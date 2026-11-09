@@ -11,8 +11,6 @@ The need: a scenario stamps a note with the current time.
 - The use case receives the port and calls `Now()`; the domain receives the instant it is given as an argument.
 - `container` writes the one line that binds `clock.System{}` to the port.
 
-The pattern for a timer is the same with a function type: `Wait` and `Delay` in `libs/core/port/machineport/clock.go` are implemented in one adapter, and a use case that waits is handed one.
-
 ## A driven adapter that stores and does not decide: the similarity floor
 
 The need: a search remembers the floor a plugin measured for a vault and a recipe.

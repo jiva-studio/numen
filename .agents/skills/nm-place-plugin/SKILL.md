@@ -72,7 +72,7 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 | A helper one package uses                                                            | That package. It moves to a package of its own when a second package of the plugin imports it                                                                                                                                             |
 | Pure logic (parsing, formatting, scheduling, geometry)                               | Backend: a package named after what it computes, importing nothing of the plugin. Frontend: the `lib` segment of the slice                                                                                                                |
 | A message between frontend and backend                                               | A struct in `backend/api`, a type in the `api` segment of the frontend, and a JSON fixture in `testdata/api/` that the tests of both sides read                                                                                           |
-| A timer, a clock, a random source, the process environment, a network or file access | An adapter in `backend/internal/adapter/<technology>`, a method of a type that implements an interface the consuming package declares                                                                                                     |
+| A clock, the process environment, a network or file access | An adapter in `backend/internal/adapter/<technology>`, a method of a type that implements an interface the consuming package declares                                                                                                     |
 | A stylesheet                                                                         | `frontend/styles.css` using the tokens of `@numen/ui`; no literal colour, size or duration                                                                                                                                                |
 | A text shown to a person                                                             | `frontend/words.ts` (or the words module of the slice); a component receives text, it does not compose it                                                                                                                                 |
 
@@ -97,7 +97,7 @@ The imports point inward and nowhere else.
 
 - `service` imports everything below it and is imported by `main` only. It is the one package that knows both the SDK `server` package and the plugin's adapters. It converts between `api` messages and domain values.
 - A use case imports `ports` and the domain. A port file imports the domain and the SDK's domain types.
-- A domain package imports the standard library and `plugin-sdk-go/host/domain`. It reads no file, opens no socket, and takes no clock and no randomness.
+- A domain package imports the standard library and `plugin-sdk-go/host/domain`. It reads no file, opens no socket, and takes no clock.
 - An adapter imports the domain and, when it names the interface it satisfies, the package that declares it. It imports no `service` and no other adapter.
 - `api` imports nothing of the plugin.
 - A package named `service` or `engine` is outer; inner packages never import it.
@@ -162,7 +162,7 @@ The complete list, with the verifier of each, is in [`checks.md`](checks.md). In
 - No plugin holds a `.proto` file, a `@/` or `@plugins/` import, or an import past the main entry of the SDK or the UI library.
 - The tooling configuration of a plugin is byte-identical to `plugins/.example/`.
 - Inside a Go backend an inner package does not import `service` or `engine`. Inside a frontend `lib/` imports no `ui`, `model` or `api`, no Vue and no browser global; a component stays within the size limits; no component lies in `lib`, `api` or `model`.
-- Functions stay within the complexity, depth, length and parameter limits; an interface has at most 5 methods; the machine clock, timers and randomness appear only inside methods of port implementations; no lint suppression comment exists.
+- Functions stay within the complexity, depth, length and parameter limits; an interface has at most 5 methods; the machine clock appears only inside a method of a clock port implementation; no lint suppression comment exists.
 - The manifest passes the validator; JSON keys are camelCase; every setting a manifest declares is read by the plugin; every plugin has a README.
 
 A red check is fixed in the code, not by changing the check or moving code out of its sight.

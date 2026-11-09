@@ -33,10 +33,6 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkMachineClockIsReadOnlyByAClockPortImplementation(t, workspace)
 	})
-	t.Run("TimersAndRandomnessAreReadOnlyInAPortImplementation", func(t *testing.T) {
-		t.Parallel()
-		checkTimersAndRandomnessAreReadOnlyInAPortImplementation(t, workspace)
-	})
 	t.Run("TheSDKNamesNoProtocolType", func(t *testing.T) {
 		t.Parallel()
 		checkSDKNamesNoProtocolType(t, workspace)

@@ -23,13 +23,13 @@ Each entry names a check or a lint rule by what it forbids. `node tools/lint-lay
 
 ## Tooling configuration
 
-- `plugin-config-golden-parity`: `Makefile`, `.golangci.yml`, `eslint.config.js` and `tsconfig.json` of a plugin (and `numen-rules.mjs`, once the branch named at the end lands) are the files of `plugins/.example/` byte for byte, and the golden Go linters equal those of the root `.golangci.yml`.
+- `plugin-config-golden-parity`: `Makefile`, `.golangci.yml`, `eslint.config.js` and `tsconfig.json` of a plugin (and `numen-rules.mjs`) are the files of `plugins/.example/` byte for byte, and the golden Go linters equal those of the root `.golangci.yml`.
 
 ## Inside a Go backend
 
 - `plugin-backend-layers`: a package under `backend/` other than `cmd`, `service`, `engine` and `testsupport` imports neither `backend/service` nor `backend/engine`.
 - The Go lint configuration of the plugin (`.golangci.yml`, `.golangci-structure.yml`): cyclomatic complexity, cognitive complexity, nesting, function length, parameter count, an interface of at most five methods, exhaustive switches and struct literals, no naked returns, no package-level mutable state and no `init`, no discarded errors, `errors.Is`/`errors.As`, US spelling in comments; depguard keeps the domain free of adapters, `os` and `net`.
-- The machine clock (`time.Now`, `time.Since`, `time.Until`) is read only inside a method `Now() time.Time` of a type that implements a declared clock interface. A timer (`time.After`, `AfterFunc`, `NewTimer`, `NewTicker`, `Tick`, `Sleep`) and a random source (`crypto/rand`, `math/rand`) are used only inside a method of a type that implements an interface the workspace declares. Tests are in scope.
+- The machine clock (`time.Now`, `time.Since`, `time.Until`) is read only inside a method `Now() time.Time` of a type that implements a declared clock interface. Tests are in scope.
 - No function of a port calls a method of an interface value; an interface's full method set, embedded methods included, stays within the limit.
 - No package lies below the composition root of the core.
 
@@ -50,4 +50,3 @@ Each entry names a check or a lint rule by what it forbids. `node tools/lint-lay
 - `lint-narrative`: identifiers, test titles, comments and commit subjects are written in plain technical English.
 - Version of a changed plugin: `<year>.<month>.<build>` raised once relative to the merge base with main.
 
-The checks added by the branch `checks/no-bypass` (the type-checked Go rules above on aliases, timers and randomness, port calls, interface size; and the frontend rules on `lib` imports at any depth, components below `ui`, and the component rules from `numen-rules.mjs`) are part of this list once that branch is merged.

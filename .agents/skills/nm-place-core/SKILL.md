@@ -1,6 +1,6 @@
 ---
 name: nm-place-core
-description: Says where code of the Go core goes and how it is shaped, for libs/core, libs/notes and the Go side of apps/desktop. Load it before adding or moving a capability, a rule about notes, a storage, an RPC, a setting, a plugin host call, a timer, a random identifier, a port, a use case or an adapter, and when deciding which layer a piece of logic belongs to.
+description: Says where code of the Go core goes and how it is shaped, for libs/core, libs/notes and the Go side of apps/desktop. Load it before adding or moving a capability, a rule about notes, a storage, an RPC, a setting, a plugin host call, an identifier, a port, a use case or an adapter, and when deciding which layer a piece of logic belongs to.
 paths:
   - "libs/core/**"
   - "libs/notes/**"
@@ -43,10 +43,10 @@ An adapter is driving or driven, never both. A package that would be both is spl
 
 ## What each layer holds
 
-- `libs/notes/domain` holds entities, value objects, identifiers (`NoteID`, `VaultID`, `CardFaceID`), the errors that name a refusal, and the rules that need only those values. It does no I/O, reads no clock, draws no random number, and knows no storage and no wire format.
+- `libs/notes/domain` holds entities, value objects, identifiers (`NoteID`, `VaultID`, `CardFaceID`), the errors that name a refusal, and the rules that need only those values. It does no I/O, reads no clock, and knows no storage and no wire format.
 - `libs/notes/markdown`, `edit`, `textfile` and `ulid` hold the format of a note's file and the identifier scheme. They are pure and take time and entropy as arguments.
 - `libs/core/port/<name>port` holds interfaces, the small types they exchange, and the sentinel errors a caller tests with `errors.Is`. It holds no function that calls a method of an interface value, no default behaviour and no policy.
-- `libs/core/usecase/<name>` holds one use case per file, its request and result types, the small interfaces only that use case consumes, and the policy of the scenario (order of steps, what is reported). It holds no `os`, no SQL, no clock read, no timer and no randomness.
+- `libs/core/usecase/<name>` holds one use case per file, its request and result types, the small interfaces only that use case consumes, and the policy of the scenario (order of steps, what is reported). It holds no `os`, no SQL, and no clock read.
 - `libs/core/adapter/*` and `libs/core/internal/adapter/*` hold technology: the settings file, SQL, directory watching, process management, toolkit calls. They hold no rule about what a note is.
 - `libs/core/container` holds wiring only: constructors called in order, ports bound to adapters, use cases created and passed on.
 
@@ -63,9 +63,8 @@ An adapter is driving or driven, never both. A package that would be both is spl
 | A new setting | The value and its constraints as a domain value or a settings declaration; reading, writing and applying through the settings use cases; the file layout in `adapter/settings`; a consumer is handed the value by `container` | The consumer, which never opens the settings file |
 | A new plugin host call (something a plugin asks of the core) | A method on a `host*` driving package of the plugin adapter that maps the call and calls a use case; the permission check of the host endpoint stays where it is | The plugin, through the SDK |
 | A new call from the core to a plugin | A port the use case declares, implemented by a `*bridge` driven package | The use case |
-| A timer, delay or wait | A function-typed or one-method port in `port/machineport` (`Wait`, `Delay`), implemented in one adapter | The use case receives it at construction |
 | The current time | `machineport.Clock`; the use case calls `Now()` and passes the instant on | The use case; the domain receives the instant as an argument |
-| A random identifier | A one-method port that returns the identifier (`NoteIDs`), implemented over the entropy source and `ulid` in one adapter | The use case; the domain receives the identifier |
+| A new identifier | A one-method port that returns the identifier (`NoteIDs`), implemented with `ulid` in one adapter | The use case; the domain receives the identifier |
 | A new content type or reader | A row a plugin contributes to the content type table (`contenttypeport`); the core names no plugin | The existing file use cases |
 | A new window or entry point | A package in `apps/<app>/cmd` and `app` that calls `container`; its only logic is options and the toolkit | The user's launcher |
 | A result type that a use case and an adapter both name | A type in the use case package, or in `domain` when it is a fact about notes | Both import it from there |
@@ -107,7 +106,7 @@ An adapter is driving or driven, never both. A package that would be both is spl
 The structural checks live in `libs/core/container/*_test.go`, `libs/notes/*_test.go` and `tools/lint-layers`. Each walks the type-checked tree and fails when it reads nothing. They forbid:
 
 - a package importing from a layer above it, and any package the core is compiled from importing an adapter;
-- `domain`, `port` and `usecase` using `os`, the filesystem, the network, the machine clock, a logging library, or a timer or random source outside a port implementation;
+- `domain`, `port` and `usecase` using `os`, the filesystem, the network, the machine clock outside a clock port implementation, or a logging library;
 - a use case importing another use case that `useCaseEdges` does not list for it;
 - an adapter naming the port it satisfies, and the composition root returning an adapter type;
 - a port, a port type or a port method that nothing outside `port/` uses;

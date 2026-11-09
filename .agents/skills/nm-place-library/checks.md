@@ -36,9 +36,7 @@ A red check is fixed in the code, not by changing the check or moving code out o
 - `json-keys-camelcase`: a JSON key that is not camelCase in a manifest, API fixture or TypeScript JSON type.
 - `make generate-check`: generated code that is out of date with the schema.
 
-## Added by the `checks/no-bypass` branch
-
-When that branch is merged these also hold; before that, the same placement applies by this skill.
+## Placement checks of windows and plugin frontends
 
 - `core-client-only-in-api`: a window file other than an `api` segment and the window entry that imports `@numen/core-client`.
 - `no-component-below-ui`: a component in a `lib`, `api` or `model` segment.

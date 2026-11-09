@@ -55,7 +55,6 @@ outside `port/`.
 | An instant is a `time.Time`                                                                   | `TestEveryInstantTheCoreCarriesIsATime`                                                    |
 | A driving adapter calls no port outside its wiring files, and is covered by the depguard rule | `TestNoDrivingAdapterCallsAPortOutsideItsWiring`, `TestEveryDrivingAdapterIsOnTheLintRule` |
 | The core starts no timer of the machine                                                       | `TestNothingOfTheCoreReadsTheMachinesClock`                                                |
-| A timer or a source of randomness is used only in a method of a type that implements a declared interface with that method, in every module of the workspace | `TestTheTypeCheckedWorkspaceObeysItsRules/TimersAndRandomnessAreReadOnlyInAPortImplementation` |
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
 

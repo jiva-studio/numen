@@ -37,11 +37,10 @@
 - The file's layout, locking, merge with the defaults and the declared schema are the settings adapter's.
 - The consumer of a setting is handed the value, or a function that returns the current value, by `container`. No consumer opens the file, and `container` computes no setting.
 
-## Time, randomness, identifiers
+## Time and identifiers
 
 - The use case receives `machineport.Clock` and calls `Now()` once per scenario, then passes the instant on. A function in the domain takes the instant as an argument.
-- A use case that waits or schedules receives `machineport.Wait` or `machineport.Delay`.
-- A use case that needs a new identifier receives a port that returns one; the adapter draws entropy and builds the identifier with `ulid`. The domain receives identifiers, never creates them.
+- A use case that needs a new identifier receives a port that returns one; the adapter builds the identifier with `ulid`. The domain receives identifiers, never creates them.
 
 ## What an application may keep
 
