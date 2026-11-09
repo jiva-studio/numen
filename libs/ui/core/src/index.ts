@@ -9,6 +9,10 @@ export type { MenuItem, MenuTrigger } from './shared/ui/menu'
 
 export { Button } from './shared/ui/button'
 
+/** The chip of a bar, with the popover it opens. */
+export { BarChip } from './shared/ui/bar-chip'
+export type { BarChipTone } from './shared/ui/bar-chip'
+
 /** A question over the window answered with a confirm or a cancel button. */
 export { ConfirmDialog } from './shared/ui/confirm-dialog'
 

@@ -138,6 +138,18 @@
      a conversation are read at the same measure, so they keep the same one. */
   --numen-gutter: 1.25rem;
 
+  /* The height of the title bar and of the status bar, in px: it does not follow the interface
+     scale. `TITLE_BAR_HEIGHT` of `libs/ui/shell/src/features/window-frame/lib/sizes.ts` and
+     `BarHeight` of `apps/desktop/internal/frame` hold the same number. */
+  --numen-title-bar-height: 32px;
+  /* The distance between two views in one slot of a bar. */
+  --numen-bar-gap: 4px;
+  /* The chip of a bar: the same size in both bars, in px. */
+  --numen-chip-height: 20px;
+  --numen-chip-text: 12px;
+  --numen-chip-inset: 8px;
+  --numen-chip-mark: 12px;
+
   --numen-inset: 0.5rem;
   --numen-inset-wide: 0.75rem;
 

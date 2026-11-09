@@ -36,7 +36,7 @@ test.describe('Cancelling a background task', () => {
     // The vector pass names the source it embeds, and the mock embedder holds the batch of the held
     // note until it is cancelled: the row of the pass is found by the path of that note.
     await page.goto('/')
-    const trigger = page.locator('.tasks-status__trigger')
+    const trigger = page.locator('[data-tasks-status] button')
     await expect(trigger).toBeVisible()
     await expect(page.locator('.tasks-status__summary')).not.toHaveText(/^\d+ of \d+$/)
 

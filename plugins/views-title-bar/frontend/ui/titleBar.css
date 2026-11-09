@@ -2,8 +2,8 @@
   display: flex;
   align-items: stretch;
   box-sizing: border-box;
-  height: 32px;
-  min-height: 32px;
+  height: var(--numen-title-bar-height);
+  min-height: var(--numen-title-bar-height);
   background: var(--numen-titlebar);
   border-bottom: 1px solid var(--numen-rule);
   color: var(--numen-ink);
@@ -114,7 +114,7 @@
 .title-bar__title {
   min-width: 0;
   padding-inline: 12px;
-  line-height: 32px;
+  line-height: var(--numen-title-bar-height);
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -138,4 +138,14 @@
 
 .title-bar__title--trigger:focus-visible {
   box-shadow: inset 0 0 0 1px var(--numen-accent);
+}
+
+/* Two views side by side keep the bar gap between them; commands next to them keep touching. A view
+   that draws nothing takes no room. */
+.title-bar__view:empty {
+  display: none;
+}
+
+.title-bar__view + .title-bar__view {
+  margin-inline-start: var(--numen-bar-gap);
 }

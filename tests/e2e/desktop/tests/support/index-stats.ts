@@ -19,7 +19,7 @@ export const waitForCurrentVectors = async (page: Page): Promise<void> => {
   )
   const statsResponse = await statsRequest.response()
   const { vectors } = ((await statsResponse?.json()) ?? {}) as { vectors?: number }
-  const label = page.locator('.index-stats__trigger')
+  const label = page.locator('button:has(.index-stats__figure)')
   await expect
     .poll(async () => Number(((await label.textContent()) ?? '').replace(/\D/g, '')))
     .toBe(vectors ?? 0)

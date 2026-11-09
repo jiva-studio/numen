@@ -1,7 +1,7 @@
 /**
  * The height of a title bar, in pixels: the macOS window keeps its system buttons centred 16 points
  * from the top, so a strip this high holds them. `BarHeight` of `apps/desktop/internal/frame` and
- * `--numen-title-bar-height` of tokens/frame.css hold the same number.
+ * `--numen-title-bar-height` of libs/ui/core/src/shared/tokens/tokens.css hold the same number.
  */
 export const TITLE_BAR_HEIGHT = 32
 
