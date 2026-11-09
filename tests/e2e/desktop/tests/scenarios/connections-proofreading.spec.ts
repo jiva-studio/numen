@@ -81,7 +81,7 @@ const closePalette = async (page: Page): Promise<void> => {
 }
 
 test.describe('Proofreading through connections', () => {
-  test.describe.configure({ timeout: 180_000, mode: 'serial' })
+  test.describe.configure({ timeout: 180_000 })
 
   let limited: FakeServer
   let working: FakeServer
@@ -97,8 +97,11 @@ test.describe('Proofreading through connections', () => {
     working.process.kill()
   })
 
-  test('reports the connection and the reason when the only row answers 429', async ({ page }) => {
+  test('names the connection and the reason, then ends the check on the second row when the first answers 429', async ({
+    page,
+  }) => {
     const first = await createConnection(page, 'Limited service', limited.address)
+    const second = await createConnection(page, 'Working service', working.address)
     try {
       await writeRows(page, [first])
       await proofreadTranscript(page, false)
@@ -109,15 +112,8 @@ test.describe('Proofreading through connections', () => {
           .locator('.task-popover .task-item')
           .filter({ hasText: 'Limited service: rate limited' }),
       ).toHaveCount(1, { timeout: 60_000 })
-    } finally {
-      await deleteConnection(page, first)
-    }
-  })
+      await page.keyboard.press('Escape')
 
-  test('ends the check on the second row when the first answers 429', async ({ page }) => {
-    const first = await createConnection(page, 'Limited service', limited.address)
-    const second = await createConnection(page, 'Working service', working.address)
-    try {
       await writeRows(page, [first, second])
       await proofreadTranscript(page, true)
 
