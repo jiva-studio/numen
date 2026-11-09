@@ -19,7 +19,7 @@ func TestTranscriptCreateDuringPaletteTranscriptionReportsRunning(t *testing.T) 
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	if out.State != stateRunning {
+	if out.State != stateRunning || out.TaskID != getTaskID("Lectures", lecture) {
 		t.Errorf("transcript_create in the shown vault while the command transcribes the recording returned %+v, want the state running", out)
 	}
 	close(s.blocking.release)

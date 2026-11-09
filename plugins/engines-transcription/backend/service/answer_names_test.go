@@ -172,11 +172,11 @@ func TestTranscriptCreateReturnsTheTaskIDKey(t *testing.T) {
 	}
 	answer := decodeAnswer(t, res.GetResult().GetStructured())
 	requireKeys(t, "the answer of transcript_create", answer, []string{"taskId", "path", "state"}, []string{"task_id"})
-	if want := "transcription:" + lecture; answer["taskId"] != want {
+	if want := "transcription:Lectures:" + lecture; answer["taskId"] != want {
 		t.Errorf("taskId = %v, want %s", answer["taskId"], want)
 	}
 	close(s.blocking.release)
-	s.waitFinished(t, "transcription:"+lecture)
+	s.waitFinished(t, "transcription:Lectures:"+lecture)
 
 	schema := getToolSchema(t, s.registry, "transcript_create", true)
 	requireKeys(t, "the output schema of transcript_create", getSchemaProperties(t, schema), []string{"taskId"}, []string{"task_id"})

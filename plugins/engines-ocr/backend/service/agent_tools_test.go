@@ -269,7 +269,7 @@ func TestRecognitionCreateReturnsBeforeTheRecognitionEnds(t *testing.T) {
 
 	out := s.recognize(t, "Physics", scanPath)
 
-	want := RecognitionCreateOutput{TaskID: "recognize:" + scanPath, Path: scanPath, State: "started"}
+	want := RecognitionCreateOutput{TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
 		t.Fatalf("recognition_create returned %+v, want %+v", out, want)
 	}
@@ -373,7 +373,7 @@ func TestRecognitionCreateOfRecognisedScanReturnsItsVersion(t *testing.T) {
 	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
+		TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
@@ -401,7 +401,7 @@ func TestRecognitionCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(listing.Live),
+		TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "done", Version: string(listing.Live),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
@@ -453,7 +453,7 @@ func TestRecognitionCreateOfLiveProofreadReturnsItWithoutARun(t *testing.T) {
 	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(proofread.GetID()),
+		TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "done", Version: string(proofread.GetID()),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
@@ -468,7 +468,7 @@ func TestRecognitionCreateOfALiveProofreadOfTheScanStartsTheRun(t *testing.T) {
 
 	out := s.recognize(t, "Physics", scanPath)
 
-	want := RecognitionCreateOutput{TaskID: "recognize:" + scanPath, Path: scanPath, State: "started"}
+	want := RecognitionCreateOutput{TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "started"}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)
 	}
@@ -499,7 +499,7 @@ func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
 	}
 
 	out := s.recognize(t, "Chemistry", chemistryScan)
-	if out.State != "started" || out.TaskID != "recognize:"+chemistryScan {
+	if out.State != "started" || out.TaskID != "recognize:Chemistry:"+chemistryScan {
 		t.Fatalf("recognition_create in Chemistry returned %+v", out)
 	}
 	close(s.recogniser.release)
@@ -511,6 +511,52 @@ func TestRecognitionCreateRecognisesInTheNamedVault(t *testing.T) {
 	}
 	if hasRecognition(t, s.texts, chemistryScan) {
 		t.Error("the shown vault has a text version of the scan of Chemistry")
+	}
+}
+
+func TestRecognitionCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
+	s := newToolFixture(t)
+	raw, _, err := s.vault.Read(t.Context(), scanPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.chemistry.File(scanPath, string(raw))
+	s.chemTexts.File(scanPath, raw)
+
+	first := s.recognize(t, "Physics", scanPath)
+	if want := (RecognitionCreateOutput{TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "started"}); first != want {
+		t.Fatalf("first call returned %+v, want %+v", first, want)
+	}
+	s.waitStarted(t)
+
+	again := s.recognize(t, "Physics", scanPath)
+	if want := (RecognitionCreateOutput{TaskID: first.TaskID, Path: scanPath, State: "running"}); again != want {
+		t.Errorf("second call in Physics returned %+v, want %+v", again, want)
+	}
+
+	second := s.recognize(t, "Chemistry", scanPath)
+	if want := (RecognitionCreateOutput{TaskID: "recognize:Chemistry:" + scanPath, Path: scanPath, State: "started"}); second != want {
+		t.Fatalf("call in Chemistry returned %+v, want %+v", second, want)
+	}
+	deadline := time.After(workDeadline)
+	for !isListed(s.queue.ListTasks(), second.TaskID) {
+		select {
+		case <-deadline:
+			t.Fatalf("the task %s was not listed within %v; tasks %+v", second.TaskID, workDeadline, s.queue.ListTasks())
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	if tasks := s.queue.ListTasks(); !isListed(tasks, first.TaskID) || !isListed(tasks, second.TaskID) {
+		t.Errorf("tasks %+v, want both %s and %s", tasks, first.TaskID, second.TaskID)
+	}
+
+	close(s.recogniser.release)
+	s.waitFinished(t, first.TaskID)
+	s.waitFinished(t, second.TaskID)
+	s.tools.Close()
+
+	if !hasRecognition(t, s.texts, scanPath) || !hasRecognition(t, s.chemTexts, scanPath) {
+		t.Error("one of the two vaults has no recognition after both runs ended")
 	}
 }
 
@@ -641,7 +687,7 @@ func TestRecognitionCreateOfARecognisedScanReadsNoFile(t *testing.T) {
 	out := s.recognize(t, "Physics", scanPath)
 
 	want := RecognitionCreateOutput{
-		TaskID: "recognize:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
+		TaskID: "recognize:Physics:" + scanPath, Path: scanPath, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
 		t.Errorf("recognition_create returned %+v, want %+v", out, want)

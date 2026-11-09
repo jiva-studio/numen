@@ -325,7 +325,7 @@ func TestDownloadCaptionsAnswersOnceItsTaskIsShown(t *testing.T) {
 	if err != nil || res.Message == "" {
 		t.Fatalf("app:file.createText answered %+v (%v)", res, err)
 	}
-	if _, isShown := findTask(queue, "text:"+path); !isShown {
+	if _, isShown := findTask(queue, "text:Mills:"+path); !isShown {
 		t.Errorf("the fetch of the text is not shown as a task once the handler answered: %+v", queue.ListTasks())
 	}
 	<-cf.textStartedCh
@@ -346,7 +346,7 @@ func TestAFailedFetchOfTheCaptionsFailsTheTaskAndNotTheHandler(t *testing.T) {
 	if err != nil {
 		t.Errorf("app:file.createText answered %v, want the failure on its task alone", err)
 	}
-	task, isShown := findTask(queue, "text:"+path)
+	task, isShown := findTask(queue, "text:Mills:"+path)
 	if !isShown || task.FailureReason != "tide-tables answered 404 Not Found" {
 		t.Errorf("the task of the fetch is %+v (shown: %v), want it failed with the reason", task, isShown)
 	}
@@ -361,7 +361,7 @@ func TestDownloadMediaAnswersOnceItsTaskIsShown(t *testing.T) {
 	if err != nil || res.Message == "" {
 		t.Fatalf("app:link.downloadMedia answered %+v (%v)", res, err)
 	}
-	if _, isShown := findTask(queue, link.GetCopyTaskID(path)); !isShown {
+	if _, isShown := findTask(queue, link.GetCopyTaskID("Mills", path)); !isShown {
 		t.Errorf("the copy is not shown as a task once the handler answered: %+v", queue.ListTasks())
 	}
 	<-cf.startedCh
@@ -382,7 +382,7 @@ func TestAFailedCopyFailsTheTaskAndNotTheHandler(t *testing.T) {
 	if err != nil {
 		t.Errorf("app:link.downloadMedia answered %v, want the failure on its task alone", err)
 	}
-	task, isShown := findTask(queue, link.GetCopyTaskID(path))
+	task, isShown := findTask(queue, link.GetCopyTaskID("Mills", path))
 	if !isShown || !strings.Contains(task.FailureReason, "403 Forbidden") {
 		t.Errorf("the task of the copy is %+v (shown: %v), want it failed with the reason", task, isShown)
 	}
