@@ -4,12 +4,12 @@ Feature: Answer card
   Background:
     Given the empty vault "Test"
     And the vault has the following card models:
-      | card model | fields       | template  | front                                        | back |
-      | Animal     | Name, Height | Recognise | {{Name}}                                     | {{Height}} |
-      | Animal     |              | Name it   | Which animal is {{Height}} at the shoulder?  | {{Name}} |
+      | card model | fields       | template  | front                                       | back       |
+      | Animal     | Name, Height | Recognise | {{Name}}                                    | {{Height}} |
+      | Animal     |              | Name it   | Which animal is {{Height}} at the shoulder? | {{Name}}   |
     And the vault has the following cards:
-      | deck      | card model | Name     | Height |
-      | crlf-deck | Animal     | Guanaco  | about 43" (shoulder) |
+      | deck      | card model | Name    | Height               |
+      | crlf-deck | Animal     | Guanaco | about 43" (shoulder) |
     And the application "flashcards" starts
     And the person chooses the vault "Test"
 
@@ -24,9 +24,9 @@ Feature: Answer card
       Examples:
         | answer |
         | Again |
-        | Hard |
-        | Good |
-        | Easy |
+        | Hard  |
+        | Good  |
+        | Easy  |
 
   Rule: A deck is reviewed alone
 
