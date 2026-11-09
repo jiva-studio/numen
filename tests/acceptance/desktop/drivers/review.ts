@@ -64,8 +64,12 @@ export class ReviewDriver {
   /** Takes back the answer of the scenario, so the card is due again for the next one. */
   async takeBackAnswer(): Promise<void> {
     if (!this.hasAnswered) return
-    const undo = this.scenario.page.getByRole('button', { name: /Undo/ })
-    if (!(await undo.isEnabled().catch(() => false))) return
+    const { page } = this.scenario
+    const undo = page.getByRole('button', { name: /Undo/ })
+    const finished = page.getByRole('button', { name: /Back to the decks/ })
+    await expect(undo.or(finished)).toBeVisible()
+    if (await finished.isVisible()) return
+    await expect(undo).toBeEnabled()
     const count = readAnswers().length
     await undo.click()
     await expect.poll(() => readAnswers().length).toBe(count + 1)
