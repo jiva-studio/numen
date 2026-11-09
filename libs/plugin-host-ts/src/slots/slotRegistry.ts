@@ -299,15 +299,13 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
     layOut(place, sortEntries(place, target))
 
   const findLayoutKey = (itemKey: string, slot?: SlotName): string | undefined => {
-    if (slot !== undefined) {
-      const drawn = sortEntries(slot, undefined).find(({ item }) => item.key === itemKey)
-      return drawn && getLayoutKey(drawn.entry)
-    }
-    for (const entry of declared.value.entries) {
-      const layoutKey = getLayoutKey(entry)
-      if (layoutKey !== undefined && getItemKey(entry) === itemKey) return layoutKey
-    }
-    return undefined
+    const entries =
+      slot === undefined
+        ? declared.value.entries
+        : sortEntries(slot, undefined).map((one) => one.entry)
+    return entries.flatMap((entry) =>
+      getItemKey(entry) === itemKey ? (getLayoutKey(entry) ?? []) : [],
+    )[0]
   }
 
   return {

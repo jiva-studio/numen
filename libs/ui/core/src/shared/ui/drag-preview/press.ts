@@ -84,10 +84,14 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     if (target.hasMoved) press.cancel?.(target.item)
   }
 
-  function end(): void {
+  function clear(): void {
     detach()
     dropTarget.value = null
     position.value = null
+  }
+
+  function end(): void {
+    clear()
     press.getClock().schedule(() => {
       dragging.value = null
     })
@@ -121,9 +125,7 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
   }
 
   function abandon(): void {
-    detach()
-    dropTarget.value = null
-    position.value = null
+    clear()
     dragging.value = null
   }
 
