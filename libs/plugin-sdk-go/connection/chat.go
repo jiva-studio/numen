@@ -155,7 +155,7 @@ func (s *ChatStream) Next() (ChatEvent, bool) {
 }
 
 // Err returns why the stream ended: nil after a finish, ErrNoConnection, *AllFailedError or
-// *RejectedError for a turn the core could not serve, the error of the context for a cancelled call, or
+// *RejectedError for a turn the core could not serve, the error of the context for a canceled call, or
 // ErrStreamEnded.
 func (s *ChatStream) Err() error { return s.err }
 

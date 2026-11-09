@@ -109,8 +109,6 @@ func (k *memoryKeys) listNames() []string {
 	return names
 }
 
-func number(value float64) *float64 { return &value }
-
 func newTypes() fixedTypes {
 	fixed := "https://openrouter.ai/api/v1"
 	return fixedTypes{types: []connectionport.Type{
@@ -119,7 +117,7 @@ func newTypes() fixedTypes {
 			Fields: []manifest.ConnectionField{
 				{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, FixedValue: &fixed},
 				{Key: "apiKey", Type: "secret", Title: "API key", IsRequired: true},
-				{Key: "parallelRequests", Type: "number", Title: "Parallel requests", Default: float64(4), Min: number(1), Max: number(32), Step: number(1)},
+				{Key: "parallelRequests", Type: "number", Title: "Parallel requests", Default: float64(4), Min: new(1.0), Max: new(32.0), Step: new(1.0)},
 			},
 		}},
 		{PluginID: "md.numen.connections.llm", PluginName: "LLM connections", IsAvailable: true, Declaration: manifest.ConnectionType{

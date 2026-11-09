@@ -190,7 +190,7 @@ func cancelRunningChat(t *testing.T, provider connectionport.Provider, service *
 			t.Fatalf("the handler context ended with %v, want context.Canceled", got)
 		}
 	case <-time.After(cancelWait):
-		t.Fatal("the context of the provider's handler did not end after the caller cancelled")
+		t.Fatal("the context of the provider's handler did not end after the caller canceled")
 	}
 	select {
 	case err := <-outcome:
@@ -198,7 +198,7 @@ func cancelRunningChat(t *testing.T, provider connectionport.Provider, service *
 			t.Fatalf("Chat = %v, want context.Canceled", err)
 		}
 	case <-time.After(cancelWait):
-		t.Fatal("Chat did not return after it was cancelled")
+		t.Fatal("Chat did not return after it was canceled")
 	}
 }
 

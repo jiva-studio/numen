@@ -88,7 +88,7 @@ type ProfileReader interface {
 // Provider lists the roles one plugin fills. A nil role is not served.
 //
 // A role returns NewTryNextError or NewStopError for a call that failed, and ctx.Err() for a call that
-// was cancelled. Any other error is a stop of unknown reason.
+// was canceled. Any other error is a stop of unknown reason.
 type Provider struct {
 	Completer Completer
 	Embedder  Embedder

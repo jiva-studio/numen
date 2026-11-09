@@ -253,7 +253,7 @@ async function* streamChat(
   options: ModelCallOptions | undefined,
 ): AsyncGenerator<ModelChatEvent, ModelCallFailure | null> {
   const stream = rpc.chat(request, writeCallOptions(options))
-  for await (const answer of stream as AsyncIterable<ModelServiceChatResponse>) {
+  for await (const answer of stream) {
     switch (answer.event.case) {
       case 'textDelta':
         yield { textDelta: answer.event.value }

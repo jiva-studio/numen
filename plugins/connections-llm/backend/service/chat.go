@@ -286,7 +286,6 @@ func awaitLine(ctx context.Context, lines <-chan streamLine, wait time.Duration)
 	}
 }
 
-// takeLine adds the line to the event being read, and reads the event when the line ends it.
 func (r *chatReader) takeLine(data *bytes.Buffer, one streamLine) error {
 	line := bytes.TrimRight(one.raw, "\r\n")
 	if field, ok := bytes.CutPrefix(line, []byte("data:")); ok {
@@ -370,7 +369,6 @@ func (r *chatReader) read(data []byte) error {
 	return nil
 }
 
-// readMessage reads the whole message a service gives instead of deltas.
 func (r *chatReader) readMessage(message *streamedMessage) error {
 	if message == nil {
 		return nil

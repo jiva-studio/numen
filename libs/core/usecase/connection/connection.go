@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -230,9 +231,7 @@ func (o operation) buildEntry(ctx context.Context, one connectionport.Connection
 	}
 	found, isFound := o.types.GetType(one.TypeID)
 	if !isFound {
-		for key, value := range one.Fields {
-			entry.Fields[key] = value
-		}
+		maps.Copy(entry.Fields, one.Fields)
 		return entry, nil
 	}
 	entry.IsTypeAvailable = found.IsAvailable

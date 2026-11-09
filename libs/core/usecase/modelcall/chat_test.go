@@ -247,7 +247,7 @@ func TestACancelledChatReturnsTheErrorOfTheContextAndFreesTheLease(t *testing.T)
 			t.Errorf("err = %v, want context.Canceled", err)
 		}
 	case <-time.After(10 * time.Second):
-		t.Fatal("a cancelled chat did not return")
+		t.Fatal("a canceled chat did not return")
 	}
 	if opened, released := len(s.world.Source.Opened()), s.world.Source.Released(); opened != released {
 		t.Errorf("opened %d providers and released %d", opened, released)

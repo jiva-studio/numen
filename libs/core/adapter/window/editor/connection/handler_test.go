@@ -78,8 +78,6 @@ func (k *memoryKeys) DeleteKey(_ context.Context, name string) error {
 	return nil
 }
 
-func number(value float64) *float64 { return &value }
-
 type fixedUses map[string][]connectionport.Use
 
 func (u fixedUses) ListUses(connectionID string) ([]connectionport.Use, error) {
@@ -100,7 +98,7 @@ func newHandlerWithUses(keys *memoryKeys, uses connectionport.Uses) *Handler {
 			{Key: "baseUrl", Type: "string", Title: "Address", IsAddress: true, FixedValue: &fixed},
 			{Key: "apiKey", Type: "secret", Title: "API key", IsRequired: true},
 			{Key: "mode", Type: "enum", Title: "Mode", Default: "fast", Options: manifest.SettingOptions{{Value: "fast"}, {Value: "slow", Title: "Slow"}}},
-			{Key: "parallelRequests", Type: "number", Title: "Parallel requests", Default: float64(4), Min: number(1), Max: number(32), Step: number(1)},
+			{Key: "parallelRequests", Type: "number", Title: "Parallel requests", Default: float64(4), Min: new(1.0), Max: new(32.0), Step: new(1.0)},
 		},
 	}}}
 	next := 0

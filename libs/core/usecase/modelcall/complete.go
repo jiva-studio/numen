@@ -9,7 +9,7 @@ import (
 // Complete asks the rows of the plugin for the operation complete, in order. It returns
 // connectionport.ErrNoConnection where the plugin has no row, *connectionport.AllFailedError where every
 // row failed, *connectionport.RejectedError where a connection found the request wrong, and the error of
-// the context where the call was cancelled.
+// the context where the call was canceled.
 func (c *Calls) Complete(
 	ctx context.Context, callerPluginID string, request connectionport.CompleteRequest, priority connectionport.Priority,
 ) (connectionport.CompleteResult, error) {

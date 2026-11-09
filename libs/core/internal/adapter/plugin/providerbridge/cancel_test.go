@@ -58,7 +58,7 @@ func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient
 			t.Fatalf("the handler context ended with %v, want context.Canceled", got)
 		}
 	case <-time.After(cancelWait):
-		t.Fatal("the context of the provider's handler did not end after the caller cancelled")
+		t.Fatal("the context of the provider's handler did not end after the caller canceled")
 	}
 	select {
 	case err := <-failed:
@@ -66,7 +66,7 @@ func cancelRunningCall(t *testing.T, client numenv1connect.ProviderServiceClient
 			t.Fatalf("the caller got code %v, want canceled: %v", connect.CodeOf(err), err)
 		}
 	case <-time.After(cancelWait):
-		t.Fatal("the caller's call did not return after it was cancelled")
+		t.Fatal("the caller's call did not return after it was canceled")
 	}
 }
 

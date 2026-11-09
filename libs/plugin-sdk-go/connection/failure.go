@@ -75,8 +75,7 @@ func IsStop(err error) bool {
 
 // GetReason returns the reason of a failure err is or wraps, and false for any other error.
 func GetReason(err error) (Reason, bool) {
-	var one *failure
-	if errors.As(err, &one) {
+	if one, ok := errors.AsType[*failure](err); ok {
 		return one.reason, true
 	}
 	return ReasonUnknown, false

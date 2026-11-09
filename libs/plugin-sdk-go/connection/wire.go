@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// adapter serves the roles of a Provider. A cancelled call answers with the status code Canceled, and any
+// adapter serves the roles of a Provider. A canceled call answers with the status code Canceled, and any
 // other error with a served failure; the text of an error that is no failure kind never leaves the provider.
 type adapter struct {
 	numenv1connect.UnimplementedProviderServiceHandler

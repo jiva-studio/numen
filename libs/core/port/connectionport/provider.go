@@ -144,7 +144,7 @@ type ModelProfile struct {
 }
 
 // The roles of a provider. A call fails with *TryNextError or *StopError, with the error of the context
-// when it was cancelled, or with an error of its own when the provider could not be reached.
+// when it was canceled, or with an error of its own when the provider could not be reached.
 type (
 	// CompletionProvider carries out the operation complete.
 	CompletionProvider interface {

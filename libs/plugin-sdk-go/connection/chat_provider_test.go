@@ -173,7 +173,7 @@ func TestACancelledChatEndsTheContextOfTheProvider(t *testing.T) {
 			t.Errorf("provider context error = %v, want canceled", got)
 		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("the context of the provider did not end after the client cancelled")
+		t.Fatal("the context of the provider did not end after the client canceled")
 	}
 }
 

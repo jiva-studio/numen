@@ -371,7 +371,7 @@ func TestACancelledQueuedCallIsRemovedFromTheQueueAndFreesNoSlot(t *testing.T) {
 	next := s.complete(t.Context(), consumerID, "next", connectionport.PriorityBackground)
 	s.world.Waits.AwaitCount(t, 1)
 	if got := s.texts(); len(got) != 1 {
-		t.Errorf("provider received %v, the cancelled call freed a slot it did not hold", got)
+		t.Errorf("provider received %v, the canceled call freed a slot it did not hold", got)
 	}
 	s.world.Provider.Unblock(addressLimited)
 	for _, one := range []<-chan error{running, next} {

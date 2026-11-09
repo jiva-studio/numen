@@ -21,7 +21,8 @@ type modelsAnswer struct {
 
 // ListModels lists the models of the service. OpenRouter labels its models, so the list holds the
 // models that fit the operation; the other services give no label, and every model is listed with no
-// operations.
+// operations. A model with no declared output modalities counts as a model of text, because OpenRouter
+// leaves the list out for some.
 func (s *Service) ListModels(ctx context.Context, call connection.Call, operation string) ([]connection.Model, error) {
 	path, isLabelled := "/models", call.Type == typeOpenRouter
 	if isLabelled && operation == operationEmbed {
@@ -52,7 +53,6 @@ func isTextOperation(operation string) bool {
 	return operation == operationComplete || operation == operationChat
 }
 
-// makesText is true for a model with no declared output modalities, because OpenRouter leaves the list out for some.
 func makesText(modalities []string) bool {
 	return len(modalities) == 0 || slices.Contains(modalities, "text")
 }

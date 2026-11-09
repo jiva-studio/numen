@@ -59,7 +59,7 @@ const (
 // call to the next row. GetEmbeddingProfile is background.
 type ModelCalls interface {
 	// Complete asks the rows in order. It returns ErrNoConnection, *AllFailedError or *RejectedError where
-	// no row answers, and the error of the context when the call is cancelled.
+	// no row answers, and the error of the context when the call is canceled.
 	Complete(ctx context.Context, callerPluginID string, request CompleteRequest, priority Priority) (CompleteResult, error)
 	// Chat asks the rows in order for the next turn of a conversation and sends its events to send as they
 	// arrive. A row that fails before its first event is set aside and the next row is asked; a row that

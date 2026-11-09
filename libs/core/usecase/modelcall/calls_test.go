@@ -340,7 +340,7 @@ func TestACallCancelledBeforeItStartsReachesNoProvider(t *testing.T) {
 		t.Errorf("err = %v, want context.Canceled", err)
 	}
 	if len(s.world.Provider.Calls()) != 0 {
-		t.Error("a provider was called for a cancelled call")
+		t.Error("a provider was called for a canceled call")
 	}
 }
 
@@ -361,15 +361,15 @@ func TestACallCancelledWhileTheProviderWorksReturnsTheCancellationAndSetsNothing
 		t.Fatalf("err = %v, want context.Canceled", err)
 	}
 	if len(s.world.Provider.CallsTo(addressTwo)) != 0 {
-		t.Error("the call went on to the next row after it was cancelled")
+		t.Error("the call went on to the next row after it was canceled")
 	}
 	s.world.Provider.Unblock(addressOne)
 	result, err := s.complete(t)
 	if err != nil || result.Text != "answer from "+addressOne {
-		t.Errorf("the cancelled connection was set aside: %v, %v", result, err)
+		t.Errorf("the canceled connection was set aside: %v, %v", result, err)
 	}
 	if got := s.world.Notices.List(); len(got) != 0 {
-		t.Errorf("notices = %v after a cancelled call", got)
+		t.Errorf("notices = %v after a canceled call", got)
 	}
 }
 

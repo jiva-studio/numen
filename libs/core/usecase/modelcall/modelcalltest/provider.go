@@ -131,7 +131,7 @@ func (p *Provider) Embed(ctx context.Context, call connectionport.ProviderCall, 
 	return vectors, nil
 }
 
-// ListModels answers two models, the first one labelled with the operation.
+// ListModels answers two models, the first one labeled with the operation.
 func (p *Provider) ListModels(ctx context.Context, call connectionport.ProviderCall, operation string) ([]connectionport.Model, error) {
 	if err := p.receive(ctx, "list models", call); err != nil {
 		return nil, err

@@ -710,7 +710,7 @@ func TestACancelledTaskEndsTheStreamOfTheModel(t *testing.T) {
 	cancel()
 
 	if err := <-finish; err != nil {
-		t.Errorf("a cancelled task returned %v", err)
+		t.Errorf("a canceled task returned %v", err)
 	}
 	<-ended
 }
