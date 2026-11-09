@@ -7,7 +7,6 @@ import {
   ModelErrorCode,
   ModelService,
   Priority,
-  type ModelServiceChatResponse,
 } from '@numen/protocol'
 import { asFailure, asValue, type Result } from '../result'
 import { transport } from '../transport'
