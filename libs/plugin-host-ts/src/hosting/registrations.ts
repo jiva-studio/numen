@@ -12,6 +12,7 @@ import type {
   ViewRegistration,
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from './types'
+import { getViewPermissions } from './viewPermissions'
 
 export type Track = (disposable: Disposable) => Disposable
 export type RequirePermission = (permission: string, operation: string) => void
@@ -20,11 +21,6 @@ export type RequirePermission = (permission: string, operation: string) => void
 export interface RegistrationGuard {
   readonly requirePerm: RequirePermission
   readonly add: Track
-}
-
-/** A view context that names a note to read, such as the one of the note editor. */
-function hasNotePath(context: unknown): boolean {
-  return typeof context === 'object' && context !== null && 'path' in context && !!context.path
 }
 
 export function createRegistrations(
@@ -44,7 +40,7 @@ export function createRegistrations(
       add(host.registerAgentProvider(pluginId, reg)),
     registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
     mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      if (hasNotePath(context)) requirePerm('vault:read', 'mountView')
+      for (const permission of getViewPermissions(capability)) requirePerm(permission, 'mountView')
       const view = host.mountView(capability, element, context)
       return { focus: () => view.focus(), ...add(view) }
     },
