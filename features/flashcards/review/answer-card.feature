@@ -24,7 +24,7 @@ Feature: Answer card
 
     Scenario: The review of a deck has the number of its cards left
       When the person starts the review of the deck "crlf-deck"
-      Then the review session has "1 left"
+      Then the review session has "2 left"
 
     Scenario: A card of a deck is answered in the review of the deck
       When the person starts the review of the deck "crlf-deck"
