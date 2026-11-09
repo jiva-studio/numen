@@ -25,7 +25,7 @@ The three chips are slot views of `titleBar.status` (manifests of `tools-updater
 
 - One token holds the bar height in px: `--numen-title-bar-height: 32px`. The title bar and the status bar read it for `height` and `min-height`. No `rem` and no `--numen-interface-scale` in either bar's height.
 - `frame.BarHeight` (Go) and `TITLE_BAR_HEIGHT` (shell) keep the same number, 32.
-- Where the token is declared is open question Q1: a plugin frontend may import only `@numen/plugin-sdk` and `@numen/ui`, and the plugin Storybook (`libs/plugin-sdk-ts/stories/.storybook/preview.ts`) loads `@numen/ui/styles.css` and not the shell. The status bar reading a token that only the shell declares has no height in its own story. Proposed: move the declaration from `libs/ui/shell/.../tokens/frame.css` into `libs/ui/core/src/shared/tokens/tokens.css`, keep its name, and point the comments of `frame.go`, `sizes.ts` and `bar_height_test.go` at the new file. Until Q1 is answered the coder does not move it.
+- Where the token is declared is open question Q1: a plugin frontend may import only `@numen/plugin-sdk` and `@numen/ui`, and the plugin Storybook (`libs/plugin-sdk-ts/stories/.storybook/preview.ts`) loads `@numen/ui/styles.css` and not the shell. The status bar reading a token that only the shell declares has no height in its own story. Proposed: move the declaration from `libs/ui/shell/.../tokens/frame.css` into `libs/ui/core/src/shared/tokens/tokens.css`, keep its name, and point the comments of `frame.go`, `sizes.ts` and `bar_height_test.go` at the new file. Decided: move (section 5).
 
 ### 1.2 Bar text and spacing in px
 
@@ -34,7 +34,7 @@ The three chips are slot views of `titleBar.status` (manifests of `tools-updater
 | Property | Today | New |
 | :------- | :---- | :-- |
 | `.status-bar` `height`, `min-height` | `1.375rem` | `var(--numen-title-bar-height)` |
-| `.status-bar` `font-size` | `var(--numen-text-1)` | `10px` (Q3) |
+| `.status-bar` `font-size` | `var(--numen-text-1)` | `13px` |
 | `.status-bar__entry` `padding` | `0 0.5rem` | `0 8px` |
 | `.status-bar__entry` `gap` | `0.25rem` | `4px` |
 | `.status-bar__gap` `inline-size` | `0.5rem` | `8px` |
@@ -45,7 +45,7 @@ The three chips are slot views of `titleBar.status` (manifests of `tools-updater
 
 - New token in `libs/ui/core/src/shared/tokens/tokens.css`: `--numen-bar-gap: 4px` (today's distance between two chips at scale 1).
 - `.title-bar__slot` and `.status-bar__slot` set `gap: var(--numen-bar-gap)`. The gap is between adjacent entries of one slot; none before the first or after the last.
-- Whether the gap also applies between adjacent command buttons is open question Q2. The spec takes the issue literally: between every pair of adjacent entries. The separator keeps its `8px`.
+- The gap applies between adjacent view entries only; command buttons keep touching (decision Q2). The separator keeps its `8px`.
 
 ### 1.4 Chip component
 
@@ -311,10 +311,12 @@ Scales below are the pairs (interface, text) `(1,1)`, `(2,1)`, `(1,2)`, `(2,2)`,
 - **When**: they are measured at every scale
 - **Then**: each pair of adjacent chips is 4px apart at every scale (the bar gap alone).
 
-## 5. Open questions for the user
+## 5. Decisions (answered 2026-11-09)
 
-- **Q1 — Where the bar height token is declared.** A plugin cannot read the shell's `frame.css`, and the plugin stories do not load it. Proposed: move `--numen-title-bar-height` into `libs/ui/core` `tokens.css` and repoint `frame.go`, `sizes.ts`, `frame.test.ts` and `bar_height_test.go`. Alternative: keep it in the shell and have the status bar fall back to `32px` (a second copy of the number).
-- **Q2 — Gap between command buttons.** Today the title bar's icon buttons touch each other. A slot gap of 4px between every entry also separates them. Proposed: between every entry, as the issue says. Alternative: only next to view entries.
-- **Q3 — Status bar text size.** Proposed `10px` (today's value at scale 1). The bar grows from 22px to 32px; the user may want a larger size.
-- **Q4 — `tone` prop.** The three chips draw three grounds today. Proposed: `tone: 'neutral' | 'accent' | 'alarm'` on the chip. Alternative: the chip has one ground and a plugin overrides it with a class.
-- **Q5 — Dialog name.** reka-ui's `PopoverContent` is the dialog. Proposed: the chip takes a `popoverLabel` prop for its `aria-label` (today "Index stats", the updater title, the tasks title). Alternative: attributes passed through to the content.
+- **Q1, token location:** move. `--numen-title-bar-height` is declared in `libs/ui/core/src/shared/tokens/tokens.css` under the same name; `frame.css` no longer declares it; the comments of `frame.go` and `sizes.ts` and the path in `bar_height_test.go` point at the new file.
+- **Q2, command buttons:** unchanged. The title bar command buttons keep touching as today; the 4px gap applies between view entries (chips) only. The title bar does not change its look.
+- **Q3, status bar text:** 13px, the title bar's text size, so both bars read the same.
+- **Q4, `tone`:** accepted as proposed; each chip keeps today's ground.
+- **Q5, `popoverLabel`:** accepted as proposed.
+- **Chip size:** unchanged from today's title bar chip: 20px high, 12px text, 8px padding, in both bars.
+- **Gap:** 4px in px; it does not follow the interface scale.
