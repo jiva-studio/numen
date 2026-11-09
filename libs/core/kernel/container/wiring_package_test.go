@@ -1,75 +1,142 @@
 package container
 
 import (
-	"path"
-	"path/filepath"
+	"regexp"
 	"slices"
-	"strings"
 	"testing"
 
 	"golang.org/x/tools/go/packages"
 )
 
-// listWiringWords returns the names a package takes when it builds the objects of the program and hands them
-// to each other.
-func listWiringWords() []string {
-	return []string{"wire", "wiring", "compose", "composition", "assembly", "assemble", "bootstrap", "inject", "di", "container"}
-}
+// compositionRoot matches the packages of an application that compose it: apps/<name>/cmd and
+// apps/<name>/app, and what lies below them.
+var compositionRoot = regexp.MustCompile(`^` + regexp.QuoteMeta(numenRoot) + `apps/[^/]+/(cmd|app)(/|$)`)
 
-// getWiringPackages returns each package, at its first file, whose last path element is a wiring word and
-// whose path is not one of the allowed roots, and whether an allowed root was among the packages.
-func getWiringPackages(pkgs []*packages.Package, roots []string) ([]finding, bool) {
-	var found []finding
-	isRootRead := false
+// getWiringPackages returns each package, at its first file, that imports a use case package and a driven
+// adapter package: one with a type that implements an interface declared under root/port. Such a package
+// builds the objects of the program and hands them to each other. A package accepted by isExempt is
+// not returned; the second result counts the exempt packages that have that shape.
+func getWiringPackages(pkgs []*packages.Package, root string, isExempt func(path string) bool) ([]finding, int) {
+	ports := listPortInterfaces(pkgs, root)
+	driven := map[string]bool{}
 	for _, pkg := range pkgs {
-		if slices.Contains(roots, pkg.PkgPath) {
-			isRootRead = true
+		if getImplementation(pkg, ports).name != "" {
+			driven[pkg.PkgPath] = true
+		}
+	}
+	var found []finding
+	exempted := 0
+	for _, pkg := range pkgs {
+		if len(pkg.Syntax) == 0 {
 			continue
 		}
-		if len(pkg.Syntax) == 0 || !slices.Contains(listWiringWords(), strings.ToLower(path.Base(pkg.PkgPath))) {
+		hasUseCase, hasDriven := false, false
+		for path := range pkg.Imports {
+			hasUseCase = hasUseCase || isInLayer(path, root, "usecase")
+			hasDriven = hasDriven || driven[path]
+		}
+		if !hasUseCase || !hasDriven {
+			continue
+		}
+		if isExempt(pkg.PkgPath) {
+			exempted++
 			continue
 		}
 		found = append(found, newFinding(pkg.Fset, pkg.Syntax[0].Package, pkg.PkgPath))
 	}
-	return sortFindings(found), isRootRead
+	return sortFindings(found), exempted
+}
+
+func isCompositionRoot(path string) bool {
+	return isWithin(path, coreImportPath+"/container") || compositionRoot.MatchString(path)
 }
 
 func checkNoWiringPackageExistsOutsideTheContainer(t *testing.T, workspace workspacePackages) {
 	t.Helper()
-	root, err := filepath.Abs(repoRootDir)
-	if err != nil {
-		t.Fatal(err)
-	}
 	var pkgs []*packages.Package
-	for _, dir := range listWorkspaceModules(t) {
-		// A plugin names its own packages after its own domain: the container of an EPUB file is not wiring.
-		if rel, err := filepath.Rel(root, dir); err != nil || isWithin(filepath.ToSlash(rel), "plugins") {
-			continue
-		}
-		pkgs = append(pkgs, listProductionPackages(workspace.listModule(t, dir))...)
+	for _, rel := range []string{"libs/core/kernel", "apps/desktop", "apps/mobile"} {
+		pkgs = append(pkgs, getModulePackages(t, workspace, rel)...)
 	}
-	found, isRootRead := getWiringPackages(pkgs, []string{coreImportPath + "/container"})
+	found, exempted := getWiringPackages(pkgs, coreImportPath, isCompositionRoot)
 	for _, one := range found {
-		t.Errorf("%s: %s is a wiring package; the wiring is the one package container", one.position, one.name)
+		t.Errorf("%s: %s builds use cases from driven adapters; the wiring is the one package container", one.position, one.name)
 	}
-	if !isRootRead {
-		t.Fatal("the package container was not read: the rule is checked against nothing")
+
+	// A walk that finds no composition root with the shape checks nothing.
+	if exempted == 0 {
+		t.Fatal("no composition root has the shape of wiring: the rule is checked against nothing")
 	}
 }
 
-// The rule rejects a package named for wiring anywhere but the root, and accepts the root and a package
-// of another name.
-func TestWiringPackageRule_RejectsAWiringPackageOutsideTheContainer(t *testing.T) {
+// The rule rejects a package that imports a use case and a driven adapter, and accepts a driving adapter,
+// a driven adapter, a package that imports one of the two, and the exempt composition root.
+func TestWiringPackageRule_RejectsAPackageThatBuildsUseCasesFromDrivenAdapters(t *testing.T) {
 	dir := writeTreeFixture(t, map[string]string{
-		"container/container.go":       "package container\n\nfunc New() {}\n",
-		"internal/wiring/wiring.go":    "package wiring\n\nfunc Build() {}\n",
-		"adapter/window/assembly/a.go": "package assembly\n\nfunc Build() {}\n",
-		"adapter/window/window.go":     "package window\n\nfunc Serve() {}\n",
-		"wirelength/wirelength.go":     "package wirelength\n\nfunc Measure() {}\n",
+		"port/noteport/noteport.go": "package noteport\n\ntype Notes interface{ Read() string }\n",
+		"usecase/find/find.go": `package find
+
+import "fixture/port/noteport"
+
+type Find struct{ notes noteport.Notes }
+
+func New(notes noteport.Notes) *Find { return &Find{notes: notes} }
+`,
+		"adapter/store/store.go": "package store\n\ntype Store struct{}\n\nfunc (*Store) Read() string { return \"\" }\n",
+		"container/container.go": `package container
+
+import (
+	"fixture/adapter/store"
+	"fixture/usecase/find"
+)
+
+func New() *find.Find { return find.New(&store.Store{}) }
+`,
+		"internal/hub/hub.go": `package hub
+
+import (
+	"fixture/adapter/store"
+	"fixture/usecase/find"
+)
+
+func Build() *find.Find { return find.New(&store.Store{}) }
+`,
+		"adapter/driving/driving.go": `package driving
+
+import "fixture/usecase/find"
+
+func Run(f *find.Find) {}
+`,
+		"internal/stores/stores.go": `package stores
+
+import "fixture/adapter/store"
+
+func Open() *store.Store { return &store.Store{} }
+`,
 	})
-	found, isRootRead := getWiringPackages(loadFixture(t, dir), []string{"fixture/container"})
-	want := []string{"a.go:1 fixture/adapter/window/assembly", "wiring.go:1 fixture/internal/wiring"}
-	if !isRootRead || !slices.Equal(formatFindings(found), want) {
-		t.Errorf("the rule rejects %v with the root read %v, want %v", formatFindings(found), isRootRead, want)
+	found, exempted := getWiringPackages(loadFixture(t, dir), "fixture", func(path string) bool { return path == "fixture/container" })
+	want := []string{"hub.go:1 fixture/internal/hub"}
+	if got := formatFindings(found); !slices.Equal(got, want) || exempted != 1 {
+		t.Errorf("the rule rejects %v with %d exempt, want %v with 1", got, exempted, want)
+	}
+}
+
+func TestCompositionRootRule_ExemptsTheContainerAndTheApplicationRoots(t *testing.T) {
+	for _, tc := range []struct {
+		path     string
+		isExempt bool
+	}{
+		{coreImportPath + "/container", true},
+		{coreImportPath + "/container/vault", true},
+		{numenRoot + "apps/desktop/cmd/numen", true},
+		{numenRoot + "apps/desktop/app", true},
+		{numenRoot + "apps/mobile/app/sub", true},
+		{numenRoot + "apps/desktop/internal/platform", false},
+		{coreImportPath + "/internal/adapterlib/wire", false},
+		{coreImportPath + "/adapter/window/editor/assembly", false},
+		{numenRoot + "apps/desktop/application", false},
+	} {
+		if got := isCompositionRoot(tc.path); got != tc.isExempt {
+			t.Errorf("%s is exempt: %v, want %v", tc.path, got, tc.isExempt)
+		}
 	}
 }

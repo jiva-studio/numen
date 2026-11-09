@@ -109,9 +109,9 @@ func getBloatedInterfaces(pkgs []*packages.Package, limit int) ([]finding, inter
 }
 
 // isInterfaceSizeScope reports whether a module, by its directory under the repository root, is one whose
-// interfaces the size rule counts: the kernel, the notes library, the plugin SDK and the applications.
+// interfaces the size rule counts: the kernel, the notes library, the plugin SDK, the applications and the plugins.
 func isInterfaceSizeScope(rel string) bool {
-	return slices.ContainsFunc([]string{"libs/core/kernel", "libs/note", "libs/plugin/sdk-go", "apps"}, func(root string) bool {
+	return slices.ContainsFunc([]string{"libs/core/kernel", "libs/note", "libs/plugin/sdk-go", "apps", "plugins"}, func(root string) bool {
 		return isWithin(filepath.ToSlash(rel), root)
 	})
 }
@@ -216,9 +216,9 @@ type Service interface {
 	}
 }
 
-// The rule counts the kernel, the notes library, the plugin SDK and the applications, and no plugin, no
+// The rule counts the kernel, the notes library, the plugin SDK, the applications and the plugins, and no
 // other library and no tool.
-func TestInterfaceSizeRule_CountsNoPluginNoToolAndNoOtherLibrary(t *testing.T) {
+func TestInterfaceSizeRule_CountsNoToolAndNoOtherLibrary(t *testing.T) {
 	for _, tc := range []struct {
 		rel       string
 		isCounted bool
@@ -233,8 +233,8 @@ func TestInterfaceSizeRule_CountsNoPluginNoToolAndNoOtherLibrary(t *testing.T) {
 		{"tools/lint-comments", false},
 		{"libs/plugin/catalog", false},
 		{"libs/core/protocol", false},
-		{"plugins/agents-acp", false},
-		{"plugins/views-flashcards-studio", false},
+		{"plugins/agents-acp", true},
+		{"plugins/views-flashcards-studio", true},
 		{"libs/plugin/sdk-golang", false},
 	} {
 		if got := isInterfaceSizeScope(tc.rel); got != tc.isCounted {

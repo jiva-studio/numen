@@ -28,7 +28,7 @@ Each test verifies adherence to structural rules.
 | No plugin, no plugin SDK and no plugin catalog package imports a package of the core, a domain package included | `TestNoPluginImportsAnotherPluginOrTheCore`, `TestNoSDKOrCatalogPackageImportsTheCore` |
 | The depguard rule `domain` denies `port` as well as adapters, use cases and the composition root | `.golangci.yml` |
 | No struct holds more than five use cases | `TestTheTypeCheckedWorkspaceObeysItsRules/NoStructHoldsMoreThanFiveUseCases` |
-| No wiring package exists outside `container` | `TestTheTypeCheckedWorkspaceObeysItsRules/NoWiringPackageExistsOutsideTheContainer` |
+| No package outside `container`, `apps/*/cmd` and `apps/*/app` imports a use case package and a driven adapter package (one with a type that implements a `port/` interface) | `TestTheTypeCheckedWorkspaceObeysItsRules/NoWiringPackageExistsOutsideTheContainer` |
 
 ## What the core may not do
 
@@ -50,7 +50,7 @@ outside `port/`.
 | Every port method is called from outside `port/`   | `TestEveryPortMethodIsCalledSomewhereElse`      |
 | Every adapter serving the schema is a driving one  | `TestEveryAdapterServingTheSchemaIsDriving`     |
 | No function or method of a port calls a method of an interface value | `TestTheTypeCheckedWorkspaceObeysItsRules/APortDeclaresAndDoesNotOrchestrate` |
-| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in the kernel, the notes library, the SDK and the applications, not in a plugin or a tool | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
+| An interface has at most the interfacebloat `max` of `.golangci-structure.yml` methods, embedded ones included, in the kernel, the notes library, the SDK, the applications and the plugins, not in a tool | `TestTheTypeCheckedWorkspaceObeysItsRules/InterfaceSizeCountsTheWholeMethodSet` |
 
 ## Names in the core
 
