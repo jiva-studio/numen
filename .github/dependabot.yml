@@ -104,6 +104,11 @@ updates:
       gradle-major:
         patterns: ["*"]
         update-types: ["major"]
+    # Android Gradle Plugin 8.13 runs on Gradle 8 only; the wrapper stays on 8.x
+    # until the plugin moves to 9.
+    ignore:
+      - dependency-name: gradle-wrapper
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
