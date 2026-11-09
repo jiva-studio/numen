@@ -228,11 +228,8 @@ export function createShellHost(
         add(registerInSlots(slotViews, { pluginId, manifest }, registration)),
       slots: windowSlots.slots,
       mountView: (capability, element, viewContext) => {
-        const view = mountDeclaredView(declaredViews, { pluginId, manifest })(
-          capability,
-          element,
-          viewContext,
-        )
+        const mount = mountDeclaredView(declaredViews, { pluginId, manifest })
+        const view = mount(capability, element, viewContext)
         add(view)
         return view
       },
