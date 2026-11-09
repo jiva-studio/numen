@@ -94,10 +94,10 @@ describe('the menu of a row', () => {
   it('runs the command of an entry through the commands of the window', async () => {
     const { host, commands } = createHost()
 
-    await createFilesTabDeps(host, 'files').runCommand('app:note.remove', rowTarget)
+    await createFilesTabDeps(host, 'files').runCommand('app:file.remove', rowTarget)
 
     expect(commands.getRuns()).toStrictEqual([
-      { command: 'app:note.remove', target: rowTarget, itemId: undefined },
+      { command: 'app:file.remove', target: rowTarget, itemId: undefined },
     ])
   })
 
@@ -107,7 +107,7 @@ describe('the menu of a row', () => {
     const deps = createFilesTabDeps(withoutSlots, 'files')
 
     expect(deps.getMenuEntries(rowTarget)).toStrictEqual([])
-    await expect(deps.runCommand('app:note.remove', rowTarget)).resolves.toBe('')
+    await expect(deps.runCommand('app:file.remove', rowTarget)).resolves.toBe('')
   })
 
   it('reads the entries of no slot but the menu of the file tree', () => {

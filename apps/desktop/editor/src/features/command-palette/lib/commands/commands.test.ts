@@ -27,7 +27,7 @@ describe('the commands over a note', () => {
 
     expect(commands).toContain('app:file.open')
     expect(commands).not.toContain('app:file.open#beside')
-    expect(commands).not.toContain('app:note.remove#permanent')
+    expect(commands).not.toContain('app:file.remove#permanent')
   })
 })
 
@@ -38,7 +38,7 @@ describe('the commands over the vaults an installation holds', () => {
       .map((one) => one.id)
 
     expect(commands).toStrictEqual([
-      'app:note.goTo',
+      'app:file.open#note',
       'app:vault.open',
       'app:vault.create',
       'app:vault.rename',

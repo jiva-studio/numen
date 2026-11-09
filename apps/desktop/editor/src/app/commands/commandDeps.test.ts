@@ -14,7 +14,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
   const options: CommandDepsOptions = {
     core: {
       rename: record('rename', 'renamed'),
-      remove: record('app:note.remove', 'removed'),
+      remove: record('app:file.remove', 'removed'),
       move: record('app:file.move', 'moved'),
       createFolder: record('app:folder.create', 'folded'),
     } as never,
@@ -86,7 +86,7 @@ describe('the commands reach the window', () => {
       ['createWithTitle', 'Llama', 'Animals.md', null],
       ['createUntitled', 'zoo'],
       ['rename', 'Llama.md', 'Alpaca'],
-      ['app:note.remove', 'Llama.md', true],
+      ['app:file.remove', 'Llama.md', true],
       ['app:file.move', 'Llama.md', 'zoo/Llama.md'],
       ['app:folder.create', 'zoo'],
     ])

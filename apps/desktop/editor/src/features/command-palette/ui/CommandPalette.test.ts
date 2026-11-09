@@ -212,7 +212,7 @@ describe('choosing a row of the commands', () => {
     one.search.setOpen(false)
     one.commands.setOpen(true)
 
-    await one.choose('app:note.copyPath', 'app:note.copyPath')
+    await one.choose('app:file.copyPath', 'app:file.copyPath')
 
     expect(h.runInvocation).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()

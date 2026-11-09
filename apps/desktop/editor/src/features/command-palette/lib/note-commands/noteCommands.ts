@@ -56,15 +56,15 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
   // The note moves to the vault's .trash folder, and restoring it is a move.
   // Destroy is the command that requires confirmation.
   {
-    id: COMMAND.removeNote,
+    id: COMMAND.removeFile,
     text: words.remove,
     group: 'note',
     ...withWhen('target.isNote'),
-    also: ROW.destroyNote,
+    also: ROW.destroyFile,
   },
   {
-    id: ROW.destroyNote,
-    command: COMMAND.removeNote,
+    id: ROW.destroyFile,
+    command: COMMAND.removeFile,
     values: { [ARGUMENT.removal]: 'permanent' },
     text: words.destroy,
     group: 'note',
@@ -72,5 +72,5 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     ...withWhen('target.isNote'),
     warns: { action: words.destroys, detail: words.forever, back: words.typeBack },
   },
-  { id: COMMAND.copyNotePath, text: words.copy, group: 'note', ...withWhen('target.isNote') },
+  { id: COMMAND.copyFilePath, text: words.copy, group: 'note', ...withWhen('target.isNote') },
 ]

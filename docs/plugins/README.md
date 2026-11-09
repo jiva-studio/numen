@@ -536,7 +536,7 @@ The owner of a slot only draws it. It reads the entries with `context.slots.getE
 
 In `titleBar.commands` an entry is a button with the icon of its command, shown while a vault is open, and its hover text is the title of the command and its suggested shortcut, if it has one. In `palette.searchResult` an entry is an action of a search result that is a note: a note found by its name, a heading and a passage of a note; a result that is another file has none. "Open note" is built by the palette and is always the first action, so Enter opens the note whatever the plugins place; the first entry is the second action, run by Shift+Enter, over the note of the result, not of the tab in front.
 
-The application places commands of its own in the same slots, from a list of its own whose owner is `app`. `app:settings.open` is in `titleBar.commands`, in the group `settings`, which sorts after `navigate` and `new`, so the settings button is the last one in the bar. The commands of the window over a row (`app:file.open`, `app:note.copyPath`, `app:note.remove`) are in `fileTree.context`, and those over a tab (`app:tab.moveToWindow`, `app:tab.detach`, `app:tab.link`, `app:tab.unlink`) in `tabStrip.context`.
+The application places commands of its own in the same slots, from a list of its own whose owner is `app`. `app:settings.open` is in `titleBar.commands`, in the group `settings`, which sorts after `navigate` and `new`, so the settings button is the last one in the bar. The commands of the window over a row (`app:file.open`, `app:file.copyPath`, `app:file.remove`) are in `fileTree.context`, and those over a tab (`app:tab.moveToWindow`, `app:tab.detach`, `app:tab.link`, `app:tab.unlink`) in `tabStrip.context`.
 
 ## Conditions
 

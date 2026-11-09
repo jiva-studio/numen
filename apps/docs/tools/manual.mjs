@@ -127,7 +127,7 @@ const chords = (source, ids) => {
   const table = declaring(source, 'CHORDS', 'chords.ts no longer lists its chords')
   const found = [
     ...table.text.matchAll(
-      /\{\s*command:\s*COMMAND\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
+      /\{\s*command:\s*(?:COMMAND|ROW)\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
     ),
   ].map(([, name, letter, shift]) => ({
     command: getCommandId(ids, name),

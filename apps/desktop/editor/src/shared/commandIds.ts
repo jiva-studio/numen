@@ -7,14 +7,13 @@ import { APP_COMMAND_OWNER, formatCommandId } from '@numen/plugin-host'
 const formatAppCommandId = (id: string): string => formatCommandId(APP_COMMAND_OWNER, id)
 
 export const COMMAND = {
-  goToNote: formatAppCommandId('note.goTo'),
   createNote: formatAppCommandId('note.create'),
   createChildNote: formatAppCommandId('note.createChild'),
   createParentNote: formatAppCommandId('note.createParent'),
   createJumpNote: formatAppCommandId('note.createJump'),
   renameNote: formatAppCommandId('note.rename'),
-  removeNote: formatAppCommandId('note.remove'),
-  copyNotePath: formatAppCommandId('note.copyPath'),
+  removeFile: formatAppCommandId('file.remove'),
+  copyFilePath: formatAppCommandId('file.copyPath'),
   deleteText: formatAppCommandId('version.delete'),
   openFile: formatAppCommandId('file.open'),
   moveFile: formatAppCommandId('file.move'),
@@ -43,10 +42,11 @@ export const SETTING_COMMAND_PREFIX = 'setting:'
 export const ROW = {
   openNoteBeside: `${COMMAND.openFile}#beside`,
   openDocument: `${COMMAND.openFile}#document`,
-  destroyNote: `${COMMAND.removeNote}#permanent`,
+  goToNote: `${COMMAND.openFile}#note`,
+  destroyFile: `${COMMAND.removeFile}#permanent`,
 } as const
 
-/** The names of the arguments of the command that opens a file and of the command that removes a note. */
+/** The names of the arguments of the command that opens a file and of the command that removes a file. */
 export const ARGUMENT = {
   showing: 'showing',
   removal: 'removal',

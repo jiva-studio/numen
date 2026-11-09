@@ -43,7 +43,7 @@ describe('a keystroke the window answers', () => {
 describe('the command a letter asks for', () => {
   it('is the one the chord alongside it names', () => {
     expect(findChordCommand('n', false)).toBe('app:note.create')
-    expect(findChordCommand('g', false)).toBe('app:note.goTo')
+    expect(findChordCommand('g', false)).toBe('app:file.open#note')
   })
 
   it('is the same command in either case', () => {
@@ -83,7 +83,7 @@ describe('how a keystroke is drawn on the row that names it', () => {
       icons: ['control'],
       letter: 'N',
     })
-    expect(findChordKeys('app:note.goTo', 'Linux x86_64')).toEqual({
+    expect(findChordKeys('app:file.open#note', 'Linux x86_64')).toEqual({
       icons: ['control'],
       letter: 'G',
     })
@@ -101,8 +101,8 @@ describe('how a keystroke is drawn on the row that names it', () => {
   })
 
   it('is nothing for a command no keystroke reaches', () => {
-    expect(findChordKeys('app:note.remove#permanent', 'Linux x86_64')).toBeUndefined()
-    expect(createRowKeys('app:note.remove#permanent', 'Linux x86_64')).toEqual({})
+    expect(findChordKeys('app:file.remove#permanent', 'Linux x86_64')).toBeUndefined()
+    expect(createRowKeys('app:file.remove#permanent', 'Linux x86_64')).toEqual({})
   })
 })
 
@@ -158,8 +158,8 @@ describe('every keystroke the table holds', () => {
 
   it('reaches nothing that removes a note, a file or a vault', () => {
     const destroys = [
-      'app:note.remove',
-      'app:note.remove#permanent',
+      'app:file.remove',
+      'app:file.remove#permanent',
       'app:vault.remove',
       'app:vault.erase',
     ]

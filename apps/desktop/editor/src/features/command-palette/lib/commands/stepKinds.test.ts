@@ -31,7 +31,7 @@ describe('the input a command of the palette asks for', () => {
   })
 
   it('is a note for the command that goes to one', () => {
-    expect(getIdsAsking('note')).toStrictEqual(['app:note.goTo'])
+    expect(getIdsAsking('note')).toStrictEqual(['app:file.open#note'])
   })
 
   it('is a vault for the commands that act on one', () => {
@@ -47,7 +47,7 @@ describe('the input a command of the palette asks for', () => {
   })
 
   it('is the name typed again for the command that deletes a note', () => {
-    expect(getIdsAsking('retypedName')).toStrictEqual(['app:note.remove#permanent'])
+    expect(getIdsAsking('retypedName')).toStrictEqual(['app:file.remove#permanent'])
   })
 
   it('is a confirmation after the vault, for the command that removes one', () => {

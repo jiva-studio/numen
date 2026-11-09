@@ -121,7 +121,7 @@ describe('view-file-tree plugin', () => {
 
     expect(ctx.commands.getRuns()).toStrictEqual([
       {
-        command: 'app:note.remove',
+        command: 'app:file.remove',
         target: {
           path: 'A.md',
           title: 'A.md',
