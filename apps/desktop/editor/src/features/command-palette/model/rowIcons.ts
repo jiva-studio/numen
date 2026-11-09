@@ -1,9 +1,10 @@
 import type { Component } from 'vue'
-import { File } from '@lucide/vue'
+import { File, Undo2 } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
 import { COMMAND } from '@/shared/commandIds'
 import { CREATE_NOTE_ROW } from '../lib/entries/entries'
+import { KEEP_SUFFIX } from './view/stepGroups'
 import type { Commands } from './palette/palette'
 import type { SearchState } from './search/search'
 
@@ -19,6 +20,7 @@ export function findRowIcon(
   search: SearchState,
   findFileIcon?: (path: string) => Component | undefined,
 ) {
+  if (id.endsWith(KEEP_SUFFIX)) return Undo2
   if (commands.open.value) {
     const picked = commands.findTabKind(id)
     return picked === null ? (commands.findCommandIcon(id) ?? findIcon(id)) : getNoteIcon(picked)

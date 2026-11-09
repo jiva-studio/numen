@@ -8,6 +8,7 @@ import { defineComponent, ref } from 'vue'
 import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
+import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { createCommands } from '../../lib/commands/commands'
 import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
@@ -17,6 +18,8 @@ import type { Commands } from '../palette/palette'
 import { runSupport } from '../palette/runSupport'
 import { findRowIcon } from '../rowIcons'
 import type { SearchState } from '../search/search'
+import { createStepGroups } from './stepGroups'
+import type { ViewState } from './viewState'
 import { getPaletteView } from './view'
 
 const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -326,5 +329,36 @@ describe('the icon of the command that opens a document', () => {
         search as unknown as SearchState,
       ),
     ).toBe(File)
+  })
+})
+
+describe('the two choices of the confirmation that empties the trash', () => {
+  const emptyTrash = createCommands(words).find((one) => one.id === COMMAND.emptyTrash)
+
+  it('are both drawn with an icon', () => {
+    const groups = createStepGroups({
+      words,
+      getStepLabel: () => 'trash',
+    } as unknown as ViewState)
+    const step: PendingStep = {
+      step: 'confirmation',
+      command: emptyTrash as Command,
+      on: front(),
+    }
+    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
+    const search = { findTabKind: () => null, findHitFile: () => null }
+
+    const items = groups.getConfirmGroup(step, '').items
+
+    expect(items.map((one) => one.id)).toStrictEqual(['app:trash.empty:keep', COMMAND.emptyTrash])
+    for (const one of items) {
+      expect(
+        findRowIcon(
+          one.id,
+          commands as unknown as Commands,
+          search as unknown as SearchState,
+        ),
+      ).not.toBeNull()
+    }
   })
 })

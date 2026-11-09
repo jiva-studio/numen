@@ -14,6 +14,9 @@ import type { ConfirmWords, RetypeWords, Words } from '../../words'
 import type { NameMatch } from '../search/search'
 import type { ViewState } from './viewState'
 
+/** The ending of the id of the choice that leaves a confirmation without running the command. */
+export const KEEP_SUFFIX = ':keep'
+
 function getNamingGroup(step: PendingStep, text: string, words: Words): PaletteGroup {
   const name = text.trim()
   return {
@@ -87,10 +90,10 @@ function getConfirmGroup(
     [
       keeps,
       {
-        id: `${step.command.id}:keep`,
+        id: `${step.command.id}${KEEP_SUFFIX}`,
         title: keeps,
         detail: retainedNotice,
-        actions: [{ id: `${step.command.id}:keep`, text: keeps }],
+        actions: [{ id: `${step.command.id}${KEEP_SUFFIX}`, text: keeps }],
       },
     ],
     [
