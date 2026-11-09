@@ -52,16 +52,40 @@ function checkPermission(target: PermissionTarget, permission: string, operation
   }
 }
 
-function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
+function guardNotes(
+  notes: VaultNotes,
+  requirePerm: (permission: string, operation: string) => void,
+): VaultNotes {
+  const requireRead = (operation: string) => requirePerm('vault:read', operation)
+  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
-    ...notes,
+    getNeighbourhood: async (path) => {
+      requireRead('notes.getNeighbourhood')
+      return notes.getNeighbourhood(path)
+    },
+    getHeadings: async (paths) => {
+      requireRead('notes.getHeadings')
+      return notes.getHeadings(paths)
+    },
+    findNotes: async (query, limit) => {
+      requireRead('notes.findNotes')
+      return notes.findNotes(query, limit)
+    },
     createUntitledNote: async () => {
       requireWrite('notes.createUntitledNote')
       return notes.createUntitledNote()
     },
+    read: async (path) => {
+      requireRead('notes.read')
+      return notes.read(path)
+    },
     write: async (path, body) => {
       requireWrite('notes.write')
       return notes.write(path, body)
+    },
+    readProperties: async (path) => {
+      requireRead('notes.readProperties')
+      return notes.readProperties(path)
     },
   }
 }
@@ -105,9 +129,17 @@ function guardRelations(
   }
 }
 
-function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void): VaultFiles {
+function guardFiles(
+  files: VaultFiles,
+  requirePerm: (permission: string, operation: string) => void,
+): VaultFiles {
+  const requireRead = (operation: string) => requirePerm('vault:read', operation)
+  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
-    ...files,
+    list: async (folder) => {
+      requireRead('files.list')
+      return files.list(folder)
+    },
     move: async (from, to) => {
       requireWrite('files.move')
       return files.move(from, to)
@@ -213,9 +245,9 @@ function guardServices(
   const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
     ...guardService('workspace', host.getWorkspace?.(), (one: WorkspaceHost) => one),
-    ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requireWrite)),
+    ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requirePerm)),
     ...guardService('relations', host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
-    ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requireWrite)),
+    ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requirePerm)),
     ...guardService('agent', host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
     ...guardService('buffers', host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),
   }
