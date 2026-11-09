@@ -21,8 +21,13 @@ import { WORDS } from '@/shared/words'
 
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
-  /** Runs a command of an entry over the tab; with `itemId`, the one picked. */
-  runCommand?(command: string, target: RunTarget, itemId?: string): Promise<unknown>
+  /** Runs a command of an entry over the tab; with `itemId`, the one picked, and with `values`, those the entry holds. */
+  runCommand?(
+    command: string,
+    target: RunTarget,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): Promise<unknown>
   /** The items a command of an entry offers over the tab. */
   listItems?(command: string, target: RunTarget): Promise<readonly CommandItem[]>
   /** The tab and the file it shows, which the commands of the entries run over. */
@@ -125,7 +130,8 @@ export function useTabMenu(deps: TabMenuDeps) {
     const choice = slotMenu.pick(id)
     if (!choice) return
     ;(
-      deps.runCommand?.(choice.command, choice.target.target, choice.itemId) ?? Promise.resolve()
+      deps.runCommand?.(choice.command, choice.target.target, choice.itemId, choice.values) ??
+      Promise.resolve()
     ).catch((error: unknown) => deps.reportError?.(error))
   }
 
@@ -169,8 +175,8 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
   const { windowTabs, slots, commands } = deps
   return useTabMenu({
     slots,
-    runCommand: (command, target, itemId) =>
-      commands?.run(command, target, itemId) ?? Promise.resolve(),
+    runCommand: (command, target, itemId, values) =>
+      commands?.run(command, target, itemId, values) ?? Promise.resolve(),
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),

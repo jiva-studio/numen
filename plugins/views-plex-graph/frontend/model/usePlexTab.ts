@@ -231,7 +231,7 @@ function usePlexMenu(options: {
     const choice = nodeMenu.pick(id)
     if (!choice) return
     deps
-      .runCommand(choice.command, choice.target.target, choice.itemId)
+      .runCommand(choice.command, choice.target.target, choice.itemId, choice.values)
       .then((made) => (choice.command === CREATE_NOTE && made ? showCreated(made) : undefined))
       .catch(reportFailure)
   }

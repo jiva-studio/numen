@@ -20,8 +20,8 @@ const (
 
 // antigravityModel is one model the program lists.
 type antigravityModel struct {
-	Name  string
-	Title string
+	Name  string `json:"name"`
+	Title string `json:"title"`
 }
 
 func listAntigravityModels(ctx context.Context, command []string) ([]antigravityModel, error) {

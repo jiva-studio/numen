@@ -234,6 +234,9 @@ func (s *Server) Close(ctx context.Context) error {
 	}
 
 	shutdownErr := s.httpServer.Shutdown(ctx)
+	if errors.Is(shutdownErr, net.ErrClosed) {
+		shutdownErr = nil
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return errors.Join(shutdownErr, s.serveErr)

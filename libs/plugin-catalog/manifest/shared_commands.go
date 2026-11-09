@@ -23,3 +23,19 @@ func GetSharedCommandArguments(id string) []CommandArgument {
 	}
 	return nil
 }
+
+// GetAppCommandArguments returns the arguments the app command of the full id takes,
+// as commands.json declares them, and false for a command that is not listed there.
+func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
+	switch id {
+	case "app:file.open":
+		return []AppCommandArgument{
+			{Name: "placement", Title: "Showing", Type: "enum", Options: []string{"current", "split"}},
+		}, true
+	case "app:file.remove":
+		return []AppCommandArgument{
+			{Name: "removal", Title: "Removal", Type: "enum", Options: []string{"trash", "permanent"}},
+		}, true
+	}
+	return nil, false
+}

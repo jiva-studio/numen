@@ -22,11 +22,23 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- Events --------------------------------- */
-const emit = defineEmits<{ (event: 'run-command', command: string, itemId?: string): void }>()
+const emit = defineEmits<{
+  (
+    event: 'run-command',
+    command: string,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): void
+}>()
 
 /* -------------------------------- Handlers -------------------------------- */
-function onRunCommand(command: string, itemId?: string): void {
-  if (itemId === undefined) emit('run-command', command)
+function onRunCommand(
+  command: string,
+  itemId?: string,
+  values?: Readonly<Record<string, string>>,
+): void {
+  if (values) emit('run-command', command, itemId, values)
+  else if (itemId === undefined) emit('run-command', command)
   else emit('run-command', command, itemId)
 }
 
@@ -76,7 +88,7 @@ function isDrawn(entry: SlotItem): boolean {
           :aria-label="entry.title"
           :title="getTooltip(entry)"
           style="--wails-draggable: no-drag"
-          @click="emit('run-command', entry.command)"
+          @click="onRunCommand(entry.command, undefined, entry.values)"
         >
           <component :is="entry.icon as Component" v-if="entry.icon !== undefined" :size="16" />
           <template v-else>{{ entry.title }}</template>
