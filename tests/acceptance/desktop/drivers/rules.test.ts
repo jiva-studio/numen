@@ -44,6 +44,7 @@ describe('getTitlePattern', () => {
   it('matches a title, and the name of a tab with its close button', () => {
     expect(getTitlePattern('rance').test('rance')).toBe(true)
     expect(getTitlePattern('rance').test('rance Close rance')).toBe(true)
+    expect(getTitlePattern('rance').test('Linked tab rance Close rance')).toBe(true)
   })
 
   it('does not match a title that starts or goes on beyond the words', () => {
@@ -89,6 +90,7 @@ describe('getPaletteField', () => {
   it('reads the placeholders of a name and of a list', () => {
     expect(getPaletteField('Name')).toBe('name')
     expect(getPaletteField('Search')).toBe('item')
+    expect(getPaletteField('Search notes')).toBe('note')
   })
 
   it('reads any other placeholder as a text', () => {

@@ -57,6 +57,14 @@ export class ApplicationDriver {
     const kind = getPaletteField((await field.getAttribute('placeholder')) ?? '')
     if (kind === 'item') {
       await page.getByRole('option', { name: new RegExp(`^${getEscaped(value)}$`) }).click()
+    } else if (kind === 'note') {
+      await field.fill(value)
+      const name = new RegExp(`^${getEscaped(value)}$`)
+      await page
+        .getByRole('option')
+        .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
+        .first()
+        .click()
     } else {
       if (kind === 'name') await this.scenario.claimTitle(value)
       await field.fill(value)

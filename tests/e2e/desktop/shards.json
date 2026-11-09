@@ -24,7 +24,6 @@
   "tests/plugins/views.media.viewer/mp3.spec.ts": 4,
   "tests/plugins/views.media.viewer/player.spec.ts": 8,
   "tests/plugins/views.plex.graph/hierarchy.spec.ts": 25,
-  "tests/plugins/views.plex.graph/links.spec.ts": 24,
   "tests/plugins/views.plex.graph/search-menu.spec.ts": 20,
   "tests/plugins/views.statusBar/status-bar.spec.ts": 2,
   "tests/scenarios/ocr-disabled.spec.ts": 16,

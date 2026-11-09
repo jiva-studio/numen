@@ -1,5 +1,6 @@
 /** The person at a tab, whatever it holds: closing it, finding the one in front, its position, what it shows. */
 import { expect, type Locator } from 'playwright/test'
+import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { getNoteTab, getTabName, revealTreeRow } from '../../../e2e/desktop/tests/support/vault.js'
 import { assertSingleTab, getAddressTitle, getEscaped, getStem, getTitlePattern, parseReference } from './rules.js'
 import type { Scenario } from './scenario.js'
@@ -66,6 +67,10 @@ export class TabDriver {
     }
   }
 
+  async activate(reference: string, name: string): Promise<void> {
+    await (await this.getTab(reference, name)).click()
+  }
+
   async expectHasText(reference: string, name: string, text: string): Promise<void> {
     const panel = this.getPanel(reference, name)
     await expect(panel).toBeVisible()
@@ -98,6 +103,11 @@ export class TabDriver {
   }
 
   async expectActive(reference: string, name: string): Promise<void> {
+    if (parseReference(reference, name).reference === 'at' && name.endsWith('.md')) {
+      // A tab linked to another tab keeps its own id and shows the note it was sent to.
+      await expect.poll(() => readActivePath(this.scenario.page.request)).toBe(name)
+      return
+    }
     await expect(await this.getTab(reference, name)).toHaveAttribute('aria-selected', 'true')
   }
 

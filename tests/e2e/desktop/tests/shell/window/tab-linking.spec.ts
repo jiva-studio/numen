@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '../../support/test.js'
-import { getGraph, openWorkspace } from '../../support/workspace.js'
+import { openWorkspace } from '../../support/workspace.js'
 import {
   createNoteWithBody,
   destroyNotes,
@@ -57,19 +57,5 @@ test.describe('Linked tabs', () => {
     await expect(page.getByRole('tabpanel', { name: /Flume notes/ })).toContainText(
       'The flume carries the water onto the wheel.',
     )
-  })
-
-  test('moves the note tab linked to the plex to the note chosen in the plex', async ({ page }) => {
-    await openWorkspace(page)
-    await showInFiles(page, ['notes'])
-    await getRow(page, weir).press('Enter')
-    await expect(getTab(page, 'Weir notes')).toBeVisible()
-    await linkTab(page, 'Thermodynamics', 'Weir notes')
-
-    await getGraph(page).getByRole('button', { name: 'Entropy, child' }).click()
-
-    await expect.poll(() => readNoteTabPaths(page)).toEqual(['notes/Entropy.md'])
-    await expect(page.locator('[data-workspace-tab^="note:"]')).toHaveText(/Entropy/)
-    await expect(getTab(page, 'Weir notes')).toHaveCount(0)
   })
 })
