@@ -40,6 +40,7 @@ export class Person {
 
   async removeNotes(): Promise<void> {
     await this.plugin.enableDisabled()
+    await this.scenario.removeVersions()
     this.web.removePageTexts()
     await this.scenario.removeNotes()
   }

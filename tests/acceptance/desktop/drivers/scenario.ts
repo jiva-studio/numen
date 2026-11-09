@@ -3,6 +3,7 @@ import type { Page } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
 import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
+import { deleteVersion, listVersionIds } from './text-versions.js'
 import { parseReference, pickByTitle } from './rules.js'
 
 export class Scenario {
@@ -10,6 +11,7 @@ export class Scenario {
   private readonly titles = new Set<string>()
   private hasWorkspace = false
   private filesBefore: readonly string[] = []
+  private readonly versionsBefore = new Map<string, readonly string[]>()
   private vaultName: string | undefined
 
   constructor(readonly page: Page) {}
@@ -30,6 +32,12 @@ export class Scenario {
     const entries = await listFiles(this.page.request, folder)
     const nested = await Promise.all(entries.filter((one) => one.isFolder).map((one) => this.listEntries(one.path)))
     return [...nested.flat(), ...entries.map((one) => one.path)]
+  }
+
+  /** Notes the text versions a file has when the person opens it, so the scenario can delete the ones it makes. */
+  async watchVersions(filePath: string): Promise<void> {
+    if (this.versionsBefore.has(filePath)) return
+    this.versionsBefore.set(filePath, await listVersionIds(this.page.request, filePath).catch(() => []))
   }
 
   async claimTitle(title: string): Promise<void> {
@@ -53,6 +61,15 @@ export class Scenario {
     if (this.vaultName !== name) {
       throw new Error(`the run has one vault, named "${this.vaultName}" here, not "${name}"`)
     }
+  }
+
+  async removeVersions(): Promise<void> {
+    const { request } = this.page
+    for (const [filePath, before] of this.versionsBefore) {
+      const now = await listVersionIds(request, filePath).catch(() => [])
+      for (const id of now.filter((one) => !before.includes(one))) await deleteVersion(request, filePath, id).catch(() => undefined)
+    }
+    this.versionsBefore.clear()
   }
 
   async removeNotes(): Promise<void> {
