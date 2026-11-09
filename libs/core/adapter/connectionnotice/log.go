@@ -1,4 +1,5 @@
-package modelcalls
+// Package connectionnotice tells the person of what the core did with their connections.
+package connectionnotice
 
 import (
 	"fmt"

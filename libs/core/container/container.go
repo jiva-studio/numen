@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/connectionnotice"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	connectionswiring "github.com/jiva-studio/numen/libs/core/container/connections"
@@ -337,5 +338,5 @@ func (c Config) plugins() pluginswiring.Config {
 // SetModelCallsLoggedTo is SetModelCalls for a window that shows no list of tasks: a connection set
 // aside is written to out.
 func (c Config) SetModelCallsLoggedTo(out io.Writer) {
-	c.modelCalls().SetModelCalls(modelcallswiring.NewLogNotices(out))
+	c.modelCalls().SetModelCalls(connectionnotice.NewLogNotices(out))
 }

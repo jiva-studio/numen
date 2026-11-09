@@ -1,4 +1,4 @@
-package modelcalls
+package connectionnotice
 
 import (
 	"strings"
