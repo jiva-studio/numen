@@ -5,7 +5,7 @@
  *
  * Without a `popover` slot a press opens nothing.
  */
-import { useSlots } from 'vue'
+import { onBeforeUnmount, useSlots } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { BarChipTone } from './barChip.types'
 
@@ -33,16 +33,27 @@ function onUpdateOpen(value: boolean): void {
   isOpen.value = value
 }
 
-// The content of reka-ui labels itself by the trigger, which wins over `aria-label`. The dialog is
-// named by `popoverLabel`, so that label is removed once the content is drawn.
+// reka-ui labels its content by the trigger and writes that attribute again whenever the trigger id
+// changes, which wins over `aria-label`. The dialog is named by `popoverLabel`, so the attribute is
+// removed as often as it appears.
+let observer: MutationObserver | null = null
+
 function nameDialog(instance: unknown): void {
+  observer?.disconnect()
+  observer = null
   const element = (instance as { $el?: Element } | null)?.$el
   if (!(element instanceof Element)) return
   const dialog = element.matches('[role="dialog"]')
     ? element
     : element.querySelector('[role="dialog"]')
-  dialog?.removeAttribute('aria-labelledby')
+  if (!dialog) return
+  const removeLabelledby = (): void => dialog.removeAttribute('aria-labelledby')
+  removeLabelledby()
+  observer = new MutationObserver(removeLabelledby)
+  observer.observe(dialog, { attributes: true, attributeFilter: ['aria-labelledby'] })
 }
+
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
