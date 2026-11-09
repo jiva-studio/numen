@@ -50,7 +50,7 @@ const everyFieldManifest = `{
 		"readers": [{"id": "r", "contentTypes": ["audio/*"], "rank": "default"}],
 		"noteTypes": [{"type": "link", "chunks": false, "headings": [1, 2], "idHeadingLevels": [3], "idPattern": "[a-z]+"}],
 		"frameOrigins": ["https://player.example"],
-		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1},
+		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1, "values": {"n": "3"}},
 			{"slot": "titleBar", "view": "bar"},
 			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "target.isFolder"}],
 		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}]}

@@ -180,7 +180,7 @@ describe('a shared command', () => {
       { id: `${SCANS}:fast`, title: 'Fast', group: SCANS },
     ])
     await host.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: `${SCANS}:fast` })
-    expect(handler).toHaveBeenCalledWith({ ...SCAN, type: '' }, 'fast')
+    expect(handler).toHaveBeenCalledWith({ ...SCAN, type: '' }, 'fast', {})
     expect(runBackendHandler).not.toHaveBeenCalled()
     expect(host.getPaletteCommands()).toStrictEqual([])
   })

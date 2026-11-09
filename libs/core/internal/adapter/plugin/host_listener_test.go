@@ -51,6 +51,22 @@ func getFreePort(t *testing.T) int {
 	return port
 }
 
+func changePortToFree(t *testing.T, host *Host, change func(context.Context, *Host, int) error) int {
+	t.Helper()
+	var err error
+	for range 5 {
+		port := getFreePort(t)
+		if err = change(t.Context(), host, port); err == nil {
+			return port
+		}
+		if !errors.Is(err, syscall.EADDRINUSE) {
+			break
+		}
+	}
+	t.Fatal(err)
+	return 0
+}
+
 func createListenerPlugin(t *testing.T, root, name string, defaultPort int) {
 	t.Helper()
 	dir := filepath.Join(root, "relay")
@@ -365,11 +381,7 @@ func TestAChangedPortSettingBindsTheNewPortAndClosesTheOldOne(t *testing.T) {
 			if !isPortOpen(t, w.port) {
 				t.Fatal("the default port is not bound")
 			}
-			next := getFreePort(t)
-
-			if err := change(t.Context(), w.host, next); err != nil {
-				t.Fatal(err)
-			}
+			next := changePortToFree(t, w.host, change)
 
 			plugintest.WaitUntil(t, "the new port to be bound", func() bool { return isPortOpen(t, next) })
 			plugintest.WaitUntil(t, "the old port to be closed", func() bool { return !isPortOpen(t, w.port) })

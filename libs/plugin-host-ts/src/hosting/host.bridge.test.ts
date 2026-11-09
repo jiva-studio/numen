@@ -179,7 +179,7 @@ describe('a command over a note', () => {
     expect(host.getPaletteCommands()).toStrictEqual([
       { id: 'cmd.plugin:summary', title: 'Open summary', when: 'target.isNote' },
     ])
-    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
   })
 
   it('does not run from its shortcut while no note is in front', async () => {
@@ -211,7 +211,7 @@ describe('a command over a note', () => {
     host.handleShortcut(event, async () => NOTE)
     await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
   })
 })
 

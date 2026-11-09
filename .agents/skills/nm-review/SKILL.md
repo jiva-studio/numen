@@ -45,8 +45,18 @@ Resolve the repository root and determine the target:
    ```bash
    REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || readlink -f .agents/.. 2>/dev/null || echo "$PWD/../source/numen")
    ```
-2. **Explicit target**: a path (`/nm-review libs/ui/core/src/plex`) focuses the audit on those files; a git reference (`/nm-review origin/main...HEAD`, a SHA) reviews that range.
-3. **Auto-detection (default)**:
+2. **Pull request or commit range**:
+   - For a pull request (`/nm-review #123`, `/nm-review 123`, or a branch with an open pull request), read `baseRefName`, `baseRefOid` (`BASE_SHA`) and `headRefOid` (`HEAD_SHA`) with `gh pr view [<number>] --json number,baseRefName,baseRefOid,headRefOid`.
+   - For a commit range (`/nm-review <base>...<head>`), resolve `BASE_SHA=$(git -C "$REPO_ROOT" rev-parse "<base>^{commit}")` and `HEAD_SHA=$(git -C "$REPO_ROOT" rev-parse "<head>^{commit}")`.
+   - Verify that the checkout is at the head of the target: `git -C "$REPO_ROOT" rev-parse HEAD` must equal `HEAD_SHA`. Stop with an error when the checkout is not at `HEAD_SHA`.
+   - Diff against the base of the pull request or range:
+     ```bash
+     git -C "$REPO_ROOT" diff "$BASE_SHA...$HEAD_SHA" --name-only
+     git -C "$REPO_ROOT" diff "$BASE_SHA...$HEAD_SHA"
+     ```
+   - State the base branch (when known), `$BASE_SHA...$HEAD_SHA`, and the changed files before proceeding. Review only the files in `$BASE_SHA...$HEAD_SHA` and ignore uncommitted working-tree changes. When a changed file in the working tree differs from `HEAD_SHA` (such as `.agents`, `.claude/skills`, `AGENTS.md`, `tools/lint-narrative` or `tools/shared/tools.mjs` in CI), read the version at `HEAD_SHA` with `git -C "$REPO_ROOT" show "$HEAD_SHA:<path>"`.
+3. **Explicit path**: a path (`/nm-review libs/ui/core/src/plex`) focuses the audit on those files.
+4. **Local auto-detection (no argument and no open pull request)**:
    - `git -C "$REPO_ROOT" status --short` and `git -C "$REPO_ROOT" diff HEAD`.
    - Dirty tree: audit the uncommitted diff.
    - Clean tree: take the branch delta.

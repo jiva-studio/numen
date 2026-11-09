@@ -81,7 +81,7 @@ describe('the items of a plugin command', () => {
 
     await host.executeCommand(`${TIDE}:chart.move`, NOTE, { itemId: 'w2' })
 
-    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, 'w2')
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, 'w2', {})
   })
 
   it('say whether a command offers choices', () => {
@@ -91,5 +91,43 @@ describe('the items of a plugin command', () => {
 
     expect(host.hasCommandItems(`${TIDE}:chart.move`)).toBe(true)
     expect(host.hasCommandItems(`${TIDE}:chart.open`)).toBe(false)
+  })
+
+  it('reach the handler with the values of the arguments by name, after the item id', async () => {
+    const { host, context } = createHost()
+    const handler = vi.fn()
+    context.registerCommand({ id: 'chart.move', handler, listItems: () => WINDOWS })
+
+    await host.executeCommand(`${TIDE}:chart.move`, NOTE, {
+      itemId: 'w2',
+      values: { window: 'north' },
+    })
+
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, 'w2', { window: 'north' })
+  })
+
+  it('give the values to the handler of a run without an item id, awaited or not', async () => {
+    const { host, context } = createHost()
+    const handler = vi.fn()
+    context.registerCommand({ id: 'chart.open', handler })
+
+    await host.executeCommand(`${TIDE}:chart.open`, NOTE, { values: { scale: '2' } })
+    await host.executeCommand(`${TIDE}:chart.open`, NOTE, {
+      values: { scale: '3' },
+      isAwaited: true,
+    })
+
+    expect(handler).toHaveBeenNthCalledWith(1, NOTE, undefined, { scale: '2' })
+    expect(handler).toHaveBeenNthCalledWith(2, NOTE, undefined, { scale: '3' })
+  })
+
+  it('give the handler an empty object when no values were given', async () => {
+    const { host, context } = createHost()
+    const handler = vi.fn()
+    context.registerCommand({ id: 'chart.open', handler })
+
+    await host.executeCommand(`${TIDE}:chart.open`, NOTE)
+
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
   })
 })

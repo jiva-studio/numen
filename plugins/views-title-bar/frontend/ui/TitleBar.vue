@@ -65,7 +65,12 @@ const emit = defineEmits<{
   (event: 'toggle-maximize-window'): void
   (event: 'close-window'): void
   /** A command was picked; with `itemId`, the id of the item picked. */
-  (event: 'run-command', command: string, itemId?: string): void
+  (
+    event: 'run-command',
+    command: string,
+    itemId?: string,
+    values?: Readonly<Record<string, string>>,
+  ): void
   /** A vault that is not the current one was chosen. */
   (event: 'switch-vault', id: string): void
   /** The last row of the list, which creates a vault, was chosen. */
@@ -157,8 +162,13 @@ function onDoubleClick(event: MouseEvent): void {
   emit('toggle-maximize-window')
 }
 
-function onRunCommand(command: string, itemId?: string): void {
-  if (itemId === undefined) emit('run-command', command)
+function onRunCommand(
+  command: string,
+  itemId?: string,
+  values?: Readonly<Record<string, string>>,
+): void {
+  if (values) emit('run-command', command, itemId, values)
+  else if (itemId === undefined) emit('run-command', command)
   else emit('run-command', command, itemId)
 }
 </script>

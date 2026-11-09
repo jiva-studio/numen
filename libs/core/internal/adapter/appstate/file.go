@@ -8,5 +8,12 @@ import "github.com/jiva-studio/numen/libs/notes/domain"
 type registryFile struct {
 	Version int            `json:"v"`
 	LastID  domain.VaultID `json:"last,omitempty"`
-	Vaults  []domain.Vault `json:"vaults"`
+	Vaults  []vaultEntry   `json:"vaults"`
+}
+
+// vaultEntry is the on-disk JSON representation of one registered vault.
+type vaultEntry struct {
+	ID   domain.VaultID `json:"id"`
+	Name string         `json:"name"`
+	Path string         `json:"path"`
 }

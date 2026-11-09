@@ -11,12 +11,24 @@ import {
 import type { Command, CommandTarget } from '@/features/command-palette'
 import { getNamedTarget } from './runTarget'
 
+type Values = Readonly<Record<string, string>>
+
 interface CommandItemsDeps {
   readonly getAppCommands: () => readonly Command[]
   readonly pluginHost: Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
   readonly getTarget: () => CommandTarget
-  readonly runApp: (id: string, target: CommandTarget, itemId: string) => Promise<void>
-  readonly runPlugin: (id: string, target: RunTarget, itemId: string) => Promise<void>
+  readonly runApp: (
+    id: string,
+    target: CommandTarget,
+    itemId: string,
+    values?: Values,
+  ) => Promise<void>
+  readonly runPlugin: (
+    id: string,
+    target: RunTarget,
+    itemId: string,
+    values?: Values,
+  ) => Promise<void>
   readonly readTarget?: (target: RunTarget) => Promise<RunTarget>
 }
 
@@ -37,9 +49,16 @@ export function createCommandItems(deps: CommandItemsDeps) {
         isSharedCommand(id) && deps.readTarget ? await deps.readTarget(target) : target
       return deps.pluginHost.listCommandItems(id, noteTarget)
     },
-    runWithItem: (id: string, target: RunTarget, itemId: string): Promise<void> =>
-      findAppCommand(id)
-        ? deps.runApp(id, toAppTarget(target), itemId)
-        : deps.runPlugin(id, target, itemId),
+    runWithItem: (
+      id: string,
+      target: RunTarget,
+      itemId: string,
+      values?: Values,
+    ): Promise<void> => {
+      const extra = values === undefined ? [] : [values]
+      return findAppCommand(id)
+        ? deps.runApp(id, toAppTarget(target), itemId, ...extra)
+        : deps.runPlugin(id, target, itemId, ...extra)
+    },
   }
 }

@@ -29,12 +29,12 @@ type LocalModel struct {
 	Name           string `json:"name"`
 	Dir            string `json:"dir"`
 	File           string `json:"file"`
-	BatchTexts     int    `json:"batch_texts"`
+	BatchTexts     int    `json:"batchTexts"`
 	Runtime        string `json:"runtime"`
 	Threads        int    `json:"threads"`
 	Sessions       int    `json:"sessions"`
-	PassBudget     int    `json:"pass_budget"`
-	PassMemory     int64  `json:"pass_memory"`
+	PassBudget     int    `json:"passBudget"`
+	PassMemory     int64  `json:"passMemory"`
 	Provider       string `json:"provider"`
 	ShouldDownload bool   `json:"download"`
 
@@ -46,14 +46,14 @@ type LocalModel struct {
 type ModelInfo struct {
 	Name           string   `json:"name"`
 	Dimensions     int      `json:"dimensions"`
-	MaxTokens      int      `json:"max_tokens"`
+	MaxTokens      int      `json:"maxTokens"`
 	Pooling        string   `json:"pooling"`
 	From           string   `json:"from"`
 	Concurrency    int      `json:"concurrency"`
-	FloorHint      float64  `json:"floor_hint"`
+	FloorHint      float64  `json:"floorHint"`
 	Handling       Handling `json:"handling"`
-	MinChunkLength int      `json:"min_chunk_length"`
-	ChunkTokens    int      `json:"chunk_tokens"`
+	MinChunkLength int      `json:"minChunkLength"`
+	ChunkTokens    int      `json:"chunkTokens"`
 }
 
 // CheckIdentity verifies the model dimension, tokens, and pooling.

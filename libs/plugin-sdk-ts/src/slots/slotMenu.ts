@@ -18,10 +18,11 @@ export interface SlotMenuWords {
   readonly loadingText: string
 }
 
-// SlotMenuPick is what a row runs: a command, with the id of the item picked.
+// SlotMenuPick is what a row runs: a command, with the id of the item picked and the values its entry holds.
 export interface SlotMenuPick {
   readonly command: string
   readonly itemId?: string
+  readonly values?: Readonly<Record<string, string>>
 }
 
 // SlotMenu is the menu tree of the entries of a slot.
@@ -42,6 +43,9 @@ interface MenuParts {
   readonly icons: Map<string, unknown>
 }
 
+const getValues = (entry: SlotCommand): Pick<SlotMenuPick, 'values'> =>
+  entry.values === undefined ? {} : { values: entry.values }
+
 function createItemsRow(entry: SlotCommand, group: string, parts: MenuParts): MenuItem | null {
   const list = parts.lists.get(entry.key)
   const row = { id: entry.key, text: entry.title, group }
@@ -55,7 +59,7 @@ function createItemsRow(entry: SlotCommand, group: string, parts: MenuParts): Me
   const isShared = isSharedCommand(entry.command)
   const children = list.map((item): MenuItem => {
     const id = `${entry.key}${ITEM_MARK}${item.id}`
-    parts.picks.set(id, { command: entry.command, itemId: item.id })
+    parts.picks.set(id, { command: entry.command, itemId: item.id, ...getValues(entry) })
     return {
       id,
       text: item.title,
@@ -98,7 +102,7 @@ function createRows(entries: readonly SlotItem[], parts: MenuParts): MenuItem[] 
       if (row) rows.push(row)
       continue
     }
-    parts.picks.set(entry.key, { command: entry.command })
+    parts.picks.set(entry.key, { command: entry.command, ...getValues(entry) })
     rows.push({ id: entry.key, text: entry.title, group: groupName })
   }
   return rows

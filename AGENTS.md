@@ -346,13 +346,25 @@ is the thing, not the kind of thing: a folder collecting every type, every
 handler or every use case is unstructured at fifty entries and was already unstructured at
 five.
 
-## 12. File and directory naming (frontend — TypeScript / Vue)
+## 12. Naming conventions across formats and files
 
-Directories and files follow strict casing rules:
+Each surface of the repository takes one casing convention:
 
-1. **Directories**: always `kebab-case` (`status-corner/`, `command-palette/`, `file-routing/`, `tabs/`).
-2. **Vue components**: always `PascalCase` (`App.vue`, `NoteTab.vue`, `Field.vue`).
-3. **TypeScript / JavaScript files**: always `camelCase` (`useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts`, `words.ts`, `answers.ts`).
+| Surface | Convention | Examples |
+| --- | --- | --- |
+| **JSON keys** (settings files, plugin manifests, plugin RPC payloads, tool argument and result schemas, index and cache payloads, test fixtures) | `camelCase` | `maxTokens`, `floorHint`, `pathPrefix`, `taskId` |
+| **Protobuf `.proto` fields** | `lower_snake_case` (proto3 JSON mapping is `camelCase`) | `max_steps`, `vault_id` |
+| **Note frontmatter keys** | Obsidian convention (`lowercase`) | `id`, `type`, `title`, `tags`, `aliases`, `cssclasses` |
+| **MCP tool names** | `snake_case` (`subject_action`) | `note_search`, `card_create` |
+| **MCP tool arguments and answer keys** | `camelCase` | `pathPrefix`, `taskId` |
+| **Directories** | `kebab-case` (Go package directories: `lowercase` with no separator) | `status-corner/`, `command-palette/`, `appstate/` |
+| **Go files** | `snake_case` | `count_reviews.go`, `one_schema_test.go` |
+| **TypeScript / JavaScript files** | `camelCase` | `useWorkspaceTabs.ts`, `useFileRouter.ts`, `transport.ts` |
+| **Vue components** | `PascalCase` | `App.vue`, `NoteTab.vue`, `Field.vue` |
+| **SQL tables and columns** | `snake_case` | `open_tabs`, `source_id`, `folded_name` |
+| **Environment variables** | `UPPER_SNAKE` | `NUMEN_MODELS_DIR`, `NUMEN_PLUGIN_DATA_DIR` |
+| **CLI flags, CSS classes and variables, URL paths** | `kebab-case` | `--output-format`, `--numen-text-color` |
+| **Plugin ids** | reverse-domain with dots | `md.numen.engines.embeddings`, `md.numen.views.flashcards-studio` |
 
 ## 13. Absolute ban on narrative slop, participles, and Anglish metaphors (all languages)
 
