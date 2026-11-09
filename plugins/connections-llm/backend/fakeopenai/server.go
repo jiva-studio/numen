@@ -18,8 +18,10 @@ import (
 const DefaultDimensions = 8
 
 const (
-	modelKey  = "model"
-	objectKey = "object"
+	modelKey   = "model"
+	objectKey  = "object"
+	indexKey   = "index"
+	contentKey = "content"
 )
 
 // Model is a model the server lists. Name is the label OpenRouter gives; an empty Name leaves the
@@ -222,8 +224,8 @@ func (s *Server) serveChat(w http.ResponseWriter, r *http.Request, body []byte) 
 		"id":     "chatcmpl-fake",
 		modelKey: request.Model,
 		"choices": []any{map[string]any{
-			"index":         0,
-			"message":       map[string]any{"role": "assistant", "content": "echo: " + last},
+			indexKey:        0,
+			"message":       map[string]any{"role": "assistant", contentKey: "echo: " + last},
 			"finish_reason": "stop",
 		}},
 	})
@@ -275,15 +277,15 @@ func (s *Server) writeChunks(w http.ResponseWriter, r *http.Request, controller 
 func echoChunks(echo string) []string {
 	runes := []rune(echo)
 	return []string{
-		encodeDelta(map[string]any{"role": "assistant", "content": string(runes[:len(runes)/2])}, ""),
-		encodeDelta(map[string]any{"content": string(runes[len(runes)/2:])}, ""),
+		encodeDelta(map[string]any{"role": "assistant", contentKey: string(runes[:len(runes)/2])}, ""),
+		encodeDelta(map[string]any{contentKey: string(runes[len(runes)/2:])}, ""),
 		encodeDelta(map[string]any{}, "stop"),
 		"[DONE]",
 	}
 }
 
 func encodeDelta(delta map[string]any, finishReason string) string {
-	choice := map[string]any{"index": 0, "delta": delta}
+	choice := map[string]any{indexKey: 0, "delta": delta}
 	if finishReason != "" {
 		choice["finish_reason"] = finishReason
 	}
@@ -307,7 +309,7 @@ func (s *Server) serveEmbeddings(w http.ResponseWriter, body []byte) {
 	}
 	data := make([]any, len(request.Input))
 	for i, text := range request.Input {
-		data[i] = map[string]any{objectKey: "embedding", "index": i, "embedding": s.Vector(text)}
+		data[i] = map[string]any{objectKey: "embedding", indexKey: i, "embedding": s.Vector(text)}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{objectKey: "list", modelKey: request.Model, "data": data})
 }
