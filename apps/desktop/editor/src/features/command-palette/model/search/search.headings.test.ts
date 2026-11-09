@@ -96,7 +96,7 @@ describe('the headings of the search groups', () => {
     await flushPromises()
 
     expect(getIds(palette)).not.toContain('searching')
-    expect(palette.isNothingFound.value).toBe(false)
+    expect(palette.status.isNothingFound.value).toBe(false)
   })
 
   it('is busy while a question is out', async () => {
@@ -105,7 +105,7 @@ describe('the headings of the search groups', () => {
     palette.setTyped('Entropy').catch(() => undefined)
     await flushPromises()
 
-    expect(palette.isBusy.value).toBe(true)
+    expect(palette.status.isBusy.value).toBe(true)
   })
 
   it('is busy until the last question answers', async () => {
@@ -115,17 +115,17 @@ describe('the headings of the search groups', () => {
     await flushPromises()
     names.answer([])
     await flushPromises()
-    expect(palette.isBusy.value).toBe(true)
+    expect(palette.status.isBusy.value).toBe(true)
 
     passages.answer([])
     await flushPromises()
-    expect(palette.isBusy.value).toBe(false)
+    expect(palette.status.isBusy.value).toBe(false)
   })
 
   it('is not busy before anything is typed', () => {
     const { palette } = createHeldVault()
 
-    expect(palette.isBusy.value).toBe(false)
+    expect(palette.status.isBusy.value).toBe(false)
   })
 
   it('says nothing found once every question answered with no row', async () => {
@@ -138,7 +138,7 @@ describe('the headings of the search groups', () => {
     await flushPromises()
 
     expect(palette.groups.value).toEqual([])
-    expect(palette.isNothingFound.value).toBe(true)
+    expect(palette.status.isNothingFound.value).toBe(true)
   })
 
   it('draws no nothing found while a group has rows', async () => {
@@ -150,6 +150,6 @@ describe('the headings of the search groups', () => {
     await flushPromises()
 
     expect(getIds(palette)).toEqual(['names'])
-    expect(palette.isNothingFound.value).toBe(false)
+    expect(palette.status.isNothingFound.value).toBe(false)
   })
 })

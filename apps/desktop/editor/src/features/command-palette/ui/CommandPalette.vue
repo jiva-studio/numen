@@ -51,7 +51,7 @@ const field = computed(() =>
       }
     : {
         open: props.search.open.value,
-        isBusy: props.search.isBusy.value,
+        isBusy: props.search.status.isBusy.value,
         typed: props.search.typed.value,
         groups: props.search.groups.value,
         crumb: '',
@@ -125,7 +125,7 @@ function getRowIcon(id: string) {
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
-    <template v-if="!commands.open.value && search.isNothingFound.value" #silence>
+    <template v-if="!commands.open.value && search.status.isNothingFound.value" #silence>
       <span class="nothing-found">
         <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
         <span class="nothing-found__text" data-palette="nothing-text">{{

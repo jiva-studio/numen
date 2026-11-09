@@ -163,7 +163,6 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
   return { groups, hitsById }
 }
 
-/** Adds to every row the actions that create a note under the words typed. */
 function appendCreateNoteActions(
   base: ReturnType<typeof buildSearchGroups>,
   text: string,
@@ -186,7 +185,6 @@ function appendCreateNoteActions(
   return { groups, hitsById }
 }
 
-/** A group is listed when it has rows, or has answered with a message to show in their place. */
 const hasContent = (group: PaletteGroup): boolean =>
   group.items.length > 0 || (!group.isWorking && Boolean(group.silence))
 
@@ -353,8 +351,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     open,
     typed: inputValue,
     groups,
-    isNothingFound,
-    isBusy,
+    status: { isBusy, isNothingFound },
     setTyped,
     setOpen,
     chooseResult,

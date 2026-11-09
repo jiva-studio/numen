@@ -27,7 +27,6 @@ const createContext = () => {
   return { ctx, recorded, folders }
 }
 
-/** The window's tab strip over the registered kinds; only the opening of a tab is recorded. */
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const opened: (readonly [string, string])[] = []

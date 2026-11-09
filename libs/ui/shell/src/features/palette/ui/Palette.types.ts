@@ -5,7 +5,6 @@ import type { PaletteGroup } from '../lib/item'
 export interface PaletteProps {
   groups?: readonly PaletteGroup[]
   isOpen?: boolean
-  /** More results are on their way; the field shows a spinner. */
   isBusy?: boolean
   placeholder?: string
   crumb?: string
