@@ -25,6 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -129,7 +130,12 @@ watch(
     @delete-data="onDeleteData"
   >
     <template #settings>
-      <PluginFields v-if="hasSettings" :state="props.state" :plugin="props.plugin" />
+      <PluginFields
+        v-if="hasSettings"
+        :state="props.state"
+        :plugin="props.plugin"
+        @open-connections="emit('open-connections')"
+      />
     </template>
   </PluginDetailView>
 </template>

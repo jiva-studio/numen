@@ -5,21 +5,15 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
-	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
@@ -28,7 +22,8 @@ import (
 // PluginID is the identity the manifest gives the plugin.
 const PluginID = "md.numen.tools.proofreading"
 
-// EnvMockML names the variable that has the plugin answer every question with the mock proofreader.
+// EnvMockML names the variable that has the plugin answer with the mock proofreader where its settings hold
+// no connection; with a connection the plugin asks it.
 const EnvMockML = "NUMEN_MOCK_ML"
 
 // Default proofreading sizes.
@@ -38,11 +33,11 @@ const (
 	DefaultInFlight  = 4
 )
 
-// purpose is what every question to the model is for. It routes nothing.
-const purpose = "proofreading"
+// completer asks the connections of the plugin to complete a request.
+type completer func(ctx context.Context, request connection.CompleteRequest) (connection.CompleteResult, error)
 
-// completer sends a question to the host and returns the answer.
-type completer func(ctx context.Context, question *ai.Question) (string, error)
+// errNoConnection means the settings of the plugin hold no connection that can complete.
+var errNoConnection = errors.New("proofreading is off: add a connection on the Connections page, then choose it in the settings of LLM Proofreading")
 
 // Host provides the plugin's host services: the store folder for corrected
 // texts, the text versions it reads and reports, and the queue it runs in.
@@ -61,10 +56,6 @@ func openHostAt(endpoint hostcall.Endpoint) Host {
 }
 
 type proofreadingConfig struct {
-	provider        string
-	baseURL         string
-	model           string
-	apiKey          string
 	batchSize       int
 	overlap         int
 	inFlight        int
@@ -73,10 +64,6 @@ type proofreadingConfig struct {
 
 func defaultProofreadingConfig() proofreadingConfig {
 	return proofreadingConfig{
-		provider:        "agent",
-		baseURL:         "",
-		model:           "openai/gpt-4o-mini",
-		apiKey:          "",
 		batchSize:       DefaultBatchSize,
 		overlap:         DefaultOverlap,
 		inFlight:        DefaultInFlight,
@@ -97,24 +84,9 @@ func newSettings() *settings {
 	return &settings{mu: sync.RWMutex{}, cfg: defaultProofreadingConfig()}
 }
 
-func (s *settings) updateConfig(values map[string]string, secrets server.Secrets) {
+func (s *settings) updateConfig(values map[string]string, _ server.Secrets) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if provider := values["provider"]; provider != "" {
-		s.cfg.provider = provider
-	}
-	if baseURL, ok := values["baseUrl"]; ok {
-		s.cfg.baseURL = baseURL
-	}
-	if model := values["model"]; model != "" {
-		s.cfg.model = model
-	}
-	if list, carried := server.ReadSecrets(secrets, server.SecretAPIKey); carried {
-		s.cfg.apiKey = ""
-		if len(list) > 0 {
-			s.cfg.apiKey = list[0].Value
-		}
-	}
 	applyIntConfig(values, "batchSize", &s.cfg.batchSize, 1)
 	applyIntConfig(values, "overlap", &s.cfg.overlap, 0)
 	applyIntConfig(values, "inFlight", &s.cfg.inFlight, 1)
@@ -139,107 +111,32 @@ func (s *settings) getConfig() proofreadingConfig {
 	return s.cfg
 }
 
-func newAskModel(complete completer, getConfig ...func() proofreadingConfig) askModel {
+func newAskModel(complete completer) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		if len(getConfig) > 0 && getConfig[0] != nil && os.Getenv(EnvMockML) != mockEnabled {
-			cfg := getConfig[0]()
-			if cfg.provider == "openrouter" || cfg.provider == "openai" || cfg.provider == "custom" {
-				return askDirectAPI(ctx, cfg, instruction, prompt)
-			}
-		}
-		return complete(ctx, &ai.Question{
-			Purpose: purpose,
-			Messages: []ai.Message{
+		result, err := complete(ctx, connection.CompleteRequest{
+			Messages: []connection.Message{
 				{Role: "system", Text: instruction},
 				{Role: "user", Text: prompt},
 			},
+			Temperature: nil,
+			MaxTokens:   0,
+			Priority:    connection.PriorityInteractive,
 		})
-	}
-}
-
-type chatCompletionMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type chatCompletionRequest struct {
-	Model    string                  `json:"model"`
-	Messages []chatCompletionMessage `json:"messages"`
-}
-
-type chatCompletionResponse struct {
-	Choices []struct {
-		Message chatCompletionMessage `json:"message"`
-	} `json:"choices"`
-}
-
-func resolveDirectBaseURL(cfg proofreadingConfig) string {
-	switch cfg.provider {
-	case "openrouter":
-		if cfg.baseURL != "" {
-			return cfg.baseURL
+		if errors.Is(err, connection.ErrNoConnection) {
+			return "", errNoConnection
 		}
-		return "https://openrouter.ai/api/v1"
-	case "openai":
-		if cfg.baseURL != "" {
-			return cfg.baseURL
-		}
-		return "https://api.openai.com/v1"
-	default:
-		return cfg.baseURL
+		return result.Text, err
 	}
 }
 
-func askDirectAPI(ctx context.Context, cfg proofreadingConfig, instruction, prompt string) (answer string, err error) {
-	baseURL := strings.TrimSuffix(resolveDirectBaseURL(cfg), "/")
-	if baseURL == "" {
-		return "", errors.New("service URL is not configured")
+func completeOrMock(complete completer) completer {
+	return func(ctx context.Context, request connection.CompleteRequest) (connection.CompleteResult, error) {
+		result, err := complete(ctx, request)
+		if errors.Is(err, connection.ErrNoConnection) {
+			return completeMock(ctx, request)
+		}
+		return result, err
 	}
-	model := cfg.model
-	if model == "" {
-		model = "openai/gpt-4o-mini"
-	}
-	body, err := json.Marshal(chatCompletionRequest{
-		Model: model,
-		Messages: []chatCompletionMessage{
-			{Role: "system", Content: instruction},
-			{Role: "user", Content: prompt},
-		},
-	})
-	if err != nil {
-		return "", fmt.Errorf("marshal chat request: %w", err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/chat/completions", bytes.NewReader(body))
-	if err != nil {
-		return "", fmt.Errorf("create chat request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if cfg.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+cfg.apiKey)
-	}
-	client := &http.Client{
-		Transport: nil, CheckRedirect: nil, Jar: nil, Timeout: 2 * time.Minute,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("send chat request: %w", err)
-	}
-	defer func() { err = errors.Join(err, resp.Body.Close()) }()
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("read chat response: %w", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("chat API status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBytes)))
-	}
-	var parsed chatCompletionResponse
-	if err := json.Unmarshal(respBytes, &parsed); err != nil {
-		return "", fmt.Errorf("decode chat response: %w", err)
-	}
-	if len(parsed.Choices) == 0 {
-		return "", errors.New("chat API returned no choices")
-	}
-	return parsed.Choices[0].Message.Content, nil
 }
 
 // Mount registers the proofread and delete commands on s, using the
@@ -250,9 +147,13 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	complete := completer(ai.Complete)
+	client, err := connection.NewClientFromEnv()
+	if err != nil {
+		return err
+	}
+	complete := completer(client.Complete)
 	if os.Getenv(EnvMockML) == mockEnabled {
-		complete = completeMock
+		complete = completeOrMock(complete)
 	}
 	return mount(s, openHostAt(endpoint), complete, nil)
 }
@@ -265,15 +166,13 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	complete := func(ctx context.Context, question *ai.Question) (string, error) {
-		client, err := ai.NewClientFromVars(vars)
-		if err != nil {
-			return "", err
-		}
-		return client.Complete(ctx, question)
+	client, err := connection.NewClientFromVars(vars)
+	if err != nil {
+		return nil, err
 	}
+	complete := completer(client.Complete)
 	if vars[EnvMockML] == mockEnabled {
-		complete = completeMock
+		complete = completeOrMock(complete)
 	}
 	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
@@ -291,7 +190,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 	if len(vars) > 0 {
 		config.updateConfig(vars, nil)
 	}
-	run := newProofreading(h, getProofreadKinds(), newAskModel(complete, config.getConfig), config.getConfig)
+	run := newProofreading(h, getProofreadKinds(), newAskModel(complete), config.getConfig)
 	commands, err := newCommands(run)
 	if err != nil {
 		return err

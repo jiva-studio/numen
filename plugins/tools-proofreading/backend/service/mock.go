@@ -5,22 +5,22 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/connection"
 )
 
 // MockMark is appended by the mock proofreader to the end of every line in the prompt.
 const MockMark = "[proofread]"
 
-func completeMock(ctx context.Context, question *ai.Question) (string, error) {
+func completeMock(ctx context.Context, request connection.CompleteRequest) (connection.CompleteResult, error) {
 	if err := ctx.Err(); err != nil {
-		return "", err
+		return connection.CompleteResult{}, err
 	}
-	messages := question.GetMessages()
+	messages := request.Messages
 	if len(messages) == 0 {
-		return "", nil
+		return connection.CompleteResult{}, nil
 	}
 	var rows []string
-	segments := strings.Split(messages[len(messages)-1].GetText(), Opens)
+	segments := strings.Split(messages[len(messages)-1].Text, Opens)
 	for _, segment := range segments[1:] {
 		number, text, ok := strings.Cut(segment, Closes)
 		if _, err := strconv.Atoi(number); !ok || err != nil {
@@ -32,5 +32,5 @@ func completeMock(ctx context.Context, question *ai.Question) (string, error) {
 		}
 		rows = append(rows, number+"|"+text+" "+MockMark)
 	}
-	return strings.Join(rows, "\n"), nil
+	return connection.CompleteResult{Text: strings.Join(rows, "\n")}, nil
 }

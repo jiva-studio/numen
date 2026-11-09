@@ -6,6 +6,8 @@
  * others. A row is moved by dragging its grip, or by the keyboard: Space picks it up, the arrows
  * move it and Space drops it.
  *
+ * With no row, "Open Connections" asks the settings tab to show the Connections page.
+ *
  * Only a row that names a connection and a model is written. A row added and not yet complete
  * stays on the page.
  */
@@ -34,6 +36,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'change', rows: readonly StoredRow[]): void
+  (e: 'open-connections'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -129,6 +132,9 @@ function getReason(row: RowDraft): string {
       <Button v-if="drafts.length < limit" variant="outline" :disabled="!canAdd" @click="add">
         <Plus :size="14" aria-hidden="true" />
         {{ words.connectionAdd }}
+      </Button>
+      <Button v-if="drafts.length === 0" variant="ghost" @click="emit('open-connections')">
+        {{ words.connectionRowsOpen }}
       </Button>
       <p v-if="connections.length === 0" class="connection-rows__note">
         {{ words.connectionRowsNone }}

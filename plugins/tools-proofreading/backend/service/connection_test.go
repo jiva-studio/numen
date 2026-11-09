@@ -82,7 +82,8 @@ func TestTheMockAnswersOnlyWhereNoConnectionIsSet(t *testing.T) {
 	answered := func(context.Context, connection.CompleteRequest) (connection.CompleteResult, error) {
 		return connection.CompleteResult{Text: "from the connection"}, nil
 	}
-	if got, _ := completeOrMock(answered)(t.Context(), request); got.Text != "from the connection" {
-		t.Errorf("with a connection the answer was %q", got.Text)
+	got, err := completeOrMock(answered)(t.Context(), request)
+	if err != nil || got.Text != "from the connection" {
+		t.Errorf("with a connection the answer was %q, %v", got.Text, err)
 	}
 }

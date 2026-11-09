@@ -174,17 +174,15 @@ A local model the Vector Embeddings plugin does not list is added with a profile
 
 The proofreading plugin, `md.numen.tools.proofreading`, corrects a transcript or a recognition when a person requests it from the file's menu, and its settings belong to the plugin. What a correction may change, and what rejects one, is in [Proofreading](proofreading.md).
 
-The plugin has two ways to reach a model, chosen by its setting `provider`. With `agent`, the default, it requests a completion from the host through the host service `ai:complete`, and the host uses [`app.ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which sets the agent program, the model and the number of questions answered at once. With `openrouter`, `openai` or `custom`, it calls an OpenAI-compatible chat service directly, with the `model` and, for `custom`, the `baseUrl` of its own settings and the `apiKey` secret, read from the [secrets](#secrets) allowed to the plugin. With no agent available, a proofreading through the agent fails with "unavailable", and no version is made.
+The plugin reaches a model through the rows of its setting `connections`: up to 5 connections from the Connections page, each with a model and a reasoning level, tried in order (see [Rows of connections](plugins/connection-rows.md)). With no row it is off, and its page links to Connections. The plugin keeps no address and no key.
 
 ```json
 {
-  "app": {
-    "ai": {
-      "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
-    }
-  },
   "md.numen.tools.proofreading": {
-    "provider": "agent",
+    "connections": [
+      { "connection": "c1f0a9e20", "model": "google/gemini-2.5-flash", "reasoning": "low" },
+      { "connection": "c77b01d40", "model": "qwen2.5:14b" }
+    ],
     "batchSize": 40,
     "overlap": 4,
     "inFlight": 4,
@@ -195,6 +193,7 @@ The plugin has two ways to reach a model, chosen by its setting `provider`. With
 
 |                   |                                                                                                                                                                                                                                                                                                                                                           |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connections`     | the connections that proofread, in the order they are tried: at most 5 rows of a connection, a model and optionally a reasoning level. Empty turns the plugin off.                                                                                                                                                                                        |
 | `batchSize`       | how many lines of a transcript one request contains. 40. A recognition is sent one page per request.                                                                                                                                                                                                                                                      |
 | `overlap`         | how many lines neighbouring batches of a transcript share, so a phrase split at a batch boundary still appears whole in one of them. 4.                                                                                                                                                                                                                   |
 | `inFlight`        | how many batches of a transcript one window contains; the task shows the lines done after each window. 4.                                                                                                                                                                                                                                                 |
@@ -249,9 +248,6 @@ A plugin that holds the `ai:complete` permission requests a completion from the 
     "ai": {
       "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
     }
-  },
-  "md.numen.tools.proofreading": {
-    "provider": "agent"
   }
 }
 ```

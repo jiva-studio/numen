@@ -110,6 +110,7 @@ export const WORDS = {
   /** The rows of connections on the page of a plugin. */
   connectionRowsPrivacy: 'The text of your notes is sent to each connection listed, in this order.',
   connectionRowsNone: 'No connections yet. Add one on the Connections page.',
+  connectionRowsOpen: 'Open Connections',
   connectionRowsChoose: 'Choose a connection',
   connectionRowsConnection: 'Connection',
   connectionRowsModel: 'Model',

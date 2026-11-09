@@ -11,9 +11,7 @@ Cleans up spelling, punctuation, and recognition errors in audio transcripts and
 
 ## Settings
 
-- **Provider**:
-  - **Agent** _(default)_: Uses one of your configured AI assistants in Numen.
-  - **OpenRouter / OpenAI / Custom service**: Connects directly to an online model service to proofread multiple sections in parallel for faster results and lower cost.
+- **Connections**: Up to five connections that check the text, tried in order. Add a connection on the Connections page, then choose it here with a model. When one cannot answer, for example because its key was rejected or it ran out of credit, the next one is used. With no connection, proofreading is off.
 - **Batch size**: How many lines are proofread together at once (`40` by default).
 - **Overlap**: Extra surrounding lines included for context between batches (`4` by default).
 - **In-flight requests**: How many batches are proofread in parallel (`4` by default).

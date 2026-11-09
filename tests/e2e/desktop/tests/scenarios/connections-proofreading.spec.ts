@@ -25,7 +25,6 @@ interface FakeServer {
   readonly process: ChildProcess
 }
 
-/** Builds the fake OpenAI server of the connections plugin and gives back the path of its binary. */
 const buildFakeServer = (): string => {
   const binary = test.info().outputPath('fakeopenai')
   fs.mkdirSync(path.dirname(binary), { recursive: true })
@@ -36,7 +35,6 @@ const buildFakeServer = (): string => {
   return binary
 }
 
-/** Starts the fake server on a free loopback port and waits for the address it prints. */
 const startFakeServer = (binary: string, args: readonly string[]): Promise<FakeServer> =>
   new Promise((resolve, reject) => {
     const child = spawn(binary, [...args], { stdio: ['ignore', 'pipe', 'inherit'] })
@@ -107,7 +105,9 @@ test.describe('Proofreading through connections', () => {
 
       await page.locator('.tasks-status__trigger').click()
       await expect(
-        page.locator('.task-popover .task-item').filter({ hasText: 'Limited service: rate limited' }),
+        page
+          .locator('.task-popover .task-item')
+          .filter({ hasText: 'Limited service: rate limited' }),
       ).toHaveCount(1, { timeout: 60_000 })
     } finally {
       await deleteConnection(page, first)

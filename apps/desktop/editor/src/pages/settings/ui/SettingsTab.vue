@@ -82,6 +82,7 @@ function onBack(): void {
           :state="props.state"
           :plugin="selectedPlugin"
           @back="onBack"
+          @open-connections="onSelectPlugin('connections')"
         />
         <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
         <PluginsList

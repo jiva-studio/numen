@@ -111,6 +111,14 @@ The settings of the plugin Numen Agent.
 | `maxTokens` | a number | maximum number of tokens to generate per completion. From 256 to 128000. |
 | `maxSteps` | a number | maximum number of requests to the model one task may make before it is stopped. From 1 to 1000. |
 
+### `md.numen.connections.llm`
+
+The settings of the plugin Language model services.
+
+| | | |
+| --- | --- | --- |
+| `requestTimeout` | a number | seconds to wait for a service to answer. Without a value, a completion waits 120 seconds and an embedding 60 seconds. From 1 to 3600. |
+
 ### `md.numen.engines.embeddings`
 
 The settings of the plugin Vector Embeddings.
@@ -180,9 +188,7 @@ The settings of the plugin LLM Proofreading.
 
 | | | |
 | --- | --- | --- |
-| `provider` | text | how proofreading requests are executed: through the default Numen agent or directly against an OpenAI-compatible batch/chat API. One of `agent`, `openrouter`, `openai`, `custom`. |
-| `baseUrl` | text | base URL of the OpenAI-compatible API, for example http://localhost:11434/v1. |
-| `model` | text | model ID used for batch proofreading requests. |
+| `connections` | text | services and agents that proofread, tried in order. The next one is used when one cannot answer. |
 | `batchSize` | a number | lines per model request. From 1 to 500. |
 | `overlap` | a number | lines shared by neighbouring batches. From 0 to 100. |
 | `inFlight` | a number | parallel model requests per call. From 1 to 32. |

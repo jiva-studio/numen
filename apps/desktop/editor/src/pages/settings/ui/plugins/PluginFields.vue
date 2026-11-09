@@ -23,6 +23,10 @@ const props = defineProps<{
   plugin: PluginInfo
 }>()
 
+const emit = defineEmits<{
+  (e: 'open-connections'): void
+}>()
+
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
@@ -117,6 +121,7 @@ function getStringSetting(key: string, fallback: unknown): string {
         :value="getValue(setting.key)"
         :installation="installation"
         @change="(rows) => onSettingChange(setting.key, rows)"
+        @open-connections="emit('open-connections')"
       />
     </div>
     <SettingRow
