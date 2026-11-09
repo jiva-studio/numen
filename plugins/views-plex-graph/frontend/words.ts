@@ -8,8 +8,6 @@ export const WORDS = {
   loading: 'Loading…',
   /** The row of a command of the menu whose items are being read. */
   loadingItems: 'Loading…',
-  /** The menu entry shown when the plex has no content. */
-  newNote: 'New note',
   /** The label of the drop preview shown while notes are dragged over the plex. */
   dropName: (relation: PlexRelation) => `as ${getRelationName(relation)}`,
   /** The notes that stayed unjoined, because the vault would not write the link. */
