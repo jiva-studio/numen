@@ -36,10 +36,12 @@ export interface SettingsDeps {
   catalog?: PluginCatalog
   connections?: ConnectionClient
   models?: ModelClient
+  countNotes?: Installation['countNotes']
 }
 
 interface SettingsTabConfigDeps {
   models?: ModelClient
+  countNotes?: Installation['countNotes']
   appearance: ReturnType<typeof createWindowAppearance>
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
@@ -98,6 +100,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     catalogEntries,
     reportError,
     models,
+    countNotes,
   } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
@@ -108,6 +111,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(getPlatform ? { getPlatform } : {}),
     ...(catalogEntries ? { catalog: catalogEntries } : {}),
+    ...(countNotes ? { countNotes } : {}),
     ...createConnectionMembers(connections),
     ...createModelMembers(models),
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
@@ -264,6 +268,7 @@ export function useSettings({
   catalog,
   connections: connectionClient,
   models,
+  countNotes,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
@@ -305,6 +310,7 @@ export function useSettings({
       ...(catalogEntries ? { catalogEntries } : {}),
       reportError,
       ...(models ? { models } : {}),
+      ...(countNotes ? { countNotes } : {}),
     }),
     reportError,
   )

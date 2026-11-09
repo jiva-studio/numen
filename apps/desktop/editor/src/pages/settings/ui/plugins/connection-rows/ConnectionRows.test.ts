@@ -85,6 +85,8 @@ interface Options {
   readonly max?: number
   readonly connections?: readonly ConnectionInfo[]
   readonly listModels?: NonNullable<Installation['listModels']>
+  readonly operation?: string
+  readonly countNotes?: NonNullable<Installation['countNotes']>
 }
 
 const mountRows = (options: Options = {}) => {
@@ -94,11 +96,12 @@ const mountRows = (options: Options = {}) => {
     connectionTypes: ref([SERVICE, EMBEDDER]),
     listModels,
     listReasoningLevels: vi.fn(() => Promise.resolve(asValue([]))),
+    ...(options.countNotes ? { countNotes: options.countNotes } : {}),
   })
   const wrapper = mount(ConnectionRows, {
     attachTo: document.body,
     props: {
-      setting: setting({ max: options.max ?? 3 }),
+      setting: setting({ max: options.max ?? 3, operation: options.operation ?? 'complete' }),
       value: options.value ?? [],
       installation,
     },
@@ -315,6 +318,112 @@ describe('the rows of a setting of connections', () => {
     await wrapper.setProps({ value: [row(HOME.id, 'beta')] })
 
     expect(root().querySelectorAll('li')).toHaveLength(1)
+    dispose(wrapper)
+  })
+})
+
+describe('the rows of embeddings, whose change indexes the vault again', () => {
+  const mountEmbedRows = (options: Options = {}) =>
+    mountRows({
+      operation: 'embed',
+      max: 1,
+      countNotes: vi.fn(() => Promise.resolve(120)),
+      ...options,
+    })
+
+  const choose = async (wrapper: VueWrapper, index: number, id: string): Promise<void> => {
+    wrapper.findAllComponents(Select)[index]?.vm.$emit('update:modelValue', id)
+    await flushPromises()
+  }
+
+  it('asks before it writes a connection, naming the notes and the connection', async () => {
+    const { wrapper } = mountEmbedRows()
+    await click(findButton(/add connection/i))
+
+    await choose(wrapper, 0, HOME.id)
+
+    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+      'This indexes 120 notes through Home. It may cost money.',
+    )
+    expect(changes(wrapper)).toStrictEqual([])
+    dispose(wrapper)
+  })
+
+  it('writes the row once the question is confirmed', async () => {
+    const { wrapper } = mountEmbedRows()
+    await click(findButton(/add connection/i))
+    await choose(wrapper, 0, HOME.id)
+
+    await click(findButton(/^index$/i))
+
+    expect(changes(wrapper)).toStrictEqual([[row(HOME.id, 'alpha')]])
+    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    dispose(wrapper)
+  })
+
+  it('writes nothing and keeps the stored rows when the question is cancelled', async () => {
+    const { wrapper } = mountEmbedRows({ value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+    await choose(wrapper, 0, HOME.id)
+
+    await click(findButton(/^cancel$/i))
+
+    expect(changes(wrapper)).toStrictEqual([])
+    expect(root().querySelector('li')?.textContent).toContain('Work')
+    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    dispose(wrapper)
+  })
+
+  it('asks again when only the model of the stored row changes', async () => {
+    const { wrapper } = mountEmbedRows({ value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+
+    wrapper.findAllComponents(Select)[1]?.vm.$emit('update:modelValue', 'beta')
+    await flushPromises()
+
+    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+      'This indexes 120 notes through Work.',
+    )
+    expect(changes(wrapper)).toStrictEqual([])
+    dispose(wrapper)
+  })
+
+  it('does not ask when the row is removed', async () => {
+    const { wrapper } = mountEmbedRows({ value: [row(WORK.id, 'alpha')] })
+    await flushPromises()
+
+    await click(findButton(/remove row 1/i))
+
+    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(changes(wrapper)).toStrictEqual([[]])
+    dispose(wrapper)
+  })
+
+  it('does not ask for the rows of another operation', async () => {
+    const { wrapper } = mountRows({
+      operation: 'complete',
+      countNotes: vi.fn(() => Promise.resolve(5)),
+    })
+    await click(findButton(/add connection/i))
+
+    await choose(wrapper, 0, HOME.id)
+
+    expect(root().querySelector('[role="alertdialog"]')).toBeNull()
+    expect(changes(wrapper)).toStrictEqual([[row(HOME.id, 'alpha')]])
+    dispose(wrapper)
+  })
+
+  it('says the notes without a number when they cannot be counted', async () => {
+    const { wrapper } = mountEmbedRows({
+      countNotes: vi.fn(() => Promise.reject(new Error('no list'))),
+    })
+    await click(findButton(/add connection/i))
+
+    await choose(wrapper, 0, HOME.id)
+
+    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain(
+      'This indexes your notes through Home. It may cost money.',
+    )
     dispose(wrapper)
   })
 })

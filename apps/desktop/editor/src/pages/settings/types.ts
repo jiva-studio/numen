@@ -77,6 +77,8 @@ export interface Installation {
     connectionId: string,
     model: string,
   ): Promise<Result<readonly ReasoningLevelInfo[], ModelListFailure>>
+  /** How many notes the shown vault holds. Rows of connections for embeddings say it before they index. */
+  countNotes?(): Promise<number>
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**

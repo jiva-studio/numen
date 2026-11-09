@@ -8,12 +8,17 @@
  *
  * Only a row that names a connection and a model is written. A row added and not yet complete
  * stays on the page.
+ *
+ * A change of the connection or the model of embeddings indexes the vault again, which a service
+ * may charge for. It is written after a question that names the notes and the connection, and a
+ * row that is not complete changes nothing meanwhile.
  */
-import { computed, onMounted, useTemplateRef } from 'vue'
+import { computed, onMounted, ref, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { Button, type SelectChoice } from '@numen/ui'
+import { Button, ConfirmDialog, type SelectChoice } from '@numen/ui'
 import {
   getConnectionUsability,
+  readRows,
   sortByUsability,
   type RowDraft,
   type StoredRow,
@@ -38,9 +43,10 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const list = useTemplateRef<HTMLElement>('list')
-const { drafts, write, add, remove, update, move } = useRowDrafts({
+const asking = ref<{ readonly rows: readonly StoredRow[]; readonly text: string } | undefined>()
+const { drafts, write, reset, add, remove, update, move } = useRowDrafts({
   getValue: () => props.value,
-  onChange: (rows) => emit('change', rows),
+  onChange: (rows) => void onRowsChange(rows),
 })
 const { heldKey, announcement, drag, onGripPress, onGripKey } = useRowOrder({
   drafts,
@@ -86,7 +92,47 @@ const canAdd = computed(() => drafts.value.length < limit.value && connections.v
 /* ---------------------------------- Hooks --------------------------------- */
 onMounted(() => props.installation.loadConnections?.())
 
+/* -------------------------------- Handlers -------------------------------- */
+async function onRowsChange(rows: readonly StoredRow[]): Promise<void> {
+  if (operation.value !== 'embed') {
+    emit('change', rows)
+    return
+  }
+  if (drafts.value.length !== rows.length) return
+  if (!isIndexChange(rows)) {
+    emit('change', rows)
+    return
+  }
+  const name = connections.value.find((one) => one.id === rows[0]?.connection)?.name ?? ''
+  asking.value = { rows, text: words.connectionRowsIndexAsking(await countNotes(), name) }
+}
+
+function onConfirmIndex(): void {
+  const rows = asking.value?.rows
+  asking.value = undefined
+  if (rows) emit('change', rows)
+}
+
+function onCancelIndex(): void {
+  asking.value = undefined
+  reset()
+}
+
 /* -------------------------------- Helpers --------------------------------- */
+function isIndexChange(rows: readonly StoredRow[]): boolean {
+  const getKey = (one: StoredRow): string => `${one.connection}\0${one.model}`
+  const stored = readRows(props.value).map(getKey)
+  return rows.length > 0 && rows.map(getKey).join('\n') !== stored.join('\n')
+}
+
+async function countNotes(): Promise<number | undefined> {
+  try {
+    return await props.installation.countNotes?.()
+  } catch {
+    return undefined
+  }
+}
+
 function getReason(row: RowDraft): string {
   return entries.value.find((one) => one.connection.id === row.connection)?.reason ?? ''
 }
@@ -137,6 +183,16 @@ function getReason(row: RowDraft): string {
 
     <p v-if="drafts.length > 0" class="connection-rows__note">{{ words.connectionRowsPrivacy }}</p>
     <p class="sr-only" role="status" aria-live="assertive">{{ announcement }}</p>
+
+    <ConfirmDialog
+      v-if="asking"
+      :text="asking.text"
+      :label="words.connectionRowsIndexLabel"
+      :confirm-text="words.connectionRowsIndexConfirm"
+      :cancel-text="words.connectionCancel"
+      @confirm="onConfirmIndex"
+      @cancel="onCancelIndex"
+    />
   </div>
 </template>
 
