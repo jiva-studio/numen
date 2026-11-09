@@ -50,7 +50,7 @@ test.describe('Removing and renaming a note', () => {
       await writeNote(request, target, 'High water at six.\n')
       await openWorkspace(page)
       await openNote(page, linker)
-      await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
+      await runPaletteCommand(page, 'Show in plex', 'Show in plex')
       await expect(getPlexNode(page, targetTitle, 'child')).toBeAttached()
 
       await openNote(page, target)
