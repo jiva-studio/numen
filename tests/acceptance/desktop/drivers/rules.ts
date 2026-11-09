@@ -178,6 +178,9 @@ export const TAB_KINDS = {
   recording: { id: 'reader:media-viewer', title: 'Audio Player' },
   Files: { id: 'files', title: 'Files' },
   Agent: { id: 'agent', title: 'Agent' },
+  Deck: { id: 'deck', title: 'Deck' },
+  'Card Model': { id: 'card-model', title: 'Card Model' },
+  Preset: { id: 'preset', title: 'Preset' },
 } as const
 
 export type TabKindWord = keyof typeof TAB_KINDS
@@ -193,7 +196,7 @@ const isTabKindWord = (word: string): word is TabKindWord => Object.hasOwn(TAB_K
 
 /** The kind a step names in "the note tab" or "the tab": a word of TAB_KINDS, or "any" for none. */
 export const parseTabKind = (text: string): TabKindChoice => {
-  const match = /^(?:([A-Za-z]+) )?tab$/.exec(text)
+  const match = /^(?:([A-Za-z]+(?: [A-Za-z]+)?) )?tab$/.exec(text)
   if (!match) throw new Error(`"${text}" does not name a tab: write the tab or the note tab`)
   const word = match[1] as string | undefined
   if (word === undefined) return ANY_TAB

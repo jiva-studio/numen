@@ -39,6 +39,6 @@ defineParameterType({
 
 defineParameterType({
   name: 'tab',
-  regexp: /(?:[A-Za-z]+ )?tab/,
+  regexp: /(?:[A-Za-z]+ ){0,2}tab/,
   transformer: (tab: string) => parseTabKind(tab),
 })

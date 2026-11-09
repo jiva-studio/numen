@@ -221,11 +221,17 @@ describe('parseTabKind', () => {
     expect(parseTabKind('recording tab')).toBe('recording')
     expect(parseTabKind('Files tab')).toBe('Files')
     expect(parseTabKind('Agent tab')).toBe('Agent')
+    expect(parseTabKind('Deck tab')).toBe('Deck')
+    expect(parseTabKind('Preset tab')).toBe('Preset')
+  })
+
+  it('takes two words before tab as the kind', () => {
+    expect(parseTabKind('Card Model tab')).toBe('Card Model')
   })
 
   it('fails on a word that is not a kind and lists the words', () => {
     expect(() => parseTabKind('chart tab')).toThrow(
-      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Files, Agent',
+      'the tab kind "chart" is not a tab kind: use note, Plex, PDF, book, recording, Files, Agent, Deck, Card Model, Preset',
     )
   })
 })
