@@ -10,7 +10,8 @@
     "slots": [
       {
         "slot": "titleBar.status",
-        "view": "update"
+        "view": "update",
+        "title": "Updates"
       }
     ]
   },

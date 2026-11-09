@@ -44,7 +44,7 @@ import { createTabCommands, type TabCommands } from '../tabs/tabCommands'
 import { createVersionCommands } from '../commands/versionCommands'
 import { getPaletteId, useDeclaredCommands } from '../commands/declaredCommands'
 import { createWindowSlots } from './windowSlots'
-import { createSlotDrag } from '@/features/slot-layout'
+import { MOVE_WORDS, getSlotTitle, useSlotMoveMenu } from '@/features/slot-layout'
 import { createBackendHandlers } from '../commands/backendHandlers'
 import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import { createCommandItemLists, type CommandItemLists } from '../commands/commandItemLists'
@@ -792,15 +792,15 @@ function createWindowFrameServices(
   return { frame, slots: base.pluginHost.slots, windowCommands }
 }
 
-/** The Cmd/Ctrl+drag of the slot entries, over the slots of the plugin host and the layout in the settings. */
-const createWindowSlotDrag = (base: WindowCore) =>
-  createSlotDrag({
-    isMac: () => base.frame.platform.value === 'darwin',
+/** The right-click menu of the slot entries, over the slots of the plugin host and the layout in the settings. */
+const createWindowSlotMoveMenu = (base: WindowCore) =>
+  useSlotMoveMenu({
     findLayoutKey: (itemKey, slot) => base.pluginHost.slots.findLayoutKey(itemKey, slot),
-    listLayoutKeys: (slot) => base.pluginHost.slots.listLayoutKeys(slot),
+    listEntries: (slot) => base.pluginHost.slots.listLayoutEntries(slot),
+    getSlotTitle,
     getLayout: base.windowSlots.layout.getLayout,
     writeLayout: base.windowSlots.layout.writeLayout,
-    showPreview: base.windowSlots.layout.showPreview,
+    words: MOVE_WORDS,
   })
 
 const getPluginViews = (pluginHost: PluginHost) => ({
@@ -893,7 +893,7 @@ export const useWindow = () => {
     tabLinks: base.tabLinks,
     ...createWindowFrameServices(base, ctx, { getTarget }),
     isHighlighted,
-    slotDrag: createWindowSlotDrag(base),
+    slotMoveMenu: createWindowSlotMoveMenu(base),
     ...moves,
   }
   return api

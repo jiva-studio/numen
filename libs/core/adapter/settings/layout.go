@@ -18,7 +18,7 @@ const keyLayout = "layout"
 const keyLayoutSlots = "slots"
 
 // Layout is the user's arrangement of the slots. The window writes it when the user moves an
-// entry of a slot by Cmd/Ctrl+drag.
+// entry into or out of a slot from its menu.
 //
 //numen:settings
 type Layout struct {
@@ -31,7 +31,7 @@ type Layout struct {
 var errNotAKeyList = errors.New("expected a list of entry keys")
 
 // readLayout returns the part of a layout in the file that is in force. A slot that slots.json does
-// not declare, a value that is not a list of strings, and a key that names no home slot or owner
+// not declare or does not arrange by the user, a value that is not a list of strings, and a key that names no home slot or owner
 // are left out, each with a notice.
 func (f *File) readLayout(value any) Layout {
 	label := OwnerApp + "." + keyLayout
@@ -68,8 +68,8 @@ func (f *File) readLayoutSlots(label string, value any) map[string][]string {
 }
 
 func (f *File) readLayoutList(label, slot string, value any) ([]string, bool) {
-	if !manifest.IsSlot(slot) {
-		f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", label, fmt.Errorf("%w: not a slot", ErrUndeclared)))
+	if !manifest.IsUserArrangedSlot(slot) {
+		f.AddNotice(fmt.Sprintf("numen.json: %q: %v; the value is ignored", label, fmt.Errorf("%w: not a slot the user arranges", ErrUndeclared)))
 		return nil, false
 	}
 	list, err := readKeyList(value)
@@ -99,7 +99,7 @@ func checkLayoutWrite(path []string, value any) error {
 		return ErrUndeclared
 	case len(path) == 1:
 		return checkLayoutSlots(value)
-	case len(path) == 2 && manifest.IsSlot(path[1]):
+	case len(path) == 2 && manifest.IsUserArrangedSlot(path[1]):
 		return checkLayoutList(value)
 	}
 	return ErrUndeclared
@@ -133,8 +133,8 @@ func checkLayoutSlots(value any) error {
 		return fmt.Errorf("%w: expected an object", ErrWrongType)
 	}
 	for slot, list := range slots {
-		if !manifest.IsSlot(slot) {
-			return fmt.Errorf("%w: %s is not a slot", ErrUndeclared, slot)
+		if !manifest.IsUserArrangedSlot(slot) {
+			return fmt.Errorf("%w: %s is not a slot the user arranges", ErrUndeclared, slot)
 		}
 		if err := checkLayoutList(list); err != nil {
 			return err

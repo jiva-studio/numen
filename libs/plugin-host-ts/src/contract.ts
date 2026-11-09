@@ -16,6 +16,8 @@ export {
   getRelationErrorWords,
   isNotePath,
   isSharedCommand,
+  isUserArrangedSlot,
+  listUserArrangedSlots,
   MENU_HOLD_MS,
   useSlotMenu,
 } from '@numen/plugin-sdk'

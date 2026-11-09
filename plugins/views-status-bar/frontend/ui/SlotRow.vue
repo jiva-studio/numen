@@ -34,7 +34,7 @@ function onRun(command: string, itemId?: string, values?: Readonly<Record<string
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The attribute the window finds a command or a view by when it drags the entries of the bars. */
+/** The attribute the window finds a command or a view by when it opens the menu of an entry of the bars. */
 function markEntry(entry: SlotItem): Record<string, string> {
   return { [SLOT_ENTRY_ATTRIBUTE]: entry.key }
 }
@@ -43,7 +43,6 @@ function markEntry(entry: SlotItem): Record<string, string> {
 <template>
   <div
     class="status-bar__slot"
-    :class="{ 'status-bar__slot--empty': entries.length === 0 }"
     :data-status-bar-slot="place"
     v-bind="{ [SLOT_ATTRIBUTE]: place }"
   >

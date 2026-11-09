@@ -1,5 +1,5 @@
 {
-  "//": "The slots of a window. A plugin fills them with the entries of contributes.slots; it declares no slot of its own, only submenus. tools/slots.mjs writes the Go and TypeScript lists from this file.",
+  "//": "The slots of a window. A plugin fills them with the entries of contributes.slots; it declares no slot of its own, only submenus. A slot with the arrangement user is one the user fills by moving entries into and out of it; without the field the arrangement is manifest and the manifests of the plugins fix the entries. tools/slots.mjs writes the Go and TypeScript lists from this file.",
   "slots": [
     {
       "name": "titleBar",
@@ -15,21 +15,25 @@
     },
     {
       "name": "titleBar.commands",
+      "arrangement": "user",
       "owner": "the plugin of the title bar",
       "about": "the buttons of the title bar"
     },
     {
       "name": "titleBar.status",
+      "arrangement": "user",
       "owner": "the plugin of the title bar",
       "about": "the views of the title bar, after its title"
     },
     {
       "name": "statusBar.left",
+      "arrangement": "user",
       "owner": "the plugin of the status bar",
       "about": "the start of the status bar"
     },
     {
       "name": "statusBar.right",
+      "arrangement": "user",
       "owner": "the plugin of the status bar",
       "about": "the end of the status bar"
     },

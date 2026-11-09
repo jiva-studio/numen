@@ -11,15 +11,12 @@ import { getStandInsOrigin } from '../../support/media.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
 /**
- * The slot entries moved by Cmd/Ctrl+drag: the order and the slot the user gives them are kept in
- * `app.layout.slots` of numen.json and drawn again after the window starts anew.
+ * The slot entries moved from their right-click menu: the order and the slot the user gives them are
+ * kept in `app.layout.slots` of numen.json and drawn again after the window starts anew.
  */
 const TASKS_KEY = 'titleBar.status|md.numen.views.tasks/status'
 const STATS_KEY = 'titleBar.status|md.numen.tools.index.stats/stats'
 const UPDATER_KEY = 'titleBar.status|md.numen.tools.updater/update'
-
-/** The window takes Cmd on macOS and Ctrl elsewhere; the core runs on the machine of the test. */
-const MODIFIER = process.platform === 'darwin' ? 'Meta' : 'Control'
 
 const getTasks = (page: Page): Locator => page.locator('.tasks-status__trigger')
 const getStats = (page: Page): Locator => page.locator('.index-stats__trigger')
@@ -41,23 +38,16 @@ const getBox = async (element: Locator): Promise<Box> => {
   return box
 }
 
-const getCenter = (box: Box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 })
-
-/** Holds the modifier, presses the entry, moves past the threshold and then to the target, and releases. */
-const dragWithModifier = async (
+/** Opens the menu of the entry with a right click and chooses Move to, the slot and the item. */
+const moveFromMenu = async (
   page: Page,
   entry: Locator,
-  getTarget: () => Promise<{ x: number; y: number }>,
+  path: readonly [slot: string, item: string],
 ): Promise<void> => {
-  const from = getCenter(await getBox(entry))
-  await page.keyboard.down(MODIFIER)
-  await page.mouse.move(from.x, from.y)
-  await page.mouse.down()
-  await page.mouse.move(from.x + 12, from.y + 12, { steps: 4 })
-  const to = await getTarget()
-  await page.mouse.move(to.x, to.y, { steps: 8 })
-  await page.mouse.up()
-  await page.keyboard.up(MODIFIER)
+  await entry.click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Move to', exact: true }).click()
+  await page.getByRole('menuitem', { name: path[0], exact: true }).click()
+  await page.getByRole('menuitem', { name: path[1], exact: true }).click()
 }
 
 const publishNewRelease = async (request: APIRequestContext): Promise<void> => {
@@ -88,7 +78,7 @@ test.describe('the layout of the slot entries', () => {
     await withdrawNewRelease(request)
   })
 
-  test('keeps a chip reordered in the title bar and a chip moved into the status bar after a restart', async ({
+  test('keeps a chip reordered in the title bar and a chip moved into the status bar from its menu after a restart', async ({
     page,
     request,
   }) => {
@@ -98,17 +88,12 @@ test.describe('the layout of the slot entries', () => {
     await expect(getUpdater(page)).toBeVisible()
     expect((await getBox(getStats(page))).x).toBeLessThan((await getBox(getTasks(page))).x)
 
-    await dragWithModifier(page, getTasks(page), async () => {
-      const stats = await getBox(getStats(page))
-      return { x: stats.x + stats.width / 4, y: stats.y + stats.height / 2 }
-    })
+    await moveFromMenu(page, getTasks(page), ['Title bar status', 'Index statistics'])
     await expect
       .poll(async () => (await getBox(getTasks(page))).x < (await getBox(getStats(page))).x)
       .toBe(true)
 
-    await dragWithModifier(page, getUpdater(page), async () =>
-      getCenter(await getBox(getStatusEnd(page))),
-    )
+    await moveFromMenu(page, getUpdater(page), ['Status bar end', 'At the end'])
     await expect(
       getStatusEnd(page).getByRole('button', { name: /^Update available: v/ }),
     ).toBeVisible()

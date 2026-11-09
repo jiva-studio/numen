@@ -12,7 +12,7 @@ export { WHEN_VARIABLES } from './whenVariables'
 
 // SLOT_ATTRIBUTE names the element that draws a slot; its value is the slot name.
 // SLOT_ENTRY_ATTRIBUTE names the element of one command or view of a slot; its value is
-// SlotItem.key. The window finds the entries it drags by them.
+// SlotItem.key. The window finds the entries it opens its move menu on by them.
 export const SLOT_ATTRIBUTE = 'data-numen-slot'
 export const SLOT_ENTRY_ATTRIBUTE = 'data-numen-slot-entry'
 

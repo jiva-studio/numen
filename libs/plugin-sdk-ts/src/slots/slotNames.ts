@@ -26,3 +26,21 @@ export const SLOT = {
 
 // SlotName is a slot of a window.
 export type SlotName = (typeof SLOT)[keyof typeof SLOT]
+
+// USER_ARRANGED_SLOTS are the slots whose entries the user moves, in the order slots.json lists them.
+const USER_ARRANGED_SLOTS: readonly SlotName[] = [
+  SLOT.titleBarCommands,
+  SLOT.titleBarStatus,
+  SLOT.statusBarLeft,
+  SLOT.statusBarRight,
+]
+
+// listUserArrangedSlots returns the slots whose arrangement is "user".
+export function listUserArrangedSlots(): readonly SlotName[] {
+  return USER_ARRANGED_SLOTS
+}
+
+// isUserArrangedSlot reports whether the user moves the entries of the slot; the entries of any other slot are fixed by the manifests.
+export function isUserArrangedSlot(name: string): name is SlotName {
+  return (USER_ARRANGED_SLOTS as readonly string[]).includes(name)
+}

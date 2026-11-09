@@ -2,6 +2,8 @@
 
 package manifest
 
+import "slices"
+
 // SlotTitleBar is the bar at the top of a window; one view, the plugin of the title bar, drawn by the window.
 const SlotTitleBar = "titleBar"
 
@@ -42,6 +44,19 @@ func IsSlot(name string) bool {
 		return true
 	}
 	return false
+}
+
+// userArrangedSlots are the slots whose entries the user moves, in the order slots.json lists them.
+var userArrangedSlots = []string{SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight}
+
+// ListUserArrangedSlots returns the slots whose arrangement is "user", in the order slots.json lists them.
+func ListUserArrangedSlots() []string {
+	return slices.Clone(userArrangedSlots)
+}
+
+// IsUserArrangedSlot reports whether the user moves the entries of the slot; the entries of any other slot are fixed by the manifests.
+func IsUserArrangedSlot(name string) bool {
+	return slices.Contains(userArrangedSlots, name)
 }
 
 // IsWindowSlot reports whether the slot is one of the window itself, which draws one view.

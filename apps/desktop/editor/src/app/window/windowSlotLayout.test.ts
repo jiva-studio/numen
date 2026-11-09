@@ -20,7 +20,7 @@ describe('the layout of the window', () => {
     expect(layout.getLayout()).toStrictEqual({ 'statusBar.right': [UPDATER] })
   })
 
-  it('writes the lists of a drop in one write, one edit per slot', async () => {
+  it('writes the lists of a move in one write, one edit per slot', async () => {
     const writeSettings = vi.fn(() => Promise.resolve())
     const layout = createWindowSlotLayout()
     layout.setSettings({ getSetting: () => undefined, writeSettings })
@@ -34,7 +34,7 @@ describe('the layout of the window', () => {
   })
 })
 
-describe('the edits of a drop', () => {
+describe('the edits of a move', () => {
   it('put each list at app.layout.slots of its slot', () => {
     expect(
       getLayoutEdits({ 'statusBar.right': [UPDATER] }).map((one) => ({

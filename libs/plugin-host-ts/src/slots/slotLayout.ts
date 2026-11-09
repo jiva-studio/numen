@@ -1,28 +1,24 @@
 /**
  * The user's arrangement of the slots, kept in the settings at `app.layout.slots`: the key of an
- * entry, the layout a settings value holds, and the lists a drop of an entry writes.
+ * entry, the layout a settings value holds, and the lists a move of an entry writes. Only the slots
+ * whose arrangement is `user` in `slots.json` take a list.
  */
-import { SLOT, type SlotName } from '@numen/plugin-sdk'
+import { isUserArrangedSlot, listUserArrangedSlots, type SlotName } from '@numen/plugin-sdk'
 import type { DeclaredSlotEntry } from './slotRegistry'
 
 /** The user's arrangement of the slots: per slot, the keys of its entries in drawing order. */
 export type SlotLayout = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
-/** The lists of the slots a drop changes, each the whole new list of its slot. */
+/** The lists of the slots a move changes, each the whole new list of its slot. */
 export type SlotLayoutChange = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
-/** One drop: the entry, the slot it is drawn in, the slot it is dropped in, and the key it is dropped before. */
+/** One move: the entry, the slot it is drawn in, the slot it goes to, and the key it goes before. */
 export interface SlotMove {
   readonly key: string
   readonly from: SlotName
   readonly to: SlotName
   readonly before?: string | undefined
 }
-
-const SLOT_NAMES: readonly SlotName[] = Object.values(SLOT)
-
-const isSlotName = (slot: string): slot is SlotName =>
-  (SLOT_NAMES as readonly string[]).includes(slot)
 
 /** The key of an entry in the layout, `<home slot>|<plugin id>/<view or command id>`; undefined for a submenu. */
 export function getLayoutKey(entry: DeclaredSlotEntry): string | undefined {
@@ -39,7 +35,7 @@ export interface LayoutPlace {
 /** The place of each key in the layout. */
 export function findLayoutPlaces(layout: SlotLayout): ReadonlyMap<string, LayoutPlace> {
   const places = new Map<string, LayoutPlace>()
-  for (const slot of SLOT_NAMES) {
+  for (const slot of listUserArrangedSlots()) {
     ;(layout[slot] ?? []).forEach((key, index) => {
       if (!places.has(key)) places.set(key, { slot, index })
     })
@@ -50,12 +46,12 @@ export function findLayoutPlaces(layout: SlotLayout): ReadonlyMap<string, Layout
 const isKeyList = (value: unknown): value is readonly string[] =>
   Array.isArray(value) && value.every((one) => typeof one === 'string')
 
-/** The layout a settings value holds. A slot that \`slots.json\` does not declare and a list that is not a list of strings are left out. */
+/** The layout a settings value holds. A slot that is not arranged by the user and a list that is not a list of strings are left out. */
 export function readSlotLayout(value: unknown): SlotLayout {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return {}
   const layout: Partial<Record<SlotName, readonly string[]>> = {}
   for (const [slot, keys] of Object.entries(value)) {
-    if (isSlotName(slot) && isKeyList(keys)) layout[slot] = [...keys]
+    if (isUserArrangedSlot(slot) && isKeyList(keys)) layout[slot] = [...keys]
   }
   return layout
 }
@@ -103,7 +99,7 @@ type DrawnKeys = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
 const getDrawn = (drawn: DrawnKeys, slot: SlotName): readonly string[] => drawn[slot] ?? []
 
-/** The lists a drop writes; empty when the drop leaves every slot as it is drawn. */
+/** The lists a move writes; empty when the move leaves every slot as it is drawn. */
 export function moveSlotEntry(
   layout: SlotLayout,
   drawn: DrawnKeys,
@@ -114,12 +110,15 @@ export function moveSlotEntry(
   const inserted = insertBefore(from === to ? removed : getDrawn(drawn, to), key, before)
   if (from === to && isSameList(inserted, getDrawn(drawn, from))) return {}
 
-  const orders: Partial<Record<SlotName, readonly string[]>> =
-    from === to ? { [to]: inserted } : { [from]: removed, [to]: inserted }
+  const orders: (readonly [SlotName, readonly string[]])[] =
+    from === to
+      ? [[to, inserted]]
+      : [
+          [from, removed],
+          [to, inserted],
+        ]
   const change: Partial<Record<SlotName, readonly string[]>> = {}
-  for (const slot of SLOT_NAMES) {
-    const next = orders[slot]
-    if (next === undefined) continue
+  for (const [slot, next] of orders) {
     const list = mergeStoredKeys(
       layout[slot] ?? [],
       next,

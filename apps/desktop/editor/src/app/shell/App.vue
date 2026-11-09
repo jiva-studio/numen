@@ -13,7 +13,7 @@ import { formatErrorMessage } from '@numen/core-client'
 import '@numen/ui/styles.css'
 import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
-import { SlotDragLayer } from '@/features/slot-layout'
+import { SlotMoveMenu } from '@/features/slot-layout'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
@@ -67,10 +67,8 @@ const {
   highlightWindow,
   detachTab,
   frame,
-  slotDrag,
+  slotMoveMenu,
 } = useWindow()
-
-const { copy: slotDragCopy, position: slotDragPosition } = slotDrag
 
 const tabMenu = useWindowTabMenu({
   windowTabs,
@@ -184,7 +182,13 @@ function onShowTab(id: string) {
 
     <SlotViewHost :view="statusBarView" />
 
-    <SlotDragLayer :copy="slotDragCopy" :at="slotDragPosition" />
+    <SlotMoveMenu
+      v-if="slotMoveMenu.menu.value"
+      :items="slotMoveMenu.menu.value.items"
+      :at="slotMoveMenu.menu.value.at"
+      @choose="slotMoveMenu.choose"
+      @dismiss="slotMoveMenu.dismiss"
+    />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

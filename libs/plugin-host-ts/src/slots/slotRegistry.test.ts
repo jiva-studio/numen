@@ -1,7 +1,7 @@
 /** The entries of the slots of a window, as their owners read them. Every plugin here is invented. */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, shallowRef } from 'vue'
-import type { CommandTarget, SlotItem } from '@numen/plugin-sdk'
+import type { CommandTarget, SlotItem, SlotName } from '@numen/plugin-sdk'
 import { createSlotRegistry, type DeclaredSlotEntry, type SlotRegistryDeps } from './slotRegistry'
 
 const LEDGER = 'org.example.ledger'
@@ -637,10 +637,30 @@ describe('the layout of the slots', () => {
       'titleBar.status': [TASKS_KEY],
       'statusBar.right': [UPDATER_KEY],
     })
+    const listKeys = (slot: SlotName) => registry.listLayoutEntries(slot).map((one) => one.key)
 
-    expect(registry.listLayoutKeys('titleBar.status')).toStrictEqual([TASKS_KEY, STATS_KEY])
-    expect(registry.listLayoutKeys('statusBar.right')).toStrictEqual([UPDATER_KEY])
-    expect(registry.listLayoutKeys('statusBar.left')).toStrictEqual([])
+    expect(listKeys('titleBar.status')).toStrictEqual([TASKS_KEY, STATS_KEY])
+    expect(listKeys('statusBar.right')).toStrictEqual([UPDATER_KEY])
+    expect(listKeys('statusBar.left')).toStrictEqual([])
+  })
+
+  it('lists the layout entries of a slot with the title of the command, of the view and, failing that, the key', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.status', command: 'ledger.open' },
+        { ...STATS, title: 'Reef statistics' },
+        TASKS,
+        { pluginId: LEDGER, slot: 'titleBar.status', submenu: 'ledger.more', title: 'More' },
+      ],
+      { 'titleBar.status': [TASKS_KEY, STATS_KEY] },
+    )
+
+    expect(registry.listLayoutEntries('titleBar.status')).toStrictEqual([
+      { key: TASKS_KEY, title: TASKS_KEY },
+      { key: STATS_KEY, title: 'Reef statistics' },
+      { key: `titleBar.status|${LEDGER}/ledger.open`, title: 'Open ledger' },
+    ])
+    expect(registry.listLayoutEntries('statusBar.left')).toStrictEqual([])
   })
 
   it('lists the layout keys of a menu slot', () => {
@@ -652,7 +672,7 @@ describe('the layout of the slots', () => {
       undefined,
     )
 
-    expect(registry.listLayoutKeys('fileTree.context')).toStrictEqual([
+    expect(registry.listLayoutEntries('fileTree.context').map((one) => one.key)).toStrictEqual([
       `fileTree.context|${HARBOR}/harbor.open`,
       `fileTree.context|${LEDGER}/ledger.open`,
     ])

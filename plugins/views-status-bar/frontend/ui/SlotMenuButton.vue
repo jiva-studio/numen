@@ -10,7 +10,7 @@ import { Menu, measureRect, type MenuTrigger } from '@numen/ui'
 import { useSlotMenu, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import { WORDS } from '../lib/entries'
 
-// The attributes a row gives the button, such as the mark the window drags it by, go on the button.
+// The attributes a row gives the button, such as the mark the window finds it by, go on the button.
 defineOptions({ inheritAttrs: false })
 
 /* --------------------------------- Props ---------------------------------- */

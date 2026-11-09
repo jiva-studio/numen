@@ -61,6 +61,7 @@ export {
   createSlotRegistry,
   readManifestSlotEntries,
   type DeclaredSlotEntry,
+  type LayoutEntry,
   type SlotCommandLook,
   type SlotRegistry,
   type SlotRegistryDeps,

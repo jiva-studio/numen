@@ -1,11 +1,11 @@
-# Specification: Reorder and move slot entries by Cmd/Ctrl+drag
+# Specification: Reorder and move slot entries from a right-click menu
 
 **Task Slug:** `1803-slot-layout`
 **Date:** `2026-11-09`
 **Intent:** `.agents/tasks/1803-slot-layout/intent.md`
 **Issue:** jiva-studio/numen#1803. Depends on #1802 (fixed 32px bars, shared chip with a popover that turns upward).
 
-The layout of the slots is a section of the owner `app` in `numen.json`. It applies to every slot `slots.json` declares; today only the title bar and status bar slots are drawn with the SDK attributes, so only they can be dragged. The window reads the layout through the existing settings store, the plugin host applies it when it resolves a slot, and the window runs the drag over the elements that carry the SDK attributes. No protobuf message or RPC changes: the layout travels as JSON in the existing `Setting` of `GetSettings`, `WriteSettings` and `WatchSettings`.
+The layout of the slots is a section of the owner `app` in `numen.json`. It applies to the slots `slots.json` marks with `"arrangement": "user"`: the buttons and the chips of the title bar and the start and the end of the status bar. The window reads the layout through the existing settings store, the plugin host applies it when it resolves a slot, and the window runs a right-click menu over the elements that carry the SDK attributes. No protobuf message or RPC changes: the layout travels as JSON in the existing `Setting` of `GetSettings`, `WriteSettings` and `WatchSettings`.
 
 ## 1. Target Architecture & Interfaces
 
@@ -29,7 +29,7 @@ The layout of the slots is a section of the owner `app` in `numen.json`. It appl
 - An entry key is `<home slot>|<plugin id>/<id>`: the slot of the manifest entry that places the entry, a `|`, the plugin that places it, a `/`, then the view id or the command id exactly as the manifest entry writes it (`chat.open`, `app:note.create`). The application's own entries use the owner `app` (`titleBar.commands|app/app:settings.open`). The home slot is fixed by the manifest and does not change when the user moves the entry, so a key names one manifest entry. A submenu has no key and cannot be moved.
 - `|` is the separator because no part of a key can contain it: slot names in `slots.json` and submenu ids are words joined by dots (`submenuIDPattern`), a plugin id matches `[a-zA-Z0-9_-]+` parts joined by dots (`manifestIDPattern`), a view id matches `tabKindPattern` (`[a-z0-9]` words joined by `.`, `:` or `-`), and a command id is a declared `<word>.<word>` or a full id `<owner>:<word>.<word>` (`fullCommandIDPattern`); none admits `|`. `libs/plugin-host-ts` has no id pattern of its own and reads these ids from the manifest.
 - A key is unique without any rule: one manifest entry has one home slot, and the same command in two slots has two keys.
-- Any slot name that `slots.json` declares is valid in the map. A name it does not declare is refused on write and ignored on read.
+- Only a slot whose `arrangement` in `slots.json` is `user` is valid in the map. Any other name, a slot the manifests fix (`fileTree.context`) or a name `slots.json` does not declare, is refused on write and ignored on read.
 - The file is the only store. There is no default value; no `layout` key means the manifest order everywhere.
 
 ### 1.2 Wire
@@ -39,14 +39,15 @@ No change to any `.proto`.
 | Operation | Existing call    | Shape used                                                                                                                                                       |
 | :-------- | :--------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Read      | `GetSettings`    | `written` holds `app.layout.slots` like every other app section.                                                                                                 |
-| Write     | `WriteSettings`  | One request per drop. One `Setting` per changed slot: `at = ["app", "layout", "slots", "<slot>"]`, `value` = JSON list of keys. Both settings of a move go in the one request, which is written whole or not at all. |
+| Write     | `WriteSettings`  | One request per move. One `Setting` per changed slot: `at = ["app", "layout", "slots", "<slot>"]`, `value` = JSON list of keys. Both settings of a move go in the one request, which is written whole or not at all. |
 | Follow    | `WatchSettings`  | A change arrives as `at = ["app", "layout", "slots"]`, `value` = the whole map as JSON (or `null` when removed).                                                 |
 
 ### 1.3 Slot list (`libs/protocol/slots.json` and its generator)
 
-- `slots.json` has no `isBar` field. `libs/protocol/tools/slots.mjs` emits no `BarSlots`, `IsBarSlot`, `BAR_SLOTS` or `BarSlotName`; the existing slot names and `IsSlot` / `SlotName` are enough.
-- The `//` note of `slots.json` no longer mentions bars.
-- Removed from the branch: `libs/plugin-host-ts/src/slots/barSlots.ts`, `libs/plugin-sdk-ts/src/slots/barSlots.test.ts` and `libs/plugin-catalog/manifest/slot_bar_test.go` (replaced by the tests of §1.6). Any name for this in the layout code says "slot" (`SlotName`, `listSlots`), not "bar".
+- A slot has a field `arrangement`: `"user"` when the user moves entries into and out of the slot, `"manifest"` (the default when the field is absent) when the manifests of the plugins fix the entries. `titleBar.commands`, `titleBar.status`, `statusBar.left` and `statusBar.right` are `"user"`. The `//` note of `slots.json` describes the field.
+- `libs/protocol/tools/slots.mjs` writes both lists from it and refuses any other value. Go: `manifest.ListUserArrangedSlots()` and `manifest.IsUserArrangedSlot(name)`. TypeScript SDK: `listUserArrangedSlots()` and `isUserArrangedSlot(name)`. The host reads the slots to offer, and to take a list for, from these two; no host code lists slot names.
+- `slots.json` has no `isBar` field and the generator emits no `BarSlots`, `IsBarSlot`, `BAR_SLOTS` or `BarSlotName`.
+- Removed from the branch: `libs/plugin-host-ts/src/slots/barSlots.ts`, `libs/plugin-sdk-ts/src/slots/barSlots.test.ts` and `libs/plugin-catalog/manifest/slot_bar_test.go` (replaced by the tests of §1.6).
 
 ### 1.4 Settings adapter (Go, `libs/core/adapter/settings`)
 
@@ -85,10 +86,10 @@ import type { SlotName } from '@numen/plugin-sdk'
 /** The user's arrangement of the slots: per slot, the keys of its entries in drawing order. */
 export type SlotLayout = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
-/** The lists of the slots a drop changes, each the whole new list of its slot. */
+/** The lists of the slots a move changes, each the whole new list of its slot. */
 export type SlotLayoutChange = Readonly<Partial<Record<SlotName, readonly string[]>>>
 
-/** One drop: the entry, the slot it is drawn in, the slot it is dropped in, and the key it is dropped before. */
+/** One move: the entry, the slot it is drawn in, the slot it goes to, and the key it goes before. */
 export interface SlotMove {
   readonly key: string
   readonly from: SlotName
@@ -102,7 +103,7 @@ export function getLayoutKey(entry: DeclaredSlotEntry): string | undefined
 /** The layout a settings value holds. A slot that `slots.json` does not declare and a list that is not a list of strings are left out. */
 export function readSlotLayout(value: unknown): SlotLayout
 
-/** The lists a drop writes; empty when the drop leaves every slot as it is drawn. */
+/** The lists a move writes; empty when the move leaves every slot as it is drawn. */
 export function moveSlotEntry(
   layout: SlotLayout,
   drawn: Readonly<Record<SlotName, readonly string[]>>,
@@ -123,17 +124,17 @@ Changes to `slotRegistry.ts`:
 - `createSlotRegistry` returns `SlotRegistry`:
 
 ```ts
-/** The slots of the window with the lookups the drag of the slot entries needs. */
+/** The slots of the window with the lookups the move of the slot entries needs. */
 export interface SlotRegistry extends SlotHost {
   /** The layout key of a drawn item, by its `SlotItem.key`; undefined for a separator, a submenu or an unknown key. */
   findLayoutKey(itemKey: string): string | undefined
-  /** The layout keys of the commands and views drawn in a slot, in drawing order. */
-  listLayoutKeys(slot: SlotName): readonly string[]
+  /** The commands and views drawn in a slot, in drawing order, with the title the registry knows them by (the layout key when there is none). */
+  listLayoutEntries(slot: SlotName): readonly { key: string; title: string }[]
 }
 ```
 
 - Resolving a slot `P`:
-  1. A key belongs to the first slot, in `slots.json` order, whose list holds it. Keys are matched in every slot, menus included.
+  1. A key belongs to the first slot, in `slots.json` order, whose list holds it. Keys are matched in the slots whose arrangement is `user`.
   2. The entries drawn in `P` are those whose key belongs to `P`, in the order of the first position of their key in the list of `P`, followed by the entries whose manifest slot is `P` and whose key belongs to no slot, sorted by the current `compareInSlot` (group, then order, then plugin id).
   3. `keepFirstOfEachCommand` still applies.
   4. A separator is drawn between two neighbours whose groups (`group ?? ''`) differ. Its key is `<slot>/separator/<n>`, `n` counting the separators of the slot from 0. With no layout this gives the same order and separators as today.
@@ -157,43 +158,44 @@ The Go SDK has no slot API; nothing is added there.
 
 ### 1.9 Slot drawing
 
-Drop targets and draggable entries are the slots and entries that carry `SLOT_ATTRIBUTE` and `SLOT_ENTRY_ATTRIBUTE`. The shared slot row sets them, so today the title bar and status bar slots are drawn that way. Menus are not, so they have no drag until their drawing sets the attributes. No compatibility rule between slots exists: a drop moves an entry into any slot that carries the attribute.
+The entries a menu can move are the slots and entries that carry `SLOT_ATTRIBUTE` and `SLOT_ENTRY_ATTRIBUTE`. The shared slot row sets them, so the title bar and status bar slots are drawn that way. Menus are not, and their arrangement is `manifest`.
 
 - `plugins/views-title-bar/frontend/ui/TitleBarSlot.vue`: the slot element gets `SLOT_ATTRIBUTE` = `name`; each command button, command-with-items button and view wrapper gets `SLOT_ENTRY_ATTRIBUTE` = `entry.key`. Existing `data-title-bar-*` attributes stay.
 - `plugins/views-status-bar/frontend/ui/SlotRow.vue`: the slot element gets `SLOT_ATTRIBUTE` = `place`; each command button and command-with-items button gets `SLOT_ENTRY_ATTRIBUTE`; a view is wrapped in an element with `SLOT_ENTRY_ATTRIBUTE` (views are drawn bare today).
-- While the root element of the document has `data-numen-slot-dragging`, an empty slot element that carries the attribute keeps a minimum width of one chip (the #1802 chip height, 32px bar) so it can take a drop. No other drag code lives in the drawing plugins.
+- No other code for the menu lives in the drawing plugins.
 
 ### 1.10 Window (TypeScript, `apps/desktop/editor`)
 
-- `features/slot-layout/model/slotDrag.ts` — `createSlotDrag(deps)`, built on `usePressDrag` of `@numen/ui`:
+- `features/slot-layout/model/moveMenu.ts` — pure: `getMoveMenu(source, words, moved)` returns the items of the menu and the target of each item that moves the entry; `getMoveChange(layout, listKeys, move)` returns the lists a choice writes, through `moveSlotEntry`.
+  - One item, `Move to`, with one submenu for each slot of `listUserArrangedSlots()`, titled by `features/slot-layout/words.ts` (`Title bar buttons`, `Title bar status`, `Status bar start`, `Status bar end`).
+  - A slot submenu has one item for each entry `listLayoutEntries(slot)` returns, in drawing order, except the entry being moved; the item puts the entry before that one. Its last item, `At the end`, puts the entry last. An empty slot shows `At the end` only.
+- `features/slot-layout/model/useSlotMoveMenu.ts` — `useSlotMoveMenu(deps)`:
 
 ```ts
-export interface SlotDragDeps {
-  readonly isMac: () => boolean
-  readonly findLayoutKey: (itemKey: string) => string | undefined
-  readonly listLayoutKeys: (slot: SlotName) => readonly string[]
+export interface SlotMoveMenuDeps {
+  readonly findLayoutKey: (itemKey: string, slot: SlotName) => string | undefined
+  readonly listEntries: (slot: SlotName) => readonly LayoutEntry[]
+  readonly getSlotTitle: (slot: SlotName) => string
   readonly getLayout: () => SlotLayout
   readonly writeLayout: (change: SlotLayoutChange) => Promise<void>
+  readonly words: { moveTo: string; atTheEnd: string }
 }
 ```
 
-  - A `pointerdown` listener on the document in the capture phase. It acts only for the primary button with `metaKey` on macOS or `ctrlKey` elsewhere, on an element inside `[SLOT_ENTRY_ATTRIBUTE]` inside a `[SLOT_ATTRIBUTE]` whose item key has a layout key. Then it calls `preventDefault` and `stopPropagation` and starts the press. Every other press is not touched.
-  - Past the `usePressDrag` threshold the drag starts and `data-numen-slot-dragging` is set on the document root. The drop target is the element with `SLOT_ATTRIBUTE` under the pointer and the entry before which the pointer stands, by the horizontal midpoints of the entry elements of that slot (hidden entries of the title bar fit excluded).
-  - Drop on a target: `moveSlotEntry` with the current layout and `listLayoutKeys` of every slot that carries `SLOT_ATTRIBUTE`; a non-empty change is written with one `writeLayout` call. The `click` that follows a drag is stopped in the capture phase.
-  - Escape, or a drop outside the elements with `SLOT_ATTRIBUTE`, ends the drag with no write.
-  - A press that ends before the threshold leaves the following `click` to the entry.
-- `features/slot-layout/ui/SlotDragLayer.vue` — draws `DragPreview` of `@numen/ui` with the title of the entry and an insertion marker at the drop position. Props only.
+  - A `contextmenu` listener on the document in the capture phase. It acts for an element inside `[SLOT_ENTRY_ATTRIBUTE]` inside a `[SLOT_ATTRIBUTE]` whose slot is user-arranged and whose item key has a layout key. Then it calls `preventDefault` and opens the menu at the pointer. Every other right click is not touched.
+  - A choice of an item that moves the entry closes the menu and calls `moveSlotEntry` with the current layout and the drawn keys of the slot the entry is in and of the slot it goes to; a non-empty change is written with one `writeLayout` call, and an empty one writes nothing.
+- `features/slot-layout/ui/SlotMoveMenu.vue` — draws the `Menu` of `@numen/ui`; props only. It is mounted once in the window root.
+- Entries are views and commands alike. An entry that has a context menu of its own is not given the move items; no entry has one today.
 - `app/window/useWindow.ts` wiring:
   - `getSlotLayout` = `readSlotLayout(settings.rest.getSetting(['app', 'layout', 'slots']))` as a computed, passed into the plugin host deps (through `windowSlots.ts` / `useWindowPlugins.ts`).
   - `writeLayout(change)` = one `settings.rest.writeSettings` call with one edit per slot in `change` at `['app', 'layout', 'slots', slot]`. A failed write is reported by the store as other setting writes are, and the store's re-read draws the stored layout again.
-  - `SlotDragLayer` is mounted once in the window root.
 - Until the window has read the settings, slots draw the manifest order.
 
 ## 2. Blast Radius Matrix
 
 | Package / Path                   | File                                                                 | Action          | Downstream Consumers                                                   |
 | :------------------------------- | :------------------------------------------------------------------- | :-------------- | :--------------------------------------------------------------------- |
-| `libs/protocol`                  | `slots.json` (drop `isBar`), `tools/slots.mjs`                       | Modify          | generated Go and TS slot lists                                         |
+| `libs/protocol`                  | `slots.json` (the field `arrangement`), `tools/slots.mjs`            | Modify          | generated Go and TS slot lists                                         |
 | `libs/plugin-catalog/manifest`   | `slots.go` (generated), `slot_bar_test.go`                           | Modify / Delete | `slot.go`, `libs/core/adapter/settings`                                |
 | `libs/plugin-catalog/manifest`   | `slot.go`, `slot_test.go`                                            | Modify          | plugin install and load; **overlaps open PR #1795**                    |
 | `libs/core/adapter/settings`     | `document.go`, `owner.go`, new `layout.go`                           | Modify / Create | `GetSettings.written`, `WriteSettings`, settings reference docs        |
@@ -215,11 +217,12 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 - No plugin id appears in `libs/core`, `apps/*` or `libs/ui` (§11 g). Keys are data from the file.
 - Plugins that draw a slot do not import `@numen/plugin-host`, `@numen/core-client` or each other. They only mark elements with the SDK attributes.
 - The plugin host does not read or write settings itself; the window passes `getSlotLayout` in and writes through its settings store.
-- No module-level mutable state in the window; the drag state lives in the composable.
-- A `.vue` file uses no client; `SlotDragLayer.vue` takes props only.
+- No module-level mutable state in the window; the state of the menu lives in the composable.
+- A `.vue` file uses no client; `SlotMoveMenu.vue` takes props only.
 - No reset, hide or per-vault layout, no palette command and no settings page row.
-- No `isBar` field, no bar subset of the slots, no compatibility rule between slots.
-- Menus (`fileTree.context`, `tabStrip.context`, `plexGraph.context`, `palette.searchResult`, submenus) are not drawn with the SDK attributes in this task and have no drag.
+- No `isBar` field, no bar subset of the slots, no compatibility rule between slots, no list of slot names in host code.
+- No drag of entries, no modifier key, no drop marker.
+- Menus (`fileTree.context`, `tabStrip.context`, `plexGraph.context`, `palette.searchResult`, submenus) have the arrangement `manifest`: no list is taken for them and their entries have no move menu.
 - No backward compatibility: no migration of an older layout and no reader of another shape.
 - No test reads CSS text.
 
@@ -267,11 +270,11 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 - **When**: the slots are resolved
 - **Then**: the first is drawn in `titleBar.status` only (first in `slots.json` order), and the second once, at its first position.
 
-### AC-8: A menu slot takes the layout
+### AC-8: A slot the manifests fix takes no layout
 
-- **Given**: a command placed by manifest in `fileTree.context` and in `titleBar.commands`, and a layout that lists the key of the `fileTree.context` placement in `statusBar.left`
-- **When**: `fileTree.context`, `statusBar.left` and `titleBar.commands` are resolved
-- **Then**: the command is drawn in `statusBar.left` (for the `fileTree.context` placement) and in `titleBar.commands`, and not in `fileTree.context`. With no layout, `fileTree.context` resolves as before.
+- **Given**: a command placed by manifest in `fileTree.context` and in `titleBar.commands`, and a layout list for `fileTree.context`
+- **When**: `readSlotLayout` reads the layout and the slots are resolved
+- **Then**: the list of `fileTree.context` is left out, and `fileTree.context` resolves as the manifests place it.
 
 ### AC-9: A reorder writes one slot
 
@@ -291,10 +294,10 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 - **When**: `b` is moved before `a`
 - **Then**: the new list is `[b, a, x]`.
 
-### AC-12: A drop at the same place writes nothing
+### AC-12: A move to the same place writes nothing
 
 - **Given**: any drawn layout
-- **When**: an entry is dropped before the key that already follows it, or at the end of its own slot when it is last
+- **When**: an entry is moved before the key that already follows it, or to the end of its own slot when it is last
 - **Then**: the change is empty and the window makes no write.
 
 ### AC-13: The layout is written, read back and reported
@@ -306,14 +309,14 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 ### AC-14: A wrong layout write is refused
 
 - **Given**: a settings file
-- **When**: a write puts a list under `app.layout.slots.fileTree.context`, a string instead of a list, a list with a number, a key with no `/`, or a key twice in one list
+- **When**: a write puts a list under `app.layout.slots.fileTree.context` (a slot with the arrangement `manifest`), a string instead of a list, a list with a number, a key with no `/`, or a key twice in one list
 - **Then**: the write fails with `ErrNotASetting` and the file is unchanged.
 
 ### AC-15: A wrong layout in the file is ignored with a notice
 
-- **Given**: a hand-written file whose `app.layout.slots` holds a slot name that `slots.json` does not declare and one valid slot list
+- **Given**: a hand-written file whose `app.layout.slots` holds a slot name that `slots.json` does not declare, a list for a slot whose arrangement is `manifest`, and one valid slot list
 - **When**: the settings are read
-- **Then**: a notice names the undeclared slot, the valid list is in force, and the file is not rewritten.
+- **Then**: a notice names each of the two slots, the valid list is in force, and the file is not rewritten.
 
 ### AC-16: A hand edit reaches the window
 
@@ -351,46 +354,46 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 - **When**: they are rendered
 - **Then**: each slot element carries `data-numen-slot` with its slot name, and each command and view element carries `data-numen-slot-entry` with its item key.
 
-### AC-21: Cmd/Ctrl+drag moves an entry and writes once
+### AC-21: A right click on an entry opens the move menu
 
-- **Given**: a window on Linux with two entries in `titleBar.status`
-- **When**: the user presses Ctrl on the second entry, moves past the threshold, and releases over the first entry's left half
-- **Then**: one `writeSettings` call is made with one edit at `["app","layout","slots","titleBar.status"]`, and the slot draws the new order. With `metaKey` instead of `ctrlKey` on Linux, no drag starts; on macOS `metaKey` starts it.
+- **Given**: a window with two entries in `titleBar.status`, one in `statusBar.left` and an empty `titleBar.commands`
+- **When**: the user right-clicks the first entry of `titleBar.status`
+- **Then**: the page's own menu is prevented and a menu opens at the pointer with the one item `Move to`. Its submenu lists `Title bar buttons` (only `At the end`), `Title bar status` (the other entry by title, then `At the end`), `Status bar start` (its entry, then `At the end`) and `Status bar end` (only `At the end`). The entry being moved is in none of them.
 
-### AC-22: A plain press is left alone
+### AC-22: A right click elsewhere is left alone
 
-- **Given**: an entry of a slot that carries the attributes
-- **When**: the user presses it without the modifier, or with the modifier and releases before the threshold
-- **Then**: the host does not prevent the event, no drag starts, and the click reaches the entry, which runs its command.
+- **Given**: an element that is not inside an entry, or an entry of a slot whose arrangement is `manifest`
+- **When**: the user right-clicks it
+- **Then**: the host does not prevent the event and opens no menu. A plain click on an entry runs its command as before.
 
-### AC-23: The click after a drag does nothing
+### AC-23: A choice writes the move once
 
-- **Given**: a Cmd/Ctrl+drag that ends with a drop
-- **When**: the browser sends the `click` that follows
-- **Then**: the entry's command does not run.
+- **Given**: the menu open on the second entry of `titleBar.status`
+- **When**: the user chooses `Move to`, `Status bar start`, the entry of that slot
+- **Then**: one `writeSettings` call holds one edit for `titleBar.status` and one for `statusBar.left`, the entry before the one chosen, and the menu closes.
 
-### AC-24: A drag can be cancelled
+### AC-24: A move that changes nothing writes nothing
 
-- **Given**: a running drag
-- **When**: the user presses Escape, or releases outside the elements with `data-numen-slot`
-- **Then**: no write is made and the slots are as before.
+- **Given**: the menu open on an entry
+- **When**: the user chooses the entry that already follows it in its slot, or `At the end` for the last entry of its slot
+- **Then**: no write is made and the menu closes. An item that is not a move (`Move to`) writes nothing and leaves the menu open.
 
-### AC-25: An empty slot takes a drop
+### AC-25: An empty slot takes a move
 
-- **Given**: `statusBar.left` with no entries
-- **When**: the user drags an entry over it and releases
-- **Then**: the entry is drawn in `statusBar.left` and one write holds both lists.
+- **Given**: `statusBar.right` with no entries
+- **When**: the user chooses `Move to`, `Status bar end`, `At the end` on an entry of another slot
+- **Then**: the entry is drawn in `statusBar.right` and one write holds both lists.
 
 ### AC-26: A failed write restores the slots
 
 - **Given**: a write of the layout that fails
-- **When**: the drop ends
+- **When**: the move ends
 - **Then**: the window reports the failure as other setting writes do, and the slots draw the layout the file holds.
 
 ### AC-27 (e2e): Reorder, move, restart
 
 - **Given**: a desktop window with the updater showing a new release (stand-in), index stats and tasks in the title bar, no `app.layout` in `numen.json`
-- **When**: the user Ctrl+drags (Cmd+drag on macOS) the tasks chip before the index stats chip, then Ctrl+drags the updater chip into the right end of the status bar, then the application restarts
+- **When**: the user moves the tasks chip before the index stats chip and the updater chip to the end of the right end of the status bar, each from its right-click menu, then the application restarts
 - **Then**: after the restart the title bar shows tasks before stats, the status bar's right end shows the updater, the title bar does not, `numen.json` holds `app.layout.slots` with both lists, and clicking the updater chip opens its popover above the chip (the popover's bottom edge is at or above the chip's top edge).
 
 ## 5. Decisions (2026-11-09)
@@ -398,11 +401,13 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 1. **Place in the file:** `app.layout.slots`, as proposed; the first level of `numen.json` takes only `v`, `app` and plugin ids.
 2. **Wire:** no protobuf change; the layout goes through `WriteSettings`, `GetSettings` and `WatchSettings`.
 3. **Attributes:** `data-numen-slot` and `data-numen-slot-entry` are exported from the TS SDK as proposed. They are DOM attributes of the TS host and have no Go counterpart.
-4. **Cmd/Ctrl press without movement:** accepted as proposed (a plain button runs, a menu button that opens on press does not).
-5. **Unlisted entry with a false `when` at drop time:** not added to the list, as proposed.
+4. **Decision 2026-11-09: no drag of entries at all.** The user moves an entry from a right-click menu, `Move to`, a slot and the entry to go before or `At the end`. There is no modifier key, no drop marker and no sliding of entries.
+5. **Unlisted entry with a false `when` at move time:** not added to the list, as proposed.
 6. **Key in two lists (hand-edited file):** drawn in the first slot in `slots.json` order, both copies kept in the file, as proposed.
 7. **Two plugins placing the same full command in one slot:** the first is drawn, the second is not movable, as proposed.
 8. **Decision 2026-11-09: no `isBar`, slots are generic; the key includes the home slot.**
 9. **Decision 2026-11-09: same view/command id twice in one slot of one plugin is refused, so the key stays unique; no kind marker in the key.**
+10. **Decision 2026-11-09: a slot has the field `arrangement` in `slots.json`.** `"user"` means the user moves entries into and out of the slot; `"manifest"` (the default) means the manifests fix the entries. The four bar slots are `"user"`. Both SDKs list and test it (`listUserArrangedSlots`, `isUserArrangedSlot`; `ListUserArrangedSlots`, `IsUserArrangedSlot`). The Go layout check refuses a list for any other slot; no host code lists slot names.
+11. **Decision 2026-11-09: the menu is the `Menu` of `@numen/ui`, mounted once in `App.vue`.** `Move to` opens one submenu for each user-arranged slot; an entry is listed by its registry title (the title of a command, the `title` of the manifest entry of a view), failing that by its layout key.
 
 PR #1795 (`feat/slot-entry-values`) changes `slot.go`, `slotRegistry.ts`, the SDK `slots.ts` and `docs/plugins/README.md`; the branch that merges second rebases onto the first.

@@ -58,7 +58,7 @@ function isDrawn(entry: SlotItem): boolean {
   return !props.hidden.has(props.getKey(entry))
 }
 
-/** The attribute the window finds a command or a view by when it drags the entries of the bars. */
+/** The attribute the window finds a command or a view by when it opens the menu of an entry of the bars. */
 function markEntry(entry: SlotItem): Record<string, string> {
   return { [SLOT_ENTRY_ATTRIBUTE]: entry.key }
 }
@@ -67,7 +67,6 @@ function markEntry(entry: SlotItem): Record<string, string> {
 <template>
   <div
     class="title-bar__slot"
-    :class="{ 'title-bar__slot--empty': entries.length === 0 }"
     :data-title-bar-slot="name"
     v-bind="{ [SLOT_ATTRIBUTE]: name }"
   >

@@ -63,11 +63,6 @@
   height: 100%;
 }
 
-/* While the window drags a bar entry, an empty slot keeps the room of one chip to take the drop. */
-:root[data-numen-slot-dragging] .title-bar__slot--empty {
-  min-inline-size: 2rem;
-}
-
 /* The gap between two groups of a slot. */
 .title-bar__gap {
   flex: none;

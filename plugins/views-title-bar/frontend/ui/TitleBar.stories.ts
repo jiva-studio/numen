@@ -410,28 +410,3 @@ export const NothingFound: Story = {
     await expect(page.queryAllByRole('option')).toHaveLength(0)
   },
 }
-
-/** While the window drags a slot entry, an empty slot can take the drop: a point inside it hits the slot. */
-export const EmptySlotsWhileDragging: Story = {
-  args: { commands: [], status: [] },
-  play: async ({ canvasElement }) => {
-    const root = canvasElement.ownerDocument.documentElement
-    root.setAttribute('data-numen-slot-dragging', '')
-    try {
-      for (const name of ['titleBar.commands', 'titleBar.status']) {
-        await waitFor(() => {
-          const slot = canvasElement.querySelector(`[data-numen-slot="${name}"]`)
-          if (!slot) throw new Error(`the slot ${name} is not drawn`)
-          const rect = slot.getBoundingClientRect()
-          const hit = canvasElement.ownerDocument.elementFromPoint(
-            rect.left + rect.width / 2,
-            rect.top + rect.height / 2,
-          )
-          return expect(hit?.closest('[data-numen-slot]')).toBe(slot)
-        })
-      }
-    } finally {
-      root.removeAttribute('data-numen-slot-dragging')
-    }
-  },
-}

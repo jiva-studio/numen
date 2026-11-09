@@ -584,7 +584,7 @@ describe('a command with items', () => {
   })
 })
 
-describe('the marks the window drags the entries by', () => {
+describe('the marks the window finds the entries by', () => {
   const findMarks = (element: Element) => ({
     slot: element.closest('[data-numen-slot]')?.getAttribute('data-numen-slot'),
     entry: element.closest('[data-numen-slot-entry]')?.getAttribute('data-numen-slot-entry'),

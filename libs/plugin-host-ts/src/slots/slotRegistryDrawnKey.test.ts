@@ -1,4 +1,4 @@
-/** The layout key a drag uses is the key of the entry the slot draws. Every plugin here is invented. */
+/** The layout key the move menu uses is the key of the entry the slot draws. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
 import { createSlotRegistry, type DeclaredSlotEntry } from './slotRegistry'
 
@@ -21,7 +21,7 @@ describe('the layout key of a command placed twice in one slot', () => {
     expect(registry.findLayoutKey(itemKey, 'titleBar.commands')).toBe(
       `titleBar.commands|${LEDGER}/${LEDGER}:ledger.open`,
     )
-    expect(registry.listLayoutKeys('titleBar.commands')).toStrictEqual([
+    expect(registry.listLayoutEntries('titleBar.commands').map((one) => one.key)).toStrictEqual([
       `titleBar.commands|${LEDGER}/${LEDGER}:ledger.open`,
     ])
   })

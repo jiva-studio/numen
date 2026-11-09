@@ -1,24 +1,13 @@
-/** The layout of the slots: its keys, how a settings value is read, and what a drop writes. Every plugin here is invented. */
+/** The layout of the slots: its keys, how a settings value is read, and what a move writes. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
-import type { SlotName } from '@numen/plugin-sdk'
+import { SLOT, type SlotName } from '@numen/plugin-sdk'
 import { getLayoutKey, moveSlotEntry, readSlotLayout, type SlotLayout } from './slotLayout'
 
 const STATS = 'titleBar.status|org.example.reef/stats'
 const TASKS = 'titleBar.status|org.example.tide/status'
 const UPDATER = 'titleBar.status|org.example.harbor/update'
 
-const SLOT_NAMES: readonly SlotName[] = [
-  'titleBar',
-  'statusBar',
-  'titleBar.commands',
-  'titleBar.status',
-  'statusBar.left',
-  'statusBar.right',
-  'fileTree.context',
-  'tabStrip.context',
-  'plexGraph.context',
-  'palette.searchResult',
-]
+const SLOT_NAMES: readonly SlotName[] = Object.values(SLOT)
 
 const drawnAs = (slots: Partial<Record<SlotName, readonly string[]>>) =>
   ({
@@ -91,16 +80,12 @@ describe('a layout read from the settings', () => {
     ).toStrictEqual({ 'titleBar.status': [TASKS, STATS], 'statusBar.right': [UPDATER] })
   })
 
-  it('keeps the list of a menu slot', () => {
-    expect(readSlotLayout({ 'fileTree.context': [STATS] })).toStrictEqual({
-      'fileTree.context': [STATS],
-    })
-  })
-
-  it('leaves out a slot that slots.json does not declare and a list that is not a list of strings', () => {
+  it('leaves out a slot the manifests fix, a slot slots.json does not declare and a list that is not a list of strings', () => {
     expect(
       readSlotLayout({
         'titleBar.status': [TASKS],
+        'fileTree.context': [STATS],
+        titleBar: [STATS],
         'sideBar.top': [STATS],
         'statusBar.left': STATS,
         'statusBar.right': [UPDATER, 3],
@@ -115,7 +100,7 @@ describe('a layout read from the settings', () => {
   })
 })
 
-describe('a drop of a slot entry', () => {
+describe('a move of a slot entry', () => {
   it('within its slot writes that slot alone, in the new order', () => {
     const change = moveSlotEntry({}, drawnAs({ 'titleBar.status': [STATS, TASKS] }), {
       key: TASKS,
@@ -140,20 +125,7 @@ describe('a drop of a slot entry', () => {
     })
   })
 
-  it('into a menu slot writes both slots', () => {
-    const change = moveSlotEntry({}, drawnAs({ 'titleBar.status': [STATS, UPDATER] }), {
-      key: UPDATER,
-      from: 'titleBar.status',
-      to: 'fileTree.context',
-    })
-
-    expect(change).toStrictEqual({
-      'titleBar.status': [STATS],
-      'fileTree.context': [UPDATER],
-    })
-  })
-
-  it('into another slot goes before the key it is dropped on', () => {
+  it('into another slot goes before the key it is moved before', () => {
     const change = moveSlotEntry(
       {},
       drawnAs({ 'titleBar.status': [STATS, UPDATER], 'statusBar.right': [TASKS] }),

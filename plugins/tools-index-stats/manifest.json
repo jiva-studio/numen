@@ -8,7 +8,13 @@
   "contributes": {
     "category": "tools",
     "slots": [
-      { "slot": "titleBar.status", "view": "stats", "order": 10, "when": "window.isVaultOpen" }
+      {
+        "slot": "titleBar.status",
+        "view": "stats",
+        "title": "Index statistics",
+        "order": 10,
+        "when": "window.isVaultOpen"
+      }
     ]
   },
   "permissions": ["index:read"],

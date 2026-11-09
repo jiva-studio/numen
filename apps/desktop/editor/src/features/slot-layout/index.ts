@@ -1,10 +1,6 @@
 /**
- * Public exports for the Cmd/Ctrl+drag of the bar entries.
+ * Public exports for the right-click menu that moves the entries of the bars.
  */
-export {
-  createSlotDrag,
-  type SlotDragCopy,
-  type SlotDragDeps,
-  type SlotDragState,
-} from './model/slotDrag'
-export { default as SlotDragLayer } from './ui/SlotDragLayer.vue'
+export { useSlotMoveMenu, type SlotMoveMenu, type SlotMoveMenuDeps } from './model/useSlotMoveMenu'
+export { MOVE_WORDS, getSlotTitle } from './words'
+export { default as SlotMoveMenu } from './ui/SlotMoveMenu.vue'

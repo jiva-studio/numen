@@ -59,15 +59,21 @@ export interface SlotRegistryDeps {
   readonly getLayout?: () => SlotLayout | undefined
 }
 
-/** The slots of the window with the lookups the drag of the slot entries needs. */
+/** One command or view drawn in a slot: its layout key and the title the registry knows it by. */
+export interface LayoutEntry {
+  readonly key: string
+  readonly title: string
+}
+
+/** The slots of the window with the lookups the move of the slot entries needs. */
 export interface SlotRegistry extends SlotHost {
   /**
    * The layout key of a drawn item, by its `SlotItem.key`; undefined for a separator, a submenu or an
    * unknown key. An entry placed in several slots has one item key; `slot` names the one drawn there.
    */
   findLayoutKey(itemKey: string, slot?: SlotName): string | undefined
-  /** The layout keys of the commands and views drawn in a slot, in drawing order. */
-  listLayoutKeys(slot: SlotName): readonly string[]
+  /** The commands and views drawn in a slot, in drawing order; a view the manifest gives no title has the layout key as its title. */
+  listLayoutEntries(slot: SlotName): readonly LayoutEntry[]
 }
 
 const KNOWN_SLOTS: ReadonlySet<string> = new Set(Object.values(SLOT))
@@ -314,8 +320,13 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotRegistry {
   return {
     getEntries: (slot: SlotPlace, target?: CommandTarget) => resolve(slot, target),
     findLayoutKey,
-    listLayoutKeys: (slot) =>
-      sortEntries(slot, undefined).flatMap(({ entry }) => getLayoutKey(entry) ?? []),
+    listLayoutEntries: (slot) =>
+      sortEntries(slot, undefined).flatMap(({ entry, item }) => {
+        const key = getLayoutKey(entry)
+        if (key === undefined) return []
+        const title = item.kind === 'command' ? item.title : entry.title
+        return [{ key, title: title || key }]
+      }),
     watchEntries: (slot, handler, target): Disposable => {
       const stop = watch(() => resolve(slot, target), handler, { immediate: true })
       return { dispose: stop }
