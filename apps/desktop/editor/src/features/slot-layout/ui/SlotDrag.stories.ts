@@ -1,5 +1,5 @@
 /**
- * The Cmd/Ctrl+drag of the entries of the bars, over two bars drawn the way the bar plugins mark
+ * The Cmd/Ctrl+drag of slot entries, over slots drawn the way the drawing plugins mark
  * them. Where a drop lands depends on where the entries are drawn, which needs a browser. Every
  * plugin and entry here is invented.
  */
@@ -8,11 +8,17 @@ import { expect, fn, waitFor } from 'storybook/test'
 import { defineComponent, h, type PropType } from 'vue'
 import { createSlotDrag } from '../model/slotDrag'
 
-const STATS = { item: 'org.example.reef/view/stats', layout: 'org.example.reef/stats' }
-const TASKS = { item: 'org.example.tide/view/status', layout: 'org.example.tide/status' }
+const STATS = {
+  item: 'org.example.reef/view/stats',
+  layout: 'titleBar.status|org.example.reef/stats',
+}
+const TASKS = {
+  item: 'org.example.tide/view/status',
+  layout: 'titleBar.status|org.example.tide/status',
+}
 const CLOCK = {
   item: 'org.example.harbor/command/org.example.harbor:clock.open',
-  layout: 'org.example.harbor/clock.open',
+  layout: 'statusBar.right|org.example.harbor/clock.open',
 }
 
 const LAYOUT_KEYS: Readonly<Record<string, string>> = {
@@ -45,8 +51,8 @@ const drawEntry = (key: string, name: string, onRun: Run) =>
     ),
   ])
 
-/** Two bars marked as the bar plugins mark them, with the drag of the window over them. */
-const Bars = defineComponent({
+/** Slots marked as the drawing plugins mark them, with the drag of the window over them. */
+const Slots = defineComponent({
   props: {
     isMac: { type: Boolean, default: false },
     onRun: { type: Function as PropType<Run>, required: true },
@@ -70,16 +76,23 @@ const Bars = defineComponent({
         },
         [
           h('header', { style: row }, [
-            h('div', {
-              'data-numen-slot': 'titleBar.commands',
-              style: `${row}; min-inline-size: 40px`,
-            }),
+            h(
+              'div',
+              { 'data-numen-slot': 'titleBar.commands', style: `${row}; min-inline-size: 40px` },
+              [drawEntry('org.example.dock/view/plain', 'plain', props.onRun)],
+            ),
             h('div', { 'data-numen-slot': 'titleBar.status', style: row }, [
               drawEntry(STATS.item, 'stats', props.onRun),
               drawEntry(TASKS.item, 'tasks', props.onRun),
             ]),
           ]),
-          h('main', { 'data-outside': '', style: 'block-size: 120px' }, 'The editor'),
+          h('main', { style: row }, [
+            h('div', {
+              'data-numen-slot': 'fileTree.context',
+              style: `${row}; min-inline-size: 120px`,
+            }),
+          ]),
+          h('div', { 'data-outside': '', style: 'block-size: 60px' }, 'The editor'),
           h('footer', { style: `${row}; justify-content: space-between` }, [
             h('div', {
               'data-numen-slot': 'statusBar.left',
@@ -96,9 +109,9 @@ const Bars = defineComponent({
 
 const meta = {
   title: 'Window/Slot Drag',
-  component: Bars,
+  component: Slots,
   args: { isMac: false, onRun: fn(), writeLayout: fn(() => Promise.resolve()) },
-} satisfies Meta<typeof Bars>
+} satisfies Meta<typeof Slots>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -304,8 +317,8 @@ export const EscapeCancelsADrag: Story = {
   },
 }
 
-/** A release outside the four bar slots ends the drag with no write. */
-export const DropOutsideTheBarsWritesNothing: Story = {
+/** A release outside every element that carries the slot attribute ends the drag with no write. */
+export const DropOutsideTheSlotsWritesNothing: Story = {
   play: async ({ canvasElement, args }) => {
     const tasks = getEntry(canvasElement, 'tasks')
     const from = getCenter(tasks)
@@ -354,7 +367,7 @@ export const DropBeforeAnEntryOfAnotherSlot: Story = {
 
 /**
  * A write the settings store answers with a failure: the store reports it and reads the file again,
- * and its promise settles. The drag ends, the bars stay as the file draws them, and the next drag
+ * and its promise settles. The drag ends, the slots stay as the file draws them, and the next drag
  * writes again.
  */
 export const FailedWriteEndsTheDrag: Story = {
@@ -368,9 +381,42 @@ export const FailedWriteEndsTheDrag: Story = {
     dragTo(getEntry(canvasElement, 'tasks'), getLeftQuarter(getEntry(canvasElement, 'stats')), CTRL)
     await waitFor(() => expect(args.writeLayout).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(isDragging()).toBe(false))
-    await expect(order()).toStrictEqual(['stats', 'tasks', 'clock'])
+    await expect(order()).toStrictEqual(['plain', 'stats', 'tasks', 'clock'])
 
     dragTo(getEntry(canvasElement, 'tasks'), getLeftQuarter(getEntry(canvasElement, 'stats')), CTRL)
     await waitFor(() => expect(args.writeLayout).toHaveBeenCalledTimes(2))
+  },
+}
+
+/** An entry the layout has no key for, such as a submenu, is left to the page even with the modifier. */
+export const EntryWithoutALayoutKeyIsLeftAlone: Story = {
+  play: async ({ canvasElement, args }) => {
+    const plain = getEntry(canvasElement, 'plain')
+
+    const down = dragTo(plain, getLeftQuarter(getEntry(canvasElement, 'stats')), CTRL)
+    click(plain, CTRL)
+    await settle()
+
+    await expect(down.defaultPrevented).toBe(false)
+    await expect(isDragging()).toBe(false)
+    await expect(args.writeLayout).not.toHaveBeenCalled()
+    await expect(args.onRun).toHaveBeenCalledWith('plain')
+  },
+}
+
+/** Any element that carries the slot attribute takes a drop, a menu slot as well as the title bar. */
+export const DropIntoAnySlotThatCarriesTheAttribute: Story = {
+  play: async ({ canvasElement, args }) => {
+    dragTo(
+      getEntry(canvasElement, 'tasks'),
+      getCenter(getPart(canvasElement, '[data-numen-slot="fileTree.context"]')),
+      CTRL,
+    )
+
+    await waitFor(() => expect(args.writeLayout).toHaveBeenCalledTimes(1))
+    await expect(args.writeLayout).toHaveBeenCalledWith({
+      'titleBar.status': [STATS.layout],
+      'fileTree.context': [TASKS.layout],
+    })
   },
 }

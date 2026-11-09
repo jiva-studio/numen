@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	layoutTasks   = "org.example.tide/status"
-	layoutStats   = "org.example.reef/stats"
-	layoutUpdater = "org.example.harbor/update"
+	layoutTasks   = "titleBar.status|org.example.tide/status"
+	layoutStats   = "titleBar.status|org.example.reef/stats"
+	layoutUpdater = "titleBar.status|org.example.harbor/update"
 )
 
 func layoutSlotsPath() []string { return []string{"app", "layout", "slots"} }
@@ -112,12 +112,12 @@ func TestALayoutEditedByHandReachesEveryReader(t *testing.T) {
 
 func TestAWrongLayoutWriteIsRefusedAndLeavesTheFileAsItWas(t *testing.T) {
 	for what, lists := range map[string]map[string]string{
-		"a list under a menu slot":   {"fileTree.context": `["` + layoutTasks + `"]`},
-		"a string instead of a list": {"titleBar.status": `"` + layoutTasks + `"`},
-		"a list holding a number":    {"titleBar.status": `["` + layoutTasks + `",3]`},
-		"a key with no slash":        {"titleBar.status": `["status"]`},
-		"a key twice in one list":    {"titleBar.status": `["` + layoutTasks + `","` + layoutTasks + `"]`},
-		"a move with one wrong list": {"titleBar.status": `["` + layoutStats + `"]`, "statusBar.right": `["` + layoutUpdater + `",1]`},
+		"a list under an undeclared slot": {"sideBar.top": `["` + layoutTasks + `"]`},
+		"a string instead of a list":      {"titleBar.status": `"` + layoutTasks + `"`},
+		"a list holding a number":         {"titleBar.status": `["` + layoutTasks + `",3]`},
+		"a key with no slash":             {"titleBar.status": `["titleBar.status|org.example.tide"]`},
+		"a key twice in one list":         {"titleBar.status": `["` + layoutTasks + `","` + layoutTasks + `"]`},
+		"a move with one wrong list":      {"titleBar.status": `["` + layoutStats + `"]`, "statusBar.right": `["` + layoutUpdater + `",1]`},
 	} {
 		cfg, path, _ := openInstallation(t, `{}`)
 

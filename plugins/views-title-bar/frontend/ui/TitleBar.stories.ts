@@ -411,7 +411,7 @@ export const NothingFound: Story = {
   },
 }
 
-/** While the window drags a bar entry, an empty slot keeps the room of one chip to take the drop. */
+/** While the window drags a slot entry, an empty slot can take the drop: a point inside it hits the slot. */
 export const EmptySlotsWhileDragging: Story = {
   args: { commands: [], status: [] },
   play: async ({ canvasElement }) => {
@@ -422,7 +422,12 @@ export const EmptySlotsWhileDragging: Story = {
         await waitFor(() => {
           const slot = canvasElement.querySelector(`[data-numen-slot="${name}"]`)
           if (!slot) throw new Error(`the slot ${name} is not drawn`)
-          return expect(slot.getBoundingClientRect().width).toBeGreaterThanOrEqual(20)
+          const rect = slot.getBoundingClientRect()
+          const hit = canvasElement.ownerDocument.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+          )
+          return expect(hit?.closest('[data-numen-slot]')).toBe(slot)
         })
       }
     } finally {

@@ -1,23 +1,30 @@
-import { test, expect, type APIRequestContext, type Locator, type Page } from '../../support/test.js'
+import {
+  test,
+  expect,
+  type APIRequestContext,
+  type Locator,
+  type Page,
+} from '../../support/test.js'
 import { NEW_RELEASE } from '../../../scripts/stand-ins.mjs'
 import { openWorkspace } from '../../support/workspace.js'
 import { getStandInsOrigin } from '../../support/media.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
 /**
- * The bar entries moved by Cmd/Ctrl+drag: the order and the bar the user gives them are kept in
+ * The slot entries moved by Cmd/Ctrl+drag: the order and the slot the user gives them are kept in
  * `app.layout.slots` of numen.json and drawn again after the window starts anew.
  */
-const TASKS_KEY = 'md.numen.views.tasks/status'
-const STATS_KEY = 'md.numen.tools.index.stats/stats'
-const UPDATER_KEY = 'md.numen.tools.updater/update'
+const TASKS_KEY = 'titleBar.status|md.numen.views.tasks/status'
+const STATS_KEY = 'titleBar.status|md.numen.tools.index.stats/stats'
+const UPDATER_KEY = 'titleBar.status|md.numen.tools.updater/update'
 
 /** The window takes Cmd on macOS and Ctrl elsewhere; the core runs on the machine of the test. */
 const MODIFIER = process.platform === 'darwin' ? 'Meta' : 'Control'
 
 const getTasks = (page: Page): Locator => page.locator('.tasks-status__trigger')
 const getStats = (page: Page): Locator => page.locator('.index-stats__trigger')
-const getUpdater = (page: Page): Locator => page.getByRole('button', { name: /^Update available: v/ })
+const getUpdater = (page: Page): Locator =>
+  page.getByRole('button', { name: /^Update available: v/ })
 const getTitleBar = (page: Page): Locator => page.locator('[data-title-bar]')
 const getStatusEnd = (page: Page): Locator => page.locator('[data-numen-slot="statusBar.right"]')
 
@@ -68,7 +75,7 @@ const withdrawNewRelease = async (request: APIRequestContext): Promise<void> => 
 const readLayoutSlots = async (request: APIRequestContext): Promise<unknown> =>
   ((await readOwner(request, 'app'))['layout'] as { slots?: unknown } | undefined)?.slots
 
-test.describe('the layout of the bar entries', () => {
+test.describe('the layout of the slot entries', () => {
   test.describe.configure({ timeout: 120_000 })
 
   test.beforeEach(async ({ request }) => {
@@ -99,8 +106,12 @@ test.describe('the layout of the bar entries', () => {
       .poll(async () => (await getBox(getTasks(page))).x < (await getBox(getStats(page))).x)
       .toBe(true)
 
-    await dragWithModifier(page, getUpdater(page), async () => getCenter(await getBox(getStatusEnd(page))))
-    await expect(getStatusEnd(page).getByRole('button', { name: /^Update available: v/ })).toBeVisible()
+    await dragWithModifier(page, getUpdater(page), async () =>
+      getCenter(await getBox(getStatusEnd(page))),
+    )
+    await expect(
+      getStatusEnd(page).getByRole('button', { name: /^Update available: v/ }),
+    ).toBeVisible()
 
     await openWorkspace(page)
 
@@ -109,7 +120,9 @@ test.describe('the layout of the bar entries', () => {
     expect((await getBox(getTasks(page))).x).toBeLessThan((await getBox(getStats(page))).x)
     const updater = getStatusEnd(page).getByRole('button', { name: /^Update available: v/ })
     await expect(updater).toBeVisible()
-    await expect(getTitleBar(page).getByRole('button', { name: /^Update available: v/ })).toHaveCount(0)
+    await expect(
+      getTitleBar(page).getByRole('button', { name: /^Update available: v/ }),
+    ).toHaveCount(0)
     expect(await readLayoutSlots(request)).toStrictEqual({
       'titleBar.status': [TASKS_KEY, STATS_KEY],
       'statusBar.right': [UPDATER_KEY],

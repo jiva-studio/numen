@@ -383,11 +383,14 @@ describe('a watcher of a slot', () => {
   })
 })
 
-describe('the layout of the bar slots', () => {
+describe('the layout of the slots', () => {
   const REEF = 'org.example.reef'
   const STATS: DeclaredSlotEntry = { pluginId: REEF, slot: 'titleBar.status', view: 'stats' }
   const TASKS: DeclaredSlotEntry = { pluginId: TIDE, slot: 'titleBar.status', view: 'status' }
   const UPDATER: DeclaredSlotEntry = { pluginId: HARBOR, slot: 'titleBar.status', view: 'update' }
+  const STATS_KEY = `titleBar.status|${REEF}/stats`
+  const TASKS_KEY = `titleBar.status|${TIDE}/status`
+  const UPDATER_KEY = `titleBar.status|${HARBOR}/update`
 
   const setupWithLayout = (
     entries: readonly DeclaredSlotEntry[],
@@ -405,7 +408,7 @@ describe('the layout of the bar slots', () => {
 
   it('draws listed entries in the listed order', () => {
     const { registry } = setupWithLayout([STATS, TASKS], {
-      'titleBar.status': [`${TIDE}/status`, `${REEF}/stats`],
+      'titleBar.status': [TASKS_KEY, STATS_KEY],
     })
 
     expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual([
@@ -416,7 +419,7 @@ describe('the layout of the bar slots', () => {
 
   it('draws a listed entry in the listed slot and not in the slot of its manifest', () => {
     const { registry } = setupWithLayout([STATS, UPDATER], {
-      'statusBar.right': [`${HARBOR}/update`],
+      'statusBar.right': [UPDATER_KEY],
     })
 
     expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual(['view stats'])
@@ -430,7 +433,7 @@ describe('the layout of the bar slots', () => {
         { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', order: 2 },
         { pluginId: TIDE, slot: 'titleBar.commands', command: 'tide.open', order: 3 },
       ],
-      { 'titleBar.commands': [`${TIDE}/tide.open`] },
+      { 'titleBar.commands': [`titleBar.commands|${TIDE}/tide.open`] },
     )
 
     expect(describeSlot(registry.getEntries('titleBar.commands'))).toStrictEqual([
@@ -475,7 +478,11 @@ describe('the layout of the bar slots', () => {
         { pluginId: TIDE, slot: 'titleBar.commands', command: 'tide.open', group: 'navigate' },
       ],
       {
-        'titleBar.commands': [`${HARBOR}/harbor.open`, `${LEDGER}/ledger.sum`, `${TIDE}/tide.open`],
+        'titleBar.commands': [
+          `titleBar.commands|${HARBOR}/harbor.open`,
+          `titleBar.commands|${LEDGER}/ledger.sum`,
+          `titleBar.commands|${TIDE}/tide.open`,
+        ],
       },
     )
     const items = registry.getEntries('titleBar.commands')
@@ -500,11 +507,11 @@ describe('the layout of the bar slots', () => {
       ],
       {
         'titleBar.status': [
-          'org.example.disabled/clock',
-          `${TIDE}/status`,
-          'org.example.missing/weather',
-          `${LEDGER}/balance`,
-          `${REEF}/stats`,
+          'titleBar.status|org.example.disabled/clock',
+          TASKS_KEY,
+          'titleBar.status|org.example.missing/weather',
+          `titleBar.status|${LEDGER}/balance`,
+          STATS_KEY,
         ],
       },
     )
@@ -515,7 +522,7 @@ describe('the layout of the bar slots', () => {
     ])
   })
 
-  it('draws a key listed in two slots in the first bar slot only, and a key listed twice once at its first place', () => {
+  it('draws a key listed in two slots in the first of them in the order of slots.json, and a key listed twice once at its first place', () => {
     const left = (pluginId: string, view: string): DeclaredSlotEntry => ({
       pluginId,
       slot: 'statusBar.left',
@@ -523,12 +530,12 @@ describe('the layout of the bar slots', () => {
     })
     const { registry } = setupWithLayout([UPDATER, left(LEDGER, 'words'), left(REEF, 'clock')], {
       'statusBar.right': [
-        `${LEDGER}/words`,
-        `${REEF}/clock`,
-        `${LEDGER}/words`,
-        `${HARBOR}/update`,
+        `statusBar.left|${LEDGER}/words`,
+        `statusBar.left|${REEF}/clock`,
+        `statusBar.left|${LEDGER}/words`,
+        UPDATER_KEY,
       ],
-      'titleBar.status': [`${HARBOR}/update`],
+      'titleBar.status': [UPDATER_KEY],
     })
 
     expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual(['view update'])
@@ -539,20 +546,52 @@ describe('the layout of the bar slots', () => {
     expect(describeSlot(registry.getEntries('statusBar.left'))).toStrictEqual([])
   })
 
-  it('leaves the menus as the manifests place them', () => {
+  it('takes a menu slot into the layout, by the key of the menu placement', () => {
     const { registry } = setupWithLayout(
       [
         { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
         { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.open' },
       ],
-      { 'statusBar.left': [`${LEDGER}/ledger.open`] },
+      { 'statusBar.left': [`fileTree.context|${LEDGER}/ledger.open`] },
+    )
+
+    expect(describeSlot(registry.getEntries('fileTree.context', NOTE))).toStrictEqual([])
+    expect(describeSlot(registry.getEntries('titleBar.commands'))).toStrictEqual([
+      `${LEDGER}:ledger.open`,
+    ])
+    expect(describeSlot(registry.getEntries('statusBar.left'))).toStrictEqual([
+      `${LEDGER}:ledger.open`,
+    ])
+  })
+
+  it('draws a menu slot as the manifests place it when the layout does not list it', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
+        { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.open' },
+      ],
+      { 'titleBar.commands': [`titleBar.commands|${LEDGER}/ledger.open`] },
     )
 
     expect(describeSlot(registry.getEntries('fileTree.context', NOTE))).toStrictEqual([
       `${LEDGER}:ledger.open`,
     ])
-    expect(describeSlot(registry.getEntries('titleBar.commands'))).toStrictEqual([])
-    expect(describeSlot(registry.getEntries('statusBar.left'))).toStrictEqual([
+  })
+
+  it('keeps the placements of one command in two slots apart, each with its own key', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
+        { pluginId: LEDGER, slot: 'statusBar.left', command: 'ledger.open' },
+      ],
+      { 'statusBar.right': [`statusBar.left|${LEDGER}/ledger.open`] },
+    )
+
+    expect(describeSlot(registry.getEntries('titleBar.commands'))).toStrictEqual([
+      `${LEDGER}:ledger.open`,
+    ])
+    expect(describeSlot(registry.getEntries('statusBar.left'))).toStrictEqual([])
+    expect(describeSlot(registry.getEntries('statusBar.right'))).toStrictEqual([
       `${LEDGER}:ledger.open`,
     ])
   })
@@ -562,7 +601,7 @@ describe('the layout of the bar slots', () => {
     const handler = vi.fn()
 
     const watching = registry.watchEntries('titleBar.status', handler)
-    layout.value = { 'titleBar.status': [`${TIDE}/status`] }
+    layout.value = { 'titleBar.status': [TASKS_KEY] }
     await nextTick()
     watching.dispose()
 
@@ -581,29 +620,41 @@ describe('the layout of the bar slots', () => {
       ],
       undefined,
     )
-    const lookup = registry as unknown as { findLayoutKey: (itemKey: string) => string | undefined }
 
-    expect(lookup.findLayoutKey(`${LEDGER}/command/${LEDGER}:ledger.open`)).toBe(
-      `${LEDGER}/ledger.open`,
+    expect(registry.findLayoutKey(`${LEDGER}/command/${LEDGER}:ledger.open`)).toBe(
+      `titleBar.commands|${LEDGER}/ledger.open`,
     )
-    expect(lookup.findLayoutKey('app/command/app:settings.open')).toBe('app/app:settings.open')
-    expect(lookup.findLayoutKey(`${TIDE}/view/status`)).toBe(`${TIDE}/status`)
-    expect(lookup.findLayoutKey('titleBar.commands/separator/0')).toBeUndefined()
-    expect(lookup.findLayoutKey(`${REEF}/view/unknown`)).toBeUndefined()
+    expect(registry.findLayoutKey('app/command/app:settings.open')).toBe(
+      'titleBar.commands|app/app:settings.open',
+    )
+    expect(registry.findLayoutKey(`${TIDE}/view/status`)).toBe(TASKS_KEY)
+    expect(registry.findLayoutKey('titleBar.commands/separator/0')).toBeUndefined()
+    expect(registry.findLayoutKey(`${REEF}/view/unknown`)).toBeUndefined()
   })
 
-  it('lists the layout keys a bar slot draws, in drawing order', () => {
+  it('lists the layout keys a slot draws, in drawing order', () => {
     const { registry } = setupWithLayout([STATS, TASKS, UPDATER], {
-      'titleBar.status': [`${TIDE}/status`],
-      'statusBar.right': [`${HARBOR}/update`],
+      'titleBar.status': [TASKS_KEY],
+      'statusBar.right': [UPDATER_KEY],
     })
-    const lookup = registry as unknown as { listLayoutKeys: (slot: string) => readonly string[] }
 
-    expect(lookup.listLayoutKeys('titleBar.status')).toStrictEqual([
-      `${TIDE}/status`,
-      `${REEF}/stats`,
+    expect(registry.listLayoutKeys('titleBar.status')).toStrictEqual([TASKS_KEY, STATS_KEY])
+    expect(registry.listLayoutKeys('statusBar.right')).toStrictEqual([UPDATER_KEY])
+    expect(registry.listLayoutKeys('statusBar.left')).toStrictEqual([])
+  })
+
+  it('lists the layout keys of a menu slot', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.open' },
+        { pluginId: HARBOR, slot: 'fileTree.context', command: 'harbor.open' },
+      ],
+      undefined,
+    )
+
+    expect(registry.listLayoutKeys('fileTree.context')).toStrictEqual([
+      `fileTree.context|${HARBOR}/harbor.open`,
+      `fileTree.context|${LEDGER}/ledger.open`,
     ])
-    expect(lookup.listLayoutKeys('statusBar.right')).toStrictEqual([`${HARBOR}/update`])
-    expect(lookup.listLayoutKeys('statusBar.left')).toStrictEqual([])
   })
 })

@@ -1,45 +1,37 @@
-/** The layout of the bar slots: its keys, how a settings value is read, and what a drop writes. Every plugin here is invented. */
+/** The layout of the slots: its keys, how a settings value is read, and what a drop writes. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
+import { SLOT, type SlotName } from '@numen/plugin-sdk'
 import { getLayoutKey, moveSlotEntry, readSlotLayout, type SlotLayout } from './slotLayout'
 
-const STATS = 'org.example.reef/stats'
-const TASKS = 'org.example.tide/status'
-const UPDATER = 'org.example.harbor/update'
+const STATS = 'titleBar.status|org.example.reef/stats'
+const TASKS = 'titleBar.status|org.example.tide/status'
+const UPDATER = 'titleBar.status|org.example.harbor/update'
 
-const drawnAs = (
-  slots: Partial<
-    Record<
-      'titleBar.commands' | 'titleBar.status' | 'statusBar.left' | 'statusBar.right',
-      readonly string[]
-    >
-  >,
-) => ({
-  'titleBar.commands': [],
-  'titleBar.status': [],
-  'statusBar.left': [],
-  'statusBar.right': [],
-  ...slots,
-})
+const drawnAs = (slots: Partial<Record<SlotName, readonly string[]>>) =>
+  ({
+    ...Object.fromEntries(Object.values(SLOT).map((name) => [name, []])),
+    ...slots,
+  }) as Record<SlotName, readonly string[]>
 
 describe('the layout key of an entry', () => {
-  it('is the plugin and the command as the manifest writes it', () => {
+  it('is the home slot, the plugin and the command as the manifest writes it', () => {
     expect(
       getLayoutKey({
         pluginId: 'org.example.tide',
         slot: 'titleBar.commands',
         command: 'tide.open',
       }),
-    ).toBe('org.example.tide/tide.open')
+    ).toBe('titleBar.commands|org.example.tide/tide.open')
     expect(
       getLayoutKey({
         pluginId: 'org.example.ledger',
         slot: 'titleBar.commands',
         command: 'app:note.create',
       }),
-    ).toBe('org.example.ledger/app:note.create')
+    ).toBe('titleBar.commands|org.example.ledger/app:note.create')
   })
 
-  it('is the plugin and the view id for a view', () => {
+  it('is the home slot, the plugin and the view id for a view', () => {
     expect(
       getLayoutKey({ pluginId: 'org.example.tide', slot: 'titleBar.status', view: 'status' }),
     ).toBe(TASKS)
@@ -48,7 +40,23 @@ describe('the layout key of an entry', () => {
   it('names the application as app for its own entries', () => {
     expect(
       getLayoutKey({ pluginId: 'app', slot: 'titleBar.commands', command: 'app:settings.open' }),
-    ).toBe('app/app:settings.open')
+    ).toBe('titleBar.commands|app/app:settings.open')
+  })
+
+  it('differs for one command placed in two slots', () => {
+    const bar = getLayoutKey({
+      pluginId: 'org.example.tide',
+      slot: 'titleBar.commands',
+      command: 'tide.open',
+    })
+    const menu = getLayoutKey({
+      pluginId: 'org.example.tide',
+      slot: 'fileTree.context',
+      command: 'tide.open',
+    })
+
+    expect(bar).toBe('titleBar.commands|org.example.tide/tide.open')
+    expect(menu).toBe('fileTree.context|org.example.tide/tide.open')
   })
 
   it('is none for a submenu', () => {
@@ -64,17 +72,23 @@ describe('the layout key of an entry', () => {
 })
 
 describe('a layout read from the settings', () => {
-  it('keeps the lists of the bar slots', () => {
+  it('keeps the lists of the slots', () => {
     expect(
       readSlotLayout({ 'titleBar.status': [TASKS, STATS], 'statusBar.right': [UPDATER] }),
     ).toStrictEqual({ 'titleBar.status': [TASKS, STATS], 'statusBar.right': [UPDATER] })
   })
 
-  it('leaves out a slot that is no bar slot and a list that is not a list of strings', () => {
+  it('keeps the list of a menu slot', () => {
+    expect(readSlotLayout({ 'fileTree.context': [STATS] })).toStrictEqual({
+      'fileTree.context': [STATS],
+    })
+  })
+
+  it('leaves out a slot that slots.json does not declare and a list that is not a list of strings', () => {
     expect(
       readSlotLayout({
         'titleBar.status': [TASKS],
-        'fileTree.context': [STATS],
+        'sideBar.top': [STATS],
         'statusBar.left': STATS,
         'statusBar.right': [UPDATER, 3],
       }),
@@ -88,7 +102,7 @@ describe('a layout read from the settings', () => {
   })
 })
 
-describe('a drop of a bar entry', () => {
+describe('a drop of a slot entry', () => {
   it('within its slot writes that slot alone, in the new order', () => {
     const change = moveSlotEntry({}, drawnAs({ 'titleBar.status': [STATS, TASKS] }), {
       key: TASKS,
@@ -113,6 +127,19 @@ describe('a drop of a bar entry', () => {
     })
   })
 
+  it('into a menu slot writes both slots', () => {
+    const change = moveSlotEntry({}, drawnAs({ 'titleBar.status': [STATS, UPDATER] }), {
+      key: UPDATER,
+      from: 'titleBar.status',
+      to: 'fileTree.context',
+    })
+
+    expect(change).toStrictEqual({
+      'titleBar.status': [STATS],
+      'fileTree.context': [UPDATER],
+    })
+  })
+
   it('into another slot goes before the key it is dropped on', () => {
     const change = moveSlotEntry(
       {},
@@ -127,28 +154,56 @@ describe('a drop of a bar entry', () => {
   })
 
   it('keeps a stored key that is not drawn right after the key that preceded it', () => {
-    const layout: SlotLayout = { 'titleBar.commands': ['a/one', 'x/gone', 'b/two'] }
+    const layout: SlotLayout = {
+      'titleBar.commands': [
+        'titleBar.commands|a/one',
+        'titleBar.commands|x/gone',
+        'titleBar.commands|b/two',
+      ],
+    }
 
-    const change = moveSlotEntry(layout, drawnAs({ 'titleBar.commands': ['a/one', 'b/two'] }), {
-      key: 'b/two',
-      from: 'titleBar.commands',
-      to: 'titleBar.commands',
-      before: 'a/one',
+    const change = moveSlotEntry(
+      layout,
+      drawnAs({ 'titleBar.commands': ['titleBar.commands|a/one', 'titleBar.commands|b/two'] }),
+      {
+        key: 'titleBar.commands|b/two',
+        from: 'titleBar.commands',
+        to: 'titleBar.commands',
+        before: 'titleBar.commands|a/one',
+      },
+    )
+
+    expect(change).toStrictEqual({
+      'titleBar.commands': [
+        'titleBar.commands|b/two',
+        'titleBar.commands|a/one',
+        'titleBar.commands|x/gone',
+      ],
     })
-
-    expect(change).toStrictEqual({ 'titleBar.commands': ['b/two', 'a/one', 'x/gone'] })
   })
 
   it('keeps a stored key that is not drawn first when no stored key preceded it', () => {
-    const layout: SlotLayout = { 'titleBar.commands': ['x/gone', 'a/one', 'b/two'] }
+    const layout: SlotLayout = {
+      'titleBar.commands': [
+        'titleBar.commands|x/gone',
+        'titleBar.commands|a/one',
+        'titleBar.commands|b/two',
+      ],
+    }
 
-    const change = moveSlotEntry(layout, drawnAs({ 'titleBar.commands': ['a/one', 'b/two'] }), {
-      key: 'a/one',
-      from: 'titleBar.commands',
-      to: 'titleBar.commands',
+    const change = moveSlotEntry(
+      layout,
+      drawnAs({ 'titleBar.commands': ['titleBar.commands|a/one', 'titleBar.commands|b/two'] }),
+      { key: 'titleBar.commands|a/one', from: 'titleBar.commands', to: 'titleBar.commands' },
+    )
+
+    expect(change).toStrictEqual({
+      'titleBar.commands': [
+        'titleBar.commands|x/gone',
+        'titleBar.commands|b/two',
+        'titleBar.commands|a/one',
+      ],
     })
-
-    expect(change).toStrictEqual({ 'titleBar.commands': ['x/gone', 'b/two', 'a/one'] })
   })
 
   it('writes every drawn key of the slot, so entries never placed join the user order', () => {

@@ -1,6 +1,6 @@
 /**
- * The status bar with nothing placed in it, as the window drags a bar entry over it. The room an
- * empty slot keeps needs a browser to measure.
+ * The status bar with nothing placed in it, as the window drags a slot entry over it. Whether an
+ * empty slot can take a drop needs a browser to hit-test.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, waitFor } from 'storybook/test'
@@ -25,7 +25,7 @@ const meta: Meta<typeof StatusBar> = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** While the window drags a bar entry, each empty slot keeps the room of one chip to take the drop. */
+/** While the window drags a slot entry, a point inside each empty slot hits the slot, so it can take the drop. */
 export const EmptySlotsWhileDragging: Story = {
   play: async ({ canvasElement }) => {
     const root = canvasElement.ownerDocument.documentElement
@@ -35,7 +35,12 @@ export const EmptySlotsWhileDragging: Story = {
         await waitFor(() => {
           const slot = canvasElement.querySelector(`[data-numen-slot="${name}"]`)
           if (!slot) throw new Error(`the slot ${name} is not drawn`)
-          return expect(slot.getBoundingClientRect().width).toBeGreaterThanOrEqual(20)
+          const rect = slot.getBoundingClientRect()
+          const hit = canvasElement.ownerDocument.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+          )
+          return expect(hit?.closest('[data-numen-slot]')).toBe(slot)
         })
       }
     } finally {
