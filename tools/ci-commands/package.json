@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "The commands every plugin adds to a window's palette, read out of the plugins' manifests and frontends. Reads manifests through tools/shared/manifests.mjs, so it needs the workspace installed.",
+  "dependencies": {
+    "typescript": "^6.0.3"
+  },
   "scripts": {
     "check": "node --test ./*.test.mjs"
   }
