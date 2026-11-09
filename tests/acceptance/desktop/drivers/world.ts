@@ -4,7 +4,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { readSample, type SampleKind } from '../support/samples.js'
 import { freeFromRemoval, holdForRemoval } from './reaper.js'
-import { assertVaultName, assertVaultPath, getNoteFile, pickVault } from './rules.js'
+import { assertVaultName, assertVaultPath, pickVault } from './rules.js'
 
 export type EntryKind = 'file' | 'folder'
 
@@ -50,8 +50,8 @@ export class World {
     return path.join(this.root, pickVault(this.vaults, name))
   }
 
-  writeNote(vault: string, title: string, text: string): void {
-    this.writeText(vault, getNoteFile(title), `${text}\n`)
+  writeNote(vault: string, filePath: string, text: string): void {
+    this.writeText(vault, filePath, `${text}\n`)
     this.hasNote = true
   }
 
@@ -74,12 +74,12 @@ export class World {
     fs.mkdirSync(path.join(this.getFolder(vault), folder), { recursive: true })
   }
 
-  /** Puts the sample file of a kind in the vault at the path, which names the sample by its file name. */
-  copySample(vault: string, kind: SampleKind, filePath: string): void {
+  /** Puts the sample file of a kind, found by its file name, in the vault at the path. */
+  copySample(vault: string, kind: SampleKind, filePath: string, fileName: string): void {
     assertVaultPath(filePath)
     const target = path.join(this.getFolder(vault), filePath)
     fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.writeFileSync(target, readSample(kind, path.basename(filePath)))
+    fs.writeFileSync(target, readSample(kind, fileName))
   }
 
   getEntryKind(vault: string, entryPath: string): EntryKind | undefined {

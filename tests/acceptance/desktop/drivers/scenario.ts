@@ -175,7 +175,7 @@ export class Scenario {
   getNotePath(title: string): string {
     const remembered = this.paths.get(title)
     if (remembered !== undefined) return remembered
-    if (this.world === undefined) throw new Error(`no note is titled "${title}": begin with the vault has the note titled "${title}" with "..."`)
+    if (this.world === undefined) throw new Error(`no note is titled "${title}": begin with the vault has the following: a row with the path of the note and its text`)
     return getNoteFile(title)
   }
 

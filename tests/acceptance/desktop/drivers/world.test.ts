@@ -108,10 +108,10 @@ describe('World', () => {
     expect(() => world.getFolder(DEFAULT_VAULT)).toThrow('name the vault: the world has Test and Archive')
   })
 
-  it('writes a note into the root of the vault', () => {
+  it('writes a note at its path in the vault', () => {
     const world = create()
     world.addVault('Test')
-    world.writeNote(DEFAULT_VAULT, 'Entropy', 'A measure of uncertainty.')
+    world.writeNote(DEFAULT_VAULT, 'Entropy.md', 'A measure of uncertainty.')
     expect(fs.readFileSync(path.join(world.getFolder('Test'), 'Entropy.md'), 'utf8')).toBe('A measure of uncertainty.\n')
     expect(world.getEntryKind('Test', 'Entropy.md')).toBe('file')
   })
@@ -120,7 +120,7 @@ describe('World', () => {
     const world = create()
     world.addVault('Test')
     world.makeFolder('Test', 'daily/2026')
-    world.copySample('Test', 'PDF', 'assets/shore.pdf')
+    world.copySample('Test', 'PDF', 'assets/shore.pdf', 'shore.pdf')
     expect(world.getEntryKind('Test', 'daily/2026')).toBe('folder')
     expect(world.getEntryKind('Test', 'assets/shore.pdf')).toBe('file')
     expect(world.getEntryKind('Test', 'assets/other.pdf')).toBeUndefined()
@@ -129,16 +129,16 @@ describe('World', () => {
   it('has no sample for a PDF the library does not know', () => {
     const world = create()
     world.addVault('Test')
-    expect(() => world.copySample('Test', 'PDF', 'assets/unknown.pdf')).toThrow('there is no sample PDF "unknown.pdf"')
+    expect(() => world.copySample('Test', 'PDF', 'assets/unknown.pdf', 'unknown.pdf')).toThrow('there is no sample PDF "unknown.pdf"')
   })
 
   it('copies a book, a recording and an image, and makes a file the samples generate', () => {
     const world = create()
     world.addVault('Test')
-    world.copySample('Test', 'EPUB', 'assets/ledger.epub')
-    world.copySample('Test', 'recording', 'assets/talk.mp3')
-    world.copySample('Test', 'recording', 'assets/sample.wav')
-    world.copySample('Test', 'image', 'assets/llama.png')
+    world.copySample('Test', 'EPUB', 'assets/ledger.epub', 'ledger.epub')
+    world.copySample('Test', 'recording', 'assets/talk.mp3', 'talk.mp3')
+    world.copySample('Test', 'recording', 'assets/sample.wav', 'sample.wav')
+    world.copySample('Test', 'image', 'assets/llama.png', 'llama.png')
     for (const file of ['ledger.epub', 'talk.mp3', 'sample.wav', 'llama.png']) {
       expect(world.getEntryKind('Test', `assets/${file}`)).toBe('file')
     }
@@ -157,7 +157,7 @@ describe('World', () => {
     world.addVault('Test')
     world.writeText('Test', 'cards/Animal.md', 'fields')
     expect(world.hasNotes()).toBe(false)
-    world.writeNote('Test', 'Entropy', 'A measure.')
+    world.writeNote('Test', 'Entropy.md', 'A measure.')
     expect(world.hasNotes()).toBe(true)
   })
 
@@ -173,7 +173,7 @@ describe('World', () => {
     const world = create()
     world.addVault('Test')
     world.addVault('Archive')
-    world.writeNote('Archive', 'Old', 'Kept.')
+    world.writeNote('Archive', 'Old.md', 'Kept.')
     expect(world.getEntryKind('Archive', 'Old.md')).toBe('file')
     expect(world.getEntryKind('Test', 'Old.md')).toBeUndefined()
   })

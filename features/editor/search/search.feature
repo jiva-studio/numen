@@ -8,7 +8,9 @@ Feature: Search
 
     Scenario: A passage of a note is opened in its note
       Given the empty vault "Test"
-      And the vault has the note titled "Entropy" with "Entropy is a measure of uncertainty."
+      And the vault has the following:
+        | path       | text                                 |
+        | Entropy.md | Entropy is a measure of uncertainty. |
       And the application "editor" starts
       When the person searches the vault for "Entropy"
       And the person chooses the search result "Entropy is a measure of uncertainty" in the group "Text"

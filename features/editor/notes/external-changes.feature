@@ -2,7 +2,9 @@ Feature: External changes of a note
   A person writes a note. Another program changes the same note on disk.
 
   Background:
-    Given the vault has the note titled "Shopping list" with "tea"
+    Given the vault has the following:
+      | path                   | text |
+      | notes/Shopping list.md | tea  |
     And the person opens the note titled "Shopping list"
 
   Rule: A note without unsaved text has the text of its file

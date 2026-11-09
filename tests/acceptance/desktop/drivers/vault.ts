@@ -1,4 +1,5 @@
 /** The vault of the scenario as a person finds it: what is in its folder before the application starts, and what is there after. */
+import path from 'node:path'
 import { expect } from 'playwright/test'
 import {
   addVault,
@@ -7,12 +8,12 @@ import {
   listFiles,
   listVaults,
   openVault,
+  waitForSavedBody,
   writeNote as writeBody,
 } from '../../../e2e/desktop/tests/support/vault.js'
 import {
   assertCardFileIsFree,
   assertCardFileKind,
-  assertTemplatesAreNew,
   countCards,
   createCardId,
   createCardModelText,
@@ -21,14 +22,13 @@ import {
   createPresetText,
   createTemplatesText,
   getCardFile,
-  parseFieldNames,
-  parsePresetSettings,
-  parseTemplates,
-  parseValues,
+  parseCardModels,
+  parseCards,
+  parsePresets,
   readCardModelFields,
 } from './cards.js'
-import { assertEntry, getNoteFile } from './rules.js'
-import type { SampleKind } from '../support/samples.js'
+import { assertEntry, getStem } from './rules.js'
+import { assertPathsAreFree, parseVaultChecks, parseVaultFiles, type VaultWrite } from './vault-files.js'
 import type { Scenario } from './scenario.js'
 
 export class VaultDriver {
@@ -38,53 +38,41 @@ export class VaultDriver {
     this.scenario.createVault(name)
   }
 
-  async writeNote(vault: string, title: string, text: string): Promise<void> {
-    if (this.scenario.hasWorld) {
-      this.scenario.getWorld().writeNote(this.scenario.getVault(vault), title, text)
-      this.scenario.rememberNote(title, getNoteFile(title))
-      if (this.scenario.hasServer) await this.expectListed(getNoteFile(title))
+  async addFiles(vault: string, rows: string[][]): Promise<void> {
+    const writes = parseVaultFiles(rows)
+    if (!this.scenario.hasWorld) {
+      this.scenario.checkSharedVault(vault)
+      for (const write of writes) await this.writeSharedNote(write)
       return
     }
-    this.scenario.checkSharedVault(vault)
-    const { request } = this.scenario.page
-    await this.scenario.claimTitle(title)
-    const notePath = await createNote(request, title)
-    this.scenario.rememberNote(title, notePath)
-    await writeBody(request, notePath, `${text}\n`)
-    await this.expectListed(notePath)
+    const world = this.scenario.getWorld()
+    const name = this.scenario.getVault(vault)
+    assertPathsAreFree(writes, (entryPath) => world.getEntryKind(name, entryPath) !== undefined)
+    for (const write of writes) await this.writeFile(name, write)
   }
 
-  makeFolder(vault: string, folder: string): void {
-    this.scenario.getWorld().makeFolder(this.scenario.getVault(vault), folder)
+  async expectContainsFiles(vault: string, rows: string[][]): Promise<void> {
+    for (const check of parseVaultChecks(rows)) {
+      await this.expectContains(vault, check.isFolder ? 'folder' : 'file', check.path)
+      if (check.text !== '') await this.expectHasText(vault, check.path, check.text)
+    }
   }
 
-  copySample(vault: string, kind: SampleKind, filePath: string): void {
-    this.scenario.getWorld().copySample(this.scenario.getVault(vault), kind, filePath)
+  addCardModels(vault: string, rows: string[][]): void {
+    for (const model of parseCardModels(rows)) {
+      this.writeNewCards(vault, model.title, createCardModelText(model.title, model.fields) + createTemplatesText(model.templates))
+    }
   }
 
-  addCardModel(vault: string, title: string, fields: string[][]): void {
-    this.writeNewCards(vault, title, createCardModelText(title, parseFieldNames(fields)))
+  addCards(vault: string, rows: string[][]): void {
+    for (const card of parseCards(rows)) {
+      this.writeDeck(vault, card.deck)
+      if (card.model !== undefined) this.writeCard(vault, card.deck, card.model, card.values)
+    }
   }
 
-  addTemplates(vault: string, title: string, templates: string[][]): void {
-    const text = this.readCards(vault, title, 'card model')
-    assertTemplatesAreNew(text, title)
-    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(title), text + createTemplatesText(parseTemplates(templates)))
-  }
-
-  addDeck(vault: string, title: string): void {
-    this.writeNewCards(vault, title, createDeckText(title))
-  }
-
-  addCard(vault: string, model: string, deck: string, values: string[][]): void {
-    const fields = readCardModelFields(this.readCards(vault, model, 'card model'))
-    const text = this.readCards(vault, deck, 'deck')
-    const card = createCardText(model, fields, parseValues(values), createCardId(deck, countCards(text)))
-    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(deck), text + card)
-  }
-
-  addPreset(vault: string, title: string, settings: string[][]): void {
-    this.writeNewCards(vault, title, createPresetText(title, parsePresetSettings(settings)))
+  addPresets(vault: string, rows: string[][]): void {
+    for (const preset of parsePresets(rows)) this.writeNewCards(vault, preset.title, createPresetText(preset.title, preset.settings))
   }
 
   /** Makes the window show another vault of the world, over the calls of the vault list the palette command Open vault makes. */
@@ -122,6 +110,57 @@ export class VaultDriver {
     }
     this.scenario.setVault(vault)
     await expect.poll(() => this.listEntries(file)).not.toContain(file)
+  }
+
+  private async expectHasText(vault: string, notePath: string, text: string): Promise<void> {
+    if (!this.scenario.hasWorld) {
+      await waitForSavedBody(this.scenario.page.request, notePath, text)
+      return
+    }
+    const world = this.scenario.getWorld()
+    const name = this.scenario.getVault(vault)
+    await expect.poll(() => world.readText(name, notePath), { message: `the note "${notePath}" does not have the text "${text}"` }).toContain(text)
+  }
+
+  private async writeFile(vault: string, write: VaultWrite): Promise<void> {
+    const world = this.scenario.getWorld()
+    if (write.kind === 'folder') world.makeFolder(vault, write.path)
+    else if (write.kind === 'empty') world.writeText(vault, write.path, '')
+    else if (write.kind === 'sample') world.copySample(vault, write.sampleKind, write.path, write.sample)
+    else {
+      world.writeNote(vault, write.path, write.text)
+      this.scenario.rememberNote(getStem(write.path), write.path)
+      if (this.scenario.hasServer) await this.expectListed(write.path)
+    }
+  }
+
+  private async writeSharedNote(write: VaultWrite): Promise<void> {
+    if (write.kind !== 'note') {
+      throw new Error(`"${write.path}" is not a note: the vault without a name takes notes only, a world takes any file`)
+    }
+    const { request } = this.scenario.page
+    const title = getStem(write.path)
+    await this.scenario.claimTitle(title)
+    const notePath = await createNote(request, title, path.posix.dirname(write.path).replace(/^\.$/, ''))
+    if (notePath !== write.path) throw new Error(`the product made the note at "${notePath}", not at "${write.path}"`)
+    this.scenario.rememberNote(title, notePath)
+    await writeBody(request, notePath, `${write.text}\n`)
+    await this.expectListed(notePath)
+  }
+
+  private writeDeck(vault: string, deck: string): void {
+    const world = this.scenario.getWorld()
+    const name = this.scenario.getVault(vault)
+    const existing = world.readText(name, getCardFile(deck))
+    if (existing === undefined) world.writeText(name, getCardFile(deck), createDeckText(deck))
+    else assertCardFileKind(existing, deck, 'deck')
+  }
+
+  private writeCard(vault: string, deck: string, model: string, values: [string, string][]): void {
+    const fields = readCardModelFields(this.readCards(vault, model, 'card model'))
+    const text = this.readCards(vault, deck, 'deck')
+    const card = createCardText(model, fields, values, createCardId(deck, countCards(text)))
+    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(deck), text + card)
   }
 
   private readCards(vault: string, title: string, kind: 'card model' | 'deck'): string {

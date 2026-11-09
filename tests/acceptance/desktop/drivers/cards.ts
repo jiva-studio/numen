@@ -50,10 +50,6 @@ export const assertCardFileKind = (existing: string | undefined, title: string, 
   return existing
 }
 
-export const assertTemplatesAreNew = (modelText: string, title: string): void => {
-  if (/^## /m.test(modelText)) throw new Error(`the card model "${title}" already has its templates: they are given once`)
-}
-
 const quote = (text: string): string => (/^[\w][\w ]*$/u.test(text) ? text : JSON.stringify(text))
 
 const assertHeader = (rows: readonly string[][], header: readonly string[], what: string): string[][] => {
@@ -65,21 +61,73 @@ const assertHeader = (rows: readonly string[][], header: readonly string[], what
   return body
 }
 
-/** The names of the fields of a card model: one row of names. */
-export const parseFieldNames = (rows: readonly string[][]): string[] => {
-  if (rows.length !== 1 || rows[0].length === 0 || rows[0].some((one) => one.trim() === '')) {
-    throw new Error('the fields are one row of names, like | Name | Height |')
-  }
-  const names = rows[0].map((one) => one.trim())
+const assertColumnsAreNew = (columns: readonly string[], what: string): void => {
+  const repeated = columns.find((one, index) => columns.indexOf(one) !== index)
+  if (repeated !== undefined) throw new Error(`${what} has the column "${repeated}" twice`)
+}
+
+const parseNames = (cell: string, title: string): string[] => {
+  const names = cell.split(',').map((one) => one.trim())
+  if (names.some((one) => one === '')) throw new Error(`the fields of the card model "${title}" are names with commas between them`)
   if (new Set(names).size !== names.length) throw new Error(`the fields ${names.join(', ')} name one field twice`)
   return names
 }
 
-export const parseTemplates = (rows: readonly string[][]): Template[] =>
-  assertHeader(rows, ['Template', 'Front', 'Back'], 'the templates').map(([name, front, back]) => ({ name, front, back }))
+export interface CardModel {
+  readonly title: string
+  readonly fields: string[]
+  readonly templates: Template[]
+}
 
-export const parseValues = (rows: readonly string[][]): [string, string][] =>
-  assertHeader(rows, ['Field', 'Value'], 'the values of a card').map(([field, value]) => [field, value])
+const CARD_MODEL_HEADER = ['card model', 'fields', 'template', 'front', 'back']
+
+/** The card models of a table: the fields stand in the first row of a model, and each row gives a template. */
+export const parseCardModels = (rows: readonly string[][]): CardModel[] => {
+  const models = new Map<string, CardModel>()
+  for (const [title, fields, name, front, back] of assertHeader(rows, CARD_MODEL_HEADER, 'the card models')) {
+    if (title === '') throw new Error('a row of the card models has no card model: write its title in the first column')
+    let model = models.get(title)
+    if (model === undefined) {
+      if (fields === '') throw new Error(`the card model "${title}" has no fields: write them in its first row`)
+      model = { title, fields: parseNames(fields, title), templates: [] }
+      models.set(title, model)
+    } else if (fields !== '') {
+      throw new Error(`the card model "${title}" has its fields in more than one row: write them in its first row only`)
+    }
+    if (name === '' && (front !== '' || back !== '')) throw new Error(`a template of the card model "${title}" has no name`)
+    if (name === '') continue
+    if (model.templates.some((one) => one.name === name)) {
+      throw new Error(`the card model "${title}" has the template "${name}" twice`)
+    }
+    model.templates.push({ name, front, back })
+  }
+  return [...models.values()]
+}
+
+export interface DeckCard {
+  readonly deck: string
+  readonly model: string | undefined
+  readonly values: [string, string][]
+}
+
+/** The cards of a table: after the deck and the card model each column is a field; a row with only a deck makes the deck. */
+export const parseCards = (rows: readonly string[][]): DeckCard[] => {
+  const [header = [], ...body] = rows
+  if (header[0] !== 'deck' || header[1] !== 'card model' || header.slice(2).some((one) => one === '')) {
+    throw new Error('the cards are a table with the columns "deck" and "card model", then one column for each field')
+  }
+  const fields = header.slice(2)
+  assertColumnsAreNew(header, 'the cards')
+  if (body.length === 0) throw new Error('the cards have no row')
+  return body.map(([deck, model, ...values]) => {
+    if (deck === '') throw new Error('a card has no deck: write its deck in the first column')
+    if (model === '' && values.some((one) => one !== '')) {
+      throw new Error(`a card in the deck "${deck}" has values and no card model: write the card model in the second column`)
+    }
+    const pairs = fields.map((field, index): [string, string] => [field, values[index]])
+    return { deck, model: model === '' ? undefined : model, values: pairs }
+  })
+}
 
 export const createCardModelText = (title: string, fields: readonly string[]): string =>
   `---\ntype: card-model\ntitle: ${quote(title)}\nfields:\n${fields.map((field) => `  - ${quote(field)}\n`).join('')}---\n`
@@ -104,7 +152,7 @@ export const createCardId = (deck: string, index: number): string => {
 
 export const countCards = (deckText: string): number => deckText.match(CARD_HEADING)?.length ?? 0
 
-/** The section of a card: headed by its first value, naming its card model, one section for each value. */
+/** The section of a card: headed by its first value, naming its card model, one section for each value given. */
 export const createCardText = (
   model: string,
   fields: readonly string[],
@@ -116,8 +164,10 @@ export const createCardText = (
       throw new Error(`the card model "${model}" has no field "${field}": it has ${fields.join(', ')}`)
     }
   }
-  const heading = values.find(([field]) => field === fields[0])?.[1] ?? values[0][1]
-  const sections = values.map(([field, value]) => `### ${field}\n\n${value}\n`)
+  const given = values.filter(([, value]) => value !== '')
+  if (given.length === 0) throw new Error(`a card of the card model "${model}" has no value`)
+  const heading = given.find(([field]) => field === fields[0])?.[1] ?? given[0][1]
+  const sections = given.map(([field, value]) => `### ${field}\n\n${value}\n`)
   return `\n## ${heading} ^${id}\n\n[[${model}]]\n\n${sections.join('\n')}`
 }
 
@@ -159,18 +209,40 @@ const PRESET_SETTINGS: Readonly<Record<string, PresetSetting>> = {
   'Even load': { key: 'even_load', parse: parseChoice({ Yes: 'true', No: 'false' }) },
 }
 
-export const parsePresetSettings = (rows: readonly string[][]): [string, string][] => {
-  const settings = assertHeader(rows, ['Setting', 'Value'], 'the settings of a preset')
-  return settings.map(([name, value]) => {
+const parseSetting = (name: string, value: string): string => {
+  try {
+    return PRESET_SETTINGS[name].parse(value)
+  } catch (error) {
+    throw new Error(`the setting "${name}": ${(error as Error).message}`, { cause: error })
+  }
+}
+
+export interface Preset {
+  readonly title: string
+  readonly settings: [string, string][]
+}
+
+/** The presets of a table: after the title each column is a setting, named as the preset tab names it; an empty cell leaves it out. */
+export const parsePresets = (rows: readonly string[][]): Preset[] => {
+  const [header = [], ...body] = rows
+  if (header[0] !== 'preset') {
+    throw new Error('the presets are a table that starts with the column "preset", then one column for each setting')
+  }
+  const names = header.slice(1)
+  for (const name of names) {
     if (!Object.hasOwn(PRESET_SETTINGS, name)) {
       throw new Error(`"${name}" is not a setting of a preset: use ${Object.keys(PRESET_SETTINGS).join(', ')}`)
     }
-    const setting = PRESET_SETTINGS[name]
-    try {
-      return [setting.key, setting.parse(value)]
-    } catch (error) {
-      throw new Error(`the setting "${name}": ${(error as Error).message}`, { cause: error })
+  }
+  assertColumnsAreNew(header, 'the presets')
+  if (body.length === 0) throw new Error('the presets have no row')
+  return body.map(([title, ...values]) => {
+    if (title === '') throw new Error('a preset has no title: write it in the first column')
+    const settings: [string, string][] = []
+    for (const [index, name] of names.entries()) {
+      if (values[index] !== '') settings.push([PRESET_SETTINGS[name].key, parseSetting(name, values[index])])
     }
+    return { title, settings }
   })
 }
 

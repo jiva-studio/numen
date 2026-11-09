@@ -1,31 +1,16 @@
+import type { DataTable } from 'playwright-bdd'
 import { Given, Then, When } from '../support/bdd.js'
 
 Given('the empty vault {string}', ({ person }, name: string) => {
   person.vault.createEmpty(name)
 })
 
-Given('{vault} has the note titled {string} with {string}', async ({ person }, vault: string, title: string, text: string) => {
-  await person.vault.writeNote(vault, title, text)
+Given('{vault} has the following:', async ({ person }, vault: string, files: DataTable) => {
+  await person.vault.addFiles(vault, files.raw())
 })
 
-Given('{vault} has the folder at {string}', ({ person }, vault: string, folder: string) => {
-  person.vault.makeFolder(vault, folder)
-})
-
-Given('{vault} has the PDF at {string}', ({ person }, vault: string, filePath: string) => {
-  person.vault.copySample(vault, 'PDF', filePath)
-})
-
-Given('{vault} has the EPUB at {string}', ({ person }, vault: string, filePath: string) => {
-  person.vault.copySample(vault, 'EPUB', filePath)
-})
-
-Given('{vault} has the recording at {string}', ({ person }, vault: string, filePath: string) => {
-  person.vault.copySample(vault, 'recording', filePath)
-})
-
-Given('{vault} has the image at {string}', ({ person }, vault: string, filePath: string) => {
-  person.vault.copySample(vault, 'image', filePath)
+Then('{vault} contains the following:', async ({ person }, vault: string, files: DataTable) => {
+  await person.vault.expectContainsFiles(vault, files.raw())
 })
 
 Given('{vault} contains the {entry} at {string}', async ({ person }, vault: string, entry: string, entryPath: string) => {

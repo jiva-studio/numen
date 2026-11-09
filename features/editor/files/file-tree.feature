@@ -8,9 +8,13 @@ Feature: File tree
 
     Scenario: A note is moved to a folder and its links follow
       Given the vault "Test" contains the folder at "daily"
-      And the vault has the note titled "Quay" with "The quay is at the harbour."
+      And the vault has the following:
+        | path          | text                        |
+        | notes/Quay.md | The quay is at the harbour. |
       And the person opens the note titled "Quay"
-      And the vault has the note titled "Jetty" with "See [[Quay]]."
+      And the vault has the following:
+        | path           | text          |
+        | notes/Jetty.md | See [[Quay]]. |
       And the person opens the note titled "Jetty"
       When the person moves the file at "notes/Quay.md" to the folder at "daily"
       Then the tab at "daily/Quay.md" is open
@@ -24,7 +28,9 @@ Feature: File tree
       Then the vault "Test" contains the folder at "Saltworks/Brine tanks"
 
     Scenario: A note is renamed and its tab follows
-      Given the vault has the note titled "Brine pump" with "The pump runs at night."
+      Given the vault has the following:
+        | path                | text                    |
+        | notes/Brine pump.md | The pump runs at night. |
       And the person opens the note titled "Brine pump"
       When the person runs the command "Rename file" on the file at "notes/Brine pump.md"
       And the person enters "Brine pumps.md"
@@ -32,7 +38,9 @@ Feature: File tree
       And the tab at "notes/Brine pump.md" is not open
 
     Scenario: The tab of a removed note is closed
-      Given the vault has the note titled "Mill race" with "The race feeds the wheel."
+      Given the vault has the following:
+        | path               | text                      |
+        | notes/Mill race.md | The race feeds the wheel. |
       And the person opens the note titled "Mill race"
       When the person runs the command "Move note to trash" on the file at "notes/Mill race.md"
       Then the tab at "notes/Mill race.md" is not open

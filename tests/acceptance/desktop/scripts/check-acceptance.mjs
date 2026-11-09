@@ -24,16 +24,10 @@ const NEAR_DUPLICATE = 0.75
 const SIMILAR = 0.5
 /** Steps of the world that wait for the scenarios not migrated yet: listed as warnings while no scenario uses them. */
 const PENDING = new Set([
-  '{vault} has the folder at {string}',
-  '{vault} has the PDF at {string}',
-  '{vault} has the EPUB at {string}',
-  '{vault} has the recording at {string}',
-  '{vault} has the image at {string}',
-  '{vault} has the card model {string} with the fields:',
-  '{vault} has the card model {string} with the templates:',
-  '{vault} has the deck {string}',
-  '{vault} has the card of the card model {string} in the deck {string} with:',
-  '{vault} has the preset {string} with the settings:',
+  '{vault} contains the following:',
+  '{vault} has the following card models:',
+  '{vault} has the following cards:',
+  '{vault} has the following presets:',
   'the person switches to the vault {string}',
 ])
 
