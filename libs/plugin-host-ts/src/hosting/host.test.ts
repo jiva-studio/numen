@@ -475,7 +475,10 @@ describe('a note editor view mounted by a plugin', () => {
         setup(props) {
           const body = ref('')
           if (props.context.path) {
-            void notesPlugin.notes!.read(props.context.path).then((one) => (body.value = one.body))
+            notesPlugin.notes!.read(props.context.path).then(
+              (one) => (body.value = one.body),
+              (error: unknown) => (body.value = `Failed: ${String(error)}`),
+            )
           }
           return () => h('div', body.value)
         },
