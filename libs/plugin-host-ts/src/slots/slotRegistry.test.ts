@@ -382,3 +382,226 @@ describe('a watcher of a slot', () => {
     ])
   })
 })
+
+describe('the layout of the bar slots', () => {
+  const REEF = 'org.example.reef'
+  const STATS: DeclaredSlotEntry = { pluginId: REEF, slot: 'titleBar.status', view: 'stats' }
+  const TASKS: DeclaredSlotEntry = { pluginId: TIDE, slot: 'titleBar.status', view: 'status' }
+  const UPDATER: DeclaredSlotEntry = { pluginId: HARBOR, slot: 'titleBar.status', view: 'update' }
+
+  const setupWithLayout = (
+    entries: readonly DeclaredSlotEntry[],
+    layout: Record<string, readonly string[]> | undefined,
+    overrides: Partial<SlotRegistryDeps> = {},
+  ) => {
+    const current = shallowRef(layout)
+    const deps = {
+      findView: (pluginId: string, view: string) => ({ name: `${pluginId}-${view}` }),
+      getLayout: () => current.value,
+      ...overrides,
+    }
+    return { ...setup(entries, deps as Partial<SlotRegistryDeps>), layout: current }
+  }
+
+  it('draws listed entries in the listed order', () => {
+    const { registry } = setupWithLayout([STATS, TASKS], {
+      'titleBar.status': [`${TIDE}/status`, `${REEF}/stats`],
+    })
+
+    expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual([
+      'view status',
+      'view stats',
+    ])
+  })
+
+  it('draws a listed entry in the listed slot and not in the slot of its manifest', () => {
+    const { registry } = setupWithLayout([STATS, UPDATER], {
+      'statusBar.right': [`${HARBOR}/update`],
+    })
+
+    expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual(['view stats'])
+    expect(describeSlot(registry.getEntries('statusBar.right'))).toStrictEqual(['view update'])
+  })
+
+  it('draws the unlisted entries after the listed ones, by group, order and plugin id', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: HARBOR, slot: 'titleBar.commands', command: 'harbor.open', order: 1 },
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', order: 2 },
+        { pluginId: TIDE, slot: 'titleBar.commands', command: 'tide.open', order: 3 },
+      ],
+      { 'titleBar.commands': [`${TIDE}/tide.open`] },
+    )
+
+    expect(describeSlot(registry.getEntries('titleBar.commands'))).toStrictEqual([
+      `${TIDE}:tide.open`,
+      `${HARBOR}:harbor.open`,
+      `${LEDGER}:ledger.open`,
+    ])
+  })
+
+  it('without a layout draws the order and the separators of the manifests, each separator with its own key', () => {
+    const entries: DeclaredSlotEntry[] = [
+      { pluginId: TIDE, slot: 'titleBar.commands', command: 'tide.open', group: '1-go', order: 2 },
+      { pluginId: HARBOR, slot: 'titleBar.commands', command: 'harbor.open', group: '1-go' },
+      { pluginId: 'app', slot: 'titleBar.commands', command: 'app:settings.open' },
+      { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.sum', group: '0-make' },
+    ]
+
+    for (const layout of [undefined, {}]) {
+      const { registry } = setupWithLayout(entries, layout)
+      const items = registry.getEntries('titleBar.commands')
+
+      expect(describeSlot(items)).toStrictEqual([
+        `${LEDGER}:ledger.sum`,
+        '|',
+        `${TIDE}:tide.open`,
+        `${HARBOR}:harbor.open`,
+        '|',
+        'app:settings.open',
+      ])
+      expect(items.filter((one) => one.kind === 'separator').map((one) => one.key)).toStrictEqual([
+        'titleBar.commands/separator/0',
+        'titleBar.commands/separator/1',
+      ])
+    }
+  })
+
+  it('puts a separator between listed neighbours of different groups, never first, last or doubled', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: HARBOR, slot: 'titleBar.commands', command: 'harbor.open', group: 'navigate' },
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.sum', group: 'new' },
+        { pluginId: TIDE, slot: 'titleBar.commands', command: 'tide.open', group: 'navigate' },
+      ],
+      {
+        'titleBar.commands': [`${HARBOR}/harbor.open`, `${LEDGER}/ledger.sum`, `${TIDE}/tide.open`],
+      },
+    )
+    const items = registry.getEntries('titleBar.commands')
+
+    expect(describeSlot(items)).toStrictEqual([
+      `${HARBOR}:harbor.open`,
+      '|',
+      `${LEDGER}:ledger.sum`,
+      '|',
+      `${TIDE}:tide.open`,
+    ])
+    const keys = items.map((one) => one.key)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
+
+  it('skips listed keys that draw nothing and draws the rest in the listed order', () => {
+    const { registry } = setupWithLayout(
+      [
+        STATS,
+        TASKS,
+        { pluginId: LEDGER, slot: 'titleBar.status', view: 'balance', when: 'target.isFolder' },
+      ],
+      {
+        'titleBar.status': [
+          'org.example.disabled/clock',
+          `${TIDE}/status`,
+          'org.example.missing/weather',
+          `${LEDGER}/balance`,
+          `${REEF}/stats`,
+        ],
+      },
+    )
+
+    expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual([
+      'view status',
+      'view stats',
+    ])
+  })
+
+  it('draws a key listed in two slots in the first bar slot only, and a key listed twice once at its first place', () => {
+    const left = (pluginId: string, view: string): DeclaredSlotEntry => ({
+      pluginId,
+      slot: 'statusBar.left',
+      view,
+    })
+    const { registry } = setupWithLayout(
+      [UPDATER, left(LEDGER, 'words'), left(REEF, 'clock')],
+      {
+        'statusBar.right': [`${LEDGER}/words`, `${REEF}/clock`, `${LEDGER}/words`, `${HARBOR}/update`],
+        'titleBar.status': [`${HARBOR}/update`],
+      },
+    )
+
+    expect(describeSlot(registry.getEntries('titleBar.status'))).toStrictEqual(['view update'])
+    expect(describeSlot(registry.getEntries('statusBar.right'))).toStrictEqual([
+      'view words',
+      'view clock',
+    ])
+    expect(describeSlot(registry.getEntries('statusBar.left'))).toStrictEqual([])
+  })
+
+  it('leaves the menus as the manifests place them', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open' },
+        { pluginId: LEDGER, slot: 'fileTree.context', command: 'ledger.open' },
+      ],
+      { 'statusBar.left': [`${LEDGER}/ledger.open`] },
+    )
+
+    expect(describeSlot(registry.getEntries('fileTree.context', NOTE))).toStrictEqual([
+      `${LEDGER}:ledger.open`,
+    ])
+    expect(describeSlot(registry.getEntries('titleBar.commands'))).toStrictEqual([])
+    expect(describeSlot(registry.getEntries('statusBar.left'))).toStrictEqual([
+      `${LEDGER}:ledger.open`,
+    ])
+  })
+
+  it('redraws a watched slot when the layout changes', async () => {
+    const { registry, layout } = setupWithLayout([STATS, TASKS], undefined)
+    const handler = vi.fn()
+
+    const watching = registry.watchEntries('titleBar.status', handler)
+    layout.value = { 'titleBar.status': [`${TIDE}/status`] }
+    await nextTick()
+    watching.dispose()
+
+    expect(handler.mock.calls.map(([items]) => describeSlot(items as SlotItem[]))).toStrictEqual([
+      ['view stats', 'view status'],
+      ['view status', 'view stats'],
+    ])
+  })
+
+  it('finds the layout key of a drawn command or view, and none for a separator or an unknown item', () => {
+    const { registry } = setupWithLayout(
+      [
+        { pluginId: LEDGER, slot: 'titleBar.commands', command: 'ledger.open', group: 'a' },
+        { pluginId: 'app', slot: 'titleBar.commands', command: 'app:settings.open', group: 'b' },
+        TASKS,
+      ],
+      undefined,
+    )
+    const lookup = registry as unknown as { findLayoutKey: (itemKey: string) => string | undefined }
+
+    expect(lookup.findLayoutKey(`${LEDGER}/command/${LEDGER}:ledger.open`)).toBe(
+      `${LEDGER}/ledger.open`,
+    )
+    expect(lookup.findLayoutKey('app/command/app:settings.open')).toBe('app/app:settings.open')
+    expect(lookup.findLayoutKey(`${TIDE}/view/status`)).toBe(`${TIDE}/status`)
+    expect(lookup.findLayoutKey('titleBar.commands/separator/0')).toBeUndefined()
+    expect(lookup.findLayoutKey(`${REEF}/view/unknown`)).toBeUndefined()
+  })
+
+  it('lists the layout keys a bar slot draws, in drawing order', () => {
+    const { registry } = setupWithLayout([STATS, TASKS, UPDATER], {
+      'titleBar.status': [`${TIDE}/status`],
+      'statusBar.right': [`${HARBOR}/update`],
+    })
+    const lookup = registry as unknown as { listLayoutKeys: (slot: string) => readonly string[] }
+
+    expect(lookup.listLayoutKeys('titleBar.status')).toStrictEqual([
+      `${TIDE}/status`,
+      `${REEF}/stats`,
+    ])
+    expect(lookup.listLayoutKeys('statusBar.right')).toStrictEqual([`${HARBOR}/update`])
+    expect(lookup.listLayoutKeys('statusBar.left')).toStrictEqual([])
+  })
+})

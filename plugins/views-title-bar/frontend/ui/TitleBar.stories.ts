@@ -410,3 +410,23 @@ export const NothingFound: Story = {
     await expect(page.queryAllByRole('option')).toHaveLength(0)
   },
 }
+
+/** While the window drags a bar entry, an empty slot keeps the room of one chip to take the drop. */
+export const EmptySlotsWhileDragging: Story = {
+  args: { commands: [], status: [] },
+  play: async ({ canvasElement }) => {
+    const root = canvasElement.ownerDocument.documentElement
+    root.setAttribute('data-numen-slot-dragging', '')
+    try {
+      for (const name of ['titleBar.commands', 'titleBar.status']) {
+        await waitFor(() => {
+          const slot = canvasElement.querySelector(`[data-numen-slot="${name}"]`)
+          if (!slot) throw new Error(`the slot ${name} is not drawn`)
+          return expect(slot.getBoundingClientRect().width).toBeGreaterThanOrEqual(20)
+        })
+      }
+    } finally {
+      root.removeAttribute('data-numen-slot-dragging')
+    }
+  },
+}

@@ -395,3 +395,34 @@ describe('a command with items', () => {
     ])
   })
 })
+
+describe('the marks the window drags the entries by', () => {
+  const findMarks = (element: Element) => ({
+    slot: element.closest('[data-numen-slot]')?.getAttribute('data-numen-slot'),
+    entry: element.closest('[data-numen-slot-entry]')?.getAttribute('data-numen-slot-entry'),
+  })
+
+  it('name each slot and each command and view by its slot and its item key', () => {
+    const { context, view } = activateBar()
+    const count = createCommand('count', 'Count words')
+    const lang = createCommand('lang', 'Language', { hasItems: true })
+    const words = createView('words', '312 words')
+    context.slots.setEntries('statusBar.left', [count, lang])
+    context.slots.setEntries('statusBar.right', [words])
+
+    const wrapper = mountBar(view)
+
+    expect(findMarks(wrapper.find('button[data-status-bar-entry]').element)).toStrictEqual({
+      slot: 'statusBar.left',
+      entry: count.key,
+    })
+    expect(findMarks(wrapper.find('[aria-label="Language"]').element)).toStrictEqual({
+      slot: 'statusBar.left',
+      entry: lang.key,
+    })
+    expect(findMarks(wrapper.find('[data-word-count]').element)).toStrictEqual({
+      slot: 'statusBar.right',
+      entry: words.key,
+    })
+  })
+})

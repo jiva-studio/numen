@@ -583,3 +583,31 @@ describe('a command with items', () => {
     )
   })
 })
+
+describe('the marks the window drags the entries by', () => {
+  const findMarks = (element: Element) => ({
+    slot: element.closest('[data-numen-slot]')?.getAttribute('data-numen-slot'),
+    entry: element.closest('[data-numen-slot-entry]')?.getAttribute('data-numen-slot-entry'),
+  })
+
+  it('name each slot and each command and view by its slot and its item key', () => {
+    const listed = command('list', { hasItems: true })
+    const wrapper = mountBar({
+      commands: [command('a'), listed],
+      status: [view('tasks')],
+    })
+
+    expect(findMarks(button(wrapper, 'a').element)).toStrictEqual({
+      slot: 'titleBar.commands',
+      entry: command('a').key,
+    })
+    expect(findMarks(button(wrapper, 'list').element)).toStrictEqual({
+      slot: 'titleBar.commands',
+      entry: listed.key,
+    })
+    expect(findMarks(wrapper.find('[data-label-view="tasks"]').element)).toStrictEqual({
+      slot: 'titleBar.status',
+      entry: view('tasks').key,
+    })
+  })
+})
