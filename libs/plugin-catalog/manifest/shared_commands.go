@@ -47,6 +47,7 @@ func ListAppKeybindings() []Keybinding {
 		{Key: "mod+shift+n", Command: "app:vault.create"},
 		{Key: "mod+g", Command: "app:file.open#note"},
 		{Key: "mod+shift+c", Command: "app:note.createChild"},
+		{Key: "mod+w", Command: "app:tab.close"},
 		{Key: "mod+shift+w", Command: "app:tab.close"},
 		{Key: "mod+k", Command: "app:vault.search"},
 		{Key: "mod+p", Command: "app:commands.open"},

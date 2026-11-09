@@ -66,6 +66,7 @@ export const APP_KEYBINDINGS: readonly AppKeybinding[] = [
   { key: 'mod+shift+n', command: 'app:vault.create', values: {}, when: '' },
   { key: 'mod+g', command: 'app:file.open#note', values: {}, when: '' },
   { key: 'mod+shift+c', command: 'app:note.createChild', values: {}, when: '' },
+  { key: 'mod+w', command: 'app:tab.close', values: {}, when: '' },
   { key: 'mod+shift+w', command: 'app:tab.close', values: {}, when: '' },
   { key: 'mod+k', command: 'app:vault.search', values: {}, when: '' },
   { key: 'mod+p', command: 'app:commands.open', values: {}, when: '' },

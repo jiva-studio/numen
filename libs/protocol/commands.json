@@ -61,6 +61,7 @@
     { "key": "mod+shift+n", "command": "app:vault.create" },
     { "key": "mod+g", "command": "app:file.open#note" },
     { "key": "mod+shift+c", "command": "app:note.createChild" },
+    { "key": "mod+w", "command": "app:tab.close" },
     { "key": "mod+shift+w", "command": "app:tab.close" },
     { "key": "mod+k", "command": "app:vault.search" },
     { "key": "mod+p", "command": "app:commands.open" }
