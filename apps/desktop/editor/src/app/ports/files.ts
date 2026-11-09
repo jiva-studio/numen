@@ -21,4 +21,6 @@ export interface FilePort {
   move(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   createFolder(path: string): Promise<ErrorCode | null>
+  /** Deletes everything the vault's trash holds for good; how many paths could not be deleted. */
+  emptyTrash(): Promise<number>
 }

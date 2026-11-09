@@ -28,8 +28,10 @@ export interface VaultWriter {
   createUntitled(folder: string): Promise<string>
   /** A note given a different name, and its file renamed with it where the two are one name. */
   rename(path: string, title: string): Promise<RenameResult>
-  /** A note taken out of the vault, into the trash or off the disk. */
-  remove(path: string, isPermanent: boolean): Promise<RemoveResult>
+  /** A note taken out of the vault, into the trash. */
+  remove(path: string): Promise<RemoveResult>
+  /** Everything the trash holds, deleted for good; how many paths could not be deleted. */
+  emptyTrash(): Promise<number>
   /**
    * A file or a folder filed somewhere else. The last segment of `to` is what
    * it is called from now on.

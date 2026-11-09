@@ -50,6 +50,7 @@ const createWindow = (
       createUntitled: unused,
       rename: unused,
       remove: unused,
+      emptyTrash: unused,
       move: unused,
       createFolder: unused,
     },

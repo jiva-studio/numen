@@ -73,6 +73,7 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     },
     rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
     remove: async () => asValue({ trashed: '', dangling: [] }),
+    emptyTrash: async () => 0,
     list: async () => [],
     move: async () => ({ ok: true, value: null }),
     createFolder: async () => null,

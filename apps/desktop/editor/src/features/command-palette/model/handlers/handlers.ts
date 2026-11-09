@@ -21,7 +21,7 @@ import {
   renameNoteCommand,
   flushTab,
 } from './noteHandlers'
-import { addVault, renameVault, removeVault, showVault } from './vaults'
+import { addVault, emptyTrash, renameVault, removeVault, showVault } from './vaults'
 import { SETTINGS } from '@/entities/tab'
 import { ARGUMENT, COMMAND, SETTING_COMMAND_PREFIX } from '@/shared/commandIds'
 
@@ -48,11 +48,7 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.createNote]: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: null, words }),
   [COMMAND.renameNote]: (invocation, on, words) => renameNoteCommand(invocation, on, words),
-  [COMMAND.removeFile]: (invocation, on, words) =>
-    removeFiles(invocation, on, {
-      isPermanent: invocation.values?.[ARGUMENT.removal] === 'permanent',
-      words,
-    }),
+  [COMMAND.removeFile]: (invocation, on, words) => removeFiles(invocation, on, words),
   [COMMAND.copyFilePath]: (invocation, on) => on.copyPath(invocation.path),
   [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
   [COMMAND.moveFile]: (invocation, on, words) => moveFileCommand(invocation, on, words),
@@ -66,6 +62,7 @@ const HANDLERS: Record<string, CommandHandler> = {
     removeVault(invocation, on, { shouldErase: false, words }),
   [COMMAND.eraseVault]: (invocation, on, words) =>
     removeVault(invocation, on, { shouldErase: true, words }),
+  [COMMAND.emptyTrash]: (_, on, words) => emptyTrash(on, words),
 }
 
 const commandRegistry = new Map<string, CommandHandler>()
@@ -126,17 +123,11 @@ const getInvocationPaths = (invocation: CommandInvocation): readonly string[] =>
   ...invocation.others,
 ]
 
-interface RemoveFilesOptions {
-  readonly isPermanent: boolean
-  readonly words: AnswerWords
-}
-
 const removeFiles = async (
   invocation: CommandInvocation,
   on: CommandDeps,
-  options: RemoveFilesOptions,
+  words: AnswerWords,
 ): Promise<void> => {
-  const { isPermanent, words } = options
   const dangling: string[] = []
   const errors: string[] = []
   let isWaiting = false
@@ -148,7 +139,7 @@ const removeFiles = async (
       isWaiting = true
       continue
     }
-    const answer = await on.files.remove(path, isPermanent)
+    const answer = await on.files.remove(path)
     if (!answer.ok) {
       errors.push(words.errors[answer.error])
       continue

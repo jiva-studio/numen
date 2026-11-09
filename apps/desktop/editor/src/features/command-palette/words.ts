@@ -24,6 +24,7 @@ export interface AnswerWords {
   readonly vaultErrors: Record<VaultErrorCode, string>
   readonly folder: string
   readonly dangling: string
+  readonly undeleted: (count: number) => string
   readonly nowhere: string
   readonly unanswered: string
   readonly stale: string
@@ -56,7 +57,6 @@ export interface Words extends EmptyWords {
   readonly jump: string
   readonly title: string
   readonly remove: string
-  readonly destroy: string
   readonly copy: string
   readonly newNote: string
   readonly close: string
@@ -71,6 +71,7 @@ export interface Words extends EmptyWords {
   readonly renameVault: string
   readonly removeVault: string
   readonly eraseVault: string
+  readonly emptyTrash: string
   readonly noteGroupTitle: string
   readonly overFile: string
   readonly overWindow: string
@@ -98,12 +99,12 @@ export interface Words extends EmptyWords {
   readonly answer: string
   readonly retainedNotice: string
   readonly keepsVault: string
+  readonly keepsTrash: string
+  readonly emptiesTrash: string
   readonly removeVaultAction: string
   readonly stays: string
   readonly exactly: string
   readonly typeBack: string
-  readonly destroys: string
-  readonly forever: string
   readonly typeVaultBack: string
   readonly erases: string
   readonly binned: string

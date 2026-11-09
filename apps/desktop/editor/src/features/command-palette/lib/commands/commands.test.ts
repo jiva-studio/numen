@@ -27,7 +27,6 @@ describe('the commands over a note', () => {
 
     expect(commands).toContain('app:file.open')
     expect(commands).not.toContain('app:file.open#beside')
-    expect(commands).not.toContain('app:file.remove#permanent')
   })
 })
 

@@ -1,7 +1,7 @@
 /**
  * The commands offered over the note in front.
  */
-import { ARGUMENT, COMMAND, ROW } from '@/shared/commandIds'
+import { ARGUMENT, COMMAND } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
@@ -54,23 +54,11 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     getFieldText: (target) => target.title,
   },
   // The note moves to the vault's .trash folder, and restoring it is a move.
-  // Destroy is the command that requires confirmation.
   {
     id: COMMAND.removeFile,
     text: words.remove,
     group: 'note',
     ...withWhen('target.isNote'),
-    also: ROW.destroyFile,
-  },
-  {
-    id: ROW.destroyFile,
-    command: COMMAND.removeFile,
-    values: { [ARGUMENT.removal]: 'permanent' },
-    text: words.destroy,
-    group: 'note',
-    input: 'retypedName',
-    ...withWhen('target.isNote'),
-    warns: { action: words.destroys, detail: words.forever, back: words.typeBack },
   },
   { id: COMMAND.copyFilePath, text: words.copy, group: 'note', ...withWhen('target.isNote') },
 ]

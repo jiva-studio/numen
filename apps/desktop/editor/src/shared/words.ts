@@ -50,7 +50,6 @@ export const WORDS = {
   jump: 'Create jump note',
   title: 'Rename note',
   remove: 'Move note to trash',
-  destroy: 'Delete note permanently',
   copy: 'Copy note path',
   /** Status corner text shown after a file menu command has run. */
   commandRan: (title: string) => `${title}: done`,
@@ -75,6 +74,7 @@ export const WORDS = {
   renameVault: 'Rename vault',
   removeVault: 'Remove vault from list',
   eraseVault: 'Erase vault',
+  emptyTrash: 'Empty trash',
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   noVault: 'No vault open',
   noNote: 'No active note',
@@ -118,12 +118,12 @@ export const WORDS = {
   answer: 'Choose',
   retainedNotice: 'No changes',
   keepsVault: 'Keep vault',
+  keepsTrash: 'Keep trash',
+  emptiesTrash: 'Empty the trash of',
   removeVaultAction: 'Remove',
   stays: 'The folder is not deleted',
   exactly: 'This cannot be undone',
   typeBack: 'Type the note name to confirm',
-  destroys: 'Destroy',
-  forever: 'The note file is deleted',
   typeVaultBack: 'Type the vault name to confirm',
   erases: 'Erase',
   binned: 'The folder moves to the trash',
@@ -135,6 +135,8 @@ export const WORDS = {
   asJump: 'Create as jump',
   errors: ERRORS,
   dangling: 'Broken links in:',
+  undeleted: (count: number) =>
+    `Not deleted: ${count} ${count === 1 ? 'item' : 'items'} in the trash`,
   /** The vault opens with no note at all. */
   nowhere: 'No start note',
   unanswered: 'Not saved: resolve the file conflict in its tab first',

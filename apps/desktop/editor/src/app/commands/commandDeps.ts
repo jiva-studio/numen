@@ -40,7 +40,8 @@ function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
     createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
     createUntitled: (folder) => making.createUntitled(folder),
     rename: (path, title) => core.rename(path, title),
-    remove: (path, isPermanent) => core.remove(path, isPermanent),
+    remove: (path) => core.remove(path),
+    emptyTrash: () => core.emptyTrash(),
     move: (from, to) => core.move(from, to),
     createFolder: (path) => core.createFolder(path),
   }

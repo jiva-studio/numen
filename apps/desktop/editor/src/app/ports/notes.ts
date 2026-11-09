@@ -51,10 +51,6 @@ export interface NotePort {
    * filename are kept as one name.
    */
   rename(path: string, title: string): Promise<RenameResult>
-  /**
-   * A file or folder moved out of the vault into the trash, from which it can be
-   * restored. A permanent removal deletes the file from disk and cannot be undone;
-   * it is available for notes only.
-   */
-  remove(path: string, isPermanent?: boolean): Promise<RemoveResult>
+  /** A file or folder moved out of the vault into the trash, from which it can be restored. */
+  remove(path: string): Promise<RemoveResult>
 }

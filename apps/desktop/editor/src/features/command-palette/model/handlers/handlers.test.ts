@@ -64,6 +64,7 @@ const window = (
     turnedDown?: VaultErrorCode
     movement?: Movement
     folderError?: ErrorCode
+    undeleted?: number
   } = {},
 ) => {
   const isDone: string[] = []
@@ -90,9 +91,13 @@ const window = (
         isDone.push(`rename ${path} ${title}`)
         return answers.renamed ?? createRenameResult()
       },
-      remove: async (path, isPermanent) => {
-        isDone.push(`remove ${path} ${isPermanent}`)
+      remove: async (path) => {
+        isDone.push(`remove ${path}`)
         return answers.removed ?? createRemoveResult()
+      },
+      emptyTrash: async () => {
+        isDone.push('emptyTrash')
+        return answers.undeleted ?? 0
       },
       move: async (from, to) => {
         isDone.push(`move ${from} ${to}`)
@@ -514,11 +519,11 @@ describe('a note removed', () => {
 
     expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
-      'remove physics/Ontology.md false',
+      'remove physics/Ontology.md',
     ])
   })
 
-  it('goes off the disk where destroying was what was requested', async () => {
+  it('goes to the trash and never off the disk, whatever argument it is given', async () => {
     const one = window()
 
     await carry(
@@ -529,7 +534,9 @@ describe('a note removed', () => {
       one.on,
     )
 
-    expect(one.actions[1]).toBe('remove physics/Ontology.md true')
+    expect(one.actions.filter((one) => one.startsWith('remove'))).toStrictEqual([
+      'remove physics/Ontology.md',
+    ])
   })
 
   /** The row is removed from the tree, which is all the user needs to see. */
@@ -615,7 +622,7 @@ describe('several files removed at once', () => {
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
-      'remove physics/Heat.pdf false',
+      'remove physics/Heat.pdf',
     ])
   })
 
@@ -1157,6 +1164,26 @@ describe('what the voice says in which severity', () => {
     expect(failingWindow.severities).toStrictEqual(['error'])
     expect(pendingItem.notices).toStrictEqual([words.unanswered])
     expect(pendingItem.severities).toStrictEqual(['warning'])
+  })
+})
+
+describe('the trash emptied', () => {
+  it('is deleted through the vault and says nothing when every path went', async () => {
+    const one = window()
+
+    await carry(createInvocation('app:trash.empty', front()), one.on)
+
+    expect(one.actions).toStrictEqual(['emptyTrash'])
+    expect(one.notices).toStrictEqual([])
+  })
+
+  it('says as one error how many paths stayed', async () => {
+    const one = window({ undeleted: 2 })
+
+    await carry(createInvocation('app:trash.empty', front()), one.on)
+
+    expect(one.notices).toStrictEqual([words.undeleted(2)])
+    expect(one.severities).toStrictEqual(['error'])
   })
 })
 

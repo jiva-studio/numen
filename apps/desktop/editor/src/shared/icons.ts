@@ -53,7 +53,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.renameNote, Type],
   [COMMAND.copyFilePath, Copy],
   [COMMAND.removeFile, Trash2],
-  [ROW.destroyFile, Trash2],
   [COMMAND.deleteText, FileX],
   [COMMAND.detachTab, ExternalLink],
   [COMMAND.unlinkTab, Link2Off],
@@ -79,6 +78,7 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.renameVault, PenLine],
   [COMMAND.removeVault, X],
   [COMMAND.eraseVault, Trash2],
+  [COMMAND.emptyTrash, Trash2],
 ])
 
 /**
