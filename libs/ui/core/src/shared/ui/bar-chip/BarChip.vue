@@ -58,7 +58,7 @@ function onUpdateOpen(value: boolean): void {
         :side-offset="4"
         :avoid-collisions="true"
         :aria-label="props.popoverLabel"
-        :aria-labelledby="undefined"
+        aria-labelledby=""
       >
         <slot name="popover" />
       </PopoverContent>
