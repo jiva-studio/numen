@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.titleBar",
   "name": "Title bar",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "protocol": 1,
   "description": "Draws the bar at the top of each window: the commands, the vault and the window buttons",
   "targets": ["desktop.editor", "desktop.flashcards"],

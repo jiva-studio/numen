@@ -63,8 +63,14 @@
   display: none;
 }
 
-.status-bar__view:not(:has(> [data-slot-view]:empty)) + .status-bar__view:not(:has(> [data-slot-view]:empty)),
-.status-bar__view:not(:has(> [data-slot-view]:empty)) + .status-bar__view:has(> [data-slot-view]:empty) + .status-bar__view:not(:has(> [data-slot-view]:empty)),
-.status-bar__view:not(:has(> [data-slot-view]:empty)) + .status-bar__view:has(> [data-slot-view]:empty) + .status-bar__view:has(> [data-slot-view]:empty) + .status-bar__view:not(:has(> [data-slot-view]:empty)) {
+.status-bar__view:not(:has(> [data-slot-view]:empty))
+  + .status-bar__view:not(:has(> [data-slot-view]:empty)),
+.status-bar__view:not(:has(> [data-slot-view]:empty))
+  + .status-bar__view:has(> [data-slot-view]:empty)
+  + .status-bar__view:not(:has(> [data-slot-view]:empty)),
+.status-bar__view:not(:has(> [data-slot-view]:empty))
+  + .status-bar__view:has(> [data-slot-view]:empty)
+  + .status-bar__view:has(> [data-slot-view]:empty)
+  + .status-bar__view:not(:has(> [data-slot-view]:empty)) {
   margin-inline-start: var(--numen-bar-gap);
 }

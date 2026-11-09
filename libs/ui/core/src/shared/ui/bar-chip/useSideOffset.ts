@@ -4,7 +4,7 @@ const POPOVER_GAP = 4
 
 /**
  * The side offset of a popover that keeps `POPOVER_GAP` px from the edge of the bar, whatever the
- * height of the chip. floating-ui measures the offset from the chip, which sits in the middle of
+ * height of the chip. floating-ui measures the offset from the chip, which is centered in
  * the bar. The offset is read from the bar tokens each time `isOpen` turns true.
  */
 export function useSideOffset(isOpen: WatchSource<boolean>): Ref<number> {

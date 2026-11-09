@@ -82,7 +82,9 @@ describe('the summary', () => {
     const wrapper = mountTasks(view)
 
     expect(wrapper.find('.tasks-status__summary').text()).toBe('Idle')
-    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe('No tasks running')
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe(
+      'No tasks running',
+    )
     expect(wrapper.find('.tasks-status__ring-track').exists()).toBe(true)
     expect(wrapper.find('.tasks-status__ring-fill').exists()).toBe(false)
   })
@@ -102,7 +104,9 @@ describe('the summary', () => {
     expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('aria-label')).toBe(
       '1 of 3 tasks done',
     )
-    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('title')).toBe('1 of 3 tasks done')
+    expect(wrapper.find('button[aria-haspopup="dialog"]').attributes('title')).toBe(
+      '1 of 3 tasks done',
+    )
 
     context.backgroundTasks.setTasks([running('c'), running('d')])
     await settle(HOLD_MS)
@@ -203,7 +207,9 @@ describe('the list', () => {
 
     expect(page().find('.task-popover__title').text()).toBe('Background tasks')
     expect(
-      page().findAll('.task-item').map((row) => row.attributes('data-task-id')),
+      page()
+        .findAll('.task-item')
+        .map((row) => row.attributes('data-task-id')),
     ).toStrictEqual(['second', 'first'])
 
     await openList(wrapper)

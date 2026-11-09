@@ -147,8 +147,14 @@
   display: none;
 }
 
-.title-bar__view:not(:has(> [data-slot-view]:empty)) + .title-bar__view:not(:has(> [data-slot-view]:empty)),
-.title-bar__view:not(:has(> [data-slot-view]:empty)) + .title-bar__view:has(> [data-slot-view]:empty) + .title-bar__view:not(:has(> [data-slot-view]:empty)),
-.title-bar__view:not(:has(> [data-slot-view]:empty)) + .title-bar__view:has(> [data-slot-view]:empty) + .title-bar__view:has(> [data-slot-view]:empty) + .title-bar__view:not(:has(> [data-slot-view]:empty)) {
+.title-bar__view:not(:has(> [data-slot-view]:empty))
+  + .title-bar__view:not(:has(> [data-slot-view]:empty)),
+.title-bar__view:not(:has(> [data-slot-view]:empty))
+  + .title-bar__view:has(> [data-slot-view]:empty)
+  + .title-bar__view:not(:has(> [data-slot-view]:empty)),
+.title-bar__view:not(:has(> [data-slot-view]:empty))
+  + .title-bar__view:has(> [data-slot-view]:empty)
+  + .title-bar__view:has(> [data-slot-view]:empty)
+  + .title-bar__view:not(:has(> [data-slot-view]:empty)) {
   margin-inline-start: var(--numen-bar-gap);
 }

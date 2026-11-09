@@ -35,12 +35,7 @@ function onClose() {
 </script>
 
 <template>
-  <BarChip
-    v-model:open="isOpen"
-    :label="summary"
-    :tooltip="summary"
-    :popover-label="words.title"
-  >
+  <BarChip v-model:open="isOpen" :label="summary" :tooltip="summary" :popover-label="words.title">
     <span class="index-stats__icon" aria-hidden="true">{{ MARK }}</span>
     <span class="index-stats__figure">{{ figure }}</span>
     <template v-if="stats" #popover>
