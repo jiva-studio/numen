@@ -196,8 +196,8 @@ export class TabDriver {
 
   async openAt(kind: TabKindChoice, reference: string, name: string, place: Place): Promise<void> {
     await this.scenario.ensureWorkspace()
-    await this.requireKindIfNamed(kind, reference, name)
     await openTabAt(this.scenario.page, await this.scenario.getPath(reference, name), place.position, place.where)
+    await this.requireKindIfNamed(kind, reference, name)
   }
 
   async expectAt(kind: TabKindChoice, reference: string, name: string, place: Place): Promise<void> {
