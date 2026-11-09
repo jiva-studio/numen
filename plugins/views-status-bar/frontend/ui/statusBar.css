@@ -8,6 +8,8 @@
   background: var(--numen-surface);
   border-top: 1px solid var(--numen-rule);
   color: var(--numen-ink);
+  /* The window rounds its corners; the entries keep as far from the edges as in the title bar. */
+  padding-inline: max(0px, calc(var(--numen-window-radius, 0px) - 8px));
   font-size: 13px;
   user-select: none;
   z-index: 30;

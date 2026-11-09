@@ -69,7 +69,7 @@ const {
   frame,
   slotDrag,
 } = useWindow()
-const { label: slotDragLabel, position: slotDragPosition, marker: slotDropMarker } = slotDrag
+const { source: slotDragSource, position: slotDragPosition, marker: slotDropMarker } = slotDrag
 
 const tabMenu = useWindowTabMenu({
   windowTabs,
@@ -183,7 +183,7 @@ function onShowTab(id: string) {
 
     <SlotViewHost :view="statusBarView" />
 
-    <SlotDragLayer :label="slotDragLabel" :at="slotDragPosition" :marker="slotDropMarker" />
+    <SlotDragLayer :source="slotDragSource" :at="slotDragPosition" :marker="slotDropMarker" />
 
     <UnsavedChangesPrompt
       :conflicts="fileFlush.conflicts.value"

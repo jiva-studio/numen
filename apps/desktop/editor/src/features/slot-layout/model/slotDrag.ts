@@ -38,18 +38,18 @@ export interface SlotDropMarker {
   readonly height: number
 }
 
-/** What the layer of the drag draws: the title of the dragged entry, where it is, and the marker. */
+/** What the layer of the drag draws: the dragged entry at the pointer and the marker of the place it goes to. */
 export interface SlotDragState {
-  readonly label: ComputedRef<string | null>
+  readonly source: ComputedRef<Element | null>
   readonly position: Readonly<Ref<Position | null>>
   readonly marker: ComputedRef<SlotDropMarker | null>
 }
 
-/** The entry a press holds: its layout key, the slot it is drawn in and its title. */
+/** The entry a press holds: its layout key, the slot it is drawn in and its element. */
 interface PressedEntry {
   readonly key: string
   readonly from: SlotName
-  readonly label: string
+  readonly element: Element
 }
 
 interface SlotDropTarget {
@@ -67,12 +67,6 @@ const findSlot = (element: Element | null): { element: Element; slot: SlotName }
   return { element: slotElement, slot: slot as SlotName }
 }
 
-const getEntryLabel = (element: Element, key: string): string => {
-  const named = element.hasAttribute('aria-label') ? element : element.querySelector('[aria-label]')
-  const label = named?.getAttribute('aria-label') ?? element.textContent
-  return label.trim() || key
-}
-
 const hasDragModifier = (event: PointerEvent, isMac: boolean): boolean =>
   isMac ? event.metaKey : event.ctrlKey
 
@@ -88,7 +82,7 @@ const findPressedEntry = (target: EventTarget | null, deps: LayoutDeps): Pressed
   if (!entry || !found) return null
   const key = deps.findLayoutKey(entry.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', found.slot)
   if (key === undefined) return null
-  return { key, from: found.slot, label: getEntryLabel(entry, key) }
+  return { key, from: found.slot, element: entry }
 }
 
 const listEntryBoxes = (
@@ -243,7 +237,7 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
 
   const isDrawn = (): boolean => dragging.value?.hasMoved === true && !isCancelled.value
   return {
-    label: computed(() => (isDrawn() ? (dragging.value?.item.label ?? null) : null)),
+    source: computed(() => (isDrawn() ? (dragging.value?.item.element ?? null) : null)),
     position,
     marker: computed(() => (isDrawn() ? (dropTarget.value?.marker ?? null) : null)),
   }
