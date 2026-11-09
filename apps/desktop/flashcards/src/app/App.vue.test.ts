@@ -103,6 +103,7 @@ const MANIFEST = {
   name: 'Cards',
   version: '1.0.0',
   frontend: {},
+  permissions: ['vault:read'],
 }
 
 const createDeps = (listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS) => ({
@@ -201,9 +202,7 @@ describe('App', () => {
             listVaults: async () => VAULTS,
             fetch: (async (url: string) => {
               if (url.includes('broken')) return new Response('not json', { status: 200 })
-              return new Response(
-                JSON.stringify({ ...MANIFEST, id: 'md.numen.closing', permissions: ['vault:read'] }),
-              )
+              return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
