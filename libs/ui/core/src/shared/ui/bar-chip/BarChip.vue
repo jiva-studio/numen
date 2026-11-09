@@ -39,6 +39,7 @@ function onUpdateOpen(value: boolean): void {
 let observer: MutationObserver | null = null
 
 function nameDialog(instance: unknown): void {
+  console.log("NAMEDIALOG", instance === null ? "null" : String((instance as {$el?: Element}).$el?.outerHTML?.slice(0, 80) ?? (instance as {$el?: Node}).$el?.nodeName))
   observer?.disconnect()
   observer = null
   const element = (instance as { $el?: Element } | null)?.$el
