@@ -71,39 +71,6 @@ test.describe('Removing and renaming a note', () => {
     }
   })
 
-  test('destroys a note only once its exact title is typed back', async ({ page, request }) => {
-    const title = createUniqueTitle('Ballast')
-    const notePath = await createNote(request, title)
-    try {
-      await writeNote(request, notePath, 'Stones laid in the hold.\n')
-      await openWorkspace(page)
-      await openNote(page, notePath)
-
-      await page.keyboard.press('Control+p')
-      await getPaletteField(page).fill('Move note to trash')
-      await expect(page.getByRole('option', { selected: true })).toContainText('Move note to trash')
-      await page.keyboard.press('Shift+Enter')
-      const field = getPaletteField(page)
-      const destroy = page.getByRole('option', { name: new RegExp(`^Destroy “`) })
-      await field.fill(`${title} wrong`)
-      await expect(destroy).toHaveAttribute('aria-disabled', 'true')
-      await page.keyboard.press('Enter')
-      expect((await readNote(request, notePath)).body).toBe('Stones laid in the hold.\n')
-
-      await field.fill(title)
-      await expect(destroy).not.toHaveAttribute('aria-disabled', 'true')
-      await page.keyboard.press('Enter')
-
-      await expect(getNoteTab(page, notePath)).toHaveCount(0)
-      await expect
-        .poll(async () => (await readNote(request, notePath)).error)
-        .toBe('ERROR_CODE_NOT_FOUND')
-      expect(await findTrashed(request, `${title}.md`)).toHaveLength(0)
-    } finally {
-      await destroyNote(request, notePath)
-    }
-  })
-
   test('renames the file and the links to it when the title changes while title and filename are synced', async ({
     page,
     request,

@@ -121,9 +121,13 @@ export const listFiles = async (request: APIRequestContext, folder = ''): Promis
 export const listFilePaths = async (request: APIRequestContext, folder = ''): Promise<string[]> =>
   (await listFiles(request, folder)).filter((one) => !one.isFolder).map((one) => one.path)
 
-/** Deletes a note file, and does nothing when it is already gone. */
+/** Removes a note file and the copy it leaves in the trash, and does nothing when it is already gone. */
 export const destroyNote = async (request: APIRequestContext, notePath: string): Promise<void> => {
-  await callRPC(request, 'FileService/RemoveFile', { path: notePath, destroy: true })
+  const answer = await callRPC(request, 'FileService/RemoveFile', { path: notePath })
+  const trashed = answer['trashed']
+  if (typeof trashed === 'string' && trashed) {
+    fs.rmSync(path.join(getVaultPath(), trashed), { force: true })
+  }
 }
 
 const isIndexedNote = async (request: APIRequestContext, notePath: string): Promise<boolean> => {
