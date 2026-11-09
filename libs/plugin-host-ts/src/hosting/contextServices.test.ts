@@ -1,6 +1,6 @@
 /**
  * What a plugin may do through the window, the notes and the files it is
- * handed: the reads are open, the writes need `vault:write`.
+ * handed: the reads need `vault:read`, the writes need `vault:write`.
  */
 import { describe, expect, it, vi } from 'vitest'
 import {
@@ -23,7 +23,11 @@ const createServices = () => {
     showError: vi.fn(),
   } as unknown as WorkspaceHost
   const notes = {
+    getNeighbourhood: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
     getHeadings: vi.fn(() => Promise.resolve(new Map())),
+    findNotes: vi.fn(() => Promise.resolve([])),
+    read: vi.fn(() => Promise.resolve({ body: 'Example prose.' })),
+    readProperties: vi.fn(() => Promise.resolve({ title: 'Example' })),
     createUntitledNote: vi.fn(() => Promise.resolve('Untitled.md')),
     write: vi.fn(() => Promise.resolve()),
   } as unknown as VaultNotes
@@ -85,6 +89,14 @@ type Call = (context: PluginContext) => unknown
 const NOTE_WRITES: Record<string, Call> = {
   createUntitledNote: (c) => c.notes!.createUntitledNote(),
   write: (c) => c.notes!.write('a.md', 'Prose.'),
+}
+
+const NOTE_READS: Record<string, Call> = {
+  getNeighbourhood: (c) => c.notes!.getNeighbourhood('Notes/Example.md'),
+  getHeadings: (c) => c.notes!.getHeadings(['Notes/Example.md']),
+  findNotes: (c) => c.notes!.findNotes('Example', 5),
+  read: (c) => c.notes!.read('Notes/Example.md'),
+  readProperties: (c) => c.notes!.readProperties('Notes/Example.md'),
 }
 
 const RELATION_WRITES: Record<string, Call> = {
@@ -162,7 +174,7 @@ const FILE_WRITES: Record<string, Call> = {
   createNote: (c) => c.files!.createNote('dir'),
 }
 
-describe('a note a plugin writes', () => {
+describe('a note a plugin reads and writes', () => {
   it.each(Object.entries(NOTE_WRITES))(
     'fails through %s without vault:write',
     async (name, call) => {
@@ -183,12 +195,49 @@ describe('a note a plugin writes', () => {
     },
   )
 
-  it('is read without vault:write', async () => {
+  it.each(Object.entries(NOTE_READS))('fails through %s without vault:read', async (name, call) => {
+    const { context, notes } = createContext(['vault:write'])
+
+    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      `Plugin "md.numen.sample" lacks required permission "vault:read" for notes.${name}`,
+    )
+    expect(notes[name as keyof VaultNotes]).not.toHaveBeenCalled()
+  })
+
+  it.each(Object.entries(NOTE_READS))('fails through %s with no permission', async (name, call) => {
+    const { context } = createContext([])
+
+    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(
+      `Plugin "md.numen.sample" lacks required permission "vault:read" for notes.${name}`,
+    )
+  })
+
+  it.each(Object.entries(NOTE_READS))('is read through %s with vault:read', async (name, call) => {
     const { context, notes } = createContext(['vault:read'])
 
-    await context.notes!.getHeadings(['a.md'])
+    await call(context)
 
-    expect(notes.getHeadings).toHaveBeenCalledWith(['a.md'])
+    expect(notes[name as keyof VaultNotes]).toHaveBeenCalledOnce()
+  })
+
+  it('is read with vault:read and without vault:write', async () => {
+    const { context, notes } = createContext(['vault:read'])
+
+    const note = await context.notes!.read('Notes/Example.md')
+
+    expect(note).toStrictEqual({ body: 'Example prose.' })
+    expect(notes.read).toHaveBeenCalledWith('Notes/Example.md')
+  })
+
+  it('is written and not read with vault:write and without vault:read', async () => {
+    const { context, notes } = createContext(['vault:write'])
+
+    await context.notes!.write('Notes/Example.md', 'New prose.')
+
+    expect(notes.write).toHaveBeenCalledWith('Notes/Example.md', 'New prose.')
+    await expect(context.notes!.read('Notes/Example.md')).rejects.toThrowError(
+      'Plugin "md.numen.sample" lacks required permission "vault:read" for notes.read',
+    )
   })
 })
 
@@ -247,7 +296,7 @@ describe('the registrations of a plugin in the open files', () => {
   })
 })
 
-describe('a file a plugin writes', () => {
+describe('a file a plugin lists and writes', () => {
   it.each(Object.entries(FILE_WRITES))(
     'fails through %s without vault:write',
     async (name, call) => {
@@ -268,12 +317,24 @@ describe('a file a plugin writes', () => {
     },
   )
 
-  it('is listed without vault:write', async () => {
-    const { context, files } = createContext([])
+  it('is listed with vault:read and without vault:write', async () => {
+    const { context, files } = createContext(['vault:read'])
 
-    await context.files!.list('dir')
+    await context.files!.list('Notes')
 
-    expect(files.list).toHaveBeenCalledWith('dir')
+    expect(files.list).toHaveBeenCalledWith('Notes')
+  })
+
+  it.each([
+    ['vault:write', ['vault:write']],
+    ['no permission', []],
+  ])('fails to be listed with %s', async (_, permissions) => {
+    const { context, files } = createContext(permissions)
+
+    await expect(context.files!.list('Notes')).rejects.toThrowError(
+      'Plugin "md.numen.sample" lacks required permission "vault:read" for files.list',
+    )
+    expect(files.list).not.toHaveBeenCalled()
   })
 })
 
