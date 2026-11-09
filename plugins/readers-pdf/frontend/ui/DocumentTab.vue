@@ -3,16 +3,17 @@
  * PDF document viewer tab component.
  * Renders document pages, toolbar controls, and text highlights.
  */
-import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, useTemplateRef } from 'vue'
 import { LoadingIndicator } from '@numen/ui'
-import { Reader } from './reader'
-import { WORDS as words } from './words'
-import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
-import type { TextRange } from './types'
-import type { DocumentTabState } from './model/useDocumentTab'
-import { useDocumentTab } from './model/useDocumentTab'
-import { useDocumentReader } from './model/useDocumentReader'
-import { readerPreferences } from './model/preferences'
+import { Reader } from '../reader'
+import { WORDS as words } from '../words'
+import type { ReaderTabState } from '@numen/plugin-sdk'
+import type { TextRange } from '../types'
+import type { DocumentTabState } from '../model/useDocumentTab'
+import { useDocumentTab } from '../model/useDocumentTab'
+import { useDocumentReader } from '../model/useDocumentReader'
+import { useReaderTabSync } from '../model/useReaderTabSync'
+import { readerPreferences } from '../model/preferences'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -65,64 +66,9 @@ onMounted(() => {
 /** The tab state from the window, when it is a reader tab. */
 const readerTab = computed(() => props.state as Partial<ReaderTabState> | undefined)
 
-// The selector is a search hit or the place saved before a restart; `page` counts from 1 (RFC 8118).
-watch(
-  () => readerTab.value?.selector,
-  (selector: Selector | null | undefined) => {
-    if (!activeState.value || typeof selector?.page !== 'number') return
-    const page = Math.max(0, selector.page - 1)
-    const boxes = selector.boxes as
-      readonly (readonly [number, number, number, number])[] | undefined
-    if (Array.isArray(boxes) && boxes.length > 0) {
-      const rects = boxes.map(([minX, minY, maxX, maxY]) => ({
-        minX,
-        minY,
-        maxX,
-        maxY,
-      }))
-      activeState.value.applyHighlights([[{ page, rects }]]).catch(activeState.value.reportFailure)
-      return
-    }
-    activeState.value.goToPage(page).catch(activeState.value.reportFailure)
-  },
-  { immediate: true },
-)
-
-// The window sets a new array on each request, so the same ranges are highlighted again.
-watch(
-  () => readerTab.value?.ranges,
-  (ranges) => {
-    if (!activeState.value || !ranges || ranges.length === 0) return
-    activeState.value.focusSpans(...ranges).catch(activeState.value.reportFailure)
-  },
-  { immediate: true },
-)
-
-watch(
-  () => activeState.value?.pageNumber.value,
-  (page) => {
-    const pageCount = activeState.value?.pages.value.length ?? 0
-    if (typeof page === 'number' && pageCount > 0 && !activeState.value?.isLoading.value) {
-      readerTab.value?.savePlace?.({ page: page + 1, pageCount })
-    }
-  },
-)
-
-// The place is reported as soon as the document has loaded, the page it opens at included, and again
-// on each later page.
-watch(
-  () =>
-    [
-      activeState.value?.pageNumber.value,
-      activeState.value?.pages.value.length ?? 0,
-      activeState.value?.isLoading.value,
-    ] as const,
-  ([page, pageCount, isLoading]) => {
-    if (typeof page === 'number' && pageCount > 0 && !isLoading) {
-      readerTab.value?.reportPlace?.({ page: page + 1, pageCount })
-    }
-  },
-  { immediate: true },
+useReaderTabSync(
+  () => readerTab.value,
+  () => activeState.value,
 )
 
 onUnmounted(() => {
