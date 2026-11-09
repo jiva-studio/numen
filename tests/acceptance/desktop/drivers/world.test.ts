@@ -144,6 +144,31 @@ describe('World', () => {
     }
   })
 
+  it('writes a file at a path and reads it back, and finds nothing at a path without a file', () => {
+    const world = create()
+    world.addVault('Test')
+    world.writeText('Test', 'cards/Animal.md', 'fields')
+    expect(world.readText('Test', 'cards/Animal.md')).toBe('fields')
+    expect(world.readText('Test', 'cards/Deck.md')).toBeUndefined()
+  })
+
+  it('knows a note was written only after a step wrote one', () => {
+    const world = create()
+    world.addVault('Test')
+    world.writeText('Test', 'cards/Animal.md', 'fields')
+    expect(world.hasNotes()).toBe(false)
+    world.writeNote('Test', 'Entropy', 'A measure.')
+    expect(world.hasNotes()).toBe(true)
+  })
+
+  it('keeps the texts of the pages of its own', () => {
+    const first = create()
+    const second = create()
+    first.setPageText('http://numen.dev/one', 'Tidal mills store water.')
+    expect(first.readPageText('http://numen.dev/one')).toBe('Tidal mills store water.')
+    expect(second.readPageText('http://numen.dev/one')).toBeUndefined()
+  })
+
   it('keeps every vault apart', () => {
     const world = create()
     world.addVault('Test')

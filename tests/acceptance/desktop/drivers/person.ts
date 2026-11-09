@@ -39,7 +39,7 @@ export class Person {
     this.search = new SearchDriver(this.scenario)
     this.plex = new PlexDriver(this.scenario)
     this.plugin = new PluginDriver(this.scenario)
-    this.web = new WebDriver()
+    this.web = new WebDriver(this.scenario)
     this.review = new ReviewDriver(this.scenario)
     this.vault = new VaultDriver(this.scenario)
   }

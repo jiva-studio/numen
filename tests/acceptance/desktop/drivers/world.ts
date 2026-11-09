@@ -3,17 +3,36 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { readSample, type SampleKind } from '../support/samples.js'
+import { freeFromRemoval, holdForRemoval } from './reaper.js'
 import { assertVaultName, assertVaultPath, getNoteFile, pickVault } from './rules.js'
 
 export type EntryKind = 'file' | 'folder'
 
 export class World {
   private readonly vaults: string[] = []
+  private readonly pageTexts = new Map<string, string>()
+  private hasNote = false
 
   private constructor(readonly root: string) {}
 
   static create(): World {
-    return new World(fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-world-'))))
+    const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-world-')))
+    holdForRemoval('dir', root)
+    return new World(root)
+  }
+
+  /** Whether a step wrote a note: the window opens on the plex of the note the vault changed last. */
+  hasNotes(): boolean {
+    return this.hasNote
+  }
+
+  /** Makes the page of the address answer with the text in its first paragraph, for the server of this world. */
+  setPageText(address: string, text: string): void {
+    this.pageTexts.set(address, text)
+  }
+
+  readPageText(address: string): string | undefined {
+    return this.pageTexts.get(address)
   }
 
   getVaults(): readonly string[] {
@@ -32,7 +51,22 @@ export class World {
   }
 
   writeNote(vault: string, title: string, text: string): void {
-    this.writeFile(vault, getNoteFile(title), `${text}\n`)
+    this.writeText(vault, getNoteFile(title), `${text}\n`)
+    this.hasNote = true
+  }
+
+  /** Writes a file of the vault at the path, with the folders above it. */
+  writeText(vault: string, filePath: string, text: string): void {
+    assertVaultPath(filePath)
+    const target = path.join(this.getFolder(vault), filePath)
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, text)
+  }
+
+  readText(vault: string, filePath: string): string | undefined {
+    assertVaultPath(filePath)
+    const target = path.join(this.getFolder(vault), filePath)
+    return fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : undefined
   }
 
   makeFolder(vault: string, folder: string): void {
@@ -57,11 +91,6 @@ export class World {
 
   remove(): void {
     fs.rmSync(this.root, { recursive: true, force: true })
-  }
-
-  private writeFile(vault: string, filePath: string, text: string): void {
-    const target = path.join(this.getFolder(vault), filePath)
-    fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.writeFileSync(target, text)
+    freeFromRemoval('dir', this.root)
   }
 }

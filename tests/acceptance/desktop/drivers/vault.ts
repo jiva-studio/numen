@@ -1,6 +1,29 @@
 /** The vault of the scenario as a person finds it: what is in its folder before the application starts, and what is there after. */
 import { expect } from 'playwright/test'
-import { createNote, listFilePaths, listFiles, writeNote as writeBody } from '../../../e2e/desktop/tests/support/vault.js'
+import {
+  addVault,
+  createNote,
+  listFilePaths,
+  listFiles,
+  listVaults,
+  openVault,
+  writeNote as writeBody,
+} from '../../../e2e/desktop/tests/support/vault.js'
+import {
+  countCards,
+  createCardId,
+  createCardModelText,
+  createCardText,
+  createDeckText,
+  createPresetText,
+  createTemplatesText,
+  getCardFile,
+  parseFieldNames,
+  parsePresetSettings,
+  parseTemplates,
+  parseValues,
+  readCardModelFields,
+} from './cards.js'
 import { assertEntry, getNoteFile } from './rules.js'
 import type { SampleKind } from '../support/samples.js'
 import type { Scenario } from './scenario.js'
@@ -36,6 +59,40 @@ export class VaultDriver {
     this.scenario.getWorld().copySample(this.scenario.getVault(vault), kind, filePath)
   }
 
+  addCardModel(vault: string, title: string, fields: string[][]): void {
+    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(title), createCardModelText(title, parseFieldNames(fields)))
+  }
+
+  addTemplates(vault: string, title: string, templates: string[][]): void {
+    const text = this.readCards(vault, title, 'card model')
+    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(title), text + createTemplatesText(parseTemplates(templates)))
+  }
+
+  addDeck(vault: string, title: string): void {
+    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(title), createDeckText(title))
+  }
+
+  addCard(vault: string, model: string, deck: string, values: string[][]): void {
+    const fields = readCardModelFields(this.readCards(vault, model, 'card model'))
+    const text = this.readCards(vault, deck, 'deck')
+    const card = createCardText(model, fields, parseValues(values), createCardId(deck, countCards(text)))
+    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(deck), text + card)
+  }
+
+  addPreset(vault: string, title: string, settings: string[][]): void {
+    this.scenario.getWorld().writeText(this.scenario.getVault(vault), getCardFile(title), createPresetText(title, parsePresetSettings(settings)))
+  }
+
+  /** Makes the window show another vault of the world, over the calls of the vault list the palette command Open vault makes. */
+  async switchTo(name: string): Promise<void> {
+    const vault = this.scenario.getVault(name)
+    const folder = this.scenario.getWorld().getFolder(vault)
+    const { page } = this.scenario
+    const listed = (await listVaults(page.request)).find((one) => one.path === folder)
+    await openVault(page.request, (listed ?? (await addVault(page.request, folder, vault))).id)
+    await expect(page.locator('[data-title]')).toContainText(vault)
+  }
+
   async expectContains(vault: string, entry: string, entryPath: string): Promise<void> {
     if (this.scenario.hasWorld) {
       const world = this.scenario.getWorld()
@@ -60,6 +117,12 @@ export class VaultDriver {
     }
     this.scenario.setVault(vault)
     await expect.poll(() => this.listEntries(file)).not.toContain(file)
+  }
+
+  private readCards(vault: string, title: string, what: string): string {
+    const text = this.scenario.getWorld().readText(this.scenario.getVault(vault), getCardFile(title))
+    if (text === undefined) throw new Error(`the vault has no ${what} "${title}": begin with the vault has the ${what} "${title}"`)
+    return text
   }
 
   private async expectListed(filePath: string): Promise<void> {

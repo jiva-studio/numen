@@ -26,11 +26,10 @@ export class ApplicationDriver {
 
   async startApplication(name: string): Promise<void> {
     assertApplication(name)
-    if (name === 'editor' && this.scenario.hasWorld) await this.scenario.startWorld()
+    if (this.scenario.hasWorld) await this.scenario.startWorld(name)
     const { page } = this.scenario
     if (name === 'flashcards') {
-      if (this.scenario.hasWorld) throw new Error('the flashcards window has no world yet: start the application "editor"')
-      await page.goto(`https://127.0.0.1:${process.env['NUMEN_FLASHCARDS_TEST_PORT']}/`)
+      await page.goto(this.scenario.hasWorld ? '/' : `https://127.0.0.1:${process.env['NUMEN_FLASHCARDS_TEST_PORT']}/`)
       return
     }
     if (this.scenario.isOpen) {
@@ -98,7 +97,8 @@ export class ApplicationDriver {
   }
 
   async expectVaultHasNote(vaultName: string, reference: string, name: string): Promise<void> {
-    this.scenario.setVault(vaultName)
+    if (this.scenario.hasWorld) this.scenario.getVault(vaultName)
+    else this.scenario.setVault(vaultName)
     if (reference === 'titled') {
       await expect.poll(() => this.findNote(name)).not.toBe('')
       this.scenario.rememberNote(name, await this.findNote(name))
@@ -110,9 +110,12 @@ export class ApplicationDriver {
   }
 
   async expectNoteCount(type: string, vaultName: string, count: string): Promise<void> {
-    this.scenario.setVault(vaultName)
+    if (!this.scenario.hasWorld) this.scenario.setVault(vaultName)
     const expected = parseCount(count)
-    await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
+    const folder = this.scenario.hasWorld
+      ? this.scenario.getWorld().getFolder(this.scenario.getVault(vaultName))
+      : getVaultPath()
+    await expect.poll(() => this.listNotesOfType(folder, type).length).toBe(expected)
   }
 
   private async expectActiveFileHasMadeText(): Promise<void> {

@@ -2,9 +2,18 @@
 import type { Browser, Page, ViewportSize } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
-import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
+import { getGraph, openWorkspace, waitForWindow } from '../../../e2e/desktop/tests/support/workspace.js'
+import { expect } from 'playwright/test'
 import { deleteVersion, listVersionIds } from './text-versions.js'
-import { DEFAULT_VAULT, getNoteFile, parseReference, pickByTitle, pickVault } from './rules.js'
+import {
+  assertWorldApplication,
+  DEFAULT_VAULT,
+  getNoteFile,
+  parseReference,
+  pickByTitle,
+  pickVault,
+  type Application,
+} from './rules.js'
 import { Server } from './server.js'
 import { World } from './world.js'
 
@@ -17,6 +26,7 @@ export class Scenario {
   private vaultName: string | undefined
   private world: World | undefined
   private server: Server | undefined
+  private application: Application | undefined
   private browser: Browser | undefined
   private currentPage: Page
 
@@ -56,12 +66,18 @@ export class Scenario {
   }
 
   /** Starts the server of the world on its first vault, or starts it again over the same state, and opens a window on it. */
-  async startWorld(): Promise<void> {
+  async startWorld(application: Application): Promise<void> {
     const world = this.getWorld()
     const vaults = world.getVaults()
     if (vaults.length === 0) throw new Error('the world has no vault: begin with the empty vault "Name"')
+    assertWorldApplication(application, vaults, this.application)
     if (this.server === undefined) {
-      this.server = await Server.start(world.getFolder(vaults[0]))
+      this.server = await Server.start({
+        application,
+        vault: world.getFolder(vaults[0]),
+        readPageText: (address) => world.readPageText(address),
+      })
+      this.application = application
     } else {
       await this.server.restart()
     }
@@ -96,6 +112,7 @@ export class Scenario {
     }
     this.browser = undefined
     this.server = undefined
+    this.application = undefined
     this.world = undefined
   }
 
@@ -105,8 +122,19 @@ export class Scenario {
 
   async ensureWorkspace(): Promise<void> {
     if (this.hasWorkspace) return
+    if (this.world !== undefined) return this.openWorldWindow(this.world)
     this.filesBefore = await this.listEntries()
     await openWorkspace(this.page)
+    this.hasWorkspace = true
+  }
+
+  /** Loads the window of the world's editor, starting the editor first if the scenario has not. The tabs a restart saved stay. */
+  private async openWorldWindow(world: World): Promise<void> {
+    if (this.server === undefined) await this.startWorld('editor')
+    assertWorldApplication('editor', world.getVaults(), this.application)
+    await this.page.goto('/')
+    await waitForWindow(this.page)
+    if (world.hasNotes()) await expect(getGraph(this.page)).toBeVisible()
     this.hasWorkspace = true
   }
 

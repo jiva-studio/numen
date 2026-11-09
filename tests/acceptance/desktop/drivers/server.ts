@@ -1,7 +1,8 @@
 /**
- * A server of its own for one scenario: the debug binary on a port the system gives, with its own
- * certificate, state folders and log, and the stand-ins the e2e server has, so nothing reaches the
- * network. Only the binary and the plugins are shared with the other servers.
+ * A server of its own for one scenario: the debug binary of the editor or of the flashcards window
+ * on a port the system gives, with its own certificate, state folders and log, and the stand-ins the
+ * e2e server has, so nothing reaches the network. Only the binary and the plugins are shared with
+ * the other servers.
  */
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createHash, X509Certificate } from 'node:crypto'
@@ -12,10 +13,15 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { STAND_IN_MODEL, startStandIns } from '../../../e2e/desktop/scripts/stand-ins.mjs'
+import { freeFromRemoval, holdForRemoval } from './reaper.js'
+import type { Application } from './rules.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(here, '../../../..')
-const BINARY = path.join(REPO_ROOT, 'apps/desktop/numen-debug')
+const BINARIES = {
+  editor: path.join(REPO_ROOT, 'apps/desktop/numen-debug'),
+  flashcards: path.join(REPO_ROOT, 'apps/desktop/numen-flashcards-debug'),
+} as const
 const ARTICLE = path.join(REPO_ROOT, 'tests/e2e/desktop/fixtures/article.html')
 const HOST = '127.0.0.1'
 const STATE_FOLDERS = ['config', 'cache', 'data', 'state', 'home'] as const
@@ -30,14 +36,19 @@ const getFreePort = (): Promise<number> =>
     })
   })
 
-const startPageProxy = async (): Promise<http.Server> => {
+const escapeHtml = (text: string): string => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+const startPageProxy = async (readPageText: (address: string) => string | undefined): Promise<http.Server> => {
   const proxy = http.createServer((request, response) => {
     const host = (request.headers.host ?? '').replace(/:\d+$/, '')
     if (host !== 'numen.dev') {
       response.writeHead(404).end()
       return
     }
-    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(fs.readFileSync(ARTICLE))
+    const page = fs.readFileSync(ARTICLE, 'utf8')
+    const text = readPageText(request.url ?? '')
+    const body = text === undefined ? page : page.replace(/<p>[\s\S]*?<\/p>/, () => `<p>${escapeHtml(text)}</p>`)
+    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(body)
   })
   await new Promise<void>((resolve, reject) => {
     proxy.once('error', reject)
@@ -46,27 +57,39 @@ const startPageProxy = async (): Promise<http.Server> => {
   return proxy
 }
 
+export interface ServerOptions {
+  readonly application: Application
+  /** The folder of the vault the server opens. */
+  readonly vault: string
+  /** The text the page of an address of numen.dev has, if the scenario gave it one. */
+  readonly readPageText: (address: string) => string | undefined
+}
+
 export class Server {
   private child: ChildProcess | undefined
   private baseURL = ''
   private publicKeyHash = ''
 
   private constructor(
+    private readonly application: Application,
+    private readonly vault: string,
     private readonly state: string,
     private readonly standIns: { close: () => void },
     private readonly proxy: http.Server,
     private readonly mcpPort: number,
   ) {}
 
-  /** Starts the binary with `vault` as the vault it opens. */
-  static async start(vault: string): Promise<Server> {
+  /** Starts the binary of the application with the vault of the options as the vault it opens. */
+  static async start(options: ServerOptions): Promise<Server> {
     const state = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'numen-state-')))
+    holdForRemoval('dir', state)
     const standIns = await startStandIns()
-    const server = new Server(state, standIns, await startPageProxy(), await getFreePort())
+    const proxy = await startPageProxy(options.readPageText)
+    const server = new Server(options.application, options.vault, state, standIns, proxy, await getFreePort())
     try {
       for (const name of STATE_FOLDERS) fs.mkdirSync(path.join(state, name))
       server.writeSettings(standIns)
-      await server.launch([`-vault=${vault}`])
+      await server.launch(server.getStartFlags(true))
     } catch (error) {
       await server.stop()
       throw error
@@ -90,7 +113,7 @@ export class Server {
   /** Ends the binary and starts it again over the same state, which opens the vault it had open. */
   async restart(): Promise<void> {
     await this.end()
-    await this.launch([])
+    await this.launch(this.getStartFlags(false))
   }
 
   /** Ends the binary and removes everything it kept. */
@@ -101,7 +124,13 @@ export class Server {
       this.standIns.close()
       this.proxy.close()
       fs.rmSync(this.state, { recursive: true, force: true })
+      freeFromRemoval('dir', this.state)
     }
+  }
+
+  private getStartFlags(isFirst: boolean): string[] {
+    if (this.application === 'flashcards') return [`-debug-vault=${this.vault}`]
+    return isFirst ? [`-vault=${this.vault}`, '-debug-mock-ml'] : ['-debug-mock-ml']
   }
 
   private writeSettings(standIns: { chatUrl: string; updateUrl: string }): void {
@@ -115,12 +144,16 @@ export class Server {
       v: 1,
       app: { agent: { use: 'numen' } },
       'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
-      'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
       'md.numen.agents.claude': { enabled: false },
       'md.numen.agents.codex': { enabled: false },
       'md.numen.agents.antigravity': { enabled: false },
       'md.numen.agents.acp': { enabled: false },
-      'md.numen.agents.mcp.server': { port: this.mcpPort },
+      ...(this.application === 'editor'
+        ? {
+            'md.numen.tools.updater': { channel: 'custom', endpoint: standIns.updateUrl },
+            'md.numen.agents.mcp.server': { port: this.mcpPort },
+          }
+        : {}),
     }
     fs.writeFileSync(path.join(folder, 'numen.json'), JSON.stringify(settings, null, 2))
   }
@@ -129,7 +162,11 @@ export class Server {
     const certificate = path.join(this.state, 'cert.pem')
     const log = fs.openSync(path.join(this.state, 'server.log'), 'a')
     const proxyAddress = this.proxy.address() as net.AddressInfo
-    const child = spawn(BINARY, [`-debug-http-addr=${HOST}:0`, '-debug-mock-ml', ...flags], {
+    const editorEnv =
+      this.application === 'editor'
+        ? { NUMEN_MOCK_ML: 'true', HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`, NO_PROXY: HOST }
+        : {}
+    const child = spawn(BINARIES[this.application], [`-debug-http-addr=${HOST}:0`, ...flags], {
       stdio: ['ignore', 'pipe', log],
       env: {
         ...process.env,
@@ -138,15 +175,14 @@ export class Server {
         XDG_DATA_HOME: path.join(this.state, 'data'),
         XDG_STATE_HOME: path.join(this.state, 'state'),
         HOME: path.join(this.state, 'home'),
-        NUMEN_MOCK_ML: 'true',
+        ...editorEnv,
         NUMEN_PLUGINS_PATH: path.join(REPO_ROOT, 'plugins'),
         NUMEN_DEBUG_TLS_CERT: certificate,
         NUMEN_DEBUG_TLS_KEY: path.join(this.state, 'key.pem'),
-        HTTP_PROXY: `http://${HOST}:${proxyAddress.port}`,
-        NO_PROXY: HOST,
       },
     })
     this.child = child
+    if (child.pid !== undefined) holdForRemoval('pid', child.pid)
     child.once('close', () => fs.closeSync(log))
     const port = await new Promise<string>((resolve, reject) => {
       let text = ''
@@ -172,5 +208,6 @@ export class Server {
     const ended = new Promise((resolve) => child.once('exit', resolve))
     child.kill('SIGTERM')
     await ended
+    if (child.pid !== undefined) freeFromRemoval('pid', child.pid)
   }
 }

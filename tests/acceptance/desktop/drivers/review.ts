@@ -5,11 +5,10 @@ import { expect } from 'playwright/test'
 import { getEscaped, getRating, parseReviewScope } from './rules.js'
 import type { Scenario } from './scenario.js'
 
-const getAnswerFolder = (): string =>
-  path.join(process.env['NUMEN_FLASHCARDS_VAULT'] ?? '', '.numen', 'md.numen.views.flashcards.studio')
+const getAnswerFolder = (vault: string): string => path.join(vault, '.numen', 'md.numen.views.flashcards.studio')
 
-const readAnswers = (): { rating?: number; undo?: string }[] => {
-  const folder = getAnswerFolder()
+const readVaultAnswers = (vault: string): { rating?: number; undo?: string }[] => {
+  const folder = getAnswerFolder(vault)
   if (!fs.existsSync(folder)) return []
   return fs
     .readdirSync(folder)
@@ -25,6 +24,13 @@ export class ReviewDriver {
   private hasAnswered = false
 
   constructor(private readonly scenario: Scenario) {}
+
+  /** The answers written in the vault of the window: the vault of the world, or the vault of the run. */
+  private readAnswers(): { rating?: number; undo?: string }[] {
+    const vaults = this.scenario.hasWorld ? this.scenario.getWorld().getVaults() : []
+    const folder = vaults.length > 0 ? this.scenario.getWorld().getFolder(vaults[0]) : (process.env['NUMEN_FLASHCARDS_VAULT'] ?? '')
+    return readVaultAnswers(folder)
+  }
 
   async chooseVault(name: string): Promise<void> {
     const { page } = this.scenario
@@ -49,15 +55,15 @@ export class ReviewDriver {
 
   async answer(answer: string): Promise<void> {
     getRating(answer)
-    this.answersBefore = readAnswers().length
+    this.answersBefore = this.readAnswers().length
     this.hasAnswered = true
     await this.scenario.page.getByRole('button', { name: new RegExp(`\\b${answer}\\b`) }).click()
   }
 
   async expectAnswer(answer: string): Promise<void> {
     const rating = getRating(answer)
-    await expect.poll(() => readAnswers().length).toBe(this.answersBefore + 1)
-    expect(readAnswers().at(-1)?.rating).toBe(rating)
+    await expect.poll(() => this.readAnswers().length).toBe(this.answersBefore + 1)
+    expect(this.readAnswers().at(-1)?.rating).toBe(rating)
   }
 
   /** Takes back the answer of the scenario, so the card is due again for the next one. */
@@ -69,9 +75,9 @@ export class ReviewDriver {
     await expect(undo.or(finished)).toBeVisible()
     if (await finished.isVisible()) return
     await expect(undo).toBeEnabled()
-    const count = readAnswers().length
+    const count = this.readAnswers().length
     await undo.click()
-    await expect.poll(() => readAnswers().length).toBe(count + 1)
+    await expect.poll(() => this.readAnswers().length).toBe(count + 1)
   }
 
   async expectSessionHas(text: string): Promise<void> {

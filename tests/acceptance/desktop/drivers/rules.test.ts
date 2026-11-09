@@ -19,6 +19,7 @@ import {
   pickKindTab,
   pickByTitle,
   readNoteType,
+  assertWorldApplication,
 } from './rules.js'
 
 describe('parseReference', () => {
@@ -273,5 +274,26 @@ describe('parsePlace', () => {
 
   it('fails on anything else', () => {
     expect(() => parsePlace('line "2"')).toThrow('"line "2"" is not a place: write page "2" or time "2:00"')
+  })
+})
+
+describe('assertWorldApplication', () => {
+  it('takes the editor on any number of vaults, and the flashcards window on one', () => {
+    expect(() => assertWorldApplication('editor', ['Test', 'Archive'], undefined)).not.toThrow()
+    expect(() => assertWorldApplication('flashcards', ['Test'], undefined)).not.toThrow()
+  })
+
+  it('takes the application that runs again', () => {
+    expect(() => assertWorldApplication('editor', ['Test'], 'editor')).not.toThrow()
+  })
+
+  it('says the flashcards window opens one vault', () => {
+    expect(() => assertWorldApplication('flashcards', ['Test', 'Archive'], undefined)).toThrow(
+      'opens one vault, and the world has Test and Archive',
+    )
+  })
+
+  it('refuses a second application', () => {
+    expect(() => assertWorldApplication('flashcards', ['Test'], 'editor')).toThrow('a world has one application')
   })
 })

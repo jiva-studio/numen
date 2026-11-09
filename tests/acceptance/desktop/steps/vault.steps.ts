@@ -1,4 +1,4 @@
-import { Given, Then } from '../support/bdd.js'
+import { Given, Then, When } from '../support/bdd.js'
 
 Given('the empty vault {string}', ({ person }, name: string) => {
   person.vault.createEmpty(name)
@@ -34,4 +34,8 @@ Given('{vault} contains the {entry} at {string}', async ({ person }, vault: stri
 
 Then('{vault} does not contain the file at {string}', async ({ person }, vault: string, file: string) => {
   await person.vault.expectDoesNotContain(vault, file)
+})
+
+When('the person switches to the vault {string}', async ({ person }, name: string) => {
+  await person.vault.switchTo(name)
 })

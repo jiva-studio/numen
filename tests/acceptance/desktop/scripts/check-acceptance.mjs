@@ -29,6 +29,12 @@ const PENDING = new Set([
   '{vault} has the EPUB at {string}',
   '{vault} has the recording at {string}',
   '{vault} has the image at {string}',
+  '{vault} has the card model {string} with the fields:',
+  '{vault} has the card model {string} with the templates:',
+  '{vault} has the deck {string}',
+  '{vault} has the card of the card model {string} in the deck {string} with:',
+  '{vault} has the preset {string} with the settings:',
+  'the person switches to the vault {string}',
 ])
 
 const walk = (dir, ext) =>

@@ -61,7 +61,19 @@ const PALETTE_FIELDS: Record<string, PaletteField> = { Name: 'name', Search: 'it
 /** What the field of the open palette asks for, read from its placeholder: a name, one item of a list, a note found by words, or a text. */
 export const getPaletteField = (placeholder: string): PaletteField => PALETTE_FIELDS[placeholder] ?? 'text'
 
-export const assertApplication = (name: string): void => {
+/** The application a world runs: the server of a world runs one, and the flashcards window opens one vault. */
+export const assertWorldApplication = (application: string, vaults: readonly string[], running: string | undefined): void => {
+  if (running !== undefined && running !== application) {
+    throw new Error(`the world runs the application "${running}" already: a world has one application, not "${application}" too`)
+  }
+  if (application === 'flashcards' && vaults.length > 1) {
+    throw new Error(`the application "flashcards" opens one vault, and the world has ${vaults.join(' and ')}: a world for the flashcards window has one vault`)
+  }
+}
+
+export type Application = 'editor' | 'flashcards'
+
+export const assertApplication = (name: string): asserts name is Application => {
   if (name !== 'editor' && name !== 'flashcards') {
     throw new Error(`"${name}" is not an application: use "editor" or "flashcards"`)
   }
