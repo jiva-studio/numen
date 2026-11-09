@@ -93,6 +93,7 @@ export class TabDriver {
     await this.scenario.ensureWorkspace()
     this.scenario.rememberFile(filePath)
     await (await revealTreeRow(this.scenario.page, filePath)).press('Enter')
+    await expect.poll(() => readActivePath(this.scenario.page.request)).toBe(filePath)
   }
 
   async playRecording(reference: string, name: string): Promise<void> {
