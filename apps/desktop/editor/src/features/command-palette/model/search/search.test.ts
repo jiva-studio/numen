@@ -192,7 +192,7 @@ describe('answers arriving', () => {
     // The first question answers late, and with something else entirely.
     vault.names[0]?.answer([createNameMatch({ path: 'notes/stale.md', title: 'Stale' })])
     await flushPromises()
-    expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
+    expect(getGroup(palette.groups.value, 'names')?.items).toBeUndefined()
 
     vault.names[1]?.answer([createNameMatch()])
     await flushPromises()
@@ -744,7 +744,7 @@ describe('answers to a question overtaken', () => {
     await flushPromises()
 
     expect(getGroup(palette.groups.value, 'names')?.items).toHaveLength(1)
-    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
+    expect(getGroup(palette.groups.value, 'names')?.silence ?? '').toBe('')
   })
 
   it('keeps the spinner where only the overtaken question has answered', async () => {
