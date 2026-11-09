@@ -83,7 +83,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	models := &run.Lock{}
 	made.ReportPluginFailures(tasks)
 	made.SetPluginWork(tasks, models)
-	made.SetModelCalls(newModelNotices(tasks))
+	made.SetModelCalls(model.NewNotices(tasks))
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.

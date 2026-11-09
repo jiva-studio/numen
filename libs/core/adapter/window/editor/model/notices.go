@@ -1,4 +1,4 @@
-package editor
+package model
 
 import (
 	"fmt"
@@ -7,15 +7,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
-// modelNotices tells the person, in the list of tasks, that a connection was set aside.
-type modelNotices struct {
+// Notices tells the person, in the list of tasks, that a connection was set aside.
+type Notices struct {
 	tasks *run.Tasks
 }
 
-func newModelNotices(tasks *run.Tasks) modelNotices { return modelNotices{tasks: tasks} }
+// NewNotices reports into the list of tasks.
+func NewNotices(tasks *run.Tasks) Notices { return Notices{tasks: tasks} }
 
 // ReportSetAside adds a notice for the connection and the reason to the list of tasks.
-func (n modelNotices) ReportSetAside(connectionID, connectionName string, reason modelcallport.FailureReason) {
+func (n Notices) ReportSetAside(connectionID, connectionName string, reason modelcallport.FailureReason) {
 	n.tasks.Set(run.Task{
 		ID:    fmt.Sprintf("connection set aside %s %s", connectionID, reason),
 		Title: "Connection set aside",

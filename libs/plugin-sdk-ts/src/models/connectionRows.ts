@@ -1,4 +1,4 @@
-import { asFailure, asValue, type Result } from './result'
+import { asFailure, asValue, type Result } from '../result'
 
 /**
  * One entry of a setting of rows: the connection, the model and the reasoning level the person chose.

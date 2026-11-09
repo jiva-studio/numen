@@ -1,4 +1,4 @@
-package editor
+package model
 
 import (
 	"strings"
@@ -10,7 +10,7 @@ import (
 
 func TestAConnectionSetAsideIsAKindOfNoticeInTheListOfTasks(t *testing.T) {
 	tasks := run.NewTasks()
-	notices := newModelNotices(tasks)
+	notices := NewNotices(tasks)
 
 	notices.ReportSetAside("c0000001", "OpenRouter", connectionport.FailureReasonPaymentRequired)
 
@@ -25,7 +25,7 @@ func TestAConnectionSetAsideIsAKindOfNoticeInTheListOfTasks(t *testing.T) {
 
 func TestEachConnectionAndReasonIsOneTask(t *testing.T) {
 	tasks := run.NewTasks()
-	notices := newModelNotices(tasks)
+	notices := NewNotices(tasks)
 
 	notices.ReportSetAside("c0000001", "OpenRouter", connectionport.FailureReasonPaymentRequired)
 	notices.ReportSetAside("c0000001", "OpenRouter", connectionport.FailureReasonPaymentRequired)
