@@ -1,10 +1,12 @@
 /** What one scenario shares between the levels of the driver: the page, the notes it made, its vault. */
-import type { Page } from 'playwright/test'
+import type { Browser, Page, ViewportSize } from 'playwright/test'
 import { readSavedStates } from '../../../e2e/desktop/tests/support/test.js'
 import { destroyNote, destroyTrashed, listFiles } from '../../../e2e/desktop/tests/support/vault.js'
 import { openWorkspace } from '../../../e2e/desktop/tests/support/workspace.js'
 import { deleteVersion, listVersionIds } from './text-versions.js'
-import { parseReference, pickByTitle } from './rules.js'
+import { DEFAULT_VAULT, parseReference, pickByTitle, pickVault } from './rules.js'
+import { Server } from './server.js'
+import { World } from './world.js'
 
 export class Scenario {
   private readonly paths = new Map<string, string>()
@@ -13,8 +15,85 @@ export class Scenario {
   private filesBefore: readonly string[] = []
   private readonly versionsBefore = new Map<string, readonly string[]>()
   private vaultName: string | undefined
+  private world: World | undefined
+  private server: Server | undefined
+  private browser: Browser | undefined
+  private currentPage: Page
 
-  constructor(readonly page: Page) {}
+  constructor(
+    firstPage: Page,
+    private readonly viewport: ViewportSize | null,
+  ) {
+    this.currentPage = firstPage
+  }
+
+  get page(): Page {
+    return this.currentPage
+  }
+
+  get hasWorld(): boolean {
+    return this.world !== undefined
+  }
+
+  /** Gives the scenario a world of its own, if it has none, and puts an empty vault of that name in it. */
+  createVault(name: string): void {
+    this.world ??= World.create()
+    this.world.addVault(name)
+  }
+
+  getWorld(): World {
+    if (this.world === undefined) throw new Error('the scenario has no world: begin with the empty vault "Name"')
+    return this.world
+  }
+
+  /** The vault of the world a step names; a step of a scenario with no world can only name its vault. */
+  getVault(name: string): string {
+    return pickVault(this.getWorld().getVaults(), name)
+  }
+
+  /** Starts the server of the world on its first vault, or starts it again over the same state, and opens a window on it. */
+  async startWorld(): Promise<void> {
+    const world = this.getWorld()
+    const [first] = world.getVaults()
+    if (first === undefined) throw new Error('the world has no vault: begin with the empty vault "Name"')
+    if (this.server === undefined) {
+      this.server = await Server.start(world.getFolder(first))
+    } else {
+      await this.server.restart()
+    }
+    await this.browser?.close()
+    const browserType = this.currentPage.context().browser()?.browserType()
+    if (browserType === undefined) throw new Error('the page has no browser to launch another from')
+    const args = browserType.name() === 'chromium' ? [`--ignore-certificate-errors-spki-list=${this.server.getPublicKeyHash()}`] : []
+    this.browser = await browserType.launch({ args })
+    const context = await this.browser.newContext({
+      baseURL: this.server.getBaseURL(),
+      ignoreHTTPSErrors: true,
+      viewport: this.viewport,
+    })
+    this.currentPage = await context.newPage()
+    this.hasWorkspace = false
+  }
+
+  readServerLog(): string | undefined {
+    return this.server?.readLog()
+  }
+
+  /** Ends the window, the server and the world, in this order, and removes every folder they made. */
+  async removeWorld(): Promise<void> {
+    try {
+      await this.browser?.close()
+    } finally {
+      try {
+        await this.server?.stop()
+      } finally {
+        this.world?.remove()
+      }
+    }
+    this.browser = undefined
+    this.server = undefined
+    this.world = undefined
+  }
 
   get isOpen(): boolean {
     return this.hasWorkspace
@@ -57,6 +136,7 @@ export class Scenario {
   }
 
   setVault(name: string): void {
+    if (name === DEFAULT_VAULT) throw new Error('name the vault: the scenario has no world, so its vault has the name the run gives')
     this.vaultName ??= name
     if (this.vaultName !== name) {
       throw new Error(`the run has one vault, named "${this.vaultName}" here, not "${name}"`)

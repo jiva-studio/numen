@@ -1,4 +1,5 @@
 import { defineParameterType } from 'playwright-bdd'
+import { parseVaultName } from '../drivers/rules.js'
 
 defineParameterType({
   name: 'actor',
@@ -28,4 +29,10 @@ defineParameterType({
   name: 'entry',
   regexp: /file|folder/,
   transformer: (entry: string) => entry,
+})
+
+defineParameterType({
+  name: 'vault',
+  regexp: /the vault(?: "[^"]+")?/,
+  transformer: (vault: string) => parseVaultName(vault),
 })

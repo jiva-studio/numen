@@ -4,6 +4,10 @@ Given('the person has the note titled {string} with {string}', async ({ person }
   await person.note.create(title, text)
 })
 
+When('the person opens the note titled {string}', async ({ person }, title: string) => {
+  await person.note.open(title)
+})
+
 When(
   '{actor} writes {string} in the note {reference} {string}',
   async ({ person }, actor: string, text: string, reference: string, name: string) => {

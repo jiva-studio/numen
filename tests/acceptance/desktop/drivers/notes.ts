@@ -1,6 +1,6 @@
 /** The person at a note: writing it, choosing in its banner, and what the note holds in the window and on disk. */
 import { expect, type Locator } from 'playwright/test'
-import { getEscaped } from './rules.js'
+import { getEscaped, getNoteFile } from './rules.js'
 import {
   createNote,
   getNotePanel,
@@ -35,6 +35,14 @@ export class NoteDriver {
     await this.scenario.ensureWorkspace()
     // The editor hides the brackets of a link where the cursor is not.
     await expect(await openNote(page, notePath)).toContainText(initialText.replace(/\[\[|\]\]/g, ''))
+  }
+
+  async open(title: string): Promise<void> {
+    this.scenario.getWorld()
+    await this.scenario.ensureWorkspace()
+    const notePath = getNoteFile(title)
+    this.scenario.rememberNote(title, notePath)
+    await openNote(this.scenario.page, notePath)
   }
 
   async write(actor: string, text: string, reference: string, name: string): Promise<void> {

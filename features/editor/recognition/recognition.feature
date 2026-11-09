@@ -7,7 +7,7 @@ Feature: Recognition
   Rule: The text of a scan is found by search
 
     Scenario: A scan is found by the words recognized in it
-      Given the vault "Test" has the file at "assets/regenerative-braking.pdf"
+      Given the vault "Test" contains the file at "assets/regenerative-braking.pdf"
       And the person opens the file at "assets/regenerative-braking.pdf"
       And the person runs the command "Create text"
       And the person enters "Recognize text"
@@ -15,7 +15,7 @@ Feature: Recognition
       Then the search has the result "assets/regenerative-braking.pdf" in the group "Text"
 
     Scenario: A passage of a scan is opened with the highlight
-      Given the vault "Test" has the file at "assets/regenerative-braking.pdf"
+      Given the vault "Test" contains the file at "assets/regenerative-braking.pdf"
       And the person opens the file at "assets/regenerative-braking.pdf"
       And the person runs the command "Create text"
       And the person enters "Recognize text"
@@ -26,7 +26,7 @@ Feature: Recognition
   Rule: The text of a scan is found when the plugin "Document OCR" is disabled
 
     Scenario: The recognized text is found
-      Given the vault "Test" has the file at "assets/flywheel.pdf"
+      Given the vault "Test" contains the file at "assets/flywheel.pdf"
       And the person opens the file at "assets/flywheel.pdf"
       And the person runs the command "Create text"
       And the person enters "Recognize text"
@@ -35,7 +35,7 @@ Feature: Recognition
       Then the search has the result "assets/flywheel.pdf" in the group "Text"
 
     Scenario: The proofread text is found
-      Given the vault "Test" has the file at "assets/flywheel.pdf"
+      Given the vault "Test" contains the file at "assets/flywheel.pdf"
       And the person opens the file at "assets/flywheel.pdf"
       And the person runs the command "Create text"
       And the person enters "Recognize text"

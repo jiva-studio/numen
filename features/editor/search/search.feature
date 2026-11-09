@@ -7,10 +7,13 @@ Feature: Search
   Rule: A search finds the passages of notes
 
     Scenario: A passage of a note is opened in its note
+      Given the empty vault "Test"
+      And the vault has the note titled "Entropy" with "A measure of uncertainty."
+      And the application "editor" starts
       When the person searches the vault for "Entropy"
       And the person chooses the search result "A measure of uncertainty" in the group "Text"
-      Then the tab at "notes/Entropy.md" is active
-      And the note at "notes/Entropy.md" has "A measure of uncertainty"
+      Then the tab titled "Entropy" is active
+      And the note titled "Entropy" has "A measure of uncertainty."
 
     Scenario: A note is found by a word it does not have
       When the person searches the vault for "boat"

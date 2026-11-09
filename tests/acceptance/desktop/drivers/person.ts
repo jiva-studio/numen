@@ -4,7 +4,7 @@
  * the screen (the tabs, the keys, the labels) stays in drivers/, so a step and a scenario say what
  * happens and never how it looks.
  */
-import type { Page } from 'playwright/test'
+import type { Page, ViewportSize } from 'playwright/test'
 import { ApplicationDriver } from './application.js'
 import { FileTreeDriver } from './file-tree.js'
 import { NoteDriver } from './notes.js'
@@ -14,6 +14,7 @@ import { PluginDriver } from './plugins.js'
 import { Scenario } from './scenario.js'
 import { SearchDriver } from './search.js'
 import { TabDriver } from './tabs.js'
+import { VaultDriver } from './vault.js'
 import { WebDriver } from './web.js'
 
 export class Person {
@@ -26,10 +27,11 @@ export class Person {
   readonly plugin: PluginDriver
   readonly web: WebDriver
   readonly review: ReviewDriver
+  readonly vault: VaultDriver
   private readonly scenario: Scenario
 
-  constructor(page: Page) {
-    this.scenario = new Scenario(page)
+  constructor(page: Page, viewport: ViewportSize | null) {
+    this.scenario = new Scenario(page, viewport)
     this.application = new ApplicationDriver(this.scenario)
     this.tab = new TabDriver(this.scenario)
     this.note = new NoteDriver(this.scenario)
@@ -39,9 +41,16 @@ export class Person {
     this.plugin = new PluginDriver(this.scenario)
     this.web = new WebDriver()
     this.review = new ReviewDriver(this.scenario)
+    this.vault = new VaultDriver(this.scenario)
   }
 
+  readServerLog(): string | undefined {
+    return this.scenario.readServerLog()
+  }
+
+  /** Leaves the vault as the scenario found it; a scenario with a world of its own removes the world and its server. */
   async removeNotes(): Promise<void> {
+    if (this.scenario.hasWorld) return this.scenario.removeWorld()
     await this.plugin.enableDisabled()
     await this.scenario.removeVersions()
     this.web.removePageTexts()

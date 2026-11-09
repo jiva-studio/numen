@@ -7,7 +7,7 @@ Feature: File tree
   Rule: The file tree changes the files of the vault
 
     Scenario: A note is moved to a folder and its links follow
-      Given the vault "Test" has the folder at "daily"
+      Given the vault "Test" contains the folder at "daily"
       And the person has the note titled "Quay" with "The quay is at the harbour."
       And the person has the note titled "Jetty" with "See [[Quay]]."
       When the person moves the file at "notes/Quay.md" to the folder at "daily"
@@ -16,10 +16,10 @@ Feature: File tree
       And the note titled "Jetty" links to the note at "daily/Quay.md"
 
     Scenario: A folder is made in a folder
-      Given the vault "Test" has the folder at "Saltworks"
+      Given the vault "Test" contains the folder at "Saltworks"
       When the person runs the command "Create folder" on the folder at "Saltworks"
       And the person enters "Brine tanks"
-      Then the vault "Test" has the folder at "Saltworks/Brine tanks"
+      Then the vault "Test" contains the folder at "Saltworks/Brine tanks"
 
     Scenario: A note is renamed and its tab follows
       Given the person has the note titled "Brine pump" with "The pump runs at night."
@@ -32,7 +32,7 @@ Feature: File tree
       Given the person has the note titled "Mill race" with "The race feeds the wheel."
       When the person runs the command "Move note to trash" on the file at "notes/Mill race.md"
       Then the tab at "notes/Mill race.md" is not open
-      And the vault "Test" does not have the file at "notes/Mill race.md"
+      And the vault "Test" does not contain the file at "notes/Mill race.md"
 
   Rule: The file tree has the files of the vault
 

@@ -22,6 +22,12 @@ const stepsDir = path.join(root, 'steps')
 const NEAR_DUPLICATE = 0.75
 /** From this overlap a pair is listed as a warning: the author reads both and says why there are two. */
 const SIMILAR = 0.5
+/** Steps of the world that wait for the scenarios not migrated yet: listed as warnings while no scenario uses them. */
+const PENDING = new Set([
+  '{vault} has the folder at {string}',
+  '{vault} has the PDF at {string}',
+  'the person opens the note titled {string}',
+])
 
 const walk = (dir, ext) =>
   fs.existsSync(dir)
@@ -103,7 +109,9 @@ for (const feature of features) {
   }
 }
 for (const definition of definitions) {
-  if (definition.uses.length === 0) {
+  if (definition.uses.length === 0 && PENDING.has(definition.pattern)) {
+    warnings.push(`${rel(definition.file)}:${definition.line}  pending: '${definition.pattern}' is used by no scenario yet`)
+  } else if (definition.uses.length === 0) {
     report('unused', `${rel(definition.file)}:${definition.line}`, `'${definition.pattern}' is used by no scenario`)
   }
 }

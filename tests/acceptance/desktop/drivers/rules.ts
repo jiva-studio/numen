@@ -107,3 +107,47 @@ export const pickByTitle = (title: string, paths: readonly string[]): string => 
 export const assertSingleTab = (title: string, count: number): void => {
   if (count > 1) throw new Error(`${count} tabs are titled "${title}": use "at" with the path`)
 }
+
+/** The name a step gives for the only vault of a world, when it does not name one. */
+export const DEFAULT_VAULT = 'default'
+
+/** The vault a step names: the words `the vault`, or `the vault "Archive"`. */
+export const parseVaultName = (text: string): string => {
+  const match = /^the vault(?: "([^"]+)")?$/.exec(text)
+  if (!match) throw new Error(`"${text}" does not name a vault: write the vault or the vault "Name"`)
+  return match[1] ?? DEFAULT_VAULT
+}
+
+/** The vault of a world a step means: the one it names, or the only one when it names none. */
+export const pickVault = (vaults: readonly string[], name: string): string => {
+  if (name !== DEFAULT_VAULT) {
+    if (vaults.includes(name)) return name
+    throw new Error(`the world has no vault "${name}": it has ${vaults.join(', ') || 'none'}`)
+  }
+  if (vaults.length === 1) return vaults[0]
+  if (vaults.length === 0) throw new Error('the world has no vault: begin with the empty vault "Name"')
+  throw new Error(`name the vault: the world has ${vaults.join(' and ')}`)
+}
+
+/** The name of a vault folder in the world: a plain name, not the word that stands for the only vault. */
+export const assertVaultName = (name: string): void => {
+  if (name === '' || name === DEFAULT_VAULT || name.startsWith('.') || /[/\\:*?"<>|]/.test(name)) {
+    throw new Error(`"${name}" cannot name a vault: use a plain name other than "${DEFAULT_VAULT}", with no path in it`)
+  }
+}
+
+/** The file the product's create-note command makes for a title: in the root of the vault, named by the title. */
+export const getNoteFile = (title: string): string => {
+  if (title.trim() === '' || /[/\\:*?"<>|#]/.test(title)) {
+    throw new Error(`"${title}" cannot be the title of a note file: leave out / \\ : * ? " < > | #`)
+  }
+  return `${title.trim()}.md`
+}
+
+/** A path inside a vault: relative, and never leaving the vault. */
+export const assertVaultPath = (entryPath: string): void => {
+  const parts = entryPath.split('/')
+  if (entryPath.startsWith('/') || parts.some((one) => one === '' || one === '.' || one === '..')) {
+    throw new Error(`"${entryPath}" is not a path inside the vault: write it relative to the vault, like "assets/a.pdf"`)
+  }
+}

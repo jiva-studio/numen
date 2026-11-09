@@ -8,7 +8,7 @@ import {
 } from '../../../e2e/desktop/tests/support/workspace.js'
 import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertApplication, assertEntry, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
+import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 import { listVersions } from './text-versions.js'
 
@@ -26,8 +26,10 @@ export class ApplicationDriver {
 
   async startApplication(name: string): Promise<void> {
     assertApplication(name)
+    if (name === 'editor' && this.scenario.hasWorld) await this.scenario.startWorld()
     const { page } = this.scenario
     if (name === 'flashcards') {
+      if (this.scenario.hasWorld) throw new Error('the flashcards window has no world yet: start the application "editor"')
       await page.goto(`https://127.0.0.1:${process.env['NUMEN_FLASHCARDS_TEST_PORT']}/`)
       return
     }
@@ -105,24 +107,6 @@ export class ApplicationDriver {
     const notePath = await this.scenario.getPath(reference, name)
     const folder = notePath.split('/').slice(0, -1).join('/')
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
-  }
-
-  async expectVaultHasEntry(vaultName: string, entry: string, entryPath: string): Promise<void> {
-    this.scenario.setVault(vaultName)
-    await expect.poll(() => this.listEntries(entryPath)).toContain(entryPath)
-    const parent = entryPath.split('/').slice(0, -1).join('/')
-    const found = (await listFiles(this.scenario.page.request, parent)).find((one) => one.path === entryPath)
-    assertEntry(entry, entryPath, found?.isFolder ?? false)
-  }
-
-  async expectVaultDoesNotHaveFile(vaultName: string, file: string): Promise<void> {
-    this.scenario.setVault(vaultName)
-    await expect.poll(() => this.listEntries(file)).not.toContain(file)
-  }
-
-  private async listEntries(entryPath: string): Promise<string[]> {
-    const parent = entryPath.split('/').slice(0, -1).join('/')
-    return (await listFiles(this.scenario.page.request, parent)).map((one) => one.path)
   }
 
   async expectNoteCount(type: string, vaultName: string, count: string): Promise<void> {
