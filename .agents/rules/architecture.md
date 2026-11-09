@@ -214,7 +214,7 @@ graph LR
 
 **(i) Time is a port.** Logic that depends on time takes a clock as a port, so a test controls the time. In Go a plugin takes the clock of the SDK package `clock` or declares its own; the check in §5 accepts a read of the machine clock inside any method `Now() time.Time` that implements a declared clock port. In TypeScript the time comes from `getNow()` of `@numen/ui` or from an injected clock.
 
-**(j) Nothing is published for now.** The SDK, `@numen/ui` and `libs/notes` are built inside this repository. Each plugin is built as if it had a repository of its own (`go-structure` and `dependency-graph`). Later, when the SDK is released: publishing of the SDK and `@numen/ui`, tooling for API compatibility, and iframe isolation of plugin frontends.
+**(j) The SDK and `@numen/ui` are published.** `libs/plugin-sdk-go`, `@numen/plugin-sdk` and `@numen/ui` are packages with a versioned public contract that plugin authors and other consumers depend on, so an exported name, a type and a behavior are a contract: a change that breaks one raises the major version. `libs/notes` is built inside this repository and reached by plugins only through the SDK. Each plugin is built as if it had a repository of its own (`go-structure` and `dependency-graph`). `@numen/core-client` stays private. Iframe isolation of plugin frontends comes later.
 
 **(k) Plugin kinds and storage.** A plugin has a backend kind, and the kind decides who runs it.
 

@@ -14,8 +14,8 @@ import {
   createLayerPolicies,
 } from '../../../tools/lint-layers/layers.mjs'
 
-const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
-const sliceLayers = ['entities', 'features', 'widgets', 'pages']
+const layerOrder = ['shared', 'entities', 'features', 'pages', 'app']
+const sliceLayers = ['entities', 'features', 'pages']
 
 const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
 const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })

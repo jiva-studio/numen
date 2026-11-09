@@ -14,8 +14,8 @@ import {
   createLayerPolicies,
 } from '../../../tools/lint-layers/layers.mjs'
 
-const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
-const sliceLayers = ['entities', 'features', 'widgets', 'pages']
+const layerOrder = ['shared', 'entities', 'features', 'pages', 'app']
+const sliceLayers = ['entities', 'features', 'pages']
 
 // A plugin is an element of its own, and no policy applies to it: the window
 // loads a plugin over HTTP and imports nothing of it.

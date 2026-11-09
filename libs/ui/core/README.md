@@ -6,11 +6,9 @@ Interface components shared by the desktop and mobile clients.
 
 ## The one rule
 
-**A component here uses nothing from the application.** No import from the application's domain, no wire types, nothing from `apps/**` — not in the components, not in the stories, not in the fixtures. A component takes props it defines itself and emits events with opaque identifiers; whoever renders it translates the domain data into that shape.
+**A component here uses nothing from the application and says nothing of its domain.** No import from the application's domain, no wire types, nothing from `apps/**` — not in the components, not in the stories, not in the fixtures — and no domain word in a name, a prop, an event or a story: a component says `tree`, `menu`, `row`, `slot`, `item`, never `vault` or `note`. A component takes props it defines itself and emits events with opaque identifiers; whoever renders it maps its domain onto these general words and maps the identifier back. The window (or `@numen/shell`) that draws a list of vaults passes it as `items` of a `tree` or a `menu`.
 
-**A concept is named with the term of its field, including the domain's own terms.** Where a component draws a vault, it uses the word vault: the welcome page of `@numen/shell`, built on these components, names its rows `vaults`, and its `letters.ts` defines for each of them the letter that selects it. A shape word coined to keep the domain out of the module would be a second name for the thing on the screen, and the naming rule rejects one. The rule rejects the dependency, not the vocabulary.
-
-The dependency runs one way: `apps/*` depends on `libs/ui/core`. Never the reverse, and never sideways.
+The dependency runs one way: `apps/*` depends on `libs/ui/core`. Never the reverse, and never sideways. `@numen/ui` is a published package with a versioned public contract, so its names are general ones that a consumer outside this repository can use.
 
 ## Working on it
 
@@ -43,21 +41,21 @@ docker run --rm --ipc=host -v "$PWD:/ui" -w /ui \
 
 ```
 src/
-  tokens/            all styling
-    tokens.css       every value, as custom properties
-    theme.css        Tailwind names defined from those values
-  classes.ts         cn(), for joining class lists
-  lib/               the clock, the geometry and the viewport, as parameters
-  components/ui/     components copied from shadcn-vue and maintained here
-  fixtures/          irregular text, and a backdrop for the floating panel
-  panel/             the floating panel: a surface for content
-  composer/          the message input field
-    model.ts         its state, and the meaning of each key
-  dots/              three dots rising one after another: a message is being written
-  thread/            the message thread
-    model.ts         every voice, declared once — a new voice starts here
-  assembled/         the three components combined, for Storybook
+  index.ts           the public entry: everything a consumer imports
+  shared/
+    tokens/          all styling
+      tokens.css     every value, as custom properties
+      theme.css      Tailwind names defined from those values
+      classes.css    shared class lists
+      window.css     the window frame
+    lib/             pure helpers: async, dom, format, math, text, time (the clock)
+    ui/              one folder per component: button, menu, select, slider, switch, ...
+    fixtures/        made-up text, colours and a clock for stories
+  features/
+    tree/            the tree component and its pure model
 ```
+
+A component is a folder in `shared/ui/`; a part that has state of its own and is drawn on its own is a slice of `features/`. Placement is the skill [`nm-place-library`](../../../.agents/skills/nm-place-library/SKILL.md).
 
 ## Styling
 
@@ -67,6 +65,6 @@ Both use the same tokens: `tokens.css` holds every value, `theme.css` defines Ta
 
 **A theme is chosen by `color-scheme`.** The tokens are `light-dark()` pairs, and that is the whole mechanism — Storybook's switch sets `color-scheme` and everything follows. It is declared on `:root` and **nowhere else**: an element that declares it again returns the choice to the system setting, so every token under that element resolves to the wrong half of its pair while the page appears to use the other one. **No component writes a `dark:` class.** Tailwind's `dark:` variant reads a class or the OS setting, neither of which is what is being switched, so a component using one stays in the theme it was written for. Components copied from shadcn-vue have theirs removed when they are copied in.
 
-**Scoped CSS overrides a utility.** Component styles are unlayered and Tailwind's are in `@layer`, so an unlayered rule wins whatever its specificity. A scoped block on a DOM component is therefore for what a utility cannot express — the composer's field and its copy sharing one grid cell — and never for what one can.
+**Scoped CSS overrides a utility.** Component styles are unlayered and Tailwind's are in `@layer`, so an unlayered rule wins whatever its specificity. A scoped block on a DOM component is therefore for what a utility cannot express — an input field and its copy sharing one grid cell — and never for what one can.
 
 **A component root has the class `numen`.** The tokens are declared on `:root` and on `.numen` both, so a component works in a page that never set them.

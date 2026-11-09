@@ -48,8 +48,6 @@ Pattern for a domain view: the library defines its own view-model and takes it b
 
 The code below does not follow the target. It is not a model.
 
-- `libs/ui/core/README.md` and `docs/architecture/plan.md` (section 3) allow a component in `@numen/ui` to use domain words ("where a component draws a vault, it says vault"). The target is a drawing vocabulary of general words in `@numen/ui`; domain words belong to the window, its plugin, or a domain library such as `@numen/plugin-manager`.
-- The layout section of `libs/ui/core/README.md` lists `panel/`, `composer/`, `thread/` and `components/ui/`, which do not exist. The tree is `shared/{ui,lib,tokens,fixtures}` and `features/<slice>`.
 - Doc comments in `libs/ui/core/src/index.ts` name domain things: a "moment of a recording" for `clock`, a "manifest" for `NamedIcon`, "both windows" for the number formatters. The exports are general; the comments name their first consumer.
 - `libs/ui/shell/src/features/welcome` exposes `VaultRow` and `getVaultForKey`; the shell's other slices (workspace, palette, notices, window frame) are chrome.
 - `Menu.types.ts:16` takes `clock?: () => number` while `Tree.types.ts:15` takes `clock?: Clock`. The target is `Clock`.
