@@ -1,0 +1,53 @@
+# What the checks enforce
+
+Each entry names a check or a lint rule by what it forbids. `node tools/lint-layers/check.mjs --list` prints the registered verifiers; the rules are in `.agents/rules/architecture.md` §5, §8, §9, §10 and §11. A red check is fixed in the code, not by changing the check or moving code out of its sight.
+
+## Dependencies of a plugin
+
+- `go.mod` of a plugin (`plugins-independence`, tests `TestNoPluginModuleRequiresMoreThanTheSDK`, `TestWhatThePluginGoModRulesReject`): the module path is the folder's; it requires directly only the plugin SDK modules and third-party code; it names no `libs/notes`, `libs/protocol`, connect or protobuf module, no other plugin and no core package; it has no `replace` to a folder.
+- The import graph of the plugins on fourteen platform targets (`plugins-independence`): a plugin reaches no other plugin, no core package, no application.
+- `plugins-isolation-capture`: a file under `plugins/<name>/` references no other plugin.
+- `package.json` of a plugin (`package-matrix`, `protocol-declared-only-by-clients`, `core-client-private`): it declares no `@numen/protocol` and no `@numen/core-client`, and among the packages of this repository only `@numen/plugin-sdk` and `@numen/ui`.
+- `plugins-use-main-entry`: the SDK and the UI library are imported through the entries their `exports` declare.
+- `plugins-frontend` (ESLint with the golden `eslint.config.js`): no `@/**` and no `@plugins/**` import, and no `@numen/*` import other than `@numen/plugin-sdk` and `@numen/ui`.
+- `plugins-hold-no-schema`: no `.proto` file under `plugins/`.
+- `sdk-isolation` and `sdk-ts-encapsulates-protocol`: the SDKs import no core and no application, and no exported SDK declaration exposes a generated protocol type.
+- The no-reexport rule of the core: a package declares no alias of a type of another package. Types a plugin uses come from the SDK under one name each.
+
+## The manifest and the host
+
+- `plugins-leakage`: the manifest schema, and static non-leakage of the core into plugins.
+- `json-keys-camelcase`: every JSON key of a manifest, fixture and JSON type is camelCase.
+- Manifest tests of `libs/core/container`: every manifest passes the validator; a plugin that registers tabs declares them; no wildcard activation event; every setting declared is read by the plugin; every plugin has a README; the plugin names follow the naming rule; the core names no plugin id.
+- `host_permission_test.go`: the host refuses a call whose permission the plugin's manifest does not declare, for any client of the host endpoint.
+
+## Tooling configuration
+
+- `plugin-config-golden-parity`: `Makefile`, `.golangci.yml`, `eslint.config.js` and `tsconfig.json` of a plugin (and `numen-rules.mjs`, once the branch named at the end lands) are the files of `plugins/.example/` byte for byte, and the golden Go linters equal those of the root `.golangci.yml`.
+
+## Inside a Go backend
+
+- `plugin-backend-layers`: a package under `backend/` other than `cmd`, `service`, `engine` and `testsupport` imports neither `backend/service` nor `backend/engine`.
+- The Go lint configuration of the plugin (`.golangci.yml`, `.golangci-structure.yml`): cyclomatic complexity, cognitive complexity, nesting, function length, parameter count, an interface of at most five methods, exhaustive switches and struct literals, no naked returns, no package-level mutable state and no `init`, no discarded errors, `errors.Is`/`errors.As`, US spelling in comments; depguard keeps the domain free of adapters, `os` and `net`.
+- The machine clock (`time.Now`, `time.Since`, `time.Until`) is read only inside a method `Now() time.Time` of a type that implements a declared clock interface. A timer (`time.After`, `AfterFunc`, `NewTimer`, `NewTicker`, `Tick`, `Sleep`) and a random source (`crypto/rand`, `math/rand`) are used only inside a method of a type that implements an interface the workspace declares. Tests are in scope.
+- No function of a port calls a method of an interface value; an interface's full method set, embedded methods included, stays within the limit.
+- No package lies below the composition root of the core.
+
+## Inside a frontend
+
+- Golden `eslint.config.js` for every plugin frontend: the strict promise and `void` rules; `complexity`, `max-depth`, `max-params`; no `console`; no `any`; no `Date.now()`, `new Date()`, `Math.random()`, `getBoundingClientRect` or `matchMedia` outside tests and stories.
+- `lib/` segments: no import of Vue, Pinia or `@vue/*`; no import of a `ui`, `model` or `api` segment at any depth and no `.vue` file; no `window`, `document`, `navigator`, `localStorage`, `sessionStorage`; no `setTimeout` or `setInterval`.
+- `model/` segments: no import from `ui`; no `window`, `document`, `navigator`.
+- `.vue` files: no import of a wire file, `@connectrpc/*` or `@bufbuild/*`; no `window`, `document`, `navigator`.
+- Components (`numen-rules.mjs`): at most six inline props (`numen/max-inline-props`), the section order Props, Emits, State, Hooks, Handlers, Helpers (`numen/vue-script-sections`), at most 100 script lines (`numen/max-script-lines`); the template, depth and composable-return limits of §8.
+- `no-component-below-ui`: no `.vue` file in a `lib`, `api` or `model` segment.
+- `styles-use-tokens`: no colour literal, no `--numen-` declaration outside the token files, no `var()` fallback and no undeclared token in a style sheet.
+- Every package with a `package.json` or an ESLint configuration is linted with the strict rule set, and no `tsconfig` excludes a tracked file.
+
+## Everywhere
+
+- `no-suppressions`: no `nolint`, `eslint-disable`, `@ts-ignore`, `@ts-expect-error` or `@ts-nocheck`; no `exclusions` or `exclude-functions` in a linter configuration; no file named in an `ignores` entry to avoid a rule.
+- `lint-narrative`: identifiers, test titles, comments and commit subjects are written in plain technical English.
+- Version of a changed plugin: `<year>.<month>.<build>` raised once relative to the merge base with main.
+
+The checks added by the branch `checks/no-bypass` (the type-checked Go rules above on aliases, timers and randomness, port calls, interface size; and the frontend rules on `lib` imports at any depth, components below `ui`, and the component rules from `numen-rules.mjs`) are part of this list once that branch is merged.
