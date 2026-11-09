@@ -5,10 +5,12 @@
  *
  * Without a `popover` slot a press opens nothing.
  */
-import { onBeforeUnmount, useId, useSlots, watch } from 'vue'
+import { useId, useSlots } from 'vue'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import type { BarChipTone } from './barChip.types'
+import { useDialogName } from './useDialogName'
 
+/* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(
   defineProps<{
     /** Accessible name of the trigger. */
@@ -22,48 +24,25 @@ const props = withDefaults(
   { tooltip: undefined, tone: 'neutral', popoverLabel: undefined },
 )
 
+/* --------------------------------- State ---------------------------------- */
 const isOpen = defineModel<boolean>('open', { default: false })
-
 const slots = useSlots()
-// Read on every render: a slot given under a condition appears and goes without a reactive change.
-const hasPopover = (): boolean => slots.popover !== undefined
+const chipId = useId()
 
+/* --------------------------------- Hooks ---------------------------------- */
+useDialogName(chipId, () => isOpen.value && hasPopover() && props.popoverLabel !== undefined)
+
+/* -------------------------------- Handlers -------------------------------- */
 function onUpdateOpen(value: boolean): void {
   if (value && !hasPopover()) return
   isOpen.value = value
 }
 
-// reka-ui labels its content by the trigger and writes that attribute again whenever the trigger id
-// changes, which wins over `aria-label`. While the popover is open and `popoverLabel` is given, the
-// attribute is removed as often as it appears, so the dialog is named by `popoverLabel`.
-const chipId = useId()
-let observer: MutationObserver | null = null
-
-function removeLabelledby(): void {
-  document
-    .querySelector(`[data-bar-chip-popover="${chipId}"]`)
-    ?.removeAttribute('aria-labelledby')
+/* -------------------------------- Helpers --------------------------------- */
+// Read on every render: a slot given under a condition appears and goes without a reactive change.
+function hasPopover(): boolean {
+  return slots.popover !== undefined
 }
-
-watch(
-  () => isOpen.value && hasPopover() && props.popoverLabel !== undefined,
-  (isNamed) => {
-    observer?.disconnect()
-    observer = null
-    if (!isNamed) return
-    removeLabelledby()
-    observer = new MutationObserver(removeLabelledby)
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['aria-labelledby'],
-    })
-  },
-  { immediate: true, flush: 'post' },
-)
-
-onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
@@ -88,7 +67,7 @@ onBeforeUnmount(() => observer?.disconnect())
         side="bottom"
         align="end"
         :side-offset="4"
-        :avoid-collisions="true"
+        avoid-collisions
         :aria-label="props.popoverLabel"
         :data-bar-chip-popover="chipId"
       >
