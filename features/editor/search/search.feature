@@ -8,12 +8,12 @@ Feature: Search
 
     Scenario: A passage of a note is opened in its note
       Given the empty vault "Test"
-      And the vault has the note titled "Entropy" with "A measure of uncertainty."
+      And the vault has the note titled "Entropy" with "Entropy is a measure of uncertainty."
       And the application "editor" starts
       When the person searches the vault for "Entropy"
-      And the person chooses the search result "A measure of uncertainty" in the group "Text"
+      And the person chooses the search result "Entropy is a measure of uncertainty" in the group "Text"
       Then the tab titled "Entropy" is active
-      And the note titled "Entropy" has "A measure of uncertainty."
+      And the note titled "Entropy" has "Entropy is a measure of uncertainty."
 
     Scenario: A note is found by a word it does not have
       When the person searches the vault for "boat"
