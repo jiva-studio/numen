@@ -318,7 +318,11 @@ export function createPluginContext(
     ...guardServices(host, requirePerm, add),
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
-    ...createRegistrations(pluginId, host, { requirePerm, add }),
+    ...createRegistrations(pluginId, host, {
+      requirePerm,
+      add,
+      permissions: manifest?.permissions ?? [],
+    }),
     ...createSlotContext(
       { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
       host,

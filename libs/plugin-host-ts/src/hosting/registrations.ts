@@ -21,6 +21,7 @@ export type RequirePermission = (permission: string, operation: string) => void
 export interface RegistrationGuard {
   readonly requirePerm: RequirePermission
   readonly add: Track
+  readonly permissions: readonly string[]
 }
 
 export function createRegistrations(
@@ -28,7 +29,7 @@ export function createRegistrations(
   host: PluginContextHost,
   guard: RegistrationGuard,
 ) {
-  const { requirePerm, add } = guard
+  const { requirePerm, add, permissions } = guard
   return {
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerSettingsView: (reg: SettingsViewRegistration) =>
@@ -38,10 +39,12 @@ export function createRegistrations(
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
     registerAgentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),
-    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
+    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg, permissions)),
     mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      for (const permission of getViewPermissions(capability)) requirePerm(permission, 'mountView')
-      const view = host.mountView(capability, element, context)
+      const required = getViewPermissions(capability)
+      for (const permission of required ?? []) requirePerm(permission, 'mountView')
+      const access = required ? undefined : { permissions, requirePerm }
+      const view = host.mountView(capability, element, context, access)
       return { focus: () => view.focus(), ...add(view) }
     },
     registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
