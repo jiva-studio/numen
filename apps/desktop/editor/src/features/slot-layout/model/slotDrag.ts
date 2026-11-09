@@ -89,7 +89,7 @@ const findPressedEntry = (target: EventTarget | null, deps: LayoutDeps): Pressed
   if (!entry || !found) return null
   const key = deps.findLayoutKey(entry.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', found.slot)
   if (key === undefined) return null
-  const box = entry.getBoundingClientRect()
+  const box = measureRect(entry)
   const copy = { node: entry.cloneNode(true), width: box.width, height: box.height }
   return { key, itemKey: entry.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', from: found.slot, copy }
 }
@@ -195,10 +195,12 @@ function createPreview(deps: SlotDragDeps) {
     shown = key
     const before = measureEntries()
     deps.showPreview?.(change)
-    void nextTick().then(() => {
-      playMoves(before, pressed?.itemKey ?? '')
-      markPlaceholder()
-    })
+    nextTick()
+      .then(() => {
+        playMoves(before, pressed?.itemKey ?? '')
+        markPlaceholder()
+      })
+      .catch(() => undefined)
   }
 
   /** The lists the entry changes by going to the target; none when it stays where it is. */

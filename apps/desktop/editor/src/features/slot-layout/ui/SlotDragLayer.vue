@@ -27,7 +27,7 @@ const hostStyle = computed(() =>
     : undefined,
 )
 
-/* -------------------------------- Watchers -------------------------------- */
+/* ---------------------------------- Hooks --------------------------------- */
 watch(
   [() => props.copy, host],
   ([copy, element]) => {
@@ -44,6 +44,12 @@ watch(
 <style>
 [data-numen-slot-placeholder] {
   opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-numen-slot-entry] {
+    transition: none !important;
+  }
 }
 </style>
 
