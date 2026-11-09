@@ -15,6 +15,7 @@ numen/
 ├── libs/
 │   ├── core/
 │   │   ├── kernel/               # Go: the hexagon
+│   │   │   ├── domain/<area>/    # small packages of the core's own concepts (settings, agent, theme, plugin information); no plugin and not the SDK imports them
 │   │   │   ├── port/             # interfaces the use cases require
 │   │   │   ├── usecase/          # one business scenario each, orchestrating ports
 │   │   │   ├── adapter/          # cli, index, settings, window: the adapters the core exposes
@@ -66,6 +67,9 @@ Where a piece of Go code goes and how a port, a use case and an adapter are shap
 - **Driving and driven adapters are both adapters.** A CLI, a window and an MCP server drive the core; a database, a filesystem and a clock are driven by it. The core must not depend on which kind of adapter is used.
 - **The plugin adapter (`libs/core/kernel/internal/adapter/plugin`) has two kinds of package, distinguished by name.** A package ending in `bridge` calls a plugin for the core (`agentbridge`, `textbridge`, `agenttoolsbridge`); a package starting with `host` handles the calls a plugin makes to the core (`hostendpoint`, `hosttext`, `hostvault`). `bridge`, `transport` and `manifestfile` are shared, and `manifestlist` lists what the manifests declare without calling a plugin. Neither side imports the other, bridges import no other bridge, no package below `internal/adapter/plugin` imports the root `plugin` package, and nothing in `internal/adapter/plugin` imports a sibling adapter. `.golangci.yml` (`plugin-*` depguard rules) and `container/plugin_adapter_layers_test.go` enforce this.
 - **A use case is one business scenario**, and it defines the boundary of one unit of work, which is the transaction boundary.
+- **Use cases are isolated.** No use case imports another. What two share is a rule in the domain or a port both consume.
+- **A port has one to three methods** and no type of its own: its types and the sentinel errors of an area are in `libs/core/kernel/domain/<area>` or `libs/note/domain`.
+- **The window adapter is cut by wire service.** One adapter type per RPC service, each built from the use cases it calls; no object holds every use case or every service, and no struct holds more than five use cases.
 - **A repository is a collection**: put an aggregate in, take one out, remove one. Searches and counts are separate queries, not methods on the repository.
 - **Entities contain rules only.** No I/O, no clock, no framework tags, no knowledge of how they are stored.
 
@@ -79,6 +83,8 @@ $$\text{shared (0)} \longrightarrow \text{entities (1)} \longrightarrow \text{fe
 - **Slice isolation**: A slice does not import from a sibling slice on the same layer. Shared code is in a lower layer. There is no `@x` cross-import; `dependency-graph` fails on one. A slice is imported from a higher layer only through its `index.ts`.
 - **Import aliasing**: Imports crossing slice boundaries use the `@/` alias (e.g. `@/entities/note`), while intra-slice imports remain relative (`./model`, `./types`).
 - **Segments**: Inside a slice the direction is `ui` → `model` → `api` → `lib`.
+- **Calls to the core**: The `model` of a slice imports its own `api` directly. `provide`/`inject` carries no RPC call; a component takes props only and emits events.
+- **Commands**: A command is declared in the `model/commands.ts` of the feature that owns it; `entities/command` holds the `Command` type.
 
 Component architecture enforces separation of concerns:
 
@@ -86,14 +92,15 @@ Component architecture enforces separation of concerns:
 - **Presentational views**: Views receive precomputed data and render elements without executing business calculations in templates.
 - **Platform capabilities as ports**: Clocks, `requestAnimationFrame`, viewport geometry, and media preferences are taken as parameters (§5), with browser defaults supplied by the caller.
 - **Design tokens**: Styling is exclusively driven by design tokens defined in `src/tokens/`.
+- **Lengths**: A dimension that belongs to one component is a local custom property in `rem` or `em`. No `px` for a size, except a 1px hairline border; no bare length on a property.
 
 ## 5. Determinism
 
 In anything pure — `domain/`, the model and arithmetic modules beside a component, the text cutting and chunking:
 
-- **The clock is a port.** `time.Now()`, `Date.now()`, `new Date()`, `setTimeout` and `setInterval` are injected as a clock the caller supplies, and the module that wraps the real one is the only place they appear. A test must be able to control the time.
-  - In Go the rule is structural. `TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation` (`libs/core/kernel/container/clock_port_test.go`) loads every module of `go.work` with go/packages, tests included, and fails on any reference to `time.Now`, `time.Since` or `time.Until` outside the body of a method `Now() time.Time` whose receiver implements a clock port (an interface declared in non-test code whose only method is `Now() time.Time`). Generated files are skipped. No path, file or name is listed, forbidigo has no time pattern, and the test asserts that it finds the real clock implementations. It runs in `make check_layers` (verifier `go-structure`), which `make check_gate` runs whenever a Go file changes.
-  - In TypeScript the rule is structural. `no-restricted-syntax` in `tools/lint-layers/base-eslint.mjs` (`createClockSelectors`) bans `Date.now()` and `new Date()` with no arguments in every package, except inside the declaration of the function `getNow` in `libs/ui/components/src/shared/lib/dom.ts`. `performance.now()` is banned the same way, except inside the declaration of `getMonotonicNow` in `libs/ui/components/src/shared/lib/time/clock.ts`. In every `lib/` and `domain/` segment `createPureSegmentConfig` also bans `setTimeout` and `setInterval`; a stateful `model/` module that debounces or polls is not a pure segment and may schedule. Other code takes the time from `getNow` (exported by `@numen/ui`) or from an injected clock, and tests control it with fake timers. `tools/lint-layers/clock.test.mjs` proves a stray `Date.now()` fails and `getNow` passes.
+- **The machine clock is a port (Go).** `time.Now`, `time.Since` and `time.Until` appear only in the body of a clock port implementation, so a test controls the time. Timers (`time.After`, `time.NewTimer`, `time.Ticker`, `time.AfterFunc`) and randomness are not restricted in Go.
+  - The Go rule is structural. `TestTheTypeCheckedWorkspaceObeysItsRules/TheMachineClockIsReadOnlyByAClockPortImplementation` (`libs/core/kernel/container/clock_port_test.go`) loads every module of `go.work` with go/packages, tests included, and fails on any reference to `time.Now`, `time.Since` or `time.Until` outside the body of a method `Now() time.Time` whose receiver implements a clock port (an interface declared in non-test code whose only method is `Now() time.Time`). Generated files are skipped. No path, file or name is listed, forbidigo has no time pattern, and the test asserts that it finds the real clock implementations. It runs in `make check_layers` (verifier `go-structure`), which `make check_gate` runs whenever a Go file changes.
+- **A pure segment holds no clock, no timer, no randomness and no measuring (TypeScript).** The reason is that `lib/` is pure: its output is a function of its arguments. `Date.now()`, `new Date()` with no arguments and `performance.now()` are banned in every package by `no-restricted-syntax` (`createClockSelectors` in `tools/lint-layers/base-eslint.mjs`), except inside the declaration of `getNow` in `libs/ui/components/src/shared/lib/dom.ts` and of `getMonotonicNow` in `libs/ui/components/src/shared/lib/time/clock.ts`. In every `lib/` and `domain/` segment `createPureSegmentConfig` also bans `setTimeout`, `setInterval` and `Math.random`; `Math.random` stays banned in every non-test file. A stateful `model/` module that debounces or polls is not a pure segment and may schedule through an injected clock. Other code takes the time from `getNow` (exported by `@numen/ui`) or from an injected clock, and tests control it with fake timers. `tools/lint-layers/clock.test.mjs` proves a stray `Date.now()` fails and `getNow` passes.
 - **The same input gives the same output** on any machine on any day. A chunk identified by its text is the same identifier on either platform.
 - **No error is swallowed.** An empty `catch {}`, a discarded `_ = fn()` and a floating `void promise` are all forbidden. An error is handled, returned or wrapped.
 

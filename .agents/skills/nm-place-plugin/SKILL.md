@@ -73,7 +73,7 @@ A plugin has a backend, a frontend or both. A frontend-only plugin (`plugins/not
 | Pure logic (parsing, formatting, scheduling, geometry)                               | Backend: a package named after what it computes, importing nothing of the plugin. Frontend: the `lib` segment of the slice                                                                                                                |
 | A message between frontend and backend                                               | A struct in `backend/api`, a type in the `api` segment of the frontend, and a JSON fixture in `testdata/api/` that the tests of both sides read                                                                                           |
 | A clock, the process environment, a network or file access | An adapter in `backend/internal/adapter/<technology>`, a method of a type that implements an interface the consuming package declares                                                                                                     |
-| A stylesheet                                                                         | `frontend/styles.css` using the tokens of `@numen/ui`; no literal colour, size or duration                                                                                                                                                |
+| A stylesheet                                                                         | `frontend/styles.css` using the tokens of `@numen/ui`; no literal colour or duration; sizes in `rem`/`em` (a local custom property for one component), no `px` except a 1px hairline                                                                                                                                              |
 | A text shown to a person                                                             | `frontend/words.ts` (or the words module of the slice); a component receives text, it does not compose it                                                                                                                                 |
 
 ## The backend
@@ -134,7 +134,7 @@ Inside a slice the imports run `ui` to `model` to `api` to `lib`: a segment impo
 
 Two slices do not import each other. A value two slices need is a pure function in `frontend/lib/`, a type in `frontend/types.ts`, or is written again in each slice. A component that two slices draw belongs to one of them and the other draws it through that slice's `index.ts`, or is copied.
 
-A component of general use belongs in `@numen/ui`, and is added there with the plugin that uses it first.
+A component of general use belongs in `@numen/ui` (what plugins need goes into `@numen/ui`; what only applications need goes into `@numen/workbench`, which a plugin never imports), and is added there with the plugin that uses it first.
 
 ## When something belongs in the SDK, is copied, or stays in the core
 

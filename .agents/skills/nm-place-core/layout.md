@@ -11,11 +11,12 @@ libs/note/                      the domain; imports nothing of this repository a
 └── ulid/                        the identifiers of notes; time and entropy come in as arguments
 
 libs/core/kernel/                       the hexagon
-├── port/<name>port/             the interfaces use cases require from several use case packages, and the types they exchange
+├── domain/<area>/               small packages of the core's own concepts (settings, agent, theme, plugin information) and their sentinel errors; never imported by a plugin or the SDK
+├── port/<name>port/             the interfaces use cases require, one to three methods each; no type of its own
 ├── usecase/<noun>/              one scenario per file, with its request and result types and the interfaces only it consumes
 ├── adapter/
 │   ├── cli/                     driving: the command line; parses arguments, calls use cases, prints
-│   ├── window/                  driving: the window's services; maps requests to use cases and results to the wire
+│   ├── window/                  driving: cut by wire service, one adapter type per RPC service; no object holds them all
 │   ├── index/                   driven: the SQLite index; stores and reads, never cuts or ranks
 │   └── settings/                driven: the settings file, its lock and its on-disk layout
 ├── internal/
@@ -40,8 +41,9 @@ apps/desktop/                    thin shells
 ## What each folder may import
 
 - `libs/note/*` imports the standard library and its own siblings only, along the edges its layer test lists.
-- `port/*` imports `libs/note/domain` and the standard library.
-- `usecase/*` imports `port`, `libs/note` and the use cases `useCaseEdges` lists.
+- `domain/<area>` imports the standard library, `libs/note/domain` and itself.
+- `port/*` imports `domain/<area>`, `libs/note/domain` and the standard library.
+- `usecase/*` imports `port`, `domain/<area>`, `libs/note` and no other use case.
 - A driven adapter imports `port`, `libs/note` and its technology; it imports no other adapter.
 - A driving adapter imports `usecase`, `libs/note` and the generated protocol; it imports nothing under `port/`.
 - `container` imports everything and returns no adapter type.

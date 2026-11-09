@@ -3,7 +3,7 @@
 The conventions every language in this repository shares are in `AGENTS.md` at
 the root. This file defines specific rules for `libs/core/kernel`. Where a piece of code goes and how it is shaped is the skill [`nm-place-core`](../../../.agents/skills/nm-place-core/SKILL.md).
 
-The architecture follows [`.agents/rules/architecture.md`](../../../../.agents/rules/architecture.md)
+The architecture follows [`.agents/rules/architecture.md`](../../../.agents/rules/architecture.md)
 ("Ports and adapters"). The following table summarizes architectural invariants
 and the corresponding tests enforcing them.
 
@@ -16,7 +16,7 @@ Each test verifies adherence to structural rules.
 | ----------------------------------------------------------------------------- | -------------------------------------------------- |
 | A package is on the layer its path states, and imports only from lower layers | `TestTheLayersAreWhatTheyAre`                      |
 | No package that the core is compiled from imports an adapter                  | `TestNothingTheCoreIsCompiledFromReachesOutward`   |
-| A use case imports only the use cases `useCaseEdges` declares for it          | `TestUseCaseImportsFollowDeclaredEdges`            |
+| A use case imports no other use case (use cases are isolated)                 | `TestUseCaseImportsFollowDeclaredEdges`            |
 | An adapter does not name the port it implements                               | `TestNoAdapterNamesThePortItSatisfies`             |
 | The composition root returns no adapter type                                  | `TestTheRootPassesOutNoAdapterTheCompilerContains` |
 | A package is imported under the name its layer gives it                       | `TestNoPackageIsImportedBelowItsLayer`             |
@@ -54,9 +54,11 @@ outside `port/`.
 | An identity is named with the core's own term, in fields and in signatures                    | `TestTheCoresIdentitiesAreItsOwn`, `TestTheIdentitiesAPortAsksForAreTheCoresOwn`           |
 | An instant is a `time.Time`                                                                   | `TestEveryInstantTheCoreCarriesIsATime`                                                    |
 | A driving adapter calls no port outside its wiring files, and is covered by the depguard rule | `TestNoDrivingAdapterCallsAPortOutsideItsWiring`, `TestEveryDrivingAdapterIsOnTheLintRule` |
-| The core starts no timer of the machine                                                       | `TestNothingOfTheCoreReadsTheMachinesClock`                                                |
+| The machine clock is read only inside a clock port implementation; timers and randomness are not restricted | `TestNothingOfTheCoreReadsTheMachinesClock`                                                |
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
+
+The target shape, which the packages of the refactor reach: the core's own concepts are small packages `domain/<area>` that import the standard library, `libs/note/domain` and themselves, and that no plugin and not the SDK imports; a port has one to three methods and no type of its own; the window adapter is one adapter type per RPC service, with no object that holds them all; no struct holds more than five use cases.
 
 No type is named by a gerund or a participle.
 

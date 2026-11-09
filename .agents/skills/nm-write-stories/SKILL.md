@@ -1,6 +1,6 @@
 ---
 name: nm-write-stories
-description: Says what a Storybook story in libs/ui/core (@numen/ui) and libs/ui/shell (@numen/shell) shows, which behavior it exercises with a play function, how its fixtures are made, how a component takes its clock and viewport, what the accessibility check covers and what a person decides, and how a component uses design tokens. Load it before writing or changing a component, a story, a story fixture or a unit test under libs/ui, and when reviewing one. Trigger with "/nm-write-stories", "write a story", "add a story", or "story for this component".
+description: Says what a Storybook story in libs/ui/components (@numen/ui) and libs/ui/workbench (@numen/workbench) shows, which behavior it exercises with a play function, how its fixtures are made, how a component takes its clock and viewport, and how a component uses design tokens. Load it before writing or changing a component, a story, a story fixture or a unit test under libs/ui, and when reviewing one. Trigger with "/nm-write-stories", "write a story", "add a story", or "story for this component".
 paths:
   - libs/ui/**/*.stories.ts
   - libs/ui/**/*.vue
@@ -8,7 +8,7 @@ paths:
 
 # Writing stories (`/nm-write-stories`)
 
-This skill answers what a story in `@numen/ui` and `@numen/shell` contains. Where a component goes is decided by [`nm-place-library`](../nm-place-library/SKILL.md); this skill starts once the component has its folder. A check can tell that a story exists, imports no domain and runs the accessibility rules; it cannot tell whether the story shows the states a caller reaches or whether the `play` function proves the behavior. This skill does.
+This skill answers what a story in `@numen/ui` and `@numen/workbench` contains. Where a component goes is decided by [`nm-place-library`](../nm-place-library/SKILL.md); this skill starts once the component has its folder. A check can tell that a story exists and imports no domain; it cannot tell whether the story shows the states a caller reaches or whether the `play` function proves the behavior. This skill does.
 
 The rules are in `AGENTS.md` (sections 1, 13 and 14), `.agents/rules/architecture.md` (sections 2, 4 and 5) and `.agents/rules/coding-style-frontend.md` (sections 2, 3, 8, 9 and 12). The user's recorded decisions are stated here as targets: no visual-regression test, no test of a pixel size, a gap, a scale or a contrast ratio; behavior is tested (open, close, flip, move); fixtures are invented content. Where code in `main` differs from a target, the target governs; the section "Where main differs" lists the places.
 
@@ -85,7 +85,7 @@ A behavior that depends on layout, focus-visible, paint order or pointer geometr
 The official page: "use a play function to simulate user behavior like clicks, typing, and submitting a form". The tools come from `storybook/test`: `userEvent`, `expect`, `fn`, `within`, `waitFor`.
 
 - Strike what a person strikes: `userEvent.click`, `userEvent.keyboard('{ArrowDown}')`, `userEvent.type`, `userEvent.pointer([...])` for a drag. Never call a component method, set a ref or dispatch a hand-built event to make the state change; an event the component needs from a person is produced the way a person produces it. Where one browser-level gesture is needed (a pointer sweep, the system colour scheme), the commands in `.storybook/browser.ts` exist.
-- Find elements the way a screen reader does: `within(canvas).getByRole('menuitem', { name: 'Open' })`. A query by role and name is the first accessibility check: if the test cannot find the control, a person using assistive technology cannot either. A `data-*` hook or a class is the second choice and is for an element that has no role.
+- Find elements the way a screen reader does: `within(canvas).getByRole('menuitem', { name: 'Open' })`. A query by role and name fails when the control has no role or no name, which a person using assistive technology would also miss. A `data-*` hook or a class is the second choice and is for an element that has no role.
 - Spy only on the outer edge. The component's emitted events are the outer edge: pass `fn()` as the `onX` arg and assert `toHaveBeenCalledWith(id)`. The official page: "you will use `fn` as an `arg` value when writing your story". Everything between the event and the edge is real. A story mocks no module, no component, no `getBoundingClientRect`.
 - Wait for what takes a frame: `await waitFor(() => expect(...))`. A fixed sleep is a defect.
 - Group a long script with `step('…', async () => {})`; the official page: "group sets of related interactions together using the step function".
@@ -111,23 +111,16 @@ A component that depends on time or on the size of the window takes it as a para
 - Randomness and identifiers are parameters in the same way. A story passes a seeded or fixed source.
 - The toolbar globals `theme`, `interface` and `font` set `color-scheme` and the two scale variables on the root. A story that must run in the dark theme sets `globals: DARK` from `src/shared/fixtures/theme.ts`, and its `play` asserts a behavior.
 
-## Accessibility
+## Focus and names
 
-Every story is checked for accessibility; a story does not switch the check off.
+No accessibility addon and no axe run is part of the story projects. What a person looks at, and what a `play` function asserts when it can:
 
-**What runs.** The target is `@storybook/addon-a11y`, built on axe-core, with `parameters.a11y.test` set to `'error'` in `.storybook/preview.ts` so that a violation fails the story in the Vitest run and in CI. The official page: `'error'` means "violations return a failing test in the Storybook UI and CLI/CI", and `'off'` is "only for stories that do not need accessibility testing". The addon "automatically catches up to 57% of WCAG issues". Today `main` runs a keyboard walk after every story (`.storybook/check.ts`, `reach.ts`, `keyboard.ts`): each tab stop is visible, has a name and does not trap the keyboard.
-
-**What the axe check covers:** a missing accessible name, an invalid or missing ARIA role or attribute, a duplicate id, a form control without a label, an image without alternative text, a heading order, a focusable element hidden from assistive technology.
-
-**What a person decides** (axe lists these under "Incomplete" or does not see them):
-
-- whether the accessible name says the right thing ("Delete note" and not "Button");
+- whether the accessible name says the right thing ("Delete note" and not "Button"); a query by role and name in the `play` function fails when the control has none;
 - whether the tab order follows the reading order and the visual order;
 - whether a focus ring is visible and where focus goes after a dialog closes (the `play` function asserts the destination);
 - whether the component announces a state change a screen reader user needs (busy, selected, expanded);
 - whether motion respects the reduced-motion preference;
-- whether the component works at 200 percent of the interface scale (the toolbar switch);
-- one pass with a screen reader before a new interaction pattern is declared done.
+- whether the component works at 200 percent of the interface scale (the toolbar switch).
 
 Contrast is not tested: the user decided against contrast tests. The token pairs are chosen by a person in the theme files.
 
@@ -137,8 +130,8 @@ A component draws with design tokens and declares none.
 
 - Colours, radii, durations, fonts and the spacing steps that exist as tokens are used through the token: a Tailwind name from `theme.css` (`bg-surface`, `text-ink`) or `var(--numen-surface)` in a scoped block. No hex, no `rgb()`, no named colour, no `var()` fallback, no Tailwind palette class, no `dark:` variant.
 - Tokens are declared in `src/shared/tokens/tokens.css` and nowhere else; a component never declares a `--numen-` property. A new value that two components use is a new token, added with its Tailwind name in `theme.css`.
-- What scales with the interface is in `rem`; a hairline border, a focus ring and a handle stroke are one physical line and stay in `px`.
-- A dimension that belongs to one component only (a row height, an indent) is a local custom property named for the part (`--row`, `--indent`) in `rem`, declared in that component's block. It is not a token until a second component needs it.
+- What scales with the interface is in `rem` or `em`. No `px` for a size, with one exception, a 1px hairline border; no bare length on a property (`padding: 0.375rem`).
+- A dimension that belongs to one component only (a row height, an indent) is a local custom property named for the part (`--row`, `--indent`) in `rem` or `em`, declared in that component's block. It is not a token until a second component needs it.
 - The theme is chosen by `color-scheme` on the root: the tokens are `light-dark()` pairs. The component root carries the class `numen`.
 - Pure geometry and arithmetic are computed in a `.ts` module beside the component, not in the template or in a `computed`.
 
@@ -152,7 +145,7 @@ A component draws with design tokens and declares none.
 
 Geometry, focus, pointer and keyboard are proven in the story projects in both engines. jsdom decides logic. Use `getBoundingClientRect` in a story to prove that something is whole, inside or ordered, never to pin a size.
 
-In `libs/ui/core` and `libs/ui/shell` take the projects one at a time; `npm test` starts both story instances at once and the run dies before a test executes:
+In `libs/ui/components` and `libs/ui/workbench` take the projects one at a time; `npm test` starts both story instances at once and the run dies before a test executes:
 
 ```bash
 npm run test:unit
@@ -160,26 +153,26 @@ npx vitest run --project 'stories (chromium)'
 npx vitest run --project 'stories (webkit)'
 ```
 
-`libs/ui/shell` imports `@numen/ui` through its build: run `npm run build` in `libs/ui/core` first. Heavy runs belong to the verification machine, not to editing; while writing, run `npm run typecheck` and `npm run lint`.
+`libs/ui/workbench` imports `@numen/ui` through its build: run `npm run build` in `libs/ui/components` first. Heavy runs belong to the verification machine, not to editing; while writing, run `npm run typecheck` and `npm run lint`.
 
 ## Worked examples
 
 Each follows the target.
 
-- A dialog whose first story asserts focus by role and name: `libs/ui/core/src/shared/ui/confirm-dialog/ConfirmDialog.stories.ts:34-41`. The state stories below it (`:44-54`) are a question that is far too long and a question in another script, with no `play`.
-- Choosing emits the identifier the caller gave, asserted through an `fn()` arg, and the menu closes: `libs/ui/core/src/shared/ui/menu/Menu.stories.ts:146-158`. The `args` that carry `fn()` are `:133-134`.
+- A dialog whose first story asserts focus by role and name: `libs/ui/components/src/shared/ui/confirm-dialog/ConfirmDialog.stories.ts:34-41`. The state stories below it (`:44-54`) are a question that is far too long and a question in another script, with no `play`.
+- Choosing emits the identifier the caller gave, asserted through an `fn()` arg, and the menu closes: `libs/ui/components/src/shared/ui/menu/Menu.stories.ts:146-158`. The `args` that carry `fn()` are `:133-134`.
 - Keyboard focus lands on the first item and returns to the opener on Escape, asserted by role: `Menu.stories.ts:186-205` (read the body; the export name is not a model).
-- A tree driven with real pointer events and the keyboard, over invented rows: `libs/ui/core/src/features/tree/ui/Tree.stories.ts:305-356` (`dragTo`, `WalksWithTheKeyboard`, `DragsIntoARow`), rows in `libs/ui/core/src/features/tree/fixtures/rows.ts:1-18`, renaming typed in another script at `Tree.stories.ts:466-480`.
-- Data edge cases as named states with shared awkward text: `libs/ui/core/src/shared/ui/select/Select.stories.ts:102-138`, text in `libs/ui/core/src/shared/fixtures/prose.ts:1-61`.
-- A modal that keeps the keyboard, driven by Tab and Shift+Tab: `libs/ui/shell/src/features/palette/ui/Palette.stories.ts:264-284`; a choice with Enter and Shift+Enter through `fn()` arg: `:247-258`.
-- A space bar toggles a switch (focus, then key, then state): `libs/ui/core/src/shared/ui/switch/Switch.stories.ts:211-225`.
-- A clock as a parameter with a browser default: `libs/ui/core/src/features/tree/ui/Tree.types.ts:15` (`clock?: Clock`) and the stub that tests pass: `libs/ui/core/src/shared/fixtures/clock.ts:1-40`, used at `libs/ui/core/src/features/tree/ui/Tree.test.ts:436-437`.
+- A tree driven with real pointer events and the keyboard, over invented rows: `libs/ui/components/src/features/tree/ui/Tree.stories.ts:305-356` (`dragTo`, `WalksWithTheKeyboard`, `DragsIntoARow`), rows in `libs/ui/components/src/features/tree/fixtures/rows.ts:1-18`, renaming typed in another script at `Tree.stories.ts:466-480`.
+- Data edge cases as named states with shared awkward text: `libs/ui/components/src/shared/ui/select/Select.stories.ts:102-138`, text in `libs/ui/components/src/shared/fixtures/prose.ts:1-61`.
+- A modal that keeps the keyboard, driven by Tab and Shift+Tab: `libs/ui/workbench/src/features/palette/ui/Palette.stories.ts:264-284`; a choice with Enter and Shift+Enter through `fn()` arg: `:247-258`.
+- A space bar toggles a switch (focus, then key, then state): `libs/ui/components/src/shared/ui/switch/Switch.stories.ts:211-225`.
+- A clock as a parameter with a browser default: `libs/ui/components/src/features/tree/ui/Tree.types.ts:15` (`clock?: Clock`) and the stub that tests pass: `libs/ui/components/src/shared/fixtures/clock.ts:1-40`, used at `libs/ui/components/src/features/tree/ui/Tree.test.ts:436-437`.
 
 ## Where main differs
 
 These places do not follow the target and are not models.
 
-- `Sizing.stories.ts`, `Window.stories.ts` (in `shared/tokens/`), `Contrast.stories.ts`, `TreeContrast.stories.ts`, `WorkspaceTabContrast.stories.ts` and the `accentCheck` hook in both `preview.ts` files test sizes and contrast ratios. The decision is against such tests.
+- `Sizing.stories.ts`, `Window.stories.ts` (in `shared/tokens/`), `Contrast.stories.ts`, `TreeContrast.stories.ts`, `WorkspaceTabContrast.stories.ts` and the `accentCheck` hook in both `preview.ts` files test sizes and contrast ratios. These stories and the hook are deleted; the decision is against such tests.
 - `Switch.stories.ts` (`BusyUntilTheAnswer`, `TheThumbSlidesAndTheTrackFills`, `Dark`) measures the thumb position per frame, a fill colour and a lightness. Behavior is the `aria-checked` change and the busy state.
 - 12 story files read `getComputedStyle` or `.style` (`checks.md`).
 - `Menu.types.ts:16` takes `clock?: () => number`; the target is `Clock`.
@@ -187,25 +180,25 @@ These places do not follow the target and are not models.
 - `Select.stories.ts` and `Tree.stories.ts` find elements by class (`.menu__item`, `.tree__field`); the target is role and name.
 - `Tree.test.ts:44` replaces `Element.prototype.getBoundingClientRect` in jsdom. A test of layout is a story.
 - `Prose.stories.ts` has no `play` for a component that emits `follow`; `DragPreview` has no story.
-- `libs/ui/core/README.md` lists a layout (`panel/`, `composer/`, `thread/`) that no longer exists.
+- `libs/ui/components/README.md` lists a layout (`panel/`, `composer/`, `thread/`) that no longer exists.
 - Export names such as `Lit`, `GivingItBack` and `NothingBelowIt` are narrative; the target is a standard verb phrase for the behavior.
 
 ## What the checks enforce
 
 Today, in `main`:
 
-- `ui-lint` and `shell-lint`: an import of a domain or wire package in a component (stories and fixtures stand outside this rule today), `Date.now()`, `new Date()` and `performance.now()` outside the clock function, `Math.random()`, `setTimeout` and `setInterval` in a pure segment, a layer that imports a higher layer.
+- `ui-components-lint` and `workbench-lint`: an import of a domain or wire package in a component (stories and fixtures stand outside this rule today), `Date.now()`, `new Date()` and `performance.now()` outside the clock function, `Math.random()`, `setTimeout` and `setInterval` in a pure segment, a layer that imports a higher layer.
 - `styles-use-tokens` (stylelint): a colour literal, a `--numen-` declaration outside the token and theme files, a `var()` with a fallback, an undeclared `--numen-` token.
 - `no-suppressions`: `eslint-disable`, `@ts-ignore` and the like.
 - The keyboard walk after every story: a tab stop that cannot be seen, a tab stop without a name, a component that keeps Tab.
 
-Proposed, in [`checks.md`](checks.md): a story imports no domain or wire type; every public component has a story; every component that emits has a story with a `play` function; the axe check runs in every story; a component declares no raw length or font value; a story and a test read no style text.
+Proposed, in [`checks.md`](checks.md): a story imports no domain or wire type; every public component has a story; every component that emits has a story with a `play` function; a component declares no raw length or font value; a story and a test read no style text. Four of these are built by Package F25 of the refactor plan: a story for every public component, a `play` story for every emitting one, the import block applied to stories and fixtures, and `eslint-plugin-storybook`. The rest of the list in `checks.md` stays as candidates.
 
 ## What no check decides
 
 - Whether the stories show the states a caller reaches: the list of states and behaviors comes from the props, events and slots, and a person reads the component against it.
 - Whether a `play` function proves the behavior: break the behavior and see the story fail.
 - Whether a fixture is invented and general: a check can see a wire import, not a real name.
-- Whether the accessible name is the right words, and the items under "What a person decides".
+- Whether the accessible name is the right words, and the items under "Focus and names".
 - Whether a component is general enough for `@numen/ui` ([`nm-place-library`](../nm-place-library/SKILL.md)).
 - Whether the design is right: spacing steps, hierarchy, density, motion. The owner looks at the story in both themes and at 200 percent.

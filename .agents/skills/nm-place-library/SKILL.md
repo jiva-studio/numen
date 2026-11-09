@@ -60,6 +60,7 @@ Ask in this order. The first question answered yes names the home.
 - Does it call the core, or read what the core returns (service client, enum code, error sentence, manifest, catalog)? It belongs to `@numen/core-client`.
 - Is it drawn, and could any application draw it without knowing a domain term or a wire type? It belongs to `@numen/ui`.
 - Is it window chrome that every desktop window draws the same way? It belongs to `@numen/workbench`.
+- Between the two UI libraries: what plugins need goes into `@numen/ui`; what only applications need goes into `@numen/workbench`, which no plugin imports.
 - Is it the plugin list or the plugin page? It belongs to `@numen/plugin-manager`.
 - Does it load, start or host plugin frontends? It belongs to `@numen/plugin-loader`.
 - Does a plugin author call it? It belongs to `@numen/plugin-sdk`, and only when a plugin already imports it.
@@ -122,6 +123,7 @@ The component is a function from props to a drawing, plus events out.
 - The clock, the viewport and the schedule are parameters with browser defaults: a `clock` prop whose default calls `getNow()` or `browserClock`, a `viewport` prop whose default reads the window. A test passes its own.
 - A boolean prop is `isX` or `hasX`. A handler is `onX`. A composable is `useX`. A function is a base-form verb phrase or a predicate.
 - The `<script setup>` block follows the section order Props, Events, State, Hooks, Handlers, Helpers, under 80-character banners. Logic beyond wiring is a function in a `lib` or `model` file beside the component; a `.vue` file holds none.
+- Lengths: a dimension that belongs to one component is a local custom property in `rem` or `em` (`--row: 1.5rem`), declared in its block. No `px` for a size, with one exception, a 1px hairline border; no bare length on a property (`padding: 0.375rem`).
 - A component styles itself with token classes (`bg-surface`, `var(--numen-surface)`), declares no colour, takes its theme from `color-scheme`, and writes no `dark:` class. SVG painted with attributes uses scoped CSS over the same tokens. The root element carries the class `numen`.
 - The public surface is exported in `src/index.ts` through the folder's `index.ts`.
 

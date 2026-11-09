@@ -8,6 +8,8 @@ Holds pure components of general purpose, the design tokens, and the pure helper
 
 Imports Vue and third-party UI code (`reka-ui`, Tailwind, Lucide, `markdown-it`) and no other first-party package. Imported by `@numen/workbench`, `@numen/plugin-manager`, `@numen/plugin-sdk`, every window and every plugin frontend, through the main entry `@numen/ui` only.
 
+Plugins import this library, so whatever a plugin needs from the shared UI is added here.
+
 Test for "does this belong here": the component or function can be described without a domain word, takes only props or arguments it defines itself, and a second application could use it unchanged. A file that needs `@numen/protocol`, a wire type, a note, a vault, a card or a plugin does not belong.
 
 A component that was written for one window and names its domain stays with that window. When a general part can be separated, it moves here with a vocabulary of general words (`rows`, `items`, `at`) and the window maps its domain onto it.
@@ -18,7 +20,7 @@ Holds the chrome every desktop window shares: the workspace of panes and tabs, t
 
 Imports `@numen/ui`, `reka-ui` and Vue, nothing else. Imported by the windows.
 
-Test: every desktop window draws it the same way and it needs no knowledge of what a tab shows. Behavior of one window (what its tabs contain, what its commands do) stays in that window.
+Test: every desktop window draws it the same way and it needs no knowledge of what a tab shows.  It holds what only applications need; a plugin never imports it, and a component a plugin needs is added to `@numen/ui` instead. Behavior of one window (what its tabs contain, what its commands do) stays in that window.
 
 ## `@numen/core-client` (`libs/core/client`)
 

@@ -21,7 +21,7 @@ Five layers, lowest first. A file imports only from a lower layer. There is no `
 | `entities` | A business thing of the window and what is done to it alone: note, file, vault, settings, tab, plugin, command                                                 | yes    |
 | `features` | One user scenario, whole: find and run a command, resolve a file conflict, link tabs, move a tab                                                               | yes    |
 | `pages`    | One tab, whole: it puts features and entities on a screen and registers its tab kind                                                                           | yes    |
-| `app`      | Composition and wiring: create the instances, pass each slice's `api` to the model that needs it, implement the plugin host's contracts, order the start-up    | no     |
+| `app`      | Composition and wiring: create the services, implement the plugin host's contracts, collect the commands of the features, order the start-up                   | no     |
 
 `app` holds nothing a lower layer could hold. A function in `app` that does not create, connect or order slices belongs to a slice: a stateful scenario to a feature, a thing with its own type and rules to an entity, a pure helper to the `lib` of the slice that uses it.
 
@@ -37,13 +37,13 @@ A slice is split into segments. A segment imports the segments after it in this 
 | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ui`     | Vue components, their stories and tests, and the `*.types.ts` of a component with more than six props. A component receives props, emits events and holds no logic.                                             |
 | `model`  | State and behavior: composables (`use<Feature>`), factories (`create<Thing>`), the ports the slice needs declared as interfaces, the orchestration of a scenario.                                               |
-| `api`    | The calls to the core. A file calls a client of `@numen/core-client`, maps the answer field by field into the slice's own type, and turns an error into a `Result`. It implements a port that `model` declares. |
+| `api`    | The calls to the core. A file calls a client of `@numen/core-client`, maps the answer field by field into the slice's own type, and turns an error into a `Result`. The `model` of the same slice imports it. |
 | `lib`    | Pure TypeScript: types, mappers, rules, formatters. No Vue, no DOM, no clock, no timers.                                                                                                                        |
 | `config` | Constants and static tables of the slice.                                                                                                                                                                       |
 
 A `.vue` file lives in `ui/` alone. The words a slice shows are in `words.ts` at the root of the slice. A slice that holds only types and pure functions has `lib/` and `index.ts` and no other segment.
 
-A model never imports the wire. It declares the port it needs and receives an implementation as an argument; the `api` segment exports the implementation, and `app` passes it. A test of the model passes a real in-memory implementation of the port, and a spy is only on the outer edge (the network, the filesystem, the navigator).
+A model never imports the wire. The `model` of a slice imports its own `api` segment directly (`../api`); `api` maps the wire and returns the slice's own types. `provide` and `inject` carry no RPC call: a call to the core is made by the model of the slice that owns it, never reached through the component tree. A component takes props and emits events, and holds no client, no `api` and no injected service. A test of the model runs against a real in-memory transport (`@numen/core-client/testing`), and a spy is only on the outer edge (the network, the filesystem, the navigator).
 
 ## I am adding
 
@@ -54,7 +54,7 @@ A model never imports the wire. It declares the port it needs and receives an im
 | A pure rule, mapper or formatter                                     | `lib/` of the slice that uses it                                                                                                                                                                                           |
 | A screen that is one tab                                             | `pages/<tab>/ui/`, with its state in `model/` and the registration of its tab kind in `model/kind.ts`                                                                                                                      |
 | A part of a screen that has state or is drawn on two pages           | A feature (a scenario) or an entity (a thing), imported by the pages                                                                                                                                                       |
-| A command (palette, key, menu)                                       | The feature that runs it: `features/<scenario>/model/commands.ts` declares the identifier, the words, the availability and the handler. `app` collects the commands of the features and gives them to the palette feature. |
+| A command (palette, key, menu)                                       | The feature that owns it: `features/<scenario>/model/commands.ts` declares the identifier, the words, the availability and the handler; `entities/command` holds only the `Command` type. `app` collects the commands of the features and gives them to the palette feature. |
 | A command that a plugin declares                                     | Nothing in the window: the plugin's manifest declares it, and `app/plugins/` passes the declared entries to the palette                                                                                                    |
 | A plugin slot entry or a view a plugin draws                         | Nothing in the window: the plugin registers it and the slot row of `@numen/workbench` draws it. `app/plugins/` binds the slot to the shell.                                                                                    |
 | The order of the entries of a slot, or a move between slots          | The core keeps the layout in `numen.json` under `app.layout.slots`, and the shared slot row takes the gesture. The window adds no layout state.                                                                            |
@@ -78,7 +78,7 @@ apps/desktop/editor/src/
 ├── main.ts                       entry: creates the window with app/ and mounts it
 ├── app/                          composition and wiring only
 │   ├── App.vue                   the root: places the shell, the pages and the notices
-│   ├── window/                   createWindow(): creates the services, passes each slice's api to its model, returns the few objects App.vue reads
+│   ├── window/                   createWindow(): creates the services (each model imports its own api), returns the few objects App.vue reads
 │   ├── plugins/                  the window's LoaderHost: binds slots, tab kinds, commands, vaults, agent and buffers of the plugin host to slice services
 │   └── bootstrap/                the start-up order and the screen shown when it fails
 ├── pages/
@@ -116,7 +116,7 @@ apps/desktop/flashcards/src/
 ├── main.ts                       entry: mounts app/
 ├── app/
 │   ├── App.vue                   the root: the chooser, or the plugin view for the chosen vault
-│   ├── window/                   createWindow(): creates the services and passes each slice's api to its model
+│   ├── window/                   createWindow(): creates the services; each model imports its own api
 │   ├── plugins/                  the window's LoaderHost for the target desktop.flashcards: tab kinds, slots, vaults, commands (none), agent
 │   └── app.css                   the entry style sheet
 ├── pages/
@@ -166,7 +166,7 @@ A type that two slices use lives in the lowest layer that makes sense:
 
 ## What the checks enforce
 
-Each structural check and lint rule is listed by what it forbids in [`checks.md`](checks.md). In short, they forbid an import of a higher layer, an import between slices of one layer, an import of a slice other than through its `index.ts`, a segment importing a segment before it in the list above, a `@numen/core-client` import outside an `api` segment, a component outside `ui`, a file in `shared` that one slice uses, a composable that returns more than eight properties, a `.vue` file that calls a client, a plugin imported by a window, a wire type in `libs/ui/components`, a color literal in a style, and the machine clock outside a port.
+Each structural check and lint rule is listed by what it forbids in [`checks.md`](checks.md). In short, they forbid an import of a higher layer, an import between slices of one layer, an import of a slice other than through its `index.ts`, a segment importing a segment before it in the list above, a `@numen/core-client` import outside an `api` segment, a component outside `ui`, a file in `shared` that one slice uses, a composable that returns more than eight properties, a `.vue` file that calls a client, a plugin imported by a window, a wire type in `libs/ui/components`, a color literal in a style, and the machine clock outside a port. An RPC call carried by `provide`/`inject`, and a command declared outside the owning feature's `model/commands.ts`, are refused in review.
 
 A red check is fixed in the code, not by changing the check or moving code out of its sight.
 
@@ -187,6 +187,7 @@ A check sees imports and syntax. These calls are made by the person writing and 
 
 - Functions are imperative (`getTab`, `findGroup`, `createTabLinks`, `isEligible`); handlers are `on<Action>`; composables are `use<Feature>`; factories are `create<Thing>`; booleans are `is`, `has`, `can`. Types are singular nouns.
 - A fallible operation returns `Result`, and its failure key is `error`.
+- Lengths: a local custom property in `rem` or `em` (`--row: 1.5rem`) may name a dimension that belongs to one component. No `px` for a size, with one exception, a 1px hairline border. No bare length on a property (`padding: 0.375rem`): a property takes a token, a local custom property or `0`.
 - A comment states a fact the code cannot show. Prose is plain technical English.
 - A test checks behavior through the real path and fails when the behavior breaks. None reads CSS text or measures a look. A scenario uses the words of the product from `words.ts`.
 - A moved file is moved. Nothing keeps the old path or the old layout working.
