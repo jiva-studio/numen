@@ -192,7 +192,7 @@ describe('answers arriving', () => {
     // The first question answers late, and with something else entirely.
     vault.names[0]?.answer([createNameMatch({ path: 'notes/stale.md', title: 'Stale' })])
     await flushPromises()
-    expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
+    expect(getGroup(palette.groups.value, 'names')?.silence).toBe('')
 
     vault.names[1]?.answer([createNameMatch()])
     await flushPromises()
@@ -650,26 +650,8 @@ function createHolds() {
   return { holds, wait }
 }
 
-const describeGroups = (groups: readonly { id: string }[]) =>
-  Object.fromEntries(
-    ['names', 'text', 'meaning'].map((id) => {
-      const group = getGroup(groups, id)
-      return [
-        id,
-        { items: group?.items.length, isWorking: group?.isWorking, silence: group?.silence },
-      ]
-    }),
-  )
-
-/** Every group holding nothing, working at nothing and saying nothing. */
-const IDLE = {
-  names: { items: 0, isWorking: false, silence: '' },
-  text: { items: 0, isWorking: false, silence: '' },
-  meaning: { items: 0, isWorking: false, silence: '' },
-}
-
 describe('the hold before a question', () => {
-  it('draws every group idle and saying nothing while the first keystroke waits', async () => {
+  it('draws no group and no spinner while the first keystroke waits', async () => {
     const vault = createVault()
     const { wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
@@ -677,10 +659,11 @@ describe('the hold before a question', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
-    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+    expect(palette.groups.value).toStrictEqual([])
+    expect(palette.status.isBusy.value).toBe(false)
   })
 
-  it('draws every group working once the hold is out and nothing has answered', async () => {
+  it('shows the spinner and draws no group once the hold is out and nothing has answered', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -689,9 +672,8 @@ describe('the hold before a question', () => {
     palette.setTyped('ent').catch(rethrow)
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(true)
-    expect(getGroup(palette.groups.value, 'text')?.isWorking).toBe(true)
-    expect(getGroup(palette.groups.value, 'meaning')?.isWorking).toBe(true)
+    expect(palette.status.isBusy.value).toBe(true)
+    expect(palette.groups.value).toStrictEqual([])
   })
 
   it('asks nothing about a keystroke another one overtook while it waited', async () => {
@@ -714,7 +696,7 @@ describe('the hold before a question', () => {
 })
 
 describe('what was typed taken back', () => {
-  it('forgets what each group found and returned, before anything else is typed', async () => {
+  it('draws no group of what was found before anything else is typed', async () => {
     const vault = createVault()
     const { holds, wait } = createHolds()
     const palette = useSearch(vault.core, WORDS, { wait })
@@ -730,7 +712,7 @@ describe('what was typed taken back', () => {
     palette.setTyped('heat').catch(rethrow)
     await flushPromises()
 
-    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+    expect(palette.groups.value).toStrictEqual([])
   })
 
   it('draws no group at all where only spaces are typed', async () => {
@@ -765,7 +747,7 @@ describe('answers to a question overtaken', () => {
     expect(getGroup(palette.groups.value, 'names')).toBeUndefined()
   })
 
-  it('keeps the group working where only the overtaken question has answered', async () => {
+  it('keeps the spinner where only the overtaken question has answered', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -778,7 +760,8 @@ describe('answers to a question overtaken', () => {
     vault.names[0]?.answer([createNameMatch()])
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'names')?.isWorking).toBe(true)
+    expect(palette.status.isBusy.value).toBe(true)
+    expect(palette.groups.value).toStrictEqual([])
   })
 
   it('holds nothing in a group whose question failed', async () => {
@@ -795,7 +778,7 @@ describe('answers to a question overtaken', () => {
     expect(getGroup(palette.groups.value, 'names')?.items).toStrictEqual([])
   })
 
-  it('forgets what each group found for an earlier question as soon as another question is typed', async () => {
+  it('draws no group of an earlier question as soon as another question is typed', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -810,9 +793,7 @@ describe('answers to a question overtaken', () => {
     palette.setTyped('entr').catch(rethrow)
     await flushPromises()
 
-    expect(getGroup(palette.groups.value, 'names')?.items).toStrictEqual([])
-    expect(getGroup(palette.groups.value, 'text')?.items).toStrictEqual([])
-    expect(getGroup(palette.groups.value, 'meaning')?.items).toStrictEqual([])
+    expect(palette.groups.value).toStrictEqual([])
   })
 })
 
@@ -852,6 +833,6 @@ describe('the palette opened and put away', () => {
     palette.setTyped('heat').catch(rethrow)
     await flushPromises()
 
-    expect(describeGroups(palette.groups.value)).toStrictEqual(IDLE)
+    expect(palette.groups.value).toStrictEqual([])
   })
 })

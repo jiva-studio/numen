@@ -171,6 +171,8 @@ describe('the commands as they open', () => {
     expect(getItemIds(commands.groups)).toStrictEqual({
       note: [
         'app:file.open',
+        'app:file.reveal#plex',
+        'app:file.reveal#files',
         'app:note.createChild',
         'app:note.createParent',
         'app:note.createJump',
@@ -1514,7 +1516,6 @@ describe('what a step draws', () => {
       'Remove “Heat”',
     ])
   })
-
 })
 
 describe('a row of a list the window holds', () => {

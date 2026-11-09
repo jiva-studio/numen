@@ -144,18 +144,35 @@ describe('the actions of the palette', () => {
     const search = await searchFor('reef', { passages: [bookPassage] }, inFront)
 
     const ids = collectActionIds(search.groups.value)
-    expect(ids).toStrictEqual(['app:file.open#document'])
+    expect(ids).toStrictEqual([
+      'app:file.open#document',
+      'app:note.create',
+      'app:note.createChild',
+      'app:note.createParent',
+      'app:note.createJump',
+    ])
     expectCommands(ids)
   })
 
-  it('are commands on the row that creates a note, with a note in front and with none', async () => {
-    for (const target of [inFront, nothingInFront]) {
-      const search = await searchFor('Entropy', {}, target)
+  it('are commands on the rows as the actions that create a note, with a note in front and with none', async () => {
+    const created = ['app:note.create']
+    const related = ['app:note.createChild', 'app:note.createParent', 'app:note.createJump']
+    for (const [target, expected] of [
+      [inFront, [...created, ...related]],
+      [nothingInFront, created],
+    ] as const) {
+      const search = await searchFor('Entropy', { names: [byName] }, target)
 
-      const ids = collectActionIds(search.groups.value.filter((one) => one.items.length > 0))
-      expect(ids[0]).toBe('app:note.create')
+      const ids = collectActionIds(search.groups.value)
+      expect(ids.filter((one) => one.startsWith('app:note.'))).toStrictEqual(expected)
       expectCommands(ids)
     }
+  })
+
+  it('are on no row where nothing is found', async () => {
+    const search = await searchFor('Entropy', {}, inFront)
+
+    expect(collectActionIds(search.groups.value)).toStrictEqual([])
   })
 })
 

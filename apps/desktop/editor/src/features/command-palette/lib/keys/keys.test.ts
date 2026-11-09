@@ -29,14 +29,23 @@ describe('how a key is drawn on the row that names it', () => {
       icons: ['command', 'shift'],
       letter: 'C',
     })
-    expect(findChordKeys('app:tab.close', 'Linux x86_64')).toEqual({
+    expect(findChordKeys('app:note.createChild', 'Linux x86_64')).toEqual({
       icons: ['control', 'shift'],
+      letter: 'C',
+    })
+  })
+
+  it('is the first key of a command that has several', () => {
+    expect(findChordKeys('app:tab.close', 'Linux x86_64')).toEqual({
+      icons: ['control'],
       letter: 'W',
     })
   })
 
   it('is the key of the command with the same values only', () => {
-    expect(findChordKeys('app:file.open#note', 'Linux x86_64', { placement: 'split' })).toBeUndefined()
+    expect(
+      findChordKeys('app:file.open#note', 'Linux x86_64', { placement: 'split' }),
+    ).toBeUndefined()
     expect(createRowKeys('app:file.open#note', 'Linux x86_64', { placement: 'split' })).toEqual({})
     expect(createRowKeys('app:file.open#note', 'Linux x86_64', {})).toEqual({
       keys: { icons: ['control'], letter: 'G' },

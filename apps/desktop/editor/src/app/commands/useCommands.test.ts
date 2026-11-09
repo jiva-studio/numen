@@ -494,6 +494,7 @@ describe('a plugin command with items in the palette', () => {
     const pluginHost = {
       getPaletteCommands: () => [MOVE],
       hasCommand: () => false,
+      getKeyFor: () => undefined,
       hasCommandItems: (id: string) => id === MOVE.id,
       listCommandItems,
       executeCommand,
