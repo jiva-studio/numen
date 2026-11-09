@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"testing"
 )
@@ -99,8 +100,8 @@ func TestEmptyTrashRemovesATrashThatIsALinkWithoutWalkingIt(t *testing.T) {
 }
 
 func TestEmptyTrashReportsWhatItCannotDeleteAndGoesOn(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("a superuser deletes from a read-only folder")
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("permission bits do not lock a folder here")
 	}
 	w, root := openWriter(t)
 	placeTrashed(t, root, ".trash/Entropy.md", ".trash/locked/Heat.md", ".trash/physics/Work.md")

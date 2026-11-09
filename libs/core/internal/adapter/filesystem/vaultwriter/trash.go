@@ -40,12 +40,18 @@ func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err e
 		return nil, err
 	}
 	defer closeAndJoin(&err, trash)
+	if !isSameFolder(info, trash) {
+		return []string{TrashDir}, nil
+	}
 	return deleteFolderContent(ctx, trash, ".", TrashDir)
 }
 
 func deleteFolderContent(ctx context.Context, root *os.Root, dir, display string) ([]string, error) {
-	entries, isReadable := readFolder(root, dir)
-	if !isReadable {
+	entries, err := readFolder(root, dir)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
 		return []string{display}, nil
 	}
 	var undeleted []string
@@ -75,14 +81,21 @@ func deleteEntry(ctx context.Context, root *os.Root, name, display string, isDir
 	return []string{display}, nil
 }
 
-func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, isReadable bool) {
+func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, err error) {
 	folder, err := root.Open(dir)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
 	entries, err = folder.ReadDir(-1)
 	closeAndJoin(&err, folder)
-	return entries, err == nil
+	return entries, err
+}
+
+// isSameFolder reports whether the opened root is the folder that was checked,
+// so a link swapped in between the check and the open is never walked.
+func isSameFolder(checked fs.FileInfo, opened *os.Root) bool {
+	current, err := opened.Stat(".")
+	return err == nil && os.SameFile(checked, current)
 }
 
 func isGone(removeErr error) bool {
