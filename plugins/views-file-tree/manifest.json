@@ -30,6 +30,16 @@
       }
     ],
     "slots": [
+      {
+        "slot": "palette.searchResult",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "title": "Show in file tree",
+        "icon": "folder-open",
+        "group": "navigate",
+        "order": 30,
+        "when": "target.isNote"
+      },
       { "slot": "titleBar.commands", "command": "tree.open", "group": "navigate", "order": 10 },
       {
         "slot": "fileTree.context",

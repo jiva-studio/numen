@@ -159,6 +159,16 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
     return null
   }
 
+  // A command with no input that comes with values was offered by a row or slot entry that carries them.
+  const isStartable = (
+    command: Command,
+    target: CommandTarget,
+    values: Readonly<Record<string, string>> | undefined,
+  ): boolean => {
+    const isOffered = !command.input && values !== undefined && Object.keys(values).length > 0
+    return isOffered || command.isAvailable(target, deps.runs)
+  }
+
   /** Starts a command; the text typed for it, where given, answers a step that asks for a name. */
   const startCommand = (
     id: string,
@@ -167,7 +177,8 @@ function createPaletteCommands(deps: PaletteCommandsDeps) {
     values?: Readonly<Record<string, string>>,
   ): CommandInvocation | null => {
     const command = deps.byId.get(id)
-    if (!command || !command.isAvailable(target, deps.runs)) return null
+    if (!command) return null
+    if (!isStartable(command, target, values)) return null
     if (!command.input) return deps.invocation(command.id, target)
     if (command.input === 'arguments' && values) return startArguments(command, target, values)
     const name = input?.trim() ?? ''

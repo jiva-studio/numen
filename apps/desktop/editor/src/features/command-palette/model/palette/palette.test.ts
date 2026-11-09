@@ -1599,6 +1599,28 @@ describe('the icon of a command', () => {
 })
 
 describe('runSupport, arguments steps, and palette shortcuts', () => {
+  it('starts a command that is hidden from the palette when it comes with values', () => {
+    const commands = useCommandPalette({
+      core: {
+        names: async () => [],
+        vaults: async () => installation(vault('physics', 'Physics')),
+      },
+      words,
+      at: () => front(),
+      knows: createLookup().knows,
+      lists: createLists({}).paletteLists,
+      runs: runSupport(),
+      getExtraCommands: () => [
+        { id: 'app:test.reveal', text: 'Reveal', group: 'note', isAvailable: () => false },
+      ],
+    })
+
+    expect(commands.startCommand('app:test.reveal', front())).toBeNull()
+    expect(
+      commands.startCommand('app:test.reveal', front(), undefined, { kind: 'plex' }),
+    ).toMatchObject({ id: 'app:test.reveal' })
+  })
+
   it('tracks unsupported runs in runSupport', () => {
     const runs = runSupport()
     expect(runs.canRun('ocr')).toBe(true)

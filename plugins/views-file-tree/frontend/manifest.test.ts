@@ -34,6 +34,23 @@ describe('the manifest', () => {
     ])
   })
 
+  it('places showing a note in the file tree in the menu of a search result, after showing it in the plex', () => {
+    expect(
+      (manifest.contributes.slots ?? []).filter((one) => one.slot === 'palette.searchResult'),
+    ).toStrictEqual([
+      {
+        slot: 'palette.searchResult',
+        command: 'app:file.reveal',
+        values: { kind: 'files' },
+        title: 'Show in file tree',
+        icon: 'folder-open',
+        group: 'navigate',
+        order: 30,
+        when: 'target.isNote',
+      },
+    ])
+  })
+
   it('declares the command the title bar shows with the title and the icon of a folder tree', () => {
     expect(manifest.contributes.commands.find((one) => one.id === 'tree.open')).toMatchObject({
       title: 'Open file tree',
