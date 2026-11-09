@@ -7,6 +7,7 @@ package container
 
 import (
 	"context"
+	"io"
 	"sync"
 	"time"
 
@@ -331,4 +332,10 @@ func (c Config) plugins() pluginswiring.Config {
 		BuildNotes:            c.Notes,
 		Moves:                 v.Moves,
 	}
+}
+
+// SetModelCallsLoggedTo is SetModelCalls for a window that shows no list of tasks: a connection set
+// aside is written to out.
+func (c Config) SetModelCallsLoggedTo(out io.Writer) {
+	c.modelCalls().SetModelCalls(modelcallswiring.NewLogNotices(out))
 }
