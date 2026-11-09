@@ -22,6 +22,7 @@ const (
 	CompleterTypeID   = ProviderPluginID + "/completer"
 	OtherServerTypeID = OtherPluginID + "/server"
 	LimitedTypeID     = ProviderPluginID + "/limited"
+	AgentTypeID       = ProviderPluginID + "/agent"
 )
 
 // Notice is one report of a connection set aside.
@@ -223,6 +224,8 @@ func New() *World {
 	minimum, step := 1.0, 1.0
 	parallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(2), Min: &minimum, Step: &step}
 	optionalKey := manifest.ConnectionField{Key: apiKeyField, Type: "secret", Title: "API key"}
+	maximum := 8.0
+	agentParallelRequests := manifest.ConnectionField{Key: manifest.ConnectionParallelRequests, Type: "number", Title: "Parallel requests", Default: float64(1), Min: &minimum, Max: &maximum, Step: &step}
 	serverType := func(pluginID string) connectionport.Type {
 		return connectionport.Type{PluginID: pluginID, PluginName: pluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: "server", Title: "Server", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key},
@@ -236,6 +239,9 @@ func New() *World {
 		serverType(OtherPluginID),
 		{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
 			ID: "limited", Title: "Limited", Operations: getBothOperations(), Fields: []manifest.ConnectionField{address, key, parallelRequests},
+		}},
+		{PluginID: ProviderPluginID, PluginName: ProviderPluginID, IsAvailable: true, Declaration: manifest.ConnectionType{
+			ID: "agent", Title: "Agent", Operations: getCompleteOnly(), Fields: []manifest.ConnectionField{agentParallelRequests},
 		}},
 	}}
 	w := &World{
@@ -368,3 +374,16 @@ const addressField = "baseUrl"
 func getBothOperations() []string { return []string{"complete", "embed"} }
 
 func getCompleteOnly() []string { return []string{"complete"} }
+
+// AddAgent creates a connection of the type agent, which has no address and no key and runs one call at a
+// time.
+func (w *World) AddAgent(t *testing.T, name string) connection.Entry {
+	t.Helper()
+	entry, err := w.Connections.Create.Execute(t.Context(), connection.CreateRequest{
+		TypeID: AgentTypeID, Name: name, Fields: map[string]any{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return entry
+}
