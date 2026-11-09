@@ -2,71 +2,59 @@ Feature: Import link
   A person imports a web page or a video by its address.
 
   Background:
-    Given the application "editor" starts
+    Given the empty vault "Test"
+    And the application "editor" starts
 
-  Rule: A link to a web page has the text of the page
+  Rule: A web page has its text
 
-    Scenario: The text of a web page is downloaded into its link note
+    Background:
       Given the web address "http://numen.dev/one" has the page text "Tidal mills store water."
-      When the person runs the command "Import link"
-      And the person types "http://numen.dev/one"
-      And the person runs the command "Download captions"
+      And the person imports the link "http://numen.dev/one"
+
+    Scenario: The text is downloaded
+      When the person downloads the text of the link "http://numen.dev/one"
       Then the tab for the web address "http://numen.dev/one" has "Tidal mills store water."
 
-    Scenario: The text of a web page is found by search
-      Given the web address "http://numen.dev/one" has the page text "Tidal mills store water."
-      And the person runs the command "Import link"
-      And the person types "http://numen.dev/one"
-      And the person runs the command "Download captions"
+    Scenario: The text is found by search
+      Given the person downloads the text of the link "http://numen.dev/one"
       When the person searches the vault for "store water"
       Then the search has the result "numen.dev" in the group "Text"
 
-    Scenario: The deleted text of a link is not there after the application starts
-      Given the web address "http://numen.dev/two" has the page text "Tidal mills store water."
-      And the person runs the command "Import link"
-      And the person types "http://numen.dev/two"
-      And the person runs the command "Download captions"
-      When the person runs the command "Delete text"
-      And the person picks "Article (current)"
+    Scenario: The deleted text stays deleted
+      Given the person downloads the text of the link "http://numen.dev/one"
+      And the tab for the web address "http://numen.dev/one" has "Tidal mills store water."
+      When the person deletes the text of the link "http://numen.dev/one"
       And the application "editor" starts
-      Then the tab for the web address "http://numen.dev/two" does not have "Tidal mills store water."
+      Then the tab for the web address "http://numen.dev/one" does not have "Tidal mills store water."
 
   Rule: A link has one note
 
-    Scenario: A link with another address has a note of its own
-      Given the person runs the command "Import link"
-      And the person types "http://numen.dev/two"
-      When the person runs the command "Import link"
-      And the person types "http://numen.dev/three"
+    Background:
+      Given the person imports the link "http://numen.dev/three"
+
+    Scenario: Another address has its own note
+      When the person imports the link "http://numen.dev/two"
       Then the number of the notes of the type "link" in the vault "Test" is 2
 
-    Scenario: A link imported again opens the note it already has
-      Given the person runs the command "Import link"
-      And the person types "http://numen.dev/three"
-      And the person closes the tab for the web address "http://numen.dev/three"
-      When the person runs the command "Import link"
-      And the person types "http://numen.dev/three"
+    Scenario: The same address opens its note
+      Given the person closes the tab for the web address "http://numen.dev/three"
+      When the person imports the link "http://numen.dev/three"
       Then the tab for the web address "http://numen.dev/three" is open
       And the number of the notes of the type "link" in the vault "Test" is 1
 
-  Rule: A link to a video has a recording that plays
+  Rule: A video has a recording
 
-    Scenario: A video is downloaded and plays
-      Given the person runs the command "Import link"
-      And the person types "https://youtu.be/mill01"
-      And the person runs the command "Download captions"
-      And the person runs the command "Download media"
-      And the person picks "Video"
+    Background:
+      Given the person imports the link "https://youtu.be/mill01"
+      And the person downloads the text of the link "https://youtu.be/mill01"
+      And the person downloads the video of the link "https://youtu.be/mill01"
+
+    Scenario: The video plays
       When the person plays the recording in the tab for the web address "https://youtu.be/mill01"
       Then the recording in the tab for the web address "https://youtu.be/mill01" is playing
       And the tab for the web address "https://youtu.be/mill01" has "The mill pond fills behind the gate."
 
-    Scenario: A video note is opened from the file tree
-      Given the person runs the command "Import link"
-      And the person types "https://youtu.be/mill02"
-      And the person runs the command "Download captions"
-      And the person runs the command "Download media"
-      And the person picks "Video"
-      When the application "editor" starts
-      And the person opens the file at "https---youtu.be-mill02.md"
-      Then the tab at "https---youtu.be-mill02.md" has "The mill pond fills behind the gate."
+    Scenario: The video note opens from the file tree
+      Given the application "editor" starts
+      When the person opens the file at "https---youtu.be-mill01.md"
+      Then the tab at "https---youtu.be-mill01.md" has "The mill pond fills behind the gate."
