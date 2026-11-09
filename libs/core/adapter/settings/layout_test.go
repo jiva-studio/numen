@@ -53,20 +53,20 @@ func TestAWrongLayoutWriteIsRefusedWhereTheRightOneIsAccepted(t *testing.T) {
 		path  []string
 		value any
 	}{
-		"a list under a menu slot":         {slotPath("fileTree.context"), []any{tasksKey}},
-		"a list under an unknown slot":     {slotPath("sideBar.top"), []any{tasksKey}},
-		"a string instead of a list":       {slotPath("titleBar.status"), tasksKey},
-		"a list holding a number":          {slotPath("titleBar.status"), []any{tasksKey, 3.0}},
-		"a key with no slash":              {slotPath("titleBar.status"), []any{"org.example.tide"}},
-		"a key with an empty id":           {slotPath("titleBar.status"), []any{"org.example.tide/"}},
-		"a key whose owner is no plugin":   {slotPath("titleBar.status"), []any{"Tide Plugin/status"}},
-		"a key twice in one list":          {slotPath("titleBar.status"), []any{tasksKey, statsKey, tasksKey}},
-		"a map with a menu slot":           {[]string{settings.OwnerApp, "layout", "slots"}, map[string]any{"fileTree.context": []any{tasksKey}}},
-		"a map holding a string":           {[]string{settings.OwnerApp, "layout", "slots"}, map[string]any{"titleBar.status": tasksKey}},
-		"a layout with another member":     {[]string{settings.OwnerApp, "layout"}, map[string]any{"slots": map[string]any{}, "hidden": []any{}}},
-		"a path below the list of a slot":  {append(slotPath("titleBar.status"), "0"), tasksKey},
-		"a path beside the slots":          {[]string{settings.OwnerApp, "layout", "hidden"}, []any{tasksKey}},
-		"slots that are not an object":     {[]string{settings.OwnerApp, "layout", "slots"}, []any{tasksKey}},
+		"a list under a menu slot":        {slotPath("fileTree.context"), []any{tasksKey}},
+		"a list under an unknown slot":    {slotPath("sideBar.top"), []any{tasksKey}},
+		"a string instead of a list":      {slotPath("titleBar.status"), tasksKey},
+		"a list holding a number":         {slotPath("titleBar.status"), []any{tasksKey, 3.0}},
+		"a key with no slash":             {slotPath("titleBar.status"), []any{"org.example.tide"}},
+		"a key with an empty id":          {slotPath("titleBar.status"), []any{"org.example.tide/"}},
+		"a key whose owner is no plugin":  {slotPath("titleBar.status"), []any{"Tide Plugin/status"}},
+		"a key twice in one list":         {slotPath("titleBar.status"), []any{tasksKey, statsKey, tasksKey}},
+		"a map with a menu slot":          {[]string{settings.OwnerApp, "layout", "slots"}, map[string]any{"fileTree.context": []any{tasksKey}}},
+		"a map holding a string":          {[]string{settings.OwnerApp, "layout", "slots"}, map[string]any{"titleBar.status": tasksKey}},
+		"a layout with another member":    {[]string{settings.OwnerApp, "layout"}, map[string]any{"slots": map[string]any{}, "hidden": []any{}}},
+		"a path below the list of a slot": {append(slotPath("titleBar.status"), "0"), tasksKey},
+		"a path beside the slots":         {[]string{settings.OwnerApp, "layout", "hidden"}, []any{tasksKey}},
+		"slots that are not an object":    {[]string{settings.OwnerApp, "layout", "slots"}, []any{tasksKey}},
 	} {
 		if err := check(c.path, c.value); !isRefusedWrite(err) {
 			t.Errorf("%s gave %v, want a refusal", what, err)
