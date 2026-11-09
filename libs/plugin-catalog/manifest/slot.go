@@ -59,7 +59,7 @@ func (m Manifest) listSlotIssues() []error {
 	for _, entry := range m.Contributes.Slots {
 		issues = append(issues, listSlotEntryIssues(entry, declared)...)
 		kind, id := entry.getPlaced()
-		key := placement{entry.Slot, kind, id}
+		key := placement{entry.Slot, kind, m.getFullPlacedID(kind, id)}
 		if kind != "" && observed[key] {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))
 		}
@@ -153,4 +153,13 @@ func (k slotKinds) add(slot, kind, id string) []error {
 		return []error{fmt.Errorf("%w: view and command %q share one key in %q", ErrInvalidSlotEntry, id, slot)}
 	}
 	return nil
+}
+
+// getFullPlacedID is the id that tells two placements of one thing apart: a command carries its
+// owner, so "a.one" and "org.example.ledger:a.one" are one command in the plugin org.example.ledger.
+func (m Manifest) getFullPlacedID(kind, id string) string {
+	if kind != "command" || strings.Contains(id, ":") {
+		return id
+	}
+	return m.ID + ":" + id
 }

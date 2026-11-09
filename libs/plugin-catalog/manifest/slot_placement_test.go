@@ -73,3 +73,24 @@ func TestTwoPluginsMayPlaceEntriesWithOneIdInOneSlot(t *testing.T) {
 		}
 	}
 }
+
+func TestACommandPlacedTwiceInOneSlotIsRefusedWhateverItsSpelling(t *testing.T) {
+	for _, entries := range []string{
+		`{"slot":"titleBar.commands","command":"ledger.open"},{"slot":"titleBar.commands","command":"org.example.ledger:ledger.open"}`,
+		`{"slot":"titleBar.commands","command":"org.example.ledger:ledger.open"},{"slot":"titleBar.commands","command":"ledger.open"}`,
+	} {
+		_, err := readSlots(`[` + entries + `]`)
+
+		if !errors.Is(err, manifest.ErrInvalidSlotEntry) || !strings.Contains(err.Error(), "placed twice") {
+			t.Errorf("%s: error = %v, want a command placed twice", entries, err)
+		}
+	}
+}
+
+func TestACommandOfAnotherOwnerWithTheSameLocalIdMayShareASlot(t *testing.T) {
+	_, err := readSlots(`[{"slot":"titleBar.commands","command":"ledger.open"},{"slot":"titleBar.commands","command":"org.other:ledger.open"}]`)
+
+	if err != nil {
+		t.Errorf("error = %v, want none", err)
+	}
+}

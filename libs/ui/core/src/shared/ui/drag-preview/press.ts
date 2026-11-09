@@ -23,6 +23,8 @@ export interface PressDragState<Item, At> {
   readonly at: ShallowRef<At | null>
   readonly position: ShallowRef<Position | null>
   readonly startPress: (item: Item, event: PointerEvent) => void
+  /** Ends the press at once: detaches its listeners and clears the drag without the clock. */
+  readonly cancelPress: () => void
 }
 
 interface Capture {
@@ -118,12 +120,14 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
     window.addEventListener('pointercancel', cancel)
   }
 
-  onScopeDispose(() => {
+  function abandon(): void {
     detach()
     dropTarget.value = null
     position.value = null
     dragging.value = null
-  })
+  }
 
-  return { dragging, at: dropTarget, position, startPress }
+  onScopeDispose(abandon)
+
+  return { dragging, at: dropTarget, position, startPress, cancelPress: abandon }
 }

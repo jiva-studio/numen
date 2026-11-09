@@ -197,6 +197,7 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
     at: dropTarget,
     position,
     startPress,
+    cancelPress,
   } = usePressDrag<PressedEntry, SlotDropTarget>({
     getThreshold: () => DRAG_THRESHOLD,
     getClock: () => deps.getClock?.() ?? browserClock,
@@ -211,12 +212,17 @@ export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
     cancel: endDrag,
   })
 
+  const abandonDrag = (): void => {
+    cancelDrag()
+    cancelPress()
+  }
+
   listenInCapture({
     // The window loses the pointer, and its release, when it loses focus.
-    blur: cancelDrag,
+    blur: abandonDrag,
     pointerdown: (event: PointerEvent): void => {
       // A release that never arrived leaves a drag open; a new press ends it.
-      if (root.hasAttribute(DRAGGING_ATTRIBUTE)) cancelDrag()
+      if (root.hasAttribute(DRAGGING_ATTRIBUTE)) abandonDrag()
       if (event.button !== 0 || !hasDragModifier(event, deps.isMac())) return
       const entry = findPressedEntry(event.target, deps)
       if (!entry) return
