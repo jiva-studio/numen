@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
@@ -79,8 +80,10 @@ func (r *run) turn(ctx context.Context, messages []connection.ChatMessage) ([]co
 
 // read asks for one turn and reports its text as it arrives. A turn that fails keeps the text already
 // reported, calls no tool and is not asked again.
-func (r *run) read(ctx context.Context, messages []connection.ChatMessage) (connection.ChatMessage, connection.FinishReason, error) {
-	reply := connection.ChatMessage{Role: "assistant"}
+func (r *run) read(
+	ctx context.Context, messages []connection.ChatMessage,
+) (reply connection.ChatMessage, finish connection.FinishReason, err error) {
+	reply = connection.ChatMessage{Role: "assistant"}
 	stream, err := r.ask(ctx, connection.ChatRequest{
 		Messages: messages, Tools: r.tools.tools, Temperature: r.temperature, MaxTokens: r.maxTokens,
 		Priority: connection.PriorityInteractive,
@@ -88,9 +91,9 @@ func (r *run) read(ctx context.Context, messages []connection.ChatMessage) (conn
 	if err != nil {
 		return reply, connection.FinishStop, &failure{err: err}
 	}
-	defer func() { _ = stream.Close() }()
+	defer func() { err = errors.Join(err, stream.Close()) }()
 	var text strings.Builder
-	finish := connection.FinishStop
+	finish = connection.FinishStop
 	for {
 		event, ok := stream.Next()
 		if !ok {
@@ -109,8 +112,8 @@ func (r *run) read(ctx context.Context, messages []connection.ChatMessage) (conn
 		}
 	}
 	reply.Text = text.String()
-	if err := stream.Err(); err != nil {
-		return reply, finish, &failure{err: err}
+	if streamErr := stream.Err(); streamErr != nil {
+		return reply, finish, &failure{err: streamErr}
 	}
 	for i := range reply.ToolCalls {
 		if strings.TrimSpace(reply.ToolCalls[i].Arguments) == "" {

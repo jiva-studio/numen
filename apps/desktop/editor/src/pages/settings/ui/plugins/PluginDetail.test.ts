@@ -4,7 +4,6 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
-import { SecretField } from '../secret-field'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import type { Installation, SettingsTabState } from '../../types'
 import {
@@ -38,15 +37,11 @@ const createDetail = (
 ) => {
   const recordedWrites: SettingEdit[] = []
   const retryPlugin = vi.fn()
-  const writeSecret = vi.fn()
-  const deleteSecret = vi.fn()
   const installation: Installation = createInstallation({
     getSetting: (path) => at(file, path),
     write: (edits) => {
       recordedWrites.push(...edits)
     },
-    writeSecret,
-    deleteSecret,
     retryPlugin,
     plugins: ref([plugin]),
     ...(platform ? { getPlatform: () => platform } : {}),
@@ -60,8 +55,6 @@ const createDetail = (
     wrapper,
     recordedWrites,
     retryPlugin,
-    writeSecret,
-    deleteSecret,
     installation,
   }
 }
@@ -329,15 +322,6 @@ describe('PluginDetail', () => {
 describe('PluginDetail with settings that follow one another', () => {
   const option = (value: string, title = '', detail = '') => ({ value, title, detail })
   const LINKED = createPluginInfo('test.linked', 'Linked', {
-    secrets: [
-      {
-        name: 'apiKey',
-        title: 'API key',
-        description: '',
-        group: '',
-        when: { setting: 'provider', is: ['remote'] },
-      },
-    ],
     settings: [
       {
         key: 'model',
@@ -491,24 +475,20 @@ describe('PluginDetail with settings that follow one another', () => {
     expect(row.findComponent(Select).props('modelValue')).toBe('Xenova/bge-m3')
   })
 
-  it('shows provider settings and key only while the provider is selected, key after provider', () => {
+  it('shows provider settings only while the provider is selected', () => {
     const local = createDetail(resolveBy(LINKED, { url: { isShown: false } }))
     expect(findRow(local.wrapper, 'url')).toBeUndefined()
-    expect(local.wrapper.findComponent(SecretField).exists()).toBe(false)
 
     const remote = createDetail(
       resolveBy(LINKED, { provider: { value: 'remote' }, url: { isShown: true } }),
       { 'test.linked': { provider: 'remote' } },
     )
     expect(findRow(remote.wrapper, 'url')).toBeDefined()
-    expect(remote.wrapper.findComponent(SecretField).props('name')).toBe('API key')
     const rowIds = remote.wrapper.findAllComponents(SettingRow).map((r) => r.props('at'))
     const providerIndex = rowIds.indexOf('test.linked-provider')
-    const keyIndex = rowIds.indexOf('key-test.linked-apiKey')
     const urlIndex = rowIds.indexOf('test.linked-url')
     expect(providerIndex).toBeGreaterThanOrEqual(0)
-    expect(keyIndex).toBe(providerIndex + 1)
-    expect(urlIndex).toBeGreaterThan(keyIndex)
+    expect(urlIndex).toBeGreaterThan(providerIndex)
   })
 
   it('chooses a path with the picker, says why it was not taken, and clears it', async () => {

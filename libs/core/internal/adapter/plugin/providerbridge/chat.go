@@ -18,12 +18,12 @@ var errStreamEnded = errors.New("the stream of the provider ended before the tur
 // that ends with no finish is an error of no failure kind.
 func (p *provider) Chat(
 	ctx context.Context, call modelcallport.ProviderCall, request modelcallport.ChatRequest, send func(modelcallport.ChatEvent) error,
-) error {
+) (err error) {
 	stream, err := p.client.Chat(ctx, connect.NewRequest(writeChatRequest(call, request)))
 	if err != nil {
 		return readCallError(ctx, err)
 	}
-	defer func() { _ = stream.Close() }()
+	defer func() { err = errors.Join(err, stream.Close()) }()
 	for stream.Receive() {
 		switch event := stream.Msg().GetEvent().(type) {
 		case *v1.ProviderServiceChatResponse_TextDelta:
@@ -44,8 +44,8 @@ func (p *provider) Chat(
 			return err
 		}
 	}
-	if err := stream.Err(); err != nil {
-		return readCallError(ctx, err)
+	if streamErr := stream.Err(); streamErr != nil {
+		return readCallError(ctx, streamErr)
 	}
 	return errStreamEnded
 }

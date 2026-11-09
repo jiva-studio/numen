@@ -7,7 +7,6 @@ import {
   getPluginCategory,
   matchesPluginQuery,
   matchesConnectionsRow,
-  matchesSecretsRow,
   matchesSystemRow,
   parsePluginQuery,
   type PluginFilterContext,
@@ -350,15 +349,5 @@ describe('matchesConnectionsRow', () => {
     expect(matchesConnectionsRow(parsePluginQuery('openrouter key'))).toBe(true)
     expect(matchesConnectionsRow(parsePluginQuery('tree'))).toBe(false)
     expect(matchesConnectionsRow(parsePluginQuery('@disabled'))).toBe(false)
-  })
-})
-
-describe('matchesSecretsRow', () => {
-  it('shows for an empty query and for words about secrets, not for qualifiers or other words', () => {
-    expect(matchesSecretsRow(parsePluginQuery(''))).toBe(true)
-    expect(matchesSecretsRow(parsePluginQuery('secret'))).toBe(true)
-    expect(matchesSecretsRow(parsePluginQuery('api key'))).toBe(true)
-    expect(matchesSecretsRow(parsePluginQuery('tree'))).toBe(false)
-    expect(matchesSecretsRow(parsePluginQuery('@disabled'))).toBe(false)
   })
 })

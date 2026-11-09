@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -197,11 +198,11 @@ func newServer(model *fakeModel) *Server {
 }
 
 func rowsJSON(rows ...connection.Row) string {
-	text, err := json.Marshal(rows)
-	if err != nil {
-		panic(err)
+	items := make([]string, len(rows))
+	for i, one := range rows {
+		items[i] = fmt.Sprintf(`{"connection":%q,"model":%q,"reasoning":%q}`, one.Connection, one.Model, one.Reasoning)
 	}
-	return string(text)
+	return "[" + strings.Join(items, ",") + "]"
 }
 
 func assertToolSteps(t *testing.T, steps []*agentrun.Response) {

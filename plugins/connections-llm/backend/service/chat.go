@@ -152,31 +152,25 @@ func (s *Service) openStream(
 	}
 	opening, stopOpening := context.WithTimeout(ctx, s.getLimit(call, operationChat))
 	defer stopOpening()
-	opened := make(chan struct {
-		response *http.Response
-		err      error
-	}, 1)
-	go func() {
-		response, err := s.clients.get(isLoopbackRequired).Do(request)
-		opened <- struct {
-			response *http.Response
-			err      error
-		}{response, err}
-	}()
-	select {
-	case answer := <-opened:
-		if answer.err != nil {
-			cancel()
-			return nil, nil, nil, classifyTransportError(ctx, limited, answer.err)
+	stopCancelling := context.AfterFunc(opening, cancel)
+	response, err := s.clients.get(isLoopbackRequired).Do(request)
+	if err != nil {
+		stopCancelling()
+		cancel()
+		if ctx.Err() == nil && opening.Err() != nil {
+			return nil, nil, nil, connection.NewTryNextError(connection.ReasonTimeout, 0)
 		}
-		return answer.response, requestCtx, cancel, nil
-	case <-opening.Done():
+		return nil, nil, nil, classifyTransportError(ctx, limited, err)
+	}
+	if !stopCancelling() {
+		closeBody(response.Body)
 		cancel()
 		if ctx.Err() != nil {
 			return nil, nil, nil, ctx.Err()
 		}
 		return nil, nil, nil, connection.NewTryNextError(connection.ReasonTimeout, 0)
 	}
+	return response, requestCtx, cancel, nil
 }
 
 // sendFailure is a send that failed: the receiver of the events is gone.

@@ -11,4 +11,3 @@ export { formatErrorCodeMessage, formatErrorMessage, ReportedError } from './err
 export { findErrorCode, isStaleAnswer, parseFingerprint } from './errors/answers'
 export { ERRORS, getKnownErrorCode } from './errors/codes'
 export { asFailure, asValue, type Result } from './result'
-export { findServiceInfo, getServiceInfo, type ServiceInfo } from './services/services'

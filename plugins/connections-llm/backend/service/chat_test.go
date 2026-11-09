@@ -91,26 +91,26 @@ func TestChatSendsTheHistoryTheToolsAndTheOptions(t *testing.T) {
 	}
 
 	body := lastChatBody(t, fake)
-	messages, _ := body["messages"].([]any)
+	messages := list(t, body["messages"])
 	if len(messages) != 4 {
 		t.Fatalf("body = %v", body)
 	}
-	assistant, _ := messages[2].(map[string]any)
-	calls, _ := assistant["tool_calls"].([]any)
-	call, _ := calls[0].(map[string]any)
-	function, _ := call["function"].(map[string]any)
+	assistant := object(t, messages[2])
+	calls := list(t, assistant["tool_calls"])
+	call := object(t, calls[0])
+	function := object(t, call["function"])
 	if _, hasContent := assistant["content"]; hasContent || assistant["role"] != "assistant" || call["id"] != "call-1" || call["type"] != "function" ||
 		function["name"] != "list_notes" || function["arguments"] != `{"limit":3}` {
 		t.Errorf("assistant message = %v", assistant)
 	}
-	tool, _ := messages[3].(map[string]any)
+	tool := object(t, messages[3])
 	if tool["role"] != "tool" || tool["tool_call_id"] != "call-1" || tool["content"] != "a, b, c" {
 		t.Errorf("tool message = %v", tool)
 	}
-	tools, _ := body["tools"].([]any)
-	definition, _ := tools[0].(map[string]any)
-	described, _ := definition["function"].(map[string]any)
-	parameters, _ := described["parameters"].(map[string]any)
+	tools := list(t, body["tools"])
+	definition := object(t, tools[0])
+	described := object(t, definition["function"])
+	parameters := object(t, described["parameters"])
 	if definition["type"] != "function" || described["name"] != "list_notes" || described["description"] != "Lists the notes." || parameters["type"] != "object" {
 		t.Errorf("tools = %v", tools)
 	}
@@ -192,7 +192,7 @@ func TestChatNamesTheReasoningLevelAsTheServiceExpectsIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reasoning, _ := lastChatBody(t, fake)["reasoning"].(map[string]any)
+	reasoning := object(t, lastChatBody(t, fake)["reasoning"])
 	if reasoning["effort"] != "low" {
 		t.Errorf("body = %v", lastChatBody(t, fake))
 	}
@@ -364,4 +364,22 @@ func TestChatStopsOnAnUnknownTypeAndALoneKeyOverPlainHTTPToARemoteHost(t *testin
 	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
 	_, err = runChat(t, New(), newCall("openai-compatible", "http://203.0.113.9/v1", testKey, "m"), chatUser("hi"))
 	checkFailure(t, err, failureWant{reason: connection.ReasonBadRequest})
+}
+
+func object(t *testing.T, value any) map[string]any {
+	t.Helper()
+	one, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("%v is no JSON object", value)
+	}
+	return one
+}
+
+func list(t *testing.T, value any) []any {
+	t.Helper()
+	one, ok := value.([]any)
+	if !ok {
+		t.Fatalf("%v is no JSON list", value)
+	}
+	return one
 }

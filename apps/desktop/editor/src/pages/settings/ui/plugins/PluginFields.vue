@@ -1,14 +1,13 @@
 <script setup lang="ts">
 /**
- * Declarative settings fields and secrets for a plugin: switches,
- * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
- * secret whose condition fails is not shown, and keeps its value.
+ * Declarative settings fields for a plugin: switches, number inputs, sliders,
+ * selects, paths, and text fields. A setting whose condition fails is not shown,
+ * and keeps its value.
  */
 import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
-import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
 import ConnectionRows from './connection-rows/ConnectionRows.vue'
 import type { SettingsTabState } from '../../types'
@@ -30,14 +29,7 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
-const {
-  getEnumOptions,
-  getEnumChoices,
-  getEnumValue,
-  getShownSettings,
-  getTopSecrets,
-  getSecretsAfter,
-} = createEnumFields(
+const { getEnumOptions, getEnumChoices, getEnumValue, getShownSettings } = createEnumFields(
   () => props.plugin,
   readSetting,
   isKeyRequested,
@@ -107,8 +99,6 @@ function getStringSetting(key: string, fallback: unknown): string {
 
 <template>
   <SettingsViews :state="props.state" :plugin="props.plugin" />
-
-  <PluginSecretField :state="state" :plugin="plugin" :secrets="getTopSecrets()" />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <div v-if="setting.type === 'connections'" class="settings__rows">
@@ -222,8 +212,6 @@ function getStringSetting(key: string, fallback: unknown): string {
         @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
-
-    <PluginSecretField :state="state" :plugin="plugin" :secrets="getSecretsAfter(setting.key)" />
   </template>
 </template>
 

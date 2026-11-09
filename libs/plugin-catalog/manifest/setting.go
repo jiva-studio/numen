@@ -226,14 +226,6 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 	return issues
 }
 
-func (m Manifest) listConditionIssues(subject string, when *Condition) []error {
-	declared := make(map[string]Setting, len(m.Settings))
-	for _, s := range m.Settings {
-		declared[s.Key] = s
-	}
-	return listConditionIssues(subject, when, declared)
-}
-
 func listConditionIssues(subject string, when *Condition, declared map[string]Setting) []error {
 	if when == nil {
 		return nil

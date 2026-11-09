@@ -99,8 +99,7 @@ The settings of the plugin Numen Agent.
 
 | | | |
 | --- | --- | --- |
-| `baseUrl` | text | base URL of an OpenAI-compatible chat API, such as https://openrouter.ai/api/v1 or http://localhost:11434/v1. Available models are fetched from <Chat API>/models. |
-| `model` | text | model used when a task sets none. |
+| `connections` | text | the service the agent chats through, with its model and reasoning level. |
 | `temperature` | a number | sampling temperature for model responses (0.0 to 1.0). From 0 to 1. |
 | `maxTokens` | a number | maximum number of tokens to generate per completion. From 256 to 128000. |
 | `maxSteps` | a number | maximum number of requests to the model one task may make before it is stopped. From 1 to 1000. |

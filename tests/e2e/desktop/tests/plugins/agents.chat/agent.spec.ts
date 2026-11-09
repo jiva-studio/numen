@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '../../support/test.js'
 import {
   DELAYED_PROMPT,
+  STAND_IN_MODEL,
   HELD_PROMPT,
   STAND_IN_REPLY,
   TOOL_NOTE_PATH,
@@ -36,11 +37,11 @@ test.describe('Agent Plugin and Interface', () => {
     await openAgentPanel(page)
 
     const pill = page.locator('.model-selector__pill').first()
-    await expect(pill).toHaveText(/ · Stand-in model$/)
+    await expect(pill).toHaveText(/ · stand-in\/model$/)
     await pill.click()
     await expectSearchableList(page)
     await expect(
-      page.getByRole('listbox', { name: 'Model' }).getByRole('option', { name: 'Stand-in model' }),
+      page.getByRole('listbox', { name: 'Model' }).getByRole('option', { name: STAND_IN_MODEL }),
     ).toHaveAttribute('aria-current', 'true')
   })
 
@@ -59,10 +60,10 @@ test.describe('Agent Plugin and Interface', () => {
     )
 
     await search.fill('stand-in')
-    await expect(models.getByRole('option')).toHaveText(['Stand-in model'])
+    await expect(models.getByRole('option')).toHaveText([STAND_IN_MODEL])
     await search.press('Enter')
     await expect(search).toHaveCount(0)
-    await expect(page.locator('.model-selector__pill').first()).toHaveText(/ · Stand-in model$/)
+    await expect(page.locator('.model-selector__pill').first()).toHaveText(/ · stand-in\/model$/)
   })
 
   test('sends the question and shows the answer of the chat API under it', async ({ page }) => {

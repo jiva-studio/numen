@@ -26,7 +26,7 @@ import {
   nameOf,
   root,
   textInputs,
-} from '@/testing/secretsDom'
+} from '@/testing/dom'
 
 const field = (
   overrides: Partial<ConnectionFieldInfo> & Pick<ConnectionFieldInfo, 'key'>,

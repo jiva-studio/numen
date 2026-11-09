@@ -52,7 +52,6 @@ const KEY_VALUE_ALIASES: Readonly<Record<string, Readonly<Record<string, FilterQ
 }
 
 const SYSTEM_KEYWORDS = ['system', 'theme', 'appearance', 'window', 'scale', 'naming', 'sync']
-const SECRETS_KEYWORDS = ['secrets', 'keys', 'api', 'token', 'password', 'keychain']
 const CONNECTIONS_KEYWORDS = [
   'connections',
   'services',
@@ -219,14 +218,6 @@ export function matchesConnectionsRow(query: ParsedPluginQuery): boolean {
   if (query.qualifiers.length > 0) return false
   return query.terms.every((term) =>
     CONNECTIONS_KEYWORDS.some((keyword) => keyword.includes(term) || term.includes(keyword)),
-  )
-}
-
-/** Checks whether the Secrets row should be shown for the parsed query. */
-export function matchesSecretsRow(query: ParsedPluginQuery): boolean {
-  if (query.qualifiers.length > 0) return false
-  return query.terms.every((term) =>
-    SECRETS_KEYWORDS.some((keyword) => keyword.includes(term) || term.includes(keyword)),
   )
 }
 

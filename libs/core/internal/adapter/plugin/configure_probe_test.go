@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -28,33 +27,9 @@ const configuredPluginID = "md.numen.agents.numen"
 // configured records the Configure calls a plugin receives.
 type configured struct {
 	testsupport.PluginLifecycle
-	mu            sync.Mutex
-	calls         []*v1.ConfigureRequest
-	unimplemented bool
-	shutdowns     int
-	failure       error
-	hold          chan struct{}
-	entered       chan struct{}
-	delay         time.Duration
-	during        func()
-}
-
-func (c *configured) setFailure(err error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.failure = err
-}
-
-func (c *configured) setHold(t *testing.T) (entered <-chan struct{}, release func()) {
-	t.Helper()
-	hold, arrivals := make(chan struct{}), make(chan struct{}, 8)
-	c.mu.Lock()
-	c.hold, c.entered = hold, arrivals
-	c.mu.Unlock()
-	var once sync.Once
-	release = func() { once.Do(func() { close(hold) }) }
-	t.Cleanup(release)
-	return arrivals, release
+	mu        sync.Mutex
+	calls     []*v1.ConfigureRequest
+	shutdowns int
 }
 
 func (c *configured) count() int {
@@ -64,43 +39,11 @@ func (c *configured) count() int {
 }
 
 func (c *configured) Configure(
-	ctx context.Context, req *connect.Request[v1.ConfigureRequest],
+	_ context.Context, req *connect.Request[v1.ConfigureRequest],
 ) (*connect.Response[v1.ConfigureResponse], error) {
-	c.mu.Lock()
-	hold, entered, delay, during := c.hold, c.entered, c.delay, c.during
-	c.mu.Unlock()
-	if during != nil {
-		during()
-	}
-	if entered != nil {
-		select {
-		case entered <- struct{}{}:
-		default:
-		}
-	}
-	if hold != nil {
-		select {
-		case <-hold:
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
-	if delay > 0 {
-		select {
-		case <-time.After(delay):
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.calls = append(c.calls, req.Msg)
-	if c.failure != nil {
-		return nil, c.failure
-	}
-	if c.unimplemented {
-		return nil, connect.NewError(connect.CodeUnimplemented, errors.New("no configure"))
-	}
 	return connect.NewResponse(&v1.ConfigureResponse{Success: true}), nil
 }
 

@@ -238,20 +238,25 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request, echo string
 	s.mu.Unlock()
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.WriteHeader(http.StatusOK)
-	flusher, _ := w.(http.Flusher)
+	controller := http.NewResponseController(w)
 	for _, chunk := range script.Chunks {
 		if _, err := io.WriteString(w, "data: "+chunk+"\n\n"); err != nil {
 			return
 		}
-		if flusher != nil {
-			flusher.Flush()
+		if err := controller.Flush(); err != nil {
+			return
 		}
 		if script.Pause > 0 && !s.wait(r, script.Pause) {
 			return
 		}
 	}
 	if script.IsBroken {
-		panic(http.ErrAbortHandler)
+		if conn, _, err := controller.Hijack(); err == nil {
+			if err := conn.Close(); err != nil {
+				return
+			}
+		}
+		return
 	}
 	if n := len(script.Chunks); n == 0 || script.Chunks[n-1] != "[DONE]" {
 		<-r.Context().Done()

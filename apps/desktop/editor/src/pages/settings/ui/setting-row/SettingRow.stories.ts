@@ -5,7 +5,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
-import { SecretField } from '../secret-field'
 import SettingRow from './SettingRow.vue'
 
 const CHOICES = [
@@ -13,53 +12,16 @@ const CHOICES = [
   { id: 'careful', text: 'Careful' },
 ]
 
-const DECLARATION = {
-  pluginId: 'md.numen.sample',
-  pluginName: 'Sample',
-  name: 'apiKey',
-  group: 'openrouter',
-  title: 'API key',
-  description: 'The key of the service.',
-}
-
-const SECTIONS = [
-  {
-    group: 'openrouter',
-    isAsked: true,
-    secrets: [
-      {
-        id: 's00000001',
-        name: 'Work',
-        group: 'openrouter',
-        allowed: [{ pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter' }],
-        hasValue: true,
-      },
-    ],
-  },
-]
-
-const MENUS = [
-  {
-    pluginId: 'md.numen.sample',
-    name: 'apiKey',
-    group: 'openrouter',
-    secrets: SECTIONS[0]?.secrets ?? [],
-  },
-]
-
 const LONG_NAME = 'Maximum number of recognition sessions kept open at the same time'
 const LONG_DETAIL =
   'Parallel ONNX recognition sessions used for every scanned page of every document in the vault queue'
 
 const rows = (width: string) => () => ({
-  components: { SettingRow, SecretField, Select, Switch, NumberField, Slider },
+  components: { SettingRow, Select, Switch, NumberField, Slider },
   setup: () => ({
     choices: CHOICES,
     longName: LONG_NAME,
     longDetail: LONG_DETAIL,
-    declaration: DECLARATION,
-    sections: SECTIONS,
-    menus: MENUS,
   }),
   template: `
     <div class="numen" style="container-type:inline-size;inline-size:${width};padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
@@ -83,7 +45,6 @@ const rows = (width: string) => () => ({
           <Slider :model-value="0.7" :min="0" :max="1" :step="0.1" :aria-labelledby="labelledBy" style="flex:1 1 auto" />
         </span>
       </SettingRow>
-      <SecretField at="secret" name="Key: apiKey" detail="The key of the service." :declaration="declaration" :sections="sections" :menus="menus" />
     </div>
   `,
 })
@@ -127,16 +88,14 @@ export const WideRowsDoNotOverlap: Story = {
   },
 }
 
-/** Wide: text, select, path and secret controls share one width. */
+/** Wide: text, select and path controls share one width. */
 export const WideTextControlsShareOneWidth: Story = {
   play: async ({ canvasElement }) => {
     const widths = [
-      ...canvasElement.querySelectorAll(
-        '.settings__choice, .settings__text-input, .settings__secret',
-      ),
+      ...canvasElement.querySelectorAll('.settings__choice, .settings__text-input'),
     ].map((one) => Math.round(one.getBoundingClientRect().width))
     const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize)
-    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem, 16 * rem])
+    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem])
   },
 }
 

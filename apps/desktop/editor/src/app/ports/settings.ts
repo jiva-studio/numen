@@ -13,29 +13,6 @@ export interface SettingsPort {
    */
   watchSettings(signal: AbortSignal): AsyncIterable<readonly SettingEdit[]>
   /**
-   * The secrets shared between plugins. A value is stored in the system keychain, or in a
-   * protected file where there is none, and is never read back or written to the settings file.
-   * A machine that can store neither rejects the call.
-   */
-  createSecret(group: string, name: string, value: string): Promise<string>
-  renameSecret(id: string, name: string): Promise<void>
-  writeSecret(id: string, value: string): Promise<void>
-  /** A secret removed with its value and its permissions. */
-  deleteSecret(id: string): Promise<void>
-  /** Every secret of a group removed with its values and its permissions. */
-  deleteSecretGroup(group: string): Promise<void>
-  /**
-   * For each secret id, whether its value is on this machine. The core reads the key store for
-   * each secret, so only the page of secrets asks.
-   */
-  listSecretStates(): Promise<ReadonlyMap<string, boolean>>
-  /** A secret put before another one of its group; an empty `beforeId` puts it at the end. */
-  moveSecret(id: string, beforeId: string): Promise<void>
-  renameSecretGroup(group: string, name: string): Promise<void>
-  /** One declaration of a plugin let to read a secret. The group is empty for a declaration with none. */
-  allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
-  denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): Promise<void>
-  /**
    * A plugin whose last start failed, started once more. The answer is why it failed
    * again, and empty where it started.
    */

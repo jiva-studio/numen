@@ -238,13 +238,6 @@ func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingC
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-func newWireManifestCondition(target *setting.PluginSettingCondition) *v1.ManifestCondition {
-	if target == nil {
-		return nil
-	}
-	return &v1.ManifestCondition{Setting: target.Setting, Is: target.Is}
-}
-
 // ChoosePluginPath shows the machine's native picker for a plugin's path setting
 // and writes the chosen path. A path the setting does not accept returns the reason.
 func (h *Handler) ChoosePluginPath(

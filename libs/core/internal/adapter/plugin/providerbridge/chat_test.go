@@ -221,7 +221,10 @@ func TestACancelledChatReachesTheProviderOverTheLoopback(t *testing.T) {
 	mux.Handle(numenv1connect.NewProviderServiceHandler(service))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	address := server.Listener.Addr().(*net.TCPAddr)
+	address, isTCP := server.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatal("the test server does not listen on TCP")
+	}
 	host := &activator{endpoint: pluginport.Endpoint{Host: address.IP.String(), Port: address.Port, Token: token}}
 	provider, _, err := providerbridge.NewSource(host).OpenProvider(t.Context(), pluginID)
 	if err != nil {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * An entry row of the settings list that opens a page of settings: System by default, Secrets by props.
+ * An entry row of the settings list that opens a page of settings: System by default, others by props.
  */
 import { PLUGIN_WORDS as words } from './words'
 

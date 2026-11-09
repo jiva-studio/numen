@@ -96,7 +96,7 @@ func TestChatSendsTheTurnAndTheTokenAndStreamsTheEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	closeAfter(t, stream)
 	got := readEvents(stream)
 
 	if stream.Err() != nil {
@@ -125,7 +125,7 @@ func TestAChatThatEndsWithoutAFinishIsAnError(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	closeAfter(t, stream)
 
 	got := readEvents(stream)
 
@@ -147,7 +147,7 @@ func TestAFailureBeforeTheFirstEventIsTheErrorOfTheStream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	closeAfter(t, stream)
 
 	got := readEvents(stream)
 
@@ -170,7 +170,7 @@ func TestAFailureAfterTheFirstEventKeepsTheTextAndNamesTheConnection(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	closeAfter(t, stream)
 
 	got := readEvents(stream)
 
@@ -200,7 +200,7 @@ func TestChatReportsNoConnectionAndRejection(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer stream.Close()
+			closeAfter(t, stream)
 			readEvents(stream)
 			if !want.is(stream.Err()) {
 				t.Errorf("Err = %v", stream.Err())
@@ -216,7 +216,7 @@ func TestACancelledChatInTheMiddleOfATurnKeepsTheTextAndReturnsTheContextError(t
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stream.Close()
+	closeAfter(t, stream)
 	first, ok := stream.Next()
 	<-host.entered
 
@@ -238,7 +238,7 @@ func TestACancelledChatBeforeTheFirstEventReturnsTheContextError(t *testing.T) {
 	go func() {
 		stream, err := newChatClient(t, host).Chat(ctx, ChatRequest{})
 		if stream != nil {
-			stream.Close()
+			closeAfter(t, stream)
 		}
 		opened <- err
 	}()
@@ -263,5 +263,14 @@ func TestEveryFinishReasonOfTheHostSchemaIsRead(t *testing.T) {
 	schematest.CheckHandled(t, func(reason v1.HostModelChatFinishReason) bool {
 		expected, isNamed := want[reason]
 		return isNamed && readHostFinishReason(reason) == expected
+	})
+}
+
+func closeAfter(t *testing.T, stream interface{ Close() error }) {
+	t.Helper()
+	t.Cleanup(func() {
+		if err := stream.Close(); err != nil {
+			t.Error(err)
+		}
 	})
 }

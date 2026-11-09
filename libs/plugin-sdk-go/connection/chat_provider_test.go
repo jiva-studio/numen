@@ -160,7 +160,7 @@ func TestACancelledChatEndsTheContextOfTheProvider(t *testing.T) {
 	go func() {
 		stream, err := client.Chat(ctx, newChatRequest())
 		if err == nil {
-			stream.Close()
+			closeAfter(t, stream)
 		}
 	}()
 	<-chatter.entered

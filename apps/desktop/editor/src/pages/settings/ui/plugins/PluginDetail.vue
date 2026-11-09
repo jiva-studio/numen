@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * The page of one plugin in the settings tab: the plugin manager's page, with the README and the
- * data of the plugin read here, and the declarative settings and secrets drawn in its slot.
+ * data of the plugin read here, and the declarative settings drawn in its slot.
  *
  * The README and the file count are read for the plugin shown; an answer for another plugin is
  * dropped.
@@ -32,8 +32,6 @@ const emit = defineEmits<{
 const installation = computed(() => props.state.installation)
 const fields = createSettingFields(() => props.state.installation)
 
-const read = (key: string) => installation.value.getSetting([props.plugin.id, key])
-
 const managed = computed(
   () => createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])[0],
 )
@@ -52,7 +50,7 @@ const isPending = computed<boolean>(
   () => installation.value.isPending?.([props.plugin.id, 'enabled']) ?? false,
 )
 
-const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
+const hasSettings = computed(() => hasPluginSettings(props.plugin))
 /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
 const fileCount = ref(0)
 const deleteProblem = ref('')
