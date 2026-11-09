@@ -1,10 +1,11 @@
 /**
  * The Cmd/Ctrl+drag of the entries of the slots. A press with the modifier on an entry the plugins
  * mark starts a press; past the threshold it is a drag, and a drop on a marked slot writes the lists
- * the move changes in one write. While the drag goes on, the entry is drawn where a drop would put it.
+ * the move changes in one write. While the drag goes on, a copy of the entry follows the pointer, the
+ * entry itself stands dimmed where a drop would put it, and the entries around it slide aside.
  * Every other press is left to the page.
  */
-import { onScopeDispose, shallowRef, watch } from 'vue'
+import { computed, nextTick, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import { browserClock, measureRect, usePressDrag, type Clock, type Position } from '@numen/ui'
 import {
   SLOT,
@@ -16,6 +17,7 @@ import {
   type SlotLayoutChange,
 } from '@numen/plugin-host'
 import { findDropPlace, type EntryBox } from '../lib/dropPlace'
+import { listEntryElements, measureEntries, playMoves } from '../lib/flip'
 
 /** The attribute the root element of the page carries while a slot entry is dragged. */
 export const DRAGGING_ATTRIBUTE = 'data-numen-slot-dragging'
@@ -34,10 +36,28 @@ export interface SlotDragDeps {
   readonly getClock?: () => Clock
 }
 
-/** The entry a press holds: its layout key and the slot it is drawn in. */
+/** The attribute of the entry that stands where a drop would put the dragged one. */
+export const PLACEHOLDER_ATTRIBUTE = 'data-numen-slot-placeholder'
+
+/** What the layer of the drag draws: a copy of the dragged entry and where the pointer is. */
+export interface SlotDragState {
+  readonly copy: ComputedRef<SlotDragCopy | null>
+  readonly position: Readonly<Ref<Position | null>>
+}
+
+/** A copy of the dragged entry, with the size the entry had. */
+export interface SlotDragCopy {
+  readonly node: Node
+  readonly width: number
+  readonly height: number
+}
+
+/** The entry a press holds: its layout key, its entry attribute, the slot it is drawn in and a copy. */
 interface PressedEntry {
   readonly key: string
+  readonly itemKey: string
   readonly from: SlotName
+  readonly copy: SlotDragCopy
 }
 
 interface SlotDropTarget {
@@ -69,7 +89,9 @@ const findPressedEntry = (target: EventTarget | null, deps: LayoutDeps): Pressed
   if (!entry || !found) return null
   const key = deps.findLayoutKey(entry.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', found.slot)
   if (key === undefined) return null
-  return { key, from: found.slot }
+  const box = entry.getBoundingClientRect()
+  const copy = { node: entry.cloneNode(true), width: box.width, height: box.height }
+  return { key, itemKey: entry.getAttribute(SLOT_ENTRY_ATTRIBUTE) ?? '', from: found.slot, copy }
 }
 
 const listEntryBoxes = (
@@ -100,33 +122,6 @@ const findDropTarget = (
     box.left,
   )
   return { slot: found.slot, before: place.before }
-}
-
-/** The lists that moving the entry, drawn in `from`, to the target changes; none when it stays. */
-const getMoveChange = (
-  entry: PressedEntry,
-  from: SlotName,
-  target: SlotDropTarget,
-  deps: LayoutDeps,
-): SlotLayoutChange => {
-  const drawnKeys: Partial<Record<SlotName, readonly string[]>> = {
-    [from]: deps.listLayoutKeys(from),
-    [target.slot]: deps.listLayoutKeys(target.slot),
-  }
-  return moveSlotEntry(deps.getLayout(), drawnKeys, {
-    key: entry.key,
-    from,
-    to: target.slot,
-    before: target.before,
-  })
-}
-
-/** Writes the lists a drop changes, in one write; a drop that changes nothing writes nothing. */
-const writeDrop = (entry: PressedEntry, target: SlotDropTarget, deps: LayoutDeps): void => {
-  const change = getMoveChange(entry, entry.from, target, deps)
-  if (Object.keys(change).length === 0) return
-  // The settings store reports a failed write itself and reads the file again.
-  deps.writeLayout(change).catch(() => undefined)
 }
 
 /** Stops the click the browser sends after the release that ends a drag, so no entry runs it. */
@@ -169,48 +164,86 @@ const listenInCapture = (listeners: DocumentListeners): void => {
   })
 }
 
+/** The drawn lists of every slot and the layout, as they were when the press began. */
+interface PressSnapshot {
+  readonly layout: SlotLayout
+  readonly drawn: Partial<Record<SlotName, readonly string[]>>
+}
+
 /**
- * The preview of a drag: the slots drawn with the entry where a drop would put it. It keeps the lists
- * the preview changed, and the slot the entry is drawn in now.
+ * The preview of a drag: the slots drawn with the entry where a drop would put it, and the entries
+ * around it sliding to their new places. Every change is worked out from the state at the press.
  */
 function createPreview(deps: SlotDragDeps) {
   let pressed: PressedEntry | null = null
-  let drawnIn: SlotName | null = null
-  let lists: SlotLayoutChange = {}
-  const clear = (): void => {
-    lists = {}
-    drawnIn = pressed?.from ?? null
-    deps.showPreview?.(null)
+  let snapshot: PressSnapshot | null = null
+  let shown = ''
+
+  const markPlaceholder = (): void => {
+    for (const element of listEntryElements()) element.removeAttribute(PLACEHOLDER_ATTRIBUTE)
+    if (!pressed || shown === '') return
+    const { itemKey } = pressed
+    const placeholder = listEntryElements().find(
+      (element) => element.getAttribute(SLOT_ENTRY_ATTRIBUTE) === itemKey,
+    )
+    placeholder?.setAttribute(PLACEHOLDER_ATTRIBUTE, '')
   }
+
+  const draw = (change: SlotLayoutChange | null): void => {
+    const key = change ? JSON.stringify(change) : ''
+    if (key === shown) return
+    shown = key
+    const before = measureEntries()
+    deps.showPreview?.(change)
+    void nextTick().then(() => {
+      playMoves(before, pressed?.itemKey ?? '')
+      markPlaceholder()
+    })
+  }
+
+  /** The lists the entry changes by going to the target; none when it stays where it is. */
+  const getChange = (target: SlotDropTarget): SlotLayoutChange =>
+    pressed && snapshot
+      ? moveSlotEntry(snapshot.layout, snapshot.drawn, {
+          key: pressed.key,
+          from: pressed.from,
+          to: target.slot,
+          before: target.before,
+        })
+      : {}
+
   return {
-    clear,
+    getChange,
     start: (entry: PressedEntry): void => {
       pressed = entry
-      drawnIn = entry.from
-      lists = {}
+      shown = ''
+      snapshot = {
+        layout: deps.getLayout(),
+        drawn: Object.fromEntries(
+          SLOT_NAMES.map((slot) => [slot, deps.listLayoutKeys(slot as SlotName)]),
+        ),
+      }
     },
     /** Draws the entry at the target; null puts it back where it was. */
     show: (target: SlotDropTarget | null): void => {
-      if (!pressed || drawnIn === null) return
-      if (!target) {
-        if (Object.keys(lists).length > 0) clear()
-        return
-      }
-      const change = getMoveChange(pressed, drawnIn, target, deps)
-      if (Object.keys(change).length === 0) return
-      lists = { ...lists, ...change }
-      drawnIn = target.slot
-      deps.showPreview?.(lists)
+      const change = target ? getChange(target) : {}
+      draw(Object.keys(change).length > 0 ? change : null)
+    },
+    clear: (): void => draw(null),
+    /** Keeps the preview until the write ends, so the slots do not show the old layout in between. */
+    hold: (write: Promise<void>): void => {
+      write.catch(() => undefined).finally(() => draw(null))
     },
   }
 }
 
-export function createSlotDrag(deps: SlotDragDeps): void {
+export function createSlotDrag(deps: SlotDragDeps): SlotDragState {
   const root = document.documentElement
   const isCancelled = shallowRef(false)
   const clicks = createClickBlocker()
   const endDrag = (): void => root.removeAttribute(DRAGGING_ATTRIBUTE)
   const preview = createPreview(deps)
+  const pressedCopy = shallowRef<SlotDragCopy | null>(null)
   const cancelDrag = (): void => {
     isCancelled.value = true
     endDrag()
@@ -220,6 +253,7 @@ export function createSlotDrag(deps: SlotDragDeps): void {
   const {
     dragging,
     at: dropTarget,
+    position,
     startPress,
     cancelPress,
   } = usePressDrag<PressedEntry, SlotDropTarget>({
@@ -231,9 +265,10 @@ export function createSlotDrag(deps: SlotDragDeps): void {
     commit: (entry, target) => {
       endDrag()
       clicks.block()
-      // The drop is worked out from the layout as it was, not from the preview.
-      preview.clear()
-      if (target && !isCancelled.value) writeDrop(entry, target, deps)
+      const change = target && !isCancelled.value ? preview.getChange(target) : {}
+      // The settings store reports a failed write itself and reads the file again.
+      if (Object.keys(change).length > 0) preview.hold(deps.writeLayout(change))
+      else preview.clear()
     },
     cancel: () => {
       endDrag()
@@ -261,6 +296,7 @@ export function createSlotDrag(deps: SlotDragDeps): void {
       event.stopPropagation()
       isCancelled.value = false
       preview.start(entry)
+      pressedCopy.value = entry.copy
       startPress(entry, event)
     },
     keydown: (event: KeyboardEvent): void => {
@@ -272,4 +308,7 @@ export function createSlotDrag(deps: SlotDragDeps): void {
     click: clicks.onClick,
   })
   onScopeDispose(endDrag)
+
+  const isDrawn = (): boolean => dragging.value?.hasMoved === true && !isCancelled.value
+  return { copy: computed(() => (isDrawn() ? pressedCopy.value : null)), position }
 }
