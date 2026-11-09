@@ -169,25 +169,52 @@ const listenInCapture = (listeners: DocumentListeners): void => {
   })
 }
 
+/**
+ * The preview of a drag: the slots drawn with the entry where a drop would put it. It keeps the lists
+ * the preview changed, and the slot the entry is drawn in now.
+ */
+function createPreview(deps: SlotDragDeps) {
+  let pressed: PressedEntry | null = null
+  let drawnIn: SlotName | null = null
+  let lists: SlotLayoutChange = {}
+  const clear = (): void => {
+    lists = {}
+    drawnIn = pressed?.from ?? null
+    deps.showPreview?.(null)
+  }
+  return {
+    clear,
+    start: (entry: PressedEntry): void => {
+      pressed = entry
+      drawnIn = entry.from
+      lists = {}
+    },
+    /** Draws the entry at the target; null puts it back where it was. */
+    show: (target: SlotDropTarget | null): void => {
+      if (!pressed || drawnIn === null) return
+      if (!target) {
+        if (Object.keys(lists).length > 0) clear()
+        return
+      }
+      const change = getMoveChange(pressed, drawnIn, target, deps)
+      if (Object.keys(change).length === 0) return
+      lists = { ...lists, ...change }
+      drawnIn = target.slot
+      deps.showPreview?.(lists)
+    },
+  }
+}
+
 export function createSlotDrag(deps: SlotDragDeps): void {
   const root = document.documentElement
   const isCancelled = shallowRef(false)
   const clicks = createClickBlocker()
   const endDrag = (): void => root.removeAttribute(DRAGGING_ATTRIBUTE)
+  const preview = createPreview(deps)
   const cancelDrag = (): void => {
     isCancelled.value = true
     endDrag()
-    clearPreview()
-  }
-
-  // The entry as drawn now, the slot it is drawn in, and the lists the preview draws over the layout.
-  let pressed: PressedEntry | null = null
-  let drawnIn: SlotName | null = null
-  let preview: SlotLayoutChange = {}
-  const clearPreview = (): void => {
-    preview = {}
-    drawnIn = pressed?.from ?? null
-    deps.showPreview?.(null)
+    preview.clear()
   }
 
   const {
@@ -205,31 +232,16 @@ export function createSlotDrag(deps: SlotDragDeps): void {
       endDrag()
       clicks.block()
       // The drop is worked out from the layout as it was, not from the preview.
-      clearPreview()
+      preview.clear()
       if (target && !isCancelled.value) writeDrop(entry, target, deps)
     },
     cancel: () => {
       endDrag()
-      clearPreview()
+      preview.clear()
     },
   })
 
-  watch(
-    dropTarget,
-    (target) => {
-      if (!pressed || drawnIn === null) return
-      if (!target || isCancelled.value) {
-        if (Object.keys(preview).length > 0) clearPreview()
-        return
-      }
-      const change = getMoveChange(pressed, drawnIn, target, deps)
-      if (Object.keys(change).length === 0) return
-      preview = { ...preview, ...change }
-      drawnIn = target.slot
-      deps.showPreview?.(preview)
-    },
-    { flush: 'sync' },
-  )
+  watch(dropTarget, (target) => preview.show(isCancelled.value ? null : target), { flush: 'sync' })
 
   const abandonDrag = (): void => {
     cancelDrag()
@@ -248,9 +260,7 @@ export function createSlotDrag(deps: SlotDragDeps): void {
       event.preventDefault()
       event.stopPropagation()
       isCancelled.value = false
-      pressed = entry
-      drawnIn = entry.from
-      preview = {}
+      preview.start(entry)
       startPress(entry, event)
     },
     keydown: (event: KeyboardEvent): void => {
