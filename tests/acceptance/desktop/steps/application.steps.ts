@@ -16,10 +16,6 @@ When('the person picks {string}', async ({ person }, item: string) => {
   await person.application.pickItem(item)
 })
 
-When('the person types {string}', async ({ person }, text: string) => {
-  await person.application.enterText(text)
-})
-
 Then('{vault} contains the note {reference} {string}', async ({ person }, vault: string, reference: string, name: string) => {
   await person.application.expectVaultContainsNote(vault, reference, name)
 })

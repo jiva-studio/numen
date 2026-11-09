@@ -7,6 +7,7 @@ import {
   assertPosition,
   assertSingleTab,
   getAddressTitle,
+  getLinkNotePath,
   getAncestors,
   getStem,
   getTitlePattern,
@@ -37,6 +38,12 @@ describe('parseReference', () => {
     expect(() => parseReference('named', 'A')).toThrow(
       '"named" does not name a tab or a note: use "at", "titled" or "for the web address"',
     )
+  })
+})
+
+describe('getLinkNotePath', () => {
+  it('names the note file of an address', () => {
+    expect(getLinkNotePath('https://youtu.be/mill01')).toBe('https---youtu.be-mill01.md')
   })
 })
 

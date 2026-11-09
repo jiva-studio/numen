@@ -2,7 +2,7 @@
 import { expect } from 'playwright/test'
 import { getTab } from '../../../e2e/desktop/tests/support/layout.js'
 import type { ApplicationDriver } from './application.js'
-import { getAddressTitle, getCurrentVersionLabel, type TextKind } from './rules.js'
+import { getAddressTitle, getLinkNotePath, getCurrentVersionLabel, type TextKind } from './rules.js'
 import type { Scenario } from './scenario.js'
 import type { TabDriver } from './tabs.js'
 import { hasMadeText, hasVersions } from './text-versions.js'
@@ -67,8 +67,12 @@ export class TextDriver {
     await this.application.pickItem(getCurrentVersionLabel('article'))
   }
 
+  async openLink(address: string): Promise<void> {
+    await this.tab.openFile(getLinkNotePath(address))
+  }
+
   private async showLink(address: string): Promise<string> {
-    const notePath = `${getAddressTitle(address)}.md`
+    const notePath = getLinkNotePath(address)
     await this.tab.showFile(notePath)
     return notePath
   }

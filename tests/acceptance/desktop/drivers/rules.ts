@@ -23,6 +23,8 @@ export const getTitlePattern = (title: string): RegExp => new RegExp(`^(Linked t
 /** The title the product gives the tab of a web address: the characters a file name cannot have become "-". */
 export const getAddressTitle = (address: string): string => address.replace(/[/\\:*?"<>|#]/g, '-')
 
+export const getLinkNotePath = (address: string): string => `${getAddressTitle(address)}.md`
+
 export const parseReference = (reference: string, name: string): Reference => {
   if (reference !== 'at' && reference !== 'titled' && reference !== 'for the web address') {
     throw new Error(`"${reference}" does not name a tab or a note: use "at", "titled" or "for the web address"`)
