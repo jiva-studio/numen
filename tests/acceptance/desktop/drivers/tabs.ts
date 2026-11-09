@@ -34,9 +34,11 @@ export class TabDriver {
   }
 
   private getPanel(reference: string, name: string): Locator {
-    return this.scenario.page.getByRole('tabpanel', {
-      name: getTitlePattern(this.getTitle(reference, name)),
-    })
+    const title = this.getTitle(reference, name)
+    // The panel of a file that is not a note is named by the file name, with its extension.
+    const isFile = parseReference(reference, name).reference === 'at' && !name.endsWith('.md')
+    const pattern = isFile ? new RegExp(`^(Linked tab )?${getEscaped(title)}(\\.\\w+)?( Close |$)`) : getTitlePattern(title)
+    return this.scenario.page.getByRole('tabpanel', { name: pattern })
   }
 
   async close(reference: string, name: string): Promise<void> {
@@ -89,7 +91,9 @@ export class TabDriver {
 
   async openFile(filePath: string): Promise<void> {
     await this.scenario.ensureWorkspace()
+    this.scenario.rememberFile(filePath)
     await (await revealTreeRow(this.scenario.page, filePath)).press('Enter')
+    await expect.poll(() => readActivePath(this.scenario.page.request)).toBe(filePath)
   }
 
   async playRecording(reference: string, name: string): Promise<void> {

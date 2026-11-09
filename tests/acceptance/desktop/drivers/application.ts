@@ -6,12 +6,24 @@ import {
   getPaletteField as getPaletteInput,
   waitForWindow,
 } from '../../../e2e/desktop/tests/support/workspace.js'
+import { readActivePath } from '../../../e2e/desktop/tests/support/test.js'
 import { callRPC, getVaultPath, listFiles, listFilePaths } from '../../../e2e/desktop/tests/support/vault.js'
-import { assertApplication, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
+import { assertApplication, assertEntry, getEscaped, getPaletteField, parseCount, readNoteType } from './rules.js'
 import type { Scenario } from './scenario.js'
 
-const DELETE_TEXT = 'Delete text'
-const DELETE_TEXT_ID = 'app:version.delete'
+/** A plugin may take this long to start before the first command of it answers. */
+const PLUGIN_START_LIMIT_MS = 35_000
+
+interface PluginCommand {
+  pluginId?: string
+  command: string
+}
+
+/** The commands that work on the text of the open file, and the command whose items must list a text first. */
+const TEXT_COMMANDS: Partial<Record<string, PluginCommand>> = {
+  'Delete text': { command: 'app:version.delete' },
+  'Proofread text': { pluginId: 'md.numen.tools.proofreading', command: 'proofreading.create' },
+}
 
 export class ApplicationDriver {
   constructor(private readonly scenario: Scenario) {}
@@ -39,12 +51,19 @@ export class ApplicationDriver {
     const command = page
       .getByRole('option')
       .filter({ has: page.locator('[data-palette="name"]', { hasText: name }) })
-    if (label === DELETE_TEXT) await this.expectOpenTabHasText()
+    const textCommand = TEXT_COMMANDS[label]
+    if (textCommand) await this.expectOpenTabHasText(textCommand)
     await page.keyboard.press('Control+p')
     await expect(field).toBeVisible()
     await field.fill(label)
     await expect(command).toHaveAttribute('data-here', 'true')
     await page.keyboard.press('Enter')
+    const crumb = page.locator('[data-palette="crumb"]')
+    await expect
+      .poll(async () => !(await field.isVisible()) || ((await crumb.textContent()) ?? '').includes(label), {
+        timeout: PLUGIN_START_LIMIT_MS,
+      })
+      .toBe(true)
   }
 
   async enter(value: string): Promise<void> {
@@ -90,9 +109,12 @@ export class ApplicationDriver {
     await expect.poll(() => listFilePaths(this.scenario.page.request, folder)).toContain(notePath)
   }
 
-  async expectVaultHasFolder(vaultName: string, folder: string): Promise<void> {
+  async expectVaultHasEntry(vaultName: string, entry: string, entryPath: string): Promise<void> {
     this.scenario.setVault(vaultName)
-    await expect.poll(() => this.listEntries(folder)).toContain(folder)
+    await expect.poll(() => this.listEntries(entryPath)).toContain(entryPath)
+    const parent = entryPath.split('/').slice(0, -1).join('/')
+    const found = (await listFiles(this.scenario.page.request, parent)).find((one) => one.path === entryPath)
+    assertEntry(entry, entryPath, found?.isFolder ?? false)
   }
 
   async expectVaultDoesNotHaveFile(vaultName: string, file: string): Promise<void> {
@@ -111,19 +133,17 @@ export class ApplicationDriver {
     await expect.poll(() => this.listNotesOfType(getVaultPath(), type).length).toBe(expected)
   }
 
-  private async expectOpenTabHasText(): Promise<void> {
+  private async expectOpenTabHasText(textCommand: PluginCommand): Promise<void> {
     const { page } = this.scenario
-    const closeButton = page.getByRole('tab', { selected: true }).getByRole('button').first()
-    const title = ((await closeButton.getAttribute('aria-label')) ?? '').replace(/^Close /, '')
-    const notePath = await this.findNote(title)
     await expect
       .poll(async () => {
+        const notePath = await readActivePath(page.request)
         const answer = await callRPC(page.request, 'CommandService/ListCommandItems', {
           path: notePath,
-          commands: [{ command: DELETE_TEXT_ID }],
+          commands: [{ ...(textCommand.pluginId ? { pluginId: textCommand.pluginId } : {}), command: textCommand.command }],
         })
-        const [list] = (answer['lists'] as ({ items?: unknown[] } | undefined)[] | undefined) ?? []
-        return list?.items?.length ?? 0
+        const lists = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
+        return lists.flatMap((one) => one.items ?? []).length
       })
       .toBeGreaterThan(0)
   }
