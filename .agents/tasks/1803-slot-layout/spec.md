@@ -386,12 +386,14 @@ PR #1795 (feat/slot-entry-values) lets two entries of one command with different
 - **When**: the user Ctrl+drags (Cmd+drag on macOS) the tasks chip before the index stats chip, then Ctrl+drags the updater chip into the right end of the status bar, then the application restarts
 - **Then**: after the restart the title bar shows tasks before stats, the status bar's right end shows the updater, the title bar does not, `numen.json` holds `app.layout.slots` with both lists, and clicking the updater chip opens its popover above the chip (the popover's bottom edge is at or above the chip's top edge).
 
-## 5. Open Questions
+## 5. Decisions (2026-11-09)
 
-1. **Path in the file.** The issue shows `"layout": { "slots": … }` without its parent. The first level of `numen.json` is `v`, `app` and plugin ids, and the write check refuses any other first-level key. This spec puts it at `app.layout.slots`. A top-level `layout` would need a new owner in the file format. Confirm `app.layout.slots`.
-2. **Wire.** No protobuf change is proposed; the layout uses the existing `Setting` of `WriteSettings` / `GetSettings` / `WatchSettings`. Confirm (§4 decision).
-3. **SDK contract for the drag.** The window finds bar elements by two attributes the SDK names (`data-numen-slot`, `data-numen-slot-entry`) and the bars set. This is a new SDK export that both bar plugins use. Approve, or name another shape.
-4. **Modifier press on a menu button.** Menu buttons of the title bar open on press (reka-ui). A Cmd/Ctrl press is taken by the window before the button sees it, so a Cmd/Ctrl press and release without moving opens a plain button (its `click` runs) but not a menu button. Acceptable?
-5. **Entries hidden by `when` during a drop.** An unlisted entry whose `when` is false at the time of a drop in its slot is not added to the list; it later appears after the listed ones. Acceptable?
-6. **Keys in several slots.** A hand-edited file may list one key in two slots. This spec draws it in the first bar slot (`BAR_SLOTS` order) and keeps both in the file until the next drop of that entry. Acceptable?
-7. **Two plugins placing the same full command** (`app:x.y`) in bars: today only the first is drawn. The second key is never drawn and cannot be moved. Keep?
+1. **Place in the file:** `app.layout.slots`, as proposed; the first level of `numen.json` takes only `v`, `app` and plugin ids.
+2. **Wire:** no protobuf change; the layout goes through `WriteSettings`, `GetSettings` and `WatchSettings`.
+3. **Attributes:** `data-numen-slot` and `data-numen-slot-entry` are exported from the TS SDK as proposed. They are DOM attributes of the TS host and have no Go counterpart.
+4. **Cmd/Ctrl press without movement:** accepted as proposed (a plain button runs, a menu button that opens on press does not).
+5. **Unlisted entry with a false `when` at drop time:** not added to the list, as proposed.
+6. **Key in two lists (hand-edited file):** drawn in the first bar slot, both copies kept in the file, as proposed.
+7. **Two plugins placing the same full command in the bars:** the first is drawn, the second is not movable, as proposed.
+
+PR #1795 (`feat/slot-entry-values`) changes `slot.go`, `slotRegistry.ts`, the SDK `slots.ts` and `docs/plugins/README.md`; the branch that merges second rebases onto the first.
