@@ -93,7 +93,7 @@ func (s *embeddingServer) getConnectionProfile(ctx context.Context) (connection.
 
 func (s *embeddingServer) startFetchLocked(caller context.Context, models modelClient) *profileFetch {
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(caller), profileFetchLimit)
-	fetch := &profileFetch{finished: make(chan struct{}), cancel: cancel}
+	fetch := &profileFetch{finished: make(chan struct{}), cancel: cancel, profile: connection.EmbeddingProfile{}, err: nil}
 	s.fetch = fetch
 	go func() {
 		defer cancel()
@@ -160,15 +160,22 @@ func (s *embeddingServer) getConnectionModelInfo(ctx context.Context) (embedding
 		Concurrency:    int32(getIndexShare(concurrency)),
 		MinChunkLength: int32(minChunkLength),
 		ChunkTokens:    int32(ClampChunkTokens(chunkTokens, profile.MaxTokens)),
-		Handling:       getHandlingHash(connectionInfo(profile)),
+		Handling:       getConnectionHandlingHash(profile),
 	}, nil
 }
 
-func connectionInfo(profile connection.EmbeddingProfile) engine.ModelInfo {
-	return engine.ModelInfo{
-		MaxTokens: profile.MaxTokens,
-		Handling:  engine.Handling{QueryPrefix: profile.QueryPrefix, DocumentPrefix: profile.DocumentPrefix},
+func getConnectionHandling(profile connection.EmbeddingProfile) engine.Handling {
+	return engine.Handling{
+		QueryPrefix: profile.QueryPrefix, DocumentPrefix: profile.DocumentPrefix, File: "", Normalise: false, ExtraInputs: nil,
 	}
+}
+
+func getConnectionHandlingHash(profile connection.EmbeddingProfile) string {
+	handling := getConnectionHandling(profile)
+	if handling.IsZero() {
+		return ""
+	}
+	return handling.Hash(profile.MaxTokens)
 }
 
 // embedThroughConnection embeds the texts with the prefix the profile names for the role. A person's
@@ -178,7 +185,7 @@ func (s *embeddingServer) embedThroughConnection(ctx context.Context, role embed
 	if err != nil {
 		return nil, err
 	}
-	handling := connectionInfo(profile).Handling
+	handling := getConnectionHandling(profile)
 	engineRole, priority := engine.RoleDocument, connection.PriorityBackground
 	if role == embedding.RoleQuery {
 		engineRole, priority = engine.RoleQuery, connection.PriorityInteractive
