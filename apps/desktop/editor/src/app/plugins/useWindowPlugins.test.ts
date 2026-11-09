@@ -141,7 +141,7 @@ describe('the settings and notices a plugin is given', () => {
 
   it('reads a setting of the plugin, and the default of its switch where none is written', () => {
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
-    const rest = { getSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] }
+    const rest = { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] }
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const ctx = pluginHost.createContext('md.numen.a')
 
@@ -343,7 +343,7 @@ describe('the settings and notices a plugin is given', () => {
 
   it('calls the handler of a followed setting once per changed value', async () => {
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
-    const rest = { getSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] }
+    const rest = { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] }
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const handler = vi.fn()
     pluginHost.createContext('md.numen.a').onSettingChange('fontSize', handler)
@@ -403,7 +403,7 @@ describe('the plugins the window loads', () => {
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
     const pluginsRef = ref([{ id: 'md.numen.a', hasFrontend: true }])
     const rest = {
-      getSetting: (path: readonly string[]) =>
+      getCommittedSetting: (path: readonly string[]) =>
         path.length === 2 ? settings.value[path[1] ?? ''] : undefined,
       plugins: pluginsRef,
     }

@@ -100,7 +100,7 @@ func (t *Tools) createTranscript(ctx context.Context, in TranscriptCreateInput) 
 	if !isRecording(in.Path) {
 		return TranscriptCreateOutput{}, fmt.Errorf("%s: %w", in.Path, errNoRecording)
 	}
-	out := TranscriptCreateOutput{TaskID: getTaskID(in.Path), Path: in.Path, State: stateRunning, Version: ""}
+	out := TranscriptCreateOutput{TaskID: getTaskID(vault, in.Path), Path: in.Path, State: stateRunning, Version: ""}
 	if t.transcriber.isRunning(vault, in.Path) {
 		return out, nil
 	}

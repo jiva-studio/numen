@@ -208,3 +208,22 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 		t.Errorf("the replaced index was called %d times, want 1", updated)
 	}
 }
+
+// An observer that cannot be notified of the change stops the write, and the note stays as it was.
+func TestAWriteWhoseObserverCannotBeNotifiedIsRefused(t *testing.T) {
+	t.Parallel()
+	const was = "alpha beta\n"
+	c := openChanging(t, map[string]string{"Entropy.md": was})
+	observerError := errors.New("the observer cannot be reached")
+	writing := c.newWrite()
+	writing.Drawing = func(context.Context, domain.Edit) error { return observerError }
+
+	_, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "alpha gamma\n", domain.FileStat{})
+
+	if !errors.Is(err, observerError) {
+		t.Fatalf("want the error of the observer, got %v", err)
+	}
+	if body := c.read(t, "Entropy.md"); body != was {
+		t.Errorf("the refused write landed anyway:\n%s", body)
+	}
+}

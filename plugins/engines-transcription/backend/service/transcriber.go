@@ -90,7 +90,9 @@ func (t *Transcriber) withClosing(ctx context.Context) (context.Context, context
 	return runCtx, cancel
 }
 
-func getTaskID(path string) string { return "transcription:" + path }
+func getTaskID(vault domain.VaultID, path string) string {
+	return "transcription:" + string(vault) + ":" + path
+}
 
 var (
 	// errAlreadyTranscribing is returned for a recording another run is transcribing.
@@ -105,12 +107,12 @@ type readRecording func(ctx context.Context) ([]byte, error)
 // Transcribe transcribes a recording and returns once its transcript is written, with the error the
 // transcription stopped on. It ends when ctx ends or the plugin stops.
 func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
-	key, err := t.claimOrFail(ctx, vault, path)
+	claimed, key, err := t.claimOrFail(ctx, vault, path)
 	if err != nil {
 		return err
 	}
-	return t.runTranscription(ctx, key, vault, path, func(ctx context.Context) ([]byte, error) {
-		return t.files.ReadFile(ctx, vault, path)
+	return t.runTranscription(ctx, key, claimed, path, func(ctx context.Context) ([]byte, error) {
+		return t.files.ReadFile(ctx, claimed, path)
 	})
 }
 
@@ -132,8 +134,8 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	go func() {
 		// Run reports a failure as the task's error.
 		// gomutants:disable-next-line BRANCH_IF,CONDITIONALS_NEGATION reason="best-effort stderr diagnostic log does not affect transcription control flow"
-		if err := t.runTranscription(context.WithoutCancel(ctx), key, vault, path, func(ctx context.Context) ([]byte, error) {
-			return t.files.ReadFile(ctx, vault, path)
+		if err := t.runTranscription(context.WithoutCancel(ctx), key, claimed, path, func(ctx context.Context) ([]byte, error) {
+			return t.files.ReadFile(ctx, claimed, path)
 		}); err != nil && !errors.Is(err, context.Canceled) {
 			fmt.Fprintf(os.Stderr, "engines-transcription: transcribe %s: %v\n", path, err)
 		}
@@ -141,19 +143,19 @@ func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path stri
 	return true, nil
 }
 
-func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (string, error) {
+func (t *Transcriber) claimOrFail(ctx context.Context, vault domain.VaultID, path string) (domain.VaultID, string, error) {
 	claimed, err := t.getClaimVault(ctx, vault)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	key, isClaimed := t.claim(claimed, path)
 	switch {
 	case isClaimed:
-		return key, nil
+		return claimed, key, nil
 	case t.isClosing():
-		return "", fmt.Errorf("%s: %w", path, errClosed)
+		return "", "", fmt.Errorf("%s: %w", path, errClosed)
 	default:
-		return "", fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
+		return "", "", fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
 	}
 }
 
@@ -163,7 +165,7 @@ func (t *Transcriber) runTranscription(ctx context.Context, key string, vault do
 	defer cancel()
 
 	if err := t.queue.ReportTask(ctx, host.Task{
-		ID: getTaskID(path), Title: taskTranscribing, Detail: path, IsUserStarted: true,
+		ID: getTaskID(vault, path), Title: taskTranscribing, Detail: path, IsUserStarted: true,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 	}); err != nil {
@@ -241,10 +243,10 @@ func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path
 	err := t.run(ctx, vault, path, read)
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
-		t.finishTask(ctx, path)
+		t.finishTask(ctx, vault, path)
 	default:
 		t.reportTask(ctx, host.Task{
-			ID: getTaskID(path), Title: taskTranscribing, Detail: path, FailureReason: err.Error(), IsUserStarted: true,
+			ID: getTaskID(vault, path), Title: taskTranscribing, Detail: path, FailureReason: err.Error(), IsUserStarted: true,
 			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 			CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings,
 		})
@@ -292,7 +294,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="progress notification before opening model"
 	t.reportTask(ctx, host.Task{
-		ID: getTaskID(path), Title: taskLoading, Detail: path, IsUserStarted: true,
+		ID: getTaskID(vault, path), Title: taskLoading, Detail: path, IsUserStarted: true,
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 		CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 	})
@@ -344,7 +346,7 @@ func (t *Transcriber) takeTurn(ctx context.Context, j *job) error {
 	turn, err := t.queue.EnqueueWork(ctx, host.Work{IsUserStarted: true, OnWaiting: func() {
 		// gomutants:disable-next-line STATEMENT_REMOVE reason="best-effort waiting task status notification"
 		t.reportTask(ctx, host.Task{
-			ID: getTaskID(j.path), Title: taskWaiting, Detail: j.path, IsUserStarted: true,
+			ID: getTaskID(j.vault, j.path), Title: taskWaiting, Detail: j.path, IsUserStarted: true,
 			// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="indeterminate task progress uses zero counts"
 			CompletedCount: 0, TotalCount: 0, Unit: host.UnitThings, FailureReason: "",
 		})
@@ -363,7 +365,7 @@ func (t *Transcriber) hearSegments(ctx context.Context, j *job, model engine.Tra
 	}
 	length := recording.GetDuration()
 	for {
-		t.reportProgress(ctx, j.path, from, length)
+		t.reportProgress(ctx, j.vault, j.path, from, length)
 		cues, reached, err := hearBatch(ctx, model, recording, j.path, from)
 		if err != nil {
 			return err
@@ -416,9 +418,9 @@ func hearBatch(
 	return cues, reached, nil
 }
 
-func (t *Transcriber) reportProgress(ctx context.Context, path string, heard, length int) {
+func (t *Transcriber) reportProgress(ctx context.Context, vault domain.VaultID, path string, heard, length int) {
 	t.reportTask(ctx, host.Task{
-		ID: getTaskID(path), Title: taskTranscribing, Detail: path,
+		ID: getTaskID(vault, path), Title: taskTranscribing, Detail: path,
 		CompletedCount: int64(heard / 1000), TotalCount: int64(length / 1000), Unit: host.UnitSeconds, IsUserStarted: true, FailureReason: "",
 	})
 }
@@ -430,9 +432,9 @@ func (t *Transcriber) reportTask(ctx context.Context, task host.Task) {
 	}
 }
 
-func (t *Transcriber) finishTask(ctx context.Context, path string) {
+func (t *Transcriber) finishTask(ctx context.Context, vault domain.VaultID, path string) {
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="best-effort stderr diagnostic log does not affect transcription control flow"
-	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(path)); err != nil {
+	if err := t.queue.FinishTask(context.WithoutCancel(ctx), getTaskID(vault, path)); err != nil {
 		fmt.Fprintf(os.Stderr, "engines-transcription: finish the task of %s: %v\n", path, err)
 	}
 }

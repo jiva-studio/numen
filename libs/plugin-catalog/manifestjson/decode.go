@@ -219,10 +219,10 @@ func newDependencies(wire []*v1.ManifestDependency) []manifest.DependencyRequire
 	return out
 }
 
-func newSecrets(wire []*v1.ManifestSecret) []manifest.Secret {
-	var out []manifest.Secret
+func newSecrets(wire []*v1.SecretDeclaration) []manifest.SecretDeclaration {
+	var out []manifest.SecretDeclaration
 	for _, one := range wire {
-		out = append(out, manifest.Secret{
+		out = append(out, manifest.SecretDeclaration{
 			Name:        one.GetName(),
 			Title:       one.GetTitle(),
 			Description: one.GetDescription(),

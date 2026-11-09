@@ -40,7 +40,8 @@ const Drawn = () => renderedContent.value
 
 /* -------------------------------- Handlers -------------------------------- */
 const onClick = (press: MouseEvent) => {
-  const link = (press.target as HTMLElement | null)?.closest?.('a')
+  const target = press.target as Partial<Pick<Element, 'closest'>> | null
+  const link = target?.closest?.('a')
   const href = link?.getAttribute('href')
   if (!href) return
   if (callerHrefs.value.has(href)) press.preventDefault()

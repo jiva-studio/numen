@@ -66,10 +66,10 @@ type (
 	PluginSearchFloor      = pluginport.PluginSearchFloor
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
 	PluginSimilaritySample = pluginport.PluginSimilaritySample
-	PluginSecret           = pluginport.PluginSecret
+	SecretDeclaration      = pluginport.SecretDeclaration
 	SecretSource           = pluginport.SecretSource
 	Secret                 = pluginport.Secret
-	SecretPermission       = pluginport.SecretPermission
+	DeclarationKey         = pluginport.DeclarationKey
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
 	PluginSettingCondition = pluginport.PluginSettingCondition

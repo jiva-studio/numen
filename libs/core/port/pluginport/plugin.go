@@ -153,17 +153,12 @@ type pluginSecretConfigurator interface {
 	// Refresh configures the running plugins whose list of secrets differs from the one they were
 	// last given, and the plugins named in forced.
 	Refresh(ctx context.Context, forced ...string) error
-	ListDeclarations() []SecretPermission
+	ListDeclarations() []DeclarationKey
 }
 
 type pluginSettingsPush interface {
 	SetSettings(all map[string]map[string]any)
-	// SetPerformanceProfile tells every running plugin the profile of the performance setting, and
-	// gives each plugin started later the same one.
 	SetPerformanceProfile(ctx context.Context, profile string)
-	// WatchPluginConfig registers fn to run each time the plugin has been given its configuration, its
-	// settings and its secrets. fn runs on its own goroutine, after the plugin holds the values. The
-	// returned function removes the registration.
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 

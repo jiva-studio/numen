@@ -85,11 +85,9 @@ export function useTabDrag(options: TabDragOptions): TabDragState {
   function press(tab: TabId, pointer: PointerEvent): void {
     if (pointer.button !== 0) return
 
-    const holder = document.elementFromPoint
-      ? document
-          .elementFromPoint(pointer.clientX, pointer.clientY)
-          ?.closest('[data-workspace-pane]')
-      : null
+    const holder = document
+      .elementFromPoint(pointer.clientX, pointer.clientY)
+      ?.closest('[data-workspace-pane]')
     const from = holder?.getAttribute('data-workspace-pane') ?? options.workspace.value.focus
 
     startPress({ tab, from }, pointer)
@@ -182,9 +180,7 @@ function resolveDropTarget(
   if (!isInside(point, outer)) return null
 
   const local = (box: Rect): Rect => ({ ...box, x: box.x - outer.x, y: box.y - outer.y })
-  const underElement = document.elementFromPoint
-    ? document.elementFromPoint(point.x, point.y)
-    : null
+  const underElement = document.elementFromPoint(point.x, point.y)
 
   const strip = getClosest(underElement, '[data-workspace-strip]')
   const pane = getClosest(underElement, '[data-workspace-pane]')

@@ -3,24 +3,26 @@ package secret
 import (
 	"slices"
 	"sort"
+
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// Section is the secrets of one group in the order of the list. IsAsked is true for a group an
-// installed plugin asks for by name.
+// Section is the secrets of one group in list order. IsAsked is true when an installed plugin
+// declares the group.
 type Section struct {
 	Group   string
 	IsAsked bool
-	Secrets []Secret
+	Secrets []pluginport.Secret
 }
 
 // Menu is the secrets the menu of one declaration offers, in order.
 type Menu struct {
-	Declaration Permission
-	Secrets     []Secret
+	Declaration pluginport.DeclarationKey
+	Secrets     []pluginport.Secret
 }
 
-// ListAskedGroups returns the groups the declarations ask for, once each, in byte order.
-func ListAskedGroups(declarations []Permission) []string {
+// ListAskedGroups returns the groups declared by plugins, once each, in byte order.
+func ListAskedGroups(declarations []pluginport.DeclarationKey) []string {
 	var groups []string
 	for _, one := range declarations {
 		if one.Group != "" && !slices.Contains(groups, one.Group) {
@@ -31,10 +33,9 @@ func ListAskedGroups(declarations []Permission) []string {
 	return groups
 }
 
-// ListSections returns the sections of the page of secrets: the groups an installed plugin asks
-// for by name, each a section while it holds no secret, then the groups the person made by name,
-// and inside a section the order of the list. Names are compared byte by byte.
-func ListSections(list []Secret, requested []string) []Section {
+// ListSections returns the secret sections in page order: declared groups first, then custom
+// groups, sorted by name byte by byte.
+func ListSections(list []pluginport.Secret, requested []string) []Section {
 	var others []string
 	for _, one := range list {
 		if !slices.Contains(requested, one.Group) && !slices.Contains(others, one.Group) {
@@ -44,7 +45,7 @@ func ListSections(list []Secret, requested []string) []Section {
 	sort.Strings(others)
 	sections := make([]Section, 0, len(requested)+len(others))
 	for _, group := range slices.Concat(requested, others) {
-		section := Section{Group: group, IsAsked: slices.Contains(requested, group), Secrets: []Secret{}}
+		section := Section{Group: group, IsAsked: slices.Contains(requested, group), Secrets: []pluginport.Secret{}}
 		for _, one := range list {
 			if one.Group == group {
 				section.Secrets = append(section.Secrets, one)
@@ -57,8 +58,8 @@ func ListSections(list []Secret, requested []string) []Section {
 
 // ListInPageOrder returns the secrets in the order of the page of secrets, the secrets of
 // ListSections one after the other.
-func ListInPageOrder(list []Secret, requested []string) []Secret {
-	ordered := make([]Secret, 0, len(list))
+func ListInPageOrder(list []pluginport.Secret, requested []string) []pluginport.Secret {
+	ordered := make([]pluginport.Secret, 0, len(list))
 	for _, section := range ListSections(list, requested) {
 		ordered = append(ordered, section.Secrets...)
 	}
@@ -67,8 +68,8 @@ func ListInPageOrder(list []Secret, requested []string) []Secret {
 
 // ListMenu returns the secrets the menu of a declaration offers: those of the declared group first
 // where it has one, then the others, each in the order of the page.
-func ListMenu(page []Section, declaration Permission) []Secret {
-	var first, rest []Secret
+func ListMenu(page []Section, declaration pluginport.DeclarationKey) []pluginport.Secret {
+	var first, rest []pluginport.Secret
 	for _, section := range page {
 		if declaration.Group != "" && section.Group == declaration.Group {
 			first = append(first, section.Secrets...)
@@ -82,8 +83,8 @@ func ListMenu(page []Section, declaration Permission) []Secret {
 // ListAllowed returns, from secrets in the order of the page, those allowed to the declaration in
 // the order it receives them: the secrets of the declared group first where it has one, then the
 // others.
-func ListAllowed(page []Secret, declaration Permission) []Secret {
-	var first, rest []Secret
+func ListAllowed(page []pluginport.Secret, declaration pluginport.DeclarationKey) []pluginport.Secret {
+	var first, rest []pluginport.Secret
 	for _, one := range page {
 		if !slices.Contains(one.Allowed, declaration) {
 			continue

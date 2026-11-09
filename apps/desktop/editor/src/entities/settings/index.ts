@@ -10,10 +10,10 @@ export type {
   PluginSettingsViewInfo,
   PluginSettingOption,
   PluginSettingCondition,
-  PluginSecret,
+  SecretDeclaration,
   Secret,
   SecretMenu,
-  SecretPermission,
+  DeclarationKey,
   SecretSection,
 } from './lib/configuration'
 export { getSettingAt, createSettingsStore } from './model/store'

@@ -11,7 +11,7 @@ export const root = (): HTMLElement => document.body
 export const nameOf = (element: Element): string =>
   element.getAttribute('aria-label') ??
   element.getAttribute('title') ??
-  (element.textContent ?? '').replace(/\s+/g, ' ').trim()
+  element.textContent.replace(/\s+/g, ' ').trim()
 
 /** Every button, or element with the role button, in a scope. */
 export const buttons = (scope: ParentNode = root()): HTMLElement[] =>
@@ -96,7 +96,7 @@ export const findNameInput = (name: string, scope: ParentNode = root()): HTMLInp
   textInputs(scope).find((one) => one.value === name) ?? null
 
 const regionNameOf = (region: Element): string =>
-  document.getElementById(region.getAttribute('aria-labelledby') ?? '')?.textContent?.trim() ?? ''
+  document.getElementById(region.getAttribute('aria-labelledby') ?? '')?.textContent.trim() ?? ''
 
 /** The row of the secret with that name: the group of controls the row is labelled as. */
 export const rowOf = (name: string): HTMLElement => {

@@ -68,7 +68,11 @@ function handlePaletteKey(event: KeyboardEvent, context: KeyContext): void {
 
   if (event.key === 'Enter') {
     event.preventDefault()
-    context.places.chooseAt(context.places.here.value, event.shiftKey)
+    const pos =
+      context.places.here.value >= 0
+        ? context.places.here.value
+        : stepTo(context.places.places.value, { from: -1, by: 1 }, canLandOn)
+    context.places.chooseAt(pos, event.shiftKey)
     return
   }
 

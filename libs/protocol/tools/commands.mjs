@@ -58,10 +58,25 @@ const getTsArguments = (one) =>
 const ts = [
   `// ${HEADER}`,
   '',
+  '/** One argument of a shared command; the palette asks for it as it asks for the argument of a manifest command. */',
+  'export interface SharedCommandArgument {',
+  '  readonly name: string',
+  '  readonly title: string',
+  '  readonly type: string',
+  '  readonly isRequired: boolean',
+  '}',
+  '',
+  '/** A shared command of the application and the arguments every handler of it takes. */',
+  'export interface SharedCommand {',
+  '  readonly id: string',
+  '  readonly title: string',
+  '  readonly arguments: readonly SharedCommandArgument[]',
+  '}',
+  '',
   '// SHARED_COMMANDS are the shared commands of the application: plugins handle them with the entries of',
   '// `contributes.handlers`. A command runs its one matching handler, or offers several as its items. The',
   '// palette asks for its arguments as it asks for those of a command of a manifest.',
-  'export const SHARED_COMMANDS = [',
+  'export const SHARED_COMMANDS: readonly SharedCommand[] = [',
   ...commands.flatMap((one) => [
     `  // ${one.about[0].toUpperCase() + one.about.slice(1)}.`,
     ...((one.arguments ?? []).length === 0
@@ -74,7 +89,7 @@ const ts = [
           '  },',
         ]),
   ]),
-  '] as const',
+  ']',
   '',
 ].join('\n')
 

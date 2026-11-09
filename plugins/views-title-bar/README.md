@@ -16,6 +16,7 @@ Draws the bar at the top of each window: the buttons of the commands the plugins
 ## Settings
 
 - **Window buttons** (`buttons`): where the bar draws the minimize, maximize and close buttons on Linux. **Right** draws square buttons as on Windows, **Left** draws three circles as on macOS. Windows and macOS keep their own place. The bar follows a change at once.
+- **Hide in full screen** (`hideInFullscreen`): off by default. When it is on and the window is in full screen, the bar is not drawn and the tabs start at the top of the window; the bar is drawn again when the window leaves full screen. The keyboard shortcut of the window still leaves full screen.
 
 The plugin is enabled by default.
 

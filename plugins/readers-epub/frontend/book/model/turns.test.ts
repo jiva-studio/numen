@@ -193,7 +193,10 @@ describe('a turn drawn frame by frame', () => {
       now += 20
       queue.shift()?.(now)
     }
-    return { frame }
+    const advance = (ms: number) => {
+      now += ms
+    }
+    return { frame, advance }
   }
 
   const moved = (writes: readonly string[]): number[] =>
@@ -269,6 +272,21 @@ describe('a turn drawn frame by frame', () => {
     expect(writes).toHaveLength(count)
     vi.restoreAllMocks()
   })
+
+  it('moves the columns across frames when the thread blocks before the first frame', () => {
+    const { frame, advance } = setUpFrames()
+    const { turns, writes } = setUp()
+    turns.stand(0, 'auto')
+    writes.length = 0
+
+    turns.stand(1, 'smooth')
+    advance(260)
+    for (let index = 0; index < 20; index += 1) frame()
+
+    expect(moved(writes).length).toBeGreaterThan(5)
+    expect(writes.at(-1)).toBe('translate -1000px 0')
+    vi.restoreAllMocks()
+  })
 })
 
 describe('the curve of a turn', () => {
@@ -299,7 +317,7 @@ describe('a spread entered from the adjacent document', () => {
     return { holder, leaving }
   }
 
-  it('starts one spread on the far side after a forward turn and carries the copy out the other way', () => {
+  it('starts one spread past the far edge and moves the copy out after a forward turn', () => {
     const { turns, writes } = setUp()
     const { holder, leaving } = createLeaving('-5000px 0')
 

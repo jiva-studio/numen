@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 )
 
@@ -25,8 +26,8 @@ func (b blockingStore) SetKey(ctx context.Context, name, value string) error {
 
 func TestTwoOperationsNeverInterleaveTheirChanges(t *testing.T) {
 	f := newFixture(
-		secret.Secret{ID: "s00000001", Name: "One", Group: "g"},
-		secret.Secret{ID: "s00000002", Name: "Two", Group: "g"},
+		pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"},
+		pluginport.Secret{ID: "s00000002", Name: "Two", Group: "g"},
 	)
 	store := blockingStore{keys: f.keys, entered: make(chan string, 2), release: make(chan struct{})}
 	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, nil)
@@ -62,10 +63,8 @@ func (r *refreshBlocker) Refresh(context.Context, ...string) error {
 	return nil
 }
 
-// The gate is held until the plugins are configured, so a refresh of the file watch, which waits
-// for the gate, finds them configured and cannot take the error of a plugin from the operation.
-func TestTheGateIsHeldUntilThePluginsAreConfigured(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "One", Group: "g"})
+func TestGateBlocksUntilPluginsAreConfigured(t *testing.T) {
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"})
 	gate := secret.NewGate()
 	blocker := &refreshBlocker{entered: make(chan struct{}, 2), release: make(chan struct{})}
 	f.secrets = secret.NewSecrets(f.ledger, f.keys, blocker, nil, nil, gate)
@@ -98,8 +97,8 @@ func TestTheGateIsHeldUntilThePluginsAreConfigured(t *testing.T) {
 	}
 }
 
-func TestAnOperationWhoseContextEndedWhileItWaitsForTheGateChangesNothing(t *testing.T) {
-	f := newFixture(secret.Secret{ID: "s00000001", Name: "One", Group: "g"})
+func TestCanceledWaitOnGateChangesNothing(t *testing.T) {
+	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"})
 	gate := secret.NewGate()
 	store := blockingStore{keys: f.keys, entered: make(chan string, 1), release: make(chan struct{})}
 	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, gate)
@@ -122,16 +121,15 @@ func TestAnOperationWhoseContextEndedWhileItWaitsForTheGateChangesNothing(t *tes
 	}
 }
 
-// failingLedger refuses to change the list.
 type failingLedger struct{ ledger }
 
 var errDisk = errors.New("the disk is full")
 
-func (*failingLedger) ChangeSecrets(func([]secret.Secret) ([]secret.Secret, error)) error {
+func (*failingLedger) ChangeSecrets(func([]pluginport.Secret) ([]pluginport.Secret, error)) error {
 	return errDisk
 }
 
-func TestCreateRemovesTheValueAlthoughTheContextEndedBeforeTheListFailed(t *testing.T) {
+func TestCreateRollsBackValueWhenListWriteFailsAfterCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	store := keys{}
 	failing := &failingLedger{}
@@ -146,7 +144,6 @@ func TestCreateRemovesTheValueAlthoughTheContextEndedBeforeTheListFailed(t *test
 	}
 }
 
-// cancelOnSet ends the context of the caller after it stores a value, and refuses to delete with it.
 type cancelOnSet struct {
 	keys
 	cancel context.CancelFunc

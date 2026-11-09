@@ -30,7 +30,7 @@ message Manifest {
   ManifestBackend backend = 13;
   ManifestFrontend frontend = 14;
   repeated ManifestSetting settings = 15;
-  repeated ManifestSecret secrets = 16;
+  repeated SecretDeclaration secrets = 16;
   repeated string services = 17;
   repeated ManifestSettingsView settings_views = 24;
   // contributes is what the plugin adds to the application, known before its
@@ -252,7 +252,8 @@ message ManifestSetting {
   string generate = 20;
 }
 
-message ManifestSecret {
+// SecretDeclaration is a secret, such as an API key, that a plugin asks the host to store.
+message SecretDeclaration {
   string name = 1;
   string title = 2;
   string description = 3;

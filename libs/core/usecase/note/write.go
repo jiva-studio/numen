@@ -111,8 +111,7 @@ func (u Write) Execute(
 			return err
 		}
 		if pos.Start != pos.End || insert != "" {
-			var tellErr error
-			ends, tellErr = u.Drawing.beginChange(ctx, u.now, domain.Edit{
+			finish, tellErr := u.Drawing.beginChange(ctx, u.now, domain.Edit{
 				Path: path,
 				From: markdown.CountUTF16(was, pos.Start),
 				To:   markdown.CountUTF16(was, pos.End),
@@ -121,6 +120,7 @@ func (u Write) Execute(
 			if tellErr != nil {
 				return tellErr
 			}
+			ends = finish
 		}
 		return nil
 	})

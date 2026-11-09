@@ -29,6 +29,7 @@ export function createPlexTabDeps(
   id: string,
 ): PlexTabDeps {
   return {
+    tabId: id,
     editor: {
       createRelated: (request) => relations.createRelated(request),
       join: (from, to, side) => relations.join(from, to, side),

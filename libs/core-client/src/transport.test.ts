@@ -21,12 +21,6 @@ describe('the wire transport', () => {
     expect(createConnectTransport).toHaveBeenCalledWith({ baseUrl: '' })
   })
 
-  it('loads where a window has no location', async () => {
-    vi.stubGlobal('window', {})
-    await expect(import('./transport')).resolves.toHaveProperty('transport')
-    expect(createConnectTransport).toHaveBeenCalledWith({ baseUrl: '' })
-  })
-
   it('loads where a window was served from an origin', async () => {
     vi.stubGlobal('window', { location: { origin: 'https://example.test' } })
     const { transport } = await import('./transport')

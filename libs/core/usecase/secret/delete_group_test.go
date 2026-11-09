@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/usecase/secret"
 )
 
@@ -22,13 +23,13 @@ func (p *countingPlugins) Refresh(ctx context.Context, forced ...string) error {
 
 func newGroupFixture() fixture {
 	return newFixture(
-		secret.Secret{ID: "s00000001", Name: "One", Group: "g"},
-		secret.Secret{ID: "s00000002", Name: "Other", Group: "h"},
-		secret.Secret{ID: "s00000003", Name: "Two", Group: "g", Allowed: []secret.Permission{getAlphaKey()}},
+		pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"},
+		pluginport.Secret{ID: "s00000002", Name: "Other", Group: "h"},
+		pluginport.Secret{ID: "s00000003", Name: "Two", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey()}},
 	)
 }
 
-func TestDeleteGroupRemovesEverySecretOfTheGroupWithItsValuesInOneRound(t *testing.T) {
+func TestDeleteGroupRemovesSecretsAndValuesInOneRound(t *testing.T) {
 	f := newGroupFixture()
 	f.keys["secret/s00000001"] = "invented-one"
 	f.keys["secret/s00000002"] = "invented-other"
@@ -57,7 +58,7 @@ func TestDeleteGroupOfAGroupWithNoSecretIsNotFound(t *testing.T) {
 	}
 }
 
-func TestDeleteGroupWithAFailingStoreRestoresTheEntryWithItsPermissions(t *testing.T) {
+func TestDeleteGroupWithFailingStoreRestoresEntries(t *testing.T) {
 	f := newGroupFixture()
 	f.keys["secret/s00000003"] = "invented-two"
 	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
@@ -66,12 +67,12 @@ func TestDeleteGroupWithAFailingStoreRestoresTheEntryWithItsPermissions(t *testi
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
 		t.Errorf("error = %v", err)
 	}
-	want := []secret.Secret{
+	want := []pluginport.Secret{
 		{ID: "s00000001", Name: "One", Group: "g"},
 		{ID: "s00000002", Name: "Other", Group: "h"},
-		{ID: "s00000003", Name: "Two", Group: "g", Allowed: []secret.Permission{getAlphaKey()}},
+		{ID: "s00000003", Name: "Two", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey()}},
 	}
-	if !slices.EqualFunc(f.ledger.list, want, func(a, b secret.Secret) bool {
+	if !slices.EqualFunc(f.ledger.list, want, func(a, b pluginport.Secret) bool {
 		return a.ID == b.ID && slices.Equal(a.Allowed, b.Allowed)
 	}) {
 		t.Errorf("list = %v, want %v", f.ledger.list, want)

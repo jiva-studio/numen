@@ -197,7 +197,7 @@ message Secret {
   string id = 1;
   string name = 2;
   string group = 3;
-  repeated SecretPermission allowed = 4;
+  repeated DeclarationKey allowed = 4;
   reserved 5;
 }
 
@@ -220,8 +220,8 @@ message SecretMenu {
   repeated string secret_ids = 4;
 }
 
-// SecretPermission is one declaration of a plugin that may read a secret.
-message SecretPermission {
+// DeclarationKey identifies one secret declaration of a plugin.
+message DeclarationKey {
   string plugin_id = 1;
   string name = 2;
   // The group of the declaration, empty for none.

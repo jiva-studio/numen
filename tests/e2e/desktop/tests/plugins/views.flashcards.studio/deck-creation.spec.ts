@@ -7,9 +7,11 @@ const make = async (page: Page, command: string, name: string): Promise<void> =>
   const field = page.locator('input[data-palette="field"]').first()
   await expect(field).toBeVisible()
   await field.fill(command)
+  await expect(page.getByRole('option', { selected: true })).toContainText(command)
   await page.keyboard.press('Enter')
   await expect(field).toBeVisible()
   await field.fill(name)
+  await expect(page.getByRole('option', { selected: true })).toContainText(name)
   await page.keyboard.press('Enter')
 }
 
@@ -41,6 +43,7 @@ test.describe('a deck made from the New submenu of a row of the file tree', () =
       const field = page.locator('input[data-palette="field"]').first()
       await expect(field).toBeVisible()
       await field.fill('Moraines')
+      await expect(page.getByRole('option', { selected: true })).toContainText('Moraines')
       await page.keyboard.press('Enter')
 
       await expect

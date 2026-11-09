@@ -195,7 +195,7 @@ func TestURLImportDownloadsTheVideoWhenDownloadVideoIsSet(t *testing.T) {
 	answer := s.getImportAnswer(t, `{"url":"`+videoAddress+`","downloadVideo":true}`)
 	s.links.Wait()
 	requireKeys(t, "the answer of url_import", answer, []string{"downloadTaskId"}, []string{"copy_task_id", "copy_error"})
-	if want := "copy:" + fmt.Sprint(answer["path"]); answer["downloadTaskId"] != want {
+	if want := "copy:Mills:" + fmt.Sprint(answer["path"]); answer["downloadTaskId"] != want {
 		t.Errorf("downloadTaskId = %v, want %s", answer["downloadTaskId"], want)
 	}
 	if !hasCopy(t, s.store) {

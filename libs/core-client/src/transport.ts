@@ -6,8 +6,7 @@
  */
 import { createConnectTransport } from '@connectrpc/connect-web'
 
-const getOrigin = (): string =>
-  typeof window === 'undefined' || !window.location ? '' : window.location.origin
+const getOrigin = (): string => (typeof window === 'undefined' ? '' : window.location.origin)
 
 export const transport = createConnectTransport({ baseUrl: getOrigin() })
 

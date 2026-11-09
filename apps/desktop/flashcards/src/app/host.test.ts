@@ -173,16 +173,15 @@ describe('createShellHost', () => {
       createMockManifest('md.numen.example', { name: 'Example', permissions: ['vault:read'] }),
     )
     const withoutManifest = host.createContext('md.numen.bare')
-    const withoutPermissions = host.createContext('md.numen.empty', {
-      id: 'md.numen.empty',
-      name: 'Empty',
-      version: '1.0.0',
-    } as never)
+    const withoutGrants = host.createContext(
+      'md.numen.empty',
+      createMockManifest('md.numen.empty', { name: 'Empty', permissions: [] }),
+    )
 
     expect(context.hasPermission?.('vault:read')).toBe(true)
     expect(context.hasPermission?.('vault:write')).toBe(false)
     expect(withoutManifest.hasPermission?.('vault:read')).toBe(false)
-    expect(withoutPermissions.hasPermission?.('vault:read')).toBe(false)
+    expect(withoutGrants.hasPermission?.('vault:read')).toBe(false)
   })
 
   it('provides no-op capabilities and opens external web URLs', async () => {

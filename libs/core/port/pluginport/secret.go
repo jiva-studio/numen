@@ -6,10 +6,10 @@ import (
 	"unicode/utf8"
 )
 
-// SecretPermission names one declaration of a plugin: the plugin, the name the plugin reads the
+// DeclarationKey names one declaration of a plugin: the plugin, the name the plugin reads the
 // secret under, and the group it declares, empty for none. A declaration is identified by the name
 // and the group together.
-type SecretPermission struct {
+type DeclarationKey struct {
 	Plugin string
 	Name   string
 	Group  string
@@ -20,7 +20,7 @@ type Secret struct {
 	ID      string
 	Name    string
 	Group   string
-	Allowed []SecretPermission
+	Allowed []DeclarationKey
 }
 
 // SecretLedger is the ordered list of secrets kept in the settings file.
@@ -35,7 +35,7 @@ type SecretLedger interface {
 // SecretPlugins is what the use cases on secrets need from the plugin host.
 type SecretPlugins interface {
 	// ListDeclarations returns every secret declaration of every installed plugin.
-	ListDeclarations() []SecretPermission
+	ListDeclarations() []DeclarationKey
 	// Refresh configures each running plugin whose list of secrets differs from the one it holds,
 	// and each plugin named in forced although its list did not change, and waits for every send.
 	// An operation calls it after its change is committed, with the plugins that read the secret it
@@ -47,7 +47,7 @@ type SecretPlugins interface {
 // of declarations that are gone.
 type SecretSource struct {
 	List  func() ([]Secret, error)
-	Prune func(declared []SecretPermission) error
+	Prune func(declared []DeclarationKey) error
 }
 
 // MaxSecretNameLength is the longest name of a secret or a group, in characters.

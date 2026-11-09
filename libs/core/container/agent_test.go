@@ -37,6 +37,7 @@ type providerServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	programs []*v1.AgentProgram
 	onlyWith string
+	gate     <-chan struct{}
 
 	mu        sync.Mutex
 	requested []*v1.AskAgentRequest
@@ -86,8 +87,15 @@ func (s *providerServer) getCommands() []*v1.AgentProgramCommand {
 }
 
 func (s *providerServer) GetAgentPrograms(
-	_ context.Context, req *connect.Request[v1.GetAgentProgramsRequest],
+	ctx context.Context, req *connect.Request[v1.GetAgentProgramsRequest],
 ) (*connect.Response[v1.GetAgentProgramsResponse], error) {
+	if s.gate != nil {
+		select {
+		case <-s.gate:
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 	s.mu.Lock()
 	s.commands = req.Msg.GetCommands()
 	s.mu.Unlock()
