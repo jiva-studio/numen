@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { callRPC, writeSetting } from '../../support/vault.js'
-import { openWorkspace, runCommand } from '../../support/workspace.js'
+import { openTaskList, openWorkspace, runCommand } from '../../support/workspace.js'
 
 const EMBEDDINGS_ID = 'md.numen.engines.embeddings'
 const STATS_PATH = '/md.numen.tools.index.stats/GetStats'
@@ -139,7 +139,8 @@ test.describe('Embeddings through a connection', () => {
     await chooseConnection(settings, page, 'Limited service')
     await page.getByRole('alertdialog').getByRole('button', { name: 'Index' }).click()
 
-    await expect(page.getByText(/Limited service: rate limited/).first()).toBeAttached({
+    const tasks = await openTaskList(page)
+    await expect(tasks.getByText(/Limited service: rate limited/).first()).toBeVisible({
       timeout: 60_000,
     })
   })
