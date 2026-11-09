@@ -604,7 +604,7 @@ describe('a note removed', () => {
     await carry(createInvocation('app:file.remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.notFound])
-    expect(one.actions.at(-1)).toBe('remove physics/Ontology.md false')
+    expect(one.actions.at(-1)).toBe('remove physics/Ontology.md')
   })
 
   it('is rejected while the note is waiting on the person', async () => {
@@ -626,7 +626,7 @@ describe('several files removed at once', () => {
     await carry(createInvocation('app:file.remove', both), one.on)
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
-      'remove physics/Ontology.md false',
+      'remove physics/Ontology.md',
       'remove physics/Heat.pdf',
     ])
   })
@@ -656,8 +656,8 @@ describe('several files removed at once', () => {
       ...one.on,
       files: {
         ...one.on.files,
-        remove: async (path, destroy) => {
-          one.actions.push(`remove ${path} ${destroy}`)
+        remove: async (path) => {
+          one.actions.push(`remove ${path}`)
           return path === 'physics/Ontology.md'
             ? asFailure('notFound' as const)
             : createRemoveResult()
@@ -668,8 +668,8 @@ describe('several files removed at once', () => {
     await carry(createInvocation('app:file.remove', both), picky)
 
     expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
-      'remove physics/Ontology.md false',
-      'remove physics/Heat.pdf false',
+      'remove physics/Ontology.md',
+      'remove physics/Heat.pdf',
     ])
     expect(one.notices).toStrictEqual([words.errors.notFound])
   })
@@ -839,7 +839,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
-      'remove physics/Being.md false',
+      'remove physics/Being.md',
     ])
   })
 
@@ -848,7 +848,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(createInvocation('app:file.remove', front()), one.on)
 
-    expect(one.actions[0]).toBe('remove physics/Ontology.md false')
+    expect(one.actions[0]).toBe('remove physics/Ontology.md')
   })
 })
 
@@ -1258,7 +1258,7 @@ describe('a file removed that no tab holds', () => {
     await carry(createInvocation('app:file.remove', front({ path: 'physics/Heat.pdf' })), one.on)
 
     expect(one.actions).toStrictEqual([
-      'remove physics/Heat.pdf false',
+      'remove physics/Heat.pdf',
       'leave physics/Heat.pdf Root.md',
     ])
   })

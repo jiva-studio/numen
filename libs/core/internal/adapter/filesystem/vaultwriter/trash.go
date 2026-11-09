@@ -43,23 +43,26 @@ func deleteFolderContent(ctx context.Context, root *os.Root, dir, display string
 		if err := ctx.Err(); err != nil {
 			return undeleted, err
 		}
-		name := pathpkg.Join(dir, entry.Name())
-		displayName := pathpkg.Join(display, entry.Name())
-		if entry.IsDir() {
-			inner, err := deleteFolderContent(ctx, root, name, displayName)
-			undeleted = append(undeleted, inner...)
-			if err != nil {
-				return undeleted, err
-			}
-			if len(inner) > 0 {
-				continue
-			}
-		}
-		if err := root.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			undeleted = append(undeleted, displayName)
+		left, err := deleteEntry(ctx, root, pathpkg.Join(dir, entry.Name()), pathpkg.Join(display, entry.Name()), entry.IsDir())
+		undeleted = append(undeleted, left...)
+		if err != nil {
+			return undeleted, err
 		}
 	}
 	return undeleted, nil
+}
+
+func deleteEntry(ctx context.Context, root *os.Root, name, display string, isDir bool) ([]string, error) {
+	if isDir {
+		inner, err := deleteFolderContent(ctx, root, name, display)
+		if err != nil || len(inner) > 0 {
+			return inner, err
+		}
+	}
+	if isGone(root.Remove(name)) {
+		return nil, nil
+	}
+	return []string{display}, nil
 }
 
 func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, isReadable bool) {
@@ -70,4 +73,8 @@ func readFolder(root *os.Root, dir string) (entries []fs.DirEntry, isReadable bo
 	entries, err = folder.ReadDir(-1)
 	closeAndJoin(&err, folder)
 	return entries, err == nil
+}
+
+func isGone(removeErr error) bool {
+	return removeErr == nil || errors.Is(removeErr, fs.ErrNotExist)
 }

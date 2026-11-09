@@ -1,7 +1,7 @@
 /**
  * The commands offered over the note in front.
  */
-import { ARGUMENT, COMMAND } from '@/shared/commandIds'
+import { ARGUMENT, COMMAND, ROW } from '@/shared/commandIds'
 import { createRowKeys } from '../chords/chords'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
