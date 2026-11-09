@@ -3,26 +3,20 @@
  */
 import type {
   AgentHost,
-  AgentProviderRegistration,
   BufferHost,
-  CommandRegistration,
   Disposable,
-  DropRegistration,
   FileSelectEvent,
   PluginContext,
-  ReaderRegistration,
-  SettingsViewRegistration,
-  TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
   VaultRelations,
   VaultTexts,
-  ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
+import { createRegistrations, type RequirePermission, type Track } from './registrations'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
@@ -256,39 +250,6 @@ function guardServices(
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
-/** A view context that names a note to read, such as the one of the note editor. */
-function hasNotePath(context: unknown): boolean {
-  return typeof context === 'object' && context !== null && 'path' in context && !!context.path
-}
-
-type Track = (disposable: Disposable) => Disposable
-type RequirePermission = (permission: string, operation: string) => void
-
-function createRegistrations(
-  pluginId: string,
-  host: PluginContextHost,
-  add: Track,
-  requirePerm: RequirePermission,
-) {
-  return {
-    registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
-    registerSettingsView: (reg: SettingsViewRegistration) =>
-      add(host.registerSettingsView(pluginId, reg)),
-    registerTabKind: <State>(reg: TabKindRegistration<State>) =>
-      add(host.registerTabKind(pluginId, reg)),
-    registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
-    registerAgentProvider: (reg: AgentProviderRegistration) =>
-      add(host.registerAgentProvider(pluginId, reg)),
-    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
-    mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      if (hasNotePath(context)) requirePerm('vault:read', 'mountView')
-      const view = host.mountView(capability, element, context)
-      return { focus: () => view.focus(), ...add(view) }
-    },
-    registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
-  }
-}
-
 /** What the events of a plugin are tracked and guarded with. */
 interface EventGuard {
   readonly requirePerm: RequirePermission
@@ -357,7 +318,7 @@ export function createPluginContext(
     ...guardServices(host, requirePerm, add),
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
-    ...createRegistrations(pluginId, host, add, requirePerm),
+    ...createRegistrations(pluginId, host, { requirePerm, add }),
     ...createSlotContext(
       { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
       host,
