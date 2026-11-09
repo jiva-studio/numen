@@ -1,7 +1,7 @@
 /**
  * A window of commands built from the real pieces: the plugin host with the slots and keybindings
  * the manifests of the plugins declare, the palette model, the runner and the handler table. Only
- * the edge is a double: the navigation of a tab and the events the core hears.
+ * the edge is a double: the navigation of a tab and the events the core is notified of.
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -34,7 +34,7 @@ export interface PluginManifest {
   readonly id: string
   readonly contributes: {
     readonly slots?: readonly (ManifestSlot & Record<string, unknown>)[]
-    readonly keybindings?: readonly ManifestKeybinding[]
+    readonly keybindings?: readonly ManifestKeybinding[] | undefined
   }
 }
 
@@ -80,7 +80,7 @@ const toSlotEntries = (manifests: readonly PluginManifest[]): DeclaredSlotEntry[
   manifests.flatMap((manifest) =>
     (manifest.contributes.slots ?? []).map((one) => {
       const { icon: _icon, ...entry } = one
-      return { pluginId: manifest.id, ...entry } as DeclaredSlotEntry
+      return { pluginId: manifest.id, ...entry }
     }),
   )
 
@@ -92,7 +92,7 @@ const createHost = (parts: RealWindowParts): PluginHost => {
   const host = createPluginHost({
     registerKind: () => () => undefined,
     registerExtensionReader: () => () => undefined,
-    openTab: async () => 'tab-1',
+    openTab: () => Promise.resolve('tab-1'),
     getSlotWhenValues: getValues,
     getSlotEntries: () => entries,
     findSlotCommand: createSlotCommandFinder({
@@ -109,17 +109,18 @@ const createHost = (parts: RealWindowParts): PluginHost => {
   return host
 }
 
-/** The core of the vault: it reads kinds, hears events, and answers any other read with nothing. */
 const createCore = (emitEvent: RealWindowParts['emitEvent']) => {
-  const known = {
-    fileKinds: async (paths: readonly string[]) =>
-      new Map(paths.map((one) => [one, { type: 'note' }])),
+  const base = {
+    fileKinds: (paths: readonly string[]) =>
+      Promise.resolve(new Map(paths.map((one) => [one, { type: 'note' }]))),
     ...(emitEvent ? { emitEvent } : {}),
   }
-  return new Proxy<Record<string, unknown>>(known, {
-    get: (target, name: string) => target[name] ?? (async () => []),
+  return new Proxy<Record<string, unknown>>(base, {
+    get: (target, name: string) => target[name] ?? (() => Promise.resolve([])),
   })
 }
+
+const toDeps = (options: object): CommandsDepsOptions => options as CommandsDepsOptions
 
 /** The commands of a window over the note, whose tab navigation is `parts.navigateTab`. */
 export function createRealWindow(parts: RealWindowParts) {
@@ -131,7 +132,7 @@ export function createRealWindow(parts: RealWindowParts) {
     windowTabs: {
       onKeyPress: () => false,
       navigateTab: parts.navigateTab,
-      openTabOfKind: async () => undefined,
+      openTabOfKind: () => Promise.resolve(),
       requestClose: () => undefined,
       tabs: { value: [] },
       getTab: () => undefined,
@@ -145,7 +146,7 @@ export function createRealWindow(parts: RealWindowParts) {
       getTabAt: () => null,
       getPath: (id: string) => id,
       asking: () => false,
-      flushPending: async () => undefined,
+      flushPending: () => Promise.resolve(),
       close: () => undefined,
       openFile: () => undefined,
     },
@@ -153,6 +154,6 @@ export function createRealWindow(parts: RealWindowParts) {
     writeMessage: (text: string) => messages.push(text),
     pluginHost,
     slots: pluginHost.slots,
-  } as unknown as CommandsDepsOptions
-  return { pluginHost, messages, used: useCommands(options) }
+  }
+  return { pluginHost, messages, used: useCommands(toDeps(options)) }
 }

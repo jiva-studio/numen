@@ -1,6 +1,6 @@
 /** The keys of a window through the one handler, over the real registry, palette model and runner. All names are invented. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createRealWindow, windowValues, type PluginManifest } from '@/testing/realCommands'
+import { createRealWindow, windowValues, type ManifestKeybinding } from '@/testing/realCommands'
 
 const reveal = (key: string, kind: string, when?: string) => ({
   key,
@@ -9,7 +9,7 @@ const reveal = (key: string, kind: string, when?: string) => ({
   ...(when ? { when } : {}),
 })
 
-const create = (keybindings: PluginManifest['contributes']['keybindings']) => {
+const create = (keybindings: readonly ManifestKeybinding[]) => {
   const navigateTab = vi.fn(async (_kind: string, _path: string) => undefined)
   const manifest = { id: 'org.example.ledger', contributes: { keybindings } }
   return { navigateTab, ...createRealWindow({ manifests: [manifest], navigateTab }) }

@@ -32,6 +32,7 @@ type (
 	PluginTriggerEntry     = pluginport.PluginTriggerEntry
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
+	PluginDeclarations     = pluginport.PluginDeclarations
 	PluginParts            = pluginport.PluginParts
 	PluginConfigurator     = pluginport.PluginConfigurator
 	PluginDiscoverer       = pluginport.PluginDiscoverer

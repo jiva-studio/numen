@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-host'
-import { resolveChoice, createNameItem, type NameMatch } from '@/features/command-palette/model/search/lookup'
+import { resolveChoice, createNameItem, type NameMatch } from '@/features/command-palette'
 import { WORDS } from '@/shared/words'
 import {
   createRealWindow,
@@ -74,9 +74,16 @@ describe('the keys that show a note', () => {
 describe('the entries of a search result that show a note', () => {
   it('show the note found, not the one in front, in the tab of the kind they carry', async () => {
     const one = setup()
-    const found = { path: 'Reef.md', title: 'Reef', heading: '', line: -1, at: [], type: 'note' }
+    const found: NameMatch = {
+      path: 'Reef.md',
+      title: 'Reef',
+      heading: '',
+      line: -1,
+      at: [],
+      type: 'note',
+    }
     const entries = one.pluginHost.slots.getEntries(SLOT.paletteSearchResult, REEF)
-    const row = createNameItem(found as unknown as NameMatch, WORDS, entries)
+    const row = createNameItem(found, WORDS, entries)
     const actions = row.hit.actionIds.filter((id) => row.hit.actionCommands?.[id] === REVEAL)
     expect(actions).not.toStrictEqual([])
 
@@ -103,7 +110,7 @@ describe('the entries of a context menu that show a note', () => {
       runCommandToEnd: one.used.pluginRuns.runCommandToEnd,
       listItems: async () => [],
       runWithItem: async () => undefined,
-      getTarget: () => ({ ...REEF, kind: null, file: 'Reef.md', vault: { id: 'sea', name: 'Sea' } }),
+      getTarget: () => ({ ...REEF, kind: null, file: 'Reef.md', vault: { id: 'sea', name: 'Sea' }, isReady: true }),
     })
     const item = getRevealItems(one.pluginHost.slots.getEntries(slot, REEF)).find(
       (entry) => entry.values?.['kind'] === kind,

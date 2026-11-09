@@ -1599,7 +1599,7 @@ describe('the icon of a command', () => {
 })
 
 describe('runSupport, arguments steps, and palette shortcuts', () => {
-  it('starts a command that is hidden from the palette when it comes with values', () => {
+  it('starts a hidden command given values', () => {
     const commands = useCommandPalette({
       core: {
         names: async () => [],
