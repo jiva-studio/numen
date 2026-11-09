@@ -112,7 +112,7 @@ func TestHideInheritedFilesKeepsPipeOutOfChild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list descriptors of the child: %v", err)
 	}
-	for _, line := range strings.Fields(string(out)) {
+	for line := range strings.FieldsSeq(string(out)) {
 		if n, convErr := strconv.Atoi(line); convErr == nil && (n == ends[0] || n == ends[1]) {
 			t.Errorf("the child inherited descriptor %d of the pipe", n)
 		}

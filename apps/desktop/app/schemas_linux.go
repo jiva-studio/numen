@@ -3,6 +3,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 )
 
@@ -30,7 +31,7 @@ func getToolkitDir() string {
 	if err != nil {
 		return ""
 	}
-	for _, line := range strings.Split(string(maps), "\n") {
+	for line := range strings.SplitSeq(string(maps), "\n") {
 		pos := strings.Index(line, "/")
 		if pos < 0 {
 			continue
@@ -72,16 +73,14 @@ func hasSchemas() bool {
 }
 
 func hasSchemasWithDefault(fallbackDirs string) bool {
-	for _, dir := range filepath.SplitList(os.Getenv("GSETTINGS_SCHEMA_DIR")) {
-		if hasCompiledSchemas(dir) {
-			return true
-		}
+	if slices.ContainsFunc(filepath.SplitList(os.Getenv("GSETTINGS_SCHEMA_DIR")), hasCompiledSchemas) {
+		return true
 	}
 	dirs := os.Getenv("XDG_DATA_DIRS")
 	if dirs == "" {
 		dirs = fallbackDirs
 	}
-	for _, dir := range strings.Split(dirs, ":") {
+	for dir := range strings.SplitSeq(dirs, ":") {
 		if dir != "" && hasCompiledSchemas(filepath.Join(dir, "glib-2.0", "schemas")) {
 			return true
 		}
