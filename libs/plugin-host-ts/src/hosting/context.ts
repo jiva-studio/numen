@@ -23,6 +23,7 @@ import type {
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { guardAgent } from './agentGuard'
+import { checkPermission, type PermissionTarget } from './permission'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
@@ -36,19 +37,6 @@ function trackSubscription(subscriptions: Disposable[], disposable: Disposable):
       }
       disposable.dispose()
     },
-  }
-}
-
-export interface PermissionTarget {
-  readonly pluginId: string
-  readonly manifest?: Manifest | { permissions?: readonly string[] } | undefined
-}
-
-export function checkPermission(target: PermissionTarget, permission: string, operation: string): void {
-  if (!(target.manifest?.permissions?.includes(permission) ?? false)) {
-    throw new Error(
-      `Plugin "${target.pluginId}" lacks required permission "${permission}" for ${operation}`,
-    )
   }
 }
 

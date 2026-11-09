@@ -1,5 +1,5 @@
 import type { AgentHost } from '@numen/plugin-sdk'
-import { checkPermission, type PermissionTarget } from './context'
+import { checkPermission, type PermissionTarget } from './permission'
 
 const isAgentPath = (path: readonly string[]): boolean => path[0] === 'app' && path[1] === 'agent'
 
