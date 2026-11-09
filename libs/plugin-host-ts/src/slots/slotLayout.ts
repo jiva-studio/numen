@@ -21,7 +21,8 @@ export interface SlotMove {
 
 const SLOT_NAMES: readonly SlotName[] = Object.values(SLOT)
 
-const isSlotName = (slot: string): slot is SlotName => (SLOT_NAMES as readonly string[]).includes(slot)
+const isSlotName = (slot: string): slot is SlotName =>
+  (SLOT_NAMES as readonly string[]).includes(slot)
 
 /** The key of an entry in the layout, `<home slot>|<plugin id>/<view or command id>`; undefined for a submenu. */
 export function getLayoutKey(entry: DeclaredSlotEntry): string | undefined {
