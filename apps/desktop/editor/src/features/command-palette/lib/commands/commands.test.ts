@@ -25,9 +25,9 @@ describe('the commands over a note', () => {
   it('leave out the ones another command reaches on its own row', () => {
     const commands = getGroupCommands(createCommands(words), 'note').map((one) => one.id)
 
-    expect(commands).toContain('app:note.open')
-    expect(commands).not.toContain('app:note.openBeside')
-    expect(commands).not.toContain('app:note.delete')
+    expect(commands).toContain('app:file.open')
+    expect(commands).not.toContain('app:file.open#beside')
+    expect(commands).not.toContain('app:note.remove#permanent')
   })
 })
 
@@ -99,7 +99,7 @@ describe('getPrompt', () => {
 })
 
 describe('the command that opens a document chosen as a result', () => {
-  const open = () => createCommands(words).find((one) => one.id === 'app:file.open')
+  const open = () => createCommands(words).find((one) => one.id === 'app:file.open#document')
 
   it('is filed under the file group with the words that open a document', () => {
     expect(open()).toMatchObject({ text: words.readDocument, group: 'file' })
@@ -112,7 +112,7 @@ describe('the command that opens a document chosen as a result', () => {
 
   it('is not one of the commands over a note, so the menu of a file row does not list it', () => {
     expect(getGroupCommands(createCommands(words), 'note').map((one) => one.id)).not.toContain(
-      'app:file.open',
+      'app:file.open#document',
     )
   })
 

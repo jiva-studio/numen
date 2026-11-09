@@ -252,9 +252,9 @@ describe('opening the note of a search result as a command', () => {
     const nothingInFront = { ...front, tab: '', kind: null, path: '', title: '', file: '' }
     const one = setup({ target: nothingInFront as CommandTarget })
 
-    one.runChoice(choice('app:note.open'))
+    one.runChoice(choice('app:file.open'))
 
-    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:note.open', resultTarget)
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:file.open', resultTarget)
     expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
       { id: 'inv' },
       { name: 'command deps' },
@@ -267,10 +267,10 @@ describe('opening the note of a search result as a command', () => {
     h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup()
 
-    one.runChoice(choice('app:note.open', 7))
+    one.runChoice(choice('app:file.open', 7))
 
     expect(h.startCommand).toHaveBeenCalledExactlyOnceWith(
-      'app:note.open',
+      'app:file.open',
       expect.objectContaining({ path: 'Reef.md', line: 7 }),
     )
   })
@@ -279,10 +279,10 @@ describe('opening the note of a search result as a command', () => {
     h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup()
 
-    one.runChoice(choice('app:note.open', 0))
+    one.runChoice(choice('app:file.open', 0))
 
     expect(h.startCommand).toHaveBeenCalledExactlyOnceWith(
-      'app:note.open',
+      'app:file.open',
       expect.objectContaining({ path: 'Reef.md', line: 0 }),
     )
   })
@@ -291,7 +291,7 @@ describe('opening the note of a search result as a command', () => {
     h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup()
 
-    one.runChoice(choice('app:note.open', -1))
+    one.runChoice(choice('app:file.open', -1))
 
     expect(h.startCommand).toHaveBeenCalledTimes(1)
     const target = h.startCommand.mock.calls[0]?.[1] as { line?: number }
@@ -318,11 +318,11 @@ describe('opening the note of a search result as a command', () => {
     h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup()
 
-    one.runChoice(choice('app:note.open'))
+    one.runChoice(choice('app:file.open'))
 
-    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:note.open', resultTarget)
+    expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:file.open', resultTarget)
     expect(h.startCommand).not.toHaveBeenCalledWith(
-      'app:note.open',
+      'app:file.open',
       expect.objectContaining({ path: 'Animals.md' }),
     )
   })
@@ -331,7 +331,7 @@ describe('opening the note of a search result as a command', () => {
     h.startCommand.mockReturnValue({ id: 'inv' })
     const one = setup({ hasCommand: () => false })
 
-    one.runChoice(choice('app:note.open'))
+    one.runChoice(choice('app:file.open'))
 
     expect(one.executeCommand).not.toHaveBeenCalled()
   })

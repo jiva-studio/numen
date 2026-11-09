@@ -42,10 +42,10 @@ const separator = (index: number): SlotSeparator => ({
   key: `separator/${index}`,
 })
 
-export const OPEN = command('app', 'note.open', 'Open note', Icon)
+export const OPEN = command('app', 'file.open', 'Open note', Icon)
 const RENAME_ENTRY = command(TREE, 'tree.renameFile', 'Rename file')
 const COPY_PATH = command('app', 'note.copyPath', 'Copy path')
-export const TRASH = command('app', 'note.trash', 'Move to trash')
+export const TRASH = command('app', 'note.remove', 'Move to trash')
 const NEW_NOTE_ENTRY = command('app', 'note.create', 'Create note')
 const NEW_FOLDER_ENTRY = command(TREE, 'tree.createFolder', 'Create folder')
 export const ASK = command(CHAT, 'note.ask', 'Ask about the note')

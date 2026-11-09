@@ -2,7 +2,7 @@
  * The target of a search hit, and where choosing one navigates the user.
  */
 import { describe, expect, it } from 'vitest'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import {
   createNameItem,
   createPassageItem,
@@ -32,7 +32,7 @@ const WORDS: Words = {
 }
 
 /** The first action of a note is the id of the editor command that opens it. */
-const OPEN_NOTE = COMMAND.openNote
+const OPEN_NOTE = COMMAND.openFile
 
 const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   path: 'physics/Ontology.md',
@@ -124,14 +124,14 @@ describe('a passage found in a file that is no note', () => {
     )
 
     expect(row.item.title).toBe('physics/Ontology.md')
-    expect(row.item.actions).toStrictEqual([{ id: COMMAND.openFile, text: WORDS.readDocument }])
+    expect(row.item.actions).toStrictEqual([{ id: ROW.openDocument, text: WORDS.readDocument }])
     expect(row.hit).toStrictEqual(
       createHit({
         title: '',
         line: -1,
         start: 12,
         length: 4,
-        actionIds: [COMMAND.openFile],
+        actionIds: [ROW.openDocument],
         type: null,
         selector: { page: 3 },
       }),
@@ -141,19 +141,19 @@ describe('a passage found in a file that is no note', () => {
 
 describe('what choosing an action of an item runs', () => {
   it('is nothing where nothing was found, or the item does not carry that action', () => {
-    expect(resolveChoice(undefined, COMMAND.openFile)).toBeNull()
-    expect(resolveChoice(createHit({ actionIds: [COMMAND.openFile] }), 'other')).toBeNull()
+    expect(resolveChoice(undefined, ROW.openDocument)).toBeNull()
+    expect(resolveChoice(createHit({ actionIds: [ROW.openDocument] }), 'other')).toBeNull()
   })
 
   it('is the command that opens the file at the selector of the hit, for a file that is no note', () => {
     const searchHit = createHit({
       type: null,
-      actionIds: [COMMAND.openFile],
+      actionIds: [ROW.openDocument],
       selector: { t: [12, 14] },
     })
 
-    expect(resolveChoice(searchHit, COMMAND.openFile)).toStrictEqual({
-      command: 'app:file.open',
+    expect(resolveChoice(searchHit, ROW.openDocument)).toStrictEqual({
+      command: 'app:file.open#document',
       over: {
         path: '',
         file: 'physics/Ontology.md',
@@ -166,7 +166,7 @@ describe('what choosing an action of an item runs', () => {
 
   it('is the command that opens the note at its line, for a note', () => {
     expect(resolveChoice(createHit({ line: 5 }), OPEN_NOTE)).toStrictEqual({
-      command: 'app:note.open',
+      command: 'app:file.open',
       over: {
         path: 'physics/Ontology.md',
         file: 'physics/Ontology.md',
@@ -184,9 +184,9 @@ describe('what choosing an action of an item runs', () => {
   })
 
   it('is the file with no selector where a file that is no note remains at none', () => {
-    const document = createHit({ type: null, actionIds: [COMMAND.openFile], line: -1 })
+    const document = createHit({ type: null, actionIds: [ROW.openDocument], line: -1 })
 
-    expect(resolveChoice(document, COMMAND.openFile)?.over).toStrictEqual({
+    expect(resolveChoice(document, ROW.openDocument)?.over).toStrictEqual({
       path: '',
       file: 'physics/Ontology.md',
       title: 'Ontology',

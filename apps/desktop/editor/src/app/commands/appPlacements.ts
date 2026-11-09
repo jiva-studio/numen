@@ -21,7 +21,7 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
-    command: 'app:note.open',
+    command: 'app:file.open',
     group: '0-open',
     order: 10,
   },
@@ -43,7 +43,7 @@ export const APP_SLOT_ENTRIES: readonly DeclaredSlotEntry[] = [
   {
     pluginId: APP_PLACEMENT_OWNER,
     slot: 'fileTree.context',
-    command: 'app:note.trash',
+    command: 'app:note.remove',
     group: '9-remove',
   },
   {

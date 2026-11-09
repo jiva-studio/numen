@@ -172,12 +172,12 @@ describe('the commands as they open', () => {
 
     expect(getItemIds(commands.groups)).toStrictEqual({
       note: [
-        'app:note.open',
+        'app:file.open',
         'app:note.createChild',
         'app:note.createParent',
         'app:note.createJump',
         'app:note.rename',
-        'app:note.trash',
+        'app:note.remove',
         'app:note.copyPath',
       ],
       window: ['app:note.create', 'app:tab.close', 'app:vault.search'],
@@ -198,11 +198,11 @@ describe('the commands as they open', () => {
     const items = commands.groups.value[0]?.items ?? []
 
     expect(
-      items.find((item) => item.id === 'app:note.open')?.actions?.map((one) => one.id),
-    ).toStrictEqual(['app:note.open', 'app:note.openBeside'])
+      items.find((item) => item.id === 'app:file.open')?.actions?.map((one) => one.id),
+    ).toStrictEqual(['app:file.open', 'app:file.open#beside'])
     expect(
-      items.find((item) => item.id === 'app:note.trash')?.actions?.map((one) => one.id),
-    ).toStrictEqual(['app:note.trash', 'app:note.delete'])
+      items.find((item) => item.id === 'app:note.remove')?.actions?.map((one) => one.id),
+    ).toStrictEqual(['app:note.remove', 'app:note.remove#permanent'])
   })
 
   it('says which key reaches a command away from the palette', () => {
@@ -284,8 +284,8 @@ describe('a command that needs nothing', () => {
   it('is carried out the moment it is chosen, over the note in front', () => {
     const { commands } = createPalette()
 
-    expect(commands.chooseItem('app:note.open', 'app:note.open')).toStrictEqual({
-      id: 'app:note.open',
+    expect(commands.chooseItem('app:file.open', 'app:file.open')).toStrictEqual({
+      id: 'app:file.open',
       path: 'physics/Ontology.md',
       vault: { id: 'physics', name: 'Physics' },
       note: null,
@@ -302,21 +302,22 @@ describe('a command that needs nothing', () => {
     const { commands, openNote } = createPalette()
     openNote('physics/Ontology.md', 'active')
 
-    expect(commands.chooseItem('app:note.open', 'app:note.open')?.note).toBe('active')
+    expect(commands.chooseItem('app:file.open', 'app:file.open')?.note).toBe('active')
   })
 
   it('is the second one where Shift and Enter reached it', () => {
     const { commands } = createPalette()
 
-    expect(commands.chooseItem('app:note.open', 'app:note.openBeside')?.id).toBe(
-      'app:note.openBeside',
-    )
+    expect(commands.chooseItem('app:file.open', 'app:file.open#beside')).toMatchObject({
+      id: 'app:file.open',
+      values: { showing: 'split' },
+    })
   })
 
   it('is nothing where what is in front does not offer it', () => {
     const { commands } = createPalette({ kind: 'document', path: '', title: '' })
 
-    expect(commands.chooseItem('app:note.open', 'app:note.open')).toBeNull()
+    expect(commands.chooseItem('app:file.open', 'app:file.open')).toBeNull()
   })
 })
 
@@ -417,9 +418,9 @@ describe('removing a note', () => {
   it('is carried out the moment it is requested for, over the note in front', () => {
     const { commands } = createPalette()
 
-    const invocation = commands.startCommand('app:note.trash', front())
+    const invocation = commands.startCommand('app:note.remove', front())
 
-    expect(invocation?.id).toBe('app:note.trash')
+    expect(invocation?.id).toBe('app:note.remove')
     expect(invocation?.path).toBe('physics/Ontology.md')
   })
 
@@ -427,20 +428,22 @@ describe('removing a note', () => {
     const { commands } = createPalette()
     const others = ['physics/Heat.pdf']
 
-    expect(commands.startCommand('app:note.trash', front({ others }))?.others).toStrictEqual(others)
+    expect(commands.startCommand('app:note.remove', front({ others }))?.others).toStrictEqual(
+      others,
+    )
   })
 
   it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
     const { commands, openNote } = createPalette()
     openNote('physics/Ontology.md', 'active')
 
-    expect(commands.startCommand('app:note.trash', front())?.note).toBe('active')
+    expect(commands.startCommand('app:note.remove', front())?.note).toBe('active')
   })
 
   it('leaves the palette on the commands, having nothing to ask', () => {
     const { commands } = createPalette()
 
-    commands.startCommand('app:note.trash', front())
+    commands.startCommand('app:note.remove', front())
 
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
       'note',
@@ -454,7 +457,7 @@ describe('removing a note', () => {
 describe('destroying a note', () => {
   it('waits for the name of the note, and is not reachable before it', () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.delete', front())
+    commands.startCommand('app:note.remove#permanent', front())
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(true)
     expect(chooseRow(commands)).toBeNull()
@@ -466,11 +469,14 @@ describe('destroying a note', () => {
 
   it('submits once the name of the note is what was typed', () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.delete', front())
+    commands.startCommand('app:note.remove#permanent', front())
     commands.setTyped('Ontology').catch(rethrow)
 
     expect(commands.groups.value[0]?.items[0]?.isDisabled).toBe(false)
-    expect(chooseRow(commands)?.id).toBe('app:note.delete')
+    expect(chooseRow(commands)).toMatchObject({
+      id: 'app:note.remove',
+      values: { removal: 'permanent' },
+    })
   })
 })
 
@@ -492,7 +498,7 @@ describe('a note that moves under an open step', () => {
 
   it('is not destroyed by the name it had, and is by the name it has', () => {
     const { commands, moveNote } = createPalette()
-    commands.startCommand('app:note.delete', front())
+    commands.startCommand('app:note.remove#permanent', front())
     moveNote('physics/Ontology.md', 'physics/Being.md', 'Being')
     commands.applyRenames([{ from: 'physics/Ontology.md', to: 'physics/Being.md' }])
 
@@ -533,21 +539,21 @@ describe('a command that was not offered over what it was requested over', () =>
   it('says the vault could not be opened', () => {
     const { commands } = createPalette({ isReady: false })
 
-    expect(commands.getObjection('app:note.trash', front({ isReady: false }))).toBe(words.noVault)
+    expect(commands.getObjection('app:note.remove', front({ isReady: false }))).toBe(words.noVault)
   })
 
   it('says nothing in front is a note', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.getObjection('app:note.trash', front({ kind: 'document', path: '', title: '' })),
+      commands.getObjection('app:note.remove', front({ kind: 'document', path: '', title: '' })),
     ).toBe(words.noNote)
   })
 
   it('says nothing at all about one that was taken up', () => {
     const { commands } = createPalette()
 
-    expect(commands.getObjection('app:note.trash', front())).toBe('')
+    expect(commands.getObjection('app:note.remove', front())).toBe('')
     expect(commands.getObjection('nothing of the sort', front())).toBe('')
   })
 })
@@ -1506,7 +1512,7 @@ describe('what a step draws', () => {
 
   it('takes the name typed back around spaces, under the one action that destroys', () => {
     const { commands } = createPalette()
-    commands.startCommand('app:note.delete', front())
+    commands.startCommand('app:note.remove#permanent', front())
 
     commands.setTyped('  Ontology  ').catch(rethrow)
 
@@ -1596,7 +1602,7 @@ describe('the icon of a command', () => {
     )
 
     expect(commands.findCommandIcon('org.example.sample:graph.run')).toBe(icon)
-    expect(commands.findCommandIcon('app:note.open')).toBeNull()
+    expect(commands.findCommandIcon('app:file.open#document')).toBeNull()
   })
 })
 
@@ -1802,7 +1808,7 @@ describe('the command that opens a document chosen as a result', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.startCommand('app:file.open', createDocument({ selector: { page: 3 } })),
+      commands.startCommand('app:file.open#document', createDocument({ selector: { page: 3 } })),
     ).toMatchObject({
       id: 'app:file.open',
       path: '',
@@ -1816,30 +1822,43 @@ describe('the command that opens a document chosen as a result', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.startCommand('app:file.open', createDocument({ tab: 'tab', kind: 'reader' })),
+      commands.startCommand(
+        'app:file.open#document',
+        createDocument({ tab: 'tab', kind: 'reader' }),
+      ),
     ).toBeNull()
     expect(
-      commands.startCommand('app:file.open', createDocument({ path: 'a.md', file: 'a.md' })),
+      commands.startCommand(
+        'app:file.open#document',
+        createDocument({ path: 'a.md', file: 'a.md' }),
+      ),
     ).toBeNull()
-    expect(commands.startCommand('app:file.open', createDocument({ isReady: false }))).toBeNull()
-    expect(commands.startCommand('app:file.open', createDocument({ file: '' }))).toBeNull()
+    expect(
+      commands.startCommand('app:file.open#document', createDocument({ isReady: false })),
+    ).toBeNull()
+    expect(commands.startCommand('app:file.open#document', createDocument({ file: '' }))).toBeNull()
   })
 
   it('says why it did not start, as any command does', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.getObjection('app:file.open', createDocument({ tab: 'tab', kind: 'reader' })),
+      commands.getObjection(
+        'app:file.open#document',
+        createDocument({ tab: 'tab', kind: 'reader' }),
+      ),
     ).toBe(words.noNote)
-    expect(commands.getObjection('app:file.open', createDocument({ isReady: false }))).toBe(
-      words.noVault,
-    )
-    expect(commands.getObjection('app:file.open', createDocument())).toBe('')
+    expect(
+      commands.getObjection('app:file.open#document', createDocument({ isReady: false })),
+    ).toBe(words.noVault)
+    expect(commands.getObjection('app:file.open#document', createDocument())).toBe('')
   })
 
   it('is not in the list of commands over a window holding a document in a tab', () => {
     const { commands } = createPalette({ kind: 'reader', path: '', title: '', file: 'a.pdf' })
 
-    expect(Object.values(getItemIds(commands.groups)).flat()).not.toContain('app:file.open')
+    expect(Object.values(getItemIds(commands.groups)).flat()).not.toContain(
+      'app:file.open#document',
+    )
   })
 })

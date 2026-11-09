@@ -119,7 +119,7 @@ const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
  * create from it in the plex, agent actions, and removal from the vault.
  */
 const MENU: readonly MenuItem[] = [
-  { id: 'app:note.open', text: 'Open note', group: 'open' },
+  { id: 'app:file.open', text: 'Open note', group: 'open' },
   { id: 'travel', text: 'Show note in plex', group: 'open' },
   { id: 'app:note.copyPath', text: 'Copy note path', group: 'file' },
   { id: 'reveal', text: 'Show note in file tree', group: 'file' },
@@ -128,7 +128,7 @@ const MENU: readonly MenuItem[] = [
   { id: 'app:note.createJump', text: 'Create jump note', group: 'plex' },
   { id: 'app:note.rename', text: 'Rename note', group: 'plex' },
   { id: 'ask', text: 'Ask agent about note', group: 'agent' },
-  { id: 'app:note.trash', text: 'Move note to trash', group: 'remove' },
+  { id: 'app:note.remove', text: 'Move note to trash', group: 'remove' },
 ]
 
 const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {

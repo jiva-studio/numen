@@ -179,7 +179,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('remove', ['Entropy.md', 'Cover.png'])
     await settle()
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('is filed under the name that was typed over it', async () => {
@@ -278,7 +278,7 @@ describe('the menu on a row', () => {
     window.findComponent(Menu).vm.$emit('choose', TRASH.key)
     await settle()
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.remove Entropy.md Cover.png Entropy.md'])
     expect(window.findComponent(Menu).exists()).toBe(false)
   })
 })

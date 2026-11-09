@@ -38,7 +38,7 @@ const createEntry = (command: string, extra: Partial<SlotCommand> = {}): SlotCom
 })
 
 /** The row of the entry that opens the note. */
-const OPEN_ROW = 'org.example.sample/command/app:note.open'
+const OPEN_ROW = 'org.example.sample/command/app:file.open'
 
 /** The row of the entry the slot holds over the canvas. */
 const NEW_NOTE_ROW = 'org.example.sample/command/app:note.create'
@@ -48,11 +48,11 @@ const CANVAS_MENU: readonly SlotItem[] = [createEntry('app:note.create')]
 
 /** The entries the slot of the node menu holds in these tests. */
 const NODE_MENU: readonly SlotItem[] = [
-  createEntry('app:note.open', { icon: SHARE_ICON }),
+  createEntry('app:file.open', { icon: SHARE_ICON }),
   { kind: 'separator', key: 'separator/1' },
   createEntry('org.example.sample:share.run', { icon: SHARE_ICON }),
   { kind: 'separator', key: 'separator/2' },
-  createEntry('app:note.trash'),
+  createEntry('app:note.remove'),
 ]
 
 const createDeps = (
@@ -220,7 +220,7 @@ describe('the menu on a node', () => {
 
     one.state.chooseMenuItem(OPEN_ROW)
 
-    expect(one.ran).toEqual([['app:note.open', 'Child.md', 'Child']])
+    expect(one.ran).toEqual([['app:file.open', 'Child.md', 'Child']])
     expect(one.state.menu.value).toBeNull()
   })
 
@@ -229,9 +229,9 @@ describe('the menu on a node', () => {
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
     expect(one.state.menuItems.value.map((item) => [item.id, item.group])).toStrictEqual([
-      ['org.example.sample/command/app:note.open', '0'],
+      ['org.example.sample/command/app:file.open', '0'],
       ['org.example.sample/command/org.example.sample:share.run', '1'],
-      ['org.example.sample/command/app:note.trash', '2'],
+      ['org.example.sample/command/app:note.remove', '2'],
     ])
     expect(one.menuTargets).toStrictEqual([
       { path: 'Child.md', title: 'Child', isFolder: false, others: [], tab: '' },
@@ -261,8 +261,8 @@ describe('the menu on a node', () => {
     const one = tab('Root.md', ['Child.md'])
     one.state.openMenu(createMenuRequest(one.node('Child.md')))
 
-    expect(one.state.getMenuIcon('org.example.sample/command/app:note.open')).toBe(SHARE_ICON)
-    expect(one.state.getMenuIcon('org.example.sample/command/app:note.trash')).toBeNull()
+    expect(one.state.getMenuIcon('org.example.sample/command/app:file.open')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('org.example.sample/command/app:note.remove')).toBeNull()
   })
 
   it('does nothing when it relies on nothing', () => {
@@ -931,7 +931,7 @@ describe('a gesture the plex reports', () => {
     one.state.openMenu({ node: one.node('Heat'), at: { x: 1, y: 2 }, opening: 'pointer' })
     one.state.chooseMenuItem(OPEN_ROW)
 
-    expect(one.ran).toStrictEqual([['app:note.open', 'physics/Heat.md', 'Heat']])
+    expect(one.ran).toStrictEqual([['app:file.open', 'physics/Heat.md', 'Heat']])
   })
 
   it('makes a note in a relation of the note the node remains for', async () => {

@@ -80,9 +80,14 @@ export interface CommandTarget {
   readonly isReady: boolean
 }
 
-/** A command a user can invoke. */
+/**
+ * A command a user can invoke, as one row. A row is run under its `id`; a row whose `command` is
+ * set runs that command with its `values` as the arguments.
+ */
 export interface Command {
   readonly id: string
+  readonly command?: string
+  readonly values?: Readonly<Record<string, string>>
   readonly text: string
   readonly detail?: string
   readonly keys?: PaletteKeys

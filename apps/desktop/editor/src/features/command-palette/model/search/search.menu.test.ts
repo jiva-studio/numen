@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-host'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import { CREATE_NOTE_ROW } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
@@ -52,7 +52,7 @@ const SKETCH: SlotItem = {
   view: 'sketch',
   component: {},
 }
-const openId = COMMAND.openNote
+const openId = COMMAND.openFile
 const showId = SHOW.command
 
 const nameMatch: NameMatch = {
@@ -201,7 +201,7 @@ describe('a note found by name in the search', () => {
     const item = getNamesGroup(palette)?.items[0]?.id ?? ''
 
     expect(palette.chooseResult(item, openId)).toStrictEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'reef/Coral.md', file: 'reef/Coral.md', title: 'Coral' },
       input: '',
     })
@@ -232,7 +232,7 @@ describe('a passage of a file that is no note in the search', () => {
 
     const text = palette.groups.value.find((one) => one.id === 'text')
     expect(text?.items[0]?.actions).toStrictEqual([
-      { id: COMMAND.openFile, text: 'Open the document' },
+      { id: ROW.openDocument, text: 'Open the document' },
     ])
     expect(palette.chooseResult(text?.items[0]?.id ?? '', showId)).toBeNull()
     expect(palette.chooseResult(text?.items[0]?.id ?? '', 'note')).toBeNull()
@@ -245,8 +245,8 @@ describe('choosing the action of a passage of a file that is no note', () => {
     await typeQuery(palette)
     const item = palette.groups.value.find((one) => one.id === 'text')?.items[0]?.id ?? ''
 
-    expect(palette.chooseResult(item, COMMAND.openFile)).toStrictEqual({
-      command: 'app:file.open',
+    expect(palette.chooseResult(item, ROW.openDocument)).toStrictEqual({
+      command: 'app:file.open#document',
       over: { path: '', file: 'books/Atlas.pdf', title: '', selector: { page: 3 } },
       input: '',
     })

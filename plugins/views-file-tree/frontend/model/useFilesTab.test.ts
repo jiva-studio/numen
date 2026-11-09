@@ -424,7 +424,7 @@ describe('rows requested to go', () => {
 
     one.remove(['Entropy.md', 'Cover.png'])
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Cover.png Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.remove Entropy.md Cover.png Entropy.md'])
   })
 
   it('shows the failure of the command the window runs', async () => {
@@ -498,7 +498,7 @@ describe('an item chosen in the menu on a row', () => {
 
     one.chooseMenuItem(TRASH.key)
 
-    expect(recorded).toStrictEqual(['runs app:note.trash Entropy.md Entropy.md'])
+    expect(recorded).toStrictEqual(['runs app:note.remove Entropy.md Entropy.md'])
   })
 
   it('runs the command of an entry inside a submenu', async () => {
@@ -527,7 +527,7 @@ describe('an item chosen in the menu on a row', () => {
     pendingState.one.chooseMenuItem(TRASH.key)
 
     expect(pendingState.recorded).toStrictEqual([
-      'runs app:note.trash Entropy.md Cover.png Entropy.md',
+      'runs app:note.remove Entropy.md Cover.png Entropy.md',
     ])
   })
 
@@ -538,7 +538,7 @@ describe('an item chosen in the menu on a row', () => {
 
     pendingState.one.chooseMenuItem(TRASH.key)
 
-    expect(pendingState.recorded).toStrictEqual(['runs app:note.trash Entropy.md Entropy.md'])
+    expect(pendingState.recorded).toStrictEqual(['runs app:note.remove Entropy.md Entropy.md'])
   })
 
   it('runs nothing for a submenu, a view, or a choice the menu does not offer', async () => {
@@ -560,7 +560,7 @@ describe('an item chosen in the menu on a row', () => {
     await settle()
 
     expect(recorded).toStrictEqual([
-      'runs app:note.trash Entropy.md Entropy.md',
+      'runs app:note.remove Entropy.md Entropy.md',
       'says Numen is not responding; retrying',
     ])
   })
@@ -721,7 +721,7 @@ describe('the target a command of the menu runs over', () => {
     one.openMenu({ path: 'ghost/Scan.bin', at: { x: 0, y: 0 } })
     one.chooseMenuItem(TRASH.key)
 
-    expect(recorded).toStrictEqual(['runs app:note.trash ghost/Scan.bin Scan.bin'])
+    expect(recorded).toStrictEqual(['runs app:note.remove ghost/Scan.bin Scan.bin'])
   })
 })
 
