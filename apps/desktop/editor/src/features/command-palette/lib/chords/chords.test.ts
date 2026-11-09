@@ -101,8 +101,8 @@ describe('how a keystroke is drawn on the row that names it', () => {
   })
 
   it('is nothing for a command no keystroke reaches', () => {
-    expect(findChordKeys('app:note.delete', 'Linux x86_64')).toBeUndefined()
-    expect(createRowKeys('app:note.delete', 'Linux x86_64')).toEqual({})
+    expect(findChordKeys('app:note.remove#permanent', 'Linux x86_64')).toBeUndefined()
+    expect(createRowKeys('app:note.remove#permanent', 'Linux x86_64')).toEqual({})
   })
 })
 
@@ -157,7 +157,12 @@ describe('every keystroke the table holds', () => {
   })
 
   it('reaches nothing that removes a note, a file or a vault', () => {
-    const destroys = ['app:note.trash', 'app:note.delete', 'app:vault.remove', 'app:vault.erase']
+    const destroys = [
+      'app:note.remove',
+      'app:note.remove#permanent',
+      'app:vault.remove',
+      'app:vault.erase',
+    ]
     for (const target of CHORDS) expect(destroys).not.toContain(target.command)
   })
 

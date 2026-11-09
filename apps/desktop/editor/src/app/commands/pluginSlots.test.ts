@@ -65,7 +65,7 @@ describe('the slot entries of the window', () => {
       {
         pluginId: 'app',
         slot: 'fileTree.context',
-        command: 'app:note.open',
+        command: 'app:file.open',
         group: '0-open',
         order: 10,
       },
@@ -84,7 +84,7 @@ describe('the slot entries of the window', () => {
         group: '3-text',
         order: 90,
       },
-      { pluginId: 'app', slot: 'fileTree.context', command: 'app:note.trash', group: '9-remove' },
+      { pluginId: 'app', slot: 'fileTree.context', command: 'app:note.remove', group: '9-remove' },
     ])
   })
 

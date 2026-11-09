@@ -120,7 +120,8 @@ function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): Command
     deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }
-  return { ...deps.invocation(step.command.id, step.on), values }
+  const made = deps.invocation(step.command.id, step.on)
+  return { ...made, values: { ...made.values, ...values } }
 }
 
 function resolveStepAction(

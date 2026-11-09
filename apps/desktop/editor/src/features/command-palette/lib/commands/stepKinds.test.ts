@@ -47,7 +47,7 @@ describe('the input a command of the palette asks for', () => {
   })
 
   it('is the name typed again for the command that deletes a note', () => {
-    expect(getIdsAsking('retypedName')).toStrictEqual(['app:note.delete'])
+    expect(getIdsAsking('retypedName')).toStrictEqual(['app:note.remove#permanent'])
   })
 
   it('is a confirmation after the vault, for the command that removes one', () => {

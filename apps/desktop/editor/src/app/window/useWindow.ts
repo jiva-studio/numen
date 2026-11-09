@@ -767,7 +767,7 @@ function createWindowFrameServices(
   const { items, runCommandToEnd } = getCommands(ctx).pluginRuns
   const windowCommands = createWindowCommands({
     getAppIds: () => [
-      ...(tableIds ??= createCommands(words).map((one) => one.id)),
+      ...(tableIds ??= [...new Set(createCommands(words).map((one) => one.command ?? one.id))]),
       ...getAppCommands().map((one) => one.id),
     ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),

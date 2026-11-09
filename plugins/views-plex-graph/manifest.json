@@ -64,7 +64,7 @@
         "order": 10,
         "when": "target.isRoot"
       },
-      { "slot": "plexGraph.context", "command": "app:note.open", "group": "0-open", "order": 10 },
+      { "slot": "plexGraph.context", "command": "app:file.open", "group": "0-open", "order": 10 },
       { "slot": "plexGraph.context", "command": "graph.showNote", "group": "1-note", "order": 10 },
       {
         "slot": "plexGraph.context",
@@ -91,7 +91,7 @@
         "order": 30
       },
       { "slot": "plexGraph.context", "command": "app:note.rename", "group": "3-plex", "order": 40 },
-      { "slot": "plexGraph.context", "command": "app:note.trash", "group": "9-remove" }
+      { "slot": "plexGraph.context", "command": "app:note.remove", "group": "9-remove" }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

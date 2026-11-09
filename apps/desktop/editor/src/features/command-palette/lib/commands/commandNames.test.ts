@@ -8,18 +8,18 @@ import { WORDS as words } from '@/shared/words'
 const OWNED = /^app:[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$/
 
 const TITLES: Readonly<Record<string, string>> = {
-  'app:note.open': 'Open note',
-  'app:note.openBeside': 'Open note beside',
+  'app:file.open': 'Open note',
+  'app:file.open#beside': 'Open note beside',
   'app:note.create': 'Create note',
   'app:note.createChild': 'Create child note',
   'app:note.createParent': 'Create parent note',
   'app:note.createJump': 'Create jump note',
   'app:note.rename': 'Rename note',
-  'app:note.trash': 'Move note to trash',
-  'app:note.delete': 'Delete note permanently',
+  'app:note.remove': 'Move note to trash',
+  'app:note.remove#permanent': 'Delete note permanently',
   'app:note.copyPath': 'Copy note path',
   'app:note.goTo': 'Go to note',
-  'app:file.open': 'Open the document here',
+  'app:file.open#document': 'Open the document here',
   'app:tab.close': 'Close tab',
   'app:vault.search': 'Search vault',
   'app:settings.open': 'Open settings',
@@ -34,7 +34,7 @@ describe('the commands of the editor', () => {
   const commands = createCommands(words)
 
   it('are filed under the owner app and an object and an action', () => {
-    for (const one of commands) expect(one.id, one.id).toMatch(OWNED)
+    for (const one of commands) expect(one.command ?? one.id, one.id).toMatch(OWNED)
   })
 
   it('offer no way to go to a start note', () => {

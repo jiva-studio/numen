@@ -338,13 +338,11 @@ function createPalettePresentation(
     steps: ReturnType<typeof createPaletteSteps>
     on: ComputedRef<CommandTarget>
     invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
+    rows: ReturnType<typeof createRows>
   },
 ) {
-  const { steps, on, invocation } = context
-  const staticCommands = createCommands(deps.words)
-  // Stryker disable next-line ArrayDeclaration: Empty fallback when getExtraCommands is not provided.
-  const getCommands = () => [...staticCommands, ...(deps.getExtraCommands?.() ?? [])]
-  const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
+  const { steps, on, invocation, rows } = context
+  const { getCommands, byId } = rows
 
   const draws = getPaletteView({
     words: deps.words,
@@ -385,13 +383,31 @@ function createPalettePresentation(
   return { groups, findTabKind: draws.findTabKind, findCommandIcon, ...execution }
 }
 
+function createRows(deps: CommandPaletteDeps) {
+  const staticCommands = createCommands(deps.words)
+  // Stryker disable next-line ArrayDeclaration: Empty fallback when getExtraCommands is not provided.
+  const getCommands = () => [...staticCommands, ...(deps.getExtraCommands?.() ?? [])]
+  const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
+  return { getCommands, byId }
+}
+
 export function useCommandPalette(...args: PaletteArgs) {
   const deps = parsePaletteDeps(args)
   const state = createPaletteState(deps.wait)
   const on = computed<CommandTarget>(() => deps.at())
 
-  const invocation = (id: string, target: CommandTarget, name = ''): CommandInvocation =>
-    createInvocation(id, target, name, target.path ? deps.knows.getTabAt(target.path) : null)
+  const rows = createRows(deps)
+
+  const invocation = (id: string, target: CommandTarget, name = ''): CommandInvocation => {
+    const row = rows.byId.value.get(id)
+    const made = createInvocation(
+      row?.command ?? id,
+      target,
+      name,
+      target.path ? deps.knows.getTabAt(target.path) : null,
+    )
+    return row?.values ? { ...made, values: row.values } : made
+  }
 
   const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(
     deps,
@@ -399,7 +415,7 @@ export function useCommandPalette(...args: PaletteArgs) {
     invocation,
   )
 
-  const presentation = createPalettePresentation(deps, state, { steps, on, invocation })
+  const presentation = createPalettePresentation(deps, state, { steps, on, invocation, rows })
 
   const api = {
     open: state.open,

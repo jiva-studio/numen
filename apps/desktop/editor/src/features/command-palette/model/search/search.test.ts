@@ -7,7 +7,7 @@
  * two.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/shared/commandIds'
 import {
   useSearch,
   type SearchDeps,
@@ -41,7 +41,7 @@ const WORDS: Words = {
 }
 
 /** The first action of a note is the id of the editor command that opens it. */
-const OPEN_NOTE = COMMAND.openNote
+const OPEN_NOTE = COMMAND.openFile
 
 function createVault() {
   const names: Deferred<readonly NameMatch[]>[] = []
@@ -358,7 +358,7 @@ describe('where a thing found takes the person', () => {
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
     expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'notes/entropy.md', file: 'notes/entropy.md', title: 'Entropy' },
       input: '',
     })
@@ -369,7 +369,7 @@ describe('where a thing found takes the person', () => {
     const item = getGroup(palette.groups.value, 'names')!.items[1]!
 
     expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: {
         path: 'notes/carnot.md',
         file: 'notes/carnot.md',
@@ -394,7 +394,7 @@ describe('where a thing found takes the person', () => {
     const item = getGroup(palette.groups.value, 'text')!.items[0]!
 
     expect(palette.chooseResult(item.id, OPEN_NOTE)).toEqual({
-      command: COMMAND.openNote,
+      command: COMMAND.openFile,
       over: { path: 'notes/heat.md', file: 'notes/heat.md', title: 'Heat engines', line: 12 },
       input: '',
     })
@@ -464,8 +464,8 @@ describe('a passage from something that is not a note', () => {
     expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
 
     // The document opens where the words stand in its own text.
-    expect(palette.chooseResult(item.id, COMMAND.openFile)).toEqual({
-      command: 'app:file.open',
+    expect(palette.chooseResult(item.id, ROW.openDocument)).toEqual({
+      command: 'app:file.open#document',
       over: {
         path: '',
         file: 'library/mahabharata.epub',

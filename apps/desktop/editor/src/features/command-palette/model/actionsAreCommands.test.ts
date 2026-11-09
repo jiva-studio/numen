@@ -144,7 +144,7 @@ describe('the actions of the palette', () => {
     const search = await searchFor('reef', { passages: [bookPassage] }, inFront)
 
     const ids = collectActionIds(search.groups.value)
-    expect(ids).toStrictEqual(['app:file.open'])
+    expect(ids).toStrictEqual(['app:file.open#document'])
     expectCommands(ids)
   })
 
