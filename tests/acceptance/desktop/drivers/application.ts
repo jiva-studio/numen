@@ -20,7 +20,7 @@ interface PluginCommand {
 }
 
 /** The commands that work on the text of the open file, and the command whose items must list a text first. */
-const TEXT_COMMANDS: Record<string, PluginCommand> = {
+const TEXT_COMMANDS: Partial<Record<string, PluginCommand>> = {
   'Delete text': { command: 'app:version.delete' },
   'Proofread text': { pluginId: 'md.numen.tools.proofreading', command: 'proofreading.create' },
 }
@@ -138,8 +138,8 @@ export class ApplicationDriver {
           path: notePath,
           commands: [{ ...(textCommand.pluginId ? { pluginId: textCommand.pluginId } : {}), command: textCommand.command }],
         })
-        const [list] = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
-        return list?.items?.length ?? 0
+        const lists = (answer['lists'] as { items?: unknown[] }[] | undefined) ?? []
+        return lists.flatMap((one) => one.items ?? []).length
       })
       .toBeGreaterThan(0)
   }

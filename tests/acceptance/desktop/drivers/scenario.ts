@@ -69,8 +69,8 @@ export class Scenario {
         path: filePath,
         commands: [{ command: DELETE_TEXT_ID }],
       }).catch(() => ({}))
-      const [list] = (answer['lists'] as { items?: { id: string }[] }[] | undefined) ?? []
-      for (const item of list?.items ?? []) {
+      const lists = (answer['lists'] as { items?: { id: string }[] }[] | undefined) ?? []
+      for (const item of lists.flatMap((one) => one.items ?? [])) {
         await callRPC(this.page.request, 'CommandService/RunPluginCommand', {
           command: DELETE_TEXT_ID,
           path: filePath,
