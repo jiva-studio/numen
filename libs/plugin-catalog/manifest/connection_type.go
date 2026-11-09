@@ -96,7 +96,7 @@ func SplitConnectionTypeID(typeID string) (pluginID, id string, isValid bool) {
 func reservedConnectionFieldKeys() []string { return []string{"type", "name", "id"} }
 
 func connectionFieldTypes() []string {
-	return []string{"string", "number", "boolean", SettingTypeEnum, SettingTypeFile, ConnectionFieldSecret}
+	return []string{SettingTypeString, settingTypeNumber, settingTypeBoolean, SettingTypeEnum, SettingTypeFile, ConnectionFieldSecret}
 }
 
 func reservedConnectionOperations() []string { return []string{"submit", "status", "fetch"} }
@@ -169,34 +169,45 @@ func listConnectionFieldIssues(t ConnectionType) []error {
 }
 
 func listConnectionFieldShapeIssues(typeID string, field ConnectionField) []error {
-	var issues []error
-	fail := func(format string, args ...any) {
-		issues = append(issues, newConnectionIssue("type %q: field %q %s", typeID, field.Key, fmt.Sprintf(format, args...)))
-	}
 	if !slices.Contains(connectionFieldTypes(), field.Type) {
-		fail("has type %q, which is not a field type", field.Type)
-		return issues
+		return []error{newFieldIssue(typeID, field, "has type %q, which is not a field type", field.Type)}
 	}
-	if field.Type == SettingTypeEnum && len(field.Options) == 0 {
-		fail("is an enum with no options")
-	}
-	if field.Type == ConnectionFieldSecret && (field.Default != nil || field.FixedValue != nil || field.IsAddress || len(field.Options) > 0) {
-		fail("is a secret and has a default, a fixed value, options or the address mark")
-	}
-	if field.FixedValue != nil && (field.Type != "string" || field.IsRequired || field.Default != nil) {
-		fail("has a fixed value and is not an optional string with no default")
-	}
-	if field.IsAddress && field.Type != "string" {
-		fail("is the address and is not a string")
-	}
+	issues := listConnectionFieldKindIssues(typeID, field)
+	issues = append(issues, listConnectionFieldValueIssues(typeID, field)...)
 	if field.Key == ConnectionParallelRequests {
 		issues = append(issues, listParallelRequestsIssues(typeID, field)...)
 	}
 	return issues
 }
 
+func newFieldIssue(typeID string, field ConnectionField, format string, args ...any) error {
+	return newConnectionIssue("type %q: field %q %s", typeID, field.Key, fmt.Sprintf(format, args...))
+}
+
+func listConnectionFieldKindIssues(typeID string, field ConnectionField) []error {
+	var issues []error
+	if field.Type == SettingTypeEnum && len(field.Options) == 0 {
+		issues = append(issues, newFieldIssue(typeID, field, "is an enum with no options"))
+	}
+	if field.Type == ConnectionFieldSecret && (field.Default != nil || field.FixedValue != nil || field.IsAddress || len(field.Options) > 0) {
+		issues = append(issues, newFieldIssue(typeID, field, "is a secret and has a default, a fixed value, options or the address mark"))
+	}
+	return issues
+}
+
+func listConnectionFieldValueIssues(typeID string, field ConnectionField) []error {
+	var issues []error
+	if field.FixedValue != nil && (field.Type != SettingTypeString || field.IsRequired || field.Default != nil) {
+		issues = append(issues, newFieldIssue(typeID, field, "has a fixed value and is not an optional string with no default"))
+	}
+	if field.IsAddress && field.Type != SettingTypeString {
+		issues = append(issues, newFieldIssue(typeID, field, "is the address and is not a string"))
+	}
+	return issues
+}
+
 func listParallelRequestsIssues(typeID string, field ConnectionField) []error {
-	if field.Type != "number" || field.Min == nil || *field.Min < 1 || field.Step == nil || *field.Step != 1 {
+	if field.Type != settingTypeNumber || field.Min == nil || *field.Min < 1 || field.Step == nil || *field.Step != 1 {
 		return []error{newConnectionIssue("type %q: %s is a number with a min of at least 1 and a step of 1", typeID, ConnectionParallelRequests)}
 	}
 	if field.Default == nil {

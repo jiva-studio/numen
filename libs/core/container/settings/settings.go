@@ -377,22 +377,9 @@ func (c Config) listSettingValues(target Settings) (settingevents.Values, error)
 	for _, plugin := range c.Plugins()() {
 		listPluginValues(target, plugin, add, values)
 	}
-	if len(target.Secrets) > 0 {
-		content, err := target.WriteSecretsJSON()
-		if err != nil {
-			failures = append(failures, err)
-		} else {
-			values[settingevents.JoinPath([]string{settingKeySecrets})] = content
-		}
-	}
-	if len(target.Connections) > 0 {
-		content, err := target.WriteConnectionsJSON()
-		if err != nil {
-			failures = append(failures, err)
-		} else {
-			values[settingevents.JoinPath([]string{settingKeyConnections})] = content
-		}
-	}
+	failures = append(failures,
+		addStoredContent(values, settingKeySecrets, len(target.Secrets) > 0, target.WriteSecretsJSON),
+		addStoredContent(values, settingKeyConnections, len(target.Connections) > 0, target.WriteConnectionsJSON))
 	if c.Programs != nil {
 		if late := c.Programs.GetLate(); len(late) > 0 {
 			add([]string{settingsadapter.OwnerApp, AgentAt, "use"}, getAgentUseValue(target.Agent, late))
@@ -685,4 +672,18 @@ func (c Config) handleError(err error) {
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
 	}
+}
+
+// addStoredContent adds the JSON a store writes under the key when the store holds entries. A
+// failure to write is returned, and errors.Join leaves out a nil.
+func addStoredContent(values settingevents.Values, key string, isHeld bool, write func() (string, error)) error {
+	if !isHeld {
+		return nil
+	}
+	content, err := write()
+	if err != nil {
+		return err
+	}
+	values[settingevents.JoinPath([]string{key})] = content
+	return nil
 }

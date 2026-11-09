@@ -235,7 +235,7 @@ func (m Manifest) listOptionsByIssues(s Setting, declared map[string]Setting) []
 	if s.OptionsBy == nil {
 		return nil
 	}
-	if (s.Type != SettingTypeEnum && s.Type != "string") || len(s.Options) > 0 {
+	if (s.Type != SettingTypeEnum && s.Type != SettingTypeString) || len(s.Options) > 0 {
 		return []error{fmt.Errorf("%w: %s takes its options from %s and is no enum or string without options of its own", ErrInvalidSetting, s.Key, s.OptionsBy.Setting)}
 	}
 	parent, ok := declared[s.OptionsBy.Setting]
@@ -273,7 +273,7 @@ func listConditionIssues(subject string, when *Condition, declared map[string]Se
 	var issues []error
 	for _, value := range when.Is {
 		switch {
-		case parent.Type == "boolean" && value != "true" && value != "false":
+		case parent.Type == settingTypeBoolean && value != "true" && value != "false":
 			issues = append(issues, fmt.Errorf("%w: %s is shown by %s holding %q, and it holds true or false", ErrInvalidSetting, subject, when.Setting, value))
 		case len(parent.Options) > 0:
 			if _, isOption := parent.Options.Find(value); !isOption {

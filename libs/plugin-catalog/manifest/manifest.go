@@ -127,8 +127,11 @@ const SettingTypeConnections = "connections"
 // settingTypeNumber is the type of a setting that stores a number.
 const settingTypeNumber = "number"
 
+// settingTypeBoolean is the type of a setting that stores true or false.
+const settingTypeBoolean = CommandArgumentBoolean
+
 func listSettingTypes() []string {
-	return []string{"boolean", SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
+	return []string{settingTypeBoolean, SettingTypeString, settingTypeNumber, SettingTypeEnum, "range", SettingTypeFile, SettingTypeConnections}
 }
 
 // Backend describes the server-side executable of a plugin.
