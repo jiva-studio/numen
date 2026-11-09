@@ -1,7 +1,7 @@
 {
   "id": "md.numen.tools.updater",
   "name": "Update Notifier",
-  "version": "2026.11.10",
+  "version": "2026.11.9",
   "protocol": 1,
   "description": "Notifies when a newer build of Numen is published",
   "targets": ["desktop.editor"],
