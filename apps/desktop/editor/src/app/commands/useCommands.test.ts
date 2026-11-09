@@ -11,7 +11,7 @@ const h = vi.hoisted(() => ({
   setPaletteOpen: vi.fn(),
   isCommandsOpen: { value: false },
   isSearchOpen: { value: false },
-  runInvocation: vi.fn(() => Promise.resolve()),
+  runInvocation: vi.fn((..._args: unknown[]) => Promise.resolve()),
   depsOptions: null as unknown,
   registerCommand: vi.fn(),
   getExtraCommands: null as null | (() => readonly unknown[]),

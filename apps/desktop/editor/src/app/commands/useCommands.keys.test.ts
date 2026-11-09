@@ -7,7 +7,7 @@ const h = vi.hoisted(() => ({
   startCommand: vi.fn(),
   setCommandsOpen: vi.fn(),
   setSearchOpen: vi.fn(),
-  runInvocation: vi.fn(() => Promise.resolve()),
+  runInvocation: vi.fn((..._args: unknown[]) => Promise.resolve()),
 }))
 
 vi.mock('@/features/command-palette', () => ({
