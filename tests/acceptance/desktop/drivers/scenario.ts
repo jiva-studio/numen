@@ -71,11 +71,12 @@ export class Scenario {
       }).catch(() => ({}))
       const [list] = (answer['lists'] as { items?: { id: string }[] }[] | undefined) ?? []
       for (const item of list?.items ?? []) {
-        await callRPC(this.page.request, 'CommandService/RunCommand', {
+        const result = await callRPC(this.page.request, 'CommandService/RunCommand', {
           command: DELETE_TEXT_ID,
           path: filePath,
           itemId: item.id,
-        }).catch(() => undefined)
+        })
+        console.log('DBGDEL', JSON.stringify(item), JSON.stringify(result))
       }
     }
   }
