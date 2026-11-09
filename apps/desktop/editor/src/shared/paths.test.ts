@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getFileName, getFileStem } from './paths'
+import { generateUniqueName, getFileName, getFileStem } from './paths'
 
 describe('what a file is filed as', () => {
   it('is the last segment of the path', () => {
@@ -32,5 +32,19 @@ describe('the name a link writes', () => {
 
   it('is nothing for a file filed nowhere', () => {
     expect(getFileStem('')).toBe('')
+  })
+})
+
+describe('a name nothing in a folder carries', () => {
+  it('is the word itself where nothing is called that', () => {
+    expect(generateUniqueName(['physics'], 'New folder')).toBe('New folder')
+  })
+
+  it('is the word and a count where it is taken', () => {
+    expect(generateUniqueName(['New folder'], 'New folder')).toBe('New folder 2')
+  })
+
+  it('counts past every one that is taken', () => {
+    expect(generateUniqueName(['New folder', 'New folder 2'], 'New folder')).toBe('New folder 3')
   })
 })

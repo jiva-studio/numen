@@ -34,11 +34,6 @@
         "id": "tree.renameFile",
         "title": "Rename",
         "icon": "pencil"
-      },
-      {
-        "id": "tree.createFolder",
-        "title": "Create folder",
-        "icon": "folder-plus"
       }
     ],
     "slots": [
@@ -60,7 +55,7 @@
       },
       {
         "slot": "fileTree.new",
-        "command": "tree.createFolder",
+        "command": "app:folder.create",
         "group": "0-tree",
         "order": 20,
         "when": "target.isFolder"

@@ -58,7 +58,6 @@ const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {
     },
     movePath: async () => undefined,
     setDraggedPaths: () => undefined,
-    createFolder: async () => undefined,
     canDropData: () => false,
     dropData: async () => [],
     showError: (text) => {

@@ -182,8 +182,8 @@ interface RunWay {
 /**
  * The two runs of a command of the window. The run of the palette and the shortcuts writes its
  * error in the window. The run to its end, which a plugin awaits through `context.commands.run`,
- * writes nothing: it settles when the run ends with the path of the note it made, empty where it
- * made none, and rejects with its error.
+ * writes nothing: it settles when the run ends with the path of the note or folder it made, empty
+ * where it made none, and rejects with its error.
  */
 export function createCommandRunner(parts: CommandRunnerParts) {
   const { commands, palette, pluginHost, getCommandNote } = parts

@@ -64,6 +64,7 @@ const window = (
     turnedDown?: VaultErrorCode
     movement?: Movement
     folderError?: ErrorCode
+    names?: readonly string[]
   } = {},
 ) => {
   const isDone: string[] = []
@@ -97,6 +98,10 @@ const window = (
       move: async (from, to) => {
         isDone.push(`move ${from} ${to}`)
         return answers.movement ?? { ok: true, value: null }
+      },
+      listNames: async (folder) => {
+        isDone.push(`listNames ${folder || '—'}`)
+        return answers.names ?? []
       },
       createFolder: async (path) => {
         isDone.push(`createFolder ${path}`)
@@ -745,6 +750,65 @@ describe('a folder made', () => {
     await carry(createInvocation('app:folder.create', front()), one.on)
 
     expect(one.actions).toStrictEqual([])
+  })
+
+  it('answers the path it made under a typed path', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:folder.create', front(), 'physics/heat'), one.on)
+
+    expect(made).toBe('physics/heat')
+  })
+})
+
+describe('a folder made over a folder', () => {
+  const folder = (path: string) => front({ path, file: path, isFolder: true, isTargetNamed: true })
+
+  it('is named in the folder, filed there, and answers its path', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:folder.create', folder('physics')), one.on)
+
+    expect(made).toBe('physics/New folder')
+    expect(one.actions).toStrictEqual(['listNames physics', 'createFolder physics/New folder'])
+  })
+
+  it('is filed at the root where the folder is the root', async () => {
+    const one = window()
+
+    const made = await carry(createInvocation('app:folder.create', folder('')), one.on)
+
+    expect(made).toBe('New folder')
+    expect(one.actions).toStrictEqual(['listNames —', 'createFolder New folder'])
+  })
+
+  it('counts past the names the folder already holds', async () => {
+    const one = window({ names: ['New folder', 'New folder 2'] })
+
+    const made = await carry(createInvocation('app:folder.create', folder('physics')), one.on)
+
+    expect(made).toBe('physics/New folder 3')
+  })
+
+  it('is made under the typed path where one was typed', async () => {
+    const one = window()
+
+    const made = await carry(
+      createInvocation('app:folder.create', folder('physics'), 'optics'),
+      one.on,
+    )
+
+    expect(made).toBe('optics')
+    expect(one.actions).toStrictEqual(['createFolder optics'])
+  })
+
+  it('answers nothing and says why where the vault refused it', async () => {
+    const one = window({ folderError: 'alreadyExists' })
+
+    const made = await carry(createInvocation('app:folder.create', folder('physics')), one.on)
+
+    expect(made).toBe('')
+    expect(one.notices).toStrictEqual([words.alreadyExists])
   })
 })
 
