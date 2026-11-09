@@ -14,7 +14,7 @@ import {
 const showInPlex = async (page: Page, path: string): Promise<void> => {
   await showInFiles(page, ['notes'])
   await getRow(page, path).click({ button: 'right' })
-  await page.getByRole('menuitem', { name: 'Show note in plex', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Show in plex', exact: true }).click()
 }
 
 const SEARCH_NAMES = '**/numen.v1.SearchService/SearchNames'

@@ -95,6 +95,7 @@ describe('the host reading the listed commands', () => {
       getCommandDeclarations: () => [declaration],
       reportCommandIssue,
     })
+    host.registerKeybindings('md.tree', [{ key: 'e', command: 'tree.open' }])
     host.createContext('md.tree')
     const event = new KeyboardEvent('keydown', { key: 'e' })
     const note = {

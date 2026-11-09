@@ -332,3 +332,51 @@ describe('an address dropped on the files tab', () => {
     expect(recorded.some((one) => one.startsWith('drops into'))).toBe(false)
   })
 })
+
+describe('the empty message of the tab', () => {
+  const mountOver = (list: (folderPath: string) => Promise<readonly Entry[]>) => {
+    const tree = createFileTree({ list })
+    const tab = useFilesTab(tree, {
+      ...renderDeps,
+      openEntry: () => undefined,
+      listItems: async () => [],
+      getMenuEntries: () => ROW_MENU,
+      runCommand: async () => '',
+      movePath: async () => undefined,
+      setDraggedPaths: () => undefined,
+      canDropData: () => false,
+      dropData: async () => [],
+      showError: () => undefined,
+    })
+    const window = mount(FilesTab, { props: { state: tab } })
+    return { tree, window }
+  }
+
+  it('is absent while the first listing is still loading', async () => {
+    const { tree, window } = mountOver(() => new Promise(() => undefined))
+    tree.openFolder(ROOT).catch(() => undefined)
+    await settle()
+
+    expect(window.text()).not.toContain('No files in this vault')
+  })
+
+  it('shows the entries once the first listing is returned', async () => {
+    let resolve: (entries: readonly Entry[]) => void = () => undefined
+    const { tree, window } = mountOver(() => new Promise((isDone) => (resolve = isDone)))
+    const opening = tree.openFolder(ROOT)
+    resolve([file('Entropy.md')])
+    await opening
+    await settle()
+
+    expect(window.text()).toContain('Entropy.md')
+    expect(window.text()).not.toContain('No files in this vault')
+  })
+
+  it('shows once the first listing is returned with no entries', async () => {
+    const { tree, window } = mountOver(async () => [])
+    await tree.openFolder(ROOT)
+    await settle()
+
+    expect(window.text()).toContain('No files in this vault')
+  })
+})

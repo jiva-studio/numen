@@ -32,6 +32,24 @@ func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
 		return []AppCommandArgument{
 			{Name: "placement", Title: "Showing", Type: "enum", Options: []string{"current", "split"}},
 		}, true
+	case "app:file.reveal":
+		return []AppCommandArgument{
+			{Name: "kind", Title: "Place", Type: "enum", Options: []string{"plex", "files"}},
+		}, true
 	}
 	return nil, false
+}
+
+// ListAppKeybindings lists the keys of the application in the order commands.json declares them.
+func ListAppKeybindings() []Keybinding {
+	return []Keybinding{
+		{Key: "mod+n", Command: "app:note.create"},
+		{Key: "mod+shift+n", Command: "app:vault.create"},
+		{Key: "mod+g", Command: "app:file.open#note"},
+		{Key: "mod+shift+c", Command: "app:note.createChild"},
+		{Key: "mod+w", Command: "app:tab.close"},
+		{Key: "mod+shift+w", Command: "app:tab.close"},
+		{Key: "mod+k", Command: "app:vault.search"},
+		{Key: "mod+p", Command: "app:commands.open"},
+	}
 }

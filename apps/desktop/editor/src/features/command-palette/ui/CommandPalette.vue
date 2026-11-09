@@ -4,9 +4,10 @@
  * and the search.
  *
  * The two share a field, and which one is active determines what is drawn in it
- * and what a keystroke in it means. Two chords open and close each.
+ * and what a keystroke in it means. The keys of the window open and close each.
  */
 import { computed } from 'vue'
+import { Search } from '@lucide/vue'
 import { Palette, type ActionWords } from '@numen/shell'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '../model/handlers/deps'
@@ -14,7 +15,6 @@ import type { CommandTarget } from '../types'
 import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
-import { usePaletteShortcuts } from '../model/palette/shortcuts'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
 import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
@@ -36,13 +36,12 @@ const actionWords: ActionWords = {
   silence: words.noAction,
 }
 
-usePaletteShortcuts(props.search, props.commands)
-
 /** What the palette draws: the commands while they are open, the search under. */
 const field = computed(() =>
   props.commands.open.value
     ? {
         open: true,
+        isBusy: false,
         typed: props.commands.typed.value,
         groups: props.commands.groups.value,
         crumb: props.commands.crumb.value,
@@ -52,6 +51,7 @@ const field = computed(() =>
       }
     : {
         open: props.search.open.value,
+        isBusy: props.search.status.isBusy.value,
         typed: props.search.typed.value,
         groups: props.search.groups.value,
         crumb: '',
@@ -109,6 +109,7 @@ function getRowIcon(id: string) {
     :model-value="field.typed"
     :groups="field.groups"
     :is-open="field.open"
+    :is-busy="field.isBusy"
     :placeholder="field.placeholder"
     :crumb="field.crumb"
     :step="field.step"
@@ -124,10 +125,42 @@ function getRowIcon(id: string) {
     <template #icon="{ id }">
       <component :is="getRowIcon(id)" v-if="getRowIcon(id)" class="command-icon" />
     </template>
+    <template v-if="!commands.open.value && search.status.isNothingFound.value" #silence>
+      <span class="nothing-found">
+        <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
+        <span class="nothing-found__text" data-palette="nothing-text">{{
+          words.nothingFound(search.typed.value.trim())
+        }}</span>
+      </span>
+    </template>
   </Palette>
 </template>
 
 <style scoped>
+.nothing-found {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  padding-block: 1.5rem;
+  text-align: center;
+}
+
+.nothing-found__icon {
+  flex: none;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  stroke-width: 1.75;
+}
+
+/* A long query is cut by the edge of the panel. */
+.nothing-found__text {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .command-icon {
   inline-size: 100%;

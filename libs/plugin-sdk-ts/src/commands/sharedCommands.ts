@@ -47,4 +47,27 @@ export const APP_COMMANDS: Readonly<Record<string, readonly AppCommandArgument[]
   'app:file.open': [
     { name: 'placement', title: 'Showing', type: 'enum', options: ['current', 'split'] },
   ],
+  'app:file.reveal': [
+    { name: 'kind', title: 'Place', type: 'enum', options: ['plex', 'files'] },
+  ],
 }
+
+/** A key of the application: a chord bound to the full id of a command, with values for its arguments and a condition. */
+export interface AppKeybinding {
+  readonly key: string
+  readonly command: string
+  readonly values: Readonly<Record<string, string>>
+  readonly when: string
+}
+
+// APP_KEYBINDINGS are the keys of the application, in the order commands.json declares them.
+export const APP_KEYBINDINGS: readonly AppKeybinding[] = [
+  { key: 'mod+n', command: 'app:note.create', values: {}, when: '' },
+  { key: 'mod+shift+n', command: 'app:vault.create', values: {}, when: '' },
+  { key: 'mod+g', command: 'app:file.open#note', values: {}, when: '' },
+  { key: 'mod+shift+c', command: 'app:note.createChild', values: {}, when: '' },
+  { key: 'mod+w', command: 'app:tab.close', values: {}, when: '' },
+  { key: 'mod+shift+w', command: 'app:tab.close', values: {}, when: '' },
+  { key: 'mod+k', command: 'app:vault.search', values: {}, when: '' },
+  { key: 'mod+p', command: 'app:commands.open', values: {}, when: '' },
+]

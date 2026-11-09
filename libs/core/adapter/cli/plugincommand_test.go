@@ -19,6 +19,8 @@ type pluginCommands struct {
 	calls    []plugincommand.Call
 }
 
+func (p *pluginCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+
 func (p *pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
 func (p *pluginCommands) ListHandlers() []plugincommand.Entry { return p.handlers }

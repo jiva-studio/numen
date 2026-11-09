@@ -2,7 +2,7 @@
  * The commands offered over the vaults an installation holds.
  */
 import { COMMAND, ROW } from '@/shared/commandIds'
-import { createRowKeys } from '../chords/chords'
+import { createRowKeys } from '../keys/keys'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'

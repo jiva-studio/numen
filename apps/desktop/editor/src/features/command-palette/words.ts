@@ -52,6 +52,9 @@ export interface Words extends EmptyWords {
   readonly read: string
   readonly readDocument: string
   readonly beside: string
+  readonly reveal: string
+  readonly revealInPlex: string
+  readonly revealInFiles: string
   readonly travel: string
   readonly child: string
   readonly parent: string
@@ -110,7 +113,6 @@ export interface Words extends EmptyWords {
   readonly typeVaultBack: string
   readonly erases: string
   readonly binned: string
-  readonly creating: string
   readonly creates: string
   readonly asChild: string
   readonly asParent: string

@@ -8,9 +8,17 @@ import {
 } from '../../support/workspace.js'
 
 const OPEN_NOTE = 'Open note'
-const SHOW_IN_PLEX = 'Show note in plex'
+const SHOW_IN_PLEX = 'Show in plex'
+const SHOW_IN_FILE_TREE = 'Show in file tree'
 /** A note of the vault the scenarios share, which the plex does not have in focus when the window opens. */
 const NOTE = 'Entropy'
+const CREATE_NOTE = `Create note “${NOTE}”`
+const CREATE_ACTIONS = [
+  CREATE_NOTE,
+  `Create as child “${NOTE}”`,
+  `Create as parent “${NOTE}”`,
+  `Create as jump “${NOTE}”`,
+]
 
 const openWindow = async (page: Page): Promise<void> => {
   await forgetOpenTabs(page.request)
@@ -60,13 +68,18 @@ const setPlexEnabled = async (page: Page, isEnabled: boolean): Promise<void> => 
 }
 
 test.describe('The actions of a note found by its name, with the plex plugin enabled', () => {
-  test('lists opening the note and then showing it in the plex', async ({ page }) => {
+  test('lists opening the note, showing it, then the Create actions', async ({ page }) => {
     await openWorkspace(page)
 
     await searchForNote(page)
     const rows = await openActions(page)
 
-    await expect(rows.locator('[data-actions="name"]')).toHaveText([OPEN_NOTE, SHOW_IN_PLEX])
+    await expect(rows.locator('[data-actions="name"]')).toHaveText([
+      OPEN_NOTE,
+      SHOW_IN_PLEX,
+      SHOW_IN_FILE_TREE,
+      ...CREATE_ACTIONS,
+    ])
   })
 
   test('opens the note in a tab on Enter', async ({ page }) => {
@@ -78,7 +91,7 @@ test.describe('The actions of a note found by its name, with the plex plugin ena
     await expect.poll(() => readActivePath(page.request)).toMatch(new RegExp(`${NOTE}\\.md$`))
   })
 
-  test('shows the note in the plex when the second action is chosen', async ({ page }) => {
+  test('shows the note in the plex when Show in plex is chosen', async ({ page }) => {
     await openWorkspace(page)
     await expect(getGraph(page).getByRole('img', { name: `${NOTE}, focus` })).toBeHidden()
 
@@ -96,13 +109,17 @@ test.describe('The actions of a note found by its name, with the plex plugin dis
     await setPlexEnabled(page, true)
   })
 
-  test('lists opening the note alone, and Enter still opens it in a tab', async ({ page }) => {
+  test('lists no Show in plex, and Enter still opens the note in a tab', async ({ page }) => {
     await openWindow(page)
     await setPlexEnabled(page, false)
 
     await searchForNote(page)
     const rows = await openActions(page)
-    await expect(rows.locator('[data-actions="name"]')).toHaveText([OPEN_NOTE])
+    await expect(rows.locator('[data-actions="name"]')).toHaveText([
+      OPEN_NOTE,
+      SHOW_IN_FILE_TREE,
+      CREATE_NOTE,
+    ])
     await page.keyboard.press('Escape')
     await page.keyboard.press('Enter')
 

@@ -96,7 +96,7 @@ const declaring = (source, name, what) => {
 /* ------------------------------------------------------------------ keys */
 
 /**
- * The full id of every command of the window, by the name chords.ts and the table give it. The
+ * The full id of every command of the window, by the name the table gives it. The
  * names are the keys of COMMAND in commandIds.ts, each filed under the owner app.
  */
 const readCommandIds = async () => {
@@ -122,59 +122,56 @@ const getCommandId = (ids, name) => {
   return id
 }
 
-/** Every chord the window carries out a command for, in the order it declares them. */
-const chords = (source, ids) => {
-  const table = declaring(source, 'CHORDS', 'chords.ts no longer lists its chords')
-  const found = [
-    ...table.text.matchAll(
-      /\{\s*command:\s*(?:COMMAND|ROW)\.([A-Za-z]+),\s*letter:\s*'([a-z])',\s*hasShift:\s*(true|false)\s*\}/g,
-    ),
-  ].map(([, name, letter, shift]) => ({
-    command: getCommandId(ids, name),
-    letter,
-    shift: shift === 'true',
-  }))
-  if (found.length === 0) die('no chords are declared in chords.ts')
-  if (found.length !== table.entries) {
-    die(`chords.ts lists ${table.entries} chords and this reads ${found.length}`)
-  }
-  return found
+/** The keys of the application, in the order commands.json declares them. */
+const readKeybindings = () => {
+  const found = SHARED.keybindings ?? []
+  if (found.length === 0) die('commands.json declares no keybindings')
+  return found.map(({ key, command, values, when }) => {
+    if (Object.keys(values ?? {}).length > 0 || when) {
+      die(`the keyboard page cannot draw the key '${key}', which has values or a condition`)
+    }
+    const parts = key.split('+')
+    const letter = parts.at(-1)
+    const modifiers = parts.slice(0, -1)
+    if (!/^[a-z]$/.test(letter) || modifiers.some((one) => one !== 'mod' && one !== 'shift')) {
+      die(`the keyboard page draws only mod and shift with a letter, and not '${key}'`)
+    }
+    return { command, letter, shift: modifiers.includes('shift') }
+  })
 }
 
 /** The chord as it is drawn: Control and Command are one key. */
-const chordOf = ({ letter, shift }) => {
+const chordOf = ({ letter, shift, alt }) => {
   const keys = ['<kbd>Ctrl</kbd>/<kbd>⌘</kbd>']
+  if (alt) keys.push('<kbd>Alt</kbd>/<kbd>⌥</kbd>')
   if (shift) keys.push('<kbd>⇧</kbd>')
   keys.push(`<kbd>${letter.toUpperCase()}</kbd>`)
   return keys.join(' ')
 }
 
 const keyboard = async () => {
-  const keys = await read(PALETTE, 'lib/chords/chords.ts')
   const words = await read(UI, 'words.ts')
   const ids = await readCommandIds()
+  const declared = await readCommands(ids)
+  const search = getCommandId(ids, 'searchVault')
+  const commands = getCommandId(ids, 'openCommands')
 
-  // The two the window keeps for itself are not in that table: they put the
-  // palette up, and the palette answers them.
-  const palette = await read(PALETTE, 'model/palette/shortcuts.ts')
-  for (const letter of ['k', 'p']) {
-    if (!palette.includes(`key === '${letter}'`)) {
-      die(`the palette no longer answers '${letter}' itself`)
-    }
+  // The two that put a palette up are no row of the palette: the window answers them itself.
+  const text = async (command) => {
+    if (command === search) return said(words, 'find')
+    if (command === commands) return 'Commands'
+    return said(words, spoken(declared, command))
   }
 
-  const rows = [
-    `| ${chordOf({ letter: 'k' })} | ${await said(words, 'find')} |`,
-    `| ${chordOf({ letter: 'p' })} | Commands |`,
-  ]
-  const declared = await readCommands(ids)
-  for (const chord of chords(keys, ids)) {
-    rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(declared, chord.command))} |`)
+  const rows = []
+  for (const one of readKeybindings()) {
+    rows.push(`| ${chordOf(one)} | ${await text(one.command)} |`)
   }
   for (const plugin of await readPlugins()) {
     for (const command of plugin.commands) {
       if (command.chord) rows.push(`| ${chordOf(command.chord)} | ${command.text} |`)
     }
+    for (const bound of plugin.bound) rows.push(`| ${chordOf(bound.chord)} | ${bound.text} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
@@ -217,9 +214,44 @@ const readCommands = async (ids) => {
     const specifier = imports.get(fn)
     if (!specifier) die(`table.ts calls '${fn}' without importing it`)
     const path = new URL(`${specifier}.ts`, at)
-    const part = declaring(await readFile(path, 'utf8'), fn, `${specifier} no longer lists ${fn}`)
-    rows.push(...rowsOf(part, ids, specifier))
+    const whole = await readFile(path, 'utf8')
+    const part = declaring(whole, fn, `${specifier} no longer lists ${fn}`)
+    rows.push(...rowsWithin(whole, part, ids, specifier))
   }
+  return rows
+}
+
+/**
+ * The rows of one list, in its order, with the rows of every list it spreads from
+ * the same file standing where the spread stands: createNoteCommands draws the open and
+ * show commands from a helper of its own.
+ */
+const rowsWithin = (whole, part, ids, path, seen = new Set()) => {
+  const spreads = [...part.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].filter((one) =>
+    new RegExp(`^(?:export )?const ${one[1]} =`, 'm').test(whole),
+  )
+  if (spreads.length === 0) return rowsOf(part, ids, path)
+  const rows = []
+  const take = (text) => {
+    const own = [...text.matchAll(/\bid:\s*(?:COMMAND|ROW)\.([A-Za-z]+)/g)]
+    own.forEach((one, i) => {
+      rows.push({
+        id: getCommandId(ids, one[1]),
+        said: text.slice(one.index, own[i + 1]?.index ?? text.length),
+      })
+    })
+  }
+  let from = 0
+  for (const spread of spreads) {
+    if (seen.has(spread[1])) die(`${path} spreads ${spread[1]} into itself`)
+    take(part.text.slice(from, spread.index))
+    const at = whole.search(new RegExp(`^(?:export )?const ${spread[1]} =`, 'm'))
+    const inner = listed(whole, at)
+    if (!inner) die(`${path} no longer lists ${spread[1]}`)
+    rows.push(...rowsWithin(whole, inner, ids, path, new Set([...seen, spread[1]])))
+    from = spread.index
+  }
+  take(part.text.slice(from))
   return rows
 }
 
@@ -276,9 +308,8 @@ const getSharedRows = (plugins) => {
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
   const words = await read(UI, 'words.ts')
-  const keys = await read(PALETTE, 'lib/chords/chords.ts')
   const ids = await readCommandIds()
-  const table = chords(keys, ids)
+  const table = readKeybindings()
 
   const declared = await readCommands(ids)
   if (declared.length === 0) die('no commands are declared in table.ts')
@@ -292,18 +323,20 @@ const commands = async () => {
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' is in no group`)
     const chord = table.find((one) => one.command === id)
-    const key = chord
-      ? chordOf(chord)
-      : id === getCommandId(ids, 'searchVault')
-        ? chordOf({ letter: 'k' })
-        : ''
+    const key = chord ? chordOf(chord) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
+  }
+  // A row the window draws for a command a plugin binds with values carries the key of the plugin.
+  const plugins = await readPlugins()
+  const bound = plugins.flatMap((one) => one.bound)
+  for (const row of own) {
+    const found = bound.find((one) => one.text === row.text)
+    if (!row.key && found) row.key = chordOf(found.chord)
   }
 
   // The window's own commands come first, then what the plugins add, in the
   // order useCommands.ts hands them to the palette.
   await checkSettingCommands()
-  const plugins = await readPlugins()
   const rows = [
     ...own,
     ...(await readVersionCommands()),

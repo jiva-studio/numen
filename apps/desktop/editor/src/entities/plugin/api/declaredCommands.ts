@@ -18,7 +18,6 @@ interface WireCommand {
   readonly title: string
   readonly icon?: string
   readonly when: string
-  readonly shortcut?: string
   readonly hasItems?: boolean
   readonly arguments: readonly {
     readonly name: string
@@ -50,6 +49,18 @@ interface WireHandler {
   readonly hasItems: boolean
 }
 
+interface WireKeybinding {
+  readonly pluginId: string
+  readonly keybinding?:
+    | {
+        readonly key: string
+        readonly command: string
+        readonly values?: Readonly<Record<string, string>> | undefined
+        readonly when: string
+      }
+    | undefined
+}
+
 interface DeclaredArgument {
   readonly name: string
   readonly title: string
@@ -71,12 +82,22 @@ export interface DeclaredSlot {
   readonly values?: Readonly<Record<string, string>>
 }
 
+/** One entry of `contributes.keybindings` of an enabled plugin, as the core lists it. */
+export interface DeclaredKeybinding {
+  readonly pluginId: string
+  readonly key: string
+  readonly command: string
+  readonly values?: Readonly<Record<string, string>>
+  readonly when?: string
+}
+
 /** What the core lists of the enabled plugins: the commands they declare and where they place them. */
 export interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
   readonly contentTypes?: Readonly<Record<string, string>>
   readonly handlers?: readonly HandlerDeclaration[]
+  readonly keybindings?: readonly DeclaredKeybinding[]
 }
 
 /** One command a plugin declares. */
@@ -86,7 +107,6 @@ export interface DeclaredCommand {
   readonly title: string
   readonly icon?: string
   readonly when?: string
-  readonly shortcut?: string
   readonly hasItems?: true
   readonly arguments: readonly DeclaredArgument[]
 }
@@ -116,7 +136,6 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   title: wire.title,
   ...(wire.icon ? { icon: wire.icon } : {}),
   ...(wire.when ? { when: wire.when } : {}),
-  ...(wire.shortcut ? { shortcut: wire.shortcut } : {}),
   ...(wire.hasItems ? { hasItems: true as const } : {}),
   arguments: wire.arguments.map((one) => ({
     name: one.name,
@@ -160,7 +179,17 @@ const readHandler = ({ pluginId, handler, hasItems }: WireHandler): HandlerDecla
   hasItems,
 })
 
-/** Every command the enabled plugins declare, in the order of the plugins' ids, and their slot entries. */
+const readKeybinding = ({ pluginId, keybinding }: WireKeybinding): DeclaredKeybinding => ({
+  pluginId,
+  key: keybinding?.key ?? '',
+  command: keybinding?.command ?? '',
+  ...(keybinding?.values && Object.keys(keybinding.values).length > 0
+    ? { values: { ...keybinding.values } }
+    : {}),
+  ...(keybinding?.when ? { when: keybinding.when } : {}),
+})
+
+/** Every command the enabled plugins declare, in the order of the plugins' ids, their slot entries and their keybindings. */
 export async function listDeclaredCommands(): Promise<DeclaredList> {
   const answer = await pluginCommands.listCommands({})
   return {
@@ -168,6 +197,8 @@ export async function listDeclaredCommands(): Promise<DeclaredList> {
     slots: answer.slots.map(readSlotEntry),
     contentTypes: { ...answer.contentTypeByExtension },
     handlers: (answer.handlers as readonly WireHandler[] | undefined)?.map(readHandler) ?? [],
+    keybindings:
+      (answer.keybindings as readonly WireKeybinding[] | undefined)?.map(readKeybinding) ?? [],
   }
 }
 

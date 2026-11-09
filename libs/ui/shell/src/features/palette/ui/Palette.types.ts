@@ -5,6 +5,7 @@ import type { PaletteGroup } from '../lib/item'
 export interface PaletteProps {
   groups?: readonly PaletteGroup[]
   isOpen?: boolean
+  isBusy?: boolean
   placeholder?: string
   crumb?: string
   step?: string

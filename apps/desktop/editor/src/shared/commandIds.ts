@@ -16,6 +16,7 @@ export const COMMAND = {
   copyFilePath: formatAppCommandId('file.copyPath'),
   deleteText: formatAppCommandId('version.delete'),
   openFile: formatAppCommandId('file.open'),
+  revealFile: formatAppCommandId('file.reveal'),
   moveFile: formatAppCommandId('file.move'),
   createFolder: formatAppCommandId('folder.create'),
   closeTab: formatAppCommandId('tab.close'),
@@ -24,6 +25,7 @@ export const COMMAND = {
   moveTabToWindow: formatAppCommandId('tab.moveToWindow'),
   linkTab: formatAppCommandId('tab.link'),
   searchVault: formatAppCommandId('vault.search'),
+  openCommands: formatAppCommandId('commands.open'),
   openSettings: formatAppCommandId('settings.open'),
   openVault: formatAppCommandId('vault.open'),
   createVault: formatAppCommandId('vault.create'),
@@ -44,11 +46,14 @@ export const ROW = {
   openNoteBeside: `${COMMAND.openFile}#beside`,
   openDocument: `${COMMAND.openFile}#document`,
   goToNote: `${COMMAND.openFile}#note`,
+  revealInPlex: `${COMMAND.revealFile}#plex`,
+  revealInFiles: `${COMMAND.revealFile}#files`,
 } as const
 
-/** The names of the arguments of the command that opens a file. */
+/** The names of the arguments of the commands that open and show a file. */
 export const ARGUMENT = {
   placement: 'placement',
+  kind: 'kind',
 } as const
 
 /** The welcome row that puts the commands up. It is no command of its own, so it is its own identity. */

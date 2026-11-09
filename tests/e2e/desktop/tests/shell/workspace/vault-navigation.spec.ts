@@ -8,7 +8,7 @@ import {
 import { openNote } from '../../support/vault.js'
 
 test.describe('Vault Navigation and Quick Open Palette', () => {
-  test('shows the note picked in Go to note in the plex with the command Show note in plex', async ({
+  test('shows the note picked in Go to note in the plex with the command Show in plex', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -20,7 +20,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     await page.keyboard.press('Enter')
     await expect.poll(() => readActivePath(page.request)).toMatch(/Entropy\.md$/)
 
-    await runPaletteCommand(page, 'Show note in plex', 'Show note in plex')
+    await runPaletteCommand(page, 'Show in plex', 'Show in plex')
 
     await expect(getGraph(page).getByRole('img', { name: 'Entropy, focus' })).toBeAttached()
     await expect(
@@ -38,7 +38,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
       'true',
     )
 
-    await runPaletteCommand(page, 'Show note in file tree', 'Show note in file tree')
+    await runPaletteCommand(page, 'Show in file tree', 'Show in file tree')
 
     await expect(page.getByRole('tab', { name: /^Files/ })).toHaveAttribute('aria-selected', 'true')
     await expect(page.locator('[data-tree-row="notes/Entropy.md"]')).toBeVisible()

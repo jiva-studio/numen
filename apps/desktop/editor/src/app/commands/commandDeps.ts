@@ -62,6 +62,10 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
       runInBackground(windowTabs.openTabOfKind(kind), (error) =>
         writeMessage(formatErrorMessage(error), 'error'),
       ),
+    showTab: (kind, path) =>
+      runInBackground(windowTabs.navigateTab(kind, path), (error) =>
+        writeMessage(formatErrorMessage(error), 'error'),
+      ),
     closeTab: (tab) => windowTabs.requestClose(tab),
     // Without a palette to open, searching does nothing.
     search: search ?? (() => undefined),

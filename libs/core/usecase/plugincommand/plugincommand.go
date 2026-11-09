@@ -24,6 +24,8 @@ type (
 	Entry = pluginport.PluginCommandEntry
 	// SlotEntry is one slot entry an enabled plugin declares, and the plugin that does.
 	SlotEntry = pluginport.PluginSlotEntry
+	// KeybindingEntry is one keybinding an enabled plugin declares, and the plugin that does.
+	KeybindingEntry = pluginport.PluginKeybindingEntry
 	// Parts is what one plugin has and whether the host holds it suspended.
 	Parts = pluginport.PluginParts
 	// Command is a command as its manifest declares it.
@@ -130,6 +132,18 @@ func (u List) ExecuteSlots() []SlotEntry {
 		return nil
 	}
 	return slices.DeleteFunc(u.commands.ListSlots(), func(one SlotEntry) bool {
+		parts := u.commands.GetParts(one.PluginID)
+		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
+	})
+}
+
+// ExecuteKeybindings lists the keybindings of the enabled plugins, leaving out those of a plugin the host
+// holds suspended and of a plugin with neither a frontend nor a backend.
+func (u List) ExecuteKeybindings() []KeybindingEntry {
+	if u.commands == nil {
+		return nil
+	}
+	return slices.DeleteFunc(u.commands.ListKeybindings(), func(one KeybindingEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})

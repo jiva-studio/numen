@@ -72,6 +72,16 @@
       "about": "a tab is in front"
     },
     {
+      "name": "window.isFieldFocused",
+      "type": "bool",
+      "about": "a text field or an editable area of the window has the focus"
+    },
+    {
+      "name": "window.isPaletteOpen",
+      "type": "bool",
+      "about": "the search or the command palette of the window is open"
+    },
+    {
       "name": "app.platform",
       "type": "string",
       "about": "the operating system of the window: darwin, windows or linux, as context.app.platform"

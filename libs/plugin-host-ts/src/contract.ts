@@ -3,6 +3,7 @@
  * `@numen/core-client` and the plugins it hosts through this package, never through the SDK itself.
  */
 export {
+  APP_KEYBINDINGS,
   CONVERSATION,
   NOTE_TYPE,
   SHARED_COMMANDS,

@@ -36,9 +36,15 @@ const openFile = (invocation: CommandInvocation, on: CommandDeps): void => {
   on.notes.openFile(file, invocation.title || file, placement, getPlace(invocation))
 }
 
+const revealFile = (invocation: CommandInvocation, on: CommandDeps): void => {
+  const kind = invocation.values?.[ARGUMENT.kind]
+  if (kind === 'plex' || kind === 'files') on.navigator.showTab(kind, invocation.path)
+}
+
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.openFile]: openFile,
+  [COMMAND.revealFile]: revealFile,
   [COMMAND.createChildNote]: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: 'child', words }),
   [COMMAND.createParentNote]: (invocation, on, words) =>

@@ -67,6 +67,14 @@ export {
 export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
 export { getTargetValues } from './when/targetValues'
 export { createWhenReader, type WhenReader } from './when/whenReader'
+export {
+  createKeybindingRegistry,
+  type Keybinding,
+  type KeybindingRegistry,
+  type KeybindingRegistryDeps,
+  type KeybindingSource,
+} from './keybindings/keybindingRegistry'
+export { parseKey, type ParsedKey } from './keybindings/parseKey'
 export { getWhenValues, type WhenValueParts } from './when/whenValues'
 export { createWindowHost, type WindowControls } from './hosting/windowHost'
 export { SlotViewHost, usePluginStyles } from './slot-views/slotViewHost'

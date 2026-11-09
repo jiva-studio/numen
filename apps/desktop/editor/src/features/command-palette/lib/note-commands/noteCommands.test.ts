@@ -19,6 +19,9 @@ describe('the commands over a note', () => {
     expect(inputs).toStrictEqual({
       'app:file.open': undefined,
       'app:file.open#beside': undefined,
+      'app:file.reveal': undefined,
+      'app:file.reveal#plex': undefined,
+      'app:file.reveal#files': undefined,
       'app:note.createChild': 'name',
       'app:note.createParent': 'name',
       'app:note.createJump': 'name',

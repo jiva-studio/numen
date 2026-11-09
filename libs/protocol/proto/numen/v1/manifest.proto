@@ -72,6 +72,25 @@ message ManifestContributes {
   repeated ManifestTextKind text_kinds = 18;
   // listeners are the ports the host binds for the plugin.
   repeated ManifestListener listeners = 14;
+  // keybindings bind keys to commands, see the keybindings list of commands.json for the keys of the
+  // application.
+  repeated ManifestKeybinding keybindings = 19;
+}
+
+// ManifestKeybinding binds a key to a command, optionally with values for its arguments, under a
+// condition.
+message ManifestKeybinding {
+  // key is a chord such as "mod+shift+p": the modifiers mod, ctrl, alt, shift and meta, then one key
+  // name. A single letter such as "n" is a key without modifiers.
+  string key = 1;
+  // command is the id the manifest declares the command under, or the full id of a command of
+  // another owner, such as app:file.reveal.
+  string command = 2;
+  // values are the values of the arguments of the command by argument name, as text, checked as
+  // the values of a slot entry.
+  map<string, string> values = 3;
+  // when is a CEL condition over the variables of libs/protocol/when.json. Empty is always true.
+  string when = 4;
 }
 
 // ManifestTextKind is the readable name of one kind of text version a plugin makes. The application
@@ -293,8 +312,7 @@ message ManifestCommand {
   // libs/protocol/when.json, such as "target.isNote". Empty is always. A command whose condition
   // names version.* offers one item per text version of a file for which it holds.
   string when = 11;
-  // shortcut is the keystroke the plugin suggests for the command, such as "mod+shift+e".
-  string shortcut = 10;
+  reserved 10;
 }
 
 message ManifestReader {

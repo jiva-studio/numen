@@ -61,7 +61,6 @@ export interface CommandDeclaration {
   readonly id: string
   readonly title: string
   readonly icon?: string
-  readonly shortcut?: string
   readonly when?: string
 }
 
@@ -96,7 +95,6 @@ export interface CommandRun {
 export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
-  readonly shortcut?: string
   readonly when?: string
   readonly icon?: string
 }

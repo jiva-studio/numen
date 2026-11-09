@@ -142,7 +142,9 @@ function getItemIcon(id: string): Component | null {
         <component :is="getRowIcon(id, isOpen)" class="files__icon" aria-hidden="true" />
       </template>
 
-      <template #silence>{{ words.empty }}</template>
+      <template #silence>
+        <template v-if="props.state.list.isLoaded.value">{{ words.empty }}</template>
+      </template>
     </Tree>
 
     <Menu

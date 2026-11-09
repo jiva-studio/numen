@@ -12,6 +12,8 @@ import (
 // with neither, and of one the host holds suspended.
 type mixedCommands struct{ calls []plugincommand.Call }
 
+func (m *mixedCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+
 func (m *mixedCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
 func (m *mixedCommands) ListHandlers() []plugincommand.Entry { return nil }

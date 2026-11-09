@@ -2,12 +2,12 @@
  * The commands offered over the note in front.
  */
 import { ARGUMENT, COMMAND, ROW } from '@/shared/commandIds'
-import { createRowKeys } from '../chords/chords'
+import { createRowKeys } from '../keys/keys'
 import { withWhen } from '../commands/availability'
 import type { Command } from '../../types'
 import type { Words } from '../../words'
 
-export const createNoteCommands = (words: Words, agent: string): readonly Command[] => [
+const createNoteOpenCommands = (words: Words): readonly Command[] => [
   {
     id: COMMAND.openFile,
     text: words.read,
@@ -23,6 +23,34 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     group: 'note',
     ...withWhen('target.isNote'),
   },
+  // The slots draw this command with the kind of place each entry names; the palette offers its rows.
+  {
+    id: COMMAND.revealFile,
+    text: words.reveal,
+    group: 'note',
+    when: 'target.isNote',
+    isAvailable: () => false,
+  },
+  {
+    id: ROW.revealInPlex,
+    command: COMMAND.revealFile,
+    values: { [ARGUMENT.kind]: 'plex' },
+    text: words.revealInPlex,
+    group: 'note',
+    ...withWhen('target.isNote'),
+  },
+  {
+    id: ROW.revealInFiles,
+    command: COMMAND.revealFile,
+    values: { [ARGUMENT.kind]: 'files' },
+    text: words.revealInFiles,
+    group: 'note',
+    ...withWhen('target.isNote'),
+  },
+]
+
+export const createNoteCommands = (words: Words, agent: string): readonly Command[] => [
+  ...createNoteOpenCommands(words),
   {
     id: COMMAND.createChildNote,
     text: words.child,

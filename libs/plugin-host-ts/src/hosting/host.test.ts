@@ -24,7 +24,6 @@ describe('createPluginHost', () => {
           pluginId: 'sample.plugin',
           id: 'test.run',
           title: 'Run Test',
-          shortcut: 'ctrl+shift+k',
         },
       ],
       registerKind: vi.fn((kind) => {
@@ -55,6 +54,7 @@ describe('createPluginHost', () => {
   it('manages readers, tab kinds, commands, and settings', async () => {
     const { deps, registeredKinds, extensionReaders } = createMockDeps()
     const host = createPluginHost(deps)
+    host.registerKeybindings('sample.plugin', [{ key: 'ctrl+shift+k', command: 'test.run' }])
     const ctx = host.createContext('sample.plugin')
 
     // Register reader

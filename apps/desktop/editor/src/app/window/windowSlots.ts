@@ -19,7 +19,7 @@ import { getPaletteId } from '../commands/declaredCommands'
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<
     DeclaredCommands,
-    'slots' | 'commands' | 'handlers' | 'whenContext'
+    'slots' | 'commands' | 'contributions' | 'whenContext'
   >
   readonly hostHolder: { readonly current?: PluginHost }
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
@@ -60,7 +60,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     whenReader: whenContext.whenReader,
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
-    getHandlerDeclarations: () => deps.declaredCommands.handlers.value,
+    getHandlerDeclarations: () => deps.declaredCommands.contributions.handlers.value,
     getEditorCommands: () => [
       ...(editorCommands ??= createCommands(words)),
       ...(deps.getAppCommands?.() ?? []),

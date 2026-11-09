@@ -6,8 +6,6 @@ import { formatErrorMessage } from '@numen/core-client'
 import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-host'
 import { runInBackground } from '@numen/ui'
 import {
-  isChord,
-  findChordCommand,
   runInvocation,
   createInvocation,
   useCommandPalette,
@@ -26,10 +24,13 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
+import { COMMAND } from '@/shared/commandIds'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
+import { toRunTarget } from './runTarget'
 import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
+import { syncKeybindings } from './syncKeybindings'
 import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
@@ -252,7 +253,7 @@ export function useCommands(options: CommandsDepsOptions) {
     options.readCommandNote ?? createCommandNoteReader(core),
     pluginHost,
     declaredCommands?.whenContext,
-    () => declaredCommands?.handlers.value,
+    () => declaredCommands?.contributions.handlers.value,
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
@@ -295,16 +296,41 @@ export function useCommands(options: CommandsDepsOptions) {
       choice.values,
     )
 
+  /**
+   * Runs a command of the application over the front target with the values of its keybinding. The
+   * command is not asked whether it is offered: the reveal of a note is offered only as the rows that
+   * carry its values, and the condition of the key was judged when the key matched.
+   */
+  const runKeyWithValues = (command: string, values: Values): void => {
+    const invocation = withValues(createInvocation(command, getTarget()), values)
+    runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), (error) =>
+      writeMessage(formatErrorMessage(error), 'error'),
+    )
+  }
+
+  /** Runs the command of the application a key is bound to, with the values of the keybinding. */
+  const runAppKey = (command: string, values: Values): void => {
+    if (command === COMMAND.searchVault) {
+      commands.setOpen(false)
+      palette.setOpen(!palette.open.value)
+    } else if (command === COMMAND.openCommands) {
+      palette.setOpen(false)
+      commands.setOpen(!commands.open.value)
+    } else if (Object.keys(values).length > 0) runKeyWithValues(command, values)
+    else runCommand(command, getTarget())
+  }
+
+  if (pluginHost && declaredCommands?.contributions.keybindings) {
+    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, options.rest.plugins)
+  }
+
+  /** The one handler of keys: the tabs first, then the registry of the keybindings. */
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
-    if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
-    if (!isChord(event)) return
-    const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
-    if (!command) return
-    event.preventDefault()
-    runCommand(command, getTarget())
+    const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
+    if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
   }
 
   return {

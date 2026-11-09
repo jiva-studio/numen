@@ -19,7 +19,7 @@ import {
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
-import { createNoteRow, CREATE_NOTE_ROW } from '../../lib/entries/entries'
+import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '../../types'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
@@ -62,7 +62,6 @@ export interface Words extends EmptyWords {
   readDocument: string
   wordsOnly: string
   notEmbedded: string
-  creating: string
   creates: string
   asChild: string
   asParent: string
@@ -164,32 +163,30 @@ function buildSearchGroups(deps: BuildGroupsDeps) {
   return { groups, hitsById }
 }
 
-function appendCreateNoteRow(
+function appendCreateNoteActions(
   base: ReturnType<typeof buildSearchGroups>,
   text: string,
   words: Words,
   getTarget: SearchOptions['getTarget'],
 ) {
-  const isEmpty = base.groups.every((one) => one.items.length === 0 && !one.isWorking)
-  const row = getTarget && isEmpty ? createNoteRow({ text, words, target: getTarget() }) : null
-  if (!row) return base
-  const actions = row.items.flatMap((one) => one.actions ?? []).map((one) => one.id)
-  const creation: SearchHit = {
-    path: '',
-    title: '',
-    line: -1,
-    start: 0,
-    length: 0,
-    actionIds: actions,
-    type: null,
-    selector: null,
-    isCreation: true,
-  }
-  return {
-    groups: [...base.groups, row],
-    hitsById: new Map([...base.hitsById, [CREATE_NOTE_ROW, creation]]),
-  }
+  const created = getTarget ? getCreateNoteActions({ text, words, target: getTarget() }) : []
+  if (created.length === 0) return base
+  const ids = created.map((one) => one.id)
+  const groups = base.groups.map((one) => ({
+    ...one,
+    items: one.items.map((item) => ({ ...item, actions: [...(item.actions ?? []), ...created] })),
+  }))
+  const hitsById = new Map(
+    [...base.hitsById].map(([id, hit]) => [
+      id,
+      { ...hit, actionIds: [...hit.actionIds, ...ids], creationIds: ids },
+    ]),
+  )
+  return { groups, hitsById }
 }
+
+const hasContent = (group: PaletteGroup): boolean =>
+  group.items.length > 0 || (!group.isWorking && Boolean(group.silence))
 
 interface SearchRefs {
   names: ShallowRef<readonly NameMatch[]>
@@ -197,6 +194,7 @@ interface SearchRefs {
   meanings: ShallowRef<readonly Passage[]>
   isWorking: Ref<Record<SearchGroup, boolean>>
   failureMessages: Ref<Partial<Record<SearchGroup, string>>>
+  isAnswered: Ref<boolean>
 }
 
 async function executeSearchQuery(
@@ -213,6 +211,7 @@ async function executeSearchQuery(
   state.meanings.value = []
   state.isWorking.value = { names: true, text: true, meaning: true }
   state.failureMessages.value = {}
+  state.isAnswered.value = false
   const onFailed = (g: SearchGroup) => {
     state.failureMessages.value = { ...state.failureMessages.value, [g]: ctx.emptyQueryWord }
   }
@@ -253,6 +252,8 @@ async function executeSearchQuery(
       onDone,
     }),
   ])
+  // Stryker disable next-line ConditionalExpression: Outdated queries do not mark the answer.
+  if (ctx.mine.isCurrent) state.isAnswered.value = true
 }
 
 function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
@@ -278,35 +279,30 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const texts = shallowRef<readonly Passage[]>([])
   const meanings = shallowRef<readonly Passage[]>([])
 
-  const isWaiting = ref(false)
   const isWorking = ref<Record<SearchGroup, boolean>>({ names: false, text: false, meaning: false })
   const failureMessages = ref<Partial<Record<SearchGroup, string>>>({})
-  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages }
+  const isAnswered = ref(false)
+  const state: SearchRefs = { names, texts, meanings, isWorking, failureMessages, isAnswered }
 
   const debounced = useDebouncedSearch(how.wait ? { wait: how.wait } : {})
 
   const drop = () => {
-    isWaiting.value = false
     names.value = []
     texts.value = []
     meanings.value = []
     isWorking.value = { names: false, text: false, meaning: false }
     failureMessages.value = {}
+    isAnswered.value = false
   }
 
-  const ask = (query: string, mine: InFlightRequest) => {
-    isWaiting.value = false
-    return executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
-  }
+  const ask = (query: string, mine: InFlightRequest) =>
+    executeSearchQuery({ core, query, mine, emptyQueryWord: words.noQuery }, state)
 
   const setTyped = async (text: string) => {
     inputValue.value = text
     await debounced.search(text, {
       blank: drop,
-      pending: () => {
-        drop()
-        isWaiting.value = true
-      },
+      pending: drop,
       run: ask,
     })
   }
@@ -334,12 +330,19 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
       isWorking: isWorking.value,
       getSilence: getEmptyGroupMessage,
     })
-    return isWaiting.value
-      ? base
-      : appendCreateNoteRow(base, inputValue.value, words, how.getTarget)
+    const withCreation = appendCreateNoteActions(base, inputValue.value, words, how.getTarget)
+    return { ...withCreation, groups: withCreation.groups.filter(hasContent) }
   })
 
   const groups = computed(() => searchGroups.value.groups)
+
+  /** Whether any question of the current request is still out. */
+  const isBusy = computed(() => Object.values(isWorking.value).some(Boolean))
+
+  /** Whether every question has answered and no group has a row or a message to show. */
+  const isNothingFound = computed(
+    () => isAnswered.value && Boolean(inputValue.value.trim()) && groups.value.length === 0,
+  )
 
   const chooseResult = (item: string, action: string): ResultChoice | null =>
     resolveChoice(searchGroups.value.hitsById.get(item), action, inputValue.value)
@@ -348,10 +351,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     open,
     typed: inputValue,
     groups,
+    status: { isBusy, isNothingFound },
     setTyped,
     setOpen,
     chooseResult,
-    ...createHitReaders(() => searchGroups.value.hitsById),
+    reads: createHitReaders(() => searchGroups.value.hitsById),
   }
 }
 

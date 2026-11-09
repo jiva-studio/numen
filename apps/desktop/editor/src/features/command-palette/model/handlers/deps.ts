@@ -64,6 +64,8 @@ export interface WindowNavigator {
   getOpeningNote(): string
   /** A tab of a kind, opened and put in front. */
   openTab(kind: string): void
+  /** The tab of a kind last in front, or a new one, shown at a path. */
+  showTab(kind: string, path: string): void
   /** A tab release. */
   closeTab(tab: string): void
   /** The search, in place of the commands. */

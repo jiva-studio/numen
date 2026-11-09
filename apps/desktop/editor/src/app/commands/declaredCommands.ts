@@ -25,6 +25,7 @@ import {
   listDeclaredCommands,
   runDeclaredCommand,
   type DeclaredCommand,
+  type DeclaredKeybinding,
   type DeclaredSlot,
 } from '@/entities/plugin'
 import {
@@ -119,7 +120,6 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
   title: command.title,
   ...(command.icon ? { icon: command.icon } : {}),
   ...(command.when ? { when: command.when } : {}),
-  ...(command.shortcut ? { shortcut: command.shortcut } : {}),
 })
 
 const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => ({
@@ -142,6 +142,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
+  const declaredKeybindings = shallowRef<readonly DeclaredKeybinding[] | undefined>(undefined)
   const contentTypes = shallowRef<Readonly<Record<string, string>>>({})
   const whenContext: WindowWhenContext = {
     getContentTypes: () => contentTypes.value,
@@ -197,6 +198,8 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     if (!isSameList(declared.value, commands.commands)) declared.value = commands.commands
     if (!isSameList(declaredSlots.value, commands.slots)) declaredSlots.value = commands.slots
     if (!isSameList(declaredHandlers.value, handlers)) declaredHandlers.value = handlers
+    const keybindings = commands.keybindings ?? []
+    if (!isSameList(declaredKeybindings.value, keybindings)) declaredKeybindings.value = keybindings
     if (commands.contentTypes) contentTypes.value = commands.contentTypes
     onFirstList()
   }
@@ -217,8 +220,11 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     whenContext,
     commands: computed(() => declared.value),
     slots: computed(() => declaredSlots.value),
-    /** The handlers of shared commands the enabled plugins declare; undefined until the first list. */
-    handlers: computed(() => declaredHandlers.value),
+    /** The handlers of shared commands and the keybindings the enabled plugins declare; undefined until the first list. */
+    contributions: {
+      handlers: computed(() => declaredHandlers.value),
+      keybindings: computed(() => declaredKeybindings.value),
+    },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load,
   }

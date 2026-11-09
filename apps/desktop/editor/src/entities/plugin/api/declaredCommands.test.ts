@@ -167,7 +167,7 @@ describe('the commands the plugins declare', () => {
     ])
   })
 
-  it('are read with their condition, shortcut, destination flag and the parts of their plugin', async () => {
+  it('are read with their condition, destination flag and the parts of their plugin', async () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
@@ -176,7 +176,6 @@ describe('the commands the plugins declare', () => {
           title: 'Show note in file tree',
           icon: 'folder-open',
           when: 'target.isNote',
-          shortcut: 'mod+shift+e',
           arguments: [],
         },
       ],
@@ -193,7 +192,6 @@ describe('the commands the plugins declare', () => {
       title: 'Show note in file tree',
       icon: 'folder-open',
       when: 'target.isNote',
-      shortcut: 'mod+shift+e',
       arguments: [],
     })
   })
@@ -502,5 +500,45 @@ describe('useCatalogEntries', () => {
     expect((errors.at(-1) as Error).message).toBe(
       'The plugin catalog is unavailable: it lists nothing',
     )
+  })
+})
+
+describe('the keybindings of the plugins', () => {
+  it('are read with their plugin, key, command, values and condition, and none where the core lists none', async () => {
+    request.listCommands.mockResolvedValue({
+      commands: [],
+      slots: [],
+      keybindings: [
+        {
+          pluginId: 'org.example.ink',
+          keybinding: { key: 'mod+shift+i', command: 'ink.open', values: {}, when: '' },
+        },
+        {
+          pluginId: 'org.example.ink',
+          keybinding: {
+            key: 'g',
+            command: 'app:file.open',
+            values: { placement: 'split' },
+            when: '!window.isFieldFocused',
+          },
+        },
+      ],
+    })
+
+    const { keybindings } = await listDeclaredCommands()
+
+    expect(keybindings).toStrictEqual([
+      { pluginId: 'org.example.ink', key: 'mod+shift+i', command: 'ink.open' },
+      {
+        pluginId: 'org.example.ink',
+        key: 'g',
+        command: 'app:file.open',
+        values: { placement: 'split' },
+        when: '!window.isFieldFocused',
+      },
+    ])
+
+    request.listCommands.mockResolvedValue({ commands: [], slots: [] })
+    expect((await listDeclaredCommands()).keybindings).toStrictEqual([])
   })
 })

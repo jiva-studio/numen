@@ -1,4 +1,4 @@
-/** How a command runs, and what a key chord triggers. */
+/** How a command runs, and what a key press triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommandDeps, CommandTarget, PaletteLists } from '@/features/command-palette'
 import { getNamedIcon } from '@/shared/icons'
@@ -10,9 +10,8 @@ const h = vi.hoisted(() => ({
   setCommandsOpen: vi.fn(),
   setPaletteOpen: vi.fn(),
   isCommandsOpen: { value: false },
-  runInvocation: vi.fn(() => Promise.resolve()),
-  isChord: vi.fn(),
-  findChordCommand: vi.fn(),
+  isSearchOpen: { value: false },
+  runInvocation: vi.fn((..._args: unknown[]) => Promise.resolve()),
   depsOptions: null as unknown,
   registerCommand: vi.fn(),
   getExtraCommands: null as null | (() => readonly unknown[]),
@@ -21,13 +20,12 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: { name: 'answer words' },
-  isChord: h.isChord,
-  findChordCommand: h.findChordCommand,
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
   runInvocation: h.runInvocation,
+  createInvocation: (id: string, on: { path: string }) => ({ id, path: on.path }),
   registerCommand: h.registerCommand,
   useSearch: () => {
-    return { setOpen: h.setPaletteOpen }
+    return { setOpen: h.setPaletteOpen, open: h.isSearchOpen }
   },
   useCommandPalette: (...args: unknown[]) => {
     h.getExtraCommands = args[7] as () => readonly unknown[]
@@ -58,7 +56,7 @@ const inFront = (path: string, isReady = true) =>
     isReady,
   }) as unknown as CommandTarget
 
-const setup = (isPrevented = false) => {
+const setup = (isPrevented = false, pluginHost?: object) => {
   const content: [string, string][] = []
   const press = vi.fn(() => isPrevented)
   const options = {
@@ -72,6 +70,7 @@ const setup = (isPrevented = false) => {
     coverage: () => ({}),
     rest: {},
     writeMessage: (text: string, severity: string) => content.push([text, severity]),
+    ...(pluginHost ? { pluginHost } : {}),
   } as unknown as CommandsDepsOptions
   return { messages: content, press, ...useCommands(options) }
 }
@@ -90,8 +89,7 @@ const keyEvent = (key: string, overrides: Partial<KeyboardEvent> = {}) => {
 beforeEach(() => {
   vi.clearAllMocks()
   h.isCommandsOpen.value = false
-  h.isChord.mockReturnValue(true)
-  h.findChordCommand.mockReturnValue('save')
+  h.isSearchOpen.value = false
 })
 
 describe('running a command', () => {
@@ -226,58 +224,43 @@ describe('a run to its end, as a plugin awaits it', () => {
 })
 
 describe('a key press', () => {
-  it('runs the command of the chord, requested for by the lowercase key', () => {
-    h.startCommand.mockReturnValue({ id: 'inv' })
-    const one = setup()
-    const event = keyEvent('S', { shiftKey: true })
+  type RunAppKey = (command: string, values: Record<string, string>) => void
 
-    one.onKeyDown(event)
-
-    expect(h.findChordCommand).toHaveBeenCalledWith('s', true)
-    expect(h.startCommand).toHaveBeenCalledWith('save', target)
-    expect(event.preventDefault).toHaveBeenCalledOnce()
+  /** A host whose registry matches the key as the test says: no match, or an app command to run. */
+  const createHost = (match?: { command: string; values?: Record<string, string> }) => ({
+    getPaletteCommands: () => [],
+    hasCommandItems: () => false,
+    hasCommand: () => false,
+    isSharedCommand: () => false,
+    executeCommand: vi.fn(),
+    handleShortcut: vi.fn(
+      (_event: KeyboardEvent, _getNote: unknown, keyContext: { runApp: RunAppKey }) => {
+        if (match) keyContext.runApp(match.command, match.values ?? {})
+        return match !== undefined
+      },
+    ),
   })
 
   it('does nothing where the event was already handled', () => {
-    const one = setup()
-    const event = keyEvent('s', { defaultPrevented: true })
+    const host = createHost({ command: 'app:note.create' })
+    const one = setup(false, host)
+    const event = keyEvent('n', { defaultPrevented: true })
 
     one.onKeyDown(event)
 
     expect(one.press).not.toHaveBeenCalled()
-    expect(h.startCommand).not.toHaveBeenCalled()
+    expect(host.handleShortcut).not.toHaveBeenCalled()
   })
 
   it('stops at the tabs where they take the key', () => {
-    const one = setup(true)
-    const event = keyEvent('s')
+    const host = createHost({ command: 'app:note.create' })
+    const one = setup(true, host)
+    const event = keyEvent('n')
 
     one.onKeyDown(event)
 
     expect(event.preventDefault).toHaveBeenCalledOnce()
-    expect(h.isChord).not.toHaveBeenCalled()
-  })
-
-  it('does nothing where the key is no chord', () => {
-    h.isChord.mockReturnValue(false)
-    const one = setup()
-    const event = keyEvent('s')
-
-    one.onKeyDown(event)
-
-    expect(h.findChordCommand).not.toHaveBeenCalled()
-    expect(event.preventDefault).not.toHaveBeenCalled()
-  })
-
-  it('does nothing where the chord has no command', () => {
-    h.findChordCommand.mockReturnValue(null)
-    const one = setup()
-    const event = keyEvent('s')
-
-    one.onKeyDown(event)
-
-    expect(h.startCommand).not.toHaveBeenCalled()
-    expect(event.preventDefault).not.toHaveBeenCalled()
+    expect(host.handleShortcut).not.toHaveBeenCalled()
   })
 })
 
@@ -286,13 +269,15 @@ describe('a plugin command over a note', () => {
     id: 'org.example.sample:summary.run',
     title: 'Open summary',
     when: 'target.isNote',
-    shortcut: 'mod+k',
   }
   const GRAPH = {
     id: 'org.example.sample:graph.run',
     title: 'New graph',
-    shortcut: 'mod+shift+x',
     icon: 'waypoints',
+  }
+  const KEYS: Record<string, string> = {
+    [SUMMARY.id]: 'mod+k',
+    [GRAPH.id]: 'mod+shift+x',
   }
   const setupPlugin = (
     declared: readonly object[] = [SUMMARY],
@@ -303,6 +288,7 @@ describe('a plugin command over a note', () => {
     const writeMessage = vi.fn()
     const pluginHost = {
       getPaletteCommands: () => declared,
+      getKeyFor: (id: string) => KEYS[id],
       hasCommandItems: () => false,
       hasCommand: (id: string) => id === 'summary',
       executeCommand,
@@ -485,7 +471,6 @@ describe('a plugin command over a note', () => {
       }),
     )
     expect(event.preventDefault).toHaveBeenCalledOnce()
-    expect(h.isChord).not.toHaveBeenCalled()
   })
 })
 
@@ -509,6 +494,7 @@ describe('a plugin command with items in the palette', () => {
     const pluginHost = {
       getPaletteCommands: () => [MOVE],
       hasCommand: () => false,
+      getKeyFor: () => undefined,
       hasCommandItems: (id: string) => id === MOVE.id,
       listCommandItems,
       executeCommand,

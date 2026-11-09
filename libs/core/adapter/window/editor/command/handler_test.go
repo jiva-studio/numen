@@ -30,6 +30,8 @@ type pluginCommands struct {
 	err    error
 }
 
+func (p pluginCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+
 func (p pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
 
 func (p pluginCommands) ListHandlers() []plugincommand.Entry { return nil }

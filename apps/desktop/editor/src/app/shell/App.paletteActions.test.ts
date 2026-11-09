@@ -1,22 +1,20 @@
 /**
  * The actions of a row of the search, chosen on the mounted window.
  *
- * The row that creates a note is drawn when a search found nothing, and each of its actions is
- * the id of a command that makes the note under the words typed.
+ * The actions that create a note are offered on every row, and each of them is the id of a command
+ * that makes the note under the words typed.
  */
 import { describe, expect, it } from 'vitest'
 import { Palette, type PaletteGroup } from '@numen/shell'
 import {
   DEBOUNCE,
   mountWindowWithPalette,
+  nameAnswer,
   requests,
   settle,
   sourceAnswer,
   vaultState,
 } from '@/testing/window'
-
-/** The id of the group and of the item of the row that creates a note. */
-const CREATE_NOTE_ROW = 'creating'
 
 type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
 
@@ -37,23 +35,25 @@ const choose = async (window: Window, item: string, action: string) => {
   await settle()
 }
 
-describe('the row that creates a note, chosen on the window', () => {
-  it('draws the command that makes the note alone where no note is in front', async () => {
-    vaultState.names = []
+const ROW = 'Ants.md'
+
+describe('the actions that create a note, chosen on the window', () => {
+  it('follows the action of a row with the command that makes the note alone where no note is in front', async () => {
+    vaultState.names = [nameAnswer(ROW, 'Ants')]
     const window = await mountWindowWithPalette()
 
     await search(window, 'Entropy')
 
-    const row = getGroups(window).find((one) => one.id === CREATE_NOTE_ROW)?.items[0]
-    expect(row?.actions?.map((one) => one.id)).toStrictEqual(['app:note.create'])
+    const row = getGroups(window).flatMap((one) => one.items)[0]
+    expect(row?.actions?.map((one) => one.id).filter((id) => id.startsWith('app:note.create'))).toStrictEqual(['app:note.create'])
   })
 
   it('makes one note under the words typed on the choice of app:note.create, and closes the search', async () => {
-    vaultState.names = []
+    vaultState.names = [nameAnswer(ROW, 'Ants')]
     const window = await mountWindowWithPalette()
     await search(window, '  Entropy  ')
 
-    await choose(window, CREATE_NOTE_ROW, 'app:note.create')
+    await choose(window, ROW, 'app:note.create')
 
     expect(requests.made).toStrictEqual(['Entropy'])
     expect(window.findComponent(Palette).props('isOpen')).toBe(false)
@@ -61,18 +61,18 @@ describe('the row that creates a note, chosen on the window', () => {
   })
 
   it('makes no note on the choice of an action that is no command of the row', async () => {
-    vaultState.names = []
+    vaultState.names = [nameAnswer(ROW, 'Ants')]
     const window = await mountWindowWithPalette()
     await search(window, 'Entropy')
 
-    await choose(window, CREATE_NOTE_ROW, 'creating')
+    await choose(window, ROW, 'creating')
 
     expect(requests.made).toStrictEqual([])
   })
 })
 
 describe('the row of a passage of a document, chosen on the window', () => {
-  it('draws the command that opens the document as its one action', async () => {
+  it('draws the command that opens the document as its first action', async () => {
     vaultState.names = []
     vaultState.passages = [sourceAnswer('Ants.bin', { page: 3 })]
     const window = await mountWindowWithPalette()
@@ -81,9 +81,9 @@ describe('the row of a passage of a document, chosen on the window', () => {
 
     const actions = getGroups(window)
       .flatMap((one) => one.items)
-      .flatMap((one) => one.actions ?? [])
+      .map((one) => one.actions?.[0]?.id)
     expect(actions.length).toBeGreaterThan(0)
-    expect(actions.map((one) => one.id)).toStrictEqual(actions.map(() => 'app:file.open#document'))
+    expect(actions).toStrictEqual(actions.map(() => 'app:file.open#document'))
   })
 
   it('closes the search once and writes no message on the choice of that command', async () => {

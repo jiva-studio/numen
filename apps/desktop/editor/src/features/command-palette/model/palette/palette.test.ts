@@ -5,8 +5,7 @@
  * destructive action is reached only by typing the note's name.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, ref } from 'vue'
-import { mount } from '@vue/test-utils'
+import { defineComponent, ref } from 'vue'
 import { runSupport } from './runSupport'
 import type {
   Command,
@@ -17,9 +16,8 @@ import type {
   StepGroup,
 } from '../../types'
 import { useCommandPalette, type Commands } from './palette'
-import { usePaletteShortcuts } from './shortcuts'
 import type { VaultList, Vault } from '@/entities/vault'
-import type { NameMatch, SearchState } from '../search/search'
+import type { NameMatch } from '../search/search'
 import { WORDS as words } from '@/shared/words'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
@@ -173,6 +171,8 @@ describe('the commands as they open', () => {
     expect(getItemIds(commands.groups)).toStrictEqual({
       note: [
         'app:file.open',
+        'app:file.reveal#plex',
+        'app:file.reveal#files',
         'app:note.createChild',
         'app:note.createParent',
         'app:note.createJump',
@@ -1516,7 +1516,6 @@ describe('what a step draws', () => {
       'Remove “Heat”',
     ])
   })
-
 })
 
 describe('a row of a list the window holds', () => {
@@ -1601,6 +1600,28 @@ describe('the icon of a command', () => {
 })
 
 describe('runSupport, arguments steps, and palette shortcuts', () => {
+  it('starts a hidden command given values', () => {
+    const commands = useCommandPalette({
+      core: {
+        names: async () => [],
+        vaults: async () => installation(vault('physics', 'Physics')),
+      },
+      words,
+      at: () => front(),
+      knows: createLookup().knows,
+      lists: createLists({}).paletteLists,
+      runs: runSupport(),
+      getExtraCommands: () => [
+        { id: 'app:test.reveal', text: 'Reveal', group: 'note', isAvailable: () => false },
+      ],
+    })
+
+    expect(commands.startCommand('app:test.reveal', front())).toBeNull()
+    expect(
+      commands.startCommand('app:test.reveal', front(), undefined, { kind: 'plex' }),
+    ).toMatchObject({ id: 'app:test.reveal' })
+  })
+
   it('tracks unsupported runs in runSupport', () => {
     const runs = runSupport()
     expect(runs.canRun('ocr')).toBe(true)
@@ -1697,53 +1718,6 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     commands.setTyped('Quantum').catch(rethrow)
     const result = chooseRow(commands)
     expect(result?.values).toStrictEqual({ detail: 'Spin', topic: 'Quantum' })
-  })
-
-  it('toggles search and command palettes via keyboard shortcuts', () => {
-    const searchOpen = ref(false)
-    const search = {
-      open: searchOpen,
-      setOpen: (val: boolean) => {
-        searchOpen.value = val
-      },
-    } as unknown as SearchState
-    const { commands } = createPalette()
-    commands.setOpen(false)
-
-    const Comp = defineComponent({
-      setup() {
-        usePaletteShortcuts(search, commands)
-        return () => h('div')
-      },
-    })
-    const wrapper = mount(Comp)
-
-    const nonChord = new KeyboardEvent('keydown', { key: 'k', cancelable: true })
-    globalThis.dispatchEvent(nonChord)
-    expect(searchOpen.value).toBe(false)
-
-    const prePrevented = new KeyboardEvent('keydown', {
-      key: 'k',
-      ctrlKey: true,
-      cancelable: true,
-    })
-    prePrevented.preventDefault()
-    globalThis.dispatchEvent(prePrevented)
-    expect(searchOpen.value).toBe(false)
-
-    const kEvent = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, cancelable: true })
-    globalThis.dispatchEvent(kEvent)
-    expect(kEvent.defaultPrevented).toBe(true)
-    expect(searchOpen.value).toBe(true)
-    expect(commands.open.value).toBe(false)
-
-    const pEvent = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true, cancelable: true })
-    globalThis.dispatchEvent(pEvent)
-    expect(pEvent.defaultPrevented).toBe(true)
-    expect(searchOpen.value).toBe(false)
-    expect(commands.open.value).toBe(true)
-
-    wrapper.unmount()
   })
 })
 

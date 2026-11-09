@@ -39,12 +39,6 @@ export function activate(context: PluginContext): void {
 
   context.registerCommand({
     id: 'tree.open',
-    handler: async () => {
-      await context.openTab?.(FILES)
-    },
-  })
-  context.registerCommand({
-    id: 'tree.revealNote',
     handler: async (note) => {
       await context.navigateTab?.(FILES, note.path)
     },

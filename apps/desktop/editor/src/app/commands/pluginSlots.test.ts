@@ -126,7 +126,7 @@ describe('a command of a slot entry', () => {
   const find = createSlotCommandFinder({
     whenReader: createWhenReader(),
     getPluginCommands: () => [
-      { id: `${TIDE}:tide.live`, title: 'Live tide', icon: 'waves', shortcut: 'mod+t' },
+      { id: `${TIDE}:tide.live`, title: 'Live tide', icon: 'waves' },
     ],
     getDeclaredCommands: () => [
       declared({ id: 'tide.open', title: 'Open tide', icon: 'waves' }),
@@ -143,23 +143,20 @@ describe('a command of a slot entry', () => {
     getWhenValues: (target) => getTargetValues(target, { csv: 'text/csv', md: 'text/markdown' }),
   })
 
-  it('is drawn with the title, icon and shortcut of the command', () => {
+  it('is drawn with the title and icon of the command', () => {
     expect(find(`${TIDE}:tide.live`, undefined)).toStrictEqual({
       title: 'Live tide',
       icon: getNamedIcon('waves'),
-      shortcut: 'mod+t',
       hasItems: false,
     })
     expect(find(`${TIDE}:tide.open`, undefined)).toStrictEqual({
       title: 'Open tide',
       icon: getNamedIcon('waves'),
-      shortcut: '',
       hasItems: false,
     })
     expect(find('app:settings.open', undefined)).toStrictEqual({
       title: 'Open settings',
       icon: getNamedIcon('settings'),
-      shortcut: '',
       hasItems: false,
     })
   })
@@ -200,7 +197,6 @@ describe('a shared command in a slot', () => {
     expect(find('app:file.createText', NOTE)).toStrictEqual({
       title: 'Create text',
       icon: FileText,
-      shortcut: '',
       hasItems: true,
     })
   })

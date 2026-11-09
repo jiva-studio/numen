@@ -177,6 +177,7 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		Triggers:     newTriggers(wire.GetTriggers()),
 		TextKinds:    newTextKinds(wire.GetTextKinds()),
 		Listeners:    newListeners(wire.GetListeners()),
+		Keybindings:  newKeybindings(wire.GetKeybindings()),
 	}, nil
 }
 
@@ -200,6 +201,14 @@ func newSlots(wire []*v1.ManifestSlotEntry) []manifest.SlotEntry {
 			When:    one.GetWhen(),
 			Values:  one.GetValues(),
 		})
+	}
+	return out
+}
+
+func newKeybindings(wire []*v1.ManifestKeybinding) []manifest.Keybinding {
+	var out []manifest.Keybinding
+	for _, one := range wire {
+		out = append(out, manifest.Keybinding{Key: one.GetKey(), Command: one.GetCommand(), Values: one.GetValues(), When: one.GetWhen()})
 	}
 	return out
 }
@@ -379,7 +388,6 @@ func newCommands(wire []*v1.ManifestCommand) []manifest.Command {
 			Icon:      one.GetIcon(),
 			When:      one.GetWhen(),
 			Arguments: newCommandArguments(one.GetArguments()),
-			Shortcut:  one.GetShortcut(),
 		})
 	}
 	return out

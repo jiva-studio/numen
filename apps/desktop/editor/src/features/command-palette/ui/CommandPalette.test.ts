@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/shell'
 import type { SlotCommand } from '@numen/plugin-host'
 import { WORDS as words } from '@/shared/words'
-import { CREATE_NOTE_ROW } from '../lib/entries/entries'
 import { runSupport } from '../model/palette/runSupport'
 import { useCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
@@ -77,7 +76,11 @@ const flushPromises = async () => {
   for (let turn = 0; turn < 8; turn += 1) await Promise.resolve()
 }
 
-async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, text: string) {
+async function mountField(
+  found: { names?: NameMatch[]; passages?: Passage[] },
+  text: string,
+  showSilence = false,
+) {
   const core: SearchDeps = {
     names: async () => found.names ?? [],
     search: async (_query, mode) => (mode === 'words' ? (found.passages ?? []) : []),
@@ -108,7 +111,9 @@ async function mountField(found: { names?: NameMatch[]; passages?: Passage[] }, 
       places: {},
       runChoice,
     },
-    global: { stubs: { Palette: true } },
+    global: {
+      stubs: { Palette: showSilence ? { template: '<div><slot name="silence" /></div>' } : true },
+    },
   })
   const choose = async (item: string, action: string) => {
     field.findComponent(Palette).vm.$emit('choose', item, action)
@@ -182,7 +187,7 @@ describe('choosing an action of a row of the search', () => {
   })
 })
 
-describe('choosing an action of the row that creates a note', () => {
+describe('choosing an action that creates a note on a row of the search', () => {
   it.each([
     'app:note.create',
     'app:note.createChild',
@@ -191,9 +196,9 @@ describe('choosing an action of the row that creates a note', () => {
   ])(
     'runs %s with the words typed as its input, as a command and not as a branch',
     async (action) => {
-      const one = await mountField({}, '  Entropy  ')
+      const one = await mountField({ names: [byName] }, '  Entropy  ')
 
-      await one.choose(CREATE_NOTE_ROW, action)
+      await one.choose(byName.path, action)
 
       expect(one.runChoice).toHaveBeenCalledExactlyOnceWith({
         command: action,
@@ -318,5 +323,21 @@ describe('the highlight of the search menu as groups answer', () => {
     } finally {
       field.unmount()
     }
+  })
+})
+
+describe('the empty state of the search', () => {
+  it('shows the typed words and the icon when nothing is found', async () => {
+    const one = await mountField({}, '  oo  ', true)
+
+    expect(one.field.get('[data-palette="nothing-text"]').text()).toBe('No results for “oo”')
+    expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(true)
+  })
+
+  it('is absent while results exist', async () => {
+    const one = await mountField({ passages: [bookPassage] }, 'reef', true)
+
+    expect(one.field.find('[data-palette="nothing-text"]').exists()).toBe(false)
+    expect(one.field.find('[data-palette="nothing-icon"]').exists()).toBe(false)
   })
 })

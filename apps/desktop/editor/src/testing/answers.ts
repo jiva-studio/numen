@@ -90,7 +90,6 @@ interface DeclaredAnswer {
   title: string
   icon?: string
   scope?: 'note'
-  shortcut?: string
   contentTypes: string[]
   extensions: string[]
   arguments: []

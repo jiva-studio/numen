@@ -37,6 +37,7 @@ export const WORDS = {
   readDocument: 'Open the document here',
   noneFound: 'No results found',
   noQuery: 'Search failed',
+  nothingFound: (query: string) => `No results for “${query}”`,
   notEmbedded: 'Semantic index not built yet',
   /** The commands, and the groups they are drawn in. */
   noteGroupTitle: 'Note',
@@ -45,6 +46,9 @@ export const WORDS = {
   overSettings: 'Settings',
   overVault: 'Vault',
   beside: 'Open note beside',
+  reveal: 'Show note',
+  revealInPlex: 'Show in plex',
+  revealInFiles: 'Show in file tree',
   child: 'Create child note',
   parent: 'Create parent note',
   jump: 'Create jump note',
@@ -131,7 +135,6 @@ export const WORDS = {
   erases: 'Erase',
   binned: 'The folder moves to the trash',
   /** The note a search did not find, offered as one to make. */
-  creating: 'No results',
   creates: 'Create note',
   asChild: 'Create as child',
   asParent: 'Create as parent',

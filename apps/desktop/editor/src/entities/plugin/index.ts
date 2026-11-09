@@ -6,6 +6,7 @@ export {
   runDeclaredHandler,
   type DeclaredCommand,
   type DeclaredCommandOutcome,
+  type DeclaredKeybinding,
   type DeclaredList,
   type DeclaredSlot,
   type ItemListAnswer,

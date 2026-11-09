@@ -18,8 +18,13 @@ import { createViewRegistry, type ViewRegistry } from '../views'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners } from './events'
 import { createCommandApi } from './commandApi'
-import { createWhenReader } from '../when/whenReader'
-import { isSharedCommand } from '@numen/plugin-sdk'
+import { createWhenReader, type WhenReader } from '../when/whenReader'
+import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
+import { APP_COMMAND_OWNER } from '../commandId'
+import {
+  createKeybindingRegistry,
+  type KeybindingSource,
+} from '../keybindings/keybindingRegistry'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
@@ -256,7 +261,35 @@ function createRegisteredApi(registry: HostRegistry) {
   }
 }
 
-function createContextApi(registry: HostRegistry, contextHost: PluginContextHost) {
+function createKeybindingApi(deps: PluginHostDeps & { readonly whenReader: WhenReader }) {
+  const keybindings = createKeybindingRegistry({
+    isMac: () => deps.app?.platform === 'darwin',
+    whenReader: deps.whenReader,
+    report: (owner, message) => deps.reportSlotIssue?.(owner, message, 'warning'),
+  })
+  keybindings.register(APP_COMMAND_OWNER, APP_KEYBINDINGS)
+  const owners = new Set<string>()
+  const registerKeybindings = (pluginId: string, sources: readonly KeybindingSource[]) => {
+    owners.add(pluginId)
+    keybindings.register(pluginId, sources)
+  }
+  const unregisterKeybindings = (pluginId: string) => {
+    owners.delete(pluginId)
+    keybindings.unregister(pluginId)
+  }
+  return {
+    keybindings,
+    registerKeybindings,
+    unregisterKeybindings,
+    unregisterAllKeybindings: () => [...owners].forEach(unregisterKeybindings),
+  }
+}
+
+function createContextApi(
+  registry: HostRegistry,
+  contextHost: PluginContextHost,
+  registerKeybindings: (pluginId: string, sources: readonly KeybindingSource[]) => void,
+) {
   return {
     contextHost,
     createContext: (pluginId: string, manifest?: Manifest): PluginContext => {
@@ -279,6 +312,7 @@ function createContextApi(registry: HostRegistry, contextHost: PluginContextHost
         )
       }
       registry.manifests.set(pluginId, manifest)
+      registerKeybindings(pluginId, manifest.contributes?.keybindings ?? [])
     },
   }
 }
@@ -295,7 +329,10 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     drops: createDropRegistry(),
     slotViews,
   })
+  const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
+    createKeybindingApi(deps)
   const slots = createSlotRegistry({
+    getKeyFor: keybindings.getKeyFor,
     getEntries: () => deps.getSlotEntries?.(),
     findCommand: (command, target) => deps.findSlotCommand?.(command, target),
     findView: slotViews.findView,
@@ -307,16 +344,26 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const parts = { registry, slotViews, deps }
 
   return {
-    ...createContextApi(registry, contextHost),
-    ...createCommandApi(deps, registry),
+    ...createContextApi(registry, contextHost, registerKeybindings),
+    ...createCommandApi(deps, registry, keybindings),
+    registerKeybindings,
+    unregisterKeybindings,
+    /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */
+    getKeyFor: keybindings.getKeyFor,
     ...createRegisteredApi(registry),
     getSetting: contextHost.getSetting,
     onSettingChange: contextHost.onSettingChange,
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
-    disposePlugin: (pluginId: string) => disposePluginEntry(pluginId, parts),
-    disposeAll: () => disposeAllEntries(parts),
+    disposePlugin: (pluginId: string) => {
+      disposePluginEntry(pluginId, parts)
+      unregisterKeybindings(pluginId)
+    },
+    disposeAll: () => {
+      disposeAllEntries(parts)
+      unregisterAllKeybindings()
+    },
     /** The entries of the slots of the window, as their owners read them. */
     slots,
     /** The view a slot of the window draws, or null while no plugin registered one; reactive. */

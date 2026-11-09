@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CONVERSATION } from '@numen/plugin-sdk'
+import { CONVERSATION, type TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
 import plugin, { activate, AgentTab, AGENT, ConversationView } from './index'
 import { createHost } from './fixtures'
@@ -12,6 +12,27 @@ const createContext = () => {
     agent: host.agent,
   })
   return { ctx, recorded }
+}
+
+const createWindow = () => {
+  let getKinds = (): readonly TabKindRegistration[] => []
+  const tabOpens: (readonly [string, string])[] = []
+  const tabs: { kind: string; state: unknown }[] = []
+  const navigateTab = async (kind: string, path: string): Promise<string> => {
+    const registration = getKinds().find((one) => one.kind === kind)!
+    const last = tabs.filter((one) => one.kind === kind).at(-1)
+    if (last) {
+      await registration.navigate?.(last.state, path, '')
+      return kind
+    }
+    tabOpens.push([kind, path])
+    tabs.push({ kind, state: registration.open!(path, `${kind}-${tabs.length}`) })
+    return kind
+  }
+  const bind = (ctx: { getRegisteredTabKinds(): TabKindRegistration[] }): void => {
+    getKinds = () => ctx.getRegisteredTabKinds()
+  }
+  return { tabOpens, tabs, navigateTab, bind }
 }
 
 describe('view-agent-chat plugin', () => {
@@ -71,18 +92,42 @@ describe('view-agent-chat plugin', () => {
     expect(second.userQuestion.value).toBe('')
   })
 
-  it('registers the handlers that open a conversation and ask about a note', async () => {
-    const openCalls: (readonly [string, string | undefined])[] = []
-    const { host, recorded } = createHost()
+  it('opens one conversation however many times the command runs', async () => {
+    const { host } = createHost()
+    const strip = createWindow()
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.views.agent.chat',
       workspace: host.workspace,
       agent: host.agent,
-      openTab: (kind, path) => {
-        openCalls.push([kind, path])
-        return Promise.resolve('')
-      },
+      navigateTab: strip.navigateTab,
     })
+    strip.bind(ctx)
+    activate(ctx)
+
+    await ctx.triggerCommand('chat.open')
+    await ctx.triggerCommand('chat.open', {
+      path: 'One.md',
+      title: 'One.md',
+      type: 'note',
+      isFolder: false,
+      others: [],
+      tab: '',
+    })
+
+    expect(strip.tabOpens).toStrictEqual([[AGENT, '']])
+    expect(strip.tabs).toHaveLength(1)
+  })
+
+  it('registers the handlers that open a conversation and ask about a note', async () => {
+    const { host, recorded } = createHost()
+    const strip = createWindow()
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.agent.chat',
+      workspace: host.workspace,
+      agent: host.agent,
+      navigateTab: strip.navigateTab,
+    })
+    strip.bind(ctx)
     activate(ctx)
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
@@ -99,7 +144,7 @@ describe('view-agent-chat plugin', () => {
       tab: '',
     })
 
-    expect(openCalls).toStrictEqual([[AGENT, undefined]])
+    expect(strip.tabOpens).toStrictEqual([[AGENT, '']])
     expect(recorded.questions).toStrictEqual(['One.md — '])
   })
 

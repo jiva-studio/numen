@@ -115,13 +115,13 @@ describe('the palette', () => {
       one.textContent?.trim(),
     )
 
-  it('draws no group for a search that answered with nothing, and says so once', async () => {
+  it('draws no group for a search that answered with nothing', async () => {
     vaultState.embedded = 4
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
 
-    expect(groupTitles()).toStrictEqual([WORDS.creating])
+    expect(groupTitles()).toStrictEqual([])
     expect(document.body.querySelector('[data-palette="silence"]')).toBeNull()
   })
 
@@ -131,7 +131,7 @@ describe('the palette', () => {
 
     await runSearch(window)
 
-    expect(groupTitles()).toStrictEqual([WORDS.creating, WORDS.meaning])
+    expect(groupTitles()).toStrictEqual([WORDS.meaning])
     expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
       WORDS.notEmbedded,
     )

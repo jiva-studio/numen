@@ -170,20 +170,53 @@ const getWordsFile = (sourceFile, module, at) => {
 }
 
 /**
- * The chord a plugin's shortcut is drawn as, such as `mod+shift+x`. The window
- * draws a shortcut that is its modifier with a letter, and Shift or not; any
- * other shortcut is refused, as the window would draw it as nothing.
+ * The chord a plugin's keybinding is drawn as, such as `mod+shift+x`. The window
+ * draws a key that is its modifier with a letter, and Shift or not; any
+ * other key is refused, as the window would draw it as nothing.
  */
-const getShortcutChord = (shortcut, where) => {
-  const parts = shortcut.toLowerCase().split('+')
+const getKeyChord = (key, where, known = ['mod', 'ctrl', 'control', 'cmd', 'shift']) => {
+  const parts = key.toLowerCase().split('+')
   const letter = parts.at(-1)
   const modifiers = parts.slice(0, -1)
-  const known = ['mod', 'ctrl', 'control', 'cmd', 'shift']
   if (!/^[a-z]$/.test(letter) || modifiers.some((one) => !known.includes(one))) {
-    fail(`${where} declares the shortcut '${shortcut}', which the window draws as nothing`)
+    fail(`${where} binds the key '${key}', which the window draws as nothing`)
   }
-  return { letter, shift: modifiers.includes('shift') }
+  const alt = modifiers.includes('alt') ? { alt: true } : {}
+  return { letter, shift: modifiers.includes('shift'), ...alt }
 }
+
+/** Whether a slot entry passes exactly the values a keybinding passes. */
+const hasSameValues = (a = {}, b = {}) => {
+  const names = Object.keys(a)
+  return names.length === Object.keys(b).length && names.every((name) => a[name] === b[name])
+}
+
+/**
+ * The keys a manifest binds to a command of the application with values, such as showing a note in
+ * the plex, each named by the title of the slot entry that passes the same values and drawn with
+ * Alt allowed.
+ */
+const getBoundKeys = (manifest, name) =>
+  (manifest.contributes?.keybindings ?? [])
+    .filter((one) => one.command.startsWith('app:') && Object.keys(one.values ?? {}).length > 0)
+    .map((one) => {
+      const entry = (manifest.contributes?.slots ?? []).find(
+        (slot) =>
+          slot.placed.case === 'command' &&
+          slot.placed.value === one.command &&
+          hasSameValues(slot.values, one.values),
+      )
+      if (!entry?.title) fail(`${name} binds '${one.key}' to a command no entry of a slot titles`)
+      return {
+        text: entry.title,
+        group: /\btarget\.isNote\b/.test(one.when) ? 'note' : 'window',
+        chord: getKeyChord(one.key, name, ['mod', 'ctrl', 'control', 'cmd', 'shift', 'alt']),
+      }
+    })
+
+/** The key the manifest binds to its command of the id, or an empty string for none. */
+const getKey = (manifest, id) =>
+  (manifest.contributes?.keybindings ?? []).find((one) => one.command === id)?.key ?? ''
 
 /** The palette group of a declared command by its when condition, as the window files it. */
 const getWhenGroup = (when) => {
@@ -204,8 +237,10 @@ const isOverVersion = (when) => /\bversion\.\w/.test(when)
  *   frontend does not register, which the palette shows, leaving out the ones whose condition names
  *   a text version;
  * - `commands`, each command its manifest declares that its frontend registers a
- *   handler for, with the chord its shortcut is drawn as, over the note where its condition
+ *   handler for, with the chord its keybinding is drawn as, over the note where its condition
  *   reads target.isNote and over the window where it does not;
+ * - `bound`, each key the manifest binds to a command of the application with values, with the
+ *   title the slot entry gives it and its chord;
  * - `handled`, the id of each shared command its manifest handles under
  *   `contributes.handlers`.
  *
@@ -245,12 +280,16 @@ export const getPluginCommands = async (target, plugins = PLUGINS) => {
         .map((one) => ({ text: one.title, group: getWhenGroup(one.when) })),
       commands: all
         .filter((one) => registered.includes(one.id))
-        .map((one) => ({
-          id: one.id,
-          text: one.title,
-          group: /\btarget\.isNote\b/.test(one.when) ? 'note' : 'window',
-          ...(one.shortcut ? { chord: getShortcutChord(one.shortcut, name) } : {}),
-        })),
+        .map((one) => {
+          const key = getKey(manifest, one.id)
+          return {
+            id: one.id,
+            text: one.title,
+            group: /\btarget\.isNote\b/.test(one.when) ? 'note' : 'window',
+            ...(key ? { chord: getKeyChord(key, name) } : {}),
+          }
+        }),
+      bound: getBoundKeys(manifest, name),
       handled,
     })
   }

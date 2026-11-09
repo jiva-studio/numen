@@ -167,6 +167,9 @@ const window = (
       openTab: (kind) => {
         isDone.push(`openTab ${kind}`)
       },
+      showTab: (kind, path) => {
+        isDone.push(`showTab ${kind} ${path}`)
+      },
       closeTab: (tab) => {
         isDone.push(`closeTab ${tab}`)
       },
@@ -198,7 +201,8 @@ const carry = async (invocation: CommandInvocation, on: CommandDeps) =>
 
 describe('every command that is offered', () => {
   it('is carried out by something', async () => {
-    for (const command of createCommands(WORDS)) {
+    // The command that shows a note is drawn by the slots with a kind; the palette offers its rows.
+    for (const command of createCommands(WORDS).filter((one) => one.id !== 'app:file.reveal')) {
       const one = window()
       await carry(
         {
@@ -284,6 +288,28 @@ describe('a note put in front of the person', () => {
     expect(one.actions).toStrictEqual([
       'openFile physics/Ontology.md Ontology current',
       'openFile physics/Ontology.md Ontology split',
+    ])
+  })
+})
+
+describe('a note shown in a place', () => {
+  it('moves the tab of the kind to the note, and does nothing for a kind the window has none of', async () => {
+    const one = window()
+
+    await carry(
+      { ...createInvocation('app:file.reveal', front()), values: { kind: 'plex' } },
+      one.on,
+    )
+    await carry(
+      { ...createInvocation('app:file.reveal', front()), values: { kind: 'files' } },
+      one.on,
+    )
+    await carry({ ...createInvocation('app:file.reveal', front()), values: { kind: 'x' } }, one.on)
+    await carry(createInvocation('app:file.reveal', front()), one.on)
+
+    expect(one.actions).toStrictEqual([
+      'showTab plex physics/Ontology.md',
+      'showTab files physics/Ontology.md',
     ])
   })
 })

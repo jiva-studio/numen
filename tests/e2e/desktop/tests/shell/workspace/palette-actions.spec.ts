@@ -2,6 +2,13 @@ import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { getPaletteField, openWorkspace, waitForPassage } from '../../support/workspace.js'
 
 const OPEN_DOCUMENT = 'Open the document here'
+const QUERY = 'reflowable epub reader'
+const CREATE_ACTIONS = [
+  `Create note “${QUERY}”`,
+  `Create as child “${QUERY}”`,
+  `Create as parent “${QUERY}”`,
+  `Create as jump “${QUERY}”`,
+]
 
 const readLitText = (): string[] => {
   const ranges = CSS.highlights.get('numen-book')
@@ -26,15 +33,18 @@ const openActions = async (page: Page) => {
 test.describe('The actions of a passage of a book found by the search', () => {
   test.describe.configure({ timeout: 120_000 })
 
-  test('lists one action that opens the document, and opens the book at the passage on Enter', async ({
+  test('lists Open first and then the Create actions, and opens the book on Enter', async ({
     page,
   }) => {
     await openWorkspace(page)
-    const passage = await waitForPassage(page, 'reflowable epub reader', 'assets/sample.epub')
+    const passage = await waitForPassage(page, QUERY, 'assets/sample.epub')
     await highlightRow(page, passage)
 
     const rows = await openActions(page)
-    await expect(rows.locator('[data-actions="name"]')).toHaveText([OPEN_DOCUMENT])
+    await expect(rows.locator('[data-actions="name"]')).toHaveText([
+      OPEN_DOCUMENT,
+      ...CREATE_ACTIONS,
+    ])
     await page.keyboard.press('Enter')
 
     await expect(page.locator('.book-tab')).toBeVisible()
@@ -46,7 +56,7 @@ test.describe('The actions of a passage of a book found by the search', () => {
 
   test('opens the book at the passage on Enter over the row', async ({ page }) => {
     await openWorkspace(page)
-    const passage = await waitForPassage(page, 'reflowable epub reader', 'assets/sample.epub')
+    const passage = await waitForPassage(page, QUERY, 'assets/sample.epub')
     await highlightRow(page, passage)
 
     await page.keyboard.press('Enter')

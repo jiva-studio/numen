@@ -40,8 +40,7 @@ const everyFieldManifest = `{
 	"contributes": {"commands": [{"id": "task.run", "title": "Run", "icon": "play",
 		"when": "target.contentType.startsWith('audio/')",
 		"arguments": [{"name": "n", "title": "N", "type": "number", "required": false},
-			{"name": "m", "title": "M", "type": "number", "required": true}],
-		"shortcut": "mod+shift+r"}],
+			{"name": "m", "title": "M", "type": "number", "required": true}]}],
 		"tabKinds": [{"kind": "full", "title": "Full", "icon": "gauge", "when": "target.noteType == 'full'", "rank": "alternate"}], "feature": "full tabs", "category": "views",
 		"themes": [{"id": "full-dark", "name": "Full Dark", "appearance": "dark", "file": "themes/full-dark.css"}],
 		"handlers": [{"command": "app:file.createText", "title": "Transcribe", "when": "target.contentType.startsWith('audio/')"}],
@@ -53,7 +52,8 @@ const everyFieldManifest = `{
 		"slots": [{"slot": "titleBar.commands", "command": "task.run", "group": "run", "order": 1, "values": {"n": "3"}},
 			{"slot": "titleBar", "view": "bar"},
 			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "target.isFolder"}],
-		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}]}
+		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}],
+		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

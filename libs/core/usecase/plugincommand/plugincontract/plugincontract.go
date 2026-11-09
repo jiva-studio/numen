@@ -27,10 +27,12 @@ type (
 	PluginCommandEntry     = pluginport.PluginCommandEntry
 	PluginCommandResult    = pluginport.PluginCommandResult
 	PluginSlotEntry        = pluginport.PluginSlotEntry
+	PluginKeybindingEntry  = pluginport.PluginKeybindingEntry
 	PluginTabKindEntry     = pluginport.PluginTabKindEntry
 	PluginTriggerEntry     = pluginport.PluginTriggerEntry
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
+	PluginDeclarations     = pluginport.PluginDeclarations
 	PluginParts            = pluginport.PluginParts
 	PluginConfigurator     = pluginport.PluginConfigurator
 	PluginDiscoverer       = pluginport.PluginDiscoverer

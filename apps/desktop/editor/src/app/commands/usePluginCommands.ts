@@ -59,7 +59,8 @@ export function usePluginCommands(
   const { getSharedCommands, getSharedEntries } = createSharedCommands(getHandlers, isWhenAvailable)
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
-    const keys = cmd.shortcut ? findShortcutKeys(cmd.shortcut, navigator.userAgent) : undefined
+    const key = pluginHost?.getKeyFor(cmd.id)
+    const keys = key ? findShortcutKeys(key, navigator.userAgent) : undefined
     return {
       ...(keys ? { keys } : {}),
       ...(cmd.icon ? { icon: getNamedIcon(cmd.icon) } : {}),
@@ -90,7 +91,7 @@ export function usePluginCommands(
    */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => !hasNoteVariable(context.whenReader.getCondition(cmd.when)) && cmd.shortcut)
+      .filter((cmd) => !hasNoteVariable(context.whenReader.getCondition(cmd.when)) && pluginHost?.getKeyFor(cmd.id))
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 

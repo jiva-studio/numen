@@ -17,6 +17,8 @@ func (menuPlugins) ListCommands() []plugincommand.Entry { return nil }
 
 func (menuPlugins) ListHandlers() []plugincommand.Entry { return nil }
 
+func (menuPlugins) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+
 func (menuPlugins) ListSlots() []plugincommand.SlotEntry {
 	order := 20
 	return []plugincommand.SlotEntry{
