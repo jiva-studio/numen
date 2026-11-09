@@ -274,7 +274,7 @@ export const createUniqueTitle = (words: string): string =>
 
 /** The row of the files tab for the path, with the folder above it opened. */
 export const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
-  await page.getByRole('tab', { name: /^Files/ }).click()
+  await page.getByRole('tab', { name: /^(Linked tab )?Files/ }).click()
   const folder = path.posix.dirname(filePath)
   if (folder !== '.') {
     const parent = page.locator(`[data-tree-row="${folder}"]`)
