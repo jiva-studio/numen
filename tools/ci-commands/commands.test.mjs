@@ -59,7 +59,23 @@ test('a plugin is read with its settings, declared and registered commands', () 
               { id: 'wick.trim', title: 'Trim the wick', when: 'target.isNote' },
             ],
             handlers: [{ command: 'app:file.createText', title: 'Read the lantern' }],
-            keybindings: [{ key: 'mod+shift+l', command: 'lamp.create' }],
+            keybindings: [
+              { key: 'mod+shift+l', command: 'lamp.create' },
+              {
+                key: 'mod+alt+l',
+                command: 'app:file.reveal',
+                values: { kind: 'plex' },
+                when: 'target.isNote',
+              },
+            ],
+            slots: [
+              {
+                slot: 'fileTree.context',
+                command: 'app:file.reveal',
+                values: { kind: 'plex' },
+                title: 'Show in plex',
+              },
+            ],
           },
         },
         {
@@ -103,6 +119,13 @@ test('a plugin is read with its settings, declared and registered commands', () 
               chord: { letter: 'l', shift: true },
             },
             { id: 'wick.trim', text: 'Trim the wick', group: 'note' },
+          ],
+          bound: [
+            {
+              text: 'Show in plex',
+              group: 'note',
+              chord: { letter: 'l', shift: false, alt: true },
+            },
           ],
           handled: ['app:file.createText'],
         },

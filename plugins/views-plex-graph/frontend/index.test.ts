@@ -32,7 +32,7 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(6)
+    expect(ctx.subscriptions).toHaveLength(5)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
@@ -40,19 +40,15 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
 
-  it('registers the handlers that open the plex and show a note in it', () => {
+  it('registers the handler that opens the plex', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
-      'graph.open',
-      'graph.showNote',
-    ])
+    expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['graph.open'])
   })
 
-  it('opens a plex, and moves the plex last in front to a note', async () => {
+  it('opens a plex', async () => {
     const openCalls: (readonly [string, string | undefined])[] = []
-    const navigateCalls: (readonly [string, string])[] = []
     const { host } = createHost({ opening: 'Root.md' })
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.views.plex.graph',
@@ -63,25 +59,12 @@ describe('view-plex-graph plugin', () => {
         openCalls.push([kind, path])
         return Promise.resolve('')
       },
-      navigateTab: (kind, path) => {
-        navigateCalls.push([kind, path])
-        return Promise.resolve('')
-      },
     })
     activate(ctx)
 
     await ctx.triggerCommand('graph.open')
-    await ctx.triggerCommand('graph.showNote', {
-      path: 'One.md',
-      title: 'One',
-      type: 'note',
-      isFolder: false,
-      others: [],
-      tab: '',
-    })
 
     expect(openCalls).toStrictEqual([[PLEX, undefined]])
-    expect(navigateCalls).toStrictEqual([[PLEX, 'One.md']])
   })
 
   it('registers no command that makes a note', () => {

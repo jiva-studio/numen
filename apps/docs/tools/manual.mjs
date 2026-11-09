@@ -141,8 +141,9 @@ const readKeybindings = () => {
 }
 
 /** The chord as it is drawn: Control and Command are one key. */
-const chordOf = ({ letter, shift }) => {
+const chordOf = ({ letter, shift, alt }) => {
   const keys = ['<kbd>Ctrl</kbd>/<kbd>⌘</kbd>']
+  if (alt) keys.push('<kbd>Alt</kbd>/<kbd>⌥</kbd>')
   if (shift) keys.push('<kbd>⇧</kbd>')
   keys.push(`<kbd>${letter.toUpperCase()}</kbd>`)
   return keys.join(' ')
@@ -170,6 +171,7 @@ const keyboard = async () => {
     for (const command of plugin.commands) {
       if (command.chord) rows.push(`| ${chordOf(command.chord)} | ${command.text} |`)
     }
+    for (const bound of plugin.bound) rows.push(`| ${chordOf(bound.chord)} | ${bound.text} |`)
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
@@ -289,11 +291,17 @@ const commands = async () => {
     const key = chord ? chordOf(chord) : ''
     own.push({ text: await said(words, word[1]), group: group[1], key })
   }
+  // A row the window draws for a command a plugin binds with values carries the key of the plugin.
+  const plugins = await readPlugins()
+  const bound = plugins.flatMap((one) => one.bound)
+  for (const row of own) {
+    const found = bound.find((one) => one.text === row.text)
+    if (!row.key && found) row.key = chordOf(found.chord)
+  }
 
   // The window's own commands come first, then what the plugins add, in the
   // order useCommands.ts hands them to the palette.
   await checkSettingCommands()
-  const plugins = await readPlugins()
   const rows = [
     ...own,
     ...(await readVersionCommands()),

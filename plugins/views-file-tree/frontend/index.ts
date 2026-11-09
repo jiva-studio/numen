@@ -44,12 +44,6 @@ export function activate(context: PluginContext): void {
     },
   })
   context.registerCommand({
-    id: 'tree.revealNote',
-    handler: async (note) => {
-      await context.navigateTab?.(FILES, note.path)
-    },
-  })
-  context.registerCommand({
     id: 'tree.renameFile',
     handler: runOnTab((state, path) => {
       if (path !== ROOT) state.setRenamingPath(path)

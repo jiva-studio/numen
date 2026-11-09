@@ -32,20 +32,11 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
 
-  /** Opens the note in the plex that was last active, or in a new plex when none is open. */
-  const travel = async (path: string): Promise<void> => {
-    await context.navigateTab?.(PLEX, path)
-  }
-
   context.registerCommand({
     id: 'graph.open',
     handler: async () => {
       await context.openTab?.(PLEX)
     },
-  })
-  context.registerCommand({
-    id: 'graph.showNote',
-    handler: (note) => travel(note.path),
   })
 }
 

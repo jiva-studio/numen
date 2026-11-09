@@ -22,23 +22,30 @@
         "title": "Open plex graph",
         "icon": "waypoints",
         "when": "window.isVaultOpen"
-      },
-      {
-        "id": "graph.showNote",
-        "title": "Show note in plex",
-        "icon": "waypoints",
-        "when": "target.isNote"
       }
     ],
     "slots": [
       {
         "slot": "palette.searchResult",
-        "command": "graph.showNote",
+        "command": "app:file.reveal",
+        "values": { "kind": "plex" },
+        "title": "Show in plex",
+        "icon": "waypoints",
         "group": "navigate",
-        "order": 20
+        "order": 20,
+        "when": "target.isNote"
       },
       { "slot": "titleBar.commands", "command": "graph.open", "group": "navigate", "order": 20 },
-      { "slot": "fileTree.context", "command": "graph.showNote", "group": "0-open", "order": 20 },
+      {
+        "slot": "fileTree.context",
+        "command": "app:file.reveal",
+        "values": { "kind": "plex" },
+        "title": "Show in plex",
+        "icon": "waypoints",
+        "group": "0-open",
+        "order": 20,
+        "when": "target.isNote"
+      },
       {
         "slot": "fileTree.context",
         "submenu": "plex.relation",
@@ -57,7 +64,16 @@
         "when": "target.isFolder"
       },
       { "slot": "plexGraph.context", "command": "app:file.open", "group": "0-open", "order": 10 },
-      { "slot": "plexGraph.context", "command": "graph.showNote", "group": "1-note", "order": 10 },
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.reveal",
+        "values": { "kind": "plex" },
+        "title": "Show in plex",
+        "icon": "waypoints",
+        "group": "1-note",
+        "order": 10,
+        "when": "target.isNote"
+      },
       {
         "slot": "plexGraph.context",
         "command": "app:file.copyPath",
@@ -87,7 +103,12 @@
     ],
     "keybindings": [
       { "key": "mod+shift+x", "command": "graph.open" },
-      { "key": "mod+shift+p", "command": "graph.showNote" }
+      {
+        "key": "mod+shift+p",
+        "command": "app:file.reveal",
+        "values": { "kind": "plex" },
+        "when": "target.isNote"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

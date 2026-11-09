@@ -24,12 +24,6 @@
         "when": "window.isVaultOpen"
       },
       {
-        "id": "tree.revealNote",
-        "title": "Show note in file tree",
-        "icon": "folder-open",
-        "when": "target.isNote"
-      },
-      {
         "id": "tree.renameFile",
         "title": "Rename",
         "icon": "pencil"
@@ -66,10 +60,25 @@
         "order": 10,
         "when": "!target.isRoot && !target.isMultiple"
       },
-      { "slot": "plexGraph.context", "command": "tree.revealNote", "group": "1-note", "order": 30 }
+      {
+        "slot": "plexGraph.context",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "title": "Show in file tree",
+        "icon": "folder-open",
+        "group": "1-note",
+        "order": 30,
+        "when": "target.isNote"
+      }
     ],
     "keybindings": [
-      { "key": "mod+shift+e", "command": "tree.open" }
+      { "key": "mod+shift+e", "command": "tree.open" },
+      {
+        "key": "mod+alt+e",
+        "command": "app:file.reveal",
+        "values": { "kind": "files" },
+        "when": "target.isNote"
+      }
     ]
   },
   "permissions": ["vault:read", "vault:write"],

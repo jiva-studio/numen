@@ -16,6 +16,7 @@ export const COMMAND = {
   copyFilePath: formatAppCommandId('file.copyPath'),
   deleteText: formatAppCommandId('version.delete'),
   openFile: formatAppCommandId('file.open'),
+  revealFile: formatAppCommandId('file.reveal'),
   moveFile: formatAppCommandId('file.move'),
   createFolder: formatAppCommandId('folder.create'),
   closeTab: formatAppCommandId('tab.close'),
@@ -44,12 +45,15 @@ export const ROW = {
   openNoteBeside: `${COMMAND.openFile}#beside`,
   openDocument: `${COMMAND.openFile}#document`,
   goToNote: `${COMMAND.openFile}#note`,
+  revealInPlex: `${COMMAND.revealFile}#plex`,
+  revealInFiles: `${COMMAND.revealFile}#files`,
   destroyFile: `${COMMAND.removeFile}#permanent`,
 } as const
 
-/** The names of the arguments of the command that opens a file and of the command that removes a file. */
+/** The names of the arguments of the commands that open, show and remove a file. */
 export const ARGUMENT = {
   placement: 'placement',
+  kind: 'kind',
   removal: 'removal',
 } as const
 

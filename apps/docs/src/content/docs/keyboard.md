@@ -23,8 +23,9 @@ A command gets a key if it is used often and leaves nothing to undo. No command 
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd> | Commands |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> | Open agent chat |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>E</kbd> | Open file tree |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>Alt</kbd>/<kbd>⌥</kbd> <kbd>E</kbd> | Show in file tree |
 | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> | Open plex graph |
-| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> | Show note in plex |
+| <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> | Show in plex |
 <!-- END AUTOGEN -->
 
 Every other command is on the [commands page](/commands/) and is available by name.

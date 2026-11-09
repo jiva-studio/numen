@@ -38,7 +38,16 @@ describe('the manifest', () => {
         (one) => one.slot === 'palette.searchResult' || one.slot === 'titleBar.commands',
       ),
     ).toStrictEqual([
-      { slot: 'palette.searchResult', command: 'graph.showNote', group: 'navigate', order: 20 },
+      {
+        slot: 'palette.searchResult',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        title: 'Show in plex',
+        icon: 'waypoints',
+        group: 'navigate',
+        order: 20,
+        when: 'target.isNote',
+      },
       { slot: 'titleBar.commands', command: 'graph.open', group: 'navigate', order: 20 },
     ])
   })
@@ -55,22 +64,27 @@ describe('the manifest', () => {
       (one) => one.slot === 'titleBar.commands',
     )
 
-    expect(entries.map((one) => one.command)).not.toContain('graph.showNote')
+    expect(entries.map((one) => one.command)).not.toContain('app:file.reveal')
   })
 
-  it('keeps the declaration of the command that shows a note, with no field about its place', () => {
-    const command = manifest.contributes.commands.find((one) => one.id === 'graph.showNote')
-
-    expect(command).toMatchObject({ title: 'Show note in plex', when: 'target.isNote' })
-    expect(Object.keys(command ?? {})).not.toContain('location')
-    expect(Object.keys(command ?? {})).not.toContain('slots')
+  it('declares no command to show a note, which the window runs as app:file.reveal over the plex', () => {
+    expect(manifest.contributes.commands.map((one) => one.id)).toStrictEqual(['graph.open'])
   })
 })
 
 describe('the menu of a row of the file tree', () => {
   it('places showing the note, and the submenu of relations with the window’s commands', () => {
     expect(getMenuEntries()).toStrictEqual([
-      { slot: 'fileTree.context', command: 'graph.showNote', group: '0-open', order: 20 },
+      {
+        slot: 'fileTree.context',
+        command: 'app:file.reveal',
+        values: { kind: 'plex' },
+        title: 'Show in plex',
+        icon: 'waypoints',
+        group: '0-open',
+        order: 20,
+        when: 'target.isNote',
+      },
       {
         slot: 'fileTree.context',
         submenu: 'plex.relation',
@@ -99,7 +113,7 @@ describe('the menu on a node', () => {
         .map((one) => [one.command, one.group]),
     ).toStrictEqual([
       ['app:file.open', '0-open'],
-      ['graph.showNote', '1-note'],
+      ['app:file.reveal', '1-note'],
       ['app:file.copyPath', '2-file'],
       ['app:note.createChild', '3-plex'],
       ['app:note.createParent', '3-plex'],

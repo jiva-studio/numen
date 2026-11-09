@@ -44,6 +44,18 @@
       ]
     },
     {
+      "id": "app:file.reveal",
+      "arguments": [
+        {
+          "name": "kind",
+          "title": "Place",
+          "type": "enum",
+          "required": false,
+          "options": ["plex", "files"]
+        }
+      ]
+    },
+    {
       "id": "app:file.remove",
       "arguments": [
         {

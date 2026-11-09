@@ -32,6 +32,10 @@ func GetAppCommandArguments(id string) ([]AppCommandArgument, bool) {
 		return []AppCommandArgument{
 			{Name: "placement", Title: "Showing", Type: "enum", Options: []string{"current", "split"}},
 		}, true
+	case "app:file.reveal":
+		return []AppCommandArgument{
+			{Name: "kind", Title: "Place", Type: "enum", Options: []string{"plex", "files"}},
+		}, true
 	case "app:file.remove":
 		return []AppCommandArgument{
 			{Name: "removal", Title: "Removal", Type: "enum", Options: []string{"trash", "permanent"}},
