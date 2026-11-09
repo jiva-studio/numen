@@ -11,7 +11,6 @@ export class PlexDriver {
     return parseReference(reference, name).reference === 'at' ? getStem(name) : name
   }
 
-  /** The focus is drawn as a picture, every other note as a button; both are named by title and relation. */
   private getNote(title: string, relation: string): Locator {
     const role = relation === 'focus' ? 'img' : 'button'
     return getGraph(this.scenario.page).getByRole(role, { name: `${title}, ${relation}`, exact: true })
