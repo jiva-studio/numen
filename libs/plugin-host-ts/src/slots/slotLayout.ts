@@ -98,16 +98,20 @@ function mergeStoredKeys(
   return list
 }
 
+type DrawnKeys = Readonly<Partial<Record<SlotName, readonly string[]>>>
+
+const getDrawn = (drawn: DrawnKeys, slot: SlotName): readonly string[] => drawn[slot] ?? []
+
 /** The lists a drop writes; empty when the drop leaves every slot as it is drawn. */
 export function moveSlotEntry(
   layout: SlotLayout,
-  drawn: Readonly<Partial<Record<SlotName, readonly string[]>>>,
+  drawn: DrawnKeys,
   move: SlotMove,
 ): SlotLayoutChange {
   const { key, from, to, before } = move
-  const removed = (drawn[from] ?? []).filter((one) => one !== key)
-  const inserted = insertBefore(from === to ? removed : (drawn[to] ?? []), key, before)
-  if (from === to && isSameList(inserted, drawn[from] ?? [])) return {}
+  const removed = getDrawn(drawn, from).filter((one) => one !== key)
+  const inserted = insertBefore(from === to ? removed : getDrawn(drawn, to), key, before)
+  if (from === to && isSameList(inserted, getDrawn(drawn, from))) return {}
 
   const orders: Partial<Record<SlotName, readonly string[]>> =
     from === to ? { [to]: inserted } : { [from]: removed, [to]: inserted }
@@ -118,7 +122,7 @@ export function moveSlotEntry(
     const list = mergeStoredKeys(
       layout[slot] ?? [],
       next,
-      (one) => one === key || (drawn[slot] ?? []).includes(one),
+      (one) => one === key || getDrawn(drawn, slot).includes(one),
     )
     if (!isSameList(list, layout[slot])) change[slot] = list
   }

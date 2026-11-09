@@ -53,9 +53,7 @@ func (m Manifest) listSlotIssues() []error {
 	var issues []error
 	type placement struct{ slot, kind, id string }
 	observed := map[placement]bool{}
-	// kinds maps a slot and the id of a command or view in it to the kind placed first; the layout
-	// key of the entry is made of the slot, the plugin and the id, whatever the kind.
-	kinds := map[struct{ slot, id string }]string{}
+	kinds := slotKinds{}
 	submenus := map[string]bool{}
 	windowViews := map[string]bool{}
 	for _, entry := range m.Contributes.Slots {
@@ -66,13 +64,8 @@ func (m Manifest) listSlotIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %s %q is placed twice in %q", ErrInvalidSlotEntry, kind, id, entry.Slot))
 		}
 		observed[key] = true
-		if kind == "command" || kind == "view" {
-			entryKey := struct{ slot, id string }{entry.Slot, id}
-			if first, found := kinds[entryKey]; !found {
-				kinds[entryKey] = kind
-			} else if first != kind {
-				issues = append(issues, fmt.Errorf("%w: view and command %q share one key in %q", ErrInvalidSlotEntry, id, entry.Slot))
-			}
+		if err := kinds.add(entry.Slot, kind, id); err != nil {
+			issues = append(issues, err)
 		}
 		if entry.Submenu != "" && submenus[entry.Submenu] {
 			issues = append(issues, fmt.Errorf("%w: submenu %q is declared twice", ErrInvalidSlotEntry, entry.Submenu))
@@ -142,4 +135,24 @@ func (c Contributes) hasSlotViews() bool {
 		}
 	}
 	return false
+}
+
+// slotKinds maps a slot and the id of a command or view in it to the kind placed first. The layout
+// key of an entry is made of the slot, the plugin and the id, whatever the kind.
+type slotKinds map[struct{ slot, id string }]string
+
+func (k slotKinds) add(slot, kind, id string) error {
+	if kind != "command" && kind != "view" {
+		return nil
+	}
+	key := struct{ slot, id string }{slot, id}
+	first, found := k[key]
+	if !found {
+		k[key] = kind
+		return nil
+	}
+	if first != kind {
+		return fmt.Errorf("%w: view and command %q share one key in %q", ErrInvalidSlotEntry, id, slot)
+	}
+	return nil
 }
