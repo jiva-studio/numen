@@ -64,7 +64,8 @@ func (s *debounceState) walkChan(requested chan<- string) (chan<- string, string
 }
 
 func (s *debounceState) handleWalkResult(one walkResult, delay time.Duration, droppedChan chan<- struct{}) {
-	if one.isWholeVault {
+	// A folder holding no file adds no source to report, yet the folder is a change.
+	if one.isWholeVault || len(one.paths) == 0 {
 		s.rescan(droppedChan)
 		return
 	}

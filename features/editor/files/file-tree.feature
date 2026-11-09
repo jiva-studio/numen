@@ -2,32 +2,33 @@ Feature: File tree
   A person moves, makes, renames and removes the files of a vault in the file tree.
 
   Background:
-    Given the application "editor" starts
+    Given the empty vault "Test"
+    And the application "editor" starts
 
-  Rule: The file tree changes the files of the vault
+  Rule: The file tree changes files
 
-    Scenario: A note is moved to a folder and its links follow
-      Given the vault "Test" contains the folder at "daily"
-      And the vault has the following:
-        | path          | text                        |
-        | notes/Quay.md | The quay is at the harbour. |
+    Scenario: A note is moved with its links
+      Given the vault has the following:
+        | path           | text                        |
+        | daily/         |                             |
+        | notes/Quay.md  | The quay is at the harbour. |
+        | notes/Jetty.md | See [[Quay]].               |
       And the person opens the note titled "Quay"
-      And the vault has the following:
-        | path           | text          |
-        | notes/Jetty.md | See [[Quay]]. |
       And the person opens the note titled "Jetty"
       When the person moves the file at "notes/Quay.md" to the folder at "daily"
       Then the tab at "daily/Quay.md" is open
       And the tab at "notes/Quay.md" is not open
       And the note titled "Jetty" links to the note at "daily/Quay.md"
 
-    Scenario: A folder is made in a folder
-      Given the vault "Test" contains the folder at "Saltworks"
+    Scenario: A folder is made
+      Given the vault has the following:
+        | path       | text |
+        | Saltworks/ |      |
       When the person runs the command "Create folder" on the folder at "Saltworks"
       And the person names it "Brine tanks"
-      Then the vault "Test" contains the folder at "Saltworks/Brine tanks"
+      Then the vault contains the folder at "Saltworks/Brine tanks"
 
-    Scenario: A note is renamed and its tab follows
+    Scenario: A note is renamed
       Given the vault has the following:
         | path                | text                    |
         | notes/Brine pump.md | The pump runs at night. |
@@ -37,23 +38,29 @@ Feature: File tree
       Then the tab at "notes/Brine pumps.md" is open
       And the tab at "notes/Brine pump.md" is not open
 
-    Scenario: The tab of a removed note is closed
+    Scenario: A note is removed
       Given the vault has the following:
         | path               | text                      |
         | notes/Mill race.md | The race feeds the wheel. |
       And the person opens the note titled "Mill race"
       When the person runs the command "Move note to trash" on the file at "notes/Mill race.md"
       Then the tab at "notes/Mill race.md" is not open
-      And the vault "Test" does not contain the file at "notes/Mill race.md"
+      And the vault does not contain the file at "notes/Mill race.md"
 
-  Rule: The file tree has the files of the vault
+  Rule: The file tree shows files
 
-    Scenario: A folder is opened in the file tree
+    Scenario: A folder is opened
+      Given the vault has the following:
+        | path             | text                      |
+        | cards/Animals.md | A heron is a wading bird. |
       When the person opens the folder at "cards"
       Then the tab titled "Files" has "cards/Animals.md"
 
-    Scenario: A note is shown in the file tree
-      Given the person opens the file at "notes/Entropy.md"
+    Scenario: A note is shown
+      Given the vault has the following:
+        | path             | text      |
+        | notes/Entropy.md | # Entropy |
+      And the person opens the file at "notes/Entropy.md"
       When the person runs the command "Show note in file tree"
       Then the tab titled "Files" is active
       And the tab titled "Files" has "notes/Entropy.md"

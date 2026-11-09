@@ -94,10 +94,28 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
     wait,
   })
 
+  // The first message of a reading says the stream is subscribed. What changed before
+  // that went unreported, so the files are listed again.
+  let isOpening = true
+  const followsChanges = createFollower({
+    isOpen,
+    setLost,
+    wait,
+    reset: () => {
+      isOpening = true
+    },
+  })
+
   const follow = () =>
-    follows(
+    followsChanges(
       () => core.watchVaultChanges(listening.signal),
-      (change) => handleVaultChange(change, deps),
+      async (change) => {
+        if (isOpening) {
+          isOpening = false
+          await deps.onVaultChanged([], [], [])
+        }
+        await handleVaultChange(change, deps)
+      },
     )
 
   /** Follows the changes being made to notes. */
