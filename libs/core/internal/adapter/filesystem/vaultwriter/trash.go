@@ -12,7 +12,8 @@ import (
 // first, and keeps the trash folder. The paths that could not be deleted are
 // returned relative to the vault; an entry that fails does not stop the others.
 // A folder holding an undeleted entry stays and is not reported itself; a folder
-// that cannot be read is reported as one undeleted path.
+// that cannot be read is reported as one undeleted path. A trash that is a
+// symbolic link is removed as a link and its target is left alone.
 func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -22,10 +23,20 @@ func (w *VaultWriter) EmptyTrash(ctx context.Context) (undeleted []string, err e
 		return nil, err
 	}
 	defer closeAndJoin(&err, vault)
-	trash, err := vault.OpenRoot(TrashDir)
+	info, err := vault.Lstat(TrashDir)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil, nil
 	}
+	if err != nil {
+		return nil, err
+	}
+	if info.Mode()&fs.ModeSymlink != 0 {
+		if isGone(vault.Remove(TrashDir)) {
+			return nil, nil
+		}
+		return []string{TrashDir}, nil
+	}
+	trash, err := vault.OpenRoot(TrashDir)
 	if err != nil {
 		return nil, err
 	}

@@ -79,6 +79,25 @@ func TestEmptyTrashDoesNotFollowALinkOutOfTheTrash(t *testing.T) {
 	}
 }
 
+func TestEmptyTrashRemovesATrashThatIsALinkWithoutWalkingIt(t *testing.T) {
+	w, root := openWriter(t)
+	placeTrashed(t, root, "notes/Kept.md")
+	if err := os.Symlink(filepath.Join(root, "notes"), filepath.Join(root, ".trash")); err != nil {
+		t.Skipf("symlinks are not available: %v", err)
+	}
+
+	undeleted, err := w.EmptyTrash(t.Context())
+	if err != nil || len(undeleted) != 0 {
+		t.Fatalf("got %v, %v", undeleted, err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "notes", "Kept.md")); err != nil {
+		t.Errorf("a file behind the linked trash was deleted: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(root, ".trash")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the trash link is still there: %v", err)
+	}
+}
+
 func TestEmptyTrashReportsWhatItCannotDeleteAndGoesOn(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("a superuser deletes from a read-only folder")
