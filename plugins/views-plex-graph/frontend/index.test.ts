@@ -32,7 +32,7 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(6)
+    expect(ctx.subscriptions).toHaveLength(7)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
@@ -47,6 +47,7 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
       'graph.open',
       'graph.showNote',
+      'graph.createNote',
     ])
   })
 
@@ -82,6 +83,51 @@ describe('view-plex-graph plugin', () => {
 
     expect(openCalls).toStrictEqual([[PLEX, undefined]])
     expect(navigateCalls).toStrictEqual([[PLEX, 'One.md']])
+  })
+
+  it('makes a note and shows it in the plex of the tab the target names', async () => {
+    const { host, recorded } = createHost({ opening: 'Root.md' })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      workspace: host.workspace,
+      notes: host.notes,
+      relations: host.relations,
+    })
+    activate(ctx)
+    const kind = ctx.getRegisteredTabKinds()[0]!
+    const first = kind.open!('', 'plex:1') as PlexTabState
+    const second = kind.open!('One.md', 'plex:2') as PlexTabState
+    await settle()
+
+    await ctx.triggerCommand('graph.createNote', {
+      path: '',
+      title: '',
+      type: 'note',
+      isFolder: true,
+      others: [],
+      tab: 'plex:2',
+    })
+    await settle()
+
+    expect(second.view.here.value).toBe('Untitled.md')
+    expect(first.view.here.value).not.toBe('Untitled.md')
+    expect(recorded.errors).toStrictEqual([])
+  })
+
+  it('fails where no plex is open in the tab the target names', async () => {
+    const { ctx } = createContext()
+    activate(ctx)
+
+    await expect(
+      ctx.triggerCommand('graph.createNote', {
+        path: '',
+        title: '',
+        type: 'note',
+        isFolder: true,
+        others: [],
+        tab: 'plex:9',
+      }),
+    ).rejects.toThrow('no plex is open in the tab plex:9')
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {

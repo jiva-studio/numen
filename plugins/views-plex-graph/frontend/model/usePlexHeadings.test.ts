@@ -19,6 +19,7 @@ const createDeps = (
   editor: createVault(false).editor,
   isReady: ref(true),
   isNesting: ref(true),
+  tabId: 'plex:1',
   headings: ref(6),
   openNote: () => undefined,
   readHeadings,

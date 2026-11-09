@@ -8,7 +8,6 @@ export { PlexGraphView, PlexGraphView as PlexTab }
 export { createPlexKind, PLEX } from './kind'
 export { createPlexTab } from './model/usePlexTab'
 export { usePlexView } from './model/usePlexView'
-export { NONE, NEW_NOTE } from './lib/menu'
 export * from './types'
 export * from './words'
 
@@ -47,6 +46,10 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'graph.showNote',
     handler: (note) => travel(note.path),
+  })
+  context.registerCommand({
+    id: 'graph.createNote',
+    handler: (note) => plexes.createNote(note.tab),
   })
 }
 

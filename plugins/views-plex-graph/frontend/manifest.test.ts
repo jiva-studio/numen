@@ -11,7 +11,13 @@ const manifest = JSON.parse(
 ) as {
   permissions: readonly string[]
   contributes: {
-    commands: readonly { id: string; title: string; icon?: string; scope?: string }[]
+    commands: readonly {
+      id: string
+      title: string
+      icon?: string
+      scope?: string
+      when?: string
+    }[]
     slots?: readonly Record<string, unknown>[]
   }
 }
@@ -86,10 +92,10 @@ describe('the menu of a row of the file tree', () => {
 })
 
 describe('the menu on a node', () => {
-  it('is the slot plexGraph.context, filled with the commands of the window over a note', () => {
+  it('is the slot plexGraph.context, filled with the commands of the window over a note, and no new note', () => {
     expect(
       (manifest.contributes.slots ?? [])
-        .filter((one) => one.slot === 'plexGraph.context')
+        .filter((one) => one.slot === 'plexGraph.context' && one.command !== 'graph.createNote')
         .map((one) => [one.command, one.group]),
     ).toStrictEqual([
       ['app:note.open', '0-open'],
@@ -101,6 +107,35 @@ describe('the menu on a node', () => {
       ['app:note.rename', '3-plex'],
       ['app:note.trash', '9-remove'],
     ])
+  })
+})
+
+describe('the menu of a place with no node', () => {
+  const getCanvasEntries = () =>
+    (manifest.contributes.slots ?? []).filter(
+      (one) => one.slot === 'plexGraph.context' && one.command === 'graph.createNote',
+    )
+
+  it('declares the command that makes a note with a title of its own', () => {
+    expect(
+      manifest.contributes.commands.find((one) => one.id === 'graph.createNote'),
+    ).toMatchObject({ title: 'New note' })
+  })
+
+  it('offers the command over the root target alone, in the menu and in every other place', () => {
+    expect(manifest.contributes.commands.find((one) => one.id === 'graph.createNote')?.when).toBe(
+      'target.isRoot',
+    )
+    expect(getCanvasEntries()).toHaveLength(1)
+    expect(getCanvasEntries()[0]).toMatchObject({ when: 'target.isRoot' })
+  })
+
+  it('places the command in no slot other than the menu of the canvas', () => {
+    expect(
+      (manifest.contributes.slots ?? [])
+        .filter((one) => one.command === 'graph.createNote')
+        .map((one) => one.slot),
+    ).toStrictEqual(['plexGraph.context'])
   })
 })
 
