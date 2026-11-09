@@ -12,32 +12,32 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
-type emptyingWriter struct {
+type trashWriterStub struct {
 	vaultport.VaultWriter
 	undeleted []string
 	err       error
 	calls     *int
 }
 
-func (w emptyingWriter) EmptyTrash(context.Context) ([]string, error) {
+func (w trashWriterStub) EmptyTrash(context.Context) ([]string, error) {
 	*w.calls++
 	return w.undeleted, w.err
 }
 
-type emptyingWriters struct {
+type trashWriterProviderStub struct {
 	vaultport.VaultWriters
-	writer  emptyingWriter
+	writer  trashWriterStub
 	openErr error
 }
 
-func (w emptyingWriters) Open(domain.Vault) (vaultport.VaultWriter, error) {
+func (w trashWriterProviderStub) Open(domain.Vault) (vaultport.VaultWriter, error) {
 	return w.writer, w.openErr
 }
 
 func TestEmptyTrashReturnsWhatTheWriterCouldNotDelete(t *testing.T) {
 	t.Parallel()
 	calls := 0
-	writers := emptyingWriters{writer: emptyingWriter{undeleted: []string{".trash/locked/Heat.md"}, calls: &calls}}
+	writers := trashWriterProviderStub{writer: trashWriterStub{undeleted: []string{".trash/locked/Heat.md"}, calls: &calls}}
 
 	got, err := note.NewEmptyTrash(writers).Execute(t.Context(), domain.Vault{})
 	if err != nil {
@@ -55,7 +55,7 @@ func TestEmptyTrashStopsWhenTheVaultCannotBeOpened(t *testing.T) {
 	t.Parallel()
 	calls := 0
 	broken := errors.New("the vault is gone")
-	writers := emptyingWriters{writer: emptyingWriter{calls: &calls}, openErr: broken}
+	writers := trashWriterProviderStub{writer: trashWriterStub{calls: &calls}, openErr: broken}
 
 	if _, err := note.NewEmptyTrash(writers).Execute(t.Context(), domain.Vault{}); !errors.Is(err, broken) {
 		t.Fatalf("want the open error, got %v", err)
@@ -69,7 +69,7 @@ func TestEmptyTrashReturnsTheWriterError(t *testing.T) {
 	t.Parallel()
 	calls := 0
 	broken := errors.New("the disk is gone")
-	writers := emptyingWriters{writer: emptyingWriter{err: broken, calls: &calls}}
+	writers := trashWriterProviderStub{writer: trashWriterStub{err: broken, calls: &calls}}
 
 	if _, err := note.NewEmptyTrash(writers).Execute(t.Context(), domain.Vault{}); !errors.Is(err, broken) {
 		t.Fatalf("want the writer error, got %v", err)
@@ -80,7 +80,7 @@ func TestEmptyTrashReturnsTheUndeletedPathsTogetherWithTheWriterError(t *testing
 	t.Parallel()
 	calls := 0
 	broken := errors.New("the disk is gone")
-	writers := emptyingWriters{writer: emptyingWriter{undeleted: []string{".trash/Heat.md"}, err: broken, calls: &calls}}
+	writers := trashWriterProviderStub{writer: trashWriterStub{undeleted: []string{".trash/Heat.md"}, err: broken, calls: &calls}}
 
 	got, err := note.NewEmptyTrash(writers).Execute(t.Context(), domain.Vault{})
 	if !errors.Is(err, broken) {
