@@ -25,6 +25,8 @@ type vaultPathWriter interface {
 	CheckMoveTarget(ctx context.Context, from, to string) error
 	MakeFolder(ctx context.Context, path string) error
 	Remove(ctx context.Context, path string) error
+	// EmptyTrash deletes everything under the vault's trash and returns the paths it could not delete.
+	EmptyTrash(ctx context.Context) (undeleted []string, err error)
 }
 
 // VaultWriter changes the files of one vault.

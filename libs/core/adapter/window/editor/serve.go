@@ -324,6 +324,7 @@ func (o *Installation) wireUseCases() {
 	services.Note.getLinkAddress = notes.GetLinkAddress
 	services.Note.bindConnections(notes)
 	services.File.remove = &notes.Remove
+	services.File.emptyTrash = &notes.EmptyTrash
 
 	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
