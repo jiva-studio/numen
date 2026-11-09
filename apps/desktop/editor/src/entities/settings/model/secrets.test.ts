@@ -1,19 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ReportedError } from '@numen/core-client'
 import { createSecretStore, type SecretDeps } from './secrets'
-
-// The editor has no dependency on the connect library, so a ConnectError cannot be built here. The stand-in
-// carries the message the way formatErrorMessage does for a carried code (InvalidArgument is the code of a
-// plugin that is not installed or does not declare the secret).
-vi.mock('@numen/core-client', () => ({
-  formatErrorMessage: (error: unknown) => (error instanceof Error ? error.message : ''),
-}))
 
 const words = { secretFailed: 'The secret was not saved.' }
 
 const createStore = (failure: string | null = null) => {
   const calls: string[] = []
   const answer = <T>(value: T): Promise<T> =>
-    failure ? Promise.reject(new Error(failure)) : Promise.resolve(value)
+    failure ? Promise.reject(new ReportedError(failure)) : Promise.resolve(value)
   const core: SecretDeps = {
     createSecret: (group, name, value) => {
       calls.push(`create ${group} ${name} ${value}`)

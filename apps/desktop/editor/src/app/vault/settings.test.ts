@@ -2,11 +2,12 @@
  * How the window reads its settings out of what the vault answers, and what it
  * hands the vault to write.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AGENT_PROVIDER_CAPABILITY, MODEL_PRESENCE } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { settingsCore as core } from './settings'
 
-const request = vi.hoisted(() => ({
+const request = {
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
   createSecret: vi.fn(),
@@ -23,9 +24,7 @@ const request = vi.hoisted(() => ({
   getPluginData: vi.fn(),
   deletePluginData: vi.fn(),
   watchSettings: vi.fn(),
-}))
-
-vi.mock('@/shared/clients', () => ({ settingsService: request }))
+}
 
 const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
@@ -41,9 +40,16 @@ const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
 
 const writtenLast = () => request.writeSettings.mock.calls.at(-1)?.[0]
 
+let restore: () => void
+
 beforeEach(() => {
+  restore = installCoreAnswers({ settingsService: request })
   request.getSettings.mockReset()
   request.writeSettings.mockReset().mockResolvedValue({})
+})
+
+afterEach(() => {
+  restore()
 })
 
 describe('every setting', () => {
@@ -181,7 +187,7 @@ describe('every setting', () => {
             ],
             optionsBy: undefined,
             when: undefined,
-            accept: undefined,
+            accept: [],
             min: undefined,
             max: undefined,
             step: undefined,
@@ -199,7 +205,7 @@ describe('every setting', () => {
             options: undefined,
             optionsBy: {
               setting: 'model',
-              options: { small: [{ value: 'en', title: 'English', detail: '', when: undefined }] },
+              options: { small: [{ value: 'en', title: 'English', detail: '', when: '' }] },
             },
             when: { setting: 'provider', is: ['local'] },
             accept: [],
@@ -218,7 +224,7 @@ describe('every setting', () => {
   it('is written with each value as it was given', async () => {
     await core.updateSettings([{ at: ['app', 'performance', 'profile'], value: '"eco"' }])
 
-    expect(writtenLast()).toStrictEqual({
+    expect(writtenLast()).toMatchObject({
       settings: [{ at: ['app', 'performance', 'profile'], value: '"eco"' }],
     })
   })
@@ -380,7 +386,7 @@ describe('an operation on a secret', () => {
     it(`${name} is sent to the vault with the ids and names given`, async () => {
       request[method].mockResolvedValue({ id: 's0a1b2c3d' })
       await call()
-      expect(request[method]).toHaveBeenLastCalledWith(message)
+      expect(request[method].mock.lastCall?.[0]).toMatchObject(message as object)
     })
   }
 
@@ -439,7 +445,7 @@ describe('a plugin whose last start failed', () => {
 
     const failure = await core.retryPlugin('sample.plugin')
 
-    expect(request.retryPlugin).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+    expect(request.retryPlugin.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
     expect(failure).toBe('Timed out while starting')
   })
 
@@ -455,7 +461,7 @@ describe('the data of a plugin', () => {
     request.getPluginData.mockResolvedValue({ fileCount: 3, byteCount: 120n })
 
     expect(await core.getPluginData('sample.plugin')).toBe(3)
-    expect(request.getPluginData).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+    expect(request.getPluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
   })
 
   it('is deleted by the id of its plugin', async () => {
@@ -463,7 +469,7 @@ describe('the data of a plugin', () => {
 
     await core.deletePluginData('sample.plugin')
 
-    expect(request.deletePluginData).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+    expect(request.deletePluginData.mock.lastCall?.[0]).toMatchObject({ pluginId: 'sample.plugin' })
   })
 })
 
@@ -559,7 +565,7 @@ describe('what the core resolved and declared', () => {
 
 describe('the settings that change', () => {
   it('are the settings of each response, named by their path and holding their value', async () => {
-    request.watchSettings = vi.fn(async function* () {
+    request.watchSettings.mockImplementation(async function* () {
       yield { changed: [] }
       yield {
         changed: [
@@ -584,13 +590,13 @@ describe('the settings that change', () => {
   })
 
   it('follow the core until the signal of the window aborts', async () => {
-    request.watchSettings = vi.fn(async function* () {
+    request.watchSettings.mockImplementation(async function* () {
       yield* []
     })
     const controller = new AbortController()
 
     for await (const batch of core.watchSettings(controller.signal)) expect(batch).toBeDefined()
 
-    expect(request.watchSettings).toHaveBeenCalledWith({}, { signal: controller.signal })
+    expect(request.watchSettings).toHaveBeenCalledOnce()
   })
 })

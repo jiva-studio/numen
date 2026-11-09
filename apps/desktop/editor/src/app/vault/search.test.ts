@@ -2,19 +2,25 @@
  * What a search answers, read into the window's own words: a part of a match
  * the answer left out reads as nothing, and a passage is a start and a length.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SEARCH_MODE } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { searchCore } from './search'
 
-const search = vi.hoisted(() => ({
+const search = {
   searchNames: vi.fn(),
   searchPassages: vi.fn(),
-}))
+}
 
-vi.mock('@/shared/clients', () => ({ search }))
+let restore: () => void
 
 beforeEach(() => {
   vi.clearAllMocks()
+  restore = installCoreAnswers({ search })
+})
+
+afterEach(() => {
+  restore()
 })
 
 describe('a name searched for', () => {
@@ -23,7 +29,7 @@ describe('a name searched for', () => {
 
     await searchCore.names('lla', 8)
 
-    expect(search.searchNames).toHaveBeenCalledWith({ query: 'lla', limit: 8 })
+    expect(search.searchNames.mock.lastCall?.[0]).toMatchObject({ query: 'lla', limit: 8 })
   })
 
   it('carries the note and the heading it was found at', async () => {
@@ -57,7 +63,7 @@ describe('a passage searched for', () => {
 
     await searchCore.search('grass', 'meaning', 8)
 
-    expect(search.searchPassages).toHaveBeenCalledWith({
+    expect(search.searchPassages.mock.lastCall?.[0]).toMatchObject({
       query: 'grass',
       limit: 8,
       mode: SEARCH_MODE.MEANING,

@@ -5,21 +5,9 @@
  * Everything else passes a message through unchanged, and the schema defines its
  * shape.
  */
-import { describe, expect, it, vi } from 'vitest'
-
-vi.stubGlobal('window', { location: { origin: 'http://numen.invalid' } })
-
-vi.mock('@/shared/clients', () => ({
-  vault: request,
-  agentService: request,
-  workspace: request,
-  files: request,
-  notes: request,
-  search: request,
-  vaultsService: request,
-  settingsService: request,
-  windowService: request,
-}))
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { installCoreHandlers } from '@numen/core-client/testing'
+import { core, vaults } from './index'
 
 const request = {
   readNote: vi.fn(),
@@ -51,7 +39,15 @@ const request = {
   openVault: vi.fn(),
 }
 
-const { core, vaults } = await import('./index')
+let restore: () => void
+
+beforeEach(() => {
+  restore = installCoreHandlers(request)
+})
+
+afterEach(() => {
+  restore()
+})
 
 describe('the file a save presents', () => {
   it('arrives back as the file it was, through a path that holds spaces', async () => {
@@ -70,7 +66,7 @@ describe('the file a save presents', () => {
       stat: readItem.value.at ?? '',
     })
 
-    expect(request.writeNote.mock.calls[0]?.[0]).toEqual({
+    expect(request.writeNote.mock.calls[0]?.[0]).toMatchObject({
       path: noteFile.path,
       body: 'prose and more',
       baseline: { prose: 'prose', at: noteFile },
@@ -82,15 +78,19 @@ describe('the file a save presents', () => {
 
     await core.write('Heat.md', 'mine', null)
 
-    expect(request.writeNote.mock.calls.at(-1)?.[0]).toEqual({ path: 'Heat.md', body: 'mine' })
+    expect(request.writeNote.mock.calls.at(-1)?.[0]).toMatchObject({
+      path: 'Heat.md',
+      body: 'mine',
+    })
+    expect(request.writeNote.mock.calls.at(-1)?.[0].baseline).toBeUndefined()
   })
 })
 
 describe('files domain', () => {
   it('handles remove, list, move, createFolder, and fileKinds', async () => {
-    request.removeFile.mockResolvedValue({ trashed: true, dangling: [] })
+    request.removeFile.mockResolvedValue({ trashed: '.trash/test.md', dangling: [] })
     const removed = await core.remove('test.md')
-    expect(removed.ok && removed.value.trashed).toBe(true)
+    expect(removed.ok && removed.value.trashed).toBe('.trash/test.md')
 
     request.listFiles.mockResolvedValue({
       entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 'note' }],

@@ -6,6 +6,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { ReportedError, THEME_MODE, type ThemeModeCode } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
 import { SettingsTab } from '@/pages/settings'
 import { useWindowTabs } from '@/entities/tab'
@@ -14,42 +16,10 @@ import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { useSettings } from './useSettings'
-import type * as CoreClientModule from '@numen/core-client'
-import type * as SettingsModule from '@/entities/settings'
 
 type Tree = Record<string, Record<string, unknown>>
 
-const file = vi.hoisted(() => ({ current: {} as Record<string, unknown> }))
-
-// The reason of a rejected write is the text of the error, as the core sends it for a bad request.
-vi.mock('@numen/core-client', async (importOriginal) => ({
-  ...(await importOriginal<typeof CoreClientModule>()),
-  formatErrorMessage: (error: unknown) => (error as Error).message,
-}))
-
-vi.mock('@/entities/settings', async (importOriginal) => ({
-  ...(await importOriginal<typeof SettingsModule>()),
-  themes: {
-    getAppearance: async () => {
-      const appearance = ((file.current['app'] as Tree)['appearance'] ?? {}) as Record<
-        string,
-        unknown
-      >
-      return {
-        themes: [],
-        applied: appearance['theme'] as string,
-        mode: appearance['mode'] as string,
-        sizes: { interfaceScale: appearance['interfaceScale'], textScale: 1 },
-        bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 2 } },
-      }
-    },
-    readTheme: async (name: string) => `:root { --theme: "${name}"; }`,
-    writeAppearance: async () => '',
-    watchThemes: async function* () {
-      yield* []
-    },
-  },
-}))
+const file = { current: {} as Record<string, unknown> }
 
 const THEME_CHOICES = [
   { value: 'preset:numen', title: 'Numen', detail: '' },
@@ -175,7 +145,7 @@ const create = (timing: Timing) => {
         new Promise<void>((resolve, reject) => {
           setTimeout(() => {
             if (timing.rejectedWith) {
-              reject(new Error(timing.rejectedWith))
+              reject(new ReportedError(timing.rejectedWith))
               return
             }
             before = clone(file.current)
@@ -261,7 +231,38 @@ const ORDERS: readonly [string, Timing][] = [
   ],
 ]
 
+const MODES: Record<string, ThemeModeCode> = {
+  system: THEME_MODE.SYSTEM,
+  light: THEME_MODE.LIGHT,
+  dark: THEME_MODE.DARK,
+}
+
+let restore: () => void
+
 beforeEach(() => {
+  restore = installCoreAnswers({
+    theme: {
+      listThemes: () => {
+        const appearance = ((file.current['app'] as Tree)['appearance'] ?? {}) as Record<
+          string,
+          unknown
+        >
+        return {
+          themes: [],
+          applied: appearance['theme'] as string,
+          mode: MODES[appearance['mode'] as string] ?? THEME_MODE.SYSTEM,
+          interfaceScale: appearance['interfaceScale'] as number,
+          textScale: 1,
+          interfaceScaleBounds: { min: 0.8, max: 2 },
+          textScaleBounds: { min: 0.8, max: 2 },
+        }
+      },
+      readTheme: ({ name }) => ({ css: `:root { --theme: "${name}"; }` }),
+      async *watchThemes() {
+        yield* []
+      },
+    },
+  })
   vi.useFakeTimers()
   vi.stubGlobal(
     'ResizeObserver',
@@ -274,6 +275,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  restore()
   vi.useRealTimers()
   vi.unstubAllGlobals()
   document.head.querySelectorAll('style[data-appearance]').forEach((one) => one.remove())

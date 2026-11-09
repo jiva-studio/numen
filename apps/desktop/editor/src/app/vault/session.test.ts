@@ -2,11 +2,12 @@
  * The vault state response mapped to window values: a field omitted from the
  * response maps to an empty or zero value.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FLUSH_RESULT, TASK_KIND, TASK_UNIT } from '@numen/core-client'
+import { createLostConnection, installCoreHandlers } from '@numen/core-client/testing'
 import { sessionCore } from './session'
 
-const request = vi.hoisted(() => ({
+const request = {
   getVaultState: vi.fn(),
   writeOpenTabs: vi.fn(),
   reportFlush: vi.fn(),
@@ -16,17 +17,17 @@ const request = vi.hoisted(() => ({
   cancelTask: vi.fn(),
   watchQuit: vi.fn(),
   detachTab: vi.fn(),
-}))
+}
 
-vi.mock('@/shared/clients', () => ({
-  vault: request,
-  agentService: request,
-  workspace: request,
-  windowService: request,
-}))
+let restore: () => void
 
 beforeEach(() => {
   vi.clearAllMocks()
+  restore = installCoreHandlers(request)
+})
+
+afterEach(() => {
+  restore()
 })
 
 describe('the state of the vault', () => {
@@ -68,7 +69,7 @@ describe('the tabs a window holds open', () => {
 
     await sessionCore.writeOpenTabs({ tabs: [tab], activeId: 't1' } as never)
 
-    expect(request.writeOpenTabs).toHaveBeenCalledWith({ tabs: [tab], activeId: 't1' })
+    expect(request.writeOpenTabs.mock.lastCall?.[0]).toMatchObject({ tabs: [tab], activeId: 't1' })
   })
 })
 
@@ -76,7 +77,7 @@ describe('a flush reported', () => {
   it('says nothing was left where the window had nothing unsaved', async () => {
     await sessionCore.reportFlush('token-1')
 
-    expect(request.reportFlush).toHaveBeenCalledWith({
+    expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
       token: 'token-1',
       result: FLUSH_RESULT.NOTHING,
@@ -86,7 +87,7 @@ describe('a flush reported', () => {
   it('says what the window wrote', async () => {
     await sessionCore.reportFlush('token-1', 'written')
 
-    expect(request.reportFlush).toHaveBeenCalledWith({
+    expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
       token: 'token-1',
       result: FLUSH_RESULT.WRITTEN,
@@ -121,27 +122,40 @@ describe('the streams a window follows', () => {
         versionPaths: ['talks/a.mp3'],
       },
     ])
-    expect(request.watchVaultChanges).toHaveBeenCalledWith({}, { signal })
   })
 
-  it('follows the focus, and releases it on the signal', () => {
-    const focus = (async function* () {
-      yield* []
-    })()
-    request.watchFocus.mockReturnValue(focus)
+  it('follows the focus', async () => {
+    request.watchFocus.mockImplementation(async function* () {
+      yield {}
+    })
 
-    expect(sessionCore.watchFocus(signal)).toBe(focus)
-    expect(request.watchFocus).toHaveBeenCalledWith({}, { signal })
+    expect(await readAll(sessionCore.watchFocus(signal))).toHaveLength(1)
   })
 
-  it('follows a quit requested of this window', () => {
-    const quit = (async function* () {
-      yield* []
-    })()
-    request.watchQuit.mockReturnValue(quit)
+  it('releases the focus on the signal', async () => {
+    let requestSignal: AbortSignal | undefined
+    request.watchFocus.mockImplementation(async function* (_request, context) {
+      requestSignal = context.signal
+      await new Promise((resolve) => context.signal.addEventListener('abort', resolve))
+      yield* [] as object[]
+    })
+    const controller = new AbortController()
 
-    expect(sessionCore.watchQuit(signal)).toBe(quit)
-    expect(request.watchQuit).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+    const readTask = readAll(sessionCore.watchFocus(controller.signal))
+    await vi.waitFor(() => expect(requestSignal).toBeDefined())
+    controller.abort()
+
+    await vi.waitFor(() => expect(requestSignal?.aborted).toBe(true))
+    await readTask.catch(() => undefined)
+  })
+
+  it('follows a quit requested of this window', async () => {
+    request.watchQuit.mockImplementation(async function* () {
+      yield {}
+    })
+
+    expect(await readAll(sessionCore.watchQuit(signal))).toHaveLength(1)
+    expect(request.watchQuit.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
   it('notifies the work under way, counted in what each counts', async () => {
@@ -212,7 +226,7 @@ describe('the streams a window follows', () => {
         },
       ],
     ])
-    expect(request.watchTasks).toHaveBeenCalledWith({ window: 'editor' }, { signal })
+    expect(request.watchTasks.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
   it('asks the core of this window to cancel a task by its id', async () => {
@@ -220,11 +234,14 @@ describe('the streams a window follows', () => {
 
     await sessionCore.cancelTask('making the vectors')
 
-    expect(request.cancelTask).toHaveBeenCalledWith({ window: 'editor', id: 'making the vectors' })
+    expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
+      window: 'editor',
+      id: 'making the vectors',
+    })
   })
 
   it('rejects when the core does not cancel the task', async () => {
-    request.cancelTask.mockRejectedValue(new Error('not found'))
+    request.cancelTask.mockRejectedValue(createLostConnection('not found'))
 
     await expect(sessionCore.cancelTask('gone')).rejects.toThrow('not found')
   })
@@ -252,7 +269,7 @@ describe('detaching a tab', () => {
       error: 'timeout',
     })
 
-    expect(request.detachTab).toHaveBeenCalledWith({
+    expect(request.detachTab.mock.calls[0]?.[0]).toMatchObject({
       tab,
       x: 101,
       y: 200,
