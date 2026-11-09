@@ -43,7 +43,6 @@ func newCodex(t *testing.T, script string) *agentServer {
 	return svc
 }
 
-// recordingCodex is a Codex that records the folder and the arguments it ran with and then answers.
 func recordingCodex(t *testing.T) (string, func() (string, []string)) {
 	t.Helper()
 	recorded, read := agenttest.RecordingProgram(t, "codex")

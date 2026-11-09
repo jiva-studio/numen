@@ -64,6 +64,7 @@ The settings of the plugin ACP Agents.
 | | | |
 | --- | --- | --- |
 | `executablePath` | text | installed ACP agents are discovered automatically. Choose one or more custom ACP agent executables to add them. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.antigravity`
 
@@ -72,6 +73,7 @@ The settings of the plugin Antigravity Agent.
 | | | |
 | --- | --- | --- |
 | `executablePath` | text | path to the Antigravity CLI executable. Empty finds it automatically. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.claude`
 
@@ -81,6 +83,7 @@ The settings of the plugin Claude Code Agent.
 | --- | --- | --- |
 | `executablePath` | text | path to the Claude Code CLI executable. Empty finds it automatically. |
 | `readsHooksAndSkills` | yes or no | let Claude Code read the hooks, skills, standing instructions in CLAUDE.md and plugins configured for this person. Off. A hook is a shell command Claude Code runs itself. What a vault contains is never read. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.codex`
 
@@ -89,6 +92,7 @@ The settings of the plugin OpenAI Codex Agent.
 | | | |
 | --- | --- | --- |
 | `executablePath` | text | path to the OpenAI Codex CLI executable. Empty finds it automatically. |
+| `requestTimeout` | a number | seconds to wait for the program to answer a request from a connection. Without a value, a request waits 120 seconds. From 1 to 3600. |
 
 ### `md.numen.agents.mcp.server`
 
@@ -110,6 +114,14 @@ The settings of the plugin Numen Agent.
 | `temperature` | a number | sampling temperature for model responses (0.0 to 1.0). From 0 to 1. |
 | `maxTokens` | a number | maximum number of tokens to generate per completion. From 256 to 128000. |
 | `maxSteps` | a number | maximum number of requests to the model one task may make before it is stopped. From 1 to 1000. |
+
+### `md.numen.connections.llm`
+
+The settings of the plugin Language model services.
+
+| | | |
+| --- | --- | --- |
+| `requestTimeout` | a number | seconds to wait for a service to answer. Without a value, a completion waits 120 seconds and an embedding 60 seconds. From 1 to 3600. |
 
 ### `md.numen.engines.embeddings`
 

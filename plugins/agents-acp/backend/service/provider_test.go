@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
-// fakeProgram is an executable that runs the fake ACP agent with the behavior, and the file it records to.
 func fakeProgram(t *testing.T, behavior string) (string, string) {
 	t.Helper()
 	record := filepath.Join(t.TempDir(), "record")

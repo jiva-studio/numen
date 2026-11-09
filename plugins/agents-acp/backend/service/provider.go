@@ -44,8 +44,6 @@ func parseRequestTimeout(value string) time.Duration {
 	return time.Duration(seconds * float64(time.Second))
 }
 
-// getCallAgent returns the agent the program field of the call names. A call that names no program is a
-// stop, and a program that cannot be found is a failure to try the next connection after.
 func getCallAgent(call connection.Call) (acpAgent, error) {
 	program := strings.TrimSpace(call.Fields[fieldProgram])
 	if program == "" {
