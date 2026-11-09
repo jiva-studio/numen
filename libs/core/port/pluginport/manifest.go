@@ -34,34 +34,34 @@ type (
 const ConfigPerformanceProfile = "host.performanceProfile"
 
 const (
-	PermissionVaultRead       = manifest.PermissionVaultRead
-	PermissionVaultWrite      = manifest.PermissionVaultWrite
-	PermissionVaultManage     = manifest.PermissionVaultManage
-	PermissionNetworkOutbound = manifest.PermissionNetworkOutbound
-	PermissionAIComplete      = manifest.PermissionAIComplete
-	PermissionIndexRead       = manifest.PermissionIndexRead
-	PermissionSearchPolicy    = manifest.PermissionSearchPolicy
-	PermissionWindowFocus     = manifest.PermissionWindowFocus
-	PermissionNetworkAlias    = manifest.PermissionNetworkAlias
+	PermissionVaultRead         = manifest.PermissionVaultRead
+	PermissionVaultWrite        = manifest.PermissionVaultWrite
+	PermissionVaultManage       = manifest.PermissionVaultManage
+	PermissionNetworkOutbound   = manifest.PermissionNetworkOutbound
+	PermissionAIComplete        = manifest.PermissionAIComplete
+	PermissionIndexRead         = manifest.PermissionIndexRead
+	PermissionSearchPolicy      = manifest.PermissionSearchPolicy
+	PermissionWindowFocus       = manifest.PermissionWindowFocus
+	PermissionNetworkAlias      = manifest.PermissionNetworkAlias
 	RuntimeONNX                 = "onnxruntime"
 	ActivationEventStartup      = manifest.ActivationEventStartup
 	ActivationEventVectorsReady = manifest.ActivationEventVectorsReady
 	ActivationEventFilePrefix   = manifest.ActivationEventFilePrefix
 	ConditionTrue               = when.True
-	ConditionFalse            = when.False
-	ConditionUnknown          = when.Unknown
-	PluginProtocolVersion     = manifest.ProtocolVersion
-	SettingTypeString         = manifest.SettingTypeString
-	SettingTypeEnum           = manifest.SettingTypeEnum
-	SettingTypeFile           = manifest.SettingTypeFile
-	CommandArgumentString     = manifest.CommandArgumentString
-	CommandArgumentNumber     = manifest.CommandArgumentNumber
-	CommandArgumentBoolean    = manifest.CommandArgumentBoolean
-	CommandArgumentVersion    = manifest.CommandArgumentVersion
-	DependencyKindRuntime     = manifest.DependencyKindRuntime
-	DependencyKindModel       = manifest.DependencyKindModel
-	DependencyKindBinary      = manifest.DependencyKindBinary
-	DependencyKindDataset     = manifest.DependencyKindDataset
+	ConditionFalse              = when.False
+	ConditionUnknown            = when.Unknown
+	PluginProtocolVersion       = manifest.ProtocolVersion
+	SettingTypeString           = manifest.SettingTypeString
+	SettingTypeEnum             = manifest.SettingTypeEnum
+	SettingTypeFile             = manifest.SettingTypeFile
+	CommandArgumentString       = manifest.CommandArgumentString
+	CommandArgumentNumber       = manifest.CommandArgumentNumber
+	CommandArgumentBoolean      = manifest.CommandArgumentBoolean
+	CommandArgumentVersion      = manifest.CommandArgumentVersion
+	DependencyKindRuntime       = manifest.DependencyKindRuntime
+	DependencyKindModel         = manifest.DependencyKindModel
+	DependencyKindBinary        = manifest.DependencyKindBinary
+	DependencyKindDataset       = manifest.DependencyKindDataset
 )
 
 var (

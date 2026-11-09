@@ -22,7 +22,7 @@ const createProbe = (id: string, title: string, log: string): InstalledPlugin =>
       description: 'Records the secrets it receives',
       capabilities: [],
       targets: ['desktop.editor'],
-      activationEvents: ['*'],
+      activationEvents: ['onStartup'],
       permissions: [],
       backend: { entrypoint: 'bin/probe' },
       secrets: [
