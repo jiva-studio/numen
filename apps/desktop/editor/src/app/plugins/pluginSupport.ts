@@ -37,7 +37,6 @@ export interface PluginSupportDeps {
   readonly reportLoadError?: (pluginId: string, error: unknown) => void
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
-  /** Where the plugins stand; made first where the tabs read it before the loader exists. */
   readonly status?: PluginStatus
   readonly getServices?: () => PluginServices
   readonly notices?: NoticeQueue

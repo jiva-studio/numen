@@ -109,10 +109,6 @@ export interface DeclaredStateDeps {
 }
 
 export interface DeclaredCommandsDeps extends DeclaredStateDeps {
-  /**
-   * The lists of declarations, made first where the plugin host reads them before the commands that
-   * depend on the host can be made.
-   */
   readonly state?: DeclaredState
   readonly run?: typeof runDeclaredCommand
   readonly isListed?: (id: string) => boolean

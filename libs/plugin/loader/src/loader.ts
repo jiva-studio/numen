@@ -19,7 +19,6 @@ import { createSignal } from './loading/signal'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
-  /** Where the plugins stand; made first where the host or the tabs read it before the loader exists. */
   readonly status?: PluginStatus
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
