@@ -2,27 +2,22 @@
  * Host implementation of PluginContext conforming to @numen/plugin-sdk.
  */
 import type {
-  AgentHost,
-  AgentProviderRegistration,
   BufferHost,
-  CommandRegistration,
   Disposable,
-  DropRegistration,
   FileSelectEvent,
   PluginContext,
-  ReaderRegistration,
-  SettingsViewRegistration,
-  TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
   VaultRelations,
   VaultTexts,
-  ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
+import { guardAgent } from './guards/agentGuard'
+import { checkPermission, type PermissionTarget } from './guards/permission'
+import { createRegistrations, type RequirePermission, type Track } from './guards/registrations'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
@@ -36,19 +31,6 @@ function trackSubscription(subscriptions: Disposable[], disposable: Disposable):
       }
       disposable.dispose()
     },
-  }
-}
-
-interface PermissionTarget {
-  readonly pluginId: string
-  readonly manifest?: Manifest | { permissions?: readonly string[] } | undefined
-}
-
-function checkPermission(target: PermissionTarget, permission: string, operation: string): void {
-  if (!(target.manifest?.permissions?.includes(permission) ?? false)) {
-    throw new Error(
-      `Plugin "${target.pluginId}" lacks required permission "${permission}" for ${operation}`,
-    )
   }
 }
 
@@ -171,39 +153,6 @@ function guardTexts(
   }
 }
 
-const isAgentPath = (path: readonly string[]): boolean => path[0] === 'app' && path[1] === 'agent'
-
-function guardAgent(
-  agent: AgentHost,
-  requirePerm: (permission: string, operation: string) => void,
-): AgentHost {
-  return {
-    ...agent,
-    getSetting: (path) => (isAgentPath(path) ? agent.getSetting(path) : undefined),
-    writeSetting: async (path, value) => {
-      if (!isAgentPath(path)) {
-        throw new Error(
-          `agent.writeSetting is limited to the agent settings, not "${path.join('.')}"`,
-        )
-      }
-      await agent.writeSetting(path, value)
-    },
-    getModelsAt: (path) => (isAgentPath(path) ? agent.getModelsAt(path) : []),
-    ask: (query) => {
-      requirePerm('vault:read', 'agent.ask')
-      return agent.ask(query)
-    },
-    finish: (conversation) => {
-      requirePerm('vault:read', 'agent.finish')
-      return agent.finish(conversation)
-    },
-    resolveLinks: (text, vault) => {
-      requirePerm('vault:read', 'agent.resolveLinks')
-      return agent.resolveLinks(text, vault)
-    },
-  }
-}
-
 function guardBuffers(
   buffers: BufferHost,
   requireWrite: (operation: string) => void,
@@ -255,28 +204,6 @@ function guardServices(
 
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
-
-type Track = (disposable: Disposable) => Disposable
-type RequirePermission = (permission: string, operation: string) => void
-
-function createRegistrations(pluginId: string, host: PluginContextHost, add: Track) {
-  return {
-    registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
-    registerSettingsView: (reg: SettingsViewRegistration) =>
-      add(host.registerSettingsView(pluginId, reg)),
-    registerTabKind: <State>(reg: TabKindRegistration<State>) =>
-      add(host.registerTabKind(pluginId, reg)),
-    registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
-    registerAgentProvider: (reg: AgentProviderRegistration) =>
-      add(host.registerAgentProvider(pluginId, reg)),
-    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
-    mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      const view = host.mountView(capability, element, context)
-      return { focus: () => view.focus(), ...add(view) }
-    },
-    registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
-  }
-}
 
 /** What the events of a plugin are tracked and guarded with. */
 interface EventGuard {
@@ -346,7 +273,7 @@ export function createPluginContext(
     ...guardServices(host, requirePerm, add),
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
-    ...createRegistrations(pluginId, host, add),
+    ...createRegistrations(pluginId, host, { target, add }),
     ...createSlotContext(
       { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
       host,

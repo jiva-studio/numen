@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, onUnmounted } from 'vue'
 import { CONVERSATION } from '@numen/plugin-sdk'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from './styles'
-import { createViewRegistry } from './views'
+import { createViewRegistry, type MountAccess } from './views'
+
+const NO_ACCESS: MountAccess = { inherits: false, permissions: [], requirePerm: () => undefined }
 
 function createView(name: string, options?: { exposeFocus?: boolean; onUnmount?: () => void }) {
   const focused = { count: 0 }
@@ -29,7 +31,7 @@ describe('createViewRegistry', () => {
     views.registerView('chat.plugin', { capability: CONVERSATION, component })
     const element = document.createElement('section')
 
-    const mounted = views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
+    const mounted = views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
     mounted.focus()
 
     const root = element.querySelector('.plugin-view') as HTMLElement
@@ -53,10 +55,10 @@ describe('createViewRegistry', () => {
     const element = document.createElement('section')
     const disposedBeforeRegister = document.createElement('section')
 
-    const earlyDisposed = views.mountView(CONVERSATION, disposedBeforeRegister, { focus: 'gone' })
+    const earlyDisposed = views.mountView(CONVERSATION, disposedBeforeRegister, { focus: 'gone' }, NO_ACCESS)
     earlyDisposed.dispose()
 
-    const mounted = views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
+    const mounted = views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
     mounted.focus()
     expect(element.childElementCount).toBe(0)
 
@@ -87,15 +89,15 @@ describe('createViewRegistry', () => {
     const element = document.createElement('section')
     const pendingEl = document.createElement('section')
     const graphEl = document.createElement('section')
-    views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
-    views.mountView('unregistered', pendingEl, { focus: 'none' })
-    views.mountView('graph', graphEl, { focus: 'Nodes' })
+    views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
+    views.mountView('unregistered', pendingEl, { focus: 'none' }, NO_ACCESS)
+    views.mountView('graph', graphEl, { focus: 'Nodes' }, NO_ACCESS)
 
     declared.dispose()
     declared.dispose()
 
     const graphEl2 = document.createElement('section')
-    views.mountView('graph', graphEl2, { focus: 'Nodes2' })
+    views.mountView('graph', graphEl2, { focus: 'Nodes2' }, NO_ACCESS)
     expect(graphEl2.textContent).toBe('graph: Nodes2')
 
     expect(element.childElementCount).toBe(0)
@@ -116,7 +118,7 @@ describe('createViewRegistry', () => {
       component: createView('second').component,
     })
     const element = document.createElement('section')
-    views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
+    views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
 
     second.dispose()
     expect(element.textContent).toBe('first: Decks/Physics.md')
@@ -140,7 +142,7 @@ describe('createViewRegistry', () => {
     })
     const element = document.createElement('section')
 
-    views.mountView(CONVERSATION, element, {})
+    views.mountView(CONVERSATION, element, {}, NO_ACCESS)
 
     const link = element.querySelector('link')
     expect(link?.rel).toBe('stylesheet')
@@ -176,7 +178,7 @@ describe('createViewRegistry', () => {
       const element = document.createElement('section')
       document.body.appendChild(element)
 
-      const mounted = views.mountView(CONVERSATION, element, { focus: 'Note.md' })
+      const mounted = views.mountView(CONVERSATION, element, { focus: 'Note.md' }, NO_ACCESS)
       expect(element.querySelector('link')).toBeNull()
       expect(element.querySelector('.plugin-view')).not.toBeNull()
       expect(document.adoptedStyleSheets.length).toBe(1)
@@ -199,7 +201,7 @@ describe('createViewRegistry', () => {
     })
     const element = document.createElement('section')
 
-    views.mountView('graph', element, {})
+    views.mountView('graph', element, {}, NO_ACCESS)
 
     expect(element.childElementCount).toBe(0)
   })
