@@ -4,13 +4,13 @@
  * number inputs, sliders, selects, paths, secrets, and text fields. A setting or
  * secret whose condition fails is not shown, and keeps its value.
  */
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { PathField } from '../path-field'
 import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
-import type { SettingsTabState } from '../../types'
+import type { InstallationSettings, PluginFieldsHost, SecretChoices } from '../../types'
 import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import { createPluginSettings } from '../../model/createPluginSettings'
 import { createEnumFields, getValueInForce } from '../../lib/enums'
@@ -19,14 +19,19 @@ import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: InstallationSettings
+  host: PluginFieldsHost
+  choices: SecretChoices
   plugin: PluginInfo
 }>()
 
+const emit = defineEmits<{
+  (e: 'open-secrets'): void
+}>()
+
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const settings = createPluginSettings(
-  () => props.state.installation.settings,
+const pluginSettings = createPluginSettings(
+  () => props.settings,
   () => props.plugin.id,
 )
 const {
@@ -39,8 +44,8 @@ const {
 } = createEnumFields(
   () => props.plugin,
   readSetting,
-  settings.isRequested,
-  () => props.state.installation.settings.getPlatform(),
+  pluginSettings.isRequested,
+  () => props.settings.getPlatform(),
 )
 
 /** Why a path setting did not accept the path last chosen, by key. */
@@ -49,13 +54,13 @@ const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(key: string, value: unknown): void {
-  settings.set(key, value)
+  pluginSettings.set(key, value)
 }
 
 async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
   const pluginId = props.plugin.id
   const previous = getStringSetting(setting.key, setting.default)
-  const problem = await installation.value.plugin.choosePath(pluginId, setting.key)
+  const problem = await props.host.choosePath(pluginId, setting.key)
   if (props.plugin.id !== pluginId) return
   pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
   if (problem === '' && previous !== '' && hasManyPaths(setting)) {
@@ -75,13 +80,13 @@ function hasManyPaths(setting: PluginSettingInfo): boolean {
 }
 
 function readSetting(key: string): unknown {
-  return settings.get(key)
+  return pluginSettings.get(key)
 }
 
 function getValue(key: string): unknown {
   const setting = props.plugin.settings.find((one) => one.key === key)
   if (!setting) return readSetting(key)
-  return getValueInForce(setting, readSetting, settings.isRequested)
+  return getValueInForce(setting, readSetting, pluginSettings.isRequested)
 }
 
 function getBooleanSetting(key: string, fallback: unknown): boolean {
@@ -101,9 +106,14 @@ function getStringSetting(key: string, fallback: unknown): string {
 </script>
 
 <template>
-  <SettingsViews :state="props.state" :plugin="props.plugin" />
+  <SettingsViews :settings="props.settings" :host="props.host" :plugin="props.plugin" />
 
-  <PluginSecretField :state="state" :plugin="plugin" :secrets="getTopSecrets()" />
+  <PluginSecretField
+    :choices="props.choices"
+    :plugin="plugin"
+    :secrets="getTopSecrets()"
+    @open-secrets="emit('open-secrets')"
+  />
 
   <template v-for="setting in getShownSettings()" :key="setting.key">
     <SettingRow
@@ -204,7 +214,12 @@ function getStringSetting(key: string, fallback: unknown): string {
       />
     </SettingRow>
 
-    <PluginSecretField :state="state" :plugin="plugin" :secrets="getSecretsAfter(setting.key)" />
+    <PluginSecretField
+      :choices="props.choices"
+      :plugin="plugin"
+      :secrets="getSecretsAfter(setting.key)"
+      @open-secrets="emit('open-secrets')"
+    />
   </template>
 </template>
 

@@ -4,34 +4,36 @@
  * in the order the manifest declares them. A declared view without a registration draws nothing.
  */
 import { computed } from 'vue'
-import type { SettingsTabState } from '../../types'
+import type { InstallationSettings, PluginFieldsHost } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
 import { createPluginSettings } from '../../model/createPluginSettings'
 import { getRegisteredViews, getSettingValues } from '../../lib/settingsViews'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: InstallationSettings
+  host: Pick<PluginFieldsHost, 'getSettingsViews'>
   plugin: PluginInfo
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const settings = createPluginSettings(
-  () => props.state.installation.settings,
+const pluginSettings = createPluginSettings(
+  () => props.settings,
   () => props.plugin.id,
 )
 const views = computed(() =>
   getRegisteredViews(
     props.plugin.settingsViews ?? [],
-    installation.value.plugin.getSettingsViews(props.plugin.id),
+    props.host.getSettingsViews(props.plugin.id),
   ),
 )
-const values = computed(() => getSettingValues(props.plugin, settings.get, settings.isRequested))
+const values = computed(() =>
+  getSettingValues(props.plugin, pluginSettings.get, pluginSettings.isRequested),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingUpdate(key: string, value: unknown): void {
-  settings.set(key, value)
+  pluginSettings.set(key, value)
 }
 </script>
 

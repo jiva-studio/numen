@@ -12,11 +12,9 @@ import type {
   TabPathSync,
   WindowTabsReport,
 } from '@/entities/tab'
-import { cancelTabLinksWatch, watchTabLinks, writeTabLinks } from '../api/tab-links'
+import { cancelTabLinksWatch, watchTabLinks } from '../api/tab-links'
 import type { TabLinksState } from '../types'
-
-/** How long a failed tab report waits before it is sent again. */
-export const REPORT_RETRY_MS = 2000
+import type { TabReports } from './tabReports'
 
 export interface TabLinkSessionDeps {
   readonly windowId: string
@@ -30,7 +28,7 @@ export interface TabLinkSessionDeps {
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
   readonly openMovedTab: (moved: MovedTab) => void
   readonly setHighlighted: (isOn: boolean) => void
-  readonly getReport: () => WindowTabsReport
+  readonly reports: Pick<TabReports, 'reportTabs' | 'waitForReports' | 'stop' | 'resume'>
   readonly wait: (ms: number) => Promise<unknown>
   readonly onError: (error: unknown) => void
 }
@@ -46,44 +44,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     wait: deps.wait,
   })
 
-  /** The latest report not yet written to the core. */
-  let pendingReport: WindowTabsReport | null = null
-  let isReporting = false
-  /** Settles when the running writeReports loop ends. */
-  let reporting: Promise<void> = Promise.resolve()
-
-  /**
-   * Writes the pending report until none is left. A failed report is reported
-   * once and sent again after REPORT_RETRY_MS, unless a newer report replaced
-   * it. Stops while the session is closed.
-   */
-  const writeReports = async (): Promise<void> => {
-    isReporting = true
-    let hasFailed = false
-    while (pendingReport && isOpen) {
-      const report = pendingReport
-      pendingReport = null
-      try {
-        await writeTabLinks(deps.windowId, report)
-        hasFailed = false
-      } catch (error) {
-        if (!hasFailed) deps.onError(error)
-        hasFailed = true
-        pendingReport ??= report
-        await deps.wait(REPORT_RETRY_MS)
-      }
-    }
-    isReporting = false
-  }
-
-  /** Writes the current report to the core, after any pending report. */
-  const reportTabs = (): void => {
-    pendingReport = deps.getReport()
-    if (!isReporting) reporting = writeReports().catch(deps.onError)
-  }
-
-  /** Settles when the pending tab reports are written. */
-  const waitForReports = (): Promise<void> => reporting
+  const { reportTabs, waitForReports } = deps.reports
 
   /**
    * Sends AcceptTabMove once the pending reports are written, so that a report
@@ -129,6 +90,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   const close = (): void => {
     if (!isOpen) return
     isOpen = false
+    deps.reports.stop()
     abortController.abort()
     cancelTabLinksWatch(deps.windowId).catch(deps.onError)
   }
@@ -137,6 +99,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   const reopen = (): Promise<void> => {
     if (isOpen) return Promise.resolve()
     isOpen = true
+    deps.reports.resume()
     abortController = new AbortController()
     return start()
   }
