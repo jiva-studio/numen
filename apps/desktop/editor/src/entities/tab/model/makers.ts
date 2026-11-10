@@ -2,8 +2,7 @@
  * A file of a kind a tab creates, created in a folder under the given name and
  * opened in a tab of its own.
  */
-import { formatErrorMessage } from '@numen/core-client'
-import type { ErrorCode } from '@/shared/api/errors'
+import { formatError, type ErrorCode } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import type { FileOpeners } from './openers'
@@ -57,7 +56,7 @@ export function createFileCreators(
       }
       return answer.value.path
     } catch (error) {
-      write(formatErrorMessage(error), 'error')
+      write(formatError(error), 'error')
       return ''
     }
   }

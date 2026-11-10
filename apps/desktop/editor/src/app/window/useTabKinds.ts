@@ -2,8 +2,8 @@
  * Tab kinds and openers declared for the desktop window.
  */
 import { shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
 import { getCurrentDate } from '@numen/ui'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { FileIcons } from '@/features/command-palette'
 import { relations } from '@/entities/note'
@@ -39,7 +39,7 @@ function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessag
       }
       windowTabs
         .sendText(textKind.kind, text)
-        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
   }
 }
@@ -47,7 +47,7 @@ function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessag
 /**
  * Initializes and registers view kinds for the desktop window.
  */
-export function useWindowKinds(deps: WindowKindsDeps) {
+export function useTabKinds(deps: WindowKindsDeps) {
   const { core, log, tabOpeners, windowTabs, editing, settings } = deps
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])

@@ -5,14 +5,15 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
-import { CATALOG_INCOMPATIBILITY, CATALOG_STATE, type PluginCatalog } from '@numen/core-client'
+import { CATALOG_INCOMPATIBILITY, CATALOG_STATE } from '@numen/core-client'
 import {
   createMockCatalogEntry,
-  createMockPluginCatalog,
+  installCoreAnswers,
   type MockCatalogEntryOptions,
 } from '@numen/core-client/testing'
 import { createDeferred } from '@/testing/deferred'
-import { createUnavailableKind, type UnavailableServices } from './unavailable'
+import { createUnavailableKind, type UnavailableServices } from '../model/unavailable'
+import UnavailablePane from './UnavailablePane.vue'
 
 type Answer = 'pending' | 'disabled' | 'missing' | 'available' | 'installed' | 'incompatible'
 
@@ -41,21 +42,23 @@ const OPTIONS: Record<Exclude<Answer, 'pending' | 'missing'>, MockCatalogEntryOp
 const enablePlugin = fn(() => createDeferred<void>().promise)
 const openPlugin = fn()
 
-const createCatalog = (answer: Answer): PluginCatalog => {
-  if (answer === 'missing') return createMockPluginCatalog()
-  if (answer === 'pending') {
-    return { ...createMockPluginCatalog(), findByTabKind: () => createDeferred<never>().promise }
-  }
-  return createMockPluginCatalog([createMockCatalogEntry('sample.notes', OPTIONS[answer])])
+/** Answers which plugin provides the kind, the way the story's `answer` says. */
+const answerCatalog = (answer: Answer): void => {
+  installCoreAnswers({
+    pluginCatalog: {
+      findCatalogEntryByTabKind: () => {
+        if (answer === 'pending') return createDeferred<never>().promise
+        if (answer === 'missing') return {}
+        return { entry: createMockCatalogEntry('sample.notes', OPTIONS[answer]) }
+      },
+    },
+  })
 }
 
 const render = (args: Knobs) => {
-  const services: UnavailableServices = {
-    catalog: createCatalog(args.answer),
-    enablePlugin,
-    openPlugin,
-  }
-  const kind = createUnavailableKind('sample', undefined, services)
+  const services: UnavailableServices = { enablePlugin, openPlugin }
+  answerCatalog(args.answer)
+  const kind = createUnavailableKind(UnavailablePane, 'sample', undefined, services)
   return {
     components: { Pane: kind.pane },
     setup: () => ({ state: kind.open('Sample.md', 'tab'), args }),

@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
-import { tabLinksCore } from './tabLinks'
+import * as tabLinksCore from './tabLinks'
 
 const request = {
   watchTabLinks: vi.fn(),
@@ -14,6 +14,7 @@ const request = {
   moveTab: vi.fn(),
   acceptTabMove: vi.fn(),
   highlightWindow: vi.fn(),
+  detachTab: vi.fn(),
 }
 
 const ORBITS = {
@@ -231,6 +232,26 @@ describe('tab move requests', () => {
       windowId: 'window-b',
       tabId: 'plex:1',
       moveId: 'move-1',
+    })
+  })
+
+  it('sends DetachTab with the tab, its saved state and the rounded position and size', async () => {
+    request.detachTab.mockResolvedValueOnce({ error: 0 })
+    request.detachTab.mockResolvedValueOnce({ error: 2 })
+
+    expect(
+      await tabLinksCore.detachTab(ORBITS, { x: 100.6, y: 200.4, width: 640.5, height: 479.6 }),
+    ).toStrictEqual({ ok: true, value: undefined })
+    expect(
+      await tabLinksCore.detachTab(ORBITS, { x: 0, y: 0, width: 0, height: 0 }),
+    ).toStrictEqual({ ok: false, error: 'timeout' })
+
+    expect(request.detachTab.mock.calls[0]?.[0]).toMatchObject({
+      tab: ORBITS,
+      x: 101,
+      y: 200,
+      width: 641,
+      height: 480,
     })
   })
 

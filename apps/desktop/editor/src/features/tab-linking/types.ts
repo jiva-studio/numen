@@ -1,11 +1,14 @@
 /**
  * Types for tab linking and path sync between tabs of all windows.
  */
-import type { LinkableTab, TabId, TabLinkGroup, TabLinksSnapshot, TabWindow } from '@/entities/tab'
-
-/** Link or unlink change written to the core. */
-export type TabLinksChange =
-  { readonly link: { readonly source: TabId; readonly target: TabId } } | { readonly unlink: TabId }
+import type {
+  LinkableTab,
+  TabId,
+  TabLinkGroup,
+  TabLinksChange,
+  TabLinksSnapshot,
+  TabWindow,
+} from '@/entities/tab'
 
 /** Writes a link change to the core. */
 export type TabLinksWriter = (change: TabLinksChange) => Promise<void>

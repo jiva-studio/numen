@@ -1,32 +1,42 @@
 /**
- * The tab entity's part of the vault mock: the saved tabs, tab links and moves between windows.
+ * What the core answers about the tabs of the window: the saved tabs, the tab links and the
+ * moves between windows. The answers go through the router transport.
  */
+import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
+import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
 import { mockVaultState, pendingStream } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
-import type { Tab } from '@/entities/tab'
 
-export const tabCoreMock = {
-  writeOpenTabs: (open: { tabs: readonly Tab[]; activeId: string }) => {
-    requests.openTabs.push(open)
-    return Promise.resolve()
-  },
-  readOpenTabs: () => Promise.resolve(mockVaultState.savedTabs),
-  detachTab: () =>
-    mockVaultState.detachError
-      ? Promise.reject(new Error(mockVaultState.detachError))
-      : Promise.resolve({ ok: true as const, value: undefined }),
-  watchTabLinks: pendingStream,
-  cancelTabLinksWatch: () => Promise.resolve(),
-  writeTabLinks: () => Promise.resolve(),
-  syncTabPath: () => Promise.resolve(),
-  readDetachedTab: (_windowId: string, tabId: string) =>
-    Promise.resolve(
-      mockVaultState.detachedTab?.id === tabId
+export const tabAnswers = {
+  workspace: {
+    writeOpenTabs: (request) => {
+      requests.openTabs.push({
+        tabs: request.tabs.map(({ id, kind, path, title, state }) => ({
+          id,
+          kind,
+          path,
+          title,
+          state,
+        })),
+        activeId: request.activeId,
+      })
+      return {}
+    },
+    readOpenTabs: () => mockVaultState.savedTabs,
+    detachTab: () => {
+      if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
+      return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+    },
+    watchTabLinks: pendingStream,
+    cancelWatchTabLinks: () => ({}),
+    writeTabLinks: () => ({}),
+    syncTabPath: () => ({}),
+    readDetachedTab: (request) =>
+      mockVaultState.detachedTab?.id === request.tabId
         ? { tab: mockVaultState.detachedTab, moveId: 'move-1' }
-        : null,
-    ),
-  moveTab: () => Promise.resolve({ ok: true, value: undefined }),
-  acceptTabMove: () => Promise.resolve({ ok: true, value: undefined }),
-  highlightWindow: () => Promise.resolve(),
-} satisfies Partial<VaultCore>
+        : {},
+    moveTab: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
+    acceptTabMove: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
+    highlightWindow: () => ({}),
+  },
+} satisfies CoreAnswers

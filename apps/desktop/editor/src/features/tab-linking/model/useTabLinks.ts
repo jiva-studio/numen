@@ -4,8 +4,15 @@
  * snapshot.
  */
 import { shallowRef } from 'vue'
-import type { TabLinksChange, TabLinksState, TabLinksWriter } from '../types'
-import type { LinkableTab, TabId, TabLinkGroup, TabLinksSnapshot, TabWindow } from '@/entities/tab'
+import type { TabLinksState, TabLinksWriter } from '../types'
+import type {
+  LinkableTab,
+  TabId,
+  TabLinkGroup,
+  TabLinksChange,
+  TabLinksSnapshot,
+  TabWindow,
+} from '@/entities/tab'
 
 export interface TabLinksDeps {
   readonly write: TabLinksWriter
