@@ -30,20 +30,11 @@ const toWireCondition = (when: PluginSettingCondition) => ({
   is: [...when.is],
 })
 
-/** A declared setting as the core sends it: its default and its value are JSON texts. */
-export const toWireSetting = (setting: PluginSettingInfo) => ({
-  key: setting.key,
-  type: setting.type,
-  title: setting.title,
-  description: setting.description,
-  defaultJson: JSON.stringify(setting.default) ?? '',
-  palette: Boolean(setting.palette),
-  icon: setting.icon ?? '',
-  preview: Boolean(setting.preview),
-  multiple: Boolean(setting.multiple),
-  accept: [...(setting.accept ?? [])],
+/** The options of a declared setting as the core sends them. */
+const toWireOptions = (setting: PluginSettingInfo) => ({
   optionsFrom: setting.optionsFrom ?? '',
   options: (setting.options ?? []).map(toWireOption),
+  activeOptions: (setting.activeOptions ?? []).map(toWireOption),
   ...(setting.optionsBy
     ? {
         optionsBy: {
@@ -58,12 +49,31 @@ export const toWireSetting = (setting: PluginSettingInfo) => ({
       }
     : {}),
   ...(setting.when ? { when: toWireCondition(setting.when) } : {}),
-  activeOptions: (setting.activeOptions ?? []).map(toWireOption),
+})
+
+/** The bounds of a declared setting, where it has them. */
+const toWireBounds = (setting: PluginSettingInfo) => ({
   ...(setting.min !== undefined ? { min: setting.min } : {}),
   ...(setting.max !== undefined ? { max: setting.max } : {}),
   ...(setting.step !== undefined ? { step: setting.step } : {}),
+})
+
+/** A declared setting as the core sends it: its default and its value are JSON texts. */
+export const toWireSetting = (setting: PluginSettingInfo) => ({
+  key: setting.key,
+  type: setting.type,
+  title: setting.title,
+  description: setting.description,
+  defaultJson: JSON.stringify(setting.default),
+  palette: Boolean(setting.palette),
+  icon: setting.icon ?? '',
+  preview: Boolean(setting.preview),
+  multiple: Boolean(setting.multiple),
+  accept: [...(setting.accept ?? [])],
+  ...toWireOptions(setting),
+  ...toWireBounds(setting),
   isShown: setting.isShown ?? true,
-  valueJson: JSON.stringify(setting.value) ?? '',
+  valueJson: JSON.stringify(setting.value),
 })
 
 const PRESENCE: Record<Presence, ModelPresenceCode> = {
@@ -169,6 +179,162 @@ export interface SettingsCore {
   deletePluginData(pluginId: string): Promise<void>
 }
 
+type Answers = Record<string, unknown>
+
+interface Declaration {
+  readonly secretId: string
+  readonly pluginId: string
+  readonly name: string
+  readonly group: string
+}
+
+const answerSettings = (core: Partial<SettingsCore>): Answers => {
+  const { getSettings, updateSettings, watchSettings } = core
+  return {
+    ...(getSettings
+      ? { getSettings: async () => toWireConfiguration(await getSettings()) }
+      : {}),
+    ...(updateSettings
+      ? {
+          writeSettings: async (request: { settings: readonly SettingEdit[] }) => {
+            await updateSettings(
+              request.settings.map((one) => ({ at: [...one.at], value: one.value })),
+            )
+            return {}
+          },
+        }
+      : {}),
+    ...(watchSettings
+      ? {
+          watchSettings: async function* (_request: unknown, context: { signal: AbortSignal }) {
+            for await (const batch of watchSettings(context.signal)) yield { changed: batch }
+          },
+        }
+      : {}),
+  }
+}
+
+const answerSecrets = (core: Partial<SettingsCore>): Answers => {
+  const { createSecret, renameSecret, writeSecret, deleteSecret, deleteSecretGroup } = core
+  const { listSecretStates, moveSecret, renameSecretGroup } = core
+  const { allowPluginSecret, denyPluginSecret } = core
+  const done = {}
+  return {
+    ...(createSecret
+      ? {
+          createSecret: async (r: { group: string; name: string; value: string }) => ({
+            id: await createSecret(r.group, r.name, r.value),
+          }),
+        }
+      : {}),
+    ...(renameSecret
+      ? {
+          renameSecret: async (r: { id: string; name: string }) => {
+            await renameSecret(r.id, r.name)
+            return done
+          },
+        }
+      : {}),
+    ...(writeSecret
+      ? {
+          writeSecret: async (r: { id: string; value: string }) => {
+            await writeSecret(r.id, r.value)
+            return done
+          },
+        }
+      : {}),
+    ...(deleteSecret
+      ? {
+          deleteSecret: async (r: { id: string }) => {
+            await deleteSecret(r.id)
+            return done
+          },
+        }
+      : {}),
+    ...(deleteSecretGroup
+      ? {
+          deleteSecretGroup: async (r: { group: string }) => {
+            await deleteSecretGroup(r.group)
+            return done
+          },
+        }
+      : {}),
+    ...(listSecretStates
+      ? {
+          listSecretStates: async () => ({
+            states: [...(await listSecretStates())].map(([id, hasValue]) => ({ id, hasValue })),
+          }),
+        }
+      : {}),
+    ...(moveSecret
+      ? {
+          moveSecret: async (r: { id: string; beforeId: string }) => {
+            await moveSecret(r.id, r.beforeId)
+            return done
+          },
+        }
+      : {}),
+    ...(renameSecretGroup
+      ? {
+          renameSecretGroup: async (r: { group: string; name: string }) => {
+            await renameSecretGroup(r.group, r.name)
+            return done
+          },
+        }
+      : {}),
+    ...(allowPluginSecret
+      ? {
+          allowPluginSecret: async (r: Declaration) => {
+            await allowPluginSecret(r.secretId, r.pluginId, r.name, r.group)
+            return done
+          },
+        }
+      : {}),
+    ...(denyPluginSecret
+      ? {
+          denyPluginSecret: async (r: Declaration) => {
+            await denyPluginSecret(r.secretId, r.pluginId, r.name, r.group)
+            return done
+          },
+        }
+      : {}),
+  }
+}
+
+const answerPlugins = (core: Partial<SettingsCore>): Answers => {
+  const { retryPlugin, choosePluginPath, getPluginData, deletePluginData } = core
+  return {
+    ...(retryPlugin
+      ? {
+          retryPlugin: async (r: { pluginId: string }) => ({
+            failure: await retryPlugin(r.pluginId),
+          }),
+        }
+      : {}),
+    ...(choosePluginPath
+      ? {
+          choosePluginPath: (r: { pluginId: string; key: string }) =>
+            choosePluginPath(r.pluginId, r.key),
+        }
+      : {}),
+    ...(getPluginData
+      ? {
+          getPluginData: async (r: { pluginId: string }) => ({
+            fileCount: await getPluginData(r.pluginId),
+          }),
+        }
+      : {}),
+    ...(deletePluginData
+      ? {
+          deletePluginData: async (r: { pluginId: string }) => {
+            await deletePluginData(r.pluginId)
+            return {}
+          },
+        }
+      : {}),
+  }
+}
+
 /**
  * Answers the settings calls of every client from `core`, through the real clients. The returned
  * function restores the transport installed before. `others` answers the calls of the other
@@ -177,131 +343,9 @@ export interface SettingsCore {
 export const installSettingsCore = (
   core: Partial<SettingsCore>,
   others: CoreAnswers = {},
-): (() => void) => {
-  const answers: Record<string, unknown> = {}
-  const { getSettings, updateSettings, watchSettings, ...secrets } = core
-  if (getSettings) {
-    answers['getSettings'] = async () => toWireConfiguration(await getSettings())
-  }
-  if (updateSettings) {
-    answers['writeSettings'] = async (request: { settings: readonly SettingEdit[] }) => {
-      await updateSettings(request.settings.map((one) => ({ at: [...one.at], value: one.value })))
-      return {}
-    }
-  }
-  if (watchSettings) {
-    answers['watchSettings'] = async function* (
-      _request: unknown,
-      context: { signal: AbortSignal },
-    ) {
-      for await (const batch of watchSettings(context.signal)) yield { changed: batch }
-    }
-  }
-  if (secrets.createSecret) {
-    const createSecret = secrets.createSecret
-    answers['createSecret'] = async (r: { group: string; name: string; value: string }) => ({
-      id: await createSecret(r.group, r.name, r.value),
-    })
-  }
-  if (secrets.renameSecret) {
-    const renameSecret = secrets.renameSecret
-    answers['renameSecret'] = async (r: { id: string; name: string }) => {
-      await renameSecret(r.id, r.name)
-      return {}
-    }
-  }
-  if (secrets.writeSecret) {
-    const writeSecret = secrets.writeSecret
-    answers['writeSecret'] = async (r: { id: string; value: string }) => {
-      await writeSecret(r.id, r.value)
-      return {}
-    }
-  }
-  if (secrets.deleteSecret) {
-    const deleteSecret = secrets.deleteSecret
-    answers['deleteSecret'] = async (r: { id: string }) => {
-      await deleteSecret(r.id)
-      return {}
-    }
-  }
-  if (secrets.deleteSecretGroup) {
-    const deleteSecretGroup = secrets.deleteSecretGroup
-    answers['deleteSecretGroup'] = async (r: { group: string }) => {
-      await deleteSecretGroup(r.group)
-      return {}
-    }
-  }
-  if (secrets.listSecretStates) {
-    const listSecretStates = secrets.listSecretStates
-    answers['listSecretStates'] = async () => ({
-      states: [...(await listSecretStates())].map(([id, hasValue]) => ({ id, hasValue })),
-    })
-  }
-  if (secrets.moveSecret) {
-    const moveSecret = secrets.moveSecret
-    answers['moveSecret'] = async (r: { id: string; beforeId: string }) => {
-      await moveSecret(r.id, r.beforeId)
-      return {}
-    }
-  }
-  if (secrets.renameSecretGroup) {
-    const renameSecretGroup = secrets.renameSecretGroup
-    answers['renameSecretGroup'] = async (r: { group: string; name: string }) => {
-      await renameSecretGroup(r.group, r.name)
-      return {}
-    }
-  }
-  if (secrets.allowPluginSecret) {
-    const allowPluginSecret = secrets.allowPluginSecret
-    answers['allowPluginSecret'] = async (r: {
-      secretId: string
-      pluginId: string
-      name: string
-      group: string
-    }) => {
-      await allowPluginSecret(r.secretId, r.pluginId, r.name, r.group)
-      return {}
-    }
-  }
-  if (secrets.denyPluginSecret) {
-    const denyPluginSecret = secrets.denyPluginSecret
-    answers['denyPluginSecret'] = async (r: {
-      secretId: string
-      pluginId: string
-      name: string
-      group: string
-    }) => {
-      await denyPluginSecret(r.secretId, r.pluginId, r.name, r.group)
-      return {}
-    }
-  }
-  if (secrets.retryPlugin) {
-    const retryPlugin = secrets.retryPlugin
-    answers['retryPlugin'] = async (r: { pluginId: string }) => ({
-      failure: await retryPlugin(r.pluginId),
-    })
-  }
-  if (secrets.choosePluginPath) {
-    const choosePluginPath = secrets.choosePluginPath
-    answers['choosePluginPath'] = (r: { pluginId: string; key: string }) =>
-      choosePluginPath(r.pluginId, r.key)
-  }
-  if (secrets.getPluginData) {
-    const getPluginData = secrets.getPluginData
-    answers['getPluginData'] = async (r: { pluginId: string }) => ({
-      fileCount: await getPluginData(r.pluginId),
-    })
-  }
-  if (secrets.deletePluginData) {
-    const deletePluginData = secrets.deletePluginData
-    answers['deletePluginData'] = async (r: { pluginId: string }) => {
-      await deletePluginData(r.pluginId)
-      return {}
-    }
-  }
-  return installCoreAnswers({
+): (() => void) =>
+  installCoreAnswers({
     pluginCatalog: { listCatalog: () => ({ entries: [], sourceErrors: [] }) },
     ...others,
-    settingsService: answers as never,
+    settingsService: { ...answerSettings(core), ...answerSecrets(core), ...answerPlugins(core) },
   })
-}

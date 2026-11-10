@@ -3,13 +3,9 @@
  * window dispatches it and reads its result.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
-import { flushPromises } from '@vue/test-utils'
-import { COMMAND_ERROR_CODE, asFailure, asValue, type PluginCatalog } from '@numen/core-client'
+import { COMMAND_ERROR_CODE } from '@numen/core-client'
 import { createWhenReader } from '@numen/plugin-loader'
-import { createMockCatalogEntry, installCoreAnswers } from '@numen/core-client/testing'
-import type { PluginInfo } from '@numen/plugin-manager'
-import { useCatalogEntries } from '../model/catalogEntries'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import {
   isOverTarget,
   listDeclaredCommands,
@@ -435,76 +431,6 @@ describe('the handlers of shared commands', () => {
         { path: 'a.mp3', values: {} },
       ),
     ).toStrictEqual({ ok: false, error: 'no such version' })
-  })
-})
-
-describe('useCatalogEntries', () => {
-  const createPlugin = (id: string, isActive: boolean): PluginInfo => ({
-    id,
-    name: id,
-    version: '1.0.0',
-    description: '',
-    isActive,
-    capabilities: [],
-    secrets: [],
-    hasFrontend: false,
-    hasBackend: false,
-    settings: [],
-  })
-
-  it('starts empty and refreshes only when plugin ids or active states change', async () => {
-    const entry = createMockCatalogEntry('sample.notes')
-    const list = vi.fn<PluginCatalog['list']>().mockResolvedValue(
-      asValue({
-        entries: [entry],
-        sourceErrors: [{ source: 'community', message: 'timed out' }] as never,
-      }),
-    )
-    const catalog = {
-      list,
-      findByTabKind: vi.fn(),
-    } as unknown as PluginCatalog
-    const plugins = ref<readonly PluginInfo[]>([])
-    const errors: unknown[] = []
-    const entries = useCatalogEntries(catalog, plugins, (err) => errors.push(err))
-
-    expect(entries.value).toStrictEqual([])
-    expect(list).not.toHaveBeenCalled()
-
-    plugins.value = [createPlugin('a', true), createPlugin('b', false)]
-    await nextTick()
-    await flushPromises()
-    expect(list).toHaveBeenCalledTimes(1)
-    expect(entries.value).toStrictEqual([entry])
-    expect(errors).toHaveLength(1)
-    expect((errors[0] as Error).message).toBe('The plugin source community failed: timed out')
-
-    // Same ids and active states do not trigger a refresh
-    plugins.value = [createPlugin('a', true), createPlugin('b', false)]
-    await nextTick()
-    await flushPromises()
-    expect(list).toHaveBeenCalledTimes(1)
-
-    // Boundary between plugins matters (joining with newline vs empty string)
-    plugins.value = [createPlugin('a:trueb', false)]
-    await nextTick()
-    await flushPromises()
-    expect(list).toHaveBeenCalledTimes(2)
-
-    // Unavailable error reports reason, and other error kinds report default fallback
-    list.mockResolvedValueOnce(asFailure({ kind: 'unavailable', message: 'offline' }))
-    plugins.value = [createPlugin('a', false)]
-    await nextTick()
-    await flushPromises()
-    expect((errors.at(-1) as Error).message).toBe('The plugin catalog is unavailable: offline')
-
-    list.mockResolvedValueOnce(asFailure({ kind: 'other' as 'unavailable', message: 'offline' }))
-    plugins.value = [createPlugin('a', true)]
-    await nextTick()
-    await flushPromises()
-    expect((errors.at(-1) as Error).message).toBe(
-      'The plugin catalog is unavailable: it lists nothing',
-    )
   })
 })
 

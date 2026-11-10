@@ -50,7 +50,7 @@ interface SettingsTabConfigDeps {
   retry: ReturnType<typeof createPluginRetry>
   getSettingsViews?: Installation['getSettingsViews']
   getPlatform?: Installation['getPlatform']
-  catalogEntries: Installation['catalog']
+  catalogEntries: NonNullable<Installation['catalog']>
   reportError: (error: unknown) => void
 }
 

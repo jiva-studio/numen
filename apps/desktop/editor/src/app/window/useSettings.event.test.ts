@@ -70,7 +70,6 @@ const create = () => {
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = useWindowTabs()
   const settings = useSettings({
-    core,
     words: WORDS,
     log,
     windowTabs,
