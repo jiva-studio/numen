@@ -52,7 +52,7 @@ func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testsupport.CloseAfter(t, back)
+	testsupport.CloseAfter(t, loopbackCloser{back})
 	return back, back.getHandler()
 }
 
@@ -96,7 +96,7 @@ func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, back)
+	defer testsupport.Close(t, loopbackCloser{back})
 
 	select {
 	case res := <-response:
@@ -244,7 +244,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, back)
+	defer testsupport.Close(t, loopbackCloser{back})
 
 	out := fetch(t, http.DefaultClient, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
 	if out.StatusCode != http.StatusOK {
@@ -265,7 +265,7 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, back)
+	defer testsupport.Close(t, loopbackCloser{back})
 	api.state.Playing.Store(back)
 
 	response := getResponse(t, api.NewHandler(http.NotFoundHandler()), "/").
@@ -294,3 +294,8 @@ func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
 		t.Errorf("no stamp goes on the wire as %d", target)
 	}
 }
+
+// loopbackCloser closes a loopback with no bound on the wait.
+type loopbackCloser struct{ *Loopback }
+
+func (c loopbackCloser) Close() error { return c.Loopback.Close(context.Background()) }
