@@ -20,7 +20,8 @@ import (
 const EnvMockML = "NUMEN_MOCK_ML"
 
 // Mount registers the handlers and the agent tool transcript_create on s over the host the process
-// was started for. The transcriptions and the model end with s.
+// was started for. The model is the mock one where NUMEN_MOCK_ML is "true". The transcriptions and
+// the model end with s.
 func Mount(s *server.Server) error {
 	endpoint, err := hostcall.FromEnv()
 	if err != nil {
@@ -42,7 +43,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-// mount wires the use cases over the host given. The model is the mock one where isMock is set.
 func mount(s *server.Server, hosted hostclient.Host, cfg engine.Config, isMock bool) error {
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
 	transcriber := transcribe.NewTranscriber(hostclient.NewFiles(hosted.Vaults), hosted.Store, hosted.Texts, hosted.Queue, model.getRecognizer)

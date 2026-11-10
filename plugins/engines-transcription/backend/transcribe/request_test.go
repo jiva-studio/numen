@@ -173,7 +173,6 @@ func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFi
 	return s
 }
 
-// requestWithin makes the request and fails the test when the call waits for the transcription.
 func (s *requestFixture) requestWithin(t *testing.T, vault domain.VaultID, path string) (Outcome, error) {
 	t.Helper()
 	type answer struct {
@@ -203,7 +202,6 @@ func (s *requestFixture) createTranscript(t *testing.T, vault, path string) Outc
 	return out
 }
 
-// startWithin starts the transcription as the command of the palette does, in the vault the host shows.
 func (s *requestFixture) startWithin(t *testing.T, path string) (bool, error) {
 	t.Helper()
 	type answer struct {
