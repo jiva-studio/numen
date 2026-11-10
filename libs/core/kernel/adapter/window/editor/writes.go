@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // Writes is the writes to the vault that the window waits for before it closes, and what a write
