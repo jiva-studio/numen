@@ -434,7 +434,13 @@ describe('createPluginHost', () => {
       setup: (props) => () => h('p', (props.context as { focus: string }).focus),
     })
     host.lifecycle
-      .createContext('md.numen.chat')
+      .createContext(
+        'md.numen.chat',
+        createMockManifest('md.numen.chat', {
+          permissions: ['vault:read', 'vault:write'],
+          viewCapabilities: [CONVERSATION],
+        }),
+      )
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
 
@@ -452,7 +458,13 @@ describe('createPluginHost', () => {
     const host = createPluginHost(deps)
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
     host.lifecycle
-      .createContext('md.numen.chat')
+      .createContext(
+        'md.numen.chat',
+        createMockManifest('md.numen.chat', {
+          permissions: ['vault:read', 'vault:write'],
+          viewCapabilities: [CONVERSATION],
+        }),
+      )
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
     host.lifecycle
@@ -503,6 +515,7 @@ describe('a view mounted by a plugin', () => {
       createMockManifest('md.numen.notes', {
         name: 'Notes',
         permissions: ['vault:read', 'vault:write'],
+        viewCapabilities: [NOTE_EDITOR, CONVERSATION],
       }),
     )
     const registerViews = () => {

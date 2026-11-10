@@ -53,7 +53,8 @@ const everyFieldManifest = `{
 			{"slot": "titleBar", "view": "bar"},
 			{"slot": "fileTree.context", "submenu": "full.new", "title": "New", "icon": "plus", "when": "target.isFolder"}],
 		"listeners": [{"name": "mcp", "port": 3333, "protocol": "tcp"}, {"name": "console", "portSetting": "mode", "protocol": "tcp"}],
-		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}]}
+		"keybindings": [{"key": "mod+shift+r", "command": "task.run", "values": {"n": "3"}, "when": "window.isVaultOpen"}],
+		"viewCapabilities": ["conversation"]}
 }`
 
 func TestTheSampleManifestSetsEveryFieldOfTheSchema(t *testing.T) {

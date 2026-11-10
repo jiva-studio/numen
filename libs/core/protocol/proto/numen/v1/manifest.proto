@@ -75,6 +75,10 @@ message ManifestContributes {
   // keybindings bind keys to commands, see the keybindings list of commands.json for the keys of the
   // application.
   repeated ManifestKeybinding keybindings = 19;
+  // view_capabilities are the kinds of view the plugin's frontend draws for other plugins to mount: a
+  // kind the application defines (conversation, note-editor, vault-summary) or a kind named after the
+  // plugin id. The frontend registers a view only for a kind listed here.
+  repeated string view_capabilities = 20;
 }
 
 // ManifestKeybinding binds a key to a command, optionally with values for its arguments, under a

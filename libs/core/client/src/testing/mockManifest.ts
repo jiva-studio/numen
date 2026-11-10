@@ -10,6 +10,7 @@ export function createMockManifest(
     version?: string
     permissions?: readonly string[]
     frontend?: boolean
+    viewCapabilities?: readonly string[]
   } = {},
 ): Manifest {
   return create(ManifestSchema, {
@@ -18,5 +19,8 @@ export function createMockManifest(
     version: fields.version ?? '1.0.0',
     permissions: [...(fields.permissions ?? [])],
     ...(fields.frontend ? { frontend: {} } : {}),
+    ...(fields.viewCapabilities
+      ? { contributes: { viewCapabilities: [...fields.viewCapabilities] } }
+      : {}),
   })
 }

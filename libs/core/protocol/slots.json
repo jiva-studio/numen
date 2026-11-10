@@ -52,6 +52,11 @@
       "name": "palette.searchResult",
       "owner": "the palette",
       "about": "the actions of a search result that is a note, over that note"
+    },
+    {
+      "name": "palette.note",
+      "owner": "the palette",
+      "about": "the commands of the palette over the note in front"
     }
   ]
 }
