@@ -1,7 +1,6 @@
 package container
 
 import (
-	"bufio"
 	"go/types"
 	"io/fs"
 	"os"
@@ -226,19 +225,16 @@ func TestMutationDirectiveRule_RejectsADirectiveWithoutAReason(t *testing.T) {
 }
 
 func getDirectiveLines(path string) ([]string, error) {
-	file, err := os.Open(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { _ = file.Close() }()
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
 	var found []string
-	for line := 1; scanner.Scan(); line++ {
-		text := strings.TrimSpace(scanner.Text())
+	for i, line := range strings.Split(string(raw), "\n") {
+		text := strings.TrimSpace(line)
 		if strings.HasPrefix(text, "//") && strings.Contains(text, "gomutants:disable") {
-			found = append(found, strconv.Itoa(line)+": "+text)
+			found = append(found, strconv.Itoa(i+1)+": "+text)
 		}
 	}
-	return found, scanner.Err()
+	return found, nil
 }

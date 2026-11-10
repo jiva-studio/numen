@@ -147,10 +147,6 @@ func isRepoPath(path string) bool {
 	return strings.HasPrefix(path, numenRoot)
 }
 
-// A package finds what it forwards from another package of the repository, so that a name has one home: an
-// alias of a named type, an alias of an unnamed interface (a second spelling of a port that hides its name), an
-// exported variable or constant set to a member of another package, and an exported function whose whole body
-// calls a function of another package of the repository with its own parameters and has the same signature.
 func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	pkgs := getModulePackages(t, workspace, "libs/core/kernel")
@@ -165,6 +161,10 @@ func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 	}
 }
 
+// A re-export is an alias of a named type, an alias of an unnamed interface (a second spelling of a port that
+// hides its name), an exported variable or constant set to a member of another package, or an exported
+// function whose whole body calls a function of another package of the repository with its own parameters
+// and has the same signature.
 // The rule rejects an alias of a type another package of the repository declares, an alias of an unnamed
 // interface, a variable, constant or function that only forwards a member of another package of the
 // repository (a function only when its signature is the callee's), and accepts an alias of a type of its own package or of a package outside the repository.

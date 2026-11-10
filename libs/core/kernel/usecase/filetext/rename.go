@@ -11,6 +11,9 @@ import (
 )
 
 // FollowRenames moves the index rows of files that were removed to the files added with the same content.
+// A removed source is the one other than a note that the index holds at or under a removed path, with the
+// content hash it was read with; a source never read has no hash and matches nothing. Only an added file of
+// the same size as a removed source is read.
 type FollowRenames struct {
 	lookup  sourceport.RemovalLookup
 	sources sourceport.SourceRepository
@@ -32,8 +35,6 @@ func (f FollowRenames) Execute(ctx context.Context, reader vaultport.VaultReader
 	return moveRenamedSources(ctx, f.sources, reader, vaultID, found, added)
 }
 
-// findRemovedSources is the sources other than notes the index holds at and under the paths, with the
-// content hash each was read with. A source never read has no hash and matches nothing.
 func findRemovedSources(
 	ctx context.Context, queries sourceport.RemovalLookup, vaultID domain.VaultID, paths []string,
 ) ([]source.Text, error) {
@@ -59,8 +60,6 @@ func findRemovedSources(
 	return out, nil
 }
 
-// moveRenamedSources moves each removed source to the path among added whose file holds the same content,
-// and returns the paths it moved from. Only a file of the same size as a removed source is read.
 func moveRenamedSources(
 	ctx context.Context,
 	sources sourceport.SourceRepository,

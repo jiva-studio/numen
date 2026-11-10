@@ -67,9 +67,6 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 	return found, driven
 }
 
-// A package under adapter/ or internal/adapter/ that calls no use case is a driven adapter and imports a
-// technology; one that holds callbacks and no technology is a seam written as an adapter. A package of
-// internal/adapter/ that calls a use case is a driving adapter in the wrong folder.
 func checkDrivenAdaptersImportATechnology(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	pkgs := getModulePackages(t, workspace, "libs/core/kernel")
@@ -105,6 +102,9 @@ func TestTechnologyImportRule_NamesWhatReachesOutsideTheProcess(t *testing.T) {
 	}
 }
 
+// A package under adapter/ or internal/adapter/ that calls no use case is a driven adapter and imports a
+// technology; one that holds callbacks and no technology is a seam written as an adapter. A package of
+// internal/adapter/ that calls a use case is a driving adapter in the wrong folder.
 func TestTechnologyRule_RejectsAnAdapterOfCallbacks(t *testing.T) {
 	dir := writeTreeFixture(t, map[string]string{
 		"usecase/find/find.go":          "package find\n\nfunc Execute() {}\n",

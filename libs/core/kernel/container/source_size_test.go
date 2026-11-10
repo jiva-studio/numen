@@ -1,7 +1,7 @@
 package container
 
 import (
-	"bufio"
+	"bytes"
 	"go/parser"
 	"go/token"
 	"io/fs"
@@ -27,18 +27,18 @@ func listSourceRoots() []string {
 }
 
 func getSourceLines(path string) (int, error) {
-	file, err := os.Open(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
 	}
-	defer func() { _ = file.Close() }()
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
-	lines := 0
-	for scanner.Scan() {
-		lines++
+	return bytes.Count(raw, []byte("\n")) + btoi(len(raw) > 0 && raw[len(raw)-1] != 10), nil
+}
+
+func btoi(ok bool) int {
+	if ok {
+		return 1
 	}
-	return lines, scanner.Err()
+	return 0
 }
 
 func isGeneratedPath(path string) (bool, error) {
