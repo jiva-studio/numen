@@ -21,8 +21,8 @@ type NotifyPlugins struct {
 	report         func(error)
 }
 
-// NewNotifyPlugins makes the use case. signal is called once the plugins have been told, and is
-// nil where nobody waits for it.
+// NewNotifyPlugins makes the use case. signal is called once the plugins have received the batch. It is
+// optional.
 func NewNotifyPlugins(
 	codec settingsport.ValueCodec, plugins settingsport.PluginSettings, config settingsport.PluginConfig, refreshSecrets settingsport.SecretRefresh,
 	resolveProfile settingsport.ProfileResolver, signal func(), report func(error),

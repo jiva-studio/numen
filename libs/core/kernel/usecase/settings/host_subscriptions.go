@@ -9,7 +9,7 @@ import (
 )
 
 // HostSubscriptions keeps the delivery of setting changes to the plugin hosts, one per host. A
-// host is told apart by its identity: the pointer the capabilities that reach it are built from.
+// host is identified by the pointer the capabilities that reach it are built from.
 type HostSubscriptions struct {
 	hosts sync.Map
 }

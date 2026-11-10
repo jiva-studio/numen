@@ -19,7 +19,7 @@ func newNotifier(host *pluginHost, refreshSecrets func(context.Context) error, s
 	return settings.NewNotifyPlugins(jsonCodec{}, host, host, refreshSecrets, func(profile string) string { return "resolved-" + profile }, signal, report)
 }
 
-// A plugin that is enabled in the same batch as its settings is told of the settings first, and
+// A plugin that is enabled in the same batch as its settings receives the settings first, and
 // the settings of the shell reach no plugin.
 func TestNotifyPluginsUpdatesTheEnabledFlagLast(t *testing.T) {
 	host := &pluginHost{}
@@ -68,16 +68,16 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	hosts := &settings.HostSubscriptions{}
 	var mu sync.Mutex
 	subscriptions := 0
-	stopped := make(chan struct{})
+	done := make(chan struct{})
 	feed := make(chan []settingsdomain.Setting, 1)
 	subscribe := func() (<-chan []settingsdomain.Setting, func()) {
 		mu.Lock()
 		subscriptions++
 		mu.Unlock()
-		return feed, func() { close(feed); close(stopped) }
+		return feed, func() { close(feed); close(done) }
 	}
 	file := &memoryFile{}
-	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{known: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
+	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
 	setups := 0
 	apply := settings.NewApplyToPlugins(jsonCodec{}, host, write, newNotifier(host, nil, nil, nil), subscribe, hosts, func() { setups++ })
 
@@ -86,7 +86,7 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	feed <- []settingsdomain.Setting{setting(`4`, "org.example.scans", "depth")}
 	hosts.Unsubscribe(host)
 
-	<-stopped
+	<-done
 	if subscriptions != 1 || setups != 2 {
 		t.Errorf("subscriptions = %d, setups = %d", subscriptions, setups)
 	}
@@ -102,13 +102,13 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 func TestApplyToPluginsSavesWhatAPluginChanges(t *testing.T) {
 	host := &pluginHost{}
 	file := &memoryFile{}
-	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{known: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
+	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
 	apply := settings.NewApplyToPlugins(jsonCodec{}, host, write, newNotifier(host, nil, nil, nil), nil, &settings.HostSubscriptions{}, func() {})
 	apply.Execute(nil, "fast")
 
 	err := host.persist("org.example.scans", "depth", 5)
 
-	if err != nil || len(file.written) != 1 || file.written[0].JSON != "5" {
-		t.Fatalf("err = %v, written = %+v", err, file.written)
+	if err != nil || len(file.writes) != 1 || file.writes[0].JSON != "5" {
+		t.Fatalf("err = %v, writes = %+v", err, file.writes)
 	}
 }

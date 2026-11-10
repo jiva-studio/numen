@@ -25,19 +25,19 @@ func TestReadAppearanceReadsTheAppearanceOfTheFile(t *testing.T) {
 	}
 }
 
-// A scale of zero is not written, so the stored scale stays.
+// A scale of zero is not writes, so the stored scale stays.
 func TestWriteAppearanceWritesTheModeAsAWordAndSkipsAScaleOfZero(t *testing.T) {
 	file := &memoryFile{}
-	known := [][]string{{"app", "appearance", "theme"}, {"app", "appearance", "mode"}, {"app", "appearance", "textScale"}}
-	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{known: known}, nil), file, refreshRecorder{new([]string)})
+	declared := [][]string{{"app", "appearance", "theme"}, {"app", "appearance", "mode"}, {"app", "appearance", "textScale"}}
+	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: declared}, nil), file, refreshRecorder{new([]string)})
 
 	err := settings.NewWriteAppearance(jsonCodec{}, write).Execute(themedomain.Appearance{ThemeName: "preset:night", Mode: themedomain.Light, TextScale: 1.5})
 
 	var got []string
-	for _, one := range file.written {
+	for _, one := range file.writes {
 		got = append(got, one.Path[2]+"="+one.JSON)
 	}
 	if want := []string{"theme=\"preset:night\"", "mode=\"light\"", "textScale=1.5"}; err != nil || !slices.Equal(got, want) {
-		t.Fatalf("written = %v, %v, want %v", got, err, want)
+		t.Fatalf("writes = %v, %v, want %v", got, err, want)
 	}
 }

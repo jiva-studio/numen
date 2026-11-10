@@ -19,7 +19,7 @@ type ApplyToPlugins struct {
 	setup     func()
 }
 
-// NewApplyToPlugins makes the use case. The host is told apart by config, which every capability
+// NewApplyToPlugins makes the use case. The host is identified by config, which every capability
 // of the host is built from. setup hands the host what it needs besides settings, such as the key
 // store. subscribe is nil where the changes are not followed.
 func NewApplyToPlugins(

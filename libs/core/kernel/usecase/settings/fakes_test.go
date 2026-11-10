@@ -34,7 +34,7 @@ func (s stored) GetAgentUse() string { return s.use }
 type memoryFile struct {
 	mu      sync.Mutex
 	current stored
-	written []settingsdomain.Setting
+	writes  []settingsdomain.Setting
 	events  *[]string
 	failure error
 }
@@ -49,19 +49,19 @@ func (f *memoryFile) Write(entries []settingsdomain.Setting) error {
 	if f.events != nil {
 		*f.events = append(*f.events, "write file")
 	}
-	f.written = append(f.written, entries...)
+	f.writes = append(f.writes, entries...)
 	return f.failure
 }
 
 func (f *memoryFile) GetDefaults() settingsdomain.Stored { return stored{values: map[string]any{}} }
 
 // refusingValidator refuses a write to a path it does not know.
-type refusingValidator struct{ known [][]string }
+type refusingValidator struct{ declared [][]string }
 
 var errUnknown = errors.New("no such setting")
 
 func (v refusingValidator) CheckWrite(path []string, _ any) error {
-	for _, one := range v.known {
+	for _, one := range v.declared {
 		if slices.Equal(one, path) {
 			return nil
 		}
@@ -81,7 +81,7 @@ type pluginHost struct {
 	profiles []string
 	settings map[string]map[string]any
 	persist  plugin.PersistHandler
-	refusal  error
+	reason   error
 }
 
 func (h *pluginHost) UpdatePluginSetting(_ context.Context, pluginID, key string, _ any) error {
@@ -93,7 +93,7 @@ func (h *pluginHost) UpdatePluginSetting(_ context.Context, pluginID, key string
 
 func (h *pluginHost) CheckPluginSetting(pluginID, key string, _ any) error {
 	h.checks = append(h.checks, pluginID+"."+key)
-	return h.refusal
+	return h.reason
 }
 
 func (h *pluginHost) SetSettings(all map[string]map[string]any) { h.settings = all }
