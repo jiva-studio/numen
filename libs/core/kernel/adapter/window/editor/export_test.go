@@ -6,14 +6,17 @@ import (
 	"connectrpc.com/connect"
 
 	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
+	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
+	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
@@ -26,13 +29,10 @@ import (
 type Services struct {
 	state *State
 
-	Vault     *vaultHandler
-	Workspace *workspaceHandler
-	File      *FileHandler
-	Note      *NoteHandler
-	Vaults    *VaultsHandler
-	Command   *command.Handler
-	Media     *MediaHandler
+	File    *filewindow.Handler
+	Note    *notewindow.Handler
+	Command *command.Handler
+	Media   *mediawindow.Handler
 
 	Themes numenv1connect.ThemeServiceHandler
 
@@ -40,32 +40,92 @@ type Services struct {
 
 	Plugin numenv1connect.PluginServiceHandler
 
-	Mounted []Route
+	Extra []Route
 
 	getPluginDir func(id string) (string, bool)
 
 	server *FileServer
+
+	installation *Installation
+
+	resolve *file.ResolveAddress
+
+	NoteCases NoteUseCases
+}
+
+// NoteUseCases are the use cases a test gives the notes service. A use case left nil is one the
+// test does not call.
+type NoteUseCases struct {
+	Read           *note.Read
+	Write          *note.Write
+	Create         *note.Create
+	Rename         *note.Rename
+	EditLinks      *note.EditLinks
+	GetLinkAddress *query.GetLinkAddress
+	OpeningNote    *query.GetOpeningNote
+	Types          *query.GetTypes
+	Headings       *query.GetHeadings
+	Neighborhood   *query.ShowNeighbourhood
+	ResolveLinks   *query.ResolveLinks
+}
+
+// UseNotes builds the notes service over NoteCases.
+func (s *Services) UseNotes() {
+	use := s.NoteCases
+	addresses := notewindow.NewAddresses(s.state, use.GetLinkAddress)
+	s.Note = notewindow.NewHandler(
+		s.state,
+		notewindow.NewProse(s.state, s.state, addresses, use.Read, use.Write, use.Create, use.Rename),
+		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
+		notewindow.NewLinks(s.state, s.state, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
+		notewindow.NewConnections(s.state, s.state, nil, nil, nil, nil, nil),
+	)
 }
 
 func createServices(state *State) *Services {
-	return &Services{
-		state:     state,
-		Vault:     &vaultHandler{state: state},
-		Workspace: &workspaceHandler{state: state},
-		File:      NewFileHandler(state),
-		Note:      NewNoteHandler(state),
-		Vaults:    NewVaultsHandler(state),
-		Command:   command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
-		Media:     NewMediaHandler(state, nil, nil),
-		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
-		server:    NewFileServer(state, nil, nil, nil, nil),
-		Mounted: []Route{
-			RouteOf(state, search.NewHandler(state), search.NewRoute),
-			RouteOf(state, &settings.Handler{}, settings.NewRoute),
-			RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
-			RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
-		},
+	services := &Services{
+		state: state,
+		File: filewindow.NewHandler(
+			filewindow.NewFolders(state, state, state, nil, nil, nil, nil),
+			filewindow.NewChanges(state, state, state, state, nil, nil, nil),
+		),
+		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
+		Media:   mediawindow.NewHandler(state, state, nil, nil),
+		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
+		server:  NewFileServer(state, nil, nil, nil, nil),
 	}
+	services.Extra = []Route{
+		RouteOf(state, search.NewHandler(state), search.NewRoute),
+		RouteOf(state, &settings.Handler{}, settings.NewRoute),
+		RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
+		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
+	}
+	services.UseNotes()
+	return services
+}
+
+// NewHandler is the handler of the pages with these services in front of them.
+func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
+	return s.pages().newHandler(files, named...)
+}
+
+func (s *Services) pages() pageSet {
+	counted := s.state.CountQuestions()
+	var routes []Route
+	path, served := numenv1connect.NewFileServiceHandler(s.File, counted)
+	routes = append(routes, NewRoute(path, served, s.File))
+	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
+	routes = append(routes, NewRoute(path, served, s.Note))
+	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
+	routes = append(routes, NewRoute(path, served, s.state.Window))
+	path, served = numenv1connect.NewMediaServiceHandler(s.Media, counted)
+	routes = append(routes, NewRoute(path, served, s.Media))
+	path, served = numenv1connect.NewCommandServiceHandler(s.Command, counted)
+	routes = append(routes, NewRoute(path, served, s.Command))
+	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
+	routes = append(routes, NewRoute(path, served, s.Plugin))
+	routes = append(routes, s.Extra...)
+	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
 }
 
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
@@ -77,13 +137,13 @@ func RouteOf[H any](state *State, handler H, build func(H, ...connect.HandlerOpt
 
 // Mount puts the route in the place of the one served at its path, or beside them.
 func (s *Services) Mount(route Route) {
-	for i, one := range s.Mounted {
+	for i, one := range s.Extra {
 		if one.path == route.path {
-			s.Mounted[i] = route
+			s.Extra[i] = route
 			return
 		}
 	}
-	s.Mounted = append(s.Mounted, route)
+	s.Extra = append(s.Extra, route)
 }
 
 // HandlerOf is the handler of the type the installation mounted.
@@ -97,77 +157,42 @@ func HandlerOf[T any](o *Installation) T {
 	return none
 }
 
-// NewHandler is the handler of the pages with these services in front of them.
-func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
-	return s.pages().newHandler(files, named...)
-}
-
-func (s *Services) pages() pageSet {
-	counted := s.state.CountQuestions()
-	var routes []Route
-	path, served := numenv1connect.NewVaultServiceHandler(s.Vault, counted)
-	routes = append(routes, NewRoute(path, served, s.Vault))
-	path, served = numenv1connect.NewWorkspaceServiceHandler(s.Workspace, counted)
-	routes = append(routes, NewRoute(path, served, s.Workspace))
-	path, served = numenv1connect.NewFileServiceHandler(s.File, counted)
-	routes = append(routes, NewRoute(path, served, s.File))
-	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
-	routes = append(routes, NewRoute(path, served, s.Note))
-	path, served = numenv1connect.NewVaultsServiceHandler(s.Vaults, counted)
-	routes = append(routes, NewRoute(path, served, s.Vaults))
-	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
-	routes = append(routes, NewRoute(path, served, s.state.Window))
-	path, served = numenv1connect.NewMediaServiceHandler(s.Media, counted)
-	routes = append(routes, NewRoute(path, served, s.Media))
-	path, served = numenv1connect.NewCommandServiceHandler(s.Command, counted)
-	routes = append(routes, NewRoute(path, served, s.Command))
-	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
-	routes = append(routes, NewRoute(path, served, s.Plugin))
-	routes = append(routes, s.Mounted...)
-	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
-}
-
 func (s *Services) openPlaying(playing *Loopback) { s.state.Playing.Store(playing) }
 
 func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *file.OpenPluginFile, mediaTypes *file.GetMediaType) {
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openPluginFile = openPluginFile
 	s.server.mediaTypes = mediaTypes
-	s.Media.resolveAddress = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile)
-	s.Media.mediaTypes = mediaTypes
+	s.resolve = file.NewResolveAddress(file.NewStatFile(readers), openPluginFile)
+	s.Media = mediawindow.NewHandler(
+		s.state, s.state, s.resolve, mediaTypes)
 }
 
 // ServicesOf is the handlers a window answers through.
 func ServicesOf(o *Installation) *Services {
-	services := &Services{state: o.State}
+	services := &Services{state: o.State, installation: o}
 	for _, one := range o.pages.routes {
 		switch handler := one.service.(type) {
-		case *vaultHandler:
-			services.Vault = handler
-		case *workspaceHandler:
-			services.Workspace = handler
-		case *FileHandler:
+		case *filewindow.Handler:
 			services.File = handler
-		case *NoteHandler:
+		case *notewindow.Handler:
 			services.Note = handler
-		case *VaultsHandler:
-			services.Vaults = handler
-		case *MediaHandler:
+		case *mediawindow.Handler:
 			services.Media = handler
 		}
 	}
 	return services
 }
 
-// The use cases a handler holds, for the tests that wrap one in a fake.
+// The use cases the services of notes and files call, for the tests that wrap one in a fake. The
+// services hold pointers into the scenarios of the installation, so the one wrapped there is the
+// one they call.
 
-func (s *Services) NoteCreate() *note.Create { return s.Note.create }
-func (s *Services) NoteWrite() *note.Write   { return s.Note.write }
-func (s *Services) NoteRename() *note.Rename { return s.Note.rename }
-func (s *Services) FileRemove() *note.Remove { return s.File.remove }
-func (s *Services) FileMove() *vaults.Move   { return s.File.move }
+func (s *Services) NoteCreate() *note.Create { return &s.installation.notes.Create }
+func (s *Services) NoteWrite() *note.Write   { return &s.installation.notes.Write }
+func (s *Services) NoteRename() *note.Rename { return &s.installation.notes.Rename }
+func (s *Services) FileRemove() *note.Remove { return &s.installation.notes.Remove }
+func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Move }
 
-func (s *Services) SetFileMove(move *vaults.Move)  { s.File.move = move }
-func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
-
-func (s *Services) SetTabKindChoice(choose *tabkind.Choose) { s.File.chooseTabKind = choose }
+func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Move = *move }
+func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Write = *write }

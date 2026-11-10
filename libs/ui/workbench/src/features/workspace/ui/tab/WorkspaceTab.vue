@@ -103,13 +103,17 @@ defineExpose({ focus: () => root.value?.focus() })
 }
 
 .tab__icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --icon: 0.875rem;
+
+  inline-size: var(--icon);
+  block-size: var(--icon);
 }
 
 .tab__mark {
-  inline-size: 0.45em;
-  block-size: 0.45em;
+  --dot: 0.45em;
+
+  inline-size: var(--dot);
+  block-size: var(--dot);
   border-radius: 50%;
   background: currentColor;
 }
@@ -120,8 +124,10 @@ defineExpose({ focus: () => root.value?.focus() })
 }
 
 .tab__close {
-  inline-size: 1.1em;
-  block-size: 1.1em;
+  --close: 1.1em;
+
+  inline-size: var(--close);
+  block-size: var(--close);
   line-height: 1;
   opacity: 0;
 }

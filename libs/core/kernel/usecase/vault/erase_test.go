@@ -7,6 +7,7 @@ import (
 	"slices"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -76,7 +77,7 @@ func TestErase_RejectsFolderWithoutIdentity(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaults.ErrUnreadable) {
+	if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("a folder that is not the vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
@@ -126,7 +127,7 @@ func TestErase_RejectsOnlyVaultBeforeTouchingFolder(t *testing.T) {
 	}
 	erase, trash, _, _ := newErase(registry)
 
-	if _, err := erase.Execute(t.Context(), only); !errors.Is(err, vaults.ErrLastVault) {
+	if _, err := erase.Execute(t.Context(), only); !errors.Is(err, vaultdomain.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
 	if len(trash.moved) != 0 {
@@ -149,7 +150,7 @@ func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
 	)
 
 	res, err := erase.Execute(t.Context(), removed)
-	if !errors.Is(err, vaults.ErrUnreadable) {
+	if !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("want ErrUnreadable, got %v", err)
 	}
 	if res.IsTrashed || len(trash.moved) != 0 || len(index.unregistered) != 0 {
@@ -169,7 +170,7 @@ func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 	)
 
 	_, err := erase.Execute(t.Context(), removed)
-	if !errors.Is(err, errRefused) || errors.Is(err, vaults.ErrUnreadable) {
+	if !errors.Is(err, errRefused) || errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("want the rejection itself back, got %v", err)
 	}
 	if len(trash.moved) != 0 || len(index.unregistered) != 0 {
@@ -202,7 +203,7 @@ func TestErase_RejectsFolderWithOtherIdentity(t *testing.T) {
 				vaults.NewUnregister(registry, registry, index),
 			)
 
-			if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaults.ErrUnreadable) {
+			if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaultdomain.ErrUnreadable) {
 				t.Fatalf("want ErrUnreadable, got %v", err)
 			}
 			if len(trash.moved) != 0 || len(index.unregistered) != 0 {
@@ -240,7 +241,7 @@ func TestEraseKeepsTheCauseWhenTheFolderCannotBeRead(t *testing.T) {
 	)
 
 	_, err := erase.Execute(t.Context(), removed)
-	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
+	if !errors.Is(err, vaultdomain.ErrUnreadable) || !errors.Is(err, errRefused) {
 		t.Fatalf("want both the sentinel and the cause, got %v", err)
 	}
 }

@@ -11,13 +11,12 @@ import {
   useNoticeTasks,
 } from '@/features/background-tasks'
 import type { WindowTabs } from '@/entities/tab'
-import type { NoteLookup, runSupport } from '@/features/command-palette'
+import { searchCore, type NoteLookup, type runSupport } from '@/features/command-palette'
 import type { Command, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { isFieldFocused } from './isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
-import { core } from '../vault'
 import type { CommandItemLists } from '../plugins/commands/commandItemLists'
 import { getPaletteId, type useDeclaredCommands } from '../plugins/commands/declaredCommands'
 import { createCommandNotes } from '../tabs/commandDeps'
@@ -42,7 +41,7 @@ import {
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
 import type { createWindowTabMoves } from './createTabsPart'
-import { createTargetResolver } from './useWindowDisplayOptions'
+import { createTargetResolver } from './displayOptions'
 import { useTabKinds } from './useTabKinds'
 
 interface WindowCommandsOptions {
@@ -69,7 +68,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     ...(deps.slots ? { slots: deps.slots } : {}),
     getAppCommands: deps.getAppCommands,
     readCommandNote: deps.readCommandNote,
-    core,
+    core: searchCore,
     words,
     log: deps.log,
     windowTabs,
@@ -114,7 +113,7 @@ function initFeatureCommands(
       windowTabs: base.windowTabs,
       travel: (path) => getKinds(ctx).travel(path),
       leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
-      getOpeningNote: () => window.opening.value,
+      getOpeningNote: () => window.opening.path.value,
       tabsHold: {
         pause: async () => getTabsHold(ctx).pause(),
         resume: () => getTabsHold(ctx).resume(),
@@ -161,7 +160,7 @@ export function initWindowKindsAndCommands(
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
   ctx.kinds = useTabKinds({
-    core,
+    core: searchCore,
     log: base.log,
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
@@ -225,7 +224,7 @@ function createBackgroundTasks(
   const noticeTasks = useNoticeTasks({
     log: base.log,
     plugins: base.pluginNotices,
-    window,
+    window: { lost: window.health.lost, unwatched: window.vault.unwatched, error: window.vault.error },
     settings,
   })
   return createBackgroundTaskHost({

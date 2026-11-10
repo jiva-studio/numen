@@ -10,7 +10,7 @@ import {
   registerCommand,
   runInvocation,
   createInvocation,
-  useCommandPalette,
+  createCommandPalette,
   useSearch,
   type Words as PaletteWords,
   type CommandDeps,
@@ -18,6 +18,7 @@ import {
   type SearchMenuDeps,
   type NoteLookup,
   type PaletteLists,
+  type SearchDeps,
 } from '@/features/command-palette'
 import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
 import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
@@ -53,7 +54,6 @@ import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
 import { getFileKinds } from '@/entities/file'
-import type { VaultCore } from '../vault'
 import { getVaultList } from './vaultList'
 
 type Words = typeof WORDS
@@ -62,7 +62,7 @@ import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
 import type { Ref } from 'vue'
 
 export interface CommandsDepsOptions {
-  core: VaultCore
+  core: SearchDeps
   words: Words
   log: MessageLog
   windowTabs: WindowTabs
@@ -174,7 +174,7 @@ async function runInvocationToEnd(
 
 /** What the runs of the window go through: the palettes, the plugin host and the deps of a command. */
 interface CommandRunnerParts {
-  readonly commands: ReturnType<typeof useCommandPalette>
+  readonly commands: ReturnType<typeof createCommandPalette>
   readonly palette: { setOpen(isOpen: boolean): void }
   readonly pluginHost: CommandsDepsOptions['pluginHost']
   readonly getCommandNote: ReturnType<typeof createCommandNoteReader>
@@ -246,13 +246,13 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   }
 }
 
-function useWindowCommandPalette(
+function createWindowCommandPalette(
   options: CommandsDepsOptions,
   lists: PaletteLists,
   listExtras: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
-  return useCommandPalette(
+  return createCommandPalette(
     { ...core, vaults: getVaultList },
     words,
     getTarget,
@@ -283,7 +283,7 @@ export function createCommands(options: CommandsDepsOptions) {
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
-  const commands = useWindowCommandPalette(options, lists, listExtras)
+  const commands = createWindowCommandPalette(options, lists, listExtras)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)

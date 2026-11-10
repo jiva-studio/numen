@@ -177,6 +177,8 @@ function onChoose(key: string): void {
      number of rows is counted in. */
   --inset: 0.375rem;
   --row: calc(var(--numen-font-size) * var(--numen-line-height) + 0.75rem);
+  /* The air at the sides of the search line and of the status line under it. */
+  --side: 0.75rem;
 
   box-sizing: border-box;
   display: flex;
@@ -198,7 +200,7 @@ function onChoose(key: string): void {
   inline-size: 100%;
   block-size: var(--numen-action-size);
   padding-block: 0;
-  padding-inline: 0.75rem;
+  padding-inline: var(--side);
   font: inherit;
   color: var(--numen-ink);
   background: transparent;
@@ -237,7 +239,7 @@ function onChoose(key: string): void {
 
 .searchable-list__status {
   margin: 0;
-  padding: 0.375rem 0.75rem;
+  padding: var(--inset) var(--side);
   color: var(--numen-hushed);
   border-block-start: var(--numen-stroke) solid var(--numen-panel-border);
 }

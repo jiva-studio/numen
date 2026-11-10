@@ -2,17 +2,14 @@ package vault
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
-
-// ErrLastVault is the one vault an installation has left. It stays on the list.
-var ErrLastVault = errors.New("the last vault cannot be removed")
 
 // Unregister takes a vault off the list this installation keeps, and out of the
 // index. The folder keeps its position, with the identity it carries, and adding
@@ -48,7 +45,7 @@ func keepTheLastVault(vaults vaultport.VaultList, v domain.Vault) error {
 		return err
 	}
 	if len(recognized) == 1 && recognized[0].ID == v.ID {
-		return domain.NewDetailError(fmt.Sprintf("%s is the only vault; the last vault cannot be removed", v.Name), ErrLastVault)
+		return domain.NewDetailError(fmt.Sprintf("%s is the only vault; the last vault cannot be removed", v.Name), vaultdomain.ErrLastVault)
 	}
 	return nil
 }

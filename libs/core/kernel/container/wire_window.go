@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -26,7 +27,7 @@ type windowWiring struct {
 	vaults *vault.Scenarios
 
 	inst   *editor.Installation
-	files  *editor.FileHandler
+	files  *filewindow.Handler
 	server *editor.FileServer
 	wrap   func(editor.Sources) editor.Sources
 }
@@ -88,7 +89,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	if w.wrap != nil {
 		sources = w.wrap(sources)
 	}
-	inst, err := editor.NewInstallation(editor.Setup{
+	inst := editor.NewInstallation(editor.Setup{
 		Tasks:         tasks,
 		Out:           out,
 		CheckIdentity: vault.NewCheckIdentity(w.cfg.VaultIdentity()),
@@ -97,14 +98,10 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		EmbedderError: why,
 		StopEmbedder:  closeEmbedder,
 		Progress:      w.db.Progress(),
-		OpenTabsStore: w.db.OpenTabs(),
 		EmitEvent:     w.cfg.plugins().EmitPluginEvent,
 		IsRebuilding:  w.cfg.ShouldRebuildIndex,
 		Closing:       ctx.Done(),
 	}, sources)
-	if err != nil {
-		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
-	}
 	w.inst = inst
 
 	// A note saved by the user is refreshed in the index before the save returns,
@@ -115,16 +112,20 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	w.vaults = &moves
 	inst.UseScenarios(w.notes, w.vaults)
 
-	mountServices(w)
+	if err := mountServices(w); err != nil {
+		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
+	}
 	if err := inst.Start(ctx, first, w.server); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
 	}
 	return inst, nil
 }
 
-func mountServices(w *windowWiring) {
+func mountServices(w *windowWiring) error {
 	mountVault(w)
-	mountWorkspace(w)
+	if err := mountWorkspace(w); err != nil {
+		return err
+	}
 	mountWindowState(w)
 	mountFile(w)
 	mountNote(w)
@@ -137,4 +138,5 @@ func mountServices(w *windowWiring) {
 	mountText(w)
 	mountPlugin(w)
 	mountCatalog(w)
+	return nil
 }

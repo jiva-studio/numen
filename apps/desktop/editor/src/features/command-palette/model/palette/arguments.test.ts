@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
-import { useCommandPalette, type Commands } from './palette'
+import { createCommandPalette, type Commands } from './palette'
 import type { Command, CommandTarget } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
 
@@ -42,7 +42,7 @@ const createSample: Command = {
 }
 
 const createPalette = () => {
-  const commands = useCommandPalette({
+  const commands = createCommandPalette({
     core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
     words,
     at: () => front,
@@ -118,7 +118,7 @@ describe('a command that asks for its arguments', () => {
 describe('a command that arrives after the palette is made', () => {
   it('is offered from then on', () => {
     const extra = shallowRef<readonly Command[]>([])
-    const commands = useCommandPalette({
+    const commands = createCommandPalette({
       core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
       words,
       at: () => front,

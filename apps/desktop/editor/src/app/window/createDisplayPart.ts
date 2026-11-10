@@ -17,10 +17,10 @@ import type { TabsHold } from '@/features/vault-commands'
 import type { createCommands } from './createCommands'
 import type { useDeclaredCommands } from '../plugins/commands/declaredCommands'
 import type { CommandItemLists } from '../plugins/commands/commandItemLists'
-import { useWindowDisplay } from './useWindowDisplay'
-import { createDisplayOptions } from './useWindowDisplayOptions'
+import { useWindowDisplay } from '@/features/window-display'
+import { createDisplayOptions } from './displayOptions'
 import type { useTabKinds } from './useTabKinds'
-import type { createWindowSlots } from './windowSlots'
+import type { createWindowSlots } from '../plugins/windowSlots'
 import type { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import type { createPluginSupport } from '../plugins/useWindowPlugins'
@@ -123,9 +123,9 @@ export function initWindowServices(
   ctx.vaults = useVaults({
     words,
     log: base.log,
-    chunks: window.chunks,
-    embedded: window.embedded,
-    isEmbedding: window.isEmbedding,
+    chunks: window.vault.chunks,
+    embedded: window.vault.embedded,
+    isEmbedding: window.vault.isEmbedding,
   })
 
   return { editing, tabSync, window, settings }

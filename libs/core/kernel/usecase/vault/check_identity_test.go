@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
@@ -31,7 +32,7 @@ func TestAFolderCarryingAnotherIdentityIsNotTheVault(t *testing.T) {
 	}
 	v.ID = "another"
 
-	if err := vaults.NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaults.ErrUnreadable) {
+	if err := vaults.NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("error is %v, want ErrUnreadable", err)
 	}
 }
@@ -47,7 +48,7 @@ func TestAFolderThatIsMissingIsNotReadable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := vaults.NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaults.ErrUnreadable) {
+	if err := vaults.NewCheckIdentity(vaultreader.Identity{}).Execute(v); !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("error is %v, want ErrUnreadable", err)
 	}
 }

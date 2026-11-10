@@ -14,6 +14,9 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
+	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 )
@@ -252,25 +255,19 @@ func (s pageSet) setRequestVault(r *http.Request) {
 }
 
 // NewNoteRoute is the route of the notes service.
-func NewNoteRoute(state *State, handler *NoteHandler) Route {
+func NewNoteRoute(state *State, handler *notewindow.Handler) Route {
 	path, served := numenv1connect.NewNoteServiceHandler(handler, state.CountQuestions())
 	return NewRoute(path, served, handler)
 }
 
 // NewFileRoute is the route of the files service.
-func NewFileRoute(state *State, handler *FileHandler) Route {
+func NewFileRoute(state *State, handler *filewindow.Handler) Route {
 	path, served := numenv1connect.NewFileServiceHandler(handler, state.CountQuestions())
 	return NewRoute(path, served, handler)
 }
 
-// NewVaultsRoute is the route of the service that lists and changes the vaults.
-func NewVaultsRoute(state *State, handler *VaultsHandler) Route {
-	path, served := numenv1connect.NewVaultsServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
 // NewMediaRoute is the route of the service that tells where a media file is played from.
-func NewMediaRoute(state *State, handler *MediaHandler) Route {
+func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	path, served := numenv1connect.NewMediaServiceHandler(handler, state.CountQuestions())
 	return NewRoute(path, served, handler)
 }

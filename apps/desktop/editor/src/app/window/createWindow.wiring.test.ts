@@ -29,9 +29,9 @@ const h = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
+  searchCore: { name: 'search' },
   registerCommand: () => () => undefined,
 }))
 vi.mock('./createCommands', () => ({
@@ -109,7 +109,7 @@ vi.mock('./useSettings', () => ({
   },
 }))
 vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
-vi.mock('./useWindowDisplay', () => ({
+vi.mock('@/features/window-display', () => ({
   useWindowDisplay: (args: unknown) => {
     h.args.display = args
     return h.f.display
@@ -152,7 +152,7 @@ vi.mock('../plugins/useWindowPlugins', () => ({
     h.args.watchPlugins = { settings, loader, onError }
   },
 }))
-vi.mock('./useAppBootstrap', () => ({
+vi.mock('../bootstrap/useAppBootstrap', () => ({
   useAppBootstrap: (args: unknown) => {
     h.args.bootstrap = args
     return { failure: { value: '' }, isStarted: { value: true }, retry: vi.fn() }
@@ -221,12 +221,16 @@ beforeEach(() => {
       close: vi.fn(),
     },
     display: {
-      chunks: {},
-      embedded: {},
-      isEmbedding: {},
+      vault: {
+        chunks: {},
+        embedded: {},
+        isEmbedding: {},
+        unwatched: ref(''),
+        error: ref(''),
+      },
+      health: { failure: ref(null), lost: ref('') },
       tasks: ref([{ id: 'task:1' }]),
-      failure: ref(null),
-      opening: ref('opening'),
+      opening: { path: ref('opening') },
       start: vi.fn(),
       close: vi.fn(),
     },
@@ -337,7 +341,7 @@ describe('what the window answers about the tab in front', () => {
   })
 
   it('is not ready while the window has failed', () => {
-    h.f.display.failure.value = 'failed'
+    h.f.display.health.failure.value = 'failed'
     const window = createWindow()
 
     expect(window.palette.getTarget().isReady).toBe(false)
@@ -731,7 +735,11 @@ describe('the services a plugin is given', () => {
     expect(h.f.openTabs.resume).toHaveBeenCalledOnce()
 
     // background tasks & noticeTasks
-    expect(h.args.noticeTasks.window).toBe(h.f.display)
+    expect(h.args.noticeTasks.window).toStrictEqual({
+      lost: h.f.display.health.lost,
+      unwatched: h.f.display.vault.unwatched,
+      error: h.f.display.vault.error,
+    })
     expect(h.args.backgroundTasks.tasks.value).toEqual([{ id: 'task:1' }, { id: 'notice:1' }])
     await h.args.backgroundTasks.cancelTask('task:1')
     expect(h.core.cancelTask).toHaveBeenCalledWith('task:1')

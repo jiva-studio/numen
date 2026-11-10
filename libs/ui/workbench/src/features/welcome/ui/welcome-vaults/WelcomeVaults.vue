@@ -60,8 +60,11 @@ defineSlots<{
 
 <style scoped>
 .welcome-page__heading {
-  margin: 0 0 0.25rem;
-  padding-inline: 0.6rem;
+  --below: 0.25rem;
+  --pad-inline: 0.6rem;
+
+  margin: 0 0 var(--below);
+  padding-inline: var(--pad-inline);
   color: var(--numen-edge-label);
   font-size: var(--numen-text-1);
   font-weight: inherit;
@@ -72,10 +75,12 @@ defineSlots<{
 /* Reserves the space the rows will occupy, so the loading text is centred in
    the area they will take. */
 .welcome-page__waiting {
+  --least: 4rem;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  min-block-size: 4rem;
+  min-block-size: var(--least);
 }
 
 /* In the two-column layout, the heading stays at the top of this column and

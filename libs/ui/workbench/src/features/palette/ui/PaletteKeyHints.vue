@@ -33,8 +33,10 @@ defineProps<{
 /* The action each key triggers is shown next to its key cap. */
 .palette__key,
 .palette__more {
+  --gap: 0.4em;
+
   display: inline-flex;
   align-items: center;
-  gap: 0.4em;
+  gap: var(--gap);
 }
 </style>

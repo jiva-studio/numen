@@ -229,8 +229,9 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 
 func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
 	services := editor.ServicesOf(installation)
-	mux.Handle(numenv1connect.NewVaultServiceHandler(services.Vault))
-	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(services.Workspace))
+	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
+	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
+	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
 	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
 	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation)))

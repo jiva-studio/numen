@@ -1,22 +1,14 @@
 package vault
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// ErrUnreadable is returned for a path that is not a folder, or a folder this
-// application cannot read as the requested vault.
-var ErrUnreadable = errors.New("the folder cannot be read as a vault")
-
-// ErrCopy is one identity carried by two folders that are both there. One index
-// cannot hold both.
-var ErrCopy = errors.New("the folder is a copy of a vault on the list")
 
 // Add registers a folder as a vault known to this installation: the folder is
 // given an identity that stays with it, then that identity is recorded here.
@@ -51,7 +43,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	// routes lead to it is the machine's to say.
 	root = u.identity.GetName(root)
 	if err := u.identity.CheckReadable(root); err != nil {
-		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", root, err), ErrUnreadable, err)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", root, err), vaultdomain.ErrUnreadable, err)
 	}
 
 	target, err := u.vaults.List()
@@ -105,7 +97,7 @@ func (u Add) checkNotCopy(id domain.VaultID, root, oldPath string) error {
 	if carriesIt && stillThere == id {
 		return domain.NewDetailError(fmt.Sprintf(
 			"%s is a copy of the vault at %s; delete the service folder of %s to add it as a separate vault",
-			root, oldPath, root), ErrCopy)
+			root, oldPath, root), vaultdomain.ErrCopy)
 	}
 	return nil
 }

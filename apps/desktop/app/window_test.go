@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -83,11 +84,11 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 
 func TestGetSecondaryWindowURL(t *testing.T) {
 	cases := []struct {
-		tab  editor.DetachedTab
+		tab  windowdomain.DetachedTab
 		want string
 	}{
-		{editor.DetachedTab{ID: "plex:4f1c", X: 40}, "/?id=plex%3A4f1c&window=secondary"},
-		{editor.DetachedTab{}, "/?window=secondary"},
+		{windowdomain.DetachedTab{ID: "plex:4f1c", X: 40}, "/?id=plex%3A4f1c&window=secondary"},
+		{windowdomain.DetachedTab{}, "/?window=secondary"},
 	}
 	for _, c := range cases {
 		if got := getSecondaryWindowURL(c.tab); got != c.want {

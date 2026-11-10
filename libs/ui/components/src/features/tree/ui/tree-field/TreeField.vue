@@ -88,14 +88,21 @@ defineExpose({ focus })
 
 <style scoped>
 .tree__field {
+  /* The field is drawn two hairlines inside the row, and reaches out to the left to
+     keep its text over the name it replaces. */
+  --trim: 0.125rem;
+  --reach: 0.1875rem;
+  --pad: 0.125rem;
+  --corner: 0.0625rem;
+
   box-sizing: border-box;
   inline-size: 100%;
-  block-size: calc(var(--row) - 2px);
-  margin-inline-start: -3px;
-  padding-inline: 2px;
+  block-size: calc(var(--row) - var(--trim));
+  margin-inline-start: calc(-1 * var(--reach));
+  padding-inline: var(--pad);
   padding-block: 0;
   border: var(--numen-stroke) solid var(--numen-ring);
-  border-radius: 1px;
+  border-radius: var(--corner);
   background: var(--numen-raised);
   color: var(--numen-ink);
   font: inherit;

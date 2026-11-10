@@ -46,11 +46,31 @@ func (u RecordOpen) Execute(id domain.VaultID) error {
 }
 
 // WriteOpenTabs saves the open tabs of a vault.
-func WriteOpenTabs(ctx context.Context, store windowport.OpenTabsStore, v domain.Vault, open domain.OpenTabs) error {
-	return store.WriteOpenTabs(ctx, v, open)
+type WriteOpenTabs struct {
+	store windowport.OpenTabsStore
+}
+
+// NewWriteOpenTabs is the use case that saves open tabs in the store.
+func NewWriteOpenTabs(store windowport.OpenTabsStore) WriteOpenTabs {
+	return WriteOpenTabs{store: store}
+}
+
+// Execute replaces the tabs kept for the vault.
+func (u WriteOpenTabs) Execute(ctx context.Context, v domain.Vault, open domain.OpenTabs) error {
+	return u.store.WriteOpenTabs(ctx, v, open)
 }
 
 // ReadOpenTabs loads the open tabs of a vault.
-func ReadOpenTabs(ctx context.Context, store windowport.OpenTabsStore, v domain.Vault) (domain.OpenTabs, error) {
-	return store.ReadOpenTabs(ctx, v)
+type ReadOpenTabs struct {
+	store windowport.OpenTabsStore
+}
+
+// NewReadOpenTabs is the use case that loads open tabs from the store.
+func NewReadOpenTabs(store windowport.OpenTabsStore) ReadOpenTabs {
+	return ReadOpenTabs{store: store}
+}
+
+// Execute returns the tabs last written for the vault, and none where nothing was written.
+func (u ReadOpenTabs) Execute(ctx context.Context, v domain.Vault) (domain.OpenTabs, error) {
+	return u.store.ReadOpenTabs(ctx, v)
 }
