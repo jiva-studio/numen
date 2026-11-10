@@ -13,7 +13,7 @@ import (
 
 type fakeProgram struct {
 	installed bool
-	items    []models.Model
+	items     []models.Model
 	err       error
 	commands  [][]string
 }
