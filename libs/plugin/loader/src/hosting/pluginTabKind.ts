@@ -79,7 +79,7 @@ export function pickDeclaredHooks<State extends object>(
  * stylesheet the plugin's manifest names. A component that fails is replaced by
  * the plugin's failure.
  */
-export function createDeclaredPane(
+function createDeclaredPane(
   pluginId: string,
   rawComponent: PluginComponentSource | null,
 ): Component {
