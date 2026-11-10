@@ -5,7 +5,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
-// reading is the spec of a tool that changes nothing, offered on the full and the reading server.
 func reading(step tools.Step, name, title, description string, instructions ...string) tools.Spec {
 	return tools.Spec{
 		Name: name, Title: title, Description: description, Effect: tools.ReadOnly, Step: step,
@@ -13,7 +12,6 @@ func reading(step tools.Step, name, title, description string, instructions ...s
 	}
 }
 
-// writing is the spec of a tool that changes the vault, offered on the full server alone.
 func writing(step tools.Step, name, title, description string, instructions ...string) tools.Spec {
 	return tools.Spec{
 		Name: name, Title: title, Description: description, Effect: tools.ReadWrite, Step: step,

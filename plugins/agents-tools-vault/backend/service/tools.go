@@ -83,7 +83,6 @@ func joinRegistrations(groups ...[]registration) []registration {
 	return all
 }
 
-// bind registers the tool that run implements on the use case use builds for the vault of the call.
 func bind[U, In, Out any](spec tools.Spec, use func(*call) U, run func(U, context.Context, In) (Out, error)) registration {
 	return func(t *Tools, registry *tools.Registry) error {
 		return tools.Add(registry, spec, func(ctx context.Context, in In) (Out, error) {
