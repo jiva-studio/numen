@@ -11,7 +11,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 import { RATING_BY_GRADE } from '../../../entities/card'
-import type { Rating } from '../../../../api/types'
+import type { Rating } from '../../../../api/review'
 import type { ReviewCard, Grade, Intervals } from '../../../entities/card'
 
 /** What a session requests of the application, and nothing more. */

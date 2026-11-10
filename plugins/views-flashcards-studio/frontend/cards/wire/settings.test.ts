@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BudgetUnit as BudgetUnits, Goal as Goals, Rule as Rules } from '../../api/types'
+import { BudgetUnit as BudgetUnits, Goal as Goals, Rule as Rules } from '../../api/presets'
 
 import { DEFAULT_SETTINGS, formatSettings, parseSettings } from './settings'
 import type { Settings, SettingsMessage } from './settings'

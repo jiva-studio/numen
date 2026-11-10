@@ -1,6 +1,6 @@
 /** What the application answers about the preset one deck is scheduled by. */
-import { StopReason } from '../../../../api/types.js'
-import type { ErrorCode } from '../../../../api/types.js'
+import { StopReason } from '../../../../api/presets.js'
+import type { ErrorCode } from '../../../../api/common.js'
 import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
 import { formatErrorCodeMessage } from '../../../../cards/wire/errors'
 import { parseSettings } from '../../../../cards/wire/settings'

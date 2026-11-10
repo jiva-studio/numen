@@ -3,7 +3,7 @@
  * back, and its behavior when the file changed after it was read.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../api/presets.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { ErrorCode } from '../../cards/wire/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '../../cards'

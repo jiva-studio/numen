@@ -1,10 +1,10 @@
+import { ProblemKind as ProblemKinds } from '../../api/common.js'
 import {
-  ProblemKind as ProblemKinds,
   type Card as CardMessage,
   type Deck as DeckMessage,
   type Problem as ProblemMessage,
   type CardModel as CardModelMessage,
-} from '../../api/types.js'
+} from '../../api/cards.js'
 import type {
   ProblemKind,
   DeckProblem,

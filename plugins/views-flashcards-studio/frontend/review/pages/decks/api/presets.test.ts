@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode } from '../../../../api/types.js'
-import { Goal, StopReason } from '../../../../api/types.js'
+import { ErrorCode } from '../../../../api/common.js'
+import { Goal, StopReason } from '../../../../api/presets.js'
 import { DEFAULT_SETTINGS, formatSettings } from '../../../../cards/wire/settings'
 import type { SettingsMessage } from '../../../../cards/wire/settings'
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../api/types'
+import { StopReason } from '../../api/presets'
 
 import { formatStopReasonMessage } from './stop'
 

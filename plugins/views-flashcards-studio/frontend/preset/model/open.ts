@@ -1,7 +1,7 @@
 /**
  * Tab state and coordinator for an open flashcard preset.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../api/presets.js'
 import { ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
 import {

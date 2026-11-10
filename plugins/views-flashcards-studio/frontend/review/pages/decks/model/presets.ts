@@ -6,7 +6,7 @@
  * the decks of one preset are counted together.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { StopReason } from '../../../../api/types.js'
+import type { StopReason } from '../../../../api/presets.js'
 
 import { getDeckName } from '../../../entities/vault'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '../../../entities/vault'

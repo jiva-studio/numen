@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { ErrorCode } from '../../api/types.js'
+import { ErrorCode } from '../../api/common.js'
 import { cardsService } from '../../api/client'
 import { cards } from './cards'
 

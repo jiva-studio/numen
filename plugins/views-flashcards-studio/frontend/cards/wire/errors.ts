@@ -3,7 +3,7 @@
  * plugin's windows use. Every code of the API `ErrorCode` is
  * translated here into the plugin's own `ErrorCode`.
  */
-import { ErrorCode as ProtoErrorCode } from '../../api/types'
+import { ErrorCode as ProtoErrorCode } from '../../api/common'
 
 /** The error code a call of this plugin answers with. */
 export type ErrorCode =
