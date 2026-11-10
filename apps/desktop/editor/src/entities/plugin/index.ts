@@ -13,3 +13,4 @@ export {
   type ItemListAnswer,
   type ItemListRequest,
 } from './api/declaredCommands'
+export { agentPort, getPluginTexts } from './api/hostClients'

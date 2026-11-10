@@ -4,11 +4,12 @@
  * A test declares the application's responses in `vaultState`, reads the requests it
  * received from the recorded log, and mounts the window with `mountWindow`.
  */
-import './vaultMock'
 import { afterEach, beforeEach } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { fileAnswers } from './mocks/file'
 import { noteAnswers } from './mocks/note'
+import { pluginAnswers } from './mocks/plugin'
+import { searchAnswers } from './mocks/search'
 import { vaultAnswers } from './mocks/vault'
 import { settingsAnswers } from './mocks/settings'
 import { tabAnswers } from './mocks/tab'
@@ -54,6 +55,8 @@ beforeEach(() => {
       noteAnswers,
       fileAnswers,
       tabAnswers,
+      pluginAnswers,
+      searchAnswers,
     ),
   )
 })

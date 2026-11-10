@@ -1,10 +1,12 @@
 /**
- * The search part of the vault mock: the note names and passages a query finds.
+ * The search part of the answers: the note names and passages a query finds, answered to the real
+ * client over the router transport.
  */
 import { mockVaultState } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
 
-export const searchCoreMock = {
-  names: () => Promise.resolve(mockVaultState.names),
-  search: () => Promise.resolve(mockVaultState.passages),
-} satisfies Partial<VaultCore>
+export const searchAnswers = {
+  search: {
+    searchNames: () => ({ found: mockVaultState.names }),
+    searchPassages: () => ({ found: mockVaultState.passages }),
+  },
+}

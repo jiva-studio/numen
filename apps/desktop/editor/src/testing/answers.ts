@@ -13,26 +13,11 @@ interface MockVaultState {
   error: string
   detachError: string
   opening: string | null
-  names: {
-    path: string
-    title: string
-    heading: string
-    line: number
-    at: []
-    type: string
-  }[]
-  passages: {
-    path: string
-    title: string
-    isNote: boolean
-    text: string
-    start: number
-    length: number
-    line: number
-    at: []
-    type: string
-    selector: Record<string, unknown> | null
-  }[]
+  names: ReturnType<typeof nameAnswer>[]
+  passages: (
+    | ReturnType<typeof passageAnswer>
+    | ReturnType<typeof sourceAnswer>
+  )[]
   savedTabs: OpenTabs
   detachedTab: Tab | null
   types: Record<string, string>
@@ -82,34 +67,6 @@ export const mockVaultList = {
 }
 
 export { mockVaultState as vaultState, mockVaultList as listed }
-
-/** One command a plugin declares, as the list the core answers carries it. */
-interface DeclaredAnswer {
-  pluginId: string
-  id: string
-  title: string
-  icon?: string
-  scope?: 'note'
-  contentTypes: string[]
-  extensions: string[]
-  arguments: []
-}
-
-/** One entry a plugin places in a slot, as the list the core answers carries it. */
-interface PlacementAnswer {
-  pluginId: string
-  slot: string
-  command?: string
-  view?: string
-  group?: string
-  order?: number
-}
-
-/** What the plugins declare and place. */
-export const declared = {
-  commands: [] as DeclaredAnswer[],
-  slots: [] as PlacementAnswer[],
-}
 
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
@@ -199,37 +156,36 @@ export const maker = (() => {
   }
 })()
 
-/** One name the vault answers a search with, of a note of some kind. */
+/** One name the vault answers a search with, of a note of some kind, as the core sends it. */
 export const nameAnswer = (path: string, title: string, type: string = 'note') => ({
-  path,
-  title,
-  heading: '',
-  line: -1,
-  at: [] as [],
+  note: { path, title },
+  ranges: [] as [],
   type,
   ...(type === 'note' ? {} : { tabKind: type }),
 })
 
-/** One passage the search answers with, read out of a note of some kind. */
+/** One passage the search answers with, read out of a note of some kind, as the core sends it. */
 export const passageAnswer = (path: string, title: string, type: string = 'note') => ({
   path,
-  title,
-  isNote: true,
+  note: { path, title },
   text: 'what it says',
-  start: 0,
-  length: 4,
+  range: { start: 0, end: 4 },
   line: 3,
-  at: [] as [],
+  ranges: [] as [],
   type,
   ...(type === 'note' ? {} : { tabKind: type }),
-  selector: null as Record<string, unknown> | null,
+  selector: '',
 })
 
 /** One passage read out of a file that is no note, at a place its selector names. */
 export const sourceAnswer = (path: string, selector: Record<string, unknown>) => ({
-  ...passageAnswer(path, ''),
-  isNote: false,
-  selector,
+  path,
+  text: 'what it says',
+  range: { start: 0, end: 4 },
+  line: 3,
+  ranges: [] as [],
+  type: 'note',
+  selector: JSON.stringify(selector),
 })
 
 /** Everything answered back where it opens, which is where every test begins. */
@@ -249,8 +205,6 @@ export const forgetAnswers = () => {
   mockVaultState.applied = 'preset:numen'
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
-  declared.commands = []
-  declared.slots = []
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [

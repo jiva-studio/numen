@@ -2,7 +2,6 @@
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
 import { computed, type Ref, type ShallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
 import type {
   AgentHost,
   AgentPort,
@@ -22,6 +21,7 @@ import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
 import { getNeighbourhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/entities/window'
 import type { useSettings } from '../window/useSettings'
@@ -81,12 +81,12 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
           ...(options?.line === undefined ? {} : { line: options.line }),
           ...(options?.selector ? { selector: options.selector } : {}),
         })
-        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
     openFileAt: (path, spans) => {
       tabOpeners
         .openFileAt(path, spans)
-        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
     getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,

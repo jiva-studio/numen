@@ -4,7 +4,6 @@
  */
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
-import { getKnownErrorCode, asFailure } from '@numen/core-client'
 import { createFileCreators, type FileOpeners, type WindowTabs } from '@/entities/tab'
 import { listFiles, type CreateResult } from '@/entities/file'
 import {
@@ -15,6 +14,7 @@ import {
 } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
+import { getKnownErrorCode } from '@/shared/api/errors'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { findIcon } from '@/shared/icons'
@@ -74,7 +74,9 @@ export function createFileMakers({
       writeMessage(words.unavailable, 'error')
       return null
     }
-    return createdItem.ok ? createdItem : asFailure(getKnownErrorCode(createdItem.error))
+    return createdItem.ok
+      ? createdItem
+      : { ok: false, error: getKnownErrorCode(createdItem.error) }
   }
 
   const makers = createFileCreators(

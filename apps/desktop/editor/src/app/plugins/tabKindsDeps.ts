@@ -6,7 +6,7 @@ import type { TabLinksState } from '@/features/tab-linking'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useSettings } from '../window/useSettings'
 import type { useWindowDisplay } from '../window/useWindowDisplay'
-import type { PluginNotes } from '../plugins/pluginNotes'
+import type { PluginNotes } from './pluginNotes'
 
 export interface WindowKindsDeps {
   core: Pick<SearchDeps, 'names'>
