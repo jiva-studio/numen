@@ -138,9 +138,7 @@ const SHELL_SETTINGS: Installation['settings'] = {
     file: ref('/numen.json'),
 }
 
-const INSTALLATION: Installation = {
-  settings: SHELL_SETTINGS,
-  plugin: {
+const SHELL_PLUGIN: Installation['plugin'] = {
     ...DEFAULTS.plugin,
     app: ref<PluginSettingInfo[]>([
       {
@@ -181,8 +179,9 @@ const INSTALLATION: Installation = {
       return ''
     },
     plugins: ref<PluginInfo[]>([...PLUGINS]),
-  },
-  secrets: {
+}
+
+const SHELL_SECRETS: Installation['secrets'] = {
     ...DEFAULTS.secrets,
     edit: {
       createSecret: async () => {
@@ -216,7 +215,12 @@ const INSTALLATION: Installation = {
         DONE.push('secret denied')
       },
     },
-  },
+}
+
+const INSTALLATION: Installation = {
+  settings: SHELL_SETTINGS,
+  plugin: SHELL_PLUGIN,
+  secrets: SHELL_SECRETS,
 }
 
 /** The settings of the window and of every plugin installed, each reached from its row. */
