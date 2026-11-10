@@ -155,7 +155,7 @@ export interface FilesTabTransfer {
 }
 
 /** The menu of a row, or of no row; request is where the open menu is, null while none is open. */
-  /** Where the open menu is, or null while none is open. */
+export interface FilesTabMenu {
   readonly request: Readonly<Ref<MenuRequest | null>>
   getOverPaths(path: string): readonly string[]
   open(request: MenuRequest): void
