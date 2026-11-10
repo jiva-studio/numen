@@ -14,7 +14,7 @@ export interface NoteOpeners {
     title: string,
     options:
       'current' | 'split' | { where: 'current' | 'split'; line?: number; selector?: Selector },
-  ): unknown
+  ): void
 }
 
 const createPlacement = (

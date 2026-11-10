@@ -24,7 +24,7 @@ const groupByPlugin = (
 export function syncKeybindings(
   host: KeybindingHost,
   keybindings: Ref<readonly DeclaredKeybinding[] | undefined>,
-  plugins?: Ref<readonly unknown[]>,
+  plugins?: Ref<readonly object[]>,
 ): void {
   let owners: ReadonlySet<string> = new Set()
   const register = () => {

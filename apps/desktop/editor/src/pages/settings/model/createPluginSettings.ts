@@ -1,11 +1,12 @@
 import { createSettingFields } from '@/entities/settings'
 import type { InstallationSettings } from '../types'
+import type { JsonValue } from '@/shared/api/json'
 
 /** The settings of one plugin, read and written by the key its manifest declares, such as `agent.use`. */
 export interface PluginSettings {
-  readonly get: (key: string) => unknown
+  readonly get: (key: string) => JsonValue | undefined
   readonly isRequested: (key: string) => boolean
-  readonly set: (key: string, value: unknown) => void
+  readonly set: (key: string, value: JsonValue) => void
 }
 
 const getPath = (pluginId: string, key: string): readonly string[] => [pluginId, ...key.split('.')]

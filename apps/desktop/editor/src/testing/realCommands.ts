@@ -42,7 +42,7 @@ export interface ManifestSlot {
 export interface PluginManifest {
   readonly id: string
   readonly contributes: {
-    readonly slots?: readonly (ManifestSlot & Record<string, unknown>)[]
+    readonly slots?: readonly ManifestSlot[]
     readonly keybindings?: readonly ManifestKeybinding[] | undefined
   }
 }
@@ -127,7 +127,7 @@ const createCore = (emitEvent: RealWindowParts['emitEvent']) => {
       Promise.resolve(new Map(paths.map((one) => [one, { type: 'note' }]))),
     ...(emitEvent ? { emitEvent } : {}),
   }
-  return new Proxy<Record<string, unknown>>(base, {
+  return new Proxy<Record<string, (...args: never[]) => Promise<object>>>(base, {
     get: (target, name: string) => target[name] ?? (() => Promise.resolve([])),
   })
 }

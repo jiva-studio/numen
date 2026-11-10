@@ -173,4 +173,4 @@ export function createFileFlush(core: FlushDeps, wait: (ms: number) => Promise<v
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

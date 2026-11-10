@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { JsonValue } from '@/shared/api/json'
 /**
  * The views a plugin's frontend registered for its settings form, drawn at the top of the form
  * in the order the manifest declares them. A declared view without a registration draws nothing.
@@ -32,7 +33,7 @@ const values = computed(() =>
 )
 
 /* -------------------------------- Handlers -------------------------------- */
-function onSettingUpdate(key: string, value: unknown): void {
+function onSettingUpdate(key: string, value: JsonValue): void {
   pluginSettings.set(key, value)
 }
 </script>

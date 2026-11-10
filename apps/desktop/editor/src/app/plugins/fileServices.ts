@@ -108,7 +108,7 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
 
 /** What the window finds the icons of commands and files with. */
 export interface IconHostDeps {
-  readonly getPluginCommandIcon?: (id: string) => unknown
+  readonly getPluginCommandIcon?: (id: string) => Component | undefined
   readonly findFileIcon?: ((path: string) => Component | undefined) | undefined
 }
 

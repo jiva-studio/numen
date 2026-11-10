@@ -19,7 +19,7 @@ export interface KindTab<TabState> {
 export interface ActiveTab {
   readonly id: string
   readonly kind: string | null
-  readonly state: object
+  readonly state: object | null
 }
 
 /** What a kind may ask of the window its tabs are drawn in. */

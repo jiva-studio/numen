@@ -153,4 +153,4 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
 
 export type WindowDisplay = ReturnType<typeof useWindowDisplay>
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))

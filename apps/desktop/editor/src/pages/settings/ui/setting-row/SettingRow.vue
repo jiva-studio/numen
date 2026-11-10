@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * One settings row: the title and an info tooltip on the left, the control on
  * the right. When the nearest size container (the settings column) is narrower
@@ -20,9 +21,9 @@ const props = defineProps<{
 
 defineSlots<{
   /** The control, given the id of the title that labels it. */
-  default(props: { labelledBy: string }): unknown
+  default(props: { labelledBy: string }): VNode[]
   /** An action placed after the title and its info tooltip. */
-  action?(): unknown
+  action?(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */

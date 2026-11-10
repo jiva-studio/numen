@@ -32,7 +32,7 @@ export function getSettingsConfig(owners: readonly SettingOwner[]): WhenSettings
         level[part] ??= {}
         level = level[part] as Record<string, JsonValue>
       }
-      level[key] = one.value
+      if (one.value !== undefined) level[key] = one.value
     }
   }
   return config

@@ -15,6 +15,8 @@ import type {
   SecretSection,
   SettingEdit,
 } from '@/entities/settings'
+import type { JsonValue } from '@/shared/api/json'
+import type { Component } from 'vue'
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
@@ -31,9 +33,9 @@ export interface InstallationSettings {
   /**
    * names one can be set to, and settings written in place.
    */
-  getSetting(at: readonly string[]): unknown
+  getSetting(at: readonly string[]): JsonValue | undefined
   /** A setting as the vault last answered it, never a value asked for and not yet answered. */
-  getConfirmedSetting(at: readonly string[]): unknown
+  getConfirmedSetting(at: readonly string[]): JsonValue | undefined
   /** Whether the write of a setting is in flight. */
   isPending(at: readonly string[]): boolean
   /**
@@ -64,7 +66,7 @@ export interface InstallationPlugin {
    * was chosen.
    */
   choosePath(pluginId: string, key: string): Promise<string>
-  getSettingsViews(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
+  getSettingsViews(pluginId: string): ReadonlyMap<string, { readonly component: Component }>
   readonly files: InstallationPluginFiles
 }
 

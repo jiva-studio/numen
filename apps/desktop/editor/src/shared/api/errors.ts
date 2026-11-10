@@ -5,7 +5,7 @@
 import { formatErrorMessage } from '@numen/core-client'
 
 /** Whatever a try block threw or a promise rejected with. */
-export type { Caught } from '@numen/core-client'
+export type { Caught, Unvalidated } from '@numen/core-client'
 
 /** The error code a vault operation answers with. */
 export type { ErrorCode } from '@numen/plugin-loader'

@@ -8,10 +8,11 @@ import { APP_OWNER } from '../lib/settingsConfig'
 import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
 import type { createWindowAppearance } from './appearance'
 import { createSettingPalette, type SettingPreview, type SettingWords } from './settingCommands'
+import type { Unvalidated } from '@/shared/api/errors'
 
 const SHELL_APPEARANCE = ['app', 'appearance'] as const
 
-const isMode = (value: unknown): value is Mode => MODES.some((one) => one === value)
+const isMode = (value: Unvalidated): value is Mode => MODES.some((one) => one === value)
 
 function createWindowPreview(
   appearance: ReturnType<typeof createWindowAppearance>,

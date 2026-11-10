@@ -50,7 +50,7 @@ export interface PluginSettingInfo {
   readonly type: PluginSettingType
   readonly title: string
   readonly description: string
-  readonly default: SettingValue
+  readonly default: SettingValue | undefined
   readonly palette?: boolean | undefined
   readonly icon?: string | undefined
   readonly options?: readonly PluginSettingOption[] | undefined

@@ -7,6 +7,7 @@
 import type { Entry } from '@/entities/file'
 import type { OpenTabs, Tab } from '@/entities/tab'
 import type { PluginSettingInfo } from '@/entities/settings'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
 
 interface MockVaultState {
   isReady: boolean
@@ -178,7 +179,7 @@ export const passageAnswer = (path: string, title: string, type: string = 'note'
 })
 
 /** One passage read out of a file that is no note, at a place its selector names. */
-export const sourceAnswer = (path: string, selector: Record<string, unknown>) => ({
+export const sourceAnswer = (path: string, selector: JsonObject) => ({
   path,
   text: 'what it says',
   range: { start: 0, end: 4 },
@@ -221,7 +222,7 @@ const THEME_OPTIONS = [
 
 /** A declared setting with the value in force and the options the mocked application resolves. */
 export const getSettingInForce = (setting: PluginSettingInfo): PluginSettingInfo => {
-  const values: Record<string, unknown> = {
+  const values: Record<string, JsonValue> = {
     'appearance.theme': mockVaultState.applied,
     'appearance.mode': mockVaultState.mode,
     'appearance.interfaceScale': mockVaultState.sizes.interfaceScale,
@@ -236,7 +237,7 @@ export const getSettingInForce = (setting: PluginSettingInfo): PluginSettingInfo
 }
 
 /** The state of the mocked application after a setting was written. */
-export const keepSetting = (path: string, value: unknown): void => {
+export const keepSetting = (path: string, value: JsonValue): void => {
   if (path === 'app.appearance.theme') mockVaultState.applied = String(value)
   if (path === 'app.appearance.mode') mockVaultState.mode = value as typeof mockVaultState.mode
   if (path === 'app.appearance.interfaceScale') {

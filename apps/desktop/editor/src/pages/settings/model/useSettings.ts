@@ -170,7 +170,7 @@ function createChangeFollower(deps: {
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 export function useSettings({
   rest,
@@ -225,7 +225,7 @@ export function useSettings({
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 
   const changes = createChangeFollower({
-    refresh: () => Promise.all([rest.start(), appearance.reload()]),
+    refresh: () => Promise.all([rest.start(), appearance.reload()]).then(() => undefined),
   })
 
   const start = async () => {
