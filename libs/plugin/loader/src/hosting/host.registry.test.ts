@@ -52,7 +52,12 @@ describe('a command run by its id', () => {
 describe('a registration replaced under the same id', () => {
   it('stays when the registration it replaced is disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin', { id: 'sample.plugin', name: 'Sample', version: '1', permissions: ['vault:read'] } as never)
+    const ctx = host.createContext('sample.plugin', {
+      id: 'sample.plugin',
+      name: 'Sample',
+      version: '1',
+      permissions: ['vault:read'],
+    } as never)
     const firstReader = ctx.register.reader({ id: 'pdf', title: 'First', component: null })
     ctx.register.reader({ id: 'pdf', title: 'Second', component: null })
     const firstTab = ctx.register.tabKind({ kind: 'custom', title: 'First', component: null })
@@ -357,7 +362,12 @@ describe('a reader opened at a selector', () => {
       }),
     )
     const sub1 = host
-      .createContext('sample.plugin', { id: 'sample.plugin', name: 'Sample', version: '1', permissions: ['vault:read'] } as never)
+      .createContext('sample.plugin', {
+        id: 'sample.plugin',
+        name: 'Sample',
+        version: '1',
+        permissions: ['vault:read'],
+      } as never)
       .register.reader({ id: 'reader:bin', component: null, icon })
     const sub2 = host
       .createContext('sample.plugin')

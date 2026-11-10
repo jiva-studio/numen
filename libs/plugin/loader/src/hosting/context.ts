@@ -146,7 +146,10 @@ export function createPluginContext(
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
     register: guardService(
-      createRegistrations(pluginId, host, { ...registration, slotView }), rules.register, { check }),
+      createRegistrations(pluginId, host, { ...registration, slotView }),
+      rules.register,
+      { check },
+    ),
     settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
     events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
     tabs: guardService(createTabs(host), rules.tabs, { check }),

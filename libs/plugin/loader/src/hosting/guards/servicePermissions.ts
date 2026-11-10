@@ -244,7 +244,8 @@ function guardMember(
       enumerable: true,
       value: (...args: unknown[]) => {
         const refusal = requireAll(rule, operation, check)
-        if (refusal === undefined) return Reflect.apply(service[key] as () => unknown, service, args)
+        if (refusal === undefined)
+          return Reflect.apply(service[key] as () => unknown, service, args)
         if (rule.isAsync) return Promise.reject(refusal.error)
         throw refusal.error
       },
@@ -265,11 +266,7 @@ function guardMember(
  * used. A member the service has and the rules do not list is not reachable; a member the service
  * lacks is absent. `guard.path` prefixes the operation named in a refusal.
  */
-export function guardService<S extends object>(
-  service: S,
-  rules: RulesOf<S>,
-  guard: Guard,
-): S {
+export function guardService<S extends object>(service: S, rules: RulesOf<S>, guard: Guard): S {
   const source = service as Members
   const guarded: Members = {}
   for (const [key, rule] of Object.entries(rules as unknown as Record<string, Rule | object>)) {

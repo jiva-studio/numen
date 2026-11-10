@@ -49,15 +49,18 @@ describe('createShellHost', () => {
   })
 
   it('gives a plugin Windows where the window gives no platform, as the frame does without the runtime', () => {
-    expect(createShellHost().host.createContext('md.numen.example', reading('md.numen.example')).plugin.app.platform).toBe(
-      'windows',
-    )
+    expect(
+      createShellHost().host.createContext('md.numen.example', reading('md.numen.example')).plugin
+        .app.platform,
+    ).toBe('windows')
   })
 
   it('activates a plugin in the window of the flashcards target', () => {
     const { host } = createShellHost()
 
-    expect(host.createContext('md.numen.example', reading('md.numen.example')).plugin.target).toBe(TARGET)
+    expect(host.createContext('md.numen.example', reading('md.numen.example')).plugin.target).toBe(
+      TARGET,
+    )
   })
 
   it('draws the main-pane view of the lowest order, and none that has no placement', () => {
@@ -90,7 +93,9 @@ describe('createShellHost', () => {
     const { host, front } = createShellHost()
     const ctx = host.createContext('md.numen.example', reading('md.numen.example'))
     ctx.register.tabKind(view('review', 0))
-    host.createContext('md.numen.other', reading('md.numen.other')).register.tabKind(view('fallback', 1))
+    host
+      .createContext('md.numen.other', reading('md.numen.other'))
+      .register.tabKind(view('fallback', 1))
     expect(() => {
       ;(ctx.plugin.subscriptions as { length: number }).length = 0
     }).toThrowError()
@@ -137,7 +142,10 @@ describe('createShellHost', () => {
     const vaults = createMockVaultsHost()
     const switchTo = vi.spyOn(vaults, 'switchTo')
     const { host } = createShellHost(undefined, { vaults })
-    const bare = host.createContext('org.example.bare', createMockManifest('org.example.bare', { name: 'Bare' }))
+    const bare = host.createContext(
+      'org.example.bare',
+      createMockManifest('org.example.bare', { name: 'Bare' }),
+    )
     const reader = host.createContext('org.example.reader', reading('org.example.reader'))
 
     expect(() => bare.vault.vaults?.getState()).toThrowError('vault:read')
@@ -146,7 +154,10 @@ describe('createShellHost', () => {
   })
 
   it('gives a plugin no vaults and no window where the window offers none', () => {
-    const context = createShellHost().host.createContext('org.example.ledger', reading('org.example.ledger'))
+    const context = createShellHost().host.createContext(
+      'org.example.ledger',
+      reading('org.example.ledger'),
+    )
 
     expect(context.vault.vaults).toBeUndefined()
     expect(context.ui.window).toBeUndefined()
@@ -258,7 +269,9 @@ describe('createShellHost', () => {
       .createContext('md.numen.chat', reading('md.numen.chat'))
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
-    host.createContext('md.numen.cards', reading('md.numen.cards')).ui.mountView(CONVERSATION, panel, {})
+    host
+      .createContext('md.numen.cards', reading('md.numen.cards'))
+      .ui.mountView(CONVERSATION, panel, {})
 
     host.disposePlugin('md.numen.cards')
 
@@ -436,8 +449,14 @@ describe('the agent of the window', () => {
   it('is given to every plugin where the window has one', () => {
     const agent = createMockAgentHost()
 
-    expect(createShellHost(agent).host.createContext('md.numen.example', reading('md.numen.example')).work.agent).toBeDefined()
-    expect(createShellHost().host.createContext('md.numen.example', reading('md.numen.example')).work.agent).toBeUndefined()
+    expect(
+      createShellHost(agent).host.createContext('md.numen.example', reading('md.numen.example'))
+        .work.agent,
+    ).toBeDefined()
+    expect(
+      createShellHost().host.createContext('md.numen.example', reading('md.numen.example')).work
+        .agent,
+    ).toBeUndefined()
   })
 })
 
