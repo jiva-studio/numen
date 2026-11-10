@@ -58,7 +58,7 @@ export { reportFailure } from './shared/lib/async/report'
 export { Spinner } from './shared/ui/spinner'
 
 /** A Lucide icon drawn by the name a manifest gives it. */
-export { createNamedIcon } from './shared/ui/named-icon'
+export { NamedIcon, createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 
