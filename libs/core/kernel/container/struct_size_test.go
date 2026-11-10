@@ -17,19 +17,26 @@ type structLimit struct {
 	fields  int
 }
 
-// A driven adapter wraps one technology behind two or three ports and a driving adapter serves one wire
-// service of about ten calls, so twenty methods hold either with room. Fifteen fields is what an adapter
-// needs for the collaborators of one service (the hexagon gives each a port of one to three methods) plus
-// its state. A use case is one scenario: an Execute method, at most a few helpers, and the ports it
-// requires, so its limits are lower. The composition root defines no object but Config.
-// Embedded interfaces count the methods they give the type, and a function-typed field counts as a
-// field: a struct cannot meet the limit by embedding interfaces of five methods or by holding callbacks.
+// The limits come from the target hexagon. A driven adapter wraps one technology behind two or three ports and
+// a driving adapter serves one wire service of about ten calls, so twenty methods hold either with room;
+// fifteen fields is what an adapter needs for the collaborators of one service (each a port of one to three
+// methods) plus its state. A use case is one scenario: an Execute method, a few steps and the ports it
+// requires, so ten and ten. The composition root defines no object but Config. Embedded interfaces count the
+// methods they give the type, and a function-typed field counts as a field, so a struct cannot meet the limit
+// by embedding interfaces of five methods or by holding callbacks.
+const (
+	maxAdapterMethods = 20
+	maxAdapterFields  = 15
+	maxUseCaseMethods = 10
+	maxUseCaseFields  = 10
+)
+
 func getStructLimit(rel string) (structLimit, bool) {
 	switch {
 	case isWithin(rel, "usecase"):
-		return structLimit{methods: 10, fields: 10}, true
+		return structLimit{methods: maxUseCaseMethods, fields: maxUseCaseFields}, true
 	case isWithin(rel, "adapter"), isWithin(rel, "internal/adapter"), isWithin(rel, "container"):
-		return structLimit{methods: 20, fields: 15}, true
+		return structLimit{methods: maxAdapterMethods, fields: maxAdapterFields}, true
 	}
 	return structLimit{}, false
 }

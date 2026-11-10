@@ -22,7 +22,6 @@ const (
 	maxPackageLines = 3000
 )
 
-// sourceRoots are the Go trees the size rule reads, relative to the repository root.
 func listSourceRoots() []string {
 	return []string{"libs/core/kernel", "apps/desktop"}
 }
@@ -32,7 +31,7 @@ func getSourceLines(path string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
 	lines := 0
@@ -60,8 +59,6 @@ func isGeneratedPath(path string) (bool, error) {
 	return false, nil
 }
 
-// getOversizedSources walks the trees and reports each production file over fileMax lines and each
-// directory whose production files together pass packageMax. It also returns the files and directories read.
 func getOversizedSources(root string, trees []string, fileMax, packageMax int) (found []string, files, dirs int, err error) {
 	for _, tree := range trees {
 		perDir := map[string]int{}
@@ -86,7 +83,10 @@ func getOversizedSources(root string, trees []string, fileMax, packageMax int) (
 			if err != nil {
 				return err
 			}
-			rel, _ := filepath.Rel(root, path)
+			rel, relErr := filepath.Rel(root, path)
+			if relErr != nil {
+				return relErr
+			}
 			files++
 			perDir[filepath.Dir(rel)] += lines
 			if lines > fileMax {

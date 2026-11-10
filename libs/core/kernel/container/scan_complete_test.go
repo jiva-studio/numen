@@ -11,15 +11,10 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// layerGroups are the folders of the kernel a package may live in. A package belongs to exactly one, so a
-// new folder cannot sit outside every rule that reads a layer.
 func listLayerGroups() []string {
 	return []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib", "internal/testsupport", "container"}
 }
 
-// getHelperPackages are the pure packages that belong to no layer, each with the reason it needs none. A
-// helper holds no scenario and no port: it computes over values, or it only hands out a grant. A package
-// with a scenario or a port-like interface belongs in usecase/ or port/.
 func getHelperPackages() map[string]string {
 	return map[string]string{
 		"internal/appearance": "builds the appearance section of a page from settings values",
@@ -48,8 +43,6 @@ func getLayerGroup(rel string, helpers map[string]string) (group string, ok bool
 	return found[0], true
 }
 
-// listProductionDirs returns the directories under root that hold a production Go file, by slash path
-// relative to root.
 func listProductionDirs(root string) ([]string, error) {
 	seen := map[string]bool{}
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -89,6 +82,10 @@ func getUnplacedPackages(dirs []string, helpers map[string]string) []string {
 	return found
 }
 
+// The layers are the folders domain, port, usecase, adapter, internal/adapter, internal/adapterlib,
+// internal/testsupport and container. A package belongs to exactly one, so a new folder cannot sit outside
+// every rule that reads a layer. The pure packages that belong to none are listed with the reason each needs
+// no layer: they hold no scenario and no port, they compute over values or hand out a grant.
 func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
 	dirs, err := listProductionDirs("..")
 	if err != nil {
@@ -111,7 +108,7 @@ func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
 }
 
 // A package outside every group fails, a package in a helper entry passes, and a layer folder that is
-// only the prefix of another (adapter and adapterlib) does not take its neighbour.
+// only the prefix of another (adapter and adapterlib) does not take its neighbor.
 func TestScanRule_RejectsAPackageOutsideEveryGroup(t *testing.T) {
 	helpers := map[string]string{"internal/csp": "policy string"}
 	got := getUnplacedPackages([]string{
@@ -130,7 +127,6 @@ func TestScanRule_RejectsAPackageOutsideEveryGroup(t *testing.T) {
 	}
 }
 
-// getUseCaseImports lists the packages of the kernel that production files of use cases import.
 func getUseCaseImports(pkgs []*packages.Package) (imports map[string][]string, read int) {
 	imports = map[string][]string{}
 	for _, pkg := range pkgs {

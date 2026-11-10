@@ -11,11 +11,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getReexports finds what a package forwards from another package of the repository, so that a name has
-// one home: an alias of a named type, an alias of an unnamed interface (a second spelling of a port that
-// hides the port's name), a variable or constant set to a member of another package, and a function whose
-// whole body calls the same function of another package with its own parameters. isRepo tells which
-// import paths belong to the repository, this module and the libraries beside it alike.
 func getReexports(pkgs []*packages.Package, isRepo func(path string) bool) ([]finding, int) {
 	var found []finding
 	read := 0
@@ -76,7 +71,10 @@ func getForwarders(pkg *packages.Package, isRepo func(string) bool) []finding {
 					continue
 				}
 				for _, spec := range decl.Specs {
-					value := spec.(*ast.ValueSpec)
+					value, ok := spec.(*ast.ValueSpec)
+					if !ok {
+						continue
+					}
 					for i, expr := range value.Values {
 						if target, ok := getForwardedPackage(pkg, expr, isRepo); ok && i < len(value.Names) && value.Names[i].IsExported() {
 							found = append(found, newFinding(pkg.Fset, value.Names[i].Pos(),
@@ -95,8 +93,6 @@ func getForwarders(pkg *packages.Package, isRepo func(string) bool) []finding {
 	return found
 }
 
-// getForwardedCall tells whether a function does nothing but call a function of another package of the
-// repository with its own parameters in order.
 func getForwardedCall(pkg *packages.Package, decl *ast.FuncDecl, isRepo func(string) bool) (string, bool) {
 	if decl.Body == nil || len(decl.Body.List) != 1 || decl.Recv != nil || !decl.Name.IsExported() {
 		return "", false
@@ -151,6 +147,10 @@ func isRepoPath(path string) bool {
 	return strings.HasPrefix(path, numenRoot)
 }
 
+// A package finds what it forwards from another package of the repository, so that a name has one home: an
+// alias of a named type, an alias of an unnamed interface (a second spelling of a port that hides its name), an
+// exported variable or constant set to a member of another package, and an exported function whose whole body
+// calls a function of another package of the repository with its own parameters and has the same signature.
 func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	pkgs := getModulePackages(t, workspace, "libs/core/kernel")

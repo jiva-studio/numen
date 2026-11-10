@@ -16,7 +16,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// listLintConfigs returns every golangci-lint configuration of the repository.
 func listLintConfigs(root string) ([]string, error) {
 	var found []string
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -60,8 +59,6 @@ func readExhaustructPatterns(path string) ([]string, error) {
 	return append(slices.Clone(exhaustruct.Include), exhaustruct.Exclude...), nil
 }
 
-// listStructNames returns "import path.Name" for every struct type the packages declare, which is how
-// exhaustruct matches its include and exclude patterns.
 func listStructNames(pkgs []*packages.Package) []string {
 	var names []string
 	for _, pkg := range listProductionPackages(pkgs) {
@@ -79,7 +76,6 @@ func listStructNames(pkgs []*packages.Package) []string {
 	return names
 }
 
-// getDeadPatterns returns the patterns that match none of the names.
 func getDeadPatterns(patterns, names []string) ([]string, error) {
 	var dead []string
 	for _, pattern := range patterns {
@@ -150,8 +146,6 @@ const maxMutationDirectives = 848
 
 var mutationDirective = regexp.MustCompile(`^//\s*gomutants:disable(-next-line)?(\s+[A-Z_]+(,[A-Z_]+)*)?\s+reason="((?:\\.|[^"\\])*)"`)
 
-// getMutationDirectives returns the comment lines of Go source files that switch mutation testing off,
-// each as "file:line: text".
 func getMutationDirectives(root string) ([]string, error) {
 	var found []string
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -167,27 +161,19 @@ func getMutationDirectives(root string) ([]string, error) {
 		if !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return nil
 		}
-		file, err := os.Open(path)
-		if err != nil {
-			return err
+		rel, relErr := filepath.Rel(root, path)
+		if relErr != nil {
+			return relErr
 		}
-		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
-		for line := 1; scanner.Scan(); line++ {
-			text := strings.TrimSpace(scanner.Text())
-			if strings.HasPrefix(text, "//") && strings.Contains(text, "gomutants:disable") {
-				rel, _ := filepath.Rel(root, path)
-				found = append(found, filepath.ToSlash(rel)+":"+strconv.Itoa(line)+": "+text)
-			}
+		lines, readErr := getDirectiveLines(path)
+		for _, one := range lines {
+			found = append(found, filepath.ToSlash(rel)+":"+one)
 		}
-		return scanner.Err()
+		return readErr
 	})
 	return found, err
 }
 
-// getUnexplainedDirectives returns the directives that give no reason of at least
-// three words.
 func getUnexplainedDirectives(directives []string) []string {
 	var found []string
 	for _, one := range directives {
@@ -237,4 +223,22 @@ func TestMutationDirectiveRule_RejectsADirectiveWithoutAReason(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Errorf("the rule rejects %v, want %v", got, want)
 	}
+}
+
+func getDirectiveLines(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = file.Close() }()
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
+	var found []string
+	for line := 1; scanner.Scan(); line++ {
+		text := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(text, "//") && strings.Contains(text, "gomutants:disable") {
+			found = append(found, strconv.Itoa(line)+": "+text)
+		}
+	}
+	return found, scanner.Err()
 }

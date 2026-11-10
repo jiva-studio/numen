@@ -8,10 +8,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// isTechnologyImport tells whether a package gives access to something outside the process: the file
-// system, the network, a child process, a database, the operating system, a device, or a vendor SDK. The
-// standard time package is not one: reading the clock is the technology only for the clock adapter, which
-// the helper list names. Third-party packages count, except the ones that only compute.
 func isTechnologyImport(path string) bool {
 	switch {
 	case path == "os", path == "io/fs", path == "syscall", path == "database/sql", path == "embed", path == "plugin", path == "net":
@@ -33,8 +29,6 @@ func isTechnologyImport(path string) bool {
 	return true
 }
 
-// getTechnologyFreeAdapters names the adapter packages that reach no technology and are none of the
-// adapters a layer rule already places, each with the reason it needs no technology.
 func getTechnologyFreeAdapters() map[string]string {
 	return map[string]string{
 		"internal/adapter/clock": "the machine clock itself, read through the time package",
@@ -45,8 +39,6 @@ func isUseCaseImport(root, path string) bool {
 	return isWithin(path, root+"/usecase")
 }
 
-// getAdapterTechnologyFindings reports the adapter packages that call a use case from a place a driving
-// adapter does not belong, and the driven adapters that import no technology.
 func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free map[string]string) (found []string, driven int) {
 	for _, pkg := range pkgs {
 		rel := strings.TrimPrefix(strings.TrimPrefix(pkg.PkgPath, root), "/")
@@ -75,6 +67,9 @@ func getAdapterTechnologyFindings(pkgs []*packages.Package, root string, free ma
 	return found, driven
 }
 
+// A package under adapter/ or internal/adapter/ that calls no use case is a driven adapter and imports a
+// technology; one that holds callbacks and no technology is a seam written as an adapter. A package of
+// internal/adapter/ that calls a use case is a driving adapter in the wrong folder.
 func checkDrivenAdaptersImportATechnology(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	pkgs := getModulePackages(t, workspace, "libs/core/kernel")
@@ -93,6 +88,10 @@ func checkDrivenAdaptersImportATechnology(t *testing.T, workspace workspacePacka
 	}
 }
 
+// A technology package gives access to something outside the process: the file system, the network, a child
+// process, a database, the operating system, a device or a vendor SDK. The standard time package is not one,
+// because reading the clock is a technology only for the clock adapter, which the exceptions list names.
+// Third-party packages count, except the ones that only compute.
 func TestTechnologyImportRule_NamesWhatReachesOutsideTheProcess(t *testing.T) {
 	for path, want := range map[string]bool{
 		"os": true, "os/exec": true, "io/fs": true, "net/http": true, "net": true, "database/sql": true,
