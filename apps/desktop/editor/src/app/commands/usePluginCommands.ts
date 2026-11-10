@@ -12,8 +12,8 @@ import type {
 import type { WelcomeAction } from '@numen/workbench'
 import { findShortcutKeys, registerCommand } from '@/features/command-palette'
 import type { Command, CommandTarget } from '@/entities/command'
+import type { FileKind } from '@/entities/file'
 import { getNamedIcon } from '@/shared/icons'
-import type { VaultCore } from '../vault'
 import {
   createEmptyWhenContext,
   createWhenAvailability,
@@ -29,7 +29,7 @@ type NoteTarget = Pick<CommandTarget, 'path' | 'title' | 'isFolder' | 'others'> 
 
 /** What a plugin command runs over: the target, the others selected with it, its type and properties. */
 export const createCommandNoteReader =
-  (core: Pick<VaultCore, 'fileKinds'>) =>
+  (core: { fileKinds(paths: readonly string[]): Promise<ReadonlyMap<string, FileKind>> }) =>
   async (target: NoteTarget): Promise<CommandNote> => {
     const { path } = target
     const kind = path === '' ? undefined : (await core.fileKinds([path])).get(path)

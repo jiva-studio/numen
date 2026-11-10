@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
 import { commands, type AnswerWords, type CommandDeps } from '@/features/command-palette'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/entities/command'
-import type { VaultCore } from '../vault'
+import { getFileKinds } from '@/entities/file'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 const HANDLER: HandlerDeclaration = {
@@ -28,13 +28,13 @@ const createHost = () =>
 describe('a shared command in the palette', () => {
   it('is an entry with a pick list while a plugin handles it, and none otherwise', () => {
     const handled = usePluginCommands(
-      createCommandNoteReader({} as VaultCore),
+      createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
       undefined,
       () => [HANDLER],
     )
     const unhandled = usePluginCommands(
-      createCommandNoteReader({} as VaultCore),
+      createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
       undefined,
       () => [],
@@ -48,7 +48,7 @@ describe('a shared command in the palette', () => {
 
   it('is available over a file and not over the window alone', () => {
     const [entry] = usePluginCommands(
-      createCommandNoteReader({} as VaultCore),
+      createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
       undefined,
       () => [HANDLER],
@@ -65,7 +65,7 @@ describe('a shared command that asks for a value', () => {
 
   it('asks for its required arguments as a command of a manifest does', () => {
     const [entry] = usePluginCommands(
-      createCommandNoteReader({} as VaultCore),
+      createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
       undefined,
       () => [importer],
@@ -91,7 +91,7 @@ describe('a shared command that asks for a value', () => {
   it('runs its handler with the values given', async () => {
     const host = createHost()
     usePluginCommands(
-      createCommandNoteReader({ fileKinds: async () => new Map() } as unknown as VaultCore),
+      createCommandNoteReader({ fileKinds: async () => new Map() }),
       host,
       undefined,
       () => [importer],

@@ -3,6 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { answerCore } from '@/testing/coreAnswers'
 import { useWindowKinds } from './useWindowKinds'
 
 type MockSeen = {
@@ -70,7 +71,7 @@ const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } 
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },
     window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
-    core: { relations: { roles: ['parent', 'child', 'jump'] } },
+    core: {},
     getTarget: vi.fn(() => ({})),
     runCommand: vi.fn(),
   } as unknown as Parameters<typeof useWindowKinds>[0]
@@ -265,9 +266,7 @@ describe('the services the window gives a plugin', () => {
     expect(deps.editing.fileFlush.addHandler).toHaveBeenCalledWith(flushFn)
     expect(hoisted.built.vaultFiles.making).toBe(deps.editing.making)
     expect(window.services.relations?.roles).toStrictEqual(['parent', 'child', 'jump'])
-    ;(deps.core as unknown as { headings: ReturnType<typeof vi.fn> }).headings = vi.fn(
-      async () => new Map([['a.md', []]]),
-    )
+    answerCore({ notes: { listHeadings: () => ({ headings: [{ path: 'a.md', headings: [] }] }) } })
     await expect(window.services.notes?.getHeadings(['a.md'])).resolves.toEqual(
       new Map([['a.md', []]]),
     )

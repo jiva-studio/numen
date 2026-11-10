@@ -4,19 +4,12 @@
  * The core numbers untitled names, files a related note beside the note it is related to and
  * writes the record of the relation. The window reports what the core answers.
  */
-import { formatErrorMessage } from '@numen/core-client'
-import { getRelationErrorWords, type ConnectionRole, type VaultRelations } from '@numen/plugin-loader'
-import type { NewNote } from '../lib/note'
-import type { CreateResult } from '@/shared/model/fileTypes'
+import { formatError } from '@/shared/api/errors'
+import { createNote } from '../api/notes'
+import { relations } from '../api/relations'
+import { getRelationErrorWords, type ConnectionRole } from '@numen/plugin-loader'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { ERRORS } from '@/shared/words'
-
-/** The operations note creation needs from the vault. */
-export interface NoteMaker {
-  /** A note made, named after the title it is given. An empty title makes an untitled note. */
-  create(note: NewNote): Promise<CreateResult>
-  readonly relations: Pick<VaultRelations, 'createRelated'>
-}
 
 /** A note that now exists: where it is filed, and what it is called. */
 export interface NoteRef {
@@ -24,10 +17,10 @@ export interface NoteRef {
   readonly title: string
 }
 
-export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
+export function createNoteWriter(writeMessage: MessageWriter) {
   async function createInFolder(title: string, folder: string): Promise<NoteRef | null> {
     try {
-      const made = await core.create({ title, folder })
+      const made = await createNote({ title, folder })
       if (!made.ok) {
         writeMessage(ERRORS[made.error], 'error')
         return null
@@ -35,7 +28,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
       writeMessage('')
       return { path: made.value.path, title }
     } catch (error) {
-      writeMessage(formatErrorMessage(error), 'error')
+      writeMessage(formatError(error), 'error')
       return null
     }
   }
@@ -46,7 +39,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
     role: ConnectionRole,
   ): Promise<NoteRef | null> {
     try {
-      const made = await core.relations.createRelated({ from, role, title })
+      const made = await relations.createRelated({ from, role, title })
       if (!made.ok) {
         writeMessage(getRelationErrorWords(made.error), 'error')
         return null
@@ -54,7 +47,7 @@ export function createNoteWriter(core: NoteMaker, writeMessage: MessageWriter) {
       writeMessage('')
       return { path: made.value, title }
     } catch (error) {
-      writeMessage(formatErrorMessage(error), 'error')
+      writeMessage(formatError(error), 'error')
       return null
     }
   }

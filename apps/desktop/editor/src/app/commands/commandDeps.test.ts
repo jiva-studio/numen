@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { NAME_SOURCE } from '@numen/core-client'
+import { answerCore } from '@/testing/coreAnswers'
 import { createCommandDeps, type CommandDepsOptions } from './commandDeps'
 import { useSettings } from '../window/useSettings'
 import { WORDS } from '@/shared/words'
@@ -12,14 +14,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
       return answer
     }
   const options: CommandDepsOptions = {
-    core: {
-      rename: record('rename', 'renamed'),
-      remove: record('app:file.remove', 'removed'),
-      emptyTrash: record('app:trash.empty', 3),
-      move: record('app:file.move', 'moved'),
-      list: record('list', [{ name: 'heat' }, { name: 'Entropy.md' }]),
-      createFolder: record('app:folder.create', 'folded'),
-    } as never,
+    core: {} as never,
     windowTabs: {
       openTabOfKind: (...args: unknown[]) => {
         record('openTabOfKind')(...args)
@@ -77,15 +72,59 @@ describe('the commands reach the window', () => {
 
   it('passes file gestures to the vault and answers with what the vault answered', async () => {
     const { deps, calls } = createOptions()
+    answerCore({
+      notes: {
+        renameNote: (request) => {
+          calls.push(['rename', request.path, request.title])
+          return { path: 'Alpaca.md', title: request.title, nameSource: NAME_SOURCE.FILENAME }
+        },
+      },
+      files: {
+        removeFile: (request) => {
+          calls.push(['app:file.remove', request.path])
+          return { trashed: '.trash/Llama.md', dangling: ['Zoo.md'] }
+        },
+        emptyTrash: () => {
+          calls.push(['app:trash.empty'])
+          return { undeleted: ['.trash/a.md', '.trash/b.md', '.trash/c.md'] }
+        },
+        moveFile: (request) => {
+          calls.push(['app:file.move', request.from, request.to])
+          return { moved: { from: request.from, to: request.to, repaired: [] } }
+        },
+        listFiles: (request) => {
+          calls.push(['list', request.path])
+          return {
+            entries: [
+              { path: 'zoo/heat', name: 'heat', isFolder: true, isNote: false, type: '' },
+              { path: 'zoo/Entropy.md', name: 'Entropy.md', isFolder: false, isNote: true, type: '' },
+            ],
+          }
+        },
+        createFolder: (request) => {
+          calls.push(['app:folder.create', request.path])
+          return {}
+        },
+      },
+    })
 
     expect(await deps.files.createNote('Llama', 'Animals.md', null)).toBe('created')
     expect(await deps.files.createUntitled('zoo')).toBe('physics/Untitled note 1.md')
-    expect(await deps.files.rename('Llama.md', 'Alpaca')).toBe('renamed')
-    expect(await deps.files.remove('Llama.md')).toBe('removed')
+    expect(await deps.files.rename('Llama.md', 'Alpaca')).toStrictEqual({
+      ok: true,
+      value: { path: 'Alpaca.md', title: 'Alpaca', hasFrontmatter: false, moved: null },
+    })
+    expect(await deps.files.remove('Llama.md')).toStrictEqual({
+      ok: true,
+      value: { trashed: '.trash/Llama.md', dangling: ['Zoo.md'] },
+    })
     expect(await deps.files.emptyTrash()).toBe(3)
-    expect(await deps.files.move('Llama.md', 'zoo/Llama.md')).toBe('moved')
+    expect(await deps.files.move('Llama.md', 'zoo/Llama.md')).toStrictEqual({
+      ok: true,
+      value: { from: 'Llama.md', to: 'zoo/Llama.md', repaired: [] },
+    })
     expect(await deps.files.listNames('zoo')).toStrictEqual(['heat', 'Entropy.md'])
-    expect(await deps.files.createFolder('zoo')).toBe('folded')
+    expect(await deps.files.createFolder('zoo')).toBeNull()
     expect(calls).toStrictEqual([
       ['createWithTitle', 'Llama', 'Animals.md', null],
       ['createUntitled', 'zoo'],

@@ -5,20 +5,13 @@
  * showing something stale, with no error and no way back.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue, TASK_KIND, TASK_UNIT } from '@numen/core-client'
+import { TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowDisplay } from './useWindowDisplay'
-import type { Core } from '@/app/ports/core'
+import type { VaultPort } from '@/app/ports/vault'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/textRange'
-import type { Neighbourhood } from '@/entities/note'
-
-const answer = (path: string): Neighbourhood => ({
-  focus: { path, title: path },
-  focusType: 'note',
-  related: [],
-  connections: [],
-})
+import type { NoteEdit } from '@/entities/note'
 
 async function* emptyStream(): AsyncGenerator<never> {
   yield* []
@@ -53,7 +46,13 @@ interface Streams {
   watchTasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
 }
 
-type Fake = Core & Streams
+/** What the core says about the notes while the window follows the vault. */
+interface NoteStreams {
+  getInitialOpenPath(): Promise<{ path: string } | null>
+  watchEdits(): AsyncGenerator<NoteEdit>
+}
+
+type Fake = VaultPort & Streams & NoteStreams
 
 let restore: () => void = () => undefined
 
@@ -90,6 +89,23 @@ const answerFrom = (core: Fake) => {
         }
       },
     },
+    notes: {
+      getOpeningNote: async () => {
+        const note = await core.getInitialOpenPath()
+        return note ? { note: { path: note.path, title: '' } } : {}
+      },
+      watchEdits: async function* () {
+        for await (const edit of core.watchEdits()) {
+          yield {
+            change: edit.change,
+            path: edit.path,
+            range: edit.span,
+            text: edit.text,
+            isFinal: edit.isComplete,
+          }
+        }
+      },
+    },
     agentService: { getAgentState: async () => ({ unreachable: await core.agentUnreachable() }) },
     workspace: { watchFocus: (_request, context) => core.watchFocus(context.signal) },
     windowService: {
@@ -111,22 +127,13 @@ const answerFrom = (core: Fake) => {
   })
 }
 
-const useDisplay = (core: Fake, how?: Parameters<typeof useWindowDisplay>[1]) => {
+const useDisplay = (core: Fake, how?: Parameters<typeof useWindowDisplay>[0]) => {
   answerFrom(core)
-  return useWindowDisplay(core, how)
+  return useWindowDisplay(how)
 }
 
-function fake(overrides: Partial<Fake> = {}): Fake & { requestLog: string[] } {
-  const request: string[] = []
+function fake(overrides: Partial<Fake> = {}): Fake {
   return {
-    requestLog: request,
-    neighbourhood: async (path) => {
-      request.push(path)
-      return answer(path)
-    },
-    headings: async () => new Map(),
-    fileKinds: async () => new Map(),
-    resolveLinks: async () => [],
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => resolved,
     agentUnreachable: async () => '',
@@ -138,25 +145,6 @@ function fake(overrides: Partial<Fake> = {}): Fake & { requestLog: string[] } {
     watchTasks: async function* () {
       await waitForever()
     },
-    read: async () => asValue({ body: '' }),
-    write: async () => asValue({ body: '' }),
-    create: async () => ({ ok: true, value: { path: '' } }),
-    relations: {
-      roles: ['parent', 'child', 'jump'],
-      getConnection: async () => asFailure('notFound'),
-      saveConnection: async () => asValue(undefined),
-      removeSide: async () => asValue(undefined),
-      removeConnection: async () => asValue(undefined),
-      join: async () => asValue(undefined),
-      createRelated: async () => asValue(''),
-      listBacklinks: async () => [],
-    },
-    rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
-    remove: async () => asValue({ trashed: '', dangling: [] }),
-    emptyTrash: async () => 0,
-    list: async () => [],
-    move: async () => ({ ok: true, value: null }),
-    createFolder: async () => null,
     detachTab: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
     watchTabLinks: emptyStream,
     cancelTabLinksWatch: vi.fn(() => Promise.resolve()),

@@ -6,7 +6,6 @@ export { ERROR_MESSAGES, STALE_CONFLICT } from './words'
 export type {
   ConflictWords,
   NoteContents,
-  Notes as NoteCore,
   NoteResult as NoteReadResult,
   OpenNote,
   OpenNotesOptions,

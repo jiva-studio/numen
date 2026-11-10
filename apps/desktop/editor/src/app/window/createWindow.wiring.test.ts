@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { getNamedIcon } from '@/shared/icons'
+import { answerCore } from '@/testing/coreAnswers'
 import { ref } from 'vue'
 import { createWindow } from './createWindow'
 import type * as BackgroundTasksModule from '@/features/background-tasks'
@@ -17,9 +18,7 @@ const h = vi.hoisted(() => ({
   f: {} as Record<string, any>,
   core: {
     name: 'core',
-    fileKinds: vi.fn(),
     readOpenTabs: vi.fn(async () => ({ tabs: [], activeId: '' })),
-    resolveLinks: vi.fn(async () => [{ path: 'resolved.md' }]),
     cancelTask: vi.fn(async (_id: string) => undefined),
     detachTab: vi.fn(),
     writeTabLinks: vi.fn(async () => undefined),
@@ -90,7 +89,7 @@ vi.mock('../commands/useCommands', () => ({
   },
 }))
 vi.mock('./useWindowDisplay', () => ({
-  useWindowDisplay: (_core: unknown, args: unknown) => {
+  useWindowDisplay: (args: unknown) => {
     h.args.display = args
     return h.f.display
   },
@@ -170,7 +169,6 @@ const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) 
 beforeEach(() => {
   front.value = null
   h.args = {}
-  h.core.fileKinds.mockReset()
   const writer = vi.fn()
   h.f = {
     writer,
@@ -673,9 +671,19 @@ describe('the services a plugin is given', () => {
     )
     expect(h.args.plugins.getCommandDeclarations()).toBeUndefined()
 
+    const resolveAddresses = vi
+      .fn()
+      .mockReturnValueOnce({
+        found: [{ raw: '[[Target]]', address: 'name://Target', text: 'Target' }],
+        resolved: [{ written: 'name://Target', path: 'resolved.md', isCrossed: false }],
+      })
+      .mockReturnValueOnce({ found: [], resolved: [] })
+    answerCore({ notes: { resolveAddresses } })
     expect(await h.args.plugins.resolveLink('from.md', 'name://Target')).toBe('resolved.md')
-    expect(h.core.resolveLinks).toHaveBeenCalledWith('from.md', '[[Target]]')
-    h.core.resolveLinks.mockResolvedValueOnce([])
+    expect(resolveAddresses.mock.calls[0]?.[0]).toMatchObject({
+      from: 'from.md',
+      text: '[[Target]]',
+    })
     expect(await h.args.plugins.resolveLink('from.md', 'Plain')).toBe('')
 
     // createTabSync & watchPluginSettings & useOpenTabs error callbacks

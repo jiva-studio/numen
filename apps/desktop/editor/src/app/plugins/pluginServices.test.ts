@@ -1,10 +1,10 @@
 /** The window and the notes of the vault, as a plugin's tabs are handed them. */
 import { describe, expect, it, vi } from 'vitest'
+import { answerCore } from '@/testing/coreAnswers'
 import { ref, shallowRef } from 'vue'
 import {
   createAgentHost,
   createVaultNotes,
-  createVaultRelations,
   createWorkspaceHost,
   type WorkspaceHostDeps,
 } from './pluginServices'
@@ -152,19 +152,19 @@ describe('the window a plugin opens files and reads the note in focus through', 
 describe('the agent a plugin is handed', () => {
   const create = () => {
     const port = { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) }
-    const core = {
-      resolveLinks: vi.fn(() =>
-        Promise.resolve([{ raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' }]),
-      ),
-    }
+    const resolveAddresses = vi.fn((_request: object) => ({
+      found: [{ raw: '[[A]]', address: 'name://A', text: 'A' }],
+      resolved: [{ written: 'name://A', path: 'A.md', isCrossed: false }],
+    }))
+    answerCore({ notes: { resolveAddresses } })
     const rest = {
       getSetting: vi.fn(() => 'zeta'),
       writeSetting: vi.fn(() => Promise.resolve()),
       getModelsAt: vi.fn(() => []),
     }
     const unreachable = ref('')
-    const agent = createAgentHost({ port, core, window: { unreachable }, settings: { rest } })
-    return { agent, port, core, rest, unreachable }
+    const agent = createAgentHost({ port, window: { unreachable }, settings: { rest } })
+    return { agent, port, resolveAddresses, rest, unreachable }
   }
 
   it('asks and ends a conversation through the port', async () => {
@@ -184,20 +184,28 @@ describe('the agent a plugin is handed', () => {
   })
 
   it('resolves the wikilinks of an answer from the top of the vault', async () => {
-    const { agent, core } = create()
+    const { agent, resolveAddresses } = create()
 
     expect(await agent.resolveLinks('See [[A]].')).toStrictEqual([
       { raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' },
     ])
-    expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].', undefined)
+    expect(resolveAddresses.mock.calls[0]?.[0]).toMatchObject({
+      from: '',
+      text: 'See [[A]].',
+      vault: '',
+    })
   })
 
   it('resolves the wikilinks of a text in the vault a plugin names', async () => {
-    const { agent, core } = create()
+    const { agent, resolveAddresses } = create()
 
     await agent.resolveLinks('See [[A]].', 'garden')
 
-    expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].', 'garden')
+    expect(resolveAddresses.mock.calls[0]?.[0]).toMatchObject({
+      from: '',
+      text: 'See [[A]].',
+      vault: 'garden',
+    })
   })
 
   it('says why the agent cannot be reached while the window says it', () => {
@@ -225,33 +233,29 @@ describe('the notes of the vault a plugin is handed', () => {
       createUntitled: vi.fn(() => Promise.resolve('Untitled.md')),
       createWithTitle: vi.fn(() => Promise.resolve(null)),
     } as unknown as NoteCreator
-    const core = {
-      neighbourhood: vi.fn((path: string) =>
-        Promise.resolve({
-          focus: { path, title: 'Root' },
-          focusType: 'note' as const,
+    const listHeadings = vi.fn((_request: object) => ({ headings: [] }))
+    const listFileKinds = vi.fn((request: { paths: string[] }) => ({
+      kinds: request.paths
+        .filter((path) => path.startsWith('links/'))
+        .map((path) => ({
+          path,
+          isNote: true,
+          type: 'link',
+          properties: { media: 'plugin://org.example.links/tide.mp4' },
+        })),
+    }))
+    answerCore({
+      notes: {
+        getNeighbourhood: (request) => ({
+          focus: { path: request.path, title: 'Root' },
+          focusType: 'note',
           related: [],
           connections: [],
         }),
-      ),
-      headings: vi.fn(() => Promise.resolve(new Map())),
-      fileKinds: vi.fn((paths: readonly string[]) =>
-        Promise.resolve(
-          new Map(
-            paths
-              .filter((path) => path.startsWith('links/'))
-              .map((path) => [
-                path,
-                {
-                  isNote: true,
-                  type: 'link',
-                  properties: { media: 'plugin://org.example.links/tide.mp4' },
-                },
-              ]),
-          ),
-        ),
-      ),
-    }
+        listHeadings,
+      },
+      files: { listFileKinds },
+    })
     const search = {
       names: vi.fn(() =>
         Promise.resolve([
@@ -265,10 +269,11 @@ describe('the notes of the vault a plugin is handed', () => {
     }
     return {
       making,
-      core,
+      listHeadings,
+      listFileKinds,
       search,
       pluginNotes,
-      notes: createVaultNotes({ core, search, making, pluginNotes }),
+      notes: createVaultNotes({ search, making, pluginNotes }),
     }
   }
 
@@ -283,14 +288,14 @@ describe('the notes of the vault a plugin is handed', () => {
   })
 
   it('reads what is around a note and the headings of notes', async () => {
-    const { notes, core } = createNotes()
+    const { notes, listHeadings } = createNotes()
 
     expect((await notes.getNeighbourhood('Root.md')).focus).toStrictEqual({
       path: 'Root.md',
       title: 'Root',
     })
     await notes.getHeadings(['Root.md'])
-    expect(core.headings).toHaveBeenCalledWith(['Root.md'])
+    expect(listHeadings.mock.calls[0]?.[0]).toMatchObject({ paths: ['Root.md'] })
   })
 
   it('finds notes by name, twenty unless told how many', async () => {
@@ -311,13 +316,13 @@ describe('the notes of the vault a plugin is handed', () => {
   })
 
   it('reads the frontmatter of a note, and nothing for a path holding no note', async () => {
-    const { notes, core } = createNotes()
+    const { notes, listFileKinds } = createNotes()
 
     expect(await notes.readProperties('links/tide.md')).toStrictEqual({
       media: 'plugin://org.example.links/tide.mp4',
     })
     expect(await notes.readProperties('Gone.md')).toStrictEqual({})
-    expect(core.fileKinds).toHaveBeenCalledWith(['links/tide.md'])
+    expect(listFileKinds.mock.calls[0]?.[0]).toMatchObject({ paths: ['links/tide.md'] })
   })
 
   it('makes no path where the note maker made no untitled note', async () => {
@@ -325,37 +330,5 @@ describe('the notes of the vault a plugin is handed', () => {
     vi.mocked(making.createUntitled).mockResolvedValueOnce('')
 
     expect(await notes.createUntitledNote()).toBe('')
-  })
-})
-
-describe('createVaultRelations', () => {
-  it('delegates all relation operations to core.relations', async () => {
-    const relations = {
-      roles: ['parent', 'child', 'jump'] as const,
-      getConnection: vi.fn(() => Promise.resolve({ ok: true as const, value: null as never })),
-      saveConnection: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-      removeSide: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-      removeConnection: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-      join: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
-      createRelated: vi.fn(() => Promise.resolve({ ok: true as const, value: 'New.md' })),
-      listBacklinks: vi.fn(() => Promise.resolve([])),
-    }
-    const host = createVaultRelations({ core: { relations } })
-
-    expect(host.roles).toStrictEqual(['parent', 'child', 'jump'])
-    await host.getConnection('a.md', 'b.md', 't')
-    expect(relations.getConnection).toHaveBeenCalledWith('a.md', 'b.md', 't')
-    await host.saveConnection({} as never)
-    expect(relations.saveConnection).toHaveBeenCalledWith({})
-    await host.removeSide('a.md', 'b.md', 't')
-    expect(relations.removeSide).toHaveBeenCalledWith('a.md', 'b.md', 't')
-    await host.removeConnection('a.md', 'b.md', 't')
-    expect(relations.removeConnection).toHaveBeenCalledWith('a.md', 'b.md', 't')
-    await host.join('a.md', 'b.md', { role: 'child' })
-    expect(relations.join).toHaveBeenCalledWith('a.md', 'b.md', { role: 'child' })
-    await host.createRelated({ from: 'a.md', role: 'child' })
-    expect(relations.createRelated).toHaveBeenCalledWith({ from: 'a.md', role: 'child' })
-    await host.listBacklinks('a.md')
-    expect(relations.listBacklinks).toHaveBeenCalledWith('a.md')
   })
 })

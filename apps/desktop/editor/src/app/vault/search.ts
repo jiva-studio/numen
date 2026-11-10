@@ -3,7 +3,8 @@
  */
 import { search } from '@/shared/api/clients'
 import type { Selector } from '@numen/plugin-loader'
-import { modes, mapNoteType, mapRange } from './words'
+import { mapNoteType, mapRange } from '@/shared/api/wire'
+import { modes } from './words'
 import type { SearchDeps } from '@/features/command-palette'
 
 const parseSelector = (json: string): Selector | null => {

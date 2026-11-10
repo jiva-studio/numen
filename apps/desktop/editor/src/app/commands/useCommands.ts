@@ -40,6 +40,7 @@ import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
 import type { NoteCreator } from '@/entities/note'
+import { getFileKinds } from '@/entities/file'
 import type { VaultCore } from '../vault'
 import { getVaultList } from '../window/vaultList'
 
@@ -262,7 +263,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(
-    options.readCommandNote ?? createCommandNoteReader(core),
+    options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
     pluginHost,
     declaredCommands?.whenContext,
     () => declaredCommands?.contributions.handlers.value,

@@ -7,7 +7,8 @@ import type { CommandDeps, Notes, VaultWriter } from '@/features/command-palette
 import type { RunSupport, VaultRef } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
-import type { NoteCreator } from '@/entities/note'
+import { renameNote, type NoteCreator } from '@/entities/note'
+import { createFolder, emptyTrash, listFiles, moveFile, removeFile } from '@/entities/file'
 import type { Model, SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
@@ -31,16 +32,16 @@ export interface CommandDepsOptions {
   search?: () => void
 }
 
-function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
+function createFileCommands(making: NoteCreator): VaultWriter {
   return {
     createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
     createUntitled: (folder) => making.createUntitled(folder),
-    rename: (path, title) => core.rename(path, title),
-    remove: (path) => core.remove(path),
-    emptyTrash: () => core.emptyTrash(),
-    move: (from, to) => core.move(from, to),
-    listNames: async (folder) => (await core.list(folder)).map((one) => one.name),
-    createFolder: (path) => core.createFolder(path),
+    rename: (path, title) => renameNote(path, title),
+    remove: (path) => removeFile(path),
+    emptyTrash: () => emptyTrash(),
+    move: (from, to) => moveFile(from, to),
+    listNames: async (folder) => (await listFiles(folder)).map((one) => one.name),
+    createFolder: (path) => createFolder(path),
   }
 }
 
@@ -138,7 +139,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
     options
 
   return {
-    files: createFileCommands(core, making),
+    files: createFileCommands(making),
     vaults: {
       ...vaults,
       ...(tabsHold ? { open: openAfterSavingTabs(vaults.open, tabsHold) } : {}),

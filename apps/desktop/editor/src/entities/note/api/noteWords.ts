@@ -14,8 +14,8 @@ import {
   asFailure,
   asValue,
 } from '@numen/core-client'
-import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '@/entities/note'
-import type { NoteType } from '@/entities/file'
+import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '../lib/note'
+import { mapNoteType } from '@/shared/api/wire'
 import { mapConnection, type ConnectionWire } from './relationWords'
 
 interface NeighbourhoodWire {
@@ -42,22 +42,13 @@ export const writes: Record<NameSourceCode, boolean> = {
 }
 
 /** The position of a note relative to the focused note, as named in the window. */
-export const relationByWire: Record<NoteRelationCode, NoteRelation | null> = {
+const relationByWire: Record<NoteRelationCode, NoteRelation | null> = {
   [NOTE_RELATION.UNSPECIFIED]: null,
   [NOTE_RELATION.PARENT]: 'parent',
   [NOTE_RELATION.CHILD]: 'child',
   [NOTE_RELATION.JUMP]: 'jump',
   [NOTE_RELATION.SIBLING]: 'sibling',
 }
-
-/** What a note is, where the schema leaves it empty for a plain note. */
-export const mapNoteType = (of: string): NoteType => of || 'note'
-
-/** Copies a wire range into the plain pair the window carries. */
-export const mapRange = (range: { start: number; end: number }) => ({
-  start: range.start,
-  end: range.end,
-})
 
 export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
   prose: baseline.prose,

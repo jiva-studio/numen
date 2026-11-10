@@ -1,33 +1,37 @@
 /**
- * The note entity's part of the vault mock: reading, writing and finding notes.
+ * What the core answers about notes: reading, writing and finding them. The calls go through the
+ * real note client and its error mapping; only the transport under them is the test's.
  */
-import { asValue } from '@numen/core-client'
+import { NAME_SOURCE } from '@numen/core-client'
+import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
 import { mockVaultState, pendingStream } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
 
-export const noteCoreMock = {
-  getInitialOpenPath: () =>
-    Promise.resolve(mockVaultState.opening ? { path: mockVaultState.opening } : null),
-  neighbourhood: (path: string) =>
-    Promise.resolve({
-      focus: { path, title: path.replace(/\.md$/, '') },
-      focusType: 'note' as const,
+export const noteAnswers = {
+  notes: {
+    getOpeningNote: () => ({
+      ...(mockVaultState.opening ? { note: { path: mockVaultState.opening, title: '' } } : {}),
+    }),
+    getNeighbourhood: (request) => ({
+      focus: { path: request.path, title: request.path.replace(/\.md$/, '') },
+      focusType: 'note',
       related: [],
       connections: [],
     }),
-  read: () => Promise.resolve(asValue({ body: 'what is written', at: 'a1' })),
-  write: () => Promise.resolve(asValue({ body: '', at: 'a2' })),
-  create: ({ title }: { title: string }) => {
-    requests.made.push(title)
-    return Promise.resolve(asValue({ path: `${title}.md` }))
+    readNote: (request) => ({
+      body: 'what is written',
+      at: { path: request.path, size: 1n, mtime: 1n },
+    }),
+    writeNote: (request) => ({ body: '', at: { path: request.path, size: 2n, mtime: 2n } }),
+    createNote: (request) => {
+      requests.made.push(request.title)
+      return { path: `${request.title}.md` }
+    },
+    renameNote: (request) => {
+      requests.renamed.push(`${request.path} ${request.title}`)
+      return { path: request.path, title: request.title, nameSource: NAME_SOURCE.FRONTMATTER }
+    },
+    watchEdits: pendingStream,
+    listHeadings: () => ({ headings: [] }),
   },
-  rename: (path: string, title: string) => {
-    requests.renamed.push(`${path} ${title}`)
-    return Promise.resolve(asValue({ path, title, hasFrontmatter: true, moved: null }))
-  },
-  watchEdits: pendingStream,
-  names: () => Promise.resolve(mockVaultState.names),
-  search: () => Promise.resolve(mockVaultState.passages),
-  headings: () => Promise.resolve(new Map()),
-} satisfies Partial<VaultCore>
+} satisfies CoreAnswers

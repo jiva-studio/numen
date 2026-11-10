@@ -23,8 +23,8 @@ interface MockParts {
 
 interface MockCalls {
   raised: unknown[][]
-  openNotes: [unknown, { onReplaced: () => void }]
-  writer: [unknown, unknown]
+  openNotes: [{ onReplaced: () => void }]
+  writer: [unknown]
   flush: unknown[]
   reached: [unknown, unknown]
 }
@@ -63,8 +63,8 @@ vi.mock('@/features/command-palette', () => ({
 beforeEach(() => {
   h.calls = {
     raised: [],
-    openNotes: [null, { onReplaced: vi.fn() }],
-    writer: [null, null],
+    openNotes: [{ onReplaced: vi.fn() }],
+    writer: [null],
     flush: [],
     reached: [null, null],
   }
@@ -104,16 +104,15 @@ const create = () => {
 
 describe('the note editors', () => {
   it('opens the notes with the change handler for a replaced note', () => {
-    const { core } = create()
+    create()
 
-    expect(h.calls.openNotes[0]).toBe(core)
-    expect(typeof h.calls.openNotes[1].onReplaced).toBe('function')
+    expect(typeof h.calls.openNotes[0].onReplaced).toBe('function')
   })
 
   it('writes the message of making a note through the writer of its own name', () => {
     const { writers } = create()
 
-    expect(h.calls.writer[1]).toBe(writers.made)
+    expect(h.calls.writer[0]).toBe(writers.made)
     expect(Object.keys(writers)).toEqual(['made'])
   })
 

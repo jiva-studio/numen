@@ -10,7 +10,6 @@ import type {
 import type { TabLinksChange } from '@/features/tab-linking'
 
 export interface VaultPort {
-  getInitialOpenPath(): Promise<{ path: string } | null>
   /** Reports the currently open tabs; called again whenever they change. */
   writeOpenTabs(open: OpenTabs): Promise<void>
   /** The tabs last written for the vault in the window, kept by the core across restarts. */

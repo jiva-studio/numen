@@ -15,7 +15,7 @@ import {
   type Move,
   type Tab,
 } from './tab'
-import type { OpenNote, Notes, OpenNotesOptions } from './types'
+import type { OpenNote, OpenNotesOptions } from './types'
 import { createNoteQueue } from './queue'
 import { createConflictCoordinator } from './conflict'
 
@@ -114,7 +114,6 @@ function applyTabTransition(
 }
 
 function createNoteStoreContext(
-  core: Notes,
   limits: Parameters<typeof transitionTab>[2],
   onReplaced: (path: string) => void,
 ) {
@@ -128,7 +127,7 @@ function createNoteStoreContext(
     bodies,
     reportedIds,
     closeCallbacks,
-    queue: createNoteQueue(core, {
+    queue: createNoteQueue({
       dispatch: (id, event) => dispatch(id, event),
       hasTab: (id) => tabs.has(id),
       resumeClosing: (id) => {
@@ -149,13 +148,13 @@ function createNoteStoreContext(
   return { context, dispatch }
 }
 
-export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
+export function openNotes(how: OpenNotesOptions = {}) {
   const limits = how.limits ?? DEFAULT_WRITE_LIMITS
   // Without a listener, a replaced body needs no notification.
   const onReplaced = how.onReplaced ?? (() => undefined)
   const now = how.now ?? getMonotonicNow
 
-  const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
+  const { context, dispatch } = createNoteStoreContext(limits, onReplaced)
   const { tabs, bodies, queue, reportedIds, closeCallbacks } = context
 
   const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))

@@ -46,11 +46,9 @@ const connectionRoles: Record<ConnectionRole, true> = { parent: true, child: tru
 /** The roles a note can be created or joined in. */
 export const CONNECTION_ROLES = Object.keys(connectionRoles) as readonly ConnectionRole[]
 
-/** The role of a link as the window names it; null for a value the schema leaves unspecified. */
-export const readRole = (code: NoteRoleCode): LinkRole | null => calledRole[code]
+const readRole = (code: NoteRoleCode): LinkRole | null => calledRole[code]
 
-/** The marker of a link as the window names it; null where it draws nothing. */
-export const readMarker = (code: NoteMarkerCode): LinkMarker | null => calledMarker[code]
+const readMarker = (code: NoteMarkerCode): LinkMarker | null => calledMarker[code]
 
 /** The marker of a link as the schema names it. */
 export const writeMarker = (marker: LinkMarker | null | undefined): NoteMarkerCode =>

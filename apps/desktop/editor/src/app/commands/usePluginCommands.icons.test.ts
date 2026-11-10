@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginHost } from '@numen/plugin-loader'
 import { getNamedIcon } from '@/shared/icons'
-import type { VaultCore } from '../vault'
+import { getFileKinds } from '@/entities/file'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 
 describe('the palette entry of a command a plugin declares', () => {
@@ -15,7 +15,7 @@ describe('the palette entry of a command a plugin declares', () => {
     } as unknown as PluginHost
 
     const [entry] = usePluginCommands(
-      createCommandNoteReader({} as VaultCore),
+      createCommandNoteReader({ fileKinds: getFileKinds }),
       host,
     ).getPaletteEntries()
 

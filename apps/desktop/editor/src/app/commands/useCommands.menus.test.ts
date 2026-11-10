@@ -9,6 +9,7 @@ import {
 } from '@numen/plugin-loader'
 import type { ResultChoice } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
+import { answerCore } from '@/testing/coreAnswers'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
 const h = vi.hoisted(() => ({
@@ -96,11 +97,15 @@ function setup(
     executeCommand,
     handleShortcut: () => false,
   }
-  const fileKinds = vi.fn(async (paths: readonly string[]) => {
-    return new Map(paths.map((one) => [one, { type: 'sample' }]))
+  answerCore({
+    files: {
+      listFileKinds: (request) => ({
+        kinds: request.paths.map((path) => ({ path, isNote: true, type: 'sample' })),
+      }),
+    },
   })
   const used = useCommands({
-    core: { fileKinds },
+    core: {},
     words: {},
     windowTabs: { onKeyPress: () => false },
     getTarget: () => options.target ?? front,

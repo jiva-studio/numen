@@ -90,7 +90,6 @@ export function initWindowServices(
   settingsHolder: { current?: ReturnType<typeof useSettings> },
 ) {
   const editing = createNoteEditors({
-    core,
     log: base.log,
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
@@ -104,7 +103,6 @@ export function initWindowServices(
   })
 
   const window = useWindowDisplay(
-    core,
     createDisplayOptions({
       editing,
       getCommands: () => getCommands(ctx),

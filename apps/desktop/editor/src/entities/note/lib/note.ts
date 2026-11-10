@@ -5,6 +5,7 @@ import type { TextRange } from '@/shared/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 
 export type { NoteRelation } from '@numen/plugin-loader'
+export type { RemovedNote, RemoveResult } from '@/shared/model/fileTypes'
 
 /** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {
@@ -68,11 +69,3 @@ export interface RenamedNote {
 
 /** What renaming a note returned. */
 export type RenameResult = Result<RenamedNote, NoteFailure>
-
-export interface RemovedNote {
-  readonly trashed: string
-  readonly dangling: readonly string[]
-}
-
-/** What removing a note returned. */
-export type RemoveResult = Result<RemovedNote, ErrorCode>

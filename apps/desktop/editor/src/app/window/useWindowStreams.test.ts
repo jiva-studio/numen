@@ -42,6 +42,7 @@ interface Streams {
   changes?: Change[]
   focus?: Focus[]
   tasks?: Task[][]
+  edits?: { change: string; path: string; range?: { start: number; end: number }; text: string }[]
 }
 
 let restore: () => void = () => undefined
@@ -64,6 +65,10 @@ const answer = (streams: Streams) => {
         ),
     },
     workspace: { watchFocus: () => yielding(...(streams.focus ?? [])) },
+    notes: {
+      watchEdits: () =>
+        yielding(...(streams.edits ?? []).map((one) => ({ ...one, isFinal: false }))),
+    },
     windowService: {
       watchTasks: () =>
         yielding(
@@ -84,7 +89,6 @@ const setup = (streams: Streams = {}, overrides: Partial<WindowStreamsDeps> = {}
   answer(streams)
   let open = true
   const deps = {
-    core: { watchEdits: () => yielding() },
     listening: new AbortController(),
     isOpen: () => open,
     setLost: vi.fn(),
@@ -232,19 +236,23 @@ describe('following the vault', () => {
 
 describe('following the edits', () => {
   it('reports an edit that names a path, and not the opening silence', async () => {
-    const deps = setup(
-      {},
-      {
-        core: {
-          watchEdits: () => yielding({ path: '' }, { path: 'a.md' }),
-        } as unknown as WindowStreamsDeps['core'],
-      },
-    )
+    const deps = setup({
+      edits: [
+        { change: '', path: '', text: '' },
+        { change: '1', path: 'a.md', range: { start: 2, end: 5 }, text: 'abc' },
+      ],
+    })
 
     await createWindowStreams(deps).draw()
 
     expect(deps.reportChange).toHaveBeenCalledTimes(1)
-    expect(deps.reportChange).toHaveBeenCalledWith({ path: 'a.md' })
+    expect(deps.reportChange).toHaveBeenCalledWith({
+      change: '1',
+      path: 'a.md',
+      span: { start: 2, end: 5 },
+      text: 'abc',
+      isComplete: false,
+    })
   })
 })
 

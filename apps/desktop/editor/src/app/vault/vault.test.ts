@@ -1,29 +1,11 @@
 /**
- * The one thing this module decides on its own: how a file the window references
- * is serialized and parsed.
- *
- * Everything else passes a message through unchanged, and the schema defines its
- * shape.
+ * The session calls of the window core, over the real clients and a router in place of the core.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreHandlers } from '@numen/core-client/testing'
 import { core } from './index'
 
 const request = {
-  readNote: vi.fn(),
-  writeNote: vi.fn(),
-  createNote: vi.fn(),
-  writeLink: vi.fn(),
-  getNeighbourhood: vi.fn(),
-  getOpeningNote: vi.fn(),
-  renameNote: vi.fn(),
-  listHeadings: vi.fn(),
-  resolveAddresses: vi.fn(),
-  removeFile: vi.fn(),
-  listFiles: vi.fn(),
-  moveFile: vi.fn(),
-  createFolder: vi.fn(),
-  listFileKinds: vi.fn(),
   writeOpenTabs: vi.fn(),
 }
 
@@ -35,127 +17,6 @@ beforeEach(() => {
 
 afterEach(() => {
   restore()
-})
-
-describe('the file a save presents', () => {
-  it('arrives back as the file it was, through a path that holds spaces', async () => {
-    const noteFile = {
-      path: 'mahabharata/The aggressor.md',
-      size: 4096n,
-      mtime: 1_700_000_000_123n,
-    }
-    request.readNote.mockResolvedValue({ body: 'prose', at: noteFile })
-    request.writeNote.mockResolvedValue({})
-
-    const readItem = await core.read(noteFile.path)
-    if (!readItem.ok) throw new Error('the read failed')
-    await core.write(noteFile.path, 'prose and more', {
-      prose: readItem.value.body,
-      stat: readItem.value.at ?? '',
-    })
-
-    expect(request.writeNote.mock.calls[0]?.[0]).toMatchObject({
-      path: noteFile.path,
-      body: 'prose and more',
-      baseline: { prose: 'prose', at: noteFile },
-    })
-  })
-
-  it('is left out of a save that presents nothing', async () => {
-    request.writeNote.mockResolvedValue({})
-
-    await core.write('Heat.md', 'mine', null)
-
-    expect(request.writeNote.mock.calls.at(-1)?.[0]).toMatchObject({
-      path: 'Heat.md',
-      body: 'mine',
-    })
-    expect(request.writeNote.mock.calls.at(-1)?.[0].baseline).toBeUndefined()
-  })
-})
-
-describe('files domain', () => {
-  it('handles remove, list, move, createFolder, and fileKinds', async () => {
-    request.removeFile.mockResolvedValue({ trashed: '.trash/test.md', dangling: [] })
-    const removed = await core.remove('test.md')
-    expect(removed.ok && removed.value.trashed).toBe('.trash/test.md')
-
-    request.listFiles.mockResolvedValue({
-      entries: [{ path: 'test.md', name: 'test.md', isFolder: false, kind: 1, type: 'note' }],
-    })
-    const listing = await core.list('')
-    expect(listing.length).toBe(1)
-
-    request.moveFile.mockResolvedValue({ moved: { from: 'a.md', to: 'b.md', repaired: [] } })
-    const moved = await core.move('a.md', 'b.md')
-    expect(moved.ok ? moved.value?.to : null).toBe('b.md')
-
-    request.createFolder.mockResolvedValue({})
-    expect(await core.createFolder('folder')).toBeNull()
-
-    request.listFileKinds.mockResolvedValue({
-      kinds: [
-        { path: 'a.bin', isNote: false, type: '' },
-        { path: 'a.md', isNote: true, type: 'deck' },
-      ],
-    })
-    const kinds = await core.fileKinds(['a.bin', 'a.md'])
-    expect(kinds.get('a.bin')).toStrictEqual({ isNote: false, type: 'note' })
-    expect(kinds.get('a.md')).toStrictEqual({ isNote: true, type: 'deck' })
-  })
-
-  it('reads the properties of a note with its kind', async () => {
-    request.listFileKinds.mockResolvedValue({
-      kinds: [
-        { path: 'link.md', isNote: true, type: 'link', properties: { media: 'plugin://x/a.mp4' } },
-      ],
-    })
-
-    const kinds = await core.fileKinds(['link.md'])
-
-    expect(kinds.get('link.md')).toStrictEqual({
-      isNote: true,
-      type: 'link',
-      properties: { media: 'plugin://x/a.mp4' },
-    })
-  })
-})
-
-describe('notes domain', () => {
-  it('handles neighbourhood, the opening path, rename, headings, and resolve', async () => {
-    request.getNeighbourhood.mockResolvedValue({
-      focus: { path: 'a.md', title: 'A' },
-      related: [],
-      connections: [],
-    })
-    const neigh = await core.neighbourhood('a.md')
-    expect(neigh.focus.path).toBe('a.md')
-
-    request.getOpeningNote.mockResolvedValue({ note: { path: 'opening.md' } })
-    expect((await core.getInitialOpenPath())?.path).toBe('opening.md')
-
-    request.renameNote.mockResolvedValue({
-      path: 'b.md',
-      title: 'B',
-      nameSource: 1,
-      moved: { path: 'b.md' },
-    })
-    const renamedItems = await core.rename('a.md', 'B')
-    expect(renamedItems.ok && renamedItems.value.path).toBe('b.md')
-
-    request.listHeadings.mockResolvedValue({
-      headings: [{ path: 'a.md', headings: [{ text: 'H1', level: 1, line: 1 }] }],
-    })
-    const heads = await core.headings(['a.md'])
-    expect(heads.get('a.md')?.[0]?.text).toBe('H1')
-
-    request.resolveAddresses.mockResolvedValue({
-      found: [{ raw: '[[B]]', address: 'name://B', text: 'B' }],
-      resolved: [{ written: 'name://B', path: 'b.md', isCrossed: false }],
-    })
-    const res = await core.resolveLinks('a.md', '[[B]]')
-    expect(res[0]?.path).toBe('b.md')
-  })
 })
 
 describe('session domain', () => {
