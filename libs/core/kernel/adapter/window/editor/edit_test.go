@@ -21,6 +21,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -361,9 +362,9 @@ func TestEditLoad(t *testing.T) {
 	api.state.setVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	made := wired.sources(db, wired.vaults.VaultReaders(), wired.vaults.VaultWatcher())
-	worker := newIndexWorker(made.ReadVault, api.state, nil, time.Hour, io.Discard)
-	_, wait := startIndexing(t.Context(), made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
+	made := wired.session(db, wired.vaults.VaultReaders(), wired.vaults.VaultWatcher())
+	worker := newIndexWorker(wired.readVault(db), api.state, nil, time.Hour, io.Discard)
+	_, wait := startIndexing(t.Context(), made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(wait)
 	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
 		time.Sleep(50 * time.Millisecond)
