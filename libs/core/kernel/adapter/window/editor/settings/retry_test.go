@@ -80,7 +80,7 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 // The failure of a plugin is delivered to the window with its reason, its detail and its time, and a plugin that has not failed carries none.
 func TestAFailedPluginTravelsWithItsReasonDetailAndTime(t *testing.T) {
 	pos := time.UnixMilli(1_700_000_000_123)
-	infos := NewWirePluginInfos([]setting.PluginInfo{
+	infos := NewWirePluginInfos([]plugin.Info{
 		{ID: "md.numen.sample", Failure: &plugin.Failure{Reason: "Timed out while starting", Detail: "handshake timeout", At: pos}},
 		{ID: "md.numen.other"},
 	})

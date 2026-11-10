@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -67,17 +68,17 @@ func answerSearch(ctx context.Context, err error) (v1.HostSearchErrorCode, error
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
-	case errors.Is(err, pluginport.ErrNoModel):
+	case errors.Is(err, plugin.ErrNoModel):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL, nil
-	case errors.Is(err, pluginport.ErrRecipeMismatch):
+	case errors.Is(err, plugin.ErrRecipeMismatch):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_RECIPE_MISMATCH, nil
-	case errors.Is(err, pluginport.ErrInvalidFloor):
+	case errors.Is(err, plugin.ErrInvalidFloor):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_FLOOR, nil
-	case errors.Is(err, pluginport.ErrLimitExceeded):
+	case errors.Is(err, plugin.ErrLimitExceeded):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_LIMIT_EXCEEDED, nil
-	case errors.Is(err, pluginport.ErrEmbeddingFailed):
+	case errors.Is(err, plugin.ErrEmbeddingFailed):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_EMBEDDING_FAILED, nil
-	case errors.Is(err, pluginport.ErrInvalidQuery):
+	case errors.Is(err, plugin.ErrInvalidQuery):
 		return v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_INVALID_QUERY, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)
@@ -172,9 +173,9 @@ func (e *searchEndpoint) SampleSimilarities(
 	if code := call.getRefusal(true); code != 0 {
 		return connect.NewResponse(&v1.SampleSimilaritiesResponse{Error: code}), nil
 	}
-	queries := make([]pluginport.PluginSimilarityQuery, len(req.Msg.GetQueries()))
+	queries := make([]plugin.SimilarityQuery, len(req.Msg.GetQueries()))
 	for i, one := range req.Msg.GetQueries() {
-		queries[i] = pluginport.PluginSimilarityQuery{Path: one.GetPath(), Vector: one.GetVector().GetValues()}
+		queries[i] = plugin.SimilarityQuery{Path: one.GetPath(), Vector: one.GetVector().GetValues()}
 	}
 	sample, err := call.search.SampleSimilarities(ctx, call.vault, req.Msg.GetRecipe(), queries)
 	code, err := answerSearch(ctx, err)
@@ -229,7 +230,7 @@ func (e *searchEndpoint) SearchPassages(
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid source kind %q: use %q or %q", kind, domain.KindNote, domain.KindFile))
 		}
 	}
-	found, err := call.search.SearchPassages(ctx, call.vault, pluginport.PluginPassageQuery{
+	found, err := call.search.SearchPassages(ctx, call.vault, plugin.PassageQuery{
 		Query: req.Msg.GetQuery(), Limit: int(req.Msg.GetLimit()), Kinds: kinds, PathPrefix: req.Msg.GetPathPrefix(),
 	})
 	code, err := answerSearch(ctx, err)
@@ -298,13 +299,13 @@ func (e *searchEndpoint) SetSearchFloor(
 	return connect.NewResponse(&v1.SetSearchFloorResponse{Error: code}), err
 }
 
-func writeFloorSource(source pluginport.PluginFloorSource) v1.SearchFloorSource {
+func writeFloorSource(source plugin.FloorSource) v1.SearchFloorSource {
 	switch source {
-	case pluginport.PluginFloorStored:
+	case plugin.FloorStored:
 		return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_STORED
-	case pluginport.PluginFloorModelHint:
+	case plugin.FloorModelHint:
 		return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_MODEL_HINT
-	case pluginport.PluginFloorDefault:
+	case plugin.FloorDefault:
 		return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_DEFAULT
 	}
 	return v1.SearchFloorSource_SEARCH_FLOOR_SOURCE_UNSPECIFIED

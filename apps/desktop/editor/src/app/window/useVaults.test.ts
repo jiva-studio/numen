@@ -6,27 +6,38 @@
  * command updates both the welcome screen and the command target.
  */
 import { ref } from 'vue'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { useVaults } from './useVaults'
 import { WORDS } from '@/shared/words'
 
 const TWO = {
   vaults: [
-    { id: 'roots', name: 'Roots', path: '/vaults/Roots', missing: false },
-    { id: 'leaves', name: 'Leaves', path: '/vaults/Leaves', missing: false },
+    { id: 'roots', name: 'Roots', path: '/vaults/Roots', isMissing: false },
+    { id: 'leaves', name: 'Leaves', path: '/vaults/Leaves', isMissing: false },
   ],
   showing: 'roots',
 }
 
-const open = () =>
-  useVaults({
-    core: { vaults: async () => TWO } as never,
+let restore: () => void = () => undefined
+
+afterEach(() => {
+  restore()
+})
+
+const open = () => {
+  restore = installCoreAnswers({
+    vaultsService: { listVaults: () => ({ vaults: TWO.vaults }) },
+    windowService: { getCurrentVault: () => ({ vault: TWO.showing }) },
+  })
+  return useVaults({
     words: WORDS,
     log: { getWriter: () => vi.fn() } as never,
     chunks: ref(0),
     embedded: ref(0),
     isEmbedding: ref(false),
   })
+}
 
 describe('the vault in front', () => {
   it('is the one the list says it is showing', async () => {
@@ -83,12 +94,15 @@ describe('the vault list before and after it is requested for', () => {
     const getWriter = vi.fn()
     const write = vi.fn()
     getWriter.mockReturnValue(write)
-    const target = useVaults({
-      core: {
-        vaults: async () => {
+    restore = installCoreAnswers({
+      vaultsService: {
+        listVaults: () => {
           throw new Error('down')
         },
-      } as never,
+      },
+      windowService: { getCurrentVault: () => ({ vault: 'roots' }) },
+    })
+    const target = useVaults({
       words: WORDS,
       log: { getWriter } as never,
       chunks: ref(0),

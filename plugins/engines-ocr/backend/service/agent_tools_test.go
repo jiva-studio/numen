@@ -94,12 +94,10 @@ func (q recordingQueue) ReportTask(ctx context.Context, task host.Task) error {
 	return q.Queue.ReportTask(ctx, task)
 }
 
-// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the store.
 func foldersOf(store *hosttest.Store) func(domain.VaultID) recognition.Folder {
 	return func(id domain.VaultID) recognition.Folder { return store.With(id) }
 }
 
-// textsOf gives the text versions of the vault with an identity.
 func textsOf(texts *hosttest.Texts) func(domain.VaultID) host.TextVersions {
 	return func(id domain.VaultID) host.TextVersions { return texts.With(id) }
 }

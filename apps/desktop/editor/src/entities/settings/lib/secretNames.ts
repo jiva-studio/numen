@@ -1,14 +1,12 @@
 /**
  * The rules for the names of secrets and groups: how a name is trimmed, how long it may be, the
- * names a new secret or group is offered, and the order moves of a secret.
+ * name a new group is offered, and the order moves of a secret.
  */
-import { findServiceInfo } from '@numen/core-client'
 import type { Secret } from './configuration'
 
 /** The longest name of a secret or group, in characters; the core refuses a longer one. */
 export const MAX_NAME_LENGTH = 64
 
-const DEFAULT_SECRET_NAME = 'Default'
 const NEW_GROUP_NAME = 'New group'
 
 /** The characters Go's `unicode.IsSpace` accepts, which `strings.TrimSpace` removes at the ends. */
@@ -37,27 +35,6 @@ export function getNewGroupName(groups: readonly string[]): string {
   let number = 2
   while (groups.includes(`${NEW_GROUP_NAME} ${number}`)) number++
   return `${NEW_GROUP_NAME} ${number}`
-}
-
-/**
- * The name the first secret of a group gets: the name of its service, or Default for a group no
- * service is known by.
- */
-export function getFirstSecretName(group: string): string {
-  const title = findServiceInfo(group)?.title ?? ''
-  return title === '' ? DEFAULT_SECRET_NAME : title
-}
-
-/**
- * The name a new secret of a group gets: the name of the service in a group with no secret, else
- * the name with V1, V2 and on, the first one not in use.
- */
-export function getNextSecretName(group: string, namesInGroup: readonly string[]): string {
-  const first = getFirstSecretName(group)
-  if (namesInGroup.length === 0) return first
-  let number = 1
-  while (namesInGroup.includes(`${first} V${number}`)) number++
-  return `${first} V${number}`
 }
 
 /** What a secret grants to a plugin: the plugin, the name it declares and the group it asks for. */

@@ -20,8 +20,8 @@ import (
 // VersionItems lists the text versions of a file a command with items offers, and runs the command
 // over one of them; it lists every version of a file and deletes one for Delete text.
 type VersionItems interface {
-	ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry) ([]textversion.VersionItem, error)
-	RunVersionItem(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry, version domain.TextVersionID) (plugin.CommandResult, error)
+	ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]textversion.VersionItem, error)
+	RunVersionItem(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry, version domain.TextVersionID) (plugin.CommandResult, error)
 	ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]textversion.VersionItem, error)
 	DeleteVersion(ctx context.Context, v domain.Vault, path string, version domain.TextVersionID) error
 }
@@ -130,8 +130,8 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 	return result, true, err
 }
 
-func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool) {
-	var entries []plugincommand.Entry
+func (h *Handler) findEntry(pluginID, command string) (plugin.CommandEntry, bool) {
+	var entries []plugin.CommandEntry
 	if plugincommand.IsSharedCommand(command) {
 		entries = h.list.ExecuteHandlers()
 	} else {
@@ -142,7 +142,7 @@ func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool
 			return one, true
 		}
 	}
-	return plugincommand.Entry{}, false
+	return plugin.CommandEntry{}, false
 }
 
 func getVersionTitle(item textversion.VersionItem, parts plugin.Parts) string {

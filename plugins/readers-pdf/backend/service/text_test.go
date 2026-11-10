@@ -79,8 +79,6 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	return texts, server, raw
 }
 
-// newTextServerOver is the text server over the vault files given, the texts and the queue; it writes
-// into the store folders of the vaults of home.
 func newTextServerOver(t *testing.T, vaults func(domain.VaultID) vaultFiles, home *hosttest.Vault, texts *hosttest.Texts, queue host.Queue) *TextServer {
 	t.Helper()
 	return NewTextServer(
@@ -90,7 +88,6 @@ func newTextServerOver(t *testing.T, vaults func(domain.VaultID) vaultFiles, hom
 		queue, newTestWorkers(t))
 }
 
-// filesOf gives the files of the vault with an identity, seen from the vault.
 func filesOf(vault *hosttest.Vault) func(domain.VaultID) vaultFiles {
 	return func(id domain.VaultID) vaultFiles { return vault.With(id) }
 }

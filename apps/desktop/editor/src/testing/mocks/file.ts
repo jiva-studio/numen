@@ -6,20 +6,22 @@ import { requests } from '../requests'
 import { folders, getFileKind } from '../answers'
 
 export const fileAnswers = {
-  removeFile: (request) => {
-    requests.removed.push(request.path)
-    return { trashed: `.trash/${request.path}`, dangling: [] }
+  files: {
+    removeFile: (request) => {
+      requests.removed.push(request.path)
+      return { trashed: `.trash/${request.path}`, dangling: [] }
+    },
+    listFiles: (request) => ({ entries: [...(folders[request.path] ?? [])] }),
+    moveFile: (request) => {
+      requests.moved.push(`${request.from} ${request.to}`)
+      return {}
+    },
+    createFolder: (request) => {
+      requests.folders.push(request.path)
+      return {}
+    },
+    listFileKinds: (request) => ({
+      kinds: request.paths.map((path) => ({ path, ...getFileKind(path) })),
+    }),
   },
-  listFiles: (request) => ({ entries: [...(folders[request.path] ?? [])] }),
-  moveFile: (request) => {
-    requests.moved.push(`${request.from} ${request.to}`)
-    return {}
-  },
-  createFolder: (request) => {
-    requests.folders.push(request.path)
-    return {}
-  },
-  listFileKinds: (request) => ({
-    kinds: request.paths.map((path) => ({ path, ...getFileKind(path) })),
-  }),
-} satisfies CoreAnswers['files']
+} satisfies CoreAnswers

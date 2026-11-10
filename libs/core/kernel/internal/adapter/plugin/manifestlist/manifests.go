@@ -26,15 +26,15 @@ func Open(host Host) Manifests {
 }
 
 // ListCommands lists the commands the manifests of the enabled plugins declare. No plugin is started.
-func (m Manifests) ListCommands() []pluginport.PluginCommandEntry {
-	var found []pluginport.PluginCommandEntry
+func (m Manifests) ListCommands() []plugindomain.CommandEntry {
+	var found []plugindomain.CommandEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
 		for _, command := range plugin.Manifest.Contributes.Commands {
-			found = append(found, pluginport.PluginCommandEntry{
+			found = append(found, plugindomain.CommandEntry{
 				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name, Command: command,
 			})
 		}
@@ -43,45 +43,45 @@ func (m Manifests) ListCommands() []pluginport.PluginCommandEntry {
 }
 
 // ListTabKinds lists the tab kinds the manifests of the enabled plugins declare. No plugin is started.
-func (m Manifests) ListTabKinds() []pluginport.PluginTabKindEntry {
-	var found []pluginport.PluginTabKindEntry
+func (m Manifests) ListTabKinds() []plugindomain.TabKindEntry {
+	var found []plugindomain.TabKindEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
 		for _, kind := range plugin.Manifest.Contributes.TabKinds {
-			found = append(found, pluginport.PluginTabKindEntry{PluginID: plugin.Manifest.ID, TabKind: kind})
+			found = append(found, plugindomain.TabKindEntry{PluginID: plugin.Manifest.ID, TabKind: kind})
 		}
 	}
 	return found
 }
 
 // ListSlots lists the slot entries the manifests of the enabled plugins declare. No plugin is started.
-func (m Manifests) ListSlots() []pluginport.PluginSlotEntry {
-	var found []pluginport.PluginSlotEntry
+func (m Manifests) ListSlots() []plugindomain.SlotEntry {
+	var found []plugindomain.SlotEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
 		for _, entry := range plugin.Manifest.Contributes.Slots {
-			found = append(found, pluginport.PluginSlotEntry{PluginID: plugin.Manifest.ID, Entry: entry})
+			found = append(found, plugindomain.SlotEntry{PluginID: plugin.Manifest.ID, Entry: entry})
 		}
 	}
 	return found
 }
 
 // ListKeybindings lists the keybindings the manifests of the enabled plugins declare. No plugin is started.
-func (m Manifests) ListKeybindings() []pluginport.PluginKeybindingEntry {
-	var found []pluginport.PluginKeybindingEntry
+func (m Manifests) ListKeybindings() []plugindomain.KeybindingEntry {
+	var found []plugindomain.KeybindingEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
 		for _, entry := range plugin.Manifest.Contributes.Keybindings {
-			found = append(found, pluginport.PluginKeybindingEntry{PluginID: plugin.Manifest.ID, Keybinding: entry})
+			found = append(found, plugindomain.KeybindingEntry{PluginID: plugin.Manifest.ID, Keybinding: entry})
 		}
 	}
 	return found
@@ -89,15 +89,15 @@ func (m Manifests) ListKeybindings() []pluginport.PluginKeybindingEntry {
 
 // ListHandlers lists the handlers the manifests of the enabled plugins declare, each as a command under
 // the full id of its shared command. No plugin is started.
-func (m Manifests) ListHandlers() []pluginport.PluginCommandEntry {
-	var found []pluginport.PluginCommandEntry
+func (m Manifests) ListHandlers() []plugindomain.CommandEntry {
+	var found []plugindomain.CommandEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
 		for _, handler := range plugin.Manifest.Contributes.Handlers {
-			found = append(found, pluginport.PluginCommandEntry{
+			found = append(found, plugindomain.CommandEntry{
 				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name,
 				Command: pluginport.PluginCommand{
 					ID: handler.Command, Title: handler.Title, When: handler.When,
@@ -111,15 +111,15 @@ func (m Manifests) ListHandlers() []pluginport.PluginCommandEntry {
 
 // ListTriggers lists the triggers the manifests of the enabled plugins declare, leaving out those of a
 // plugin the host holds suspended. No plugin is started.
-func (m Manifests) ListTriggers() []pluginport.PluginTriggerEntry {
-	var found []pluginport.PluginTriggerEntry
+func (m Manifests) ListTriggers() []plugindomain.TriggerEntry {
+	var found []plugindomain.TriggerEntry
 	for _, info := range m.host.GetPluginInfos() {
 		plugin, isEnabled := m.host.GetPlugin(info.ID)
 		if !isEnabled || info.Failure != nil {
 			continue
 		}
 		for _, trigger := range plugin.Manifest.Contributes.Triggers {
-			found = append(found, pluginport.PluginTriggerEntry{PluginID: plugin.Manifest.ID, Trigger: trigger})
+			found = append(found, plugindomain.TriggerEntry{PluginID: plugin.Manifest.ID, Trigger: trigger})
 		}
 	}
 	return found
@@ -152,12 +152,12 @@ func listTextKinds(m manifest.Manifest) map[string]string {
 // NoManifests is an installation with no plugin.
 type NoManifests struct{}
 
-func (NoManifests) ListCommands() []pluginport.PluginCommandEntry { return nil }
+func (NoManifests) ListCommands() []plugindomain.CommandEntry { return nil }
 
-func (NoManifests) ListSlots() []pluginport.PluginSlotEntry { return nil }
+func (NoManifests) ListSlots() []plugindomain.SlotEntry { return nil }
 
-func (NoManifests) ListKeybindings() []pluginport.PluginKeybindingEntry { return nil }
+func (NoManifests) ListKeybindings() []plugindomain.KeybindingEntry { return nil }
 
-func (NoManifests) ListHandlers() []pluginport.PluginCommandEntry { return nil }
+func (NoManifests) ListHandlers() []plugindomain.CommandEntry { return nil }
 
 func (NoManifests) GetParts(string) plugindomain.Parts { return plugindomain.Parts{} }

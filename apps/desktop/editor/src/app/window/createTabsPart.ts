@@ -19,7 +19,7 @@ import { useOpenTabs } from '../tabs/useOpenTabs'
 import type { WindowCore, WindowServices } from './createDisplayPart'
 import { isSecondaryWindow } from './createLifecyclePart'
 import type { useSettings } from './useSettings'
-import { focusWindow } from './windowRuntime'
+import { focusWindow } from '@/entities/window'
 
 interface TabsCoreDeps {
   readonly writeMessage: WindowCore['writeMessage']

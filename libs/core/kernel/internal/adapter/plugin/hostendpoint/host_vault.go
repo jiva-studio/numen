@@ -18,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -122,7 +123,7 @@ func getErrorEntries() []errorEntry {
 		{vaultport.ErrLockedByAnother, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED},
 		{vaultport.ErrNotANote, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
 		{fs.ErrNotExist, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		{pluginport.ErrNotText, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT},
+		{plugin.ErrNotText, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT},
 		{domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},
 		{domain.ErrInvalidConnection, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
 		{domain.ErrNotCreatable, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
@@ -250,11 +251,11 @@ func (e *vaultEndpoint) EnsureVaultIndexed(
 	}
 	out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
 	switch state.Status {
-	case pluginport.PluginIndexed:
+	case plugin.Indexed:
 		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED
-	case pluginport.PluginIndexing:
+	case plugin.Indexing:
 		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXING
-	case pluginport.PluginIndexFailed:
+	case plugin.IndexFailed:
 		out.State = v1.HostIndexState_HOST_INDEX_STATE_FAILED
 	}
 	return connect.NewResponse(out), nil

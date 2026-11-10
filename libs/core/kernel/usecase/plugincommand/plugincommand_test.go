@@ -46,17 +46,17 @@ func getTypes() fileTypes {
 
 // declaredCommands lists the commands it is given and records every call it is given to run.
 type declaredCommands struct {
-	entries []plugincommand.Entry
+	entries []plugin.CommandEntry
 	calls   []plugin.CommandCall
 }
 
-func (d *declaredCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+func (d *declaredCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (d *declaredCommands) ListSlots() []plugincommand.SlotEntry { return nil }
+func (d *declaredCommands) ListSlots() []plugin.SlotEntry { return nil }
 
-func (d *declaredCommands) ListHandlers() []plugincommand.Entry { return nil }
+func (d *declaredCommands) ListHandlers() []plugin.CommandEntry { return nil }
 
-func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.entries }
+func (d *declaredCommands) ListCommands() []plugin.CommandEntry { return d.entries }
 
 func (d *declaredCommands) GetParts(string) plugin.Parts {
 	return plugin.Parts{HasBackend: true}
@@ -68,7 +68,7 @@ func (d *declaredCommands) RunCommand(_ context.Context, call plugin.CommandCall
 }
 
 func newDeclared() *declaredCommands {
-	return &declaredCommands{entries: []plugincommand.Entry{
+	return &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.a", Command: plugincommand.Command{
 			ID: "convert", Title: "Convert", When: "target.contentType == 'application/pdf'",
 			Arguments: []plugincommand.Argument{
@@ -193,7 +193,7 @@ func TestACommandWithoutAConditionRunsOverAnyPathOrNone(t *testing.T) {
 
 func TestRunCommandRejectsEmptyPathForFileCommand(t *testing.T) {
 	for _, when := range []string{"target.isFile || target.isNote", "version.isLive && version.kind != ''"} {
-		declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "md.numen.a", Command: plugincommand.Command{
+		declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: plugincommand.Command{
 			ID: "proofreading.create", Title: "Proofread", When: when,
 		}}}}
 		commands := plugincommand.NewCommands(declared, getTypes(), nil, nil)
@@ -234,7 +234,7 @@ func (r noteReader) Read(_ context.Context, path string) ([]byte, error) {
 }
 
 func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
-	declared := &declaredCommands{entries: []plugincommand.Entry{
+	declared := &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
 	files := noteFiles{
@@ -263,7 +263,7 @@ type settingsOf map[string]any
 func (s settingsOf) GetWhenConfig() map[string]any { return s }
 
 func TestRunRejectsDisabledCommandSetting(t *testing.T) {
-	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "org.example.scans", Command: plugincommand.Command{
+	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "org.example.scans", Command: plugincommand.Command{
 		ID: "scan", Title: "Scan", When: "config.org.example.scans.isEnabled == true",
 	}}}}
 	config := settingsOf{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isEnabled": false}}}}
@@ -277,7 +277,7 @@ func TestRunRejectsDisabledCommandSetting(t *testing.T) {
 }
 
 func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
-	declared := &declaredCommands{entries: []plugincommand.Entry{
+	declared := &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
 	commands := plugincommand.NewCommands(declared, getTypes(), noteFiles{}, nil)

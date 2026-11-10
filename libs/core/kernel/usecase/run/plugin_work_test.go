@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -102,11 +103,11 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 	tasks := NewTasks()
 	work := NewPluginWork(&Lock{}, tasks, nil)
 
-	work.ReportTask("transcriber", pluginport.PluginTask{
+	work.ReportTask("transcriber", plugin.Task{
 		ID: "a.mp3", Title: "Transcribing", About: "a.mp3", Done: 3, Total: 10,
-		Unit: pluginport.TaskUnitSeconds, IsUserStarted: true,
+		Unit: plugin.TaskUnitSeconds, IsUserStarted: true,
 	})
-	work.ReportTask("recogniser", pluginport.PluginTask{ID: "a.mp3", Title: "Recognizing", Error: "no models"})
+	work.ReportTask("recogniser", plugin.Task{ID: "a.mp3", Title: "Recognizing", Error: "no models"})
 
 	got := tasks.List()
 	if len(got) != 2 {
@@ -135,9 +136,9 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	tasks := NewTasks()
 	work := NewPluginWork(lock, tasks, nil)
 
-	work.ReportTask("transcriber", pluginport.PluginTask{ID: "a", Title: "Transcribing"})
-	work.ReportTask("transcriber", pluginport.PluginTask{ID: "b", Title: "Transcribing", Error: "failed"})
-	work.ReportTask("recogniser", pluginport.PluginTask{ID: "a", Title: "Recognizing"})
+	work.ReportTask("transcriber", plugin.Task{ID: "a", Title: "Transcribing"})
+	work.ReportTask("transcriber", plugin.Task{ID: "b", Title: "Transcribing", Error: "failed"})
+	work.ReportTask("recogniser", plugin.Task{ID: "a", Title: "Recognizing"})
 
 	held, err := work.EnqueueWork(t.Context(), "transcriber", false, nil)
 	if err != nil {
@@ -174,7 +175,7 @@ func TestReportTaskSetsPluginIDAndName(t *testing.T) {
 	names := map[string]string{"md.example.engine": "Example Engine"}
 	work := NewPluginWork(&Lock{}, tasks, func(id string) string { return names[id] })
 
-	work.ReportTask("md.example.engine", pluginport.PluginTask{ID: "one", Title: "Reading"})
+	work.ReportTask("md.example.engine", plugin.Task{ID: "one", Title: "Reading"})
 
 	got := tasks.List()
 	if len(got) != 1 || got[0].PluginID != "md.example.engine" || got[0].PluginName != "Example Engine" {
@@ -186,7 +187,7 @@ func TestReportTaskWithNilNamesSetsEmptyName(t *testing.T) {
 	tasks := NewTasks()
 	work := NewPluginWork(&Lock{}, tasks, nil)
 
-	work.ReportTask("md.example.engine", pluginport.PluginTask{ID: "one", Title: "Reading"})
+	work.ReportTask("md.example.engine", plugin.Task{ID: "one", Title: "Reading"})
 
 	got := tasks.List()
 	if len(got) != 1 || got[0].PluginID != "md.example.engine" || got[0].PluginName != "" {

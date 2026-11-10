@@ -26,7 +26,7 @@ import {
   type WindowContext,
   type WindowCore,
 } from './createDisplayPart'
-import { getSettingsConfig } from './settingsConfig'
+import { getSettingsConfig } from '@/features/settings-commands'
 import type { useSettings } from './useSettings'
 import { createWindowCommands } from './windowCommands'
 import { createWindowSlots } from './windowSlots'

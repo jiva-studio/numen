@@ -1,9 +1,9 @@
 package agentrun
 
 import (
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
 // This file converts between the types of this package and the protocol messages. Every conversion

@@ -178,7 +178,6 @@ func (e *errHostVault) StatFile(ctx context.Context, path string) (domain.FileSt
 	return e.Vault.StatFile(ctx, path)
 }
 
-// vaults gives the ports' calls on the vault with an identity; the empty identity is e itself.
 func (e *errHostVault) vaults() func(domain.VaultID) hostports.Vault {
 	return func(id domain.VaultID) hostports.Vault {
 		on := e

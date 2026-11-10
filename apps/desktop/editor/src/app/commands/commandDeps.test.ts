@@ -270,14 +270,6 @@ describe('the commands reach the window', () => {
 
 describe('useSettings step groups', () => {
   it('returns no step groups for a command that is no setting', () => {
-    const core = {
-      fileKinds: async () => new Map(),
-      fileChanges: () => vi.fn(),
-      fileList: async () => [],
-      read: async () => '',
-      write: () => Promise.resolve(),
-      appState: vi.fn(),
-    } as never
     const log = {
       getWriter: () => vi.fn(),
     } as never
@@ -290,7 +282,6 @@ describe('useSettings step groups', () => {
     } as never
 
     const settings = useSettings({
-      core,
       words: WORDS,
       log,
       windowTabs,

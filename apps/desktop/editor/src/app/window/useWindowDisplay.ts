@@ -1,7 +1,7 @@
 import { ref, shallowRef } from 'vue'
-import type { VaultPort } from '@/app/ports/vault'
 import { getInitialOpenPath, type NoteEdit } from '@/entities/note'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
+import { getAgentUnreachable, getVaultState } from '@/entities/vault'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 import { formatErrorMessage } from '@numen/core-client'
@@ -118,8 +118,8 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   }
 }
 
-async function askDisplayState(core: VaultPort, display: DisplayState): Promise<unknown> {
-  const [state, agent] = await Promise.all([core.state(), core.agentUnreachable()])
+async function askDisplayState(display: DisplayState): Promise<unknown> {
+  const [state, agent] = await Promise.all([getVaultState(), getAgentUnreachable()])
   display.unreachable.value = agent
   display.name.value = state.name
   if (display.at.value === '') display.at.value = state.path
@@ -131,11 +131,11 @@ async function askDisplayState(core: VaultPort, display: DisplayState): Promise<
   return state
 }
 
-async function checkVaultSwapped(core: VaultPort, display: DisplayState): Promise<boolean> {
+async function checkVaultSwapped(display: DisplayState): Promise<boolean> {
   const was = display.at.value
   /* Stryker disable BlockStatement: callers only test truthiness of checkVaultSwapped */
   try {
-    const state = (await askDisplayState(core, display)) as { path: string }
+    const state = (await askDisplayState(display)) as { path: string }
     return was !== '' && state.path !== was
   } catch {
     return false
@@ -150,7 +150,7 @@ async function readInitialNotePath(display: DisplayState): Promise<string> {
   return display.opening.value
 }
 
-export function useWindowDisplay(core: VaultPort, how: DisplayOptions = {}) {
+export function useWindowDisplay(how: DisplayOptions = {}) {
   const wait = how.wait ?? sleep
   // No listener is attached by default; each callback does nothing.
   const onVaultChanged = how.onVaultChanged ?? (() => undefined)
@@ -159,12 +159,11 @@ export function useWindowDisplay(core: VaultPort, how: DisplayOptions = {}) {
   let open = true
   const abortController = new AbortController()
 
-  const ask = () => askDisplayState(core, display)
+  const ask = () => askDisplayState(display)
   const readInitialNote = () => readInitialNotePath(display)
-  const isVaultSwapped = () => checkVaultSwapped(core, display)
+  const isVaultSwapped = () => checkVaultSwapped(display)
 
   const streams = createWindowStreams({
-    core,
     listening: abortController,
     isOpen: () => open,
     setLost: (response) => {

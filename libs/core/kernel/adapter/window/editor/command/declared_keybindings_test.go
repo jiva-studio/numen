@@ -17,8 +17,8 @@ import (
 // and one the host holds suspended.
 type keyBindingPlugins struct{ declaredByTwoPlugins }
 
-func (keyBindingPlugins) ListKeybindings() []plugincommand.KeybindingEntry {
-	return []plugincommand.KeybindingEntry{
+func (keyBindingPlugins) ListKeybindings() []plugin.KeybindingEntry {
+	return []plugin.KeybindingEntry{
 		{PluginID: "md.numen.cards", Keybinding: manifest.Keybinding{Key: "mod+shift+d", Command: "deck.create"}},
 		{PluginID: "md.numen.down", Keybinding: manifest.Keybinding{Key: "j", Command: "down.run"}},
 		{PluginID: "md.numen.tree", Keybinding: manifest.Keybinding{

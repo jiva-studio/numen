@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -14,8 +15,8 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 	handler := &Handler{Get: setting.NewGet(
 		func() (string, string, error) { return `{"v":1}`, "/home/numen.json", nil },
 		nil, nil,
-		func() []setting.PluginSetting {
-			return []setting.PluginSetting{
+		func() []plugin.Setting {
+			return []plugin.Setting{
 				{Key: "appearance.interfaceScale", Type: "range", DefaultJSON: "1", ValueJSON: "1"},
 			}
 		},

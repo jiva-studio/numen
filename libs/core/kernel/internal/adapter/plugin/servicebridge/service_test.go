@@ -20,7 +20,7 @@ import (
 
 // servingHost serves the services it is given from the plugins it runs.
 type servingHost struct {
-	infos     []pluginport.PluginInfo
+	infos     []plugindomain.Info
 	services  map[string]string
 	endpoints map[string]plugindomain.Endpoint
 	manifests map[string]pluginport.PluginManifest
@@ -215,4 +215,4 @@ func (h *servingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, b
 	return domain.NoteProfile{}, false
 }
 
-func (h *servingHost) GetPluginInfos() []pluginport.PluginInfo { return h.infos }
+func (h *servingHost) GetPluginInfos() []plugindomain.Info { return h.infos }

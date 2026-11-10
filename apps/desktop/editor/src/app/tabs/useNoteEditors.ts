@@ -4,15 +4,14 @@
 import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { openNotes, createNoteWriter } from '@/entities/note'
+import { reportFlush, watchQuit } from '@/entities/window'
 import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
 import { createNotes, type Store } from '@/features/command-palette'
-import type { VaultPort } from '@/app/ports/vault'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { FileOpeners } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
-  core: Pick<VaultPort, 'watchQuit' | 'reportFlush'>
   log: MessageLog
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
@@ -61,13 +60,13 @@ function createNotedStore(
   }
 }
 
-export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditorsDeps) {
+export function createNoteEditors({ log, tabOpeners, windowTabs }: NoteEditorsDeps) {
   const changes = createNullChanges()
   const notes = openNotes({ onReplaced: changes.reportNoteChange })
   const making = createNoteWriter(log.getWriter('made'))
   const noted = createNoted(windowTabs)
 
-  const fileFlush = createFileFlush(core)
+  const fileFlush = createFileFlush({ watchQuit, reportFlush })
   fileFlush.addHandler(notes.flush)
 
   raiseConflicts(notes, fileFlush)

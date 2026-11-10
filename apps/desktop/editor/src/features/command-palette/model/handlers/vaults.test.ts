@@ -56,7 +56,7 @@ const createWindow = (
       createFolder: unused,
     },
     vaults: {
-      list: async () => ({ vaults: [], showing: '' }),
+      list: async () => [],
       choose: async () => answers.chose ?? '/vaults/Heat',
       add: calls.add,
       rename: calls.rename,

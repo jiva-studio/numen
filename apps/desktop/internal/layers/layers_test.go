@@ -22,7 +22,7 @@ const core = "github.com/jiva-studio/numen/libs/core/kernel/"
 const apps = "github.com/jiva-studio/numen/apps/"
 
 func isAssembled(pkg string) bool {
-	return pkg == "container" || pkg == "domain" || pkg == "port" ||
+	return pkg == "container" || pkg == "domain" || strings.HasPrefix(pkg, "domain/") || pkg == "port" ||
 		strings.HasPrefix(pkg, "port/") ||
 		strings.HasPrefix(pkg, "adapter/") ||
 		isContract(pkg)

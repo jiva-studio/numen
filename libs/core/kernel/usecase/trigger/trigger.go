@@ -21,7 +21,7 @@ import (
 // Plugins is the triggers and the handlers of the enabled plugins.
 type Plugins interface {
 	pluginport.PluginTriggers
-	ListHandlers() []pluginport.PluginCommandEntry
+	ListHandlers() []plugin.CommandEntry
 }
 
 // CommandRun runs a handler checked against its declaration, as a run a person starts is: its
@@ -120,7 +120,7 @@ func (u *Triggers) execute(
 
 // trigger is one trigger with its condition and the condition of its handler read.
 type trigger struct {
-	entry     pluginport.PluginTriggerEntry
+	entry     plugin.TriggerEntry
 	condition pluginport.PluginCondition
 	handler   pluginport.PluginCondition
 }

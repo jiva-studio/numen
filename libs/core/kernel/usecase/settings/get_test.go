@@ -4,10 +4,9 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 var errRead = errors.New("the file cannot be read")
@@ -17,17 +16,17 @@ func read() (string, string, error) { return `{"v":1}`, "/home/settings.json", n
 func TestGetAnswersTheSettingsAndTheirModels(t *testing.T) {
 	t.Parallel()
 	models := []settingsdomain.Model{{Name: "base"}}
-	pluginList := []pluginport.PluginInfo{
+	pluginList := []plugin.Info{
 		{
 			ID:   "md.numen.test",
 			Name: "Test Plugin",
-			Settings: []pluginport.PluginSetting{
+			Settings: []plugin.Setting{
 				{Key: "active", Type: "boolean", Title: "Active"},
 			},
 		},
 	}
 	get := settings.NewGet(
-		read, func() []settingsdomain.Model { return models }, func() []pluginport.PluginInfo { return pluginList }, nil,
+		read, func() []settingsdomain.Model { return models }, func() []plugin.Info { return pluginList }, nil,
 	)
 
 	got, err := get.Execute()
@@ -78,8 +77,8 @@ func TestGetAnswersTheDeclarationOfTheShell(t *testing.T) {
 	t.Parallel()
 	get := settings.NewGet(
 		read, nil, nil,
-		func() []pluginport.PluginSetting {
-			return []pluginport.PluginSetting{{Key: "appearance.mode", Type: "enum", Title: "Mode"}}
+		func() []plugin.Setting {
+			return []plugin.Setting{{Key: "appearance.mode", Type: "enum", Title: "Mode"}}
 		},
 	)
 

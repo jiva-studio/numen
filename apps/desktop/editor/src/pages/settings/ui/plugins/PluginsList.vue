@@ -5,7 +5,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import { PluginsList as PluginsListView } from '@numen/plugin-manager'
-import { createManagedFromEntries } from '@/shared/pluginListing'
+import { createManagedFromEntries } from '../../lib/pluginListing'
 import type { SettingsTabState } from '../../types'
 import { write, type PluginInfo } from '@/entities/settings'
 

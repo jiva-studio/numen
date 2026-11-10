@@ -8,28 +8,30 @@ import { requests } from '../requests'
 import { mockVaultState, pendingStream } from '../answers'
 
 export const noteAnswers = {
-  getOpeningNote: () => ({
-    ...(mockVaultState.opening ? { note: { path: mockVaultState.opening, title: '' } } : {}),
-  }),
-  getNeighbourhood: (request) => ({
-    focus: { path: request.path, title: request.path.replace(/\.md$/, '') },
-    focusType: 'note',
-    related: [],
-    connections: [],
-  }),
-  readNote: (request) => ({
-    body: 'what is written',
-    at: { path: request.path, size: 1n, mtime: 1n },
-  }),
-  writeNote: (request) => ({ body: '', at: { path: request.path, size: 2n, mtime: 2n } }),
-  createNote: (request) => {
-    requests.made.push(request.title)
-    return { path: `${request.title}.md` }
+  notes: {
+    getOpeningNote: () => ({
+      ...(mockVaultState.opening ? { note: { path: mockVaultState.opening, title: '' } } : {}),
+    }),
+    getNeighbourhood: (request) => ({
+      focus: { path: request.path, title: request.path.replace(/\.md$/, '') },
+      focusType: 'note',
+      related: [],
+      connections: [],
+    }),
+    readNote: (request) => ({
+      body: 'what is written',
+      at: { path: request.path, size: 1n, mtime: 1n },
+    }),
+    writeNote: (request) => ({ body: '', at: { path: request.path, size: 2n, mtime: 2n } }),
+    createNote: (request) => {
+      requests.made.push(request.title)
+      return { path: `${request.title}.md` }
+    },
+    renameNote: (request) => {
+      requests.renamed.push(`${request.path} ${request.title}`)
+      return { path: request.path, title: request.title, nameSource: NAME_SOURCE.FRONTMATTER }
+    },
+    watchEdits: pendingStream,
+    listHeadings: () => ({ headings: [] }),
   },
-  renameNote: (request) => {
-    requests.renamed.push(`${request.path} ${request.title}`)
-    return { path: request.path, title: request.title, nameSource: NAME_SOURCE.FRONTMATTER }
-  },
-  watchEdits: pendingStream,
-  listHeadings: () => ({ headings: [] }),
-} satisfies CoreAnswers['notes']
+} satisfies CoreAnswers

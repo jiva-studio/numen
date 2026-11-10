@@ -1,6 +1,6 @@
 /** Error messages the vault list reports for a command, in user-readable text. */
 // Stryker disable StringLiteral: interface copy
-import type { VaultErrorCode } from './types'
+import type { VaultErrorCode } from './lib/vault'
 
 export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   unreadable: 'folder missing or unreadable',

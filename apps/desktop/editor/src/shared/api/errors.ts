@@ -9,3 +9,6 @@ export type { ErrorCode } from '@numen/plugin-loader'
 
 /** The sentence an error is reported as. */
 export const formatError = formatErrorMessage
+
+/** An error whose message is shown as it is. */
+export { ReportedError } from '@numen/core-client'

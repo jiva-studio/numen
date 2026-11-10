@@ -26,48 +26,48 @@ type recordingSearch struct {
 	err     error
 	vaults  []domain.VaultID
 	recipes []string
-	queries []pluginport.PluginSimilarityQuery
+	queries []plugin.SimilarityQuery
 	floors  []float64
 
-	passageQueries []pluginport.PluginPassageQuery
+	passageQueries []plugin.PassageQuery
 }
 
-func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (pluginport.PluginEmbeddingState, error) {
+func (s *recordingSearch) GetEmbeddingState(_ context.Context, v domain.Vault) (plugin.EmbeddingState, error) {
 	s.vaults = append(s.vaults, v.ID)
-	return pluginport.PluginEmbeddingState{Recipe: "r", Model: "m", FloorHint: 0.4, ChunkCount: 5, EmbeddedCount: 5}, s.err
+	return plugin.EmbeddingState{Recipe: "r", Model: "m", FloorHint: 0.4, ChunkCount: 5, EmbeddedCount: 5}, s.err
 }
 
-func (s *recordingSearch) GetIndexStats(_ context.Context, v domain.Vault) (pluginport.PluginIndexStats, error) {
+func (s *recordingSearch) GetIndexStats(_ context.Context, v domain.Vault) (plugin.IndexStats, error) {
 	s.vaults = append(s.vaults, v.ID)
-	return pluginport.PluginIndexStats{
+	return plugin.IndexStats{
 		Recipe: "r", Model: "m", Dimensions: 1024, Chunks: 12, Vectors: 9, Sources: 3,
-		Extensions:    []pluginport.PluginExtensionStats{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
+		Extensions:    []plugin.ExtensionStats{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
 		DatabaseBytes: 4096, VectorBytes: 2048,
 	}, s.err
 }
 
-func (s *recordingSearch) EmbedTexts(_ context.Context, texts []string) (pluginport.PluginEmbeddedTexts, error) {
+func (s *recordingSearch) EmbedTexts(_ context.Context, texts []string) (plugin.EmbeddedTexts, error) {
 	vectors := make([][]float32, len(texts))
 	for i := range texts {
 		vectors[i] = []float32{float32(i), 1}
 	}
-	return pluginport.PluginEmbeddedTexts{Recipe: "r", Vectors: vectors}, s.err
+	return plugin.EmbeddedTexts{Recipe: "r", Vectors: vectors}, s.err
 }
 
-func (s *recordingSearch) SampleSimilarities(_ context.Context, v domain.Vault, recipe string, queries []pluginport.PluginSimilarityQuery) (pluginport.PluginSimilaritySample, error) {
+func (s *recordingSearch) SampleSimilarities(_ context.Context, v domain.Vault, recipe string, queries []plugin.SimilarityQuery) (plugin.SimilaritySample, error) {
 	s.vaults = append(s.vaults, v.ID)
 	s.recipes = append(s.recipes, recipe)
 	s.queries = append(s.queries, queries...)
-	return pluginport.PluginSimilaritySample{PassageCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}, s.err
+	return plugin.SimilaritySample{PassageCount: 3, SourceCount: 2, Rows: [][]float64{{0.25, 0.5}, nil}}, s.err
 }
 
 func (s *recordingSearch) GetBestSimilarity(context.Context, domain.Vault, string, []float32) (float64, error) {
 	return 0.75, s.err
 }
 
-func (s *recordingSearch) GetSearchFloor(context.Context, domain.Vault, string) (pluginport.PluginSearchFloor, error) {
-	return pluginport.PluginSearchFloor{
-		Floor: 0.5, Source: pluginport.PluginFloorStored, Stored: 0.5, Hint: 0.4, Default: 0.3,
+func (s *recordingSearch) GetSearchFloor(context.Context, domain.Vault, string) (plugin.SearchFloor, error) {
+	return plugin.SearchFloor{
+		Floor: 0.5, Source: plugin.FloorStored, Stored: 0.5, Hint: 0.4, Default: 0.3,
 	}, s.err
 }
 

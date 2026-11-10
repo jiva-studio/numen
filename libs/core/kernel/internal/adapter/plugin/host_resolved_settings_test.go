@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -40,7 +41,7 @@ func newResolvedHost(t *testing.T) *Host {
 	return host
 }
 
-func findInfoSetting(t *testing.T, host *Host, key string) pluginport.PluginSetting {
+func findInfoSetting(t *testing.T, host *Host, key string) plugindomain.Setting {
 	t.Helper()
 	for _, info := range host.GetPluginInfos() {
 		for _, one := range info.Settings {
@@ -50,7 +51,7 @@ func findInfoSetting(t *testing.T, host *Host, key string) pluginport.PluginSett
 		}
 	}
 	t.Fatalf("no setting %s", key)
-	return pluginport.PluginSetting{}
+	return plugindomain.Setting{}
 }
 
 func listValues(options pluginport.PluginSettingOptions) []string {

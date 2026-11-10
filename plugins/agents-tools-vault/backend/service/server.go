@@ -53,8 +53,6 @@ func mount(s *server.Server, client *host.Client, texts *host.TextClient, search
 	return nil
 }
 
-// vaultsOf gives the calls on the vault of the client with an identity; the empty identity is the vault
-// the host shows.
 func vaultsOf(client *host.Client) func(domain.VaultID) Vault {
 	return func(id domain.VaultID) Vault {
 		on := client.With(id)
@@ -62,7 +60,6 @@ func vaultsOf(client *host.Client) func(domain.VaultID) Vault {
 	}
 }
 
-// libraryOf gives the calls on the text versions and the search index of the vault with an identity.
 func libraryOf(texts *host.TextClient, search *host.SearchClient) func(domain.VaultID) Library {
 	return func(id domain.VaultID) Library {
 		on := texts.With(id)

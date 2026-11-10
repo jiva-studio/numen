@@ -12,10 +12,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q pluginport.PluginPassageQuery) ([]domain.Passage, error) {
+func (s *recordingSearch) SearchPassages(_ context.Context, v domain.Vault, q plugin.PassageQuery) ([]domain.Passage, error) {
 	s.vaults = append(s.vaults, v.ID)
 	s.passageQueries = append(s.passageQueries, q)
 	return []domain.Passage{
@@ -93,7 +93,7 @@ type farSearch struct {
 	recordingSearch
 }
 
-func (s *farSearch) SearchPassages(context.Context, domain.Vault, pluginport.PluginPassageQuery) ([]domain.Passage, error) {
+func (s *farSearch) SearchPassages(context.Context, domain.Vault, plugin.PassageQuery) ([]domain.Passage, error) {
 	return []domain.Passage{{Source: "library/Atlas.pdf", Text: "heron", Start: math.MaxInt32 - 5, Length: 10}}, nil
 }
 

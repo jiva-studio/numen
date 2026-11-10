@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -36,13 +37,13 @@ type folderStore struct {
 	pluginID string
 }
 
-func (s folderStore) List(context.Context) ([]pluginport.PluginStoreFile, error) {
+func (s folderStore) List(context.Context) ([]plugin.StoreFile, error) {
 	s.files.mu.Lock()
 	defer s.files.mu.Unlock()
-	var out []pluginport.PluginStoreFile
+	var out []plugin.StoreFile
 	for key, raw := range s.files.files {
 		if name, ok := strings.CutPrefix(key, s.pluginID+"/"); ok {
-			out = append(out, pluginport.PluginStoreFile{Name: name, Size: int64(len(raw))})
+			out = append(out, plugin.StoreFile{Name: name, Size: int64(len(raw))})
 		}
 	}
 	return out, nil

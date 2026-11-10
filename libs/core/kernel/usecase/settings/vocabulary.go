@@ -5,8 +5,6 @@ import (
 )
 
 type (
-	PluginSetting          = pluginport.PluginSetting
-	PluginInfo             = pluginport.PluginInfo
 	SecretDeclaration      = pluginport.SecretDeclaration
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSettingOption    = pluginport.PluginSettingOption

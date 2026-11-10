@@ -192,7 +192,6 @@ const sweep = async (from: Position, to: Position): Promise<void> => {
 const EDGE_OF_REACH = 6
 const CLEAR_OF_REACH = 10
 
-/** Presses the pointer `away` pixels from the line across `handle` and drags it `distance` along the axis. */
 async function dragFromAway(
   handle: HTMLElement,
   axis: 'x' | 'y',

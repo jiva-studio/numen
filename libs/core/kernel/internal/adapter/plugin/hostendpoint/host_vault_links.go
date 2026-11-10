@@ -12,9 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 var errTooManyLinks = fmt.Errorf("too many links: at most %d per call", batchLimit)
@@ -39,9 +39,9 @@ func (e *vaultEndpoint) AddLinks(
 	if vault == nil {
 		return connect.NewResponse(&v1.HostVaultServiceAddLinksResponse{Error: noVault}), nil
 	}
-	additions := make([]pluginport.PluginLinkAddition, len(req.Msg.GetLinks()))
+	additions := make([]plugin.LinkAddition, len(req.Msg.GetLinks()))
 	for i, one := range req.Msg.GetLinks() {
-		additions[i] = pluginport.PluginLinkAddition{From: one.GetFrom(), Baseline: readFileStat(one.GetBaseline()), Link: domain.Link{
+		additions[i] = plugin.LinkAddition{From: one.GetFrom(), Baseline: readFileStat(one.GetBaseline()), Link: domain.Link{
 			Target: domain.ParseAddress(one.GetTo()), Role: readRole(one.GetRole()),
 			Type: one.GetType(), Label: one.GetLabel(), Why: one.GetNote(),
 		}}

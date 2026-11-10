@@ -5,17 +5,29 @@
  * with no settings, and a failed write is reported and the window reverts to
  * the stored settings.
  */
-import { describe, expect, it, vi } from 'vitest'
-import { createLostConnection } from '@numen/core-client/testing'
-import type { Model } from '../lib/configuration'
-import { createSettingsStore, getSettingAt, type SettingsStoreDeps } from './store'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { MODEL_PRESENCE } from '@numen/core-client'
+import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
+import { createSettingsStore, getSettingAt } from './store'
 
 const words = {
   unturned: 'Setting not saved:',
   unreadSettings: 'The settings could not be read.',
 }
 
-const MODELS: readonly Model[] = [
+const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
+  written: text,
+  path: '/numen.json',
+  models: [],
+  plugins: [],
+  app: [],
+  secretSections: [],
+  secretMenus: [],
+  credentialsPath: '',
+  ...rest,
+})
+
+const MODELS = [
   {
     namedAt: ['agent', 'claude', 'model'],
     name: 'opus',
@@ -23,21 +35,31 @@ const MODELS: readonly Model[] = [
     group: '',
     isDefault: false,
     writes: [{ at: ['agent', 'claude', 'model'], value: '"opus"' }],
-    presence: 'nothing to fetch',
+    presence: MODEL_PRESENCE.NOTHING_TO_FETCH,
   },
 ]
 
+let restore: (() => void) | undefined
+
+afterEach(() => {
+  restore?.()
+  restore = undefined
+})
+
 const createStore = (text: string, failure: string | null = null) => {
-  const request: unknown[] = []
-  const core: SettingsStoreDeps = {
-    getSettings: () => Promise.resolve({ written: text, path: '/numen.json', models: MODELS }),
-    updateSettings: (response) => {
-      request.push(response)
-      return failure ? Promise.reject(createLostConnection(failure)) : Promise.resolve()
+  const requests: unknown[] = []
+  restore = installCoreAnswers({
+    settingsService: {
+      getSettings: () => answerWith(text, { models: MODELS }),
+      writeSettings: (request) => {
+        requests.push(request.settings.map((one) => ({ at: one.at, value: one.value })))
+        if (failure) throw createLostConnection(failure)
+        return {}
+      },
     },
-  }
-  const response = vi.fn()
-  return { requests: request, notify: response, kept: createSettingsStore(core, words, response) }
+  })
+  const notify = vi.fn()
+  return { requests, notify, kept: createSettingsStore(words, notify) }
 }
 
 describe('what remains at a setting', () => {
@@ -55,15 +77,14 @@ describe('what remains at a setting', () => {
   })
 
   it('is nothing where the vault cannot be requested', async () => {
-    const response = vi.fn()
-    const retainedState = createSettingsStore(
-      {
-        getSettings: () => Promise.reject(new Error('gone')),
-        updateSettings: () => Promise.resolve(),
+    restore = installCoreAnswers({
+      settingsService: {
+        getSettings: () => {
+          throw createLostConnection('gone')
+        },
       },
-      words,
-      response,
-    )
+    })
+    const retainedState = createSettingsStore(words, vi.fn())
 
     expect(retainedState.models.value).toStrictEqual([])
     expect(retainedState.plugins.value).toStrictEqual([])
@@ -89,39 +110,33 @@ describe('what remains at a setting', () => {
   })
 
   /** A store over a vault with one plugin whose `autoRun` setting defaults to true. */
-  const createPluginStore = (written: string) => {
-    const core: SettingsStoreDeps = {
-      getSettings: () =>
-        Promise.resolve({
-          written,
-          path: '/numen.json',
-          models: [],
-          plugins: [
-            {
-              id: 'my.plugin',
-              name: 'My Plugin',
-              version: '1.0.0',
-              description: 'A test plugin',
-              isActive: true,
-              capabilities: [],
-              secrets: [],
-              hasFrontend: false,
-              hasBackend: false,
-              settings: [
-                {
-                  key: 'autoRun',
-                  type: 'boolean',
-                  title: 'Auto run',
-                  description: 'Enable feature',
-                  default: true,
-                },
-              ],
-            },
-          ],
-        }),
-      updateSettings: () => Promise.resolve(),
-    }
-    return createSettingsStore(core, words, vi.fn())
+  const createPluginStore = (text: string) => {
+    restore = installCoreAnswers({
+      settingsService: {
+        getSettings: () =>
+          answerWith(text, {
+            plugins: [
+              {
+                id: 'my.plugin',
+                name: 'My Plugin',
+                version: '1.0.0',
+                description: 'A test plugin',
+                isActive: true,
+                settings: [
+                  {
+                    key: 'autoRun',
+                    type: 'boolean',
+                    title: 'Auto run',
+                    description: 'Enable feature',
+                    defaultJson: 'true',
+                  },
+                ],
+              },
+            ],
+          }),
+      },
+    })
+    return createSettingsStore(words, vi.fn())
   }
 
   it('falls back to declarative plugin default when unset in settings file', async () => {
@@ -188,18 +203,16 @@ describe('a setting written', () => {
 
   it('updates committed target tree preserving sibling keys and replacing non-object intermediates', async () => {
     let shouldFailRead = false
-    const core: SettingsStoreDeps = {
-      getSettings: () =>
-        shouldFailRead
-          ? Promise.reject(new Error('offline'))
-          : Promise.resolve({
-              written: '{"agent":{"keep":1},"nullBranch":null,"primBranch":42}',
-              path: '/numen.json',
-              models: [],
-            }),
-      updateSettings: () => Promise.resolve(),
-    }
-    const store = createSettingsStore(core, words, vi.fn())
+    restore = installCoreAnswers({
+      settingsService: {
+        getSettings: () => {
+          if (shouldFailRead) throw createLostConnection('offline')
+          return answerWith('{"agent":{"keep":1},"nullBranch":null,"primBranch":42}')
+        },
+        writeSettings: () => ({}),
+      },
+    })
+    const store = createSettingsStore(words, vi.fn())
     await store.start()
 
     shouldFailRead = true
@@ -228,36 +241,44 @@ const defer = <T>() => {
 describe('a setting written twice in quick succession', () => {
   const settingPath = ['app', 'naming', 'syncTitleAndFilename']
 
-  /** A file whose text a test sets, with every write and every read held until it is let through. */
-  const createBlockedVault = () => {
+  /**
+   * A vault whose file a test sets, with every write and every read held until it is let through.
+   * A write rejects when `failWrites` is set.
+   */
+  const createBlockedVault = (failWrites = false) => {
     let file = '{"app":{"naming":{"syncTitleAndFilename":true}}}'
     const writes: ReturnType<typeof defer<void>>[] = []
     const reads: ReturnType<typeof defer<string>>[] = []
-    const core: SettingsStoreDeps = {
-      getSettings: async () => {
-        const readItem = defer<string>()
-        reads.push(readItem)
-        return { written: await readItem.promise, path: '/numen.json', models: [] }
+    restore = installCoreAnswers({
+      settingsService: {
+        getSettings: async () => {
+          const readItem = defer<string>()
+          reads.push(readItem)
+          return answerWith(await readItem.promise)
+        },
+        writeSettings: async (request) => {
+          const isDone = defer<void>()
+          writes.push(isDone)
+          await isDone.promise
+          if (failWrites) throw createLostConnection('failed')
+          file = `{"app":{"naming":{"syncTitleAndFilename":${request.settings[0]?.value}}}}`
+          return {}
+        },
       },
-      updateSettings: async (edits) => {
-        const isDone = defer<void>()
-        writes.push(isDone)
-        await isDone.promise
-        file = `{"app":{"naming":{"syncTitleAndFilename":${edits[0]?.value}}}}`
-      },
-    }
-    return { core, writes, reads, getFile: () => file }
+    })
+    return { writes, reads, getFile: () => file }
   }
 
   it('remains at the last value through the answer of the first write and a read between', async () => {
     const vault = createBlockedVault()
-    const retainedState = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(words, vi.fn())
 
     const first = retainedState.writeSetting(settingPath, false)
     const second = retainedState.writeSetting(settingPath, true)
     expect(retainedState.getSetting(settingPath)).toBe(true)
     expect(retainedState.getCommittedSetting(settingPath)).toBeUndefined()
 
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve('{"app":{"naming":{"syncTitleAndFilename":false}}}')
@@ -265,6 +286,7 @@ describe('a setting written twice in quick succession', () => {
     expect(retainedState.getSetting(settingPath)).toBe(true)
     expect(retainedState.getCommittedSetting(settingPath)).toBe(false)
 
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(2))
     vault.writes[1]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
@@ -275,10 +297,11 @@ describe('a setting written twice in quick succession', () => {
 
   it('does not accept a read that answers after a newer one', async () => {
     const vault = createBlockedVault()
-    const retainedState = createSettingsStore(vault.core, words, vi.fn())
+    const retainedState = createSettingsStore(words, vi.fn())
 
     const older = retainedState.start()
     const newer = retainedState.start()
+    await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve('{"a":2}')
     await newer
     vault.reads[0]?.resolve('{"a":1}')
@@ -287,12 +310,13 @@ describe('a setting written twice in quick succession', () => {
   })
 
   it('goes back to the file where the write failed', async () => {
-    const vault = createBlockedVault()
-    vault.core.updateSettings = () => Promise.reject(new Error('failed'))
-    const retainedState = createSettingsStore(vault.core, words, vi.fn())
+    const vault = createBlockedVault(true)
+    const retainedState = createSettingsStore(words, vi.fn())
 
     const content = retainedState.writeSetting(settingPath, false)
     expect(retainedState.getSetting(settingPath)).toBe(false)
+    await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
+    vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve(vault.getFile())
     await content
@@ -321,22 +345,18 @@ describe('the settings of the shell', () => {
     type: 'range',
     title: 'Text size',
     description: '',
-    default: 1,
+    defaultJson: '1',
     min: 0.8,
     max: 1.75,
-  } as const
+  }
 
-  /** A store over a vault that declares the shell setting and holds `written`. */
-  const createShellStore = (written: string) =>
-    createSettingsStore(
-      {
-        getSettings: () =>
-          Promise.resolve({ written, path: '/numen.json', models: [], app: [TEXT_SCALE] }),
-        updateSettings: () => Promise.resolve(),
-      },
-      words,
-      vi.fn(),
-    )
+  /** A store over a vault that declares the shell setting and holds `text`. */
+  const createShellStore = (text: string) => {
+    restore = installCoreAnswers({
+      settingsService: { getSettings: () => answerWith(text, { app: [TEXT_SCALE] }) },
+    })
+    return createSettingsStore(words, vi.fn())
+  }
 
   it('are in force at the default the core declares where the file names none', async () => {
     const store = createShellStore('{}')

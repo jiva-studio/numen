@@ -5,8 +5,14 @@
  * received from the recorded log, and mounts the window with `mountWindow`.
  */
 import './vaultMock'
-import { readWindowTasks } from './mocks/window'
-import { afterEach } from 'vitest'
+import { afterEach, beforeEach } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
+import { fileAnswers } from './mocks/file'
+import { noteAnswers } from './mocks/note'
+import { vaultAnswers } from './mocks/vault'
+import { settingsAnswers } from './mocks/settings'
+import { readWindowTasks, windowAnswers } from './mocks/window'
+import { mergeAnswers } from './mergeAnswers'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { getPanes, WorkspaceLayout, type Workspace } from '@numen/workbench'
 import { requests, forgetRequests } from './requests'
@@ -36,8 +42,17 @@ const DEBOUNCE = 200
  */
 const windows: { unmount(): void }[] = []
 
+let restoreCore: () => void = () => undefined
+
+beforeEach(() => {
+  restoreCore = installCoreAnswers(
+    mergeAnswers(vaultAnswers, windowAnswers, settingsAnswers, noteAnswers, fileAnswers),
+  )
+})
+
 afterEach(() => {
   for (const window of windows.splice(0)) window.unmount()
+  restoreCore()
   forgetAnswers()
   forgetRequests()
 })

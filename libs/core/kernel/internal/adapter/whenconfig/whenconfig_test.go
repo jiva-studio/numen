@@ -4,17 +4,17 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func TestTheConfigOfAConditionIsTheResolvedValueOrTheDefaultOfEachSetting(t *testing.T) {
-	app := []pluginport.PluginSetting{
+	app := []plugin.Setting{
 		{Key: "editor.lineNumbers", DefaultJSON: "false", ValueJSON: "true"},
 		{Key: "theme", DefaultJSON: `"dusk"`},
 		{Key: "nothing"},
 	}
-	plugins := []pluginport.PluginInfo{{ID: "org.example.scans", Settings: []pluginport.PluginSetting{
+	plugins := []plugin.Info{{ID: "org.example.scans", Settings: []plugin.Setting{
 		{Key: "isAutomatic", DefaultJSON: "false", ValueJSON: "true"},
 		{Key: "pages", DefaultJSON: "3"},
 	}}}

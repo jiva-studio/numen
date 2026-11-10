@@ -4,10 +4,9 @@ import (
 	"context"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // IndexVault is a vault walked into the index.
@@ -147,18 +146,18 @@ func (a *API) ClearIndexFailure(vaultID domain.VaultID) {
 // EnsureIndexed brings a vault into the index when it is missing and reports its state, which
 // is the state a plugin counting the vault receives. A window that reads no vault reports that the
 // index does not carry the vaults it does not read.
-func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error) {
+func (a *API) EnsureIndexed(ctx context.Context, v domain.Vault) (plugin.IndexState, error) {
 	underway, reason := a.startIndexing(ctx, v)
 	switch {
 	case underway:
-		return pluginport.PluginIndexState{Status: pluginport.PluginIndexing}, nil
+		return plugin.IndexState{Status: plugin.Indexing}, nil
 	case reason != "":
-		return pluginport.PluginIndexState{Status: pluginport.PluginIndexFailed, Reason: reason}, nil
+		return plugin.IndexState{Status: plugin.IndexFailed, Reason: reason}, nil
 	}
 	if !a.IsVaultIndexed.Execute(ctx, v) {
-		return pluginport.PluginIndexState{
-			Status: pluginport.PluginIndexFailed, Reason: "the index does not contain this vault",
+		return plugin.IndexState{
+			Status: plugin.IndexFailed, Reason: "the index does not contain this vault",
 		}, nil
 	}
-	return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil
+	return plugin.IndexState{Status: plugin.Indexed}, nil
 }

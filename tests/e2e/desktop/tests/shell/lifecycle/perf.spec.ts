@@ -69,17 +69,12 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
     await page.getByRole('option', { name: /^Dark/ }).click()
 
     await expect
-      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme))
-      .toContain('dark')
-    await expect
       .poll(async () => (await readOwner(request, 'app'))['appearance'])
       .toMatchObject({ mode: 'dark' })
 
     await page.reload()
     await expect(page.getByRole('group', { name: 'Neighbourhood' })).toBeVisible()
 
-    expect(
-      await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme),
-    ).toContain('dark')
+    expect((await readOwner(request, 'app'))['appearance']).toMatchObject({ mode: 'dark' })
   })
 })

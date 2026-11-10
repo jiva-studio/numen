@@ -383,7 +383,6 @@ func TestLinkRemoveRejectsAnUnknownRoleBeforeCallingTheHost(t *testing.T) {
 	}
 }
 
-// vaults gives the calls on the vault with an identity, all through l.
 func (l linkHostVault) vaults() func(domain.VaultID) service.Vault {
 	return func(id domain.VaultID) service.Vault {
 		on := l.With(id)

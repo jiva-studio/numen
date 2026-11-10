@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 func waitIdleIn(work *PluginWork, ctx context.Context) <-chan error {
@@ -41,7 +41,7 @@ func TestWaitIdleWaitsForATaskAndTheLeaseOfAPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	work.ReportTask("org.example.ears", pluginport.PluginTask{ID: "talk", Title: "Transcribing"})
+	work.ReportTask("org.example.ears", plugin.Task{ID: "talk", Title: "Transcribing"})
 
 	finished := waitIdleIn(work, t.Context())
 	requireWaiting(t, finished, "a task and a lease")
@@ -53,14 +53,14 @@ func TestWaitIdleWaitsForATaskAndTheLeaseOfAPlugin(t *testing.T) {
 
 func TestWaitIdleDoesNotWaitForAFailedTask(t *testing.T) {
 	work := NewPluginWork(&Lock{}, NewTasks(), nil)
-	work.ReportTask("org.example.ears", pluginport.PluginTask{ID: "talk", Title: "Transcribing", Error: "no model"})
+	work.ReportTask("org.example.ears", plugin.Task{ID: "talk", Title: "Transcribing", Error: "no model"})
 
 	requireFinished(t, waitIdleIn(work, t.Context()), "a failed task")
 }
 
 func TestWaitIdleEndsWithItsContext(t *testing.T) {
 	work := NewPluginWork(&Lock{}, NewTasks(), nil)
-	work.ReportTask("org.example.ears", pluginport.PluginTask{ID: "talk", Title: "Transcribing"})
+	work.ReportTask("org.example.ears", plugin.Task{ID: "talk", Title: "Transcribing"})
 	ctx, cancel := context.WithCancel(t.Context())
 
 	finished := waitIdleIn(work, ctx)

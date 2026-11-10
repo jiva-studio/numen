@@ -9,7 +9,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getCalledInterfaceMethod returns the interface method a call invokes, or nil for a call of anything else.
 func getCalledInterfaceMethod(call *ast.CallExpr, info *types.Info) *types.Func {
 	selector, ok := ast.Unparen(call.Fun).(*ast.SelectorExpr)
 	if !ok {
@@ -30,8 +29,6 @@ func getCalledInterfaceMethod(call *ast.CallExpr, info *types.Info) *types.Func 
 	return method
 }
 
-// getPortInterfaceCalls returns each call of an interface method inside a function or method of the
-// non-generated files of the packages under root/port, and the number of functions read.
 func getPortInterfaceCalls(pkgs []*packages.Package, root string) ([]finding, int) {
 	var found []finding
 	read := 0

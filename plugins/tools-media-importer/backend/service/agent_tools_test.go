@@ -98,7 +98,6 @@ func (v textVault) Create(ctx context.Context, path string, content []byte) erro
 	return nil
 }
 
-// vaults gives the calls on the vault with an identity; the empty identity is v itself.
 func (v textVault) vaults() func(domain.VaultID) link.Vault {
 	return func(id domain.VaultID) link.Vault {
 		if id == "" {

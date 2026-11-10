@@ -32,7 +32,7 @@ type PluginActivator interface {
 // PluginDiscoverer scans for available plugins and returns their metadata in the order of their ids.
 type PluginDiscoverer interface {
 	Discover() error
-	GetPluginInfos() []PluginInfo
+	GetPluginInfos() []plugin.Info
 	// IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 	IsPluginEnabled(pluginID string) bool
 	// IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended.

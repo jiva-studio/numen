@@ -8,8 +8,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getReexports returns each type alias of the packages whose target is declared in another of the
-// packages, and the number of type names read.
 func getReexports(pkgs []*packages.Package) ([]finding, int) {
 	members := map[string]bool{}
 	for _, pkg := range pkgs {

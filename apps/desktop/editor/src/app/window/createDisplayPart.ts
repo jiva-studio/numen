@@ -4,7 +4,6 @@
  */
 import { formatError } from '@/shared/api/errors'
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
-import { pluginCatalog } from '@/shared/api/clients'
 import { core } from '../vault'
 import type { runSupport } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
@@ -91,7 +90,6 @@ export function initWindowServices(
   settingsHolder: { current?: ReturnType<typeof useSettings> },
 ) {
   const editing = createNoteEditors({
-    core,
     log: base.log,
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
@@ -105,7 +103,6 @@ export function initWindowServices(
   })
 
   const window = useWindowDisplay(
-    core,
     createDisplayOptions({
       editing,
       getCommands: () => getCommands(ctx),
@@ -119,19 +116,16 @@ export function initWindowServices(
   )
 
   const settings = useSettings({
-    core,
     words,
     log: base.log,
     windowTabs: base.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
-    catalog: pluginCatalog,
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })
   settingsHolder.current = settings
 
   ctx.vaults = useVaults({
-    core,
     words,
     log: base.log,
     chunks: window.chunks,

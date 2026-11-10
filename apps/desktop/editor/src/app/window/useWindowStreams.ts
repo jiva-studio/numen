@@ -3,14 +3,13 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
-import type { VaultPort } from '@/app/ports/vault'
 import { watchEdits, type NoteEdit } from '@/entities/note'
-import type { Task } from '@/shared/notices/task'
+import { watchFocus, watchTasks, type Task } from '@/entities/window'
+import { watchVaultChanges, type VaultChange } from '@/entities/vault'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 
 export interface WindowStreamsDeps {
-  readonly core: Pick<VaultPort, 'watchVaultChanges' | 'watchFocus' | 'watchTasks'>
   readonly listening: AbortController
   readonly isOpen: () => boolean
   readonly setLost: (response: string) => void
@@ -32,15 +31,8 @@ export interface WindowStreamsDeps {
   readonly activateTab: (id: string) => void
 }
 
-interface VaultChangeData {
-  paths: readonly string[]
-  shouldReload?: boolean
-  renamed: readonly PathRename[]
-  versionPaths?: readonly string[]
-}
-
-async function handleVaultChange(change: VaultChangeData, deps: WindowStreamsDeps): Promise<void> {
-  const versionPaths = change.versionPaths ?? []
+async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): Promise<void> {
+  const { versionPaths } = change
   const isEmpty = change.paths.length === 0 && change.renamed.length === 0
   if (isEmpty && !change.shouldReload && versionPaths.length === 0) return
   if (change.shouldReload && (await deps.isVaultSwapped())) {
@@ -83,7 +75,7 @@ async function handleFocusChange(
 }
 
 export function createWindowStreams(deps: WindowStreamsDeps) {
-  const { core, listening, isOpen, setLost, wait, tasks, reportChange } = deps
+  const { listening, isOpen, setLost, wait, tasks, reportChange } = deps
 
   /** Every stream is read the same way, and taken up again the same way. */
   const follows = createFollower({
@@ -94,7 +86,7 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
 
   const follow = () =>
     follows(
-      () => core.watchVaultChanges(listening.signal),
+      () => watchVaultChanges(listening.signal),
       (change) => handleVaultChange(change, deps),
     )
 
@@ -111,13 +103,13 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
 
   const watch = () =>
     follows(
-      () => core.watchFocus(listening.signal),
+      () => watchFocus(listening.signal),
       (request) => handleFocusChange(request, deps),
     )
 
   const followTasks = () =>
     follows(
-      () => core.watchTasks(listening.signal),
+      () => watchTasks(listening.signal),
       async (list) => {
         const ran = tasks.value.length > 0
         tasks.value = list

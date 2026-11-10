@@ -126,7 +126,7 @@ func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
 }
 
 // NewWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.
-func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
+func NewWirePluginInfos(target []plugin.Info) []*v1.PluginInfo {
 	infos := make([]*v1.PluginInfo, 0, len(target))
 	for _, one := range target {
 		infos = append(infos, &v1.PluginInfo{
@@ -149,7 +149,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 	return infos
 }
 
-func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
+func newWirePluginSettings(target []plugin.Setting) []*v1.PluginSetting {
 	settings := make([]*v1.PluginSetting, 0, len(target))
 	for _, s := range target {
 		settings = append(settings, &v1.PluginSetting{
