@@ -54,6 +54,40 @@ func GetFallback() []Model {
 	}
 }
 
+type controlLine struct {
+	Type     string        `json:"type"`
+	Response controlAnswer `json:"response"`
+}
+
+type controlAnswer struct {
+	Subtype   string `json:"subtype"`
+	RequestID string `json:"-"`
+	Error     string `json:"error"`
+	Response  struct {
+		Models []Model `json:"models"`
+	} `json:"response"`
+}
+
+// UnmarshalJSON reads the request id, which the program writes under a key that is not camelCase.
+func (a *controlAnswer) UnmarshalJSON(data []byte) error {
+	type plain controlAnswer
+	var read plain
+	if err := json.Unmarshal(data, &read); err != nil {
+		return err
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	if id, ok := raw["request_id"]; ok {
+		if err := json.Unmarshal(id, &read.RequestID); err != nil {
+			return err
+		}
+	}
+	*a = controlAnswer(read)
+	return nil
+}
+
 // Parse reads the models from the answer to the request with the given id in the output lines of
 // the program.
 func Parse(lines io.Reader, requestID string) ([]Model, error) {
@@ -61,17 +95,7 @@ func Parse(lines io.Reader, requestID string) ([]Model, error) {
 	// gomutants:disable-next-line INTEGER_INCREMENT,INTEGER_DECREMENT,ARITHMETIC_BASE reason="Scanner initial buffer allocation and maximum token size are capacity bounds."
 	scanner.Buffer(make([]byte, 0, 64*1024), 16*1024*1024)
 	for scanner.Scan() {
-		var line struct {
-			Type     string `json:"type"`
-			Response struct {
-				Subtype   string `json:"subtype"`
-				RequestID string `json:"request_id"`
-				Error     string `json:"error"`
-				Response  struct {
-					Models []Model `json:"models"`
-				} `json:"response"`
-			} `json:"response"`
-		}
+		var line controlLine
 		if json.Unmarshal(scanner.Bytes(), &line) != nil ||
 			line.Type != "control_response" || line.Response.RequestID != requestID {
 			continue

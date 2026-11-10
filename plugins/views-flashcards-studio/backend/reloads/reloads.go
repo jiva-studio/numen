@@ -50,13 +50,17 @@ func Watch(ctx context.Context, moves Moves, idle <-chan time.Time, invalidate f
 			if !open {
 				return nil
 			}
-			if move.Err != nil {
-				return &UnavailableError{Err: move.Err}
-			}
-			invalidate()
-			if err := signal(true); err != nil {
+			if err := signalMove(move, invalidate, signal); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+func signalMove(move host.Move, invalidate func(), signal func(reload bool) error) error {
+	if move.Err != nil {
+		return &UnavailableError{Err: move.Err}
+	}
+	invalidate()
+	return signal(true)
 }

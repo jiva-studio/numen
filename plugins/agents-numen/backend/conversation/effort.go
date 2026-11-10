@@ -9,11 +9,11 @@ type Effort struct {
 	Level string
 }
 
-// NewEffort returns the request for the level on the model, or none where the model takes no
-// reasoning field or does not name the level.
-func NewEffort(m Model, level string) Effort {
-	if m.ReasoningField == "" || reasoning.Pick(m.ReasoningLevels, level) == "" {
+// NewEffort returns the request for the depth on the model, or none where the model takes no
+// reasoning field or does not name the depth.
+func NewEffort(m Model, depth string) Effort {
+	if m.ReasoningField == "" || reasoning.Pick(m.ReasoningLevels, depth) == "" {
 		return Effort{Field: "", Level: ""}
 	}
-	return Effort{Field: m.ReasoningField, Level: level}
+	return Effort{Field: m.ReasoningField, Level: depth}
 }
