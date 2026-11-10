@@ -110,7 +110,9 @@ describe('prose pressed anywhere else', () => {
 })
 
 describe('prose handed the same addresses again', () => {
-  beforeEach(() => parseSpy.mockClear())
+  beforeEach(() => {
+    parseSpy.mockClear()
+  })
 
   it('is not drawn again while the unresolved addresses have the same members', async () => {
     const wrapper = mount(Prose, {

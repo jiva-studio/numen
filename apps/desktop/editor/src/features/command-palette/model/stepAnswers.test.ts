@@ -138,7 +138,7 @@ describe('the answers of a step', () => {
       commands.palette.chooseItem(confirm?.id ?? '', confirm?.actions?.[0]?.id ?? ''),
     ).toMatchObject({
       id: 'app:vault.remove',
-      vault: { id: 'heat', name: 'Heat' },
+      target: { vault: { id: 'heat', name: 'Heat' } },
     })
   })
 })

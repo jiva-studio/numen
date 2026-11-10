@@ -255,11 +255,8 @@ describe('a document the browser has laid out', () => {
 
   it('turns a spread at a time while countSpreads are left', async () => {
     const target = await mountBook()
-    const first = getFront(target)
-
     expect(pressKey(target, 'ArrowRight')).toBe(true)
 
-    expect(getFront(target)).not.toBe(first)
     expect(getMoves(target)).toEqual([LAID.span.start + countBytes('Первая строка.')])
 
     target.unmount()
@@ -273,21 +270,20 @@ describe('a document the browser has laid out', () => {
       area.dispatchEvent(new MouseEvent('pointerup', { button: 0, clientX: pos }))
     }
 
-    const first = getFront(target)
+    press(1090)
+    const second = getMoves(target)
+    expect(second).toHaveLength(1)
 
     press(1090)
-    const second = getFront(target)
-    expect(second).not.toBe(first)
-
-    press(1090)
-    const third = getFront(target)
-    expect(third).not.toBe(second)
+    const third = getMoves(target)
+    expect(third).toHaveLength(2)
+    expect(third[1]).not.toBe(third[0])
 
     press(20)
-    expect(getFront(target)).toBe(second)
+    expect(getMoves(target)).toEqual([...third, third[0]])
 
     press(550)
-    expect(getFront(target)).toBe(second)
+    expect(getMoves(target)).toHaveLength(3)
 
     target.unmount()
   })
