@@ -12,7 +12,6 @@ import { adoptPluginStyle, getPluginStyle, type StyleRoot } from './styles'
 
 interface DeclaredView {
   readonly pluginId: string
-  /** The vault permissions of the plugin that declared it. */
   readonly vaultPermissions: readonly string[]
   readonly registration: ViewRegistration
 }
@@ -25,9 +24,12 @@ interface ViewInstance {
   readonly exposed: { focus?: () => void }
 }
 
-/** What a mounting plugin holds, checked against the plugin that declared a view of its own kind. */
+/**
+ * What a mounting plugin holds. For a view kind a plugin registers itself (`inherits`), the mount
+ * also needs every vault permission the registering plugin holds, because the view reads through
+ * the services of that plugin.
+ */
 export interface MountAccess {
-  /** Whether the view is of a kind a plugin registers itself, so the registrant's vault permissions apply. */
   readonly inherits: boolean
   readonly permissions: readonly string[]
   readonly requirePerm: (permission: string, operation: string) => void

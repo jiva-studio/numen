@@ -174,13 +174,6 @@ const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
     getPlatform,
   })
 
-/**
- * The host of the window, whose plugins are given the agent where the window has one, and the
- * vaults and the window the services hold when the plugin starts.
- * The platform plugins read is the one `getPlatform` reports: Windows where none is given, as the
- * frame reports without the Wails runtime.
- */
-/** Mounts a declared view for a caller, after checking the permissions of the view kind. */
 function mountDeclaredView(
   registry: ViewRegistry,
   caller: { pluginId: string; manifest?: Manifest | undefined },
@@ -189,6 +182,12 @@ function mountDeclaredView(
     registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
 }
 
+/**
+ * The host of the window, whose plugins are given the agent where the window has one, and the
+ * vaults and the window the services hold when the plugin starts.
+ * The platform plugins read is the one `getPlatform` reports: Windows where none is given, as the
+ * frame reports without the Wails runtime.
+ */
 export function createShellHost(
   agent?: AgentHost,
   services: ShellServices = {},

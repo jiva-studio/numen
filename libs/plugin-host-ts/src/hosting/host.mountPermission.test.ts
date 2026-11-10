@@ -27,8 +27,6 @@ const createHost = () => {
 
 type Plugin = ReturnType<ReturnType<typeof createHost>['createPlugin']>
 
-// A view of the registering plugin that reads context.path through the notes service of
-// that plugin, like the note editor view does.
 const registerNoteViewer = (owner: Plugin, capability = VIEW) =>
   owner.registerView({
     capability,
