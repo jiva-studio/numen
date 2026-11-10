@@ -173,6 +173,13 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
 }
 
+func getMediaType(types *file.GetMediaType, path string) string {
+	if types == nil {
+		return ""
+	}
+	return types.Execute(path)
+}
+
 func (h *FileServer) findVault(id string) (domain.Vault, bool) {
 	if showing := h.state.GetCurrentVault(); string(showing.ID) == id {
 		return showing, true

@@ -1,4 +1,4 @@
-package editor
+package note
 
 import (
 	"context"
@@ -20,9 +20,9 @@ type connectionFailure struct {
 	isCycle   bool
 }
 
-func (h *NoteHandler) failureOf(err error) (connectionFailure, error) {
+func (h *Connections) failureOf(err error) (connectionFailure, error) {
 	switch {
-	case err == nil, h.state.isIndexOutdated(err):
+	case err == nil, h.writes.IsIndexOutdated(err):
 		return connectionFailure{}, nil
 	case errors.Is(err, domain.ErrHierarchyCycle):
 		return connectionFailure{isCycle: true}, nil
@@ -37,10 +37,10 @@ func (h *NoteHandler) failureOf(err error) (connectionFailure, error) {
 }
 
 // GetConnection answers the relationship between two notes as a whole.
-func (h *NoteHandler) GetConnection(
+func (h *Connections) GetConnection(
 	ctx context.Context, r *connect.Request[v1.GetConnectionRequest],
 ) (*connect.Response[v1.GetConnectionResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +53,10 @@ func (h *NoteHandler) GetConnection(
 
 // SaveConnection replaces the records between two notes in both notes or in
 // neither.
-func (h *NoteHandler) SaveConnection(
+func (h *Connections) SaveConnection(
 	ctx context.Context, r *connect.Request[v1.SaveConnectionRequest],
 ) (*connect.Response[v1.SaveConnectionResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -64,10 +64,10 @@ func (h *NoteHandler) SaveConnection(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	failure, err := h.failureOf(h.saveConnection.Execute(ctx, showing, saving))
 	if err != nil {
@@ -79,17 +79,17 @@ func (h *NoteHandler) SaveConnection(
 }
 
 // RemoveSide removes the record one note writes about another.
-func (h *NoteHandler) RemoveSide(
+func (h *Connections) RemoveSide(
 	ctx context.Context, r *connect.Request[v1.RemoveSideRequest],
 ) (*connect.Response[v1.RemoveSideResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	failure, err := h.failureOf(h.removeSide.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTo(), r.Msg.GetType()))
 	if err != nil {
@@ -102,17 +102,17 @@ func (h *NoteHandler) RemoveSide(
 }
 
 // RemoveConnection removes the records two notes write about each other.
-func (h *NoteHandler) RemoveConnection(
+func (h *Connections) RemoveConnection(
 	ctx context.Context, r *connect.Request[v1.RemoveConnectionRequest],
 ) (*connect.Response[v1.RemoveConnectionResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	failure, err := h.failureOf(
 		h.removeConnection.Execute(ctx, showing, r.Msg.GetFirst(), r.Msg.GetSecond(), r.Msg.GetType()))
@@ -126,10 +126,10 @@ func (h *NoteHandler) RemoveConnection(
 }
 
 // JoinNotes makes one note write a record about another.
-func (h *NoteHandler) JoinNotes(
+func (h *Connections) JoinNotes(
 	ctx context.Context, r *connect.Request[v1.JoinNotesRequest],
 ) (*connect.Response[v1.JoinNotesResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -137,10 +137,10 @@ func (h *NoteHandler) JoinNotes(
 	if err != nil || side == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.Join(errNoSide, err))
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	failure, err := h.failureOf(h.join.Execute(ctx, showing, r.Msg.GetFrom(), r.Msg.GetTo(), *side))
 	if err != nil {
@@ -154,10 +154,10 @@ func (h *NoteHandler) JoinNotes(
 var errNoSide = errors.New("a join needs the record to write")
 
 // CreateRelatedNote makes a note joined to an existing one.
-func (h *NoteHandler) CreateRelatedNote(
+func (h *Links) CreateRelatedNote(
 	ctx context.Context, r *connect.Request[v1.CreateRelatedNoteRequest],
 ) (*connect.Response[v1.CreateRelatedNoteResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -169,15 +169,15 @@ func (h *NoteHandler) CreateRelatedNote(
 	if !ok {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no link has this marker"))
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	made, err := h.createInRelation.Execute(ctx, showing, domain.RelatedNote{
 		From: r.Msg.GetFrom(), Role: role, Title: r.Msg.GetTitle(), Type: r.Msg.GetType(), Marker: marker,
 	})
-	indexOutdated := h.state.isIndexOutdated(err)
+	indexOutdated := h.writes.IsIndexOutdated(err)
 	switch {
 	case made.Path != "":
 		return connect.NewResponse(&v1.CreateRelatedNoteResponse{Path: made.Path, IsIndexOutdated: indexOutdated}), nil
@@ -194,10 +194,10 @@ func (h *NoteHandler) CreateRelatedNote(
 }
 
 // ListBacklinks answers the links written in other notes that point at a note.
-func (h *NoteHandler) ListBacklinks(
+func (h *Links) ListBacklinks(
 	ctx context.Context, r *connect.Request[v1.ListBacklinksRequest],
 ) (*connect.Response[v1.ListBacklinksResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
