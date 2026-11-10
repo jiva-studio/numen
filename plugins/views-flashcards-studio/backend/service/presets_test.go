@@ -20,8 +20,8 @@ import (
 // scheduling is a vault with the notes given in it, and a client asking about
 // its presets the way the window does.
 type scheduling struct {
-	reads  service.PresetReadAPI
-	writes service.PresetWriteAPI
+	reads  api.PresetReadAPI
+	writes api.PresetWriteAPI
 	root   string
 }
 
@@ -32,8 +32,8 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	backend := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	return &scheduling{
-		reads:  backend.PresetReads(),
-		writes: backend.PresetWrites(),
+		reads:  backend.Handlers().PresetReads,
+		writes: backend.Handlers().PresetWrites,
 		root:   env.Vault.Path,
 	}
 }
