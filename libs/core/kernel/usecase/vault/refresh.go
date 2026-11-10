@@ -353,3 +353,21 @@ func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v 
 	}
 	return true
 }
+
+// UpdateIndex brings the notes a write touched up to date in the index, through
+// the Refresh of the vault the caller has running.
+type UpdateIndex struct {
+	refresh func() Refresh
+}
+
+// NewUpdateIndex creates an UpdateIndex that asks getRefresh for the Refresh to
+// use at each call.
+func NewUpdateIndex(getRefresh func() Refresh) UpdateIndex {
+	return UpdateIndex{refresh: getRefresh}
+}
+
+// Execute refreshes the notes at the paths of the vault.
+func (u UpdateIndex) Execute(ctx context.Context, v domain.Vault, paths []string) error {
+	_, err := u.refresh().Execute(ctx, v, paths)
+	return err
+}

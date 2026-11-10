@@ -48,8 +48,6 @@ func (l *listing) ListTriggers() []pluginmodel.TriggerEntry {
 
 func (l *listing) ListHandlers() []pluginmodel.CommandEntry { return nil }
 
-// runPasses runs the passes of a vault over the real trigger use case until the test ends. It
-// returns the passes asked for, how many have run, and the line the plugins signal a change on.
 func runPasses(t *testing.T) (passes *triggerpasses.Passes, passesRun func() int32, changes chan<- struct{}) {
 	t.Helper()
 	plugins := &listing{}

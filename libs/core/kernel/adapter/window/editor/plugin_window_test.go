@@ -29,9 +29,6 @@ import (
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
-// newPluginWindow is the window the plugins are given, put together over the state as the
-// composition root puts it together, because that root imports this package and cannot be imported
-// by its tests.
 func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages) pluginport.PluginWindow {
 	return windowfocus.Window{
 		GetVault: state.GetCurrentVault,

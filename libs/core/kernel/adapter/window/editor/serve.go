@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	pathpkg "path"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
@@ -204,20 +201,6 @@ func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurren
 // Activity from callers other than the user is rendered through Notes.Drawing.
 func (o *Installation) Notes() note.Scenarios { return *o.notes }
 
-// DraftingLocation locates where target text occurs in a note as UTF-16 count offsets.
-func (o *Installation) DraftingLocation(ctx context.Context, path, text string) (int, int, bool) {
-	contents, err := o.notes.Read.Execute(ctx, o.GetCurrentVault(), path)
-	if err != nil || contents.Outcome != note.Ok {
-		return 0, 0, false
-	}
-	pos, _ := markdown.FindRanges(contents.Body, text)
-	if len(pos) != 1 {
-		return 0, 0, false
-	}
-	return markdown.CountUTF16(contents.Body, pos[0].Start),
-		markdown.CountUTF16(contents.Body, pos[0].End), true
-}
-
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
 // that what changed is findable before the change is reported done.
 func (o *Installation) Refresh() vaults.Refresh {
@@ -225,12 +208,6 @@ func (o *Installation) Refresh() vaults.Refresh {
 		return on.refresh
 	}
 	return o.session.GetRefresh()
-}
-
-// UpdateIndex brings the notes at the paths up to date in the index.
-func (o *Installation) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
-	_, err := o.Refresh().Execute(ctx, v, paths)
-	return err
 }
 
 // What each pass behind the window is called in the list of what is being done.
@@ -453,10 +430,6 @@ const FlushTimeout = 3 * time.Second
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "import files"
 
-// namedInAnError is how many of the files that stayed outside are named before
-// the rest are counted.
-const namedInAnError = 3
-
 // Imports copies files dropped onto the window into a folder of the vault; the
 // root is the empty path.
 // It runs where the drop reached the application, off the page's thread, and
@@ -480,7 +453,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	state.reportTask(pos)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
-	if direct := getDirectChildren(into, imported.Imported); len(direct) > 0 {
+	if direct := imported.DirectChildren(into); len(direct) > 0 {
 		state.ChangeEvents.publish(window.Change{Paths: direct})
 	}
 	if err != nil {
@@ -488,34 +461,10 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 		state.reportTask(pos)
 		return
 	}
-	if failureText := describeImportFailures(imported.Errors); failureText != "" {
+	if failureText := imported.DescribeFailures(); failureText != "" {
 		pos.Error = failureText
 		state.reportTask(pos)
 		return
 	}
 	state.finishTask(pos.ID)
-}
-
-func getDirectChildren(into string, landed []string) []string {
-	children := make([]string, 0, len(landed))
-	for _, path := range landed {
-		if pathpkg.Dir(path) == into || (into == "" && !strings.Contains(path, "/")) {
-			children = append(children, path)
-		}
-	}
-	return children
-}
-
-func describeImportFailures(errs []vaults.ImportFailure) string {
-	if len(errs) == 0 {
-		return ""
-	}
-	messages := make([]string, 0, namedInAnError)
-	for _, one := range errs[:min(len(errs), namedInAnError)] {
-		messages = append(messages, fmt.Sprintf("%s: %v", one.Name, one.Why))
-	}
-	if rest := len(errs) - len(messages); rest > 0 {
-		messages = append(messages, fmt.Sprintf("and %d more", rest))
-	}
-	return strings.Join(messages, "; ")
 }
