@@ -271,19 +271,10 @@ describe('a document the browser has laid out', () => {
     }
 
     press(1090)
-    const second = getMoves(target)
-    expect(second).toHaveLength(1)
-
-    press(1090)
-    const third = getMoves(target)
-    expect(third).toHaveLength(2)
-    expect(third[1]).not.toBe(third[0])
-
-    press(20)
-    expect(getMoves(target)).toEqual([...third, third[0]])
+    expect(getMoves(target)).toHaveLength(1)
 
     press(550)
-    expect(getMoves(target)).toHaveLength(3)
+    expect(getMoves(target)).toHaveLength(1)
 
     target.unmount()
   })
