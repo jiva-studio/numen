@@ -2,9 +2,75 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
+import boundaries from 'eslint-plugin-boundaries'
 import numen from './numen-rules.mjs'
 
 const contract = ['plugin-sdk', 'ui']
+
+// The shape of a frontend: `index.ts`, `words.ts` and `types.ts` at its root; slices, each a folder
+// `<slice>/` of `index.ts` and the segments `ui`, `model`, `api`, `lib`; and, for a plugin with one
+// thing to show, those segments at the root, with a `lib` that the slices share. A slice is reached
+// only through its `index.ts` and reaches no sibling slice.
+const sameSlice = { slice: '{{ from.element.captured.slice }}' }
+const shared = { element: { type: ['root-shared', 'lib'] } }
+const ownParts = (types) => ({ element: { type: types, captured: sameSlice } })
+const slicePolicies = [
+  { allow: { to: { module: { origin: ['external', 'core'] } } } },
+  {
+    from: { element: { type: 'root-index' } },
+    allow: {
+      to: {
+        element: {
+          type: ['root-shared', 'shell-ui', 'shell-model', 'shell-api', 'lib', 'slice-index'],
+        },
+      },
+    },
+  },
+  {
+    from: { element: { type: 'shell-ui' } },
+    allow: {
+      to: {
+        element: {
+          type: ['root-shared', 'shell-ui', 'shell-model', 'shell-api', 'lib', 'slice-index'],
+        },
+      },
+    },
+  },
+  {
+    from: { element: { type: 'shell-model' } },
+    allow: {
+      to: { element: { type: ['root-shared', 'shell-model', 'shell-api', 'lib', 'slice-index'] } },
+    },
+  },
+  {
+    from: { element: { type: 'shell-api' } },
+    allow: { to: { element: { type: ['root-shared', 'shell-api', 'lib'] } } },
+  },
+  {
+    from: { element: { type: 'lib' } },
+    allow: { to: { element: { type: ['root-shared', 'lib'] } } },
+  },
+  {
+    from: { element: { type: 'slice-index' } },
+    allow: { to: [shared, ownParts(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice-ui' } },
+    allow: { to: [shared, ownParts(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice-model' } },
+    allow: { to: [shared, ownParts(['slice-model', 'slice-api', 'slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice-api' } },
+    allow: { to: [shared, ownParts(['slice-api', 'slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice-lib' } },
+    allow: { to: [shared, ownParts(['slice-lib'])] },
+  },
+]
 
 export default [
   {
@@ -107,6 +173,31 @@ export default [
           message: 'a reader who asks for less motion is answered in CSS',
         },
       ],
+    },
+  },
+  {
+    files: ['frontend/**/*.{ts,vue}'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', 'frontend/{fixtures,testdata,testing}/**'],
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': [
+        { type: 'root-index', pattern: 'frontend/index.ts', mode: 'file' },
+        { type: 'root-shared', pattern: 'frontend/{words,types}.ts', mode: 'file' },
+        { type: 'shell-ui', pattern: 'frontend/ui' },
+        { type: 'shell-model', pattern: 'frontend/model' },
+        { type: 'shell-api', pattern: 'frontend/api' },
+        { type: 'lib', pattern: 'frontend/lib' },
+        { type: 'slice-ui', pattern: 'frontend/*/ui', capture: ['slice'] },
+        { type: 'slice-model', pattern: 'frontend/*/model', capture: ['slice'] },
+        { type: 'slice-api', pattern: 'frontend/*/api', capture: ['slice'] },
+        { type: 'slice-lib', pattern: 'frontend/*/lib', capture: ['slice'] },
+        { type: 'slice-index', pattern: 'frontend/*/index.ts', mode: 'file', capture: ['slice'] },
+      ],
+    },
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies: slicePolicies }],
     },
   },
   {
