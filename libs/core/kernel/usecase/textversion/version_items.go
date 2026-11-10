@@ -76,7 +76,7 @@ func listVersionItems(condition pluginport.PluginCondition, target plugin.Target
 
 // ListVersionItems lists the text versions of the file at the path over which the when condition of
 // the command holds; a command whose condition names no version.* variable has none.
-func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]VersionItem, error) {
+func (u *VersionItems) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]VersionItem, error) {
 	condition, err := u.conditions.Parse(entry.Command.When)
 	if err != nil || !condition.HasItems() {
 		return nil, err
@@ -129,7 +129,7 @@ const DeleteCommand = "app:version.delete"
 // as its argument version-id. A version the command does not offer over the file now, or a command
 // without items, is ErrInvalidVersion.
 func (u *VersionItems) RunVersionItem(
-	ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
+	ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry, version domain.TextVersionID,
 ) (plugin.CommandResult, error) {
 	items, err := u.ListVersionItems(ctx, v, path, entry)
 	if err != nil {

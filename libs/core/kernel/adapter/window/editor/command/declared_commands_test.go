@@ -16,14 +16,14 @@ import (
 // declaredByTwoPlugins declares a command of a plugin with only a frontend and one of a plugin with a backend.
 type declaredByTwoPlugins struct{}
 
-func (declaredByTwoPlugins) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+func (declaredByTwoPlugins) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (declaredByTwoPlugins) ListSlots() []plugincommand.SlotEntry { return nil }
+func (declaredByTwoPlugins) ListSlots() []plugin.SlotEntry { return nil }
 
-func (declaredByTwoPlugins) ListHandlers() []plugincommand.Entry { return nil }
+func (declaredByTwoPlugins) ListHandlers() []plugin.CommandEntry { return nil }
 
-func (declaredByTwoPlugins) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (declaredByTwoPlugins) ListCommands() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "md.numen.tree", Command: plugincommand.Command{
 			ID: "tree.revealNote", Title: "Show note in file tree", Icon: "folder-open", When: "target.isNote",
 		}},

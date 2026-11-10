@@ -4,13 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 func TestTheIndexOfAPluginCommandClosesOnceThePluginWorkFinished(t *testing.T) {
 	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil)
-	work.ReportTask("org.example.ears", pluginport.PluginTask{ID: "talk", Title: "Transcribing"})
+	work.ReportTask("org.example.ears", plugin.Task{ID: "talk", Title: "Transcribing"})
 	closed := make(chan struct{})
 	closeIndex := closeAfterWork(t.Context(), work, func() error {
 		close(closed)

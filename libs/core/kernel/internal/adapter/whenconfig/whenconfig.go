@@ -6,22 +6,22 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // Settings reads the resolved settings of the application and of the plugins.
 type Settings struct {
-	App     func() []pluginport.PluginSetting
-	Plugins func() []pluginport.PluginInfo
+	App     func() []plugindomain.Setting
+	Plugins func() []plugindomain.Info
 }
 
 // GetWhenConfig returns the config of the settings App and Plugins give; see New.
 func (s Settings) GetWhenConfig() map[string]any {
-	var app []pluginport.PluginSetting
+	var app []plugindomain.Setting
 	if s.App != nil {
 		app = s.App()
 	}
-	var plugins []pluginport.PluginInfo
+	var plugins []plugindomain.Info
 	if s.Plugins != nil {
 		plugins = s.Plugins()
 	}
@@ -35,7 +35,7 @@ const configAppOwner = "app"
 // application at config.app.<key>, and one of a plugin at config.<plugin id split at its dots>.<key>,
 // the key split at its dots too. A setting holds its value, or its default where no value is set; a
 // setting with neither is left out.
-func New(app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) map[string]any {
+func New(app []plugindomain.Setting, plugins []plugindomain.Info) map[string]any {
 	config := map[string]any{}
 	addSettings(config, []string{configAppOwner}, app)
 	for _, plugin := range plugins {
@@ -44,7 +44,7 @@ func New(app []pluginport.PluginSetting, plugins []pluginport.PluginInfo) map[st
 	return config
 }
 
-func addSettings(config map[string]any, owner []string, settings []pluginport.PluginSetting) {
+func addSettings(config map[string]any, owner []string, settings []plugindomain.Setting) {
 	for _, one := range settings {
 		text := one.ValueJSON
 		if text == "" {

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -36,7 +37,7 @@ func newWorkingHost(t *testing.T) workingHost {
 	}
 	host.Release(workingPlugin)
 
-	work.ReportTask(workingPlugin, pluginport.PluginTask{ID: "scan.sample", Title: "Scanning"})
+	work.ReportTask(workingPlugin, plugindomain.Task{ID: "scan.sample", Title: "Scanning"})
 	turn, err := work.EnqueueWork(t.Context(), workingPlugin, true, nil)
 	if err != nil {
 		t.Fatal(err)

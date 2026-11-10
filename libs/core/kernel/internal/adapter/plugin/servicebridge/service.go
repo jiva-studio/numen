@@ -11,6 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -21,7 +22,7 @@ import (
 type Plugins interface {
 	pluginport.PluginResolver
 	pluginport.PluginActivator
-	GetPluginInfos() []pluginport.PluginInfo
+	GetPluginInfos() []plugin.Info
 }
 
 // Proxy forwards the calls a window receives for the services a plugin serves, with the

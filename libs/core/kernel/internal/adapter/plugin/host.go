@@ -1416,8 +1416,8 @@ func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]a
 	return active
 }
 
-func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []pluginport.PluginSetting {
-	settings := make([]pluginport.PluginSetting, 0, len(manifestSettings))
+func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plugindomain.Setting {
+	settings := make([]plugindomain.Setting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
 		defVal, options := s.Default, s.Options
 		defJSON := ""
@@ -1426,12 +1426,12 @@ func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSett
 				defJSON = string(b)
 			}
 		}
-		settings = append(settings, pluginport.NewPluginSetting(s, defJSON, options))
+		settings = append(settings, plugindomain.NewSetting(s, defJSON, options))
 	}
 	return settings
 }
 
-func resolveSettings(declared manifest.Manifest, settings []pluginport.PluginSetting, values map[string]any) {
+func resolveSettings(declared manifest.Manifest, settings []plugindomain.Setting, values map[string]any) {
 	for index := range settings {
 		one, found := declared.GetSetting(settings[index].Key)
 		if !found {
@@ -1452,17 +1452,17 @@ func resolveSettings(declared manifest.Manifest, settings []pluginport.PluginSet
 
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
-func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
+func (h *Host) GetPluginInfos() []plugindomain.Info {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	result := make([]pluginport.PluginInfo, 0, len(h.plugins))
+	result := make([]plugindomain.Info, 0, len(h.plugins))
 	for _, p := range h.getPluginsInOrderLocked() {
 		isActive := h.isPluginActiveLocked(p.Manifest.ID)
 		settings := h.toPluginSettings(p.Manifest.Settings)
 		resolveSettings(p.Manifest, settings, h.getPluginSettingsLocked(p.Manifest.ID))
 
-		result = append(result, pluginport.PluginInfo{
+		result = append(result, plugindomain.Info{
 			ID:            p.Manifest.ID,
 			Name:          p.Manifest.Name,
 			Version:       p.Manifest.Version,

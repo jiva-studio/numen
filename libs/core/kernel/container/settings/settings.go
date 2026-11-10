@@ -153,8 +153,8 @@ func (c Config) ConfigurePluginHost(s Settings) {
 
 // Plugins returns a function that lists the discovered plugins and their
 // settings schemas.
-func (c Config) Plugins() func() []pluginport.PluginInfo {
-	return func() []pluginport.PluginInfo {
+func (c Config) Plugins() func() []plugindomain.Info {
+	return func() []plugindomain.Info {
 		if c.PluginHost == nil {
 			return nil
 		}
@@ -239,10 +239,10 @@ func (c Config) ListRegistryOptions(name string) (pluginport.PluginSettingOption
 }
 
 // ListAppSettings returns the application settings declared.
-func (c Config) ListAppSettings() []pluginport.PluginSetting {
+func (c Config) ListAppSettings() []plugindomain.Setting {
 	current := c.GetSettingsOrDefaults()
 	declared := settingsadapter.GetAppDeclaration()
-	entries := make([]pluginport.PluginSetting, 0, len(declared))
+	entries := make([]plugindomain.Setting, 0, len(declared))
 	for _, one := range declared {
 		options := one.Options
 		if one.OptionsFrom != "" {
@@ -252,7 +252,7 @@ func (c Config) ListAppSettings() []pluginport.PluginSetting {
 		if encoded, err := json.Marshal(one.Default); err == nil && one.Default != nil {
 			defaultJSON = string(encoded)
 		}
-		setting := pluginport.NewPluginSetting(one, defaultJSON, options)
+		setting := plugindomain.NewSetting(one, defaultJSON, options)
 		setting.ActiveOptions = options
 		setting.IsShown = true
 		if value, found := current.GetValue(append([]string{settingsadapter.OwnerApp}, strings.Split(one.Key, ".")...)...); found {
@@ -375,7 +375,7 @@ func getAgentUseValue(target settingsadapter.Agent, programs []agent.Program) st
 	return programs[0].Name
 }
 
-func listPluginValues(target Settings, plugin pluginport.PluginInfo, add func([]string, any), values settingevents.Values) {
+func listPluginValues(target Settings, plugin plugindomain.Info, add func([]string, any), values settingevents.Values) {
 	for _, declared := range plugin.Settings {
 		path := []string{plugin.ID, declared.Key}
 		if value, found := target.GetValue(path...); found {

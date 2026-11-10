@@ -11,14 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // RouterHost is the plugin host interface used by a Router: it lists the
 // plugins and provides each plugin's agent service.
 type RouterHost interface {
 	Host
-	GetPluginInfos() []pluginport.PluginInfo
+	GetPluginInfos() []plugin.Info
 }
 
 // NewRouter returns a Router over the plugins of the host.

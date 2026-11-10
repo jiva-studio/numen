@@ -24,7 +24,7 @@ Each test verifies adherence to structural rules.
 | An adapter that references a use case is driving, one with a type that implements a port is driven, and none is both | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/AnAdapterIsDrivingOrDrivenNotBoth` |
 | A driving adapter references no type, function, variable, constant or method declared under `port/`, aliases resolved | `TestEveryAdapterHasOneRoleAndADrivingOneReachesNoPort/ADrivingAdapterReferencesNoPort` |
 | The composition root is the one package `container`; no package lies below it | `TestTheTypeCheckedWorkspaceObeysItsRules/TheCompositionRootIsOnePackage` |
-| A package under `domain/` of the core imports the standard library, `libs/note/domain` and other domain packages, no other layer of the core, no third-party code; every other layer and the composition root may import it | `TestTheLayersAreWhatTheyAre`, `TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer` |
+| A package under `domain/` of the core imports the standard library, `libs/note/domain`, `libs/plugin/catalog/manifest` and other domain packages, no other layer of the core, no third-party code; every other layer and the composition root may import it | `TestTheLayersAreWhatTheyAre`, `TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer` |
 | No plugin, no plugin SDK and no plugin catalog package imports a package of the core, a domain package included | `TestNoPluginImportsAnotherPluginOrTheCore`, `TestNoSDKOrCatalogPackageImportsTheCore` |
 | The depguard rule `domain` denies `port` as well as adapters, use cases and the composition root | `.golangci.yml` |
 | No struct holds more than five use cases | `TestTheTypeCheckedWorkspaceObeysItsRules/NoStructHoldsMoreThanFiveUseCases` |
@@ -63,7 +63,7 @@ outside `port/`.
 | The core probes no value for another interface                                                | `TestNoCodeOfTheCoreProbesAValueForAnotherInterface`                                       |
 | A port names no type from `internal/`                                                         | `TestNoPortNamesATypeFromInternal`                                                         |
 
-The target shape, which the packages of the refactor reach: the core's own concepts are small packages `domain/<area>` that import the standard library, `libs/note/domain` and themselves, and that no plugin and not the SDK imports; a port has one to three methods and no type of its own; the window adapter is one adapter type per RPC service, with no object that holds them all; no struct holds more than five use cases.
+The target shape, which the packages of the refactor reach: the core's own concepts are small packages `domain/<area>` that import the standard library, `libs/note/domain`, `libs/plugin/catalog/manifest` and themselves, and that no plugin and not the SDK imports; a port has one to three methods and no type of its own; the window adapter is one adapter type per RPC service, with no object that holds them all; no struct holds more than five use cases.
 
 A `domain/<area>` package takes the value types, constants and sentinel errors of its area. An alias of an interface stays in its `*contract` package until the change that puts a use case in front of that interface deletes alias and importers together.
 

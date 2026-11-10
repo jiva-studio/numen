@@ -16,8 +16,8 @@ import (
 // the host holds suspended.
 type handlingPlugins struct{ declaredByTwoPlugins }
 
-func (handlingPlugins) ListHandlers() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (handlingPlugins) ListHandlers() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:file.createText", Title: "Read the scan", When: "target.isFile"}},
 		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:link.downloadMedia", Title: "Download the reading", When: "version.kind == 'reading'"}},
 		{PluginID: "org.example.crash", Command: plugincommand.Command{ID: "app:file.createText", Title: "Crash"}},
@@ -58,7 +58,7 @@ type commandReadsCounted struct {
 	reads *int
 }
 
-func (p commandReadsCounted) ListCommands() []plugincommand.Entry {
+func (p commandReadsCounted) ListCommands() []plugin.CommandEntry {
 	*p.reads++
 	return p.handlingPlugins.ListCommands()
 }

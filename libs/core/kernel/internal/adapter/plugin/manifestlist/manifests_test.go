@@ -22,11 +22,11 @@ func (h *manifestHost) IsPluginEnabled(id string) bool { return !h.disabled[id] 
 
 func (h *manifestHost) IsPluginSuspended(string) bool { return false }
 
-func (h *manifestHost) GetPluginInfos() []pluginport.PluginInfo {
+func (h *manifestHost) GetPluginInfos() []plugin.Info {
 	h.infoReads++
-	infos := make([]pluginport.PluginInfo, 0, len(h.plugins))
+	infos := make([]plugin.Info, 0, len(h.plugins))
 	for _, one := range h.plugins {
-		infos = append(infos, pluginport.PluginInfo{ID: one.Manifest.ID})
+		infos = append(infos, plugin.Info{ID: one.Manifest.ID})
 	}
 	return infos
 }

@@ -18,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -44,7 +45,7 @@ type linkRemoval struct {
 // note has no link to the core's "no link to <to> is written here". It records every call.
 type linkingVault struct {
 	*fakeNoteVault
-	additions [][]pluginport.PluginLinkAddition
+	additions [][]plugin.LinkAddition
 	updates   []linkUpdate
 	removals  []linkRemoval
 	links     map[string][]domain.Address
@@ -78,11 +79,11 @@ func (l *linkingVault) hasLink(from string, to domain.Address) bool {
 	return slices.Contains(l.links[from], to)
 }
 
-func (l *linkingVault) AddLinks(_ context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+func (l *linkingVault) AddLinks(_ context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.additions = append(l.additions, additions)
-	out := make([]pluginport.PluginLinkAdded, len(additions))
+	out := make([]plugin.LinkAdded, len(additions))
 	rejected := map[string]error{}
 	for _, one := range additions {
 		if _, isChecked := rejected[one.From]; !isChecked {
@@ -92,19 +93,19 @@ func (l *linkingVault) AddLinks(_ context.Context, additions []pluginport.Plugin
 	savedStats := map[string]domain.FileStat{}
 	for i, one := range additions {
 		if err := rejected[one.From]; err != nil {
-			out[i] = pluginport.PluginLinkAdded{Err: err}
+			out[i] = plugin.LinkAdded{Err: err}
 			continue
 		}
 		if _, isSaved := savedStats[one.From]; !isSaved {
 			stat, err := l.write(one.From)
 			if err != nil {
-				out[i] = pluginport.PluginLinkAdded{Err: err}
+				out[i] = plugin.LinkAdded{Err: err}
 				continue
 			}
 			savedStats[one.From] = stat
 		}
 		l.links[one.From] = append(l.links[one.From], one.Link.Target)
-		out[i] = pluginport.PluginLinkAdded{Stat: savedStats[one.From]}
+		out[i] = plugin.LinkAdded{Stat: savedStats[one.From]}
 	}
 	return out, nil
 }
@@ -225,7 +226,7 @@ func TestAddLinksSendsOneCallAndReturnsOneResultPerLink(t *testing.T) {
 		t.Fatalf("the vault received the additions %v, want the three in one call", vault.additions)
 	}
 	got := vault.additions[0]
-	want := []pluginport.PluginLinkAddition{
+	want := []plugin.LinkAddition{
 		{From: "Danube.md", Baseline: readFileStat(danube), Link: domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeName, Value: "Deltas"}, Role: domain.RoleChild,
 			Type: "delta", Label: "ends in", Why: "the river ends in the delta",

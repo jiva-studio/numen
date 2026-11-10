@@ -3,13 +3,14 @@ package settings
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 func TestNewWirePluginInfos_CarriesTheIcon(t *testing.T) {
-	wire := NewWirePluginInfos([]setting.PluginInfo{{
+	wire := NewWirePluginInfos([]plugin.Info{{
 		ID: "a.b",
-		Settings: []setting.PluginSetting{
+		Settings: []plugin.Setting{
 			{Key: "model", Type: "string", Icon: "audio-lines"},
 			{Key: "other", Type: "string"},
 		},
@@ -22,7 +23,7 @@ func TestNewWirePluginInfos_CarriesTheIcon(t *testing.T) {
 }
 
 func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
-	wire := NewWirePluginInfos([]setting.PluginInfo{{
+	wire := NewWirePluginInfos([]plugin.Info{{
 		ID:            "a.b",
 		SettingsViews: []setting.PluginSettingsView{{ID: "floor", Title: "Search relevance"}},
 	}})
@@ -34,9 +35,9 @@ func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
 }
 
 func TestNewWirePluginInfos_CarriesMultiple(t *testing.T) {
-	wire := NewWirePluginInfos([]setting.PluginInfo{{
+	wire := NewWirePluginInfos([]plugin.Info{{
 		ID: "a.b",
-		Settings: []setting.PluginSetting{
+		Settings: []plugin.Setting{
 			{Key: "programs", Type: "file", Multiple: true},
 			{Key: "dictionary", Type: "file"},
 		},
@@ -49,9 +50,9 @@ func TestNewWirePluginInfos_CarriesMultiple(t *testing.T) {
 }
 
 func TestNewWirePluginInfos_CarriesWhatTheCoreResolved(t *testing.T) {
-	wire := NewWirePluginInfos([]setting.PluginInfo{{
+	wire := NewWirePluginInfos([]plugin.Info{{
 		ID: "a.b",
-		Settings: []setting.PluginSetting{{
+		Settings: []plugin.Setting{{
 			Key:           "model",
 			Type:          "enum",
 			ActiveOptions: setting.PluginSettingOptions{{Value: "big", Title: "Big"}},
@@ -73,9 +74,9 @@ func TestNewWirePluginInfos_CarriesWhatTheCoreResolved(t *testing.T) {
 }
 
 func TestNewWirePluginInfos_CarriesThePreviewFlagAndTheRegistry(t *testing.T) {
-	wire := NewWirePluginInfos([]setting.PluginInfo{{
+	wire := NewWirePluginInfos([]plugin.Info{{
 		ID: "a.b",
-		Settings: []setting.PluginSetting{
+		Settings: []plugin.Setting{
 			{Key: "theme", Type: "enum", Preview: true, OptionsFrom: "themes"},
 			{Key: "other", Type: "string"},
 		},

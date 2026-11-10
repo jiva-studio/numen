@@ -92,17 +92,17 @@ func (r countingReader) Open(ctx context.Context, path string) (io.ReadSeekClose
 
 // commands offers the commands it holds, and records each run.
 type commands struct {
-	all []pluginport.PluginCommandEntry
+	all []plugin.CommandEntry
 	ran []plugin.CommandCall
 }
 
-func (c *commands) ListKeybindings() []pluginport.PluginKeybindingEntry { return nil }
+func (c *commands) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (c *commands) ListSlots() []pluginport.PluginSlotEntry { return nil }
+func (c *commands) ListSlots() []plugin.SlotEntry { return nil }
 
-func (c *commands) ListHandlers() []pluginport.PluginCommandEntry { return nil }
+func (c *commands) ListHandlers() []plugin.CommandEntry { return nil }
 
-func (c *commands) ListCommands() []pluginport.PluginCommandEntry { return c.all }
+func (c *commands) ListCommands() []plugin.CommandEntry { return c.all }
 
 func (c *commands) GetParts(string) plugin.Parts {
 	return plugin.Parts{HasBackend: true}
@@ -127,14 +127,14 @@ func (t types) ListExtensions(domain.ContentType) []string { return nil }
 
 func getPdfTypes() types { return types{".pdf": "application/pdf"} }
 
-func getRecogniseCommand() pluginport.PluginCommandEntry {
-	return pluginport.PluginCommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
+func getRecogniseCommand() plugin.CommandEntry {
+	return plugin.CommandEntry{PluginID: ocr, PluginName: "OCR", Command: pluginport.PluginCommand{
 		ID: "recognition.create", Title: "Recognize text", Icon: "scan-text", When: "target.contentType == 'application/pdf'",
 	}}
 }
 
-func getProofreadCommand() pluginport.PluginCommandEntry {
-	return pluginport.PluginCommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
+func getProofreadCommand() plugin.CommandEntry {
+	return plugin.CommandEntry{PluginID: proofreader, PluginName: "Proofreading", Command: pluginport.PluginCommand{
 		ID: "proofreading.create", Title: "Proofread", Icon: "spell-check",
 		When: liveOfKinds(string(kindPage), string(kindRecognition)),
 	}}
@@ -144,7 +144,7 @@ func liveOfKinds(kinds ...string) string {
 	return "version.isLive && version.kind in ['" + strings.Join(kinds, "', '") + "']"
 }
 
-func newMenu(t *testing.T, s *scene, entries ...pluginport.PluginCommandEntry) (*textversion.VersionItems, *commands) {
+func newMenu(t *testing.T, s *scene, entries ...plugin.CommandEntry) (*textversion.VersionItems, *commands) {
 	t.Helper()
 	recorder := &commands{all: entries}
 	menu, err := textversion.NewVersionItems(s.versions, recorder, getPdfTypes())
@@ -209,7 +209,7 @@ func TestNewFileMenuRequiresVersionsCommandsAndTypes(t *testing.T) {
 
 func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing.T) {
 	s := newScene(t)
-	deleteText := pluginport.PluginCommandEntry{PluginID: ocr, Command: pluginport.PluginCommand{
+	deleteText := plugin.CommandEntry{PluginID: ocr, Command: pluginport.PluginCommand{
 		ID: "app:file.createText", Title: "Proofread recognition", When: "version.kind != ''",
 	}}
 	menu, recorder := newMenu(t, s, deleteText)
@@ -230,7 +230,7 @@ func TestAHandlerOfASharedCommandListsEveryVersionItsConditionMatches(t *testing
 
 func TestACommandOverTheLiveVersionListsTheLiveVersionAlone(t *testing.T) {
 	s := newScene(t)
-	overLive := pluginport.PluginCommandEntry{PluginID: proofreader, Command: pluginport.PluginCommand{
+	overLive := plugin.CommandEntry{PluginID: proofreader, Command: pluginport.PluginCommand{
 		ID: "proofreading.create", Title: "Proofread", When: "version.isLive",
 	}}
 	items, _ := newMenu(t, s, overLive)

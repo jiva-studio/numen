@@ -12,8 +12,8 @@ import (
 // readingPlugins declares the handlers of two plugins over PDFs and one over audio.
 type readingPlugins struct{ declaredCommands }
 
-func (readingPlugins) ListHandlers() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (readingPlugins) ListHandlers() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:file.createText", Title: "Recognize", When: "target.contentType == 'application/pdf'"}},
 		{PluginID: "org.example.layers", Command: plugincommand.Command{ID: "app:file.createText", Title: "Extract", When: "target.contentType == 'application/pdf'"}},
 		{PluginID: "org.example.ears", Command: plugincommand.Command{ID: "app:file.createText", Title: "Transcribe", When: "target.contentType.startsWith('audio/')"}},
@@ -77,7 +77,7 @@ func TestFindHandlerNamesThePluginsWhereSeveralHold(t *testing.T) {
 }
 
 func TestRunPassesTheVersionArgumentToACommandWithItems(t *testing.T) {
-	declared := &declaredCommands{entries: []plugincommand.Entry{{PluginID: "org.example.proofs", Command: plugincommand.Command{
+	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "org.example.proofs", Command: plugincommand.Command{
 		ID: "proofread", Title: "Proofread", When: "version.isLive",
 	}}}}
 	run := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run

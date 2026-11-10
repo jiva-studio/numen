@@ -49,11 +49,11 @@ func (h *commandHost) IsPluginEnabled(id string) bool { return !h.disabled[id] }
 
 func (h *commandHost) IsPluginSuspended(string) bool { return false }
 
-func (h *commandHost) GetPluginInfos() []pluginport.PluginInfo {
+func (h *commandHost) GetPluginInfos() []plugindomain.Info {
 	h.infoReads++
-	infos := make([]pluginport.PluginInfo, 0, len(h.plugins))
+	infos := make([]plugindomain.Info, 0, len(h.plugins))
 	for _, one := range h.plugins {
-		infos = append(infos, pluginport.PluginInfo{ID: one.Manifest.ID})
+		infos = append(infos, plugindomain.Info{ID: one.Manifest.ID})
 	}
 	return infos
 }

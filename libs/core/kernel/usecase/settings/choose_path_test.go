@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -25,8 +26,8 @@ func (d *pathDialog) ChooseFile(_ context.Context, _, _ string, accept []string)
 	return d.path, d.path != "", nil
 }
 
-func listPathPlugins() []PluginInfo {
-	return []PluginInfo{{ID: "a.b", Settings: []PluginSetting{
+func listPathPlugins() []plugin.Info {
+	return []plugin.Info{{ID: "a.b", Settings: []plugin.Setting{
 		{Key: "model", Type: "enum"},
 		{Key: "dictionary", Type: pluginport.SettingTypeFile, Accept: []string{".txt"}},
 	}}}

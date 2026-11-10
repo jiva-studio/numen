@@ -16,6 +16,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -38,13 +39,13 @@ func mapWindowError(ctx context.Context, err error) (v1.HostWindowErrorCode, err
 	switch {
 	case err == nil:
 		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_UNSPECIFIED, nil
-	case errors.Is(err, pluginport.ErrNoWindow):
+	case errors.Is(err, plugin.ErrNoWindow):
 		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NO_WINDOW, nil
 	case errors.Is(err, fs.ErrNotExist):
 		return v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND, nil
-	case errors.Is(err, pluginport.ErrTabNotShown):
+	case errors.Is(err, plugin.ErrTabNotShown):
 		return 0, connect.NewError(connect.CodeDeadlineExceeded, err)
-	case errors.Is(err, pluginport.ErrInvalidFocus):
+	case errors.Is(err, plugin.ErrInvalidFocus):
 		return 0, connect.NewError(connect.CodeInvalidArgument, err)
 	case ctx.Err() != nil:
 		return 0, connect.NewError(connect.CodeCanceled, ctx.Err())

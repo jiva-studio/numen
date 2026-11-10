@@ -30,14 +30,14 @@ type pluginCommands struct {
 	err    error
 }
 
-func (p pluginCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+func (p pluginCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (p pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
+func (p pluginCommands) ListSlots() []plugin.SlotEntry { return nil }
 
-func (p pluginCommands) ListHandlers() []plugincommand.Entry { return nil }
+func (p pluginCommands) ListHandlers() []plugin.CommandEntry { return nil }
 
-func (p pluginCommands) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (p pluginCommands) ListCommands() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "sample.create", Title: "Create a sample", Icon: "layers", When: "target.contentType == 'text/markdown'",
 			Arguments: []plugincommand.Argument{

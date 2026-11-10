@@ -13,8 +13,8 @@ import (
 // handlingPlugins declares a handler of a shared command of a plugin with a backend.
 type handlingPlugins struct{ mixedCommands }
 
-func (h *handlingPlugins) ListHandlers() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (h *handlingPlugins) ListHandlers() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{
 			ID: "app:file.createText", Title: "Read the deck", When: "target.contentType == 'application/pdf'",
 		}},

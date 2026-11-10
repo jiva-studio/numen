@@ -20,6 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -39,7 +40,7 @@ type memoryVault struct {
 	changes     chan []string
 	droppedChan chan struct{}
 	others      map[domain.VaultID]*memoryVault
-	state       pluginport.PluginIndexState
+	state       plugin.IndexState
 	moves       chan struct{}
 	storeRoot   string
 
@@ -58,7 +59,7 @@ func newMemoryVault(files map[string]string) *memoryVault {
 		changes:     make(chan []string, 4),
 		droppedChan: make(chan struct{}),
 		moves:       make(chan struct{}, 4),
-		state:       pluginport.PluginIndexState{Status: pluginport.PluginIndexed},
+		state:       plugin.IndexState{Status: plugin.Indexed},
 	}
 }
 
@@ -92,7 +93,7 @@ func (m *memoryVault) With(id domain.VaultID) (pluginport.PluginVault, error) {
 	return nil, fs.ErrNotExist
 }
 
-func (m *memoryVault) EnsureIndexed(context.Context) (pluginport.PluginIndexState, error) {
+func (m *memoryVault) EnsureIndexed(context.Context) (plugin.IndexState, error) {
 	return m.state, nil
 }
 
@@ -133,11 +134,11 @@ func (m *memoryVault) Read(_ context.Context, path string) ([]byte, domain.FileS
 	return []byte(m.files[path]), pos, nil
 }
 
-func (m *memoryVault) ReadRange(context.Context, string, int, int) (pluginport.PluginFileRange, error) {
-	return pluginport.PluginFileRange{}, errors.New("not implemented")
+func (m *memoryVault) ReadRange(context.Context, string, int, int) (plugin.FileRange, error) {
+	return plugin.FileRange{}, errors.New("not implemented")
 }
 
-func (m *memoryVault) AddLinks(context.Context, []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+func (m *memoryVault) AddLinks(context.Context, []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -641,13 +642,13 @@ func TestListVaults_ReturnsEveryKnownVault(t *testing.T) {
 
 func TestGetIndexState_MapsIndexStatus(t *testing.T) {
 	client, vault := newVaultFixture(t)
-	cases := map[pluginport.PluginIndexStatus]v1.HostIndexState{
-		pluginport.PluginIndexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
-		pluginport.PluginIndexing:    v1.HostIndexState_HOST_INDEX_STATE_INDEXING,
-		pluginport.PluginIndexFailed: v1.HostIndexState_HOST_INDEX_STATE_FAILED,
+	cases := map[plugin.IndexStatus]v1.HostIndexState{
+		plugin.Indexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
+		plugin.Indexing:    v1.HostIndexState_HOST_INDEX_STATE_INDEXING,
+		plugin.IndexFailed: v1.HostIndexState_HOST_INDEX_STATE_FAILED,
 	}
 	for status, want := range cases {
-		vault.state = pluginport.PluginIndexState{Status: status, Reason: "why"}
+		vault.state = plugin.IndexState{Status: status, Reason: "why"}
 
 		res, err := client.EnsureVaultIndexed(t.Context(), connect.NewRequest(&v1.EnsureVaultIndexedRequest{}))
 
