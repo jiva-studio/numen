@@ -102,7 +102,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	availableDir := t.TempDir()
 	writeCatalogPlugin(t, availableDir, "org.example.offered", `"desktop.editor"`)
 	host := NewPluginHost("desktop.editor", dir)
-	host.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
+	host.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
 	cfg := NewConfig(Config{
 		PluginHost:    host,
 		PluginDirs:    []string{dir},
