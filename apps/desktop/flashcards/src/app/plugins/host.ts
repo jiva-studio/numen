@@ -53,15 +53,15 @@ export interface ShellServices {
 }
 
 /**
- * The services a plugin is given, held from the start of the window: the host reads them when a
+ * The services a plugin is given, stored from the start of the window: the host reads them when a
  * plugin asks, and the window provides them once it has made them.
  */
 export function createShellServices() {
-  const held = shallowRef<ShellServices>({})
+  const stored = shallowRef<ShellServices>({})
   return {
-    get: (): ShellServices => held.value,
+    get: (): ShellServices => stored.value,
     provide: (services: ShellServices): void => {
-      held.value = { ...held.value, ...services }
+      stored.value = { ...stored.value, ...services }
     },
   }
 }

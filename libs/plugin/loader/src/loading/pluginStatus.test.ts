@@ -37,7 +37,7 @@ describe('the status made before the loader', () => {
     expect(status.getPluginFailure(ORCHARD)).toBeUndefined()
   })
 
-  it('tells what the loader does with it: a started plugin is over, a failed one has its failure', async () => {
+  it('is over for a plugin the loader started', async () => {
     const status = createPluginStatus({ isEnabled: () => true })
     const loader = createLoader(status)
 
