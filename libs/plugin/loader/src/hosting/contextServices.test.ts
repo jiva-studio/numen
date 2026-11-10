@@ -19,8 +19,8 @@ import type { PluginContextHost } from './types'
 
 const createServices = () => {
   const workspace = {
-    openFile: vi.fn(),
-    showError: vi.fn(),
+    files: { open: vi.fn() },
+    messages: { showError: vi.fn() },
   } as unknown as WorkspaceHost
   const notes = {
     getNeighbourhood: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),

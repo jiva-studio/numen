@@ -17,13 +17,16 @@ function createRecordingContext(handed: Map<string, Disposable>): PluginContext 
     return one
   }
   return {
-    pluginId: HARBOR,
-    subscriptions: [],
-    commands: { getIds: () => [], watch: hand('commands.watch'), run: vi.fn() },
-    vaults: { watch: hand('vaults.watch') },
-    window: { watch: hand('window.watch') },
-    buffers: { track: hand('buffers.track'), addFlushHandler: hand('buffers.addFlushHandler') },
-    mountView: () => ({ focus: vi.fn(), ...hand('mountView')() }),
+    plugin: { id: HARBOR, subscriptions: [] },
+    vault: {
+      vaults: { watch: hand('vaults.watch') },
+      buffers: { track: hand('buffers.track'), addFlushHandler: hand('buffers.addFlushHandler') },
+    },
+    ui: {
+      commands: { getIds: () => [], watch: hand('commands.watch'), run: vi.fn() },
+      window: { watch: hand('window.watch') },
+      mountView: () => ({ focus: vi.fn(), ...hand('mountView')() }),
+    },
   } as unknown as PluginContext
 }
 
