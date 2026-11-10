@@ -32,6 +32,13 @@ const emit = defineEmits<PlexViewEvents>()
 
 defineSlots<PlexDrawnSlots>()
 
+defineExpose({
+  get svg() {
+    return svg.value
+  },
+  focusNode: (id: string) => views.get(id)?.focus(),
+})
+
 /* --------------------------------- State ---------------------------------- */
 const svg = useTemplateRef<SVGSVGElement>('svg')
 
@@ -40,8 +47,6 @@ const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
   if (view) views.set(id, view as { focus: () => void })
   else views.delete(id)
 })
-
-defineExpose({ svg, focusNode: (id: string) => views.get(id)?.focus() })
 
 const viewBox = computed(() => {
   const { width, height } = props.viewport

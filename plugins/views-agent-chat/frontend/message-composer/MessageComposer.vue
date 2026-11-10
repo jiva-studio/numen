@@ -42,6 +42,8 @@ const emit = defineEmits<{
   (event: 'open-settings'): void
 }>()
 
+
+defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => field.value?.focus(how) })
 /* --------------------------------- State ---------------------------------- */
 const field = useTemplateRef<InstanceType<typeof Textarea>>('field')
 
@@ -50,8 +52,6 @@ const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
 const barred = computed(() => props.isDisabled || props.isAgentMissing || !descriptor.value.canAct)
-
-defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => field.value?.focus(how) })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAct() {

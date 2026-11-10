@@ -15,14 +15,23 @@ import { getNoteKey, type NotesPanelState } from '../model/notes'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ panel: NotesPanelState }>()
 
+defineExpose({ scrollPage })
+
 /* --------------------------------- State ---------------------------------- */
 const NO_LINKS = Object.freeze([])
 
 const column = useTemplateRef<HTMLElement>('column')
 
-/* --------------------------------- Hooks ---------------------------------- */
-defineExpose({ scrollPage })
+/**
+ * Where each note was drawn, so the one a link named can be scrolled to. Read
+ * only when a link is followed, so it is held outside the reactive graph.
+ */
+const noteElements = new Map<string, HTMLElement>()
 
+/** How much of the panel one press of space moves it. */
+const STEP = 0.85
+
+/* --------------------------------- Hooks ---------------------------------- */
 // A link pressed in the card opens the panel on the note it names, so reading
 // starts at that note. The watcher waits for the notes: the panel opens while they
 // are still being requested, and a note cannot be scrolled to before it is
@@ -47,19 +56,10 @@ watch(
 )
 
 /* -------------------------------- Helpers --------------------------------- */
-/**
- * Where each note was drawn, so the one a link named can be scrolled to. Read
- * only when a link is followed, so it is held outside the reactive graph.
- */
-const noteElements = new Map<string, HTMLElement>()
-
 const registerNoteElement = (one: Neighbour, element: unknown): void => {
   if (element) noteElements.set(getNoteKey(one), element as HTMLElement)
   else noteElements.delete(getNoteKey(one))
 }
-
-/** How much of the panel one press of space moves it. */
-const STEP = 0.85
 
 function scrollPage(back = false) {
   const col = column.value

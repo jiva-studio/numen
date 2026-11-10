@@ -42,6 +42,8 @@ const emit = defineEmits<{
   (event: 'open-settings'): void
 }>()
 
+defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => composer.value?.focus(how) })
+
 /* --------------------------------- State ---------------------------------- */
 const composer = useTemplateRef<InstanceType<typeof MessageComposer>>('composer')
 const thread = useTemplateRef<InstanceType<typeof Thread>>('thread')
@@ -52,7 +54,8 @@ const composerElement = computed(() => (composer.value?.$el as HTMLElement | und
 const { viewport: whole } = useWholeViewport(composerElement)
 const room = computed(() => `${whole.value.height}px`)
 
-defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => composer.value?.focus(how) })
+/* -------------------------------- Helpers --------------------------------- */
+const agentStyle = computed(() => ({ '--agent-room': room.value }))
 
 /* --------------------------------- Hooks ---------------------------------- */
 // A field grown taller carries the foot of the conversation up with it.
@@ -71,9 +74,6 @@ function onSelectModel(option: AgentModelOption) {
 function onSelectReasoning(id: string) {
   emit('select-reasoning', id)
 }
-
-/* -------------------------------- Helpers --------------------------------- */
-const agentStyle = computed(() => ({ '--agent-room': room.value }))
 </script>
 
 <template>

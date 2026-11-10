@@ -31,6 +31,14 @@ const emit = defineEmits<{
 }>()
 
 /* ---------------------------------- State --------------------------------- */
+/**
+ * The most of the accent a day short of the whole is tinted with. Past it the
+ * ink on the chip falls below 4.5:1 on either set of tokens, and the accent's
+ * own ink does not reach it until the chip is nearly all accent, so a day
+ * between is a tint under the ink and only the whole of it is the accent.
+ */
+const MOST_TINT = 45
+
 const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(
   null,
 )
@@ -69,14 +77,6 @@ const onChoose = (id: string) => {
 }
 
 /* --------------------------------- Helpers -------------------------------- */
-/**
- * The most of the accent a day short of the whole is tinted with. Past it the
- * ink on the chip falls below 4.5:1 on either set of tokens, and the accent's
- * own ink does not reach it until the chip is nearly all accent, so a day
- * between is a tint under the ink and only the whole of it is the accent.
- */
-const MOST_TINT = 45
-
 const getFillStyle = (level: number) => {
   const fill = getFill(level)
   const weight = fill >= 1 ? 100 : Math.round(fill * MOST_TINT)

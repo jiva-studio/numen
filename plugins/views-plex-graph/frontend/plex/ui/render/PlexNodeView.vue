@@ -29,6 +29,9 @@ const emit = defineEmits<PlexNodeEvents>()
 
 defineSlots<PlexDrawnSlots>()
 
+/** Restores keyboard focus to this node's group when it was lost. */
+defineExpose({ focus: () => group.value?.focus() })
+
 /* --------------------------------- State ---------------------------------- */
 const group = useTemplateRef<SVGGElement>('group')
 
@@ -103,9 +106,6 @@ function getMiddle(): Position | null {
   const rect = measureRect(element)
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
 }
-
-/** Restores keyboard focus to this node's group when it was lost. */
-defineExpose({ focus: () => group.value?.focus() })
 </script>
 
 <template>

@@ -15,15 +15,17 @@ const props = defineProps<{
 
 const model = defineModel<string>({ default: '' })
 
+defineExpose({
+  /** The element itself, for a caller that has to reach past these props. */
+  get element() {
+    return element.value
+  },
+  focus: (how?: Parameters<HTMLElement['focus']>[0]) => element.value?.focus(how),
+})
+
 const ownId = useId()
 
 const element = useTemplateRef<HTMLTextAreaElement>('element')
-
-defineExpose({
-  /** The element itself, for a caller that has to reach past these props. */
-  element,
-  focus: (how?: Parameters<HTMLElement['focus']>[0]) => element.value?.focus(how),
-})
 </script>
 
 <template>

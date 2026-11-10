@@ -32,6 +32,8 @@ defineSlots<{
   failure?(props: { turn: Turn }): unknown
 }>()
 
+
+defineExpose({ toFoot })
 /* --------------------------------- State ---------------------------------- */
 const placedTurns = computed(() => placeTurns(props.turns))
 
@@ -64,8 +66,6 @@ function toFoot(again = false) {
   if (!follows.value || !area.value) return
   area.value.scrollTop = getFoot(area.value)
 }
-
-defineExpose({ toFoot })
 </script>
 
 <template>
