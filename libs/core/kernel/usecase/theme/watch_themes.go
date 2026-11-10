@@ -74,8 +74,6 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 	}
 }
 
-// watchOwnThemes starts the watch of the user's folder. Where the folder cannot be watched and the build
-// has plugin themes, it returns a nil channel, which never reports.
 func (u *WatchThemes) watchOwnThemes(ctx context.Context) (<-chan []string, error) {
 	changed, err := u.watch.WatchOwnThemes(ctx, u.hold)
 	if errors.Is(err, themedomain.ErrNoFolder) && u.catalog.sources.Plugins != nil {
