@@ -4,7 +4,7 @@
  */
 import { useTemplateRef } from 'vue'
 import type { ConversationContext } from '@numen/plugin-sdk'
-import { Agent } from './Agent.vue'
+import Agent from './Agent.vue'
 import { WORDS as words } from '../words'
 import { useConversationView } from '../model/useConversationView'
 

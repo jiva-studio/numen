@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
-import AgentModelSelector from '../../model/options'
-import type { AgentModelOption } from './AgentModelSelector.vue'
+import AgentModelSelector from './AgentModelSelector.vue'
+import type { AgentModelOption } from '../../model/options'
 
 const OPTIONS: AgentModelOption[] = [
   {

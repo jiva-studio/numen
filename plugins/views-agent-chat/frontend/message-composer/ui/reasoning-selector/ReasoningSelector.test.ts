@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import ReasoningSelector from '../../model/options'
-import type { ReasoningLevelOption } from './ReasoningSelector.vue'
+import ReasoningSelector from './ReasoningSelector.vue'
+import type { ReasoningLevelOption } from '../../model/options'
 
 const LEVELS: ReasoningLevelOption[] = [
   { id: 'low', title: 'Low' },

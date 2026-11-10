@@ -138,7 +138,7 @@ describe('a change to the vault', () => {
     const other = createTreeOf()
     const trees = [one.tree, other.tree]
     const fixture = createHost()
-    const { kind, refresh } = createFilesKind(fixture.host, () => trees.shift()!)
+    const { kind, refresh } = createFilesKind(fixture.host, () => trees.shift()!, FilesTab)
     kind.open!('', 'files:one')
     kind.open!('', 'files:other')
     const renames = [{ from: 'a.md', to: 'b.md' }]

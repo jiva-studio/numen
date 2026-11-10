@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
-import { Agent } from './Agent.vue'
+import Agent from './Agent.vue'
 import type { AgentModelOption } from '../message-composer'
 import type { Turn } from '../types'
 import { WORDS as words } from '../words'
