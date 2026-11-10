@@ -23,7 +23,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -495,8 +494,8 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 		err  error
 		want v1.VaultsErrorCode
 	}{
-		"name taken":      {err: vaults.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
-		"last vault":      {err: vaults.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
+		"name taken":      {err: vaultdomain.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
+		"last vault":      {err: vaultdomain.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
 		"current vault":   {err: registry.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
 		"no such vault":   {err: registry.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
 		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
@@ -864,7 +863,7 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 		message string
 	}{
 		"unreadable folder": {
-			err:     domain.NewDetailError("/vaults/Seas cannot be read as a vault: the folder is not there", vaults.ErrUnreadable),
+			err:     domain.NewDetailError("/vaults/Seas cannot be read as a vault: the folder is not there", vaultdomain.ErrUnreadable),
 			want:    v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE,
 			message: "/vaults/Seas cannot be read as a vault: the folder is not there",
 		},

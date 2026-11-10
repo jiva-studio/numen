@@ -26,17 +26,14 @@ import (
 type Services struct {
 	state *State
 
-	Vault     *vaultHandler
-	Workspace *workspaceHandler
-	File      *FileHandler
-	Note      *NoteHandler
-	Search    *search.Handler
-	Vaults    *VaultsHandler
-	Settings  *settings.Handler
-	Agent     *wire.AgentHandler
-	Command   *command.Handler
-	Media     *MediaHandler
-	Text      *texts.Handler
+	File     *FileHandler
+	Note     *NoteHandler
+	Search   *search.Handler
+	Settings *settings.Handler
+	Agent    *wire.AgentHandler
+	Command  *command.Handler
+	Media    *MediaHandler
+	Text     *texts.Handler
 
 	Themes numenv1connect.ThemeServiceHandler
 
@@ -46,6 +43,8 @@ type Services struct {
 
 	Catalog numenv1connect.CatalogServiceHandler
 
+	Extra []Route
+
 	getPluginDir func(id string) (string, bool)
 
 	server *FileServer
@@ -53,20 +52,17 @@ type Services struct {
 
 func createServices(state *State) *Services {
 	return &Services{
-		state:     state,
-		Vault:     &vaultHandler{state: state},
-		Workspace: &workspaceHandler{state: state},
-		File:      NewFileHandler(state),
-		Note:      NewNoteHandler(state),
-		Search:    search.NewHandler(state),
-		Vaults:    NewVaultsHandler(state),
-		Settings:  settings.NewHandler(),
-		Agent:     newAgentHandler(state),
-		Command:   command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
-		Media:     NewMediaHandler(state, nil, nil),
-		Text:      texts.NewHandler(state, nil),
-		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
-		server:    NewFileServer(state, nil, nil, nil, nil),
+		state:    state,
+		File:     NewFileHandler(state),
+		Note:     NewNoteHandler(state),
+		Search:   search.NewHandler(state),
+		Settings: settings.NewHandler(),
+		Agent:    newAgentHandler(state),
+		Command:  command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
+		Media:    NewMediaHandler(state, nil, nil),
+		Text:     texts.NewHandler(state, nil),
+		Plugin:   numenv1connect.UnimplementedPluginServiceHandler{},
+		server:   NewFileServer(state, nil, nil, nil, nil),
 	}
 }
 
@@ -78,18 +74,12 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 func (s *Services) pages() pageSet {
 	counted := s.state.CountQuestions()
 	var routes []Route
-	path, served := numenv1connect.NewVaultServiceHandler(s.Vault, counted)
-	routes = append(routes, NewRoute(path, served, s.Vault))
-	path, served = numenv1connect.NewWorkspaceServiceHandler(s.Workspace, counted)
-	routes = append(routes, NewRoute(path, served, s.Workspace))
-	path, served = numenv1connect.NewFileServiceHandler(s.File, counted)
+	path, served := numenv1connect.NewFileServiceHandler(s.File, counted)
 	routes = append(routes, NewRoute(path, served, s.File))
 	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
 	routes = append(routes, NewRoute(path, served, s.Note))
 	path, served = numenv1connect.NewSearchServiceHandler(s.Search, counted)
 	routes = append(routes, NewRoute(path, served, s.Search))
-	path, served = numenv1connect.NewVaultsServiceHandler(s.Vaults, counted)
-	routes = append(routes, NewRoute(path, served, s.Vaults))
 	path, served = numenv1connect.NewSettingsServiceHandler(s.Settings, counted)
 	routes = append(routes, NewRoute(path, served, s.Settings))
 	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
@@ -108,6 +98,7 @@ func (s *Services) pages() pageSet {
 		path, served = numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)
 		routes = append(routes, NewRoute(path, served, s.Catalog))
 	}
+	routes = append(routes, s.Extra...)
 	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
 }
 
@@ -126,18 +117,12 @@ func ServicesOf(o *Installation) *Services {
 	services := &Services{state: o.State}
 	for _, one := range o.pages.routes {
 		switch handler := one.service.(type) {
-		case *vaultHandler:
-			services.Vault = handler
-		case *workspaceHandler:
-			services.Workspace = handler
 		case *FileHandler:
 			services.File = handler
 		case *NoteHandler:
 			services.Note = handler
 		case *search.Handler:
 			services.Search = handler
-		case *VaultsHandler:
-			services.Vaults = handler
 		case *settings.Handler:
 			services.Settings = handler
 		case *MediaHandler:

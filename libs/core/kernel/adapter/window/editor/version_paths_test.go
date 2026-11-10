@@ -17,8 +17,8 @@ func TestAChangeOfTheVersionsOfAFileReachesTheWindow(t *testing.T) {
 
 	newVersionChangeReporter(state, index).ReportVersionsChanged(domain.Vault{ID: "v1"}, "scans/page.png")
 
-	got := newChangeResponse(<-line)
-	if !slices.Equal(got.GetVersionPaths(), []string{"scans/page.png"}) || len(got.GetPaths()) != 0 {
+	got := <-line
+	if !slices.Equal(got.VersionPaths, []string{"scans/page.png"}) || len(got.Paths) != 0 {
 		t.Errorf("the window received %v", got)
 	}
 }

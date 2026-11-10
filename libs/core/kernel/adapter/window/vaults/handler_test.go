@@ -1,4 +1,4 @@
-package editor
+package vaults
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -114,7 +115,6 @@ func (f *folders) getRequested() (string, string) {
 // and a client asking about them the way the window does.
 type onTheList struct {
 	client   numenv1connect.VaultsServiceClient
-	api      *Services
 	registry *appstate.VaultRegistry
 	rows     *vaultRows
 	bin      *bin
@@ -123,8 +123,28 @@ type onTheList struct {
 	second   domain.Vault
 
 	mu       sync.Mutex
+	current    domain.Vault
 	expected []domain.Vault
 	failure  error
+}
+
+func (f *onTheList) GetCurrentVault() domain.Vault {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.current
+}
+
+func (f *onTheList) ShowVault(_ context.Context, v domain.Vault) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.expected = append(f.expected, v)
+	return f.failure
+}
+
+func (f *onTheList) standOnNothing() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.current = domain.Vault{}
 }
 
 func onAList(t *testing.T) *onTheList {
@@ -144,6 +164,7 @@ func onAList(t *testing.T) *onTheList {
 		first:    addVault(t, adding, "one"),
 		second:   addVault(t, adding, "two"),
 	}
+	f.current = f.first
 	rename := vaults.NewRename(registry, registry, rows)
 	erase := vaults.NewErase(identity, f.bin, forget)
 	list := vaultregistry.NewList(registry)
@@ -151,24 +172,11 @@ func onAList(t *testing.T) *onTheList {
 	chooseFolder := picker.NewChooseFolder(f.dialog)
 	folderCheck := check.NewFolderCheck(vaultreader.Readers{})
 	remove := vaults.NewRemove(find, forget, erase)
-	f.api = newBareServices()
-	f.api.readFiles(vaultreader.Readers{}, nil, nil)
-	f.api.Vaults.list = &list
-	f.api.Vaults.find = &find
-	f.api.Vaults.folderCheck = &folderCheck
-	f.api.Vaults.chooseFolder = &chooseFolder
-	f.api.Vaults.add = &adding
-	f.api.Vaults.rename = &rename
-	f.api.Vaults.remove = &remove
-	f.api.state.OpenVault = func(_ context.Context, v domain.Vault, _ *PluginOpen) error {
-		f.mu.Lock()
-		defer f.mu.Unlock()
-		f.expected = append(f.expected, v)
-		return f.failure
-	}
-	f.api.state.setVault(f.first)
-
-	server := httptest.NewUnstartedServer(f.api.NewHandler(http.NotFoundHandler()))
+	handler := NewHandler(f, list, find, folderCheck, adding, rename, remove)
+	handler.SetFolderChooser(chooseFolder)
+	mux := http.NewServeMux()
+	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))
+	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)
@@ -375,7 +383,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := forgot.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT {
-		t.Errorf("removing the vault being shown was answered %v", got)
+		t.Errorf("removing the vault being current was answered %v", got)
 	}
 
 	erased, err := f.client.RemoveVault(t.Context(),
@@ -384,7 +392,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := erased.Msg.GetError(); got != v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT {
-		t.Errorf("trashing the vault being shown was answered %v", got)
+		t.Errorf("trashing the vault being current was answered %v", got)
 	}
 
 	onList(t, f.getList(t), string(f.first.ID))
@@ -403,7 +411,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 func TestTheLastVaultAnInstallationHasStaysOnTheList(t *testing.T) {
 	f := onAList(t)
 	// A window standing on nothing is not what keeps this vault: the list is.
-	f.api.state.setVault(domain.Vault{})
+	f.standOnNothing()
 
 	removed, err := f.client.RemoveVault(t.Context(),
 		connect.NewRequest(&v1.RemoveVaultRequest{Id: string(f.second.ID)}))
@@ -521,7 +529,7 @@ func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 	if out.Msg.Error != nil {
-		t.Fatalf("the vault was not shown: %v", out.Msg.GetError())
+		t.Fatalf("the vault was not current: %v", out.Msg.GetError())
 	}
 	if visibleVaults := f.getShown(); len(visibleVaults) != 1 || visibleVaults[0].ID != f.second.ID {
 		t.Errorf("the window was asked to show %v", visibleVaults)
@@ -531,7 +539,7 @@ func TestAnotherVaultIsInsertInTheWindow(t *testing.T) {
 // TestAPageHoldingAnUnansweredQuestionKeepsTheVaultItWasTypedIn.
 func TestOpenVault_ErrorsWhilePageHasPendingQuestion(t *testing.T) {
 	f := onAList(t)
-	f.opening(errAnswerPending)
+	f.opening(window.ErrAnswerPending)
 
 	out, err := f.client.OpenVault(t.Context(),
 		connect.NewRequest(&v1.OpenVaultRequest{Id: string(f.second.ID)}))
@@ -550,8 +558,8 @@ func TestAWindowThatIsGoingIsNotACodeAboutTheVault(t *testing.T) {
 		name string
 		why  error
 	}{
-		{"the window is closing", errWindowClosing},
-		{"the window is settling", errShutdownInProgress},
+		{"the window is closing", window.ErrClosing},
+		{"the window is settling", window.ErrFlushing},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			f := onAList(t)
@@ -608,52 +616,5 @@ func TestASecondFolderDialogIsRefusedWhileOneIsUp(t *testing.T) {
 	_, err := f.client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
 	if got := connect.CodeOf(err); got != connect.CodeUnavailable {
 		t.Errorf("a second dialog answered %v, want %v", got, connect.CodeUnavailable)
-	}
-}
-
-// A build that does not serve the list answers no question about it. The list
-// is a service and is mounted whole, so what is unanswered is unanswered
-// because nothing serves it and not because a handler standing there has
-// nothing behind it.
-func TestABuildThatDoesNotServeTheListAnswersNothingAboutIt(t *testing.T) {
-	api := newBareServices()
-	server := httptest.NewUnstartedServer(
-		api.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
-	server.EnableHTTP2 = true
-	server.StartTLS()
-	t.Cleanup(server.CloseClientConnections)
-	t.Cleanup(server.Close)
-	client := numenv1connect.NewVaultsServiceClient(server.Client(), server.URL)
-
-	request := map[string]func() error{
-		"list": func() error {
-			_, err := client.ListVaults(t.Context(), connect.NewRequest(&v1.ListVaultsRequest{}))
-			return err
-		},
-		"choose": func() error {
-			_, err := client.ChooseFolder(t.Context(), connect.NewRequest(&v1.ChooseFolderRequest{}))
-			return err
-		},
-		"add": func() error {
-			_, err := client.AddVault(t.Context(), connect.NewRequest(&v1.AddVaultRequest{Path: "/notes"}))
-			return err
-		},
-		"rename": func() error {
-			_, err := client.RenameVault(t.Context(), connect.NewRequest(&v1.RenameVaultRequest{Name: "journal"}))
-			return err
-		},
-		"remove": func() error {
-			_, err := client.RemoveVault(t.Context(), connect.NewRequest(&v1.RemoveVaultRequest{}))
-			return err
-		},
-		"open": func() error {
-			_, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.OpenVaultRequest{}))
-			return err
-		},
-	}
-	for what, ask := range request {
-		if got := connect.CodeOf(ask()); got != connect.CodeUnimplemented {
-			t.Errorf("%s answered %v, want %v", what, got, connect.CodeUnimplemented)
-		}
 	}
 }

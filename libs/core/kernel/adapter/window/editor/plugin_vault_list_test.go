@@ -15,8 +15,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -356,7 +356,7 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	list := editor.NewPluginVaultList(f.installation)
 	err := list.OpenVault(t.Context(), f.second.ID)
 
-	if !errors.Is(err, vaults.ErrUnreadable) {
+	if !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Errorf("the plugin's open of a vault whose folder is gone returned %v, want ErrUnreadable", err)
 	}
 	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {

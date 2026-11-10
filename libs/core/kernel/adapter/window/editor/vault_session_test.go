@@ -72,7 +72,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, editor.ServicesOf(installation))
+	mountQuestionsServices(mux, installation)
 	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true

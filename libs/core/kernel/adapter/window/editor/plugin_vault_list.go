@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -79,7 +80,7 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 			l.state.Window.CancelFlush()
 		}
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, context.Cause(ctx))
-	case errors.Is(err, errAnswerPending):
+	case errors.Is(err, window.ErrAnswerPending):
 		return plugin.ErrUnsavedChanges
 	}
 	return err

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -46,7 +47,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 		return EraseResult{}, u.unregister.Execute(ctx, v)
 	}
 	if err != nil {
-		return EraseResult{}, domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", v.Path, err), ErrUnreadable, err)
+		return EraseResult{}, domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", v.Path, err), vaultdomain.ErrUnreadable, err)
 	}
 
 	carried, carriesOne, err := u.identity.GetVaultID(v.Path)
@@ -54,7 +55,7 @@ func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error)
 		return EraseResult{}, err
 	}
 	if !carriesOne || carried != v.ID {
-		return EraseResult{}, domain.NewDetailError(fmt.Sprintf("%s is no longer the vault %s; the folder is not moved to the trash", v.Path, v.Name), ErrUnreadable)
+		return EraseResult{}, domain.NewDetailError(fmt.Sprintf("%s is no longer the vault %s; the folder is not moved to the trash", v.Path, v.Name), vaultdomain.ErrUnreadable)
 	}
 
 	if err := u.trash.Trash(v.Path); err != nil {

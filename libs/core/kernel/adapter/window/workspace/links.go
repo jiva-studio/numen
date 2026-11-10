@@ -1,4 +1,4 @@
-package editor
+package workspace
 
 import (
 	"context"
@@ -9,34 +9,28 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
-// linkGrace is how long a detached tab, and the tabs of a window whose last
+// LinkGrace is how long a detached tab, and the tabs of a window whose last
 // watch ended, keep their links before a window reports them.
-const linkGrace = 30 * time.Second
+const LinkGrace = 30 * time.Second
 
-var (
-	errNoTabLinks = errors.New("this build serves no tab links")
-	errNoWindowID = errors.New("a window id is required")
-)
+var errNoWindowID = errors.New("a window id is required")
 
 // WatchTabLinks streams the tab links to a window until the window cancels the
 // watch or disconnects. When the last stream of the window ends, its tabs are
 // unlinked unless the window watches again within the grace period.
-func (h *workspaceHandler) WatchTabLinks(
+func (h *Handler) WatchTabLinks(
 	ctx context.Context,
 	r *connect.Request[v1.WatchTabLinksRequest],
 	out *connect.ServerStream[v1.WatchTabLinksResponse],
 ) error {
-	if h.state.TabLinks == nil {
-		return connect.NewError(connect.CodeUnimplemented, errNoTabLinks)
-	}
 	if r.Msg.GetWindowId() == "" {
 		return connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 	}
-	watch := h.state.TabLinks.Watch(r.Msg.GetWindowId())
+	watch := h.links.Watch(r.Msg.GetWindowId())
 	defer watch.Close()
 
 	if err := out.Send(convertSnapshotToWire(watch.Initial)); err != nil {
@@ -76,33 +70,27 @@ func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], wind
 }
 
 // CancelWatchTabLinks cancels the WatchTabLinks streams of a window.
-func (h *workspaceHandler) CancelWatchTabLinks(
+func (h *Handler) CancelWatchTabLinks(
 	_ context.Context, r *connect.Request[v1.CancelWatchTabLinksRequest],
 ) (*connect.Response[v1.CancelWatchTabLinksResponse], error) {
-	if h.state.TabLinks == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoTabLinks)
-	}
-	h.state.TabLinks.Cancel(r.Msg.GetWindowId())
+	h.links.Cancel(r.Msg.GetWindowId())
 	return connect.NewResponse(&v1.CancelWatchTabLinksResponse{}), nil
 }
 
 // WriteTabLinks applies a link, an unlink or a tab report from a window.
-func (h *workspaceHandler) WriteTabLinks(
+func (h *Handler) WriteTabLinks(
 	_ context.Context, r *connect.Request[v1.WriteTabLinksRequest],
 ) (*connect.Response[v1.WriteTabLinksResponse], error) {
-	if h.state.TabLinks == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoTabLinks)
-	}
 	switch change := r.Msg.GetChange().(type) {
 	case *v1.WriteTabLinksRequest_Link:
-		h.state.TabLinks.Link(change.Link.GetSourceTabId(), change.Link.GetTargetTabId())
+		h.links.Link(change.Link.GetSourceTabId(), change.Link.GetTargetTabId())
 	case *v1.WriteTabLinksRequest_UnlinkTabId:
-		h.state.TabLinks.Unlink(change.UnlinkTabId)
+		h.links.Unlink(change.UnlinkTabId)
 	case *v1.WriteTabLinksRequest_Tabs:
 		if r.Msg.GetWindowId() == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 		}
-		h.state.TabLinks.WriteTabs(
+		h.links.WriteTabs(
 			convertWindowFromWire(r.Msg.GetWindowId(), change.Tabs.GetWindow()),
 			convertTabsFromWire(change.Tabs.GetTabs()),
 		)
@@ -111,13 +99,10 @@ func (h *workspaceHandler) WriteTabLinks(
 }
 
 // SyncTabPath sends the new path of a linked tab to every watching window.
-func (h *workspaceHandler) SyncTabPath(
+func (h *Handler) SyncTabPath(
 	_ context.Context, r *connect.Request[v1.SyncTabPathRequest],
 ) (*connect.Response[v1.SyncTabPathResponse], error) {
-	if h.state.TabLinks == nil {
-		return nil, connect.NewError(connect.CodeUnimplemented, errNoTabLinks)
-	}
-	h.state.TabLinks.SyncPath(r.Msg.GetSourceTabId(), r.Msg.GetPath(), r.Msg.GetTitle())
+	h.links.SyncPath(r.Msg.GetSourceTabId(), r.Msg.GetPath(), r.Msg.GetTitle())
 	return connect.NewResponse(&v1.SyncTabPathResponse{}), nil
 }
 

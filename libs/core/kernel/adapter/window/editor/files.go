@@ -13,6 +13,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -253,7 +254,7 @@ func (h *FileHandler) RemoveFile(
 	}
 	// The watcher reports only the paths the vault holds a source for. The removal is
 	// published here, so the tree drops the row whatever it held.
-	h.state.ChangeEvents.publish(change{paths: []string{removed.Path}})
+	h.state.ChangeEvents.publish(window.Change{Paths: []string{removed.Path}})
 	return connect.NewResponse(&v1.RemoveFileResponse{
 		Trashed:         removed.Trashed,
 		Dangling:        removed.Dangling,
@@ -282,7 +283,7 @@ func (h *FileHandler) EmptyTrash(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	h.state.ChangeEvents.publish(change{paths: []string{note.TrashDir}})
+	h.state.ChangeEvents.publish(window.Change{Paths: []string{note.TrashDir}})
 	return connect.NewResponse(&v1.EmptyTrashResponse{Undeleted: undeleted}), nil
 }
 

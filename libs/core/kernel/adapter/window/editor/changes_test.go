@@ -79,7 +79,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, editor.ServicesOf(installation))
+	mountQuestionsServices(mux, installation)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -226,9 +226,11 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	}
 }
 
-func mountQuestionsServices(mux *http.ServeMux, services *editor.Services) {
-	mux.Handle(numenv1connect.NewVaultServiceHandler(services.Vault))
-	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(services.Workspace))
+func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
+	services := editor.ServicesOf(installation)
+	pages := installation.NewHandler(http.NotFoundHandler(), numenv1connect.VaultServiceName, numenv1connect.WorkspaceServiceName)
+	mux.Handle("/"+numenv1connect.VaultServiceName+"/", pages)
+	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
 	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
 	mux.Handle(numenv1connect.NewSearchServiceHandler(services.Search))
@@ -333,7 +335,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, editor.ServicesOf(installation))
+	mountQuestionsServices(mux, installation)
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)

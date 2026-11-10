@@ -7,11 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// ErrNameTaken is a name another vault on the list already has.
-var ErrNameTaken = errors.New("another vault has this name")
 
 // Rename changes a vault's name. The name is the collection's display name and
 // lives in the list this installation keeps; the folder keeps the name assigned
@@ -43,7 +41,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 		return domain.Vault{}, err
 	}
 	if other, exists := domain.Vaults(recognized).FindByName(name, v.ID); exists {
-		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault at %s already has the name %s", other.Path, other.Name), ErrNameTaken)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault at %s already has the name %s", other.Path, other.Name), vaultdomain.ErrNameTaken)
 	}
 
 	renamedVault := v

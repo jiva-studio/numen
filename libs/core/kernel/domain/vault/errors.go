@@ -22,4 +22,18 @@ var (
 	// ErrAlreadyExists is the move error returned when something already exists
 	// where a note was to go.
 	ErrAlreadyExists = errors.New("the file already exists")
+
+	// ErrUnreadable is returned for a path that is not a folder, or a folder this
+	// application cannot read as the requested vault.
+	ErrUnreadable = errors.New("the folder cannot be read as a vault")
+
+	// ErrCopy is one identity carried by two folders that are both there. One index
+	// cannot hold both.
+	ErrCopy = errors.New("the folder is a copy of a vault on the list")
+
+	// ErrNameTaken is a name another vault on the list already has.
+	ErrNameTaken = errors.New("another vault has this name")
+
+	// ErrLastVault is the one vault an installation has left. It stays on the list.
+	ErrLastVault = errors.New("the last vault cannot be removed")
 )
