@@ -6,7 +6,9 @@ import { CONVERSATION } from '../src/views'
 
 /** An agent that answers nothing, for views that need one to be mounted. */
 const AGENT: AgentPort = {
-  ask: async function* () {},
+  ask: async function* () {
+    yield* []
+  },
   finish: async () => undefined,
 }
 

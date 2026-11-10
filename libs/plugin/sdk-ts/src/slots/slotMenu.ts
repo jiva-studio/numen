@@ -86,7 +86,7 @@ function createRows(entries: readonly SlotItem[], parts: MenuParts): MenuItem[] 
     }
     const groupName = String(group)
     if (entry.kind === 'view') {
-      const component = entry.component as Component
+      const component = entry.component
       rows.push({ id: entry.key, text: entry.view, group: groupName, component })
       continue
     }
