@@ -197,7 +197,6 @@ linters:
             - "**/internal/adapter/plugin/agenttoolsbridge/**"
             - "**/internal/adapter/plugin/bridge/**"
             - "**/internal/adapter/plugin/commandbridge/**"
-            - "**/internal/adapter/plugin/contenttypes/**"
             - "**/internal/adapter/plugin/delivery/**"
             - "**/internal/adapter/plugin/embedderbridge/**"
             - "**/internal/adapter/plugin/lifecycle/**"
