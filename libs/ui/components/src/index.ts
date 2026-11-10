@@ -33,7 +33,7 @@ export type { ListItem } from './shared/ui/searchable-list'
 export { isTyping } from './shared/lib/dom/typing'
 
 export { KeyCap, keyChord } from './shared/ui/key-cap'
-export type { KeyIcon, Keystroke } from './shared/ui/key-cap'
+export type { Keystroke } from './shared/ui/key-cap'
 
 /** A moment of a recording as a player writes one. */
 export { clock } from './shared/lib/time/duration'
@@ -58,7 +58,7 @@ export { reportFailure } from './shared/lib/async/report'
 export { Spinner } from './shared/ui/spinner'
 
 /** A Lucide icon drawn by the name a manifest gives it. */
-export { NamedIcon, createNamedIcon } from './shared/ui/named-icon'
+export { createNamedIcon } from './shared/ui/named-icon'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 

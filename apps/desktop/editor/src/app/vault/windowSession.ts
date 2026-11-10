@@ -3,7 +3,7 @@
  */
 import { TASK_KIND } from '@numen/core-client'
 import { windowService, workspace } from '@/shared/api/clients'
-import { WINDOW } from '@/shared/lib/window'
+import { WINDOW } from './clients'
 import { counted, flushResults } from './words'
 import type { VaultPort } from '@/app/ports/vault'
 

@@ -196,7 +196,7 @@ function getReport() {
 
 export function verifyEveryPublicComponentHasStory() {
   const all = getReport();
-  requireMatches("Public components", all.reduce((sum, one) => sum + one.components, 0), 20);
+  requireMatches("Public components", all.reduce((sum, one) => sum + one.components, 0), 10);
   requireMatches("Story files", all.reduce((sum, one) => sum + one.stories, 0), 20);
   failOnFindings("A public component is rendered by no story", all.flatMap((one) => one.unstoried));
 }

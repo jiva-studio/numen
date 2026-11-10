@@ -4,7 +4,7 @@
 import { onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { INTERFACE_WAIT_MS } from '@numen/plugin-loader'
-import { waitFor } from '@/shared/lib/waitFor'
+import { waitFor } from './waitFor'
 
 export interface BootstrapDeps {
   loadVaults(): Promise<void>

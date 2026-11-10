@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NOTE_ERROR_CODE, NOTE_MARKER, NOTE_ROLE, VAULTS_ERROR_CODE } from '@numen/core-client'
 import { installCoreHandlers } from '@numen/core-client/testing'
 import { core, vaults } from './index'
-import { WINDOW } from '@/shared/lib/window'
+import { WINDOW } from './clients'
 
 const requestLog = {
   createNote: vi.fn(),
