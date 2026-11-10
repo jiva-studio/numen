@@ -5,7 +5,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
@@ -32,9 +34,9 @@ type vaultSessionAssembly interface {
 
 // VaultAssembly is what this window requires to locate, read, change, and watch vaults.
 type VaultAssembly interface {
-	GetRegistry() vaultport.VaultRegistry
+	OpenGetVaultToShow() vaultregistry.GetVaultToShow
 	GetVaultReaders() vaultport.VaultReaders
-	GetVaultWriters() vaultport.VaultWriters
+	OpenCreateFolder() *file.CreateFolder
 	GetVaultIdentity() vaultport.VaultIdentity
 	vaultSessionAssembly
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -25,36 +26,42 @@ func isolate(t *testing.T) {
 
 // brokenRegistry is the list of a session with one call that fails.
 type brokenRegistry struct {
-	vaultport.VaultRegistry
+	list   registry.Ports
 	breaks string
+}
+
+func (b brokenRegistry) ports() registry.Ports {
+	return registry.Ports{
+		Vaults: b, Lookup: b.list.Lookup, Saver: b, Remover: b, Recorder: b, Last: b.list.Last,
+	}
 }
 
 func (b brokenRegistry) List() ([]domain.Vault, error) {
 	if b.breaks == "List" {
 		return nil, errRefused
 	}
-	return b.VaultRegistry.List()
+	return b.list.Vaults.List()
 }
 
 func (b brokenRegistry) Save(v domain.Vault) error {
 	if b.breaks == "Save" {
 		return errRefused
 	}
-	return b.VaultRegistry.Save(v)
+	return b.list.Saver.Save(v)
 }
 
 func (b brokenRegistry) Remove(id domain.VaultID) error {
 	if b.breaks == "Remove" {
 		return errRefused
 	}
-	return b.VaultRegistry.Remove(id)
+	return b.list.Remover.Remove(id)
 }
 
 func (b brokenRegistry) RecordOpened(id domain.VaultID) error {
 	if b.breaks == "RecordOpened" {
 		return errRefused
 	}
-	return b.VaultRegistry.RecordOpened(id)
+	return b.list.Recorder.RecordOpened(id)
 }
 
 func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, error) {
@@ -180,7 +187,7 @@ func TestVaultCommand_ReturnsVaultListError(t *testing.T) {
 		b := s.trash(nil)
 
 		out, err := s.runBroken(func(v *cli.Vaults) {
-			v.Registry = brokenRegistry{VaultRegistry: v.Registry, breaks: c.breaks}
+			v.Registry = brokenRegistry{list: v.Registry, breaks: c.breaks}.ports()
 		}, c.args...)
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%s answered %v", name, err)

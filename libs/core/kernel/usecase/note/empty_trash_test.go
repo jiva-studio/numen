@@ -13,7 +13,6 @@ import (
 )
 
 type trashWriterStub struct {
-	vaultport.VaultWriter
 	undeleted []string
 	err       error
 	calls     *int
@@ -25,12 +24,11 @@ func (w trashWriterStub) EmptyTrash(context.Context) ([]string, error) {
 }
 
 type trashWriterProviderStub struct {
-	vaultport.VaultWriters
 	writer  trashWriterStub
 	openErr error
 }
 
-func (w trashWriterProviderStub) Open(domain.Vault) (vaultport.VaultWriter, error) {
+func (w trashWriterProviderStub) OpenTrashEmptier(domain.Vault) (vaultport.TrashEmptier, error) {
 	return w.writer, w.openErr
 }
 

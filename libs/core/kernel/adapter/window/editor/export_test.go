@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -63,7 +64,7 @@ func newWatched(
 	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) watched {
 	return watched{
-		EditorAssembly: container.NewEditorAssembly(cfg, nil, db),
+		EditorAssembly: container.NewEditorAssembly(cfg, vaultregistry.Ports{}, db),
 		cfg:            cfg,
 		db:             db,
 		readers:        readers,

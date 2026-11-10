@@ -30,13 +30,13 @@ type ImportResult struct {
 // A file dropped onto the tree is imported through this use case. The bytes are
 // copied, and the source file is left in place.
 type Import struct {
-	writers vaultport.VaultWriters
+	writers vaultport.FolderWriters
 	files   sourceport.ImportedFiles
 }
 
 // NewImport creates an Import from the writers of the target vault and the port
 // that reads imported files.
-func NewImport(writers vaultport.VaultWriters, files sourceport.ImportedFiles) Import {
+func NewImport(writers vaultport.FolderWriters, files sourceport.ImportedFiles) Import {
 	return Import{writers: writers, files: files}
 }
 
@@ -52,7 +52,7 @@ func (u Import) Execute(
 	if len(handles) == 0 {
 		return ImportResult{}, nil
 	}
-	writer, err := u.writers.Open(v)
+	writer, err := u.writers.OpenFolderWriter(v)
 	if err != nil {
 		return ImportResult{}, err
 	}
@@ -73,7 +73,7 @@ func (u Import) Execute(
 
 func (u Import) bring(
 	ctx context.Context,
-	writer vaultport.VaultWriter,
+	writer vaultport.FolderWriter,
 	v domain.Vault,
 	from, to string,
 	result *ImportResult,
@@ -98,7 +98,7 @@ func (u Import) bring(
 
 func (u Import) importFolder(
 	ctx context.Context,
-	writer vaultport.VaultWriter,
+	writer vaultport.FolderWriter,
 	v domain.Vault,
 	from, to string,
 	result *ImportResult,
@@ -124,7 +124,7 @@ func (u Import) importFolder(
 }
 
 func (u Import) importFile(
-	ctx context.Context, writer vaultport.VaultWriter, from, to string, result *ImportResult,
+	ctx context.Context, writer vaultport.FolderWriter, from, to string, result *ImportResult,
 ) (err error) {
 	file, err := u.files.Open(ctx, from)
 	if err != nil {

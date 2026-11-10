@@ -174,14 +174,14 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, v := range target {
-		if err := registry.Save(v); err != nil {
+		if err := registry.Saver.Save(v); err != nil {
 			t.Fatal(err)
 		}
 	}
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	api.SetVaultIndexer(t.Context(), nil)
 
-	lent, err := openPluginVault(cfg, registry, db, api)
+	lent, err := openPluginVault(cfg, db, api)
 	if err != nil {
 		t.Fatal(err)
 	}

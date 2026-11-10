@@ -67,7 +67,7 @@ func addVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	v, err := vault.NewAdd(vaults.Identity, vaults.Registry, vaults.Now).Execute(root, *name)
+	v, err := vault.NewAdd(vaults.Identity, vaults.Registry.Vaults, vaults.Registry.Lookup, vaults.Registry.Saver, vaults.Now).Execute(root, *name)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func listVaults(out io.Writer, deps Deps) error {
 	}
 	// No vault is specified here, so the current one is the vault the next window
 	// opens.
-	recognized, err := registry.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
+	recognized, err := registry.NewGetKnownVaults(vaults.Registry.Vaults, vaults.Registry.Last, vaults.Readers).Execute("")
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) (
 	}
 	defer closeInto(&err, rows.Close)
 
-	renamed, err := vault.NewRename(vaults.Registry, rows.Vaults).Execute(ctx, v, args[1])
+	renamed, err := vault.NewRename(vaults.Registry.Vaults, vaults.Registry.Saver, rows.Vaults).Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
@@ -153,7 +153,7 @@ func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []s
 	}
 	defer closeInto(&err, rows.Close)
 
-	forget := vault.NewUnregister(vaults.Registry, rows.Vaults)
+	forget := vault.NewUnregister(vaults.Registry.Vaults, vaults.Registry.Remover, rows.Vaults)
 	if err := forget.Execute(ctx, v); err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 	defer closeInto(&err, rows.Close)
 
 	erase := vault.NewErase(
-		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry, rows.Vaults),
+		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry.Vaults, vaults.Registry.Remover, rows.Vaults),
 	)
 	res, err := erase.Execute(ctx, v)
 	if errors.Is(err, picker.ErrNoTrash) {
@@ -244,7 +244,7 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := vault.NewRecordOpen(vaults.Registry).Execute(v.ID); err != nil {
+	if err := vault.NewRecordOpen(vaults.Registry.Recorder).Execute(v.ID); err != nil {
 		return err
 	}
 	r := newReporter(out)

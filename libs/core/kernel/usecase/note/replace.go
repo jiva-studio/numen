@@ -22,7 +22,7 @@ import (
 // and the caller presents the file stat of the note it read.
 type Replace struct {
 	readers vaultport.VaultReaders
-	writers vaultport.VaultWriters
+	writers NoteWriting
 	index   IndexUpdater
 	Drawing TellEdit
 	now     machineport.Clock
@@ -34,7 +34,7 @@ type Replace struct {
 // does not reflect the new content, and without the clock the note is stamped
 // with the machine's time.
 func NewReplace(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater, now machineport.Clock,
 ) Replace {
 	return Replace{readers: readers, writers: writers, index: index, now: now}
 }

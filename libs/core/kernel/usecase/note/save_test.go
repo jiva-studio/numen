@@ -675,12 +675,12 @@ func (w watchedReader) StatFile(ctx context.Context, path string) (domain.FileSt
 // watchedWriters records when the write lock was requested, before waiting for
 // it.
 type watchedWriters struct {
-	inner vaultport.VaultWriters
+	inner note.NoteWriting
 	hold  func()
 }
 
-func (w watchedWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
-	return w.inner.Open(v)
+func (w watchedWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	return w.inner.OpenNoteWriter(v)
 }
 
 func (w watchedWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {

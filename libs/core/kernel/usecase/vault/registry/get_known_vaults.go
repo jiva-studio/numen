@@ -24,21 +24,22 @@ type KnownVault struct {
 // whether the folder still exists is determined by the machine. Checking both
 // together keeps one screen from marking a vault that another leaves unmarked.
 type GetKnownVaults struct {
-	registry vaultport.VaultRegistry
-	folders  check.FolderCheck
+	vaults  vaultport.VaultList
+	last    vaultport.LastVault
+	folders check.FolderCheck
 }
 
-// NewGetKnownVaults is what the list is read out of and what a vault's folder is
+// NewGetKnownVaults is what the list and the last vault are read out of and what a vault's folder is
 // opened through.
-func NewGetKnownVaults(registry vaultport.VaultRegistry, readers vaultport.VaultReaders) GetKnownVaults {
-	return GetKnownVaults{registry: registry, folders: check.NewFolderCheck(readers)}
+func NewGetKnownVaults(vaults vaultport.VaultList, last vaultport.LastVault, readers vaultport.VaultReaders) GetKnownVaults {
+	return GetKnownVaults{vaults: vaults, last: last, folders: check.NewFolderCheck(readers)}
 }
 
 // Execute returns the list. showing is the vault in use; the empty identity
 // requests the vault the next window opens, which is the answer where no vault is
 // open.
 func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
-	target, err := u.registry.List()
+	target, err := u.vaults.List()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (u GetKnownVaults) Execute(showing domain.VaultID) ([]KnownVault, error) {
 		return nil, nil
 	}
 	if showing == "" {
-		last, recorded, err := u.registry.GetLastVault()
+		last, recorded, err := u.last.GetLastVault()
 		if err != nil {
 			return nil, err
 		}

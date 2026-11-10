@@ -23,6 +23,7 @@ import (
 	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
@@ -45,9 +46,9 @@ type StartVaultFunc func(
 type Runtime[H, V any] struct {
 	PluginDirFn              func(id string) (string, bool)
 	EmitEventFn              func(event string)
-	RegistryVal              vaultport.VaultRegistry
+	OpenGetVaultToShowFn     func() vaultregistry.GetVaultToShow
 	VaultReadersFn           func() vaultport.VaultReaders
-	VaultWritersFn           func() vaultport.VaultWriters
+	OpenCreateFolderFn       func() *file.CreateFolder
 	VaultIdentityFn          func() vaultport.VaultIdentity
 	OpenTabsStoreFn          func() windowport.OpenTabsStore
 	ClockFn                  func() machineport.Clock
@@ -100,11 +101,13 @@ type Runtime[H, V any] struct {
 	OpenPluginVaultFn        func(current func() (domain.Vault, bool), hooks H) (V, error)
 }
 
-func (e Runtime[H, V]) GetPluginDir(id string) (string, bool)      { return e.PluginDirFn(id) }
-func (e Runtime[H, V]) EmitEvent(event string)                     { e.EmitEventFn(event) }
-func (e Runtime[H, V]) GetRegistry() vaultport.VaultRegistry       { return e.RegistryVal }
+func (e Runtime[H, V]) GetPluginDir(id string) (string, bool) { return e.PluginDirFn(id) }
+func (e Runtime[H, V]) EmitEvent(event string)                { e.EmitEventFn(event) }
+func (e Runtime[H, V]) OpenGetVaultToShow() vaultregistry.GetVaultToShow {
+	return e.OpenGetVaultToShowFn()
+}
 func (e Runtime[H, V]) GetVaultReaders() vaultport.VaultReaders    { return e.VaultReadersFn() }
-func (e Runtime[H, V]) GetVaultWriters() vaultport.VaultWriters    { return e.VaultWritersFn() }
+func (e Runtime[H, V]) OpenCreateFolder() *file.CreateFolder       { return e.OpenCreateFolderFn() }
 func (e Runtime[H, V]) GetVaultIdentity() vaultport.VaultIdentity  { return e.VaultIdentityFn() }
 func (e Runtime[H, V]) GetOpenTabsStore() windowport.OpenTabsStore { return e.OpenTabsStoreFn() }
 func (e Runtime[H, V]) GetClock() machineport.Clock                { return e.ClockFn() }

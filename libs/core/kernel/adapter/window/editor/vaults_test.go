@@ -25,7 +25,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // vaultRows is the index as a vault is written to and taken out of it.
@@ -116,7 +115,7 @@ func (f *folders) getRequested() (string, string) {
 type onTheList struct {
 	client   numenv1connect.VaultsServiceClient
 	api      *Services
-	registry vaultport.VaultRegistry
+	registry *appstate.VaultRegistry
 	rows     *vaultRows
 	bin      *bin
 	dialog   *folders
@@ -133,10 +132,10 @@ func onAList(t *testing.T) *onTheList {
 
 	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
 	identity := vaultreader.Identity{}
-	adding := vaults.NewAdd(identity, registry, testsupport.NewClock())
+	adding := vaults.NewAdd(identity, registry, registry, registry, testsupport.NewClock())
 
 	rows := &vaultRows{}
-	forget := vaults.NewUnregister(registry, rows)
+	forget := vaults.NewUnregister(registry, registry, rows)
 	f := &onTheList{
 		registry: registry,
 		rows:     rows,
@@ -145,7 +144,7 @@ func onAList(t *testing.T) *onTheList {
 		first:    addVault(t, adding, "one"),
 		second:   addVault(t, adding, "two"),
 	}
-	rename := vaults.NewRename(registry, rows)
+	rename := vaults.NewRename(registry, registry, rows)
 	erase := vaults.NewErase(identity, f.bin, forget)
 	list := vaultregistry.NewList(registry)
 	find := vaultregistry.NewFind(registry)

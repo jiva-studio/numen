@@ -325,8 +325,40 @@ type VaultWriters struct {
 	Locks   *Locks
 }
 
-func (w VaultWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
+func (w VaultWriters) Open(v domain.Vault) (*VaultWriter, error) {
 	return OpenForWriting(v.Path, w.Options)
+}
+
+func (w VaultWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	opened, err := w.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return opened, nil
+}
+
+func (w VaultWriters) OpenFolderWriter(v domain.Vault) (vaultport.FolderWriter, error) {
+	opened, err := w.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return opened, nil
+}
+
+func (w VaultWriters) OpenFileMover(v domain.Vault) (vaultport.FileMover, error) {
+	opened, err := w.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return opened, nil
+}
+
+func (w VaultWriters) OpenTrashEmptier(v domain.Vault) (vaultport.TrashEmptier, error) {
+	opened, err := w.Open(v)
+	if err != nil {
+		return nil, err
+	}
+	return opened, nil
 }
 
 // Create writes a note and returns an error if one already exists.

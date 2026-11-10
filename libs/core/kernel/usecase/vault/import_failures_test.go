@@ -27,13 +27,14 @@ func isolateHome(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 }
 
-// unwritable is a set of writers that cannot open any vault.
+// unwritable is a set of writers that cannot open any vault for moving or filling.
 type unwritable struct {
-	vaultport.VaultWriters
 	err error
 }
 
-func (u unwritable) Open(domain.Vault) (vaultport.VaultWriter, error) { return nil, u.err }
+func (u unwritable) OpenFolderWriter(domain.Vault) (vaultport.FolderWriter, error) { return nil, u.err }
+
+func (u unwritable) OpenFileMover(domain.Vault) (vaultport.FileMover, error) { return nil, u.err }
 
 // flawed is a machine supplying files, with the failures it is configured to produce.
 type flawed struct {
@@ -275,17 +276,17 @@ func TestAnEntryOfAFolderThatCannotBeExaminedIsNamed(t *testing.T) {
 
 // ignoringContext is a set of writers that complete a copy regardless of the
 // context state.
-type ignoringContext struct{ vaultport.VaultWriters }
+type ignoringContext struct{ vaultwriter.VaultWriters }
 
-func (i ignoringContext) Open(v domain.Vault) (vaultport.VaultWriter, error) {
-	w, err := i.VaultWriters.Open(v)
+func (i ignoringContext) OpenFolderWriter(v domain.Vault) (vaultport.FolderWriter, error) {
+	w, err := i.VaultWriters.OpenFolderWriter(v)
 	return deaf{w}, err
 }
 
-type deaf struct{ vaultport.VaultWriter }
+type deaf struct{ vaultport.FolderWriter }
 
 func (d deaf) Import(ctx context.Context, to string, r io.Reader) error {
-	return d.VaultWriter.Import(context.WithoutCancel(ctx), to, r)
+	return d.FolderWriter.Import(context.WithoutCancel(ctx), to, r)
 }
 
 // Files under a folder are not brought once the drop is canceled, whatever the

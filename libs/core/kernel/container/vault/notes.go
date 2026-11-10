@@ -18,7 +18,7 @@ func (c Config) Notes(db *vaultusecase.Index, index note.IndexUpdater) note.Scen
 	names, refs, links := db.NamedPaths(), db.NoteRefs(), db.Links()
 	sources, indexed := db.Sources(), db.SourcesKnown()
 	readers := c.VaultReaders()
-	writers := c.VaultWriters()
+	writers := c.writers()
 	now := c.Clock
 
 	// One note.Move settles every note that traveled, whether a rename sent it

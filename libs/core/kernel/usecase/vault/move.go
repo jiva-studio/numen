@@ -25,7 +25,7 @@ type NoteMover interface {
 // reaching one is written again by its name. A note given a different name
 // inside its own folder is called by that name, where a title and a filename are one name.
 type Move struct {
-	writers vaultport.VaultWriters
+	movers  vaultport.FileMovers
 	links   noteport.LinkQueries
 	queries sourceport.SourceQueries
 	sources sourceport.SourceRepository
@@ -37,13 +37,13 @@ type Move struct {
 // holds about the files under the path and where it files them, and the one
 // NoteMover every note that traveled settles through.
 func NewMove(
-	writers vaultport.VaultWriters,
+	movers vaultport.FileMovers,
 	links noteport.LinkQueries,
 	queries sourceport.SourceQueries,
 	sources sourceport.SourceRepository,
 	notes NoteMover,
 ) Move {
-	return Move{writers: writers, links: links, queries: queries, sources: sources, notes: notes}
+	return Move{movers: movers, links: links, queries: queries, sources: sources, notes: notes}
 }
 
 // WithSources returns a copy of Move with the given SourceRepository.
@@ -79,13 +79,13 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 		return res, err
 	}
 
-	writer, err := u.writers.Open(v)
+	mover, err := u.movers.OpenFileMover(v)
 	if err != nil {
 		return res, err
 	}
 	// Only the core reports a path as holding nothing: the writer returns the same
 	// error for a vault it cannot reach at all.
-	if err := writer.Move(ctx, from, to); errors.Is(err, vaultport.ErrNotExist) {
+	if err := mover.Move(ctx, from, to); errors.Is(err, vaultport.ErrNotExist) {
 		return res, edit.ErrNoNote
 	} else if err != nil {
 		return res, err

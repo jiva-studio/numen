@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -40,7 +41,7 @@ func runWithDeps(deps cli.Deps, args ...string) (string, error) {
 }
 
 func createVaultList(target domain.Vault) func() (cli.Vaults, error) {
-	return func() (cli.Vaults, error) { return cli.Vaults{Registry: singleVaultList{target}}, nil }
+	return func() (cli.Vaults, error) { return cli.Vaults{Registry: portsOfSingle(singleVaultList{target})}, nil }
 }
 
 // failingLinkQueries answers every question about links with an error.
@@ -331,7 +332,7 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	t.Parallel()
 	provided := cli.Deps{Vaults: func() (cli.Vaults, error) {
-		return cli.Vaults{Registry: brokenVaultList{}}, nil
+		return cli.Vaults{Registry: brokenVaultList{}.ports()}, nil
 	}}
 	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
 	if !errors.Is(err, errRefused) {
@@ -343,6 +344,10 @@ func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 }
 
 type brokenVaultList struct{ singleVaultList }
+
+func (b brokenVaultList) ports() registry.Ports {
+	return registry.Ports{Vaults: b, Lookup: b, Saver: b, Remover: b, Recorder: b, Last: b}
+}
 
 func (brokenVaultList) FindVault(string) (domain.Vault, bool, error) {
 	return domain.Vault{}, false, errRefused

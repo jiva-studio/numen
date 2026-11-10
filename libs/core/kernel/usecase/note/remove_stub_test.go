@@ -44,7 +44,7 @@ func (l trashLinks) GetBacklinks(_ context.Context, _ domain.VaultID, to string)
 
 // trashWriter is a vault whose move and remove return the results configured for them.
 type trashWriter struct {
-	vaultport.VaultWriter
+	vaultport.FileMover
 	move   func(from, to string) error
 	remove func(path string) error
 }
@@ -54,12 +54,11 @@ func (w trashWriter) Move(_ context.Context, from, to string) error { return w.m
 func (w trashWriter) Remove(_ context.Context, path string) error { return w.remove(path) }
 
 type trashWriters struct {
-	vaultport.VaultWriters
 	writer  trashWriter
 	openErr error
 }
 
-func (w trashWriters) Open(domain.Vault) (vaultport.VaultWriter, error) {
+func (w trashWriters) OpenFileMover(domain.Vault) (vaultport.FileMover, error) {
 	return w.writer, w.openErr
 }
 

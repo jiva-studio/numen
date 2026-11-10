@@ -35,7 +35,7 @@ type EraseResult struct {
 
 func (u Erase) Execute(ctx context.Context, v domain.Vault) (EraseResult, error) {
 	// The last-vault check runs before the folder is moved.
-	if err := keepTheLastVault(u.unregister.registry, v); err != nil {
+	if err := keepTheLastVault(u.unregister.vaults, v); err != nil {
 		return EraseResult{}, err
 	}
 

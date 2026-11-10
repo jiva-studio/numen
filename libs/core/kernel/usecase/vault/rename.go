@@ -17,14 +17,15 @@ var ErrNameTaken = errors.New("another vault has this name")
 // lives in the list this installation keeps; the folder keeps the name assigned
 // by the filesystem.
 type Rename struct {
-	registry vaultport.VaultRegistry
-	index    vaultport.VaultRepository
+	vaults vaultport.VaultList
+	saver  vaultport.VaultSaver
+	index  vaultport.VaultRepository
 }
 
-// NewRename creates a Rename from the list this installation keeps, which stores
-// the name, and the index, which holds the row the vault's other rows point at.
-func NewRename(registry vaultport.VaultRegistry, index vaultport.VaultRepository) Rename {
-	return Rename{registry: registry, index: index}
+// NewRename creates a Rename from the list this installation keeps and the saver of
+// the list, which stores the name, and the index, which holds the row the vault's other rows point at.
+func NewRename(vaults vaultport.VaultList, saver vaultport.VaultSaver, index vaultport.VaultRepository) Rename {
+	return Rename{vaults: vaults, saver: saver, index: index}
 }
 
 // Execute answers with the vault under its new name. The name a vault already
@@ -37,7 +38,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 		return v, nil
 	}
 
-	recognized, err := u.registry.List()
+	recognized, err := u.vaults.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -47,7 +48,7 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, name string) (domai
 
 	renamedVault := v
 	renamedVault.Name = name
-	if err := u.registry.Save(renamedVault); err != nil {
+	if err := u.saver.Save(renamedVault); err != nil {
 		return domain.Vault{}, err
 	}
 	// The index holds no name, so a rename writes nothing to it. This covers a

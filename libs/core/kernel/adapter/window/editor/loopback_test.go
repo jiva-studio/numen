@@ -33,11 +33,9 @@ func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
-// lockedVaults is the vaults an installation holds, for an address naming one the
-// window is not showing.
+// lockedVaults is the vaults an installation holds, found by identity, for an address
+// naming one the window is not showing.
 type lockedVaults []domain.Vault
-
-func (l lockedVaults) List() ([]domain.Vault, error) { return l, nil }
 
 func (l lockedVaults) FindVault(id string) (domain.Vault, bool, error) {
 	for _, v := range l {
@@ -47,14 +45,6 @@ func (l lockedVaults) FindVault(id string) (domain.Vault, bool, error) {
 	}
 	return domain.Vault{}, false, nil
 }
-
-func (l lockedVaults) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
-
-func (lockedVaults) Save(domain.Vault) error { return nil }
-
-func (lockedVaults) Remove(domain.VaultID) error { return nil }
-
-func (lockedVaults) RecordOpened(domain.VaultID) error { return nil }
 
 func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	t.Helper()

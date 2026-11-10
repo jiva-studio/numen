@@ -27,26 +27,26 @@ func getEntropyAddress() domain.Address {
 
 // countingWriters opens writers that count the files they write.
 type countingWriters struct {
-	vaultport.VaultWriters
+	vaultwriter.VaultWriters
 	writes *int
 }
 
-func (w countingWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
-	inner, err := w.VaultWriters.Open(v)
+func (w countingWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	inner, err := w.VaultWriters.OpenNoteWriter(v)
 	if err != nil {
 		return nil, err
 	}
-	return countingWriter{VaultWriter: inner, writes: w.writes}, nil
+	return countingWriter{NoteWriter: inner, writes: w.writes}, nil
 }
 
 type countingWriter struct {
-	vaultport.VaultWriter
+	vaultport.NoteWriter
 	writes *int
 }
 
 func (w countingWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
 	*w.writes++
-	return w.VaultWriter.Write(ctx, path, content, stat)
+	return w.NoteWriter.Write(ctx, path, content, stat)
 }
 
 func TestRemoveTargetLinksRemovesEveryRecordToTheTargetInOneWrite(t *testing.T) {

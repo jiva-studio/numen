@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 func newAgentPlugin(agent *toolAgent, permissions ...string) testPlugin {
@@ -26,7 +27,7 @@ func runWrite(t *testing.T, agent *toolAgent, agentPermissions ...string) *toolP
 		newAgentPlugin(agent, agentPermissions...),
 		toolsAt(atlasToolsPlugin, []string{"vault:read", "vault:write", "vault:manage"}, served),
 	)
-	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
+	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), vaultregistry.Ports{}, nil)
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "Shelve the atlas of rivers.", Agent: "alpha"})
 	return served

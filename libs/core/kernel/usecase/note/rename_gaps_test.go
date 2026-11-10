@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -101,14 +102,15 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 func TestARenamePassesOutTheDependenciesItWasGiven(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	sources, writers, readers := &sulking{}, &trashWriters{}, &statedReaders{}
+	sources, readers := &sulking{}, &statedReaders{}
+	writers := &failingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, opened: new(int)}
 
 	renaming := note.NewRename(c.move()).WithSources(sources).WithWriters(writers)
 	renaming.Move = renaming.WithReaders(readers)
 	if renaming.Sources() != sourceport.SourceRepository(sources) {
 		t.Error("the source repository is not the one given")
 	}
-	if renaming.Writers() != vaultport.VaultWriters(writers) {
+	if renaming.Writers() != note.MoveWriting(writers) {
 		t.Error("the vault writers are not the ones given")
 	}
 	if renaming.Readers() != vaultport.VaultReaders(readers) {

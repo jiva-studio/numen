@@ -70,7 +70,7 @@ type wiring struct {
 	links   noteport.LinkQueries
 	queries sourceport.SourceQueries
 	sources sourceport.SourceRepository
-	writers vaultport.VaultWriters
+	writers vaultport.FileMovers
 	index   func(context.Context, domain.Vault, []string) error
 }
 

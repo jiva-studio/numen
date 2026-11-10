@@ -39,11 +39,11 @@ func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return "", markFileFailure(ctx, err)
 	}
-	repo, err := u.repos.Open(v)
+	hashes, err := u.stores.OpenContentHashes(v)
 	if err != nil {
 		return "", err
 	}
-	record, found, err := repo.FindContentHash(ctx, path)
+	record, found, err := hashes.FindContentHash(ctx, path)
 	if err != nil {
 		return "", err
 	}
@@ -54,7 +54,7 @@ func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return "", err
 	}
-	err = repo.SaveContentHash(ctx, text.ContentHash{
+	err = hashes.SaveContentHash(ctx, text.ContentHash{
 		Path: path, Hash: hash, Size: stat.Size, ModTime: stat.ModTime, FileID: stat.FileID, HashTime: u.clock.Now(),
 	})
 	if err != nil && ctx.Err() != nil {

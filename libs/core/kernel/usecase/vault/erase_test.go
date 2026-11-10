@@ -35,7 +35,7 @@ func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows,
 	return vaults.NewErase(
 		vaultreader.Identity{},
 		trash,
-		vaults.NewUnregister(registry, index),
+		vaults.NewUnregister(registry, registry, index),
 	), trash, index, steps
 }
 
@@ -145,7 +145,7 @@ func TestEraseTouchesNothingWhenTheFolderCannotBeRead(t *testing.T) {
 	erase := vaults.NewErase(
 		refusingIdentity{checkReadable: errors.New("permission denied")},
 		trash,
-		vaults.NewUnregister(registry, index),
+		vaults.NewUnregister(registry, registry, index),
 	)
 
 	res, err := erase.Execute(t.Context(), removed)
@@ -165,7 +165,7 @@ func TestEraseTouchesNothingWhenTheIdentityCannotBeRead(t *testing.T) {
 	erase := vaults.NewErase(
 		refusingIdentity{vaultID: func(string) (domain.VaultID, bool, error) { return "", false, errRefused }},
 		trash,
-		vaults.NewUnregister(registry, index),
+		vaults.NewUnregister(registry, registry, index),
 	)
 
 	_, err := erase.Execute(t.Context(), removed)
@@ -199,7 +199,7 @@ func TestErase_RejectsFolderWithOtherIdentity(t *testing.T) {
 					return id, does, nil
 				}},
 				trash,
-				vaults.NewUnregister(registry, index),
+				vaults.NewUnregister(registry, registry, index),
 			)
 
 			if _, err := erase.Execute(t.Context(), removed); !errors.Is(err, vaults.ErrUnreadable) {
@@ -236,7 +236,7 @@ func TestEraseKeepsTheCauseWhenTheFolderCannotBeRead(t *testing.T) {
 	erase := vaults.NewErase(
 		refusingIdentity{checkReadable: errRefused},
 		&bin{},
-		vaults.NewUnregister(registry, &indexRows{}),
+		vaults.NewUnregister(registry, registry, &indexRows{}),
 	)
 
 	_, err := erase.Execute(t.Context(), removed)

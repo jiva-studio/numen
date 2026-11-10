@@ -46,14 +46,16 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 
 // NewEditorAssembly is that assembly over a list of vaults and a cache already
 // open, for a caller that opened them itself.
-func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
+func NewEditorAssembly(cfg Config, ports registry.Ports, db *Index) EditorAssembly {
 	provider := cfg.AgentProvider()
 	return EditorAssembly{
-		PluginDirFn:          cfg.GetPluginDir,
-		EmitEventFn:          cfg.plugins().EmitPluginEvent,
-		RegistryVal:          registry,
-		VaultReadersFn:       cfg.VaultReaders,
-		VaultWritersFn:       cfg.VaultWriters,
+		PluginDirFn:    cfg.GetPluginDir,
+		EmitEventFn:    cfg.plugins().EmitPluginEvent,
+		VaultReadersFn: cfg.VaultReaders,
+		OpenGetVaultToShowFn: func() registry.GetVaultToShow {
+			return registry.NewGetVaultToShow(ports.Lookup, ports.Vaults, ports.Last)
+		},
+		OpenCreateFolderFn:   func() *file.CreateFolder { return file.NewCreateFolder(cfg.vault().FolderWriters()) },
 		VaultIdentityFn:      cfg.VaultIdentity,
 		OpenTabsStoreFn:      func() windowport.OpenTabsStore { return db.OpenTabs() },
 		ClockFn:              cfg.Clock,
@@ -97,7 +99,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			return cfg.Notes(db, index)
 		},
 		OpenVaultsFn: func(moves note.Move) vault.Scenarios {
-			return cfg.Vaults(registry, db, moves)
+			return cfg.Vaults(ports, db, moves)
 		},
 		GetRefreshFn: func() vault.Refresh {
 			return makeRefresh(cfg, db, db.Notes())
@@ -126,7 +128,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		OpenFileTextFn:   cfg.vault().OpenFileText,
 		OpenPluginDataFn: cfg.vault().OpenPluginData,
 		OpenPluginVaultFn: func(current func() (domain.Vault, bool), hooks PluginVaultHooks) (pluginport.PluginVault, error) {
-			return cfg.OpenPluginVault(registry, db, current, hooks)
+			return cfg.OpenPluginVault(ports, db, current, hooks)
 		},
 	}
 }

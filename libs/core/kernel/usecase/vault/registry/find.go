@@ -32,20 +32,20 @@ func (e *UnknownError) Unwrap() error { return ErrUnknown }
 // Find resolves what the user typed — a name, a path or an identity — into
 // a vault. It is shared by every use case that works on one.
 type Find struct {
-	registry vaultport.VaultRegistry
+	lookup vaultport.VaultLookup
 }
 
 // NewFind is what a name, a path or an identity is resolved against: the list
 // this installation keeps.
-func NewFind(registry vaultport.VaultRegistry) Find {
-	return Find{registry: registry}
+func NewFind(lookup vaultport.VaultLookup) Find {
+	return Find{lookup: lookup}
 }
 
 func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
 	if nameOrPath == "" {
 		return domain.Vault{}, ErrNoName
 	}
-	v, found, err := u.registry.FindVault(nameOrPath)
+	v, found, err := u.lookup.FindVault(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, err
 	}

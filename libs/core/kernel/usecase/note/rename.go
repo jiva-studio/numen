@@ -35,7 +35,7 @@ func (u Rename) WithSources(sources sourceport.SourceRepository) Rename {
 }
 
 // WithWriters replaces the vault writers.
-func (u Rename) WithWriters(writers vaultport.VaultWriters) Rename {
+func (u Rename) WithWriters(writers MoveWriting) Rename {
 	u.Move = u.Move.WithWriters(writers)
 	return u
 }
@@ -44,7 +44,7 @@ func (u Rename) WithWriters(writers vaultport.VaultWriters) Rename {
 func (u Rename) Sources() sourceport.SourceRepository { return u.Move.Sources() }
 
 // Writers returns the vault writers.
-func (u Rename) Writers() vaultport.VaultWriters { return u.Move.Writers() }
+func (u Rename) Writers() MoveWriting { return u.Move.Writers() }
 
 // Readers returns the vault readers.
 func (u Rename) Readers() vaultport.VaultReaders { return u.Move.Readers() }
@@ -112,11 +112,11 @@ func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string
 	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
 		return nil
 	}
-	writer, err := u.writers.Open(v)
+	mover, err := u.writers.OpenFileMover(v)
 	if err != nil {
 		return err
 	}
-	return writer.CheckMoveTarget(ctx, from, to)
+	return mover.CheckMoveTarget(ctx, from, to)
 }
 
 // WriteFilenameAsTitle writes into the note at this path the name its file

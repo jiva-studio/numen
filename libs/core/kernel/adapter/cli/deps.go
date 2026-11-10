@@ -49,7 +49,7 @@ type Deps struct {
 // the folders it names, the folder identity, the trash location of this
 // machine, and the clock.
 type Vaults struct {
-	Registry vaultport.VaultRegistry
+	Registry registry.Ports
 	Readers  vaultport.VaultReaders
 	Identity vaultport.VaultIdentity
 	Trash    machineport.Trash
@@ -59,7 +59,7 @@ type Vaults struct {
 }
 
 func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
-	target, err := registry.NewFind(v.Registry).Execute(nameOrPath)
+	target, err := registry.NewFind(v.Registry.Lookup).Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}

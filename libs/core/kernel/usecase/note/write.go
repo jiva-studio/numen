@@ -47,7 +47,7 @@ var (
 // because nothing here rewrites them. The user's YAML formatting is retained.
 type Write struct {
 	readers vaultport.VaultReaders
-	writers vaultport.VaultWriters
+	writers NoteWriting
 	index   IndexUpdater
 	now     machineport.Clock
 	Bound   int
@@ -57,7 +57,7 @@ type Write struct {
 // NewWrite returns the writer that saves a note to disk. It takes the vault
 // readers and writers, the index synchronizer, and the clock.
 func NewWrite(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater, now machineport.Clock,
 ) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now}
 }
@@ -69,7 +69,7 @@ func (u Write) WithReaders(readers vaultport.VaultReaders) Write {
 }
 
 // WithWriters replaces the vault writers.
-func (u Write) WithWriters(writers vaultport.VaultWriters) Write {
+func (u Write) WithWriters(writers NoteWriting) Write {
 	u.writers = writers
 	return u
 }

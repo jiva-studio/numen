@@ -22,7 +22,15 @@ type memoryVersions struct {
 	sources  map[domain.VaultID]map[string]textdomain.ContentHash
 }
 
-func (m *memoryVersions) Open(v domain.Vault) (textport.VersionRepository, error) {
+func (m *memoryVersions) OpenVersionReader(v domain.Vault) (textport.VersionReader, error) {
+	return memoryRepo{store: m, vault: v.ID}, nil
+}
+
+func (m *memoryVersions) OpenVersionWriter(v domain.Vault) (textport.VersionWriter, error) {
+	return memoryRepo{store: m, vault: v.ID}, nil
+}
+
+func (m *memoryVersions) OpenContentHashes(v domain.Vault) (textport.ContentHashes, error) {
 	return memoryRepo{store: m, vault: v.ID}, nil
 }
 

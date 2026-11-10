@@ -26,7 +26,7 @@ const TrashDir = ".trash"
 // from the file, so losing the index costs a scan; the file is the one thing
 // nothing rebuilds.
 type Remove struct {
-	writers vaultport.VaultWriters
+	writers vaultport.FileMovers
 	links   noteport.LinkQueries
 	queries sourceport.SourceQueries
 	index   IndexUpdater
@@ -36,7 +36,7 @@ type Remove struct {
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what updates the index for the path it left.
 func NewRemove(
-	writers vaultport.VaultWriters, links noteport.LinkQueries, queries sourceport.SourceQueries, index IndexUpdater,
+	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourceQueries, index IndexUpdater,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }
@@ -68,7 +68,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 		return res, err
 	}
 
-	writer, err := u.writers.Open(v)
+	writer, err := u.writers.OpenFileMover(v)
 	if err != nil {
 		return res, err
 	}
@@ -118,7 +118,7 @@ func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources
 	return pointing, nil
 }
 
-func moveToTrash(ctx context.Context, writer vaultport.VaultWriter, path string) (string, error) {
+func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (string, error) {
 	target := pathpkg.Join(TrashDir, path)
 	for attempt := 2; ; attempt++ {
 		err := writer.Move(ctx, path, target)
@@ -143,7 +143,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 	if err != nil {
 		return res, err
 	}
-	writer, err := u.writers.Open(v)
+	writer, err := u.writers.OpenFileMover(v)
 	if err != nil {
 		return res, err
 	}

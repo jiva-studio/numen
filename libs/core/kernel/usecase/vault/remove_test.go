@@ -13,7 +13,7 @@ func newRemove(registry *appstate.VaultRegistry) (vaults.Remove, *bin, *indexRow
 	erase, trash, index, _ := newErase(registry)
 	return vaults.NewRemove(
 		vaultregistry.NewFind(registry),
-		vaults.NewUnregister(registry, index),
+		vaults.NewUnregister(registry, registry, index),
 		erase,
 	), trash, index
 }

@@ -14,12 +14,20 @@ type IndexVersions struct {
 	repo *Repository
 }
 
-// NewIndexVersions wraps a Repository as a textport.VersionRepositories.
+// NewIndexVersions wraps a Repository as a textport.VersionStores.
 func NewIndexVersions(r *Repository) IndexVersions {
 	return IndexVersions{repo: r}
 }
 
-func (r IndexVersions) Open(v domain.Vault) (textport.VersionRepository, error) {
+func (r IndexVersions) OpenVersionReader(v domain.Vault) (textport.VersionReader, error) {
+	return vaultVersions{repo: r.repo, vault: v.ID}, nil
+}
+
+func (r IndexVersions) OpenVersionWriter(v domain.Vault) (textport.VersionWriter, error) {
+	return vaultVersions{repo: r.repo, vault: v.ID}, nil
+}
+
+func (r IndexVersions) OpenContentHashes(v domain.Vault) (textport.ContentHashes, error) {
 	return vaultVersions{repo: r.repo, vault: v.ID}, nil
 }
 

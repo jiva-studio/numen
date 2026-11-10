@@ -20,7 +20,7 @@ import (
 // is shown by its `title`, else by its filename. A title the filename cannot
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
-	writers vaultport.VaultWriters
+	writers vaultport.NoteWriters
 	names   NameQueries
 	index   IndexUpdater
 	now     machineport.Clock
@@ -30,7 +30,7 @@ type Create struct {
 // is written into, the query for which names are taken, the index update for
 // the new file, and the clock.
 func NewCreate(
-	writers vaultport.VaultWriters, names NameQueries, index IndexUpdater, now machineport.Clock,
+	writers vaultport.NoteWriters, names NameQueries, index IndexUpdater, now machineport.Clock,
 ) Create {
 	return Create{writers: writers, names: names, index: index, now: now}
 }
@@ -90,7 +90,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	writer, err := u.writers.Open(v)
+	writer, err := u.writers.OpenNoteWriter(v)
 	if err != nil {
 		return CreateResult{}, err
 	}

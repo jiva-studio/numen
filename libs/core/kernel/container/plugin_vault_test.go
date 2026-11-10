@@ -25,7 +25,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 	}
 	testsupport.CloseAfter(t, db)
 	v := testsupport.NewVault(t, notes)
-	if err := registry.Save(v); err != nil {
+	if err := registry.Saver.Save(v); err != nil {
 		t.Fatal(err)
 	}
 	return v, func() (domain.Vault, bool) { return v, true }, container.NewEditorAssembly(cfg, registry, db)

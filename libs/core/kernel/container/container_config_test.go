@@ -106,9 +106,9 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
 	cfg := NewConfig(Config{ServiceDir: ".mine"})
 
-	opened, ok := cfg.VaultWriters().(vaultwriter.VaultWriters)
+	opened, ok := cfg.NoteWriters().(vaultwriter.VaultWriters)
 	if !ok {
-		t.Fatalf("vaults are opened for writing by %T", cfg.VaultWriters())
+		t.Fatalf("vaults are opened for writing by %T", cfg.NoteWriters())
 	}
 	if opened.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", opened.Options)
@@ -202,7 +202,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pos, ok := got.(placed); !ok || pos.Path() != named {
+	if pos, ok := got.Vaults.(placed); !ok || pos.Path() != named {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
@@ -214,7 +214,7 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if offset, ok := got.(placed); !ok || offset.Path() != filepath.Join(config, "numen", "vaults.json") {
+	if offset, ok := got.Vaults.(placed); !ok || offset.Path() != filepath.Join(config, "numen", "vaults.json") {
 		t.Errorf("the registry is %#v", got)
 	}
 }

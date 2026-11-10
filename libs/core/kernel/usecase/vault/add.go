@@ -24,15 +24,20 @@ var ErrCopy = errors.New("the folder is a copy of a vault on the list")
 // A name already used by another vault gets a number appended.
 type Add struct {
 	identity vaultport.VaultIdentity
-	registry vaultport.VaultRegistry
+	vaults   vaultport.VaultList
+	lookup   vaultport.VaultLookup
+	saver    vaultport.VaultSaver
 	now      machineport.Clock
 }
 
 // NewAdd is what turns a folder into a vault: what writes and reads the
 // identity the folder carries, the list this installation keeps, and when this
 // is happening, which the identity carries.
-func NewAdd(identity vaultport.VaultIdentity, registry vaultport.VaultRegistry, now machineport.Clock) Add {
-	return Add{identity: identity, registry: registry, now: now}
+func NewAdd(
+	identity vaultport.VaultIdentity, vaults vaultport.VaultList, lookup vaultport.VaultLookup, saver vaultport.VaultSaver,
+	now machineport.Clock,
+) Add {
+	return Add{identity: identity, vaults: vaults, lookup: lookup, saver: saver, now: now}
 }
 
 // Execute requires an absolute path. Resolving one against the process working
@@ -49,7 +54,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("%s cannot be read as a vault: %v", root, err), ErrUnreadable, err)
 	}
 
-	target, err := u.registry.List()
+	target, err := u.vaults.List()
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -70,7 +75,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 	//
 	// They are distinguished by checking whether the old location still carries this
 	// identity: if so, both exist and it is a copy.
-	existing, found, err := u.registry.FindVault(string(id))
+	existing, found, err := u.lookup.FindVault(string(id))
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -86,7 +91,7 @@ func (u Add) Execute(root, name string) (domain.Vault, error) {
 		v.Name = domain.BasePath(root)
 	}
 	v.Name = recognized.FreeName(v.Name, v.ID)
-	if err := u.registry.Save(v); err != nil {
+	if err := u.saver.Save(v); err != nil {
 		return domain.Vault{}, err
 	}
 	return v, nil

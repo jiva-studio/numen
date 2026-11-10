@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -365,7 +366,7 @@ func TestEditLoad(t *testing.T) {
 	api.state.setVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	made := container.NewEditorAssembly(cfg, nil, db)
+	made := container.NewEditorAssembly(cfg, vaultregistry.Ports{}, db)
 	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
 	_, wait := startIndexing(t.Context(), made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(wait)

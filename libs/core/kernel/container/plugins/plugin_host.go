@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -36,6 +35,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -239,10 +239,22 @@ func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
 	}
 }
 
+func (c Config) openNoteWriter(v domain.Vault) (hostvault.NoteWriter, error) {
+	writer, err := c.NoteWriters.OpenNoteWriter(v)
+	if err != nil {
+		return nil, err
+	}
+	return writer, nil
+}
+
+func (c Config) lockVault(ctx context.Context, v domain.Vault) (func(), error) {
+	return c.VaultLocks.Lock(ctx, v)
+}
+
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
 // index that holds them: the one current names, else the one a call names by identity.
 func (c Config) OpenPluginVault(
-	registry vaultport.VaultRegistry, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (pluginport.PluginVault, error) {
 	cache, err := c.OpenPluginCache()
 	if err != nil {
@@ -270,7 +282,8 @@ func (c Config) OpenPluginVault(
 	vaults := hostvault.Vault{
 		Current:     current,
 		Readers:     c.VaultReaders,
-		Writers:     c.VaultWriters,
+		OpenWriter:  c.openNoteWriter,
+		LockVault:   c.lockVault,
 		Notes:       db.NoteRefs(),
 		Types:       db.NoteTypes(),
 		NamedPaths:  db.NamedPaths(),
@@ -283,9 +296,9 @@ func (c Config) OpenPluginVault(
 		Cache:       cache,
 		Watcher:     c.VaultWatcher,
 		Written:     hooks.Written,
-		Vaults:      registry.List,
+		Vaults:      registry.Vaults.List,
 		Find: func(id domain.VaultID) (domain.Vault, error) {
-			found, isFound, err := registry.FindVault(string(id))
+			found, isFound, err := registry.Lookup.FindVault(string(id))
 			if err != nil {
 				return domain.Vault{}, err
 			}

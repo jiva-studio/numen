@@ -15,7 +15,7 @@ func TestAListThatCannotBeReadIsAnError(t *testing.T) {
 	list.fails = errors.New("the list cannot be read")
 	list.rows = nil
 
-	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, there).Execute("")
 	if !errors.Is(err, list.fails) {
 		t.Fatalf("got %v", err)
 	}
@@ -24,10 +24,8 @@ func TestAListThatCannotBeReadIsAnError(t *testing.T) {
 	}
 }
 
-// forgetful is a list that holds its rows and cannot say which one was opened
-// last.
+// forgetful is a list that cannot say which one was opened last.
 type forgetful struct {
-	*theList
 	err error
 }
 
@@ -40,7 +38,7 @@ func TestTheLastVaultThatCannotBeReadIsAnError(t *testing.T) {
 	list, there := twoRows()
 	cannot := errors.New("the last vault cannot be read")
 
-	recognized, err := registry.NewGetKnownVaults(forgetful{theList: list, err: cannot}, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, forgetful{err: cannot}, there).Execute("")
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
 	}
@@ -55,7 +53,7 @@ func TestNoVaultIsCurrentWhereNoneIsNamedAndNoneWasOpened(t *testing.T) {
 	t.Parallel()
 	list := &theList{rows: []domain.Vault{{ID: "", Name: "Nameless", Path: "/notes/nameless"}}}
 
-	recognized, err := registry.NewGetKnownVaults(list, folders{"": true}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, folders{"": true}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}

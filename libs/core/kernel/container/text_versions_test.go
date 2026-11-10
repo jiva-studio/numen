@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 const (
@@ -40,7 +41,7 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 		Path: talkPath, PluginID: transcriber, Key: "talk", Kind: "transcript", File: "talk.jsonl",
 		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 5, 1, 8, 0, 0, 0, time.UTC),
 	}
-	repo, err := db.TextVersions().Open(v)
+	repo, err := db.TextVersions().OpenVersionWriter(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +164,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, cfg, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(cfg.VaultWriters(), db.Links(), db.SourcesKnown(), db.Sources(), note.Move{})
+	move := vault.NewMove(cfg.FileMovers(), db.Links(), db.SourcesKnown(), db.Sources(), note.Move{})
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -302,7 +303,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		Path: talkPath, PluginID: other, Key: "notes", Kind: "subtitles", File: "notes.jsonl",
 		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
 	}
-	repo, err := db.TextVersions().Open(v)
+	repo, err := db.TextVersions().OpenVersionWriter(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +315,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.TextVersions.SetListener(cutOnChange{t: t, extract: extract})
-	data := NewEditorAssembly(cfg, nil, nil).OpenPluginData()
+	data := NewEditorAssembly(cfg, registry.Ports{}, nil).OpenPluginData()
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
 		t.Fatal(err)

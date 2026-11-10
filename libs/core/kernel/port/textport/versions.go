@@ -7,18 +7,21 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// VersionRepository is the text versions of one vault's files. A version is
+// VersionReader reads the text versions of one vault's files. A version is
 // named by its path and its id.
-type VersionRepository interface {
+type VersionReader interface {
 	// GetVersions is the versions of one file, in the order they were first saved.
 	GetVersions(ctx context.Context, path string) ([]domain.TextVersion, error)
+}
+
+// VersionWriter records and removes the text versions of one vault's files.
+type VersionWriter interface {
 	// SaveVersion records a version, replacing one of the same path and id in its place.
 	SaveVersion(ctx context.Context, version domain.TextVersion) error
 	// RemoveVersion removes a version. A version that is not there is removed.
 	RemoveVersion(ctx context.Context, path string, id domain.TextVersionID) error
 	// RemovePluginVersions removes every version a plugin made, and returns them.
 	RemovePluginVersions(ctx context.Context, pluginID string) ([]domain.TextVersion, error)
-	ContentHashes
 }
 
 // ContentHashes is the hashes recorded for the files of one vault, used to select
@@ -31,9 +34,12 @@ type ContentHashes interface {
 	SaveContentHash(ctx context.Context, record text.ContentHash) error
 }
 
-// VersionRepositories opens the versions of one vault.
-type VersionRepositories interface {
-	Open(v domain.Vault) (VersionRepository, error)
+// VersionStores opens the versions of one vault to read them and to change them, and
+// the content hashes recorded beside them.
+type VersionStores interface {
+	OpenVersionReader(v domain.Vault) (VersionReader, error)
+	OpenVersionWriter(v domain.Vault) (VersionWriter, error)
+	OpenContentHashes(v domain.Vault) (ContentHashes, error)
 }
 
 // TextFiles is the version files in the plugin folders of one vault's store.
