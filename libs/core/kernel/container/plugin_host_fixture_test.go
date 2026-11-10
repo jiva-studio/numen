@@ -1,6 +1,10 @@
 package container
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/indexfolder"
+)
 
 func newPluginHost(t *testing.T, target string, dirs ...string) *PluginHost {
 	t.Helper()
@@ -10,3 +14,5 @@ func newPluginHost(t *testing.T, target string, dirs ...string) *PluginHost {
 	}
 	return host
 }
+
+func prepareIndexPath(c vaultWiring) (string, error) { return indexfolder.Prepare(c.IndexPath) }

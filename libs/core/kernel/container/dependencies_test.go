@@ -1,6 +1,7 @@
-package dependencyenv_test
+package container
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
@@ -11,15 +12,50 @@ import (
 	"testing"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/dependencyenv"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
+func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
+	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor")
+	t.Cleanup(func() {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+			t.Error(err)
+		}
+	})
+	registry := provision.NewRegistry()
+	host.Services.SetDependencies(registry)
+	tasks := run.NewTasks()
+	reportDependencies(plugins(NewConfig(Config{PluginHost: AdaptPluginHost(host)})), tasks)
+	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
+
+	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
+	list := tasks.List()
+	if len(list) != 1 || list[0].ID != "provision:whisper" || list[0].Title != "Downloading whisper" ||
+		list[0].Unit != work.Bytes || list[0].Count != 5 || list[0].Total != 10 || list[0].IsUserStarted {
+		t.Fatalf("tasks = %+v", list)
+	}
+	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateFailed, Error: "boom"})
+	if list = tasks.List(); len(list) != 1 || list[0].Error != "boom" {
+		t.Fatalf("a failure left tasks %+v", list)
+	}
+	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateReady})
+	if list = tasks.List(); len(list) != 0 {
+		t.Errorf("a ready dependency left tasks %+v", list)
+	}
+}
+
 func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
-	t.Setenv(dependencyenv.EnvMockML, "true")
+	t.Setenv(onnxruntime.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := dependencyenv.Open("")
+	registry := newDependencyRegistry("")
 
 	model := manifest.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
@@ -49,7 +85,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 }
 
 func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
-	t.Setenv(dependencyenv.EnvMockML, "")
+	t.Setenv(onnxruntime.EnvMockML, "")
 	t.Setenv("NUMEN_MODELS_DIR", "")
 	body := []byte("model weights")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -65,7 +101,7 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 
-	resolved, err := dependencyenv.Open(models).Provision(t.Context(), req, nil)
+	resolved, err := newDependencyRegistry(models).Provision(t.Context(), req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

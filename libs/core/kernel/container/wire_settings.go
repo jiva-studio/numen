@@ -7,7 +7,6 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -147,9 +146,6 @@ func resolveCompute(_ settingsWiring, s settingsadapter.File) (hardware.Specs, h
 }
 
 func configurePluginHost(c settingsWiring, s settingsadapter.File) {
-	if c.PluginHost == nil {
-		return
-	}
 	hosts := c.SubscribedHosts
 	if hosts == nil {
 		hosts = &settingsusecase.HostSubscriptions{}
@@ -160,7 +156,7 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
-		Subscribe: subscribe, Hosts: hosts, Setup: func() { setUpPluginHost(c) },
+		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts, Setup: func() { setUpPluginHost(c) },
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
@@ -173,7 +169,7 @@ func setUpPluginHost(c settingsWiring) {
 }
 
 func unsubscribeHost(c settingsWiring) {
-	if c.SubscribedHosts == nil || c.PluginHost == nil {
+	if c.SubscribedHosts == nil {
 		return
 	}
 	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
@@ -184,12 +180,7 @@ func notifyHost(c settingsWiring, batch []settingsdomain.Setting) {
 }
 
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
-	return func() []plugindomain.Info {
-		if c.PluginHost == nil {
-			return nil
-		}
-		return c.PluginHost.Runtime.GetPluginInfos()
-	}
+	return c.PluginHost.Runtime.GetPluginInfos
 }
 
 func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvider) func() []settingsdomain.Model {
@@ -203,9 +194,6 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
-		}
-		if c.PluginHost == nil {
-			return nil, false
 		}
 		return c.PluginHost.Configuration.GetPluginSettingDeclarations(owner)
 	}
@@ -285,11 +273,7 @@ func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*p
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
-	var secrets settingsadapter.SecretDeclarations
-	if c.PluginHost != nil {
-		secrets = c.PluginHost.Configuration
-	}
-	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, getDeclarations(c), getRegistries(c), secrets)
+	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, getDeclarations(c), getRegistries(c), c.PluginHost.Views.Secrets)
 }
 
 func feed(c settingsWiring) settingevents.Feed {
@@ -311,35 +295,20 @@ func feed(c settingsWiring) settingevents.Feed {
 }
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
-	var plugins settingsport.PluginInfos
-	if c.PluginHost != nil {
-		plugins = c.PluginHost.Runtime
-	}
-	var late settingsport.LatePrograms
-	if c.Programs != nil {
-		late = c.Programs
-	}
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, plugins, late,
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos, c.Programs,
 	)
 }
 
 func settingsWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
-	var plugins settingsport.PluginSettings
-	if c.PluginHost != nil {
-		plugins = c.PluginHost.Configuration
-	}
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), plugins,
+		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), c.PluginHost.Views.Checks,
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }
 
 func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
-	var signal func()
-	if c.PluginChanges != nil {
-		signal = c.PluginChanges.Signal
-	}
+	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
 		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
 		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
@@ -397,11 +366,7 @@ func CheckTextScale(name string, scale float64) error {
 }
 
 func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {
-	sources := themeusecase.Sources{Presets: files, Own: files, Plugins: nil}
-	if c.PluginHost != nil {
-		sources.Plugins = themebridge.Open(c.PluginHost.Runtime)
-	}
-	return sources
+	return themeusecase.Sources{Presets: files, Own: files, Plugins: themebridge.Open(c.PluginHost.Runtime)}
 }
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {

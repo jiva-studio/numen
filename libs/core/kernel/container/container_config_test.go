@@ -130,7 +130,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := resolveIndexPath(vaultOf(NewConfig(Config{
+	got, err := prepareIndexPath(vaultOf(NewConfig(Config{
 		Paths: Paths{IndexPath: named},
 	})))
 	if err != nil {
@@ -151,7 +151,7 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := resolveIndexPath(vaultOf(NewConfig(Config{
+	got, err := prepareIndexPath(vaultOf(NewConfig(Config{
 		Paths: Paths{IndexPath: filepath.Join(file, "index.db")},
 	})))
 	if err == nil || got != "" {

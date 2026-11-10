@@ -78,9 +78,7 @@ type searchWiring struct {
 
 func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
-	if c.PluginHost != nil {
-		cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
-	}
+	cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
 	return cutter
 }
 
@@ -113,6 +111,12 @@ func readWholeVault(c searchWiring,
 	if err := fitIndex(c, db).Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
+	return buildReadWholeVault(c, ctx, db, embedder, v, refresh)
+}
+
+func buildReadWholeVault(c searchWiring,
+	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+) (indexing.ReadWholeVault, error) {
 	texts, err := indexTexts(c, db, v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -187,9 +191,6 @@ func newFloorPolicy(_ searchWiring, db *vault.Index, embedder embeddingport.Embe
 }
 
 func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
-	if c.PluginHost == nil {
-		return
-	}
 	c.PluginHost.Endpoint.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
@@ -219,9 +220,6 @@ func getFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
 }
 
 func embedderReady(c searchWiring) bool {
-	if c.ResolvePlugin == nil {
-		return false
-	}
 	_, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
 	return err == nil
 }
@@ -251,9 +249,6 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 }
 
 func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
-	if c.ResolvePlugin == nil {
-		return nil, func() error { return nil }, nil
-	}
 	host, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
@@ -261,6 +256,10 @@ func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(er
 	if err != nil {
 		return nil, nil, err
 	}
+	return openEmbedder(c, ctx, host, onReadError)
+}
+
+func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
 	opened, err := embedderbridge.Open(ctx, host.Runtime)
 	if err != nil {
 		return nil, nil, err

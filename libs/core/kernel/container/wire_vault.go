@@ -99,9 +99,9 @@ type vaultWiring struct {
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
-	SafeMode     bool
 	Clock        machineport.Clock
 	PluginHost   *PluginHost
+	RunningHost  *PluginHost
 	TextVersions *textversion.Versions
 	TextReaders  textdomain.Readers
 	VaultLocks   *vaultwriter.Locks

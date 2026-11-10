@@ -87,8 +87,10 @@ func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	if err := cfg.StopPlugins(t.Context()); err != nil {
 		t.Fatalf("StopPlugins = %v, want nothing to stop", err)
 	}
-	if !cfg.SetSafeMode(true).SafeMode {
-		t.Fatal("safe mode was not set")
+	safe := NewConfig(Config{SafeMode: true})
+	_, err = pluginsResolvePlugin(plugins(safe), bridge.CapabilityEmbedding)
+	if !errors.Is(err, errSafeMode) || !errors.As(err, &missing) || missing.Reason != plugindomain.Disabled {
+		t.Fatalf("resolvePlugin in safe mode = %v, want the embedding plugin disabled by safe mode", err)
 	}
 }
 
@@ -114,15 +116,11 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if !embedderReady(searchOf(cfg)) {
 		t.Fatal("an installed plugin is not ready")
 	}
-	safe := cfg.SetSafeMode(true)
-	cfg.SafeMode = false
-	if embedderReady(searchOf(cfg)) {
+	safe := NewConfig(Config{PluginHost: cfg.PluginHost, SafeMode: true})
+	if embedderReady(searchOf(safe)) {
 		t.Error("the host started a plugin in safe mode")
 	}
-	if !safe.SafeMode {
-		t.Error("safe mode was not set")
-	}
-	if !embedderReady(searchOf(cfg.SetSafeMode(false))) {
+	if !embedderReady(searchOf(NewConfig(Config{PluginHost: cfg.PluginHost}))) {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

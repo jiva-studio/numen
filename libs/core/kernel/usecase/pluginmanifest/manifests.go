@@ -148,3 +148,15 @@ func listTextKinds(m manifest.Manifest) map[string]string {
 	}
 	return titles
 }
+
+// ListFrontendPluginIDs lists the ids of the plugins that have a frontend, in the order of the host.
+func (m Manifests) ListFrontendPluginIDs() []string {
+	infos := m.host.GetPluginInfos()
+	ids := make([]string, 0, len(infos))
+	for _, info := range infos {
+		if info.HasFrontend {
+			ids = append(ids, info.ID)
+		}
+	}
+	return ids
+}

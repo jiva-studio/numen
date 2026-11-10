@@ -150,10 +150,10 @@ func Read() []string { return os.Args }
 	})
 	found, functions := getWiringFindings(loadFixture(t, dir), "fixture/container")
 	want := []string{
-		"wire.go Choose has complexity 4",
-		"wire.go calls fmt.Println",
-		"wire.go imports crypto/rand",
-		"wire.go imports os",
+		"wire.go:18 Choose has complexity 4",
+		"wire.go:29 calls fmt.Println",
+		"wire.go:4 imports crypto/rand",
+		"wire.go:6 imports os",
 	}
 	if got := formatFindings(found); !slices.Equal(got, want) || functions != 5 {
 		t.Errorf("the rule rejects %v with %d functions read, want %v with 5", got, functions, want)

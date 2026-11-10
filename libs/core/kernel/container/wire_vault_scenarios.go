@@ -4,8 +4,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
@@ -19,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -186,11 +183,7 @@ func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteReposit
 }
 
 func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, error) {
-	var plugins textport.TextPlugins = plugin.Absent{}
-	if c.PluginHost != nil && !c.SafeMode {
-		plugins = c.PluginHost.Runtime
-	}
-	return textversion.NewVersions(db.TextVersions, textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
+	return textversion.NewVersions(db.TextVersions, textfiles.Stores{Options: vaultOptions(c)}, c.RunningHost.Runtime, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }
 
 func getTextReaders(c vaultWiring) textdomain.Readers {
@@ -204,9 +197,6 @@ func getTextReaders(c vaultWiring) textdomain.Readers {
 }
 
 func setPluginTexts(c vaultWiring) {
-	if c.PluginHost == nil {
-		return
-	}
 	if c.TextVersions == nil {
 		c.PluginHost.Endpoint.SetPluginTexts(nil)
 		return
