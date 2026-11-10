@@ -165,9 +165,9 @@ describe('the models a setting offers', () => {
   it('are the ones read from that setting, and no others', async () => {
     const { kept } = createStore('{}')
     await kept.start()
-    expect(kept.read.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name)).toStrictEqual([
-      'opus',
-    ])
+    expect(
+      kept.read.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name),
+    ).toStrictEqual(['opus'])
     expect(kept.read.getModelsAt(['agent', 'use'])).toStrictEqual([])
   })
 })

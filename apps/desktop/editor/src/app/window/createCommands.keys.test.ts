@@ -31,7 +31,9 @@ describe('a letter typed into a field', () => {
 
     one.used.onKeyDown(event)
 
-    await vi.waitFor(() => expect(one.navigateTab).toHaveBeenCalledExactlyOnceWith('plex', 'Tides.md'))
+    await vi.waitFor(() =>
+      expect(one.navigateTab).toHaveBeenCalledExactlyOnceWith('plex', 'Tides.md'),
+    )
     expect(event.defaultPrevented).toBe(true)
   })
 
@@ -87,7 +89,9 @@ describe('the default of a key press', () => {
 
     expect(matched.defaultPrevented).toBe(true)
     expect(unmatched.defaultPrevented).toBe(false)
-    await vi.waitFor(() => expect(one.navigateTab).toHaveBeenCalledExactlyOnceWith('files', 'Tides.md'))
+    await vi.waitFor(() =>
+      expect(one.navigateTab).toHaveBeenCalledExactlyOnceWith('files', 'Tides.md'),
+    )
   })
 
   it('is prevented for the keys of the application, which come from commands.json', () => {

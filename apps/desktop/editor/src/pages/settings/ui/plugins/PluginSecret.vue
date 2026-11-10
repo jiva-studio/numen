@@ -23,7 +23,8 @@ const menus = computed(() => installation.value.secrets.menus?.value ?? [])
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(secret: SecretDeclaration, chosen: Secret, isAllowed: boolean): void {
   const { pluginId, name, group } = getDeclaration(props.plugin, secret)
-  if (isAllowed) installation.value.secrets.access.allowPluginSecret(chosen.id, pluginId, name, group)
+  if (isAllowed)
+    installation.value.secrets.access.allowPluginSecret(chosen.id, pluginId, name, group)
   else installation.value.secrets.access.denyPluginSecret(chosen.id, pluginId, name, group)
 }
 

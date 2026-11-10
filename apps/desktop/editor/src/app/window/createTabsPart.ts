@@ -56,7 +56,10 @@ export function createTabsCore(deps: TabsCoreDeps): TabsCore {
     write: (change) => tabReports.wait().then(() => writeTabLinks(windowId, change)),
     onError: (error) => writeMessage(`The tabs were not linked: ${formatError(error)}`, 'error'),
   })
-  const tabOpeners = fileOpeners({ fileKinds: getFileKinds, reconcileTab: windowTabs.panes.reconcileTab })
+  const tabOpeners = fileOpeners({
+    fileKinds: getFileKinds,
+    reconcileTab: windowTabs.panes.reconcileTab,
+  })
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return { windowTabs, windowId, tabReports, tabLinks, tabOpeners }
 }

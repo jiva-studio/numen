@@ -94,7 +94,15 @@ async function mountField(
     getTarget: () => inFront,
     menu: { getEntries: () => [SHOW] },
   })
-  const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) }, words, at: () => inFront, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: () => undefined }, runs: runSupport(), getCommands: createAppCommands })
+  const commands = createCommandPalette({
+    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    words,
+    at: () => inFront,
+    knows: { getTitle: () => '', getTabAt: () => null },
+    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    runs: runSupport(),
+    getCommands: createAppCommands,
+  })
   search.setOpen(true)
   await search.setTyped(text)
   await flushPromises()
@@ -249,7 +257,14 @@ describe('the highlight of the search menu as groups answer', () => {
       getTarget: () => inFront,
       menu: { getEntries: () => [SHOW] },
     })
-    const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) }, words, at: () => inFront, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: () => undefined }, runs: runSupport() })
+    const commands = createCommandPalette({
+      core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+      words,
+      at: () => inFront,
+      knows: { getTitle: () => '', getTabAt: () => null },
+      lists: { getStepGroups: () => [], previewItem: () => undefined },
+      runs: runSupport(),
+    })
     const field = mount(CommandPalette, {
       props: {
         commands,

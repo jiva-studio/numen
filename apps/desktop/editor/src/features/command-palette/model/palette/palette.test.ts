@@ -131,7 +131,19 @@ const createPalette = (
   }
   const window = createLookup()
   const retainedItem = createLists(entries)
-  const commands = createCommandPalette({ core, words, at: () => activeTarget.value, knows: window.knows, lists: retainedItem.paletteLists, runs, wait: vi.fn(() => Promise.resolve()), getCommands: () => [...createAppCommands(), ...(Object.keys(entries).length > 0 ? SETTING_COMMANDS : [])] })
+  const commands = createCommandPalette({
+    core,
+    words,
+    at: () => activeTarget.value,
+    knows: window.knows,
+    lists: retainedItem.paletteLists,
+    runs,
+    wait: vi.fn(() => Promise.resolve()),
+    getCommands: () => [
+      ...createAppCommands(),
+      ...(Object.keys(entries).length > 0 ? SETTING_COMMANDS : []),
+    ],
+  })
   commands.palette.setOpen(true)
   return {
     commands,
@@ -212,7 +224,8 @@ describe('the commands as they open', () => {
   it('writes nothing under a command that its whole group is over', () => {
     const { commands } = createPalette()
 
-    for (const item of commands.view.groups.value[0]?.items ?? []) expect(item.detail).toBeUndefined()
+    for (const item of commands.view.groups.value[0]?.items ?? [])
+      expect(item.detail).toBeUndefined()
   })
 
   it('keeps the commands the words typed leave, and lights where they match', () => {
@@ -326,7 +339,10 @@ describe('the command that makes a note, run over a folder', () => {
   it('starts without a name where a caller named the folder', () => {
     const { commands } = createPalette()
 
-    const started = commands.palette.startCommand('app:note.create', folder({ isTargetNamed: true }))
+    const started = commands.palette.startCommand(
+      'app:note.create',
+      folder({ isTargetNamed: true }),
+    )
 
     expect(started).toMatchObject({
       id: 'app:note.create',
@@ -346,13 +362,18 @@ describe('the command that makes a note, run over a folder', () => {
   it('asks for a name over a note a caller named', () => {
     const { commands } = createPalette()
 
-    expect(commands.palette.startCommand('app:note.create', front({ isTargetNamed: true }))).toBeNull()
+    expect(
+      commands.palette.startCommand('app:note.create', front({ isTargetNamed: true })),
+    ).toBeNull()
   })
 
   it('starts the command that makes a folder without a name where a caller named the folder', () => {
     const { commands } = createPalette()
 
-    const started = commands.palette.startCommand('app:folder.create', folder({ isTargetNamed: true }))
+    const started = commands.palette.startCommand(
+      'app:folder.create',
+      folder({ isTargetNamed: true }),
+    )
 
     expect(started).toMatchObject({
       id: 'app:folder.create',
@@ -372,7 +393,9 @@ describe('the command that makes a note, run over a folder', () => {
   it('asks for a name in a command of another kind over a folder a caller named', () => {
     const { commands } = createPalette()
 
-    expect(commands.palette.startCommand('app:note.rename', folder({ isTargetNamed: true }))).toBeNull()
+    expect(
+      commands.palette.startCommand('app:note.rename', folder({ isTargetNamed: true })),
+    ).toBeNull()
   })
 })
 
@@ -446,9 +469,9 @@ describe('removing a note', () => {
     const { commands } = createPalette()
     const others = ['physics/Heat.pdf']
 
-    expect(commands.palette.startCommand('app:file.remove', front({ others }))?.others).toStrictEqual(
-      others,
-    )
+    expect(
+      commands.palette.startCommand('app:file.remove', front({ others }))?.others,
+    ).toStrictEqual(others)
   })
 
   it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
@@ -515,14 +538,19 @@ describe('a command that was not offered over what it was requested over', () =>
   it('says the vault could not be opened', () => {
     const { commands } = createPalette({ isReady: false })
 
-    expect(commands.palette.getObjection('app:file.remove', front({ isReady: false }))).toBe(words.noVault)
+    expect(commands.palette.getObjection('app:file.remove', front({ isReady: false }))).toBe(
+      words.noVault,
+    )
   })
 
   it('says nothing in front is a note', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.palette.getObjection('app:file.remove', front({ kind: 'document', path: '', title: '' })),
+      commands.palette.getObjection(
+        'app:file.remove',
+        front({ kind: 'document', path: '', title: '' }),
+      ),
     ).toBe(words.noNote)
   })
 
@@ -574,10 +602,19 @@ describe('a command that asks for a note', () => {
   it('says the vault could not answer, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const activeTarget = ref(front())
-    const commands = createCommandPalette({ core: {
+    const commands = createCommandPalette({
+      core: {
         names: async () => Promise.reject(new Error('no model is set')),
         vaults: async () => installation(),
-      }, words, at: () => activeTarget.value, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: vi.fn() }, runs: runSupport(), wait: vi.fn(() => Promise.resolve()), getCommands: createAppCommands })
+      },
+      words,
+      at: () => activeTarget.value,
+      knows: { getTitle: () => '', getTabAt: () => null },
+      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      runs: runSupport(),
+      wait: vi.fn(() => Promise.resolve()),
+      getCommands: createAppCommands,
+    })
     commands.palette.setOpen(true)
     commands.palette.startCommand('app:file.open#note', front())
 
@@ -651,7 +688,10 @@ describe('a command that offers a list the window holds', () => {
 
     await commands.palette.setTyped('rac')
 
-    expect(getItemIds(commands.view.groups)).toStrictEqual({ shipping: ['preset:dracula'], owned: [] })
+    expect(getItemIds(commands.view.groups)).toStrictEqual({
+      shipping: ['preset:dracula'],
+      owned: [],
+    })
     expect(commands.view.groups.value[0]?.items[0]?.at).toStrictEqual([{ start: 1, end: 4 }])
   })
 
@@ -797,7 +837,9 @@ describe('a command requested for from outside the palette', () => {
     const { commands } = createPalette()
     commands.palette.setOpen(false)
 
-    expect(commands.palette.startCommand('app:file.copyPath', front())?.id).toBe('app:file.copyPath')
+    expect(commands.palette.startCommand('app:file.copyPath', front())?.id).toBe(
+      'app:file.copyPath',
+    )
     expect(commands.palette.open.value).toBe(false)
   })
 })
@@ -884,7 +926,9 @@ describe('a command that asks for a vault', () => {
     await settle()
 
     expect(commands.view.groups.value[0]?.items[0]?.isDisabled).toBe(true)
-    expect(commands.view.groups.value[0]?.items[0]?.detail).toBe(`${words.current} · /vaults/Physics`)
+    expect(commands.view.groups.value[0]?.items[0]?.detail).toBe(
+      `${words.current} · /vaults/Physics`,
+    )
     expect(chooseRow(commands, 'physics')).toBeNull()
   })
 
@@ -920,10 +964,19 @@ describe('a command that asks for a vault', () => {
   it('says the list could not be requested, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const activeTarget = ref(front())
-    const commands = createCommandPalette({ core: {
+    const commands = createCommandPalette({
+      core: {
         names: async () => [],
         vaults: async () => Promise.reject(new Error('the list is not there')),
-      }, words, at: () => activeTarget.value, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: vi.fn() }, runs: runSupport(), wait: vi.fn(() => Promise.resolve()), getCommands: createAppCommands })
+      },
+      words,
+      at: () => activeTarget.value,
+      knows: { getTitle: () => '', getTabAt: () => null },
+      lists: { getStepGroups: () => [], previewItem: vi.fn() },
+      runs: runSupport(),
+      wait: vi.fn(() => Promise.resolve()),
+      getCommands: createAppCommands,
+    })
     commands.palette.setOpen(true)
 
     commands.palette.startCommand('app:vault.open', front())
@@ -1073,7 +1126,16 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
     holds.push(one)
     return one.promise
   }
-  const commands = createCommandPalette({ core, words, at: () => front(), knows: createLookup().knows, lists: createLists(commandLists).paletteLists, runs: runSupport(), wait, getCommands: createAppCommands })
+  const commands = createCommandPalette({
+    core,
+    words,
+    at: () => front(),
+    knows: createLookup().knows,
+    lists: createLists(commandLists).paletteLists,
+    runs: runSupport(),
+    wait,
+    getCommands: createAppCommands,
+  })
   return { commands, names, lists, holds, hold, requests: request }
 }
 
@@ -1550,7 +1612,18 @@ describe('a row of a list the window holds', () => {
 describe('the icon of a command', () => {
   it('is the one its declaration gives, and none for a command that gives none', () => {
     const icon = defineComponent({ name: 'GraphIcon', render: () => null })
-    const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => installation(vault('physics', 'Physics')) }, words, at: () => front(), knows: createLookup().knows, lists: createLists({}).paletteLists, runs: runSupport(), wait: vi.fn(() => Promise.resolve()), getCommands: () => [
+    const commands = createCommandPalette({
+      core: {
+        names: async () => [],
+        vaults: async () => installation(vault('physics', 'Physics')),
+      },
+      words,
+      at: () => front(),
+      knows: createLookup().knows,
+      lists: createLists({}).paletteLists,
+      runs: runSupport(),
+      wait: vi.fn(() => Promise.resolve()),
+      getCommands: () => [
         ...createAppCommands(),
         {
           id: 'org.example.sample:graph.run',
@@ -1559,7 +1632,8 @@ describe('the icon of a command', () => {
           group: 'window',
           isAvailable: () => true,
         },
-      ] })
+      ],
+    })
 
     expect(commands.view.findCommandIcon('org.example.sample:graph.run')).toBe(icon)
     expect(commands.view.findCommandIcon('app:file.open#document')).toBeNull()
@@ -1680,7 +1754,9 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
     })
     expect(all?.id).toBe('org.example.sample:args.run')
 
-    commands.palette.startCommand('org.example.sample:args.run', front(), undefined, { detail: 'Spin' })
+    commands.palette.startCommand('org.example.sample:args.run', front(), undefined, {
+      detail: 'Spin',
+    })
     expect(commands.navigation.placeholder.value).toBe('Topic title')
     commands.palette.setTyped('Quantum').catch(rethrow)
     const result = chooseRow(commands)
@@ -1712,7 +1788,9 @@ describe('a command started with the text typed for it', () => {
     const { commands } = createPalette()
 
     for (const id of NAMING.slice(1)) {
-      expect(commands.palette.startCommand(id, front(), 'Entropy')?.path).toBe('physics/Ontology.md')
+      expect(commands.palette.startCommand(id, front(), 'Entropy')?.path).toBe(
+        'physics/Ontology.md',
+      )
     }
   })
 
@@ -1720,7 +1798,9 @@ describe('a command started with the text typed for it', () => {
     const { commands, openNote } = createPalette()
     openNote('physics/Ontology.md', 'active')
 
-    expect(commands.palette.startCommand('app:note.createChild', front(), 'Entropy')?.note).toBe('active')
+    expect(commands.palette.startCommand('app:note.createChild', front(), 'Entropy')?.note).toBe(
+      'active',
+    )
   })
 
   it('asks for the name as it did where the text typed is empty', () => {
@@ -1742,7 +1822,11 @@ describe('a command started with the text typed for it', () => {
     const crumbBefore = commands.navigation.crumb.value
 
     expect(
-      commands.palette.startCommand('app:note.createChild', front({ path: '', title: '' }), 'Entropy'),
+      commands.palette.startCommand(
+        'app:note.createChild',
+        front({ path: '', title: '' }),
+        'Entropy',
+      ),
     ).toBeNull()
     expect(commands.navigation.crumb.value).toBe(crumbBefore)
   })
@@ -1753,7 +1837,9 @@ describe('a command started with the text typed for it', () => {
     expect(
       commands.palette.startCommand('app:note.create', front({ isReady: false }), 'Entropy'),
     ).toBeNull()
-    expect(commands.palette.getObjection('app:note.create', front({ isReady: false }))).toBe(words.noVault)
+    expect(commands.palette.getObjection('app:note.create', front({ isReady: false }))).toBe(
+      words.noVault,
+    )
   })
 
   it('leaves a command that needs no name as it was, with no name', () => {
@@ -1782,7 +1868,10 @@ describe('the command that opens a document chosen as a result', () => {
     const { commands } = createPalette()
 
     expect(
-      commands.palette.startCommand('app:file.open#document', createDocument({ selector: { page: 3 } })),
+      commands.palette.startCommand(
+        'app:file.open#document',
+        createDocument({ selector: { page: 3 } }),
+      ),
     ).toMatchObject({
       id: 'app:file.open',
       path: '',
@@ -1810,7 +1899,9 @@ describe('the command that opens a document chosen as a result', () => {
     expect(
       commands.palette.startCommand('app:file.open#document', createDocument({ isReady: false })),
     ).toBeNull()
-    expect(commands.palette.startCommand('app:file.open#document', createDocument({ file: '' }))).toBeNull()
+    expect(
+      commands.palette.startCommand('app:file.open#document', createDocument({ file: '' })),
+    ).toBeNull()
   })
 
   it('says why it did not start, as any command does', () => {

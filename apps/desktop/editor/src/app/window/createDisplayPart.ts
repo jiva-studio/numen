@@ -127,7 +127,8 @@ export function initWindowServices(
     log: base.log,
     windowTabs: base.tabs.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
-    getSettingsViews: (pluginId) => base.plugins.host.pluginHost.getRegisteredSettingsViews(pluginId),
+    getSettingsViews: (pluginId) =>
+      base.plugins.host.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })
   settingsHolder.current = settings

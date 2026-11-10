@@ -105,7 +105,15 @@ const searchFor = async (
 }
 
 const listCommands = (target: CommandTarget) => {
-  const commands = createCommandPalette({ core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) }, words, at: () => target, knows: { getTitle: () => '', getTabAt: () => null }, lists: { getStepGroups: () => [], previewItem: () => undefined }, runs: runSupport(), getCommands: createAppCommands })
+  const commands = createCommandPalette({
+    core: { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
+    words,
+    at: () => target,
+    knows: { getTitle: () => '', getTabAt: () => null },
+    lists: { getStepGroups: () => [], previewItem: () => undefined },
+    runs: runSupport(),
+    getCommands: createAppCommands,
+  })
   commands.palette.setOpen(true)
   return commands
 }

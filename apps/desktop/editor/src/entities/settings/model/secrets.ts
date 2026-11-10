@@ -61,7 +61,9 @@ export function createSecretStore({ words, notify, refresh }: SecretOptions) {
 
   /** A secret created with its value. It resolves to its id, and to an empty text where nothing was created. An empty value creates nothing. */
   const createSecret = (group: string, name: string, value: string): Promise<string> =>
-    value === '' ? Promise.resolve('') : run(() => secretsApi.createSecret(group, name, value), '', true)
+    value === ''
+      ? Promise.resolve('')
+      : run(() => secretsApi.createSecret(group, name, value), '', true)
 
   const renameSecret = (id: string, name: string): Promise<void> =>
     runVoid(() => secretsApi.renameSecret(id, name))
@@ -70,7 +72,8 @@ export function createSecretStore({ words, notify, refresh }: SecretOptions) {
   const writeSecret = (id: string, value: string): Promise<void> =>
     value === '' ? Promise.resolve() : runVoid(() => secretsApi.writeSecret(id, value), true)
 
-  const deleteSecret = (id: string): Promise<void> => runVoid(() => secretsApi.deleteSecret(id), true)
+  const deleteSecret = (id: string): Promise<void> =>
+    runVoid(() => secretsApi.deleteSecret(id), true)
 
   const deleteSecretGroup = (group: string): Promise<void> =>
     runVoid(() => secretsApi.deleteSecretGroup(group), true)

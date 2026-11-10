@@ -47,11 +47,7 @@ describe('the sections of the page', () => {
   })
 
   it('get the state of each value, and none for a secret with no state', () => {
-    const sections = createPageSections(
-      core.sections?.value ?? [],
-      [],
-      new Map([['s1', true]]),
-    )
+    const sections = createPageSections(core.sections?.value ?? [], [], new Map([['s1', true]]))
     const secrets = sections.flatMap((one) => one.secrets)
     expect(secrets.map((one) => [one.id, one.hasValue])).toStrictEqual([
       ['s3', false],

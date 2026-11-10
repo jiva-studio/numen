@@ -16,19 +16,19 @@ const createWindowTabs = (
     tabs: {
       tabs: { value: Object.keys(tabs).map((id) => ({ id, title: id })) },
       getTab: (id: string) => {
-      const tab = tabs[id]
-      if (!tab) return null
-      return {
-        state: tab,
-        kind: {
-          ...(tab.hasOpenTab === false
-            ? {}
-            : {
-                getOpenTab: (state: { path?: string }) => ({ path: state.path ?? '' }),
-              }),
-          ...(tab.editsFiles ? { flushPending: () => Promise.resolve() } : {}),
-        },
-      }
+        const tab = tabs[id]
+        if (!tab) return null
+        return {
+          state: tab,
+          kind: {
+            ...(tab.hasOpenTab === false
+              ? {}
+              : {
+                  getOpenTab: (state: { path?: string }) => ({ path: state.path ?? '' }),
+                }),
+            ...(tab.editsFiles ? { flushPending: () => Promise.resolve() } : {}),
+          },
+        }
       },
     },
   }) as unknown as WindowTabs

@@ -12,16 +12,16 @@ const createWindowTabs = (
   ({
     tabs: {
       getTab: (id: string) => {
-      const one = tabs[id]
-      if (!one) return null
-      return {
-        state: one.state,
-        kind: {
-          kind: id.split(':')[0],
-          ...(one.navigate ? { navigate: one.navigate } : {}),
-          ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
-        },
-      }
+        const one = tabs[id]
+        if (!one) return null
+        return {
+          state: one.state,
+          kind: {
+            kind: id.split(':')[0],
+            ...(one.navigate ? { navigate: one.navigate } : {}),
+            ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
+          },
+        }
       },
     },
   }) as unknown as TabSyncDeps['windowTabs']

@@ -33,16 +33,14 @@ vi.mock('@/features/command-palette', () => ({
   useSearch: () => {
     return { setOpen: h.setPaletteOpen, open: h.isSearchOpen }
   },
-  createCommandPalette: (deps: { getCommands: () => readonly unknown[]; lists: PaletteLists }) => {
-    h.getExtraCommands = deps.getCommands
-    h.lists = deps.lists
+  createCommandPalette: (...args: unknown[]) => {
+    h.getExtraCommands = args[7] as () => readonly unknown[]
+    h.lists = args[4] as PaletteLists
     return {
-      palette: {
-        startCommand: h.startCommand,
-        getObjection: h.getObjection,
-        setOpen: h.setCommandsOpen,
-        open: h.isCommandsOpen,
-      },
+      startCommand: h.startCommand,
+      getObjection: h.getObjection,
+      setOpen: h.setCommandsOpen,
+      open: h.isCommandsOpen,
     }
   },
 }))

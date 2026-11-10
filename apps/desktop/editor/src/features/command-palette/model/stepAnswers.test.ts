@@ -129,9 +129,14 @@ describe('the answers of a step', () => {
 
     expect(commands.palette.chooseItem(keep?.id ?? '', keep?.actions?.[0]?.id ?? '')).toBeNull()
     await settle()
-    expect(commands.view.groups.value[0]?.items.map((row) => row.id)).toStrictEqual(['physics', 'heat'])
+    expect(commands.view.groups.value[0]?.items.map((row) => row.id)).toStrictEqual([
+      'physics',
+      'heat',
+    ])
     commands.palette.chooseItem('heat', heat?.actions?.[0]?.id ?? '')
-    expect(commands.palette.chooseItem(confirm?.id ?? '', confirm?.actions?.[0]?.id ?? '')).toMatchObject({
+    expect(
+      commands.palette.chooseItem(confirm?.id ?? '', confirm?.actions?.[0]?.id ?? ''),
+    ).toMatchObject({
       id: 'app:vault.remove',
       vault: { id: 'heat', name: 'Heat' },
     })

@@ -97,17 +97,17 @@ const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('the target the entries of the menu of a tab run over', () => {
   const getTab = (id: string) =>
-      id === 'none'
-        ? undefined
-        : {
-            state: id,
-            kind: {
-              getTarget: (state: unknown) =>
-                state === 'book'
-                  ? { path: '', file: 'books/Atlas.pdf', title: 'Atlas' }
-                  : { path: 'Reef.md', file: '', title: 'Reef' },
-            },
-          }
+    id === 'none'
+      ? undefined
+      : {
+          state: id,
+          kind: {
+            getTarget: (state: unknown) =>
+              state === 'book'
+                ? { path: '', file: 'books/Atlas.pdf', title: 'Atlas' }
+                : { path: 'Reef.md', file: '', title: 'Reef' },
+          },
+        }
   const windowTabs = { tabs: { tabs: { value: [] }, getTab } } as never
 
   it('is the tab and the file it shows, or the note where it shows no file', () => {

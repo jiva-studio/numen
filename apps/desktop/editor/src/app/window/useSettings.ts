@@ -64,7 +64,8 @@ function createInstallationSettings(deps: SettingsTabConfigDeps): InstallationSe
   }
   const settings: Writable<InstallationSettings> = {
     getSetting: (targetPath: readonly string[]) => rest.read.getSetting(targetPath),
-    getConfirmedSetting: (targetPath: readonly string[]) => rest.read.getCommittedSetting(targetPath),
+    getConfirmedSetting: (targetPath: readonly string[]) =>
+      rest.read.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.read.isPending(targetPath),
     isRequested: (targetPath: readonly string[]) => rest.read.isRequested(targetPath),
     getModels: (targetPath: readonly string[]) => rest.read.getModelsAt(targetPath),

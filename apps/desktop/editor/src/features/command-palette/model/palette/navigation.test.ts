@@ -125,7 +125,9 @@ describe('what a step is over', () => {
     const { steps } = createSteps()
 
     expect(
-      steps.naming.getStepLabel(pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } })),
+      steps.naming.getStepLabel(
+        pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } }),
+      ),
     ).toBe(words.several(3))
   })
 

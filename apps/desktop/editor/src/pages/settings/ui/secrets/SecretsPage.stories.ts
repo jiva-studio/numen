@@ -27,7 +27,12 @@ const plugins = [
 ]
 
 const createInstallation = (): Installation => ({
-  settings: { getSetting: () => undefined, getModels: () => [], write: () => undefined, file: ref('/numen.json') },
+  settings: {
+    getSetting: () => undefined,
+    getModels: () => [],
+    write: () => undefined,
+    file: ref('/numen.json'),
+  },
   plugin: { retryPlugin: () => undefined, choosePath: async () => '', plugins: ref(plugins) },
   secrets: {
     ...createSecretAnswer(plugins, [

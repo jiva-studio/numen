@@ -10,9 +10,12 @@ vi.mock('@/features/command-palette', () => ({
   PALETTE_WORDS: {},
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
-  createCommandPalette: () => ({ palette: { open: isOpen } }),
+  createCommandPalette: () => ({ open: isOpen }),
 }))
-vi.mock('../tabs/commandDeps', () => ({ createCommandDeps: () => ({}), createCommandNotes: () => ({}) }))
+vi.mock('../tabs/commandDeps', () => ({
+  createCommandDeps: () => ({}),
+  createCommandNotes: () => ({}),
+}))
 
 const setup = (load: () => Promise<void>, plugins?: Ref<{ id: string; isActive: boolean }[]>) => {
   const messages: [string, string][] = []

@@ -6,7 +6,7 @@ const createWiring = (leavePath: (from: string, to: string) => Promise<void>) =>
   const writeMessage = vi.fn()
   const wiring = {
     editing: { notes: { applyPathChanges: vi.fn() }, changes: { reportChange: vi.fn() } },
-    getCommands: () => ({ commands: { navigation: { applyRenames: vi.fn() } } }),
+    getCommands: () => ({ commands: { applyRenames: vi.fn() } }),
     getKinds: () => ({ leavePath, travel: vi.fn() }),
     tabOpeners: { openFileAt: vi.fn() },
     getVaults: () => ({ reload: vi.fn() }),

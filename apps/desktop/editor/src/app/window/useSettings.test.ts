@@ -338,7 +338,10 @@ describe('the settings tab', () => {
     expect(settings.rest.read.isPending).toHaveBeenCalledWith(['a', 'b'])
 
     const startSpy = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-    await (installation.secrets.edit.writeSecret('s0a1b2c3d', 'secret-val') as unknown as Promise<void>)
+    await (installation.secrets.edit.writeSecret(
+      's0a1b2c3d',
+      'secret-val',
+    ) as unknown as Promise<void>)
     expect(core.writeSecret).toHaveBeenCalledWith('s0a1b2c3d', 'secret-val')
     expect(startSpy).toHaveBeenCalledTimes(1)
 
@@ -410,7 +413,10 @@ describe('the settings tab', () => {
     vi.useFakeTimers()
     try {
       startSpy.mockClear()
-      await (installation.secrets.edit.writeSecret('s0a1b2c3d', 'secret-val-2') as unknown as Promise<void>)
+      await (installation.secrets.edit.writeSecret(
+        's0a1b2c3d',
+        'secret-val-2',
+      ) as unknown as Promise<void>)
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
       expect(startSpy).toHaveBeenCalledTimes(1)

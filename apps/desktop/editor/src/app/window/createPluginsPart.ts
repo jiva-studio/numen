@@ -40,8 +40,8 @@ const getDeclaredCommandsDeps = (
   isListed: (id: string): boolean =>
     hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
   hasBackend: (pluginId: string): boolean =>
-    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??
-    true,
+    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)
+      ?.hasBackend ?? true,
   getConfig: () => getWindowConfig(settingsHolder.current),
 })
 
@@ -69,7 +69,11 @@ function createPluginReports(
     reportCommandIssue: (pluginId: string, message: string) =>
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
     reportError: (pluginId: string, error: unknown) =>
-      write(pluginId, WINDOW_WORDS.pluginError(getPluginName(pluginId), formatError(error)), 'error'),
+      write(
+        pluginId,
+        WINDOW_WORDS.pluginError(getPluginName(pluginId), formatError(error)),
+        'error',
+      ),
     reportLoadError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
@@ -125,7 +129,8 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
   const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, settingsHolder } = deps
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
-    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
+    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)?.name ??
+    pluginId
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })

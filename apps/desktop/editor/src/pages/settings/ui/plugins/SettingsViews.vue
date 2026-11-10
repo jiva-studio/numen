@@ -27,7 +27,8 @@ const values = computed(() =>
   getSettingValues(
     props.plugin,
     (key) => installation.value.settings.getSetting([props.plugin.id, ...key.split('.')]),
-    (key) => installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
+    (key) =>
+      installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
   ),
 )
 

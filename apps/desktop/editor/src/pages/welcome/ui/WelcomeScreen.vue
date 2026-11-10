@@ -9,10 +9,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { getVaultForKey, WelcomePage } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
-import {
-  runInvocation,
-  createInvocation,
-} from '@/features/command-palette'
+import { runInvocation, createInvocation } from '@/features/command-palette'
 import { COMMAND, createRowKeys, findIcon, type VaultRef } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
 import { getUserAgent } from '../lib/dom'

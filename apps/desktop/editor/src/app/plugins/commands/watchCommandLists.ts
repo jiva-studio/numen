@@ -25,9 +25,7 @@ export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boole
   const getCommittedSetting = sources.rest?.read?.getCommittedSetting
   if (declaredCommands) {
     const loadDeclared = () => {
-      declaredCommands
-        .load()
-        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
+      declaredCommands.load().catch((error: unknown) => writeMessage(formatError(error), 'error'))
     }
     loadDeclared()
     watch(isOpen, (open) => {

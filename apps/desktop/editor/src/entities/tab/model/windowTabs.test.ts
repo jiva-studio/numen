@@ -536,7 +536,10 @@ describe('what a tab of a kind holds, requested by kind', () => {
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
     expect(window.tabs.getTabStateIn(id, 'other')).toBeNull()
-    expect(window.tabs.getTabStateIn(id, 'thing')).toEqual({ targetPath: 'Note.md', title: 'Note.md' })
+    expect(window.tabs.getTabStateIn(id, 'thing')).toEqual({
+      targetPath: 'Note.md',
+      title: 'Note.md',
+    })
   })
 })
 
@@ -608,7 +611,10 @@ describe('a tab opened alongside', () => {
 
     const two = await window.groups.handle.openTabAdjacent('thing', 'Two.md')
 
-    expect(getPanes(window.panes.layout.value.root).map((pane) => pane.tabs)).toEqual([[one], [two]])
+    expect(getPanes(window.panes.layout.value.root).map((pane) => pane.tabs)).toEqual([
+      [one],
+      [two],
+    ])
     expect(window.panes.layout.value.axis).toBe('horizontal')
   })
 
@@ -1019,7 +1025,9 @@ describe('a window opened with nothing to restore', () => {
     })
 
     expect(getPanes(window.panes.layout.value.root).map((one) => one.id)).toStrictEqual(['main'])
-    expect(onScreen(window.panes.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
+    expect(onScreen(window.panes.layout.value).map((id) => id.split(':')[0])).toStrictEqual([
+      'agent',
+    ])
   })
 })
 
@@ -1045,7 +1053,9 @@ describe('a placed kind whose tab fails to open', () => {
 
     expect(notifiedCalls).toStrictEqual([['plex', failure]])
     expect(stoppedTabs).toStrictEqual(['plex'])
-    expect(onScreen(window.panes.layout.value).map((id) => id.split(':')[0])).toStrictEqual(['agent'])
+    expect(onScreen(window.panes.layout.value).map((id) => id.split(':')[0])).toStrictEqual([
+      'agent',
+    ])
     expect(window.tabs.tabs.value.map((tab) => tab.id.split(':')[0])).toStrictEqual(['agent'])
   })
 })
@@ -1082,7 +1092,9 @@ describe('a tab of a kind moved to a path', () => {
     expect(navigations).toStrictEqual(['Wanted.md:'])
     expect(window.tabs.getTab(first)?.state).toMatchObject({ targetPath: 'Wanted.md' })
     expect(window.tabs.getTab(second)?.state).toMatchObject({ targetPath: 'Two.md' })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(first)
+    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
+      first,
+    )
 
     // Navigating a kind without a navigate callback still shows the tab
     expect(await window.tabs.navigateTab('thing', 'Other.md')).toBeDefined()
@@ -1157,7 +1169,9 @@ describe('text put to the tabs of a kind', () => {
     expect(dispatched).toBe(second)
     expect(window.tabs.getTab(first)?.state).toMatchObject({ received: [] })
     expect(window.tabs.getTab(second)?.state).toMatchObject({ received: ['what is this?'] })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(second)
+    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
+      second,
+    )
   })
 
   it('opens a tab to take it where the window holds none', async () => {
@@ -1169,7 +1183,9 @@ describe('text put to the tabs of a kind', () => {
 
     expect(id).not.toBe(otherId)
     expect(window.tabs.getTab(id)?.state).toMatchObject({ received: ['what is this?'] })
-    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(id)
+    expect(paneById(window.panes.layout.value.root, window.panes.layout.value.focus)?.active).toBe(
+      id,
+    )
   })
 
   it('is left unheard by a tab of a kind that takes no text', async () => {
@@ -1291,7 +1307,9 @@ describe('the tabs the core kept', () => {
     const one = window.tabs.getTab('paged:a.bin')
     expect(one?.kind.getState?.(one.state)).toStrictEqual({ page: 4 })
     expect(window.tabs.tabs.value[0]?.title).toBe('Saved Title')
-    expect(getPanes(window.panes.layout.value.root).map((p) => p.tabs)).toStrictEqual([['paged:a.bin']])
+    expect(getPanes(window.panes.layout.value.root).map((p) => p.tabs)).toStrictEqual([
+      ['paged:a.bin'],
+    ])
   })
 })
 
@@ -1429,7 +1447,12 @@ describe('openSavedTab', () => {
     window.groups.registerKind(pagedKind())
     await window.tabs.openTabOfKind('paged', 'existing.bin')
 
-    window.restored.openSavedTab({ id: 'paged:a.bin', kind: 'paged', path: 'a.bin', saved: { page: 4 } })
+    window.restored.openSavedTab({
+      id: 'paged:a.bin',
+      kind: 'paged',
+      path: 'a.bin',
+      saved: { page: 4 },
+    })
 
     expect(window.tabs.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
     expect(window.groups.handle.front()?.id).toBe('paged:a.bin')

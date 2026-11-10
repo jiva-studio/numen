@@ -254,7 +254,15 @@ function createWindowCommandPalette(
   listExtras: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
-  return createCommandPalette({ core: { ...core, vaults: getVaultList }, words: { ...words, ...PALETTE_WORDS }, at: getTarget, knows, lists, runs, getCommands: listExtras })
+  return createCommandPalette({
+    core: { ...core, vaults: getVaultList },
+    words: { ...words, ...PALETTE_WORDS },
+    at: getTarget,
+    knows,
+    lists,
+    runs,
+    getCommands: listExtras,
+  })
 }
 
 export function createCommands(options: CommandsDepsOptions) {
@@ -268,11 +276,15 @@ export function createCommands(options: CommandsDepsOptions) {
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
-  const palette = useSearch(core, { ...words, ...PALETTE_WORDS }, {
-    coverage,
-    menu: createSearchMenu(options.slots),
-    getTarget,
-  })
+  const palette = useSearch(
+    core,
+    { ...words, ...PALETTE_WORDS },
+    {
+      coverage,
+      menu: createSearchMenu(options.slots),
+      getTarget,
+    },
+  )
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
@@ -332,7 +344,11 @@ export function createCommands(options: CommandsDepsOptions) {
   }
 
   if (pluginHost && declaredCommands?.contributions.keybindings) {
-    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, options.rest.state?.plugins)
+    syncKeybindings(
+      pluginHost,
+      declaredCommands.contributions.keybindings,
+      options.rest.state?.plugins,
+    )
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */

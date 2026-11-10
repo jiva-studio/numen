@@ -2,10 +2,7 @@ import type { WindowTabs } from '@/entities/tab'
 import type { NoteLookup } from '@/features/command-palette'
 
 /** The tab of a kind that edits files, standing at a path, and nothing where none does. */
-export function findEditorTabAt(
-  windowTabs: Pick<WindowTabs, 'tabs'>,
-  path: string,
-): string | null {
+export function findEditorTabAt(windowTabs: Pick<WindowTabs, 'tabs'>, path: string): string | null {
   for (const tab of windowTabs.tabs.tabs.value) {
     const open = windowTabs.tabs.getTab(tab.id)
     if (open?.kind.flushPending && open.kind.getOpenTab?.(open.state).path === path) return tab.id
@@ -27,7 +24,9 @@ export function createNoteLookup(
     getTitle: (path) => {
       const id = getTabAt(path)
       if (id === null) return ''
-      return editing.getTitle(id) || windowTabs.tabs.tabs.value.find((one) => one.id === id)?.title || ''
+      return (
+        editing.getTitle(id) || windowTabs.tabs.tabs.value.find((one) => one.id === id)?.title || ''
+      )
     },
     getTabAt,
   }

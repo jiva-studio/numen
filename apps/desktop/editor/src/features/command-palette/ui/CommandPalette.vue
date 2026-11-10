@@ -130,9 +130,9 @@ function getRowIcon(id: string) {
     <template v-if="!commands.palette.open.value && search.status.isNothingFound.value" #silence>
       <span class="nothing-found">
         <Search class="nothing-found__icon" data-palette="nothing-icon" aria-hidden="true" />
-        <span class="nothing-found__text" data-palette="nothing-text">{{
-          words.nothingFound(search.typed.value.trim())
-        }}</span>
+        <span class="nothing-found__text" data-palette="nothing-text">
+          {{ words.nothingFound(search.typed.value.trim()) }}
+        </span>
       </span>
     </template>
   </Palette>

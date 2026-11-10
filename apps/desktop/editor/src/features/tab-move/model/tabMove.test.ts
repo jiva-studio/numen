@@ -303,7 +303,9 @@ describe('createMovedTabOpener', () => {
     const steps: string[] = []
     const deps = {
       windowTabs: {
-        tabs: { getTab: vi.fn((_id: string) => (isOpen ? { kind: { kind: 'plex' }, state: null } : null)) },
+        tabs: {
+          getTab: vi.fn((_id: string) => (isOpen ? { kind: { kind: 'plex' }, state: null } : null)),
+        },
         restored: { openSavedTab: vi.fn(() => steps.push('open')) },
       },
       closeTab: vi.fn(() => steps.push('close')),

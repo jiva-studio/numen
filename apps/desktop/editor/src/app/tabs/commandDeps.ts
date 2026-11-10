@@ -37,7 +37,10 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
   }
 }
 
-function tabMatchesPath(windowTab: ReturnType<WindowTabs['tabs']['getTab']>, path: string): boolean {
+function tabMatchesPath(
+  windowTab: ReturnType<WindowTabs['tabs']['getTab']>,
+  path: string,
+): boolean {
   if (!windowTab) return false
   const openPath = windowTab.kind.getOpenTab?.(windowTab.state).path
   if (openPath === path) return true

@@ -69,7 +69,8 @@ function onAddGroup(): void {
 
 function onRenameGroup(section: SectionData, name: string): void {
   newGroup.value = ''
-  if (section.secrets.length > 0) installation.value.secrets.edit.renameSecretGroup(section.group, name)
+  if (section.secrets.length > 0)
+    installation.value.secrets.edit.renameSecretGroup(section.group, name)
   else drafts.renameEmptyGroup(section.group, name)
 }
 
@@ -88,7 +89,8 @@ async function onCreate(
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {
   const { pluginId, name, group } = declaration
-  if (isAllowed) installation.value.secrets.access.allowPluginSecret(secret.id, pluginId, name, group)
+  if (isAllowed)
+    installation.value.secrets.access.allowPluginSecret(secret.id, pluginId, name, group)
   else installation.value.secrets.access.denyPluginSecret(secret.id, pluginId, name, group)
 }
 

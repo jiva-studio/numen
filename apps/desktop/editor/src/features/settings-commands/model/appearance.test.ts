@@ -465,7 +465,10 @@ describe('the window before it has received anything', () => {
 
     expect(appearance.state.applied.value).toBe('')
     expect(appearance.state.mode.value).toBe('system')
-    expect(appearance.preview.sized.value).toStrictEqual({ interfaceScale: DESIGNED, textScale: DESIGNED })
+    expect(appearance.preview.sized.value).toStrictEqual({
+      interfaceScale: DESIGNED,
+      textScale: DESIGNED,
+    })
   })
 
   it('writes nothing over the page it was served, whatever the keyboard relies on', async () => {

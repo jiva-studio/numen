@@ -42,7 +42,11 @@ export function createWindowSettingPalette(deps: {
   return createSettingPalette({
     getOwners: () => [
       { id: APP_OWNER, name: '', settings: rest.state.app.value },
-      ...rest.state.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
+      ...rest.state.plugins.value.map((one) => ({
+        id: one.id,
+        name: one.name,
+        settings: one.settings,
+      })),
     ],
     words,
     preview: createWindowPreview(appearance),

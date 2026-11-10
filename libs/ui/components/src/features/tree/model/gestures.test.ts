@@ -99,17 +99,17 @@ describe('renaming handlers', () => {
     const { gestures, notified, rows } = create(renamingPath)
     const focusSpy = vi.spyOn(rows, 'focusRow')
 
-    gestures.onFieldBlur()
+    gestures.rename.onFieldBlur()
     expect(renamingPath.value).toBeNull()
 
     renamingPath.value = 'pages'
-    gestures.onRename('pages', 'Renamed')
+    gestures.rename.onRename('pages', 'Renamed')
     expect(renamingPath.value).toBeNull()
     expect(notified).toStrictEqual([['rename', 'pages', 'Renamed']])
     expect(focusSpy).toHaveBeenCalledWith('pages')
 
     renamingPath.value = 'pages'
-    gestures.onAbandon('pages')
+    gestures.rename.onAbandon('pages')
     expect(renamingPath.value).toBeNull()
     expect(focusSpy).toHaveBeenCalledTimes(2)
 

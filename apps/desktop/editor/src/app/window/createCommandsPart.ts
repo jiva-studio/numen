@@ -224,7 +224,11 @@ function createBackgroundTasks(
   const noticeTasks = useNoticeTasks({
     log: base.log,
     plugins: base.plugins.pluginNotices,
-    window: { lost: window.health.lost, unwatched: window.vault.unwatched, error: window.vault.error },
+    window: {
+      lost: window.health.lost,
+      unwatched: window.vault.unwatched,
+      error: window.vault.error,
+    },
     settings,
   })
   return createBackgroundTaskHost({

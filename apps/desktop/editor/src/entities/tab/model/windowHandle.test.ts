@@ -32,6 +32,8 @@ describe('the show of the window handle', () => {
     window.groups.handle.show('tab-9')
 
     expect(window.panes.layout.value).toBe(before)
-    expect(getPanes(window.panes.layout.value.root).flatMap((pane) => pane.tabs)).not.toContain('tab-9')
+    expect(getPanes(window.panes.layout.value.root).flatMap((pane) => pane.tabs)).not.toContain(
+      'tab-9',
+    )
   })
 })

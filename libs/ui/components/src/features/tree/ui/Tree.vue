@@ -78,18 +78,7 @@ const drag = useRowDrag({
 })
 const { into, before, draggedIds, label, at: dropTarget } = drag
 
-const {
-  onContextMenu,
-  onRowContextMenu,
-  onRowFocus,
-  onRowPointerDown,
-  onRowClick,
-  onRowDoubleClick,
-  onRename,
-  onAbandon,
-  onFieldBlur,
-  onKeyDown,
-} = createTreeGestures({
+const gestures = createTreeGestures({
   getShownRows: () => visibleRows.value,
   getSelected: () => props.selected,
   renamingPath,
@@ -103,6 +92,10 @@ const {
   },
   emit,
 })
+const { onContextMenu, onRowContextMenu } = gestures.menu
+const { onRowFocus, onRowPointerDown, onRowClick, onRowDoubleClick } = gestures.row
+const { onRename, onAbandon, onFieldBlur } = gestures.rename
+const { onKeyDown } = gestures
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowHeight(): number {

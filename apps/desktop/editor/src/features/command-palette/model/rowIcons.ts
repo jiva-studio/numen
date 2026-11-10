@@ -21,7 +21,9 @@ export function findRowIcon(
   if (id.endsWith(KEEP_SUFFIX)) return Undo2
   if (commands.palette.open.value) {
     const picked = commands.view.findTabKind(id)
-    return picked === null ? (commands.view.findCommandIcon(id) ?? findIcon(id)) : getNoteIcon(picked)
+    return picked === null
+      ? (commands.view.findCommandIcon(id) ?? findIcon(id))
+      : getNoteIcon(picked)
   }
   const tabKind = search.reads.findTabKind(id)
   if (tabKind !== null) return getNoteIcon(tabKind)

@@ -39,15 +39,13 @@ vi.mock('@/features/command-palette', () => ({
     h.searchOptions = options
     return { setOpen: h.setPaletteOpen }
   },
-  createCommandPalette: (deps: { getCommands: () => readonly unknown[] }) => {
-    h.getExtraCommands = deps.getCommands
+  createCommandPalette: (...args: unknown[]) => {
+    h.getExtraCommands = args[7] as () => readonly unknown[]
     return {
-      palette: {
-        startCommand: h.startCommand,
-        getObjection: h.getObjection,
-        setOpen: h.setCommandsOpen,
-        open: h.isCommandsOpen,
-      },
+      startCommand: h.startCommand,
+      getObjection: h.getObjection,
+      setOpen: h.setCommandsOpen,
+      open: h.isCommandsOpen,
     }
   },
 }))
@@ -183,10 +181,7 @@ describe('running the action of a search result that is an entry of its menu', (
         kind: null,
       }),
     )
-    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
-      { id: 'inv' },
-      { name: 'command deps' },
-    )
+    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith({ id: 'inv' }, { name: 'command deps' })
   })
 
   it('opens the palette at the step a command needs, runs nothing, and closes the search', () => {
@@ -268,10 +263,7 @@ describe('opening the note of a search result as a command', () => {
     one.runChoice(choice('app:file.open'))
 
     expect(h.startCommand).toHaveBeenCalledExactlyOnceWith('app:file.open', resultTarget)
-    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
-      { id: 'inv' },
-      { name: 'command deps' },
-    )
+    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith({ id: 'inv' }, { name: 'command deps' })
     expect(one.writeMessage).not.toHaveBeenCalled()
   })
 
@@ -373,10 +365,7 @@ describe('running the action of a chosen document', () => {
         selector: { page: 3 },
       }),
     )
-    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
-      { id: 'inv' },
-      { name: 'command deps' },
-    )
+    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith({ id: 'inv' }, { name: 'command deps' })
     expect(one.executeCommand).not.toHaveBeenCalled()
     expect(one.writeMessage).not.toHaveBeenCalled()
   })
@@ -412,10 +401,7 @@ describe('running the action of the row that creates a note', () => {
     one.runChoice(create(command))
 
     expect(h.startCommand).toHaveBeenCalledExactlyOnceWith(command, front, 'Entropy')
-    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
-      { id: 'inv' },
-      { name: 'command deps' },
-    )
+    expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith({ id: 'inv' }, { name: 'command deps' })
   })
 
   it('starts the command with no input where no text was typed', () => {

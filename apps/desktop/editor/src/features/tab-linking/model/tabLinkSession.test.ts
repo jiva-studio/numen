@@ -204,10 +204,10 @@ describe('getLinkableTabs', () => {
     const windowTabs = {
       tabs: {
         tabs: computed(() => [
-        { id: 'agent:1', title: 'Agent' },
-        { id: 'plex:1', title: 'Orbits' },
-        { id: 'gone:1', title: 'Gone' },
-      ]),
+          { id: 'agent:1', title: 'Agent' },
+          { id: 'plex:1', title: 'Orbits' },
+          { id: 'gone:1', title: 'Gone' },
+        ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
     } as unknown as Parameters<typeof getLinkableTabs>[0]
@@ -446,9 +446,9 @@ describe('getWindowReport', () => {
     const windowTabs = {
       tabs: {
         tabs: computed(() => [
-        { id: 'agent:1', title: 'Agent' },
-        { id: 'plex:1', title: 'Orbits' },
-      ]),
+          { id: 'agent:1', title: 'Agent' },
+          { id: 'plex:1', title: 'Orbits' },
+        ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
       groups: { handle: { front: () => ({ id: 'agent:1', kind: 'agent', state: null }) } },

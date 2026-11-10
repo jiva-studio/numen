@@ -264,7 +264,7 @@ beforeEach(() => {
     },
     openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
     commands: {
-      commands: { navigation: { applyRenames: vi.fn() } },
+      commands: { applyRenames: vi.fn() },
       runCommand: vi.fn(),
       pluginRuns: {
         runCommandToEnd: vi.fn(async () => undefined),
@@ -371,7 +371,7 @@ describe('the parts of the window', () => {
     await h.args.display.onVaultChanged(paths, renamedItems)
 
     expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamedItems)
-    expect(h.f.commands.commands.navigation.applyRenames).toHaveBeenCalledWith(renamedItems)
+    expect(h.f.commands.commands.applyRenames).toHaveBeenCalledWith(renamedItems)
     expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed: renamedItems })
   })
 
@@ -776,7 +776,9 @@ describe('the services a plugin is given', () => {
       'error',
     )
 
-    h.f.windowTabs.restored.openPlacedTabs.mockRejectedValueOnce(createLostConnection('all tabs failed'))
+    h.f.windowTabs.restored.openPlacedTabs.mockRejectedValueOnce(
+      createLostConnection('all tabs failed'),
+    )
     window.lifecycle.openCurrentVault()
     await new Promise((r) => setTimeout(r, 10))
     expect(h.f.writer).toHaveBeenCalledWith(

@@ -110,9 +110,7 @@ const mountPage = (
 const liveAnswer = (stored: Ref<ReturnType<typeof secret>[]>) => ({
   sections: computed(() => createSecretAnswer([], stored.value).sections?.value ?? []),
   menus: ref([]),
-  states: computed(
-    () => createSecretAnswer([], stored.value).states?.value ?? new Map(),
-  ),
+  states: computed(() => createSecretAnswer([], stored.value).states?.value ?? new Map()),
 })
 
 const mountBare = (
@@ -244,14 +242,20 @@ describe('the rows of a group', () => {
     const { installation, wrapper } = mountPage()
     expect(findButtons(/rename/i, rowOf('Work'))).toHaveLength(0)
     await typeName(findNameInput('Work') as HTMLInputElement, 'Office')
-    expect(installation.secrets.edit.renameSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'Office')
+    expect(installation.secrets.edit.renameSecret).toHaveBeenCalledExactlyOnceWith(
+      WORK.id,
+      'Office',
+    )
     dispose(wrapper)
   })
 
   it('trims the name of a secret as the core does', async () => {
     const { installation, wrapper } = mountPage()
     await typeName(findNameInput('Work') as HTMLInputElement, '\u0085Office\u0085')
-    expect(installation.secrets.edit.renameSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'Office')
+    expect(installation.secrets.edit.renameSecret).toHaveBeenCalledExactlyOnceWith(
+      WORK.id,
+      'Office',
+    )
     dispose(wrapper)
   })
 })
@@ -277,7 +281,10 @@ describe('the value of a secret', () => {
   it('writes a value entered over a stored one', async () => {
     const { installation, wrapper } = mountPage([WORK])
     await enterText(maskedInputs(rowOf('Work'))[0] as HTMLInputElement, 'made-up-new-value')
-    expect(installation.secrets.edit.writeSecret).toHaveBeenCalledExactlyOnceWith(WORK.id, 'made-up-new-value')
+    expect(installation.secrets.edit.writeSecret).toHaveBeenCalledExactlyOnceWith(
+      WORK.id,
+      'made-up-new-value',
+    )
     dispose(wrapper)
   })
 
@@ -696,7 +703,10 @@ describe('the name of a group', () => {
     const travel = sectionOf('travel')
     await chooseGroupAction(/rename group/i, travel)
     await enterText(travel.querySelector('input[type="text"]') as HTMLInputElement, 'holidays')
-    expect(installation.secrets.edit.renameSecretGroup).toHaveBeenCalledExactlyOnceWith('travel', 'holidays')
+    expect(installation.secrets.edit.renameSecretGroup).toHaveBeenCalledExactlyOnceWith(
+      'travel',
+      'holidays',
+    )
     dispose(wrapper)
   })
 
@@ -748,7 +758,11 @@ describe('the name of a group', () => {
     await click(findButton(/add group/i))
     await typeGroup('\u0085abc')
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
-    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith('abc', 'Default', 'made-up-value')
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
+      'abc',
+      'Default',
+      'made-up-value',
+    )
     dispose(wrapper)
   })
 
@@ -757,7 +771,11 @@ describe('the name of a group', () => {
     await click(findButton(/add group/i))
     await typeGroup('﻿abc')
     await enterText(maskedInputs()[0] as HTMLInputElement, 'made-up-value')
-    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith('﻿abc', 'Default', 'made-up-value')
+    expect(installation.secrets.edit.createSecret).toHaveBeenCalledWith(
+      '﻿abc',
+      'Default',
+      'made-up-value',
+    )
     dispose(wrapper)
   })
 })
