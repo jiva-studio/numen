@@ -19,7 +19,7 @@ func mountWorkspace(w *windowWiring) error {
 	if err != nil {
 		return err
 	}
-	store := w.db.OpenTabs()
+	store := w.db.Stores.OpenTabs
 	handler := workspace.NewHandler(
 		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)

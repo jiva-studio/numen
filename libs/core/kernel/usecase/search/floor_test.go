@@ -60,7 +60,7 @@ func TestSearchResolvesFloorFromTheFirstSourceThatNamesOne(t *testing.T) {
 			spy := &floorSpy{}
 			searching := search.New(spy, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
 			if tc.source != nil {
-				searching = searching.WithFloorSource(tc.source)
+				searching.Floor = tc.source
 			}
 
 			p := search.GetTypingParameters(search.Dense, 5)
@@ -95,8 +95,8 @@ func TestTheDefaultFloorIsThirtyHundredths(t *testing.T) {
 func TestASearchAsksTheFloorSourceOncePerQuery(t *testing.T) {
 	vault := domain.Vault{ID: "01VAULT"}
 	calls := 0
-	searching := search.New(&floorSpy{}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil).
-		WithFloorSource(func(context.Context, domain.Vault, string) float64 { calls++; return 0.4 })
+	searching := search.New(&floorSpy{}, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
+	searching.Floor = func(context.Context, domain.Vault, string) float64 { calls++; return 0.4 }
 
 	if _, err := searching.Execute(t.Context(), vault, "disorder", search.GetTypingParameters(search.Hybrid, 5)); err != nil {
 		t.Fatal(err)

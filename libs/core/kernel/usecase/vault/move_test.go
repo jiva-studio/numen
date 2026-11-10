@@ -38,7 +38,7 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 		t.Fatal(err)
 	}
 	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
-	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.RemovalLookup(), db.Sources(), testsupport.NewClock())
+	refresh := vaults.NewRefresh(readers, db.Stores.Vaults, db.Stores.Notes, db.Source.RemovalLookup, db.Source.Sources, testsupport.NewClock())
 	return filing{
 		db:      db,
 		vault:   v,
@@ -58,7 +58,7 @@ func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 func (f filing) newMove(preserved query.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: f.db.Links(), Names: f.db.NamedPaths(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
+		Links: f.db.NoteQueries.Links, Names: f.db.NoteQueries.NamedPaths, Sources: f.db.Source.Sources, Index: f.index, Now: testsupport.NewClock(),
 	})
 	notes.Sync = func() query.SyncTitleAndFilename { return preserved }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {
@@ -67,13 +67,13 @@ func (f filing) newMove(preserved query.SyncTitleAndFilename) vaults.Move {
 	}
 	return vaults.NewMove(
 		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		f.db.Links(), f.db.SourcesUnder(), f.db.Sources(), notes,
+		f.db.NoteQueries.Links, f.db.Source.SourcesUnder, f.db.Source.Sources, notes,
 	)
 }
 
 func (f filing) resolves(t *testing.T, in string) string {
 	t.Helper()
-	found, err := f.db.Links().GetLinks(t.Context(), f.vault.ID, in)
+	found, err := f.db.NoteQueries.Links.GetLinks(t.Context(), f.vault.ID, in)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func TestAFolderMovesWithTheNotesBelowIt(t *testing.T) {
 
 func (f filing) sources(t *testing.T, path string) []string {
 	t.Helper()
-	found, err := f.db.SourcesUnder().GetSourcesUnder(t.Context(), f.vault.ID, path)
+	found, err := f.db.Source.SourcesUnder.GetSourcesUnder(t.Context(), f.vault.ID, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(f.db.Passages(), vaultreader.Readers{}, nil, nil, nil, nil)
+	searching := search.New(f.db.Chunks.Passages, vaultreader.Readers{}, nil, nil, nil, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

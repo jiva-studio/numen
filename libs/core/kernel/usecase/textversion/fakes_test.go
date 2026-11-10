@@ -212,7 +212,7 @@ func (f *fakeProvider) create(ctx context.Context, path string, source domain.Te
 		params.Key = "file-" + params.InputHash[:8]
 		segments = f.make(path, domain.VersionText{}, false)
 	} else {
-		text, err := f.versions.GetVersionText(ctx, f.vault, path, source)
+		text, err := f.versions.Texts.GetVersionText(ctx, f.vault, path, source)
 		if err != nil {
 			return err
 		}

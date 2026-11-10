@@ -65,7 +65,7 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 
 func (c Config) getTextVersions() windowsession.TextVersions {
 	if versions := c.vault().TextVersions; versions != nil {
-		return versions
+		return versions.Changes
 	}
 	return nil
 }
