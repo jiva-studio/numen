@@ -7,7 +7,9 @@
 export type SettingValue = string | number | boolean | null | SettingList | SettingObject
 
 /** The list a setting value holds. */
-export interface SettingList extends ReadonlyArray<SettingValue> {}
+export interface SettingList extends ReadonlyArray<SettingValue> {
+  readonly length: number
+}
 
 /** The object a setting value holds. */
 export interface SettingObject {
