@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"io"
 	"os"
 	"path/filepath"
@@ -513,7 +514,7 @@ func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteReposit
 }
 
 func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, error) {
-	var plugins textport.TextPlugins = absentPlugins{}
+	var plugins textport.TextPlugins = plugin.Absent{}
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = c.PluginHost
 	}

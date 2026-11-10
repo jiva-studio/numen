@@ -892,7 +892,7 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 }
 
 func openSecrets(c pluginsWiring) *secret.Secrets {
-	var plugins pluginport.SecretPlugins = absentPlugins{}
+	var plugins pluginport.SecretPlugins = plugin.Absent{}
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
@@ -955,7 +955,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
-	var commands pluginport.PluginCommands = absentPlugins{}
+	var commands pluginport.PluginCommands = plugin.Absent{}
 	var runs pluginport.PluginCommandRuns = commandbridge.NoCommands{}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {

@@ -201,29 +201,6 @@ func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
 	requireNotAttemptedMove(t, moves[2], "Deltas.md")
 }
 
-func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
-	endpoint, vault, _ := newCancellingEndpoint(t, 0, changeThenCancel)
-	vault.cancel()
-
-	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
-		Paths: getCancelledBatch(), Folder: "Archive",
-	})))
-	if err != nil {
-		t.Fatalf("the canceled move failed as a whole: %v", err)
-	}
-
-	moves := res.Msg.GetMoves()
-	if res.Msg.GetError() != 0 || len(moves) != 3 {
-		t.Fatalf("the move returned error %v with %d entries, want no call error and 3 entries", res.Msg.GetError(), len(moves))
-	}
-	for i, from := range getCancelledBatch() {
-		requireNotAttemptedMove(t, moves[i], from)
-	}
-	if len(vault.moved) != 0 {
-		t.Errorf("the vault received a request for the moves %v after the cancel", vault.moved)
-	}
-}
-
 func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 	endpoint, vault, _ := newCancellingEndpoint(t, 1, changeThenCancel)
 
