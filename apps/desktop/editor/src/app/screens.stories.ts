@@ -10,7 +10,7 @@ import type { Tab, Workspace } from '@numen/workbench'
 import { ref, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'
-import type { Model, PluginInfo } from '@/entities/settings'
+import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
 import { findTabKindIcon, SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/testing/installation'
 
@@ -128,7 +128,7 @@ const DONE: string[] = []
 
 const DEFAULTS = createInstallation()
 
-const SETTINGS: Installation['settings'] = {
+const SHELL_SETTINGS: Installation['settings'] = {
     ...DEFAULTS.settings,
     getSetting: () => undefined,
     getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
@@ -139,10 +139,10 @@ const SETTINGS: Installation['settings'] = {
 }
 
 const INSTALLATION: Installation = {
-  settings: SETTINGS,
+  settings: SHELL_SETTINGS,
   plugin: {
     ...DEFAULTS.plugin,
-    app: ref([
+    app: ref<PluginSettingInfo[]>([
       {
         key: 'appearance.theme',
         type: 'enum',
@@ -180,7 +180,7 @@ const INSTALLATION: Installation = {
       DONE.push('path chosen')
       return ''
     },
-    plugins: ref(PLUGINS),
+    plugins: ref<PluginInfo[]>([...PLUGINS]),
   },
   secrets: {
     ...DEFAULTS.secrets,
