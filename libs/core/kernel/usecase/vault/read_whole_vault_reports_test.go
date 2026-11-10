@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -84,9 +84,9 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 		embed,
 	)
 	var notes, books, made atomic.Int32
-	making.OnNotesProgress = func(vaultreading.ScanResult) { notes.Add(1) }
-	making.OnTextsProgress = func(vaultreading.IndexResult) { books.Add(1) }
-	making.OnVectorsProgress = func(vaultreading.EmbedResult) { made.Add(1) }
+	making.OnNotesProgress = func(indexdomain.ScanResult) { notes.Add(1) }
+	making.OnTextsProgress = func(indexdomain.IndexResult) { books.Add(1) }
+	making.OnVectorsProgress = func(indexdomain.EmbedResult) { made.Add(1) }
 
 	result, err := making.Execute(t.Context(), v)
 	if err != nil {

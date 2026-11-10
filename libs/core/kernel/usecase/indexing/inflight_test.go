@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -27,9 +27,9 @@ type scriptedVectors struct {
 }
 
 func (s *scriptedVectors) EmbedWithProgress(
-	ctx context.Context, _ domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
-) (vaultreading.EmbedResult, error) {
-	var res vaultreading.EmbedResult
+	ctx context.Context, _ domain.Vault, onProgress func(indexdomain.EmbedResult), isSkipped func(path, hash string) bool,
+) (indexdomain.EmbedResult, error) {
+	var res indexdomain.EmbedResult
 	for _, path := range s.order {
 		if slices.Contains(s.getEmbedded(), path) {
 			continue

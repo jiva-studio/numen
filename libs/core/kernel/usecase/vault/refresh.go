@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
@@ -20,6 +19,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
+// RenameFollower moves the index rows of removed files to the added files that hold the same content.
+type RenameFollower interface {
+	Execute(ctx context.Context, reader vaultport.VaultReader, vaultID domain.VaultID, removed, added []string) ([]string, error)
+}
 
 // Refresh brings named notes up to date when a watcher reports which files
 // changed. A scan inspects the whole vault; Refresh only the named files.
@@ -34,6 +38,8 @@ type Refresh struct {
 	now     machineport.Clock
 
 	Cut chunking.CutNotes
+
+	FollowRenames RenameFollower
 
 	Ledger *Ledger
 
@@ -318,11 +324,10 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	removed, err := vaultreading.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
-	if err != nil {
-		return err
+	if u.FollowRenames == nil {
+		return nil
 	}
-	_, err = vaultreading.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
+	_, err := u.FollowRenames.Execute(ctx, reader, v.ID, res.Removed, res.Assets)
 	return err
 }
 

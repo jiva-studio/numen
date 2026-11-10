@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -40,7 +40,7 @@ type Events interface {
 	// ReportNotes reports that the notes of a vault were read.
 	ReportNotes(v domain.Vault, notes int)
 	// ReportTexts reports how many file texts were cut.
-	ReportTexts(v domain.Vault, res vaultreading.IndexResult)
+	ReportTexts(v domain.Vault, res indexdomain.IndexResult)
 }
 
 // OpenReading is the three passes over a vault, for the embedder given.
@@ -170,7 +170,7 @@ func (c *currentSources) get() []string {
 	return slices.Clone(c.paths)
 }
 
-func getEmbeddingSources(res vaultreading.EmbedResult) []string {
+func getEmbeddingSources(res indexdomain.EmbedResult) []string {
 	if len(res.Active) > 0 {
 		return res.Active
 	}
@@ -320,7 +320,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	texts, cancel := newTaskCancel(ctx)
 	defer cancel.stop()
 	var current currentSources
-	making.OnTextsProgress = func(res vaultreading.IndexResult) {
+	making.OnTextsProgress = func(res indexdomain.IndexResult) {
 		if res.CurrentSource != "" {
 			current.set([]string{res.CurrentSource})
 		}
@@ -437,7 +437,7 @@ func (w *Worker) planVectors(ctx context.Context, v domain.Vault) vectorPlan {
 	return plan
 }
 
-func (plan vectorPlan) getTotal(res vaultreading.EmbedResult) int64 {
+func (plan vectorPlan) getTotal(res indexdomain.EmbedResult) int64 {
 	if plan.pending == 0 {
 		return 0
 	}
@@ -481,7 +481,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	items, cancel := newTaskCancel(items)
 	defer cancel.stop()
 	var current currentSources
-	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
+	making.OnVectorsProgress = func(res indexdomain.EmbedResult) {
 		current.set(getEmbeddingSources(res))
 		pos := work.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {

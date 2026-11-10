@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -44,7 +44,7 @@ type Embed struct {
 
 	Concurrency int
 
-	OnProgress func(vaultreading.EmbedResult)
+	OnProgress func(indexdomain.EmbedResult)
 
 	IsSkipped func(path, hash string) bool
 }
@@ -72,8 +72,8 @@ func NewEmbed(
 // non-nil, and leaves without vectors the chunks of every source isSkipped
 // names when non-nil.
 func (u Embed) EmbedWithProgress(
-	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
-) (vaultreading.EmbedResult, error) {
+	ctx context.Context, v domain.Vault, onProgress func(indexdomain.EmbedResult), isSkipped func(path, hash string) bool,
+) (indexdomain.EmbedResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -117,7 +117,7 @@ type completedBatch struct {
 }
 
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.EmbedResult, err error) {
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (res indexdomain.EmbedResult, err error) {
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -149,7 +149,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.Em
 	track := newTracker(u, workers, &res, &mu)
 	updateProgress := func(comp completedBatch) {
 		track.leave(comp.id)
-		track.publish(func(r *vaultreading.EmbedResult) {
+		track.publish(func(r *indexdomain.EmbedResult) {
 			r.Embedded += len(comp.vectors)
 			r.Reused += comp.reused
 		})
@@ -249,7 +249,7 @@ func (u Embed) sendBatches(
 		pos += len(batch)
 		prep.id = track.enter(prep.sources)
 		// The batch is reported before it is sent, so no worker embeds it before a report names it.
-		track.publish(func(*vaultreading.EmbedResult) {})
+		track.publish(func(*indexdomain.EmbedResult) {})
 		select {
 		case <-ctx.Done():
 			track.withdraw(prep.id)
@@ -365,7 +365,7 @@ func (u Embed) read(
 	ctx context.Context,
 	source *extracted,
 	pending []domain.Passage,
-	res *vaultreading.EmbedResult,
+	res *indexdomain.EmbedResult,
 	mu *sync.Mutex,
 	track *tracker,
 ) ([]domain.Passage, []string, error) {
@@ -515,7 +515,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	}, nil
 }
 
-func (u Embed) progress(res vaultreading.EmbedResult) {
+func (u Embed) progress(res indexdomain.EmbedResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

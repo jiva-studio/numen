@@ -11,10 +11,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -43,7 +43,7 @@ func (e indexEvents) ReportNotes(v domain.Vault, notes int) {
 	e.state.Ready.Store(true)
 }
 
-func (e indexEvents) ReportTexts(v domain.Vault, res vaultreading.IndexResult) {
+func (e indexEvents) ReportTexts(v domain.Vault, res indexdomain.IndexResult) {
 	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 

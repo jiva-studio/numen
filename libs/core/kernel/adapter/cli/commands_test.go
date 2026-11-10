@@ -13,10 +13,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -419,7 +419,7 @@ func TestAFlagMistypedAfterTheCommandIsAnError(t *testing.T) {
 
 func TestDescribeSources(t *testing.T) {
 	t.Parallel()
-	base := vaultreading.IndexResult{Seen: 5, Extracted: 3, Unchanged: 2, Chunks: 40}
+	base := indexdomain.IndexResult{Seen: 5, Extracted: 3, Unchanged: 2, Chunks: 40}
 	for name, c := range map[string]struct {
 		unreadable, vanished int
 		want                 string
