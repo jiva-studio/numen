@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowDisplay } from './useWindowDisplay'
-import type { Core } from '@/app/ports/core'
+import type { VaultPort } from '@/app/ports/vault'
 import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/textRange'
 import type { NoteEdit } from '@/entities/note'
@@ -52,7 +52,7 @@ interface NoteStreams {
   watchEdits(): AsyncGenerator<NoteEdit>
 }
 
-type Fake = Core & Streams & NoteStreams
+type Fake = VaultPort & Streams & NoteStreams
 
 let restore: () => void = () => undefined
 
