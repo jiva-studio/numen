@@ -1,6 +1,7 @@
 package vault_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"context"
 	"math"
 	"os"
@@ -33,7 +34,7 @@ func newOrchardVault(t *testing.T) domain.Vault {
 
 func scanAt(db *vaults.Index, tokens int) vaults.Scan {
 	scan := scanner(vaultreader.Readers{}, db)
-	scan.Cut = query.NewCutNotes(tokens)
+	scan.Cut = chunking.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		return db.Source.SourceBacklog.GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
@@ -43,7 +44,7 @@ func scanAt(db *vaults.Index, tokens int) vaults.Scan {
 
 func getNotesWithOtherChunking(t *testing.T, db *vaults.Index, v domain.Vault, tokens int) []string {
 	t.Helper()
-	paths, err := db.Source.SourceBacklog.GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{query.NewCutNotes(tokens).Recipe()}, 100)
+	paths, err := db.Source.SourceBacklog.GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{chunking.NewCutNotes(tokens).Recipe()}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +161,7 @@ func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testin
 	v, db := newOrchardVault(t), openIndex(t)
 	old := vaults.NewScan(vaultreader.Readers{}, db.Stores.Vaults, recipeless{db.Stores.Notes}, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	old.Walks = db.Walks()
-	old.Cut = query.NewCutNotes(512)
+	old.Cut = chunking.NewCutNotes(512)
 	runScan(t, old, v)
 	if got := getNotesWithOtherChunking(t, db, v, 512); len(got) != 3 {
 		t.Fatalf("%d notes have a recorded cut, want none", 3-len(got))
@@ -186,7 +187,7 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 	content := &groupedWrites{}
 	scan := vaults.NewScan(vaultreader.Readers{}, db.Stores.Vaults, content, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	scan.Walks = db.Walks()
-	scan.Cut = query.NewCutNotes(512)
+	scan.Cut = chunking.NewCutNotes(512)
 	scan.ShouldRecut = true
 	scan.GetOtherRecipePaths = scanAt(db, 512).GetOtherRecipePaths
 	res := runScan(t, scan, v)

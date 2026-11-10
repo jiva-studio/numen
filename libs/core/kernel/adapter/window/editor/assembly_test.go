@@ -1,6 +1,8 @@
 package editor
 
 import (
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"context"
 	"fmt"
 	"math"
@@ -106,7 +108,7 @@ func (w readingParts) GetVaultWatcher() vaultport.VaultWatcher {
 }
 
 func (w readingParts) cutNotes() chunking.CutNotes {
-	return query.NewCutNotes(w.chunks.Get())
+	return chunking.NewCutNotes(w.chunks.Get())
 }
 
 func (w readingParts) setNoteCut(scan *vault.Scan, db *vault.Index) {
@@ -197,7 +199,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 	getPath := func() (string, error) { return filepath.Join(folder, "numen.json"), nil }
 
 	declarations := func(owner string) ([]manifest.Setting, bool) {
-		if owner == settingsadapter.OwnerApp {
+		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
 		return nil, false
