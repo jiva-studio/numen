@@ -18,16 +18,16 @@ import { isFieldFocused } from '@/shared/isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import { core } from '../vault'
-import type { CommandItemLists } from '../commands/commandItemLists'
-import { getPaletteId, type useDeclaredCommands } from '../commands/declaredCommands'
-import { createCommandNotes } from '../commands/commandDeps'
+import type { CommandItemLists } from '../plugins/commands/commandItemLists'
+import { getPaletteId, type useDeclaredCommands } from '../plugins/commands/declaredCommands'
+import { createCommandNotes } from '../tabs/commandDeps'
+import { createCommandNoteReader } from '../plugins/commands/usePluginCommands'
 import {
   collectFeatureCommands,
+  createCommands,
   createFeatureDeps,
   registerFeatureCommands,
-} from '../commands/featureCommands'
-import { createCommandNoteReader } from '../commands/usePluginCommands'
-import { useCommands } from '../commands/useCommands'
+} from './createCommands'
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import {
@@ -64,7 +64,7 @@ interface WindowCommandsOptions {
 
 function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, writeMessage } = deps
-  return useCommands({
+  return createCommands({
     declaredCommands: deps.declaredCommands,
     ...(deps.slots ? { slots: deps.slots } : {}),
     getAppCommands: deps.getAppCommands,

@@ -22,7 +22,7 @@ import {
   writeTabLinks,
 } from '@/entities/tab'
 import { useTabLinks } from '@/features/tab-linking'
-import { createCommandNotes } from '../commands/commandDeps'
+import { createCommandNotes } from '../tabs/commandDeps'
 import { createTabLinkSession, getWindowReport } from '../tabs/tabLinkSession'
 import { createMovedTabOpener, createTabMover } from '../tabs/tabMove'
 import type { WindowCore, WindowServices } from './createDisplayPart'

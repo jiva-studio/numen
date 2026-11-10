@@ -14,9 +14,9 @@ import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
 import type { TabsHold } from '@/features/vault-commands'
-import type { useCommands } from '../commands/useCommands'
-import type { useDeclaredCommands } from '../commands/declaredCommands'
-import type { CommandItemLists } from '../commands/commandItemLists'
+import type { createCommands } from './createCommands'
+import type { useDeclaredCommands } from '../plugins/commands/declaredCommands'
+import type { CommandItemLists } from '../plugins/commands/commandItemLists'
 import { useWindowDisplay } from './useWindowDisplay'
 import { createDisplayOptions } from './useWindowDisplayOptions'
 import type { useTabKinds } from './useTabKinds'
@@ -48,7 +48,7 @@ export interface WindowCore {
 }
 
 export interface WindowContext {
-  commands?: ReturnType<typeof useCommands>
+  commands?: ReturnType<typeof createCommands>
   kinds?: ReturnType<typeof useTabKinds>
   vaults?: ReturnType<typeof useVaults>
   tabsHold?: TabsHold

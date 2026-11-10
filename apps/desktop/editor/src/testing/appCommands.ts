@@ -2,7 +2,7 @@
  * The commands of the editor as a window collects them from its features, for a test that reads
  * the rows. Nothing runs them, so the window they use does nothing.
  */
-import { collectFeatureCommands, type FeatureCommandsDeps } from '@/app/commands/featureCommands'
+import { collectFeatureCommands, type FeatureCommandsDeps } from '@/app/window/createCommands'
 import type { Command, Notes } from '@/entities/command'
 import { createNoteWriter } from '@/entities/note'
 import { getAllTabs, getEligibleTabs, getWindowName } from '@/features/tab-linking'

@@ -11,7 +11,7 @@ import {
 import type { ResultChoice } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { answerCore } from '@/testing/coreAnswers'
-import { useCommands, type CommandsDepsOptions } from './useCommands'
+import { createCommands, type CommandsDepsOptions } from './createCommands'
 
 const h = vi.hoisted(() => ({
   startCommand: vi.fn(),
@@ -48,12 +48,9 @@ vi.mock('@/features/command-palette', () => ({
     }
   },
 }))
-vi.mock('./commandDeps', () => ({
+vi.mock('../tabs/commandDeps', () => ({
   createCommandDeps: () => ({ name: 'command deps' }),
   createCommandNotes: () => ({ name: 'notes' }),
-}))
-vi.mock('./featureCommands', () => ({
-  collectFeatureCommands: () => ({ commands: [], handlers: {} }),
 }))
 
 const ATLAS = 'org.example.atlas'
@@ -113,7 +110,7 @@ function setup(
       }),
     },
   })
-  const used = useCommands({
+  const used = createCommands({
     core: {},
     words: {},
     windowTabs: { onKeyPress: () => false },

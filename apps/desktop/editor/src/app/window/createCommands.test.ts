@@ -5,7 +5,7 @@ import type { CommandDeps, PaletteLists } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { answerCore } from '@/testing/coreAnswers'
-import { createCommandRunner, useCommands, type CommandsDepsOptions } from './useCommands'
+import { createCommandRunner, createCommands, type CommandsDepsOptions } from './createCommands'
 
 const h = vi.hoisted(() => ({
   startCommand: vi.fn(),
@@ -43,15 +43,12 @@ vi.mock('@/features/command-palette', () => ({
     }
   },
 }))
-vi.mock('./commandDeps', () => ({
+vi.mock('../tabs/commandDeps', () => ({
   createCommandDeps: (options: unknown) => {
     h.depsOptions = options
     return { name: 'command deps' }
   },
   createCommandNotes: () => ({ name: 'notes' }),
-}))
-vi.mock('./featureCommands', () => ({
-  collectFeatureCommands: () => ({ commands: [], handlers: {} }),
 }))
 
 const target = { path: 'a.md' } as unknown as CommandTarget
@@ -81,7 +78,7 @@ const setup = (isPrevented = false, pluginHost?: object) => {
     writeMessage: (text: string, severity: string) => content.push([text, severity]),
     ...(pluginHost ? { pluginHost } : {}),
   } as unknown as CommandsDepsOptions
-  return { messages: content, press, ...useCommands(options) }
+  return { messages: content, press, ...createCommands(options) }
 }
 
 const keyEvent = (key: string, overrides: Partial<KeyboardEvent> = {}) => {
@@ -324,7 +321,7 @@ describe('a plugin command over a note', () => {
       pluginHost,
       ...extra,
     } as unknown as CommandsDepsOptions
-    return { executeCommand, handleShortcut, writeMessage, ...useCommands(options) }
+    return { executeCommand, handleShortcut, writeMessage, ...createCommands(options) }
   }
 
   const findCommand = () => {
@@ -524,7 +521,7 @@ describe('a plugin command with items in the palette', () => {
       writeMessage: vi.fn(),
       pluginHost,
     } as unknown as CommandsDepsOptions
-    useCommands(options)
+    createCommands(options)
     return {
       listCommandItems,
       executeCommand,

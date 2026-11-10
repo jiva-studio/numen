@@ -6,7 +6,7 @@ import type { CommandTarget } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import type { useCommands } from '../commands/useCommands'
+import type { createCommands } from './createCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
 import type { useWindowDisplay } from './useWindowDisplay'
@@ -14,7 +14,7 @@ import type { useTabKinds } from './useTabKinds'
 
 export interface DisplayWiring {
   editing: ReturnType<typeof createNoteEditors>
-  getCommands: () => ReturnType<typeof useCommands>
+  getCommands: () => ReturnType<typeof createCommands>
   getKinds: () => ReturnType<typeof useTabKinds>
   tabOpeners: ReturnType<typeof fileOpeners>
   windowTabs: Pick<WindowTabs, 'handle'>

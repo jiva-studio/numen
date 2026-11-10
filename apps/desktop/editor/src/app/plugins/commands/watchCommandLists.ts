@@ -3,7 +3,7 @@
  * They are read again when a plugin starts or stops, so the shortcuts of its commands follow it.
  */
 import { watch, type Ref } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import type { DeclaredCommands } from './declaredCommands'
 import type { MessageWriter } from '@/shared/notices/messages'
 
@@ -25,7 +25,7 @@ export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boole
     const loadDeclared = () => {
       declaredCommands
         .load()
-        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     }
     loadDeclared()
     watch(isOpen, (open) => {
