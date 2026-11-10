@@ -36,7 +36,7 @@ func (w *Writes) IsIndexOutdated(err error) bool {
 		w.window.RemoveTask(updatingIndex)
 		return false
 	}
-	if !errors.Is(err, note.ErrIndexOutdated) {
+	if !errors.Is(err, edit.ErrIndexOutdated) {
 		return false
 	}
 	w.window.AddTask(work.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})

@@ -15,7 +15,7 @@ func TestARenameOfANoteThatIsNotThereAnswersWithNothing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	got, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy")
-	if !errors.Is(err, note.ErrNoNote) {
+	if !errors.Is(err, edit.ErrNoNote) {
 		t.Fatalf("want ErrNoNote, got %v", err)
 	}
 	if got != (note.RenameResult{}) {
@@ -77,7 +77,7 @@ func TestAFilenameCannotBeSavedIntoANoteThatIsNotThere(t *testing.T) {
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	err := c.move().WriteFilenameAsTitle(t.Context(), c.vault, "Missing.md")
-	if !errors.Is(err, note.ErrNoNote) {
+	if !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
 	}
 }

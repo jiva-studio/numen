@@ -339,7 +339,7 @@ func fillSource(
 	}
 	first := found[indices[0]]
 	prose, version, err := of.getText(ctx, source, first.Producer)
-	if vaultport.IsNoNote(err) || errors.Is(err, errUnreadable) {
+	if edit.IsNoNote(err) || errors.Is(err, errUnreadable) {
 		return nil
 	}
 	if err != nil {

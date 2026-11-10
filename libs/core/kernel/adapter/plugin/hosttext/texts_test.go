@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hosttext"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -171,7 +171,7 @@ func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	return hosttext.NewTexts(versions, versions.Texts)
+	return hosttext.NewTexts(versions)
 }
 
 func TestListVersionsReturnsTheReaderFailure(t *testing.T) {

@@ -326,11 +326,11 @@ func (u discoverer) moveRenamed(ctx context.Context, v domain.Vault, on openVaul
 		return nil, nil
 	}
 	slices.Sort(added)
-	sources, err := FindRemovedSources(ctx, u.lookup, v.ID, removed)
+	sources, err := findRemovedSources(ctx, u.lookup, v.ID, removed)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	moved, err := MoveRenamedSources(ctx, u.sources, on.files, v.ID, sources, added)
+	moved, err := moveRenamedSources(ctx, u.sources, on.files, v.ID, sources, added)
 	if err != nil {
 		return nil, fmt.Errorf("move: %w", err)
 	}
@@ -422,7 +422,7 @@ func (u outdated) statIfOutdated(
 		return domain.FileStat{}, false, fmt.Errorf("find the live version of %s: %w", source.Path, err)
 	}
 	ref, err := on.files.StatFile(ctx, source.Path)
-	if vaultport.IsNoNote(err) {
+	if edit.IsNoNote(err) {
 		return domain.FileStat{}, false, nil
 	}
 	if err != nil {
@@ -555,7 +555,7 @@ func (u cutter) source(
 	u.progress(*res)
 
 	ref, err := on.files.StatFile(ctx, path)
-	if vaultport.IsNoNote(err) {
+	if edit.IsNoNote(err) {
 		res.Vanished++
 		return nil
 	}
@@ -563,7 +563,7 @@ func (u cutter) source(
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
 	hash, err := on.texts.GetContentHash(ctx, path)
-	if errors.Is(err, vaultport.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		res.Vanished++
 		return nil
 	}
