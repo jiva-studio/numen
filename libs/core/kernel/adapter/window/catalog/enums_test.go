@@ -1,4 +1,4 @@
-package plugincatalog
+package catalog
 
 import (
 	"testing"

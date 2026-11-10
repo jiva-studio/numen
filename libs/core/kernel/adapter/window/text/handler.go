@@ -1,6 +1,6 @@
-// Package texts serves a window's TextService: the live text of a file of the
+// Package text serves a window's TextService: the live text of a file of the
 // shown vault, and user edits of it, for plugin views.
-package texts
+package text
 
 import (
 	"context"
@@ -13,13 +13,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 )
 
 // FileText provides the live text of a file and records user edits of it.
 type FileText interface {
 	ReadLiveText(ctx context.Context, v domain.Vault, path string) (domain.VersionText, bool, error)
-	CreateEdit(ctx context.Context, v domain.Vault, edit textversion.TextEdit) (domain.TextVersion, error)
+	CreateEdit(ctx context.Context, v domain.Vault, edit textdomain.Edit) (domain.TextVersion, error)
 }
 
 // VaultProvider names the vault the window shows. A window showing none returns a vault with no ID.
@@ -74,16 +74,16 @@ func (h *Handler) CreateTextEdit(
 	if h.text == nil || v.ID == "" {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, errNoVault)
 	}
-	version, err := h.text.CreateEdit(ctx, v, textversion.TextEdit{
+	version, err := h.text.CreateEdit(ctx, v, textdomain.Edit{
 		PluginID: r.Msg.GetPluginId(), Path: r.Msg.GetPath(), Source: domain.TextVersionID(r.Msg.GetSourceVersionId()),
 		Segments: readSegments(r.Msg.GetSegments()),
 	})
 	switch {
 	case err == nil:
 		return connect.NewResponse(&v1.CreateTextEditResponse{Version: writeVersion(version)}), nil
-	case errors.Is(err, textversion.ErrNoText):
+	case errors.Is(err, textdomain.ErrNoText):
 		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.TextErrorCode_TEXT_ERROR_CODE_MISSING}), nil
-	case errors.Is(err, textversion.ErrInvalidVersion):
+	case errors.Is(err, textdomain.ErrInvalidVersion):
 		return connect.NewResponse(&v1.CreateTextEditResponse{Error: v1.TextErrorCode_TEXT_ERROR_CODE_INVALID}), nil
 	}
 	return nil, connect.NewError(connect.CodeInternal, err)

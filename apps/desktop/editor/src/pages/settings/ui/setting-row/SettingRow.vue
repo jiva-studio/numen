@@ -52,11 +52,14 @@ const trimmedDetail = computed(() => props.detail.trim())
 
 <style scoped>
 .settings__row {
+  --aside-width: 24rem;
+  --gap: 0.5rem;
+  --pad-block: 0.625rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) fit-content(24rem);
+  grid-template-columns: minmax(0, 1fr) fit-content(var(--aside-width));
   align-items: center;
-  gap: 0.5rem var(--numen-panel-gap);
-  padding-block: 0.625rem;
+  gap: var(--gap) var(--numen-panel-gap);
+  padding-block: var(--pad-block);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
@@ -71,10 +74,12 @@ const trimmedDetail = computed(() => props.detail.trim())
 }
 
 .settings__title {
+  --gap: 0.375rem;
+  --min-height: 2rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
-  min-block-size: 2rem;
+  gap: var(--gap);
+  min-block-size: var(--min-height);
   min-inline-size: 0;
 }
 
@@ -86,10 +91,11 @@ const trimmedDetail = computed(() => props.detail.trim())
 }
 
 .settings__value {
+  --min-height: 2rem;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-block-size: 2rem;
+  min-block-size: var(--min-height);
   min-inline-size: 0;
 }
 

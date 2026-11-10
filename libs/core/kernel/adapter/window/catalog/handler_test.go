@@ -1,4 +1,4 @@
-package plugincatalog_test
+package catalog_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalogtest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
+	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 )
 
 func entry(id string, state catalog.State, kind string) catalog.Entry {
@@ -29,13 +29,13 @@ func entry(id string, state catalog.State, kind string) catalog.Entry {
 	}
 }
 
-func newHandler(t *testing.T, sources ...catalog.Source) *plugincatalog.Handler {
+func newHandler(t *testing.T, sources ...catalog.Source) *windowcatalog.Handler {
 	t.Helper()
 	service, err := catalog.NewService(catalog.Config{Target: "desktop.editor", Sources: sources, InstallDir: "", CacheDir: ""})
 	if err != nil {
 		t.Fatal(err)
 	}
-	return plugincatalog.NewHandler(service)
+	return windowcatalog.NewHandler(service)
 }
 
 func TestTheListCarriesEveryEntryWithItsStateAndContributions(t *testing.T) {

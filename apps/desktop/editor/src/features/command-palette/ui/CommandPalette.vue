@@ -137,18 +137,21 @@ function getRowIcon(id: string) {
 
 <style scoped>
 .nothing-found {
+  --gap: 0.5rem;
+  --pad-block: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--gap);
   align-items: center;
-  padding-block: 1.5rem;
+  padding-block: var(--pad-block);
   text-align: center;
 }
 
 .nothing-found__icon {
+  --size: 1.5rem;
   flex: none;
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   stroke-width: 1.75;
 }
 

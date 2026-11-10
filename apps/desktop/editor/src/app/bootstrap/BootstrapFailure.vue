@@ -24,21 +24,24 @@ defineEmits<{
 
 <style scoped>
 .bootstrap-failure {
+  --gap: 0.75rem;
+  --pad: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: var(--gap);
   inline-size: 100%;
   block-size: 100%;
-  padding: 2rem;
+  padding: var(--pad);
   box-sizing: border-box;
   text-align: center;
 }
 
 .bootstrap-failure__icon {
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
+  --size: 2.5rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   color: var(--numen-caution-fg);
 }
 

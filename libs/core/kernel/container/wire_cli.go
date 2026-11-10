@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -141,10 +140,4 @@ func closeIfOpen(closeFn func() error) error {
 // GetVaultList builds the use case that lists the vaults of the registry given.
 func (c Config) GetVaultList(ports registry.Ports) registry.List {
 	return registry.NewList(ports.Vaults)
-}
-
-// GetAgentFunc returns the agent of the installation to a window that asks for it on each call.
-func (c Config) GetAgentFunc() func() agentport.Agent {
-	agent := c.GetSettingsAgent()
-	return func() agentport.Agent { return agent }
 }

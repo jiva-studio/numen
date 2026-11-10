@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
 	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowvaults"
@@ -16,12 +15,6 @@ func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
 	w.inst.SetTriggers(w.cfg.plugins().OpenTriggers, w.cfg.WatchPluginChanges)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
-}
-
-func mountCatalog(w *windowWiring) {
-	if plugins := w.cfg.getEditorCatalog(); plugins != nil {
-		w.inst.Mount(editor.NewCatalogRoute(w.inst.State, plugincatalog.NewHandler(plugins)))
-	}
 }
 
 // SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file

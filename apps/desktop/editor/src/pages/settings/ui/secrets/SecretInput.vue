@@ -21,11 +21,12 @@ defineExpose({
 
 <style scoped>
 .secret-input {
+  --pad: 0.25rem 0.625rem;
   box-sizing: border-box;
   inline-size: 100%;
   min-inline-size: 0;
   block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
+  padding: var(--pad);
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);

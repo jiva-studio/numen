@@ -20,7 +20,7 @@ func newRetryHandler(t *testing.T, retry func(context.Context, string) (*plugin.
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &Handler{PluginRetry: useCase}
+	return &Handler{PluginFolders: PluginFolders{Retry: useCase}}
 }
 
 // A plugin that starts again is answered with no failure.

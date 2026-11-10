@@ -72,45 +72,52 @@ function onAct(target: UnavailableView): void {
 
 <style scoped>
 .tab-unavailable {
+  --pad: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   inline-size: 100%;
   block-size: 100%;
-  padding: 2rem;
+  padding: var(--pad);
   box-sizing: border-box;
 }
 
 .tab-unavailable__content {
+  --max-width: 28rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-inline-size: 28rem;
+  max-inline-size: var(--max-width);
 }
 
 .tab-unavailable__icon {
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  margin-block-end: 0.75rem;
+  --size: 2.5rem;
+  --margin-end: 0.75rem;
+  inline-size: var(--size);
+  block-size: var(--size);
+  margin-block-end: var(--margin-end);
   color: var(--numen-caution-fg);
 }
 
 .tab-unavailable__title {
-  margin: 0 0 0.5rem 0;
+  --margin: 0 0 0.5rem 0;
+  margin: var(--margin);
   font-size: var(--numen-text-4);
   font-weight: 600;
   color: var(--numen-ink);
 }
 
 .tab-unavailable__message {
-  margin: 0 0 0.75rem 0;
+  --margin: 0 0 0.75rem 0;
+  margin: var(--margin);
   color: var(--numen-hushed);
   font-size: var(--numen-text-2);
   line-height: 1.4;
 }
 
 .tab-unavailable__action {
-  margin-block-start: 0.5rem;
+  --margin-start: 0.5rem;
+  margin-block-start: var(--margin-start);
 }
 </style>

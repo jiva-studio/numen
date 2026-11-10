@@ -2,14 +2,14 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	editorsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
+	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
 func mountSearch(w *windowWiring) {
 	state := w.inst.State
-	handler := editorsearch.NewHandler(state)
+	handler := windowsearch.NewHandler(state)
 	handler.GetNameMatches = search.NewGetNameMatches(w.db.NameMatches())
 	handler.GetTitles = query.NewGetTitles(w.db.NoteRefs())
 	handler.GetTypes = query.NewGetTypes(w.db.NoteTypes())
@@ -17,5 +17,6 @@ func mountSearch(w *windowWiring) {
 	finds := w.cfg.NewSearch(w.db, w.inst.Asking, state.ReportWordsAlone)
 	handler.Finds = &finds
 	w.cfg.SetPluginSearch(w.db, w.inst.Embedder, state.ReportFloorError)
-	w.inst.Mount(editor.NewSearchRoute(state, handler))
+	path, served := windowsearch.NewRoute(handler, state.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

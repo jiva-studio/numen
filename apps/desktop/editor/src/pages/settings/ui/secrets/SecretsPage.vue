@@ -181,8 +181,9 @@ function getNamesInGroup(group: string): readonly string[] {
 }
 
 .secrets-page__back {
+  --margin-end: 0.75rem;
   align-self: flex-start;
-  margin-block-end: 0.75rem;
+  margin-block-end: var(--margin-end);
 }
 
 .secrets-page__where {

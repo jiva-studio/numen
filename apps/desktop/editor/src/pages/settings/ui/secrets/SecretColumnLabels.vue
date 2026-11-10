@@ -29,10 +29,12 @@ defineProps<{ hasName: boolean }>()
 }
 
 .secret-labels__text {
-  padding-inline: 0.125rem;
+  --pad-inline: 0.125rem;
+  --tracking: 0.06em;
+  padding-inline: var(--pad-inline);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking);
   text-transform: uppercase;
 }
 </style>
