@@ -53,7 +53,7 @@ async function withinLimit<T>(what: string, work: Promise<T>, limitMs: number): 
   /* Stryker restore BlockStatement,CallExpression */
 }
 
-export function useAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
+export function createAppBootstrap(deps: BootstrapDeps, stepLimitMs: number = STEP_LIMIT_MS) {
   /**
    * True once the plugins of the window slots have started, INTERFACE_WAIT_MS has passed since the window
    * mounted, or the start failed: the window is drawn from then on.

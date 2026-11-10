@@ -6,7 +6,6 @@
 import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import {
-  createCommands as createPaletteCommands,
   runInvocation,
   createInvocation,
   createCommandPalette,
@@ -18,30 +17,24 @@ import {
   type PaletteLists,
   type SearchDeps,
 } from '@/features/command-palette'
-import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
-import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
-import { createTabCommands, type TabCommandsDeps } from '@/features/tab-commands'
-import { createVersionCommands, type VersionCommandsDeps } from '@/features/version-commands'
-import {
-  createVaultCommands,
-  type TabsHold,
-  type VaultCommandsDeps,
-} from '@/features/vault-commands'
 import {
   COMMAND,
   type Command,
   type CommandInvocation,
   type CommandTarget,
-  type FeatureCommands,
   type Notes,
   type RunSupport,
-  type VaultRef,
-  registerCommand,
   type CommandDeps,
 } from '@/entities/command'
-import type { NoteCreator } from '@/entities/note'
 import { formatError } from '@/shared/api/errors'
 import { createCommandDeps } from '../tabs/commandDeps'
+import {
+  createCommandRunner,
+  getValues,
+  runInvocationToEnd,
+  withValues,
+  type Values,
+} from './createCommandRunner'
 import {
   createCommandNoteReader,
   usePluginCommands,
@@ -142,107 +135,6 @@ function createPaletteItems(
       return { ...target, noteType: type, ...(properties ? { properties } : {}) }
     },
   })
-}
-
-type Values = Readonly<Record<string, string>>
-
-const getValues = (values: Values | undefined): { values?: Values } =>
-  values && Object.keys(values).length > 0 ? { values } : {}
-
-const withValues = (
-  invocation: CommandInvocation,
-  values: Values | undefined,
-): CommandInvocation => ({
-  ...invocation,
-  ...getValues(values),
-})
-
-async function runInvocationToEnd(
-  invocation: CommandInvocation,
-  deps: CommandDeps,
-): Promise<string> {
-  const errors: string[] = []
-  const writeMessage: MessageWriter = (text, severity) => {
-    if (severity === 'error') errors.push(text)
-    else deps.writeMessage(text, severity)
-  }
-  const made = await runInvocation(invocation, { ...deps, writeMessage })
-  if (errors[0] !== undefined) throw new Error(errors[0])
-  return made
-}
-
-/** What the runs of the window go through: the palettes, the plugin host and the deps of a command. */
-interface CommandRunnerParts {
-  readonly commands: ReturnType<typeof createCommandPalette>
-  readonly palette: { setOpen(isOpen: boolean): void }
-  readonly pluginHost: CommandsDepsOptions['pluginHost']
-  readonly getCommandNote: ReturnType<typeof createCommandNoteReader>
-  readonly getCommandDeps: () => CommandDeps
-  readonly writeMessage: MessageWriter
-}
-
-/** How a command is run: with the text typed for it, and whether its caller awaits it. */
-interface RunWay {
-  readonly input?: string | undefined
-  readonly values?: Values | undefined
-  readonly isAwaited: boolean
-}
-
-/**
- * The two runs of a command of the window. The run of the palette and the shortcuts writes its
- * error in the window. The run to its end, which a plugin awaits through `context.commands.run`,
- * writes nothing: it settles when the run ends with the path of the note or folder it made, empty
- * where it made none, and rejects with its error.
- */
-export function createCommandRunner(parts: CommandRunnerParts) {
-  const { commands, palette, pluginHost, getCommandNote } = parts
-
-  /** The run of the command over the target, or the objection to it where it cannot start. */
-  const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
-    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
-      commands.palette.setOpen(false)
-      return getCommandNote(target).then((note) => {
-        const run = { ...getValues(way.values), ...(way.isAwaited ? { isAwaited: true } : {}) }
-        return Object.keys(run).length > 0
-          ? pluginHost.executeCommand(id, note, run)
-          : pluginHost.executeCommand(id, note)
-      })
-    }
-    const { values } = getValues(way.values)
-    const invocation = values
-      ? commands.palette.startCommand(id, target, way.input, values)
-      : way.input === undefined
-        ? commands.palette.startCommand(id, target)
-        : commands.palette.startCommand(id, target, way.input)
-    if (invocation) {
-      const deps = parts.getCommandDeps()
-      const run = withValues(invocation, way.values)
-      return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps)
-    }
-    if (commands.palette.open.value) {
-      palette.setOpen(false)
-      return Promise.resolve()
-    }
-    return commands.palette.getObjection(id, target)
-  }
-
-  return {
-    runCommand: (id: string, target: CommandTarget, input?: string, values?: Values): void => {
-      const run = startRun(id, target, { input, values, isAwaited: false })
-      if (typeof run === 'string') parts.writeMessage(run, 'error')
-      else runInBackground(run, (error) => parts.writeMessage(formatError(error), 'error'))
-    },
-    runCommandToEnd: async (
-      id: string,
-      target: CommandTarget,
-      values?: Values,
-    ): Promise<string> => {
-      const run = startRun(id, target, { values, isAwaited: true })
-      if (typeof run === 'string') throw new Error(run)
-      const made = await run
-      return typeof made === 'string' ? made : ''
-    },
-  }
 }
 
 function createWindowCommandPalette(
@@ -379,101 +271,4 @@ export function createCommands(options: CommandsDepsOptions) {
     onKeyDown,
     pluginWays,
   }
-}
-
-/** What the commands of the features use of the window. */
-export interface FeatureCommandsDeps {
-  readonly notes: NoteCommandsDeps
-  readonly files: FileCommandsDeps
-  readonly vaults: VaultCommandsDeps
-  readonly tabs: TabCommandsDeps
-  readonly versions: VersionCommandsDeps
-}
-
-/** The parts of the window the commands of the features are given. */
-export interface FeatureWindow {
-  readonly making: NoteCreator
-  readonly notes: Notes
-  readonly windowTabs: Pick<WindowTabs, 'tabs'>
-  readonly travel: (path: string) => Promise<void> | void
-  readonly leavePath: (from: string, to: string) => Promise<void> | void
-  readonly getOpeningNote: () => string
-  readonly tabsHold: TabsHold
-  readonly setVaultName: (vault: VaultRef) => void
-  readonly reload: () => void
-  readonly writeMessage: MessageWriter
-  readonly tabs: TabCommandsDeps
-  readonly listVersionItems: VersionCommandsDeps['listItems']
-}
-
-/** What each feature uses, taken from the parts of the window. */
-export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
-  const { notes, writeMessage } = parts
-  return {
-    notes: {
-      making: parts.making,
-      notes,
-      navigator: {
-        travel: async (path) => {
-          await parts.travel(path)
-        },
-        leave: async (from, to) => {
-          await parts.leavePath(from, to)
-        },
-        getOpeningNote: parts.getOpeningNote,
-        showTab: (kind, path) =>
-          runInBackground(parts.windowTabs.tabs.navigateTab(kind, path), (error) =>
-            writeMessage(formatError(error), 'error'),
-          ),
-      },
-      writeMessage,
-    },
-    files: { notes, writeMessage },
-    vaults: {
-      tabsHold: parts.tabsHold,
-      setVaultName: parts.setVaultName,
-      reload: parts.reload,
-      writeMessage,
-    },
-    tabs: parts.tabs,
-    versions: { listItems: parts.listVersionItems, writeMessage },
-  }
-}
-
-/**
- * The rows of the note, file, palette, vault, tab and version commands, in that order, and the
- * handler of each command that has one. A group draws its commands in the order of this list.
- */
-export function collectFeatureCommands(
-  deps: FeatureCommandsDeps,
-  words: Words,
-  agent: string = navigator.userAgent,
-): FeatureCommands {
-  const notes = createNoteCommands(deps.notes, agent)
-  const files = createFileCommands(deps.files)
-  const vaults = createVaultCommands(deps.vaults, agent)
-  const tabs = createTabCommands(deps.tabs)
-  const versions = createVersionCommands(deps.versions)
-  return {
-    commands: [
-      ...notes.commands,
-      ...files.commands,
-      ...createPaletteCommands({ ...words, ...PALETTE_WORDS }, agent),
-      ...vaults.commands,
-      ...tabs.commands,
-      ...versions.commands,
-    ],
-    handlers: {
-      ...notes.handlers,
-      ...files.handlers,
-      ...vaults.handlers,
-      ...tabs.handlers,
-      ...versions.handlers,
-    },
-  }
-}
-
-/** Puts the handlers of the commands in the registry the palette carries commands out through. */
-export function registerFeatureCommands(features: FeatureCommands): void {
-  for (const [id, run] of Object.entries(features.handlers)) registerCommand(id, run)
 }

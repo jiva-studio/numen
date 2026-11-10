@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { STEP_LIMIT_MS, useAppBootstrap, type BootstrapDeps } from './useAppBootstrap'
+import { STEP_LIMIT_MS, createAppBootstrap, type BootstrapDeps } from './createAppBootstrap'
 
 const setup = (overrides: Partial<BootstrapDeps> = {}) => {
   const calls: string[] = []
@@ -26,11 +26,11 @@ const setup = (overrides: Partial<BootstrapDeps> = {}) => {
     reportError: vi.fn(),
     ...overrides,
   }
-  let started: ReturnType<typeof useAppBootstrap> | undefined
+  let started: ReturnType<typeof createAppBootstrap> | undefined
   const view = mount(
     defineComponent({
       setup() {
-        started = useAppBootstrap(deps)
+        started = createAppBootstrap(deps)
         return () => h('div')
       },
     }),
@@ -219,12 +219,12 @@ describe('a window mounting while the settings never answer', () => {
 
   it('starts with an empty failure before mounting and skips startPlugins when omitted', async () => {
     let initialFailure = 'unset'
-    let bootstrap!: ReturnType<typeof useAppBootstrap>
+    let bootstrap!: ReturnType<typeof createAppBootstrap>
     const startLayout = vi.fn(async () => undefined)
     const view = mount(
       defineComponent({
         setup() {
-          bootstrap = useAppBootstrap({
+          bootstrap = createAppBootstrap({
             loadVaults: async () => undefined,
             startSettings: async () => undefined,
             startWindow: async () => undefined,

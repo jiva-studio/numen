@@ -2,21 +2,27 @@
  * Vaults listing, active vault tracking, and coverage monitoring.
  */
 import { computed, ref, type Ref } from 'vue'
-import type { VaultList } from '@/entities/vault'
+import type { VaultList } from '../lib/vault'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { VaultRef } from '@/entities/command'
-import { WINDOW_WORDS } from './words'
-import { getVaultList } from './vaultList'
+import { VAULT_WORDS } from '../words'
+
+/** A vault as the commands and the target of the window name it. */
+export interface VaultRef {
+  readonly id: string
+  readonly name: string
+}
 
 export interface VaultsDeps {
+  /** Every vault the installation holds, and which of them this window shows. */
+  listVaults: () => Promise<VaultList>
   log: MessageLog
   chunks: Ref<number>
   embedded: Ref<number>
   isEmbedding: Ref<boolean>
 }
 
-export function useVaults({ log, chunks, embedded, isEmbedding }: VaultsDeps) {
+export function useVaults({ listVaults, log, chunks, embedded, isEmbedding }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
   const items = ref<VaultList>({ vaults: [], showing: '' })
 
@@ -42,10 +48,10 @@ export function useVaults({ log, chunks, embedded, isEmbedding }: VaultsDeps) {
 
   const loadVaults = async () => {
     try {
-      items.value = await getVaultList()
+      items.value = await listVaults()
     } catch {
       // The layout the window opens with is the one the list's answer decides.
-      unlisted(WINDOW_WORDS.unlistedVaults, 'error')
+      unlisted(VAULT_WORDS.unlisted, 'error')
     }
   }
 

@@ -13,7 +13,7 @@ import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { createWindowSlots } from '../plugins/windowSlots'
 import type { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
-import type { createPluginSupport } from '../plugins/useWindowPlugins'
+import type { createPluginSupport } from '../plugins/pluginSupport'
 
 /** What the window is made of before its parts exist: the tabs, the plugins and the message log. */
 export interface WindowCore {

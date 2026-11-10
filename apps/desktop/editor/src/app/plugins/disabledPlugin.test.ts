@@ -10,7 +10,7 @@ import { CATALOG_STATE, type CatalogEntry, type Manifest } from '@numen/core-cli
 import { createMockCatalogEntry, createMockManifest } from '@numen/core-client/testing'
 import { answerTabKinds } from '@/testing/tabCatalog'
 import { createTestTabs } from '@/testing/tabs'
-import { createPluginSupport } from './useWindowPlugins'
+import { createPluginSupport } from './pluginSupport'
 
 const PLUGIN_ID = 'sample.decks'
 

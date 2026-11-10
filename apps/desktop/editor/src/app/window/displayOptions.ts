@@ -7,8 +7,8 @@ import type { CommandTarget } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import type { createNoteEditors } from '../tabs/useNoteEditors'
-import type { useVaults } from './useVaults'
+import type { createNoteEditors } from '../tabs/createNoteEditors'
+import type { useVaults } from '@/entities/vault'
 import type { WindowDisplay } from '@/features/window-display'
 
 export interface DisplayWiring {

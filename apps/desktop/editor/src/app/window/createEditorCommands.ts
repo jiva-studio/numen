@@ -24,22 +24,22 @@ import {
   createCommandNoteReader,
 } from '@/features/plugin-commands'
 import { createCommandNotes } from '../tabs/commandDeps'
+import { createCommands } from './createCommands'
 import {
   collectFeatureCommands,
-  createCommands,
   createFeatureDeps,
   registerFeatureCommands,
-} from './createCommands'
+} from './createFeatureCommands'
 import { createNoteLookup } from '../tabs/editorTabs'
-import type { createNoteEditors } from '../tabs/useNoteEditors'
+import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { WindowCore } from './windowCore'
 import type { WindowServices } from './createWindowServices'
 import type { TabsHold } from '@/features/vault-commands'
 import type { useSettings } from '@/pages/settings'
-import type { useVaults } from './useVaults'
+import type { useVaults } from '@/entities/vault'
 import type { createWindowTabMoves } from './createTabsPart'
 import { createTargetResolver } from './displayOptions'
-import { useTabKinds } from './useTabKinds'
+import { createTabKinds } from './createTabKinds'
 
 interface WindowCommandsOptions {
   windowTabs: WindowTabs
@@ -183,7 +183,7 @@ export function createWindowKinds(
 ) {
   const { editing, settings, window, tabSync } = services
   const { getTarget, commands } = parts
-  const kinds = useTabKinds({
+  const kinds = createTabKinds({
     core: searchCore,
     log: base.log,
     tabOpeners: base.tabs.tabOpeners,

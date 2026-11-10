@@ -40,6 +40,8 @@ vi.mock('./createCommands', () => ({
     h.args.commands = args
     return h.f.commands
   },
+}))
+vi.mock('./createFeatureCommands', () => ({
   createFeatureDeps: (args: unknown) => {
     h.args.featureWindow = args
     return {}
@@ -98,7 +100,7 @@ vi.mock('@/entities/tab', async (importOriginal) => ({
   },
   readOpenTabs: () => h.core.readOpenTabs(),
 }))
-vi.mock('../tabs/useNoteEditors', () => ({
+vi.mock('../tabs/createNoteEditors', () => ({
   createNoteEditors: (args: unknown) => {
     h.args.editing = args
     return h.f.editing
@@ -114,15 +116,15 @@ vi.mock('@/pages/settings/model/useSettings', () => ({
     return h.f.settings
   },
 }))
-vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
+vi.mock('@/entities/vault/model/useVaults', () => ({ useVaults: () => h.f.vaults }))
 vi.mock('@/features/window-display', () => ({
   useWindowDisplay: (args: unknown) => {
     h.args.display = args
     return h.f.display
   },
 }))
-vi.mock('./useTabKinds', () => ({
-  useTabKinds: (args: unknown) => {
+vi.mock('./createTabKinds', () => ({
+  createTabKinds: (args: unknown) => {
     h.args.kinds = args
     return h.f.kinds
   },
@@ -148,7 +150,7 @@ vi.mock('@/entities/window', async (original) => ({
     h.args.emptyWindowClose = args
   },
 }))
-vi.mock('../plugins/useWindowPlugins', () => ({
+vi.mock('../plugins/pluginSupport', () => ({
   createPluginSupport: (args: unknown) => {
     h.args.plugins = args
     return { pluginHost: h.f.pluginHost, pluginLoader: h.f.pluginLoader }
@@ -158,8 +160,8 @@ vi.mock('../plugins/useWindowPlugins', () => ({
     h.args.watchPlugins = { settings, loader, onError }
   },
 }))
-vi.mock('../bootstrap/useAppBootstrap', () => ({
-  useAppBootstrap: (args: unknown) => {
+vi.mock('../bootstrap/createAppBootstrap', () => ({
+  createAppBootstrap: (args: unknown) => {
     h.args.bootstrap = args
     return { failure: { value: '' }, isStarted: { value: true }, retry: vi.fn() }
   },
@@ -735,7 +737,7 @@ describe('the services a plugin is given', () => {
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
     expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
 
-    // useTabKinds callbacks
+    // createTabKinds callbacks
     const target = window.palette.getTarget()
     h.args.kinds.runCommand('cmd-1', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)

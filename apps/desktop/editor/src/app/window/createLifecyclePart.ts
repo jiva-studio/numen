@@ -9,12 +9,12 @@ import { runInBackground } from '@numen/ui'
 import { parseSavedTabs, readOpenTabs, type MovedTab, type WindowTabs } from '@/entities/tab'
 import { readDetachedTab } from '@/features/tab-move'
 import type { MessageWriter } from '@/shared/notices/messages'
-import { getFrontendPluginIds } from '../plugins/useWindowPlugins'
-import type { createNoteEditors } from '../tabs/useNoteEditors'
+import { getFrontendPluginIds } from '../plugins/pluginSupport'
+import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { WindowCore } from './windowCore'
 import type { useSettings } from '@/pages/settings'
-import { useAppBootstrap } from '../bootstrap/useAppBootstrap'
-import type { useVaults } from './useVaults'
+import { createAppBootstrap } from '../bootstrap/createAppBootstrap'
+import type { useVaults } from '@/entities/vault'
 import type { WindowDisplay } from '@/features/window-display'
 import { closeWindow, closeWindowWhenEmpty } from '@/entities/window'
 
@@ -81,7 +81,7 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
     deps.onLayoutStarted()
   }
 
-  return useAppBootstrap({
+  return createAppBootstrap({
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,

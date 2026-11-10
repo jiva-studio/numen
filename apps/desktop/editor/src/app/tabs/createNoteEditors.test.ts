@@ -4,7 +4,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import type { Store } from '@/features/command-palette'
-import { createNoteEditors } from './useNoteEditors'
+import { createNoteEditors } from './createNoteEditors'
 
 interface MockParts {
   changes?: { reportNoteChange: unknown; close: unknown }

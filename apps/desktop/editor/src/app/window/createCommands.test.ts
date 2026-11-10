@@ -7,7 +7,8 @@ import type { PaletteLists } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { answerCore } from '@/testing/coreAnswers'
-import { createCommandRunner, createCommands, type CommandsDepsOptions } from './createCommands'
+import { createCommands, type CommandsDepsOptions } from './createCommands'
+import { createCommandRunner } from './createCommandRunner'
 
 const h = vi.hoisted(() => ({
   startCommand: vi.fn(),

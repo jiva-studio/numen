@@ -13,3 +13,8 @@ export const VAULT_ERRORS: Record<VaultErrorCode, string> = {
   noTrash: 'no trash on this system',
   unsaved: 'a tab has an unresolved file conflict',
 }
+
+export const VAULT_WORDS = {
+  /** The list of vaults did not answer. */
+  unlisted: 'Vault list unavailable',
+}

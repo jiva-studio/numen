@@ -12,7 +12,7 @@ import { createTestTabs } from '@/testing/tabs'
 import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
-import { createPluginSupport, getFrontendPluginIds, watchPluginSettings } from './useWindowPlugins'
+import { createPluginSupport, getFrontendPluginIds, watchPluginSettings } from './pluginSupport'
 import { getNoteIcon } from '@/entities/note'
 import { createBackendHandlers } from '@/features/plugin-commands'
 

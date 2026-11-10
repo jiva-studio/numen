@@ -47,7 +47,7 @@ function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessag
 /**
  * Initializes and registers view kinds for the desktop window.
  */
-export function useTabKinds(deps: WindowKindsDeps) {
+export function createTabKinds(deps: WindowKindsDeps) {
   const { core, log, tabOpeners, windowTabs, editing, settings } = deps
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])

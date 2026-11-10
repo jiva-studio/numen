@@ -15,13 +15,12 @@ import {
 import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { createSlotCommandFinder } from '@/features/plugin-commands'
+import { createCommands, type CommandsDepsOptions } from '@/app/window/createCommands'
 import {
   collectFeatureCommands,
-  createCommands,
   createFeatureDeps,
   registerFeatureCommands,
-  type CommandsDepsOptions,
-} from '@/app/window/createCommands'
+} from '@/app/window/createFeatureCommands'
 import { WORDS } from '@/shared/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'

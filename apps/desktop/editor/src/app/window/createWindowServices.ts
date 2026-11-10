@@ -10,9 +10,10 @@ import { useSettings } from '@/pages/settings'
 import { createEmitter } from '@/shared/lib/emitter'
 import type { PathRename } from '@/shared/paths'
 import { WORDS as words } from '@/shared/words'
-import { createNoteEditors } from '../tabs/useNoteEditors'
+import { createNoteEditors } from '../tabs/createNoteEditors'
 import { createDisplayOptions } from './displayOptions'
-import { useVaults } from './useVaults'
+import { useVaults } from '@/entities/vault'
+import { getVaultList } from './vaultList'
 import type { WindowCore } from './windowCore'
 
 export function createWindowServices(base: WindowCore) {
@@ -61,6 +62,7 @@ export function createWindowServices(base: WindowCore) {
   })
 
   const vaults = useVaults({
+    listVaults: getVaultList,
     log: base.log,
     chunks: window.vault.chunks,
     embedded: window.vault.embedded,

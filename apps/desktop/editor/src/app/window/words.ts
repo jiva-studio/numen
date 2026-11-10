@@ -6,6 +6,4 @@
 export const WINDOW_WORDS = {
   /** The name the title bar of every window starts with. */
   appName: 'numen',
-  /** The list of vaults did not answer. */
-  unlistedVaults: 'Vault list unavailable',
 }

@@ -9,7 +9,7 @@ import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { createMessageLog } from '@/shared/notices/messages'
 import { useAppHotkeys } from '@/features/hotkeys'
-import { watchPluginSettings } from '../plugins/useWindowPlugins'
+import { watchPluginSettings } from '../plugins/pluginSupport'
 import {
   createEditorCommands,
   createNoteKindReader,

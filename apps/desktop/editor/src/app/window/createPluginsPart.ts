@@ -19,7 +19,7 @@ import {
 } from '@/features/plugin-commands'
 import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
-import { createPluginSupport } from '../plugins/useWindowPlugins'
+import { createPluginSupport } from '../plugins/pluginSupport'
 import type { createEditorCommands } from './createEditorCommands'
 import type { PluginsCore, TabsCore, WindowCore } from './windowCore'
 import type { WindowServices } from './createWindowServices'

@@ -10,7 +10,7 @@ import { createSettingsStore, SETTINGS_WORDS, type SettingEdit } from '@/entitie
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
-import { createPluginSupport } from '@/app/plugins/useWindowPlugins'
+import { createPluginSupport } from '@/app/plugins/pluginSupport'
 import { useSettings } from './useSettings'
 
 const file = { current: {} as Record<string, unknown> }
