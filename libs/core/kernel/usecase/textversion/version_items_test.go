@@ -182,11 +182,11 @@ func TestFileMenuRejectsAVersionTheCommandDoesNotList(t *testing.T) {
 		"another version": "org.numen.tools-proofreading/other",
 		"no version":      "",
 	} {
-		if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, proofread, version); !errors.Is(err, textversion.ErrInvalidVersion) {
+		if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, proofread, version); !errors.Is(err, text.ErrInvalidVersion) {
 			t.Errorf("%s: got %v, want ErrInvalidVersion", name, err)
 		}
 	}
-	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, getRecognizeCommand(), s.getReaderVersion()); !errors.Is(err, textversion.ErrInvalidVersion) {
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, getRecognizeCommand(), s.getReaderVersion()); !errors.Is(err, text.ErrInvalidVersion) {
 		t.Errorf("a command without items: got %v, want ErrInvalidVersion", err)
 	}
 	if len(recorder.ran) != 0 {

@@ -48,7 +48,7 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, edit.ErrTooLarge):
 		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
-	case errors.Is(err, query.ErrInvalidName):
+	case errors.Is(err, domain.ErrInvalidName):
 		return v1.ErrorCode_ERROR_CODE_INVALID_NAME, true
 	case errors.Is(err, edit.ErrUnreadable),
 		errors.Is(err, edit.ErrInline),

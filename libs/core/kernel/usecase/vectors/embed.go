@@ -564,7 +564,7 @@ func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool
 
 	read, err := e.read(ctx, path, from)
 	switch {
-	case vaultport.IsNoNote(err), errors.Is(err, vaultport.ErrNotExist), errors.Is(err, textdomain.ErrNoText):
+	case edit.IsNoNote(err), errors.Is(err, edit.ErrNotExist), errors.Is(err, textdomain.ErrNoText):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)
