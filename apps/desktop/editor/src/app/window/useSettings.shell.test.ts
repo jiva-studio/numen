@@ -65,11 +65,11 @@ const createWindow = () => {
   })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = {
-    handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') },
+    groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
   } as unknown as WindowTabs
   const settings = useSettings({ words: WORDS, log, windowTabs, onSizeChanged: vi.fn() })
   vi.spyOn(settings.rest, 'start').mockResolvedValue()
-  vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+  vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
   return { settings, listThemes }
 }
 
@@ -80,7 +80,7 @@ describe('the settings of the shell in the settings tab', () => {
 
     await settings.rest.start()
 
-    expect(settings.configured.state.installation.app?.value).toMatchObject([
+    expect(settings.configured.state.installation.plugin.app?.value).toMatchObject([
       { key: 'appearance.interfaceScale', value: 1.4 },
     ])
   })
@@ -90,14 +90,17 @@ describe('the appearance of the window after a write of the settings of the shel
   it('shows the theme, the mode and the scales the file now holds', async () => {
     const { settings } = createWindow()
 
-    await (settings.configured.state.installation.write([
+    await (settings.configured.state.installation.settings.write([
       { at: ['app', 'appearance', 'theme'], value: '"plugin:md.example.themes/dusk"' },
     ]) as unknown as Promise<void>)
 
     await vi.waitFor(() => {
-      expect(settings.appearance.applied.value).toBe('plugin:md.example.themes/dusk')
-      expect(settings.appearance.mode.value).toBe('dark')
-      expect(settings.appearance.sized.value).toStrictEqual({ interfaceScale: 1.4, textScale: 1.2 })
+      expect(settings.appearance.state.applied.value).toBe('plugin:md.example.themes/dusk')
+      expect(settings.appearance.state.mode.value).toBe('dark')
+      expect(settings.appearance.preview.sized.value).toStrictEqual({
+        interfaceScale: 1.4,
+        textScale: 1.2,
+      })
       expect(document.head.querySelector('style[data-appearance="theme"]')?.textContent).toContain(
         '--numen-surface: #223',
       )
@@ -108,7 +111,7 @@ describe('the appearance of the window after a write of the settings of the shel
   it('stays as it is after a write of the settings of a plugin', async () => {
     const { settings, listThemes } = createWindow()
 
-    await (settings.configured.state.installation.write([
+    await (settings.configured.state.installation.settings.write([
       { at: ['md.example.themes', 'accent'], value: '"teal"' },
     ]) as unknown as Promise<void>)
 

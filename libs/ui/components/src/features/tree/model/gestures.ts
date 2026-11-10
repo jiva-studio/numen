@@ -34,15 +34,21 @@ export interface TreeGesturesOptions {
 
 /** Event handlers for tree pointer and keyboard gestures. */
 export interface TreeGesturesState {
-  readonly onContextMenu: (event: MouseEvent) => void
-  readonly onRowContextMenu: (row: ShownRow, event: MouseEvent) => void
-  readonly onRowFocus: (row: RowId) => void
-  readonly onRowPointerDown: (row: RowId, event: PointerEvent) => void
-  readonly onRowClick: (row: ShownRow) => void
-  readonly onRowDoubleClick: (row: ShownRow) => void
-  readonly onRename: (row: RowId, name: string) => void
-  readonly onAbandon: (row: RowId) => void
-  readonly onFieldBlur: () => void
+  readonly menu: {
+    readonly onContextMenu: (event: MouseEvent) => void
+    readonly onRowContextMenu: (row: ShownRow, event: MouseEvent) => void
+  }
+  readonly row: {
+    readonly onRowFocus: (row: RowId) => void
+    readonly onRowPointerDown: (row: RowId, event: PointerEvent) => void
+    readonly onRowClick: (row: ShownRow) => void
+    readonly onRowDoubleClick: (row: ShownRow) => void
+  }
+  readonly rename: {
+    readonly onRename: (row: RowId, name: string) => void
+    readonly onAbandon: (row: RowId) => void
+    readonly onFieldBlur: () => void
+  }
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
@@ -192,15 +198,9 @@ export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesSt
   const { onKeyDown } = createTreeKeyboard(options, { activateRow, requestMenu })
 
   return {
-    onContextMenu,
-    onRowContextMenu,
-    onRowFocus,
-    onRowPointerDown,
-    onRowClick,
-    onRowDoubleClick,
-    onRename,
-    onAbandon,
-    onFieldBlur,
+    menu: { onContextMenu, onRowContextMenu },
+    row: { onRowFocus, onRowPointerDown, onRowClick, onRowDoubleClick },
+    rename: { onRename, onAbandon, onFieldBlur },
     onKeyDown,
   }
 }

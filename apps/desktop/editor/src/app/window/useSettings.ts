@@ -24,7 +24,7 @@ import { useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { useSettingsTab } from '@/pages/settings'
-import type { Installation } from '@/pages/settings'
+import type { Installation, InstallationPlugin, InstallationSettings } from '@/pages/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WINDOW_WORDS } from './words'
 import type { WindowTabs } from '@/entities/tab'
@@ -34,8 +34,8 @@ export interface SettingsDeps {
   log: MessageLog
   windowTabs: WindowTabs
   onSizeChanged: () => void
-  getSettingsViews?: Installation['getSettingsViews']
-  getPlatform?: Installation['getPlatform']
+  getSettingsViews?: InstallationPlugin['getSettingsViews']
+  getPlatform?: InstallationSettings['getPlatform']
 }
 
 interface SettingsTabConfigDeps {
@@ -43,62 +43,43 @@ interface SettingsTabConfigDeps {
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
-  getSettingsViews?: Installation['getSettingsViews']
-  getPlatform?: Installation['getPlatform']
-  catalogEntries: NonNullable<Installation['catalog']>
+  getSettingsViews?: InstallationPlugin['getSettingsViews']
+  getPlatform?: InstallationSettings['getPlatform']
+  catalogEntries: NonNullable<InstallationPlugin['catalog']>
   reportError: (error: unknown) => void
 }
 
-function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const {
-    appearance,
-    rest,
-    secrets,
-    retry,
-    getSettingsViews,
-    getPlatform,
-    catalogEntries,
-    reportError,
-  } = deps
+function createInstallationSettings(deps: SettingsTabConfigDeps) {
+  const { appearance, rest, getPlatform, reportError } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
     if (!content.some((one) => one.at[0] === 'app')) return
     await appearance.reload()
   }
   return {
-    ...(getSettingsViews ? { getSettingsViews } : {}),
-    ...(getPlatform ? { getPlatform } : {}),
-    catalog: catalogEntries,
-    getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
-    getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
-    isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
-    isRequested: (targetPath: readonly string[]) => rest.isRequested(targetPath),
-    getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
+    getSetting: (targetPath: readonly string[]) => rest.read.getSetting(targetPath),
+    getConfirmedSetting: (targetPath: readonly string[]) =>
+      rest.read.getCommittedSetting(targetPath),
+    isPending: (targetPath: readonly string[]) => rest.read.isPending(targetPath),
+    isRequested: (targetPath: readonly string[]) => rest.read.isRequested(targetPath),
+    getModels: (targetPath: readonly string[]) => rest.read.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
-      const promise = rest.writeSettings(content)
+      const promise = rest.write.writeSettings(content)
       runInBackground(
         promise.then(() => followShell(content)),
         reportError,
       )
       return promise
     },
-    secretSections: rest.secretSections,
-    secretMenus: rest.secretMenus,
-    secretStates: secrets.states,
-    loadSecretStates: () => secrets.loadStates(),
-    credentialsPath: rest.credentialsPath,
-    createSecret: (group: string, name: string, value: string) =>
-      secrets.createSecret(group, name, value),
-    renameSecret: (id: string, name: string) => secrets.renameSecret(id, name),
-    writeSecret: (id: string, value: string) => secrets.writeSecret(id, value),
-    deleteSecret: (id: string) => secrets.deleteSecret(id),
-    deleteSecretGroup: (group: string) => secrets.deleteSecretGroup(group),
-    moveSecret: (id: string, beforeId: string) => secrets.moveSecret(id, beforeId),
-    renameSecretGroup: (group: string, name: string) => secrets.renameSecretGroup(group, name),
-    allowPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>
-      secrets.allowPluginSecret(secretId, pluginId, name, group),
-    denyPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>
-      secrets.denyPluginSecret(secretId, pluginId, name, group),
+    file: rest.state.path,
+    getPlatform,
+  }
+}
+
+function createInstallationPlugin(deps: SettingsTabConfigDeps) {
+  const { rest, retry, getSettingsViews, catalogEntries } = deps
+  return {
+    catalog: catalogEntries,
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {
@@ -120,9 +101,29 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
         return formatError(caughtError)
       }
     },
-    plugins: rest.plugins,
-    app: rest.app,
-    file: rest.path,
+    plugins: rest.state.plugins,
+    app: rest.state.app,
+    getSettingsViews,
+  }
+}
+
+function createInstallationSecrets({ rest, secrets }: SettingsTabConfigDeps) {
+  return {
+    sections: rest.state.secretSections,
+    menus: rest.state.secretMenus,
+    states: secrets.states,
+    loadStates: () => secrets.loadStates(),
+    credentialsPath: rest.state.credentialsPath,
+    edit: secrets.edit,
+    access: secrets.access,
+  }
+}
+
+function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
+  return {
+    settings: createInstallationSettings(deps),
+    plugin: createInstallationPlugin(deps),
+    secrets: createInstallationSecrets(deps),
   }
 }
 
@@ -176,7 +177,7 @@ export function useSettings({
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(SETTINGS_WORDS, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
-    rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
+    rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
     core: themes,
     words: APPEARANCE_WORDS,
@@ -195,10 +196,10 @@ export function useSettings({
     getName: getPluginName,
   })
 
-  const catalogEntries = useCatalogEntries(rest.plugins, reportError)
+  const catalogEntries = useCatalogEntries(rest.state.plugins, reportError)
 
   const configured = useSettingsTab(
-    windowTabs.handle,
+    windowTabs.groups.handle,
     createSettingsTabConfig({
       appearance,
       rest,
@@ -212,7 +213,7 @@ export function useSettings({
     reportError,
   )
 
-  watch(appearance.sized, () => onSizeChanged())
+  watch(appearance.preview.sized, () => onSizeChanged())
 
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 

@@ -60,7 +60,7 @@ const createSettings = (
     },
   } as unknown as MessageLog
   const handle = { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') }
-  const windowTabs = { handle } as unknown as WindowTabs
+  const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = useSettings({
     words: WORDS,
@@ -218,7 +218,7 @@ describe('the settings as they are put together', () => {
 
   it('notifies onSizeChanged when appearance.sized changes', async () => {
     const { settings, onSizeChanged } = createSettings()
-    settings.appearance.settings.value = { interfaceScale: 110, textScale: 105 }
+    settings.appearance.state.settings.value = { interfaceScale: 110, textScale: 105 }
     await Promise.resolve()
     expect(onSizeChanged).toHaveBeenCalledTimes(1)
   })
@@ -227,15 +227,15 @@ describe('the settings as they are put together', () => {
 describe('the lists the palette offers for a setting', () => {
   it('offers nothing for a command that is over no setting', () => {
     const { settings } = createSettings()
-    vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
-    vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
+    vi.spyOn(settings.rest.read, 'getSetting').mockReturnValue('people/own-model')
+    vi.spyOn(settings.rest.read, 'getModelsAt').mockReturnValue([model()])
 
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
 
   it('offers the six settings of the shell from the declaration the core sends, and no command made by hand', () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
+    settings.rest.state.app.value = SHELL_DECLARATION
 
     const ids = settings.settingPalette.getCommands().map((one) => one.id)
 
@@ -261,8 +261,8 @@ describe('the lists the palette offers for a setting', () => {
 
   it('offers the settings of the installed plugins together with those of the shell', () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.app.value = SHELL_DECLARATION
+    settings.rest.state.plugins.value = [SCANNER]
 
     const ids = settings.settingPalette.getCommands().map((one) => one.id)
 
@@ -272,8 +272,8 @@ describe('the lists the palette offers for a setting', () => {
 
   it('draws the rows of every command from the adapter, whichever owner declares the setting', () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.app.value = SHELL_DECLARATION
+    settings.rest.state.plugins.value = [SCANNER]
 
     for (const command of [
       'setting:app:performance.profile',
@@ -288,8 +288,8 @@ describe('the lists the palette offers for a setting', () => {
 
   it('writes the row chosen under the path of the setting through the settings the window holds', async () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
-    const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+    settings.rest.state.app.value = SHELL_DECLARATION
+    const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
 
     await settings.settingPalette.choose('setting:app:performance.profile', 'eco')
 
@@ -303,17 +303,17 @@ describe('the settings tab', () => {
     try {
       const { settings } = createSettings()
       const { installation } = settings.configured.state
-      vi.spyOn(settings.rest, 'getSetting').mockReturnValue('eco')
-      vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
+      vi.spyOn(settings.rest.read, 'getSetting').mockReturnValue('eco')
+      vi.spyOn(settings.rest.read, 'getModelsAt').mockReturnValue([model()])
       const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-      const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+      const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
-      await (installation.write(edits) as unknown as Promise<void>)
+      await (installation.settings.write(edits) as unknown as Promise<void>)
       vi.advanceTimersByTime(1500)
 
-      expect(installation.getSetting(['app', 'performance', 'profile'])).toBe('eco')
-      expect(installation.getModels(['indexing'])).toStrictEqual([model()])
+      expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
+      expect(installation.settings.getModels(['indexing'])).toStrictEqual([model()])
       expect(write).toHaveBeenCalledWith(edits)
       expect(startRest).toHaveBeenCalledTimes(0)
       settings.close()
@@ -327,26 +327,29 @@ describe('the settings tab', () => {
     const { settings, core, writerFns } = createSettings({ getSettingsViews })
     const { installation } = settings.configured.state
 
-    expect(installation.getSettingsViews).toBe(getSettingsViews)
-    expect(installation.catalog).toBeDefined()
+    expect(installation.plugin.getSettingsViews).toBe(getSettingsViews)
+    expect(installation.plugin.catalog).toBeDefined()
 
-    vi.spyOn(settings.rest, 'getCommittedSetting').mockReturnValue('committed-val')
-    vi.spyOn(settings.rest, 'isPending').mockReturnValue(true)
-    expect(installation.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
-    expect(settings.rest.getCommittedSetting).toHaveBeenCalledWith(['a', 'b'])
-    expect(installation.isPending?.(['a', 'b'])).toBe(true)
-    expect(settings.rest.isPending).toHaveBeenCalledWith(['a', 'b'])
+    vi.spyOn(settings.rest.read, 'getCommittedSetting').mockReturnValue('committed-val')
+    vi.spyOn(settings.rest.read, 'isPending').mockReturnValue(true)
+    expect(installation.settings.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
+    expect(settings.rest.read.getCommittedSetting).toHaveBeenCalledWith(['a', 'b'])
+    expect(installation.settings.isPending?.(['a', 'b'])).toBe(true)
+    expect(settings.rest.read.isPending).toHaveBeenCalledWith(['a', 'b'])
 
     const startSpy = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-    await (installation.writeSecret('s0a1b2c3d', 'secret-val') as unknown as Promise<void>)
+    await (installation.secrets.edit.writeSecret(
+      's0a1b2c3d',
+      'secret-val',
+    ) as unknown as Promise<void>)
     expect(core.writeSecret).toHaveBeenCalledWith('s0a1b2c3d', 'secret-val')
     expect(startSpy).toHaveBeenCalledTimes(1)
 
-    await (installation.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
+    await (installation.secrets.edit.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
     expect(core.deleteSecret).toHaveBeenCalledWith('s0a1b2c3d')
     expect(startSpy).toHaveBeenCalledTimes(2)
 
-    await (installation.allowPluginSecret(
+    await (installation.secrets.access.allowPluginSecret(
       's0a1b2c3d',
       'plugin.ocr',
       'apiKey',
@@ -358,7 +361,7 @@ describe('the settings tab', () => {
       'apiKey',
       'openrouter',
     )
-    await (installation.denyPluginSecret(
+    await (installation.secrets.access.denyPluginSecret(
       's0a1b2c3d',
       'plugin.ocr',
       'apiKey',
@@ -372,7 +375,7 @@ describe('the settings tab', () => {
     )
     expect(startSpy).toHaveBeenCalledTimes(4)
 
-    settings.rest.plugins.value = [
+    settings.rest.state.plugins.value = [
       {
         id: 'plugin.other',
         name: 'Other Plugin',
@@ -399,18 +402,21 @@ describe('the settings tab', () => {
       },
     ]
     vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed to start')
-    await (installation.retryPlugin('plugin.ocr') as unknown as Promise<void>)
+    await (installation.plugin.retryPlugin('plugin.ocr') as unknown as Promise<void>)
     expect(core.retryPlugin).toHaveBeenCalledWith('plugin.ocr')
     expect(writerFns.plugins).toHaveBeenCalledWith('OCR Plugin stopped: failed to start', 'warning')
 
     vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed unknown')
-    await (installation.retryPlugin('unknown.id') as unknown as Promise<void>)
+    await (installation.plugin.retryPlugin('unknown.id') as unknown as Promise<void>)
     expect(writerFns.plugins).toHaveBeenCalledWith('unknown.id stopped: failed unknown', 'warning')
 
     vi.useFakeTimers()
     try {
       startSpy.mockClear()
-      await (installation.writeSecret('s0a1b2c3d', 'secret-val-2') as unknown as Promise<void>)
+      await (installation.secrets.edit.writeSecret(
+        's0a1b2c3d',
+        'secret-val-2',
+      ) as unknown as Promise<void>)
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
       expect(startSpy).toHaveBeenCalledTimes(1)
@@ -421,7 +427,7 @@ describe('the settings tab', () => {
         isChosen: true,
         problem: '',
       })
-      expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('')
+      expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe('')
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
       expect(startSpy).toHaveBeenCalledTimes(1)
@@ -431,7 +437,7 @@ describe('the settings tab', () => {
         isChosen: false,
         problem: 'cancelled',
       })
-      expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
+      expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
       expect(startSpy).toHaveBeenCalledTimes(1)
       settings.close()
     } finally {
@@ -439,27 +445,27 @@ describe('the settings tab', () => {
     }
 
     vi.mocked(core.choosePluginPath).mockRejectedValueOnce(createLostConnection('dialog crashed'))
-    expect(await installation.choosePath('plugin.ocr', 'dir')).toBe(
+    expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe(
       'Numen is not responding; retrying',
     )
 
-    expect(await installation.getPluginData?.('plugin.ocr')).toBe(5)
+    expect(await installation.plugin.getPluginData?.('plugin.ocr')).toBe(5)
     expect(core.getPluginData).toHaveBeenCalledWith('plugin.ocr')
 
-    expect(await installation.deletePluginData?.('plugin.ocr')).toBe('')
+    expect(await installation.plugin.deletePluginData?.('plugin.ocr')).toBe('')
     expect(core.deletePluginData).toHaveBeenCalledWith('plugin.ocr')
 
     vi.mocked(core.deletePluginData).mockRejectedValueOnce(
       createLostConnection('permission denied'),
     )
-    expect(await installation.deletePluginData?.('plugin.ocr')).toBe(
+    expect(await installation.plugin.deletePluginData?.('plugin.ocr')).toBe(
       'Numen is not responding; retrying',
     )
 
-    vi.spyOn(settings.rest, 'writeSettings').mockRejectedValueOnce(
+    vi.spyOn(settings.rest.write, 'writeSettings').mockRejectedValueOnce(
       createLostConnection('write failed'),
     )
-    const failed = installation.write([
+    const failed = installation.settings.write([
       { at: ['app', 'performance', 'profile'], value: '"eco"' },
     ]) as unknown as Promise<void>
     await failed.catch(() => undefined)
@@ -492,7 +498,7 @@ describe('the plugin catalog', () => {
       },
     )
 
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.plugins.value = [SCANNER]
 
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
@@ -515,7 +521,7 @@ describe('the plugin catalog', () => {
       },
     )
 
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.plugins.value = [SCANNER]
 
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(

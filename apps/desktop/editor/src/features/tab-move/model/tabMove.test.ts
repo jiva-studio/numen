@@ -64,8 +64,10 @@ const setup = (asking: () => boolean = () => false) => {
   const deps = {
     windowId: 'window-a',
     windowTabs: {
-      getTab: (id: string) => open.get(id) ?? null,
-      tabs: ref([{ id: ORBITS_ID, title: 'Orbits' }]),
+      tabs: {
+        getTab: (id: string) => open.get(id) ?? null,
+        tabs: ref([{ id: ORBITS_ID, title: 'Orbits' }]),
+      },
     },
     notes: {
       asking: vi.fn((_id: string) => asking()),
@@ -274,7 +276,7 @@ describe('detachTab', () => {
 
   it('sends an empty state and path for a kind without getState and getOpenTab', async () => {
     const { core, deps, mover } = setup()
-    ;(deps.windowTabs.getTab as (id: string) => unknown) = () => ({
+    ;(deps.windowTabs.tabs.getTab as (id: string) => unknown) = () => ({
       kind: { kind: 'settings' },
       state: {},
     })
@@ -301,8 +303,10 @@ describe('createMovedTabOpener', () => {
     const steps: string[] = []
     const deps = {
       windowTabs: {
-        getTab: vi.fn((_id: string) => (isOpen ? { kind: { kind: 'plex' }, state: null } : null)),
-        openSavedTab: vi.fn(() => steps.push('open')),
+        tabs: {
+          getTab: vi.fn((_id: string) => (isOpen ? { kind: { kind: 'plex' }, state: null } : null)),
+        },
+        restored: { openSavedTab: vi.fn(() => steps.push('open')) },
       },
       closeTab: vi.fn(() => steps.push('close')),
       acceptMove: vi.fn(async (_tabId: string, _moveId: string) => {
@@ -330,7 +334,7 @@ describe('createMovedTabOpener', () => {
     await openMovedTab(MOVED_ORBITS)
 
     expect(steps).toStrictEqual(['open', 'accept', 'focus'])
-    expect(deps.windowTabs.openSavedTab).toHaveBeenCalledWith({
+    expect(deps.windowTabs.restored.openSavedTab).toHaveBeenCalledWith({
       id: ORBITS_ID,
       kind: 'plex',
       path: 'notes/Orbits.md',
@@ -393,7 +397,7 @@ describe('createMovedTabOpener', () => {
   it('reports an error when the tab does not open', async () => {
     const { deps, openMovedTab } = setupOpener({ ok: true, value: undefined })
     const failure = new Error('no kind')
-    deps.windowTabs.openSavedTab.mockImplementationOnce(() => {
+    deps.windowTabs.restored.openSavedTab.mockImplementationOnce(() => {
       throw failure
     })
 

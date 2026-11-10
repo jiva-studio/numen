@@ -27,34 +27,37 @@ const plugins = [
 ]
 
 const createInstallation = (): Installation => ({
-  getSetting: () => undefined,
-  getModels: () => [],
-  write: () => undefined,
-  createSecret: async () => 's00000009',
-  renameSecret: () => undefined,
-  writeSecret: () => undefined,
-  deleteSecret: () => undefined,
-  deleteSecretGroup: () => undefined,
-  moveSecret: () => undefined,
-  renameSecretGroup: () => undefined,
-  allowPluginSecret: () => undefined,
-  denyPluginSecret: () => undefined,
-  retryPlugin: () => undefined,
-  choosePath: async () => '',
-  file: ref('/numen.json'),
-  plugins: ref(plugins),
-  ...createSecretAnswer(plugins, [
-    {
-      id: 's00000001',
-      name: 'Work',
-      group: 'openrouter',
-      allowed: [{ pluginId: EMBEDDINGS, name: 'apiKey', group: 'openrouter' }],
-      hasValue: true,
+  settings: {
+    getSetting: () => undefined,
+    getModels: () => [],
+    write: () => undefined,
+    file: ref('/numen.json'),
+  },
+  plugin: { retryPlugin: () => undefined, choosePath: async () => '', plugins: ref(plugins) },
+  secrets: {
+    ...createSecretAnswer(plugins, [
+      {
+        id: 's00000001',
+        name: 'Work',
+        group: 'openrouter',
+        allowed: [{ pluginId: EMBEDDINGS, name: 'apiKey', group: 'openrouter' }],
+        hasValue: true,
+      },
+      { id: 's00000002', name: 'Home', group: 'openrouter', allowed: [], hasValue: true },
+      { id: 's00000003', name: 'Personal', group: 'travel', allowed: [], hasValue: false },
+    ]),
+    credentialsPath: ref(''),
+    edit: {
+      createSecret: async () => 's00000009',
+      renameSecret: () => undefined,
+      writeSecret: () => undefined,
+      deleteSecret: () => undefined,
+      deleteSecretGroup: () => undefined,
+      moveSecret: () => undefined,
+      renameSecretGroup: () => undefined,
     },
-    { id: 's00000002', name: 'Home', group: 'openrouter', allowed: [], hasValue: true },
-    { id: 's00000003', name: 'Personal', group: 'travel', allowed: [], hasValue: false },
-  ]),
-  credentialsPath: ref(''),
+    access: { allowPluginSecret: () => undefined, denyPluginSecret: () => undefined },
+  },
 })
 
 const meta: Meta<typeof SecretsPage> = {
@@ -120,11 +123,14 @@ export const NewSecretWaitsForAValue: Story = {
   },
 }
 
-const emptyInstallation = (): Installation => ({
-  ...createInstallation(),
-  plugins: ref([]),
-  ...createSecretAnswer([], []),
-})
+const emptyInstallation = (): Installation => {
+  const installation = createInstallation()
+  return {
+    ...installation,
+    plugin: { ...installation.plugin, plugins: ref([]) },
+    secrets: { ...installation.secrets, ...createSecretAnswer([], []) },
+  }
+}
 
 const renderEmpty = () => ({
   components: { SecretsPage },

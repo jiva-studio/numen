@@ -97,9 +97,9 @@ describe('restoring a session with a disabled plugin', () => {
 
   it('restores a disabled plugin tab in windowTabs directly without throwing', async () => {
     const window = createTestTabs()
-    const id = await window.createTab('disabled-plugin', '/docs/sample.pdf')
+    const id = await window.tabs.createTab('disabled-plugin', '/docs/sample.pdf')
 
     expect(id).toBe('disabled-plugin:/docs/sample.pdf')
-    expect(window.tabs.value).toEqual([{ id, title: 'sample.pdf' }])
+    expect(window.tabs.tabs.value).toEqual([{ id, title: 'sample.pdf' }])
   })
 })

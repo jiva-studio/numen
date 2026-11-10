@@ -19,10 +19,10 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
   const { windowTabs, search, writeMessage } = options
   return {
     openTab: (kind) =>
-      runInBackground(windowTabs.openTabOfKind(kind), (error) =>
+      runInBackground(windowTabs.tabs.openTabOfKind(kind), (error) =>
         writeMessage(formatError(error), 'error'),
       ),
-    closeTab: (tab) => windowTabs.requestClose(tab),
+    closeTab: (tab) => windowTabs.panes.requestClose(tab),
     // Without a palette to open, searching does nothing.
     search: search ?? (() => undefined),
   }
@@ -37,7 +37,10 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
   }
 }
 
-function tabMatchesPath(windowTab: ReturnType<WindowTabs['getTab']>, path: string): boolean {
+function tabMatchesPath(
+  windowTab: ReturnType<WindowTabs['tabs']['getTab']>,
+  path: string,
+): boolean {
   if (!windowTab) return false
   const openPath = windowTab.kind.getOpenTab?.(windowTab.state).path
   if (openPath === path) return true
@@ -47,8 +50,8 @@ function tabMatchesPath(windowTab: ReturnType<WindowTabs['getTab']>, path: strin
 
 function findActiveTabAt(windowTabs: WindowTabs, path: string): string | null {
   if (!path) return null
-  for (const tab of windowTabs.tabs.value) {
-    if (tabMatchesPath(windowTabs.getTab(tab.id), path)) return tab.id
+  for (const tab of windowTabs.tabs.tabs.value) {
+    if (tabMatchesPath(windowTabs.tabs.getTab(tab.id), path)) return tab.id
   }
   return null
 }
@@ -58,9 +61,9 @@ function findActiveTabAt(windowTabs: WindowTabs, path: string): string | null {
  * a tab kind serves.
  */
 export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Notes {
-  const getTab = (id: string) => windowTabs.getTab(id)
+  const getTab = (id: string) => windowTabs.tabs.getTab(id)
   return {
-    ...reached,
+    openFile: (path, title, placement, place) => reached.openFile(path, title, placement, place),
     getTabAt: (path: string) => reached.getTabAt(path) ?? findActiveTabAt(windowTabs, path),
     getPath: (id: string) => {
       const path = reached.getPath(id)
@@ -79,7 +82,7 @@ export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Note
     },
     close: (id: string) => {
       reached.close(id)
-      windowTabs.requestClose(id)
+      windowTabs.panes.requestClose(id)
     },
   }
 }

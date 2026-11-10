@@ -16,7 +16,7 @@ function setup() {
       declaredCommands: { load } as unknown as DeclaredCommands,
       writeMessage: vi.fn(),
       plugins,
-      rest: { getCommittedSetting },
+      rest: { read: { getCommittedSetting } },
     },
     ref(false),
   )

@@ -6,11 +6,7 @@ import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
 import { createFileCreators, type FileOpeners, type WindowTabs } from '@/entities/tab'
 import { listFiles, type CreateResult } from '@/entities/file'
-import {
-  createInvocation,
-  runInvocation,
-  type CommandDeps,
-} from '@/features/command-palette'
+import { createInvocation, runInvocation, type CommandDeps } from '@/features/command-palette'
 import { COMMAND, findIcon, type CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 import { getKnownErrorCode } from '@/shared/api/errors'
@@ -30,7 +26,7 @@ export interface FileCreatorRegistry {
 /** The window operations needed to create a file. */
 export interface FileMakersDeps {
   readonly tabOpeners: FileOpeners
-  readonly windowTabs: Pick<WindowTabs, 'createFileOfKind'>
+  readonly windowTabs: { readonly groups: Pick<WindowTabs['groups'], 'createFileOfKind'> }
   readonly writeMessage: MessageWriter
   readonly creators?: Record<string, FileCreatorFn>
 }
@@ -66,14 +62,12 @@ export function createFileMakers({
   ): Promise<CreateResult | null> => {
     const registered = registeredCreators.get(kind)
     if (registered) return registered(title, folder)
-    const createdItem = await windowTabs.createFileOfKind(kind, folder, title)
+    const createdItem = await windowTabs.groups.createFileOfKind(kind, folder, title)
     if (createdItem === undefined) {
       writeMessage(words.unavailable, 'error')
       return null
     }
-    return createdItem.ok
-      ? createdItem
-      : { ok: false, error: getKnownErrorCode(createdItem.error) }
+    return createdItem.ok ? createdItem : { ok: false, error: getKnownErrorCode(createdItem.error) }
   }
 
   const makers = createFileCreators(
@@ -85,7 +79,8 @@ export function createFileMakers({
   )
 
   return {
-    ...makers,
+    createFile: makers.createFile,
+    createAndOpenFile: makers.createAndOpenFile,
     registerCreator,
     createFileOfKind: createGenericOfKind,
   }

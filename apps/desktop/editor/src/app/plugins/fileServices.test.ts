@@ -104,7 +104,7 @@ describe('dynamic creator registration', () => {
     const createFileOfKind = vi.fn()
     const makers = createFileMakers({
       tabOpeners: { openFile } as never,
-      windowTabs: { createFileOfKind },
+      windowTabs: { groups: { createFileOfKind } },
       writeMessage,
       creators: {
         preset: async (title, folder) => ({

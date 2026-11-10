@@ -144,29 +144,27 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
   return { start, close, reopen, reportTabs, acceptMove, waitForReports }
 }
 
-type ReportedTabs = Pick<WindowTabs, 'tabs' | 'getTab' | 'handle'>
+type ReportedTabs = Pick<WindowTabs, 'tabs' | 'groups'>
 
 /** Returns the tabs whose kind supports navigate, in tab order. */
-export function getLinkableTabs(
-  windowTabs: Pick<ReportedTabs, 'tabs' | 'getTab'>,
-): WindowTabsReport['tabs'] {
-  return windowTabs.tabs.value.flatMap((tab) => {
-    const kind = windowTabs.getTab(tab.id)?.kind
+export function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsReport['tabs'] {
+  return windowTabs.tabs.tabs.value.flatMap((tab) => {
+    const kind = windowTabs.tabs.getTab(tab.id)?.kind
     return kind?.navigate ? [{ id: tab.id, kind: kind.kind, title: tab.title }] : []
   })
 }
 
 /** Returns the linkable tabs, the active tab and the tab count of the window. */
 export function getWindowReport(windowTabs: ReportedTabs, isMain: boolean): WindowTabsReport {
-  const front = windowTabs.handle.front()
-  const activeTitle = windowTabs.tabs.value.find((tab) => tab.id === front?.id)?.title ?? ''
+  const front = windowTabs.groups.handle.front()
+  const activeTitle = windowTabs.tabs.tabs.value.find((tab) => tab.id === front?.id)?.title ?? ''
   return {
     tabs: getLinkableTabs(windowTabs),
     window: {
       isMain,
       activeTitle,
       activeKind: front?.kind ?? '',
-      tabCount: windowTabs.tabs.value.length,
+      tabCount: windowTabs.tabs.tabs.value.length,
     },
   }
 }

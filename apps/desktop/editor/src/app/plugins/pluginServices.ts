@@ -63,7 +63,7 @@ export interface WorkspaceHostDeps extends IconHostDeps {
   readonly today: () => string
 }
 
-export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
+export function getWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
   const { window, dragged, tabOpeners, writeMessage } = deps
   return {
     isReady: computed(() => !window.health.failure.value),
@@ -128,10 +128,13 @@ export interface AgentHostDeps {
   readonly port: AgentPort
   readonly window: { readonly vault: { readonly unreachable: Readonly<Ref<string>> } }
   readonly settings: {
-    readonly rest: Pick<
-      ReturnType<typeof useSettings>['rest'],
-      'getSetting' | 'writeSetting' | 'getModelsAt'
-    >
+    readonly rest: {
+      readonly read: Pick<
+        ReturnType<typeof useSettings>['rest']['read'],
+        'getSetting' | 'getModelsAt'
+      >
+      readonly write: Pick<ReturnType<typeof useSettings>['rest']['write'], 'writeSetting'>
+    }
   }
 }
 
@@ -141,8 +144,8 @@ export function createAgentHost({ port, window, settings }: AgentHostDeps): Agen
     finish: (conversation) => port.finish(conversation),
     resolveLinks: (text, vault) => resolveLinks('', text, vault),
     getUnreachable: () => window.vault.unreachable.value,
-    getSetting: (path) => settings.rest.getSetting(path),
-    writeSetting: (path, value) => settings.rest.writeSetting(path, value),
-    getModelsAt: (path) => settings.rest.getModelsAt(path),
+    getSetting: (path) => settings.rest.read.getSetting(path),
+    writeSetting: (path, value) => settings.rest.write.writeSetting(path, value),
+    getModelsAt: (path) => settings.rest.read.getModelsAt(path),
   }
 }

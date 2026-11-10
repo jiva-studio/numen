@@ -3,6 +3,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
+import type { Store } from '@/features/command-palette'
 import { createNoteEditors } from './useNoteEditors'
 
 interface MockParts {
@@ -93,8 +94,10 @@ const create = () => {
   const core = { name: 'core' }
   const tabOpeners = { name: 'openers' }
   const windowTabs = {
-    tabs: { value: [{ id: 'titled-note', title: 'Tide table' }] },
-    getTab: vi.fn(),
+    tabs: {
+      tabs: { value: [{ id: 'titled-note', title: 'Tide table' }] },
+      getTab: vi.fn(),
+    },
   }
   const editors = createNoteEditors({ core, log, tabOpeners, windowTabs } as unknown as Parameters<
     typeof createNoteEditors
@@ -133,8 +136,7 @@ describe('the note editors', () => {
   it('keeps the store of notes and reaches notes through it', () => {
     const { editors, tabOpeners } = create()
 
-    expect(editors.stores.length).toBe(1)
-    expect(h.calls.reached[0]).toBe(editors.stores)
+    expect(h.calls.reached[0]).toHaveLength(1)
     expect(h.calls.reached[1]).toBe(tabOpeners)
     expect(editors.reached).toBe(h.parts.reached)
   })
@@ -160,13 +162,13 @@ describe('the note editors', () => {
     const { editors, windowTabs } = create()
     const measureDirect = vi.fn()
     const measureNested = vi.fn()
-    windowTabs.tabs.value = [
+    windowTabs.tabs.tabs.value = [
       { id: 't1', title: 'Direct' },
       { id: 't2', title: 'Nested' },
       { id: 't3', title: 'None' },
       { id: 't4', title: 'Missing' },
     ]
-    windowTabs.getTab.mockImplementation((id: string) => {
+    windowTabs.tabs.getTab.mockImplementation((id: string) => {
       if (id === 't1') return { state: { measure: measureDirect } }
       if (id === 't2') return { state: { editor: { measure: measureNested } } }
       if (id === 't4') return null
@@ -189,16 +191,16 @@ describe('the store of open notes, as the palette reads it', () => {
   })
 
   it('finds the tab a path is open in, and none for a path no tab holds', () => {
-    const { editors } = create()
-    const store = editors.stores[0]!
+    create()
+    const store = (h.calls.reached[0] as readonly Store[])[0]!
 
     expect(store.getTabAt('title of titled-note')).toBe('titled-note')
     expect(store.getTabAt('notes/Elsewhere.md')).toBeNull()
   })
 
   it('delegates has, getPath, asking, flushPending, and close with error reporting', async () => {
-    const { editors, writers } = create()
-    const store = editors.stores[0]!
+    const { writers } = create()
+    const store = (h.calls.reached[0] as readonly Store[])[0]!
 
     expect(store.has('known-note')).toBe(true)
     expect(store.has('other')).toBe(false)

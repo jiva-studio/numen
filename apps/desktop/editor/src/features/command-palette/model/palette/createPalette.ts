@@ -19,7 +19,7 @@ function createPaletteCommands(session: PaletteSession) {
 
   const openSteps = (): void => {
     if (state.open.value) return
-    steps.reset()
+    steps.stack.reset()
     state.open.value = true
   }
 
@@ -31,7 +31,7 @@ function createPaletteCommands(session: PaletteSession) {
     const promptIndex = findUnsuppliedPrompt(command, 0, values)
     if (promptIndex < 0) return invocation(command.id, target)
     openSteps()
-    steps.pushStep({ step: 'arguments', command, on: target, promptIndex, values })
+    steps.stack.pushStep({ step: 'arguments', command, on: target, promptIndex, values })
     return null
   }
 
@@ -61,7 +61,7 @@ function createPaletteCommands(session: PaletteSession) {
     if (command.input === 'name' && name !== '') return invocation(command.id, target, name)
     if (isNameOmittable(command, target)) return invocation(command.id, target)
     openSteps()
-    steps.pushStep({ step: command.input, command, on: target })
+    steps.stack.pushStep({ step: command.input, command, on: target })
     return null
   }
 
@@ -75,7 +75,8 @@ function createPaletteCommands(session: PaletteSession) {
 }
 
 export function createPalette(session: PaletteSession, view: ReturnType<typeof usePaletteView>) {
-  const { state, steps, on, previewItem, setOpen, searchNames } = session
+  const { state, steps, on } = session
+  const { previewItem, setOpen, searchNames } = session.handlers
   const { startCommand, getObjection } = createPaletteCommands(session)
 
   const setTyped = async (text: string) => {
@@ -91,8 +92,8 @@ export function createPalette(session: PaletteSession, view: ReturnType<typeof u
       step,
       item,
       action,
-      state.found.value,
-      state.known.value,
+      state.results.found.value,
+      state.results.known.value,
       view.isVaultAside,
     )
   }

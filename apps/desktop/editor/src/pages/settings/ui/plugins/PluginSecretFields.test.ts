@@ -131,8 +131,8 @@ describe('the secret field of a declaration', () => {
     expect(fieldOf('API key').querySelectorAll('input')).toHaveLength(0)
     expect(maskedInputs()).toHaveLength(0)
     await openMenu('API key')
-    expect(installation.createSecret).not.toHaveBeenCalled()
-    expect(installation.writeSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.createSecret).not.toHaveBeenCalled()
+    expect(installation.secrets.edit.writeSecret).not.toHaveBeenCalled()
     dispose(wrapper)
   })
 
@@ -181,7 +181,7 @@ describe('the secret field of a declaration', () => {
     const { installation, wrapper } = mountDetail()
     await openMenu('API key')
     await click(menuItem('Spare'))
-    expect(installation.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.access.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
       SPARE.id,
       PLUGIN,
       'apiKey',
@@ -194,7 +194,7 @@ describe('the secret field of a declaration', () => {
     const { installation, wrapper } = mountDetail()
     await openMenu('API key')
     await click(menuItem('Chat'))
-    expect(installation.denyPluginSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.access.denyPluginSecret).toHaveBeenCalledExactlyOnceWith(
       CHAT.id,
       PLUGIN,
       'apiKey',
@@ -207,7 +207,7 @@ describe('the secret field of a declaration', () => {
     const { installation, wrapper } = mountDetail()
     await openMenu('Organization')
     await click(menuItem('Work'))
-    expect(installation.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
+    expect(installation.secrets.access.allowPluginSecret).toHaveBeenCalledExactlyOnceWith(
       WORK.id,
       PLUGIN,
       'orgId',

@@ -233,9 +233,7 @@ export function createStepGroups(state: ViewState) {
   return {
     getNamingGroup: (step: PendingStep, text: string) => getNamingGroup(step, text, words),
     getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
-    getPickingGroup,
-    getItemGroups,
-    getVaultsGroup,
+    lists: { getPickingGroup, getItemGroups, getVaultsGroup },
     getConfirmGroup: (step: PendingStep, text: string) =>
       getConfirmGroup(step, text, words, getStepLabel(step)),
     getExactlyGroup: (step: PendingStep, text: string) =>

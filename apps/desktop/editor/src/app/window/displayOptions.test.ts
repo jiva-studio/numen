@@ -6,7 +6,7 @@ const createWiring = (leavePath: (from: string, to: string) => Promise<void>) =>
   const writeMessage = vi.fn()
   const wiring = {
     editing: { notes: { applyPathChanges: vi.fn() }, changes: { reportChange: vi.fn() } },
-    getCommands: () => ({ commands: { applyRenames: vi.fn() } }),
+    getCommands: () => ({ commands: { navigation: { applyRenames: vi.fn() } } }),
     getKinds: () => ({ leavePath, travel: vi.fn() }),
     tabOpeners: { openFileAt: vi.fn() },
     getVaults: () => ({ reload: vi.fn() }),
@@ -97,7 +97,7 @@ describe('a tab requested from outside the window', () => {
     const show = vi.fn()
     const options = createDisplayOptions({
       ...wiring,
-      windowTabs: { handle: { show } },
+      windowTabs: { groups: { handle: { show } } },
     } as unknown as DisplayWiring)
 
     options.activateTab('tab-2')

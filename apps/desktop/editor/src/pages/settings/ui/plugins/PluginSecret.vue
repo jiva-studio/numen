@@ -18,13 +18,14 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const sections = computed(() => installation.value.secretSections?.value ?? [])
-const menus = computed(() => installation.value.secretMenus?.value ?? [])
+const sections = computed(() => installation.value.secrets.sections?.value ?? [])
+const menus = computed(() => installation.value.secrets.menus?.value ?? [])
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle(secret: SecretDeclaration, chosen: Secret, isAllowed: boolean): void {
   const { pluginId, name, group } = getDeclaration(props.plugin, secret)
-  if (isAllowed) installation.value.allowPluginSecret(chosen.id, pluginId, name, group)
-  else installation.value.denyPluginSecret(chosen.id, pluginId, name, group)
+  if (isAllowed)
+    installation.value.secrets.access.allowPluginSecret(chosen.id, pluginId, name, group)
+  else installation.value.secrets.access.denyPluginSecret(chosen.id, pluginId, name, group)
 }
 
 function onOpenSecrets(): void {

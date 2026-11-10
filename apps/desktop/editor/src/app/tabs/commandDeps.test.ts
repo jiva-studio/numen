@@ -14,11 +14,13 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
   const options: CommandDepsOptions = {
     core: {} as never,
     windowTabs: {
-      openTabOfKind: (...args: unknown[]) => {
-        record('openTabOfKind')(...args)
-        return Promise.resolve()
+      tabs: {
+        openTabOfKind: (...args: unknown[]) => {
+          record('openTabOfKind')(...args)
+          return Promise.resolve()
+        },
       },
-      requestClose: record('requestClose'),
+      panes: { requestClose: record('requestClose') },
     } as never,
     reached: {} as never,
     runs: {} as never,
@@ -63,8 +65,8 @@ describe('the commands reach the window', () => {
     const failing = createOptions({
       writeMessage,
       windowTabs: {
-        openTabOfKind: () => Promise.reject(new Error('tab failed')),
-        requestClose: vi.fn(),
+        tabs: { openTabOfKind: () => Promise.reject(new Error('tab failed')) },
+        panes: { requestClose: vi.fn() },
       } as never,
     })
     failing.deps.navigator.openTab('broken')
@@ -106,19 +108,21 @@ describe('the open files a command can access', () => {
         close: closeReached,
       } as never,
       {
-        tabs: { value: [{ id: 'tab:1', title: 'One' }] },
-        getTab: (id: string) =>
-          id === 'tab:1'
-            ? {
-                state: {},
-                kind: {
-                  getOpenTab: () => ({ path: 'Tab.md' }),
-                  isAsking: () => true,
-                  flushPending: flushTab,
-                },
-              }
-            : null,
-        requestClose,
+        tabs: {
+          tabs: { value: [{ id: 'tab:1', title: 'One' }] },
+          getTab: (id: string) =>
+            id === 'tab:1'
+              ? {
+                  state: {},
+                  kind: {
+                    getOpenTab: () => ({ path: 'Tab.md' }),
+                    isAsking: () => true,
+                    flushPending: flushTab,
+                  },
+                }
+              : null,
+        },
+        panes: { requestClose },
       } as never,
     )
 
@@ -142,10 +146,12 @@ describe('useSettings step groups', () => {
       getWriter: () => vi.fn(),
     } as never
     const windowTabs = {
-      handle: {
-        front: () => null,
-        open: vi.fn(),
-        close: vi.fn(),
+      groups: {
+        handle: {
+          front: () => null,
+          open: vi.fn(),
+          close: vi.fn(),
+        },
       },
     } as never
 

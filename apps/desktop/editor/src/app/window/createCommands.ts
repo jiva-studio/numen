@@ -77,10 +77,12 @@ export interface CommandsDepsOptions {
     choose: (command: string, item: string) => Promise<void>
   }
   rest: {
-    writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
-    getModelsAt?: (at: readonly string[]) => readonly Model[]
-    plugins?: Ref<readonly PluginInfo[]>
-    getCommittedSetting?: (path: readonly string[]) => unknown
+    write: { writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void }
+    read?: {
+      getModelsAt?: (at: readonly string[]) => readonly Model[]
+      getCommittedSetting?: (path: readonly string[]) => unknown
+    }
+    state?: { plugins?: Ref<readonly PluginInfo[]> }
   }
   writeMessage: MessageWriter
   pluginHost?: PluginHost | undefined
@@ -201,7 +203,7 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   /** The run of the command over the target, or the objection to it where it cannot start. */
   const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
     if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
-      commands.setOpen(false)
+      commands.palette.setOpen(false)
       return getCommandNote(target).then((note) => {
         const run = { ...getValues(way.values), ...(way.isAwaited ? { isAwaited: true } : {}) }
         return Object.keys(run).length > 0
@@ -211,20 +213,20 @@ export function createCommandRunner(parts: CommandRunnerParts) {
     }
     const { values } = getValues(way.values)
     const invocation = values
-      ? commands.startCommand(id, target, way.input, values)
+      ? commands.palette.startCommand(id, target, way.input, values)
       : way.input === undefined
-        ? commands.startCommand(id, target)
-        : commands.startCommand(id, target, way.input)
+        ? commands.palette.startCommand(id, target)
+        : commands.palette.startCommand(id, target, way.input)
     if (invocation) {
       const deps = parts.getCommandDeps()
       const run = withValues(invocation, way.values)
       return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps)
     }
-    if (commands.open.value) {
+    if (commands.palette.open.value) {
       palette.setOpen(false)
       return Promise.resolve()
     }
-    return commands.getObjection(id, target)
+    return commands.palette.getObjection(id, target)
   }
 
   return {
@@ -252,21 +254,20 @@ function createWindowCommandPalette(
   listExtras: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
-  return createCommandPalette(
-    { ...core, vaults: getVaultList },
-    { ...words, ...PALETTE_WORDS },
-    getTarget,
+  return createCommandPalette({
+    core: { ...core, vaults: getVaultList },
+    words: { ...words, ...PALETTE_WORDS },
+    at: getTarget,
     knows,
     lists,
     runs,
-    undefined,
-    listExtras,
-  )
+    getCommands: listExtras,
+  })
 }
 
 export function createCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
-  const { pluginHost, declaredCommands } = options
+  const { pluginHost, declaredCommands, rest } = options
   const plugins = usePluginCommands(
     options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
     pluginHost,
@@ -285,13 +286,13 @@ export function createCommands(options: CommandsDepsOptions) {
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = createWindowCommandPalette(options, lists, listExtras)
 
-  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
-  resetWhenClosed(commands.open)
+  watchCommandLists({ ...options, plugins: rest.state?.plugins }, commands.palette.open)
+  resetWhenClosed(commands.palette.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
     search: () => {
-      commands.setOpen(false)
+      commands.palette.setOpen(false)
       palette.setOpen(true)
     },
   })
@@ -329,23 +330,23 @@ export function createCommands(options: CommandsDepsOptions) {
   /** Runs the command of the application a key is bound to, with the values of the keybinding. */
   const runAppKey = (command: string, values: Values): void => {
     if (command === COMMAND.searchVault) {
-      commands.setOpen(false)
+      commands.palette.setOpen(false)
       palette.setOpen(!palette.open.value)
     } else if (command === COMMAND.openCommands) {
       palette.setOpen(false)
-      commands.setOpen(!commands.open.value)
+      commands.palette.setOpen(!commands.palette.open.value)
     } else if (Object.keys(values).length > 0) runKeyWithValues(command, values)
     else runCommand(command, getTarget())
   }
 
   if (pluginHost && declaredCommands?.contributions.keybindings) {
-    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, options.rest.plugins)
+    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, rest.state?.plugins)
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
-    if (windowTabs.onKeyPress(event)) return event.preventDefault()
+    if (windowTabs.panes.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
     const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
     if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
@@ -376,7 +377,7 @@ export interface FeatureCommandsDeps {
 export interface FeatureWindow {
   readonly making: NoteCreator
   readonly notes: Notes
-  readonly windowTabs: Pick<WindowTabs, 'navigateTab'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly travel: (path: string) => Promise<void> | void
   readonly leavePath: (from: string, to: string) => Promise<void> | void
   readonly getOpeningNote: () => string
@@ -404,7 +405,7 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
         },
         getOpeningNote: parts.getOpeningNote,
         showTab: (kind, path) =>
-          runInBackground(parts.windowTabs.navigateTab(kind, path), (error) =>
+          runInBackground(parts.windowTabs.tabs.navigateTab(kind, path), (error) =>
             writeMessage(formatError(error), 'error'),
           ),
       },

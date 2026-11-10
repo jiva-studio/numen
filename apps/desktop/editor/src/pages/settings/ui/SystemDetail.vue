@@ -35,7 +35,7 @@ const owner = computed<PluginInfo>(() => ({
   secrets: [],
   hasFrontend: false,
   hasBackend: false,
-  settings: installation.value.app?.value ?? [],
+  settings: installation.value.plugin.app?.value ?? [],
 }))
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -55,7 +55,7 @@ function onBack(): void {
     </PluginSettingsCard>
 
     <div class="system-detail__where">
-      <p class="system-detail__file">{{ installation.file.value || words.file }}</p>
+      <p class="system-detail__file">{{ installation.settings.file.value || words.file }}</p>
     </div>
   </div>
 </template>

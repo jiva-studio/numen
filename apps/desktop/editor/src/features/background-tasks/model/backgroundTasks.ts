@@ -28,7 +28,7 @@ function getState(task: Task, isCancelling: boolean): BackgroundTask['state'] {
   return isCancelling ? 'cancelling' : 'running'
 }
 
-function createBackgroundTask(
+function getBackgroundTask(
   task: Task,
   isCancelling: boolean,
   action: TaskAction | undefined,
@@ -60,7 +60,7 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
     deps.tasks.value
       .filter((task) => !dismissedIds.value.has(task.id))
       .map((task) =>
-        createBackgroundTask(
+        getBackgroundTask(
           task,
           cancellingIds.value.has(task.id),
           task.error ? deps.resolveAction(task) : undefined,

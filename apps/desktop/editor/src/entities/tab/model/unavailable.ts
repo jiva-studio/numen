@@ -2,6 +2,7 @@ import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { findTabKindPlugin } from '../api/tabKindPlugin'
 import type { AnyTabKind } from '../lib/kinds'
+import type { Writable } from '@/shared/lib/writable'
 import type { UnavailableLookup } from '../lib/unavailableView'
 
 /** What a placeholder asks of the window: the changes it makes. */
@@ -68,9 +69,8 @@ export const createUnavailableKind = (
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const placeholder: AnyTabKind = {
+  const placeholder: Writable<AnyTabKind> = {
     kind,
-    ...(options?.icon ? { icon: options.icon } : {}),
     open: (targetPath: string, _id: string, saved?: unknown): UnavailableState => ({
       kind,
       targetPath,
@@ -94,6 +94,7 @@ export const createUnavailableKind = (
     pane,
     identity: (targetPath: string) => targetPath,
   }
+  if (options?.icon) placeholder.icon = options.icon
   placeholders.add(placeholder)
   return placeholder
 }

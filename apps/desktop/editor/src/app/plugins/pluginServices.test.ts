@@ -5,7 +5,7 @@ import { ref, shallowRef } from 'vue'
 import {
   createAgentHost,
   createVaultNotes,
-  createWorkspaceHost,
+  getWorkspaceHost,
   type WorkspaceHostDeps,
 } from './pluginServices'
 import type { CommandTarget } from '@/entities/command'
@@ -34,7 +34,7 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
     today: () => '2026-09-04',
     ...overrides,
   } satisfies WorkspaceHostDeps
-  return { deps, failure, workspace: createWorkspaceHost(deps) }
+  return { deps, failure, workspace: getWorkspaceHost(deps) }
 }
 
 describe('the window a plugin is handed', () => {
@@ -76,7 +76,7 @@ describe('the window a plugin is handed', () => {
     expect(deps.tabSync.syncPathFromTab).toHaveBeenCalledWith('plex:1', 'One.md', 'One')
 
     const { tabSync: _tabSync, ...unlinked } = deps
-    expect(createWorkspaceHost(unlinked).syncPath('plex:1', 'One.md')).toBe(false)
+    expect(getWorkspaceHost(unlinked).syncPath('plex:1', 'One.md')).toBe(false)
   })
 
   it('runs no command itself: a plugin runs one through the commands of its context', () => {
@@ -157,9 +157,8 @@ describe('the agent a plugin is handed', () => {
     }))
     answerCore({ notes: { resolveAddresses } })
     const rest = {
-      getSetting: vi.fn(() => 'zeta'),
-      writeSetting: vi.fn(() => Promise.resolve()),
-      getModelsAt: vi.fn(() => []),
+      read: { getSetting: vi.fn(() => 'zeta'), getModelsAt: vi.fn(() => []) },
+      write: { writeSetting: vi.fn(() => Promise.resolve()) },
     }
     const unreachable = ref('')
     const agent = createAgentHost({ port, window: { vault: { unreachable } }, settings: { rest } })
@@ -222,7 +221,7 @@ describe('the agent a plugin is handed', () => {
 
     expect(agent.getSetting(['agent', 'use'])).toBe('zeta')
     expect(agent.getModelsAt(['agent', 'zeta', 'model'])).toStrictEqual([])
-    expect(rest.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'omega')
+    expect(rest.write.writeSetting).toHaveBeenCalledWith(['agent', 'use'], 'omega')
   })
 })
 

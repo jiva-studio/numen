@@ -13,19 +13,19 @@ interface CommandListSources {
   readonly plugins?: Ref<readonly { readonly id: string; readonly isActive: boolean }[]> | undefined
   readonly rest?:
     | {
-        readonly getCommittedSetting?: ((path: readonly string[]) => unknown) | undefined
+        readonly read?:
+          | { readonly getCommittedSetting?: ((path: readonly string[]) => unknown) | undefined }
+          | undefined
       }
     | undefined
 }
 
 export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boolean>): void {
   const { declaredCommands, writeMessage, plugins } = sources
-  const getCommittedSetting = sources.rest?.getCommittedSetting
+  const getCommittedSetting = sources.rest?.read?.getCommittedSetting
   if (declaredCommands) {
     const loadDeclared = () => {
-      declaredCommands
-        .load()
-        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
+      declaredCommands.load().catch((error: unknown) => writeMessage(formatError(error), 'error'))
     }
     loadDeclared()
     watch(isOpen, (open) => {

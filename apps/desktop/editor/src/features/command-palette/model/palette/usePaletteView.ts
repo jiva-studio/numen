@@ -20,13 +20,13 @@ export function usePaletteView(session: PaletteSession) {
     },
     runs: deps.runs,
     lists: deps.lists,
-    found: state.found,
-    known: state.known,
-    showing: state.showing,
-    isWorking: state.isWorking,
-    failureMessage: state.failureMessage,
-    getStepTitle: steps.getStepTitle,
-    getStepLabel: steps.getStepLabel,
+    found: state.results.found,
+    known: state.results.known,
+    showing: state.results.showing,
+    isWorking: state.results.isWorking,
+    failureMessage: state.results.failureMessage,
+    getStepTitle: steps.naming.getStepTitle,
+    getStepLabel: steps.naming.getStepLabel,
   })
 
   const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))

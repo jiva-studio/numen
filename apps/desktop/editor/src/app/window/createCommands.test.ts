@@ -33,14 +33,16 @@ vi.mock('@/features/command-palette', () => ({
   useSearch: () => {
     return { setOpen: h.setPaletteOpen, open: h.isSearchOpen }
   },
-  createCommandPalette: (...args: unknown[]) => {
-    h.getExtraCommands = args[7] as () => readonly unknown[]
-    h.lists = args[4] as PaletteLists
+  createCommandPalette: (deps: { getCommands: () => readonly unknown[]; lists: PaletteLists }) => {
+    h.getExtraCommands = deps.getCommands
+    h.lists = deps.lists
     return {
-      startCommand: h.startCommand,
-      getObjection: h.getObjection,
-      setOpen: h.setCommandsOpen,
-      open: h.isCommandsOpen,
+      palette: {
+        startCommand: h.startCommand,
+        getObjection: h.getObjection,
+        setOpen: h.setCommandsOpen,
+        open: h.isCommandsOpen,
+      },
     }
   },
 }))
@@ -69,7 +71,7 @@ const setup = (isPrevented = false, pluginHost?: object) => {
   const options = {
     core: {},
     words: {},
-    windowTabs: { onKeyPress: press },
+    windowTabs: { panes: { onKeyPress: press } },
     getTarget: () => target,
     knows: {},
     paletteLists: {},
@@ -156,10 +158,12 @@ describe('a run to its end, as a plugin awaits it', () => {
     const writeMessage = (text: string, severity?: string) => messages.push([text, severity])
     const runner = createCommandRunner({
       commands: {
-        startCommand: h.startCommand,
-        getObjection: h.getObjection,
-        setOpen: h.setCommandsOpen,
-        open: h.isCommandsOpen,
+        palette: {
+          startCommand: h.startCommand,
+          getObjection: h.getObjection,
+          setOpen: h.setCommandsOpen,
+          open: h.isCommandsOpen,
+        },
       } as unknown as Parameters<typeof createCommandRunner>[0]['commands'],
       palette: { setOpen: h.setPaletteOpen },
       pluginHost: pluginHost as CommandsDepsOptions['pluginHost'],
@@ -311,7 +315,7 @@ describe('a plugin command over a note', () => {
     const options = {
       core: {},
       words: {},
-      windowTabs: { onKeyPress: () => false },
+      windowTabs: { panes: { onKeyPress: () => false } },
       getTarget: () => ({ path: 'Animals.md', title: 'Animals' }),
       knows: {},
       paletteLists: {},
@@ -512,7 +516,7 @@ describe('a plugin command with items in the palette', () => {
     const options = {
       core: {},
       words: {},
-      windowTabs: { onKeyPress: () => false },
+      windowTabs: { panes: { onKeyPress: () => false } },
       getTarget: () => ({ tab: 'plex:1', path: 'Tide.md', title: 'Tide' }),
       knows: {},
       paletteLists: windowLists,

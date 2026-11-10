@@ -18,10 +18,10 @@ export interface NoticeTasksDeps {
     readonly unwatched: Readonly<Ref<string>>
     readonly error: Readonly<Ref<string>>
   }
-  settings: { readonly appearance: { readonly lost: Readonly<Ref<string>> } }
+  settings: { readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } } }
 }
 
-const createFailedTask = (id: string, text: string, about = ''): Task => ({
+const getFailedTask = (id: string, text: string, about = ''): Task => ({
   id,
   label: text,
   about,
@@ -47,20 +47,20 @@ export function useNoticeTasks({
   settings,
 }: NoticeTasksDeps): ComputedRef<readonly Task[]> {
   return computed<readonly Task[]>(() => {
-    const reason = window.lost.value || settings.appearance.lost.value
+    const reason = window.lost.value || settings.appearance.state.lost.value
     const state: Task[] = [
       ...(window.unwatched.value
-        ? [createFailedTask('unwatched', words.unwatched, window.unwatched.value)]
+        ? [getFailedTask('unwatched', words.unwatched, window.unwatched.value)]
         : []),
-      ...(window.error.value ? [createFailedTask('unread', words.unread, window.error.value)] : []),
-      ...(reason ? [createFailedTask('lost', reason)] : []),
+      ...(window.error.value ? [getFailedTask('unread', words.unread, window.error.value)] : []),
+      ...(reason ? [getFailedTask('lost', reason)] : []),
     ]
     const messages = log.messages.value
       .filter(isFailure)
-      .map((one) => createFailedTask(one.id, one.text))
+      .map((one) => getFailedTask(one.id, one.text))
     const reported = plugins.notices.value
       .filter((one: Notice) => isFailure(one) && one.text !== '')
-      .map((one) => createFailedTask(one.id, one.text, one.about ?? ''))
+      .map((one) => getFailedTask(one.id, one.text, one.about ?? ''))
     return [...state, ...messages, ...reported]
   })
 }

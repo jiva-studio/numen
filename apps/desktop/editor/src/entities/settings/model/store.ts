@@ -180,21 +180,9 @@ export function createSettingsStore(words: Words, say: MessageWriter) {
     writeSettings([{ at: path, value: write(value) }])
 
   return {
-    target: target,
-    path,
-    models,
-    plugins,
-    app,
-    secretSections,
-    secretMenus,
-    credentialsPath,
     start,
-    getSetting,
-    getCommittedSetting,
-    isPending,
-    isRequested,
-    getModelsAt,
-    writeSettings,
-    writeSetting,
+    state: { target, path, models, plugins, app, secretSections, secretMenus, credentialsPath },
+    read: { getSetting, getCommittedSetting, isPending, isRequested, getModelsAt },
+    write: { writeSettings, writeSetting },
   }
 }

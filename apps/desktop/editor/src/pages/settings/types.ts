@@ -18,6 +18,16 @@ import type {
 
 /** What this installation is configured as, as the window already holds it. */
 export interface Installation {
+  readonly settings: InstallationSettings
+  readonly plugin: InstallationPlugin
+  readonly secrets: InstallationSecrets
+}
+
+/**
+ * The settings of the installation, read and written in place. `getPlatform` answers the operating
+ * system of the window: darwin, windows or linux; the `app.platform` of conditions.
+ */
+export interface InstallationSettings {
   /**
    * names one can be set to, and settings written in place.
    */
@@ -32,24 +42,20 @@ export interface Installation {
    */
   isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
-  /** The operating system of the window: darwin, windows or linux; the `app.platform` of conditions. */
-  getPlatform?(): string
+  readonly getPlatform?: (() => string) | undefined
   write(content: readonly SettingEdit[]): void
-  /**
-   * The secrets, each a name in a group with the plugin declarations that may read it. A value
-   * is entered once and is never read back. Each call reads the settings again.
-   */
-  createSecret(group: string, name: string, value: string): Promise<string>
-  renameSecret(id: string, name: string): void
-  writeSecret(id: string, value: string): void
-  deleteSecret(id: string): void
-  deleteSecretGroup(group: string): void
-  /** Puts a secret before another one of its group, or at the end of the group where `beforeId` is empty. */
-  moveSecret(id: string, beforeId: string): void
-  renameSecretGroup(group: string, name: string): void
-  /** Lets one declaration of a plugin read a secret. The group is empty for a declaration with none. */
-  allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
-  denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
+  readonly file: Readonly<Ref<string>>
+}
+
+/**
+ * The plugins of the installation, what they declare and what the window does for them.
+ * `getSettingsViews` answers the components a plugin's frontend registered for its settings
+ * views, by view id; a view the plugin declares and has not registered is absent.
+ */
+export interface InstallationPlugin {
+  readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
+  readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
+  readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
   /** A plugin whose last start failed, started once more. */
   retryPlugin(pluginId: string): void
   /**
@@ -68,21 +74,36 @@ export interface Installation {
    * deleted, and empty where it was.
    */
   deletePluginData?(pluginId: string): Promise<string>
-  /**
-   * The components a plugin's frontend registered for its settings views, by view id. A view the
-   * plugin declares and has not registered is absent.
-   */
-  getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
-  readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
-  readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
-  readonly catalog?: Readonly<Ref<readonly CatalogEntry[]>>
-  readonly secretSections?: Readonly<Ref<readonly SecretSection[]>>
-  readonly secretMenus?: Readonly<Ref<readonly SecretMenu[]>>
-  readonly secretStates?: Readonly<Ref<ReadonlyMap<string, boolean>>>
+  readonly getSettingsViews?:
+    ((pluginId: string) => ReadonlyMap<string, { readonly component: unknown }>) | undefined
+}
+
+/**
+ * The secrets, each a name in a group with the plugin declarations that may read it. A value
+ * is entered once and is never read back. Each call reads the settings again.
+ */
+export interface InstallationSecrets {
+  readonly sections?: Readonly<Ref<readonly SecretSection[]>>
+  readonly menus?: Readonly<Ref<readonly SecretMenu[]>>
+  readonly states?: Readonly<Ref<ReadonlyMap<string, boolean>>>
   /** Reads which secrets have a value. Only the page of secrets calls it. */
-  loadSecretStates?(): Promise<void>
+  loadStates?(): Promise<void>
   readonly credentialsPath?: Readonly<Ref<string>>
-  readonly file: Readonly<Ref<string>>
+  readonly edit: {
+    createSecret(group: string, name: string, value: string): Promise<string>
+    renameSecret(id: string, name: string): void
+    writeSecret(id: string, value: string): void
+    deleteSecret(id: string): void
+    deleteSecretGroup(group: string): void
+    /** Puts a secret before another one of its group, or at the end of the group where `beforeId` is empty. */
+    moveSecret(id: string, beforeId: string): void
+    renameSecretGroup(group: string, name: string): void
+  }
+  readonly access: {
+    /** Lets one declaration of a plugin read a secret. The group is empty for a declaration with none. */
+    allowPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
+    denyPluginSecret(secretId: string, pluginId: string, name: string, group: string): void
+  }
 }
 
 /** One of the choices a select offers. */

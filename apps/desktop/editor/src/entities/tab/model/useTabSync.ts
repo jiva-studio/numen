@@ -10,7 +10,7 @@ import type { TabId, TabLinkGroup, TabPathSync } from '../lib/links'
 import type { WindowTabs } from './windowTabs'
 
 export interface TabSyncDeps {
-  windowTabs: Pick<WindowTabs, 'getTab'>
+  windowTabs: Pick<WindowTabs, 'tabs'>
   tabLinks: {
     getGroupOf(this: void, tabId: TabId): TabLinkGroup | null
     readonly groups: ReadonlyMap<string, TabLinkGroup>
@@ -33,7 +33,7 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
   const getShownPath = (tabId: TabId): string => {
     const shownPath = shownPaths.get(tabId)
     if (shownPath !== undefined) return shownPath
-    const tab = windowTabs.getTab(tabId)
+    const tab = windowTabs.tabs.getTab(tabId)
     if (!tab) return ''
     return tab.kind.getOpenTab?.(tab.state).path || tab.kind.getTarget?.(tab.state).path || ''
   }
@@ -62,7 +62,7 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
    * echo is expected until the navigate settles.
    */
   const moveTab = (tabId: TabId, path: string, title: string) => {
-    const target = windowTabs.getTab(tabId)
+    const target = windowTabs.tabs.getTab(tabId)
     if (!target?.kind.navigate) return
     echoPaths.set(tabId, path)
     shownPaths.set(tabId, path)

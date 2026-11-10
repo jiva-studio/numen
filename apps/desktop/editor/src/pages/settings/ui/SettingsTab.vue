@@ -27,9 +27,11 @@ watch(
   },
 )
 
-const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugins?.value ?? [])
+const plugins = computed<readonly PluginInfo[]>(
+  () => props.state.installation.plugin.plugins?.value ?? [],
+)
 const uninstalled = computed(() =>
-  createManagedFromEntries([], props.state.installation.catalog?.value ?? []).find(
+  createManagedFromEntries([], props.state.installation.plugin.catalog?.value ?? []).find(
     (one) => one.id === selectedPluginId.value,
   ),
 )

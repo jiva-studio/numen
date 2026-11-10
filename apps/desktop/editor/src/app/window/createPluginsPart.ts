@@ -19,7 +19,14 @@ import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'
 import type { initWindowKindsAndCommands } from './createCommandsPart'
-import { getCommands, getVaults, type WindowContext, type WindowCore } from './createDisplayPart'
+import {
+  getCommands,
+  getVaults,
+  type PluginsCore,
+  type TabsCore,
+  type WindowContext,
+  type WindowCore,
+} from './createDisplayPart'
 import { getSettingsConfig } from '@/features/settings-commands'
 import type { useSettings } from './useSettings'
 import { createWindowCommands } from '../plugins/windowCommands'
@@ -33,16 +40,16 @@ const getDeclaredCommandsDeps = (
   isListed: (id: string): boolean =>
     hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
   hasBackend: (pluginId: string): boolean =>
-    settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.hasBackend ??
-    true,
+    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)
+      ?.hasBackend ?? true,
   getConfig: () => getWindowConfig(settingsHolder.current),
 })
 
 const getWindowConfig = (settings: ReturnType<typeof useSettings> | undefined) =>
   settings
     ? getSettingsConfig([
-        { id: 'app', name: '', settings: settings.rest.app.value },
-        ...settings.rest.plugins.value.map((one) => ({
+        { id: 'app', name: '', settings: settings.rest.state.app.value },
+        ...settings.rest.state.plugins.value.map((one) => ({
           id: one.id,
           name: one.name,
           settings: one.settings,
@@ -62,7 +69,11 @@ function createPluginReports(
     reportCommandIssue: (pluginId: string, message: string) =>
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
     reportError: (pluginId: string, error: unknown) =>
-      write(pluginId, WINDOW_WORDS.pluginError(getPluginName(pluginId), formatError(error)), 'error'),
+      write(
+        pluginId,
+        WINDOW_WORDS.pluginError(getPluginName(pluginId), formatError(error)),
+        'error',
+      ),
     reportLoadError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
@@ -108,17 +119,18 @@ interface PluginsCoreDeps {
   readonly log: WindowCore['log']
   readonly writeMessage: WindowCore['writeMessage']
   readonly frame: WindowCore['frame']
-  readonly windowTabs: WindowCore['windowTabs']
-  readonly tabLinks: WindowCore['tabLinks']
-  readonly tabOpeners: WindowCore['tabOpeners']
+  readonly windowTabs: TabsCore['windowTabs']
+  readonly tabLinks: TabsCore['tabLinks']
+  readonly tabOpeners: TabsCore['tabOpeners']
   readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
 }
 
-export function createPluginsCore(deps: PluginsCoreDeps) {
+export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
   const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, settingsHolder } = deps
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const getPluginName = (pluginId: string): string =>
-    settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
+    settingsHolder.current?.rest.state.plugins.value.find((one) => one.id === pluginId)?.name ??
+    pluginId
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
@@ -155,8 +167,7 @@ export function createPluginsCore(deps: PluginsCoreDeps) {
   return {
     declaredCommands,
     itemLists,
-    pluginHost,
-    pluginLoader,
+    host: { pluginHost, pluginLoader },
     pluginServices,
     pluginNotices,
     pluginNotes,
@@ -178,13 +189,13 @@ export function createWindowFrameServices(
       (tableIds ??= [
         ...new Set((ctx.featureCommands?.commands ?? []).map((one) => one.command ?? one.id)),
       ]),
-    getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
+    getPluginIds: () => base.plugins.host.pluginHost.getPaletteCommands().map((one) => one.id),
     runCommandToEnd,
     listItems: items.listCommandItems,
     runWithItem: items.runWithItem,
     getTarget: commands.getTarget,
   })
-  Object.assign(base.pluginServices, {
+  Object.assign(base.plugins.pluginServices, {
     commands: windowCommands,
     vaults: createEditorVaults({
       vaultList: getVaults(ctx).vaultList,
@@ -193,7 +204,7 @@ export function createWindowFrameServices(
     }),
     window: createWindowHost(frame, (error) => base.writeMessage(formatError(error), 'error')),
   })
-  return { frame, slots: base.pluginHost.slots, windowCommands }
+  return { frame, slots: base.plugins.host.pluginHost.slots, windowCommands }
 }
 
 export const getPluginViews = (pluginHost: PluginHost) => ({

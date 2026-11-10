@@ -9,10 +9,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { getVaultForKey, WelcomePage } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
-import {
-  runInvocation,
-  createInvocation,
-} from '@/features/command-palette'
+import { runInvocation, createInvocation } from '@/features/command-palette'
 import { COMMAND, createRowKeys, findIcon, type VaultRef } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
 import { getUserAgent } from '../lib/dom'
@@ -53,7 +50,7 @@ const onList = computed(() => createVaultRows(props.vaultList, { ...words, ...WE
 
 /** Whether the welcome screen is the one the user is viewing and typing into. */
 const welcoming = computed(
-  () => props.tabs.length === 0 && !props.search.open.value && !props.commands.open.value,
+  () => props.tabs.length === 0 && !props.search.open.value && !props.commands.palette.open.value,
 )
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -64,7 +61,7 @@ onUnmounted(() => globalThis.removeEventListener('keydown', onKeyDown))
 function onRun(id: string) {
   if (id !== COMMANDS) return props.runCommand(id, props.getTarget())
   props.search.setOpen(false)
-  props.commands.setOpen(true)
+  props.commands.palette.setOpen(true)
 }
 
 function onOpen(id: string) {

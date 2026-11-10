@@ -10,16 +10,19 @@ vi.mock('@/features/command-palette', () => ({
   PALETTE_WORDS: {},
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
-  createCommandPalette: () => ({ open: isOpen }),
+  createCommandPalette: () => ({ palette: { open: isOpen } }),
 }))
-vi.mock('../tabs/commandDeps', () => ({ createCommandDeps: () => ({}), createCommandNotes: () => ({}) }))
+vi.mock('../tabs/commandDeps', () => ({
+  createCommandDeps: () => ({}),
+  createCommandNotes: () => ({}),
+}))
 
 const setup = (load: () => Promise<void>, plugins?: Ref<{ id: string; isActive: boolean }[]>) => {
   const messages: [string, string][] = []
   const declaredCommands = { paletteCommands: shallowRef([]), load } as unknown as DeclaredCommands
   createCommands({
     windowTabs: {},
-    rest: { plugins },
+    rest: { write: { writeSettings: () => undefined }, state: { plugins } },
     getTarget: () => ({ file: 'books/Scan.pdf' }),
     writeMessage: (text: string, kind: string) => messages.push([text, kind]),
     declaredCommands,

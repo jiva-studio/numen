@@ -205,7 +205,7 @@ export function createShellHost(
 
   const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
-  const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {
+  const getContext = (pluginId: string, manifest?: Manifest): PluginContext => {
     const subscriptions: Disposable[] = []
     const add = (one: Disposable) => {
       subscriptions.push(one)
@@ -252,7 +252,7 @@ export function createShellHost(
   }
 
   const host: LoaderHost = {
-    createContext,
+    createContext: getContext,
     disposePlugin,
     disposeAll: () => {
       for (const pluginId of [...contexts.keys()]) disposePlugin(pluginId)
