@@ -10,7 +10,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
-import SettingsTab from '../ui/SettingsTab.vue'
+import { SettingsTab } from '@/pages/settings'
 import { createTestTabs } from '@/testing/tabs'
 import {
   createSettingsStore,
@@ -21,7 +21,7 @@ import {
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
-import { useSettings } from './useSettings'
+import { createWindowSettingsPart } from './windowSettings'
 
 type Tree = Record<string, Record<string, unknown>>
 
@@ -179,7 +179,7 @@ const create = (timing: Timing) => {
   } as unknown as SettingsCore
   restore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
-  const settings = useSettings({
+  const settings = createWindowSettingsPart({
     rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,

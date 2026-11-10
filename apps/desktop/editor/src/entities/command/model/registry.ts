@@ -1,24 +1,23 @@
 import type { CommandHandler } from './deps'
 
-const registry = new Map<string, CommandHandler>()
-
 /** The handlers that carry out the commands of the features and the plugins, by command id. */
-export const commands = {
+export interface CommandRegistry {
   /** Answers the call that removes the handler, which leaves a handler registered since untouched. */
-  registerCommand: (id: string, handler: CommandHandler): (() => void) => {
-    registry.set(id, handler)
-    return () => {
-      if (registry.get(id) === handler) {
-        registry.delete(id)
-      }
-    }
-  },
-  get(id: string): CommandHandler | undefined {
-    return registry.get(id)
-  },
-  clear(): void {
-    registry.clear()
-  },
+  readonly register: (id: string, handler: CommandHandler) => () => void
+  readonly get: (id: string) => CommandHandler | undefined
 }
 
-export const registerCommand = commands.registerCommand
+export function createCommandRegistry(): CommandRegistry {
+  const handlers = new Map<string, CommandHandler>()
+  return {
+    register: (id, handler) => {
+      handlers.set(id, handler)
+      return () => {
+        if (handlers.get(id) === handler) {
+          handlers.delete(id)
+        }
+      }
+    },
+    get: (id) => handlers.get(id),
+  }
+}

@@ -4,7 +4,7 @@
  * piece of code the palette does.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useSettings } from './useSettings'
+import { createWindowSettingsPart } from './windowSettings'
 import { WORDS } from '@/shared/ui/words'
 import {
   createSettingsStore,
@@ -26,7 +26,7 @@ afterEach(() => {
 })
 
 const createSettings = (
-  overrides: Partial<Parameters<typeof useSettings>[0]> = {},
+  overrides: Partial<Parameters<typeof createWindowSettingsPart>[0]> = {},
   others: CoreAnswers = {},
 ) => {
   const writers: string[] = []
@@ -68,7 +68,7 @@ const createSettings = (
   const handle = { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') }
   const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
-  const settings = useSettings({
+  const settings = createWindowSettingsPart({
     rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
     words: WORDS,
     log,

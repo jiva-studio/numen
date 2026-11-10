@@ -25,8 +25,8 @@ import { getFileKinds } from '@/entities/file'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
-import type { useSettings } from '@/pages/settings'
 import { createIconHost, type IconHostDeps } from './fileServices'
+import type { SettingsStore } from '@/entities/settings'
 import type { PluginNotes } from './pluginNotes'
 import type { NoteBuffer } from '@numen/plugin-loader'
 
@@ -160,10 +160,10 @@ export interface AgentHostDeps {
   readonly settings: {
     readonly rest: {
       readonly read: Pick<
-        ReturnType<typeof useSettings>['rest']['read'],
+        SettingsStore['read'],
         'getSetting' | 'getModelsAt'
       >
-      readonly write: Pick<ReturnType<typeof useSettings>['rest']['write'], 'writeSetting'>
+      readonly write: Pick<SettingsStore['write'], 'writeSetting'>
     }
   }
 }

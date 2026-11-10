@@ -1,2 +1,4 @@
 /** The screen a window with no vault open draws, and the ways in it offers. */
 export { default as WelcomeScreen } from './ui/WelcomeScreen.vue'
+export { createWelcomeActions } from './lib/screen'
+export { WELCOME_WORDS } from './words'

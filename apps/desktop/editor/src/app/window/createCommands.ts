@@ -20,6 +20,7 @@ import {
   type Notes,
   type RunSupport,
   type CommandDeps,
+  type CommandRegistry,
 } from '@/entities/command'
 import { createCommandDeps } from '../tabs/commandDeps'
 import { createKeyHandler } from './createKeyHandler'
@@ -59,6 +60,7 @@ export interface CommandsDepsOptions {
   knows: NoteLookup
   paletteLists: PaletteLists
   runs: RunSupport
+  registry: CommandRegistry
   coverage: () => IndexCoverage
   reached: Notes
   settingPalette?: {
@@ -144,6 +146,7 @@ export function createCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands, settings } = options
   const { getPaletteEntries, getCommandNote, pluginWays } = usePluginCommands(
+    options.registry,
     options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
     pluginHost,
     declaredCommands?.whenContext,
@@ -165,6 +168,7 @@ export function createCommands(options: CommandsDepsOptions) {
     reached: options.reached,
     ...(options.settingPalette ? { settingPalette: options.settingPalette } : {}),
     runs: options.runs,
+    registry: options.registry,
     writeMessage,
     search: () => searchRequests.emit(),
   })

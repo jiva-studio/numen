@@ -98,8 +98,8 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   createSettingsStore: () => h.f.settings.rest,
 }))
-vi.mock('@/pages/settings/model/useSettings', () => ({
-  useSettings: (args: unknown) => {
+vi.mock('./windowSettings', () => ({
+  createWindowSettingsPart: (args: unknown) => {
     h.args.settings = args
     return h.f.settings
   },
@@ -678,7 +678,7 @@ describe('the services a plugin is given', () => {
       'error',
     )
 
-    // useSettings callbacks
+    // settings callbacks
     h.args.settings.onSizeChanged()
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
     expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])

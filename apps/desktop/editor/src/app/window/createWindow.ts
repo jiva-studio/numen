@@ -6,7 +6,7 @@ import { formatError } from '@/shared/api/errors'
 import { ref, type Ref } from 'vue'
 import { useWindowFrame } from '@numen/workbench'
 import { runSupport } from '@/features/command-palette'
-import type { CommandTarget } from '@/entities/command'
+import { createCommandRegistry, type CommandTarget } from '@/entities/command'
 import { createMessageLog } from '@/shared/model/notices/messages'
 import { useAppHotkeys } from '@/features/hotkeys'
 import { createWindowPluginStatus, watchPluginSettings } from '../plugins/pluginSupport'
@@ -37,6 +37,7 @@ function createWindowCore(): WindowCore {
   const status = createWindowPluginStatus(rest)
   const tabs = createTabsCore({ writeMessage, rest, isPluginStarting: status.isPluginStarting })
   const runs = runSupport()
+  const registry = createCommandRegistry()
   const plugins = createPluginsCore({
     log,
     writeMessage,
@@ -46,8 +47,9 @@ function createWindowCore(): WindowCore {
     tabOpeners: tabs.tabOpeners,
     rest,
     status,
+    registry,
   })
-  return { frame, log, rest, writeMessage, runs, tabs, plugins }
+  return { frame, log, rest, writeMessage, runs, registry, tabs, plugins }
 }
 
 function createPaletteApi(

@@ -1,13 +1,7 @@
 /**
- * Settings configuration, theme application, and palette lists for the window.
+ * The settings tab: the installation it edits and the kind of tab that shows it.
  */
-import { watch } from 'vue'
-import {
-  APPEARANCE_WORDS,
-  createWindowAppearance,
-  createWindowSettingPalette,
-  type SettingWords,
-} from '@/features/settings-commands'
+import type { createWindowAppearance } from '@/features/settings-commands'
 import {
   choosePluginPath,
   createPluginRetry,
@@ -15,25 +9,22 @@ import {
   SETTINGS_WORDS,
   deletePluginData,
   getPluginData,
-  themes,
-  watchSettings,
   type SettingEdit,
   type SettingsStore,
 } from '@/entities/settings'
 import { PLUGIN_FAILURE_WORDS, readPluginReadme, useCatalogEntries } from '@/entities/plugin'
-import { createFollower, runInBackground } from '@numen/ui'
+import { runInBackground } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { useSettingsTab } from '../kind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
-export interface SettingsDeps {
+export interface SettingsPageDeps {
   rest: SettingsStore
-  words: SettingWords
+  appearance: ReturnType<typeof createWindowAppearance>
   log: MessageLog
   windowTabs: WindowTabs
-  onSizeChanged: () => void
   getSettingsViews: InstallationPlugin['getSettingsViews']
   getPlatform: InstallationSettings['getPlatform']
 }
@@ -134,63 +125,18 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps): Installation {
   }
 }
 
-function createChangeFollower(deps: {
-  refresh: () => Promise<void>
-  wait?: (ms: number) => Promise<void>
-}) {
-  const { refresh, wait = sleep } = deps
-  const abortController = new AbortController()
-  let isOpen = true
-  // The stream opens with an empty batch. After the stream was lost, what changed meanwhile is read
-  // with it.
-  let isResumed = false
-  const follows = createFollower({
-    isOpen: () => isOpen,
-    // The stream of the themes reports the lost connection.
-    setLost: () => undefined,
-    wait,
-    reset: () => {
-      isResumed = true
-    },
-  })
-  return {
-    start: () =>
-      follows(
-        () => watchSettings(abortController.signal),
-        async (batch) => {
-          if (batch.length === 0 && !isResumed) return
-          isResumed = false
-          await refresh()
-        },
-      ),
-    close: () => {
-      isOpen = false
-      abortController.abort()
-    },
-  }
-}
-
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
-
-export function useSettings({
+/** The settings tab of a window: the page that edits numen.json, as a kind of tab. */
+export function createSettingsPage({
   rest,
-  words,
+  appearance,
   log,
   windowTabs,
-  onSizeChanged,
   getSettingsViews,
   getPlatform,
-}: SettingsDeps) {
-  const writeAppearanceMessage = log.getWriter('appearance')
-  const writeSettingsMessage = log.getWriter('configured')
+}: SettingsPageDeps) {
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
-  const appearance = createWindowAppearance({
-    core: themes,
-    words: APPEARANCE_WORDS,
-    write: writeAppearanceMessage,
-  })
-  const reportError = (error: Caught) => writeSettingsMessage(formatError(error), 'error')
+  const reportError = (error: Caught) => log.getWriter('configured')(formatError(error), 'error')
   const secrets = createSecretStore({
     words: SETTINGS_WORDS,
     notify: log.getWriter('keys'),
@@ -219,36 +165,5 @@ export function useSettings({
     }),
     reportError,
   )
-
-  watch(appearance.preview.display.sized, () => onSizeChanged())
-
-  const settingPalette = createWindowSettingPalette({ rest, appearance, words })
-
-  const changes = createChangeFollower({
-    refresh: () => Promise.all([rest.start(), appearance.reload()]).then(() => undefined),
-  })
-
-  const start = async () => {
-    runInBackground(appearance.start(), reportError)
-    runInBackground(changes.start(), reportError)
-    // The plugins the window starts are named by what this read answers.
-    await rest.start()
-  }
-
-  const close = () => {
-    changes.close()
-    appearance.close()
-  }
-
-  const api = {
-    appearance,
-    rest,
-    configured,
-    paletteLists: settingPalette.lists,
-    settingPalette,
-    kinds: [configured.kind],
-    start,
-    close,
-  }
-  return api
+  return { configured, kinds: [configured.kind] }
 }

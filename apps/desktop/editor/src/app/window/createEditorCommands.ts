@@ -33,9 +33,8 @@ import {
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { WindowCore } from './windowCore'
-import type { WindowServices } from './createWindowServices'
+import type { WindowServices, WindowSettings } from './createWindowServices'
 import type { TabsHold } from '@/features/vault-commands'
-import type { useSettings } from '@/pages/settings'
 import type { useVaults } from '@/entities/vault'
 import type { createWindowTabMoves } from './createTabsPart'
 import { createTargetResolver } from './displayOptions'
@@ -45,8 +44,9 @@ interface WindowCommandsOptions {
   windowTabs: WindowTabs
   getTarget: () => CommandTarget
   knows: NoteLookup
-  settings: ReturnType<typeof useSettings>
+  settings: WindowSettings
   runs: ReturnType<typeof runSupport>
+  registry: WindowCore['registry']
   vaultsModule: ReturnType<typeof useVaults>
   editing: ReturnType<typeof createNoteEditors>
   writeMessage: MessageWriter
@@ -128,7 +128,7 @@ function createFeatureCommands(
     }),
     words,
   )
-  registerFeatureCommands(featureCommands)
+  registerFeatureCommands(base.registry, featureCommands)
   return featureCommands
 }
 
@@ -149,6 +149,7 @@ export function createEditorCommands(
     knows,
     settings,
     runs: base.runs,
+    registry: base.registry,
     vaultsModule: vaults,
     editing,
     writeMessage: base.writeMessage,
@@ -216,7 +217,7 @@ export function createWindowKinds(
   return kinds
 }
 
-type WindowSettings = ReturnType<typeof useSettings>
+
 
 function createBackgroundTasks(
   base: WindowCore,

@@ -6,7 +6,7 @@ import PluginsList from './PluginsList.vue'
 import { createCatalogEntry, createInstallation, createPluginInfo } from '@/testing/installation'
 import type { CatalogEntry } from '@/entities/plugin'
 import type { Installation } from '../../types'
-import { getSettingAt as at } from '@/testing/slices'
+import { getSettingAt as at } from '@/entities/settings'
 import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { pick } from '@/testing/pick'
 

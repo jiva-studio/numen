@@ -9,7 +9,7 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 import type { Installation } from '../../types'
-import { getSettingAt as at } from '@/testing/slices'
+import { getSettingAt as at } from '@/entities/settings'
 import type { PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { WORDS as words } from '../../words'
 

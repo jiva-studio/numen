@@ -1,7 +1,7 @@
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { describe, expect, it, vi } from 'vitest'
 import { createCommandDeps, createCommandNotes, type CommandDepsOptions } from './commandDeps'
-import { useSettings } from '@/pages/settings'
+import { createWindowSettingsPart } from '../window/windowSettings'
 import { WORDS } from '@/shared/ui/words'
 
 const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
@@ -140,7 +140,7 @@ describe('the open files a command can access', () => {
   })
 })
 
-describe('useSettings step groups', () => {
+describe('settings step groups', () => {
   it('returns no step groups for a command that is no setting', () => {
     const log = {
       getWriter: () => vi.fn(),
@@ -155,7 +155,7 @@ describe('useSettings step groups', () => {
       },
     } as never
 
-    const settings = useSettings({
+    const settings = createWindowSettingsPart({
       rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
       words: WORDS,
       log,

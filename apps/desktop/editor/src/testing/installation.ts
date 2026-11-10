@@ -2,7 +2,7 @@ import { fn } from 'storybook/test'
 import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Model, PluginInfo, Secret, SecretMenu, SecretSection } from '@/entities/settings'
-import type { Installation, SettingsTabState } from '@/pages/settings/types'
+import type { Installation, SettingsTabState } from '@/pages/settings'
 import { readPluginReadme, type CatalogEntry } from '@/entities/plugin'
 
 type Flat<T> = { [K in keyof T]: T[K] }

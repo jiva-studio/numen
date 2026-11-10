@@ -95,10 +95,11 @@ interface PluginsCoreDeps {
   readonly tabOpeners: TabsCore['tabOpeners']
   readonly rest: SettingsStore
   readonly status: PluginStatus
+  readonly registry: WindowCore['registry']
 }
 
 export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
-  const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, rest, status } = deps
+  const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, rest, status, registry } = deps
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const pluginServices = createPluginServices()
@@ -137,6 +138,7 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
   })
   const declaredCommands = useDeclaredCommands({
     state: declared,
+    registry,
     isListed: (id) => pluginHost.commands.getPaletteCommands().some((one) => one.id === id),
     hasBackend: (pluginId) => hasPluginBackend(rest, pluginId),
     listItems: itemLists.listItems,

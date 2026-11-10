@@ -5,6 +5,7 @@
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import type { runSupport } from '@/features/command-palette'
 import type { useDeclaredCommands, CommandItemLists } from '@/features/plugin-commands'
+import type { CommandRegistry } from '@/entities/command'
 import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { TabReports, useTabLinks } from '@/features/tab-linking'
@@ -21,6 +22,7 @@ export interface WindowCore {
   readonly log: ReturnType<typeof createMessageLog>
   readonly writeMessage: MessageWriter
   readonly runs: ReturnType<typeof runSupport>
+  readonly registry: CommandRegistry
   readonly tabs: TabsCore
   readonly plugins: PluginsCore
 }

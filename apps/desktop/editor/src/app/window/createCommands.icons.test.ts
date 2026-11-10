@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { COMMAND, findIcon } from '@/entities/command'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
-import { createWelcomeActions, WELCOME_WORDS } from '@/testing/slices'
+import { createWelcomeActions, WELCOME_WORDS } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/ui/words'
 import { createAppCommands } from '@/testing/appCommands'
 

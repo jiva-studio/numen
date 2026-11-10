@@ -5,7 +5,7 @@
  */
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useSettings } from './useSettings'
+import { createWindowSettingsPart } from './windowSettings'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
 import { WORDS } from '@/shared/ui/words'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
@@ -68,7 +68,7 @@ const createWindow = () => {
   const windowTabs = {
     groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
   } as unknown as WindowTabs
-  const settings = useSettings({
+  const settings = createWindowSettingsPart({
     rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,
