@@ -14,6 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -23,25 +25,28 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
+func (s *session) parts(where cli.Locations) vaultParts {
+	options := vaultconfig.Options{ServiceDir: where.ServiceDir}
+	return vaultParts{
+		ports:    portsOfFile(appstate.OpenAt(where.Registry)),
+		readers:  vaultreader.Readers{Options: options},
+		identity: vaultreader.Identity{Options: options},
+		trash:    s.bin,
+		now:      testsupport.NewClock(),
+		rows: func(ctx context.Context) (vaultport.VaultRepository, func() error, error) {
+			db, err := index.Open(ctx, where.Index)
+			if err != nil {
+				return nil, nil, err
+			}
+			return db.Vaults(), db.Close, nil
+		},
+	}
+}
+
 func (s *session) deps(where cli.Locations) cli.Deps {
 	options := vaultconfig.Options{ServiceDir: where.ServiceDir}
 	return cli.Deps{
-		Vaults: func() (cli.Vaults, error) {
-			return cli.Vaults{
-				Registry: portsOfFile(appstate.OpenAt(where.Registry)),
-				Readers:  vaultreader.Readers{Options: options},
-				Identity: vaultreader.Identity{Options: options},
-				Trash:    s.bin,
-				Now:      testsupport.NewClock(),
-				Rows: func(ctx context.Context) (cli.VaultRows, error) {
-					db, err := index.Open(ctx, where.Index)
-					if err != nil {
-						return cli.VaultRows{}, err
-					}
-					return cli.VaultRows{Vaults: db.Vaults(), Close: db.Close}, nil
-				},
-			}, nil
-		},
+		Vaults: func() (cli.Vaults, error) { return s.parts(where).build(), nil },
 
 		Links: func(ctx context.Context) (cli.Links, error) {
 			db, err := index.Open(ctx, where.Index)
@@ -97,7 +102,51 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Problems{}, err
 			}
-			return cli.Problems{Problems: db.NoteQueries(), Close: db.Close}, nil
+			return cli.Problems{Problems: vaults.NewStandardGetProblems(db.NoteQueries()), Close: db.Close}, nil
+		},
+	}
+}
+
+// vaultParts are the pieces the vault commands of a test are built from, so a test can replace one.
+type vaultParts struct {
+	ports    registry.Ports
+	readers  vaultport.VaultReaders
+	identity vaultport.VaultIdentity
+	trash    machineport.Trash
+	now      machineport.Clock
+	rows     func(context.Context) (vaultport.VaultRepository, func() error, error)
+}
+
+func (p vaultParts) build() cli.Vaults {
+	unregister := func(rows vaultport.VaultRepository) vaults.Unregister {
+		return vaults.NewUnregister(p.ports.Vaults, p.ports.Remover, rows)
+	}
+	return cli.Vaults{
+		Find:       registry.NewFind(p.ports.Lookup),
+		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
+		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
+		RecordOpen: vaults.NewRecordOpen(p.ports.Recorder),
+		Now:        p.now,
+		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
+			rows, closeRows, err := p.rows(ctx)
+			if err != nil {
+				return cli.Renaming{}, err
+			}
+			return cli.Renaming{Rename: vaults.NewRename(p.ports.Vaults, p.ports.Saver, rows), Close: closeRows}, nil
+		},
+		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
+			rows, closeRows, err := p.rows(ctx)
+			if err != nil {
+				return cli.Unregistering{}, err
+			}
+			return cli.Unregistering{Unregister: unregister(rows), Close: closeRows}, nil
+		},
+		OpenErase: func(ctx context.Context) (cli.Erasing, error) {
+			rows, closeRows, err := p.rows(ctx)
+			if err != nil {
+				return cli.Erasing{}, err
+			}
+			return cli.Erasing{Erase: vaults.NewErase(p.identity, p.trash, unregister(rows)), Close: closeRows}, nil
 		},
 	}
 }
@@ -152,7 +201,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 	provided := cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
-			return cli.Vaults{Registry: portsOfSingle(singleVaultList{target})}, nil
+			return vaultParts{ports: portsOfSingle(singleVaultList{target})}.build(), nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
 			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{

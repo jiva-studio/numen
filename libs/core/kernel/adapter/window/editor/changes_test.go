@@ -16,12 +16,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
+	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -233,7 +234,7 @@ func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installatio
 	mux.Handle("/"+numenv1connect.WorkspaceServiceName+"/", pages)
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
 	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(services.Search))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation)))
 }
 
 // going is one vault with everything a window has behind it, and a client
@@ -332,7 +333,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	)
 	editor.ServicesOf(installation).SetNoteWrite(&writing)
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
 	mountQuestionsServices(mux, installation)
@@ -1026,21 +1027,6 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	}
 }
 
-// The levels of reasoning a model offers reach the window with the model.
-func TestTheLevelsOfAModelReachTheWindow(t *testing.T) {
-	got := editor.NewWireModels([]settingsdomain.Model{{
-		Name: "deep", ReasoningLevels: []domain.ReasoningLevel{{Name: "low", Title: "Low"}}, DefaultReasoning: "low",
-	}, {Name: "plain"}})
-
-	if levels := got[0].GetReasoningLevels(); len(levels) != 1 || levels[0].GetName() != "low" || levels[0].GetTitle() != "Low" ||
-		got[0].GetDefaultReasoning() != "low" {
-		t.Errorf("the model is %v", got[0])
-	}
-	if len(got[1].GetReasoningLevels()) != 0 {
-		t.Errorf("a model offering none is %v", got[1])
-	}
-}
-
 func isSyncing(t *testing.T, f *going) bool {
 	t.Helper()
 	target, is := getSetting(t, f, "app", "naming", "syncTitleAndFilename").(bool)
@@ -1401,9 +1387,9 @@ func TestANoteReturnsWhatItIsDividedInto(t *testing.T) {
 	}
 }
 
-// TestANeighbourhoodSaysWhichOfThreeEachNoteIs covers typed notes: the graph
+// TestANeighborhoodSaysWhichOfThreeEachNoteIs covers typed notes: the graph
 // renders each typed note as its type, and the response carries the type.
-func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
+func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",

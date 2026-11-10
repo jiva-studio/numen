@@ -118,10 +118,11 @@ async function onDiscard(id: number): Promise<void> {
 
 <style scoped>
 .secret-section {
+  --pad: 0.875rem 1rem;
   display: flex;
   flex-direction: column;
   margin-block-end: calc(var(--settings-apart) / 2);
-  padding: 0.875rem 1rem;
+  padding: var(--pad);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);

@@ -125,10 +125,11 @@ function formatPathLabel(rawPath: string): string {
 
 <style scoped>
 .settings__path {
+  --gap: 0.375rem;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.375rem;
+  gap: var(--gap);
   min-inline-size: 0;
   max-inline-size: 100%;
 }
@@ -145,17 +146,20 @@ function formatPathLabel(rawPath: string): string {
 }
 
 .settings__path-item {
+  --gap: 0.5rem;
+  --min-height: 1.875rem;
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  min-block-size: 1.875rem;
+  gap: var(--gap);
+  min-block-size: var(--min-height);
   min-inline-size: 0;
 }
 
 .settings__path-header-action + .settings__path-item {
-  padding-block-start: 0.375rem;
+  --pad-start: 0.375rem;
+  padding-block-start: var(--pad-start);
   border-block-start: var(--numen-stroke) solid var(--numen-rule);
 }
 
@@ -168,10 +172,11 @@ function formatPathLabel(rawPath: string): string {
 }
 
 .settings__path-label {
+  --max-width: 18rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-inline-size: 18rem;
+  max-inline-size: var(--max-width);
   color: var(--numen-ink);
   font-size: var(--numen-text-2);
 }

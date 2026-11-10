@@ -215,9 +215,10 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__slider-container {
+  --gap: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--gap);
   inline-size: var(--settings-choice);
 }
 
@@ -227,10 +228,11 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__slider-value {
+  --min-width: 2.5rem;
   font-size: var(--numen-text-2);
   color: var(--numen-ink);
   font-variant-numeric: tabular-nums;
-  min-inline-size: 2.5rem;
+  min-inline-size: var(--min-width);
   text-align: end;
 }
 
@@ -250,10 +252,11 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__text-input {
+  --pad: 0.25rem 0.625rem;
   box-sizing: border-box;
   inline-size: var(--settings-choice);
   block-size: var(--numen-action-size);
-  padding: 0.25rem 0.625rem;
+  padding: var(--pad);
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-field-border);
   border-radius: var(--numen-radius);

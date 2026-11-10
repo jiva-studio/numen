@@ -252,6 +252,10 @@ linters:
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowvaults"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
 

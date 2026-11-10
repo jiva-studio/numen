@@ -16,6 +16,7 @@ import (
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/folderdialog"
 	"github.com/jiva-studio/numen/apps/desktop/internal/frame"
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
@@ -156,7 +157,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 
-	if err := setSchemasDir(); err != nil {
+	if err := folderdialog.SetSchemasDir(); err != nil {
 		return err
 	}
 
@@ -267,7 +268,7 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
-	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened))
+	cfg.SetEditorPluginVaultList(opened)
 	cfg.SetPluginTexts()
 	cfg.SetEditorPluginWindow(db, opened)
 	return shownInstallation{pages: pages, opened: opened}, nil
@@ -357,7 +358,7 @@ func connectWindow(
 	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
 	hooks windowHooks,
 ) {
-	opened.SetFolderDialog(&folderDialog{window: window})
+	opened.SetFolderDialog(folderdialog.New(window))
 
 	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
 	opened.State.NotifyOpenTabs = naming

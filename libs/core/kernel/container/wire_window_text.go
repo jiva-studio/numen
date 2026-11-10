@@ -2,13 +2,14 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	editortexts "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
+	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 )
 
 func mountText(w *windowWiring) {
-	handler := editortexts.NewHandler(w.inst.State, nil)
+	handler := windowtext.NewHandler(w.inst.State, nil)
 	if text := w.cfg.vault().OpenFileText(); text != nil {
-		handler = editortexts.NewHandler(w.inst.State, text)
+		handler = windowtext.NewHandler(w.inst.State, text)
 	}
-	w.inst.Mount(editor.NewTextRoute(w.inst.State, handler))
+	path, served := windowtext.NewRoute(handler, w.inst.State.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

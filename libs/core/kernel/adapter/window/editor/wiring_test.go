@@ -21,13 +21,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -75,19 +72,17 @@ func (w wiring) openIndex(t *testing.T) *vaults.Index {
 	return db
 }
 
-func (w wiring) sources(db *vaults.Index, readers vaultport.VaultReaders, watcher vaultport.VaultWatcher) Sources {
+func (w wiring) readVault(db *vaults.Index) ReadVaultFunc {
+	return testPasses{wiring: w, db: db}.ReadWholeVault
+}
+
+func (w wiring) session(db *vaults.Index, readers vaultport.VaultReaders, watcher vaultport.VaultWatcher) SessionSource {
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
-	return Sources{
-		ReadVault:              passes.ReadWholeVault,
+	return SessionSource{
 		StartVault:             passes.StartVault,
 		SetTextVersionListener: func(textport.VersionListener) {},
 		ReportTextFilesChanged: func(context.Context, domain.Vault, []string) error { return nil },
-		OpenTriggers:           func() *trigger.Triggers { return nil },
-		WatchPluginChanges:     func() (<-chan struct{}, func()) { return nil, func() {} },
 		GetRefresh:             passes.GetRefresh,
-		CloseIndex:             passes.CloseIndex,
-		GetProblemQueries:      passes.GetProblemQueries,
-		GetPassageQueries:      passes.GetPassageQueries,
 	}
 }
 
@@ -128,12 +123,6 @@ func (p testPasses) StartVault(
 }
 
 func (p testPasses) GetRefresh() vaults.Refresh { return p.vaults.MakeRefresh(p.db, p.db.Notes()) }
-
-func (p testPasses) CloseIndex() error { return p.db.Close() }
-
-func (p testPasses) GetProblemQueries() problemport.ProblemQueries { return p.db.Problems() }
-
-func (p testPasses) GetPassageQueries() sourceport.PassageQueries { return p.db.Passages() }
 
 // themeConfig is where the themes and the settings of an installation are kept.
 type themeConfig struct {

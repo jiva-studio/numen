@@ -13,14 +13,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 )
@@ -276,40 +271,3 @@ func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	return NewRoute(path, served, handler)
 }
 
-// NewSearchRoute is the route of the search service.
-func NewSearchRoute(state *State, handler *search.Handler) Route {
-	path, served := numenv1connect.NewSearchServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewSettingsRoute is the route of the settings service.
-func NewSettingsRoute(state *State, handler *settings.Handler) Route {
-	path, served := numenv1connect.NewSettingsServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewCommandRoute is the route of the service that lists and runs the commands of plugins.
-func NewCommandRoute(state *State, handler *command.Handler) Route {
-	path, served := numenv1connect.NewCommandServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewTextRoute is the route of the service that reads the text of files.
-func NewTextRoute(state *State, handler *texts.Handler) Route {
-	path, served := numenv1connect.NewTextServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewCatalogRoute is the route of the service that lists the plugins the application has.
-func NewCatalogRoute(state *State, handler *plugincatalog.Handler) Route {
-	path, served := numenv1connect.NewCatalogServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewPluginRoute is the route of the service plugins are managed through, which this window does
-// not implement.
-func NewPluginRoute(state *State) Route {
-	handler := numenv1connect.UnimplementedPluginServiceHandler{}
-	path, served := numenv1connect.NewPluginServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}

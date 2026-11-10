@@ -20,11 +20,12 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
@@ -98,7 +99,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
-	api.ListVaults = list.Vaults.List
+	api.ListVaults = cfg.GetVaultList(list).Execute
 	bindVaultIndexer(ctx, api, vaults)
 	lent, err := openPluginVault(cfg, db, api)
 	if err != nil {
@@ -135,9 +136,12 @@ func run(cfg container.Config, debug debugOptions) error {
 }
 
 func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
-	agent := cfg.GetSettingsAgent()
+	agent := &windowagent.Handler{}
+	if taking := cfg.GetSettingsAgent(); taking != nil {
+		agent.Start, agent.End = agentuse.NewStartTask(taking), agentuse.NewEndConversation(taking)
+	}
 	return &shell.API{
-		GetAgent:             func() agentport.Agent { return agent },
+		Agent:                agent,
 		IsVaultIndexed:       notes.IsVaultIndexed,
 		ResolveLinks:         notes.ResolveLinks,
 		Window:               shell.NewWindow(platform.TargetFlashcards, nil),

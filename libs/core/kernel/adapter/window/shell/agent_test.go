@@ -8,8 +8,10 @@ import (
 
 	"connectrpc.com/connect"
 
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -46,7 +48,7 @@ func (answeringRun) Stop() error                         { return nil }
 func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 	agent := &answering{tasks: make(chan agentdomain.Task, 1), ended: make(chan string, 1)}
 	api := newAPI(t)
-	api.GetAgent = func() agentport.Agent { return agent }
+	api.Agent = &windowagent.Handler{Start: agentuse.NewStartTask(agent), End: agentuse.NewEndConversation(agent)}
 	api.PluginServices = &forwarding{serves: map[string]bool{
 		numenv1connect.AgentServiceAskAgentProcedure:           true,
 		numenv1connect.AgentServiceFinishConversationProcedure: true,
@@ -97,7 +99,9 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 // A window with no agent rejects a question as a precondition the installation
 // does not meet.
 func TestAskAgent_FailsPreconditionWithoutAgent(t *testing.T) {
-	server := httptest.NewServer(newAPI(t).NewHandler(http.NotFoundHandler()))
+	api := newAPI(t)
+	api.Agent = &windowagent.Handler{}
+	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewAgentServiceClient(server.Client(), server.URL)
 

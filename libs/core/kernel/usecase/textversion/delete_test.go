@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -48,7 +49,7 @@ func TestDeleteVersionRemovesTheRecordAndTheFileOfTheVersionAndReportsTheFile(t 
 func TestDeleteVersionDeletesAnEditOfAPluginWithNoBackend(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
-	edit, err := s.versions.CreateEdit(t.Context(), s.vault, textversion.TextEdit{
+	edit, err := s.versions.CreateEdit(t.Context(), s.vault, textdomain.Edit{
 		PluginID: "org.example.viewer", Path: scanPath, Source: s.getReaderVersion(),
 		Segments: []domain.TextSegment{{Text: "edited"}},
 	})
