@@ -7,8 +7,8 @@ import { LEAST } from '../lib/frame'
 export interface HeightStore {
   /** How tall a person drew the player last, and nothing where they have not drawn it. */
   read(): number | null
-  /** The height kept. A machine that keeps nothing loses it when the page closes. */
-  write(height: number): void
+  /** Whether the height was kept. A machine that keeps nothing loses it when the page closes. */
+  write(height: number): boolean
 }
 
 /** What the store needs of a storage. */
@@ -33,9 +33,9 @@ export function createHeightStore(
     write(height) {
       try {
         getStorage().setItem(KEY, String(height))
+        return true
       } catch {
-        // A machine that keeps nothing for this page draws the player this tall
-        // until it is closed, which is the whole of what is lost.
+        return false
       }
     },
   }

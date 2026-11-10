@@ -288,7 +288,7 @@ describe('the notes of the vault a plugin is handed', () => {
   it('reads what is around a note and the headings of notes', async () => {
     const { notes, listHeadings } = createNotes()
 
-    expect((await notes.getNeighbourhood('Root.md')).focus).toStrictEqual({
+    expect((await notes.getNeighborhood('Root.md')).focus).toStrictEqual({
       path: 'Root.md',
       title: 'Root',
     })

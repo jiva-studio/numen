@@ -7,14 +7,14 @@
 import { ref } from 'vue'
 import { asFailure, asValue, NOTE_TYPE, type Connection, type LinkMarker } from '@numen/plugin-sdk'
 import type { PlexRelation } from '../plex'
-import type { PlexEditor, PlexView, Neighbourhood, NoteType, PathRename } from '../types'
+import type { PlexEditor, PlexView, Neighborhood, NoteType, PathRename } from '../types'
 
 /** A tick that lets whatever a gesture requested from the vault resolve. */
 export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 export type Types = Record<string, NoteType>
 
-export interface RelatedNeighbourSpec {
+export interface RelatedNeighborSpec {
   path: string
   relation?: PlexRelation
   through?: string
@@ -26,7 +26,7 @@ export interface RelatedNeighbourSpec {
   type?: NoteType
 }
 
-export type NeighbourSpec = string | RelatedNeighbourSpec
+export type NeighborSpec = string | RelatedNeighborSpec
 
 const toSide = (label: string | undefined, marker: LinkMarker | undefined) =>
   label === undefined && marker === undefined
@@ -34,32 +34,32 @@ const toSide = (label: string | undefined, marker: LinkMarker | undefined) =>
     : { label: label ?? '', marker: marker ?? null, reason: '' }
 
 /**
- * The line a neighbour is drawn by, as the vault answers it: from a parent to
- * its child, and from the neighbour to the focus for a jump.
+ * The line a neighbor is drawn by, as the vault answers it: from a parent to
+ * its child, and from the neighbor to the focus for a jump.
  */
-export const createLine = (focus: string, spec: RelatedNeighbourSpec): Connection => {
+export const createLine = (focus: string, spec: RelatedNeighborSpec): Connection => {
   const relation = spec.relation ?? 'child'
   const named = relation === 'sibling' ? (spec.through ?? '') : focus
   const ownSide = toSide(spec.label, spec.marker)
-  const neighbourSide = toSide(spec.reverseLabel, spec.reverseMarker)
+  const neighborSide = toSide(spec.reverseLabel, spec.reverseMarker)
   const isNamedFirst = relation === 'child' || relation === 'sibling'
   return {
     first: isNamedFirst ? named : spec.path,
     second: isNamedFirst ? spec.path : named,
     role: relation === 'jump' ? 'jump' : 'child',
     type: '',
-    firstSide: isNamedFirst ? ownSide : neighbourSide,
-    secondSide: isNamedFirst ? neighbourSide : ownSide,
+    firstSide: isNamedFirst ? ownSide : neighborSide,
+    secondSide: isNamedFirst ? neighborSide : ownSide,
   }
 }
 
-const createNeighbourhood = (
+const createNeighborhood = (
   focus: string,
-  neighbours: readonly NeighbourSpec[] = [],
+  neighbors: readonly NeighborSpec[] = [],
   types: Types = {},
   lines: readonly Connection[] = [],
-): Neighbourhood => {
-  const specs = neighbours.map((item) => (typeof item === 'string' ? { path: item } : item))
+): Neighborhood => {
+  const specs = neighbors.map((item) => (typeof item === 'string' ? { path: item } : item))
   return {
     focus: { path: focus, title: focus.replace(/\.md$/, '') },
     focusType: types[focus] ?? NOTE_TYPE,
@@ -78,14 +78,14 @@ const createNeighbourhood = (
 /** A plex standing on a note, which records every note it was sent to. `lines` join notes other than the focus. */
 export const viewOn = (
   initialPath: string,
-  neighbours: readonly NeighbourSpec[] = [],
+  neighbors: readonly NeighborSpec[] = [],
   types: Types = {},
   lines: readonly Connection[] = [],
 ) => {
   const went: string[] = []
   const view: PlexView = {
-    neighbourhood: ref<Neighbourhood | null>(
-      createNeighbourhood(initialPath, neighbours, types, lines),
+    neighborhood: ref<Neighborhood | null>(
+      createNeighborhood(initialPath, neighbors, types, lines),
     ),
     here: ref(initialPath),
     error: ref(''),
@@ -94,9 +94,9 @@ export const viewOn = (
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
-      view.neighbourhood.value = createNeighbourhood(
+      view.neighborhood.value = createNeighborhood(
         path,
-        path === initialPath ? neighbours : [],
+        path === initialPath ? neighbors : [],
         types,
         path === initialPath ? lines : [],
       )

@@ -11,13 +11,13 @@ import {
 import { optionsForType, useTypeSize } from '../model/sizing/plexScale'
 import { EXPANSION_DELAY } from '../model/sizing/expansion'
 import { type PlexHeading } from '../lib/inside'
-import { neighbourhoods } from '../fixtures/neighbourhoods'
-import { createNeighbourhood, walkStart } from '../fixtures/walk'
+import { neighborhoods } from '../fixtures/neighborhoods'
+import { createNeighborhood, walkStart } from '../fixtures/walk'
 import { build, buildAround, type TitledNode } from '../fixtures/build'
 import { nameNow } from '../fixtures/names'
 import { ring } from '../fixtures/ring'
 import type { PlexEdge } from '../lib/edge'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNeighborhood } from '../lib/neighborhood'
 import type { PlexNode, Position } from '../lib/node'
 import type { PlexRelation } from '../lib/relation'
 import type { PlexDestination } from '../model/interaction/destination'
@@ -25,7 +25,7 @@ import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@numen/ui'
 
 interface Knobs {
-  neighbourhood: PlexNeighbourhood
+  neighborhood: PlexNeighborhood
   placement: Placement
   showEdgeLabels: boolean
   duration: number
@@ -117,7 +117,7 @@ const createCounts = (a: Knobs) => ({
   sibling: a.siblings,
 })
 
-const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Knobs) => ({
+const createNavigable = (start: (args: Knobs) => PlexNeighborhood) => (args: Knobs) => ({
   components: { Plex },
   setup() {
     const type = useTypeSize()
@@ -127,7 +127,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     const createdItem = ref<PlexNode[]>([])
     const links = ref<PlexEdge[]>([])
 
-    const neighbourhood = computed<PlexNeighbourhood>(() => {
+    const neighborhood = computed<PlexNeighborhood>(() => {
       const base = focus.value
         ? buildAround(focus.value, cameFrom.value, createCounts(args))
         : start(args)
@@ -146,9 +146,9 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     })
 
     const onActivate = (id: string) => {
-      const selected = neighbourhood.value.nodes.find((node) => node.id === id)
+      const selected = neighborhood.value.nodes.find((node) => node.id === id)
       if (!selected) return
-      const was = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
+      const was = neighborhood.value.nodes.find((node) => node.relation === 'focus')
       cameFrom.value = was ? { id: was.id, title: was.title } : null
       focus.value = { id: selected.id, title: selected.title }
     }
@@ -169,7 +169,7 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
     }
 
     const dropOnto = (ids: readonly string[], relation: PlexRelation) => {
-      const here = neighbourhood.value.nodes.find((node) => node.relation === 'focus')
+      const here = neighborhood.value.nodes.find((node) => node.relation === 'focus')
       if (!here) return
       for (const one of ids) createRelated(here.id, one, relation)
     }
@@ -187,14 +187,14 @@ const createNavigable = (start: (args: Knobs) => PlexNeighbourhood) => (args: Kn
       create,
       link,
       dropOnto,
-      neighbourhood,
+      neighborhood,
       options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
     <div style="height:100vh">
       <Plex
-        :neighbourhood="neighbourhood"
+        :neighborhood="neighborhood"
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
@@ -224,14 +224,14 @@ const renderWalk = (args: Knobs) => ({
     return {
       args,
       focused,
-      neighbourhood: computed(() => createNeighbourhood(focused.value)),
+      neighborhood: computed(() => createNeighborhood(focused.value)),
       options: computed(() => createOptions(args, type.value)),
     }
   },
   template: `
     <div style="height:100vh">
       <Plex
-        :neighbourhood="neighbourhood"
+        :neighborhood="neighborhood"
         :placement="args.placement"
         :options="options"
         :show-edge-labels="args.showEdgeLabels"
@@ -304,7 +304,7 @@ const meta = {
     siblings: range(0, 12, 1, 'Playground'),
     title: { control: 'text', table: { category: 'Playground' } },
 
-    neighbourhood: { table: { disable: true } },
+    neighborhood: { table: { disable: true } },
     options: { table: { disable: true } },
     clock: { table: { disable: true } },
     naming: { table: { disable: true } },
@@ -367,14 +367,14 @@ const meta = {
     title: 'A node',
   },
 
-  render: createNavigable((args) => args.neighbourhood),
+  render: createNavigable((args) => args.neighborhood),
 } satisfies Meta<Knobs>
 
 export default meta
 type Story = StoryObj<typeof meta>
 
 const invented = {
-  args: { neighbourhood: neighbourhoods.typical, maxPerLine: 9 },
+  args: { neighborhood: neighborhoods.typical, maxPerLine: 9 },
   render: createNavigable((args: Knobs) => build(args.title, createCounts(args))),
 }
 
@@ -566,17 +566,17 @@ export const AskingForANode: Story = {
   },
 }
 
-/** Renders a neighbourhood with multiple connected parents. */
+/** Renders a neighborhood with multiple connected parents. */
 export const SeveralParents: Story = {
-  args: { neighbourhood: neighbourhoods.diamond },
+  args: { neighborhood: neighborhoods.diamond },
 }
 
-/** Renders an overcrowded neighbourhood with overflow indicators. */
+/** Renders an overcrowded neighborhood with overflow indicators. */
 export const Overcrowded: Story = {
-  args: { neighbourhood: neighbourhoods.overcrowded },
+  args: { neighborhood: neighborhoods.overcrowded },
 }
 
-const titledLines: PlexNeighbourhood = {
+const titledLines: PlexNeighborhood = {
   nodes: [
     { id: 'focus', title: 'The meeting', relation: 'focus' },
     { id: 'parent', title: 'Minutes', relation: 'parent' },
@@ -596,7 +596,7 @@ const titledLines: PlexNeighbourhood = {
 
 /** Renders edge labels along curved paths and raises hovered lines. */
 export const TitledLines: Story = {
-  args: { neighbourhood: titledLines, duration: 0, spread: 1 },
+  args: { neighborhood: titledLines, duration: 0, spread: 1 },
   play: async ({ canvasElement }) => {
     const title = (words: string) =>
       [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')].filter(
@@ -752,11 +752,11 @@ export const TitlesFindSpace: Story = {
 
 /** Verifies that edge titles across multiple rows do not overlap. */
 export const TitlesAcrossRows: Story = {
-  args: { neighbourhood: neighbourhoods.labelledRows, duration: 0 },
+  args: { neighborhood: neighborhoods.labelledRows, duration: 0 },
   play: expectTitlesClear,
 }
 
-const arrowedLines: PlexNeighbourhood = {
+const arrowedLines: PlexNeighborhood = {
   nodes: [
     { id: 'alice', title: 'Alice Fenn, The Chair', relation: 'focus' },
     { id: 'allotments', title: 'Marrowfield allotments', relation: 'parent' },
@@ -774,7 +774,7 @@ const arrowedLines: PlexNeighbourhood = {
 
 /** Renders directional arrowheads on edges and raises them on hover. */
 export const ArrowedLines: Story = {
-  args: { neighbourhood: arrowedLines, duration: 0 },
+  args: { neighborhood: arrowedLines, duration: 0 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const svg = canvasElement.querySelector('svg')!
@@ -877,12 +877,12 @@ export const ArrowedLines: Story = {
 
 /** Renders nodes with long, non-Latin, and empty labels. */
 export const AwkwardLabels: Story = {
-  args: { neighbourhood: neighbourhoods.awkwardLabels },
+  args: { neighborhood: neighborhoods.awkwardLabels },
 }
 
 /** Expands a truncated node box on hover to show the full title. */
 export const RestingOnATitle: Story = {
-  args: { neighbourhood: neighbourhoods.awkwardLabels },
+  args: { neighborhood: neighborhoods.awkwardLabels },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const node = canvas.getByLabelText(/^Supercalifragilistic/)
@@ -917,7 +917,7 @@ export const RestingOnATitle: Story = {
 export const Walk: Story = {
   render: renderWalk,
   args: {
-    neighbourhood: createNeighbourhood(walkStart),
+    neighborhood: createNeighborhood(walkStart),
     gap: 18,
   },
   play: async ({ args, canvasElement }) => {
@@ -1069,7 +1069,7 @@ export const HeadingsInside: Story = {
 
 /** Renders the plex inside a small fixed container. */
 export const SmallWindow: Story = {
-  args: { neighbourhood: neighbourhoods.crowded },
+  args: { neighborhood: neighborhoods.crowded },
   render: (args) => ({
     components: { Plex },
     setup: () => {
@@ -1080,7 +1080,7 @@ export const SmallWindow: Story = {
       <div style="height:100vh;display:grid;place-items:center;background:#8883">
         <div style="width:420px;height:320px;outline:1px solid var(--numen-rule)">
           <Plex
-            :neighbourhood="args.neighbourhood"
+            :neighborhood="args.neighborhood"
             :placement="args.placement"
             :options="options"
             :show-edge-labels="args.showEdgeLabels"

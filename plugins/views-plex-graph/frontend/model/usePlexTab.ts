@@ -3,7 +3,7 @@
  */
 import { computed, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
+import type { PlexNeighborhood, PlexRelation, PlexDestination } from '../plex'
 import {
   formatErrorMessage,
   getFileName,
@@ -12,7 +12,7 @@ import {
   useSlotMenu,
   type CommandTarget,
 } from '@numen/plugin-sdk'
-import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
+import { convertNeighborhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
@@ -42,10 +42,10 @@ export type {
 }
 
 function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
-  const picture = computed<PlexNeighbourhood | null>(() => {
-    const neighbourhood = view.neighbourhood.value
-    if (!deps.window.isReady.value || !neighbourhood) return null
-    return convertNeighbourhood(neighbourhood, map.getNodeId)
+  const picture = computed<PlexNeighborhood | null>(() => {
+    const neighborhood = view.neighborhood.value
+    if (!deps.window.isReady.value || !neighborhood) return null
+    return convertNeighborhood(neighborhood, map.getNodeId)
   })
 
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
@@ -66,34 +66,34 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
       deps.window.isReady.value &&
       !view.here.value &&
       !deps.window.openingPath.value &&
-      !view.neighbourhood.value,
+      !view.neighborhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {
     const here = view.here.value
-    if (!deps.window.isReady.value || !view.neighbourhood.value || !here) return []
+    if (!deps.window.isReady.value || !view.neighborhood.value || !here) return []
     return deps.window.dragged.value.filter((path) => path !== here)
   })
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
-    const neighbourhood = view.neighbourhood.value
-    return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
+    const neighborhood = view.neighborhood.value
+    return neighborhood ? getNoteTypes(neighborhood) : new Map()
   })
 
   const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
 
   const tabKinds = computed<ReadonlyMap<string, string>>(() => {
-    const neighbourhood = view.neighbourhood.value
-    return neighbourhood ? getTabKinds(neighbourhood) : new Map()
+    const neighborhood = view.neighborhood.value
+    return neighborhood ? getTabKinds(neighborhood) : new Map()
   })
 
   const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
 
   const activePaths = computed<readonly string[]>(() => {
-    const neighbourhood = view.neighbourhood.value
-    if (!neighbourhood) return []
-    const paths = [neighbourhood.focus.path]
-    for (const related of neighbourhood.related) paths.push(related.path)
+    const neighborhood = view.neighborhood.value
+    if (!neighborhood) return []
+    const paths = [neighborhood.focus.path]
+    for (const related of neighborhood.related) paths.push(related.path)
     return paths.filter(Boolean)
   })
 
@@ -246,10 +246,10 @@ function usePlexMenu(options: {
   return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close }
 }
 
-function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
-  if (neighbourhood?.focus.path === path && neighbourhood.focus.title)
-    return neighbourhood.focus.title
-  const foundNode = neighbourhood?.related.find((one) => one.path === path)
+function getPlexNodeName(neighborhood: PlexView['neighborhood']['value'], path: string): string {
+  if (neighborhood?.focus.path === path && neighborhood.focus.title)
+    return neighborhood.focus.title
+  const foundNode = neighborhood?.related.find((one) => one.path === path)
   return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 
@@ -265,7 +265,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     drawn: drawnNodes,
   } = usePlexImage(view, deps, map)
 
-  const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
+  const getName = (path: string): string => getPlexNodeName(view.neighborhood.value, path)
   const quickLinkModel = useQuickLink(view, deps, map)
   const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
   const linkInspectorModel = useLinkInspector(

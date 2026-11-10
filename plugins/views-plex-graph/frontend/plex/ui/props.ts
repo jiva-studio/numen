@@ -4,7 +4,7 @@
 import type { MenuTrigger, Viewport } from '@numen/ui'
 import type { Placement, PlexOptionsInput } from '../lib/arrange'
 import type { PlexHeading } from '../lib/inside'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNeighborhood } from '../lib/neighborhood'
 import type { PlacedNode, Position } from '../lib/node'
 import type { PlexRelation } from '../lib/relation'
 import type { PlexPending } from './render/props'
@@ -13,7 +13,7 @@ import type { PlexDestination, ShowStrategy } from '../model/interaction/destina
 import type { Clock } from '../model/transition'
 
 export interface PlexProps {
-  neighbourhood: PlexNeighbourhood
+  neighborhood: PlexNeighborhood
   options?: PlexOptionsInput
   placement?: Placement
   showEdgeLabels?: boolean
@@ -73,6 +73,6 @@ export interface PlexEvents {
 export interface PlexSlots {
   /** What is drawn beside a node's title. A node with none is drawn narrower. */
   icon?(props: { node: PlacedNode }): unknown
-  /** Content for the neighbours that did not fit, supplied by the caller. */
+  /** Content for the neighbors that did not fit, supplied by the caller. */
   overflow?(props: { overflow: readonly [PlexRelation, number][] }): unknown
 }

@@ -259,7 +259,7 @@ describe('a line of nothing but spaces', () => {
   })
 })
 
-describe('lines that read areNeighbourhoodsEqual', () => {
+describe('lines that read areNeighborhoodsEqual', () => {
   it('keep the unchanged line and drop the other', () => {
     const was: readonly Cue[] = [
       { text: 'Again.', from: 0, to: 1_000 },

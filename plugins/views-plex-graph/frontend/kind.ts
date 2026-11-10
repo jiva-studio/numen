@@ -51,6 +51,16 @@ function createPlexTabs() {
   }
 }
 
+/** Reads the opening path and says whether it was read; the next change reads it again. */
+async function readOpeningPath(host: PlexHost): Promise<boolean> {
+  try {
+    await host.workspace.window.readOpeningPath()
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function refreshTabs(
   host: PlexHost,
   tabs: readonly PlexTabState[],
@@ -58,11 +68,7 @@ async function refreshTabs(
 ): Promise<void> {
   for (const state of tabs) state.nodes.followMoves(event.renamed ?? [])
   if (tabs.some((state) => !state.canvas.view.here.value)) {
-    try {
-      await host.workspace.window.readOpeningPath()
-    } catch {
-      // The next change retries.
-    }
+    await readOpeningPath(host)
   }
   await Promise.all(
     tabs.map(async (state) => {
@@ -104,7 +110,7 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
       })
       return state
     },
-    getTitle: (state) => getPlexTitle(state.canvas.view.neighbourhood.value?.focus.title ?? ''),
+    getTitle: (state) => getPlexTitle(state.canvas.view.neighborhood.value?.focus.title ?? ''),
     onShow: (_state, id) => tabs.show(id),
     onClose: (state, id) => {
       state.canvas.view.close()

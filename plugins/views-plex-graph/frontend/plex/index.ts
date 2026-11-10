@@ -1,4 +1,4 @@
-/** A neighbourhood of notes drawn as a graph, and the relations its edges run between. */
+/** A neighborhood of notes drawn as a graph, and the relations its edges run between. */
 export { default as Plex } from './ui/Plex.vue'
 export { RELATION_NAMES, getRelationName } from './lib/relation'
 export type { PlexRelation } from './lib/relation'
@@ -8,5 +8,5 @@ export { byDoubleTap } from './model/interaction/destination'
 export type { PlexDestination } from './model/interaction/destination'
 export type { PlexHeading } from './lib/inside'
 export type { EdgeArrow, EdgeLabel, PlexEdge } from './lib/edge'
-export type { PlexNeighbourhood } from './lib/neighbourhood'
+export type { PlexNeighborhood } from './lib/neighborhood'
 export type { PlexNode } from './lib/node'

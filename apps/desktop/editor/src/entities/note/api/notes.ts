@@ -8,7 +8,7 @@ import { notes } from '@/shared/api/clients'
 import { mapMoveResult, mapRange } from '@/shared/api/wire'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import type {
-  Neighbourhood,
+  Neighborhood,
   NewNote,
   NoteEdit,
   NoteHeading,
@@ -16,11 +16,11 @@ import type {
   RenameResult,
   WriteResult,
 } from '../lib/note'
-import { mapBaseline, mapNeighbourhood, mapNoteResult, mapWriteResult, writes } from './noteWords'
+import { mapBaseline, mapNeighborhood, mapNoteResult, mapWriteResult, writes } from './noteWords'
 
 /** The notes joined to a note, and how. */
-export const getNeighbourhood = async (path: string): Promise<Neighbourhood> =>
-  mapNeighbourhood(await notes.getNeighbourhood({ path }))
+export const getNeighborhood = async (path: string): Promise<Neighborhood> =>
+  mapNeighborhood(await notes.getNeighbourhood({ path }))
 
 /** The note the vault opens first, and null where it names none. */
 export const getInitialOpenPath = async (): Promise<{ path: string } | null> => {

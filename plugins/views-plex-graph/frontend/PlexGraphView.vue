@@ -19,7 +19,7 @@ defineOptions({ name: 'PlexTab' })
 const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { dragged, picture: neighbourhood } = props.state.canvas
+const { dragged, picture: neighborhood } = props.state.canvas
 const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
 const { quickLink } = props.state.quickLink
 const { linkInspector } = props.state.inspector
@@ -112,15 +112,15 @@ function onDismissLinkInspector() {
       {{ props.state.canvas.view.error.value }}
     </p>
 
-    <!-- Until the first neighbourhood lands, an empty plex and one no one has
+    <!-- Until the first neighborhood lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
     <LoadingIndicator v-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
 
     <Plex
-      v-else-if="neighbourhood"
+      v-else-if="neighborhood"
       ref="picture"
       class="plex__image"
-      :neighbourhood="neighbourhood!"
+      :neighborhood="neighborhood!"
       :options="options"
       :creatable="props.state.canvas.creatable"
       :pending="pending"

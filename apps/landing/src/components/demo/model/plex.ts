@@ -6,8 +6,8 @@ import type { Vault } from './vault'
 /** The note the plex is centered on, and the notes drawn around it. */
 export function createPlex(vault: Vault) {
   const here = ref(ENTROPY_PATH)
-  const neighbourhood = computed(() => vault.read.getNeighbours(here.value))
-  const layout = computed(() => getPlexLayout(neighbourhood.value))
+  const neighborhood = computed(() => vault.read.getNeighbors(here.value))
+  const layout = computed(() => getPlexLayout(neighborhood.value))
 
   const go = (path: string) => {
     here.value = vault.read.getNote(path) ? path : ENTROPY_PATH
@@ -17,7 +17,7 @@ export function createPlex(vault: Vault) {
     if (here.value === from) here.value = to
   })
 
-  return { here, neighbourhood, layout, go }
+  return { here, neighborhood, layout, go }
 }
 
 export type Plex = ReturnType<typeof createPlex>

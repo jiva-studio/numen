@@ -4,7 +4,7 @@ import type { PlexRelation } from './plex'
 /** What a plex tab is called, on its own and after the note it relies on. */
 export const WORDS = {
   plex: 'Plex',
-  /** The neighbourhood is being read, and its contents are not known yet. */
+  /** The neighborhood is being read, and its contents are not known yet. */
   loading: 'Loading…',
   /** The row of a command of the menu whose items are being read. */
   loadingItems: 'Loading…',

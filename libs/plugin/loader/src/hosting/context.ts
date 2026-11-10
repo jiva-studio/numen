@@ -51,9 +51,9 @@ function guardNotes(
   const requireRead = (operation: string) => requirePerm('vault:read', operation)
   const requireWrite = (operation: string) => requirePerm('vault:write', operation)
   return {
-    getNeighbourhood: async (path) => {
-      requireRead('notes.getNeighbourhood')
-      return notes.getNeighbourhood(path)
+    getNeighborhood: async (path) => {
+      requireRead('notes.getNeighborhood')
+      return notes.getNeighborhood(path)
     },
     getHeadings: async (paths) => {
       requireRead('notes.getHeadings')

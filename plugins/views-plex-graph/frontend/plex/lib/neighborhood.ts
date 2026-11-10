@@ -1,26 +1,26 @@
 import type { PlexEdge } from './edge'
 import type { PlexNode } from './node'
 
-/** One neighbourhood: the node in focus and everything shown around it. */
-export interface PlexNeighbourhood {
+/** One neighborhood: the node in focus and everything shown around it. */
+export interface PlexNeighborhood {
   readonly nodes: readonly PlexNode[]
   readonly edges: readonly PlexEdge[]
 }
 
 /**
- * Check the two invariants and return the focus. Throws: a neighbourhood that
+ * Check the two invariants and return the focus. Throws: a neighborhood that
  * breaks either is a caller with a bug, not a state to be rendered.
  */
-export function assertNeighbourhood(neighbourhood: PlexNeighbourhood): PlexNode {
-  const focused = neighbourhood.nodes.filter((node) => node.relation === 'focus')
+export function assertNeighborhood(neighborhood: PlexNeighborhood): PlexNode {
+  const focused = neighborhood.nodes.filter((node) => node.relation === 'focus')
   const focus = focused[0]
 
   if (focus === undefined) {
-    throw new Error('A plex neighbourhood needs a node with the focus relation')
+    throw new Error('A plex neighborhood needs a node with the focus relation')
   }
   if (focused.length > 1) {
     throw new Error(
-      `A plex neighbourhood has one focus, not ${focused.length}: ` +
+      `A plex neighborhood has one focus, not ${focused.length}: ` +
         focused.map((node) => node.id).join(', '),
     )
   }
@@ -31,7 +31,7 @@ export function assertNeighbourhood(neighbourhood: PlexNeighbourhood): PlexNode 
   // would be ambiguous.
   const observed = new Set<string>()
   const repeated = new Set<string>()
-  for (const node of neighbourhood.nodes) {
+  for (const node of neighborhood.nodes) {
     if (observed.has(node.id)) repeated.add(node.id)
     observed.add(node.id)
   }

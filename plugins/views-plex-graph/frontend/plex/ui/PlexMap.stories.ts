@@ -24,7 +24,7 @@ import Plex from './Plex.vue'
 import { RELATION_NAMES, type PlexRelation } from '../lib/relation'
 import type { PlexEdge } from '../lib/edge'
 import type { PlexHeading } from '../lib/inside'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
+import type { PlexNeighborhood } from '../lib/neighborhood'
 import type { PlexNode } from '../lib/node'
 
 const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
@@ -66,26 +66,26 @@ const createPair = (from: string, to: string, texts: readonly [string, string]):
   arrows: ['to', 'from'],
 })
 
-const createEdge = (neighbour: PlexNode): PlexEdge => {
-  const label = LABELS[neighbour.id]
-  if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
-  if (neighbour.relation === 'parent' || neighbour.relation === 'jump') {
+const createEdge = (neighbor: PlexNode): PlexEdge => {
+  const label = LABELS[neighbor.id]
+  if (neighbor.relation === 'sibling') return { from: 'thermodynamics', to: neighbor.id }
+  if (neighbor.relation === 'parent' || neighbor.relation === 'jump') {
     return label
-      ? createLine(neighbour.id, 'focus', label, 'from')
-      : { from: neighbour.id, to: 'focus' }
+      ? createLine(neighbor.id, 'focus', label, 'from')
+      : { from: neighbor.id, to: 'focus' }
   }
   return label
-    ? createLine('focus', neighbour.id, label, 'to')
-    : { from: 'focus', to: neighbour.id }
+    ? createLine('focus', neighbor.id, label, 'to')
+    : { from: 'focus', to: neighbor.id }
 }
 
-const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
-  nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
-  edges: neighbours.map(createEdge),
+const createNeighborhood = (neighbors: readonly PlexNode[]): PlexNeighborhood => ({
+  nodes: [node('focus', 'Entropy', 'focus'), ...neighbors],
+  edges: neighbors.map(createEdge),
 })
 
-/** A wide neighbourhood: more nodes at the sides than in depth. */
-const WIDE = createNeighbourhood([
+/** A wide neighborhood: more nodes at the sides than in depth. */
+const WIDE = createNeighborhood([
   ...RELATED,
   node('landauer', "Landauer's principle", 'jump'),
   node('carnot', 'Carnot cycle', 'jump'),
@@ -155,13 +155,13 @@ interface MapScreen {
 const map = ({ headings = () => [], creatable = [], menu = null }: MapScreen) => ({
   components: { Plex, Menu },
   setup() {
-    const neighbourhood = ref<PlexNeighbourhood>(WIDE)
-    return { neighbourhood, headings, creatable, menu, MENU, menuIcon }
+    const neighborhood = ref<PlexNeighborhood>(WIDE)
+    return { neighborhood, headings, creatable, menu, MENU, menuIcon }
   },
   template: `
     <div style="height: 100vh">
       <Plex
-        :neighbourhood="neighbourhood"
+        :neighborhood="neighborhood"
         :creatable="creatable"
         :duration="420"
         :headings="headings"
@@ -251,7 +251,7 @@ export const Nesting: Story = {
  * parent and a sibling have a record written by each note, one at either end of
  * their line. A line with a record and no arrowhead is the last.
  */
-const EVERY_LINE: PlexNeighbourhood = {
+const EVERY_LINE: PlexNeighborhood = {
   nodes: [
     node('focus', 'Entropy', 'focus'),
     node('thermodynamics', 'Thermodynamics', 'parent'),
@@ -276,9 +276,9 @@ const EVERY_LINE: PlexNeighbourhood = {
 export const EveryLine: Story = {
   render: () => ({
     components: { Plex },
-    setup: () => ({ neighbourhood: ref(EVERY_LINE) }),
+    setup: () => ({ neighborhood: ref(EVERY_LINE) }),
     template:
-      '<div style="height: 100vh"><Plex :neighbourhood="neighbourhood" :creatable="[]" :duration="0" /></div>',
+      '<div style="height: 100vh"><Plex :neighborhood="neighborhood" :creatable="[]" :duration="0" /></div>',
   }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
