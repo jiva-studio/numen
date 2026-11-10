@@ -6,7 +6,7 @@ import (
 )
 
 func mountCatalog(w *windowWiring) {
-	if plugins := w.cfg.GetPluginCatalog(); plugins != nil {
+	if plugins := w.cfg.getPluginCatalog(); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
 		path, served := windowcatalog.NewRoute(handler, w.inst.State.CountQuestions())
 		w.inst.Mount(editor.NewRoute(path, served, handler))

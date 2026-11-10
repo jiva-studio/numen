@@ -33,7 +33,7 @@ func writeSettings(t *testing.T, output string) (Config, string) {
 func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	cfg, path := writeSettings(t, `{"app": {"appearance": {"theme": "mine:sea"}}}`)
 
-	content, response, err := cfg.ReadSettings()()
+	content, response, err := cfg.readSettings()()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,7 +211,7 @@ func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	cfg, _ := writeSettings(t, `{}`)
 
-	models := cfg.Models()()
+	models := cfg.models()()
 	if len(models) == 0 {
 		t.Fatal("no models are listed")
 	}

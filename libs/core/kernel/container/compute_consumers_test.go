@@ -12,7 +12,7 @@ func makePlan(workers int) hardware.ResolvedCompute {
 }
 
 func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {
-	got := NewConfig(Config{ResolvedCompute: makePlan(5)}).NewSearchOver(nil, nil, nil).GetExtractors()
+	got := NewConfig(Config{ResolvedCompute: makePlan(5)}).newSearchOver(nil, nil, nil).GetExtractors()
 	if got != 5 {
 		t.Errorf("a search extracts %d sources at once, want the 5 planned", got)
 	}
@@ -20,7 +20,7 @@ func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {
 
 func TestNewSearchOver_UsesDefaultExtractorCountWithoutPlan(t *testing.T) {
 	want := search.New(nil, nil, nil, nil, nil, nil).GetExtractors()
-	if got := (NewConfig(Config{})).NewSearchOver(nil, nil, nil).GetExtractors(); got != want {
+	if got := (NewConfig(Config{})).newSearchOver(nil, nil, nil).GetExtractors(); got != want {
 		t.Errorf("a search extracts %d sources at once, want %d", got, want)
 	}
 }

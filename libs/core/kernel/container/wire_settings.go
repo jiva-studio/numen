@@ -62,10 +62,8 @@ func (c Config) Plugins() func() []plugindomain.Info {
 	return settingsPlugins(c.settings())
 }
 
-// Models returns a function that lists the models each model setting accepts,
-// and the programs the agent setting accepts.
-func (c Config) Models() func() []settingsdomain.Model {
-	return c.modelsForProvider(c.AgentProvider())
+func (c Config) models() func() []settingsdomain.Model {
+	return c.modelsForProvider(c.agentProvider())
 }
 
 func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsdomain.Model {
@@ -76,8 +74,7 @@ func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []set
 	return settingsModelsForProvider(c.settings(), c.agentProvider)
 }
 
-// SubscribeSettingChanges starts listening to the settings that change. See settingsport.ChangeSubscriber.
-func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
+func (c Config) subscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
 	return subscribeSettingChanges(c.settings())
 }
 
@@ -86,8 +83,7 @@ func (c Config) SyncSetting() query.SyncSetting {
 	return syncSetting(c.settings())
 }
 
-// ReadSettings returns a function that reads settings as JSON and returns the settings file path.
-func (c Config) ReadSettings() func() (string, string, error) {
+func (c Config) readSettings() func() (string, string, error) {
 	return readSettings(c.settings())
 }
 
@@ -116,9 +112,7 @@ func (c Config) SetShellThemes(api *shell.API, say func(string)) error {
 	return err
 }
 
-// UnsubscribeHost stops the plugin host from receiving setting changes. It returns after the batch
-// being delivered has been handled.
-func (c Config) UnsubscribeHost() {
+func (c Config) unsubscribeHost() {
 	unsubscribeHost(c.settings())
 }
 

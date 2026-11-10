@@ -13,7 +13,7 @@ func mountFile(w *windowWiring) {
 		state, state,
 		file.NewGetFolderEntries(readers, w.db.NoteTypes()),
 		file.NewGetFileKinds(readers, w.db.NoteTypes()),
-		w.cfg.OpenChooseTabKind(),
+		w.cfg.openChooseTabKind(),
 		file.NewCreateFolder(folderWriters(w.cfg.vault())),
 	)
 	changes := filewindow.NewChanges(state, state, state, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)

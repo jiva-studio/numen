@@ -31,9 +31,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// CutNotes is how a source's text and a note are cut into the chunks the index
-// keeps: at this installation's sizes, keeping what reads as text.
-func (c Config) CutNotes() chunking.CutNotes {
+func (c Config) cutNotes() chunking.CutNotes {
 	return cutNotes(c.search())
 }
 
@@ -51,8 +49,7 @@ func (c Config) ReadWholeVault(
 	return readWholeVault(c.search(), ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
 }
 
-// FitIndex sets the vector index to the model of the embedding provider.
-func (c Config) FitIndex(db *vault.Index) vectorscase.FitIndex {
+func (c Config) fitIndex(db *vault.Index) vectorscase.FitIndex {
 	return fitIndex(c.search(), db)
 }
 
@@ -71,9 +68,7 @@ func (c Config) NewSearch(db *vault.Index, asking embeddingport.Embedder, errorH
 	return newSearch(c.search(), db, asking, errorHandler)
 }
 
-// NewSearchOver is that search over the passages given, for a run that holds
-// the index open for asking alone.
-func (c Config) NewSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
+func (c Config) newSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) searchusecase.Search {
 	return newSearchOver(c.search(), passages, asking, errorHandler)
 }
 
@@ -82,25 +77,19 @@ func (c Config) NewFloorPolicy(db *vault.Index, embedder embeddingport.Embedder,
 	return newFloorPolicy(c.search(), db, embedder, errorHandler)
 }
 
-// SetPluginSearch lends the plugins the search index, the model that fills it and the floors of the
-// vaults.
-func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
+func (c Config) setPluginSearch(db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
 	setPluginSearch(c.search(), db, embedder, errorHandler)
 }
 
-// EmbedderReady reports whether an embedding plugin is enabled.
-func (c Config) EmbedderReady() bool {
+func (c Config) embedderReady() bool {
 	return embedderReady(c.search())
 }
 
-// Embedders returns the embedder that produces the vectors a vault is searched
-// by and the embedder that produces the vector for a question.
-func (c Config) Embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
+func (c Config) embedders(ctx context.Context, tasks *run.Tasks) (indexing, asking embeddingport.Embedder, closer func() error, why error) {
 	return searchEmbedders(c.search(), ctx, tasks)
 }
 
-// Embedder is the embedding plugin that produces the vectors of a vault.
-func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
+func (c Config) embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
 	return searchEmbedder(c.search(), ctx)
 }
 
@@ -241,7 +230,7 @@ func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Emb
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.SetPluginSearch(hostsearch.Search{
+	c.PluginHost.setPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
 		Samples:  db.SearchSamples(),

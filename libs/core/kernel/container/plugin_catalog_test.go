@@ -109,7 +109,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 		PluginCatalog: catalog.Config{Target: "desktop.editor", Sources: []catalog.Source{indexsource.New(nil, []string{availableDir})}, InstallDir: "", CacheDir: ""},
 	})
 
-	service := cfg.GetPluginCatalog()
+	service := cfg.getPluginCatalog()
 	if service == nil {
 		t.Fatal("no catalog")
 	}
@@ -150,7 +150,7 @@ func findEntry(listing catalog.Listing, id string) (catalog.Entry, bool) {
 func TestAnInstallationThatNamesNoTargetHasNoCatalog(t *testing.T) {
 	cfg := NewConfig(Config{PluginHost: NewPluginHost("desktop.editor", t.TempDir())})
 
-	if cfg.GetPluginCatalog() != nil {
+	if cfg.getPluginCatalog() != nil {
 		t.Error("a catalog was made with no target")
 	}
 }

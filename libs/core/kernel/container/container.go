@@ -161,9 +161,7 @@ func (c Config) GetWait() machine.Wait {
 	}
 }
 
-// GetDelay is the delayed call every scenario assembled here is handed, bound
-// to this machine's timers.
-func (c Config) GetDelay() machine.Delay {
+func (c Config) getDelay() machine.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
 	}

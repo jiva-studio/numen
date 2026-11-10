@@ -10,6 +10,6 @@ func mountCommand(w *windowWiring) {
 	if menu := openVersionItems(w.cfg.plugins()); menu != nil {
 		versions = menu
 	}
-	handler := command.NewHandler(w.inst.State, w.cfg.GetPluginCommands(), versions)
+	handler := command.NewHandler(w.inst.State, w.cfg.getPluginCommands(), versions)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.CountQuestions(), handler)))
 }

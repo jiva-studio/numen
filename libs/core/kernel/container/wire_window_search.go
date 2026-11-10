@@ -16,7 +16,7 @@ func mountSearch(w *windowWiring) {
 	handler.ListTabKinds = w.files.ListTabKinds
 	finds := w.cfg.NewSearch(w.db, w.asking, state.ReportWordsAlone)
 	handler.Finds = &finds
-	w.cfg.SetPluginSearch(w.db, w.embedder, state.ReportFloorError)
+	w.cfg.setPluginSearch(w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

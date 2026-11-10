@@ -8,25 +8,22 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-// OpenGetSettings builds the use case that reads every setting of the installation and the models
-// the settings naming a model can be set to, with the programs the provider lists.
-func (c Config) OpenGetSettings(provider agentport.AgentProvider) *settings.Get {
-	return settings.NewGet(c.ReadSettings(), c.modelsForProvider(provider), c.Plugins(), func() []plugin.Setting { return listAppSettings(c.settings()) })
+func (c Config) openGetSettings(provider agentport.AgentProvider) *settings.Get {
+	return settings.NewGet(c.readSettings(), c.modelsForProvider(provider), c.Plugins(), func() []plugin.Setting { return listAppSettings(c.settings()) })
 }
 
-// OpenWatchSettings builds the use case that reports each setting that changes.
-func (c Config) OpenWatchSettings() *settings.WatchSettingChanges {
+func (c Config) openWatchSettings() *settings.WatchSettingChanges {
 	return openWatchSettings(c.settings())
 }
 
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	handler := &windowsettings.Handler{}
-	handler.Get = w.cfg.OpenGetSettings(w.cfg.AgentProvider())
+	handler.Get = w.cfg.openGetSettings(w.cfg.agentProvider())
 	handler.Values.Write = openWriteSettings(w.cfg.settings())
-	handler.Watch = w.cfg.OpenWatchSettings()
-	handler.Retry = openRetryPlugin(w.cfg.settings(), w.cfg.GetPluginRetrier())
-	if secrets := w.cfg.OpenSecrets(); secrets != nil {
+	handler.Watch = w.cfg.openWatchSettings()
+	handler.Retry = openRetryPlugin(w.cfg.settings(), w.cfg.getPluginRetrier())
+	if secrets := w.cfg.openSecrets(); secrets != nil {
 		handler.ListSecrets = secrets.List
 		handler.Create, handler.Rename, handler.SecretItems.Write = secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write
 		handler.Delete, handler.Move = secrets.Items.Delete, secrets.Items.Move

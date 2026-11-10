@@ -22,7 +22,7 @@ func mountPlugin(w *windowWiring) {
 func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installation) {
 	view := GetWindowView(opened)
 	focusPassages := file.NewFocusPassages(c.VaultReaders(), view)
-	c.SetPluginWindow(windowsession.NewPluginWindow(
+	c.setPluginWindow(windowsession.NewPluginWindow(
 		&opened.State.Runtime,
 		c.FocusNote(db.NoteRefs(), view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
@@ -36,7 +36,7 @@ func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installati
 // shows. It uses the vault use cases of the window, so a plugin and the user see the same errors.
 func (c Config) SetEditorPluginVaultList(opened *editor.Installation) {
 	scenarios := opened.Vaults()
-	c.SetPluginVaultList(windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
+	c.setPluginVaultList(windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    scenarios.Registry.Find,
 		Missing: scenarios.Registry.FolderCheck,

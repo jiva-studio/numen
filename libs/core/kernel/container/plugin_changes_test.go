@@ -19,7 +19,7 @@ func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
 	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(&applied)}})
-	changes, stop := c.WatchPluginChanges()
+	changes, stop := c.watchPluginChanges()
 	defer stop()
 
 	notifyHost(c.settings(), []settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
@@ -36,7 +36,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
 	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(new([]string))}})
-	changes, stop := c.WatchPluginChanges()
+	changes, stop := c.watchPluginChanges()
 	stop()
 
 	notifyHost(c.settings(), nil)

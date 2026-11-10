@@ -11,9 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// OpenCLIVaults builds the use cases of the vault commands over this installation's list. The
-// commands that change what the index remembers open it when they run.
-func (c Config) OpenCLIVaults() (cli.Vaults, error) {
+func (c Config) openCLIVaults() (cli.Vaults, error) {
 	ports, err := c.Registry()
 	if err != nil {
 		return cli.Vaults{}, err
@@ -52,8 +50,7 @@ func (c Config) OpenCLIVaults() (cli.Vaults, error) {
 	}, nil
 }
 
-// OpenCLILinks builds the link query over the index. The caller closes it.
-func (c Config) OpenCLILinks(ctx context.Context) (cli.Links, error) {
+func (c Config) openCLILinks(ctx context.Context) (cli.Links, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return cli.Links{}, err
@@ -62,20 +59,18 @@ func (c Config) OpenCLILinks(ctx context.Context) (cli.Links, error) {
 	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
 }
 
-// OpenCLIScan builds the reading of one vault into the index, with the vectors when a model is
-// installed. A rebuild reads every file again.
-func (c Config) OpenCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+func (c Config) openCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 	indexing := c
 	indexing.ShouldRebuildIndex = rebuild
 	db, err := indexing.OpenIndex(ctx)
 	if err != nil {
 		return cli.Scan{}, err
 	}
-	indexing, err = indexing.OpenPluginWork(ctx, db, v)
+	indexing, err = indexing.openedPluginWork(ctx, db, v)
 	if err != nil {
 		return cli.Scan{}, errors.Join(err, db.Close())
 	}
-	embedder, closeEmbedder, why := indexing.Embedder(ctx)
+	embedder, closeEmbedder, why := indexing.embedder(ctx)
 	read, err := indexing.ReadWholeVault(ctx, db, embedder, v)
 	if err != nil {
 		return cli.Scan{}, errors.Join(err, closeIfOpen(closeEmbedder), db.Close())
@@ -92,20 +87,18 @@ func (c Config) OpenCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (
 	}, nil
 }
 
-// OpenCLISearch builds the search the window runs. Without a model it searches by words, and
-// says why in the Words field.
-func (c Config) OpenCLISearch(
+func (c Config) openCLISearch(
 	ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return cli.Search{}, err
 	}
-	asking, err := c.OpenPluginWork(ctx, db, v)
+	asking, err := c.openedPluginWork(ctx, db, v)
 	if err != nil {
 		return cli.Search{}, errors.Join(err, db.Close())
 	}
-	embedder, closeEmbedder, why := asking.Embedder(ctx)
+	embedder, closeEmbedder, why := asking.embedder(ctx)
 	return cli.Search{
 		Search: asking.NewSearch(db, embedder, errorHandler),
 		Words:  why,
@@ -115,8 +108,7 @@ func (c Config) OpenCLISearch(
 	}, nil
 }
 
-// OpenCLIProblems builds the standard checks over the index. The caller closes it.
-func (c Config) OpenCLIProblems(ctx context.Context) (cli.Problems, error) {
+func (c Config) openCLIProblems(ctx context.Context) (cli.Problems, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return cli.Problems{}, err
@@ -124,10 +116,8 @@ func (c Config) OpenCLIProblems(ctx context.Context) (cli.Problems, error) {
 	return cli.Problems{Problems: c.GetProblems(db.Problems()), Close: db.Close}, nil
 }
 
-// GetCLIPluginCommands builds the commands the enabled plugins declare, and what readies the
-// plugins to run one.
-func (c Config) GetCLIPluginCommands() cli.PluginCommands {
-	return cli.PluginCommands{List: c.GetPluginCommands().List, Open: c.OpenPluginCommands}
+func (c Config) getCLIPluginCommands() cli.PluginCommands {
+	return cli.PluginCommands{List: c.getPluginCommands().List, Open: c.OpenPluginCommands}
 }
 
 func closeIfOpen(closeFn func() error) error {

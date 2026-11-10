@@ -59,14 +59,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// ReportDependencies keeps one task in the list for each dependency being provisioned.
-func (c Config) ReportDependencies(tasks *run.Tasks) {
+func (c Config) reportDependencies(tasks *run.Tasks) {
 	reportDependencies(c.plugins(), tasks)
 }
 
-// GetPluginCatalog is the catalog of the plugins on disk, the disabled ones too, and of the sources
-// the configuration names.
-func (c Config) GetPluginCatalog() *catalog.Service {
+func (c Config) getPluginCatalog() *catalog.Service {
 	return getPluginCatalog(c.plugins())
 }
 
@@ -90,14 +87,11 @@ func (c Config) StopPlugins(ctx context.Context) error {
 	return stopPlugins(c.plugins(), ctx)
 }
 
-// GetPluginCommands is the use cases over the commands the plugins declare.
-func (c Config) GetPluginCommands() plugincommand.Commands {
+func (c Config) getPluginCommands() plugincommand.Commands {
 	return getPluginCommands(c.plugins())
 }
 
-// OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions
-// and the queue through the host with no window.
-func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
+func (c Config) openPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
@@ -106,12 +100,10 @@ func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return c.GetPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
+	return c.getPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
 }
 
-// OpenPluginWork lets the plugins work one vault, its text versions and the queue through the host
-// with no window, over the index given.
-func (c Config) OpenPluginWork(ctx context.Context, db *vault.Index, v domain.Vault) (Config, error) {
+func (c Config) openedPluginWork(ctx context.Context, db *vault.Index, v domain.Vault) (Config, error) {
 	opened, _, err := c.openPluginWork(db, v)
 	return opened, err
 }
@@ -147,13 +139,11 @@ func (c Config) GetPluginServices() PluginServices {
 	return getPluginServices(c.plugins())
 }
 
-// GetPluginRetrier restarts, on request from the window, a plugin the host has suspended.
-func (c Config) GetPluginRetrier() func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
+func (c Config) getPluginRetrier() func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {
 	return getPluginRetrier(c.plugins())
 }
 
-// ReportPluginFailures keeps one task in the list for each plugin the host suspends.
-func (c Config) ReportPluginFailures(tasks *run.Tasks) {
+func (c Config) reportPluginFailures(tasks *run.Tasks) {
 	reportPluginFailures(c.plugins(), tasks)
 }
 
@@ -166,58 +156,43 @@ func (c Config) getPluginName(pluginID string) string {
 	return pluginsGetPluginName(c.plugins(), pluginID)
 }
 
-// SetPluginVaultList sets the list of vaults exposed to plugins.
-func (c Config) SetPluginVaultList(list hostendpoint.VaultList) {
+func (c Config) setPluginVaultList(list hostendpoint.VaultList) {
 	setPluginVaultList(c.plugins(), list)
 }
 
-// OpenPluginCache is where a plugin keeps what it worked out for a vault.
-func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
+func (c Config) openPluginCache() (pluginport.PluginCache, error) {
 	return openPluginCache(c.plugins())
 }
 
-// GetPluginDir is the folder of an installed plugin, and false for one not installed.
-func (c Config) GetPluginDir(id string) (string, bool) {
+func (c Config) getPluginDir(id string) (string, bool) {
 	return getPluginDir(c.plugins(), id)
 }
 
-// GetFrontendPluginIDs are the plugins of the host's target that declare a frontend, in the order of
-// their ids.
-func (c Config) GetFrontendPluginIDs() []string {
+func (c Config) getFrontendPluginIDs() []string {
 	return getFrontendPluginIDs(c.plugins())
 }
 
-// SetPluginWindow sets the window exposed to plugins.
-func (c Config) SetPluginWindow(window hostendpoint.WindowControl) {
+func (c Config) setPluginWindow(window hostendpoint.WindowControl) {
 	setPluginWindow(c.plugins(), window)
 }
 
-// OpenSecrets returns the use cases on the secrets shared between plugins.
-func (c Config) OpenSecrets() *secret.Secrets {
+func (c Config) openSecrets() *secret.Secrets {
 	return openSecrets(c.plugins())
 }
 
-// AgentProvider runs tasks on the programs the plugins with the agent provider capability run.
-func (c Config) AgentProvider() agentport.AgentProvider {
+func (c Config) agentProvider() agentport.AgentProvider {
 	return pluginsAgentProvider(c.plugins())
 }
 
-// GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at
-// every task.
-func (c Config) GetSettingsAgent() agentport.Agent {
+func (c Config) getSettingsAgent() agentport.Agent {
 	return getSettingsAgent(c.plugins())
 }
 
-// OpenChooseTabKind is the choice of the kind of tab a note opens in, over the tab kinds of the
-// enabled plugins.
-func (c Config) OpenChooseTabKind() *tabkind.Choose {
+func (c Config) openChooseTabKind() *tabkind.Choose {
 	return openChooseTabKind(c.plugins())
 }
 
-// WatchPluginChanges reports each time the plugin host applied a batch of settings, which enables,
-// disables and configures plugins, and each time it forgot the failure of a plugin, as after a retry
-// that succeeded. The returned function stops the reports.
-func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
+func (c Config) watchPluginChanges() (<-chan struct{}, func()) {
 	return watchPluginChanges(c.plugins())
 }
 
@@ -673,7 +648,7 @@ func setPluginVault(c pluginsWiring, v *hostendpoint.VaultAccess) {
 
 func setPluginVaultList(c pluginsWiring, list hostendpoint.VaultList) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginVaultList(list)
+		c.PluginHost.setPluginVaultList(list)
 	}
 }
 
@@ -851,7 +826,7 @@ func getFrontendPluginIDs(c pluginsWiring) []string {
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWindow(window)
+		c.PluginHost.setPluginWindow(window)
 	}
 }
 

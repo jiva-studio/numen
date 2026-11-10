@@ -8,9 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// GetEditorAgent is the agent the editor window starts its tasks on: the programs of the plugins
-// with the agent provider capability, with the tools of the host.
-func (c Config) GetEditorAgent() agentport.Agent {
+func (c Config) getEditorAgent() agentport.Agent {
 	return getToolProvider(c.plugins())
 }
 
@@ -21,7 +19,7 @@ func mountAgent(w *windowWiring) {
 		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
 		GetUnreachable: state.Unreachable.Why,
 	}
-	if taking := w.cfg.GetEditorAgent(); taking != nil {
+	if taking := w.cfg.getEditorAgent(); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}
@@ -33,7 +31,7 @@ func mountAgent(w *windowWiring) {
 // has no use case where no agent is configured.
 func (c Config) GetSettingsAgentHandler() *windowagent.Handler {
 	handler := &windowagent.Handler{}
-	if taking := c.GetSettingsAgent(); taking != nil {
+	if taking := c.getSettingsAgent(); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}

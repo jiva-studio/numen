@@ -44,9 +44,9 @@ func newFailingConfig(t *testing.T) Config {
 func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 	cfg := newFailingConfig(t)
 	tasks := run.NewTasks()
-	cfg.ReportPluginFailures(tasks)
+	cfg.reportPluginFailures(tasks)
 
-	failure, err := cfg.GetPluginRetrier()(t.Context(), "md.numen.sample")
+	failure, err := cfg.getPluginRetrier()(t.Context(), "md.numen.sample")
 	if err != nil || failure == nil {
 		t.Fatalf("retry = %+v, %v, want the plugin to fail again", failure, err)
 	}
@@ -68,9 +68,9 @@ func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 // An installation with no plugin host has nothing to retry and nothing to report.
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 	cfg := NewConfig(Config{})
-	cfg.ReportPluginFailures(run.NewTasks())
+	cfg.reportPluginFailures(run.NewTasks())
 
-	_, err := cfg.GetPluginRetrier()(t.Context(), "md.numen.sample")
+	_, err := cfg.getPluginRetrier()(t.Context(), "md.numen.sample")
 
 	var unavailable *plugin.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugin.NotInstalled {

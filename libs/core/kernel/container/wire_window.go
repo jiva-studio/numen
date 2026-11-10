@@ -90,13 +90,13 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// before any component that reports into it.
 	tasks := run.NewTasks()
 	models := &run.Lock{}
-	w.cfg.ReportPluginFailures(tasks)
-	w.cfg.ReportDependencies(tasks)
+	w.cfg.reportPluginFailures(tasks)
+	w.cfg.reportDependencies(tasks)
 	w.cfg.SetPluginWork(tasks, models)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := w.cfg.Embedders(ctx, tasks)
+	embedder, asking, closeEmbedder, why := w.cfg.embedders(ctx, tasks)
 	w.embedder, w.asking = embedder, asking
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }

@@ -61,8 +61,7 @@ func (c Config) NoteWriters() vaultport.NoteWriters {
 	return noteWriters(c.vault())
 }
 
-// FileMovers opens vaults for moving and removing files.
-func (c Config) FileMovers() vaultport.FileMovers {
+func (c Config) fileMovers() vaultport.FileMovers {
 	return fileMovers(c.vault())
 }
 
@@ -71,13 +70,11 @@ func (c Config) VaultLocks() vaultport.VaultLocks {
 	return writeLocks(c.vault())
 }
 
-// GetImportedFiles opens files imported from outside the vault.
-func (c Config) GetImportedFiles() sourceport.ImportedFiles {
+func (c Config) getImportedFiles() sourceport.ImportedFiles {
 	return getImportedFiles(c.vault())
 }
 
-// VaultWatcher monitors vaults for external filesystem changes.
-func (c Config) VaultWatcher() vaultport.VaultWatcher {
+func (c Config) vaultWatcher() vaultport.VaultWatcher {
 	return vaultWatcher(c.vault())
 }
 
@@ -106,8 +103,7 @@ func (c Config) AddVault(ports vaultregistry.Ports, root, name string) (domain.V
 	return addVault(c.vault(), ports, root, name)
 }
 
-// GetKnownVaults builds the use case that lists known vaults and their folder state.
-func (c Config) GetKnownVaults(ports vaultregistry.Ports) *vaultregistry.GetKnownVaults {
+func (c Config) getKnownVaults(ports vaultregistry.Ports) *vaultregistry.GetKnownVaults {
 	return getKnownVaults(c.vault(), ports)
 }
 
@@ -121,8 +117,7 @@ func (c Config) GetSummary(summaries noteport.VaultSummaries) *vaultregistry.Get
 	return getSummary(c.vault(), summaries)
 }
 
-// PickFolder builds the folder picker use case when a dialog is provided.
-func (c Config) PickFolder(dialog machineport.FolderDialog) *picker.PickFolder {
+func (c Config) pickFolder(dialog machineport.FolderDialog) *picker.PickFolder {
 	return pickFolder(c.vault(), dialog)
 }
 
@@ -168,9 +163,7 @@ func (c Config) VaultOpener(db *vault.Index) *vault.VaultOpener {
 	return vaultOpener(c.vault(), db)
 }
 
-// VaultOpenerWith is the same, with the watcher, and the readers the walk reads
-// the vault through, in place of the installation's own.
-func (c Config) VaultOpenerWith(
+func (c Config) vaultOpenerWith(
 	db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
 	return vaultOpenerWith(c.vault(), db, walking, watcher)
