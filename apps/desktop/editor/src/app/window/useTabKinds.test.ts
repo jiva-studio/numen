@@ -56,14 +56,18 @@ const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } 
       findFileIcon: vi.fn((path: string) => (path.endsWith('.pdf') ? 'pdf-icon' : undefined)),
     },
     windowTabs: {
-      registerKinds: vi.fn(),
-      sendText: vi.fn(() => Promise.resolve('chat:1')),
-      findKind: vi.fn((isWanted: (kind: object) => boolean) =>
-        [graphKind, ...(hasChat ? [CHAT] : [])].find(isWanted),
-      ),
-      navigateTabsAt: vi.fn(() => Promise.resolve()),
-      tabs: ref(graph ? [{ id: 'graph:1' }, { id: 'chat:1' }] : [{ id: 'chat:1' }]),
-      getTab: vi.fn((id: string) => open.get(id)),
+      groups: {
+        registerKinds: vi.fn(),
+        sendText: vi.fn(() => Promise.resolve('chat:1')),
+        findKind: vi.fn((isWanted: (kind: object) => boolean) =>
+          [graphKind, ...(hasChat ? [CHAT] : [])].find(isWanted),
+        ),
+      },
+      tabs: {
+        navigateTabsAt: vi.fn(() => Promise.resolve()),
+        tabs: ref(graph ? [{ id: 'graph:1' }, { id: 'chat:1' }] : [{ id: 'chat:1' }]),
+        getTab: vi.fn((id: string) => open.get(id)),
+      },
     },
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },

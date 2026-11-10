@@ -24,11 +24,7 @@ import { useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { useSettingsTab } from '@/pages/settings'
-import type {
-  Installation,
-  InstallationPlugin,
-  InstallationSettings,
-} from '@/pages/settings'
+import type { Installation, InstallationPlugin, InstallationSettings } from '@/pages/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WINDOW_WORDS } from './words'
 import type { WindowTabs } from '@/entities/tab'

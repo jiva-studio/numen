@@ -81,7 +81,7 @@ export function createAppearancePreview(on: PreviewDeps) {
   const close = () => clearTimeout(hold)
 
   return {
-    shown: { current, half: shownHalf, sized },
+    display: { current, half: shownHalf, sized },
     keyboard: { previewTheme, previewMode, previewSize },
     clear,
     restore,

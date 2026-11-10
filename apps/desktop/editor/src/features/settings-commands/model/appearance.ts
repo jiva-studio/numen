@@ -134,7 +134,7 @@ function createThemeWatcher(deps: {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
         await deps.loadAppearance()
-        if (names.includes(deps.preview.shown.current.value)) await deps.applyAppearance()
+        if (names.includes(deps.preview.display.current.value)) await deps.applyAppearance()
       },
     )
 
@@ -175,9 +175,10 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     settings: state.settings,
   })
 
-  const applyAppearance = () => applyTheme(preview.shown.current.value, preview.shown.half.value)
+  const applyAppearance = () =>
+    applyTheme(preview.display.current.value, preview.display.half.value)
   const writeSizes = createSizesWriter(styleElements, sheet)
-  const targetDrawing = watch(preview.shown.sized, writeSizes)
+  const targetDrawing = watch(preview.display.sized, writeSizes)
 
   const loadAppearance = createAppearanceLoader({
     core,
@@ -203,7 +204,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   return {
     state,
     preview: {
-      sized: preview.shown.sized,
+      sized: preview.display.sized,
       /** Applies the theme of a row while the keyboard is on it. */
       previewTheme: preview.keyboard.previewTheme,
       /** Reads the tokens as the half of a row while the keyboard is on it. */

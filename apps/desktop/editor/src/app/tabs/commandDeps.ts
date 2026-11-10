@@ -63,7 +63,7 @@ function findActiveTabAt(windowTabs: WindowTabs, path: string): string | null {
 export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Notes {
   const getTab = (id: string) => windowTabs.tabs.getTab(id)
   return {
-    openFile: (path, title, placement, at) => reached.openFile(path, title, placement, at),
+    openFile: (path, title, placement, place) => reached.openFile(path, title, placement, place),
     getTabAt: (path: string) => reached.getTabAt(path) ?? findActiveTabAt(windowTabs, path),
     getPath: (id: string) => {
       const path = reached.getPath(id)

@@ -23,7 +23,10 @@ export interface Installation {
   readonly secrets: InstallationSecrets
 }
 
-/** The settings of the installation, read and written in place. */
+/**
+ * The settings of the installation, read and written in place. `getPlatform` answers the operating
+ * system of the window: darwin, windows or linux; the `app.platform` of conditions.
+ */
 export interface InstallationSettings {
   /**
    * names one can be set to, and settings written in place.
@@ -39,13 +42,16 @@ export interface InstallationSettings {
    */
   isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
-  /** The operating system of the window: darwin, windows or linux; the `app.platform` of conditions. */
   readonly getPlatform?: (() => string) | undefined
   write(content: readonly SettingEdit[]): void
   readonly file: Readonly<Ref<string>>
 }
 
-/** The plugins of the installation, what they declare and what the window does for them. */
+/**
+ * The plugins of the installation, what they declare and what the window does for them.
+ * `getSettingsViews` answers the components a plugin's frontend registered for its settings
+ * views, by view id; a view the plugin declares and has not registered is absent.
+ */
 export interface InstallationPlugin {
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   readonly app?: Readonly<Ref<readonly PluginSettingInfo[]>>
@@ -68,10 +74,6 @@ export interface InstallationPlugin {
    * deleted, and empty where it was.
    */
   deletePluginData?(pluginId: string): Promise<string>
-  /**
-   * The components a plugin's frontend registered for its settings views, by view id. A view the
-   * plugin declares and has not registered is absent.
-   */
   readonly getSettingsViews?:
     ((pluginId: string) => ReadonlyMap<string, { readonly component: unknown }>) | undefined
 }

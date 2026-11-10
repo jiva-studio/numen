@@ -10,7 +10,7 @@ vi.mock('@/features/command-palette', () => ({
   PALETTE_WORDS: {},
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
-  createCommandPalette: () => ({ open: isOpen }),
+  createCommandPalette: () => ({ palette: { open: isOpen } }),
 }))
 vi.mock('../tabs/commandDeps', () => ({
   createCommandDeps: () => ({}),

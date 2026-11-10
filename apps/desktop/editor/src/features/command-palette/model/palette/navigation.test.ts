@@ -77,8 +77,8 @@ describe('the palette at its list of commands', () => {
 
     expect(steps.steps.value).toStrictEqual([])
     expect(steps.here.value).toBeNull()
-    expect(steps.shown.placeholder.value).toBe(words.typeCommand)
-    expect(steps.shown.step.value).toBe('0::commands')
+    expect(steps.position.placeholder.value).toBe(words.typeCommand)
+    expect(steps.position.step.value).toBe('0::commands')
   })
 })
 
@@ -89,7 +89,7 @@ describe('a step taken', () => {
     steps.stack.pushStep(pending('name'))
 
     expect(happened).toStrictEqual(['drop'])
-    expect(steps.shown.step.value).toBe('1:rename:name')
+    expect(steps.position.step.value).toBe('1:rename:name')
   })
 
   it('asks for the list of vaults only on the step that picks one', () => {
@@ -104,7 +104,7 @@ describe('a step taken', () => {
     const { steps } = createSteps()
 
     steps.stack.pushStep(pending('retypedName'))
-    expect(steps.shown.placeholder.value).toBe(words.typeBack)
+    expect(steps.position.placeholder.value).toBe(words.typeBack)
   })
 
   it('is taken back with what was found and lit release', () => {
@@ -206,7 +206,7 @@ describe('the row a list opens on', () => {
 
     steps.stack.pushStep(pending('items'))
 
-    expect(steps.shown.opensOn.value).toBe('dark')
+    expect(steps.position.opensOn.value).toBe('dark')
   })
 
   it('is none where no row remains now', () => {
@@ -214,7 +214,7 @@ describe('the row a list opens on', () => {
 
     steps.stack.pushStep(pending('items'))
 
-    expect(steps.shown.opensOn.value).toBe('')
+    expect(steps.position.opensOn.value).toBe('')
   })
 
   it('is none on any other step', () => {
@@ -222,6 +222,6 @@ describe('the row a list opens on', () => {
 
     steps.stack.pushStep(pending('name'))
 
-    expect(steps.shown.opensOn.value).toBe('')
+    expect(steps.position.opensOn.value).toBe('')
   })
 })

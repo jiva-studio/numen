@@ -264,7 +264,7 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
     steps,
     here,
     naming: { getStepTitle, getStepLabel },
-    shown: computedFields,
+    position: computedFields,
     stack: {
       pushStep,
       popStep,

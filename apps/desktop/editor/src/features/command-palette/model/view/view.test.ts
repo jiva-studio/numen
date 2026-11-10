@@ -280,9 +280,8 @@ describe('findRowIcon', () => {
 
   it('resolves command and note icons when commands palette is open', () => {
     const commands = {
-      open: ref(true),
-      findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
-      findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+      palette: { open: ref(true) },
+      view: { findTabKind: (id: string) => (id === 'n1' ? 'sample' : null), findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined) },
     } as unknown as Commands
     const search = {
       reads: { findTabKind: () => 'form', findHitFile: () => 'doc.pdf' },
@@ -295,9 +294,8 @@ describe('findRowIcon', () => {
 
   it('resolves search note type, and file hit icons when commands palette is closed', () => {
     const commands = {
-      open: ref(false),
-      findTabKind: () => 'sample',
-      findCommandIcon: () => customIcon,
+      palette: { open: ref(false) },
+      view: { findTabKind: () => 'sample', findCommandIcon: () => customIcon },
     } as unknown as Commands
     const search = {
       reads: {
@@ -320,7 +318,10 @@ describe('the icon of the command that opens a document', () => {
   })
 
   it('is the icon of the command the row of a document offers', () => {
-    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null },
+    }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     expect(
@@ -346,7 +347,10 @@ describe('the two choices of the confirmation that empties the trash', () => {
       command: emptyTrash as Command,
       on: front(),
     }
-    const commands = { open: ref(true), findTabKind: () => null, findCommandIcon: () => null }
+    const commands = {
+      palette: { open: ref(true) },
+      view: { findTabKind: () => null, findCommandIcon: () => null },
+    }
     const search = { reads: { findTabKind: () => null, findHitFile: () => null } }
 
     const items = groups.getConfirmGroup(step, '').items
