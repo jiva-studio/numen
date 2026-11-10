@@ -35,7 +35,6 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 			ReadFile:    file.NewReadFile(vaultreader.Readers{}),
 			RangeReader: file.Read{Readers: vaultreader.Readers{}},
 			OpenWriter:  func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
-			LockVault:   writers.Lock,
 		},
 		Stores: Stores{
 			StoreReaders: func(v domain.Vault, pluginID string) (vault.StoreReader, error) {
@@ -126,11 +125,6 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {
 		t.Errorf("a refused create indexed %v", indexed)
 	}
-	release, err := access.Access().Writer.Lock(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	release()
 }
 
 func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
@@ -193,12 +187,11 @@ func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 
 	_, _, readErr := access.Access().Files.Read(t.Context(), "a.md")
 	_, writeErr := access.Access().Writer.WriteFile(t.Context(), "a.md", nil, domain.FileStat{})
-	_, lockErr := access.Access().Writer.Lock(t.Context())
 	_, notesErr := access.Access().Notes.GetNotes(t.Context(), nil)
 	_, openErr := access.Access().Stores.OpenStore("md.numen.a")
 	_, _, watchErr := access.Access().Watch.Watch(t.Context())
 
-	for name, err := range map[string]error{"read": readErr, "write": writeErr, "lock": lockErr, "notes": notesErr, "store": openErr, "watch": watchErr} {
+	for name, err := range map[string]error{"read": readErr, "write": writeErr, "notes": notesErr, "store": openErr, "watch": watchErr} {
 		if !errors.Is(err, plugin.ErrNoVault) {
 			t.Errorf("%s was %v", name, err)
 		}

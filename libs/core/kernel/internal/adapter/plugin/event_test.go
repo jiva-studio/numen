@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net"
 	"net/http"
@@ -93,7 +94,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 	for id, manifest := range manifests {
 		manifest.ID = id
 		manifest.Backend = catalogmanifest.Backend{Entrypoint: "bin/plugin"}
-		host.Registry.t.plugins[id] = catalogmanifest.Discovered{Manifest: manifest}
+		setPlugin(host, id, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -239,8 +240,8 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 		t.Fatalf("received events %v, want [%s]", got, readyEvent)
 	}
 
-	clock.Advance(idleThreshold + time.Second)
-	evicted := host.Teardown.EvictIdle(t.Context(), idleThreshold, 50*time.Millisecond)
+	clock.Advance(supervision.IdleThreshold + time.Second)
+	evicted := host.Teardown.EvictIdle(t.Context(), supervision.IdleThreshold, 50*time.Millisecond)
 	if !slices.Equal(evicted, []string{parsed.ID}) {
 		t.Fatalf("evicted %v, want [%s]", evicted, parsed.ID)
 	}

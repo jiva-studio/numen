@@ -18,7 +18,7 @@ func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
 	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
-		host.Registry.t.plugins[manifest.ID] = catalogmanifest.Discovered{Manifest: manifest}
+		setPlugin(host, manifest.ID, catalogmanifest.Discovered{Manifest: manifest})
 	}
 	return host
 }

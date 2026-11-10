@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"os"
 	"slices"
@@ -49,7 +50,7 @@ func TestTheReleaseOfAStoppedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 	}
 }
 
-func startKillableLauncher(t *testing.T, echoPort int) (Launcher, func() []*os.Process) {
+func startKillableLauncher(t *testing.T, echoPort int) (supervision.Launcher, func() []*os.Process) {
 	t.Helper()
 	ready := "NUMEN_READY port=" + strconv.Itoa(plugintest.ServeHostPing(t)) + " listener.mcp=" + strconv.Itoa(echoPort)
 	var mu sync.Mutex
@@ -144,8 +145,8 @@ func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 
 func TestASyncKeepsTheFailureOfAPluginThatFailedToStart(t *testing.T) {
 	w := newListenerHost(t)
-	cause := errListenerNotReported
-	if failure := w.host.Failures.recordActivationFailure(listenerPlugin, cause); failure == nil {
+	cause := supervision.ErrListenerNotReported
+	if failure := w.host.Failures.RecordActivationFailure(listenerPlugin, w.host.Registry.set.getName(listenerPlugin), cause); failure == nil {
 		t.Fatal("the failure was not recorded")
 	}
 
@@ -198,7 +199,7 @@ func TestRepeatedActivationFailureIsReportedOnceAndAfterRetry(t *testing.T) {
 		}
 	}
 
-	failure, err := w.host.Activation.RetryPlugin(t.Context(), listenerPlugin)
+	failure, err := w.host.Retry.RetryPlugin(t.Context(), listenerPlugin)
 	if failure == nil && err == nil {
 		t.Fatal("RetryPlugin succeeded for a plugin that does not report its listener")
 	}

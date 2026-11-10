@@ -4,32 +4,39 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ConfigPush gives the running plugins their configuration: the settings, the performance profile
-// and the secrets they declare, each time one of them changes.
+// and the secrets they declare, each time one of them changes. It also keeps the secret
+// declarations of the installed plugins, and drops the permissions of the ones that are gone.
 type ConfigPush struct {
-	t        *table
-	errs     *errorSink
-	settings *Settings
+	registry *Registry
+	sups     *supervision.Supervisors
+	report   func(error)
 	delivery *delivery.Delivery
-	prune    func()
+
+	mu          sync.RWMutex
+	performance string
+	installed   []manifest.Discovered
+	hasScanned  bool
 }
 
-func newConfigPush(t *table, errs *errorSink, settings *Settings) *ConfigPush {
-	c := &ConfigPush{t: t, errs: errs, settings: settings}
+func newConfigPush(registry *Registry, sups *supervision.Supervisors, report func(error)) *ConfigPush {
+	c := &ConfigPush{registry: registry, sups: sups, report: report}
 	c.delivery = delivery.New(delivery.Host{
 		GetSnapshot:   c.getSnapshot,
-		ListPluginIDs: c.listPluginIDs,
-		ReportError:   errs.report,
-		GetClient:     transport.NewClientLookup(t.clients).GetClient,
+		ListPluginIDs: registry.set.listIDs,
+		ReportError:   report,
+		GetClient:     transport.NewClientLookup(sups.Clients()).GetClient,
 	})
 	return c
 }
@@ -43,27 +50,13 @@ func (c *ConfigPush) SetKeyStore(store pluginport.KeyStore) {
 // declarations are dropped.
 func (c *ConfigPush) SetSecretSource(source plugindomain.SecretSource) {
 	c.delivery.SetSource(source)
-	c.prune()
-}
-
-func (c *ConfigPush) getSecretSource() plugindomain.SecretSource {
-	return c.delivery.GetSource()
+	c.pruneSecretPermissions()
 }
 
 // ListDeclarations returns every secret declaration of every installed plugin, in the order of the
 // plugin ids and then of the manifest.
 func (c *ConfigPush) ListDeclarations() []plugindomain.DeclarationKey {
-	c.t.mu.RLock()
-	defer c.t.mu.RUnlock()
-	return c.listDeclarationsLocked()
-}
-
-func (c *ConfigPush) listDeclarationsLocked() []plugindomain.DeclarationKey {
-	var declarations []plugindomain.DeclarationKey
-	for _, p := range c.t.getPluginsInOrderLocked() {
-		declarations = appendDeclarations(declarations, p)
-	}
-	return declarations
+	return c.listDeclarations(nil)
 }
 
 // Refresh sends Configure to each running plugin whose secrets differ from the last list it was
@@ -91,6 +84,31 @@ func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) er
 	return c.delivery.Configure(ctx, pluginID)
 }
 
+// SetPerformanceProfile records the profile of the performance setting and pushes it to every
+// running plugin when it changed. A plugin that is not running receives it with its first
+// Configure call.
+func (c *ConfigPush) SetPerformanceProfile(ctx context.Context, profile string) {
+	c.mu.Lock()
+	if c.performance == profile {
+		c.mu.Unlock()
+		return
+	}
+	c.performance = profile
+	c.mu.Unlock()
+
+	for _, id := range c.sups.ListEndpointOwners() {
+		if err := c.NotifyPluginConfig(ctx, id); err != nil {
+			c.report(fmt.Errorf("push the performance profile to plugin %s: %w", id, err))
+		}
+	}
+}
+
+func (c *ConfigPush) getPerformanceProfile() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.performance
+}
+
 func (c *ConfigPush) awaitFirstConfigure(pluginID string) {
 	c.delivery.AwaitFirstConfigure(pluginID)
 }
@@ -104,34 +122,22 @@ func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) er
 	c.delivery.ClearFirstConfigure(pluginID)
 	c.delivery.Unlock()
 	if configureErr != nil {
-		c.errs.report(fmt.Errorf("push settings to plugin %s: %w", pluginID, configureErr))
+		c.report(fmt.Errorf("push settings to plugin %s: %w", pluginID, configureErr))
 	}
 	return nil
 }
 
-func (c *ConfigPush) listPluginIDs() []string {
-	c.t.mu.RLock()
-	defer c.t.mu.RUnlock()
-	ids := make([]string, 0, len(c.t.plugins))
-	for _, p := range c.t.getPluginsInOrderLocked() {
-		ids = append(ids, p.Manifest.ID)
-	}
-	return ids
-}
-
 func (c *ConfigPush) getSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
-	profile := c.settings.getPerformanceProfile()
-	c.t.mu.RLock()
-	defer c.t.mu.RUnlock()
-	endpoint, hasEndpoint := c.t.endpoints[pluginID]
-	sup, hasSup := c.t.supervisors[pluginID]
+	profile := c.getPerformanceProfile()
+	endpoint, hasEndpoint := c.sups.GetEndpoint(pluginID)
+	sup, hasSup := c.sups.Get(pluginID)
 	if !hasEndpoint || !hasSup {
 		return delivery.Snapshot{}, false, nil
 	}
 	if state := sup.GetState(); state != lifecycle.StateActive && state != lifecycle.StateIdle {
 		return delivery.Snapshot{}, false, nil
 	}
-	rawSettings := c.t.getPluginSettingsLocked(pluginID)
+	rawSettings := c.registry.set.getPluginSettings(pluginID)
 	cfgJSON, err := json.Marshal(rawSettings)
 	if err != nil {
 		return delivery.Snapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
@@ -145,13 +151,13 @@ func (c *ConfigPush) getSnapshot(pluginID string) (delivery.Snapshot, bool, erro
 		Endpoint:   endpoint,
 		ConfigJSON: string(cfgJSON),
 		Values:     values,
-		Declared:   c.listActiveDeclarationsLocked(pluginID, rawSettings),
-		Requested:  plugindomain.ListAskedSecretGroups(c.listDeclarationsLocked()),
+		Declared:   c.listActiveDeclarations(pluginID, rawSettings),
+		Requested:  plugindomain.ListAskedSecretGroups(c.listDeclarations(nil)),
 	}, true, nil
 }
 
-func (c *ConfigPush) listActiveDeclarationsLocked(pluginID string, values map[string]any) []manifest.SecretDeclaration {
-	p, ok := c.t.plugins[pluginID]
+func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]any) []manifest.SecretDeclaration {
+	p, ok := c.registry.set.getKnown(pluginID)
 	if !ok {
 		return nil
 	}
@@ -164,6 +170,23 @@ func (c *ConfigPush) listActiveDeclarationsLocked(pluginID string, values map[st
 	return active
 }
 
+func (c *ConfigPush) listDeclarations(installed []manifest.Discovered) []plugindomain.DeclarationKey {
+	v, release := c.registry.set.view()
+	defer release()
+	var declarations []plugindomain.DeclarationKey
+	installedIDs := make(map[string]bool, len(installed))
+	for _, p := range installed {
+		installedIDs[p.Manifest.ID] = true
+		declarations = appendDeclarations(declarations, p)
+	}
+	for _, p := range v.ordered() {
+		if !installedIDs[p.Manifest.ID] {
+			declarations = appendDeclarations(declarations, p)
+		}
+	}
+	return declarations
+}
+
 func appendDeclarations(declarations []plugindomain.DeclarationKey, p manifest.Discovered) []plugindomain.DeclarationKey {
 	for _, declaration := range p.Manifest.Secrets {
 		declarations = append(declarations, plugindomain.DeclarationKey{
@@ -171,4 +194,25 @@ func appendDeclarations(declarations []plugindomain.DeclarationKey, p manifest.D
 		})
 	}
 	return declarations
+}
+
+func (c *ConfigPush) recordScan(installed []manifest.Discovered) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.installed = installed
+	c.hasScanned = true
+}
+
+func (c *ConfigPush) pruneSecretPermissions() {
+	prune := c.delivery.GetSource().Prune
+	c.mu.RLock()
+	skip := !c.hasScanned || c.registry.set.hasProblems()
+	installed := c.installed
+	c.mu.RUnlock()
+	if prune == nil || skip {
+		return
+	}
+	if err := prune(c.listDeclarations(installed)); err != nil {
+		c.report(fmt.Errorf("drop the permissions of removed declarations: %w", err))
+	}
 }

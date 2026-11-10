@@ -26,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -141,7 +142,8 @@ func mountNote(w *windowWiring) {
 	notes := w.notes
 	addresses := notewindow.NewAddresses(state, notes.Refer.GetLinkAddress)
 	session := editor.NewSession(state)
-	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename)
+	save, create := note.NewSaveProse(&notes.Edit.Write, session, session), note.NewCreateNote(&notes.Edit.Create, session, session)
+	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
 	outline := notewindow.NewOutline(
 		state, w.files.ListTabKinds,
 		query.NewGetOpeningNote(w.db.NoteQueries.OpeningNote),

@@ -3,7 +3,6 @@ package vault
 import (
 	"context"
 	"net/http"
-	"sync"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -17,10 +16,6 @@ import (
 type (
 	filesCalls struct {
 		*calls
-
-		mu    sync.Mutex
-		locks map[string]func()
-		next  int
 	}
 	watchCalls       struct{ *calls }
 	cacheCalls       struct{ *calls }
@@ -63,7 +58,7 @@ func NewHandler(auth Authority, source Source, options ...connect.HandlerOption)
 		methods: v1.File_numen_v1_hostvault_proto.Services().ByName("HostVaultService").Methods(),
 		options: options,
 	}
-	files := &filesCalls{calls: base, locks: map[string]func(){}}
+	files := &filesCalls{base}
 	watch, cache := &watchCalls{base}, &cacheCalls{base}
 	lookups, arrange := &lookupsCalls{base}, &arrangeCalls{base}
 	connections, vaults := &connectionsCalls{base}, &vaultsCalls{base}

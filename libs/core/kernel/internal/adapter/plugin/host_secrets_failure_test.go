@@ -138,18 +138,18 @@ func prepareActivation(t *testing.T, host *Host, dormant bool) func() error {
 
 func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx context.Context) error {
 	t.Helper()
-	port := host.Registry.t.endpoints[secretPluginID].Port
+	port := endpointOf(host, secretPluginID).Port
 	sleeper := plugintest.StartSleepProcess(t).Process
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return sleeper, plugintest.GetReadyOutput(port), nil
 	})
-	p := host.Registry.t.plugins[secretPluginID]
+	p := getRawPlugin(host, secretPluginID)
 	p.Manifest.Backend = manifest.Backend{Entrypoint: "bin/plugin"}
 	activating := lifecycle.New(nil)
 	activating.SetActivating()
 	if dormant {
-		delete(host.Registry.t.endpoints, secretPluginID)
-		host.Registry.t.supervisors[secretPluginID] = activating
+		dropEndpoint(host, secretPluginID)
+		putSupervisor(host, secretPluginID, activating)
 	}
 	return func(ctx context.Context) error {
 		_, err := host.Activation.runActivation(ctx, p, activating)
@@ -164,14 +164,14 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(probe))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	host.Registry.t.plugins[pluginID] = manifest.Discovered{Manifest: manifest.Manifest{
+	setPlugin(host, pluginID, manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      pluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: declared, Title: "API key"}},
-	}}
+	}})
 	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
-	host.Registry.t.supervisors[pluginID] = sup
-	host.Registry.t.endpoints[pluginID] = plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
+	putSupervisor(host, pluginID, sup)
+	putEndpoint(host, pluginID, plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"})
 	source.allow(pluginID)
 	return probe
 }
@@ -202,7 +202,7 @@ func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 	if failed.count() != 0 {
 		t.Errorf("%d failures passed on, want none", failed.count())
 	}
-	sup := host.Registry.t.supervisors[secretPluginID]
+	sup := supervisorOf(host, secretPluginID)
 	if sup.Failure.IsFailed() {
 		t.Error("the plugin is marked as failed")
 	}

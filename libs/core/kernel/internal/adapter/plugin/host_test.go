@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -44,7 +45,7 @@ func newDiscoveredHostAt(t *testing.T, clock machineport.Clock, root string) *Ho
 	return host
 }
 
-func launchProcess(cmd *exec.Cmd, fallback int) Launcher {
+func launchProcess(cmd *exec.Cmd, fallback int) supervision.Launcher {
 	return func(_ context.Context, _ manifest.Discovered, port int, _ string) (*os.Process, io.ReadCloser, error) {
 		if port == 0 {
 			port = fallback
@@ -53,7 +54,7 @@ func launchProcess(cmd *exec.Cmd, fallback int) Launcher {
 	}
 }
 
-func launchProcessAt(cmd *exec.Cmd, port int) Launcher {
+func launchProcessAt(cmd *exec.Cmd, port int) supervision.Launcher {
 	return func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	}
@@ -176,7 +177,7 @@ func TestHostLifecycleWithMockLauncher(t *testing.T) {
 
 func TestHostEvictLoopTeardown(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	if host.Teardown.isEvictStopped {
+	if !host.Teardown.stopper.IsEvicting() {
 		t.Fatal("expected evict loop to be running")
 	}
 
@@ -185,7 +186,7 @@ func TestHostEvictLoopTeardown(t *testing.T) {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if !host.Teardown.isEvictStopped {
+	if host.Teardown.stopper.IsEvicting() {
 		t.Fatal("expected evict loop to be stopped after TeardownAll")
 	}
 
@@ -248,7 +249,7 @@ func TestHostEmitEventActivation(t *testing.T) {
 	ctx := t.Context()
 
 	// Initial state is dormant
-	sup := host.Registry.t.supervisors["org.example.sample"]
+	sup := supervisorOf(host, "org.example.sample")
 	if sup == nil || sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("expected initial state dormant, got %v", sup.GetState())
 	}
@@ -674,9 +675,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	closer := &testCloser{}
-	host.Processes.stdinsMu.Lock()
-	host.Processes.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}] = closer
-	host.Processes.stdinsMu.Unlock()
+	host.Processes.HoldStdin("org.example.sample", cmd.Process.Pid, closer)
 
 	host.Activation.Release("org.example.sample")
 	host.Activation.Release("org.example.sample")
@@ -696,14 +695,12 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		t.Error("expected stdin closer to be closed on eviction")
 	}
 
-	host.Processes.stdinsMu.Lock()
-	_, stdinExists := host.Processes.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}]
-	host.Processes.stdinsMu.Unlock()
+	stdinExists := host.Processes.CountStdins() > 0
 	if stdinExists {
 		t.Error("expected stdin pipe to be deleted from host.stdins")
 	}
 
-	sup := host.Registry.t.supervisors["org.example.sample"]
+	sup := supervisorOf(host, "org.example.sample")
 	if sup.GetState() != lifecycle.StateDormant {
 		t.Errorf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -732,9 +729,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 	}
 
 	closer := &testCloser{}
-	host.Processes.stdinsMu.Lock()
-	host.Processes.stdins[stdinKey{pluginID: "org.example.sample", pid: cmd.Process.Pid}] = closer
-	host.Processes.stdinsMu.Unlock()
+	host.Processes.HoldStdin("org.example.sample", cmd.Process.Pid, closer)
 
 	if err := host.Teardown.TeardownAll(ctx, 500*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
@@ -748,9 +743,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		t.Error("expected stdin closer to be closed during TeardownAll")
 	}
 
-	host.Processes.stdinsMu.Lock()
-	stdinCount := len(host.Processes.stdins)
-	host.Processes.stdinsMu.Unlock()
+	stdinCount := host.Processes.CountStdins()
 	if stdinCount != 0 {
 		t.Errorf("expected empty host.stdins, got %d entries", stdinCount)
 	}
@@ -796,16 +789,22 @@ func TestHostEvictIdleNonBlocking(t *testing.T) {
 
 	<-rpcReceived
 
-	if !host.Registry.t.mu.TryLock() {
-		t.Fatal("expected host.mu to be unlocked while EvictIdle is tearing down")
+	lookedUp := make(chan struct{})
+	go func() {
+		host.Registry.sups.Get("org.example.sample")
+		close(lookedUp)
+	}()
+	select {
+	case <-lookedUp:
+	case <-time.After(time.Second):
+		t.Fatal("expected the supervisors to be unlocked while EvictIdle is tearing down")
 	}
-	host.Registry.t.mu.Unlock()
 
 	close(releaseShutdown)
 	<-isDone
 }
 
-func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Process) Launcher {
+func startSleepLauncher(t *testing.T, started *atomic.Int32, procs *[]*os.Process) supervision.Launcher {
 	t.Helper()
 	pingPort := plugintest.ServeHostPing(t)
 	var mu sync.Mutex
@@ -837,15 +836,10 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-
-	host.Registry.t.mu.RLock()
-	sup := host.Registry.t.supervisors["org.example.sample"]
-	host.Registry.t.mu.RUnlock()
+	sup := supervisorOf(host, "org.example.sample")
 	plugintest.KillProcess(t, procs[0])
 	plugintest.WaitUntil(t, "the crashed plugin to become dormant", func() bool {
-		host.Registry.t.mu.RLock()
-		defer host.Registry.t.mu.RUnlock()
-		_, hasEndpoint := host.Registry.t.endpoints["org.example.sample"]
+		_, hasEndpoint := host.Registry.sups.GetEndpoint("org.example.sample")
 		return sup.GetState() == lifecycle.StateDormant && !hasEndpoint
 	})
 
@@ -899,17 +893,15 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Registry.t.mu.Lock()
-	delete(host.Registry.t.endpoints, "org.example.sample")
-	sup := host.Registry.t.supervisors["org.example.sample"]
-	host.Registry.t.mu.Unlock()
+	dropEndpoint(host, "org.example.sample")
+	sup := supervisorOf(host, "org.example.sample")
 	firstExit := sup.GetExitSignal()
 
 	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
 	if err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	if isEmptyEndpoint(endpoint) {
+	if supervision.IsNoEndpoint(endpoint) {
 		t.Fatal("EnsureActive returned an empty endpoint")
 	}
 	if started.Load() != 2 {
@@ -927,14 +919,10 @@ func TestEnsureActiveRetiresARunningProcessWhoseEndpointIsMissing(t *testing.T) 
 
 func TestTheExitOfAProcessDropsItsEndpoint(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	host.Registry.t.mu.Lock()
-	host.Registry.t.endpoints["p"] = plugindomain.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"}
-	host.Registry.t.mu.Unlock()
+	putEndpoint(host, "p", plugindomain.Endpoint{Host: "127.0.0.1", Port: 4321, Token: "old"})
 
-	host.Teardown.dropEndpoint("p")
-	host.Registry.t.mu.RLock()
-	_, stillThere := host.Registry.t.endpoints["p"]
-	host.Registry.t.mu.RUnlock()
+	host.Registry.sups.Drop("p")
+	_, stillThere := host.Registry.sups.GetEndpoint("p")
 	if stillThere {
 		t.Fatal("the endpoint of a stopped plugin was kept")
 	}
@@ -972,12 +960,10 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 		if err != nil {
 			t.Fatalf("round %d: EnsureActive failed: %v", i, err)
 		}
-		if isEmptyEndpoint(endpoint) {
+		if supervision.IsNoEndpoint(endpoint) {
 			t.Fatalf("round %d: EnsureActive returned an empty endpoint", i)
 		}
-		host.Registry.t.mu.RLock()
-		sup := host.Registry.t.supervisors["org.example.sample"]
-		host.Registry.t.mu.RUnlock()
+		sup := supervisorOf(host, "org.example.sample")
 		if state := sup.GetState(); state != lifecycle.StateActive {
 			t.Fatalf("round %d: a held plugin is in state %v", i, state)
 		}
@@ -998,12 +984,10 @@ func TestAPluginInUseIsNotEvictedWhileItIsBeingAcquired(t *testing.T) {
 func TestCloseStdin_PreservesNewerProcessStdin(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	oldPipe, newPipe := &testCloser{}, &testCloser{}
-	host.Processes.stdinsMu.Lock()
-	host.Processes.stdins[stdinKey{pluginID: "p", pid: 1}] = oldPipe
-	host.Processes.stdins[stdinKey{pluginID: "p", pid: 2}] = newPipe
-	host.Processes.stdinsMu.Unlock()
+	host.Processes.HoldStdin("p", 1, oldPipe)
+	host.Processes.HoldStdin("p", 2, newPipe)
 
-	host.Processes.closeStdin("p", 1)
+	host.Processes.CloseStdin("p", 1)
 
 	if !oldPipe.getIsClosed() {
 		t.Fatal("expected the evicted process stdin to be closed")
@@ -1027,10 +1011,8 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Activation.Release("org.example.sample")
-	host.Registry.t.mu.Lock()
-	sup := host.Registry.t.supervisors["org.example.sample"]
-	delete(host.Registry.t.endpoints, "org.example.sample")
-	host.Registry.t.mu.Unlock()
+	sup := supervisorOf(host, "org.example.sample")
+	dropEndpoint(host, "org.example.sample")
 	if !sup.BeginDeactivation(0, testsupport.GetMachine().Now()) {
 		t.Fatal("expected the idle plugin to begin deactivating")
 	}
@@ -1058,7 +1040,7 @@ func TestEnsureActiveWaitsForAPluginThatIsBeingDeactivated(t *testing.T) {
 	if got.err != nil {
 		t.Fatalf("EnsureActive failed: %v", got.err)
 	}
-	if isEmptyEndpoint(got.endpoint) || got.endpoint.Token == first.Token {
+	if supervision.IsNoEndpoint(got.endpoint) || got.endpoint.Token == first.Token {
 		t.Fatalf("expected a fresh endpoint from a new process, got %+v", got.endpoint)
 	}
 	if started.Load() != 2 {
@@ -1078,10 +1060,10 @@ func newHostOfProviders(t *testing.T) *Host {
 		}
 	})
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
-		host.Registry.t.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{
+		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{
 			ID:           id,
 			Capabilities: []string{bridge.CapabilityEmbedding},
-		}}
+		}})
 	}
 	return host
 }
@@ -1143,14 +1125,11 @@ func TestHostEvictIdleKeepsAPluginIdleForLessThanTheThreshold(t *testing.T) {
 	host.Activation.Release("org.example.sample")
 	host.Activation.Release("org.example.sample")
 
-	evicted := host.Teardown.EvictIdle(ctx, idleThreshold, 50*time.Millisecond)
+	evicted := host.Teardown.EvictIdle(ctx, supervision.IdleThreshold, 50*time.Millisecond)
 	if len(evicted) != 0 {
 		t.Fatalf("expected 0 evicted before the idle threshold, got %v", evicted)
 	}
-
-	host.Registry.t.mu.RLock()
-	sup := host.Registry.t.supervisors["org.example.sample"]
-	host.Registry.t.mu.RUnlock()
+	sup := supervisorOf(host, "org.example.sample")
 	if state := sup.GetState(); state != lifecycle.StateIdle {
 		t.Errorf("expected supervisor to stay StateIdle, got %v", state)
 	}
@@ -1180,8 +1159,8 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 	for id, one := range plugins {
 		sup := lifecycle.New(nil)
 		sup.Permissions.Set(one.perms)
-		host.Registry.t.supervisors[id] = sup
-		host.Registry.t.endpoints[id] = plugindomain.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token}
+		putSupervisor(host, id, sup)
+		putEndpoint(host, id, plugindomain.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token})
 	}
 	return host
 }
@@ -1265,7 +1244,7 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 	services, _ := lendEndpoint(host, hostendpoint.Address)
 	services.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
 
-	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1291,7 +1270,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 	var reported []error
 	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatalf("the launch failed: %v", err)
 	}
@@ -1342,16 +1321,13 @@ func TestHost_EndpointBindsLoopbackOnly(t *testing.T) {
 
 func TestHostProcessLimitsConfig(t *testing.T) {
 	h := NewHost(testsupport.GetMachine(), "test")
-	if h.Processes.limits != process.DefaultLimits() {
-		t.Fatalf("NewHost holds %v, want the default limits", h.Processes.limits)
+	if h.Processes.GetProcessLimits() != process.DefaultLimits() {
+		t.Fatalf("NewHost holds %v, want the default limits", h.Processes.GetProcessLimits())
 	}
 
 	customLimits := process.Limits{CPULimitSeconds: 60}
 	h.Processes.SetProcessLimits(customLimits)
-
-	h.Registry.t.mu.RLock()
-	limits := h.Processes.limits
-	h.Registry.t.mu.RUnlock()
+	limits := h.Processes.GetProcessLimits()
 
 	if limits != customLimits {
 		t.Fatalf("got %v, want %v", limits, customLimits)

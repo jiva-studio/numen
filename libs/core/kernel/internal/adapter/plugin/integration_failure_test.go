@@ -66,7 +66,7 @@ func TestRetryStartsAFailedPluginAndTellsItRecovered(t *testing.T) {
 	}
 
 	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
-	failure, err := host.Activation.RetryPlugin(t.Context(), failingPluginID)
+	failure, err := host.Retry.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil || failure != nil {
 		t.Fatalf("RetryPlugin() = %+v, %v, want the plugin started", failure, err)
 	}
@@ -88,7 +88,7 @@ func TestARetryThatFailsAgainAnswersTheReason(t *testing.T) {
 	var notified []plugindomain.Failure
 	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure) })
 
-	failure, err := host.Activation.RetryPlugin(t.Context(), failingPluginID)
+	failure, err := host.Retry.RetryPlugin(t.Context(), failingPluginID)
 	if err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
@@ -135,7 +135,7 @@ func TestTheReasonOfAFailedStartIsListedUntilAStartSucceeds(t *testing.T) {
 func TestRetryOfAPluginTheHostDoesNotKnowIsNotInstalled(t *testing.T) {
 	host := newDiscoveredHost(t)
 
-	_, err := host.Activation.RetryPlugin(t.Context(), "md.numen.missing")
+	_, err := host.Retry.RetryPlugin(t.Context(), "md.numen.missing")
 
 	var unavailable *plugindomain.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.NotInstalled {
@@ -146,7 +146,7 @@ func TestRetryOfAPluginTheHostDoesNotKnowIsNotInstalled(t *testing.T) {
 func TestEnablingAFailedPluginTellsItRecovered(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Activation.RetryPlugin(t.Context(), failingPluginID); err != nil {
+	if _, err := host.Retry.RetryPlugin(t.Context(), failingPluginID); err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
 	var recovered []string
@@ -186,7 +186,7 @@ func TestAFailureIsDescribedInWordsAPersonReads(t *testing.T) {
 func TestDisablingAFailedPluginClearsItsFailure(t *testing.T) {
 	host := newDiscoveredHost(t)
 	host.Processes.SetLauncher(failLaunching)
-	if _, err := host.Activation.RetryPlugin(t.Context(), failingPluginID); err != nil {
+	if _, err := host.Retry.RetryPlugin(t.Context(), failingPluginID); err != nil {
 		t.Fatalf("RetryPlugin() error = %v", err)
 	}
 	var cleared []string

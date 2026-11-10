@@ -25,7 +25,6 @@ type Files struct {
 	ReadFile    *file.ReadFile
 	RangeReader file.Read
 	OpenWriter  func(v domain.Vault) (NoteWriter, error)
-	LockVault   func(ctx context.Context, v domain.Vault) (func(), error)
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
 
 	session *Session
@@ -119,15 +118,6 @@ func (f Files) CreateFile(ctx context.Context, path string, content []byte) erro
 		return fmt.Errorf("index %s after create: %w", path, err)
 	}
 	return nil
-}
-
-// Lock holds the writers of the vault until the release is called.
-func (f Files) Lock(ctx context.Context) (func(), error) {
-	v, err := f.session.open()
-	if err != nil {
-		return nil, err
-	}
-	return f.LockVault(ctx, v)
 }
 
 // Scan updates the index for the files named.

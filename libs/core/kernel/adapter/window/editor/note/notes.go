@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"time"
 
 	"connectrpc.com/connect"
@@ -51,22 +51,15 @@ func (h *Prose) WriteNote(
 	if err != nil {
 		return nil, err
 	}
-	// The counter wraps the write, not the response, so closing waits for
-	// writes that reach the vault.
-	if !h.writes.BeginWrite() {
+	pos, indexOutdated, err := h.save.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
+	if errors.Is(err, windowdomain.ErrClosing) {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.writes.FinishWrite()
-	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault has happened, so the response carries the
 	// file stat the client uses at its next save. The response also sets
 	// IsIndexOutdated when the index did not follow, because the prose is on disk
 	// but search does not include it.
-	indexOutdated := h.writes.IsIndexOutdated(err)
 	if err == nil || indexOutdated {
-		// The written prose requires new vectors. The pending chunks are
-		// tracked in the index, so several saves are embedded in one pass.
-		h.writes.NoteWritten()
 		return connect.NewResponse(&v1.WriteNoteResponse{
 			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
@@ -94,22 +87,14 @@ func (h *Prose) CreateNote(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !h.writes.BeginWrite() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.writes.FinishWrite()
-
 	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Links: links}
-	var made note.CreateResult
-	if strings.TrimSpace(creating.Title) == "" {
-		made, err = h.create.ExecuteUntitled(ctx, showing, creating)
-		if errors.Is(err, domain.ErrNoFreeName) {
-			return connect.NewResponse(&v1.CreateNoteResponse{IsNameExhausted: true}), nil
-		}
-	} else {
-		made, err = h.create.Execute(ctx, showing, creating)
+	made, indexOutdated, err := h.create.Execute(ctx, showing, creating)
+	switch {
+	case errors.Is(err, windowdomain.ErrClosing):
+		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
+	case errors.Is(err, domain.ErrNoFreeName):
+		return connect.NewResponse(&v1.CreateNoteResponse{IsNameExhausted: true}), nil
 	}
-	indexOutdated := h.writes.IsIndexOutdated(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so the response carries it. The
 		// index catches up after the write, and the watcher repeats that

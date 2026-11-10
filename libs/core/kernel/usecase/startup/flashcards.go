@@ -6,27 +6,19 @@ import (
 
 // OpenFlashcards opens the registry and the index of the flashcards window, binds the notes, the vault
 // list, the vault indexer, the plugin vault, the change feed and the themes to the window, and reports
-// what it cannot follow.
+// what it cannot follow. The editor window may write the same index
+// at the same time.
 type OpenFlashcards[Registry any, Index Closer, Vaults any] struct {
-	// Label begins each message to the user.
-	Label        string
-	OpenRegistry func() (Registry, error)
-	// OpenIndex opens the index; the window of the editor may write the same index at the same time.
-	OpenIndex func(ctx context.Context) (Index, error)
-	// OpenVaults opens the vaults the window has open, over the index.
-	OpenVaults func(index Index) Vaults
-	// BindWindow binds the notes, the vault list and the vault indexer to the window.
-	BindWindow func(ctx context.Context, registry Registry, index Index, vaults Vaults)
-	// InstallVault lets the plugins work the vault the window indexes.
-	InstallVault func(registry Registry, index Index) error
-	// FollowChanges returns each time the index file changes.
+	Label         string
+	OpenRegistry  func() (Registry, error)
+	OpenIndex     func(ctx context.Context) (Index, error)
+	OpenVaults    func(index Index) Vaults
+	BindWindow    func(ctx context.Context, registry Registry, index Index, vaults Vaults)
+	InstallVault  func(registry Registry, index Index) error
 	FollowChanges func(ctx context.Context) (<-chan struct{}, error)
-	// ReportChanges tells the window of each change that comes through changes.
 	ReportChanges func(ctx context.Context, changes <-chan struct{})
-	// BindThemes gives the window its themes; say receives what the themes answer.
-	BindThemes func(say func(response string)) error
-	// Notify shows a message to the user.
-	Notify func(message string)
+	BindThemes    func(say func(response string)) error
+	Notify        func(message string)
 }
 
 // FlashcardsOpened is what the start opened and the application closes when it ends. Themes is why the

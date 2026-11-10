@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
@@ -22,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/hold"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -50,10 +52,6 @@ func openNoteWriter(c pluginsWiring, v domain.Vault) (hostvault.NoteWriter, erro
 		return nil, err
 	}
 	return writer, nil
-}
-
-func lockVault(c pluginsWiring, ctx context.Context, v domain.Vault) (func(), error) {
-	return c.VaultLocks.Lock(ctx, v)
 }
 
 func installPluginVault(c pluginsWiring,
@@ -89,6 +87,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	arranger := newArranger(scenarios, db, hooks.Notes, current)
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
+		Locks: hold.NewLocks(c.VaultLocks, clock.System{}),
 		Session: hostvault.Session{
 			Current:    current,
 			Vaults:     registry.Vaults.List,
@@ -103,7 +102,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			ReadFile:    file.NewReadFile(c.VaultReaders),
 			RangeReader: file.Read{Readers: c.VaultReaders},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
-			LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
 			Index:       index,
 		},
 		Lookups: hostvault.Lookups{

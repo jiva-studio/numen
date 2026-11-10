@@ -137,7 +137,6 @@ func getResources(c Config) *Resources {
 
 func getPrograms(c Config) *settingsadapter.ProgramList { return getResources(c).programs }
 
-// host returns the plugin host of the configuration, or the host that runs nothing while it names none.
 func (c Config) host() *PluginHost {
 	if c.PluginHost == nil {
 		return newAbsentHost(plugindomain.NotInstalled, nil)
@@ -145,8 +144,6 @@ func (c Config) host() *PluginHost {
 	return c.PluginHost
 }
 
-// runningHost returns the plugin host that runs plugins for the scenarios assembled here: the host of the
-// configuration, or in safe mode a host that runs nothing.
 func (c Config) runningHost() *PluginHost {
 	if c.SafeMode {
 		return newAbsentHost(plugindomain.Disabled, errSafeMode)

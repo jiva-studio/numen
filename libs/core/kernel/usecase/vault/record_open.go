@@ -7,6 +7,7 @@ package vault
 
 import (
 	"context"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -69,7 +70,7 @@ func NewWriteOpenTabs(store windowport.OpenTabsStore) WriteOpenTabs {
 }
 
 // Execute replaces the tabs kept for the vault.
-func (u WriteOpenTabs) Execute(ctx context.Context, v domain.Vault, open domain.OpenTabs) error {
+func (u WriteOpenTabs) Execute(ctx context.Context, v domain.Vault, open windowdomain.OpenTabs) error {
 	return u.store.WriteOpenTabs(ctx, v, open)
 }
 
@@ -84,6 +85,6 @@ func NewReadOpenTabs(store windowport.OpenTabsStore) ReadOpenTabs {
 }
 
 // Execute returns the tabs last written for the vault, and none where nothing was written.
-func (u ReadOpenTabs) Execute(ctx context.Context, v domain.Vault) (domain.OpenTabs, error) {
+func (u ReadOpenTabs) Execute(ctx context.Context, v domain.Vault) (windowdomain.OpenTabs, error) {
 	return u.store.ReadOpenTabs(ctx, v)
 }

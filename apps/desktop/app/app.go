@@ -326,7 +326,7 @@ func connectWindow(
 ) {
 	opened.SetFolderDialog(folderdialog.New(window))
 
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.State.GetCurrentVault(), open)) }
+	naming := func(open windowdomain.OpenTabs) { window.SetTitle(getWindowTitle(opened.State.GetCurrentVault(), open)) }
 	opened.State.NotifyOpenTabs = naming
 
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {
@@ -370,7 +370,7 @@ func importDroppedFiles(ctx context.Context, opened *editor.Installation, event 
 
 const droppedInto = "data-file-drop-target"
 
-func getWindowTitle(v domain.Vault, open domain.OpenTabs) string {
+func getWindowTitle(v domain.Vault, open windowdomain.OpenTabs) string {
 	if front, target := open.GetActiveTab(); target && front.Path != "" {
 		return "numen — " + path.Base(front.Path)
 	}

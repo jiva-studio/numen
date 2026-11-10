@@ -161,12 +161,12 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		Runtime: PluginRuntime{
 			PluginActivator:    host.Activation,
-			PluginRetrier:      host.Activation,
+			PluginRetrier:      host.Retry,
 			PluginDiscoverer:   host.Discovery,
 			PluginLister:       host.Registry,
 			PluginResolver:     host.Registry,
 			PluginEventEmitter: host.Events,
-			PluginBinding:      host.Mode,
+			PluginBinding:      host.Binding(),
 			ClientLookup:       host.Activation.ClientLookup(),
 			TextPlugins:        host.Registry,
 			PluginFailures:     host.Failures,

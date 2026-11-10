@@ -132,7 +132,6 @@ func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 	return app.Run()
 }
 
-// notifyUser tells the user on the error output what the start could not follow.
 func notifyUser(message string) {
 	fmt.Fprintln(os.Stderr, message)
 }

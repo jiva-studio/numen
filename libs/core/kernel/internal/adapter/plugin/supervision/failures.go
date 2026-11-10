@@ -1,4 +1,4 @@
-package plugin
+package supervision
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/errsink"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
@@ -13,9 +14,9 @@ import (
 // Failures keeps the plugins whose start failed, reports them to the callbacks registered, and
 // forgets a failure once the plugin starts or is switched on or off.
 type Failures struct {
-	t     *table
+	sups  *Supervisors
 	clock machineport.Clock
-	errs  *errorSink
+	errs  *errsink.Sink
 
 	mu              sync.Mutex
 	pending         []plugindomain.Failure
@@ -24,13 +25,14 @@ type Failures struct {
 	reportedTargets map[string]struct{}
 }
 
-func newFailures(t *table, clock machineport.Clock, errs *errorSink) *Failures {
-	return &Failures{t: t, clock: clock, errs: errs, reportedTargets: make(map[string]struct{})}
+// NewFailures returns the failures of the plugins the supervisors track. Problems the host meets go to errs.
+func NewFailures(sups *Supervisors, clock machineport.Clock, errs *errsink.Sink) *Failures {
+	return &Failures{sups: sups, clock: clock, errs: errs, reportedTargets: make(map[string]struct{})}
 }
 
 // SetErrorHandler registers a callback for problems the host meets outside a call, such as a failed shutdown.
 func (f *Failures) SetErrorHandler(handler eventbus.ErrorHandler) {
-	f.errs.set(handler)
+	f.errs.Set(handler)
 }
 
 // SetOnPluginFailed registers a callback invoked each time a start of a plugin fails.
@@ -50,24 +52,23 @@ func (f *Failures) SetOnFailureCleared(fn func(pluginID string)) {
 // IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended until
 // its failure is cleared.
 func (f *Failures) IsPluginSuspended(pluginID string) bool {
-	f.t.mu.RLock()
-	defer f.t.mu.RUnlock()
-	sup, ok := f.t.supervisors[pluginID]
+	sup, ok := f.sups.Get(pluginID)
 	return ok && sup.Failure.GetCause() != nil
 }
 
-func (f *Failures) newFailureLocked(pluginID string, sup *lifecycle.Supervisor, cause error) plugindomain.Failure {
+func newFailure(pluginID, name string, sup *lifecycle.Supervisor, cause error) plugindomain.Failure {
 	return plugindomain.Failure{
 		PluginID: pluginID,
-		Name:     f.t.plugins[pluginID].Manifest.Name,
+		Name:     name,
 		Reason:   lifecycle.DescribeFailure(cause),
 		Detail:   cause.Error(),
 		At:       sup.Failure.GetFailedAt(),
 	}
 }
 
-func (f *Failures) getFailureLocked(pluginID string) *plugindomain.Failure {
-	sup, ok := f.t.supervisors[pluginID]
+// Get returns the failure of the plugin's last start, or nil.
+func (f *Failures) Get(pluginID, name string) *plugindomain.Failure {
+	sup, ok := f.sups.Get(pluginID)
 	if !ok {
 		return nil
 	}
@@ -75,7 +76,7 @@ func (f *Failures) getFailureLocked(pluginID string) *plugindomain.Failure {
 	if cause == nil {
 		return nil
 	}
-	failure := f.newFailureLocked(pluginID, sup, cause)
+	failure := newFailure(pluginID, name, sup, cause)
 	return &failure
 }
 
@@ -85,32 +86,31 @@ func (f *Failures) enqueue(failure plugindomain.Failure) {
 	f.pending = append(f.pending, failure)
 }
 
-func (f *Failures) failActivation(ctx context.Context, pluginID string, sup *lifecycle.Supervisor, cause error) {
-	f.t.mu.Lock()
-	defer f.t.mu.Unlock()
+// FailActivation sets a plugin whose start failed dormant, and records and queues the failure unless ctx ended.
+func (f *Failures) FailActivation(ctx context.Context, pluginID, name string, sup *lifecycle.Supervisor, cause error) {
 	if sup.GetState() != lifecycle.StateActivating {
 		return
 	}
 	sup.SetDormant(cause)
 	if ctx.Err() == nil {
 		sup.Failure.Record(f.clock.Now(), cause)
-		f.enqueue(f.newFailureLocked(pluginID, sup, cause))
+		f.enqueue(newFailure(pluginID, name, sup, cause))
 	}
 }
 
-func (f *Failures) recordActivationFailure(pluginID string, cause error) *plugindomain.Failure {
-	f.t.mu.Lock()
-	defer f.t.mu.Unlock()
-	sup, ok := f.t.supervisors[pluginID]
+// RecordActivationFailure records why a plugin failed outside its start, and returns the failure unless the plugin had one.
+func (f *Failures) RecordActivationFailure(pluginID, name string, cause error) *plugindomain.Failure {
+	sup, ok := f.sups.Get(pluginID)
 	if !ok || !sup.Failure.Record(f.clock.Now(), cause) {
 		return nil
 	}
-	failure := f.newFailureLocked(pluginID, sup, cause)
+	failure := newFailure(pluginID, name, sup, cause)
 	f.enqueue(failure)
 	return &failure
 }
 
-func (f *Failures) deliver() {
+// Deliver hands the failures queued to the callback registered.
+func (f *Failures) Deliver() {
 	f.mu.Lock()
 	failures := f.pending
 	f.pending = nil
@@ -127,16 +127,14 @@ func (f *Failures) deliver() {
 
 // ClearFailure forgets the failure of the plugin, which makes it startable again.
 func (f *Failures) ClearFailure(pluginID string) {
-	f.t.mu.RLock()
-	sup := f.t.supervisors[pluginID]
-	f.t.mu.RUnlock()
-	if sup != nil {
-		f.clear(pluginID, sup)
+	if sup, ok := f.sups.Get(pluginID); ok && sup != nil {
+		f.Clear(pluginID, sup)
 	}
 }
 
-func (f *Failures) clear(pluginID string, sup *lifecycle.Supervisor) {
-	f.forgetTargetReport(pluginID)
+// Clear forgets the failure of the supervisor of a plugin and tells the callback registered.
+func (f *Failures) Clear(pluginID string, sup *lifecycle.Supervisor) {
+	f.ForgetTargetReport(pluginID)
 	if !sup.Failure.Clear() {
 		return
 	}
@@ -148,13 +146,15 @@ func (f *Failures) clear(pluginID string, sup *lifecycle.Supervisor) {
 	}
 }
 
-func (f *Failures) forgetTargetReport(pluginID string) {
+// ForgetTargetReport forgets that the failure of a plugin was reported through a listener.
+func (f *Failures) ForgetTargetReport(pluginID string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	delete(f.reportedTargets, pluginID)
 }
 
-func (f *Failures) markTargetResult(pluginID string, err error) (wasReported bool) {
+// MarkTargetResult records the result of starting a plugin for a listener and returns whether a failure was reported before.
+func (f *Failures) MarkTargetResult(pluginID string, err error) (wasReported bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	_, wasReported = f.reportedTargets[pluginID]
