@@ -77,7 +77,8 @@ func (s *Services) UseNotes() {
 	addresses := notewindow.NewAddresses(s.state, use.GetLinkAddress)
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
-		notewindow.NewProse(session, addresses, use.Read, use.Write, use.Create, use.Rename),
+		notewindow.NewProse(session, addresses, use.Read,
+			ptr(note.NewSaveProse(*use.Write, session, session)), ptr(note.NewCreateNote(*use.Create, session, session)), use.Rename),
 		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
 		notewindow.NewLinks(session, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
 		notewindow.NewConnections(session, nil, nil, nil, nil, nil),
@@ -204,3 +205,5 @@ func ViewOf(state *State) windowsession.View {
 	notices := state.Notices
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
 }
+
+func ptr[T any](v T) *T { return &v }

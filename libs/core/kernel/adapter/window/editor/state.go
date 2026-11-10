@@ -7,6 +7,7 @@ package editor
 
 import (
 	"context"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
@@ -31,7 +32,7 @@ type State struct {
 
 	OpenVault func(context.Context, domain.Vault, *windowsession.PluginOpen) error
 
-	NotifyOpenTabs func(domain.OpenTabs)
+	NotifyOpenTabs func(windowdomain.OpenTabs)
 
 	DetachTab func(context.Context, window.DetachedTab) error
 
@@ -112,7 +113,7 @@ func (s *State) GetVaultState(ctx context.Context) window.VaultState {
 
 // ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells
 // the application.
-func (s *State) ReportOpenTabs(open domain.OpenTabs) {
+func (s *State) ReportOpenTabs(open windowdomain.OpenTabs) {
 	s.Runtime.ReportOpenTabs(open)
 	if s.NotifyOpenTabs != nil {
 		s.NotifyOpenTabs(open)

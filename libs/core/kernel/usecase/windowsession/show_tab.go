@@ -4,11 +4,11 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"slices"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // defaultTabBound is how long ShowTab waits when Deps.TabBound is zero.
@@ -22,12 +22,12 @@ type ShowTab struct {
 // Execute asks the window to make the open tab with the id the active one and returns the open tabs
 // as the window reports them once it is. An id with no open tab returns fs.ErrNotExist, and a tab the
 // window does not report active in time returns plugin.ErrTabNotShown.
-func (u ShowTab) Execute(ctx context.Context, id string) (domain.OpenTabs, error) {
+func (u ShowTab) Execute(ctx context.Context, id string) (windowdomain.OpenTabs, error) {
 	rt, deps := u.life.rt, u.life.deps
 	report := rt.openTabsReports.wait()
 	open := rt.GetOpenTabs()
-	if !slices.ContainsFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id }) {
-		return domain.OpenTabs{}, fmt.Errorf("editor: %q: %w", id, plugin.ErrTabNotOpen)
+	if !slices.ContainsFunc(open.Tabs, func(tab windowdomain.Tab) bool { return tab.ID == id }) {
+		return windowdomain.OpenTabs{}, fmt.Errorf("editor: %q: %w", id, plugin.ErrTabNotOpen)
 	}
 	deps.Window.TabFront.Publish(id)
 	if open.ActiveID == id {
@@ -45,9 +45,9 @@ func (u ShowTab) Execute(ctx context.Context, id string) (domain.OpenTabs, error
 			}
 		case <-bound.Done():
 			if err := ctx.Err(); err != nil {
-				return domain.OpenTabs{}, err
+				return windowdomain.OpenTabs{}, err
 			}
-			return domain.OpenTabs{}, fmt.Errorf("editor: activate tab %q within %s: %w", id, wait, plugin.ErrTabNotShown)
+			return windowdomain.OpenTabs{}, fmt.Errorf("editor: activate tab %q within %s: %w", id, wait, plugin.ErrTabNotShown)
 		}
 	}
 }

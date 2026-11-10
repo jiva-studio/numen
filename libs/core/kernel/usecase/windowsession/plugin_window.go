@@ -2,6 +2,7 @@ package windowsession
 
 import (
 	"context"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -29,7 +30,7 @@ func (f PassagesFocusFunc) FocusPassages(
 
 // TabShowing makes an open tab the active one.
 type TabShowing interface {
-	Execute(ctx context.Context, id string) (domain.OpenTabs, error)
+	Execute(ctx context.Context, id string) (windowdomain.OpenTabs, error)
 }
 
 // PluginWindow lets the plugins that call the host move the window: focus a note or the passages of
@@ -73,18 +74,18 @@ func (w PluginWindow) FocusPassages(ctx context.Context, path string, passages [
 }
 
 // ReadOpenTabs returns the tabs the window last reported, and the active one.
-func (w PluginWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {
+func (w PluginWindow) ReadOpenTabs(context.Context) (windowdomain.OpenTabs, error) {
 	if _, err := w.getVault(); err != nil {
-		return domain.OpenTabs{}, err
+		return windowdomain.OpenTabs{}, err
 	}
 	return w.rt.GetOpenTabs(), nil
 }
 
 // ActivateTab makes the open tab with the id the active tab, and returns the open tabs as the window
 // reports them afterwards.
-func (w PluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error) {
+func (w PluginWindow) ActivateTab(ctx context.Context, id string) (windowdomain.OpenTabs, error) {
 	if _, err := w.getVault(); err != nil {
-		return domain.OpenTabs{}, err
+		return windowdomain.OpenTabs{}, err
 	}
 	return w.tabs.Execute(ctx, id)
 }

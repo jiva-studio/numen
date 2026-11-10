@@ -1,4 +1,4 @@
-package domain
+package window
 
 // OpenTabs is the set of tabs open in the user's window and the tab that is
 // active.

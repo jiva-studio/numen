@@ -2,6 +2,7 @@ package windowsession
 
 import (
 	"context"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"sync"
 	"sync/atomic"
 
@@ -22,7 +23,7 @@ type Runtime struct {
 	model  atomic.Value
 	recipe atomic.Value
 
-	openTabs        atomic.Pointer[domain.OpenTabs]
+	openTabs        atomic.Pointer[windowdomain.OpenTabs]
 	openTabsReports reportSignal
 
 	lock  sync.Mutex
@@ -99,18 +100,18 @@ func getText(v *atomic.Value) string {
 }
 
 // ReportOpenTabs keeps the tabs the window reported and wakes whoever waits for a report.
-func (r *Runtime) ReportOpenTabs(open domain.OpenTabs) {
+func (r *Runtime) ReportOpenTabs(open windowdomain.OpenTabs) {
 	r.openTabs.Store(&open)
 	r.openTabsReports.notify()
 }
 
 // GetOpenTabs returns the open tabs as last reported by the window, or the empty set when the window
 // has not reported any.
-func (r *Runtime) GetOpenTabs() domain.OpenTabs {
+func (r *Runtime) GetOpenTabs() windowdomain.OpenTabs {
 	if open := r.openTabs.Load(); open != nil {
 		return *open
 	}
-	return domain.OpenTabs{}
+	return windowdomain.OpenTabs{}
 }
 
 // reportSignal closes a channel when a report arrives. The zero value is ready to use.

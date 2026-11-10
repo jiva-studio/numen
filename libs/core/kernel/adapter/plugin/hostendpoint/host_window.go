@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"math"
 	"net/http"
@@ -132,7 +133,7 @@ func (e *windowEndpoint) ActivateTab(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: code}), err
 	}
-	index := slices.IndexFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id })
+	index := slices.IndexFunc(open.Tabs, func(tab windowdomain.Tab) bool { return tab.ID == id })
 	if index < 0 {
 		return connect.NewResponse(&v1.ActivateTabResponse{Error: v1.HostWindowErrorCode_HOST_WINDOW_ERROR_CODE_NOT_FOUND}), nil
 	}
@@ -142,7 +143,7 @@ func (e *windowEndpoint) ActivateTab(
 	}), nil
 }
 
-func convertTabToWire(tab domain.Tab) *v1.OpenTab {
+func convertTabToWire(tab windowdomain.Tab) *v1.OpenTab {
 	out := &v1.OpenTab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title}
 	if place := tab.Place; place != nil {
 		out.Place = &v1.TabPlace{

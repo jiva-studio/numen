@@ -2,18 +2,18 @@ package windowsession
 
 import (
 	"errors"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func reportTabs(active string) domain.OpenTabs {
-	return domain.OpenTabs{
+func reportTabs(active string) windowdomain.OpenTabs {
+	return windowdomain.OpenTabs{
 		ActiveID: active,
-		Tabs:     []domain.Tab{{ID: "note:one", Kind: "note"}, {ID: "plex:two", Kind: "plex"}},
+		Tabs:     []windowdomain.Tab{{ID: "note:one", Kind: "note"}, {ID: "plex:two", Kind: "plex"}},
 	}
 }
 

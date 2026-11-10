@@ -3,6 +3,7 @@ package editor
 import (
 	"context"
 	"errors"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -48,13 +49,13 @@ func newPluginWindow(
 }
 
 // memoryTabs keeps the open tabs of each vault in memory.
-type memoryTabs map[domain.VaultID]domain.OpenTabs
+type memoryTabs map[domain.VaultID]windowdomain.OpenTabs
 
-func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (domain.OpenTabs, error) {
+func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (windowdomain.OpenTabs, error) {
 	return m[v.ID], nil
 }
 
-func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open domain.OpenTabs) error {
+func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open windowdomain.OpenTabs) error {
 	m[v.ID] = open
 	return nil
 }
@@ -147,13 +148,13 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := domain.OpenTabs{
+	want := windowdomain.OpenTabs{
 		ActiveID: "tab-2",
-		Tabs: []domain.Tab{
+		Tabs: []windowdomain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &domain.TabPlace{Page: 4, PageCount: 80}},
-			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &domain.TabPlace{PositionSeconds: &atStart}},
-			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &domain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
+			{ID: "tab-3", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &windowdomain.TabPlace{PositionSeconds: &atStart}},
+			{ID: "tab-4", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &windowdomain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -257,7 +258,7 @@ func (f activateFixture) receiveTabID(t *testing.T, wait time.Duration) *v1.Watc
 
 // activationResult is what one ActivateTab call returned.
 type activationResult struct {
-	open domain.OpenTabs
+	open windowdomain.OpenTabs
 	err  error
 }
 
