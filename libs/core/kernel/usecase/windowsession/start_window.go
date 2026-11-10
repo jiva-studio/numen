@@ -20,11 +20,11 @@ func (u StartWindow) Execute(ctx context.Context, first domain.Vault) {
 		u.life.say("not embedding: %v\n", why)
 		u.life.deps.Window.Tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: why.Error()})
 	}
-	u.followModel()
+	u.followModel(ctx)
 	u.life.startVault(ctx, first, u.life.deps.IsRebuilding)
 }
 
-func (u StartWindow) followModel() {
+func (u StartWindow) followModel(ctx context.Context) {
 	deps := u.life.deps
 	if deps.Index.Model == nil {
 		return
@@ -35,7 +35,7 @@ func (u StartWindow) followModel() {
 			deps.Index.Wake.WakeSources()
 		}
 		if isChunkSizeChanged {
-			u.rebuild.Execute()
+			u.rebuild.Execute(ctx)
 		}
 	})
 }

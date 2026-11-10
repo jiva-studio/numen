@@ -15,8 +15,6 @@ import (
 // locked while that happens are decisions of the window session use case. A window adapter maps a
 // request onto a use case; it holds no lock and sets no bound on a wait.
 
-// getWaitCalls are the functions that bound or schedule a wait. The ticker of a stream that resends its
-// last message is not one of them: it keeps a connection alive and decides nothing.
 func getWaitCalls() map[string]map[string]bool {
 	return map[string]map[string]bool{
 		"context": {"WithTimeout": true, "WithDeadline": true, "WithTimeoutCause": true, "WithDeadlineCause": true},

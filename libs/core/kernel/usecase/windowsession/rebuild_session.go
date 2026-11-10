@@ -10,7 +10,7 @@ type RebuildSession struct {
 
 // Execute stops the passes behind the vault and starts them again. A window that shows no vault or has
 // closed is left as it is.
-func (u RebuildSession) Execute() {
+func (u RebuildSession) Execute(ctx context.Context) {
 	rt := u.life.rt
 	rt.lock.Lock()
 	defer rt.lock.Unlock()
@@ -20,5 +20,5 @@ func (u RebuildSession) Execute() {
 	}
 	u.life.stopVault()
 	u.life.resetStatus()
-	u.life.startVault(context.Background(), current, false)
+	u.life.startVault(ctx, current, false)
 }

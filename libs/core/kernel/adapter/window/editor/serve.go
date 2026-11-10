@@ -111,7 +111,7 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 
 // Close shuts the door on every question, stops the passes behind the vault,
 // waits for them, and closes what the window holds open.
-func (o *Installation) Close() error { return o.session.Closing.Close.Execute() }
+func (o *Installation) Close() error { return o.session.Closing.Close.Execute(context.Background()) }
 
 // Show puts a vault in the window, in place of the current one or as the first. `open` is the plugin
 // open whose lock the switch shares, nil for a user switch.

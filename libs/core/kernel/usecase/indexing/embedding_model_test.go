@@ -46,7 +46,6 @@ func newChunking(tokens int) *announcing {
 	return &announcing{model: embedding.Model{Name: "first", Dimensions: 8, Pooling: "mean", ChunkTokens: tokens}}
 }
 
-// watchChunkSizes returns the chunk size flag of each announcement of the embedder.
 func watchChunkSizes(embedder *announcing, sizes ...int) []bool {
 	var changed []bool
 	indexing.NewEmbedding(embedder, nil).OnModelChange(func(isChunkSizeChanged bool) {

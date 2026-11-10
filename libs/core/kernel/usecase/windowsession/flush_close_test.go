@@ -46,14 +46,13 @@ func (c closing) Close(context.Context) error {
 }
 
 func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t *testing.T) {
-	var log *eventLog
-	w := newTestWindow(t, func(deps *Deps) {
-		log = deps.Shutdown.Door.(door).log
+	log := &eventLog{}
+	w := newLoggedWindow(t, log, func(deps *Deps) {
 		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket"}, closing{log: log, name: "index"}}
 	})
 	w.open(t, garden())
 
-	if err := w.scenarios.Closing.Close.Execute(); err != nil {
+	if err := w.scenarios.Closing.Close.Execute(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,13 +64,13 @@ func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t 
 
 func TestClosingReportsEveryResourceThatFailedToClose(t *testing.T) {
 	socket, index := errors.New("the socket stays"), errors.New("the index is locked")
-	w := newTestWindow(t, func(deps *Deps) {
-		log := deps.Shutdown.Door.(door).log
+	log := &eventLog{}
+	w := newLoggedWindow(t, log, func(deps *Deps) {
 		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket", err: socket}, closing{log: log, name: "index", err: index}}
 	})
 	w.open(t, garden())
 
-	err := w.scenarios.Closing.Close.Execute()
+	err := w.scenarios.Closing.Close.Execute(t.Context())
 
 	if !errors.Is(err, socket) || !errors.Is(err, index) {
 		t.Errorf("closing returned %v, want both failures", err)

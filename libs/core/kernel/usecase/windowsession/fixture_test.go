@@ -229,7 +229,12 @@ type testWindow struct {
 
 func newTestWindow(t *testing.T, edit func(*Deps)) *testWindow {
 	t.Helper()
-	log := &eventLog{}
+	return newLoggedWindow(t, &eventLog{}, edit)
+}
+
+// newLoggedWindow is a window whose fakes write their events to log.
+func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow {
+	t.Helper()
 	w := &testWindow{
 		rt:      &Runtime{},
 		pages:   &pageSet{log: log},
@@ -261,8 +266,9 @@ func newTestWindow(t *testing.T, edit func(*Deps)) *testWindow {
 	}
 	w.scenarios = NewScenarios(w.rt, deps)
 	t.Cleanup(func() {
-		// A test that closed the window itself sees its failures in the close that cleans up.
-		_ = w.scenarios.Closing.Close.Execute()
+		if err := w.scenarios.Closing.Close.Execute(context.Background()); err != nil {
+			t.Log(err)
+		}
 	})
 	return w
 }

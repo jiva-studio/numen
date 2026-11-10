@@ -17,14 +17,14 @@ type CloseWindow struct {
 
 // Execute closes the window. The resources close in the order they are given, which is the order they
 // depend on each other in.
-func (u CloseWindow) Execute() error {
+func (u CloseWindow) Execute(ctx context.Context) error {
 	deps := u.life.deps
 	// Searches, note reads and link lookups read the index directly; the index
 	// closes after the last of them has finished.
 	deps.Shutdown.Door.Close()
 	u.life.stopVault()
 
-	bound, stop := context.WithTimeout(context.Background(), ShutdownBound)
+	bound, stop := context.WithTimeout(context.WithoutCancel(ctx), ShutdownBound)
 	defer stop()
 	var failures []error
 	for _, closer := range deps.Shutdown.Closers {

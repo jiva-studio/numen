@@ -109,7 +109,7 @@ func (w wiring) startSession(
 	})
 	session.Start.Execute(ctx, v)
 	return func() {
-		if err := session.Closing.Close.Execute(); err != nil {
+		if err := session.Closing.Close.Execute(ctx); err != nil {
 			t.Error(err)
 		}
 	}
