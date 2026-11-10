@@ -7,7 +7,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
 )
 
-func TestARunNobodyOpenedIsNotFound(t *testing.T) {
+func TestGetRunReturnsErrNoRunForAnUnopenedRun(t *testing.T) {
 	r := sessions.NewRegistry()
 	if _, err := r.GetRun("v1", "r1"); !errors.Is(err, sessions.ErrNoRun) {
 		t.Fatalf("expected ErrNoRun, got %v", err)

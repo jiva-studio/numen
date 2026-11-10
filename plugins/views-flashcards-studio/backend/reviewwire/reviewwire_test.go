@@ -77,9 +77,9 @@ func TestAWatchThatCannotFollowTheChangesIsUnavailable(t *testing.T) {
 	if failure, ok := errors.AsType[*server.APIError](err); !ok || failure.Code != server.CodeUnavailable {
 		t.Fatalf("expected an unavailable API error, got %v", err)
 	}
-	gone := errors.New("write failed")
-	if got := NewWatchError(gone); !errors.Is(got, gone) {
-		t.Fatalf("a listener that has gone is returned as it came, got %v", got)
+	failure := errors.New("write failed")
+	if got := NewWatchError(failure); !errors.Is(got, failure) {
+		t.Fatalf("a listener that has failure is returned as it came, got %v", got)
 	}
 	if got := NewWatchError(nil); got != nil {
 		t.Fatalf("expected nil for a watch that ended cleanly, got %v", got)

@@ -36,7 +36,7 @@ func TestGetRowFolderIsTheFolderANoteMadeFromARowGoesIn(t *testing.T) {
 	}
 }
 
-func TestGetRowFolderRefusesARowThatIsGone(t *testing.T) {
+func TestGetRowFolderReturnsErrRowGoneForAMissingRow(t *testing.T) {
 	_, err := cards.GetRowFolder(t.Context(), statter{"Gone.md": host.ErrNotExist}, "Gone.md")
 	if !errors.Is(err, cards.ErrRowGone) {
 		t.Errorf("expected ErrRowGone, got %v", err)

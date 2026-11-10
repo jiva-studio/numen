@@ -36,7 +36,7 @@ func TestCountReportsAVaultStillBeingIndexedWithoutCountingIt(t *testing.T) {
 	}
 }
 
-func TestCountSaysWhyAVaultWasNotCounted(t *testing.T) {
+func TestCountReturnsTheUnreadReason(t *testing.T) {
 	failed := indexer{state: host.IndexState{Status: host.IndexFailed, Reason: "walk failed"}}
 	if got := vaultcount.Count(t.Context(), failed, counter{}, domain.Vault{}); got.Unread != "walk failed" {
 		t.Errorf("a vault that failed to index came back as %+v", got)
@@ -85,16 +85,16 @@ func TestStartStopsWhenTheContextEnds(t *testing.T) {
 }
 
 func drain(counted <-chan int) <-chan struct{} {
-	done := make(chan struct{})
+	stop := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(stop)
 		for range counted {
 		}
 	}()
-	return done
+	return stop
 }
 
-func TestForwardHandsOnEachResultAndStopsOnAFailure(t *testing.T) {
+func TestForwardStopsOnTheFirstCallbackError(t *testing.T) {
 	counted := make(chan int, 3)
 	counted <- 1
 	counted <- 2

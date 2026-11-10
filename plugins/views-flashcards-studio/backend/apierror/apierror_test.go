@@ -41,7 +41,7 @@ func TestGetCardModelErrorNamesWhyNoCardModelWasRead(t *testing.T) {
 	}
 }
 
-func TestDescribeCreateSaysWhyTheFileWasNotMade(t *testing.T) {
+func TestDescribeCreateReturnsTheReasonByCode(t *testing.T) {
 	if got := apierror.DescribeCreate(api.ErrorCodeInvalidName); got != "a note cannot be called that" {
 		t.Fatalf("unexpected invalid name error: %q", got)
 	}
@@ -65,7 +65,7 @@ func TestConvertOutcomeIsSilentForAReadThatSucceeded(t *testing.T) {
 	}
 }
 
-func TestGetErrorCodeLeavesAFailureOfThePluginUnnamed(t *testing.T) {
+func TestGetErrorCodeReturnsFalseForAnUnmappedFailure(t *testing.T) {
 	if code, ok := apierror.GetErrorCode(errors.New("unmapped")); ok || code != api.ErrorCodeUnspecified {
 		t.Fatalf("unexpected GetErrorCode(unmapped): %v, %v", code, ok)
 	}

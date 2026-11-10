@@ -4,7 +4,7 @@ import "testing"
 
 func TestGetLimitKeepsARequestWithinWhatOneResponseCarries(t *testing.T) {
 	for _, one := range []struct {
-		asked int32
+		limit int32
 		want  int
 	}{
 		{0, MaxCardModels},
@@ -13,8 +13,8 @@ func TestGetLimitKeepsARequestWithinWhatOneResponseCarries(t *testing.T) {
 		{MaxCardModels, MaxCardModels},
 		{MaxCardModels + 1, MaxCardModels},
 	} {
-		if got := GetLimit(one.asked); got != one.want {
-			t.Errorf("a request for %d is answered with %d, want %d", one.asked, got, one.want)
+		if got := GetLimit(one.limit); got != one.want {
+			t.Errorf("a request for %d is answered with %d, want %d", one.limit, got, one.want)
 		}
 	}
 }
