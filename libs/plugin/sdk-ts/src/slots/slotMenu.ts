@@ -86,8 +86,7 @@ function createRows(entries: readonly SlotItem[], parts: MenuParts): MenuItem[] 
     }
     const groupName = String(group)
     if (entry.kind === 'view') {
-      const component = entry.component as Component
-      rows.push({ id: entry.key, text: entry.view, group: groupName, component })
+      rows.push({ id: entry.key, text: entry.view, group: groupName, component: entry.component })
       continue
     }
     if (entry.icon !== undefined) parts.icons.set(entry.key, entry.icon)

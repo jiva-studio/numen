@@ -45,7 +45,8 @@ const createStrip = (
   const moves: { to: number; smoothing: string }[] = []
   let scrollLeftValue = 0
   let smoothing = ''
-  Object.defineProperty(window_.style, 'scrollBehavior', {
+  Object.defineProperty(CSSStyleDeclaration.prototype, 'scrollBehavior', {
+    configurable: true,
     get: () => smoothing,
     set: (to: string) => {
       smoothing = to

@@ -6,11 +6,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
 import { PALETTE_WORDS } from '@/features/command-palette'
-import {
-  createNameItem,
-  resolveChoice,
-  type NameMatch,
-} from '@/features/command-palette/model/search/lookup'
+import { createNameItem, resolveChoice, type NameMatch } from '@/testing/paletteRows'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import {
   createRealWindow,

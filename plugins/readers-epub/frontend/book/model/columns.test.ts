@@ -107,9 +107,11 @@ describe('how tall a column is once the text is drawn', () => {
   }
 
   const readItem = (box: HTMLElement, text: HTMLElement): string => {
-    const setProperty = vi.spyOn(text.style, 'setProperty')
+    const setProperty = vi.spyOn(CSSStyleDeclaration.prototype, 'setProperty')
     setUp(800, 600).readColumns(box, text)
-    return setProperty.mock.calls.find(([name]) => name === '--book-paper')?.[1] ?? ''
+    const paper = setProperty.mock.calls.find(([name]) => name === '--book-paper')?.[1] ?? ''
+    setProperty.mockRestore()
+    return paper
   }
 
   it('is the whole lines of a paragraph that fit the box', () => {

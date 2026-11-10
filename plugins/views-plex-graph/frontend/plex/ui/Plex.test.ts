@@ -183,7 +183,8 @@ describe('how wide a box is drawn', () => {
    * The document, resolving the tokens a box carries into pixels. jsdom
    */
   const stubStyles = () => {
-    const engine = window.getComputedStyle.bind(window)
+    const engine: (element: Element, pseudo?: string | null) => unknown =
+      window.getComputedStyle.bind(window)
 
     vi.spyOn(window, 'getComputedStyle').mockImplementation(((
       element: Element,

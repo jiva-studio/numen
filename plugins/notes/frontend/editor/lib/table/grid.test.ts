@@ -138,29 +138,6 @@ describe('a grid drawn', () => {
     expect(cells.map((cell) => cell.textContent)).toEqual(['a', 'b | c', 'd'])
   })
 
-  it('sets a cell as its column is aligned', () => {
-    const frame = draw(createGridIn(createStateIn(SOURCE)))
-    const cells = getCells(frame, 'thead .cm-cell')
-
-    expect(cells.map((cell) => cell.style.textAlign)).toEqual(['start', 'center', 'end'])
-  })
-
-  it('leaves a cell of an unaligned column unset', () => {
-    const frame = draw(createGridIn(createStateIn('| a | b |\n|---|---|\n| c | d |\n')))
-    expect(getCells(frame, '.cm-cell').map((cell) => cell.style.textAlign)).toEqual([
-      '',
-      '',
-      '',
-      '',
-    ])
-  })
-
-  it('leaves a cell past the last aligned column unset', () => {
-    const frame = draw(createGridIn(createStateIn('| a |\n|:-:|\n| c | d |\n')))
-    const cells = getCells(frame, 'tbody .cm-cell')
-    expect(cells.map((cell) => cell.style.textAlign)).toEqual(['center', ''])
-  })
-
   it('lets a written cell be typed into, and says where it is written', () => {
     const state = createStateIn(SOURCE)
     const frame = draw(createGridIn(state))

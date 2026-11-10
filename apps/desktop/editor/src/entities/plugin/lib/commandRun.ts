@@ -1,7 +1,7 @@
 import type { WhenReader } from '@numen/plugin-loader'
 
 /** Whether the condition of the command reads its target, so a run of it names the path it is over. */
-export function isOverTarget(command: { readonly when?: string }, whenReader: WhenReader): boolean {
+function isOverTarget(command: { readonly when?: string }, whenReader: WhenReader): boolean {
   return (
     whenReader.getCondition(command.when)?.names.some((name) => name.startsWith('target.')) ?? false
   )

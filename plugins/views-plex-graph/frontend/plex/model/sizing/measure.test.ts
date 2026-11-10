@@ -59,7 +59,8 @@ const isLabel = (element: Element): boolean =>
   element.previousElementSibling !== null
 
 function stubStyles() {
-  const engine = window.getComputedStyle.bind(window)
+  const engine: (element: Element, pseudo?: string | null) => unknown =
+    window.getComputedStyle.bind(window)
 
   vi.spyOn(window, 'getComputedStyle').mockImplementation(((
     element: Element,

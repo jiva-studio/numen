@@ -4,6 +4,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
+import { Puzzle } from '@lucide/vue'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { COMMAND, commands as commandRegistry } from '@/entities/command'
 import { createInvocation } from '@/features/command-palette'
@@ -417,12 +418,12 @@ describe('the parts of the window', () => {
     expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
   })
 
-  it('give the plugins the icon of a command a plugin declares', () => {
+  it('give the plugins the icon of a command a plugin declares, and the plugin icon to one that declares none', () => {
     createWindow()
 
     const { icons } = h.args.plugins.getServices().workspace
     expect(icons.getCommand('org.example.sample:share.run')).toBe(getNamedIcon('share'))
-    expect(icons.getCommand('org.example.sample:none.run')).toBeNull()
+    expect(icons.getCommand('org.example.sample:none.run')).toBe(Puzzle)
   })
 })
 

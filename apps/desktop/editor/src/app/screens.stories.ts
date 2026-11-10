@@ -9,10 +9,9 @@ import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { ref, type Component } from 'vue'
 
-import SettingsTab from '@/pages/settings/ui/SettingsTab.vue'
-import type { Installation } from '@/pages/settings/types'
+import { SettingsTab, type Installation } from '@/testing/settingsScreen'
 import type { Model, PluginInfo } from '@/entities/settings'
-import { findTabKindIcon } from '@/entities/tab/lib/icons'
+import { findTabKindIcon } from '@/testing/tabKindIcons'
 import { SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/testing/installation'
 

@@ -66,8 +66,8 @@ function cleanup() {
   for (const dir of [vault, configDir, homeDir]) {
     try {
       fs.rmSync(dir, { recursive: true, force: true })
-    } catch {
-      // A busy file is left for the system to clear.
+    } catch (error) {
+      console.warn(`could not remove ${dir}: ${error.message}`)
     }
   }
 }

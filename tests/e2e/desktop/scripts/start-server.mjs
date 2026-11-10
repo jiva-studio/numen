@@ -195,8 +195,8 @@ function cleanup() {
   standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
-  } catch {
-    // Ignore cleanup errors on busy files.
+  } catch (error) {
+    console.warn(`could not remove ${tmpVault}: ${error.message}`)
   }
 }
 

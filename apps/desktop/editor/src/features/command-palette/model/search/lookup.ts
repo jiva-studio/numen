@@ -105,14 +105,11 @@ export function createNameItem(
           detail: one.title,
           actions: atHeading.actions,
         },
-        hit: {
-          spot: { path: one.path, title: one.title, line: one.line, start: 0, length: 0 },
-          actionIds: atHeading.actionIds,
-          ...atHeading.valuesOfHit,
-          type: one.type,
-          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
-          selector: null,
-        },
+        hit: getNoteHit(
+          { path: one.path, title: one.title, line: one.line, start: 0, length: 0 },
+          atHeading,
+          one,
+        ),
       }
     : {
         item: {
@@ -121,29 +118,35 @@ export function createNameItem(
           at: one.at,
           actions: byName.actions,
         },
-        hit: {
-          spot: { path: one.path, title: one.title, line: -1, start: 0, length: 0 },
-          actionIds: byName.actionIds,
-          ...byName.valuesOfHit,
-          type: one.type,
-          ...(one.tabKind ? { tabKind: one.tabKind } : {}),
-          selector: null,
-        },
+        hit: getNoteHit(
+          { path: one.path, title: one.title, line: -1, start: 0, length: 0 },
+          byName,
+          one,
+        ),
       }
+}
+
+function getNoteHit(
+  spot: HitSpot,
+  note: ReturnType<typeof createNoteActions>,
+  found: Pick<NameMatch, 'type' | 'tabKind'>,
+): SearchHit {
+  return {
+    spot,
+    actionIds: note.actionIds,
+    ...note.valuesOfHit,
+    type: found.type,
+    ...(found.tabKind ? { tabKind: found.tabKind } : {}),
+    selector: null,
+  }
 }
 
 function createNotePassageHit(
   one: Passage,
   note: ReturnType<typeof createNoteActions>,
 ): SearchHit {
-  return {
-    spot: { path: one.path, title: one.title, line: one.line, start: one.start, length: one.length },
-    actionIds: note.actionIds,
-    ...note.valuesOfHit,
-    type: one.type,
-    ...(one.tabKind ? { tabKind: one.tabKind } : {}),
-    selector: null,
-  }
+  const spot = { path: one.path, title: one.title, line: one.line, start: one.start, length: one.length }
+  return getNoteHit(spot, note, one)
 }
 
 function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): SearchHit {

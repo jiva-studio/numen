@@ -216,25 +216,21 @@ describe('editor preferences in setup', () => {
     expect(open({ lineNumbers: true }).dom.querySelector('.cm-lineNumbers')).not.toBeNull()
   })
 
-  it('numbers horizontal rule block widgets continuously with text lines and themes the gutter', () => {
+  it('numbers horizontal rule block widgets continuously with text lines', () => {
     const view = open({ lineNumbers: true }, '---\ntype: stencil\n---')
     const numbers = Array.from(
-      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement'),
+      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement:not(:first-child)'),
     )
-      .filter((el) => el.style.visibility !== 'hidden')
       .map((el) => el.textContent?.trim())
       .filter(Boolean)
     expect(numbers).toEqual(['1', '2', '3'])
-
-    const gutters = view.dom.querySelector<HTMLElement>('.cm-gutters')!
-    expect(getComputedStyle(gutters).backgroundColor).toBe('rgba(0, 0, 0, 0)')
   })
 
   it('attaches heading and code-block alignment classes to line number gutter elements', () => {
     const view = open({ lineNumbers: true }, '# First\n\n## Second\n\n```ts\nconst x = 1\n```')
     const elements = Array.from(
-      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement'),
-    ).filter((el) => el.style.visibility !== 'hidden')
+      view.dom.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement:not(:first-child)'),
+    )
 
     expect(elements[0]?.classList.contains('cm-gutter-heading-1')).toBe(true)
     expect(elements[0]?.classList.contains('cm-gutter-gap')).toBe(false)

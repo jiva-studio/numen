@@ -4,9 +4,11 @@ import type { PluginVault, PluginWork } from '../src/types'
 import type { AgentPort } from '../src/agent'
 import { CONVERSATION } from '../src/views'
 
-/** An agent that answers nothing, for views that need one to be mounted. */
+/** An agent that ends every question at once, for views that need one to be mounted. */
 const AGENT: AgentPort = {
-  ask: async function* () {},
+  ask: async function* () {
+    yield { kind: 'answered' }
+  },
   finish: async () => undefined,
 }
 
