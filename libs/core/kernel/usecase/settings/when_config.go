@@ -1,10 +1,4 @@
-		if text == "" {
-			continue
-		}
-		value, err := codec.Decode(text)
-		if err != nil {
-			continue
-		}package settings
+package settings
 
 import (
 	"strings"
@@ -55,8 +49,11 @@ func addSettings(codec settingsport.ValueCodec, config map[string]any, owner []s
 		if text == "" {
 			text = one.DefaultJSON
 		}
-		var value any
-		if text == "" || json.Unmarshal([]byte(text), &value) != nil {
+		if text == "" {
+			continue
+		}
+		value, err := codec.Decode(text)
+		if err != nil {
 			continue
 		}
 		path := append(append([]string(nil), owner...), strings.Split(one.Key, ".")...)
