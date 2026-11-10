@@ -22,11 +22,9 @@ function addStyle(pluginId: string, element: HTMLElement): () => void {
 
 /**
  * The component of a slot view behind the stylesheet of its plugin, the same component for the same
- * view on every read. A component given by its registered name is returned as it is.
+ * view on every read.
  */
-export function createStyledView(pluginId: string, component: unknown): unknown {
-  if (typeof component !== 'object' && typeof component !== 'function') return component
-  if (component === null) return component
+export function createStyledView(pluginId: string, component: Component): Component {
   const existing = styled.get(component)
   if (existing) return existing
   const view = defineComponent({
@@ -41,7 +39,7 @@ export function createStyledView(pluginId: string, component: unknown): unknown 
       onBeforeUnmount(() => release?.())
       return () =>
         h('span', { ref: element, style: { display: 'contents' }, 'data-slot-view': pluginId }, [
-          h(component as Component, attrs, slots),
+          h(component, attrs, slots),
         ])
     },
   })

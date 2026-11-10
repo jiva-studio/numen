@@ -23,12 +23,12 @@ export function activate(context: PluginContext): void {
     {
       workspace,
       ...(context.ui.commands ? { commands: context.ui.commands } : {}),
-      ...(context.ui.slots ? { slots: context.ui.slots } : {}),
+      slots: context.ui.slots,
       notes,
       relations,
       nesting: readNesting(context),
     },
-    () => usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
+    () => usePlexView({ neighborhood: (path) => notes.getNeighborhood(path) }),
     PlexGraphView,
   )
   context.register.tabKind(plexes.kind)

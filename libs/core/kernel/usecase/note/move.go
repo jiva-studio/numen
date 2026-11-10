@@ -57,32 +57,8 @@ func NewMove(d MoveDeps) Move {
 	}
 }
 
-// WithSources replaces the source repository.
-func (u Move) WithSources(sources sourceport.SourceRepository) Move {
-	u.sources = sources
-	return u
-}
-
-// WithReaders replaces the vault readers.
-func (u Move) WithReaders(readers vaultport.VaultReaders) Move {
-	u.readers = readers
-	return u
-}
-
-// WithWriters replaces the vault writers.
-func (u Move) WithWriters(writers MoveWriting) Move {
-	u.writers = writers
-	return u
-}
-
-// Sources returns the source repository.
-func (u Move) Sources() sourceport.SourceRepository { return u.sources }
-
-// Writers returns the vault writers.
-func (u Move) Writers() MoveWriting { return u.writers }
-
-// Readers returns the vault readers.
-func (u Move) Readers() vaultport.VaultReaders { return u.readers }
+// IsConfigured reports whether the move was made by NewMove.
+func (u Move) IsConfigured() bool { return u.readers != nil }
 
 func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
 	res := domain.MoveResult{From: from, To: to}
@@ -108,7 +84,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 		if errors.Is(err, vault.ErrAlreadyExists) {
 			return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", to, from), err)
 		}
-		return res, mapMissingNote(err)
+		return res, edit.MapMissingNote(err)
 	}
 	res.IsMoved = true
 	if err := u.moveInIndex(ctx, v, from, to); err != nil {

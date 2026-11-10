@@ -118,6 +118,12 @@ export interface SelectChoice {
   readonly isDisabled?: boolean
 }
 
+/** What the fields of one plugin ask of the plugins of the installation. */
+export type PluginFieldsHost = Pick<InstallationPlugin, 'choosePath' | 'getSettingsViews'>
+
+/** The secrets a field offers to allow and deny, and how they are allowed. */
+export type SecretChoices = Pick<InstallationSecrets, 'sections' | 'menus' | 'access'>
+
 /** What the settings tab holds. */
 export interface SettingsTabState {
   readonly installation: Installation

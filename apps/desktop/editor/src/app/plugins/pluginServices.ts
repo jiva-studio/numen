@@ -1,13 +1,14 @@
 /**
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
-import { computed, type Ref, type ShallowRef } from 'vue'
+import { computed, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type {
   AgentHost,
   AgentPort,
   BackgroundTaskHost,
   BufferHost,
   CommandsHost,
+  JsonValue,
   NoteRef,
   VaultFiles,
   VaultNotes,
@@ -20,7 +21,7 @@ import type {
 import type { SearchDeps } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
-import { getNeighbourhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
+import { getNeighborhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -45,6 +46,22 @@ export interface PluginServices {
   taskList?: Readonly<Ref<readonly Task[]>>
   backgroundTasks?: BackgroundTaskHost
 }
+
+/**
+ * The services a plugin is given, stored from the start of the window: the plugin host reads them when
+ * a plugin asks, and the parts of the window that make them provide them once they exist.
+ */
+export function createPluginServices() {
+  const stored = shallowRef<PluginServices>({})
+  return {
+    get: (): PluginServices => stored.value,
+    provide: (services: PluginServices): void => {
+      stored.value = { ...stored.value, ...services }
+    },
+  }
+}
+
+export type PluginServicesStore = ReturnType<typeof createPluginServices>
 
 /** What the window hands a plugin's tabs. */
 export interface WorkspaceHostDeps extends IconHostDeps {
@@ -126,7 +143,7 @@ const FOUND_LIMIT = 20
 
 export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps): VaultNotes {
   return {
-    getNeighbourhood: (path) => getNeighbourhood(path),
+    getNeighborhood: (path) => getNeighborhood(path),
     getHeadings: (paths) => listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
@@ -158,7 +175,8 @@ export function createAgentHost({ port, window, settings }: AgentHostDeps): Agen
     finish: (conversation) => port.finish(conversation),
     resolveLinks: (text, vault) => resolveLinks('', text, vault),
     getUnreachable: () => window.vault.unreachable.value,
-    getSetting: (path) => settings.rest.read.getSetting(path),
+    // The vault stores a setting as JSON.
+    getSetting: (path) => settings.rest.read.getSetting(path) as JsonValue | undefined,
     writeSetting: (path, value) => settings.rest.write.writeSetting(path, value),
     getModelsAt: (path) => settings.rest.read.getModelsAt(path),
   }

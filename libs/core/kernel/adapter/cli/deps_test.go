@@ -93,7 +93,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Search{}, err
 			}
 			return cli.Search{
-				Search: search.New(db.ChunkQueries(), vaultreader.Readers{Options: options},
+				Search: search.New(db.ChunkSearch(), vaultreader.Readers{Options: options},
 					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, nil, errorHandler),
 				Close: db.Close,
 			}, nil
@@ -104,7 +104,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Problems{}, err
 			}
-			return cli.Problems{Problems: vaults.NewStandardGetProblems(db.NoteQueries()), Close: db.Close}, nil
+			return cli.Problems{Problems: vaults.NewStandardGetProblems(db.NoteProblems()), Close: db.Close}, nil
 		},
 	}
 }

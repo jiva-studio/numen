@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -23,27 +24,9 @@ var (
 	ErrHandshakeTimeout = errors.New("timeout waiting for plugin handshake")
 )
 
-// NetworkTransport is the HTTP transport of one plugin process: the connections to its port are
-// pooled for the life of the process.
-type NetworkTransport struct{ pool *http.Transport }
-
-// RoundTripTransport marks NetworkTransport as a plugin.Transport.
-func (NetworkTransport) RoundTripTransport() {}
-
-// RoundTrip sends the request over the pooled connections of the process.
-func (n NetworkTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	return n.pool.RoundTrip(req)
-}
-
-// CloseIdleConnections closes the pooled connections that no request uses.
-func (n NetworkTransport) CloseIdleConnections() { n.pool.CloseIdleConnections() }
-
-// NewNetworkTransport returns the transport for a plugin process that listens on a port.
-func NewNetworkTransport() NetworkTransport {
-	return NetworkTransport{pool: newHTTPTransport()}
-}
-
-func newHTTPTransport() *http.Transport {
+// NewNetworkTransport returns the HTTP transport of one plugin process that listens on a port: the
+// connections to its port are pooled for the life of the process.
+func NewNetworkTransport() *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -69,16 +52,77 @@ func GetBaseURL(e plugin.Endpoint) string {
 	return (&url.URL{Scheme: "http", Host: host}).String()
 }
 
-// EndpointClient returns an HTTP client routed to this endpoint.
-func EndpointClient(e plugin.Endpoint) *http.Client {
-	if e.Transport != nil {
-		e.Transport.RoundTripTransport()
-		if rt, ok := e.Transport.(http.RoundTripper); ok && rt != nil {
-			return &http.Client{Transport: rt}
-		}
+// Clients keeps the HTTP client of each running plugin process, by the token of its endpoint.
+type Clients struct {
+	mu      sync.Mutex
+	byToken map[string]*http.Client
+}
+
+// NewClients returns an empty set of clients.
+func NewClients() *Clients {
+	return &Clients{mu: sync.Mutex{}, byToken: map[string]*http.Client{}}
+}
+
+// Add keeps a client that sends through the round tripper for the endpoint with the token.
+func (c *Clients) Add(token string, roundTripper http.RoundTripper) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.byToken[token] = &http.Client{Transport: roundTripper}
+}
+
+// Remove forgets the client of the endpoint with the token and closes its idle connections.
+func (c *Clients) Remove(token string) {
+	c.mu.Lock()
+	client := c.byToken[token]
+	delete(c.byToken, token)
+	c.mu.Unlock()
+	if client != nil {
+		client.CloseIdleConnections()
 	}
-	// An endpoint without a transport of its own keeps no connection open after the call.
-	unpooled := newHTTPTransport()
+}
+
+// Get returns the client kept for the endpoint, or an unpooled client when none is kept.
+func (c *Clients) Get(e plugin.Endpoint) *http.Client {
+	c.mu.Lock()
+	client := c.byToken[e.Token]
+	c.mu.Unlock()
+	if client != nil {
+		return client
+	}
+	return newUnpooledClient()
+}
+
+// ClientLookup finds the client of an endpoint among the clients of a plugin host. The zero value
+// finds an unpooled client for every endpoint.
+type ClientLookup struct{ clients *Clients }
+
+// NewClientLookup returns the lookup over the clients.
+func NewClientLookup(clients *Clients) ClientLookup { return ClientLookup{clients: clients} }
+
+// GetClient returns the client kept for the endpoint, or an unpooled client when none is kept.
+func (l ClientLookup) GetClient(e plugin.Endpoint) *http.Client {
+	if l.clients == nil {
+		return newUnpooledClient()
+	}
+	return l.clients.Get(e)
+}
+
+// ClientSource is a plugin host that keeps the client of each endpoint it started.
+type ClientSource interface {
+	GetClient(e plugin.Endpoint) *http.Client
+}
+
+// GetClient returns the client of the endpoint from the host when it keeps one, else an unpooled
+// client, which keeps no connection open after the call.
+func GetClient(host any, e plugin.Endpoint) *http.Client {
+	if source, ok := host.(ClientSource); ok {
+		return source.GetClient(e)
+	}
+	return newUnpooledClient()
+}
+
+func newUnpooledClient() *http.Client {
+	unpooled := NewNetworkTransport()
 	unpooled.DisableKeepAlives = true
 	return &http.Client{Transport: unpooled}
 }

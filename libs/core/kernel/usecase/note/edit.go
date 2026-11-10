@@ -12,10 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func mapMissingNote(err error) error {
-	return edit.MapMissingNote(err)
-}
-
 // Edit applies a change to the contents of an existing note.
 //
 // The sequence is: read the note, reject content that cannot be read, write the

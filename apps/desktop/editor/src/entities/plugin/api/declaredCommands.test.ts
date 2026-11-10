@@ -4,10 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { createWhenReader } from '@numen/plugin-loader'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import {
-  isOverTarget,
   listDeclaredCommands,
   listDeclaredItemLists,
   runDeclaredCommand,
@@ -23,7 +21,24 @@ const request = {
 let restore: () => void
 
 beforeEach(() => {
-  restore = installCoreAnswers({ pluginCommands: request })
+  restore = installCoreAnswers({
+    pluginCommands: {
+      ...request,
+      listCommands: async (...asked: unknown[]) => {
+        const answer = (await request.listCommands(...asked)) as { slots?: { entry?: object }[] }
+        // A message from the core always carries its maps and lists, empty where it has none.
+        return {
+          contentTypeByExtension: {},
+          handlers: [],
+          keybindings: [],
+          ...answer,
+          slots: (answer.slots ?? []).map((one) =>
+            one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
+          ),
+        }
+      },
+    },
+  })
 })
 
 afterEach(() => {
@@ -212,13 +227,6 @@ describe('the commands the plugins declare', () => {
     expect(one).toStrictEqual(proofread)
   })
 
-  it('run over a target where their condition reads one', () => {
-    const reader = createWhenReader()
-
-    expect(isOverTarget(convert, reader)).toBe(true)
-    expect(isOverTarget({ when: 'window.isVaultReady' }, reader)).toBe(false)
-    expect(isOverTarget({}, reader)).toBe(false)
-  })
 })
 
 describe('a run', () => {

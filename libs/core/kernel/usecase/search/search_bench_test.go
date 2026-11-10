@@ -106,26 +106,26 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		IndexPath: dbPath,
 	})
 	cfg.Chunks.Set(maxTokens)
-	db, err := cfg.OpenIndex(ctx)
+	db, err := container.OpenIndex(cfg, ctx)
 	if err != nil {
 		b.Fatal(err)
 	}
 	testsupport.CloseAfter(b, db)
 
-	if err := db.Vaults().Register(ctx, v.ID); err != nil {
+	if err := db.Stores.Vaults.Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
 	}
 	if err := db.VectorIndex().FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
 		b.Fatal(err)
 	}
 
-	scan := cfg.Scan(db)
+	scan := container.Scan(cfg, db)
 	if _, err := scan.Execute(ctx, v); err != nil {
 		b.Fatal(err)
 	}
 
 	mock := newBenchEmbedder(model)
-	embedderUseCase, err := cfg.Embed(db, mock, v)
+	embedderUseCase, err := container.Embed(cfg, db, mock, v)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -133,9 +133,9 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 		b.Fatal(err)
 	}
 
-	searchMock := cfg.NewSearch(db, mock, nil)
+	searchMock := container.NewSearch(cfg, db, mock, nil)
 
-	passages := db.Passages()
+	passages := db.Chunks.Passages
 	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)

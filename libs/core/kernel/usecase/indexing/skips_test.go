@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -79,7 +81,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 
 	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
-	heldChunks, _, err := db.Progress().GetProgress(t.Context(), v.ID, recipe)
+	heldChunks, _, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +100,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass never asked for the held note's vectors")
 	}
-	if !events.tasks.Cancel(MakingVectors) {
+	if !events.tasks.Cancel(work.MakingVectors) {
 		t.Fatalf("the vector pass is not cancellable: %+v", events.tasks.List())
 	}
 	select {
@@ -113,7 +115,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	cut(t, made, db, v)
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, recipe)
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +132,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	cut(t, made, db, v)
 	p.embed(t.Context())
 
-	target, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, recipe)
+	target, embedded, err = db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}

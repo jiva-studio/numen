@@ -19,7 +19,12 @@ import { createPluginContext } from './context'
 import { addListener, notifyListeners } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader, type WhenReader } from '../when/whenReader'
-import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
+import {
+  APP_KEYBINDINGS,
+  isSharedCommand,
+  type JsonValue,
+  type SlotHost,
+} from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER } from '../commandId'
 import {
   createKeybindingRegistry,
@@ -35,6 +40,7 @@ import {
   type HostRegistry,
 } from './registry'
 import type { PluginContextHost, PluginHostDeps } from './types'
+import { createServiceBridge } from './bridge/services'
 
 export { createPluginPaneWrapper }
 
@@ -117,9 +123,9 @@ function createSettingBridge(
   deps: PluginHostDeps,
 ): Pick<PluginContextHost, 'getSetting' | 'onSettingChange'> {
   return {
-    getSetting: <T = unknown>(pluginId: string, key: string) =>
+    getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T = unknown>(
+    onSettingChange: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
@@ -130,7 +136,7 @@ function createSettingBridge(
         dispose: deps.onSettingChange(
           pluginId,
           key,
-          handler as (v: unknown) => void | Promise<void>,
+          handler as (v: JsonValue | undefined) => void | Promise<void>,
         ),
       }
     },
@@ -167,6 +173,7 @@ interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
   readonly slotViews: SlotViewRegistry
+  readonly slots: SlotHost
 }
 
 function createHostContextBridge(
@@ -186,41 +193,7 @@ function createHostContextBridge(
     ...createEventBridge(deps, registry),
     ...createTabBridge(deps),
     ...createServiceBridge(deps),
-  }
-}
-
-function createServiceBridge(
-  deps: PluginHostDeps,
-): Pick<
-  PluginContextHost,
-  | 'getWorkspace'
-  | 'getNotes'
-  | 'getRelations'
-  | 'getFiles'
-  | 'getAgent'
-  | 'getCommands'
-  | 'getVaults'
-  | 'getWindow'
-  | 'getBuffers'
-  | 'getNotices'
-  | 'getTasks'
-  | 'getBackgroundTasks'
-  | 'getTexts'
-> {
-  return {
-    getWorkspace: () => deps.getWorkspace?.(),
-    getNotes: () => deps.getNotes?.(),
-    getRelations: () => deps.getRelations?.(),
-    getFiles: () => deps.getFiles?.(),
-    getAgent: () => deps.getAgent?.(),
-    getCommands: () => deps.getCommands?.(),
-    getVaults: () => deps.getVaults?.(),
-    getWindow: () => deps.getWindow?.(),
-    getBuffers: () => deps.getBuffers?.(),
-    getNotices: (pluginId) => deps.getNotices?.(pluginId),
-    getTasks: (pluginId) => deps.getTasks?.(pluginId),
-    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
-    getTexts: (pluginId) => deps.getTexts?.(pluginId),
+    getSlots: () => shared.slots,
   }
 }
 
@@ -324,28 +297,33 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const slotViews = createSlotViewRegistry(
     deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
   )
-  const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(),
-    drops: createDropRegistry(),
-    slotViews,
-  })
   const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
     createKeybindingApi(deps)
+  const commandApi = createCommandApi(deps, registry, keybindings)
+  const findSlotCommand = deps.createSlotCommandFinder?.({
+    getPluginCommands: commandApi.getPaletteCommands,
+    hasPluginItems: commandApi.hasCommandItems,
+  })
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: () => deps.getSlotEntries?.(),
-    findCommand: (command, target) => deps.findSlotCommand?.(command, target),
+    findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
     whenReader,
   })
-  contextHost.getSlots = () => slots
+  const contextHost = createHostContextBridge(deps, registry, {
+    views: createViewRegistry(),
+    drops: createDropRegistry(),
+    slotViews,
+    slots,
+  })
   const parts = { registry, slotViews, deps }
 
   return {
     ...createContextApi(registry, contextHost, registerKeybindings),
-    ...createCommandApi(deps, registry, keybindings),
+    ...commandApi,
     registerKeybindings,
     unregisterKeybindings,
     /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */

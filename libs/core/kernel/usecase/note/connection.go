@@ -145,7 +145,7 @@ func (e connectionEditor) apply(ctx context.Context, v domain.Vault, changes []n
 	for i, c := range changes {
 		raw, err := reader.Read(ctx, c.path)
 		if err != nil {
-			return fmt.Errorf("read %s: %w", c.path, mapMissingNote(err))
+			return fmt.Errorf("read %s: %w", c.path, edit.MapMissingNote(err))
 		}
 		doc, err := markdown.Open(raw)
 		if err != nil {

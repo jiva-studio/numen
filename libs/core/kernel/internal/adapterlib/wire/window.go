@@ -50,20 +50,20 @@ func (r *Reason) Why() string {
 // Both windows share this implementation, so tasks have one wire shape and the
 // quit drain is implemented once.
 type Window struct {
-	Named string
+	Name string
 
-	Tasking *run.Tasks
+	Tasks *run.Tasks
 
 	Vault func() string
 
 	clients flushCoordinator
 }
 
-// Again is the interval at which a stream resends its last message while nothing
+// ResendInterval is the interval at which a stream resends its last message while nothing
 // has changed.
 // The request context is canceled when the window closes, not when a page
 // reloads, so a handler detects a gone client only through a failed write.
-const Again = time.Second
+const ResendInterval = time.Second
 
 // WatchTasks streams the running tasks until the client disconnects.
 // The full list is sent on every change, and the first message is sent
@@ -77,7 +77,7 @@ func (w *Window) WatchTasks(
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return err
 	}
-	if w.Tasking == nil {
+	if w.Tasks == nil {
 		// A window that does nothing behind itself still answers, so a client
 		// has one thing to listen to.
 		return out.Send(&v1.WatchTasksResponse{})
@@ -86,8 +86,8 @@ func (w *Window) WatchTasks(
 	watching, stop := context.WithCancel(ctx)
 	defer stop()
 
-	watch := w.Tasking.Watch(watching)
-	repeat := time.NewTicker(Again)
+	watch := w.Tasks.Watch(watching)
+	repeat := time.NewTicker(ResendInterval)
 	defer repeat.Stop()
 
 	var last []work.Task
@@ -101,7 +101,7 @@ func (w *Window) WatchTasks(
 				return err
 			}
 			last = list
-			repeat.Reset(Again)
+			repeat.Reset(ResendInterval)
 
 		case <-repeat.C:
 			if err := out.Send(&v1.WatchTasksResponse{Tasks: describeTasks(last)}); err != nil {
@@ -130,7 +130,7 @@ func (w *Window) WatchQuit(
 		return err
 	}
 
-	repeat := time.NewTicker(Again)
+	repeat := time.NewTicker(ResendInterval)
 	defer repeat.Stop()
 
 	for {
@@ -189,14 +189,14 @@ func (w *Window) CancelTask(
 	if err := w.checkWindowName(r.Msg.GetWindow()); err != nil {
 		return nil, err
 	}
-	if w.Tasking == nil || !w.Tasking.Cancel(r.Msg.GetId()) {
+	if w.Tasks == nil || !w.Tasks.Cancel(r.Msg.GetId()) {
 		return nil, connect.NewError(connect.CodeNotFound, ErrNoCancellableTask)
 	}
 	return connect.NewResponse(&v1.CancelTaskResponse{}), nil
 }
 
 func (w *Window) checkWindowName(named string) error {
-	if named == w.Named {
+	if named == w.Name {
 		return nil
 	}
 	return connect.NewError(connect.CodeNotFound, ErrAnotherWindow)
@@ -204,15 +204,15 @@ func (w *Window) checkWindowName(named string) error {
 
 // AddTask puts one piece of work in the list.
 func (w *Window) AddTask(pos work.Task) {
-	if w != nil && w.Tasking != nil {
-		w.Tasking.Set(pos)
+	if w != nil && w.Tasks != nil {
+		w.Tasks.Set(pos)
 	}
 }
 
 // RemoveTask takes one piece of work out of the list.
 func (w *Window) RemoveTask(id string) {
-	if w != nil && w.Tasking != nil {
-		w.Tasking.Remove(id)
+	if w != nil && w.Tasks != nil {
+		w.Tasks.Remove(id)
 	}
 }
 
@@ -255,3 +255,43 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 
 // CancelFlush ends the running request and releases its waiters.
 func (w *Window) CancelFlush() { w.clients.endRequest() }
+
+func describeTasks(list []work.Task) []*v1.Task {
+	out := make([]*v1.Task, 0, len(list))
+	for _, item := range list {
+		out = append(out, &v1.Task{
+			Id:            item.ID,
+			Title:         item.Title,
+			About:         item.About,
+			Done:          item.Count,
+			Total:         item.Total,
+			Error:         item.Error,
+			IsUserStarted: item.IsUserStarted,
+			Unit:          convertUnit(item.Unit),
+			PluginId:      item.PluginID,
+			PluginName:    item.PluginName,
+			IsCancellable: item.Cancel != nil,
+			Kind:          convertKind(item.Kind),
+		})
+	}
+	return out
+}
+
+func convertUnit(in work.Unit) v1.Unit {
+	switch in {
+	case work.Bytes:
+		return v1.Unit_UNIT_BYTES
+	case work.Seconds:
+		return v1.Unit_UNIT_SECONDS
+	case work.Things:
+		return v1.Unit_UNIT_THINGS
+	}
+	return v1.Unit_UNIT_THINGS
+}
+
+func convertKind(in work.Kind) v1.TaskKind {
+	if in == work.KindNotice {
+		return v1.TaskKind_TASK_KIND_NOTICE
+	}
+	return v1.TaskKind_TASK_KIND_UNSPECIFIED
+}

@@ -36,23 +36,23 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 // ListVersions lists the versions of a file of the vault and names the live one for the file's
 // current content.
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
-	contentHash, err := p.versions.GetContentHash(ctx, v, path)
+	contentHash, err := p.versions.Texts.GetContentHash(ctx, v, path)
 	if errors.Is(err, text.ErrFileUnreadable) {
 		return plugin.TextListing{}, fmt.Errorf("%w: %w", text.ErrNoText, err)
 	}
 	if err != nil {
 		return plugin.TextListing{}, err
 	}
-	return p.versions.ListVersions(ctx, v, path, contentHash)
+	return p.versions.Texts.ListVersions(ctx, v, path, contentHash)
 }
 
 // ReadText reads one page of the segments of a version of a file of the vault.
 func (p Texts) ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (plugin.TextPage, error) {
-	return p.versions.GetTextPage(ctx, v, path, id, cursor)
+	return p.versions.Texts.GetTextPage(ctx, v, path, id, cursor)
 }
 
 // ReadTextRange reads the segments of a version of a file of the vault that cover a range of its
 // whole text.
 func (p Texts) ReadTextRange(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (plugin.TextRange, error) {
-	return p.versions.GetTextRange(ctx, v, path, id, start, length)
+	return p.versions.Texts.GetTextRange(ctx, v, path, id, start, length)
 }

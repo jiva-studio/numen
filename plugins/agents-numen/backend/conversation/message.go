@@ -16,10 +16,62 @@ var ErrStreamRejected = errors.New("the chat API rejected a streaming request")
 
 // Message is one message of a conversation with the chat API.
 type Message struct {
-	Role       string     `json:"role"`
-	Content    *string    `json:"content,omitempty"`
-	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
-	ToolCallID string     `json:"tool_call_id,omitempty"`
+	Role       string
+	Content    *string
+	ToolCalls  []ToolCall
+	ToolCallID string
+}
+
+// MarshalJSON writes the message as the chat API takes it: the keys are the API's, and a content,
+// tool calls and tool call id that are empty are left out.
+func (m Message) MarshalJSON() ([]byte, error) {
+	fields := map[string]any{"role": m.Role}
+	if m.Content != nil {
+		fields["content"] = m.Content
+	}
+	if len(m.ToolCalls) > 0 {
+		fields["tool_calls"] = m.ToolCalls
+	}
+	if m.ToolCallID != "" {
+		fields["tool_call_id"] = m.ToolCallID
+	}
+	return json.Marshal(fields)
+}
+
+// UnmarshalJSON reads a message in the form the chat API writes it.
+func (m *Message) UnmarshalJSON(data []byte) error {
+	raw, err := readFields(data)
+	if err != nil {
+		return err
+	}
+	read := Message{Role: "", Content: nil, ToolCalls: nil, ToolCallID: ""}
+	err = errors.Join(
+		readField(raw, "role", &read.Role),
+		readField(raw, "content", &read.Content),
+		readField(raw, "tool_calls", &read.ToolCalls),
+		readField(raw, "tool_call_id", &read.ToolCallID),
+	)
+	if err != nil {
+		return err
+	}
+	*m = read
+	return nil
+}
+
+func readFields(data []byte) (map[string]json.RawMessage, error) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+	return raw, nil
+}
+
+func readField(raw map[string]json.RawMessage, key string, target any) error {
+	value, ok := raw[key]
+	if !ok {
+		return nil
+	}
+	return json.Unmarshal(value, target)
 }
 
 // CallFunction names the function a model calls and the JSON arguments it passes.

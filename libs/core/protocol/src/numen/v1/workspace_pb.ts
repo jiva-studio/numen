@@ -102,7 +102,7 @@ export const WatchFocusRequestSchema: GenMessage<WatchFocusRequest> = /*@__PURE_
  */
 export type WatchFocusResponse = Message<"numen.v1.WatchFocusResponse"> & {
   /**
-   * The source to put in front of the person: a note to see the neighbourhood
+   * The source to put in front of the person: a note to see the neighborhood
    * from, or a document to open.
    *
    * @generated from field: string path = 1;

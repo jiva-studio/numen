@@ -72,7 +72,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	cfg.PluginHost = container.LendPluginHost(host)
+	cfg.PluginHost = container.AdaptPluginHost(host)
 
 	if !cfg.EmbedderReady() {
 		t.Error("embedder is not ready when embedding plugin is present")
@@ -82,7 +82,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 // When the embedding plugin is absent, search queries seamlessly fall back to
 // lexical full-text search without throwing errors.
 func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
-	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestSearchDegradesGracefullyWithoutPlugin(t *testing.T) {
 
 	cfg := container.NewConfig(container.Config{})
 	var lastErr error
-	s := cfg.NewSearch(db, nil, func(err error) {
+	s := container.NewSearch(cfg, db, nil, func(err error) {
 		lastErr = err
 	})
 
@@ -133,7 +133,7 @@ func TestAPluginWithoutTheEmbeddingCapabilityIsNotTheProvider(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"services": ["numen.v1.EmbeddingService"], "backend": {"entrypoint": "bin/vectors"}
 	}`)
-	cfg := container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})
+	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)})
 
 	if cfg.EmbedderReady() {
 		t.Error("a plugin without the embedding capability is the provider")
@@ -156,7 +156,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 	}`)
 	host.Settings.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
 	cfg, vault := makeScannedVault(t)
-	cfg.PluginHost = container.LendPluginHost(host)
+	cfg.PluginHost = container.AdaptPluginHost(host)
 
 	embedder, closer, why := cfg.Embedder(t.Context())
 	if why != nil || embedder != nil {
@@ -168,10 +168,10 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 		}
 	}()
 	db := read(t, cfg)
-	if _, err := cfg.ReadWholeVault(t.Context(), db, embedder, vault); err != nil {
+	if _, err := container.ReadWholeVault(cfg, t.Context(), db, embedder, vault); err != nil {
 		t.Fatal(err)
 	}
-	found, err := cfg.NewSearch(db, embedder, nil).Execute(t.Context(), vault, "disorder", search.Parameters{})
+	found, err := container.NewSearch(cfg, db, embedder, nil).Execute(t.Context(), vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)
 	}

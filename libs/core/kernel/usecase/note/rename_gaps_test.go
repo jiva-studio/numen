@@ -5,12 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/edit"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // A rename that cannot be applied reports nothing for a name the note never
@@ -97,24 +93,5 @@ func TestARenameIsBuiltOverTheMoveItWasGiven(t *testing.T) {
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Old\n" {
 		t.Errorf("the note did not move:\n%s", body)
-	}
-}
-
-func TestARenamePassesOutTheDependenciesItWasGiven(t *testing.T) {
-	t.Parallel()
-	c := openChanging(t, nil)
-	sources, readers := &sulking{}, &statedReaders{}
-	writers := &failingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, opened: new(int)}
-
-	renaming := note.NewRename(c.move()).WithSources(sources).WithWriters(writers)
-	renaming.Move = renaming.WithReaders(readers)
-	if renaming.Sources() != sourceport.SourceRepository(sources) {
-		t.Error("the source repository is not the one given")
-	}
-	if renaming.Writers() != note.MoveWriting(writers) {
-		t.Error("the vault writers are not the ones given")
-	}
-	if renaming.Readers() != vaultport.VaultReaders(readers) {
-		t.Error("the vault readers are not the ones given")
 	}
 }

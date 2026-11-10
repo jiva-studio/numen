@@ -80,22 +80,22 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	// The editor's window may write the same index at the same time.
-	db, err := cfg.OpenIndex(ctx)
+	db, err := container.OpenIndex(cfg, ctx)
 	if err != nil {
 		return err
 	}
 
-	vaults := cfg.OpenVaults(db, os.Stderr, appName)
+	vaults := container.OpenVaults(cfg, db, os.Stderr, appName)
 
 	api := makeWindowAPI(cfg)
-	cfg.SetShellNotes(api, db, vaults.UpdateIndex)
-	api.ListVaults = cfg.GetVaultList(list).Execute
-	cfg.BindVaultIndexer(ctx, api, vaults)
+	container.SetShellNotes(cfg, api, db, vaults.UpdateIndex)
+	api.ListVaults = container.GetVaultList(cfg, list).Execute
+	container.BindVaultIndexer(cfg, ctx, api, vaults)
 	registry, err := cfg.Registry()
 	if err != nil {
 		return err
 	}
-	if err := cfg.InstallPluginVault(registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
+	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		return err
 	}
 
@@ -110,7 +110,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	defer target.Run()
 
 	followChanges(ctx, cfg, api)
-	themes.Report(cfg.SetShellThemes(api, func(response string) {
+	themes.Report(container.SetShellThemes(cfg, api, func(response string) {
 		if response != "" {
 			fmt.Fprintln(os.Stderr, "themes:", response)
 		}
@@ -129,11 +129,11 @@ func run(cfg container.Config, debug debugOptions) error {
 
 func makeWindowAPI(cfg container.Config) *shell.API {
 	return &shell.API{
-		Agent:                cfg.GetSettingsAgentHandler(),
+		Agent:                container.GetSettingsAgentHandler(cfg),
 		Window:               shell.NewWindow(platform.TargetFlashcards, nil),
-		GetFrontendPluginIDs: cfg.GetFrontendPluginIDs,
-		GetPluginDir:         cfg.GetPluginDir,
-		PluginServices:       cfg.GetPluginServices(),
+		GetFrontendPluginIDs: func() []string { return container.GetFrontendPluginIDs(cfg) },
+		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
+		PluginServices:       container.GetPluginServices(cfg),
 	}
 }
 
@@ -144,7 +144,7 @@ func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
 }
 
 func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {
-	moves, err := cfg.Moves(ctx)
+	moves, err := container.Moves(cfg, ctx)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, appName+": the index is not being followed:", err)
 		return

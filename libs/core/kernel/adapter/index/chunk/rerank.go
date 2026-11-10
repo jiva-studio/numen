@@ -4,12 +4,13 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"slices"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 )
 
 // coarseCandidates is how many chunks the coarse pass keeps for each answer
@@ -27,7 +28,7 @@ type candidate struct {
 	order      int
 }
 
-func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
+func (q *Search) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
 	ranked, err := q.rankCandidates(ctx, recipe, query, candidates, of, floor)
 	if err != nil {
 		return nil, err
@@ -42,7 +43,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 	return out, nil
 }
 
-func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []candidate, err error) {
+func (q *Search) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []candidate, err error) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}

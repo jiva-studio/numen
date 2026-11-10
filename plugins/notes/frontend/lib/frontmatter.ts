@@ -1,12 +1,14 @@
 /**
  * Frontmatter metadata parser for Markdown notes.
  */
+import type { JsonValue } from '@numen/plugin-sdk'
+
 export interface FrontmatterResult {
-  readonly data: Readonly<Record<string, unknown>>
+  readonly data: Readonly<Record<string, JsonValue>>
   readonly content: string
 }
 
-function parseFrontmatterValue(raw: string): unknown {
+function parseFrontmatterValue(raw: string): JsonValue {
   const value = raw.trim()
   if (value === 'true') return true
   if (value === 'false') return false
@@ -35,7 +37,7 @@ export function parseFrontmatter(text: string): FrontmatterResult {
 
   const rawYaml = rest.slice(0, delimiterMatch.index)
   const content = rest.slice(delimiterMatch.index + delimiterMatch[0].length)
-  const data: Record<string, unknown> = {}
+  const data: Record<string, JsonValue> = {}
 
   for (const line of rawYaml.split(/\r?\n/)) {
     const cleanLine = line.trim()

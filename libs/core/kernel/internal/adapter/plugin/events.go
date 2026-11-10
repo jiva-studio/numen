@@ -75,7 +75,7 @@ func (e *Events) TriggerEvent(ctx context.Context, event string) ([]string, erro
 			errs = append(errs, fmt.Errorf("activate plugin %s on %s: %w", id, event, err))
 			continue
 		}
-		deliverErr := transport.DeliverPluginEvent(ctx, endpoint, event)
+		deliverErr := transport.DeliverPluginEvent(ctx, e.t.clients.Get(endpoint), endpoint, event)
 		e.activation.Release(id)
 		activated = append(activated, id)
 		if deliverErr != nil {

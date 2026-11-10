@@ -54,7 +54,7 @@ func WriteHeading(text string, carried cardid.ID) string {
 // break and at HeadingRunes characters, and the spaces at either end are dropped. A field that
 // is empty or only spaces projects to nothing. The value has normalized line endings.
 func Project(value string) string {
-	line := markdown.Normalise(value)
+	line := markdown.Normalize(value)
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
 		line = line[:pos]
 	}
@@ -152,7 +152,7 @@ func links(line string) [][]int {
 }
 
 func oneLine(name string) string {
-	line := markdown.Normalise(name)
+	line := markdown.Normalize(name)
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY,INTEGER_INCREMENT reason="When pos == 0, line[:0] is empty and TrimSpace on the rest is only affected if newline is at index 0."
 	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
 		line = line[:pos]

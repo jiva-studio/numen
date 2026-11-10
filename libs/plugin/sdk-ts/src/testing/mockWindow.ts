@@ -4,7 +4,7 @@ import type { TabKindRegistration } from '../types'
 // MockTabWindow opens the tabs of the kinds registered with it the way a window does: one scope to a tab,
 // a tab per identity the kind gives, and a close the kind may refuse.
 export interface MockTabWindow {
-  register<State>(registration: TabKindRegistration<State>): void
+  register<State extends object>(registration: TabKindRegistration<State>): void
   // The id of the tab opened on `at`, which is the tab it already has where the kind gives the same identity.
   openTab(kind: string, at?: string): Promise<string>
   // The state of one tab, and nothing where the window holds no such tab.
@@ -20,8 +20,8 @@ export interface MockTabWindow {
 
 // createMockTabWindow builds a window that holds tabs in memory.
 export function createMockTabWindow(): MockTabWindow {
-  const kinds = new Map<string, TabKindRegistration<unknown>>()
-  const open = new Map<string, { kind: TabKindRegistration<unknown>; state: unknown }>()
+  const kinds = new Map<string, TabKindRegistration>()
+  const open = new Map<string, { kind: TabKindRegistration; state: object | undefined }>()
   const scopes = new Map<string, EffectScope>()
 
   const finishClose = (id: string): void => {
@@ -43,7 +43,7 @@ export function createMockTabWindow(): MockTabWindow {
   }
 
   return {
-    register: <State>(registration: TabKindRegistration<State>) => {
+    register: <State extends object>(registration: TabKindRegistration<State>) => {
       kinds.set(registration.kind, registration)
     },
     openTab: (kind, targetPath = '') =>
@@ -58,7 +58,7 @@ export function createMockTabWindow(): MockTabWindow {
     requestClose: (id) => {
       const one = open.get(id)
       if (!one) return true
-      if (one.kind.onClose && !one.kind.onClose(one.state, id)) return false
+      if (one.kind.onClose && one.state && !one.kind.onClose(one.state, id)) return false
       finishClose(id)
       return true
     },

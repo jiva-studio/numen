@@ -42,7 +42,7 @@ func (u *GetProblems) Execute(ctx context.Context, v domain.Vault, named ...doma
 	}
 	ran := named
 	if len(ran) == 0 {
-		ran = u.checks.Loud()
+		ran = u.checks.GetDefaultNames()
 	}
 	return Problems{Ran: ran, Found: found}, nil
 }

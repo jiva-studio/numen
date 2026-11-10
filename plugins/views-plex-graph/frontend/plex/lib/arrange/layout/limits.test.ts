@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { arrangePlex } from '../arrange'
 import { getLimits } from './limits'
 import { DEFAULT_OPTIONS } from '../options'
-import { neighbourhoods } from '../../../fixtures/neighbourhoods'
+import { neighborhoods } from '../../../fixtures/neighborhoods'
 import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
 
@@ -38,13 +38,13 @@ describe('nothing reaches past the edge', () => {
   })
 
   it.each(WINDOWS)('$width×$height, past every limit', (viewport) => {
-    const frame = arrangePlex(neighbourhoods.overcrowded, { options: { viewport } })
+    const frame = arrangePlex(neighborhoods.overcrowded, { options: { viewport } })
     expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 
-  it.each(Object.entries(neighbourhoods))('%s', (_name, neighbourhood) => {
+  it.each(Object.entries(neighborhoods))('%s', (_name, neighborhood) => {
     const viewport = { width: 1200, height: 800 }
-    const frame = arrangePlex(neighbourhood, { options: { viewport } })
+    const frame = arrangePlex(neighborhood, { options: { viewport } })
     expect(findEscaped(frame, viewport).map((n) => n.title)).toStrictEqual([])
   })
 })

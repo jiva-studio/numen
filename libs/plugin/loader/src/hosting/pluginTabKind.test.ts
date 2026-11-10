@@ -18,6 +18,7 @@ import {
   type DeclaredTabKindRegistration,
 } from './pluginTabKind'
 import type { PluginHostDeps } from './types'
+import { STUB_COMPONENT } from '../testing/stubComponent'
 
 interface Held {
   readonly at: string
@@ -96,11 +97,11 @@ describe('the hooks a registration passes over', () => {
     const onClose = () => true
     const icon = { name: 'Icon' }
 
-    expect(pickDeclaredHooks({ kind: 'k', component: null, onClose, icon })).toStrictEqual({
+    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT, onClose, icon })).toStrictEqual({
       onClose,
       icon,
     })
-    expect(pickDeclaredHooks({ kind: 'k', component: null })).toStrictEqual({})
+    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT })).toStrictEqual({})
   })
 
   it('include what the window asks of the kind that edits a file', () => {
@@ -111,7 +112,7 @@ describe('the hooks a registration passes over', () => {
       createFile: async () => ({ ok: true as const, value: { path: 'a.md' } }),
     }
 
-    expect(pickDeclaredHooks({ kind: 'k', component: null, ...hooks })).toStrictEqual(hooks)
+    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT, ...hooks })).toStrictEqual(hooks)
   })
 })
 
@@ -207,7 +208,10 @@ describe('a declared kind registered through a plugin context', () => {
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(() => Promise.resolve('tab')),
     }
-    const context = createPluginHost(deps).createContext('md.numen.sample')
+    const context = createPluginHost(deps).createContext(
+      'md.numen.sample',
+      createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
+    )
 
     const sub = context.register.tabKind<Held>({
       kind: 'member',
@@ -233,7 +237,8 @@ describe('the services a plugin context is given', () => {
   })
 
   it('are the window and the notes the host has made by the time the plugin activates', async () => {
-    const workspace = { name: 'workspace' } as unknown as NonNullable<PluginUi['workspace']>
+    const focus = { path: 'Orchard/Pruning.md', title: 'Pruning' }
+    const workspace = { getNoteInFocus: () => focus } as unknown as NonNullable<PluginUi['workspace']>
     const read = vi.fn(async () => ({ body: 'Pruning notes.' }))
     const notes = { read } as unknown as NonNullable<PluginVault['notes']>
     const host = createPluginHost(
@@ -245,7 +250,7 @@ describe('the services a plugin context is given', () => {
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
 
-    expect(context.ui.workspace).toMatchObject(workspace)
+        expect(context.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
     await expect(context.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
       body: 'Pruning notes.',
     })

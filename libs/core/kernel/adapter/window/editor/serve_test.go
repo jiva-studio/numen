@@ -44,14 +44,14 @@ import (
 )
 
 func bindNotes(services *Services, db *vaults.Index) {
-	refs, links := db.NoteRefs(), db.Links()
-	neighborhood := query.NewShowNeighbourhood(links, refs)
-	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.OpeningNote())
-	services.NoteCases.Types = query.NewGetTypes(db.NoteTypes())
-	services.NoteCases.Headings = query.NewGetHeadings(db.Headings())
+	refs, links := db.NoteQueries.NoteRefs, db.NoteQueries.Links
+	neighborhood := query.NewShowNeighborhood(links, refs)
+	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
+	services.NoteCases.Types = query.NewGetTypes(db.NoteQueries.NoteTypes)
+	services.NoteCases.Headings = query.NewGetHeadings(db.NoteQueries.Headings)
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
 	services.NoteCases.Neighborhood = &neighborhood
-	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
+	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NoteQueries.NamedPaths)
 	services.UseNotes()
 }
 
@@ -194,26 +194,23 @@ func openingWith(
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
-	api := createServices(&State{
-		ChangeEvents: newChangeBroadcaster(),
-		Places:       newPlaceBroadcaster(),
-	})
+	api := createServices(NewState(run.NewTasks()))
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.SetVault(v)
+	api.state.Runtime.SetVault(v)
 	if embedder != nil {
 		if err := db.VectorIndex().FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.state.RecordModel(embedder.GetModel().String(), "")
-		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
+		api.state.Runtime.RecordModel(embedder.GetModel().String(), "")
+		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
 	}
-	line, isDone := api.state.ChangeEvents.subscribe()
+	line, isDone := api.state.Notices.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
-		embedding: indexing.NewEmbedding(embedder, db.Progress()), idle: idleDuration, out: io.Discard,
+		embedding: indexing.NewEmbedding(embedder, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
 
@@ -272,7 +269,7 @@ func waitFor(t *testing.T, what string, is func() bool) {
 
 func titleOf(t *testing.T, db *vaults.Index, v domain.Vault, path string) string {
 	t.Helper()
-	found, err := db.NoteRefs().GetNotes(t.Context(), v.ID, []string{path})
+	found, err := db.NoteQueries.NoteRefs.GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +292,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	if path := next(t, readers.begun); path != "Note.md" {
 		t.Fatalf("the scan is reading %q", path)
 	}
-	if f.api.state.IsReady() {
+	if f.api.state.Runtime.IsReady() {
 		t.Fatal("the scan finished with its reads held")
 	}
 
@@ -308,7 +305,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Renamed" {
 		t.Errorf("the index says %q", title)
 	}
-	if f.api.state.IsReady() {
+	if f.api.state.Runtime.IsReady() {
 		t.Error("the scan finished with its reads held")
 	}
 }
@@ -333,7 +330,7 @@ func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
 
 	// Now the scan writes what it read, and finishes.
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.state.IsReady)
+	waitFor(t, "the scan did not finish", f.api.state.Runtime.IsReady)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Two" {
 		t.Errorf("the index says %q", title)
@@ -360,7 +357,7 @@ func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
 	next(t, f.recordedVal)
 
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.state.IsReady)
+	waitFor(t, "the scan did not finish", f.api.state.Runtime.IsReady)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "" {
 		t.Errorf("the index still holds %q", title)
@@ -388,7 +385,7 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 	next(t, f.recordedVal)
 
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.state.IsReady)
+	waitFor(t, "the scan did not finish", f.api.state.Runtime.IsReady)
 
 	if title := titleOf(t, f.index, f.vault, "Later.md"); title != "Later" {
 		t.Errorf("the index says %q of a note made while it was being read", title)
@@ -403,7 +400,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}, watcher, unreadable{VaultReaders: vaultreader.Readers{}})
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
-		return f.api.state.GetError() != ""
+		return f.api.state.Runtime.GetError() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -421,7 +418,7 @@ func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, vaultreader.Readers{})
 
-	if why := f.api.state.GetWatchError(); why == "" {
+	if why := f.api.state.Runtime.GetWatchError(); why == "" {
 		t.Error("a vault whose watch never started is shown as followed")
 	}
 }
@@ -436,7 +433,7 @@ func TestAWatchThatStopsReturnsSo(t *testing.T) {
 	close(watcher.changes)
 
 	waitFor(t, "a vault whose watch stopped is shown as followed", func() bool {
-		return f.api.state.GetWatchError() != ""
+		return f.api.state.Runtime.GetWatchError() != ""
 	})
 }
 
@@ -496,13 +493,9 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	readers := vaultreader.Readers{}
 	watcher := newManualWatcher()
-	api := createServices(&State{
-		ChangeEvents: newChangeBroadcaster(),
-		Places:       newPlaceBroadcaster(),
-		Window:       &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()},
-	})
+	api := createServices(NewState(run.NewTasks()))
 	bindNotes(api, db)
-	api.state.SetVault(v)
+	api.state.Runtime.SetVault(v)
 
 	out := &saying{}
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
@@ -528,7 +521,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	}
 }
 
-func newBareServices() *Services { return createServices(&State{}) }
+func newBareServices() *Services { return createServices(NewState(run.NewTasks())) }
 
 func newThemedServices(themes numenv1connect.ThemeServiceHandler) *Services {
 	services := newBareServices()
@@ -577,12 +570,12 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+			state := NewState(run.NewTasks())
 			services := createServices(state)
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
-			vault, vaults := numenv1connect.NewVaultServiceHandler(windowvault.NewHandler(state))
+			vault, vaults := numenv1connect.NewVaultServiceHandler(windowvault.NewHandler(state, state.Notices))
 			mux.Handle(vault, testsupport.NewRootedHandler(vaults, entered, returned))
 			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(newWorkspace(t, state))
 			mux.Handle(standing, testsupport.NewRootedHandler(workspace, entered, returned))
@@ -863,8 +856,8 @@ func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Reque
 }
 
 func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
-	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
-	state.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
+	state := NewState(run.NewTasks())
+	state.Runtime.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
 	services.Mount(RouteOf(state, &windowagent.Handler{
@@ -966,8 +959,8 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 
 func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
 	plugins := &routedPlugins{}
-	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
-	state.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
+	state := NewState(run.NewTasks())
+	state.Runtime.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	services.PluginServices = plugins
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))

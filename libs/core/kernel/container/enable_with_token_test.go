@@ -2,12 +2,13 @@ package container_test
 
 import (
 	"encoding/json"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"os"
 	"path/filepath"
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -40,7 +41,7 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 		t.Fatal(err)
 	}
 	pluginHost := pluginhost.Open("desktop.editor", root)
-	lent := container.LendPluginHost(pluginHost)
+	lent := container.AdaptPluginHost(pluginHost)
 	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.SettingsPush}
 	lent.ApplySetting, lent.SettingsPush = host.applySetting, host
 	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
@@ -76,7 +77,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 	for name, write := range map[string]func(t *testing.T, cfg container.Config, path string){
 		"one write of both settings": func(t *testing.T, cfg container.Config, _ string) {
 			t.Helper()
-			if err := cfg.GetSettingsWriter()([]settings.Setting{
+			if err := container.GetSettingsWriter(cfg)([]settings.Setting{
 				{Path: []string{courierPlugin, "enabled"}, JSON: `true`},
 				{Path: []string{courierPlugin, "token"}, JSON: `"` + courierToken + `"`},
 			}); err != nil {

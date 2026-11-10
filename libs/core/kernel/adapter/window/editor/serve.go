@@ -67,7 +67,7 @@ func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.
 // put together without a catalog serves none.
 func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
 
-// GetThemes is the themes the window offers, and nil for a window put together without a catalog.
+// GetThemes returns the themes the window offers.
 func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
 
 // SetPlugins sets where the calls for the services plugins serve are forwarded,
@@ -99,10 +99,10 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
 	onStop := func(why error) {
-		writeDiagnostic(o.State.reportTask, o.out, "recordings will no longer play: %v\n", why)
+		writeDiagnostic(o.State.Window.AddTask, o.out, "recordings will no longer play: %v\n", why)
 	}
 	if playing, why := Listen(ctx, files, onStop); why != nil {
-		writeDiagnostic(o.State.reportTask, o.out, "recordings will not play: %v\n", why)
+		writeDiagnostic(o.State.Window.AddTask, o.out, "recordings will not play: %v\n", why)
 	} else {
 		o.State.Playing.Store(playing)
 	}
@@ -137,9 +137,6 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)
 }
 
-// GetCurrentVault is the vault the window has open.
-func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
-
 // Notes returns the use cases this window works its vault through.
 // Other components working the same vault in this process, such as agent
 // tools, use the same instances and share error behavior and dependencies.
@@ -159,20 +156,20 @@ const (
 	updatingIndex = "update index"
 )
 
-// SayTheme records a theme warning task, and takes the task out of the list for an empty message,
+// RecordThemeWarning records a theme warning task, and takes the task out of the list for an empty message,
 // which says the theme the settings name is found now.
-func (o *Installation) SayTheme(message string) {
+func (o *Installation) RecordThemeWarning(message string) {
 	if message == "" {
-		o.State.finishTask(applyingTheme)
+		o.State.Window.RemoveTask(applyingTheme)
 		return
 	}
-	o.State.reportTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.State.Window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.State.reportTask(work.Task{
+		o.State.Window.AddTask(work.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
@@ -202,29 +199,29 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	if showing.ID == "" {
 		return
 	}
-	if !state.Writing.begin() {
+	if !state.Writes.BeginWrite() {
 		return
 	}
-	defer state.Writing.finish()
+	defer state.Writes.FinishWrite()
 
 	pos := work.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
-	state.reportTask(pos)
+	state.Window.AddTask(pos)
 
 	imported, err := o.vaults.Tree.Import.Execute(ctx, showing, into, paths)
 	if direct := imported.DirectChildren(into); len(direct) > 0 {
-		state.ChangeEvents.publish(window.Change{Paths: direct})
+		state.Notices.ChangeEvents.publish(window.Change{Paths: direct})
 	}
 	if err != nil {
 		pos.Error = err.Error()
-		state.reportTask(pos)
+		state.Window.AddTask(pos)
 		return
 	}
 	if failureText := imported.DescribeFailures(); failureText != "" {
 		pos.Error = failureText
-		state.reportTask(pos)
+		state.Window.AddTask(pos)
 		return
 	}
-	state.finishTask(pos.ID)
+	state.Window.RemoveTask(pos.ID)
 }
 
 // ShowTabs is the use case that asks the window to make an open tab the active one.

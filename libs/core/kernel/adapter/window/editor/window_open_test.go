@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginlend"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
@@ -64,7 +63,7 @@ func vaultConfig(t *testing.T) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
+	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg
@@ -124,9 +123,9 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	})
 
 	cfg := vaultConfig(t)
-	cfg.PluginHost = pluginlend.Lend(host)
+	cfg.PluginHost = container.AdaptPluginHost(host)
 
-	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +142,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 
 // An installation with no model opens, and reports that by having none.
 func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
-	installation, err := vaultConfig(t).OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(vaultConfig(t), t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,12 +185,15 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
-		return gateWalk(start, release)
+	installation, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
+		Ports: ports, DB: db, Out: os.Stderr,
+		Wrap: func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
+			return gateWalk(start, release)
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -200,7 +202,7 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Reported before the reading goroutine starts, so a window opening on a new
 	// vault shows the walk from its start.
-	list := installation.State.Window.Tasking.List()
+	list := installation.State.Window.Tasks.List()
 	if len(list) != 1 {
 		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
 	}
@@ -214,5 +216,5 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	// Each pass removes its entry when it ends, so a fully read vault reports no
 	// operations.
 	releaseWalk()
-	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasking.List()) == 0 })
+	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasks.List()) == 0 })
 }

@@ -15,8 +15,8 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()
 
-	before := atScale(t, getQuantising(), 0.3)
-	now := getQuantising().Recipe()
+	before := atScale(t, getQuantizing(), 0.3)
+	now := getQuantizing().Recipe()
 
 	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/tale.epub", Kind: "book", Size: 1000, MTime: 1,
@@ -34,7 +34,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, before, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		t.Errorf("%d vectors went, want %d", removed, len(hashes))
 	}
 
-	retained, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes)
+	retained, err := db.ChunkVectors().GetKeptVectors(ctx, now, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 			t.Errorf("the vector under the recipe in use went with the rest: %x", hash)
 		}
 	}
-	limit, err := db.ChunkQueries().GetKeptVectors(ctx, before, hashes)
+	limit, err := db.ChunkVectors().GetKeptVectors(ctx, before, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +88,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	if err := db.Compact(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if targetVal, err := db.ChunkQueries().GetKeptVectors(ctx, now, hashes); err != nil || len(targetVal) != len(hashes) {
+	if targetVal, err := db.ChunkVectors().GetKeptVectors(ctx, now, hashes); err != nil || len(targetVal) != len(hashes) {
 		t.Errorf("%d vectors survived the vacuum, want %d: %v", len(targetVal), len(hashes), err)
 	}
 }

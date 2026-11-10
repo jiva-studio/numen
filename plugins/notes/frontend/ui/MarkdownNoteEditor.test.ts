@@ -1,7 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, type Ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
+import type { FileConflict, NoteTabState } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
+
+const createState = (overrides: Partial<NoteTabState> = {}): NoteTabState => ({
+  path: 'test.md',
+  body: ref(''),
+  isLoading: ref(false),
+  errorMessage: ref(''),
+  updateBody: () => undefined,
+  save: () => undefined,
+  ...overrides,
+})
 
 describe('MarkdownNoteEditor', () => {
   it('renders editor component with initial content', () => {
@@ -49,7 +60,7 @@ describe('MarkdownNoteEditor while the note is read', () => {
   it('refuses typing until the tab has read the note', async () => {
     const isLoading = ref(true)
     const wrapper = mount(MarkdownNoteEditor, {
-      props: { filePath: 'test.md', state: { isLoading } },
+      props: { filePath: 'test.md', state: createState({ isLoading }) },
     })
     await nextTick()
     expect(getEditable(wrapper)).toBe('false')
@@ -61,7 +72,7 @@ describe('MarkdownNoteEditor while the note is read', () => {
 
   it('accepts typing when the tab reports no read in progress', async () => {
     const wrapper = mount(MarkdownNoteEditor, {
-      props: { filePath: 'test.md', state: {} },
+      props: { filePath: 'test.md', state: createState() },
     })
     await nextTick()
     expect(getEditable(wrapper)).toBe('true')
@@ -124,24 +135,16 @@ key: value:
       props: {
         filePath: 'test.md',
         errorMessage: '',
-        state: { errorMessage: ref('') },
+        state: createState(),
       },
     })
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
-  it('reads the error ref a host tab passes as errorMessage', () => {
-    const errorMessage = ref('')
-    const wrapper = mount(MarkdownNoteEditor, {
-      props: { filePath: 'test.md', errorMessage, state: { errorMessage } },
-    })
-    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-  })
-
-  it('displays the caution banner for an error ref a host tab passes', () => {
+  it('displays the caution banner for the error a host tab reports', () => {
     const errorMessage = ref('write failed')
     const wrapper = mount(MarkdownNoteEditor, {
-      props: { filePath: 'test.md', errorMessage },
+      props: { filePath: 'test.md', state: createState({ errorMessage }) },
     })
     expect(wrapper.find('.caution__text').text()).toBe('write failed')
   })
@@ -149,16 +152,20 @@ key: value:
 
 describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
   it('offers to keep the typed text or take the file, and passes the choice to the tab', async () => {
-    const fileConflict = ref<string | null>('stale')
+    const fileConflict = ref<FileConflict>('stale')
     const choices: string[] = []
     const wrapper = mount(MarkdownNoteEditor, {
       props: {
         filePath: 'notes/Tide.md',
-        state: {
+        state: createState({
           fileConflict,
-          keepMine: () => choices.push('keep'),
-          takeFile: () => choices.push('take'),
-        },
+          keepMine: () => {
+            choices.push('keep')
+          },
+          takeFile: () => {
+            choices.push('take')
+          },
+        }),
       },
     })
     await nextTick()
@@ -178,7 +185,7 @@ describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
 
   it('offers to write the text again when the file was removed', async () => {
     const wrapper = mount(MarkdownNoteEditor, {
-      props: { filePath: 'notes/Tide.md', state: { fileConflict: 'gone' } },
+      props: { filePath: 'notes/Tide.md', state: createState({ fileConflict: ref<FileConflict>('gone') }) },
     })
     await nextTick()
 
@@ -193,7 +200,12 @@ describe('MarkdownNoteEditor over a tab that offers links', () => {
     const wrapper = mount(MarkdownNoteEditor, {
       props: {
         filePath: 'notes/Tide.md',
-        state: { wikilinks: { search: async () => [{ title: 'Entropy', type: 'note' }] } },
+        state: createState({
+          wikilinks: {
+            search: async () => [{ title: 'Entropy', type: 'note' }],
+            headings: async () => [],
+          },
+        }),
       },
     })
     await nextTick()
@@ -205,9 +217,9 @@ describe('MarkdownNoteEditor over a tab that offers links', () => {
 describe('MarkdownNoteEditor with the body from its tab', () => {
   const FILE = '---\nid: 01M4JWCXZ3X193ZQBKPWWRVAJT\n---\n'
 
-  const mountHosted = (body: ReturnType<typeof ref<string>>) =>
+  const mountHosted = (body: Ref<string>) =>
     mount(MarkdownNoteEditor, {
-      props: { filePath: 'notes/Test.md', state: { body, isLoading: ref(false) } },
+      props: { filePath: 'notes/Test.md', state: createState({ body }) },
     })
 
   it('does not read the file, frontmatter included, when the note has no body', async () => {

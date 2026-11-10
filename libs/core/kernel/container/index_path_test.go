@@ -12,17 +12,17 @@ import (
 
 func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
 	cfg := container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
-	if _, err := cfg.OpenIndex(t.Context()); !errors.Is(err, container.ErrNoIndexPath) {
+	if _, err := container.OpenIndex(cfg, t.Context()); !errors.Is(err, container.ErrNoIndexPath) {
 		t.Fatalf("OpenIndex without IndexPath: %v, want ErrNoIndexPath", err)
 	}
-	if _, err := cfg.OpenWindow(t.Context(), "", io.Discard); !errors.Is(err, container.ErrNoIndexPath) {
+	if _, err := container.OpenWindow(cfg, t.Context(), "", io.Discard); !errors.Is(err, container.ErrNoIndexPath) {
 		t.Fatalf("OpenWindow without IndexPath: %v, want ErrNoIndexPath", err)
 	}
 }
 
 func TestOpenIndexOpensTheNamedDatabase(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "data", "index.db")
-	db, err := container.NewConfig(container.Config{IndexPath: path}).OpenIndex(t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: path}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

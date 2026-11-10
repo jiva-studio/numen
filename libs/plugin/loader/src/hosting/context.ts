@@ -6,6 +6,7 @@ import type {
   Disposable,
   FileSelectEvent,
   PluginContext,
+  JsonValue,
   PluginEvents,
   PluginSettings,
   PluginTabs,
@@ -13,209 +14,53 @@ import type {
   PluginVault,
   PluginWork,
   VaultChangeEvent,
-  VaultFiles,
-  VaultNotes,
-  VaultRelations,
-  VaultTexts,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
-import { guardAgent } from './guards/agentGuard'
-import { checkPermission, type PermissionTarget } from './guards/permission'
-import {
-  createMountView,
-  createRegistrations,
-  type RequirePermission,
-  type Track,
-} from './guards/registrations'
-import { createSlotViewRegistration } from './slotContext'
+import { limitAgentSettings } from './guards/agentSettings'
+import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
+import { createMountView, createRegistrations, type Track } from './guards/registrations'
+import { guardService, SERVICE_RULES } from './guards/servicePermissions'
+import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
+import { createSlotViewRegistration } from './guards/slotContext'
 import type { PluginContextHost } from './types'
 
-function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
-  subscriptions.push(disposable)
+function trackSubscription(subscriptions: SubscriptionList, disposable: Disposable): Disposable {
+  subscriptions.add(disposable)
   return {
     dispose() {
-      const index = subscriptions.indexOf(disposable)
-      if (index !== -1) {
-        subscriptions.splice(index, 1)
-      }
+      subscriptions.remove(disposable)
       disposable.dispose()
     },
   }
 }
 
-function guardNotes(
-  notes: VaultNotes,
-  requirePerm: (permission: string, operation: string) => void,
-): VaultNotes {
-  const requireRead = (operation: string) => requirePerm('vault:read', operation)
-  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
+function createBuffers(buffers: BufferHost, add: Track): BufferHost {
   return {
-    getNeighbourhood: async (path) => {
-      requireRead('notes.getNeighbourhood')
-      return notes.getNeighbourhood(path)
-    },
-    getHeadings: async (paths) => {
-      requireRead('notes.getHeadings')
-      return notes.getHeadings(paths)
-    },
-    findNotes: async (query, limit) => {
-      requireRead('notes.findNotes')
-      return notes.findNotes(query, limit)
-    },
-    createUntitledNote: async () => {
-      requireWrite('notes.createUntitledNote')
-      return notes.createUntitledNote()
-    },
-    read: async (path) => {
-      requireRead('notes.read')
-      return notes.read(path)
-    },
-    write: async (path, body) => {
-      requireWrite('notes.write')
-      return notes.write(path, body)
-    },
-    readProperties: async (path) => {
-      requireRead('notes.readProperties')
-      return notes.readProperties(path)
-    },
-  }
-}
-
-function guardRelations(
-  relations: VaultRelations,
-  requirePerm: (permission: string, operation: string) => void,
-): VaultRelations {
-  const requireRead = (operation: string) => requirePerm('vault:read', operation)
-  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
-  return {
-    roles: relations.roles,
-    getConnection: async (first, second, type) => {
-      requireRead('relations.getConnection')
-      return relations.getConnection(first, second, type)
-    },
-    saveConnection: async (connection) => {
-      requireWrite('relations.saveConnection')
-      return relations.saveConnection(connection)
-    },
-    removeSide: async (from, to, type) => {
-      requireWrite('relations.removeSide')
-      return relations.removeSide(from, to, type)
-    },
-    removeConnection: async (first, second, type) => {
-      requireWrite('relations.removeConnection')
-      return relations.removeConnection(first, second, type)
-    },
-    join: async (from, to, side) => {
-      requireWrite('relations.join')
-      return relations.join(from, to, side)
-    },
-    createRelated: async (request) => {
-      requireWrite('relations.createRelated')
-      return relations.createRelated(request)
-    },
-    listBacklinks: async (path) => {
-      requireRead('relations.listBacklinks')
-      return relations.listBacklinks(path)
-    },
-  }
-}
-
-function guardFiles(
-  files: VaultFiles,
-  requirePerm: (permission: string, operation: string) => void,
-): VaultFiles {
-  const requireRead = (operation: string) => requirePerm('vault:read', operation)
-  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
-  return {
-    list: async (folder) => {
-      requireRead('files.list')
-      return files.list(folder)
-    },
-    move: async (from, to) => {
-      requireWrite('files.move')
-      return files.move(from, to)
-    },
-    createFolder: async (path) => {
-      requireWrite('files.createFolder')
-      return files.createFolder(path)
-    },
-    createNote: async (folder) => {
-      requireWrite('files.createNote')
-      return files.createNote(folder)
-    },
-  }
-}
-
-function guardTexts(
-  texts: VaultTexts,
-  requirePerm: (permission: string, operation: string) => void,
-): VaultTexts {
-  return {
-    readLiveText: (path) => {
-      requirePerm('vault:read', 'texts.readLiveText')
-      return texts.readLiveText(path)
-    },
-    createEdit: (path, sourceVersionId, segments) => {
-      requirePerm('vault:write', 'texts.createEdit')
-      return texts.createEdit(path, sourceVersionId, segments)
-    },
-  }
-}
-
-function guardBuffers(
-  buffers: BufferHost,
-  requireWrite: (operation: string) => void,
-  add: (disposable: Disposable) => Disposable,
-): BufferHost {
-  return {
-    track: (open) => {
-      requireWrite('buffers.track')
-      return add(buffers.track(open))
-    },
-    addFlushHandler: (handler) => {
-      requireWrite('buffers.addFlushHandler')
-      return add(buffers.addFlushHandler(handler))
-    },
+    track: (open) => add(buffers.track(open)),
+    addFlushHandler: (handler) => add(buffers.addFlushHandler(handler)),
   }
 }
 
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
-/** What the events of a plugin are tracked and guarded with. */
-interface EventGuard {
-  readonly requirePerm: RequirePermission
-  readonly add: Track
-}
-
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
-    get: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
-    onChange: <T = unknown>(key: string, h: (v: T) => void) =>
+    get: <T extends JsonValue = JsonValue>(key: string) => host.getSetting<T>(pluginId, key),
+    onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
       add(host.onSettingChange<T>(pluginId, key, h)),
   }
 }
 
-function createEvents(pluginId: string, host: PluginContextHost, guard: EventGuard): PluginEvents {
-  const { requirePerm, add } = guard
+function createEvents(pluginId: string, host: PluginContextHost, add: Track): PluginEvents {
   return {
-    onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) => {
-      requirePerm('vault:read', 'onVaultChange')
-      return add(host.onVaultChange(pluginId, h))
-    },
-    onFileSelect: (h: (e: FileSelectEvent) => void | Promise<void>) => {
-      requirePerm('vault:read', 'onFileSelect')
-      return add(host.onFileSelect(pluginId, h))
-    },
-    emitVaultChange: (e: VaultChangeEvent) => {
-      requirePerm('vault:write', 'emitVaultChange')
-      host.emitVaultChange(pluginId, e)
-    },
-    emitFileSelect: (e: FileSelectEvent) => {
-      requirePerm('vault:read', 'emitFileSelect')
-      host.emitFileSelect(pluginId, e)
-    },
+    onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) =>
+      add(host.onVaultChange(pluginId, h)),
+    onFileSelect: (h: (e: FileSelectEvent) => void | Promise<void>) =>
+      add(host.onFileSelect(pluginId, h)),
+    emitVaultChange: (e: VaultChangeEvent) => host.emitVaultChange(pluginId, e),
+    emitFileSelect: (e: FileSelectEvent) => host.emitFileSelect(pluginId, e),
   }
 }
 
@@ -229,10 +74,6 @@ function createTabs(host: PluginContextHost): PluginTabs {
   }
 }
 
-function guarded<S, G>(service: S | undefined, guard: (service: S) => G): G | undefined {
-  return service === undefined ? undefined : guard(service)
-}
-
 function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
   const picked: Partial<T> = {}
   for (const key of Object.keys(parts) as (keyof T)[]) {
@@ -242,84 +83,84 @@ function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined
   return picked as T
 }
 
-function createVault(
-  pluginId: string,
-  host: PluginContextHost,
-  guard: { readonly requirePerm: RequirePermission; readonly add: Track },
-): PluginVault {
-  const { requirePerm, add } = guard
-  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
+function createVault(pluginId: string, host: PluginContextHost, add: Track): PluginVault {
+  const buffers = host.getBuffers?.()
   return pickDefined<PluginVault>({
-    notes: guarded(host.getNotes?.(), (one) => guardNotes(one, requirePerm)),
-    relations: guarded(host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
-    files: guarded(host.getFiles?.(), (one) => guardFiles(one, requirePerm)),
-    texts: guarded(host.getTexts?.(pluginId), (one) => guardTexts(one, requirePerm)),
-    buffers: guarded(host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),
+    notes: host.getNotes?.(),
+    relations: host.getRelations?.(),
+    files: host.getFiles?.(),
+    texts: host.getTexts?.(pluginId),
+    buffers: buffers && createBuffers(buffers, add),
     vaults: host.getVaults?.(),
   })
 }
 
-function createUi(
-  pluginId: string,
-  host: PluginContextHost,
-  mountView: PluginUi['mountView'],
-): PluginUi {
+function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
   return {
-    ...pickDefined<Omit<PluginUi, 'mountView'>>({
+    ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
       workspace: host.getWorkspace?.(),
       window: host.getWindow?.(),
       commands: host.getCommands?.(),
-      slots: host.getSlots?.(),
-      notices: host.getNotices?.(pluginId),
       drops: host.drops,
     }),
-    mountView,
+    slots: host.getSlots(),
+    notices: host.getNotices(pluginId),
   }
 }
 
-function createWork(
-  pluginId: string,
-  host: PluginContextHost,
-  requirePerm: RequirePermission,
-): PluginWork {
+function createWork(pluginId: string, host: PluginContextHost): PluginWork {
+  const agent = host.getAgent?.()
   return pickDefined<PluginWork>({
-    agent: guarded(host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
+    agent: agent && limitAgentSettings(agent),
     tasks: host.getTasks?.(pluginId),
     backgroundTasks: host.getBackgroundTasks?.(),
   })
 }
 
+/**
+ * The context of a plugin. Every service in it is built from the table of SERVICE_RULES: a member
+ * the table does not list is not reachable, and a member that lists a permission throws, or rejects,
+ * where the manifest of the plugin does not declare it.
+ */
 export function createPluginContext(
   pluginId: string,
   host: PluginContextHost,
   manifest?: Manifest | { permissions?: readonly string[] },
 ): PluginContext {
-  const subscriptions: Disposable[] = []
+  const subscriptions = createSubscriptionList()
   const add = (d: Disposable) => trackSubscription(subscriptions, d)
   const target: PermissionTarget = { pluginId, manifest }
-  const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
-  const guard = { target, add }
+  const check: RequirePermission = (p, op) => checkPermission(target, p, op)
+  const registration = { target, add }
   const slotView = createSlotViewRegistration(
     { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
     host,
     add,
   )
+  const rules = SERVICE_RULES
 
   return {
     plugin: {
       id: pluginId,
-      target: EDITOR_TARGET,
+      target: host.target ?? EDITOR_TARGET,
       app: host.app,
       openExternal: createExternalOpener(host.openExternal),
-      subscriptions,
+      subscriptions: subscriptions.view,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
-    register: createRegistrations(pluginId, host, { ...guard, slotView }),
-    settings: createSettings(pluginId, host, add),
-    events: createEvents(pluginId, host, { requirePerm, add }),
-    tabs: createTabs(host),
-    vault: createVault(pluginId, host, { requirePerm, add }),
-    ui: createUi(pluginId, host, createMountView(host, guard)),
-    work: createWork(pluginId, host, requirePerm),
+    register: guardService(
+      createRegistrations(pluginId, host, { ...registration, slotView }),
+      rules.register,
+      { check },
+    ),
+    settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
+    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
+    tabs: guardService(createTabs(host), rules.tabs, { check }),
+    vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
+    ui: {
+      ...guardService(createUi(pluginId, host), rules.ui, { check }),
+      mountView: createMountView(host, registration),
+    },
+    work: guardService(createWork(pluginId, host), rules.work, { check }),
   }
 }

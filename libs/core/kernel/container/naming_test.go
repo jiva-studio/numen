@@ -24,7 +24,7 @@ func writeSettings(t *testing.T, body string) container.Config {
 // to the next rename and not only after a restart.
 func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	cfg := writeSettings(t, `{"app":{"naming":{"syncTitleAndFilename":true}}}`)
-	setting := cfg.SyncSetting()
+	setting := container.SyncSetting(cfg)
 	if !setting.GetSetting() {
 		t.Fatal("a title and a filename are distinguished")
 	}
@@ -48,7 +48,7 @@ func TestWhatIsReadWhereTheFileReturnsNothing(t *testing.T) {
 		"a file that does not parse": `{"app":{"naming":`,
 	} {
 		t.Run(name, func(t *testing.T) {
-			if !writeSettings(t, body).SyncSetting().GetSetting() {
+			if !container.SyncSetting(writeSettings(t, body)).GetSetting() {
 				t.Error("a title and a filename are distinguished")
 			}
 		})

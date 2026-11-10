@@ -95,7 +95,7 @@ func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	endpoint := plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
 	declared := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
 
-	err := transport.CheckPluginProtocol(t.Context(), declared, endpoint)
+	err := transport.CheckPluginProtocol(t.Context(), transport.NewClients().Get(endpoint), declared, endpoint)
 	if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host uses 1") {
 		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, manifest.ErrUnsupportedProtocol)
 	}
@@ -110,7 +110,7 @@ func TestCheckPluginProtocolNamesAPluginThatDoesNotAnswerPing(t *testing.T) {
 	}
 	endpoint := plugindomain.Endpoint{Host: "127.0.0.1", Port: addr.Port, Token: ""}
 
-	err := transport.CheckPluginProtocol(t.Context(), manifest.Manifest{ID: "md.numen.silent"}, endpoint)
+	err := transport.CheckPluginProtocol(t.Context(), transport.NewClients().Get(endpoint), manifest.Manifest{ID: "md.numen.silent"}, endpoint)
 	if err == nil || !strings.Contains(err.Error(), "ping plugin md.numen.silent") {
 		t.Fatalf("checkPluginProtocol() = %v, want the ping failure naming the plugin", err)
 	}

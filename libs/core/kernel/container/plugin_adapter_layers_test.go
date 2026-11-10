@@ -128,8 +128,10 @@ func TestPluginIsolationRuleDeniesEverySiblingAdapter(t *testing.T) {
 	if !found {
 		t.Fatal("the plugin-adapter-isolation rule is missing from .golangci.yml")
 	}
-	if !hasDenied(rule, coreImportPath+"/adapter") {
-		t.Errorf("the rule does not deny %s/adapter", coreImportPath)
+	for _, name := range getDirNames(t, "../adapter") {
+		if name != "plugin" && !hasDenied(rule, coreImportPath+"/adapter/"+name) {
+			t.Errorf("adapter/%s is an adapter and the plugin-adapter-isolation rule does not deny it", name)
+		}
 	}
 	for _, name := range getDirNames(t, "../internal/adapter") {
 		if name != "plugin" && !hasDenied(rule, coreImportPath+"/internal/adapter/"+name) {

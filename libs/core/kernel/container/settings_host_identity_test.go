@@ -16,7 +16,7 @@ func TestAPluginHostIsSubscribedOncePerHost(t *testing.T) {
 	container.NewConfig(cfg).SetSettings(container.DefaultSettings())
 	reader := listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settings.Setting{{Path: []string{eventPlugin, "mode"}, JSON: `"b"`}})
+	err := container.GetSettingsWriter(cfg)([]settings.Setting{{Path: []string{eventPlugin, "mode"}, JSON: `"b"`}})
 	if err != nil {
 		t.Fatal(err)
 	}

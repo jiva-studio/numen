@@ -2,12 +2,13 @@ package container_test
 
 import (
 	"errors"
-	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/note/domain"

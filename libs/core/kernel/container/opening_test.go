@@ -28,7 +28,7 @@ func getNote() map[string]string {
 // its copy of a note lands whenever the group does.
 func TestANoteSavedBelowTheWalkIsReadAgain(t *testing.T) {
 	cfg, db, v := openVault(t, getNote())
-	opening := cfg.VaultOpener(db)
+	opening := container.VaultOpener(cfg, db)
 	open := opening.Begin(t.Context(), v)
 
 	// Written through UpdateIndex while the walk is running, as the window does when
@@ -95,7 +95,7 @@ func TestASecondWalkContainsWhatIsSavedBelowIt(t *testing.T) {
 // A vault that cannot be watched is still opened, and the error is reported.
 func TestAVaultThatCannotBeWatchedIsOpenedAndReturnsSo(t *testing.T) {
 	cfg, db, v := openVault(t, getNote())
-	open := cfg.VaultOpenerWith(db, cfg.VaultReaders(), refusing{}).Begin(t.Context(), v)
+	open := cfg.VaultOpenerWith(db, container.VaultReaders(cfg), refusing{}).Begin(t.Context(), v)
 
 	if open.GetUnwatchedReason() == nil {
 		t.Fatal("a vault nobody can follow says nothing about it")
@@ -314,7 +314,7 @@ func openVault(t *testing.T, notes map[string]string) (container.Config, *vault.
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,7 +333,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 func titleOf(t *testing.T, db *vault.Index, v domain.Vault, path string) string {
 	t.Helper()
 
-	target, err := db.NoteRefs().GetNotes(t.Context(), v.ID, []string{path})
+	target, err := db.NoteQueries.NoteRefs.GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

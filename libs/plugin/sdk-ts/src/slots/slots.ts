@@ -3,6 +3,7 @@
  * `contributes.slots`; the owner of a slot reads them here, draws them, and runs their commands
  * over its target through `CommandsHost.run`.
  */
+import type { Component } from 'vue'
 import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
 import type { CommandTarget } from '../commands/commands'
@@ -24,7 +25,7 @@ export interface SlotCommand {
   readonly pluginId: string
   readonly command: string
   readonly title: string
-  readonly icon?: unknown
+  readonly icon?: Component
   readonly shortcut: string
   readonly hasItems: boolean
   readonly values?: Readonly<Record<string, string>>
@@ -36,7 +37,7 @@ export interface SlotView {
   readonly key: SlotEntryKey
   readonly pluginId: string
   readonly view: string
-  readonly component: unknown
+  readonly component: Component
 }
 
 // SlotSubmenu is a submenu a plugin declares, holding the entries that name it as their slot.
@@ -46,7 +47,7 @@ export interface SlotSubmenu {
   readonly pluginId: string
   readonly submenu: string
   readonly title: string
-  readonly icon?: unknown
+  readonly icon?: Component
   readonly entries: readonly SlotItem[]
 }
 

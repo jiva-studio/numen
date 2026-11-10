@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { VaultTexts } from '@numen/plugin-sdk'
+import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
 
@@ -13,7 +14,11 @@ const createContext = (permissions: readonly string[]) => {
     createEdit: vi.fn(() => Promise.resolve({ ok: false, error: 'missing' })),
   } as unknown as VaultTexts
   const getTexts = vi.fn(() => texts)
-  const host = { getTexts } as unknown as PluginContextHost
+  const host = {
+    getTexts,
+    getNotices: () => createMockNoticeHost(),
+    getSlots: () => createMockSlotHost(),
+  } as unknown as PluginContextHost
   const context = createPluginContext('md.numen.player', host, {
     id: 'md.numen.player',
     name: 'Player',

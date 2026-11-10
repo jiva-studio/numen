@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'vue'
+import type { JsonValue, TextRange } from './types'
 import type { Selector } from './texts'
-import type { TextRange } from './types'
 import type { Severity } from './notices'
 import type { ErrorCode } from './errors/errorCode'
 import type { Result } from './result'
@@ -24,14 +24,14 @@ export interface NoteHeading {
   readonly line: number
 }
 
-// NoteRelation is how a neighbouring note is linked to the focused note.
+// NoteRelation is how a neighboring note is linked to the focused note.
 export type NoteRelation = 'parent' | 'child' | 'jump' | 'sibling'
 
 // LinkMarker is what a link record draws at the end that points at its target. A link without one draws nothing there.
 export type LinkMarker = 'arrow'
 
-// NoteNeighbour is one note joined to the note in focus. The records that join notes are in NoteNeighbourhood.connections.
-export interface NoteNeighbour {
+// NoteNeighbor is one note joined to the note in focus. The records that join notes are in NoteNeighborhood.connections.
+export interface NoteNeighbor {
   readonly path: string
   readonly title: string
   readonly relation: NoteRelation
@@ -39,21 +39,21 @@ export interface NoteNeighbour {
   readonly tabKind?: string
 }
 
-// NoteNeighbourhood is a note in focus, the notes joined to it, and one connection for every line drawn between
-// them. A line joins the note in focus to a neighbour, or two neighbours to each other. A connection of the
+// NoteNeighborhood is a note in focus, the notes joined to it, and one connection for every line drawn between
+// them. A line joins the note in focus to a neighbor, or two neighbors to each other. A connection of the
 // hierarchy has the parent as its first note and the child as its second; a connection of jumps has the note drawn
 // later as its first note.
-export interface NoteNeighbourhood {
+export interface NoteNeighborhood {
   readonly focus: NoteRef
   readonly focusType: NoteType
   readonly focusTabKind?: string
-  readonly related: readonly NoteNeighbour[]
+  readonly related: readonly NoteNeighbor[]
   readonly connections: readonly Connection[]
 }
 
 // VaultNotes is what a plugin reads of the notes of the vault, and writes to them.
 export interface VaultNotes {
-  getNeighbourhood(path: string): Promise<NoteNeighbourhood>
+  getNeighborhood(path: string): Promise<NoteNeighborhood>
   getHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   findNotes(query: string, limit?: number): Promise<readonly NoteRef[]>
   // A note made untitled at the root of the vault: its path, and empty where none was made.
@@ -63,7 +63,7 @@ export interface VaultNotes {
   // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
   write(path: string, body: string): Promise<void>
   // The frontmatter of the note at the path by its keys, and empty for a path holding no note.
-  readProperties(path: string): Promise<Readonly<Record<string, unknown>>>
+  readProperties(path: string): Promise<Readonly<Record<string, JsonValue>>>
 }
 
 // ConnectionRole is what the second note of a connection is to the first: its parent, its child, or a jump.

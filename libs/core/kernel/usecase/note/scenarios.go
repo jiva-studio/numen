@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -59,16 +58,26 @@ type Referring struct {
 // Browsing answers questions about the notes of a vault.
 type Browsing struct {
 	Connection     query.GetConnection
-	Neighborhood   query.ShowNeighbourhood
+	Neighborhood   query.ShowNeighborhood
 	GetTitles      query.GetTitles
 	GetTitle       *query.GetTitle
 	IsVaultIndexed *query.IsVaultIndexed
 }
 
+// MoveView tells the window that a note moved.
+type MoveView interface {
+	ShowMove(ctx context.Context, went domain.Move) error
+}
+
+// EditView tells the window that a change to a note is in progress.
+type EditView interface {
+	ShowEdit(ctx context.Context, response domain.Edit) error
+}
+
 // FollowMoves notifies a window of each note move, so a view showing a note under
 // its old name switches to the new name. Every build with a window
 // binds it.
-func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
+func (n Scenarios) FollowMoves(view MoveView) Scenarios {
 	mover := n.Place.Move
 	mover.Drawing = view.ShowMove
 	n.Place.Move, n.Place.Rename = mover, NewRename(mover)
@@ -80,7 +89,7 @@ func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
 //
 // Only a caller other than the user binds it. The window's own writes are not
 // drawn, because the user is looking at the text they typed.
-func (n Scenarios) ShowEdits(view windowport.Window) Scenarios {
+func (n Scenarios) ShowEdits(view EditView) Scenarios {
 	tell := TellEdit(view.ShowEdit)
 	n.Edit.Write.Drawing, n.Edit.Replace.Drawing = tell, tell
 	return n

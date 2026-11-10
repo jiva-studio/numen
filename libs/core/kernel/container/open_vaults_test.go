@@ -87,7 +87,7 @@ func getOpenVaultsSamples() map[string]string {
 	}
 }
 
-func makeOpenVaults(t *testing.T) (*vault.OpenVaults[Config, *vault.Index], []domain.Vault) {
+func makeOpenVaults(t *testing.T) (*vault.OpenVaults[*vault.Index], []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -95,7 +95,7 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[Config, *vault.Index], []do
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
 	})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,8 +105,8 @@ func makeOpenVaults(t *testing.T) (*vault.OpenVaults[Config, *vault.Index], []do
 		{ID: "one", Name: "One", Path: makeSampleVault(t, cfg)},
 		{ID: "two", Name: "Two", Path: makeSampleVault(t, cfg)},
 	}
-	vaults := &vault.OpenVaults[Config, *vault.Index]{
-		Config: cfg, Index: db,
+	vaults := &vault.OpenVaults[*vault.Index]{
+		Opener: func(i *vault.Index) *vault.VaultOpener { return vaultOpener(vaultOf(cfg), i) }, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
@@ -117,7 +117,7 @@ func makeSampleVault(t *testing.T, cfg Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
+	if _, err := vaultIdentity(vaultOf(cfg)).EnsureIdentity(root, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range getOpenVaultsSamples() {

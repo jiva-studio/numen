@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 )
 
@@ -109,12 +109,12 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 400), indexfake.GetWords(indexfake.GetSanskrit(), 400)), 1)
 	small := cutBooks(t, index, shelf, indexfake.GetFirst())
 
-	var progress []indexdomain.EmbedResult
+	var progress []vaultreading.EmbedResult
 	model := &embedder{dims: dimensions}
 	emb := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	emb.Embedder = model
 	emb.BatchCharacters = 2000
-	emb.OnProgress = func(r indexdomain.EmbedResult) { progress = append(progress, r) }
+	emb.OnProgress = func(r vaultreading.EmbedResult) { progress = append(progress, r) }
 	res, err := emb.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatal(err)
@@ -128,7 +128,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	}
 	for _, group := range index.Groups {
 		for _, v := range group {
-			if v.Kind != embedding.QuantisedInt8 {
+			if v.Kind != embedding.QuantizedInt8 {
 				t.Errorf("chunk %s was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {
@@ -166,7 +166,7 @@ func TestWithNoEmbedderTheTextIsSplitAndNothingFails(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a vault with no embedder is not an error: %v", err)
 	}
-	if !reflect.DeepEqual(res, indexdomain.EmbedResult{}) {
+	if !reflect.DeepEqual(res, vaultreading.EmbedResult{}) {
 		t.Errorf("the run reports %+v, want nothing done", res)
 	}
 	if len(index.Vectors) != 0 || len(index.Groups) != 0 {
@@ -185,12 +185,12 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 	cases := []struct {
 		name    string
 		replace func(t *testing.T, shelf *indexfake.Library)
-		want    func(t *testing.T, res indexdomain.EmbedResult, unembedded int)
+		want    func(t *testing.T, res vaultreading.EmbedResult, unembedded int)
 	}{
 		{
 			name:    "the file is gone",
 			replace: func(_ *testing.T, shelf *indexfake.Library) { delete(shelf.Files, bookPath) },
-			want: func(t *testing.T, res indexdomain.EmbedResult, unembedded int) {
+			want: func(t *testing.T, res vaultreading.EmbedResult, unembedded int) {
 				t.Helper()
 				if res.Vanished != unembedded || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
@@ -202,7 +202,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			replace: func(_ *testing.T, shelf *indexfake.Library) {
 				shelf.Put(bookPath, domain.KindFile, []byte("not an archive"), 2)
 			},
-			want: func(t *testing.T, res indexdomain.EmbedResult, unembedded int) {
+			want: func(t *testing.T, res vaultreading.EmbedResult, unembedded int) {
 				t.Helper()
 				if res.Vanished != unembedded || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
@@ -215,7 +215,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 				t.Helper()
 				shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 20)), 2)
 			},
-			want: func(t *testing.T, res indexdomain.EmbedResult, unembedded int) {
+			want: func(t *testing.T, res vaultreading.EmbedResult, unembedded int) {
 				t.Helper()
 				if res.Vanished != unembedded || res.Embedded != 0 {
 					t.Errorf("the run reports %+v, want all %d chunks left alone", res, unembedded)
@@ -345,12 +345,12 @@ func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 1200), indexfake.GetWords(indexfake.GetSanskrit(), 1200)), 1)
 	small := cutBooks(t, index, shelf, indexfake.GetFirst())
 
-	var progressReports []indexdomain.EmbedResult
+	var progressReports []vaultreading.EmbedResult
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
 	embed.Embedder = model
 	embed.BatchCharacters = 1000
-	embed.OnProgress = func(r indexdomain.EmbedResult) {
+	embed.OnProgress = func(r vaultreading.EmbedResult) {
 		progressReports = append(progressReports, r)
 	}
 
@@ -506,20 +506,20 @@ func (h *holdingEmbedder) Embed(ctx context.Context, texts []string) ([][]float3
 // progressLog keeps the progress reports of a run, newest last.
 type progressLog struct {
 	mu      sync.Mutex
-	reports []indexdomain.EmbedResult
+	reports []vaultreading.EmbedResult
 }
 
-func (l *progressLog) add(r indexdomain.EmbedResult) {
+func (l *progressLog) add(r vaultreading.EmbedResult) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.reports = append(l.reports, r)
 }
 
-func (l *progressLog) getLast() indexdomain.EmbedResult {
+func (l *progressLog) getLast() vaultreading.EmbedResult {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if len(l.reports) == 0 {
-		return indexdomain.EmbedResult{}
+		return vaultreading.EmbedResult{}
 	}
 	return l.reports[len(l.reports)-1]
 }
@@ -634,14 +634,14 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	var log progressLog
 	embed := newEmbed(nil, index, index)
 	embed.OnProgress = log.add
-	res := &indexdomain.EmbedResult{}
-	track := newTracker(embed, 1, res, &sync.Mutex{})
+	res := &vaultreading.EmbedResult{}
+	track := newTracker(embed.OnProgress, 1, res, &sync.Mutex{})
 	activeID := track.enter([]string{inFlight})
-	track.publish(func(*indexdomain.EmbedResult) {})
+	track.publish(func(*vaultreading.EmbedResult) {})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	err := embed.sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err := newProducer(embed).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 
 	if !errors.Is(err, context.Canceled) {
@@ -653,7 +653,7 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	track.leave(activeID)
 
 	res.CurrentSource = finished
-	err = embed.sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err = newProducer(embed).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)

@@ -27,7 +27,7 @@ func getNotes() map[string]string {
 
 func makeWindow(
 	t *testing.T,
-) (container.Config, *vault.Index, *vault.OpenVaults[container.Config, *vault.Index], *shell.API, []domain.Vault) {
+) (container.Config, *vault.Index, *vault.OpenVaults[*vault.Index], *shell.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -35,7 +35,7 @@ func makeWindow(
 		IndexPath:    filepath.Join(state, "index.db"),
 		RegistryPath: filepath.Join(state, "vaults.json"),
 	})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := container.OpenIndex(cfg, t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,8 +49,8 @@ func makeWindow(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &vault.OpenVaults[container.Config, *vault.Index]{
-		Config: cfg, Index: db,
+	vaults := &vault.OpenVaults[*vault.Index]{
+		Opener: func(i *vault.Index) *vault.VaultOpener { return container.VaultOpener(cfg, i) }, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
@@ -61,7 +61,7 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 
 	root := t.TempDir()
-	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
+	if _, err := container.VaultIdentity(cfg).EnsureIdentity(root, time.Date(2026, time.March, 2, 12, 0, 0, 0, time.UTC)); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range getNotes() {
@@ -82,7 +82,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	cfg, db, vaults, _, _ := makeWindow(t)
 
 	api := makeWindowAPI(cfg)
-	cfg.SetShellNotes(api, db, vaults.UpdateIndex)
+	container.SetShellNotes(cfg, api, db, vaults.UpdateIndex)
 
 	if api == nil {
 		t.Fatal("the page has no API")
@@ -106,7 +106,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
 	api := makeWindowAPI(cfg)
-	cfg.SetShellNotes(api, db, vaults.UpdateIndex)
+	container.SetShellNotes(cfg, api, db, vaults.UpdateIndex)
 
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		return errors.New("boom")
@@ -122,7 +122,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	cfg.BindVaultIndexer(t.Context(), api, vaults)
+	container.BindVaultIndexer(cfg, t.Context(), api, vaults)
 
 	if vaults.RecordVault == nil {
 		t.Fatal("a vault updated is recorded nowhere")
@@ -172,7 +172,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	api.SetVaultIndexer(t.Context(), nil)
 
 	cfg.PluginHost = container.NewPluginHost("md.numen.test", t.TempDir())
-	if err := cfg.InstallPluginVault(registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
+	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		t.Fatal(err)
 	}
 	lent := cfg.PluginHost.GetPluginVault()
@@ -199,7 +199,7 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")
 	}
-	if api.Window.Named != platform.TargetFlashcards {
-		t.Errorf("the window answers as %q", api.Window.Named)
+	if api.Window.Name != platform.TargetFlashcards {
+		t.Errorf("the window answers as %q", api.Window.Name)
 	}
 }

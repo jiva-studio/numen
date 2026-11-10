@@ -2,7 +2,7 @@
  * Every command the palette and the welcome screen draw has an icon.
  *
  * A menu reserves the icon column on every row, so an item without an icon
- * leaves a gap where its neighbours have one.
+ * leaves a gap where its neighbors have one.
  */
 import { describe, expect, it } from 'vitest'
 

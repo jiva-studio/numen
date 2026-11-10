@@ -21,7 +21,7 @@ func TestWorker(t *testing.T) {
 	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *vault.Index) {
 		t.Helper()
 		cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-		db, err := cfg.OpenIndex(t.Context())
+		db, err := container.OpenIndex(cfg, t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -31,8 +31,8 @@ func TestWorker(t *testing.T) {
 		) (indexing.ReadWholeVault, error) {
 			request := cfg
 			request.ShouldRebuildIndex = rebuild
-			return request.ReadWholeVault(ctx, db, embedder, v)
+			return container.ReadWholeVault(request, ctx, db, embedder, v)
 		}
-		return read, cfg.VaultReaders(), db
+		return read, container.VaultReaders(cfg), db
 	})
 }

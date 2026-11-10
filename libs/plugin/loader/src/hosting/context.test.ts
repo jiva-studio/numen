@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
+import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('PluginContext', () => {
   function createMockHost(): { host: PluginContextHost; calls: Record<string, number> } {
@@ -42,6 +44,8 @@ describe('PluginContext', () => {
       mountView: vi.fn((_capability, _element, _context) => ({ focus: vi.fn(), dispose: vi.fn() })),
       registerDropHandler: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
       drops: { canDrop: vi.fn(() => false), drop: vi.fn(async () => []) },
+      getNotices: () => createMockNoticeHost(),
+      getSlots: () => createMockSlotHost(),
       getSetting: vi.fn((_id: string, key: string) => {
         calls.getSetting++
         return key === 'enabled' ? true : undefined
@@ -84,7 +88,7 @@ describe('PluginContext', () => {
 
     const sub1 = ctx.register.reader({
       id: 'pdf',
-      component: null,
+      component: STUB_COMPONENT,
     })
     expect(ctx.plugin.subscriptions).toHaveLength(1)
     expect(host.registerReader).toHaveBeenCalledWith(
@@ -104,7 +108,7 @@ describe('PluginContext', () => {
 
     const sub3 = ctx.register.tabKind({
       kind: 'custom-tab',
-      component: null,
+      component: STUB_COMPONENT,
     })
     expect(ctx.plugin.subscriptions).toHaveLength(3)
     expect(host.registerTabKind).toHaveBeenCalledWith(
@@ -155,7 +159,11 @@ describe('PluginContext', () => {
 
     const navigateTab = vi.fn(async () => 'tab-new')
     const closeTab = vi.fn()
-    const hostWithTabs = createPluginContext('tabs.plugin', { ...host, navigateTab, closeTab })
+    const hostWithTabs = createPluginContext(
+      'tabs.plugin',
+      { ...host, navigateTab, closeTab },
+      { permissions: ['vault:read'] },
+    )
     await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
     expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
     hostWithTabs.tabs.close?.('tab-9')
@@ -163,11 +171,13 @@ describe('PluginContext', () => {
 
     const hostWithoutOpen = { ...host }
     delete (hostWithoutOpen as { openTab?: unknown }).openTab
-    const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen)
+    const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen, {
+      permissions: ['vault:read'],
+    })
     expect(ctxWithoutOpen.tabs.open?.('note', 'a.md')).toBeUndefined()
 
     const mountedEl = document.createElement('div')
-    const mounted = ctx.ui.mountView('cap', mountedEl, { k: 1 })
+    const mounted = ctx.ui.mountView('note-editor', mountedEl, { path: 'a.md' })
     mounted.focus()
     const mountResult = vi.mocked(host.mountView).mock.results[0]?.value
     expect(mountResult.focus).toHaveBeenCalledTimes(1)
@@ -266,7 +276,7 @@ describe('PluginContext', () => {
       contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
     } as unknown as Parameters<typeof createPluginContext>[2])
 
-    ctx.register.slotView({ id: 'bar', component: null })
+    ctx.register.slotView({ id: 'bar', component: STUB_COMPONENT })
 
     expect(ctx.plugin.subscriptions).toHaveLength(1)
     expect(host.registerSlotView).toHaveBeenCalledWith(
@@ -280,7 +290,7 @@ describe('PluginContext', () => {
     const { host } = createMockHost()
     const ctx = createPluginContext('org.example.orchard', host)
 
-    expect(() => ctx.register.slotView({ id: 'bar', component: null })).toThrow(/places nowhere/)
+    expect(() => ctx.register.slotView({ id: 'bar', component: STUB_COMPONENT })).toThrow(/places nowhere/)
     expect(host.registerSlotView).not.toHaveBeenCalled()
   })
 

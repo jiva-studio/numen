@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -65,20 +66,21 @@ type NoteUseCases struct {
 	OpeningNote    *query.GetOpeningNote
 	Types          *query.GetTypes
 	Headings       *query.GetHeadings
-	Neighborhood   *query.ShowNeighbourhood
+	Neighborhood   *query.ShowNeighborhood
 	ResolveLinks   *query.ResolveLinks
 }
 
 // UseNotes builds the notes service over NoteCases.
 func (s *Services) UseNotes() {
 	use := s.NoteCases
+	session := NewSession(s.state)
 	addresses := notewindow.NewAddresses(s.state, use.GetLinkAddress)
 	s.Note = notewindow.NewHandler(
-		s.state,
-		notewindow.NewProse(s.state, addresses, use.Read, use.Write, use.Create, use.Rename),
+		s.state.Notices,
+		notewindow.NewProse(session, addresses, use.Read, use.Write, use.Create, use.Rename),
 		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
-		notewindow.NewLinks(s.state, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
-		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
+		notewindow.NewLinks(session, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
+		notewindow.NewConnections(session, nil, nil, nil, nil, nil),
 	)
 }
 
@@ -86,8 +88,8 @@ func createServices(state *State) *Services {
 	services := &Services{
 		state: state,
 		File: filewindow.NewHandler(
-			filewindow.NewFolders(state, state, nil, nil, nil, nil),
-			filewindow.NewChanges(state, state, state, nil, nil, nil),
+			filewindow.NewFolders(NewSession(state), state.Events, nil, nil, nil, nil),
+			filewindow.NewChanges(NewSession(state), state.Writes, state.Notices, nil, nil, nil),
 		),
 		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil), nil),
 		Media:   mediawindow.NewHandler(state, state, nil, nil),
@@ -110,7 +112,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 }
 
 func (s *Services) pages() pageSet {
-	counted := s.state.CountQuestions()
+	counted := s.state.Gate.CountQuestions()
 	var routes []Route
 	path, served := numenv1connect.NewFileServiceHandler(s.File, counted)
 	routes = append(routes, NewRoute(path, served, s.File))
@@ -131,7 +133,7 @@ func (s *Services) pages() pageSet {
 // RouteOf is the route of a handler built by its own package: the path it serves and the handler
 // that serves it come from build, counted the way the container counts them.
 func RouteOf[H any](state *State, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
-	path, served := build(handler, state.CountQuestions())
+	path, served := build(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
 }
 
@@ -196,3 +198,9 @@ func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Tre
 
 func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Tree.Move = *move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Edit.Write = *write }
+
+// ViewOf is the view of the window as the core asks it to show something.
+func ViewOf(state *State) windowsession.View {
+	notices := state.Notices
+	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
+}

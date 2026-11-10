@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"net/http"
 	"slices"
 	"strings"
 	"testing"
 	"time"
+
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
@@ -250,7 +253,7 @@ func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	t.Helper()
 	agent := &toolAgent{}
 	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Instructions: instructions})
 

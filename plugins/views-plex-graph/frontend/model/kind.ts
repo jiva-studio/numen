@@ -7,7 +7,12 @@
  */
 import { watch, type Component } from 'vue'
 import { Waypoints } from '@lucide/vue'
-import { isNotePath, type TabKindRegistration, type VaultChangeEvent } from '@numen/plugin-sdk'
+import {
+  isNotePath,
+  type JsonValue,
+  type TabKindRegistration,
+  type VaultChangeEvent,
+} from '@numen/plugin-sdk'
 import { createPlexTab } from './usePlexTab'
 import { createPlexTabDeps, type PlexHost } from './tabDeps'
 import { WORDS as words } from '../words'
@@ -17,11 +22,11 @@ import type { PlexTabState, PlexView } from '../types'
 export const PLEX = 'plex'
 
 /** What a plex tab saves across restarts: the note in focus. */
-interface PlexSavedState {
+type PlexSavedState = {
   readonly focus: string
 }
 
-const readSavedFocus = (saved: unknown): string => {
+const readSavedFocus = (saved: JsonValue | undefined): string => {
   const focus = (saved as Partial<PlexSavedState> | null | undefined)?.focus
   return typeof focus === 'string' ? focus : ''
 }
@@ -50,6 +55,15 @@ function createPlexTabs() {
   }
 }
 
+async function readOpeningPath(host: PlexHost): Promise<boolean> {
+  try {
+    await host.workspace.window.readOpeningPath()
+    return true
+  } catch {
+    return false
+  }
+}
+
 async function refreshTabs(
   host: PlexHost,
   tabs: readonly PlexTabState[],
@@ -57,11 +71,7 @@ async function refreshTabs(
 ): Promise<void> {
   for (const state of tabs) state.nodes.followMoves(event.renamed ?? [])
   if (tabs.some((state) => !state.canvas.view.here.value)) {
-    try {
-      await host.workspace.window.readOpeningPath()
-    } catch {
-      // The next change retries.
-    }
+    await readOpeningPath(host)
   }
   await Promise.all(
     tabs.map(async (state) => {
@@ -103,7 +113,7 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView, compo
       })
       return state
     },
-    getTitle: (state) => getPlexTitle(state.canvas.view.neighbourhood.value?.focus.title ?? ''),
+    getTitle: (state) => getPlexTitle(state.canvas.view.neighborhood.value?.focus.title ?? ''),
     onShow: (_state, id) => tabs.show(id),
     onClose: (state, id) => {
       state.canvas.view.close()

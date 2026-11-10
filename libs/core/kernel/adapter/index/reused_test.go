@@ -29,7 +29,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
 	ctx := t.Context()
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, testRecipe, chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault.ID, testRecipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 	for _, p := range unembedded {
 		hashes = append(hashes, hashOf(t, db, p.Chunk))
 	}
-	retained, err := db.ChunkQueries().GetKeptVectors(ctx, testRecipe, hashes)
+	retained, err := db.ChunkVectors().GetKeptVectors(ctx, testRecipe, hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +115,7 @@ func TestCoarsePass_ReachesChunkWithReusedVectorText(t *testing.T) {
 			vault, path := tc.placed(t, db)
 
 			_, small := coarseRows(t, db, vault, path)
-			target, isDone, err := db.ChunkQueries().GetProgress(t.Context(), vault.ID, testRecipe)
+			target, isDone, err := db.ChunkVectors().GetProgress(t.Context(), vault.ID, testRecipe)
 			if err != nil {
 				t.Fatal(err)
 			}

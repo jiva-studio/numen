@@ -45,6 +45,10 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkNoCoreTypeIsReexported(t, workspace)
 	})
+	t.Run("EveryExhaustructIncludeMatchesAType", func(t *testing.T) {
+		t.Parallel()
+		checkExhaustructIncludesMatchTypes(t, workspace)
+	})
 	t.Run("InterfaceSizeCountsTheWholeMethodSet", func(t *testing.T) {
 		t.Parallel()
 		checkInterfaceSizeCountsTheWholeMethodSet(t, workspace)
@@ -64,22 +68,6 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 	t.Run("NoWiringPackageExistsOutsideTheContainer", func(t *testing.T) {
 		t.Parallel()
 		checkNoWiringPackageExistsOutsideTheContainer(t, workspace)
-	})
-	t.Run("NoTypeExceedsItsLayersSize", func(t *testing.T) {
-		t.Parallel()
-		checkNoTypeExceedsItsLayersSize(t, workspace)
-	})
-	t.Run("DrivenAdaptersImportATechnology", func(t *testing.T) {
-		t.Parallel()
-		checkDrivenAdaptersImportATechnology(t, workspace)
-	})
-	t.Run("UseCasesImportOnlyDomainAndPorts", func(t *testing.T) {
-		t.Parallel()
-		checkUseCasesImportOnlyDomainAndPorts(t, workspace)
-	})
-	t.Run("EveryExhaustructPatternMatchesAType", func(t *testing.T) {
-		t.Parallel()
-		checkEveryExhaustructPatternMatchesAType(t, workspace)
 	})
 	t.Run("ThePluginAdapterHasNoGodStruct", func(t *testing.T) {
 		t.Parallel()

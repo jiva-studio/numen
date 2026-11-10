@@ -7,8 +7,28 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 )
+
+// NoteScanner scans the notes of a vault.
+type NoteScanner interface {
+	ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult)) (vaultreading.ScanResult, error)
+}
+
+// TextIndexer indexes the file texts of a vault.
+type TextIndexer interface {
+	IndexWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool,
+	) (vaultreading.IndexResult, error)
+	IndexOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error)
+}
+
+// VectorEmbedder embeds the chunks of a vault.
+type VectorEmbedder interface {
+	EmbedWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+	) (vaultreading.EmbedResult, error)
+}
 
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
 // its other files are cut, and what was cut is given its vectors.
@@ -17,11 +37,11 @@ type ReadWholeVault struct {
 	texts   TextIndexer
 	vectors VectorEmbedder
 
-	OnNotesProgress func(indexdomain.ScanResult)
+	OnNotesProgress func(vaultreading.ScanResult)
 
-	OnTextsProgress func(indexdomain.IndexResult)
+	OnTextsProgress func(vaultreading.IndexResult)
 
-	OnVectorsProgress func(indexdomain.EmbedResult)
+	OnVectorsProgress func(vaultreading.EmbedResult)
 
 	IsTextSkipped   func(path string) bool
 	IsVectorSkipped func(path, hash string) bool
@@ -36,9 +56,9 @@ func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbed
 // ReadWholeVaultResult is the outcome of each pass. A pass that did not run is
 // a zero value, indistinguishable from a pass that found nothing.
 type ReadWholeVaultResult struct {
-	Notes   indexdomain.ScanResult
-	Texts   indexdomain.IndexResult
-	Vectors indexdomain.EmbedResult
+	Notes   vaultreading.ScanResult
+	Texts   vaultreading.IndexResult
+	Vectors vaultreading.EmbedResult
 }
 
 // Execute reads the whole vault, in the order the three passes stand in.
@@ -65,7 +85,7 @@ func (u ReadWholeVault) Execute(ctx context.Context, v domain.Vault) (ReadWholeV
 }
 
 // IndexTexts cuts the live text version of every file of the vault that has one.
-func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (indexdomain.IndexResult, error) {
+func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (vaultreading.IndexResult, error) {
 	res, err := u.texts.IndexWithProgress(ctx, v, u.OnTextsProgress, u.IsTextSkipped)
 	if err != nil {
 		return res, fmt.Errorf("indexing the file texts of %s: %w", v.Name, err)
@@ -74,7 +94,7 @@ func (u ReadWholeVault) IndexTexts(ctx context.Context, v domain.Vault) (indexdo
 }
 
 // MakeVectors embeds every chunk that lacks a vector.
-func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (indexdomain.EmbedResult, error) {
+func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (vaultreading.EmbedResult, error) {
 	res, err := u.vectors.EmbedWithProgress(ctx, v, u.OnVectorsProgress, u.IsVectorSkipped)
 	if err != nil {
 		return res, fmt.Errorf("embedding %s: %w", v.Name, err)
@@ -88,24 +108,4 @@ func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string)
 		return fmt.Errorf("cutting %s: %w", path, err)
 	}
 	return nil
-}
-
-// NoteScanner scans the notes of a vault.
-type NoteScanner interface {
-	ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(indexdomain.ScanResult)) (indexdomain.ScanResult, error)
-}
-
-// TextIndexer indexes the file texts of a vault.
-type TextIndexer interface {
-	IndexWithProgress(
-		ctx context.Context, v domain.Vault, onProgress func(indexdomain.IndexResult), isSkipped func(path string) bool,
-	) (indexdomain.IndexResult, error)
-	IndexOne(ctx context.Context, v domain.Vault, path string) (indexdomain.IndexResult, error)
-}
-
-// VectorEmbedder embeds the chunks of a vault.
-type VectorEmbedder interface {
-	EmbedWithProgress(
-		ctx context.Context, v domain.Vault, onProgress func(indexdomain.EmbedResult), isSkipped func(path, hash string) bool,
-	) (indexdomain.EmbedResult, error)
 }

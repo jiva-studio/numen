@@ -5,6 +5,7 @@ export {
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
+export { createPluginStatus, type PluginStatus } from './loading/pluginStatus'
 export { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 export type { LoaderHost } from './host'
 export type { Manifest } from '@numen/core-client'
@@ -34,7 +35,6 @@ export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,
   isWebAddress,
-  openExternalUrl,
   type ExternalOpener,
 } from './externalOpener'
 export { createAgentPort, type AgentClient } from './agentPort'
@@ -45,9 +45,10 @@ export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 export { createPluginTasks, type WindowTask } from './pluginTasks'
 export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './hosting/host'
-export { createPluginAgent } from './hosting/guards/agentGuard'
 export { requireMountAccess } from './hosting/guards/viewPermissions'
 export { createPluginContext } from './hosting/context'
+export { createIdleContextHost, type IdleContextHostParts } from './hosting/idleContextHost'
+export { disposeSubscriptions } from './hosting/guards/subscriptions'
 export { createCustomTabKind } from './hosting/customTabKind'
 export type {
   NoteBuffer,
@@ -57,7 +58,8 @@ export type {
   CommandDeclaration,
   HandlerDeclaration,
   BackendHandlerRun,
-  TabActionHandler,
+  HostCommandReads,
+  SlotCommandFinder,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
 export {

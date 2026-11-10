@@ -34,7 +34,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 		t.Fatalf("the vault came back %+v (%v)", state, err)
 	}
 	testsupport.WaitFor(t, func() bool {
-		for _, item := range api.Window.Tasking.List() {
+		for _, item := range api.Window.Tasks.List() {
 			if item.Title == "Indexing the vault" && item.About == "Sanskrit" && item.IsUserStarted {
 				return true
 			}
@@ -44,7 +44,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 
 	// The indexing ends, and the work goes with it.
 	close(blockCh)
-	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 0 })
+	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasks.List()) == 0 })
 }
 
 // A vault the index already holds is rendered from its contents, so re-indexing
@@ -61,9 +61,9 @@ func TestEnsureIndexed_ShortReindexCreatesNoTask(t *testing.T) {
 	if _, err := api.EnsureIndexed(t.Context(), target); err != nil {
 		t.Fatal(err)
 	}
-	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasking.List()) == 1 })
+	testsupport.WaitFor(t, func() bool { return len(api.Window.Tasks.List()) == 1 })
 
-	if pos := api.Window.Tasking.List()[0]; pos.IsUserStarted {
+	if pos := api.Window.Tasks.List()[0]; pos.IsUserStarted {
 		t.Errorf("indexing a vault the index carries came back as work asked for: %+v", pos)
 	}
 	close(blockCh)
@@ -133,7 +133,7 @@ func TestAVaultThatWasReadIsClaimedAgainOnceForgotten(t *testing.T) {
 // has one thing to listen to.
 func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	api := newAPI(t)
-	api.Window.Tasking = nil
+	api.Window.Tasks = nil
 
 	stream, err := newWindowClient(t, api).WatchTasks(
 		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: testWindow}),
@@ -204,7 +204,7 @@ func TestAnIndexingThatFailedStaysAsWorkWithWhy(t *testing.T) {
 		t.Fatal(err)
 	}
 	testsupport.WaitFor(t, func() bool {
-		for _, item := range api.Window.Tasking.List() {
+		for _, item := range api.Window.Tasks.List() {
 			if item.Title == "Indexing the vault" && item.Error == "the folder is not there" {
 				return true
 			}

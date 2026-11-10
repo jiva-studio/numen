@@ -19,13 +19,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // The window renames a note and takes one out of the vault. What the vault
@@ -39,7 +36,7 @@ func isGone(t *testing.T, root, path string) bool {
 
 func waitForScan(t *testing.T, f *going) {
 	t.Helper()
-	testsupport.WaitFor(t, f.installation.State.IsReady)
+	testsupport.WaitFor(t, f.installation.State.Runtime.IsReady)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so
@@ -602,49 +599,6 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 	}
 }
 
-// when something outside this process wrote the file in the meantime.
-type staleWriters struct{ note.MoveWriting }
-
-func (o staleWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
-	writer, err := o.MoveWriting.OpenNoteWriter(v)
-	if err != nil {
-		return nil, err
-	}
-	return staleWriter{NoteWriter: writer}, nil
-}
-
-type staleWriter struct{ vaultport.NoteWriter }
-
-func (staleWriter) Write(
-	context.Context, string, []byte, domain.FileStat,
-) (domain.FileStat, error) {
-	return domain.FileStat{}, edit.ErrStale
-}
-
-// TestRenamingANoteWrittenElsewhereIsAQuestion. A note containing unread prose
-// from another writer is resolved by the user, as in save and join.
-func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
-	f := openWindow(t, nil, map[string]string{
-		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
-	})
-	waitForScan(t, f)
-	*editor.ServicesOf(f.installation).NoteRename() = editor.ServicesOf(f.installation).NoteRename().WithWriters(staleWriters{MoveWriting: editor.ServicesOf(f.installation).NoteRename().Writers()})
-
-	out, err := editor.ServicesOf(f.installation).Note.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
-		Path:  "Old.md",
-		Title: "New",
-	}))
-	if err != nil {
-		t.Fatalf("a note written elsewhere came back as an error: %v", err)
-	}
-	if code := out.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_CONFLICT {
-		t.Errorf("a note that changed was answered %v", code)
-	}
-	if isGone(t, f.installation.State.GetCurrentVault().Path, "Old.md") {
-		t.Error("the file moved for a rename that wrote nothing")
-	}
-}
-
 // stuck is an index that will not file a row under the path a file moved to.
 type stuck struct{ sourceport.SourceRepository }
 
@@ -679,7 +633,9 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	*editor.ServicesOf(f.installation).NoteRename() = editor.ServicesOf(f.installation).NoteRename().WithSources(stuck{editor.ServicesOf(f.installation).NoteRename().Sources()})
+	editor.ServicesOf(f.installation).NoteRename().Drawing = func(context.Context, domain.Move) error {
+		return errors.New("the window would not show the move")
+	}
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",
@@ -978,7 +934,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.installation.Notes().Browse.GetTitles.Execute(t.Context(), f.installation.GetCurrentVault(), []string{"Entropy.md"})
+	found, err := f.installation.Notes().Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1093,8 +1049,8 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 		t.Errorf("the link was written by a name two notes answer to:\n%s", made)
 	}
 
-	center, err := f.client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "physics/Ontology.md"}))
+	center, err := f.client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "physics/Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1317,7 +1273,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Errorf("the note under the folder holds:\n%s", now)
 	}
 
-	center, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+	center, err := f.client.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil {

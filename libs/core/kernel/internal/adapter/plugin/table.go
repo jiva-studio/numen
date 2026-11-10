@@ -11,6 +11,7 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -31,6 +32,7 @@ type table struct {
 	problems      []manifestjson.DiscoveryProblem
 	supervisors   map[string]*lifecycle.Supervisor
 	endpoints     map[string]plugindomain.Endpoint
+	clients       *transport.Clients
 	listenerPorts map[string]map[string]int
 	settings      map[string]map[string]any
 	activation    lifecycle.ActivationPolicy
@@ -46,6 +48,7 @@ func newTable() *table {
 		builtIns:      make(map[string]builtInPlugin),
 		supervisors:   make(map[string]*lifecycle.Supervisor),
 		endpoints:     make(map[string]plugindomain.Endpoint),
+		clients:       transport.NewClients(),
 		listenerPorts: make(map[string]map[string]int),
 		settings:      make(map[string]map[string]any),
 		activation:    lifecycle.DefaultActivationPolicy(),

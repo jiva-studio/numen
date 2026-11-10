@@ -8,6 +8,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -22,6 +23,11 @@ type Activation struct {
 	config           *ConfigPush
 	discovery        *Discovery
 	refreshListeners func(ctx context.Context, pluginID string)
+}
+
+// ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
+func (a *Activation) ClientLookup() transport.ClientLookup {
+	return transport.NewClientLookup(a.t.clients)
 }
 
 func newActivation(t *table, clock machineport.Clock, failures *Failures, processes *Processes) *Activation {

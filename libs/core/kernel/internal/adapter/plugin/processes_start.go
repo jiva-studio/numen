@@ -98,12 +98,13 @@ func (p *Processes) startBuiltIn(ctx context.Context, plug manifest.Discovered, 
 	}
 
 	endpoint := plugindomain.Endpoint{
-		Host:      "inprocess",
-		Port:      0,
-		Token:     token,
-		Transport: transport.NewInProcessTransport(handler),
+		Host:  "inprocess",
+		Port:  0,
+		Token: token,
 	}
-	if err := transport.CheckPluginProtocol(ctx, plug.Manifest, endpoint); err != nil {
+	p.t.clients.Add(token, transport.NewInProcessTransport(handler))
+	if err := transport.CheckPluginProtocol(ctx, p.t.clients.Get(endpoint), plug.Manifest, endpoint); err != nil {
+		p.t.clients.Remove(token)
 		p.shutdownBuiltIn(ctx, endpoint)
 		return emptyEndpoint(), err
 	}
@@ -122,7 +123,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, plug manifest.Discovered, 
 }
 
 func (p *Processes) shutdownBuiltIn(ctx context.Context, endpoint plugindomain.Endpoint) {
-	if shutdown := createRPCShutdown(endpoint, time.Second); shutdown != nil {
+	if shutdown := createRPCShutdown(endpoint, p.t.clients.Get(endpoint), time.Second); shutdown != nil {
 		if err := shutdown(context.WithoutCancel(ctx)); err != nil {
 			p.errs.report(fmt.Errorf("shut down the handler of built-in plugin that was not activated: %w", err))
 		}

@@ -2,7 +2,7 @@
  * The commands of the window: which ones it runs now, the items a command offers, and the one way
  * a plugin runs a command, its own or another's, from a button, a menu row or its code.
  */
-import type { Disposable } from '../types'
+import type { JsonValue, Disposable } from '../types'
 import { SHARED_COMMANDS } from './sharedCommands'
 
 // isSharedCommand reports whether the full id is a shared command of the application.
@@ -20,7 +20,7 @@ export interface CommandTarget {
   readonly others: readonly string[]
   readonly tab: string
   readonly noteType?: string
-  readonly properties?: Readonly<Record<string, unknown>>
+  readonly properties?: Readonly<Record<string, JsonValue>>
 }
 
 // CommandItem is one item a command offers over a target, such as one open window for "Move to

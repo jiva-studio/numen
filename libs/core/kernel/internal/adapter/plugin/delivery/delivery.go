@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -38,6 +39,7 @@ type Host struct {
 	GetSnapshot   func(pluginID string) (Snapshot, bool, error)
 	ListPluginIDs func() []string
 	ReportError   func(err error)
+	GetClient     func(endpoint plugindomain.Endpoint) *http.Client
 }
 
 // Delivery gives each running plugin its configuration and the secrets it declares, and sends them
@@ -180,7 +182,7 @@ func (d *Delivery) Configure(ctx context.Context, pluginID string) error {
 func (d *Delivery) deliver(ctx context.Context, snapshot Snapshot, lists []allowedList, listErr error) error {
 	entries, failures := readEntries(ctx, snapshot, lists)
 	readErr := d.getReadError(listErr, failures)
-	isConfigured, sendErr := sendConfigure(ctx, snapshot, entries)
+	isConfigured, sendErr := d.sendConfigure(ctx, snapshot, entries)
 	d.ledger.recordOutcome(snapshot.PluginID, getSignature(lists), sendErr, readErr, sendErr != nil && isCallerFailure(ctx, sendErr))
 	if sendErr == nil && isConfigured {
 		d.watchers.run(snapshot.PluginID)
@@ -196,9 +198,9 @@ func isCallerFailure(ctx context.Context, err error) bool {
 	return code == connect.CodeCanceled || code == connect.CodeDeadlineExceeded
 }
 
-func sendConfigure(ctx context.Context, snapshot Snapshot, entries []*v1.ConfigureSecrets) (bool, error) {
+func (d *Delivery) sendConfigure(ctx context.Context, snapshot Snapshot, entries []*v1.ConfigureSecrets) (bool, error) {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
-		transport.EndpointClient(snapshot.Endpoint),
+		d.host.GetClient(snapshot.Endpoint),
 		transport.GetBaseURL(snapshot.Endpoint),
 		connect.WithInterceptors(transport.AuthInterceptor(snapshot.Endpoint.Token)),
 	)

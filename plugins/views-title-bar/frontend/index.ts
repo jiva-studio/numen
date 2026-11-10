@@ -36,7 +36,7 @@ export function createTitleBarView(context: PluginContext) {
     hideInFullscreen.value = readHideInFullscreenSetting(value)
   })
   const reportError = (error: unknown): void =>
-    context.ui.notices?.show(error instanceof Error ? error.message : String(error), 'error')
+    context.ui.notices.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({
     name: 'TitleBarView',
     setup: () => {

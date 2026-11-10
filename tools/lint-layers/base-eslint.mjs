@@ -787,6 +787,55 @@ const numenPlugin = {
       },
     },
 
+    'no-unknown-in-contract': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Forbid `unknown` in an exported declaration of a contract: name the real type, JsonValue for a value that crosses as JSON, or Caught for a caught error',
+        },
+        messages: {
+          unknownInContract:
+            'A contract does not say `unknown`. Name the type, use JsonValue for JSON, or Caught for a caught value.',
+        },
+      },
+      create(context) {
+        const isInside = (node, type) => {
+          for (let up = node.parent; up; up = up.parent) if (up.type === type) return true
+          return false
+        }
+        const isCaughtAlias = (node) => {
+          const alias = node.parent
+          return alias?.type === 'TSTypeAliasDeclaration' && alias.id.name === 'Caught'
+        }
+        return {
+          TSUnknownKeyword(node) {
+            if (!isInside(node, 'ExportNamedDeclaration')) return
+            if (isInside(node, 'BlockStatement') || isCaughtAlias(node)) return
+            context.report({ node, messageId: 'unknownInContract' })
+          },
+        }
+      },
+    },
+
+    'no-comment-only-catch': {
+      meta: {
+        type: 'problem',
+        docs: { description: 'Forbid a catch block that holds no statement, a comment included' },
+        messages: {
+          emptyCatch:
+            'A catch block with no statement hides the failure. Handle it: log it, return it as a result, or leave out the try.',
+        },
+      },
+      create(context) {
+        return {
+          CatchClause(node) {
+            if (node.body.body.length === 0) context.report({ node, messageId: 'emptyCatch' })
+          },
+        }
+      },
+    },
+
     'no-double-type-assertion': {
       meta: {
         type: 'problem',
@@ -1002,6 +1051,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
+        'numen/no-comment-only-catch': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/consistent-type-assertions': [
           'error',
@@ -1209,6 +1259,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
         'numen/no-double-type-assertion': 'off',
+        'numen/no-comment-only-catch': 'off',
         '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
         complexity: 'off',
@@ -1233,6 +1284,17 @@ export function createBaseConfig(dirname, options = {}) {
 
     prettier,
   ]
+}
+
+/**
+ * Bans `unknown` in the exported declarations of the given files, which are a contract other code
+ * is written against.
+ *
+ * @param {string[]} files The globs of the files; tests are left out
+ * @returns {object}
+ */
+export function createNoUnknownContractConfig(files) {
+  return { files, ignores: ['**/*.test.ts', '**/*.spec.ts'], plugins: { numen: numenPlugin }, rules: { 'numen/no-unknown-in-contract': 'error' } }
 }
 
 /**

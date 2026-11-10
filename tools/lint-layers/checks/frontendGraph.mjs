@@ -68,7 +68,9 @@ export function getSliceOf(file, sourceRoot) {
 
 /**
  * The shipped files of a window's `shared` layer that serve one slice only. A shared file's consumers are the
- * slices of the files outside `shared` that import it, and the consumers of the shared files that import it.
+ * slices of the files outside `shared` that import it, and the consumers of the shared files that import it. The `app`
+ * layer composes the slices and is not a consumer that makes a file shared: a file used by one slice and `app` serves
+ * that slice.
  *
  * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
  */
@@ -97,8 +99,10 @@ export function findSharedServingOneSlice(modules, sourceRoot) {
   const findings = [];
   const files = modules.map((one) => one.source).filter((file) => file.startsWith(shared) && !isNotShipped(file));
   for (const file of files) {
-    const slices = getConsumers(file, new Set([file]));
-    if (slices.size === 1) findings.push({ file, line: 1, symbol: `serves only ${[...slices][0]}; it belongs in that slice` });
+    const consumers = getConsumers(file, new Set([file]));
+    const slices = [...consumers].filter((one) => one !== "app");
+    if (slices.length === 1) findings.push({ file, line: 1, symbol: `serves only ${slices[0]}; it belongs in that slice` });
+    else if (slices.length === 0 && consumers.size === 1) findings.push({ file, line: 1, symbol: "serves only app; it belongs in that layer" });
   }
   return { findings, read: files.length };
 }
@@ -177,6 +181,35 @@ export function findAppOverreach(files, maxLines = APP_MAX_LINES) {
   return { findings, read: shipped.length };
 }
 
+/** The forms of a part that is made empty and filled once the parts it needs exist. */
+const LATE_BINDINGS = [
+  { pattern: /\bcurrent\?\s*:/, symbol: "a holder with an optional current" },
+  { pattern: /\.current\s*=(?!=)/, symbol: "a holder assigned after it was made" },
+  { pattern: /\bObject\.assign\(\s*(?!\{)/, symbol: "Object.assign fills an object that was made before" },
+];
+
+/**
+ * The lines of a window's `app` layer that bind a part late: a `{ current?: ... }` holder, a `.current = ...`
+ * assignment and an `Object.assign` onto an object made before. `app` creates each part after the parts it needs;
+ * a part two others need is made first and handed to both, as a state with its own methods.
+ *
+ * @param {Array<{ file: string, text: string }>} files The files under `app/`, with their text
+ * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
+ */
+export function findLateBindings(files) {
+  const findings = [];
+  const shipped = files.filter((one) => !isNotShipped(one.file));
+  for (const { file, text } of shipped) {
+    text.split("\n").forEach((line, at) => {
+      if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
+      for (const { pattern, symbol } of LATE_BINDINGS) {
+        if (pattern.test(line)) findings.push({ file, line: at + 1, symbol });
+      }
+    });
+  }
+  return { findings, read: shipped.length };
+}
+
 function listAppFiles(root) {
   const out = [];
   const walk = (dir) => {
@@ -200,6 +233,18 @@ export function verifyAppIsComposition() {
   }
   requireMatches("Source files of the app layers", read, 10);
   failOnFindings("The app layer of a window holds more than composition", findings);
+}
+
+export function verifyAppBindsInOrder() {
+  const findings = [];
+  let read = 0;
+  for (const root of listWindows(REPO_ROOT)) {
+    const one = findLateBindings(listAppFiles(root));
+    findings.push(...one.findings);
+    read += one.read;
+  }
+  requireMatches("Source files of the app layers", read, 10);
+  failOnFindings("The app layer of a window binds a part late", findings);
 }
 
 export const FRONTEND_GRAPH_VERIFIERS = [
@@ -230,5 +275,12 @@ export const FRONTEND_GRAPH_VERIFIERS = [
     module: "boundary",
     name: "The app Layer of a Window Holds Short Files and No Composable",
     run: verifyAppIsComposition,
+  },
+  {
+    id: "app-binds-in-order",
+    scope: "apps",
+    module: "boundary",
+    name: "The app Layer of a Window Makes Each Part After the Parts It Needs, With No Holder Filled Later",
+    run: verifyAppBindsInOrder,
   },
 ];

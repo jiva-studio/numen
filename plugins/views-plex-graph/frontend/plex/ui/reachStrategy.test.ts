@@ -32,7 +32,7 @@ function stubMatrix(element: SVGSVGElement) {
 
 const mountPlex = (props: Record<string, unknown> = {}) => {
   const plex = mount(Plex, {
-    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, reaching: byLongPress(), ...props },
+    props: { neighborhood: NEIGHBOURHOOD, duration: 0, reaching: byLongPress(), ...props },
     attachTo: document.body,
   })
   const svg = plex.find('svg').element as SVGSVGElement

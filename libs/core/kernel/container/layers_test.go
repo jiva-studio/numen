@@ -1083,6 +1083,11 @@ func listGrouping() []string {
 }
 
 func family(pkg string) string {
+	// The endpoints that serve plugin calls sit under adapter/plugin and the driven clients under
+	// internal/adapter/plugin; the plugin host and both are one family.
+	if isWithin(pkg, "adapter/plugin") {
+		pkg = "internal/" + pkg
+	}
 	depth := 2
 	for _, one := range listGrouping() {
 		if strings.HasPrefix(pkg, one+"/") {

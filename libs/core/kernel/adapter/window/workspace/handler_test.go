@@ -9,8 +9,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -38,11 +38,11 @@ func (s showing) GetCurrentVault() domain.Vault { return s.vault }
 
 func newHandlerOver(t *testing.T, window showing, store memoryTabs) *Handler {
 	t.Helper()
-	links, err := tablinks.NewRegistry(LinkGrace, scheduleNothing)
+	links, err := tablinks.New(LinkGrace, scheduleNothing, newLinkEvents())
 	if err != nil {
 		t.Fatal(err)
 	}
-	return NewHandler(window, window, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links)
+	return NewHandler(window, window.Notices, window, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links)
 }
 
 // The window reports the tabs that are currently open, and the handler returns
@@ -52,7 +52,7 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 	state := newState()
 	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
 
-	if open := state.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
+	if open := state.Runtime.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
 		t.Fatalf("a window that has said nothing has %+v open", open)
 	}
 
@@ -74,7 +74,7 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 			{ID: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
 		},
 	}
-	if got := state.GetOpenTabs(); !reflect.DeepEqual(got, want) {
+	if got := state.Runtime.GetOpenTabs(); !reflect.DeepEqual(got, want) {
 		t.Errorf("the window has %+v open", got)
 	}
 }
@@ -170,8 +170,8 @@ func TestDetachTabInvokesState(t *testing.T) {
 	state.DetachTab = func(_ context.Context, tab window.DetachedTab) error {
 		got = tab
 		// The new window reads and accepts the tab, so DetachTab responds.
-		_, moveID, _ := links.ReadDetached("window-b", tab.ID)
-		links.Accept("window-b", tab.ID, moveID)
+		_, moveID, _ := links.Transfers.ReadDetached("window-b", tab.ID)
+		links.Transfers.Accept("window-b", tab.ID, moveID)
 		return nil
 	}
 

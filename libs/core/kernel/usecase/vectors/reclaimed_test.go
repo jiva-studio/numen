@@ -72,7 +72,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 }
 
 // faint answers with a direction that leans on one dimension, so the rest sit
-// below half a quantised step and are stored as zero. Which way a stored zero
+// below half a quantized step and are stored as zero. Which way a stored zero
 // leans is what the two coarse forms have to agree about.
 type faint struct{ dims int }
 

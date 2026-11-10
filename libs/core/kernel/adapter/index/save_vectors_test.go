@@ -32,7 +32,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestSaveVectorsBatchedCommit(t *testing.T) {
 	}
 
 	// Verify all were written
-	unembeddedAfter, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
+	unembeddedAfter, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, numChunks)
 	if err != nil {
 		t.Fatal(err)
 	}

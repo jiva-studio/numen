@@ -21,7 +21,7 @@ func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
 // GetFileStats is what the index records about each note of the vault, keyed by path.
 func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) {
-	return chunk.NewQueries(q.db).GetFileStats(ctx, vaultID, kind)
+	return chunk.NewFiles(q.db).GetFileStats(ctx, vaultID, kind)
 }
 
 // Has reports whether the index carries this vault at all.

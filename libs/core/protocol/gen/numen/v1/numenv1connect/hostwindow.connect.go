@@ -49,7 +49,7 @@ const (
 
 // HostWindowServiceClient is a client for the numen.v1.HostWindowService service.
 type HostWindowServiceClient interface {
-	// FocusNote makes a note the current one, and the neighbourhood view is centred on it.
+	// FocusNote makes a note the current one, and the neighborhood view is centered on it.
 	FocusNote(context.Context, *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error)
 	// FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
 	// passages opens the file at its beginning.
@@ -129,7 +129,7 @@ func (c *hostWindowServiceClient) ActivateTab(ctx context.Context, req *connect.
 
 // HostWindowServiceHandler is an implementation of the numen.v1.HostWindowService service.
 type HostWindowServiceHandler interface {
-	// FocusNote makes a note the current one, and the neighbourhood view is centred on it.
+	// FocusNote makes a note the current one, and the neighborhood view is centered on it.
 	FocusNote(context.Context, *connect.Request[v1.FocusNoteRequest]) (*connect.Response[v1.FocusNoteResponse], error)
 	// FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
 	// passages opens the file at its beginning.

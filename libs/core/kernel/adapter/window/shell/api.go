@@ -36,7 +36,7 @@ type API struct {
 }
 
 // PluginServices is where the calls for the services plugins serve are forwarded.
-type PluginServices = interface {
+type PluginServices interface {
 	http.Handler
 	// Serves reports whether an enabled plugin serves the service the path names.
 	Serves(urlPath string) bool
@@ -48,7 +48,7 @@ func NewWindow(name string, tasks *run.Tasks) *wire.Window {
 	if tasks == nil {
 		tasks = run.NewTasks()
 	}
-	return &wire.Window{Named: name, Tasking: tasks}
+	return &wire.Window{Name: name, Tasks: tasks}
 }
 
 func (a *API) reportTask(task work.Task) { a.Window.AddTask(task) }

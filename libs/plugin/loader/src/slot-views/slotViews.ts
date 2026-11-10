@@ -3,7 +3,7 @@
  * the one of the plugin first by plugin id. Every other plugin that registers a view for the slot is
  * reported.
  */
-import { computed, shallowRef, type ComputedRef, type ShallowRef } from 'vue'
+import { computed, shallowRef, type Component, type ComputedRef, type ShallowRef } from 'vue'
 import { type Disposable, type SlotName, type SlotViewRegistration } from '@numen/plugin-sdk'
 import { WINDOW_SLOTS } from '../slots/windowSlots'
 import { createStyledView } from '../slots/styledView'
@@ -24,7 +24,7 @@ export interface SlotViewRegistry {
    * The component the plugin registered for the view, in any slot, drawn with the stylesheet of the
    * plugin; undefined while it has registered none.
    */
-  findView(this: void, pluginId: string, view: string): unknown
+  findView(this: void, pluginId: string, view: string): Component | undefined
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
   registerSlotView(
     this: void,

@@ -8,30 +8,26 @@
 import { shallowRef, type ShallowRef } from 'vue'
 import {
   createAppInfo,
-  createPluginAgent,
-  createExternalOpener,
+  createIdleContextHost,
+  createPluginContext,
+  disposeSubscriptions,
   createPluginNotices,
   createSlotViewRegistry,
-  getDeclaredSlots,
   createViewRegistry,
   requireMountAccess,
   type ViewRegistry,
   SLOT,
-  openExternalUrl,
   type LoaderHost,
   type Manifest,
   type AgentHost,
   type Disposable,
   type PluginContext,
-  type PluginRegistrations,
-  type PluginUi,
-  type SlotViewRegistry,
-  type SlotViewRegistration,
   type CommandsHost,
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
+import { openExternalUrl } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
 import { TARGET } from '@/shared/config/window'
 
@@ -39,9 +35,6 @@ import {
   createFrontView,
   createWindowSlots,
   createWindowTab,
-  UNUSED_EVENTS,
-  UNUSED_REGISTRATIONS,
-  UNUSED_SETTINGS,
   type PluginView,
 } from './hostParts'
 
@@ -52,23 +45,25 @@ const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginVie
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
 }
 
-/** The commands, the vaults and the window the plugins read, filled once the window has made them. */
+/** The commands, the vaults and the window the plugins read, once the window has made them. */
 export interface ShellServices {
   commands?: CommandsHost
   vaults?: VaultsHost
   window?: WindowHost
 }
 
-const registerInSlots = (
-  slotViews: SlotViewRegistry,
-  plugin: { readonly pluginId: string; readonly manifest: Manifest | undefined },
-  registration: SlotViewRegistration,
-): Disposable => {
-  const { pluginId, manifest } = plugin
-  const registrations = getDeclaredSlots(pluginId, manifest, registration.id).map((slot) =>
-    slotViews.registerSlotView(pluginId, slot, registration),
-  )
-  return { dispose: () => registrations.forEach((one) => one.dispose()) }
+/**
+ * The services a plugin is given, stored from the start of the window: the host reads them when a
+ * plugin asks, and the window provides them once it has made them.
+ */
+export function createShellServices() {
+  const stored = shallowRef<ShellServices>({})
+  return {
+    get: (): ShellServices => stored.value,
+    provide: (services: ShellServices): void => {
+      stored.value = { ...stored.value, ...services }
+    },
+  }
 }
 
 const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
@@ -82,48 +77,8 @@ function mountDeclaredView(
   registry: ViewRegistry,
   caller: { pluginId: string; manifest?: Manifest | undefined },
 ) {
-  return (capability: string, element: HTMLElement, viewContext: unknown) =>
+  return (capability: string, element: HTMLElement, viewContext: object) =>
     registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
-}
-
-/** The plugin a context is made for, and how it keeps what the plugin registers. */
-interface PluginScope {
-  readonly plugin: { readonly pluginId: string; readonly manifest: Manifest | undefined }
-  readonly add: (one: Disposable) => Disposable
-}
-
-/** What the tab kinds, the views and the slot views of the plugins are kept in. */
-interface ShellRegistries {
-  readonly addView: (view: PluginView) => Disposable
-  readonly declaredViews: ViewRegistry
-  readonly slotViews: SlotViewRegistry
-}
-
-function createShellRegistrations(
-  scope: PluginScope,
-  registries: ShellRegistries,
-): PluginRegistrations {
-  const { plugin, add } = scope
-  const { addView, declaredViews, slotViews } = registries
-  return {
-    reader: UNUSED_REGISTRATIONS.reader,
-    command: UNUSED_REGISTRATIONS.command,
-    agentProvider: UNUSED_REGISTRATIONS.agentProvider,
-    settingsView: UNUSED_REGISTRATIONS.settingsView,
-    tabKind: (registration) => add(addView({ pluginId: plugin.pluginId, registration })),
-    view: (registration) =>
-      add(declaredViews.registerView(plugin.pluginId, registration, plugin.manifest?.permissions)),
-    slotView: (registration) => add(registerInSlots(slotViews, plugin, registration)),
-  }
-}
-
-function createShellMount(scope: PluginScope, declaredViews: ViewRegistry): PluginUi['mountView'] {
-  const { plugin, add } = scope
-  return (capability, element, viewContext) => {
-    const view = mountDeclaredView(declaredViews, plugin)(capability, element, viewContext)
-    add(view)
-    return view
-  }
 }
 
 /**
@@ -134,7 +89,7 @@ function createShellMount(scope: PluginScope, declaredViews: ViewRegistry): Plug
  */
 export function createShellHost(
   agent?: AgentHost,
-  services: ShellServices = {},
+  getServices: () => ShellServices = () => ({}),
   getPlatform: () => WindowPlatform = () => 'windows',
 ) {
   const views = shallowRef<readonly PluginView[]>([])
@@ -151,36 +106,28 @@ export function createShellHost(
 
   const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
+  const contextHost = createIdleContextHost({
+    app: createWindowAppInfo(getPlatform),
+    target: TARGET,
+    openExternal: (url) => openExternalUrl(url),
+    registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
+    registerView: (pluginId, registration, permissions) =>
+      declaredViews.registerView(pluginId, registration, permissions),
+    registerSlotView: (pluginId, slot, registration) =>
+      slotViews.registerSlotView(pluginId, slot, registration),
+    mountView: (capability, element, viewContext, access) =>
+      declaredViews.mountView(capability, element, viewContext, access),
+    closeTab: (id) => closeTab(id),
+    getSlots: () => windowSlots.slots,
+    getNotices: (pluginId) => createPluginNotices(notices, pluginId),
+    getCommands: () => getServices().commands,
+    getVaults: () => getServices().vaults,
+    getWindow: () => getServices().window,
+    getAgent: () => agent,
+  })
+
   const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {
-    const subscriptions: Disposable[] = []
-    const add = (one: Disposable) => {
-      subscriptions.push(one)
-      return one
-    }
-    const scope: PluginScope = { plugin: { pluginId, manifest }, add }
-    const context: PluginContext = {
-      plugin: {
-        id: pluginId,
-        target: TARGET,
-        subscriptions,
-        app: createWindowAppInfo(getPlatform),
-        openExternal: createExternalOpener((url) => openExternalUrl(url)),
-        hasPermission: (permission) => manifest?.permissions.includes(permission) ?? false,
-      },
-      register: createShellRegistrations(scope, { addView, declaredViews, slotViews }),
-      settings: UNUSED_SETTINGS,
-      events: UNUSED_EVENTS,
-      tabs: { close: (id) => closeTab(id) },
-      vault: { ...(services.vaults ? { vaults: services.vaults } : {}) },
-      ui: {
-        slots: windowSlots.slots,
-        notices: createPluginNotices(notices, pluginId),
-        ...(services.commands ? { commands: services.commands } : {}),
-        ...(services.window ? { window: services.window } : {}),
-        mountView: createShellMount(scope, declaredViews),
-      },
-      work: { ...(agent ? { agent: createPluginAgent(agent, { pluginId, manifest }) } : {}) },
-    }
+    const context = createPluginContext(pluginId, contextHost, manifest)
     contexts.set(pluginId, context)
     windowSlots.track(pluginId, manifest)
     return context
@@ -188,7 +135,8 @@ export function createShellHost(
 
   const disposePlugin = (pluginId: string) => {
     if (tab.value?.view.pluginId === pluginId) closeTab()
-    for (const one of contexts.get(pluginId)?.plugin.subscriptions.splice(0) ?? []) one.dispose()
+    const context = contexts.get(pluginId)
+    if (context) disposeSubscriptions(context.plugin.subscriptions)
     contexts.delete(pluginId)
     views.value = views.value.filter((one) => one.pluginId !== pluginId)
     slotViews.disposePlugin(pluginId)

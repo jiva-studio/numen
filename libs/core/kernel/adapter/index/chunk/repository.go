@@ -266,3 +266,92 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 	}
 	return nil
 }
+
+func getDisplacedSources(
+	ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string,
+) (displaced []int64, err error) {
+	first, past := getRangeUnder(to)
+	rows, err := tx.QueryContext(ctx, getStatement("sources_under"), vault, to, first, past)
+	if err != nil {
+		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+	}
+	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
+
+	movingFirst, movingPast := getRangeUnder(from)
+	for rows.Next() {
+		var source int64
+		var path string
+		if err := rows.Scan(&source, &path); err != nil {
+			return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+		}
+		if path == from || (path >= movingFirst && path < movingPast) {
+			continue
+		}
+		displaced = append(displaced, source)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", to, err)
+	}
+	return displaced, nil
+}
+
+func updateNoteName(ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string) error {
+	var title string
+	var named bool
+	err := tx.QueryRowContext(ctx, getStatement("note_naming"), vault, from).Scan(&title, &named)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("what the note %s is called: %w", from, err)
+	}
+	displayName, isRenamed := domain.GetNameAfterMove(from, to, title, named)
+	if !isRenamed {
+		return nil
+	}
+	if err := exec(ctx, tx, "rename_note", domain.FoldName(domain.Basename(to)), displayName, vault, from); err != nil {
+		return err
+	}
+	return exec(ctx, tx, "rename_title", vault, from, displayName)
+}
+
+func getRangeUnder(folder string) (first, past string) {
+	return folder + "/", folder + "0"
+}
+
+func exec(ctx context.Context, tx *sqlwrite.Transaction, name string, args ...any) error {
+	if _, err := tx.ExecContext(ctx, getStatement(name), args...); err != nil {
+		if ctx.Err() != nil {
+			return fmt.Errorf("%s: %w", name, ctx.Err())
+		}
+		return fmt.Errorf("%s: %w", name, err)
+	}
+	return nil
+}
+
+// querier runs a single-row query, on a transaction or on a plain connection.
+type querier interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+func vaultRow(ctx context.Context, db querier, identifier domain.VaultID) (int64, error) {
+	var row int64
+	err := db.QueryRowContext(ctx, vaultRowSQL, string(identifier)).Scan(&row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, errNoVault
+	}
+	return row, err
+}
+
+func getSourceRow(ctx context.Context, db querier, vault int64, kind, path string) (int64, error) {
+	var row int64
+	err := db.QueryRowContext(ctx, identifySQL, vault, kind, path).Scan(&row)
+	return row, err
+}
+
+func newNullable(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}

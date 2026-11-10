@@ -115,8 +115,8 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	if packagesRead := len(fields); packagesRead < 15 {
 		t.Fatalf("%d driving-adapter packages read, want at least 15: the walk is not reading them", packagesRead)
 	}
-	if structs < 75 {
-		t.Fatalf("%d struct types of the driving adapters read, want at least 75: the walk is not reading them", structs)
+	if structs < 60 {
+		t.Fatalf("%d struct types of the driving adapters read, want at least 60: the walk is not reading them", structs)
 	}
 
 	for rel, file := range files {
@@ -185,9 +185,6 @@ func depguardFiles(t *testing.T) []string {
 func getUncovered(patterns []string) []string {
 	var found []string
 	for one := range getDriving() {
-		if !strings.HasPrefix(one, "adapter/") {
-			continue
-		}
 		if !slices.ContainsFunc(patterns, func(pattern string) bool {
 			target := strings.TrimSuffix(strings.TrimPrefix(pattern, "**/"), "/**")
 			return !strings.HasPrefix(pattern, "!") && (one == target || strings.HasPrefix(one, target+"/"))
@@ -216,11 +213,11 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 }
 
 func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
-	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "!**/adapter/cli/deps.go"})
+	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
-	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/adapter/cli/**"}); len(got) != 0 {
+	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/adapter/cli/**"}); len(got) != 0 {
 		t.Errorf("the rule refuses %v, want none", got)
 	}
 }

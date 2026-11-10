@@ -41,7 +41,7 @@ func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		t.Fatal("the plugin's open after the prompt closed never returned")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }
@@ -117,7 +117,7 @@ func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		t.Fatal("the user's close never returned")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s, want %s", got.Name, f.second.Name)
 	}
 }

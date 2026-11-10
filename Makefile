@@ -592,6 +592,7 @@ check_styles: ## run stylelint over every stylesheet and component style: tokens
 
 .PHONY: check_quality
 check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
+	node --test $(QUALITY)/checks/apiTypes.test.mjs
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
 
 .PHONY: check_knip

@@ -3,11 +3,12 @@ package container
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -38,15 +39,15 @@ func newFailingConfig(t *testing.T) Config {
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return NewConfig(Config{PluginHost: LendPluginHost(host)})
+	return NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 }
 
 func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 	cfg := newFailingConfig(t)
 	tasks := run.NewTasks()
-	cfg.ReportPluginFailures(tasks)
+	reportPluginFailures(plugins(cfg), tasks)
 
-	failure, err := cfg.GetPluginRetrier()(t.Context(), "md.numen.sample")
+	failure, err := getPluginRetrier(plugins(cfg))(t.Context(), "md.numen.sample")
 	if err != nil || failure == nil {
 		t.Fatalf("retry = %+v, %v, want the plugin to fail again", failure, err)
 	}
@@ -68,9 +69,9 @@ func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 // An installation with no plugin host has nothing to retry and nothing to report.
 func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 	cfg := NewConfig(Config{})
-	cfg.ReportPluginFailures(run.NewTasks())
+	reportPluginFailures(plugins(cfg), run.NewTasks())
 
-	_, err := cfg.GetPluginRetrier()(t.Context(), "md.numen.sample")
+	_, err := getPluginRetrier(plugins(cfg))(t.Context(), "md.numen.sample")
 
 	var unavailable *plugin.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugin.NotInstalled {
@@ -81,10 +82,10 @@ func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 func TestGetPluginNameReadsTheManifest(t *testing.T) {
 	cfg := newFailingConfig(t)
 
-	if got := cfg.getPluginName("md.numen.sample"); got != "Sample" {
+	if got := pluginsGetPluginName(plugins(cfg), "md.numen.sample"); got != "Sample" {
 		t.Errorf("getPluginName(md.numen.sample) = %q, want Sample", got)
 	}
-	if got := cfg.getPluginName("md.numen.absent"); got != "md.numen.absent" {
+	if got := pluginsGetPluginName(plugins(cfg), "md.numen.absent"); got != "md.numen.absent" {
 		t.Errorf("getPluginName(md.numen.absent) = %q, want the id", got)
 	}
 }

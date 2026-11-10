@@ -4,6 +4,8 @@ package theme
 import (
 	"context"
 	"errors"
+	"sync"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -103,6 +105,9 @@ func (s *Service) WriteAppearance(
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
+// keepaliveInterval is the interval between empty reports to the client of a watch.
+const keepaliveInterval = time.Second
+
 // WatchThemes notifies the client when the themes folder or the set of plugin
 // themes changes, until the client disconnects.
 func (s *Service) WatchThemes(
@@ -110,9 +115,41 @@ func (s *Service) WatchThemes(
 	_ *connect.Request[v1.WatchThemesRequest],
 	stream *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
-	err := s.watchThemes.Execute(ctx, func(names []string) error {
+	// The request context belongs to the process and does not reflect whether the page that opened the
+	// stream is still open. A failed write of an empty report is how a gone client is detected.
+	watching, stop := context.WithCancel(ctx)
+	defer stop()
+	var (
+		sending sync.Mutex
+		gone    = make(chan error, 1)
+	)
+	send := func(names []string) error {
+		sending.Lock()
+		defer sending.Unlock()
 		return stream.Send(&v1.WatchThemesResponse{Names: names})
-	})
+	}
+	go func() {
+		repeat := time.NewTicker(keepaliveInterval)
+		defer repeat.Stop()
+		for {
+			select {
+			case <-watching.Done():
+				return
+			case <-repeat.C:
+				if err := send(nil); err != nil {
+					gone <- err
+					stop()
+					return
+				}
+			}
+		}
+	}()
+	err := s.watchThemes.Execute(watching, send)
+	select {
+	case failed := <-gone:
+		return failed
+	default:
+	}
 	if errors.Is(err, themeusecase.ErrWatchUnavailable) {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}

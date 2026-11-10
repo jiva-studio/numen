@@ -60,20 +60,20 @@ func vaultOf(b *testing.B, notes int) map[string]string {
 func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain.Vault) {
 	b.Helper()
 	v := testsupport.NewVault(b, notes)
-	db, err := container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		IndexPath: filepath.Join(b.TempDir(), "index.db"),
-	}).OpenIndex(b.Context())
+	}), b.Context())
 	if err != nil {
 		b.Fatal(err)
 	}
 	testsupport.CloseAfter(b, db)
 
 	scan := vaults.NewScan(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(),
-		db.FileStats(), db.Maintenance(),
+		vaultreader.Readers{}, db.Stores.Vaults, db.Stores.Notes,
+		db.NoteQueries.FileStats, db.Stores.Maintenance,
 	)
 	if _, err := scan.Execute(b.Context(), v); err != nil {
 		b.Fatal(err)
 	}
-	return check.Standard(db.Problems()), v
+	return check.Standard(db.NoteQueries.Problems), v
 }

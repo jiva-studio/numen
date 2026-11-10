@@ -16,7 +16,7 @@ import { installCoreHandlers } from '@numen/core-client/testing'
 import {
   createNote,
   getInitialOpenPath,
-  getNeighbourhood,
+  getNeighborhood,
   listHeadings,
   readNote,
   renameNote,
@@ -29,7 +29,7 @@ const request = {
   readNote: vi.fn(),
   writeNote: vi.fn(),
   createNote: vi.fn(),
-  getNeighbourhood: vi.fn(),
+  getNeighborhood: vi.fn(),
   getOpeningNote: vi.fn(),
   renameNote: vi.fn(),
   listHeadings: vi.fn(),
@@ -247,22 +247,22 @@ describe('the edits made to notes', () => {
   })
 })
 
-describe('a neighbourhood', () => {
-  it('has its neighbourhood requested of its path', async () => {
-    request.getNeighbourhood.mockResolvedValue({
+describe('a neighborhood', () => {
+  it('has its neighborhood requested of its path', async () => {
+    request.getNeighborhood.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
       connections: [],
     })
 
-    const neighbourhood = await getNeighbourhood('a.md')
+    const neighborhood = await getNeighborhood('a.md')
 
-    expect(neighbourhood.focus.path).toBe('a.md')
-    expect(request.getNeighbourhood.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
+    expect(neighborhood.focus.path).toBe('a.md')
+    expect(request.getNeighborhood.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
   })
 
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
-    request.getNeighbourhood.mockResolvedValue({
+    request.getNeighborhood.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       focusType: 'sample',
       related: [
@@ -282,14 +282,14 @@ describe('a neighbourhood', () => {
       ],
     })
 
-    const neighbourhood = await getNeighbourhood('Rota.md')
+    const neighborhood = await getNeighborhood('Rota.md')
 
-    expect(neighbourhood.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
-    expect(neighbourhood.focusType).toBe('sample')
-    expect(neighbourhood.related).toEqual([
+    expect(neighborhood.focus).toEqual({ path: 'Rota.md', title: 'The rota' })
+    expect(neighborhood.focusType).toBe('sample')
+    expect(neighborhood.related).toEqual([
       { path: 'Allotments.md', title: 'Allotments', type: 'note', relation: 'parent' },
     ])
-    expect(neighbourhood.connections).toEqual([
+    expect(neighborhood.connections).toEqual([
       {
         first: 'Allotments.md',
         second: 'Rota.md',
@@ -302,7 +302,7 @@ describe('a neighbourhood', () => {
   })
 
   it('leaves out a note it has no relation for, and one the answer names no note at', async () => {
-    request.getNeighbourhood.mockResolvedValue({
+    request.getNeighborhood.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [
         { note: { path: 'Odd.md', title: 'Odd' }, relation: NOTE_RELATION.UNSPECIFIED },
@@ -310,12 +310,12 @@ describe('a neighbourhood', () => {
       ],
     })
 
-    expect((await getNeighbourhood('Rota.md')).related).toEqual([])
+    expect((await getNeighborhood('Rota.md')).related).toEqual([])
   })
 
   it('relies on nothing where the vault no longer holds the note', async () => {
-    request.getNeighbourhood.mockResolvedValue({ related: [] })
+    request.getNeighborhood.mockResolvedValue({ related: [] })
 
-    expect((await getNeighbourhood('Gone.md')).focus.path).toBe('')
+    expect((await getNeighborhood('Gone.md')).focus.path).toBe('')
   })
 })

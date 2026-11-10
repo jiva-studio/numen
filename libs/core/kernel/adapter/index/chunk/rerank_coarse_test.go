@@ -17,7 +17,7 @@ import (
 const dimensions = 1024
 
 func preciseBytes(v []float32) []byte {
-	q := vector.Bytes(vector.Normalise(v))
+	q := vector.Bytes(vector.Normalize(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)
@@ -25,7 +25,7 @@ func preciseBytes(v []float32) []byte {
 	return out
 }
 
-func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, []float32, int) {
+func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Search, []float32, int) {
 	t.Helper()
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
@@ -67,7 +67,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 		}
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, 100)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault, "model", chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +97,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {
 		t.Fatal(err)
 	}
-	return vault, db.ChunkQueries(), query, exact * 10
+	return vault, db.ChunkSearch(), query, exact * 10
 }
 
 func TestTheCoarsePassKeepsEightCandidatesForEachAnswer(t *testing.T) {

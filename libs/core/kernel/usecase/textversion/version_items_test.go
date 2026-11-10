@@ -128,7 +128,7 @@ func (t types) ListExtensions(domain.ContentType) []string { return nil }
 
 func getPdfTypes() types { return types{".pdf": "application/pdf"} }
 
-func getRecogniseCommand() plugin.CommandEntry {
+func getRecognizeCommand() plugin.CommandEntry {
 	return plugin.CommandEntry{PluginID: ocr, PluginName: "OCR", Command: manifest.Command{
 		ID: "recognition.create", Title: "Recognize text", Icon: "scan-text", When: "target.contentType == 'application/pdf'",
 	}}
@@ -187,7 +187,7 @@ func TestFileMenuRejectsAVersionTheCommandDoesNotList(t *testing.T) {
 			t.Errorf("%s: got %v, want ErrInvalidVersion", name, err)
 		}
 	}
-	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, getRecogniseCommand(), s.getReaderVersion()); !errors.Is(err, text.ErrInvalidVersion) {
+	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, getRecognizeCommand(), s.getReaderVersion()); !errors.Is(err, text.ErrInvalidVersion) {
 		t.Errorf("a command without items: got %v, want ErrInvalidVersion", err)
 	}
 	if len(recorder.ran) != 0 {

@@ -7,9 +7,9 @@ import {
   createTabLinkSession,
   getLinkableTabs,
   getWindowReport,
-  REPORT_RETRY_MS,
   type TabLinkSessionDeps,
 } from './tabLinkSession'
+import { createTabReports, REPORT_RETRY_MS } from './tabReports'
 
 const SNAPSHOT = {
   groups: [
@@ -111,7 +111,15 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       },
     },
   })
+  const wait = vi.fn((_ms: number) => Promise.resolve())
+  const onError = vi.fn()
   const deps = {
+    reports: createTabReports({
+      windowId: 'window-a',
+      getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
+      wait,
+      onError,
+    }),
     acceptTabMove: core.acceptTabMove,
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
@@ -119,9 +127,8 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     applyGroupPaths: vi.fn(),
     openMovedTab: vi.fn(),
     setHighlighted: vi.fn(),
-    getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
-    wait: vi.fn((_ms: number) => Promise.resolve()),
-    onError: vi.fn(),
+    wait,
+    onError,
   } satisfies TabLinkSessionDeps
   return { deps, core, signals, session: createTabLinkSession(deps) }
 }

@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-const ()
-
 // Read returns the prose of one note.
 type Read struct {
 	readers vaultport.VaultReaders

@@ -28,125 +28,99 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func (c Config) readSettingsFile() (settingsadapter.File, error) {
-	return settingsSettings(c.settings())
-}
-
-func (c Config) getSettingsAt(path string) (settingsadapter.File, error) {
-	return settingsGetSettingsAt(c.settings(), path)
-}
-
-func (c Config) getSettingsOrDefaults() settingsadapter.File {
-	return settingsGetSettingsOrDefaults(c.settings())
-}
-
 // ApplySettings reads the settings file and returns the configuration with its values applied, and
 // the notices that reading it raised. An unconfigured installation applies the default settings.
 func (c Config) ApplySettings() (Config, []string, error) {
-	selected, err := c.readSettingsFile()
+	selected, err := settingsSettings(settingsOf(c))
 	if err != nil {
 		return c, nil, err
 	}
-	return c.applySettingsFile(selected), selected.Notices, nil
+	return applySettingsFile(c, selected), selected.Notices, nil
 }
 
-func (c Config) applySettingsFile(s settingsadapter.File) Config {
-	c.Hardware, c.ResolvedCompute = resolveCompute(c.settings(), s)
-	configurePluginHost(c.settings(), s)
+func applySettingsFile(c Config, s settingsadapter.File) Config {
+	c.Hardware, c.ResolvedCompute = resolveCompute(settingsOf(c), s)
+	configurePluginHost(settingsOf(c), s)
 	return c
 }
 
-// Plugins returns a function that lists the discovered plugins and their
-// settings schemas.
-func (c Config) Plugins() func() []plugindomain.Info {
-	return settingsPlugins(c.settings())
+func models(c Config) func() []settingsdomain.Model {
+	return modelsForProvider(c, pluginsAgentProvider(plugins(c)))
 }
 
-// Models returns a function that lists the models each model setting accepts,
-// and the programs the agent setting accepts.
-func (c Config) Models() func() []settingsdomain.Model {
-	return c.modelsForProvider(c.AgentProvider())
-}
-
-func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsdomain.Model {
+func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {
 	c.agentProvider = provider
-	if c.getPrograms() == nil {
+	if getPrograms(c) == nil {
 		c.programs = &settingsadapter.ProgramList{}
 	}
-	return settingsModelsForProvider(c.settings(), c.agentProvider)
-}
-
-// SubscribeSettingChanges starts listening to the settings that change. See settingsport.ChangeSubscriber.
-func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
-	return subscribeSettingChanges(c.settings())
+	return settingsModelsForProvider(settingsOf(c), c.agentProvider)
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
-func (c Config) SyncSetting() query.SyncSetting {
-	return syncSetting(c.settings())
-}
-
-// ReadSettings returns a function that reads settings as JSON and returns the settings file path.
-func (c Config) ReadSettings() func() (string, string, error) {
-	return readSettings(c.settings())
+func SyncSetting(c Config) query.SyncSetting {
+	return syncSetting(settingsOf(c))
 }
 
 // GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
 // setting-changed event receive the settings whose value changed.
-func (c Config) GetSettingsWriter() func(entries []settingsdomain.Setting) error {
-	return getSettingsWriter(c.settings())
-}
-
-func (c Config) settingsFile() (string, error) {
-	return settingsSettingsFile(c.settings())
+func GetSettingsWriter(c Config) func(entries []settingsdomain.Setting) error {
+	return getSettingsWriter(settingsOf(c))
 }
 
 // SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
 // stores the selection. The window keeps the themes the binary ships when the answer is a fault.
-func (c Config) SetThemes(inst *editor.Installation, say func(string)) error {
-	service, err := settingsThemes(c.settings(), say)
+func SetThemes(c Config, inst *editor.Installation, say func(string)) error {
+	service, err := settingsThemes(settingsOf(c), say)
 	inst.SetThemes(service)
 	return err
 }
 
 // SetShellThemes gives the shell the themes it can use, as SetThemes does the window.
-func (c Config) SetShellThemes(api *shell.API, say func(string)) error {
-	service, err := settingsThemes(c.settings(), say)
+func SetShellThemes(c Config, api *shell.API, say func(string)) error {
+	service, err := settingsThemes(settingsOf(c), say)
 	api.Themes = service
 	return err
 }
 
-// UnsubscribeHost stops the plugin host from receiving setting changes. It returns after the batch
-// being delivered has been handled.
-func (c Config) UnsubscribeHost() {
-	unsubscribeHost(c.settings())
+func UnsubscribeHost(c Config) {
+	unsubscribeHost(settingsOf(c))
 }
 
 // agentAt is the key of the agent section in the settings file.
 const agentAt = "agent"
 
 // settingsWiring wires the settings, setting change events and themes of an installation.
-type settingsWiring struct {
+type settingsPlaces struct {
 	SettingsPath              string
 	ThemesPath                string
 	RegistryPath              string
 	InterfaceScale, TextScale float64
 	Hardware                  hardware.Specs
 	ResolvedCompute           hardware.ResolvedCompute
-	PluginHost                *PluginHost
-	KeyStore                  pluginport.KeyStore
-	Watches                   *vaultwatch.Hub
-	SettingsFiles             *settingsadapter.Files
-	SettingEvents             *settingevents.Events
-	Programs                  *settingsadapter.ProgramList
-	SecretGate                *secret.Gate
-	SubscribedHosts           *settingsusecase.HostSubscriptions
-	PluginChanges             *settingsusecase.PluginChanges
-	ErrorHandler              func(error)
-	AgentProvider             func() agentport.AgentProvider
-	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
-	SetSecretSource           func()
-	SetCompleter              func()
+}
+
+type settingsStores struct {
+	Watches         *vaultwatch.Hub
+	SettingsFiles   *settingsadapter.Files
+	SettingEvents   *settingevents.Events
+	Programs        *settingsadapter.ProgramList
+	SecretGate      *secret.Gate
+	SubscribedHosts *settingsusecase.HostSubscriptions
+	PluginChanges   *settingsusecase.PluginChanges
+}
+
+type settingsPluginRefs struct {
+	PluginHost       *PluginHost
+	KeyStore         pluginport.KeyStore
+	Plugins          func() pluginsWiring
+	GetAgentPrograms func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
+}
+
+type settingsWiring struct {
+	settingsPlaces
+	settingsStores
+	settingsPluginRefs
+	ErrorHandler func(error)
 }
 
 func defaultSettings() settingsadapter.File {
@@ -203,11 +177,9 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 
 func setUpPluginHost(c settingsWiring) {
 	c.PluginHost.SetKeyStore(c.KeyStore)
-	if c.SetSecretSource != nil {
-		c.SetSecretSource()
-	}
-	if c.SetCompleter != nil {
-		c.SetCompleter()
+	if c.Plugins != nil {
+		setSecretSource(c.Plugins())
+		setCompleter(c.Plugins())
 	}
 }
 

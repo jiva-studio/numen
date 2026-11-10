@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginlend"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -282,7 +281,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, file, fileBody)
 	keys := &secretKeys{items: map[string]string{}}
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      pluginlend.Lend(host),
+		PluginHost:      container.AdaptPluginHost(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
@@ -299,10 +298,10 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
+	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -450,6 +449,6 @@ func applySettings(t *testing.T, cfg container.Config) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(cfg.UnsubscribeHost)
+	t.Cleanup(func() { container.UnsubscribeHost(cfg) })
 	return cfg
 }

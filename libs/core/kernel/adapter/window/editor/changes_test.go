@@ -68,11 +68,11 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(settings.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "watched"); err != nil {
+	if _, err := vaults.NewAdd(container.VaultIdentity(settings), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 
-	installation, err := settings.OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(settings, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,8 +145,8 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 
 	// And the index matches the disk by the time it is announced.
-	displayed, err := client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Note.md"}))
+	displayed, err := client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Note.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -311,11 +311,11 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "quitting"); err != nil {
+	if _, err := vaults.NewAdd(container.VaultIdentity(cfg), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 
-	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
+	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,8 +328,8 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	// nothing is updated behind them.
 	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
 	writing := note.NewWrite(
-		cfg.VaultReaders(),
-		recording{NoteWriters: cfg.NoteWriters(), VaultLocks: cfg.VaultLocks(), order: recorded, hold: hold},
+		container.VaultReaders(cfg),
+		recording{NoteWriters: container.NoteWriters(cfg), VaultLocks: container.VaultLocks(cfg), order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
 	)
@@ -362,10 +362,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if f.installation.State.IsReady() {
+		if f.installation.State.Runtime.IsReady() {
 			return
 		}
-		if why := f.installation.State.GetError(); why != "" {
+		if why := f.installation.State.Runtime.GetError(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -1400,8 +1400,8 @@ func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 			"## Layout\n\n### Header\n\nan animal\n\n### Footer\n\nheight\n",
 	})
 
-	center, err := client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Ontology.md"}))
+	center, err := client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1425,8 +1425,8 @@ func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 
 	// The focused note carries its type in the same way, when the graph is
 	// centered on a typed note.
-	item, err := client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
+	item, err := client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}

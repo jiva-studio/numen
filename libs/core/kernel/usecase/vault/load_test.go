@@ -44,9 +44,9 @@ func TestLoad(t *testing.T) {
 	v := testsupport.GenerateVault(t, notes)
 	t.Logf("generated %d notes in %s", notes, getElapsed(generating))
 
-	db, err := container.NewConfig(container.Config{
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
 		IndexPath: filepath.Join(t.TempDir(), "index.db"),
-	}).OpenIndex(ctx)
+	}), ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,10 +54,10 @@ func TestLoad(t *testing.T) {
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 
 	coldStart := testsupport.GetMachine().Now()
@@ -119,7 +119,7 @@ func measureUnderLoad(t *testing.T, db *vaults.Index, v domain.Vault, scan vault
 	latencies := make([][]time.Duration, readers)
 	for i := range readers {
 		readWg.Go(func() {
-			queries := db.Passages()
+			queries := db.Chunks.Passages
 			deadline := testsupport.GetMachine().Now().Add(duration)
 			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
 				started := testsupport.GetMachine().Now()

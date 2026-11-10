@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
@@ -78,7 +78,7 @@ func readClock(now func() time.Time) time.Time {
 	return now()
 }
 
-func describeSources(r indexdomain.IndexResult) string {
+func describeSources(r vaultreading.IndexResult) string {
 	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)
 	if r.Unreadable > 0 {
@@ -91,15 +91,15 @@ func describeSources(r indexdomain.IndexResult) string {
 }
 
 func showProgress(making *indexing.ReadWholeVault, r *reporter) {
-	making.OnNotesProgress = func(res indexdomain.ScanResult) {
+	making.OnNotesProgress = func(res vaultreading.ScanResult) {
 		r.Printf("  %d indexed\r", res.Indexed)
 	}
-	making.OnTextsProgress = func(res indexdomain.IndexResult) {
+	making.OnTextsProgress = func(res vaultreading.IndexResult) {
 		if res.CurrentSource != "" {
 			r.Printf("  cutting %s\r", res.CurrentSource)
 		}
 	}
-	making.OnVectorsProgress = func(res indexdomain.EmbedResult) {
+	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
 		r.Printf("  %d embedded\r", res.Embedded)
 	}
 }

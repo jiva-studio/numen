@@ -13,7 +13,7 @@ const reader = vi.hoisted(() => ({
 }))
 
 vi.mock('../model/useDocumentReader', () => ({
-  useDocumentReader: (path: string) => ({
+  useDocumentReader: (_documents: unknown, path: string) => ({
     path,
     reportFailure: () => undefined,
     close: () => undefined,
@@ -54,6 +54,7 @@ const mountTab = (ranges: readonly TextRange[] | null) => {
     selector: null,
     ranges,
     savePlace: vi.fn(),
+    reportPlace: vi.fn(),
   })
   const tab = mount(DocumentTab, { props: { state } })
   return { tab, state }

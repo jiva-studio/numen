@@ -9,18 +9,25 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
+// Problems answers what the index found wrong in the notes of a vault: parse problems, unreadable
+// frontmatter and links that point nowhere or at several notes.
+type Problems struct{ db *sql.DB }
+
+// NewProblems creates the queries about problems over the read pool.
+func NewProblems(db *sql.DB) *Problems { return &Problems{db: db} }
+
 // GetParseProblems is what parsing each file turned up. The wording is the
 // parser's and is carried through as it was written.
-func (q *Queries) GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+func (q *Problems) GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
 	return q.getProblems(ctx, vaultID, problemsSQL)
 }
 
 // GetUnreadable is the notes whose frontmatter is not YAML.
-func (q *Queries) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
+func (q *Problems) GetUnreadable(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error) {
 	return q.getProblems(ctx, vaultID, frontmatterErrorsSQL)
 }
 
-func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, query string) (_ []domain.VaultProblem, err error) {
+func (q *Problems) getProblems(ctx context.Context, vaultID domain.VaultID, query string) (_ []domain.VaultProblem, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -50,7 +57,7 @@ func (q *Queries) getProblems(ctx context.Context, vaultID domain.VaultID, query
 //
 // The query is the whole answer here: a link with no candidate resolves to
 // nothing whichever priority rule is applied to it.
-func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.ResolvedLink, err error) {
+func (q *Problems) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.ResolvedLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -81,7 +88,7 @@ func (q *Queries) GetDanglingLinks(ctx context.Context, vaultID domain.VaultID) 
 // link goes through anywhere else decides ambiguity, so SQL does not duplicate
 // that rule.
 // diverge.
-func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.AmbiguousLink, err error) {
+func (q *Problems) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID) (_ []domain.AmbiguousLink, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -117,7 +124,7 @@ func (q *Queries) GetAmbiguousLinks(ctx context.Context, vaultID domain.VaultID)
 	for _, l := range candidates {
 		answering, recognized := answers[l.Target.Value]
 		if !recognized {
-			if answering, err = q.candidates(ctx, vault, l.Target.Value); err != nil {
+			if answering, err = (&Queries{db: q.db}).candidates(ctx, vault, l.Target.Value); err != nil {
 				return nil, err
 			}
 			answers[l.Target.Value] = answering

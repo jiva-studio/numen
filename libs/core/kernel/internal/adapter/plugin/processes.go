@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -192,12 +193,13 @@ func (p *Processes) startPluginProcess(ctx context.Context, plug manifest.Discov
 	}()
 
 	endpoint := plugindomain.Endpoint{
-		Host:      "127.0.0.1",
-		Port:      handshake.Port,
-		Token:     token,
-		Transport: transport.NewNetworkTransport(),
+		Host:  "127.0.0.1",
+		Port:  handshake.Port,
+		Token: token,
 	}
-	if err := transport.CheckPluginProtocol(ctx, plug.Manifest, endpoint); err != nil {
+	p.t.clients.Add(token, transport.NewNetworkTransport())
+	if err := transport.CheckPluginProtocol(ctx, p.t.clients.Get(endpoint), plug.Manifest, endpoint); err != nil {
+		p.t.clients.Remove(token)
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)
 		return emptyEndpoint(), err
 	}
@@ -224,7 +226,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, plug manifest.Discov
 
 	p.t.endpoints[plug.Manifest.ID] = endpoint
 	p.t.listenerPorts[plug.Manifest.ID] = handshake.Listeners
-	sup.SetRPCShutdown(createRPCShutdown(endpoint, 2*time.Second))
+	sup.SetRPCShutdown(createRPCShutdown(endpoint, p.t.clients.Get(endpoint), 2*time.Second))
 	sup.FinishActivating()
 	p.t.mu.Unlock()
 
@@ -324,8 +326,8 @@ func (p *Processes) getRequirements(plug manifest.Discovered) []manifest.Depende
 	return plug.Manifest.GetDependencyRequirements(plug.Dir, p.t.getPluginSettingsLocked(plug.Manifest.ID))
 }
 
-func createRPCShutdown(endpoint plugindomain.Endpoint, gracePeriod time.Duration) func(context.Context) error {
-	if endpoint.Host == "" && endpoint.Port == 0 && endpoint.Transport == nil {
+func createRPCShutdown(endpoint plugindomain.Endpoint, client *http.Client, gracePeriod time.Duration) func(context.Context) error {
+	if endpoint.Host == "" && endpoint.Port == 0 {
 		return nil
 	}
 	return func(ctx context.Context) error {
@@ -337,7 +339,7 @@ func createRPCShutdown(endpoint plugindomain.Endpoint, gracePeriod time.Duration
 		defer cancel()
 
 		client := numenv1connect.NewPluginLifecycleServiceClient(
-			transport.EndpointClient(endpoint),
+			client,
 			transport.GetBaseURL(endpoint),
 			connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
 		)
@@ -354,5 +356,5 @@ func emptyEndpoint() plugindomain.Endpoint {
 }
 
 func isEmptyEndpoint(e plugindomain.Endpoint) bool {
-	return e.Host == "" && e.Port == 0 && e.Transport == nil
+	return e.Host == "" && e.Port == 0
 }

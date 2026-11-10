@@ -1,12 +1,23 @@
+import type { Component } from 'vue'
 import type { AgentPort } from './agent'
 import type { Disposable } from './types'
 
 // ViewRegistration declares a view another plugin mounts by its capability, without knowing which
 // plugin draws it.
 export interface ViewRegistration {
-  readonly capability: string
-  readonly component: unknown
+  readonly capability: ViewCapability
+  readonly component: Component
 }
+
+// ViewContexts is what a view of each capability is passed when it is mounted.
+export interface ViewContexts {
+  readonly conversation: ConversationContext
+  readonly 'vault-summary': VaultSummaryContext
+  readonly 'note-editor': NoteEditorContext
+}
+
+// ViewCapability names a kind of view that one plugin draws and another mounts.
+export type ViewCapability = keyof ViewContexts
 
 // MountedView is a view of another plugin drawn into an element of the plugin that mounted it.
 // Disposing it removes the view and releases what the view holds.

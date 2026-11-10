@@ -78,7 +78,7 @@ func BenchmarkUnembedded(b *testing.B) {
 	db := openUnembeddedDB(b, 200, 100)
 	ctx := b.Context()
 	recipe := getBenchModel().Recipe()
-	rows := db.ChunkQueries()
+	rows := queriesOf(db)
 	passages := db.Sources()
 
 	b.Run("Rows", func(b *testing.B) {
@@ -104,7 +104,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 	db := openUnembeddedDB(b, 2, 100)
 	ctx := b.Context()
 
-	found, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel().Recipe(), chunk.Cursor{}, chunksPerPage)
+	found, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getBenchVault().ID, getBenchModel().Recipe(), chunk.Cursor{}, chunksPerPage)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func BenchmarkSaveVectors(b *testing.B) {
 		})
 		named = append(named, embedding.Vector{
 			ChunkID: chunk.ID(p.Chunk), Hash: hash, Model: getBenchModel(),
-			Kind: embedding.QuantisedInt8, Value: value, Coarse: coarse,
+			Kind: embedding.QuantizedInt8, Value: value, Coarse: coarse,
 		})
 	}
 

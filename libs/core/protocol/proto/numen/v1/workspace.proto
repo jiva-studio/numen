@@ -91,7 +91,7 @@ message DetachTabResponse {
 message WatchFocusRequest {}
 
 message WatchFocusResponse {
-  // The source to put in front of the person: a note to see the neighbourhood
+  // The source to put in front of the person: a note to see the neighborhood
   // from, or a document to open.
   string path = 1;
 

@@ -86,7 +86,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
-	return container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), ServiceDir: ".numen"}), host, reporter
+	return container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), ServiceDir: ".numen"}), host, reporter
 }
 
 func openEmbedder(t *testing.T, cfg container.Config) {
@@ -192,12 +192,12 @@ func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	cfg.Chunks.Set(256)
-	small, err := cfg.IndexTexts(db, v)
+	small, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.Chunks.Set(512)
-	large, err := cfg.IndexTexts(db, v)
+	large, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,17 +214,17 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n"})
 	const limit = 600
 
-	if got := cfg.Scan(db).Cut.Sizes.Limit; got != limit {
+	if got := container.Scan(cfg, db).Cut.Sizes.Limit; got != limit {
 		t.Errorf("Scan cuts at %d characters, want %d", got, limit)
 	}
-	texts, err := cfg.IndexTexts(db, v)
+	texts, err := container.IndexTexts(cfg, db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if texts.Sizes.Limit != limit {
 		t.Errorf("IndexTexts cuts at %d characters, want %d", texts.Sizes.Limit, limit)
 	}
-	opener := cfg.VaultOpener(db)
+	opener := container.VaultOpener(cfg, db)
 	if got := opener.GetScan().Cut.Sizes.Limit; got != limit {
 		t.Errorf("the scan of VaultOpenerWith cuts at %d characters, want %d", got, limit)
 	}
@@ -246,14 +246,14 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	if recipe == "" {
 		t.Fatal("a cut has no recipe")
 	}
-	if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
+	if err := db.Stores.Vaults.Register(t.Context(), v.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := cfg.UpdateIndex(db)(t.Context(), v, []string{"Hedge.md"}); err != nil {
+	if err := container.UpdateIndex(cfg, db)(t.Context(), v, []string{"Hedge.md"}); err != nil {
 		t.Fatal(err)
 	}
-	read, err := cfg.ReadWholeVault(t.Context(), db, unit{"model"}, v)
+	read, err := container.ReadWholeVault(cfg, t.Context(), db, unit{"model"}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,7 +261,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 		t.Fatal(err)
 	}
 
-	other, err := db.SourceBacklog().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{recipe}, 10)
+	other, err := db.Source.SourceBacklog.GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{recipe}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,11 +274,11 @@ func TestAScanChecksTheRecordedChunkingOnlyWhereTheSizeIsKnown(t *testing.T) {
 	db := makeIndex(t)
 	cfg := container.NewConfig(container.Config{})
 
-	if scan := cfg.Scan(db); scan.ShouldRecut {
+	if scan := container.Scan(cfg, db); scan.ShouldRecut {
 		t.Error("a scan with no chunk size known checks the recorded cut")
 	}
 	cfg.Chunks.Set(256)
-	scan := cfg.Scan(db)
+	scan := container.Scan(cfg, db)
 	if !scan.ShouldRecut || scan.GetOtherRecipePaths == nil {
 		t.Errorf("a scan with a chunk size known has ShouldRecut %v and GetOtherRecipePaths %v, want the check to run", scan.ShouldRecut, scan.GetOtherRecipePaths != nil)
 	}
@@ -294,16 +294,16 @@ func TestANewChunkSizeMakesTheNextScanReadTheNotesAgain(t *testing.T) {
 	})
 
 	cfg.Chunks.Set(256)
-	first, err := cfg.Scan(db).Execute(t.Context(), v)
+	first, err := container.Scan(cfg, db).Execute(t.Context(), v)
 	if err != nil || first.Indexed != 3 {
 		t.Fatalf("first scan: %+v, %v", first, err)
 	}
 	cfg.Chunks.Set(512)
-	second, err := cfg.Scan(db).Execute(t.Context(), v)
+	second, err := container.Scan(cfg, db).Execute(t.Context(), v)
 	if err != nil || second.Indexed != 3 {
 		t.Errorf("scan after the chunk size changed indexed %d notes (%v), want 3", second.Indexed, err)
 	}
-	third, err := cfg.Scan(db).Execute(t.Context(), v)
+	third, err := container.Scan(cfg, db).Execute(t.Context(), v)
 	if err != nil || third.Indexed != 0 {
 		t.Errorf("scan at the same chunk size indexed %d notes (%v), want none", third.Indexed, err)
 	}

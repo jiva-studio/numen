@@ -3,7 +3,7 @@
  * hook the window calls on a kind.
  */
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
-import type { TabKindRegistration } from '@numen/plugin-sdk'
+import type { JsonValue, TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from './tabKinds'
 import { adoptPluginStyle, getPluginStyle } from '../styles'
 import { renderFallback, resolvePluginComponent } from './pluginView'
@@ -94,8 +94,10 @@ export function createDeclaredTabKind(
     ...pickDeclaredHooks(registration),
     kind,
     pluginId,
-    open: (targetPath, id, saved) => registration.open(targetPath, id, saved),
-    getTitle: (state) => getTitle?.(state) ?? title ?? kind,
+    // The window keeps the state a tab saved as JSON, and hands it back as it was saved.
+    open: (targetPath, id, saved) =>
+      registration.open(targetPath, id, saved as JsonValue | undefined),
+    getTitle: (state) => getTitle?.(state as object) ?? title ?? kind,
     pane: createDeclaredPane(pluginId, registration.component),
   }
 }

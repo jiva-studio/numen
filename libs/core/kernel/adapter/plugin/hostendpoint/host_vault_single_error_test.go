@@ -108,7 +108,7 @@ func TestCreateFileOverAnExistingFileReturnsAlreadyExists(t *testing.T) {
 
 const tooLargePath = "Danube.md"
 
-// tooLargeMoveVault is the vault of rivers whose move of Danube.md fails with note.ErrTooLarge.
+// tooLargeMoveVault is the vault of rivers whose move of Danube.md fails with edit.ErrTooLarge.
 type tooLargeMoveVault struct{ *fakeNoteVault }
 
 func (v tooLargeMoveVault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {
