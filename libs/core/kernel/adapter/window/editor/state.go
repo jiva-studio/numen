@@ -78,7 +78,6 @@ type IndexState struct {
 	Recipe    atomic.Value
 }
 
-// storeModel records the name and the recipe of the model the vault is embedded under.
 func (s *State) storeModel(embedding *indexing.Embedding) {
 	name, recipe := embedding.Describe()
 	s.Indexing.Model.Store(name)
