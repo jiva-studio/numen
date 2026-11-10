@@ -19,7 +19,6 @@ func getHelperPackages() map[string]string {
 	return map[string]string{
 		"internal/appearance": "builds the appearance section of a page from settings values",
 		"internal/csp":        "builds the content security policy string of a window",
-		"internal/operation":  "memo of what one operation learned, released when the operation ends",
 		"internal/testonly":   "the grant that only tests may hold",
 		"internal/text":       "byte-range arithmetic over text",
 		"internal/vector":     "quantises a vector to bytes and bits",
