@@ -25,7 +25,7 @@ import { useSettings } from './useSettings'
 
 type Tree = Record<string, Record<string, unknown>>
 
-const file = { current: {} as Record<string, unknown> }
+const file = { current: {} as JsonObject }
 
 const THEME_CHOICES = [
   { value: 'preset:numen', title: 'Numen', detail: '' },
