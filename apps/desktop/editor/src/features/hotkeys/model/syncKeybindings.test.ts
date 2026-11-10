@@ -38,10 +38,10 @@ const create = (list?: readonly DeclaredKeybinding[]) => {
   })
   const keybindings = ref<readonly DeclaredKeybinding[] | undefined>(list)
   const plugins = ref<readonly unknown[]>([])
-  syncKeybindings(host, keybindings, plugins)
+  syncKeybindings(host.keybindings, keybindings, plugins)
   const runApp = vi.fn()
   const press = (code: string, init: KeyboardEventInit = {}) =>
-    host.handleShortcut(
+    host.commands.handleShortcut(
       new KeyboardEvent('keydown', { code, ...init }),
       async () => ({}) as never,
       {

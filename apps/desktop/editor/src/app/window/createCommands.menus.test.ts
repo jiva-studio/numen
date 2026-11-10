@@ -99,13 +99,15 @@ function setup(
   const executeCommand = vi.fn(async () => true)
   const writeMessage = vi.fn()
   const pluginHost = {
-    getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
-    getKeyFor: () => undefined,
-    hasCommandItems: () => false,
-    hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
-    isSharedCommand: (id: string) => id === 'app:file.createText',
-    executeCommand,
-    handleShortcut: () => false,
+    commands: {
+      getPaletteCommands: () => [{ id: SHOW, title: 'Show note in plex' }],
+      hasCommandItems: () => false,
+      hasCommand: options.hasCommand ?? ((id: string) => id === SHOW),
+      handlers: { isSharedCommand: (id: string) => id === 'app:file.createText' },
+      executeCommand,
+      handleShortcut: () => false,
+    },
+    keybindings: { getKeyFor: () => undefined },
   }
   answerCore({
     files: {

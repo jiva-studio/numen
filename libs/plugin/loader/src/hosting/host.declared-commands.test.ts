@@ -44,10 +44,14 @@ describe('the commands a plugin declares in its manifest', () => {
       }),
     ])
 
-    host.registerKeybindings('md.tree', [{ key: 'mod+shift+e', command: 'tree.revealNote' }])
-    host.createContext('md.tree').register.command({ id: 'tree.revealNote', handler: vi.fn() })
+    host.keybindings.registerKeybindings('md.tree', [
+      { key: 'mod+shift+e', command: 'tree.revealNote' },
+    ])
+    host.lifecycle
+      .createContext('md.tree')
+      .register.command({ id: 'tree.revealNote', handler: vi.fn() })
 
-    expect(host.getPaletteCommands()).toStrictEqual([
+    expect(host.commands.getPaletteCommands()).toStrictEqual([
       {
         id: formatCommandId('md.tree', 'tree.revealNote'),
         title: 'Show note in file tree',
@@ -59,15 +63,17 @@ describe('the commands a plugin declares in its manifest', () => {
 
   it('are not listed for a handler registered under an id the manifest does not declare, and the mismatch is reported once', () => {
     const { host, deps } = createHost([declare()])
-    const ctx = host.createContext('md.tree')
+    const ctx = host.lifecycle.createContext('md.tree')
 
     ctx.register.command({ id: 'tree.open', handler: vi.fn() })
     ctx.register.command({ id: 'tree.close', handler: vi.fn() })
-    host.getPaletteCommands()
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
+    host.commands.getPaletteCommands()
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
-    expect(host.hasCommand('md.tree:tree.close')).toBe(false)
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'md.tree:tree.open',
+    ])
+    expect(host.commands.hasCommand('md.tree:tree.close')).toBe(false)
     expect(deps.reportCommandIssue).toHaveBeenCalledTimes(1)
     expect(deps.reportCommandIssue).toHaveBeenCalledWith(
       'md.tree',
@@ -77,9 +83,9 @@ describe('the commands a plugin declares in its manifest', () => {
 
   it('are not listed while the plugin has no backend and registered no handler once its frontend has activated', () => {
     const { host, deps } = createHost([declare()])
-    host.createContext('md.tree')
+    host.lifecycle.createContext('md.tree')
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
     expect(deps.reportCommandIssue).toHaveBeenCalledWith(
       'md.tree',
       expect.stringContaining('tree.open'),
@@ -94,9 +100,11 @@ describe('the commands a plugin declares in its manifest', () => {
     const { host } = createHost([declare()], { waitForPlugin: () => gate })
     const handler = vi.fn()
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
-    const running = host.executeCommand('md.tree:tree.open', note)
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'md.tree:tree.open',
+    ])
+    const running = host.commands.executeCommand('md.tree:tree.open', note)
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
     expect(handler).not.toHaveBeenCalled()
     settle()
 
@@ -106,10 +114,10 @@ describe('the commands a plugin declares in its manifest', () => {
 
   it('are not run for a plugin that failed to activate', async () => {
     const { host } = createHost([declare()], { waitForPlugin: async () => undefined })
-    host.createContext('md.tree')
-    host.disposePlugin('md.tree')
+    host.lifecycle.createContext('md.tree')
+    host.lifecycle.disposePlugin('md.tree')
 
-    expect(await host.executeCommand('md.tree:tree.open', note)).toBe(false)
+    expect(await host.commands.executeCommand('md.tree:tree.open', note)).toBe(false)
   })
 
   it('are left to the backend, and not listed by the host, when the plugin has a backend and no handler is registered', () => {
@@ -117,35 +125,37 @@ describe('the commands a plugin declares in its manifest', () => {
       hasPluginFrontend: () => false,
     })
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
   })
 
   it('are gone with a disabled plugin, bind no shortcut, and return with the plugin', () => {
     const { host } = createHost([declare()])
     const handler = vi.fn()
     const keys = [{ key: 'mod+shift+e', command: 'tree.open' }]
-    host.registerKeybindings('md.tree', keys)
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.keybindings.registerKeybindings('md.tree', keys)
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
     const event = new KeyboardEvent('keydown', { code: 'KeyE', shiftKey: true, ctrlKey: true })
 
-    host.disposePlugin('md.tree')
+    host.lifecycle.disposePlugin('md.tree')
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
-    expect(host.handleShortcut(event, async () => note)).toBe(false)
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.handleShortcut(event, async () => note)).toBe(false)
 
-    host.registerKeybindings('md.tree', keys)
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.keybindings.registerKeybindings('md.tree', keys)
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
-    expect(host.handleShortcut(event, async () => note)).toBe(true)
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'md.tree:tree.open',
+    ])
+    expect(host.commands.handleShortcut(event, async () => note)).toBe(true)
   })
 
   it('are run through the full id the palette lists', async () => {
     const { host } = createHost([declare()])
     const handler = vi.fn()
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler })
 
-    expect(await host.executeCommand('md.tree:tree.open', note)).toBe(true)
+    expect(await host.commands.executeCommand('md.tree:tree.open', note)).toBe(true)
 
     expect(handler).toHaveBeenCalledWith(note, undefined, {})
   })
@@ -158,11 +168,11 @@ describe('the commands a plugin declares in its manifest', () => {
     const first = vi.fn()
     const second = vi.fn()
 
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler: first })
-    host.createContext('md.other').register.command({ id: 'tree.open', handler: second })
-    await host.executeCommand('md.other:tree.open', note)
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler: first })
+    host.lifecycle.createContext('md.other').register.command({ id: 'tree.open', handler: second })
+    await host.commands.executeCommand('md.other:tree.open', note)
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.tree:tree.open',
       'md.other:tree.open',
     ])

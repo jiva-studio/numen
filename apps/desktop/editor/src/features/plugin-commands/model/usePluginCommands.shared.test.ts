@@ -20,9 +20,11 @@ const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }
 
 const createHost = () =>
   ({
-    hasCommandItems: () => true,
-    getPaletteCommands: () => [],
-    executeCommand: vi.fn(async () => true),
+    commands: {
+      hasCommandItems: () => true,
+      getPaletteCommands: () => [],
+      executeCommand: vi.fn(async () => true),
+    },
   }) as unknown as PluginHost
 
 describe('a shared command in the palette', () => {
@@ -111,7 +113,7 @@ describe('a shared command that asks for a value', () => {
       {} as CommandDeps,
     )
 
-    expect(host.executeCommand).toHaveBeenCalledWith(
+    expect(host.commands.executeCommand).toHaveBeenCalledWith(
       'app:link.import',
       expect.objectContaining({ path: '' }),
       { values: { address: 'https://example.com/tides' } },

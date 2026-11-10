@@ -15,7 +15,8 @@ type Values = Readonly<Record<string, string>>
 
 interface CommandItemsDeps {
   readonly getAppCommands: () => readonly Command[]
-  readonly pluginHost: Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
+  readonly pluginCommands:
+    Pick<PluginHost['commands'], 'hasCommandItems' | 'listCommandItems'> | undefined
   readonly getTarget: () => CommandTarget
   readonly runApp: (
     id: string,
@@ -40,14 +41,14 @@ export function createCommandItems(deps: CommandItemsDeps) {
 
   return {
     hasCommandItems: (id: string): boolean =>
-      findAppCommand(id) !== undefined || (deps.pluginHost?.hasCommandItems(id) ?? false),
+      findAppCommand(id) !== undefined || (deps.pluginCommands?.hasCommandItems(id) ?? false),
     listCommandItems: async (id: string, target: RunTarget): Promise<readonly CommandItem[]> => {
       const command = findAppCommand(id)
       if (command) return (await command.listItems?.(toAppTarget(target))) ?? []
-      if (!deps.pluginHost?.hasCommandItems(id)) return []
+      if (!deps.pluginCommands?.hasCommandItems(id)) return []
       const noteTarget =
         isSharedCommand(id) && deps.readTarget ? await deps.readTarget(target) : target
-      return deps.pluginHost.listCommandItems(id, noteTarget)
+      return deps.pluginCommands.listCommandItems(id, noteTarget)
     },
     runWithItem: (
       id: string,

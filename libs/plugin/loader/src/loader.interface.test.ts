@@ -89,7 +89,7 @@ describe('the start of the plugins of the window slots', () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader({ [WORKER]: 10_000 })
     let isSettled = false
-    const interfaceWait = loader.waitForInterface().then(() => (isSettled = true))
+    const interfaceWait = loader.status.waitForInterface().then(() => (isSettled = true))
 
     const started = startAll(loader)
     await vi.advanceTimersByTimeAsync(10)
@@ -105,7 +105,7 @@ describe('the start of the plugins of the window slots', () => {
     vi.useFakeTimers()
     const { loader, log } = createLoader({ [BAR]: 3_000 + 5_000 })
     let isSettled = false
-    const interfaceWait = loader.waitForInterface().then(() => (isSettled = true))
+    const interfaceWait = loader.status.waitForInterface().then(() => (isSettled = true))
 
     const started = startAll(loader)
     await vi.advanceTimersByTimeAsync(3_000 - 1)
@@ -113,11 +113,11 @@ describe('the start of the plugins of the window slots', () => {
     await vi.advanceTimersByTimeAsync(1)
 
     expect(isSettled).toBe(true)
-    expect(loader.isPluginActive(BAR)).toBe(false)
+    expect(loader.status.isPluginActive(BAR)).toBe(false)
     await vi.advanceTimersByTimeAsync(5_010)
     expect(log).toContain(`activate ${BAR}`)
-    expect(loader.isPluginActive(BAR)).toBe(true)
-    expect(loader.getPluginFailure(BAR)).toBeUndefined()
+    expect(loader.status.isPluginActive(BAR)).toBe(true)
+    expect(loader.status.getPluginFailure(BAR)).toBeUndefined()
     await Promise.all([interfaceWait, started])
   })
 
@@ -128,11 +128,11 @@ describe('the start of the plugins of the window slots', () => {
     const started = startAll(loader)
     await vi.advanceTimersByTimeAsync(3_000 + 10)
 
-    expect(loader.isPluginActive(TABS)).toBe(false)
-    expect(loader.isPluginActive(BAR)).toBe(true)
-    expect(loader.isPluginActive(WORKER)).toBe(true)
+    expect(loader.status.isPluginActive(TABS)).toBe(false)
+    expect(loader.status.isPluginActive(BAR)).toBe(true)
+    expect(loader.status.isPluginActive(WORKER)).toBe(true)
     await vi.advanceTimersByTimeAsync(10_000)
-    expect(loader.isPluginActive(TABS)).toBe(true)
+    expect(loader.status.isPluginActive(TABS)).toBe(true)
     await started
   })
 })
@@ -144,14 +144,14 @@ describe('a plugin that has not started within 30 s', () => {
 
     const started = startAll(loader)
     await vi.advanceTimersByTimeAsync(30_000 - 100)
-    expect(loader.getPluginFailure(BAR)).toBeUndefined()
+    expect(loader.status.getPluginFailure(BAR)).toBeUndefined()
     await vi.advanceTimersByTimeAsync(200)
 
-    expect(loader.getPluginFailure(BAR)).toBe('the plugin did not start within 30 s')
+    expect(loader.status.getPluginFailure(BAR)).toBe('the plugin did not start within 30 s')
     await vi.advanceTimersByTimeAsync(1_000)
-    expect(loader.isPluginActive(BAR)).toBe(false)
+    expect(loader.status.isPluginActive(BAR)).toBe(false)
     expect(host.disposePlugin).toHaveBeenCalledWith(BAR)
-    expect(loader.isPluginActive(TABS)).toBe(true)
+    expect(loader.status.isPluginActive(TABS)).toBe(true)
     await started
   })
 })

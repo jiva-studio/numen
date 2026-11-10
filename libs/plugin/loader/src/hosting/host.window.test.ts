@@ -30,7 +30,7 @@ describe('the vaults and the window of a plugin context', () => {
     const window = createMockWindowHost()
     const host = createPluginHost(createDeps({ getVaults: () => vaults, getWindow: () => window }))
 
-    const context = host.createContext('org.example.ledger', BAR)
+    const context = host.lifecycle.createContext('org.example.ledger', BAR)
 
     expect(context.vault.vaults?.getState()).toStrictEqual(vaults.getState())
     expect(context.ui.window?.getState()).toStrictEqual(window.getState())
@@ -41,8 +41,8 @@ describe('the vaults and the window of a plugin context', () => {
     const window = createMockWindowHost()
     const host = createPluginHost(createDeps({ getVaults: () => vaults, getWindow: () => window }))
 
-    const ledger = host.createContext('org.example.ledger', BAR)
-    const tide = host.createContext('org.example.tide', TIDE)
+    const ledger = host.lifecycle.createContext('org.example.ledger', BAR)
+    const tide = host.lifecycle.createContext('org.example.tide', TIDE)
 
     expect(ledger.vault.vaults?.getState()).toStrictEqual(vaults.getState())
     expect(() => tide.vault.vaults?.getState()).toThrowError('vault:read')
@@ -53,7 +53,7 @@ describe('the vaults and the window of a plugin context', () => {
   it('are absent where the window gives none', () => {
     const host = createPluginHost(createDeps())
 
-    const context = host.createContext('org.example.ledger', BAR)
+    const context = host.lifecycle.createContext('org.example.ledger', BAR)
 
     expect(context.vault.vaults).toBeUndefined()
     expect(context.ui.window).toBeUndefined()

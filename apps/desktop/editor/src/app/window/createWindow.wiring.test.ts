@@ -288,19 +288,23 @@ beforeEach(() => {
     },
     pluginHost: {
       notifyVaultChange: vi.fn(),
-      hasCommandItems: vi.fn(() => false),
-      getPaletteCommands: vi.fn(() => [
-        { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
-      ]),
-      getRegisteredSettingsViews: vi.fn(() => ['view-1']),
-      getSlotView: vi.fn(() => ref(null)),
+      commands: {
+        hasCommandItems: vi.fn(() => false),
+        getPaletteCommands: vi.fn(() => [
+          { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
+        ]),
+      },
+      registered: { getRegisteredSettingsViews: vi.fn(() => ['view-1']) },
+      slotViews: { getSlotView: vi.fn(() => ref(null)) },
     },
     pluginLoader: {
       trackPlugins: vi.fn(async () => undefined),
       start: vi.fn(async () => undefined),
-      waitForInterface: vi.fn(async () => undefined),
-      waitForTabPlugins: vi.fn(async () => undefined),
-      isPluginStarting: vi.fn((_pluginId: string) => false),
+      status: {
+        waitForInterface: vi.fn(async () => undefined),
+        waitForTabPlugins: vi.fn(async () => undefined),
+        isPluginStarting: vi.fn((_pluginId: string) => false),
+      },
       close: vi.fn(async () => undefined),
     },
     navigation: { travel: vi.fn(), leavePath: vi.fn(async () => undefined) },
@@ -659,7 +663,9 @@ describe('the services a plugin is given', () => {
 
   it('lets a tab wait while the plugin loader says its own plugin is starting', () => {
     createWindow()
-    h.f.pluginLoader.isPluginStarting.mockImplementation((pluginId: string) => pluginId === 'p1')
+    h.f.pluginLoader.status.isPluginStarting.mockImplementation(
+      (pluginId: string) => pluginId === 'p1',
+    )
 
     expect(h.args.windowTabs.isPluginStarting('p1')).toBe(true)
     expect(h.args.windowTabs.isPluginStarting('p2')).toBe(false)
@@ -948,7 +954,7 @@ describe('tab links wiring', () => {
       const tabPluginsSettled = new Promise<undefined>((resolve) => {
         settleTabPlugins = () => resolve(undefined)
       })
-      h.f.pluginLoader.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
+      h.f.pluginLoader.status.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
       h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
       h.f.windowTabs.restored.openPlacedTabs.mockClear()
       h.args.bootstrap.startPlugins().catch(() => undefined)

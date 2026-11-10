@@ -38,7 +38,7 @@ function createHost(hasFrontend: boolean) {
     onError,
   }
   const host = createPluginHost(deps)
-  const context = host.createContext(TIDES)
+  const context = host.lifecycle.createContext(TIDES)
   const fail = async () => {
     throw new Error('the tide is out')
   }
@@ -52,7 +52,7 @@ describe('a run the caller awaits', () => {
     const { host, onError } = createHost(true)
 
     await expect(
-      host.executeCommand(`${TIDES}:tide.read`, NOTE, { isAwaited: true }),
+      host.commands.executeCommand(`${TIDES}:tide.read`, NOTE, { isAwaited: true }),
     ).rejects.toThrow('the tide is out')
     expect(onError).not.toHaveBeenCalled()
   })
@@ -60,7 +60,7 @@ describe('a run the caller awaits', () => {
   it('rejects with the error of the frontend handler of a shared command and reports nothing', async () => {
     const { host, onError } = createHost(true)
 
-    await expect(host.executeCommand(CREATE, NOTE, { isAwaited: true })).rejects.toThrow(
+    await expect(host.commands.executeCommand(CREATE, NOTE, { isAwaited: true })).rejects.toThrow(
       'the tide is out',
     )
     expect(onError).not.toHaveBeenCalled()
@@ -69,7 +69,7 @@ describe('a run the caller awaits', () => {
   it('rejects with the error of the backend handler of a shared command and reports nothing', async () => {
     const { host, onError } = createHost(false)
 
-    await expect(host.executeCommand(CREATE, NOTE, { isAwaited: true })).rejects.toThrow(
+    await expect(host.commands.executeCommand(CREATE, NOTE, { isAwaited: true })).rejects.toThrow(
       'the backend is down',
     )
     expect(onError).not.toHaveBeenCalled()
@@ -80,7 +80,7 @@ describe('a run without isAwaited, as from the palette', () => {
   it('reports the error of the command and resolves', async () => {
     const { host, onError } = createHost(true)
 
-    await expect(host.executeCommand(`${TIDES}:tide.read`, NOTE)).resolves.toBe(true)
+    await expect(host.commands.executeCommand(`${TIDES}:tide.read`, NOTE)).resolves.toBe(true)
     expect(onError).toHaveBeenCalledOnce()
   })
 })

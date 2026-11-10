@@ -29,7 +29,8 @@ async function createWindow() {
       ],
       slots: [],
     }),
-    isListed: (id) => holder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
+    isListed: (id) =>
+      holder.current?.commands.getPaletteCommands().some((one) => one.id === id) ?? false,
     hasBackend,
   })
   const reportCommandIssue = vi.fn()
@@ -44,14 +45,14 @@ async function createWindow() {
   })
   holder.current = host
   await declared.load()
-  return { host, loader: createPluginLoader({ host }), reportCommandIssue }
+  return { host, loader: createPluginLoader({ host: host.lifecycle }), reportCommandIssue }
 }
 
 describe('the commands of a view plugin that starts in a window with a backend plugin', () => {
   it('are not reported as missing while the plugin registers them one after the other', async () => {
     const { loader, reportCommandIssue } = await createWindow()
     loader.registerPluginModule(VIEW, async () => ({
-      activate: (context: ReturnType<PluginHost['createContext']>) => {
+      activate: (context: ReturnType<PluginHost['lifecycle']['createContext']>) => {
         context.register.command({ id: 'tree.open', handler: () => undefined })
         context.register.command({ id: 'tree.revealNote', handler: () => undefined })
       },

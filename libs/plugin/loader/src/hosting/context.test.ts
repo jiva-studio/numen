@@ -18,53 +18,68 @@ describe('PluginContext', () => {
     }
 
     const host: PluginContextHost = {
-      registerReader: vi.fn((_id, _reg) => {
-        calls.registerReader++
-        return { dispose: vi.fn() }
-      }),
-      registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-      registerSlotView: vi.fn((_id, _slot, _reg) => ({ dispose: vi.fn() })),
-      app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
-      openExternal: vi.fn(async (_url: string) => undefined),
-      registerTabKind: vi.fn((_id, _reg) => {
-        calls.registerTabKind++
-        return { dispose: vi.fn() }
-      }),
-      registerCommand: vi.fn((_id, _reg) => {
-        calls.registerCommand++
-        return { dispose: vi.fn() }
-      }),
-      registerAgentProvider: vi.fn((_id, _reg) => {
-        calls.registerAgentProvider++
-        return { dispose: vi.fn() }
-      }),
-      registerView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-      mountView: vi.fn((_capability, _element, _context) => ({ focus: vi.fn(), dispose: vi.fn() })),
-      registerDropHandler: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
-      drops: { canDrop: vi.fn(() => false), drop: vi.fn(async () => []) },
-      getSetting: vi.fn((_id: string, key: string) => {
-        calls.getSetting++
-        return key === 'enabled' ? true : undefined
-      }) as unknown as PluginContextHost['getSetting'],
-      onSettingChange: vi.fn((_id, _key, _handler) => {
-        calls.onSettingChange++
-        return { dispose: vi.fn() }
-      }),
-      onVaultChange: vi.fn((_handler) => {
-        calls.onVaultChange++
-        return { dispose: vi.fn() }
-      }),
-      onFileSelect: vi.fn((_handler) => {
-        calls.onFileSelect++
-        return { dispose: vi.fn() }
-      }),
-      emitVaultChange: vi.fn((_event) => {
-        calls.emitVaultChange++
-      }),
-      emitFileSelect: vi.fn((_event) => {
-        calls.emitFileSelect++
-      }),
-      openTab: vi.fn(async (_kind, _at) => 'opened-tab-id'),
+      info: {
+        app: { name: 'numen', version: '2026.10.1', build: 884, platform: 'linux' },
+        openExternal: vi.fn(async (_url: string) => undefined),
+      },
+      registration: {
+        registerReader: vi.fn((_id, _reg) => {
+          calls.registerReader++
+          return { dispose: vi.fn() }
+        }),
+        registerSettingsView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+        registerTabKind: vi.fn((_id, _reg) => {
+          calls.registerTabKind++
+          return { dispose: vi.fn() }
+        }),
+        registerCommand: vi.fn((_id, _reg) => {
+          calls.registerCommand++
+          return { dispose: vi.fn() }
+        }),
+        registerAgentProvider: vi.fn((_id, _reg) => {
+          calls.registerAgentProvider++
+          return { dispose: vi.fn() }
+        }),
+      },
+      views: {
+        registerSlotView: vi.fn((_id, _slot, _reg) => ({ dispose: vi.fn() })),
+        registerView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+        mountView: vi.fn((_capability, _element, _context) => ({
+          focus: vi.fn(),
+          dispose: vi.fn(),
+        })),
+        registerDropHandler: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+        drops: { canDrop: vi.fn(() => false), drop: vi.fn(async () => []) },
+      },
+      settings: {
+        getSetting: vi.fn((_id: string, key: string) => {
+          calls.getSetting++
+          return key === 'enabled' ? true : undefined
+        }) as unknown as PluginContextHost['settings']['getSetting'],
+        onSettingChange: vi.fn((_id, _key, _handler) => {
+          calls.onSettingChange++
+          return { dispose: vi.fn() }
+        }),
+      },
+      events: {
+        onVaultChange: vi.fn((_handler) => {
+          calls.onVaultChange++
+          return { dispose: vi.fn() }
+        }),
+        onFileSelect: vi.fn((_handler) => {
+          calls.onFileSelect++
+          return { dispose: vi.fn() }
+        }),
+        emitVaultChange: vi.fn((_event) => {
+          calls.emitVaultChange++
+        }),
+        emitFileSelect: vi.fn((_event) => {
+          calls.emitFileSelect++
+        }),
+      },
+      tabs: { openTab: vi.fn(async (_kind, _at) => 'opened-tab-id') },
+      vault: {},
+      window: {},
     }
 
     return { host, calls }
@@ -87,7 +102,7 @@ describe('PluginContext', () => {
       component: null,
     })
     expect(ctx.plugin.subscriptions).toHaveLength(1)
-    expect(host.registerReader).toHaveBeenCalledWith(
+    expect(host.registration.registerReader).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'pdf' }),
     )
@@ -97,7 +112,7 @@ describe('PluginContext', () => {
       handler: vi.fn(() => Promise.resolve()),
     })
     expect(ctx.plugin.subscriptions).toHaveLength(2)
-    expect(host.registerCommand).toHaveBeenCalledWith(
+    expect(host.registration.registerCommand).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'cmd1' }),
     )
@@ -107,7 +122,7 @@ describe('PluginContext', () => {
       component: null,
     })
     expect(ctx.plugin.subscriptions).toHaveLength(3)
-    expect(host.registerTabKind).toHaveBeenCalledWith(
+    expect(host.registration.registerTabKind).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ kind: 'custom-tab' }),
     )
@@ -118,17 +133,17 @@ describe('PluginContext', () => {
       createAgent: vi.fn(),
     })
     expect(ctx.plugin.subscriptions).toHaveLength(4)
-    expect(host.registerAgentProvider).toHaveBeenCalledWith(
+    expect(host.registration.registerAgentProvider).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'agent1' }),
     )
 
     expect(ctx.settings.get('enabled')).toBe(true)
-    expect(host.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
+    expect(host.settings.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
 
     const sub5 = ctx.settings.onChange('enabled', vi.fn())
     expect(ctx.plugin.subscriptions).toHaveLength(5)
-    expect(host.onSettingChange).toHaveBeenCalledWith(
+    expect(host.settings.onSettingChange).toHaveBeenCalledWith(
       'test.plugin',
       'enabled',
       expect.any(Function),
@@ -141,14 +156,14 @@ describe('PluginContext', () => {
     expect(ctx.plugin.subscriptions).toHaveLength(7)
 
     ctx.events.emitVaultChange({ vaultPath: '/path' })
-    expect(host.emitVaultChange).toHaveBeenCalledWith('test.plugin', { vaultPath: '/path' })
+    expect(host.events.emitVaultChange).toHaveBeenCalledWith('test.plugin', { vaultPath: '/path' })
 
     ctx.events.emitFileSelect({ path: '/file.md' })
-    expect(host.emitFileSelect).toHaveBeenCalledWith('test.plugin', { path: '/file.md' })
+    expect(host.events.emitFileSelect).toHaveBeenCalledWith('test.plugin', { path: '/file.md' })
 
     const openedTab = await ctx.tabs.open?.('url', 'https://example.com')
     expect(openedTab).toBe('opened-tab-id')
-    expect(host.openTab).toHaveBeenCalledWith('url', 'https://example.com')
+    expect(host.tabs.openTab).toHaveBeenCalledWith('url', 'https://example.com')
 
     expect(ctx.tabs.navigate?.('url', 'https://example.com')).toBeUndefined()
     expect(() => ctx.tabs.close?.('tab-1')).not.toThrow()
@@ -157,7 +172,7 @@ describe('PluginContext', () => {
     const closeTab = vi.fn()
     const hostWithTabs = createPluginContext(
       'tabs.plugin',
-      { ...host, navigateTab, closeTab },
+      { ...host, tabs: { ...host.tabs, navigateTab, closeTab } },
       { permissions: ['vault:read'] },
     )
     await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
@@ -165,8 +180,7 @@ describe('PluginContext', () => {
     hostWithTabs.tabs.close?.('tab-9')
     expect(closeTab).toHaveBeenCalledWith('tab-9')
 
-    const hostWithoutOpen = { ...host }
-    delete (hostWithoutOpen as { openTab?: unknown }).openTab
+    const hostWithoutOpen = { ...host, tabs: {} }
     const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen, {
       permissions: ['vault:read'],
     })
@@ -175,7 +189,7 @@ describe('PluginContext', () => {
     const mountedEl = document.createElement('div')
     const mounted = ctx.ui.mountView('cap', mountedEl, { k: 1 })
     mounted.focus()
-    const mountResult = vi.mocked(host.mountView).mock.results[0]?.value
+    const mountResult = vi.mocked(host.views.mountView).mock.results[0]?.value
     expect(mountResult.focus).toHaveBeenCalledTimes(1)
     mounted.dispose()
 
@@ -260,7 +274,9 @@ describe('PluginContext', () => {
     })
 
     expect(() => ctxWrite.events.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
-    expect(host.emitVaultChange).toHaveBeenCalledWith('writer.plugin', { vaultPath: '/test' })
+    expect(host.events.emitVaultChange).toHaveBeenCalledWith('writer.plugin', {
+      vaultPath: '/test',
+    })
   })
 
   it('registers a view in the slot its manifest places the id in', () => {
@@ -275,7 +291,7 @@ describe('PluginContext', () => {
     ctx.register.slotView({ id: 'bar', component: null })
 
     expect(ctx.plugin.subscriptions).toHaveLength(1)
-    expect(host.registerSlotView).toHaveBeenCalledWith(
+    expect(host.views.registerSlotView).toHaveBeenCalledWith(
       'org.example.orchard',
       'titleBar',
       expect.objectContaining({ id: 'bar' }),
@@ -287,7 +303,7 @@ describe('PluginContext', () => {
     const ctx = createPluginContext('org.example.orchard', host)
 
     expect(() => ctx.register.slotView({ id: 'bar', component: null })).toThrow(/places nowhere/)
-    expect(host.registerSlotView).not.toHaveBeenCalled()
+    expect(host.views.registerSlotView).not.toHaveBeenCalled()
   })
 
   it('reports the application build the host runs', () => {
@@ -307,7 +323,7 @@ describe('PluginContext', () => {
 
     expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
     expect((await ctx.plugin.openExternal('file:///etc/passwd')).ok).toBe(false)
-    expect(host.openExternal).toHaveBeenCalledTimes(1)
-    expect(host.openExternal).toHaveBeenCalledWith('https://numen.md/')
+    expect(host.info.openExternal).toHaveBeenCalledTimes(1)
+    expect(host.info.openExternal).toHaveBeenCalledWith('https://numen.md/')
   })
 })

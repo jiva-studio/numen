@@ -59,7 +59,7 @@ describe('a start cancelled at the limit', () => {
     await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await started
 
-    expect(loader.getPluginFailure(HARBOR)).toBe('the plugin did not start within 30 s')
+    expect(loader.status.getPluginFailure(HARBOR)).toBe('the plugin did not start within 30 s')
     expect(
       [...handed]
         .filter(([, one]) => vi.mocked(one.dispose).mock.calls.length !== 1)

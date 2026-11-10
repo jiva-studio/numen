@@ -151,8 +151,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       rest.state.plugins.value.find((plugin) => plugin.id === pluginId)?.hasFrontend ?? true,
     hasPluginBackend: (pluginId) =>
       rest.state.plugins.value.find((plugin) => plugin.id === pluginId)?.hasBackend ?? true,
-    isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
-    waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
+    isPluginFailed: (pluginId) =>
+      loaderHolder.current?.status.getPluginFailure(pluginId) !== undefined,
+    waitForPlugin: (pluginId) =>
+      loaderHolder.current?.status.settlePlugin(pluginId) ?? Promise.resolve(),
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
@@ -192,7 +194,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   })
   const reportLoadError = deps.reportLoadError ?? deps.reportError
   const pluginLoader = createPluginLoader({
-    host: pluginHost,
+    host: pluginHost.lifecycle,
     ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
   })
   loaderHolder.current = pluginLoader

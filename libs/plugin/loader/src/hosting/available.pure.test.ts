@@ -95,8 +95,8 @@ describe('the host reading the listed commands', () => {
       getCommandDeclarations: () => [declaration],
       reportCommandIssue,
     })
-    host.registerKeybindings('md.tree', [{ key: 'e', command: 'tree.open' }])
-    host.createContext('md.tree')
+    host.keybindings.registerKeybindings('md.tree', [{ key: 'e', command: 'tree.open' }])
+    host.lifecycle.createContext('md.tree')
     const event = new KeyboardEvent('keydown', { key: 'e' })
     const note = {
       path: 'a.md',
@@ -107,11 +107,11 @@ describe('the host reading the listed commands', () => {
       tab: '',
     }
 
-    host.getPaletteCommands()
-    host.handleShortcut(event, async () => note)
-    await host.executeCommand('md.tree:tree.open', note)
-    host.hasCommand('md.tree:tree.open')
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
+    host.commands.handleShortcut(event, async () => note)
+    await host.commands.executeCommand('md.tree:tree.open', note)
+    host.commands.hasCommand('md.tree:tree.open')
+    host.commands.getPaletteCommands()
 
     expect(reportCommandIssue).toHaveBeenCalledTimes(1)
     expect(reportCommandIssue).toHaveBeenCalledWith('md.tree', expect.stringContaining('tree.open'))

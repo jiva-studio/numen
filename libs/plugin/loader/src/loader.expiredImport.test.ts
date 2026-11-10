@@ -40,7 +40,7 @@ describe('a plugin whose module is read after the start limit', () => {
     await vi.runAllTimersAsync()
     await started
 
-    expect(loader.getPluginFailure(HARBOR)).toBe('the plugin did not start within 30 s')
+    expect(loader.status.getPluginFailure(HARBOR)).toBe('the plugin did not start within 30 s')
     expect(activate).not.toHaveBeenCalled()
   })
 })
@@ -78,7 +78,7 @@ describe('a plugin that started within the limit', () => {
     await vi.advanceTimersByTimeAsync(30_000 + 1_000)
     context?.register.command({ id: 'harbor.open', handler: () => undefined })
 
-    expect(loader.isPluginActive(HARBOR)).toBe(true)
+    expect(loader.status.isPluginActive(HARBOR)).toBe(true)
     expect(registerCommand).toHaveBeenCalledTimes(1)
   })
 })

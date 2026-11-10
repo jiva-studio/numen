@@ -56,7 +56,7 @@ const createWindow = () => {
     rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
   })
   holder.activate = () => {
-    support.pluginHost
+    support.pluginHost.lifecycle
       .createContext(PLUGIN_ID, manifest)
       .register.tabKind<{ targetPath: string; saved?: unknown }>({
         kind: 'deck',
@@ -79,7 +79,7 @@ describe('a disabled plugin', () => {
       'deck:a',
     )
     catalog.setEntries([entryOf(CATALOG_STATE.DISABLED)])
-    support.pluginHost.disposePlugin(PLUGIN_ID)
+    support.pluginHost.lifecycle.disposePlugin(PLUGIN_ID)
     const placeholder = windowTabs.tabs.getTab('deck:a')
     expect(windowTabs.groups.hasKind('deck')).toBe(false)
     expect(placeholder?.kind.pane).not.toBe(DeckPane)
@@ -106,7 +106,7 @@ describe('a disabled plugin', () => {
     const id = await windowTabs.tabs.createTab('deck', 'a.deck')
 
     catalog.setEntries([entryOf(CATALOG_STATE.DISABLED)])
-    support.pluginHost.disposePlugin(PLUGIN_ID)
+    support.pluginHost.lifecycle.disposePlugin(PLUGIN_ID)
     await flushPromises()
 
     expect(windowTabs.tabs.tabs.value).toEqual([{ id, title: 'Deck' }])

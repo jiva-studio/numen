@@ -93,7 +93,7 @@ export function createWindow(deps: WindowDeps = {}) {
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
     startTimer = setTimeout(onStarted, INTERFACE_WAIT_MS)
-    runInBackground(loader.waitForInterface().then(onStarted), () => undefined)
+    runInBackground(loader.status.waitForInterface().then(onStarted), () => undefined)
     try {
       await loader.trackPlugins((await listPlugins()).map((one) => one.id))
       await loader.start()
@@ -116,7 +116,7 @@ export function createWindow(deps: WindowDeps = {}) {
   /** Why the window draws no view: the plugins could not be listed, or each one failed to start. */
   const failures = computed<readonly string[]>(() => [
     ...(listError.value ? [listError.value] : []),
-    ...loader.getFailedPlugins().map((one) => `${one.id}: ${one.error}`),
+    ...loader.status.getFailedPlugins().map((one) => `${one.id}: ${one.error}`),
   ])
 
   usePluginStyles(() => (front.value ? [front.value] : []))

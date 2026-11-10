@@ -18,7 +18,7 @@ const toNote = (target: CommandTarget): CommandNote => ({ ...target, type: targe
 
 /**
  * The commands the plugins registered: the palette's list, running one, and the keys that run them.
- * A shared command offers and runs the handlers the plugins declare.
+ * A shared command offers and runs the handlers the plugins declare, which `handlers` lists.
  */
 export function createCommandApi(
   deps: HostDeps,
@@ -47,7 +47,7 @@ export function createCommandApi(
     return true
   }
   return {
-    ...handlers,
+    handlers,
     getPaletteCommands: () => getAvailable().map((one) => createPaletteCommand(one)),
     hasCommand: (id: string): boolean => findAvailable(id)?.entry !== undefined,
     hasCommandItems: (id: string): boolean =>

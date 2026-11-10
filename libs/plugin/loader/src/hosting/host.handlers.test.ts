@@ -81,18 +81,20 @@ describe('a shared command', () => {
   it('offers the handlers whose condition holds over the target, by plugin id and title', async () => {
     const { host } = createHost()
 
-    expect(host.hasCommandItems(CREATE)).toBe(true)
-    expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
+    expect(host.commands.hasCommandItems(CREATE)).toBe(true)
+    expect(await host.commands.listCommandItems(CREATE, SCAN)).toStrictEqual([
       { id: SCANS, title: 'Read the scan' },
       { id: TIDES, title: 'Read the tide table' },
     ])
-    expect(await host.listCommandItems(CREATE, NOTE)).toStrictEqual([])
+    expect(await host.commands.listCommandItems(CREATE, NOTE)).toStrictEqual([])
   })
 
   it('runs the handler of the plugin picked in its backend', async () => {
     const { host, runBackendHandler } = createHost()
 
-    expect(await host.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: TIDES })).toBe(true)
+    expect(
+      await host.commands.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: TIDES }),
+    ).toBe(true)
     expect(runBackendHandler).toHaveBeenCalledWith({
       pluginId: TIDES,
       command: CREATE,
@@ -112,7 +114,7 @@ describe('a shared command', () => {
     const window = { ...SCAN, path: '', title: '', type: '' }
 
     expect(
-      await host.executeCommand('app:link.import', window, {
+      await host.commands.executeCommand('app:link.import', window, {
         values: { address: 'https://example.com/tides' },
       }),
     ).toBe(true)
@@ -127,7 +129,7 @@ describe('a shared command', () => {
 
   it('runs its one matching handler without an itemId, and nothing where several match', async () => {
     const one = createHost(HANDLERS.filter((handler) => handler.pluginId === SCANS))
-    expect(await one.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(true)
+    expect(await one.host.commands.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(true)
     expect(one.runBackendHandler).toHaveBeenCalledWith({
       pluginId: SCANS,
       command: CREATE,
@@ -136,17 +138,17 @@ describe('a shared command', () => {
     })
 
     const several = createHost()
-    expect(await several.host.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(false)
+    expect(await several.host.commands.executeCommand(CREATE, { ...SCAN, type: '' })).toBe(false)
     expect(several.runBackendHandler).not.toHaveBeenCalled()
   })
 
   it('offers the items of its handlers in one list, grouped by plugin, and runs the one picked', async () => {
     const { host, runBackendHandler } = createHost()
 
-    expect(await host.listCommandItems(DOWNLOAD, SCAN)).toStrictEqual([
+    expect(await host.commands.listCommandItems(DOWNLOAD, SCAN)).toStrictEqual([
       { id: `${SCANS}:org.example.scans/reading`, title: 'reading', group: SCANS },
     ])
-    await host.executeCommand(
+    await host.commands.executeCommand(
       DOWNLOAD,
       { ...SCAN, type: '' },
       {
@@ -165,7 +167,7 @@ describe('a shared command', () => {
     const { host, runBackendHandler } = createHost([
       { pluginId: SCANS, command: CREATE, title: 'Read the scan', hasItems: false },
     ])
-    const context = host.createContext(
+    const context = host.lifecycle.createContext(
       SCANS,
       createMockManifest(SCANS, { name: 'Scans', version: '1' }),
     )
@@ -176,20 +178,20 @@ describe('a shared command', () => {
       listItems: () => [{ id: 'fast', title: 'Fast' }],
     })
 
-    expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
+    expect(await host.commands.listCommandItems(CREATE, SCAN)).toStrictEqual([
       { id: `${SCANS}:fast`, title: 'Fast', group: SCANS },
     ])
-    await host.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: `${SCANS}:fast` })
+    await host.commands.executeCommand(CREATE, { ...SCAN, type: '' }, { itemId: `${SCANS}:fast` })
     expect(handler).toHaveBeenCalledWith({ ...SCAN, type: '' }, 'fast', {})
     expect(runBackendHandler).not.toHaveBeenCalled()
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
   })
 
   it('keeps the group a handler gives its items, and gives the plugin id to those without one', async () => {
     const { host } = createHost([
       { pluginId: SCANS, command: CREATE, title: 'Read the scan', hasItems: false },
     ])
-    const context = host.createContext(
+    const context = host.lifecycle.createContext(
       SCANS,
       createMockManifest(SCANS, { name: 'Scans', version: '1' }),
     )
@@ -202,7 +204,7 @@ describe('a shared command', () => {
       ],
     })
 
-    expect(await host.listCommandItems(CREATE, SCAN)).toStrictEqual([
+    expect(await host.commands.listCommandItems(CREATE, SCAN)).toStrictEqual([
       { id: `${SCANS}:fast`, title: 'Fast', group: 'speed' },
       { id: `${SCANS}:slow`, title: 'Slow', group: SCANS },
     ])
@@ -220,14 +222,14 @@ describe('a shared command', () => {
     ])
 
     expect(
-      await host.listCommandItems(CREATE, {
+      await host.commands.listCommandItems(CREATE, {
         ...NOTE,
         noteType: 'link',
         properties: { url: 'https://tides.example' },
       }),
     ).toStrictEqual([{ id: TIDES, title: 'Download captions' }])
     expect(
-      await host.listCommandItems(CREATE, { ...NOTE, noteType: 'link', properties: {} }),
+      await host.commands.listCommandItems(CREATE, { ...NOTE, noteType: 'link', properties: {} }),
     ).toStrictEqual([])
   })
 })

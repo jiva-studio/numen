@@ -55,11 +55,11 @@ export function usePluginCommands(
   getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
 ) {
   const isWhenAvailable = createWhenAvailability(context)
-  const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
+  const getPluginCommands = () => pluginHost?.commands.getPaletteCommands() ?? []
   const { getSharedCommands, getSharedEntries } = createSharedCommands(getHandlers, isWhenAvailable)
   /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
   const getPluginLooks = (cmd: PluginPaletteCommand) => {
-    const key = pluginHost?.getKeyFor(cmd.id)
+    const key = pluginHost?.keybindings.getKeyFor(cmd.id)
     const keys = key ? findShortcutKeys(key, navigator.userAgent) : undefined
     return {
       ...(keys ? { keys } : {}),
@@ -79,7 +79,7 @@ export function usePluginCommands(
         ? ('note' as const)
         : ('window' as const),
       ...(cmd.when ? { when: cmd.when } : {}),
-      ...(pluginHost?.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
+      ...(pluginHost?.commands.hasCommandItems(cmd.id) ? { input: 'items' as const } : {}),
       isAvailable: (target: CommandTarget) => isWhenAvailable(cmd.when, target),
     })),
     ...getSharedEntries(),
@@ -94,7 +94,7 @@ export function usePluginCommands(
       .filter(
         (cmd) =>
           !hasNoteVariable(context.whenReader.getCondition(cmd.when)) &&
-          pluginHost?.getKeyFor(cmd.id),
+          pluginHost?.keybindings.getKeyFor(cmd.id),
       )
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
@@ -102,17 +102,17 @@ export function usePluginCommands(
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
     watch(
-      () => [...pluginHost.getPaletteCommands(), ...getSharedCommands()],
+      () => [...pluginHost.commands.getPaletteCommands(), ...getSharedCommands()],
       (list) => {
         for (const unregister of unregisterAll) unregister()
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
             const note = await getCommandNote(invocation)
             if (invocation.values) {
-              await pluginHost.executeCommand(cmd.id, note, { values: invocation.values })
-            } else if (pluginHost.hasCommandItems(cmd.id) && invocation.name !== '') {
-              await pluginHost.executeCommand(cmd.id, note, { itemId: invocation.name })
-            } else await pluginHost.executeCommand(cmd.id, note)
+              await pluginHost.commands.executeCommand(cmd.id, note, { values: invocation.values })
+            } else if (pluginHost.commands.hasCommandItems(cmd.id) && invocation.name !== '') {
+              await pluginHost.commands.executeCommand(cmd.id, note, { itemId: invocation.name })
+            } else await pluginHost.commands.executeCommand(cmd.id, note)
           }),
         )
       },

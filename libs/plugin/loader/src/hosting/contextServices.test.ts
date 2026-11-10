@@ -18,6 +18,18 @@ import { createPluginContext } from './context'
 import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
 
+/** A host that offers no service: every part of it is empty. */
+const NO_SERVICES = {
+  info: {},
+  registration: {},
+  views: {},
+  settings: {},
+  events: {},
+  tabs: {},
+  vault: {},
+  window: {},
+} as unknown as PluginContextHost
+
 const createServices = () => {
   const workspace = {
     files: { open: vi.fn() },
@@ -63,13 +75,18 @@ const createServices = () => {
   } as unknown as BufferHost
   const commands = createMockCommandsHost()
   const host = {
-    getAgent: () => agent,
-    getBuffers: () => buffers,
-    getWorkspace: () => workspace,
-    getNotes: () => notes,
-    getRelations: () => relations,
-    getFiles: () => files,
-    getCommands: () => commands,
+    ...NO_SERVICES,
+    vault: {
+      getBuffers: () => buffers,
+      getNotes: () => notes,
+      getRelations: () => relations,
+      getFiles: () => files,
+    },
+    window: {
+      getAgent: () => agent,
+      getWorkspace: () => workspace,
+      getCommands: () => commands,
+    },
   } as unknown as PluginContextHost
   return { host, workspace, notes, relations, files, agent, buffers, commands }
 }
@@ -274,7 +291,7 @@ describe('the open files a plugin passes the window', () => {
 
     expect(buffers.track).toHaveBeenCalledOnce()
     expect(
-      createPluginContext('md.numen.sample', {} as unknown as PluginContextHost, {
+      createPluginContext('md.numen.sample', NO_SERVICES, {
         permissions: ['vault:write'],
       }),
     ).not.toHaveProperty('buffers')

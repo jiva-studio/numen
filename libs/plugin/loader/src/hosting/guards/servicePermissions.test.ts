@@ -32,7 +32,7 @@ import {
 import { createPluginContext } from '../context'
 import { disposeSubscriptions } from './subscriptions'
 import { Rule, SERVICE_RULES } from './servicePermissions'
-import type { PluginContextHost } from '../types'
+import type { ContextVaultHost, ContextWindowHost, PluginContextHost } from '../types'
 
 type Tree = { [key: string]: Rule | Tree }
 
@@ -69,24 +69,43 @@ function createHost(fakes: Record<string, Record<string, unknown>>): PluginConte
   const ui = fakes.ui as Record<string, unknown>
   const work = fakes.work as Record<string, unknown>
   return {
-    app: { platform: 'linux' },
-    openExternal: vi.fn(),
-    drops: ui.drops,
-    getNotes: () => vault.notes,
-    getRelations: () => vault.relations,
-    getFiles: () => vault.files,
-    getTexts: () => vault.texts,
-    getBuffers: () => vault.buffers,
-    getVaults: () => vault.vaults,
-    getWorkspace: () => ui.workspace,
-    getWindow: () => ui.window,
-    getCommands: () => ui.commands,
-    getSlots: () => ui.slots,
-    getNotices: () => ui.notices,
-    getAgent: () => work.agent,
-    getTasks: () => work.tasks,
-    getBackgroundTasks: () => work.backgroundTasks,
+    info: { app: { platform: 'linux' }, openExternal: vi.fn() },
+    registration: {},
+    views: { drops: ui.drops },
+    settings: {},
+    events: {},
+    tabs: {},
+    vault: {
+      getNotes: () => vault.notes,
+      getRelations: () => vault.relations,
+      getFiles: () => vault.files,
+      getTexts: () => vault.texts,
+      getBuffers: () => vault.buffers,
+      getVaults: () => vault.vaults,
+    },
+    window: {
+      getWorkspace: () => ui.workspace,
+      getWindow: () => ui.window,
+      getCommands: () => ui.commands,
+      getSlots: () => ui.slots,
+      getNotices: () => ui.notices,
+      getAgent: () => work.agent,
+      getTasks: () => work.tasks,
+      getBackgroundTasks: () => work.backgroundTasks,
+    },
   } as unknown as PluginContextHost
+}
+
+/** The host with services of its own in place of some of those it was made with. */
+function withServices(
+  host: PluginContextHost,
+  services: { vault?: ContextVaultHost; window?: ContextWindowHost },
+): PluginContextHost {
+  return {
+    ...host,
+    vault: { ...host.vault, ...services.vault },
+    window: { ...host.window, ...services.window },
+  }
 }
 
 const SERVICE_PARTS = ['vault', 'ui', 'work'] as const
@@ -104,13 +123,17 @@ function pick(context: PluginContext, path: readonly string[]): { target: unknow
 
 function call(context: PluginContext, path: readonly string[]): unknown {
   const { target, key } = pick(context, path)
-  return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(['app', 'agent'], 'b.md')
+  return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(
+    ['app', 'agent'],
+    'b.md',
+  )
 }
 
 const MEMBERS = SERVICE_PARTS.flatMap((part) =>
-  listLeaves(asTree((SERVICE_RULES as unknown as Record<string, unknown>)[part])).map(
-    (leaf) => ({ ...leaf, path: [part, ...leaf.path] }),
-  ),
+  listLeaves(asTree((SERVICE_RULES as unknown as Record<string, unknown>)[part])).map((leaf) => ({
+    ...leaf,
+    path: [part, ...leaf.path],
+  })),
 ).filter((leaf) => leaf.rule.permissions.length > 0)
 
 const label = (path: readonly string[]) => path.join('.')
@@ -145,10 +168,7 @@ describe('every member of a service that lists a permission', () => {
       )
       const reached = call(allowed, member.path)
       await Promise.resolve(reached)
-      const service = pick(
-        { ...fakes, plugin: undefined } as unknown as PluginContext,
-        member.path,
-      )
+      const service = pick({ ...fakes, plugin: undefined } as unknown as PluginContext, member.path)
       expect((service.target as Record<string, unknown>)[service.key]).toHaveBeenCalled()
     },
   )
@@ -171,10 +191,13 @@ describe('the services of a plugin context', () => {
   it('leave out a member of a service the table does not list', () => {
     const agent = Object.assign(createMockAgentHost(), { wipeConversations: vi.fn() })
     const notes = { read: vi.fn(), purge: vi.fn() }
-    const host = { ...createHost(createFakes()), getAgent: () => agent, getNotes: () => notes }
+    const host = withServices(createHost(createFakes()), {
+      window: { getAgent: () => agent },
+      vault: { getNotes: () => notes as unknown as VaultNotes },
+    })
     const context = createPluginContext(
       'md.numen.sample',
-      host as unknown as PluginContextHost,
+      host,
       MANIFEST(['vault:read', 'vault:write']),
     )
 
@@ -184,10 +207,12 @@ describe('the services of a plugin context', () => {
 
   it('leave out a member a host service answers to any name, such as a proxy', () => {
     const everything = new Proxy({}, { get: () => vi.fn() })
-    const host = { ...createHost(createFakes()), getNotes: () => everything }
+    const host = withServices(createHost(createFakes()), {
+      vault: { getNotes: () => everything as unknown as VaultNotes },
+    })
     const context = createPluginContext(
       'md.numen.sample',
-      host as unknown as PluginContextHost,
+      host,
       MANIFEST(['vault:read', 'vault:write']),
     )
 
@@ -201,12 +226,8 @@ describe('the services of a plugin context', () => {
     const ask = vi.fn()
     const agent = createMockAgentHost()
     Object.defineProperty(agent, 'ask', { get: () => ask })
-    const host = { ...createHost(createFakes()), getAgent: () => agent }
-    const context = createPluginContext(
-      'md.numen.sample',
-      host as unknown as PluginContextHost,
-      MANIFEST(['vault:read']),
-    )
+    const host = withServices(createHost(createFakes()), { window: { getAgent: () => agent } })
+    const context = createPluginContext('md.numen.sample', host, MANIFEST(['vault:read']))
 
     expect(() => (context.work.agent as AgentHost).ask({} as never)).toThrowError(
       'lacks required permission "vault:write" for agent.ask',
@@ -216,10 +237,9 @@ describe('the services of a plugin context', () => {
 
   it('check a service the window offers after the context was made', () => {
     const services: { vaults?: unknown } = {}
-    const host = {
-      ...createHost(createFakes()),
-      getVaults: () => services.vaults,
-    } as unknown as PluginContextHost
+    const host = withServices(createHost(createFakes()), {
+      vault: { getVaults: () => services.vaults as VaultsHost },
+    })
     const context = createPluginContext('md.numen.sample', host, MANIFEST([]))
     expect(context.vault.vaults).toBeUndefined()
 
@@ -285,11 +305,7 @@ describe('the services of a plugin context', () => {
 
 describe('the subscriptions of a plugin', () => {
   const createSubscribed = () => {
-    const context = createPluginContext(
-      'md.numen.sample',
-      createHost(createFakes()),
-      MANIFEST([]),
-    )
+    const context = createPluginContext('md.numen.sample', createHost(createFakes()), MANIFEST([]))
     return context.plugin.subscriptions
   }
 

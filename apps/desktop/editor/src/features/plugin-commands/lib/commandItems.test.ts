@@ -35,7 +35,7 @@ const CLOSE: Command = {
 const OVER_TAB: RunTarget = { path: '', title: '', isFolder: false, others: [], tab: 'note:2' }
 
 const setup = () => {
-  const pluginHost = {
+  const pluginCommands = {
     hasCommandItems: (id: string) => id === 'org.example.tide:chart.move',
     listCommandItems: vi.fn(async () => [{ id: 'w2', title: 'Second window' }]),
   }
@@ -43,12 +43,12 @@ const setup = () => {
   const runPlugin = vi.fn(async (_id: string, _target: RunTarget, _itemId: string) => undefined)
   const items = createCommandItems({
     getAppCommands: () => [MOVE, CLOSE],
-    pluginHost,
+    pluginCommands,
     getTarget: () => FRONT,
     runApp,
     runPlugin,
   })
-  return { items, pluginHost, runApp, runPlugin }
+  return { items, pluginCommands, runApp, runPlugin }
 }
 
 describe('the items of a command', () => {
@@ -79,7 +79,7 @@ describe('the items of a command', () => {
           },
         },
       ],
-      pluginHost: undefined,
+      pluginCommands: undefined,
       getTarget: () => FRONT,
       runApp: vi.fn(),
       runPlugin: vi.fn(),
@@ -98,12 +98,12 @@ describe('the items of a command', () => {
   })
 
   it('of a plugin command are the ones the plugin registered', async () => {
-    const { items, pluginHost } = setup()
+    const { items, pluginCommands } = setup()
 
     expect(await items.listCommandItems('org.example.tide:chart.move', OVER_TAB)).toStrictEqual([
       { id: 'w2', title: 'Second window' },
     ])
-    expect(pluginHost.listCommandItems).toHaveBeenCalledWith(
+    expect(pluginCommands.listCommandItems).toHaveBeenCalledWith(
       'org.example.tide:chart.move',
       OVER_TAB,
     )
@@ -150,13 +150,13 @@ describe('a run with the item picked and values', () => {
 
 describe('the target the items of a plugin command are read over', () => {
   it('carries the note type and the properties the window reads for its file', async () => {
-    const pluginHost = {
+    const pluginCommands = {
       hasCommandItems: () => true,
       listCommandItems: vi.fn(async () => []),
     }
     const items = createCommandItems({
       getAppCommands: () => [],
-      pluginHost,
+      pluginCommands,
       getTarget: () => FRONT,
       runApp: vi.fn(),
       runPlugin: vi.fn(),
@@ -166,7 +166,7 @@ describe('the target the items of a plugin command are read over', () => {
 
     await items.listCommandItems('app:file.createText', target)
 
-    expect(pluginHost.listCommandItems).toHaveBeenCalledWith('app:file.createText', {
+    expect(pluginCommands.listCommandItems).toHaveBeenCalledWith('app:file.createText', {
       ...target,
       noteType: 'link',
       properties: { media: 'a' },

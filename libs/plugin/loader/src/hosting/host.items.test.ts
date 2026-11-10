@@ -28,7 +28,10 @@ function createHost() {
     openTab: vi.fn(async () => 'tab-1'),
   }
   const host = createPluginHost(deps)
-  const context = host.createContext(TIDE, createMockManifest(TIDE, { name: 'Tide', version: '1' }))
+  const context = host.lifecycle.createContext(
+    TIDE,
+    createMockManifest(TIDE, { name: 'Tide', version: '1' }),
+  )
   return { host, context }
 }
 
@@ -38,7 +41,9 @@ describe('the items of a plugin command', () => {
     const listItems = vi.fn(() => WINDOWS)
     context.register.command({ id: 'chart.move', handler: () => undefined, listItems })
 
-    expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
+    expect(await host.commands.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(
+      WINDOWS,
+    )
     expect(listItems).toHaveBeenCalledWith(TARGET)
   })
 
@@ -50,15 +55,17 @@ describe('the items of a plugin command', () => {
       listItems: async () => WINDOWS,
     })
 
-    expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
+    expect(await host.commands.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(
+      WINDOWS,
+    )
   })
 
   it('are none for a command without items, and for one no plugin registered', async () => {
     const { host, context } = createHost()
     context.register.command({ id: 'chart.open', handler: () => undefined })
 
-    expect(await host.listCommandItems(`${TIDE}:chart.open`, TARGET)).toStrictEqual([])
-    expect(await host.listCommandItems(`${TIDE}:chart.share`, TARGET)).toStrictEqual([])
+    expect(await host.commands.listCommandItems(`${TIDE}:chart.open`, TARGET)).toStrictEqual([])
+    expect(await host.commands.listCommandItems(`${TIDE}:chart.share`, TARGET)).toStrictEqual([])
   })
 
   it('are none when the registration fails to give them', async () => {
@@ -71,7 +78,7 @@ describe('the items of a plugin command', () => {
       },
     })
 
-    expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual([])
+    expect(await host.commands.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual([])
   })
 
   it('reach the handler as its itemId, by the id of the item picked', async () => {
@@ -79,7 +86,7 @@ describe('the items of a plugin command', () => {
     const handler = vi.fn()
     context.register.command({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
-    await host.executeCommand(`${TIDE}:chart.move`, NOTE, { itemId: 'w2' })
+    await host.commands.executeCommand(`${TIDE}:chart.move`, NOTE, { itemId: 'w2' })
 
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, 'w2', {})
   })
@@ -89,8 +96,8 @@ describe('the items of a plugin command', () => {
     context.register.command({ id: 'chart.move', handler: () => undefined, listItems: () => [] })
     context.register.command({ id: 'chart.open', handler: () => undefined })
 
-    expect(host.hasCommandItems(`${TIDE}:chart.move`)).toBe(true)
-    expect(host.hasCommandItems(`${TIDE}:chart.open`)).toBe(false)
+    expect(host.commands.hasCommandItems(`${TIDE}:chart.move`)).toBe(true)
+    expect(host.commands.hasCommandItems(`${TIDE}:chart.open`)).toBe(false)
   })
 
   it('reach the handler with the values of the arguments by name, after the item id', async () => {
@@ -98,7 +105,7 @@ describe('the items of a plugin command', () => {
     const handler = vi.fn()
     context.register.command({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
-    await host.executeCommand(`${TIDE}:chart.move`, NOTE, {
+    await host.commands.executeCommand(`${TIDE}:chart.move`, NOTE, {
       itemId: 'w2',
       values: { window: 'north' },
     })
@@ -111,8 +118,8 @@ describe('the items of a plugin command', () => {
     const handler = vi.fn()
     context.register.command({ id: 'chart.open', handler })
 
-    await host.executeCommand(`${TIDE}:chart.open`, NOTE, { values: { scale: '2' } })
-    await host.executeCommand(`${TIDE}:chart.open`, NOTE, {
+    await host.commands.executeCommand(`${TIDE}:chart.open`, NOTE, { values: { scale: '2' } })
+    await host.commands.executeCommand(`${TIDE}:chart.open`, NOTE, {
       values: { scale: '3' },
       isAwaited: true,
     })
@@ -126,7 +133,7 @@ describe('the items of a plugin command', () => {
     const handler = vi.fn()
     context.register.command({ id: 'chart.open', handler })
 
-    await host.executeCommand(`${TIDE}:chart.open`, NOTE)
+    await host.commands.executeCommand(`${TIDE}:chart.open`, NOTE)
 
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
   })

@@ -66,7 +66,7 @@ export function createKeyHandler(parts: KeyHandlerParts): (event: KeyboardEvent)
 
   if (pluginHost) {
     const keybindings = parts.declaredCommands?.contributions.keybindings
-    if (keybindings) syncKeybindings(pluginHost, keybindings, parts.plugins)
+    if (keybindings) syncKeybindings(pluginHost.keybindings, keybindings, parts.plugins)
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
@@ -75,6 +75,6 @@ export function createKeyHandler(parts: KeyHandlerParts): (event: KeyboardEvent)
     if (windowTabs.panes.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
     const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
-    if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
+    if (pluginHost?.commands.handleShortcut(event, getNote, keyContext)) event.preventDefault()
   }
 }

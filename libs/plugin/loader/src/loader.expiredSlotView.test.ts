@@ -24,7 +24,7 @@ function createWindow(activate: (context: PluginContext) => Promise<void>) {
     hasPluginBackend: () => false,
   }
   const host = createPluginHost(deps)
-  const loader = createPluginLoader({ host, onError: vi.fn() })
+  const loader = createPluginLoader({ host: host.lifecycle, onError: vi.fn() })
   loader.registerPluginManifest(PLUGIN, MANIFEST)
   loader.registerPluginModule(PLUGIN, async () => ({ activate }))
   return { host, loader }
@@ -39,14 +39,14 @@ describe('a start cancelled at 30 s', () => {
       await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
       context.register.slotView({ id: 'bar', component: {} })
     })
-    const bar = host.getSlotView('titleBar')
+    const bar = host.slotViews.getSlotView('titleBar')
 
     const started = loader.start()
     await vi.advanceTimersByTimeAsync(30_000 + 2_000)
     await started
 
-    expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
-    expect(loader.isPluginActive(PLUGIN)).toBe(false)
+    expect(loader.status.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+    expect(loader.status.isPluginActive(PLUGIN)).toBe(false)
     expect(bar.value).toBeNull()
   })
 
@@ -60,16 +60,16 @@ describe('a start cancelled at 30 s', () => {
       }
       context.register.slotView({ id: 'bar', component: {} })
     })
-    const bar = host.getSlotView('titleBar')
+    const bar = host.slotViews.getSlotView('titleBar')
     const started = loader.start()
     await vi.advanceTimersByTimeAsync(30_000 + 100)
     await started
-    expect(await loader.activatePlugin(PLUGIN)).toBe(true)
+    expect(await loader.activation.activatePlugin(PLUGIN)).toBe(true)
     await vi.advanceTimersByTimeAsync(2_000)
 
-    await loader.deactivatePlugin(PLUGIN)
+    await loader.activation.deactivatePlugin(PLUGIN)
 
-    expect(loader.isPluginActive(PLUGIN)).toBe(false)
+    expect(loader.status.isPluginActive(PLUGIN)).toBe(false)
     expect(bar.value).toBeNull()
   })
 })
@@ -90,7 +90,7 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
       hasPluginBackend: () => false,
       reportCommandIssue,
     })
-    const loader = createPluginLoader({ host, onError: vi.fn() })
+    const loader = createPluginLoader({ host: host.lifecycle, onError: vi.fn() })
     let starts = 0
     loader.registerPluginModule(PLUGIN, async () => ({
       activate: async (context: PluginContext) => {
@@ -107,10 +107,10 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
     const started = loader.start()
     await vi.advanceTimersByTimeAsync(30_000 + 100)
     await started
-    const retry = loader.activatePlugin(PLUGIN)
+    const retry = loader.activation.activatePlugin(PLUGIN)
 
     await vi.advanceTimersByTimeAsync(2_000)
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
     await vi.advanceTimersByTimeAsync(5_000)
     await retry
 

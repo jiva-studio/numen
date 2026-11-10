@@ -39,23 +39,25 @@ describe('a command a plugin registers', () => {
   it('is filed under the id of the plugin and its own id', async () => {
     const host = createPluginHost(createDeps(declare('md.example.files', 'tree.open')))
     const handler = vi.fn()
-    host.createContext('md.example.files').register.command({ id: 'tree.open', handler })
+    host.lifecycle.createContext('md.example.files').register.command({ id: 'tree.open', handler })
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.example.files:tree.open',
     ])
-    expect(host.hasCommand('md.example.files:tree.open')).toBe(true)
-    expect(await host.executeCommand('md.example.files:tree.open', NOTE)).toBe(true)
+    expect(host.commands.hasCommand('md.example.files:tree.open')).toBe(true)
+    expect(await host.commands.executeCommand('md.example.files:tree.open', NOTE)).toBe(true)
     expect(handler).toHaveBeenCalledOnce()
   })
 
   it('is not found by its short id or under the old plugin prefix', async () => {
     const host = createPluginHost(createDeps(declare('md.example.files', 'tree.open')))
-    host.createContext('md.example.files').register.command({ id: 'tree.open', handler: vi.fn() })
+    host.lifecycle
+      .createContext('md.example.files')
+      .register.command({ id: 'tree.open', handler: vi.fn() })
 
-    expect(host.hasCommand('tree.open')).toBe(false)
-    expect(host.hasCommand('plugin:tree.open')).toBe(false)
-    expect(await host.executeCommand('plugin:tree.open', NOTE)).toBe(false)
+    expect(host.commands.hasCommand('tree.open')).toBe(false)
+    expect(host.commands.hasCommand('plugin:tree.open')).toBe(false)
+    expect(await host.commands.executeCommand('plugin:tree.open', NOTE)).toBe(false)
   })
 
   it('is listed once for each of two plugins that give the same short id', async () => {
@@ -64,38 +66,46 @@ describe('a command a plugin registers', () => {
     )
     const first = vi.fn()
     const second = vi.fn()
-    host.createContext('md.example.one').register.command({ id: 'note.open', handler: first })
-    host.createContext('md.example.two').register.command({ id: 'note.open', handler: second })
+    host.lifecycle
+      .createContext('md.example.one')
+      .register.command({ id: 'note.open', handler: first })
+    host.lifecycle
+      .createContext('md.example.two')
+      .register.command({ id: 'note.open', handler: second })
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
       'md.example.one:note.open',
       'md.example.two:note.open',
     ])
-    await host.executeCommand('md.example.two:note.open', NOTE)
+    await host.commands.executeCommand('md.example.two:note.open', NOTE)
     expect(second).toHaveBeenCalledOnce()
     expect(first).not.toHaveBeenCalled()
   })
 
   it('is rejected when its full id is already registered, naming the id', () => {
     const host = createPluginHost(createDeps())
-    const context = host.createContext('md.example.one')
+    const context = host.lifecycle.createContext('md.example.one')
     const first = vi.fn()
     context.register.command({ id: 'note.open', handler: first })
 
     expect(() => context.register.command({ id: 'note.open', handler: vi.fn() })).toThrow(
       'md.example.one:note.open',
     )
-    expect(host.getRegisteredCommands().map((one) => one.handler)).toStrictEqual([first])
+    expect(host.registered.getRegisteredCommands().map((one) => one.handler)).toStrictEqual([first])
   })
 
   it('is accepted again after its plugin is disposed', () => {
     const host = createPluginHost(createDeps())
-    host.createContext('md.example.one').register.command({ id: 'note.open', handler: vi.fn() })
-    host.disposePlugin('md.example.one')
+    host.lifecycle
+      .createContext('md.example.one')
+      .register.command({ id: 'note.open', handler: vi.fn() })
+    host.lifecycle.disposePlugin('md.example.one')
     const again = vi.fn()
 
-    host.createContext('md.example.one').register.command({ id: 'note.open', handler: again })
+    host.lifecycle
+      .createContext('md.example.one')
+      .register.command({ id: 'note.open', handler: again })
 
-    expect(host.getRegisteredCommands().map((one) => one.handler)).toStrictEqual([again])
+    expect(host.registered.getRegisteredCommands().map((one) => one.handler)).toStrictEqual([again])
   })
 })

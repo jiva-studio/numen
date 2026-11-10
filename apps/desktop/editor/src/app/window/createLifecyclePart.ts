@@ -73,7 +73,7 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
       windowTabs.restored.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
       // A new vault places its tabs once the plugins of its tabs have started or failed.
-      await deps.pluginLoader.waitForTabPlugins()
+      await deps.pluginLoader.status.waitForTabPlugins()
       await windowTabs.restored.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatError(error)}`, 'error'),
       )
@@ -94,7 +94,10 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
     // The title bar and the shortcuts read the commands the plugins declare, so the window waits for
     // their first list as it waits for the plugins of the slots of the window.
     waitForInterfacePlugins: async () => {
-      await Promise.all([deps.pluginLoader.waitForInterface(), deps.waitForDeclaredCommands()])
+      await Promise.all([
+        deps.pluginLoader.status.waitForInterface(),
+        deps.waitForDeclaredCommands(),
+      ])
     },
     startWindow: () => {
       runInBackground(deps.tabLinkSession.start(), (error) =>

@@ -28,7 +28,7 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
     reportCommandIssue,
   }
   const host = createPluginHost(deps)
-  const loader = createPluginLoader({ host, onError })
+  const loader = createPluginLoader({ host: host.lifecycle, onError })
   loader.registerPluginModule(PLUGIN, async () => ({ activate }))
   return { host, loader, reportCommandIssue, onError }
 }
@@ -36,7 +36,7 @@ function createWindow(activate: (context: PluginContext) => void | Promise<void>
 function followCommands(host: ReturnType<typeof createPluginHost>): string[][] {
   const reports: string[][] = []
   watch(
-    () => host.getPaletteCommands().map((one) => one.id),
+    () => host.commands.getPaletteCommands().map((one) => one.id),
     (ids) => reports.push(ids),
     { flush: 'sync' },
   )
@@ -58,7 +58,7 @@ describe('a command a plugin registers while it starts', () => {
 
   it('is not reported as missing when the commands are read before the plugin registers any', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
-      host.getPaletteCommands()
+      host.commands.getPaletteCommands()
       context.register.command({ id: 'graph.open', handler: () => undefined })
       context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
@@ -76,7 +76,7 @@ describe('a command a plugin registers while it starts', () => {
     followCommands(host)
 
     await loader.start()
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })
@@ -85,7 +85,7 @@ describe('a command a plugin registers while it starts', () => {
     let commands: string[] = []
     const { host, loader } = createWindow((context) => {
       context.register.command({ id: 'graph.open', handler: () => undefined })
-      commands = host.getPaletteCommands().map((one) => one.id)
+      commands = host.commands.getPaletteCommands().map((one) => one.id)
       context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
 
@@ -99,13 +99,13 @@ describe('a command whose handler is missing after the plugin has started', () =
   it('is reported once, whether it is read while the plugin starts or after', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
       context.register.command({ id: 'graph.open', handler: () => undefined })
-      host.getPaletteCommands()
+      host.commands.getPaletteCommands()
     })
     followCommands(host)
 
     await loader.start()
-    host.getPaletteCommands()
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
+    host.commands.getPaletteCommands()
 
     expect(reportCommandIssue).toHaveBeenCalledTimes(1)
     expect(reportCommandIssue).toHaveBeenCalledWith(
@@ -124,7 +124,7 @@ describe('the commands of a plugin that is turned off', () => {
     await loader.start()
     const reports = followCommands(host)
 
-    host.disposePlugin(PLUGIN)
+    host.lifecycle.disposePlugin(PLUGIN)
 
     expect(reportCommandIssue).not.toHaveBeenCalled()
     expect(reports.at(-1)).toStrictEqual([])
@@ -144,16 +144,16 @@ describe('a plugin whose start passes 30 s', () => {
       const started = loader.start()
       await vi.advanceTimersByTimeAsync(30_000 + 100)
 
-      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+      expect(loader.status.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
       expect(onError).toHaveBeenCalledTimes(1)
-      expect(host.getRegisteredCommands()).toStrictEqual([])
+      expect(host.registered.getRegisteredCommands()).toStrictEqual([])
       await vi.advanceTimersByTimeAsync(1_000)
       await started
 
-      expect(loader.isPluginActive(PLUGIN)).toBe(false)
-      expect(host.getRegisteredCommands()).toStrictEqual([])
-      expect(host.getPaletteCommands()).toStrictEqual([])
-      expect(loader.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
+      expect(loader.status.isPluginActive(PLUGIN)).toBe(false)
+      expect(host.registered.getRegisteredCommands()).toStrictEqual([])
+      expect(host.commands.getPaletteCommands()).toStrictEqual([])
+      expect(loader.status.getPluginFailure(PLUGIN)).toBe('the plugin did not start within 30 s')
     } finally {
       vi.useRealTimers()
     }
@@ -178,11 +178,11 @@ describe('a start cancelled at 30 s that ends after a newer start', () => {
       await vi.advanceTimersByTimeAsync(30_000 + 100)
       await started
 
-      expect(await loader.activatePlugin(PLUGIN)).toBe(true)
+      expect(await loader.activation.activatePlugin(PLUGIN)).toBe(true)
       await vi.advanceTimersByTimeAsync(2_000)
 
-      expect(loader.isPluginActive(PLUGIN)).toBe(true)
-      expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+      expect(loader.status.isPluginActive(PLUGIN)).toBe(true)
+      expect(host.registered.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
         'graph.open',
         'graph.showNote',
       ])
@@ -196,16 +196,16 @@ describe('a plugin whose activation throws', () => {
   it('reports its own failure and no command as missing', async () => {
     const { host, loader, reportCommandIssue, onError } = createWindow((context) => {
       context.register.command({ id: 'graph.open', handler: () => undefined })
-      host.getPaletteCommands()
+      host.commands.getPaletteCommands()
       throw new Error('the plex needs the notes of the vault')
     })
     followCommands(host)
 
     await loader.start()
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
 
     expect(onError).toHaveBeenCalledTimes(1)
-    expect(loader.getPluginFailure(PLUGIN)).toBe('the plex needs the notes of the vault')
+    expect(loader.status.getPluginFailure(PLUGIN)).toBe('the plex needs the notes of the vault')
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })
 })

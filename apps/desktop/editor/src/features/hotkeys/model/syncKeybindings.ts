@@ -6,7 +6,10 @@ import { watch, type Ref } from 'vue'
 import type { PluginHost } from '@numen/plugin-loader'
 import type { DeclaredKeybinding } from '@/entities/plugin'
 
-type KeybindingHost = Pick<PluginHost, 'registerKeybindings' | 'unregisterKeybindings'>
+type KeybindingHost = Pick<
+  PluginHost['keybindings'],
+  'registerKeybindings' | 'unregisterKeybindings'
+>
 
 const groupByPlugin = (
   keybindings: readonly DeclaredKeybinding[],

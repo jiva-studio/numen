@@ -66,13 +66,16 @@ export function createCommandRunner(parts: CommandRunnerParts) {
 
   /** The run of the command over the target, or the objection to it where it cannot start. */
   const startRun = (id: string, target: CommandTarget, way: RunWay): Promise<unknown> | string => {
-    if (pluginHost && (pluginHost.hasCommand(id) || pluginHost.isSharedCommand(id))) {
+    if (
+      pluginHost &&
+      (pluginHost.commands.hasCommand(id) || pluginHost.commands.handlers.isSharedCommand(id))
+    ) {
       commands.palette.setOpen(false)
       return getCommandNote(target).then((note) => {
         const run = { ...getValues(way.values), ...(way.isAwaited ? { isAwaited: true } : {}) }
         return Object.keys(run).length > 0
-          ? pluginHost.executeCommand(id, note, run)
-          : pluginHost.executeCommand(id, note)
+          ? pluginHost.commands.executeCommand(id, note, run)
+          : pluginHost.commands.executeCommand(id, note)
       })
     }
     const { values } = getValues(way.values)

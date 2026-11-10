@@ -200,9 +200,11 @@ describe('a run to its end, as a plugin awaits it', () => {
   it('resolves with an empty path for a plugin command, which makes no note', async () => {
     const executeCommand = vi.fn(async () => true)
     const { runner } = setupRunner({
-      hasCommand: () => true,
-      isSharedCommand: () => false,
-      executeCommand,
+      commands: {
+        hasCommand: () => true,
+        handlers: { isSharedCommand: () => false },
+        executeCommand,
+      },
     })
 
     expect(await runner.runCommandToEnd('summary', target)).toBe('')
@@ -222,9 +224,11 @@ describe('a run to its end, as a plugin awaits it', () => {
       throw new Error('plugin command failed')
     })
     const { runner, messages } = setupRunner({
-      hasCommand: () => true,
-      isSharedCommand: () => false,
-      executeCommand,
+      commands: {
+        hasCommand: () => true,
+        handlers: { isSharedCommand: () => false },
+        executeCommand,
+      },
     })
 
     await expect(runner.runCommandToEnd('summary', target)).rejects.toThrow('plugin command failed')
@@ -240,17 +244,19 @@ describe('a key press', () => {
 
   /** A host whose registry matches the key as the test says: no match, or an app command to run. */
   const createHost = (match?: { command: string; values?: Record<string, string> }) => ({
-    getPaletteCommands: () => [],
-    hasCommandItems: () => false,
-    hasCommand: () => false,
-    isSharedCommand: () => false,
-    executeCommand: vi.fn(),
-    handleShortcut: vi.fn(
-      (_event: KeyboardEvent, _getNote: unknown, keyContext: { runApp: RunAppKey }) => {
-        if (match) keyContext.runApp(match.command, match.values ?? {})
-        return match !== undefined
-      },
-    ),
+    commands: {
+      getPaletteCommands: () => [],
+      hasCommandItems: () => false,
+      hasCommand: () => false,
+      handlers: { isSharedCommand: () => false },
+      executeCommand: vi.fn(),
+      handleShortcut: vi.fn(
+        (_event: KeyboardEvent, _getNote: unknown, keyContext: { runApp: RunAppKey }) => {
+          if (match) keyContext.runApp(match.command, match.values ?? {})
+          return match !== undefined
+        },
+      ),
+    },
   })
 
   it('does nothing where the event was already handled', () => {
@@ -261,7 +267,7 @@ describe('a key press', () => {
     one.onKeyDown(event)
 
     expect(one.press).not.toHaveBeenCalled()
-    expect(host.handleShortcut).not.toHaveBeenCalled()
+    expect(host.commands.handleShortcut).not.toHaveBeenCalled()
   })
 
   it('stops at the tabs where they take the key', () => {
@@ -272,7 +278,7 @@ describe('a key press', () => {
     one.onKeyDown(event)
 
     expect(event.preventDefault).toHaveBeenCalledOnce()
-    expect(host.handleShortcut).not.toHaveBeenCalled()
+    expect(host.commands.handleShortcut).not.toHaveBeenCalled()
   })
 })
 
@@ -299,12 +305,14 @@ describe('a plugin command over a note', () => {
     const handleShortcut = vi.fn(() => false)
     const writeMessage = vi.fn()
     const pluginHost = {
-      getPaletteCommands: () => declared,
-      getKeyFor: (id: string) => KEYS[id],
-      hasCommandItems: () => false,
-      hasCommand: (id: string) => id === 'summary',
-      executeCommand,
-      handleShortcut,
+      commands: {
+        getPaletteCommands: () => declared,
+        hasCommandItems: () => false,
+        hasCommand: (id: string) => id === 'summary',
+        executeCommand,
+        handleShortcut,
+      },
+      keybindings: { getKeyFor: (id: string) => KEYS[id] },
     }
     answerCore({
       files: {
@@ -457,7 +465,7 @@ describe('a plugin command over a note', () => {
     ])
   })
 
-  it('delegates shortcuts to pluginHost.handleShortcut with a lazy note getter', async () => {
+  it('delegates shortcuts to pluginHost.commands.handleShortcut with a lazy note getter', async () => {
     const one = setupPlugin()
     let resolvedNote: unknown = null
     one.handleShortcut.mockImplementationOnce(((
@@ -507,13 +515,15 @@ describe('a plugin command with items in the palette', () => {
     const executeCommand = vi.fn(async () => true)
     const windowLists = { getStepGroups: vi.fn(() => []), previewItem: vi.fn() }
     const pluginHost = {
-      getPaletteCommands: () => [MOVE],
-      hasCommand: () => false,
-      getKeyFor: () => undefined,
-      hasCommandItems: (id: string) => id === MOVE.id,
-      listCommandItems,
-      executeCommand,
-      handleShortcut: vi.fn(() => false),
+      commands: {
+        getPaletteCommands: () => [MOVE],
+        hasCommand: () => false,
+        hasCommandItems: (id: string) => id === MOVE.id,
+        listCommandItems,
+        executeCommand,
+        handleShortcut: vi.fn(() => false),
+      },
+      keybindings: { getKeyFor: () => undefined },
     }
     answerCore({ files: { listFileKinds: () => ({ kinds: [] }) } })
     const options = {

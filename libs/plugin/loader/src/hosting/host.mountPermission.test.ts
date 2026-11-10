@@ -21,7 +21,7 @@ const createHost = () => {
     getNotes: () => ({ read }) as unknown as VaultNotes,
   } as unknown as PluginHostDeps)
   const createPlugin = (id: string, permissions: string[]) =>
-    host.createContext(id, createMockManifest(id, { name: id, permissions }))
+    host.lifecycle.createContext(id, createMockManifest(id, { name: id, permissions }))
   return { read, createPlugin }
 }
 

@@ -115,7 +115,7 @@ const createHost = (parts: RealWindowParts): PluginHost => {
     }),
   })
   for (const manifest of parts.manifests) {
-    host.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
+    host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])
   }
   return host
 }

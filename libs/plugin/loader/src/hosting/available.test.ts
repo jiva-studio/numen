@@ -22,13 +22,15 @@ describe('the commands of a plugin that failed to load', () => {
   it('are not listed while the plugin has not made a context', () => {
     const host = createHost({ isPluginFailed: () => true })
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
   })
 
   it('are listed while the plugin has not failed and has not made a context', () => {
     const host = createHost({ isPluginFailed: () => false })
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'md.tree:tree.open',
+    ])
   })
 })
 
@@ -36,11 +38,11 @@ describe('a declared command whose handler is missing', () => {
   it('is reported once however often the palette is read', () => {
     const reportCommandIssue = vi.fn()
     const host = createHost({ reportCommandIssue })
-    host.createContext('md.tree')
+    host.lifecycle.createContext('md.tree')
 
-    host.getPaletteCommands()
-    host.getPaletteCommands()
-    host.hasCommand('md.tree:tree.open')
+    host.commands.getPaletteCommands()
+    host.commands.getPaletteCommands()
+    host.commands.hasCommand('md.tree:tree.open')
 
     expect(reportCommandIssue).toHaveBeenCalledTimes(1)
   })
@@ -48,12 +50,12 @@ describe('a declared command whose handler is missing', () => {
   it('is not reported again for a plugin that is activated a second time', () => {
     const reportCommandIssue = vi.fn()
     const host = createHost({ reportCommandIssue })
-    host.createContext('md.tree')
-    host.getPaletteCommands()
-    host.disposePlugin('md.tree')
-    host.createContext('md.tree')
+    host.lifecycle.createContext('md.tree')
+    host.commands.getPaletteCommands()
+    host.lifecycle.disposePlugin('md.tree')
+    host.lifecycle.createContext('md.tree')
 
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
 
     expect(reportCommandIssue).toHaveBeenCalledTimes(1)
   })
@@ -63,7 +65,7 @@ describe('the commands of a plugin that has no frontend', () => {
   it('are left to the window, which runs them in the backend of the plugin', () => {
     const host = createHost({ hasPluginFrontend: () => false })
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
   })
 })
 
@@ -71,9 +73,11 @@ describe('a handler registered for a command no manifest declares', () => {
   it('is reported once the first list of declarations has loaded, even for a plugin that declares nothing', () => {
     const reportCommandIssue = vi.fn()
     const host = createHost({ getCommandDeclarations: () => [], reportCommandIssue })
-    host.createContext('md.silent').register.command({ id: 'tree.open', handler: vi.fn() })
+    host.lifecycle
+      .createContext('md.silent')
+      .register.command({ id: 'tree.open', handler: vi.fn() })
 
-    host.getPaletteCommands()
+    host.commands.getPaletteCommands()
 
     expect(reportCommandIssue).toHaveBeenCalledWith(
       'md.silent',
@@ -84,9 +88,11 @@ describe('a handler registered for a command no manifest declares', () => {
   it('is not reported before any list of declarations has loaded', () => {
     const reportCommandIssue = vi.fn()
     const host = createHost({ getCommandDeclarations: () => undefined, reportCommandIssue })
-    host.createContext('md.silent').register.command({ id: 'tree.open', handler: vi.fn() })
+    host.lifecycle
+      .createContext('md.silent')
+      .register.command({ id: 'tree.open', handler: vi.fn() })
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
     expect(reportCommandIssue).not.toHaveBeenCalled()
   })
 })
@@ -95,24 +101,28 @@ describe('a command declared by a plugin with no frontend to load', () => {
   it('is not listed by the host, before or after the plugin has a context', () => {
     const host = createHost({ hasPluginFrontend: () => false })
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
-    host.createContext('md.tree')
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
+    host.lifecycle.createContext('md.tree')
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
   })
 })
 
 describe('a plugin that was disposed', () => {
   it('lists none of its declared commands until it has a context again', () => {
     const host = createHost()
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler: vi.fn() })
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler: vi.fn() })
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'md.tree:tree.open',
+    ])
 
-    host.disposePlugin('md.tree')
+    host.lifecycle.disposePlugin('md.tree')
 
-    expect(host.getPaletteCommands()).toStrictEqual([])
+    expect(host.commands.getPaletteCommands()).toStrictEqual([])
 
-    host.createContext('md.tree').register.command({ id: 'tree.open', handler: vi.fn() })
+    host.lifecycle.createContext('md.tree').register.command({ id: 'tree.open', handler: vi.fn() })
 
-    expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
+    expect(host.commands.getPaletteCommands().map((one) => one.id)).toStrictEqual([
+      'md.tree:tree.open',
+    ])
   })
 })

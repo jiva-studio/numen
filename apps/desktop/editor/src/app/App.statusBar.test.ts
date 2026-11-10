@@ -33,7 +33,7 @@ const LanternBar = defineComponent({
 })
 
 const registerBar = async () => {
-  hosts.current!.contextHost.registerSlotView(LANTERN, 'statusBar', {
+  hosts.current!.contextHost.views.registerSlotView(LANTERN, 'statusBar', {
     id: 'bar',
     component: LanternBar,
   })
@@ -66,7 +66,7 @@ describe('the status bar of the window', () => {
     const window = await mountWindow()
     await registerBar()
 
-    hosts.current!.disposePlugin(LANTERN)
+    hosts.current!.lifecycle.disposePlugin(LANTERN)
     await settle()
 
     expect(window.find('[data-lantern-bar]').exists()).toBe(false)
@@ -78,7 +78,7 @@ describe('the background tasks a plugin is given', () => {
     vaultState.opening = null
     vaultState.error = 'the vault folder is not there'
     await mountWindow()
-    const host = hosts.current!.contextHost.getBackgroundTasks?.()
+    const host = hosts.current!.contextHost.window.getBackgroundTasks?.()
 
     let tasks: readonly BackgroundTask[] = []
     host!.watch((list) => (tasks = list)).dispose()
