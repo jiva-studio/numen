@@ -11,7 +11,7 @@ import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { createPluginSupport } from '@/app/plugins/pluginSupport'
-import { useSettings } from './useSettings'
+import { useSettings } from '@/pages/settings'
 
 const file = { current: {} as Record<string, unknown> }
 

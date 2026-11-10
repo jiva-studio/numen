@@ -76,6 +76,20 @@ function createInstallationSettings(deps: SettingsTabConfigDeps) {
   }
 }
 
+function createInstallationPluginData() {
+  return {
+    getPluginData: (pluginId: string) => getPluginData(pluginId),
+    deletePluginData: async (pluginId: string): Promise<string> => {
+      try {
+        await deletePluginData(pluginId)
+        return ''
+      } catch (caughtError) {
+        return formatError(caughtError)
+      }
+    },
+  }
+}
+
 function createInstallationPlugin(deps: SettingsTabConfigDeps) {
   const { rest, retry, getSettingsViews, catalogEntries } = deps
   return {
@@ -92,15 +106,7 @@ function createInstallationPlugin(deps: SettingsTabConfigDeps) {
         return formatError(caughtError)
       }
     },
-    getPluginData: (pluginId: string) => getPluginData(pluginId),
-    deletePluginData: async (pluginId: string): Promise<string> => {
-      try {
-        await deletePluginData(pluginId)
-        return ''
-      } catch (caughtError) {
-        return formatError(caughtError)
-      }
-    },
+    ...createInstallationPluginData(),
     plugins: rest.state.plugins,
     app: rest.state.app,
     getSettingsViews,

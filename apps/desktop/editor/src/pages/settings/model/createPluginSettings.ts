@@ -3,9 +3,9 @@ import type { InstallationSettings } from '../types'
 
 /** The settings of one plugin, read and written by the key its manifest declares, such as `agent.use`. */
 export interface PluginSettings {
-  get(key: string): unknown
-  isRequested(key: string): boolean
-  set(key: string, value: unknown): void
+  readonly get: (key: string) => unknown
+  readonly isRequested: (key: string) => boolean
+  readonly set: (key: string, value: unknown) => void
 }
 
 const getPath = (pluginId: string, key: string): readonly string[] => [pluginId, ...key.split('.')]

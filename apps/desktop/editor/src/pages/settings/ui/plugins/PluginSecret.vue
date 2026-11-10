@@ -29,7 +29,8 @@ function onToggle(secret: SecretDeclaration, chosen: Secret, isAllowed: boolean)
 }
 
 function onOpenSecrets(): void {
-  props.state.initialPluginId.value = 'secrets'
+  const target = props.state.initialPluginId
+  target.value = 'secrets'
 }
 </script>
 

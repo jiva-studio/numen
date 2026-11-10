@@ -2,10 +2,9 @@
  * The commands the plugins declare as the palette offers them, and a run of
  * one as the palette carries it out.
  */
-import { commands, type CommandDeps } from '@/entities/command'
+import { commands, type CommandDeps, type CommandInvocation } from '@/entities/command'
 import { describe, expect, it, vi } from 'vitest'
 import { createWhenReader } from '@numen/plugin-loader'
-import { runInvocation } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -44,6 +43,10 @@ const front = (file: string, isReady = true) => ({
   vault: { id: 'v', name: 'V' },
   isReady,
 })
+
+/** Carries a command out through the handler registered for its id. */
+const runInvocation = (invocation: CommandInvocation, on: CommandDeps) =>
+  commands.get(invocation.id)?.(invocation, on)
 
 describe('a declared command in the palette', () => {
   it('asks for its required arguments, one step each, and leaves the optional ones out', () => {

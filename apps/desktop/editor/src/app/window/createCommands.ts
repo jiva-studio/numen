@@ -4,9 +4,7 @@
  */
 
 import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-loader'
-import { runInBackground } from '@numen/ui'
 import {
-  runInvocation,
   createInvocation,
   createCommandPalette,
   useSearch,
@@ -18,33 +16,28 @@ import {
   type SearchDeps,
 } from '@/features/command-palette'
 import {
-  COMMAND,
   type Command,
-  type CommandInvocation,
   type CommandTarget,
   type Notes,
   type RunSupport,
   type CommandDeps,
 } from '@/entities/command'
-import { formatError } from '@/shared/api/errors'
 import { createCommandDeps } from '../tabs/commandDeps'
+import { createKeyHandler } from './createKeyHandler'
 import {
   createCommandRunner,
   getValues,
   runInvocationToEnd,
   withValues,
-  type Values,
 } from './createCommandRunner'
 import {
   createCommandNoteReader,
   usePluginCommands,
   createItemLists,
-  toRunTarget,
   createCommandItems,
   watchCommandLists,
   type DeclaredCommands,
 } from '@/features/plugin-commands'
-import { syncKeybindings } from '@/features/hotkeys'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
@@ -224,42 +217,19 @@ export function createCommands(options: CommandsDepsOptions) {
       choice.values,
     )
 
-  /**
-   * Runs a command of the application over the front target with the values of its keybinding. The
-   * command is not asked whether it is offered: the reveal of a note is offered only as the rows that
-   * carry its values, and the condition of the key was judged when the key matched.
-   */
-  const runKeyWithValues = (command: string, values: Values): void => {
-    const invocation = withValues(createInvocation(command, getTarget()), values)
-    runInBackground(runInvocation(invocation, commandDeps), (error) =>
-      writeMessage(formatError(error), 'error'),
-    )
-  }
-
-  /** Runs the command of the application a key is bound to, with the values of the keybinding. */
-  const runAppKey = (command: string, values: Values): void => {
-    if (command === COMMAND.searchVault) {
-      commands.palette.setOpen(false)
-      palette.setOpen(!palette.open.value)
-    } else if (command === COMMAND.openCommands) {
-      palette.setOpen(false)
-      commands.palette.setOpen(!commands.palette.open.value)
-    } else if (Object.keys(values).length > 0) runKeyWithValues(command, values)
-    else runCommand(command, getTarget())
-  }
-
-  if (pluginHost && declaredCommands?.contributions.keybindings) {
-    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, settings.state.plugins)
-  }
-
-  /** The one handler of keys: the tabs first, then the registry of the keybindings. */
-  const onKeyDown = (event: KeyboardEvent) => {
-    if (event.defaultPrevented) return
-    if (windowTabs.panes.onKeyPress(event)) return event.preventDefault()
-    const getNote = () => getCommandNote(getTarget())
-    const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
-    if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
-  }
+  const onKeyDown = createKeyHandler({
+    windowTabs,
+    pluginHost,
+    keybindings: declaredCommands?.contributions.keybindings,
+    plugins: settings.state.plugins,
+    palette,
+    commands,
+    commandDeps,
+    runCommand,
+    getTarget,
+    getCommandNote,
+    writeMessage,
+  })
 
   return {
     palette,
