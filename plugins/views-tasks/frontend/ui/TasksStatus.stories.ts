@@ -9,7 +9,7 @@ import { createTask } from '../testing/tasks'
 import TasksStatus from './TasksStatus.vue'
 
 const RUNNING = [
-  createTask({ id: 'a', state: 'running', progress: { done: 3, total: 10 } }),
+  createTask({ id: 'a', state: 'running', progress: { completedCount: 3, total: 10 } }),
   createTask({ id: 'b', state: 'running' }),
 ]
 const FAILED = [createTask({ id: 'f', state: 'failed', error: 'The disk is full' })]

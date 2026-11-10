@@ -17,7 +17,7 @@ const SYNC: BackgroundTask = {
   label: 'Syncing the ledger',
   about: '',
   state: 'running',
-  progress: { done: 1, total: 4, counting: '' },
+  progress: { completedCount: 1, total: 4, counting: '' },
   error: '',
   allowed: { cancel: true, retry: false },
   action: { label: '', pluginId: '' },

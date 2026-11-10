@@ -9,7 +9,7 @@ const base: Task = {
   id: 't',
   label: 'Reading',
   about: '',
-  progress: { done: 1, total: 4, counting: 'items' },
+  progress: { completedCount: 1, total: 4, counting: 'items' },
   error: '',
   source: { isUserStarted: false, pluginId: '', pluginName: '' },
   isCancellable: true,
@@ -50,7 +50,7 @@ describe('the tasks of the window as background tasks', () => {
       label: 'Reading',
       about: '',
       state: 'running',
-      progress: { done: 1, total: 4, counting: '' },
+      progress: { completedCount: 1, total: 4, counting: '' },
       error: '',
       allowed: { cancel: true, retry: false },
       action: { label: '', pluginId: '' },
@@ -58,8 +58,8 @@ describe('the tasks of the window as background tasks', () => {
   })
 
   it('counts nothing for a task without a total', () => {
-    expect(first({ ...base, progress: { ...base.progress, done: 3, total: 0 } })).toMatchObject({
-      progress: { done: 0, total: 0 },
+    expect(first({ ...base, progress: { ...base.progress, completedCount: 3, total: 0 } })).toMatchObject({
+      progress: { completedCount: 0, total: 0 },
     })
   })
 
@@ -133,7 +133,7 @@ describe('the tasks of the window as background tasks', () => {
         id: 'vectors',
         label: 'Indexing',
         about: `file ${step}`,
-        progress: { ...base.progress, done: step },
+        progress: { ...base.progress, completedCount: step },
       },
       { ...base, id: 'texts', label: 'Reading', source: { ...base.source, pluginName: 'Reader' } },
       { ...base, id: 'lost', error: 'The vault is gone' },
@@ -173,7 +173,7 @@ describe('the actions on a background task', () => {
     await host.cancel('t')
     expect(deps.cancelTask).toHaveBeenCalledTimes(1)
 
-    deps.tasks.value = [{ ...base, progress: { ...base.progress, done: 2 } }]
+    deps.tasks.value = [{ ...base, progress: { ...base.progress, completedCount: 2 } }]
     await nextTick()
     expect(pick(readTasks(host), 0).state).toBe('cancelling')
 

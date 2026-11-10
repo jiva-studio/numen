@@ -41,7 +41,7 @@ function createBackgroundTask(
     about: task.about,
     state: getState(task, isCancelling),
     progress: {
-      done: hasTotal ? task.progress.done : 0,
+      completedCount: hasTotal ? task.progress.completedCount : 0,
       total: hasTotal ? task.progress.total : 0,
       counting: task.progress.counting === 'items' ? '' : task.progress.counting,
     },

@@ -6,7 +6,7 @@ const failed: Task = {
   id: 'task',
   label: 'Working',
   about: 'notes/one.md',
-  progress: { done: 0, total: 0, counting: 'items' },
+  progress: { completedCount: 0, total: 0, counting: 'items' },
   error: 'OAuth session expired and could not be refreshed',
   source: { isUserStarted: false, pluginId: 'md.example.engine', pluginName: 'Example Engine' },
   isCancellable: false,

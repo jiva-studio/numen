@@ -8,7 +8,7 @@ const failed: Task = {
   id: 'copy:Talks/mill.md',
   label: 'Copying a video',
   about: 'Talks/mill.md',
-  progress: { done: 0, total: 0, counting: 'bytes' },
+  progress: { completedCount: 0, total: 0, counting: 'bytes' },
   error: 'the site hung up',
   source: { isUserStarted: true, pluginId: 'org.example.links', pluginName: 'Links' },
   isCancellable: false,

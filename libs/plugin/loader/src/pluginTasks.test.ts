@@ -6,7 +6,7 @@ const createTask = (id: string, pluginId: string): WindowTask => ({
   id,
   label: 'Working',
   about: `notes/${id}.md`,
-  progress: { done: 1, total: 2 },
+  progress: { completedCount: 1, total: 2 },
   error: '',
   source: { pluginId, pluginName: pluginId ? 'Example' : '' },
 })

@@ -10,7 +10,7 @@ export type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
 // BackgroundTaskProgress is how far a task has come. Both counts are zero for a task without a total, and
 // counting is empty where the task counts items one by one.
 export interface BackgroundTaskProgress {
-  readonly done: number
+  readonly completedCount: number
   readonly total: number
   readonly counting: string
 }

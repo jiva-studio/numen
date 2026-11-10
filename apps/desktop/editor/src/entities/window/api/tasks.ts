@@ -32,7 +32,7 @@ export async function* watchTasks(signal: AbortSignal): AsyncGenerator<readonly 
       label: task.title,
       about: task.about,
       progress: {
-        done: Number(task.done),
+        completedCount: Number(task.done),
         total: Number(task.total),
         counting: getCounting(task.unit),
       },

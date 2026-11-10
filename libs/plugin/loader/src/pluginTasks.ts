@@ -9,7 +9,7 @@ export interface WindowTask {
   readonly id: string
   readonly label: string
   readonly about: string
-  readonly progress: { readonly done: number; readonly total: number }
+  readonly progress: { readonly completedCount: number; readonly total: number }
   readonly error: string
   readonly source: { readonly pluginId: string; readonly pluginName: string }
 }
@@ -20,7 +20,7 @@ const toStatus = (task: WindowTask): PluginTaskStatus => ({
   pluginName: task.source.pluginName,
   title: task.label,
   about: task.about,
-  done: task.progress.done,
+  done: task.progress.completedCount,
   total: task.progress.total,
   error: task.error,
 })

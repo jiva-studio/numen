@@ -115,7 +115,7 @@ describe('the summary', () => {
     const wrapper = mountTasks(view)
 
     context.work.backgroundTasks.setTasks([
-      createTask({ id: 'a', state: 'running', progress: { done: 1, total: 2 } }),
+      createTask({ id: 'a', state: 'running', progress: { completedCount: 1, total: 2 } }),
     ])
     await settle(APPEAR_DELAY_MS)
 
@@ -239,7 +239,7 @@ describe('the list', () => {
         id: 'a',
         label: 'Index books',
         about: 'Gita.pdf',
-        progress: { done: 3, total: 12 },
+        progress: { completedCount: 3, total: 12 },
       }),
     ])
     const wrapper = mountTasks(view)

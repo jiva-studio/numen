@@ -114,7 +114,7 @@ const answerFrom = (core: Fake) => {
             tasks: list.map((one) => ({
               id: one.id,
               title: one.label,
-              done: BigInt(one.progress.done),
+              done: BigInt(one.progress.completedCount),
               total: BigInt(one.progress.total),
               unit: TASK_UNIT.THINGS,
               kind: one.kind === 'notice' ? TASK_KIND.NOTICE : TASK_KIND.UNSPECIFIED,
@@ -602,7 +602,7 @@ describe('what the application is doing', () => {
     id: 'reading:library/scan.pdf',
     label: 'Recognising a scan',
     about: 'library/scan.pdf',
-    progress: { done: count, total: 400, counting: 'items' },
+    progress: { completedCount: count, total: 400, counting: 'items' },
     error: '',
     source: { isUserStarted: true, pluginId: '', pluginName: '' },
     isCancellable: false,
@@ -631,7 +631,7 @@ describe('what the application is doing', () => {
     await window.start()
     await flushPromises()
 
-    await vi.waitFor(() => expect(window.tasks.value.map((one) => one.progress.done)).toEqual([32]))
+    await vi.waitFor(() => expect(window.tasks.value.map((one) => one.progress.completedCount)).toEqual([32]))
 
     window.close()
   })
@@ -663,7 +663,7 @@ describe('what the application is doing', () => {
     await flushPromises()
     await flushPromises()
 
-    await vi.waitFor(() => expect(window.tasks.value.map((one) => one.progress.done)).toEqual([48]))
+    await vi.waitFor(() => expect(window.tasks.value.map((one) => one.progress.completedCount)).toEqual([48]))
     expect(openedWindows).toBeGreaterThan(1)
     // A stream taken up again is not a stream that was lost.
     expect(window.health.lost.value).toBe('')

@@ -25,7 +25,7 @@ const createFailedTask = (id: string, text: string, about = ''): Task => ({
   id,
   label: text,
   about,
-  progress: { done: 0, total: 0, counting: 'items' },
+  progress: { completedCount: 0, total: 0, counting: 'items' },
   error: text,
   source: { isUserStarted: true, pluginId: '', pluginName: '' },
   isCancellable: false,

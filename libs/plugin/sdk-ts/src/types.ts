@@ -237,7 +237,7 @@ export interface PluginSettings {
   onChange<T = unknown>(key: string, handler: (value: T) => void): Disposable
 }
 
-// PluginEvents is what a plugin hears of the vault and says to the other plugins.
+// PluginEvents is what a plugin receives of the vault and says to the other plugins.
 export interface PluginEvents {
   onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
   onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable

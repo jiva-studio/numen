@@ -10,7 +10,7 @@ import type { TallyUnit } from '@numen/workbench'
  * receives.
  */
 export interface TaskProgress {
-  readonly done: number
+  readonly completedCount: number
   readonly total: number
   readonly counting: TallyUnit
 }

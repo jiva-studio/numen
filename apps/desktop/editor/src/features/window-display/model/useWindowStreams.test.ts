@@ -26,7 +26,7 @@ const task = (id: string): Task => ({
   id,
   label: 'Indexing',
   about: '',
-  progress: { done: 0, total: 0, counting: 'items' },
+  progress: { completedCount: 0, total: 0, counting: 'items' },
   error: '',
   source: { isUserStarted: false, pluginId: '', pluginName: '' },
   isCancellable: false,

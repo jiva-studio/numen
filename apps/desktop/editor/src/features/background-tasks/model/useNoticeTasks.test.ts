@@ -56,7 +56,7 @@ describe('useNoticeTasks', () => {
       id: 'unwatched',
       label: expect.any(String),
       about: 'notes/sub',
-      progress: { done: 0, total: 0, counting: 'items' },
+      progress: { completedCount: 0, total: 0, counting: 'items' },
       error: expect.any(String),
       source: { isUserStarted: true, pluginId: '', pluginName: '' },
       isCancellable: false,

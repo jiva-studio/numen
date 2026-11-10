@@ -21,7 +21,7 @@ export function createTask({ progress, allowed, action, ...fields }: TaskFields)
     state: 'running',
     error: '',
     ...fields,
-    progress: { done: 0, total: 0, counting: '', ...progress },
+    progress: { completedCount: 0, total: 0, counting: '', ...progress },
     allowed: { cancel: false, retry: false, ...allowed },
     action: { label: '', pluginId: '', ...action },
   }
