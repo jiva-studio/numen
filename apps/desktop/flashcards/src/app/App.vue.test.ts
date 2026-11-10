@@ -105,7 +105,6 @@ const MANIFEST = {
   permissions: ['vault:read'],
 }
 
-/** The core lists these plugins and the vaults `listVaults` answers. */
 const serveCore = (
   pluginIds: readonly string[],
   listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS,

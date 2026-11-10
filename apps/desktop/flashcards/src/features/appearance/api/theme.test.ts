@@ -31,7 +31,7 @@ const answer = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe('the themes the application lists', () => {
-  it('say where each comes from: shipped, the person’s own, or another source', async () => {
+  it('keep apart the shipped, the own and the other themes', async () => {
     core.listThemes.mockResolvedValue(
       answer({
         themes: [
