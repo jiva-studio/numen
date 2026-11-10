@@ -18,18 +18,19 @@ var ErrLastVault = errors.New("the last vault cannot be removed")
 // index. The folder keeps its position, with the identity it carries, and adding
 // it again brings back the same vault.
 type Unregister struct {
-	registry vaultport.VaultRegistry
-	index    vaultport.VaultRepository
+	vaults  vaultport.VaultList
+	remover vaultport.VaultRemover
+	index   vaultport.VaultRepository
 }
 
 // NewUnregister is what takes a vault off the list: the list this installation
-// keeps, and the index its rows are taken out of.
-func NewUnregister(registry vaultport.VaultRegistry, index vaultport.VaultRepository) Unregister {
-	return Unregister{registry: registry, index: index}
+// keeps and its remover, and the index its rows are taken out of.
+func NewUnregister(vaults vaultport.VaultList, remover vaultport.VaultRemover, index vaultport.VaultRepository) Unregister {
+	return Unregister{vaults: vaults, remover: remover, index: index}
 }
 
 func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
-	if err := keepTheLastVault(u.registry, v); err != nil {
+	if err := keepTheLastVault(u.vaults, v); err != nil {
 		return err
 	}
 
@@ -38,11 +39,11 @@ func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
 	if err := u.index.Unregister(ctx, v.ID); err != nil {
 		return fmt.Errorf("the index cannot remove the vault %s: %w", v.Name, err)
 	}
-	return u.registry.Remove(v.ID)
+	return u.remover.Remove(v.ID)
 }
 
-func keepTheLastVault(registry vaultport.VaultRegistry, v domain.Vault) error {
-	recognized, err := registry.List()
+func keepTheLastVault(vaults vaultport.VaultList, v domain.Vault) error {
+	recognized, err := vaults.List()
 	if err != nil {
 		return err
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -66,7 +67,7 @@ func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	return container.NewEditorAssembly(cfg, nil, db), db
+	return container.NewEditorAssembly(cfg, vaultregistry.Ports{}, db), db
 }
 
 func newPass(

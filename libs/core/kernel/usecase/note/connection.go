@@ -29,7 +29,7 @@ type noteChange struct {
 // them. A write either leaves every note changed or none.
 type connectionEditor struct {
 	readers   vaultport.VaultReaders
-	writers   vaultport.VaultWriters
+	writers   NoteWriting
 	index     IndexUpdater
 	now       machineport.Clock
 	links     noteport.LinkQueries
@@ -175,7 +175,7 @@ func (e connectionEditor) restore(
 	if len(landed) == 0 {
 		return nil
 	}
-	writer, err := e.writers.Open(v)
+	writer, err := e.writers.OpenNoteWriter(v)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ type SaveConnection struct {
 // NewSaveConnection builds the use case over the vault, the index that is brought
 // index updater after a write, the link queries, and the clock.
 func NewSaveConnection(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) SaveConnection {
 	return SaveConnection{editor: connectionEditor{
@@ -256,7 +256,7 @@ type RemoveConnection struct {
 // NewRemoveConnection builds the use case over the same collaborators as
 // NewSaveConnection.
 func NewRemoveConnection(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) RemoveConnection {
 	return RemoveConnection{editor: connectionEditor{
@@ -288,7 +288,7 @@ type RemoveSide struct {
 // NewRemoveSide builds the use case over the same collaborators as
 // NewSaveConnection.
 func NewRemoveSide(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) RemoveSide {
 	return RemoveSide{editor: connectionEditor{
@@ -317,7 +317,7 @@ type Join struct {
 
 // NewJoin builds the use case over the same collaborators as NewSaveConnection.
 func NewJoin(
-	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) Join {
 	return Join{editor: connectionEditor{

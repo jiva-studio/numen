@@ -26,7 +26,6 @@ import (
 
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
 const appName = "numen-flashcards"
@@ -83,7 +82,7 @@ func run(cfg container.Config, debug debugOptions) error {
 		return err
 	}
 
-	registry, err := cfg.Registry()
+	list, err := cfg.Registry()
 	if err != nil {
 		return err
 	}
@@ -99,9 +98,9 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
-	api.ListVaults = registry.List
+	api.ListVaults = list.Vaults.List
 	bindVaultIndexer(ctx, api, vaults)
-	lent, err := openPluginVault(cfg, registry, db, api)
+	lent, err := openPluginVault(cfg, db, api)
 	if err != nil {
 		return err
 	}
@@ -149,9 +148,13 @@ func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 }
 
 func openPluginVault(
-	cfg container.Config, registry vaultport.VaultRegistry, db *container.Index, api *shell.API,
+	cfg container.Config, db *container.Index, api *shell.API,
 ) (pluginport.PluginVault, error) {
-	return cfg.OpenPluginVault(registry, db,
+	vaults, err := cfg.Registry()
+	if err != nil {
+		return nil, err
+	}
+	return cfg.OpenPluginVault(vaults, db,
 		func() (domain.Vault, bool) { return domain.Vault{}, false },
 		container.PluginVaultHooks{
 			IndexState: api.EnsureIndexed,

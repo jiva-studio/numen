@@ -17,13 +17,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
@@ -68,9 +66,7 @@ var errNoVault = errors.New("the window has no vault")
 // Open initializes the editor window session for the specified vault.
 // When targetVault is empty, opens the most recently viewed vault.
 func Open(ctx context.Context, made assembly.Assembly, targetVault string, out io.Writer) (*Installation, error) {
-	registry := made.GetRegistry()
-
-	first, err := vaultregistry.NewGetVaultToShow(registry).Execute(targetVault)
+	first, err := made.OpenGetVaultToShow().Execute(targetVault)
 	if err != nil {
 		return nil, errors.Join(err, made.CloseIndex())
 	}
@@ -286,7 +282,7 @@ func createWindow(
 	services.File.chooseTabKind = made.OpenChooseTabKind()
 	services.Note.findTabKinds = services.File.listTabKinds
 	services.Search.ListTabKinds = services.File.listTabKinds
-	services.File.createFolder = file.NewCreateFolder(made.GetVaultWriters())
+	services.File.createFolder = made.OpenCreateFolder()
 
 	// The editor is open on one vault, and answers which as itself.
 	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }

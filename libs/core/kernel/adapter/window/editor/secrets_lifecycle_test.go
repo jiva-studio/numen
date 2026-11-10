@@ -94,7 +94,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
 	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)

@@ -24,7 +24,7 @@ import (
 // none afterwards, because moving is not editing.
 type Move struct {
 	readers vaultport.VaultReaders
-	writers vaultport.VaultWriters
+	writers MoveWriting
 	links   noteport.LinkQueries
 	names   NameQueries
 	sources sourceport.SourceRepository
@@ -41,7 +41,7 @@ type Move struct {
 // MoveDeps is what NewMove takes.
 type MoveDeps struct {
 	Readers vaultport.VaultReaders
-	Writers vaultport.VaultWriters
+	Writers MoveWriting
 	Links   noteport.LinkQueries
 	Names   NameQueries
 	Sources sourceport.SourceRepository
@@ -69,7 +69,7 @@ func (u Move) WithReaders(readers vaultport.VaultReaders) Move {
 }
 
 // WithWriters replaces the vault writers.
-func (u Move) WithWriters(writers vaultport.VaultWriters) Move {
+func (u Move) WithWriters(writers MoveWriting) Move {
 	u.writers = writers
 	return u
 }
@@ -78,7 +78,7 @@ func (u Move) WithWriters(writers vaultport.VaultWriters) Move {
 func (u Move) Sources() sourceport.SourceRepository { return u.sources }
 
 // Writers returns the vault writers.
-func (u Move) Writers() vaultport.VaultWriters { return u.writers }
+func (u Move) Writers() MoveWriting { return u.writers }
 
 // Readers returns the vault readers.
 func (u Move) Readers() vaultport.VaultReaders { return u.readers }
@@ -103,11 +103,11 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (Mov
 		return res, err
 	}
 
-	writer, err := u.writers.Open(v)
+	mover, err := u.writers.OpenFileMover(v)
 	if err != nil {
 		return res, err
 	}
-	if err := writer.Move(ctx, from, to); err != nil {
+	if err := mover.Move(ctx, from, to); err != nil {
 		if errors.Is(err, vault.ErrAlreadyExists) {
 			return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", to, from), err)
 		}
@@ -270,7 +270,7 @@ func (u Move) repair(
 		return linkUntouched, nil
 	}
 
-	writer, err := u.writers.Open(v)
+	writer, err := u.writers.OpenNoteWriter(v)
 	if err != nil {
 		return linkUntouched, err
 	}

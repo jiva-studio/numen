@@ -18,8 +18,6 @@ import (
 // Scenarios covers the vaults an installation holds, the operations on them,
 // and the vault's own tree.
 type Scenarios struct {
-	Registry vaultport.VaultRegistry
-
 	List        registry.List
 	RecordOpen  RecordOpen
 	Find        registry.Find
@@ -36,15 +34,15 @@ type Scenarios struct {
 }
 
 type RecordOpen struct {
-	registry vaultport.VaultRegistry
+	recorder vaultport.VaultRecorder
 }
 
-func NewRecordOpen(registry vaultport.VaultRegistry) RecordOpen {
-	return RecordOpen{registry: registry}
+func NewRecordOpen(recorder vaultport.VaultRecorder) RecordOpen {
+	return RecordOpen{recorder: recorder}
 }
 
 func (u RecordOpen) Execute(id domain.VaultID) error {
-	return u.registry.RecordOpened(id)
+	return u.recorder.RecordOpened(id)
 }
 
 // WriteOpenTabs saves the open tabs of a vault.

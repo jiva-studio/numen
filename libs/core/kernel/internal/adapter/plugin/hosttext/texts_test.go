@@ -94,7 +94,11 @@ type mapsVersions struct {
 	saveFailure error
 }
 
-func (m *mapsVersions) Open(domain.Vault) (textport.VersionRepository, error) { return m, nil }
+func (m *mapsVersions) OpenVersionReader(domain.Vault) (textport.VersionReader, error) { return m, nil }
+
+func (m *mapsVersions) OpenVersionWriter(domain.Vault) (textport.VersionWriter, error) { return m, nil }
+
+func (m *mapsVersions) OpenContentHashes(domain.Vault) (textport.ContentHashes, error) { return m, nil }
 
 func (m *mapsVersions) GetVersions(_ context.Context, path string) ([]domain.TextVersion, error) {
 	if path != mapsPath {

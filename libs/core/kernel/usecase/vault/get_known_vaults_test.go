@@ -29,11 +29,6 @@ func (l *theList) GetLastVault() (domain.Vault, bool, error) {
 	return l.last, l.isKept, l.fails
 }
 
-func (l *theList) Save(domain.Vault) error                      { return nil }
-func (l *theList) Remove(domain.VaultID) error                  { return nil }
-func (l *theList) RecordOpened(domain.VaultID) error            { return nil }
-func (l *theList) FindVault(string) (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
-
 // folders are the vaults whose folder can be opened. Every other path answers
 // the way a folder that has gone does.
 type folders map[domain.VaultID]bool
@@ -57,7 +52,7 @@ func TestEveryVaultOnTheListIsKnown(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 
-	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +76,7 @@ func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
 
-	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +106,7 @@ func TestTheCurrentVaultReachesFirst(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			list := &theList{rows: all, last: domain.Vault{ID: c.last}, isKept: c.last != ""}
-			recognized, err := registry.NewGetKnownVaults(list, folders{}).Execute("")
+			recognized, err := registry.NewGetKnownVaults(list, list, folders{}).Execute("")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -133,7 +128,7 @@ func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
 
-	recognized, err := registry.NewGetKnownVaults(list, there).Execute("wren")
+	recognized, err := registry.NewGetKnownVaults(list, list, there).Execute("wren")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +146,7 @@ func TestAListWithNoOpenedVaultHasNoCurrentVault(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 
-	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +163,7 @@ func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 
-	recognized, err := registry.NewGetKnownVaults(list, folders{"wren": true}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, folders{"wren": true}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +185,7 @@ func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 
-	recognized, err := registry.NewGetKnownVaults(list, nil).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, nil).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +202,7 @@ func TestAnEmptyListIsNoVaults(t *testing.T) {
 	t.Parallel()
 	list := &theList{}
 
-	recognized, err := registry.NewGetKnownVaults(list, folders{}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, folders{}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +220,7 @@ func TestAListThatCannotBeReadIsTheAnswer(t *testing.T) {
 	broken := errors.New("the list is not readable")
 	list := &theList{rows: []domain.Vault{{ID: "wren"}}, fails: broken}
 
-	recognized, err := registry.NewGetKnownVaults(list, folders{}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, list, folders{}).Execute("")
 	if !errors.Is(err, broken) {
 		t.Fatalf("got %v", err)
 	}

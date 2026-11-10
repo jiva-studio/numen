@@ -8,20 +8,20 @@ import (
 
 // GetVaultToShow returns the vault named, which must be on the list; with none named, the last shown, else the first on the list, else none.
 type GetVaultToShow struct {
-	registry vaultport.VaultRegistry
-	find     Find
-	list     List
+	last vaultport.LastVault
+	find Find
+	list List
 }
 
-func NewGetVaultToShow(registry vaultport.VaultRegistry) GetVaultToShow {
-	return GetVaultToShow{registry: registry, find: NewFind(registry), list: NewList(registry)}
+func NewGetVaultToShow(lookup vaultport.VaultLookup, vaults vaultport.VaultList, last vaultport.LastVault) GetVaultToShow {
+	return GetVaultToShow{last: last, find: NewFind(lookup), list: NewList(vaults)}
 }
 
 func (u GetVaultToShow) Execute(name string) (domain.Vault, error) {
 	if name != "" {
 		return u.find.Execute(name)
 	}
-	last, found, err := u.registry.GetLastVault()
+	last, found, err := u.last.GetLastVault()
 	if err != nil {
 		return domain.Vault{}, err
 	}

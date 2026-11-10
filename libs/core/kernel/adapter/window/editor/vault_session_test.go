@@ -25,9 +25,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // The two vaults a swap targets, and one note in each.
@@ -96,7 +95,7 @@ func openTwoVaults(t *testing.T) *showing {
 func newListedVault(
 	t *testing.T,
 	cfg container.Config,
-	registry vaultport.VaultRegistry,
+	registry vaultregistry.Ports,
 	name string,
 	notes map[string]string,
 ) domain.Vault {
@@ -115,7 +114,7 @@ func newListedVault(
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, name)
+	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +249,7 @@ func TestAnotherVaultOpensInTheWindowThatIsOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	switch last, found, err := registry.GetLastVault(); {
+	switch last, found, err := registry.Last.GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case !found || last.ID != f.second.ID:
@@ -727,7 +726,7 @@ func openInstallation(t *testing.T) *editor.Installation {
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	add := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock())
+	add := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock())
 	if _, err := add.Execute(root, "one"); err != nil {
 		t.Fatal(err)
 	}
@@ -844,7 +843,7 @@ func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	switch last, found, err := registry.GetLastVault(); {
+	switch last, found, err := registry.Last.GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case found:
@@ -1143,7 +1142,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	switch last, found, err := registry.GetLastVault(); {
+	switch last, found, err := registry.Last.GetLastVault(); {
 	case err != nil:
 		t.Fatal(err)
 	case !found || string(last.ID) != added.Msg.GetVault().GetId():

@@ -67,7 +67,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(settings.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "watched"); err != nil {
+	if _, err := vaults.NewAdd(settings.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "watched"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -306,7 +306,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "quitting"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "quitting"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -324,7 +324,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	noIndex := func(context.Context, domain.Vault, []string) error { return nil }
 	writing := note.NewWrite(
 		cfg.VaultReaders(),
-		recording{VaultWriters: cfg.VaultWriters(), order: recorded, hold: hold},
+		recording{NoteWriters: cfg.NoteWriters(), VaultLocks: cfg.VaultLocks(), order: recorded, hold: hold},
 		noIndex,
 		testsupport.NewClock(),
 	)
@@ -385,21 +385,22 @@ func (h *held) release() { h.once.Do(func() { close(h.until) }) }
 // recording wraps the vault's writers, records the time of each write, and
 // holds the write where a test requests it.
 type recording struct {
-	vaultport.VaultWriters
+	vaultport.NoteWriters
+	vaultport.VaultLocks
 	order *order
 	hold  *held
 }
 
-func (r recording) Open(v domain.Vault) (vaultport.VaultWriter, error) {
-	writer, err := r.VaultWriters.Open(v)
+func (r recording) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	writer, err := r.NoteWriters.OpenNoteWriter(v)
 	if err != nil {
 		return nil, err
 	}
-	return records{VaultWriter: writer, order: r.order, hold: r.hold}, nil
+	return records{NoteWriter: writer, order: r.order, hold: r.hold}, nil
 }
 
 type records struct {
-	vaultport.VaultWriter
+	vaultport.NoteWriter
 	order *order
 	hold  *held
 }
@@ -418,7 +419,7 @@ func (w records) Write(
 			return domain.FileStat{}, ctx.Err()
 		}
 	}
-	contentVal, err := w.VaultWriter.Write(ctx, path, content, ref)
+	contentVal, err := w.NoteWriter.Write(ctx, path, content, ref)
 	w.order.record("wrote " + path)
 	return contentVal, err
 }

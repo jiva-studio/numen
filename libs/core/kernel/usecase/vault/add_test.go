@@ -18,7 +18,7 @@ import (
 func newAdd(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
-	return vaults.NewAdd(vaultreader.Identity{}, registry, testsupport.NewClock()), registry
+	return vaults.NewAdd(vaultreader.Identity{}, registry, registry, registry, testsupport.NewClock()), registry
 }
 
 func registryAt(t *testing.T) *appstate.VaultRegistry {
@@ -210,7 +210,8 @@ func TestAdd_UnreadableVaultIsNotAdded(t *testing.T) {
 			// A folder of its own: the vault configuration is written into it.
 			root := folder(t, "notes")
 			inner := registryAt(t)
-			add := vaults.NewAdd(tc.identity, tc.registry(inner), testsupport.NewClock())
+			refusing := tc.registry(inner)
+			add := vaults.NewAdd(tc.identity, refusing, refusing, refusing, testsupport.NewClock())
 
 			_, err := add.Execute(root, "")
 			if !errors.Is(err, errRefused) {
@@ -272,7 +273,7 @@ func TestACopyOfAVaultIsRefusedAndAMoveIsFollowed(t *testing.T) {
 func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 	t.Parallel()
 	registry := registryAt(t)
-	first, err := vaults.NewAdd(vaultreader.Identity{}, registry, testsupport.NewClock()).Execute(folder(t, "old"), "")
+	first, err := vaults.NewAdd(vaultreader.Identity{}, registry, registry, registry, testsupport.NewClock()).Execute(folder(t, "old"), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +284,7 @@ func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 		},
 	}
 
-	_, err = vaults.NewAdd(identity, registry, testsupport.NewClock()).Execute(folder(t, "moved"), "")
+	_, err = vaults.NewAdd(identity, registry, registry, registry, testsupport.NewClock()).Execute(folder(t, "moved"), "")
 	if !errors.Is(err, errRefused) {
 		t.Fatalf("want the rejection back, got %v", err)
 	}
@@ -291,7 +292,8 @@ func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 
 func TestAnUnreadableFolderKeepsTheCauseInTheError(t *testing.T) {
 	t.Parallel()
-	add := vaults.NewAdd(refusingIdentity{checkReadable: errRefused}, registryAt(t), testsupport.NewClock())
+	registry := registryAt(t)
+	add := vaults.NewAdd(refusingIdentity{checkReadable: errRefused}, registry, registry, registry, testsupport.NewClock())
 
 	_, err := add.Execute(folder(t, "notes"), "")
 	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
@@ -313,7 +315,7 @@ func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			registry := registryAt(t)
-			first, err := vaults.NewAdd(vaultreader.Identity{}, registry, testsupport.NewClock()).Execute(folder(t, "old"), "")
+			first, err := vaults.NewAdd(vaultreader.Identity{}, registry, registry, registry, testsupport.NewClock()).Execute(folder(t, "old"), "")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -328,7 +330,7 @@ func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			v, err := vaults.NewAdd(identity, registry, testsupport.NewClock()).Execute(moved, "")
+			v, err := vaults.NewAdd(identity, registry, registry, registry, testsupport.NewClock()).Execute(moved, "")
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -26,12 +26,14 @@ import (
 func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, files)
+	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	return Vault{
-		Current: func() (domain.Vault, bool) { return v, true },
-		Readers: vaultreader.Readers{},
-		Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Stores:  derivedfile.PluginStores{},
-		Cache:   appstate.PluginCachesAt(t.TempDir()),
+		Current:    func() (domain.Vault, bool) { return v, true },
+		Readers:    vaultreader.Readers{},
+		OpenWriter: func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
+		LockVault:  writers.Lock,
+		Stores:     derivedfile.PluginStores{},
+		Cache:      appstate.PluginCachesAt(t.TempDir()),
 	}, v
 }
 

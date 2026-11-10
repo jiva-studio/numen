@@ -35,7 +35,7 @@ func RegisterVault(cfg container.Config, vaultPath string) error {
 	if err != nil {
 		return err
 	}
-	_, found, err := reg.FindVault(abs)
+	_, found, err := reg.Lookup.FindVault(abs)
 	if err != nil || found {
 		return err
 	}
@@ -43,5 +43,5 @@ func RegisterVault(cfg container.Config, vaultPath string) error {
 	if err != nil {
 		return err
 	}
-	return reg.RecordOpened(v.ID)
+	return reg.Recorder.RecordOpened(v.ID)
 }

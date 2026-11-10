@@ -50,7 +50,7 @@ type IndexPorts struct {
 	Links         noteport.LinkQueries
 	Problems      problemport.ProblemQueries
 	OpenTabs      windowport.OpenTabsStore
-	TextVersions  textport.VersionRepositories
+	TextVersions  textport.VersionStores
 	SearchFloors  searchpolicyport.FloorStore
 	SearchSamples searchpolicyport.Samples
 	Nearest       searchpolicyport.Nearest
@@ -119,7 +119,7 @@ func (i *Index) Path() string                               { return i.ports.Pat
 func (i *Index) Links() noteport.LinkQueries                { return i.ports.Links }
 func (i *Index) Problems() problemport.ProblemQueries       { return i.ports.Problems }
 func (i *Index) OpenTabs() windowport.OpenTabsStore         { return i.ports.OpenTabs }
-func (i *Index) TextVersions() textport.VersionRepositories { return i.ports.TextVersions }
+func (i *Index) TextVersions() textport.VersionStores       { return i.ports.TextVersions }
 func (i *Index) SearchFloors() searchpolicyport.FloorStore  { return i.ports.SearchFloors }
 func (i *Index) SearchSamples() searchpolicyport.Samples    { return i.ports.SearchSamples }
 func (i *Index) Nearest() searchpolicyport.Nearest          { return i.ports.Nearest }

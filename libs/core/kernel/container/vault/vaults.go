@@ -45,7 +45,17 @@ type Config struct {
 }
 
 // Registry opens the vault registry for this installation.
-func (c Config) Registry() (vaultport.VaultRegistry, error) {
+func (c Config) Registry() (vaultregistry.Ports, error) {
+	list, err := c.openRegistry()
+	if err != nil {
+		return vaultregistry.Ports{}, err
+	}
+	return vaultregistry.Ports{
+		Vaults: list, Lookup: list, Saver: list, Remover: list, Recorder: list, Last: list,
+	}, nil
+}
+
+func (c Config) openRegistry() (*appstate.VaultRegistry, error) {
 	if c.RegistryPath != "" {
 		return appstate.OpenAt(c.RegistryPath), nil
 	}
@@ -57,10 +67,21 @@ func (c Config) VaultReaders() vaultport.VaultReaders {
 	return vaultreader.Readers{Options: c.vaultOptions()}
 }
 
-// VaultWriters opens vaults for write operations.
-func (c Config) VaultWriters() vaultport.VaultWriters {
+func (c Config) writers() vaultwriter.VaultWriters {
 	return vaultwriter.VaultWriters{Options: c.vaultOptions(), Locks: c.VaultLocks}
 }
+
+// NoteWriters opens vaults for writing notes.
+func (c Config) NoteWriters() vaultport.NoteWriters { return c.writers() }
+
+// FolderWriters opens vaults for filling their folders.
+func (c Config) FolderWriters() vaultport.FolderWriters { return c.writers() }
+
+// FileMovers opens vaults for moving and removing files.
+func (c Config) FileMovers() vaultport.FileMovers { return c.writers() }
+
+// WriteLocks holds the write locks of the vaults.
+func (c Config) WriteLocks() vaultport.VaultLocks { return c.writers() }
 
 // GetImportedFiles opens files imported from outside the vault.
 func (c Config) GetImportedFiles() sourceport.ImportedFiles {
@@ -98,36 +119,35 @@ func (c Config) handleError(err error) {
 // tree, against this installation's list and index.
 // notes settles each note a move sent somewhere else. It is the same note.Move
 // a rename goes through, so a note settles one way however it traveled.
-func (c Config) Vaults(registry vaultport.VaultRegistry, db *vaultusecase.Index, notes note.Move) vaultusecase.Scenarios {
+func (c Config) Vaults(registry vaultregistry.Ports, db *vaultusecase.Index, notes note.Move) vaultusecase.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
-	unregister := vaultusecase.NewUnregister(registry, db.Vaults())
+	unregister := vaultusecase.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
 	erase := vaultusecase.NewErase(c.VaultIdentity(), c.Trash(), unregister)
-	find := vaultregistry.NewFind(registry)
+	find := vaultregistry.NewFind(registry.Lookup)
 	return vaultusecase.Scenarios{
-		Registry:    registry,
-		List:        vaultregistry.NewList(registry),
-		RecordOpen:  vaultusecase.NewRecordOpen(registry),
+		List:        vaultregistry.NewList(registry.Vaults),
+		RecordOpen:  vaultusecase.NewRecordOpen(registry.Recorder),
 		Find:        find,
 		FolderCheck: check.NewFolderCheck(c.VaultReaders()),
 		Remove:      vaultusecase.NewRemove(find, unregister, erase),
-		Add:         vaultusecase.NewAdd(c.VaultIdentity(), registry, c.Clock),
-		Rename:      vaultusecase.NewRename(registry, db.Vaults()),
+		Add:         vaultusecase.NewAdd(c.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, c.Clock),
+		Rename:      vaultusecase.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
 		Unregister:  unregister,
 		Erase:       erase,
 		Move: vaultusecase.NewMove(
-			c.VaultWriters(), db.Links(), db.SourcesKnown(), db.Sources(), notes),
-		Import: vaultusecase.NewImport(c.VaultWriters(), c.GetImportedFiles()),
+			c.writers(), db.Links(), db.SourcesKnown(), db.Sources(), notes),
+		Import: vaultusecase.NewImport(c.writers(), c.GetImportedFiles()),
 	}
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(registry vaultport.VaultRegistry, root, name string) (domain.Vault, error) {
-	return vaultusecase.NewAdd(c.VaultIdentity(), registry, c.Clock).Execute(root, name)
+func (c Config) AddVault(registry vaultregistry.Ports, root, name string) (domain.Vault, error) {
+	return vaultusecase.NewAdd(c.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, c.Clock).Execute(root, name)
 }
 
 // GetKnownVaults builds the use case that lists known vaults and their folder state.
-func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vaultregistry.GetKnownVaults {
-	recognized := vaultregistry.NewGetKnownVaults(registry, c.VaultReaders())
+func (c Config) GetKnownVaults(registry vaultregistry.Ports) *vaultregistry.GetKnownVaults {
+	recognized := vaultregistry.NewGetKnownVaults(registry.Vaults, registry.Last, c.VaultReaders())
 	return &recognized
 }
 

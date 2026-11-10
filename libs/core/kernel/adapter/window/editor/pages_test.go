@@ -25,8 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // mine is a user theme with a color no other theme has, pinning the dark
@@ -341,7 +339,6 @@ func TestAThemeCannotEndTheElementItIsIn(t *testing.T) {
 }
 
 type blockingVaults struct {
-	vaultport.VaultRegistry
 	begun chan struct{}
 	until chan struct{}
 }
@@ -354,14 +351,6 @@ func (b blockingVaults) List() ([]domain.Vault, error) {
 	<-b.until
 	return nil, nil
 }
-
-func (blockingVaults) FindVault(string) (domain.Vault, bool, error) {
-	return domain.Vault{}, false, nil
-}
-func (blockingVaults) GetLastVault() (domain.Vault, bool, error) { return domain.Vault{}, false, nil }
-func (blockingVaults) Save(domain.Vault) error                   { return nil }
-func (blockingVaults) Remove(domain.VaultID) error               { return nil }
-func (blockingVaults) RecordOpened(domain.VaultID) error         { return nil }
 
 // TestHandler_ClosingWaitsForInFlightRequests. A search, a note and a link are
 // answered from the index. A request admitted immediately before the handler closes

@@ -25,7 +25,7 @@ type NoteReader interface {
 // Versions is the text versions of vault files: what plugins report and what is
 // live.
 type Versions struct {
-	repos   textport.VersionRepositories
+	stores  textport.VersionStores
 	files   textport.TextFileStores
 	plugins textport.TextPlugins
 	readers vaultport.VaultReaders
@@ -37,23 +37,23 @@ type Versions struct {
 	lives    map[liveKey]domain.TextVersionID
 }
 
-// NewVersions returns the versions use case. It takes the version repositories,
+// NewVersions returns the versions use case. It takes the version stores,
 // the file stores, the enabled plugins that may record versions, the vault
 // readers, the reader of a note's properties, and the clock that dates new versions. No
 // listener is notified of changes until SetListener is called.
 func NewVersions(
-	repos textport.VersionRepositories,
+	stores textport.VersionStores,
 	files textport.TextFileStores,
 	plugins textport.TextPlugins,
 	readers vaultport.VaultReaders,
 	notes NoteReader,
 	clock machineport.Clock,
 ) (*Versions, error) {
-	if repos == nil || files == nil || plugins == nil || readers == nil || notes == nil || clock == nil {
-		return nil, errors.New("text versions need a repository, files, plugins, vault readers, a note reader and a clock")
+	if stores == nil || files == nil || plugins == nil || readers == nil || notes == nil || clock == nil {
+		return nil, errors.New("text versions need version stores, files, plugins, vault readers, a note reader and a clock")
 	}
 	return &Versions{
-		repos: repos, files: files, plugins: plugins, readers: readers, notes: notes, clock: clock,
+		stores: stores, files: files, plugins: plugins, readers: readers, notes: notes, clock: clock,
 		listener: noListener{}, lives: map[liveKey]domain.TextVersionID{},
 	}, nil
 }
@@ -118,11 +118,11 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if err := checkVersionFields(version); err != nil {
 		return domain.TextVersion{}, err
 	}
-	repo, err := u.repos.Open(v)
+	reader, err := u.stores.OpenVersionReader(v)
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
-	versions, err := repo.GetVersions(ctx, version.Path)
+	versions, err := reader.GetVersions(ctx, version.Path)
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
@@ -142,7 +142,11 @@ func (u *Versions) saveVersion(ctx context.Context, v domain.Vault, version doma
 	if i := indexOf(versions, version.GetID()); i >= 0 {
 		version.CreateTime = versions[i].CreateTime
 	}
-	if err := repo.SaveVersion(ctx, version); err != nil {
+	writer, err := u.stores.OpenVersionWriter(v)
+	if err != nil {
+		return domain.TextVersion{}, err
+	}
+	if err := writer.SaveVersion(ctx, version); err != nil {
 		return domain.TextVersion{}, fmt.Errorf("save version %s of %s: %w", version.GetID(), version.Path, err)
 	}
 	u.reportChanged(ctx, v, version.Path)
@@ -170,11 +174,11 @@ func checkVersionSource(version domain.TextVersion, versions []domain.TextVersio
 
 // RemoveVersion removes the record of a version of the plugin.
 func (u *Versions) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path, key string) error {
-	repo, err := u.repos.Open(v)
+	writer, err := u.stores.OpenVersionWriter(v)
 	if err != nil {
 		return err
 	}
-	if err := repo.RemoveVersion(ctx, path, domain.NewTextVersionID(pluginID, key)); err != nil {
+	if err := writer.RemoveVersion(ctx, path, domain.NewTextVersionID(pluginID, key)); err != nil {
 		return fmt.Errorf("remove version %s/%s of %s: %w", pluginID, key, path, err)
 	}
 	u.reportChanged(ctx, v, path)
@@ -194,11 +198,11 @@ func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path strin
 		return fmt.Errorf("%w: %s has no version %s", text.ErrInvalidVersion, path, id)
 	}
 	version := versions[index]
-	repo, err := u.repos.Open(v)
+	writer, err := u.stores.OpenVersionWriter(v)
 	if err != nil {
 		return err
 	}
-	if err := repo.RemoveVersion(ctx, path, id); err != nil {
+	if err := writer.RemoveVersion(ctx, path, id); err != nil {
 		return fmt.Errorf("remove version %s of %s: %w", id, path, err)
 	}
 	files, err := u.files.Open(v)
@@ -274,11 +278,11 @@ func (u *Versions) readSourceProperties(
 // DeletePluginVersions removes the records of every version a plugin made in a
 // vault, after its data was deleted, and reports each file whose versions changed.
 func (u *Versions) DeletePluginVersions(ctx context.Context, v domain.Vault, pluginID string) error {
-	repo, err := u.repos.Open(v)
+	writer, err := u.stores.OpenVersionWriter(v)
 	if err != nil {
 		return err
 	}
-	removed, err := repo.RemovePluginVersions(ctx, pluginID)
+	removed, err := writer.RemovePluginVersions(ctx, pluginID)
 	if err != nil {
 		return fmt.Errorf("remove the versions of %s: %w", pluginID, err)
 	}
@@ -372,11 +376,11 @@ func (u *Versions) IsTextSource(ctx context.Context, v domain.Vault, path string
 }
 
 func (u *Versions) getVersions(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, error) {
-	repo, err := u.repos.Open(v)
+	reader, err := u.stores.OpenVersionReader(v)
 	if err != nil {
 		return nil, err
 	}
-	return repo.GetVersions(ctx, path)
+	return reader.GetVersions(ctx, path)
 }
 
 func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {

@@ -30,10 +30,12 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 		"notes/Danube.md": "# Danube\n",
 	})
 	hostCallers := newCallers(nil)
+	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	hostCallers.vault = hostvault.Vault{
-		Current: func() (domain.Vault, bool) { return v, true },
-		Readers: vaultreader.Readers{},
-		Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Current:    func() (domain.Vault, bool) { return v, true },
+		Readers:    vaultreader.Readers{},
+		OpenWriter: func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
+		LockVault:  writers.Lock,
 	}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(&Endpoint{callers: hostCallers})))

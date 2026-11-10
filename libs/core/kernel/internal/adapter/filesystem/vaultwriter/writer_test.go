@@ -23,7 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func openWriter(t *testing.T) (vaultport.VaultWriter, string) {
+func openWriter(t *testing.T) (*vaultwriter.VaultWriter, string) {
 	t.Helper()
 	root := t.TempDir()
 	w, err := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}.Open(domain.Vault{Path: root})

@@ -10,17 +10,17 @@ import (
 
 // EmptyTrash deletes everything the vault's trash holds.
 type EmptyTrash struct {
-	writers vaultport.VaultWriters
+	writers vaultport.TrashEmptiers
 }
 
-func NewEmptyTrash(writers vaultport.VaultWriters) EmptyTrash {
+func NewEmptyTrash(writers vaultport.TrashEmptiers) EmptyTrash {
 	return EmptyTrash{writers: writers}
 }
 
 // Execute deletes the trash content permanently and returns the paths it could
 // not delete. The trash is not indexed, so the index is left as it is.
 func (u EmptyTrash) Execute(ctx context.Context, v domain.Vault) ([]string, error) {
-	writer, err := u.writers.Open(v)
+	writer, err := u.writers.OpenTrashEmptier(v)
 	if err != nil {
 		return nil, err
 	}

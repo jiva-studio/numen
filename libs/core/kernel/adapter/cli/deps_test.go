@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -27,7 +28,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 	return cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
 			return cli.Vaults{
-				Registry: appstate.OpenAt(where.Registry),
+				Registry: portsOfFile(appstate.OpenAt(where.Registry)),
 				Readers:  vaultreader.Readers{Options: options},
 				Identity: vaultreader.Identity{Options: options},
 				Trash:    s.bin,
@@ -101,6 +102,14 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 	}
 }
 
+func portsOfFile(list *appstate.VaultRegistry) registry.Ports {
+	return registry.Ports{Vaults: list, Lookup: list, Saver: list, Remover: list, Recorder: list, Last: list}
+}
+
+func portsOfSingle(list singleVaultList) registry.Ports {
+	return registry.Ports{Vaults: list, Lookup: list, Saver: list, Remover: list, Recorder: list, Last: list}
+}
+
 // singleVaultList is a list holding a single vault, answering nothing about any other.
 type singleVaultList struct{ targetVault domain.Vault }
 
@@ -143,7 +152,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 	provided := cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
-			return cli.Vaults{Registry: singleVaultList{target}}, nil
+			return cli.Vaults{Registry: portsOfSingle(singleVaultList{target})}, nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
 			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{

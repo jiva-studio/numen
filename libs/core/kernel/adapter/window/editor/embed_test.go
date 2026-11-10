@@ -353,7 +353,7 @@ func vaultConfig(t *testing.T) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
+	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "alpha"); err != nil {
 		t.Fatal(err)
 	}
 	return cfg

@@ -65,7 +65,7 @@ func (f failingNames) GetNamedPaths(context.Context, domain.VaultID, string) ([]
 // failingWriters behaves as the filesystem writers, except that it can fail on
 // open (on the nth call), on lock, or on file write.
 type failingWriters struct {
-	vaultport.VaultWriters
+	vaultwriter.VaultWriters
 	holdErr  error
 	openErr  error
 	failOpen int
@@ -80,20 +80,34 @@ func (f failingWriters) Lock(ctx context.Context, v domain.Vault) (func(), error
 	return f.VaultWriters.Lock(ctx, v)
 }
 
-func (f failingWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
+func (f failingWriters) failToOpen() error {
 	*f.opened++
 	if f.openErr != nil && *f.opened == f.failOpen {
-		return nil, f.openErr
+		return f.openErr
 	}
-	w, err := f.VaultWriters.Open(v)
+	return nil
+}
+
+func (f failingWriters) OpenFileMover(v domain.Vault) (vaultport.FileMover, error) {
+	if err := f.failToOpen(); err != nil {
+		return nil, err
+	}
+	return f.VaultWriters.OpenFileMover(v)
+}
+
+func (f failingWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	if err := f.failToOpen(); err != nil {
+		return nil, err
+	}
+	w, err := f.VaultWriters.OpenNoteWriter(v)
 	if err != nil {
 		return nil, err
 	}
-	return failingWriter{VaultWriter: w, err: f.writeErr}, nil
+	return failingWriter{NoteWriter: w, err: f.writeErr}, nil
 }
 
 type failingWriter struct {
-	vaultport.VaultWriter
+	vaultport.NoteWriter
 	err error
 }
 
@@ -101,7 +115,7 @@ func (f failingWriter) Write(ctx context.Context, path string, content []byte, f
 	if f.err != nil {
 		return domain.FileStat{}, f.err
 	}
-	return f.VaultWriter.Write(ctx, path, content, fp)
+	return f.NoteWriter.Write(ctx, path, content, fp)
 }
 
 // moveParts are the collaborators of a move that a test replaces. Unset fields
@@ -110,7 +124,7 @@ type moveParts struct {
 	links    noteport.LinkQueries
 	names    note.NameQueries
 	readers  vaultport.VaultReaders
-	writers  vaultport.VaultWriters
+	writers  note.MoveWriting
 	index    note.IndexUpdater
 	hasIndex bool
 }
@@ -518,7 +532,7 @@ func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 	if mover.Readers() != vaultport.VaultReaders(readers) {
 		t.Error("the readers are not the ones set")
 	}
-	if mover.Writers() != vaultport.VaultWriters(writers) {
+	if mover.Writers() != note.MoveWriting(writers) {
 		t.Error("the writers are not the ones set")
 	}
 	if mover.Sources() != sourceport.SourceRepository(sources) {

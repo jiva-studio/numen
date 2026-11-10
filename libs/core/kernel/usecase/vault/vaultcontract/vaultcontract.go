@@ -11,11 +11,8 @@ type (
 	VaultIdentity   = vaultport.VaultIdentity
 	VaultReader     = vaultport.VaultReader
 	VaultReaders    = vaultport.VaultReaders
-	VaultRegistry   = vaultport.VaultRegistry
 	VaultRepository = vaultport.VaultRepository
 	VaultWatcher    = vaultport.VaultWatcher
-	VaultWriter     = vaultport.VaultWriter
-	VaultWriters    = vaultport.VaultWriters
 )
 
 var (

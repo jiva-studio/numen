@@ -24,11 +24,18 @@ var ErrNoVault = errors.New("the host is showing no vault")
 // connections.
 var ErrNoConnections = errors.New("the host has no operations on connections")
 
+// NoteWriter writes and creates the notes of one vault.
+type NoteWriter interface {
+	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
+	Create(ctx context.Context, path string, content []byte) error
+}
+
 // Vault is port.PluginVault over the ports of the installation.
 type Vault struct {
 	Current     func() (domain.Vault, bool)
 	Readers     vaultport.VaultReaders
-	Writers     vaultport.VaultWriters
+	OpenWriter  func(v domain.Vault) (NoteWriter, error)
+	LockVault   func(ctx context.Context, v domain.Vault) (func(), error)
 	Notes       noteRefs
 	Types       noteTypes
 	NamedPaths  namedPaths
@@ -119,12 +126,12 @@ func (a Vault) openReader() (vaultport.VaultReader, error) {
 	return a.Readers.Open(v)
 }
 
-func (a Vault) openWriter() (vaultport.VaultWriter, error) {
+func (a Vault) openWriter() (NoteWriter, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
 	}
-	return a.Writers.Open(v)
+	return a.OpenWriter(v)
 }
 
 func (a Vault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
@@ -228,7 +235,7 @@ func (a Vault) Lock(ctx context.Context) (func(), error) {
 	if err != nil {
 		return nil, err
 	}
-	return a.Writers.Lock(ctx, v)
+	return a.LockVault(ctx, v)
 }
 
 func (a Vault) Scan(ctx context.Context, paths []string) error {

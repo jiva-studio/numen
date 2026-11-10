@@ -18,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -600,17 +601,17 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 }
 
 // when something outside this process wrote the file in the meantime.
-type staleWriters struct{ vaultport.VaultWriters }
+type staleWriters struct{ note.MoveWriting }
 
-func (o staleWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
-	writer, err := o.VaultWriters.Open(v)
+func (o staleWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	writer, err := o.MoveWriting.OpenNoteWriter(v)
 	if err != nil {
 		return nil, err
 	}
-	return staleWriter{VaultWriter: writer}, nil
+	return staleWriter{NoteWriter: writer}, nil
 }
 
-type staleWriter struct{ vaultport.VaultWriter }
+type staleWriter struct{ vaultport.NoteWriter }
 
 func (staleWriter) Write(
 	context.Context, string, []byte, domain.FileStat,
@@ -625,7 +626,7 @@ func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	waitForScan(t, f)
-	*f.installation.Services.NoteRename() = f.installation.Services.NoteRename().WithWriters(staleWriters{VaultWriters: f.installation.Services.NoteRename().Writers()})
+	*f.installation.Services.NoteRename() = f.installation.Services.NoteRename().WithWriters(staleWriters{MoveWriting: f.installation.Services.NoteRename().Writers()})
 
 	out, err := f.installation.Services.Note.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",

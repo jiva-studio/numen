@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
@@ -181,9 +181,9 @@ func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
 // OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
 // index that holds them.
 func (c Config) OpenPluginVault(
-	registry vaultport.VaultRegistry, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+	vaults vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) (pluginport.PluginVault, error) {
-	return c.plugins().OpenPluginVault(registry, db, current, hooks)
+	return c.plugins().OpenPluginVault(vaults, db, current, hooks)
 }
 
 // GetPluginDir is the folder of an installed plugin, and false for one not installed.

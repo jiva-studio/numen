@@ -30,7 +30,7 @@ func (c changing) saveConnection() note.SaveConnection {
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
 
-func (c changing) saveConnectionWith(writers vaultport.VaultWriters) note.SaveConnection {
+func (c changing) saveConnectionWith(writers note.NoteWriting) note.SaveConnection {
 	return note.NewSaveConnection(
 		vaultreader.Readers{}, writers, c.index, testsupport.NewClock(), c.db.Links(), c.addresses())
 }
@@ -186,23 +186,23 @@ func TestSavingAConnectionWritesNothingWhenOneNoteCannotBeEdited(t *testing.T) {
 
 // pathFailingWriters fail the write of one path.
 type pathFailingWriters struct {
-	vaultport.VaultWriters
+	vaultwriter.VaultWriters
 	path string
 }
 
 type pathFailingWriter struct {
-	vaultport.VaultWriter
+	vaultport.NoteWriter
 	path string
 }
 
 var errPathDisk = errors.New("the disk refused the write")
 
-func (w pathFailingWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
-	inner, err := w.VaultWriters.Open(v)
+func (w pathFailingWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
+	inner, err := w.VaultWriters.OpenNoteWriter(v)
 	if err != nil {
 		return nil, err
 	}
-	return pathFailingWriter{VaultWriter: inner, path: w.path}, nil
+	return pathFailingWriter{NoteWriter: inner, path: w.path}, nil
 }
 
 func (w pathFailingWriter) Write(
@@ -211,7 +211,7 @@ func (w pathFailingWriter) Write(
 	if path == w.path {
 		return domain.FileStat{}, errPathDisk
 	}
-	return w.VaultWriter.Write(ctx, path, content, stat)
+	return w.NoteWriter.Write(ctx, path, content, stat)
 }
 
 func TestAWriteThatFailsAfterTheFirstNoteLandedRestoresTheFirstNote(t *testing.T) {

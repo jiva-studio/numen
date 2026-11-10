@@ -32,7 +32,8 @@ type Config struct {
 	SecretGate            *secret.Gate
 	Programs              *settingsadapter.ProgramList
 	VaultReaders          vaultport.VaultReaders
-	VaultWriters          vaultport.VaultWriters
+	NoteWriters           vaultport.NoteWriters
+	VaultLocks            vaultport.VaultLocks
 	VaultWatcher          vaultport.VaultWatcher
 	ErrorHandler          func(error)
 	SettingsFile          func() (string, error)

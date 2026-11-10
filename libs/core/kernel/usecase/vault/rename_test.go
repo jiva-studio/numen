@@ -8,7 +8,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 )
 
 func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
@@ -16,7 +16,7 @@ func TestARenamedVaultKeepsItsNameOnTheListAndItsRowInTheIndex(t *testing.T) {
 	_, renamed, registry := twoVaults(t)
 	index := &indexRows{}
 
-	got, err := vaults.NewRename(registry, index).Execute(t.Context(), renamed, "journal")
+	got, err := vaults.NewRename(registry, registry, index).Execute(t.Context(), renamed, "journal")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 
 	// The comparison is the one the list is searched by: without case, over
 	// normalised text.
-	_, err := vaults.NewRename(registry, index).Execute(t.Context(), renamed, "PERSONAL")
+	_, err := vaults.NewRename(registry, registry, index).Execute(t.Context(), renamed, "PERSONAL")
 	if !errors.Is(err, vaults.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", acquired.Name, err)
 	}
@@ -67,7 +67,7 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 
-	got, err := vaults.NewRename(registry, index).Execute(t.Context(), v, v.Name)
+	got, err := vaults.NewRename(registry, registry, index).Execute(t.Context(), v, v.Name)
 	if err != nil {
 		t.Fatalf("renaming a vault to what it is called: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestTheNameAVaultAlreadyHasChangesNothing(t *testing.T) {
 
 // faultyRegistry is a list that fails when it is read or written.
 type faultyRegistry struct {
-	vaultport.VaultRegistry
+	*appstate.VaultRegistry
 	listErr error
 	saveErr error
 }
@@ -107,7 +107,7 @@ func TestAVaultIsNotRenamedToNothing(t *testing.T) {
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 
-	if _, err := vaults.NewRename(registry, index).Execute(t.Context(), v, ""); err == nil {
+	if _, err := vaults.NewRename(registry, registry, index).Execute(t.Context(), v, ""); err == nil {
 		t.Fatal("an empty name was accepted")
 	}
 	onTheList, _, err := registry.FindVault(string(v.ID))
@@ -127,7 +127,8 @@ func TestARenameFailsWhenTheListCannotBeRead(t *testing.T) {
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 
-	_, err := vaults.NewRename(faultyRegistry{VaultRegistry: registry, listErr: errBroken}, index).
+	faulty := faultyRegistry{VaultRegistry: registry, listErr: errBroken}
+	_, err := vaults.NewRename(faulty, faulty, index).
 		Execute(t.Context(), v, "journal")
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("got %v, want %v", err, errBroken)
@@ -142,7 +143,8 @@ func TestARenameFailsWhenTheListCannotBeSaved(t *testing.T) {
 	_, v, registry := twoVaults(t)
 	index := &indexRows{}
 
-	_, err := vaults.NewRename(faultyRegistry{VaultRegistry: registry, saveErr: errBroken}, index).
+	faulty := faultyRegistry{VaultRegistry: registry, saveErr: errBroken}
+	_, err := vaults.NewRename(faulty, faulty, index).
 		Execute(t.Context(), v, "journal")
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("got %v, want %v", err, errBroken)
@@ -156,7 +158,7 @@ func TestRename_FailsWhenIndexRejectsVault(t *testing.T) {
 	t.Parallel()
 	_, v, registry := twoVaults(t)
 
-	_, err := vaults.NewRename(registry, &indexRows{fails: errBroken}).Execute(t.Context(), v, "journal")
+	_, err := vaults.NewRename(registry, registry, &indexRows{fails: errBroken}).Execute(t.Context(), v, "journal")
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("got %v, want %v", err, errBroken)
 	}

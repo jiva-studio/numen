@@ -8,14 +8,14 @@ import (
 
 // List returns the vaults registered in this installation.
 type List struct {
-	registry vaultport.VaultRegistry
+	vaults vaultport.VaultList
 }
 
 // NewList is what the vaults are read out of: the list this installation keeps.
-func NewList(registry vaultport.VaultRegistry) List {
-	return List{registry: registry}
+func NewList(vaults vaultport.VaultList) List {
+	return List{vaults: vaults}
 }
 
 func (u List) Execute() ([]domain.Vault, error) {
-	return u.registry.List()
+	return u.vaults.List()
 }

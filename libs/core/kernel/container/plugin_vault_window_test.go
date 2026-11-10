@@ -88,7 +88,7 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "# Danube\n\nA river.\n"})
 	other = testsupport.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n\nA deep lake.\n", "Lakes.md": "# Lakes\n"})
 	for _, v := range []domain.Vault{rivers, other} {
-		if err := registry.Save(v); err != nil {
+		if err := registry.Saver.Save(v); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -156,7 +156,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	rivers := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA river.\n"})
 	lakes := testsupport.NewVault(t, map[string]string{"Danube.md": "---\ntitle: Danube\n---\nA lake of the same name.\n"})
 	for _, v := range []domain.Vault{rivers, lakes} {
-		if err := registry.Save(v); err != nil {
+		if err := registry.Saver.Save(v); err != nil {
 			t.Fatal(err)
 		}
 	}

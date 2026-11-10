@@ -62,16 +62,16 @@ func (r brokenReader) StatFile(ctx context.Context, path string) (domain.FileSta
 // brokenWriters is a vault on disk whose writers answer with the errors they
 // are given.
 type brokenWriters struct {
-	vaultport.VaultWriters
+	vaultwriter.VaultWriters
 	hold error
 	open error
 }
 
-func (b brokenWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
+func (b brokenWriters) OpenNoteWriter(v domain.Vault) (vaultport.NoteWriter, error) {
 	if b.open != nil {
 		return nil, b.open
 	}
-	return b.VaultWriters.Open(v)
+	return b.VaultWriters.OpenNoteWriter(v)
 }
 
 func (b brokenWriters) Lock(ctx context.Context, v domain.Vault) (func(), error) {
@@ -118,7 +118,7 @@ func TestAnEditThatCannotReachTheVaultChangesNothing(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
 		readers vaultport.VaultReaders
-		writers vaultport.VaultWriters
+		writers note.NoteWriting
 	}{
 		{"the write lock fails", vaultreader.Readers{}, brokenWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, hold: errDiskGone}},
 		{"the vault will not open for reading", brokenReaders{open: errDiskGone}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}},
@@ -257,7 +257,7 @@ func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	}
 }
 
-func (c changing) editWith(readers vaultport.VaultReaders, writers vaultport.VaultWriters) note.Edit {
+func (c changing) editWith(readers vaultport.VaultReaders, writers note.NoteWriting) note.Edit {
 	return note.NewEdit(readers, writers, c.index, testsupport.NewClock())
 }
 

@@ -30,7 +30,7 @@ type Notes = note.Scenarios
 type OpenVaults = vault.OpenVaults[Config, *Index]
 
 // Registry opens the vault registry for this installation.
-func (c Config) Registry() (vaultport.VaultRegistry, error) {
+func (c Config) Registry() (registry.Ports, error) {
 	return c.vault().Registry()
 }
 
@@ -39,9 +39,19 @@ func (c Config) VaultReaders() vaultport.VaultReaders {
 	return c.vault().VaultReaders()
 }
 
-// VaultWriters opens vaults for write operations.
-func (c Config) VaultWriters() vaultport.VaultWriters {
-	return c.vault().VaultWriters()
+// NoteWriters opens vaults for writing notes.
+func (c Config) NoteWriters() vaultport.NoteWriters {
+	return c.vault().NoteWriters()
+}
+
+// FileMovers opens vaults for moving and removing files.
+func (c Config) FileMovers() vaultport.FileMovers {
+	return c.vault().FileMovers()
+}
+
+// VaultLocks holds the write locks of the vaults.
+func (c Config) VaultLocks() vaultport.VaultLocks {
+	return c.vault().WriteLocks()
 }
 
 // GetImportedFiles opens files imported from outside the vault.
@@ -70,18 +80,18 @@ func (c Config) indexPath() (string, error) {
 
 // Vaults builds the list of vaults an installation holds, and the vault's own
 // tree, against this installation's list and index.
-func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.Move) vault.Scenarios {
-	return c.vault().Vaults(registry, db, notes)
+func (c Config) Vaults(ports registry.Ports, db *Index, notes note.Move) vault.Scenarios {
+	return c.vault().Vaults(ports, db, notes)
 }
 
 // AddVault registers a new vault in the registry with the given root path and name.
-func (c Config) AddVault(registry vaultport.VaultRegistry, root, name string) (domain.Vault, error) {
-	return c.vault().AddVault(registry, root, name)
+func (c Config) AddVault(ports registry.Ports, root, name string) (domain.Vault, error) {
+	return c.vault().AddVault(ports, root, name)
 }
 
 // GetKnownVaults builds the use case that lists known vaults and their folder state.
-func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *registry.GetKnownVaults {
-	return c.vault().GetKnownVaults(registry)
+func (c Config) GetKnownVaults(ports registry.Ports) *registry.GetKnownVaults {
+	return c.vault().GetKnownVaults(ports)
 }
 
 // GetProblems holds the vault to the standard checks.
