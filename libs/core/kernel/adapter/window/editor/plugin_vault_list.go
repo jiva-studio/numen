@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -67,7 +68,7 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 	}
 	defer end()
 	if l.state.Window.IsQuestionOpen() {
-		return pluginport.ErrUnsavedChanges
+		return plugin.ErrUnsavedChanges
 	}
 	err = l.state.OpenVault(ctx, v, open)
 	switch {
@@ -79,7 +80,7 @@ func (l pluginVaultList) OpenVault(ctx context.Context, id domain.VaultID) error
 		}
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, context.Cause(ctx))
 	case errors.Is(err, errAnswerPending):
-		return pluginport.ErrUnsavedChanges
+		return plugin.ErrUnsavedChanges
 	}
 	return err
 }

@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -157,24 +156,24 @@ func newFixture() *fixture {
 	return f
 }
 
-func unitQuery(path string) pluginport.PluginSimilarityQuery {
-	return pluginport.PluginSimilarityQuery{Path: path, Vector: []float32{1, 0, 0, 0}}
+func unitQuery(path string) plugin.SimilarityQuery {
+	return plugin.SimilarityQuery{Path: path, Vector: []float32{1, 0, 0, 0}}
 }
 
 func TestSampleSimilaritiesCapsThePassages(t *testing.T) {
 	f := newFixture()
-	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []pluginport.PluginSimilarityQuery{unitQuery("")})
+	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []plugin.SimilarityQuery{unitQuery("")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if f.samples.vectorLimit != pluginport.MaxSampledPassages || got.PassageCount != pluginport.MaxSampledPassages {
-		t.Errorf("asked the index for %d and sampled %d, want %d", f.samples.vectorLimit, got.PassageCount, pluginport.MaxSampledPassages)
+	if f.samples.vectorLimit != plugin.MaxSampledPassages || got.PassageCount != plugin.MaxSampledPassages {
+		t.Errorf("asked the index for %d and sampled %d, want %d", f.samples.vectorLimit, got.PassageCount, plugin.MaxSampledPassages)
 	}
-	if got.SourceCount != pluginport.MaxSampledPassages {
-		t.Errorf("%d sources, want %d", got.SourceCount, pluginport.MaxSampledPassages)
+	if got.SourceCount != plugin.MaxSampledPassages {
+		t.Errorf("%d sources, want %d", got.SourceCount, plugin.MaxSampledPassages)
 	}
-	if len(got.Rows) != 1 || len(got.Rows[0]) != pluginport.MaxSampledPassages {
-		t.Fatalf("rows %d, want one of %d similarities", len(got.Rows), pluginport.MaxSampledPassages)
+	if len(got.Rows) != 1 || len(got.Rows[0]) != plugin.MaxSampledPassages {
+		t.Fatalf("rows %d, want one of %d similarities", len(got.Rows), plugin.MaxSampledPassages)
 	}
 	// Passage i holds {i, 1, 2, 3}: its cosine with the first axis is i / sqrt(i*i + 14).
 	for _, i := range []int{0, 1, 100, 127} {
@@ -187,7 +186,7 @@ func TestSampleSimilaritiesCapsThePassages(t *testing.T) {
 
 func TestSampleSimilaritiesIsDeterministic(t *testing.T) {
 	f := newFixture()
-	queries := []pluginport.PluginSimilarityQuery{unitQuery("note-3.md"), {Path: "", Vector: []float32{0.5, 0.5, 0.5, 0.5}}}
+	queries := []plugin.SimilarityQuery{unitQuery("note-3.md"), {Path: "", Vector: []float32{0.5, 0.5, 0.5, 0.5}}}
 	first, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), queries)
 	if err != nil {
 		t.Fatal(err)
@@ -204,7 +203,7 @@ func TestSampleSimilaritiesIsDeterministic(t *testing.T) {
 func TestSampleSimilaritiesExcludesTheNoteOfTheQuery(t *testing.T) {
 	f := newFixture()
 	f.samples.vectors = 10
-	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []pluginport.PluginSimilarityQuery{
+	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []plugin.SimilarityQuery{
 		unitQuery("note-4.md"), unitQuery("missing.md"), unitQuery(""),
 	})
 	if err != nil {
@@ -220,7 +219,7 @@ func TestSampleSimilaritiesExcludesTheNoteOfTheQuery(t *testing.T) {
 
 func TestSampleSimilaritiesReturnsAnEmptyRowWithoutAVector(t *testing.T) {
 	f := newFixture()
-	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []pluginport.PluginSimilarityQuery{{Path: "a.md"}})
+	got, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []plugin.SimilarityQuery{{Path: "a.md"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,19 +230,19 @@ func TestSampleSimilaritiesReturnsAnEmptyRowWithoutAVector(t *testing.T) {
 
 func TestSampleSimilaritiesRejectsAQueryOfAnotherWidth(t *testing.T) {
 	f := newFixture()
-	_, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []pluginport.PluginSimilarityQuery{
+	_, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), []plugin.SimilarityQuery{
 		{Vector: []float32{1, 0, 0}},
 	})
-	if !errors.Is(err, pluginport.ErrInvalidQuery) {
+	if !errors.Is(err, plugin.ErrInvalidQuery) {
 		t.Errorf("got %v, want ErrInvalidQuery", err)
 	}
 }
 
 func TestSampleSimilaritiesCapsTheQueries(t *testing.T) {
 	f := newFixture()
-	queries := make([]pluginport.PluginSimilarityQuery, pluginport.MaxSampledQueries+1)
+	queries := make([]plugin.SimilarityQuery, plugin.MaxSampledQueries+1)
 	_, err := f.search.SampleSimilarities(t.Context(), getVault(), getModel().Recipe(), queries)
-	if !errors.Is(err, pluginport.ErrLimitExceeded) {
+	if !errors.Is(err, plugin.ErrLimitExceeded) {
 		t.Errorf("got %v, want ErrLimitExceeded", err)
 	}
 	if f.samples.vectorRecipe != "" {
@@ -256,16 +255,16 @@ func TestACallWithARecipeOfAnotherModelIsRefused(t *testing.T) {
 	other := "another|recipe"
 	ctx := t.Context()
 
-	if _, err := f.search.SampleSimilarities(ctx, getVault(), other, nil); !errors.Is(err, pluginport.ErrRecipeMismatch) {
+	if _, err := f.search.SampleSimilarities(ctx, getVault(), other, nil); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("sampling under another recipe gave %v", err)
 	}
-	if _, err := f.search.GetBestSimilarity(ctx, getVault(), other, []float32{1}); !errors.Is(err, pluginport.ErrRecipeMismatch) {
+	if _, err := f.search.GetBestSimilarity(ctx, getVault(), other, []float32{1}); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("a best similarity under another recipe gave %v", err)
 	}
-	if _, err := f.search.GetSearchFloor(ctx, getVault(), other); !errors.Is(err, pluginport.ErrRecipeMismatch) {
+	if _, err := f.search.GetSearchFloor(ctx, getVault(), other); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("a floor read under another recipe gave %v", err)
 	}
-	if err := f.search.SetSearchFloor(ctx, getVault(), other, 0.5); !errors.Is(err, pluginport.ErrRecipeMismatch) {
+	if err := f.search.SetSearchFloor(ctx, getVault(), other, 0.5); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("a floor set under another recipe gave %v", err)
 	}
 	if len(f.floors) != 0 || len(f.nearest.recipes) != 0 || f.samples.vectorRecipe != "" {
@@ -278,16 +277,16 @@ func TestACallThatNeedsAModelIsRefusedWhereThereIsNone(t *testing.T) {
 	f.search.Embedder = nil
 	ctx := t.Context()
 
-	if _, err := f.search.GetEmbeddingState(ctx, getVault()); !errors.Is(err, pluginport.ErrNoModel) {
+	if _, err := f.search.GetEmbeddingState(ctx, getVault()); !errors.Is(err, plugin.ErrNoModel) {
 		t.Errorf("state gave %v", err)
 	}
-	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, pluginport.ErrNoModel) {
+	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, plugin.ErrNoModel) {
 		t.Errorf("embedding gave %v", err)
 	}
-	if _, err := f.search.SampleSimilarities(ctx, getVault(), "r", nil); !errors.Is(err, pluginport.ErrNoModel) {
+	if _, err := f.search.SampleSimilarities(ctx, getVault(), "r", nil); !errors.Is(err, plugin.ErrNoModel) {
 		t.Errorf("sampling gave %v", err)
 	}
-	if err := f.search.SetSearchFloor(ctx, getVault(), "r", 0.5); !errors.Is(err, pluginport.ErrNoModel) {
+	if err := f.search.SetSearchFloor(ctx, getVault(), "r", 0.5); !errors.Is(err, plugin.ErrNoModel) {
 		t.Errorf("setting a floor gave %v", err)
 	}
 }
@@ -296,7 +295,7 @@ func TestAFloorOutsideTheRangeIsRefusedAndStoresNothing(t *testing.T) {
 	f := newFixture()
 	recipe := getModel().Recipe()
 	for _, floor := range []float64{-0.01, 1.0001, 7} {
-		if err := f.search.SetSearchFloor(t.Context(), getVault(), recipe, floor); !errors.Is(err, pluginport.ErrInvalidFloor) {
+		if err := f.search.SetSearchFloor(t.Context(), getVault(), recipe, floor); !errors.Is(err, plugin.ErrInvalidFloor) {
 			t.Errorf("floor %v gave %v, want ErrInvalidFloor", floor, err)
 		}
 	}
@@ -321,7 +320,7 @@ func TestSettingTheStoredFloorAgainChangesNothingAndZeroRemovesIt(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Floor != 0.55 || got.Source != pluginport.PluginFloorStored || got.Stored != 0.55 || got.Hint != 0.4 || got.Default != search.DefaultFloor {
+	if got.Floor != 0.55 || got.Source != plugin.FloorStored || got.Stored != 0.55 || got.Hint != 0.4 || got.Default != search.DefaultFloor {
 		t.Errorf("floor %+v", got)
 	}
 	if len(f.floors) != 1 {
@@ -335,7 +334,7 @@ func TestSettingTheStoredFloorAgainChangesNothingAndZeroRemovesIt(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Floor != 0.4 || got.Source != pluginport.PluginFloorModelHint || got.Stored != 0 {
+	if got.Floor != 0.4 || got.Source != plugin.FloorModelHint || got.Stored != 0 {
 		t.Errorf("after removing the stored floor: %+v, want the hint", got)
 	}
 	f.embedder.hint = 0
@@ -343,7 +342,7 @@ func TestSettingTheStoredFloorAgainChangesNothingAndZeroRemovesIt(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Floor != search.DefaultFloor || got.Source != pluginport.PluginFloorDefault {
+	if got.Floor != search.DefaultFloor || got.Source != plugin.FloorDefault {
 		t.Errorf("with no hint: %+v, want the default", got)
 	}
 }
@@ -399,10 +398,10 @@ func TestTextsAreEmbeddedWithinTheLimits(t *testing.T) {
 	}
 
 	many := make([]string, plugin.MaxEmbeddedTexts+1)
-	if _, err := f.search.EmbedTexts(ctx, many); !errors.Is(err, pluginport.ErrLimitExceeded) {
+	if _, err := f.search.EmbedTexts(ctx, many); !errors.Is(err, plugin.ErrLimitExceeded) {
 		t.Errorf("%d texts gave %v", len(many), err)
 	}
-	if _, err := f.search.EmbedTexts(ctx, []string{strings.Repeat("x", plugin.MaxEmbeddedBytes+1)}); !errors.Is(err, pluginport.ErrLimitExceeded) {
+	if _, err := f.search.EmbedTexts(ctx, []string{strings.Repeat("x", plugin.MaxEmbeddedBytes+1)}); !errors.Is(err, plugin.ErrLimitExceeded) {
 		t.Errorf("a long text gave %v", err)
 	}
 	atLimit := make([]string, plugin.MaxEmbeddedTexts)
@@ -419,20 +418,20 @@ func TestAnEmbeddingThatFailsOrChangesTheModelIsRefused(t *testing.T) {
 
 	f := newFixture()
 	f.embedder.err = errors.New("the plugin is not running")
-	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, pluginport.ErrEmbeddingFailed) {
+	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, plugin.ErrEmbeddingFailed) {
 		t.Errorf("a failed embedding gave %v", err)
 	}
 
 	f = newFixture()
 	f.embedder.short = true
-	if _, err := f.search.EmbedTexts(ctx, []string{"a", "b"}); !errors.Is(err, pluginport.ErrEmbeddingFailed) {
+	if _, err := f.search.EmbedTexts(ctx, []string{"a", "b"}); !errors.Is(err, plugin.ErrEmbeddingFailed) {
 		t.Errorf("a short answer gave %v", err)
 	}
 
 	f = newFixture()
 	changed := embedding.Model{Name: "other-model", Dimensions: 4, From: "test"}
 	f.embedder.switchTo = &changed
-	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, pluginport.ErrRecipeMismatch) {
+	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, plugin.ErrRecipeMismatch) {
 		t.Errorf("a model that changed during the call gave %v", err)
 	}
 

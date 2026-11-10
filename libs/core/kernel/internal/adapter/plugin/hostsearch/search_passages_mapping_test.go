@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
@@ -26,7 +26,7 @@ func TestSearchPassagesPassesPluginQueryToThePassageSearch(t *testing.T) {
 	finder := &askedFinder{found: []domain.Passage{{Source: "library/Birds.pdf", Text: "the grey heron"}}}
 	s := Search{Passages: search.NewSearchPassages(finder)}
 
-	got, err := s.SearchPassages(t.Context(), getVault(), pluginport.PluginPassageQuery{
+	got, err := s.SearchPassages(t.Context(), getVault(), plugin.PassageQuery{
 		Query: "heron", Limit: 7, Kinds: []domain.SourceKind{domain.KindFile}, PathPrefix: "library/",
 	})
 	if err != nil {

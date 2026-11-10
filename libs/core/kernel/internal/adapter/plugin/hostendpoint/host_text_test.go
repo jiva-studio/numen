@@ -16,9 +16,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // memoryTexts keeps the versions the plugins put, by vault, and returns a version's text as its key.
@@ -31,7 +31,7 @@ func newMemoryTexts() *memoryTexts {
 	return &memoryTexts{versions: map[domain.VaultID][]domain.TextVersion{}}
 }
 
-func (m *memoryTexts) PutVersion(_ context.Context, v domain.Vault, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
+func (m *memoryTexts) PutVersion(_ context.Context, v domain.Vault, pluginID string, params plugin.TextPut) (domain.TextVersion, error) {
 	if params.Key == "" || params.Kind == "" || params.File == "" {
 		return domain.TextVersion{}, text.ErrInvalidVersion
 	}
@@ -54,10 +54,10 @@ func (m *memoryTexts) RemoveVersion(_ context.Context, v domain.Vault, pluginID,
 	return nil
 }
 
-func (m *memoryTexts) ListVersions(_ context.Context, v domain.Vault, path string) (pluginport.PluginTextListing, error) {
+func (m *memoryTexts) ListVersions(_ context.Context, v domain.Vault, path string) (plugin.TextListing, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	var listing pluginport.PluginTextListing
+	var listing plugin.TextListing
 	for _, one := range m.versions[v.ID] {
 		if one.Path == path {
 			listing.Versions = append(listing.Versions, one)
@@ -67,17 +67,17 @@ func (m *memoryTexts) ListVersions(_ context.Context, v domain.Vault, path strin
 	return listing, nil
 }
 
-func (m *memoryTexts) ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, _ string) (pluginport.PluginTextPage, error) {
+func (m *memoryTexts) ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, _ string) (plugin.TextPage, error) {
 	listing, err := m.ListVersions(ctx, v, path)
 	if err != nil {
-		return pluginport.PluginTextPage{}, err
+		return plugin.TextPage{}, err
 	}
 	for _, one := range listing.Versions {
 		if one.GetID() == id {
-			return pluginport.PluginTextPage{Segments: []domain.TextSegment{{Text: one.Key, Selector: `{"page":3}`}}}, nil
+			return plugin.TextPage{Segments: []domain.TextSegment{{Text: one.Key, Selector: `{"page":3}`}}}, nil
 		}
 	}
-	return pluginport.PluginTextPage{}, text.ErrNoText
+	return plugin.TextPage{}, text.ErrNoText
 }
 
 func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostTextServiceClient {
@@ -228,6 +228,6 @@ func TestTextCallsUseVaultFromHeader(t *testing.T) {
 	}
 }
 
-func (m *memoryTexts) ReadTextRange(context.Context, domain.Vault, string, domain.TextVersionID, int, int) (pluginport.PluginTextRange, error) {
-	return pluginport.PluginTextRange{}, errors.New("not implemented")
+func (m *memoryTexts) ReadTextRange(context.Context, domain.Vault, string, domain.TextVersionID, int, int) (plugin.TextRange, error) {
+	return plugin.TextRange{}, errors.New("not implemented")
 }

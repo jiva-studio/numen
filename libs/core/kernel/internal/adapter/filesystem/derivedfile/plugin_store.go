@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -72,14 +73,14 @@ func (f pluginFolder) Append(ctx context.Context, name string, content []byte) e
 	return f.store.Append(ctx, key, content)
 }
 
-func (f pluginFolder) List(ctx context.Context) ([]pluginport.PluginStoreFile, error) {
+func (f pluginFolder) List(ctx context.Context) ([]plugin.StoreFile, error) {
 	found, err := f.store.List(ctx, f.folder)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]pluginport.PluginStoreFile, 0, len(found))
+	out := make([]plugin.StoreFile, 0, len(found))
 	for _, one := range found {
-		out = append(out, pluginport.PluginStoreFile{Name: strings.TrimPrefix(one.Name, f.folder+"/"), Size: int64(one.Size)})
+		out = append(out, plugin.StoreFile{Name: strings.TrimPrefix(one.Name, f.folder+"/"), Size: int64(one.Size)})
 	}
 	return out, nil
 }

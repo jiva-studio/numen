@@ -17,6 +17,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -58,11 +59,11 @@ func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
 	_, window, line := newBoundWindow(t)
 
 	invalid := window.FocusPassages(t.Context(), "library/Birds.pdf", []domain.ByteRange{{Start: -1, End: 4}})
-	if !errors.Is(invalid, pluginport.ErrInvalidFocus) {
+	if !errors.Is(invalid, plugin.ErrInvalidFocus) {
 		t.Errorf("a passage before the text returned %v, want ErrInvalidFocus", invalid)
 	}
 	_, emptyPath := window.FocusNote(t.Context(), "")
-	if !errors.Is(emptyPath, pluginport.ErrInvalidFocus) {
+	if !errors.Is(emptyPath, plugin.ErrInvalidFocus) {
 		t.Errorf("a note with no path returned %v, want ErrInvalidFocus", emptyPath)
 	}
 	missing := window.FocusPassages(t.Context(), "library/Gone.pdf", nil)
@@ -292,7 +293,7 @@ func TestPluginWindowActivateTabTimeoutErrorNamesTheTab(t *testing.T) {
 
 	select {
 	case got := <-results:
-		if !errors.Is(got.err, pluginport.ErrTabNotShown) || !strings.Contains(got.err.Error(), `"tab-2"`) {
+		if !errors.Is(got.err, plugin.ErrTabNotShown) || !strings.Contains(got.err.Error(), `"tab-2"`) {
 			t.Errorf("ActivateTab returned %+v (%v), want ErrTabNotShown naming tab-2", got.open, got.err)
 		}
 		if len(got.open.Tabs) != 0 {

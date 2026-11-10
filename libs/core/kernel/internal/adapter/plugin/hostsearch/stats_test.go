@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -118,10 +118,10 @@ func TestTheIndexStatisticsCarryTheModelAndTheCounts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := pluginport.PluginIndexStats{
+	want := plugin.IndexStats{
 		Recipe: getModel().Recipe(), Model: "test-model", Dimensions: 4,
 		Chunks: 12, Vectors: 9, Sources: 3,
-		Extensions:    []pluginport.PluginExtensionStats{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
+		Extensions:    []plugin.ExtensionStats{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
 		DatabaseBytes: 4096, VectorBytes: 2048,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -138,7 +138,7 @@ func TestTheIndexStatisticsAreRefusedWhereThereIsNoModelAndFailWhenTheIndexFails
 	}
 
 	f.search.Embedder = nil
-	if _, err := f.search.GetIndexStats(t.Context(), getVault()); !errors.Is(err, pluginport.ErrNoModel) {
+	if _, err := f.search.GetIndexStats(t.Context(), getVault()); !errors.Is(err, plugin.ErrNoModel) {
 		t.Errorf("an installation with no model gave %v", err)
 	}
 }

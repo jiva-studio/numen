@@ -13,9 +13,8 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func getNotes() map[string]string {
@@ -155,10 +154,10 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if state.Status == pluginport.PluginIndexFailed {
+		if state.Status == plugin.IndexFailed {
 			t.Fatalf("expected SetVaultIndexer to replace failing indexer, got %+v", state)
 		}
-		if state.Status == pluginport.PluginIndexed {
+		if state.Status == plugin.Indexed {
 			break
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -195,7 +194,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	if listErr != nil || len(recognized) != 2 || withErr != nil || hasVault {
 		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)
 	}
-	if stateErr != nil || state.Status != pluginport.PluginIndexFailed {
+	if stateErr != nil || state.Status != plugin.IndexFailed {
 		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)
 	}
 }

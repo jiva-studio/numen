@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -207,7 +208,7 @@ func (s *Supervisor) HasPermission(permission string) bool {
 // CheckPermission returns an error if the supervised plugin lacks the requested permission.
 func (s *Supervisor) CheckPermission(permission string) error {
 	if !s.HasPermission(permission) {
-		return pluginport.ErrPermissionDenied
+		return plugin.ErrPermissionDenied
 	}
 	return nil
 }

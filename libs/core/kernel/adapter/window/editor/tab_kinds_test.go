@@ -6,18 +6,18 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
 
 // tabKinds is the tab kinds of the enabled plugins of a window.
-type tabKinds []pluginport.PluginTabKindEntry
+type tabKinds []plugin.TabKindEntry
 
-func (k tabKinds) ListTabKinds() []pluginport.PluginTabKindEntry { return k }
+func (k tabKinds) ListTabKinds() []plugin.TabKindEntry { return k }
 
 func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{

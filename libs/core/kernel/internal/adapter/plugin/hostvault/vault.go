@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 
 	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
@@ -38,7 +39,7 @@ type Vault struct {
 	Watcher     vaultport.VaultWatcher
 	Vaults      func() ([]domain.Vault, error)
 	Find        func(id domain.VaultID) (domain.Vault, error)
-	IndexState  func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
+	IndexState  func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
 	Moved       func(ctx context.Context) (<-chan struct{}, error)
 	Written     func()
 	Index       func(ctx context.Context, v domain.Vault, paths []string) error
@@ -81,13 +82,13 @@ func (a Vault) find(id domain.VaultID) (domain.Vault, error) {
 	return domain.Vault{}, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
 }
 
-func (a Vault) EnsureIndexed(ctx context.Context) (pluginport.PluginIndexState, error) {
+func (a Vault) EnsureIndexed(ctx context.Context) (plugin.IndexState, error) {
 	v, err := a.open()
 	if err != nil {
-		return pluginport.PluginIndexState{}, err
+		return plugin.IndexState{}, err
 	}
 	if a.IndexState == nil {
-		return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil
+		return plugin.IndexState{Status: plugin.Indexed}, nil
 	}
 	return a.IndexState(ctx, v)
 }
@@ -149,37 +150,37 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, 
 
 // ReadRange reads the range through the read of usecase/file, with the file stat taken before the
 // bytes are read.
-func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (pluginport.PluginFileRange, error) {
+func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (plugin.FileRange, error) {
 	v, err := a.open()
 	if err != nil {
-		return pluginport.PluginFileRange{}, err
+		return plugin.FileRange{}, err
 	}
 	reader, err := a.Readers.Open(v)
 	if err != nil {
-		return pluginport.PluginFileRange{}, err
+		return plugin.FileRange{}, err
 	}
 	pos, err := reader.StatFile(ctx, path)
 	if errors.Is(err, vaultport.ErrNotANote) {
-		return pluginport.PluginFileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, fs.ErrNotExist)
+		return plugin.FileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, fs.ErrNotExist)
 	}
 	if err != nil {
-		return pluginport.PluginFileRange{}, err
+		return plugin.FileRange{}, err
 	}
 	if length <= 0 || length > file.MostRead {
 		length = file.MostRead
 	}
 	result, err := file.Read{Readers: a.Readers}.Execute(ctx, v, path, start, length)
 	if err != nil {
-		return pluginport.PluginFileRange{}, err
+		return plugin.FileRange{}, err
 	}
 	switch result.Outcome {
 	case file.Ok:
-		return pluginport.PluginFileRange{Text: result.Text, Start: result.Start, Stat: pos}, nil
+		return plugin.FileRange{Text: result.Text, Start: result.Start, Stat: pos}, nil
 	case file.NotText:
-		return pluginport.PluginFileRange{}, fmt.Errorf("read %s from %d: %w", path, result.Start, pluginport.ErrNotText)
+		return plugin.FileRange{}, fmt.Errorf("read %s from %d: %w", path, result.Start, plugin.ErrNotText)
 	case file.Missing, file.AFolder, file.LeftAlone:
 	}
-	return pluginport.PluginFileRange{}, fmt.Errorf("%s is %s: %w", path, result.Outcome, fs.ErrNotExist)
+	return plugin.FileRange{}, fmt.Errorf("%s is %s: %w", path, result.Outcome, fs.ErrNotExist)
 }
 
 func (a Vault) Write(

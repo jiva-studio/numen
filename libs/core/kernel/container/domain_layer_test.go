@@ -14,6 +14,10 @@ import (
 // notesDomain is the package of the note model that a domain package of the core may import.
 const notesDomain = notesModule + "/domain"
 
+// catalogManifest is the library of the plugin contract that a domain package of the core may import; it
+// never imports the core.
+const catalogManifest = numenRoot + "libs/plugin/catalog/manifest"
+
 func isStandardLibrary(path string) bool {
 	first, _, _ := strings.Cut(path, "/")
 	return !strings.Contains(first, ".")
@@ -23,15 +27,15 @@ func isStandardLibrary(path string) bool {
 // path. Imports of the core itself are judged by getRefusal.
 func getDomainImportRefusal(to string) string {
 	switch {
-	case isStandardLibrary(to), to == notesDomain, strings.HasPrefix(to, module+"domain/"):
+	case isStandardLibrary(to), to == notesDomain, to == catalogManifest, strings.HasPrefix(to, module+"domain/"):
 		return ""
 	case strings.HasPrefix(to, module):
 		return "a domain package names no layer of the core other than the domain"
 	}
-	return "a domain package imports the standard library, the notes domain and the domain packages, and no third-party code"
+	return "a domain package imports the standard library, the notes domain, the manifest of the plugin catalog and the domain packages, and no third-party code"
 }
 
-// The packages under domain/ of the core import the standard library, the notes domain and each other.
+// The packages under domain/ of the core import the standard library, the notes domain, the manifest of the plugin catalog and each other.
 // The walk reads every non-test file under domain/; the folder does not exist before the first domain
 // package is created, and then no file is read.
 func TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer(t *testing.T) {
@@ -69,7 +73,7 @@ func TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer(t *testing.T) {
 }
 
 // getDomainImportRefusal defines the rule over import paths, so it is tested directly.
-func TestDomainImportRule_RejectsEverythingButTheStandardLibraryAndTheDomain(t *testing.T) {
+func TestDomainImportRule_RejectsEverythingButTheStandardLibraryTheNotesDomainTheManifestAndTheDomain(t *testing.T) {
 	for _, tc := range []struct {
 		to        string
 		isRefused bool
@@ -78,6 +82,7 @@ func TestDomainImportRule_RejectsEverythingButTheStandardLibraryAndTheDomain(t *
 		{"net/url", false},
 		{"time", false},
 		{notesDomain, false},
+		{catalogManifest, false},
 		{module + "domain/settings", false},
 		{module + "port/pluginport", true},
 		{module + "usecase/note", true},
@@ -85,6 +90,9 @@ func TestDomainImportRule_RejectsEverythingButTheStandardLibraryAndTheDomain(t *
 		{module + "internal/adapter/trash", true},
 		{module + "container", true},
 		{notesModule + "/edit", true},
+		{numenRoot + "libs/plugin/catalog/when", true},
+		{catalogManifest + "/internal", true},
+		{sdkModule + "/vault", true},
 		{"github.com/google/uuid", true},
 		{"golang.org/x/text/unicode/norm", true},
 		{"gopkg.in/yaml.v3", true},

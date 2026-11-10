@@ -224,7 +224,7 @@ func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.
 type PluginVaultHooks struct {
 	Written    func()
-	IndexState func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error)
+	IndexState func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error)
 	Moved      func(ctx context.Context) (<-chan struct{}, error)
 	Notes      note.Scenarios
 }
@@ -291,15 +291,15 @@ func (c Config) OpenPluginVault(
 		Index:      index,
 	}
 	if vaults.IndexState == nil {
-		vaults.IndexState = func(ctx context.Context, v domain.Vault) (pluginport.PluginIndexState, error) {
+		vaults.IndexState = func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
 			has, err := queries.Has(ctx, v.ID)
 			if err != nil {
-				return pluginport.PluginIndexState{}, err
+				return plugindomain.IndexState{}, err
 			}
 			if has {
-				return pluginport.PluginIndexState{Status: pluginport.PluginIndexed}, nil
+				return plugindomain.IndexState{Status: plugindomain.Indexed}, nil
 			}
-			return pluginport.PluginIndexState{Status: pluginport.PluginIndexing}, nil
+			return plugindomain.IndexState{Status: plugindomain.Indexing}, nil
 		}
 	}
 	if vaults.Moved == nil {
@@ -437,10 +437,10 @@ func (c Config) OpenChooseTabKind() *tabkind.Choose {
 
 // commandManifests lists what the manifests of the enabled plugins declare.
 type commandManifests interface {
-	ListCommands() []pluginport.PluginCommandEntry
-	ListSlots() []pluginport.PluginSlotEntry
-	ListKeybindings() []pluginport.PluginKeybindingEntry
-	ListHandlers() []pluginport.PluginCommandEntry
+	ListCommands() []plugindomain.CommandEntry
+	ListSlots() []plugindomain.SlotEntry
+	ListKeybindings() []plugindomain.KeybindingEntry
+	ListHandlers() []plugindomain.CommandEntry
 	GetParts(pluginID string) plugindomain.Parts
 }
 

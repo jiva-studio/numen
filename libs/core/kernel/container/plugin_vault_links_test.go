@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -63,7 +64,7 @@ func TestPluginLinkAddInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	}
 	before := len(index.getPaths())
 
-	added, err := shared.AddLinks(t.Context(), []pluginport.PluginLinkAddition{{
+	added, err := shared.AddLinks(t.Context(), []plugin.LinkAddition{{
 		From: "Rhine.md", Baseline: statFile(t, shared, "Rhine.md"),
 		Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, Role: domain.RoleRef},
 	}})
@@ -126,7 +127,7 @@ func TestPluginLinkAddInOtherVaultBypassesWindowNoteUseCases(t *testing.T) {
 	}
 	before := len(index.getPaths())
 
-	added, err := lakes.AddLinks(t.Context(), []pluginport.PluginLinkAddition{{
+	added, err := lakes.AddLinks(t.Context(), []plugin.LinkAddition{{
 		From: "Lakes.md", Baseline: statFile(t, lakes, "Lakes.md"),
 		Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Baikal"}, Role: domain.RoleChild},
 	}})

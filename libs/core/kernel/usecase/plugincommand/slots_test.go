@@ -14,15 +14,15 @@ import (
 // for one the host holds suspended.
 type menuPlugins struct{}
 
-func (menuPlugins) ListCommands() []plugincommand.Entry { return nil }
+func (menuPlugins) ListCommands() []plugin.CommandEntry { return nil }
 
-func (menuPlugins) ListHandlers() []plugincommand.Entry { return nil }
+func (menuPlugins) ListHandlers() []plugin.CommandEntry { return nil }
 
-func (menuPlugins) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+func (menuPlugins) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (menuPlugins) ListSlots() []plugincommand.SlotEntry {
+func (menuPlugins) ListSlots() []plugin.SlotEntry {
 	order := 20
-	return []plugincommand.SlotEntry{
+	return []plugin.SlotEntry{
 		{PluginID: "org.example.atlas", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order}},
 		{PluginID: "org.example.atlas", Entry: manifest.SlotEntry{Slot: "palette.searchResult", Command: "atlas.open"}},
 		{PluginID: "org.example.bare", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "bare.run"}},

@@ -1,6 +1,9 @@
 package pluginport
 
-import "context"
+import (
+	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+)
 
 // PluginWork is the core's shared queue of heavy work and its list of tasks, as
 // the plugins use them. Every call names the plugin it is made for.
@@ -10,7 +13,7 @@ type PluginWork interface {
 	// ends while waiting takes no turn.
 	EnqueueWork(ctx context.Context, pluginID string, isUserStarted bool, onWaiting func()) (Lease, error)
 	// ReportTask puts one of the plugin's tasks in the list, or replaces it.
-	ReportTask(pluginID string, task PluginTask)
+	ReportTask(pluginID string, task plugin.Task)
 	// FinishTask takes one of the plugin's tasks out of the list.
 	FinishTask(pluginID, taskID string)
 	// ClearPlugin takes every task of the plugin out of the list and ends its
@@ -29,24 +32,3 @@ type Lease interface {
 	WatchEnd() <-chan struct{}
 }
 
-// PluginTask is one piece of a plugin's work, as shown to the user. ID is the
-// plugin's own identifier, and Done and Total are counted in Unit.
-type PluginTask struct {
-	ID            string
-	Title         string
-	About         string
-	Done          int64
-	Total         int64
-	Unit          TaskUnit
-	Error         string
-	IsUserStarted bool
-}
-
-// TaskUnit is what a task counts.
-type TaskUnit int
-
-const (
-	TaskUnitThings TaskUnit = iota
-	TaskUnitBytes
-	TaskUnitSeconds
-)

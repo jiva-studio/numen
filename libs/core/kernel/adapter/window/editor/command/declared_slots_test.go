@@ -17,9 +17,9 @@ import (
 // with a backend, and one the host holds suspended.
 type menuPlacingPlugins struct{ declaredByTwoPlugins }
 
-func (menuPlacingPlugins) ListSlots() []plugincommand.SlotEntry {
+func (menuPlacingPlugins) ListSlots() []plugin.SlotEntry {
 	order, zero := 10, 0
-	return []plugincommand.SlotEntry{
+	return []plugin.SlotEntry{
 		{PluginID: "md.numen.cards", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "deck.create", Group: "new", Order: &order}},
 		{PluginID: "md.numen.cards", Entry: manifest.SlotEntry{Slot: "palette.searchResult", Command: "app:note.create", Order: &zero, Values: map[string]string{"where": "plex"}}},
 		{PluginID: "md.numen.down", Entry: manifest.SlotEntry{Slot: "titleBar.commands", Command: "down.run"}},
@@ -94,8 +94,8 @@ func TestListCommands_ListsNoMenuEntryOfASuspendedPlugin(t *testing.T) {
 // viewAndSubmenuPlugins places a view and a submenu for an enabled plugin with a frontend.
 type viewAndSubmenuPlugins struct{ menuPlacingPlugins }
 
-func (viewAndSubmenuPlugins) ListSlots() []plugincommand.SlotEntry {
-	return []plugincommand.SlotEntry{
+func (viewAndSubmenuPlugins) ListSlots() []plugin.SlotEntry {
+	return []plugin.SlotEntry{
 		{PluginID: "md.numen.tree", Entry: manifest.SlotEntry{Slot: "titleBar.status", View: "balance"}},
 		{PluginID: "md.numen.tree", Entry: manifest.SlotEntry{Slot: "fileTree.context", Submenu: "ledger.new", Title: "New ledger", Icon: "plus", Group: "0-new", When: "isFolder && !isMultiple"}},
 	}

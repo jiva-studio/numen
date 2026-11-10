@@ -10,8 +10,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // textRangeCall is one ReadTextRange call the ranging texts received.
@@ -31,17 +31,17 @@ type rangingTexts struct {
 	pages  int
 }
 
-func (r *rangingTexts) ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (pluginport.PluginTextPage, error) {
+func (r *rangingTexts) ReadText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (plugin.TextPage, error) {
 	r.pages++
 	return r.memoryTexts.ReadText(ctx, v, path, id, cursor)
 }
 
-func (r *rangingTexts) ReadTextRange(_ context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (pluginport.PluginTextRange, error) {
+func (r *rangingTexts) ReadTextRange(_ context.Context, v domain.Vault, path string, id domain.TextVersionID, start, length int) (plugin.TextRange, error) {
 	r.ranges = append(r.ranges, textRangeCall{vault: v.ID, path: path, id: id, start: start, length: length})
 	if path != "herons.pdf" {
-		return pluginport.PluginTextRange{}, text.ErrNoText
+		return plugin.TextRange{}, text.ErrNoText
 	}
-	return pluginport.PluginTextRange{
+	return plugin.TextRange{
 		Segments: []domain.TextSegment{
 			{Text: "grey heron waits", Heading: "Herons", Selector: `{"page":2}`},
 			{Text: " by the reeds", Selector: `{"page":3}`},

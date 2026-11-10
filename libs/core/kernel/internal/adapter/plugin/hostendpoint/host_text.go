@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -86,7 +87,7 @@ func (e *textEndpoint) PutTextVersion(
 		return connect.NewResponse(&v1.PutTextVersionResponse{Error: noTexts}), nil
 	}
 	m := req.Msg
-	version, err := call.texts.PutVersion(ctx, call.vault, call.pluginID, pluginport.PluginTextPut{
+	version, err := call.texts.PutVersion(ctx, call.vault, call.pluginID, plugin.TextPut{
 		Path: m.GetPath(), Key: m.GetKey(), Source: domain.TextVersionID(m.GetSourceVersionId()),
 		Kind: domain.TextKind(m.GetKind()), InputHash: m.GetInputHash(), File: m.GetFile(),
 		SourceProperty: domain.TextSourceProperty{Key: m.GetSourceProperty().GetKey(), Value: m.GetSourceProperty().GetValue()},

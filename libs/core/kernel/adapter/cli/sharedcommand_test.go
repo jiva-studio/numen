@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
-	declared := &pluginCommands{handlers: []plugincommand.Entry{
+	declared := &pluginCommands{handlers: []plugin.CommandEntry{
 		{PluginID: "org.example.layers", Command: plugincommand.Command{
 			ID: "app:file.createText", Title: "Extract text layer", When: "target.contentType == 'application/pdf'",
 		}},

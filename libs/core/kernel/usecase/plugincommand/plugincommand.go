@@ -20,12 +20,6 @@ import (
 
 // The ports' terms for a command, used by a driving adapter.
 type (
-	// Entry is one command an enabled plugin declares, and the plugin that does.
-	Entry = pluginport.PluginCommandEntry
-	// SlotEntry is one slot entry an enabled plugin declares, and the plugin that does.
-	SlotEntry = pluginport.PluginSlotEntry
-	// KeybindingEntry is one keybinding an enabled plugin declares, and the plugin that does.
-	KeybindingEntry = pluginport.PluginKeybindingEntry
 	// Command is a command as its manifest declares it.
 	Command = pluginport.PluginCommand
 	// Argument is one argument a command takes.
@@ -76,18 +70,18 @@ type List struct {
 }
 
 // Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
-func (u List) Execute() []Entry {
-	return slices.DeleteFunc(u.ExecuteAll(), func(one Entry) bool { return !u.commands.GetParts(one.PluginID).HasBackend })
+func (u List) Execute() []plugin.CommandEntry {
+	return slices.DeleteFunc(u.ExecuteAll(), func(one plugin.CommandEntry) bool { return !u.commands.GetParts(one.PluginID).HasBackend })
 }
 
 // ExecuteAll lists every command the enabled plugins declare, whichever part of the plugin runs it.
 // A plugin with neither a frontend nor a backend has nothing that runs its commands, and a plugin the
 // host holds suspended runs none; both list none.
-func (u List) ExecuteAll() []Entry {
+func (u List) ExecuteAll() []plugin.CommandEntry {
 	if u.commands == nil {
 		return nil
 	}
-	return slices.DeleteFunc(u.commands.ListCommands(), func(one Entry) bool {
+	return slices.DeleteFunc(u.commands.ListCommands(), func(one plugin.CommandEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
@@ -96,11 +90,11 @@ func (u List) ExecuteAll() []Entry {
 // ExecuteHandlers lists the handlers of shared commands of the enabled plugins, each as a command under
 // the full id of its shared command, leaving out those of a plugin the host holds suspended and of a
 // plugin with neither a frontend nor a backend.
-func (u List) ExecuteHandlers() []Entry {
+func (u List) ExecuteHandlers() []plugin.CommandEntry {
 	if u.commands == nil {
 		return nil
 	}
-	return slices.DeleteFunc(u.commands.ListHandlers(), func(one Entry) bool {
+	return slices.DeleteFunc(u.commands.ListHandlers(), func(one plugin.CommandEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
@@ -121,11 +115,11 @@ func (u List) HasBackend(pluginID string) bool {
 
 // ExecuteSlots lists the slot entries of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
-func (u List) ExecuteSlots() []SlotEntry {
+func (u List) ExecuteSlots() []plugin.SlotEntry {
 	if u.commands == nil {
 		return nil
 	}
-	return slices.DeleteFunc(u.commands.ListSlots(), func(one SlotEntry) bool {
+	return slices.DeleteFunc(u.commands.ListSlots(), func(one plugin.SlotEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
@@ -133,11 +127,11 @@ func (u List) ExecuteSlots() []SlotEntry {
 
 // ExecuteKeybindings lists the keybindings of the enabled plugins, leaving out those of a plugin the host
 // holds suspended and of a plugin with neither a frontend nor a backend.
-func (u List) ExecuteKeybindings() []KeybindingEntry {
+func (u List) ExecuteKeybindings() []plugin.KeybindingEntry {
 	if u.commands == nil {
 		return nil
 	}
-	return slices.DeleteFunc(u.commands.ListKeybindings(), func(one KeybindingEntry) bool {
+	return slices.DeleteFunc(u.commands.ListKeybindings(), func(one plugin.KeybindingEntry) bool {
 		parts := u.commands.GetParts(one.PluginID)
 		return parts.IsSuspended || (!parts.HasBackend && !parts.HasFrontend)
 	})
@@ -145,13 +139,13 @@ func (u List) ExecuteKeybindings() []KeybindingEntry {
 
 // Find returns the command of the id, by the plugin of the lowest id that declares one, and false
 // where none does.
-func (u List) Find(id string) (Entry, bool) {
+func (u List) Find(id string) (plugin.CommandEntry, bool) {
 	for _, one := range u.Execute() {
 		if one.Command.ID == id {
 			return one, true
 		}
 	}
-	return Entry{}, false
+	return plugin.CommandEntry{}, false
 }
 
 // Run runs one command in the backend of the plugin that declares it.
@@ -170,7 +164,7 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCal
 	if u.commands == nil {
 		return plugin.CommandResult{}, ErrUnavailable
 	}
-	var entries []Entry
+	var entries []plugin.CommandEntry
 	if pluginport.IsSharedCommand(call.Command) {
 		entries = u.commands.ListHandlers()
 	} else {
@@ -179,7 +173,7 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCal
 	if !u.commands.GetParts(call.PluginID).HasBackend {
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
-	index := slices.IndexFunc(entries, func(one Entry) bool {
+	index := slices.IndexFunc(entries, func(one plugin.CommandEntry) bool {
 		return one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})
 	if index < 0 {
@@ -196,7 +190,7 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCal
 
 // IsAvailable reports whether the condition of the command of the entry holds over the path, as a
 // run of it checks; a condition the core cannot decide holds.
-func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry Entry, path string) bool {
+func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry plugin.CommandEntry, path string) bool {
 	return u.checkPath(ctx, v, entry.Command, plugin.CommandCall{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
 }
 

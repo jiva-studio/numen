@@ -3,11 +3,12 @@ package settings
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 func TestNewWirePluginInfosIncludesSecretDeclarations(t *testing.T) {
-	infos := NewWirePluginInfos([]setting.PluginInfo{{
+	infos := NewWirePluginInfos([]plugin.Info{{
 		ID: "md.numen.sample",
 		Secrets: []setting.SecretDeclaration{
 			{Name: "apiKey", Title: "API key", Description: "Key of the service", Group: "openrouter"},

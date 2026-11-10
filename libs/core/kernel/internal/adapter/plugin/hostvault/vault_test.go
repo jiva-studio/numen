@@ -18,8 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -135,7 +135,7 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 	if err != nil || string(on) != "one\n" {
 		t.Errorf("the folder holds %q (%v)", on, err)
 	}
-	if listErr != nil || !slices.Equal(items, []pluginport.PluginStoreFile{{Name: "one.log", Size: 4}}) {
+	if listErr != nil || !slices.Equal(items, []plugin.StoreFile{{Name: "one.log", Size: 4}}) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, id := range []string{"", "samples", "index", "..", "a/b.c", ".a.b"} {
@@ -206,7 +206,7 @@ func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *test
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, cancelAfterIndex, testsupport.NewClock()))
 	estuary := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Estuary"}, Role: domain.RoleRef}
 
-	added, err := access.AddLinks(ctx, []pluginport.PluginLinkAddition{
+	added, err := access.AddLinks(ctx, []plugin.LinkAddition{
 		{From: "Danube.md", Link: estuary}, {From: "Rhine.md", Link: estuary}, {From: "Volga.md", Link: estuary},
 	})
 	if err != nil {
@@ -230,7 +230,7 @@ func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, nil, testsupport.NewClock()))
 	estuary := domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Estuary"}, Role: domain.RoleRef}
 
-	added, err := access.AddLinks(ctx, []pluginport.PluginLinkAddition{{From: "Danube.md", Link: estuary}})
+	added, err := access.AddLinks(ctx, []plugin.LinkAddition{{From: "Danube.md", Link: estuary}})
 	if err != nil {
 		t.Fatalf("AddLinks returned %v, want the results and no error", err)
 	}

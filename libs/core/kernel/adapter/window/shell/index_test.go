@@ -9,11 +9,10 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func getUnread() domain.Vault {
@@ -31,7 +30,7 @@ func TestIndexingAVaultIsReportedAsWork(t *testing.T) {
 	})
 
 	state, err := api.EnsureIndexed(t.Context(), getUnread())
-	if err != nil || state.Status != pluginport.PluginIndexing || state.Reason != "" {
+	if err != nil || state.Status != plugin.Indexing || state.Reason != "" {
 		t.Fatalf("the vault came back %+v (%v)", state, err)
 	}
 	testsupport.WaitFor(t, func() bool {
@@ -79,7 +78,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 		tried.Add(1)
 		return errors.New("the folder is not there")
 	})
-	ask := func() pluginport.PluginIndexState {
+	ask := func() plugin.IndexState {
 		state, err := api.EnsureIndexed(t.Context(), getUnread())
 		if err != nil {
 			t.Fatal(err)
@@ -88,7 +87,7 @@ func TestAVaultThatCouldNotBeReadReturnsWhyAndIsLetAlone(t *testing.T) {
 	}
 
 	testsupport.WaitFor(t, func() bool { return ask().Reason == "the folder is not there" })
-	if state := ask(); state.Status != pluginport.PluginIndexFailed {
+	if state := ask(); state.Status != plugin.IndexFailed {
 		t.Errorf("a vault that could not be read stands as %+v", state)
 	}
 	if got := tried.Load(); got != 1 {
@@ -107,7 +106,7 @@ func TestAVaultTheIndexDoesNotCarryIsUnreadWhereNothingReadsIt(t *testing.T) {
 
 	state, err := api.EnsureIndexed(t.Context(), getUnread())
 
-	if err != nil || state.Status != pluginport.PluginIndexFailed || state.Reason == "" {
+	if err != nil || state.Status != plugin.IndexFailed || state.Reason == "" {
 		t.Errorf("a vault nothing reads stands as %+v (%v)", state, err)
 	}
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
@@ -41,12 +42,12 @@ type invalidFocusError struct{ err error }
 
 func (e invalidFocusError) Error() string { return e.err.Error() }
 
-func (e invalidFocusError) Unwrap() []error { return []error{e.err, pluginport.ErrInvalidFocus} }
+func (e invalidFocusError) Unwrap() []error { return []error{e.err, plugin.ErrInvalidFocus} }
 
 func (w pluginWindow) getVault() (domain.Vault, error) {
 	v := w.state.GetCurrentVault()
 	if v.Path == "" {
-		return domain.Vault{}, pluginport.ErrNoWindow
+		return domain.Vault{}, plugin.ErrNoWindow
 	}
 	return v, nil
 }
@@ -114,7 +115,7 @@ func (w pluginWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTa
 			if err := ctx.Err(); err != nil {
 				return domain.OpenTabs{}, err
 			}
-			return domain.OpenTabs{}, fmt.Errorf("editor: activate tab %q within %s: %w", id, wait, pluginport.ErrTabNotShown)
+			return domain.OpenTabs{}, fmt.Errorf("editor: activate tab %q within %s: %w", id, wait, plugin.ErrTabNotShown)
 		}
 	}
 }

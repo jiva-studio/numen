@@ -13,14 +13,14 @@ import (
 // with neither, and of one the host holds suspended.
 type mixedCommands struct{ calls []plugin.CommandCall }
 
-func (m *mixedCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+func (m *mixedCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (m *mixedCommands) ListSlots() []plugincommand.SlotEntry { return nil }
+func (m *mixedCommands) ListSlots() []plugin.SlotEntry { return nil }
 
-func (m *mixedCommands) ListHandlers() []plugincommand.Entry { return nil }
+func (m *mixedCommands) ListHandlers() []plugin.CommandEntry { return nil }
 
-func (m *mixedCommands) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (m *mixedCommands) ListCommands() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
 		{PluginID: "md.numen.tree", Command: plugincommand.Command{ID: "tree.open", Title: "Open file tree", When: "target.isNote"}},
 		{PluginID: "md.numen.empty", Command: plugincommand.Command{ID: "empty.run", Title: "Run"}},

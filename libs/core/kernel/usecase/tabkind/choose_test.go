@@ -6,14 +6,15 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
 
 // declared is the tab kinds of the enabled plugins, in the order of their ids.
-type declared []pluginport.PluginTabKindEntry
+type declared []plugin.TabKindEntry
 
-func (d declared) ListTabKinds() []pluginport.PluginTabKindEntry { return d }
+func (d declared) ListTabKinds() []plugin.TabKindEntry { return d }
 
 // notes is a content type table that knows notes only.
 type notes struct{}
@@ -21,8 +22,8 @@ type notes struct{}
 func (notes) GetContentType(string) domain.ContentType   { return "text/markdown" }
 func (notes) ListExtensions(domain.ContentType) []string { return []string{"md"} }
 
-func entry(pluginID, kind, when string, rank domain.HandlerRank) pluginport.PluginTabKindEntry {
-	return pluginport.PluginTabKindEntry{
+func entry(pluginID, kind, when string, rank domain.HandlerRank) plugin.TabKindEntry {
+	return plugin.TabKindEntry{
 		PluginID: pluginID,
 		TabKind:  manifest.TabKind{Kind: kind, Title: kind, Icon: "", When: when, Rank: rank},
 	}

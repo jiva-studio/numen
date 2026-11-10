@@ -69,6 +69,7 @@ Where a piece of Go code goes and how a port, a use case and an adapter are shap
 - **A use case is one business scenario**, and it defines the boundary of one unit of work, which is the transaction boundary.
 - **Use cases are isolated.** No use case imports another. What two share is a rule in the domain or a port both consume.
 - **A port has one to three methods** and no type of its own: its types and the sentinel errors of an area are in `libs/core/kernel/domain/<area>` or `libs/note/domain`.
+- **A `domain/<area>` package of the core imports the standard library, `libs/note/domain`, `libs/plugin/catalog/manifest` and other domain packages**, and no other layer of the core and no third-party code. The manifest is a library of the plugin contract that never imports the kernel.
 - **The window adapter is cut by wire service.** One adapter type per RPC service, each built from the use cases it calls; no object holds every use case or every service, and no struct holds more than five use cases.
 - **A repository is a collection**: put an aggregate in, take one out, remove one. Searches and counts are separate queries, not methods on the repository.
 - **Entities contain rules only.** No I/O, no clock, no framework tags, no knowledge of how they are stored.

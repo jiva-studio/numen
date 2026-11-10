@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -55,7 +56,7 @@ func TestPluginStoreWritesToFolderNamedByPluginID(t *testing.T) {
 		t.Errorf("read %q (%v)", read, err)
 	}
 	listed, err := store.List(ctx)
-	if err != nil || !slices.Equal(listed, []pluginport.PluginStoreFile{{Name: "a.jsonl", Size: 1}, {Name: "log.jsonl", Size: 8}}) {
+	if err != nil || !slices.Equal(listed, []plugin.StoreFile{{Name: "a.jsonl", Size: 1}, {Name: "log.jsonl", Size: 8}}) {
 		t.Errorf("listed %v (%v)", listed, err)
 	}
 	if _, err := store.Read(ctx, "none"); !errors.Is(err, fs.ErrNotExist) {
