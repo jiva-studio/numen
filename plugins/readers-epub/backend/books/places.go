@@ -1,4 +1,4 @@
-package service
+package books
 
 import (
 	"context"
@@ -19,12 +19,12 @@ type placedBook struct {
 	book  *epub.Book
 }
 
-func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Book, error) {
+func (s *Reader) readPlacedBook(ctx context.Context, path string) (*epub.Book, error) {
 	if path == "" {
 		return nil, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
-	vaultID := getRequestVault(ctx)
-	files := s.vaults(getRequestVault(ctx))
+	vaultID := getVault(ctx)
+	files := s.vaults(getVault(ctx))
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)
@@ -54,7 +54,7 @@ func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Boo
 }
 
 // GetCfi returns the EPUB CFI of the character at an offset of a book's text.
-func (s *BookServer) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.GetCfiResponse, error) {
+func (s *Reader) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.GetCfiResponse, error) {
 	book, err := s.readPlacedBook(ctx, req.Path)
 	if err != nil {
 		return api.GetCfiResponse{}, err
@@ -67,7 +67,7 @@ func (s *BookServer) GetCfi(ctx context.Context, req api.GetCfiRequest) (api.Get
 }
 
 // FindOffset returns the offset of a book's text an EPUB CFI names.
-func (s *BookServer) FindOffset(ctx context.Context, req api.FindOffsetRequest) (api.FindOffsetResponse, error) {
+func (s *Reader) FindOffset(ctx context.Context, req api.FindOffsetRequest) (api.FindOffsetResponse, error) {
 	place, err := cfi.Parse(req.Cfi)
 	if err != nil {
 		return api.FindOffsetResponse{}, server.NewAPIError(server.CodeInvalidArgument, err.Error())

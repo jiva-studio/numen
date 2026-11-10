@@ -1,12 +1,9 @@
-package service
+package books
 
 import (
-	"archive/zip"
 	"bytes"
-	"maps"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 
@@ -14,70 +11,16 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/vault"
 )
 
-const pngText = "\x89PNG\r\n\x1a\nnot really a picture"
-
-func getPNGBytes() []byte {
-	return []byte(pngText)
-}
-
-func createZipEpub(t *testing.T, entries map[string][]byte) []byte {
-	t.Helper()
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-	write := func(name string, content []byte) {
-		w, err := zw.Create(name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := w.Write(content); err != nil {
-			t.Fatal(err)
-		}
-	}
-	write("mimetype", []byte("application/epub+zip"))
-	write("META-INF/container.xml", []byte(`<?xml version="1.0"?>
-<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <rootfiles><rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/></rootfiles>
-</container>`))
-	for _, name := range slices.Sorted(maps.Keys(entries)) {
-		write(name, entries[name])
-	}
-	if err := zw.Close(); err != nil {
-		t.Fatal(err)
-	}
-	return buf.Bytes()
-}
-
-func createImageEpub(t *testing.T) []byte {
-	t.Helper()
-	return createZipEpub(t, map[string][]byte{
-		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Pictured</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
-  <manifest>
-    <item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>
-    <item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>
-  </manifest>
-  <spine><itemref idref="c1"/><itemref idref="c2"/></spine>
-</package>`),
-		"EPUB/c1.xhtml": []byte(`<?xml version="1.0"?>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
-<body><h1>First part</h1><p>Hello reader epub</p><span epub:type="pagebreak" title="1"></span><span epub:type="pagebreak" title="2"></span></body></html>`),
-		"EPUB/c2.xhtml": []byte(`<?xml version="1.0"?>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Two</title></head>
-<body><h1>Second part</h1><p>Goodbye reader epub</p></body></html>`),
-		"EPUB/cover.png": getPNGBytes(),
-	})
-}
-
 func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime int64) {
 	t.Helper()
 	name = "pictured.epub"
-	files = hosttest.OnDisk(t, "vault", map[string]string{name: string(createImageEpub(t))})
+	files = hosttest.OnDisk(t, "vault", map[string]string{name: string(testsupport.CreateImageEpub(t))})
 	info, err := files.StatFile(t.Context(), name)
 	if err != nil {
 		t.Fatal(err)
@@ -87,7 +30,7 @@ func writeBook(t *testing.T) (files *hosttest.Vault, name string, size, mtime in
 
 func readEntry(t *testing.T, files *hosttest.Vault, path, entry string, baseline *api.FileStat) (api.ReadBookEntryResponse, error) {
 	t.Helper()
-	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	return books.ReadBookEntry(t.Context(),
 		api.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline})
@@ -99,7 +42,7 @@ func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(resp.Body, getPNGBytes()) {
+	if !bytes.Equal(resp.Body, testsupport.GetPNGBytes()) {
 		t.Errorf("the entry is %q, want the picture's bytes", resp.Body)
 	}
 }
@@ -138,7 +81,7 @@ func TestReadBookEntry_ErrorsOnMissingArchiveEntry(t *testing.T) {
 func TestReadBookEntry_ErrorsOnPathOutsideVault(t *testing.T) {
 	files, _, _, _ := writeBook(t)
 	outside := filepath.Join(t.TempDir(), "outside.epub")
-	if err := os.WriteFile(outside, createImageEpub(t), 0o644); err != nil {
+	if err := os.WriteFile(outside, testsupport.CreateImageEpub(t), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	_, err := readEntry(t, files, outside, "EPUB/cover.png", nil)
@@ -196,23 +139,4 @@ func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
 	if _, err := readEntry(t, files, name, "EPUB/cover.png", &api.FileStat{Path: name, Size: size, Mtime: 0}); err != nil {
 		t.Fatalf("expected success with Mtime == 0, got %v", err)
 	}
-}
-
-func createEncryptedEpub(t *testing.T) []byte {
-	t.Helper()
-	return createZipEpub(t, map[string][]byte{
-		"META-INF/encryption.xml": []byte(`<?xml version="1.0"?>
-<encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
-  <EncryptedData xmlns="http://www.w3.org/2001/04/xmlenc#">
-    <CipherData><CipherReference URI="EPUB/c1.xhtml"/></CipherData>
-  </EncryptedData>
-</encryption>`),
-		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Encrypted</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
-  <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
-  <spine><itemref idref="c1"/></spine>
-</package>`),
-		"EPUB/c1.xhtml": []byte(`<html><body><p>Encrypted</p></body></html>`),
-	})
 }

@@ -1,4 +1,4 @@
-package service
+package texts
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 )
 
 // switchableVault is the vault the host shows, which a test sets to another vault of the host.
@@ -39,13 +40,13 @@ func (v *switchableVault) Read(ctx context.Context, path string) ([]byte, domain
 }
 
 func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
-	raw := createImageEpub(t)
+	raw := testsupport.CreateImageEpub(t)
 	atlas := hosttest.New("Atlas")
 	atlas.File("books/atlas.epub", string(raw))
 	botany := hosttest.New("Botany")
 	atlas.Beside(botany)
 	files := &switchableVault{Vault: atlas, active: "Atlas"}
-	vaults := func(id domain.VaultID) vaultFiles {
+	vaults := func(id domain.VaultID) Vault {
 		if id == "" {
 			return files
 		}
@@ -55,14 +56,14 @@ func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
 	texts.File("books/atlas.epub", raw)
 	texts.SetStore(pluginID, atlas.Store())
 	queue := hosttest.NewQueue()
-	server := NewTextServer(vaults, textsOf(texts), storeOf(atlas), queue)
+	server := NewWriter(vaults, textsOf(texts), storeOf(atlas), queue)
 	t.Cleanup(server.Close)
 	held, err := queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := server.CreateText(t.Context(), TextRequest{Vault: "", Path: "books/atlas.epub"}); err != nil {
+	if err := server.CreateText(t.Context(), Request{Vault: "", Path: "books/atlas.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	files.setActive("Botany")

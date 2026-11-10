@@ -1,24 +1,23 @@
-package service
+package texts
 
 import (
-	"archive/zip"
-	"bytes"
 	"context"
 	"errors"
 	"strings"
 	"testing"
-	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/segments"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 )
 
 const pluginID = "md.numen.readers.epub"
 
-func filesOf(vault *hosttest.Vault) func(domain.VaultID) vaultFiles {
-	return func(id domain.VaultID) vaultFiles { return vault.With(id) }
+func filesOf(vault *hosttest.Vault) func(domain.VaultID) Vault {
+	return func(id domain.VaultID) Vault { return vault.With(id) }
 }
 
 func textsOf(texts *hosttest.Texts) func(domain.VaultID) host.TextVersions {
@@ -29,19 +28,19 @@ func storeOf(vault *hosttest.Vault) func(domain.VaultID) host.StoreWriter {
 	return func(id domain.VaultID) host.StoreWriter { return vault.Store().With(id) }
 }
 
-func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextServer) {
+func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Writer) {
 	t.Helper()
 	files := hosttest.New("vault")
 	files.File(name, string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
 	texts.SetStore(pluginID, files.Store())
-	server := NewTextServer(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue())
+	server := NewWriter(filesOf(files), textsOf(texts), storeOf(files), hosttest.NewQueue())
 	t.Cleanup(server.Close)
 	return texts, server
 }
 
-func createText(t *testing.T, server *TextServer, req TextRequest) {
+func createText(t *testing.T, server *Writer, req Request) {
 	t.Helper()
 	if err := server.CreateText(t.Context(), req); err != nil {
 		t.Fatalf("CreateText: %v", err)
@@ -69,17 +68,17 @@ func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 }
 
 func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
-	raw := createImageEpub(t)
+	raw := testsupport.CreateImageEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 	book, err := epub.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	createText(t, server, TextRequest{Path: "book.epub"})
+	createText(t, server, Request{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
-	if text.Version().Kind != textKind || !text.Version().IsFromFile() {
+	if text.Version().Kind != Kind || !text.Version().IsFromFile() {
 		t.Errorf("version %+v, want a book text made from the file", text.Version())
 	}
 	if text.Version().InputHash != domain.HashContent(raw) || text.Version().File != domain.HashContent(raw)+".jsonl" {
@@ -105,10 +104,10 @@ func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 	for name, raw := range map[string][]byte{
 		"corrupted.epub":   []byte("INVALID_EPUB_ZIP"),
-		"locked.epub":      createEncryptedEpub(t),
-		"nocontainer.epub": createZipWithoutContainer(t),
-		"nopackage.epub":   createZipEpub(t, nil),
-		"emptytext.epub": createZipEpub(t, map[string][]byte{
+		"locked.epub":      testsupport.CreateEncryptedEpub(t),
+		"nocontainer.epub": testsupport.CreateZipWithoutContainer(t),
+		"nopackage.epub":   testsupport.CreateZipEpub(t, nil),
+		"emptytext.epub": testsupport.CreateZipEpub(t, map[string][]byte{
 			"EPUB/package.opf": []byte(`<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata/>
 <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
 <spine><itemref idref="c1"/></spine></package>`),
@@ -118,7 +117,7 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			texts, server := newTextVault(t, name, raw)
 
-			createText(t, server, TextRequest{Path: name})
+			createText(t, server, Request{Path: name})
 
 			listing, err := texts.ListVersions(t.Context(), name)
 			if err != nil {
@@ -131,63 +130,8 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 	}
 }
 
-func createZipWithoutContainer(t *testing.T) []byte {
-	t.Helper()
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-	w, err := zw.Create("mimetype")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := w.Write([]byte("application/epub+zip")); err != nil {
-		t.Fatal(err)
-	}
-	if err := zw.Close(); err != nil {
-		t.Fatal(err)
-	}
-	return buf.Bytes()
-}
-
-func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
-	text := strings.Repeat("ж", partBytes) + "end"
-	sections := []epub.Part{{Title: "One", Offset: 0}, {Title: "Inner", Offset: 0}, {Title: "Two", Offset: 2 * partBytes}}
-
-	parts, err := getSegments(text, sections, epub.Places{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var joined strings.Builder
-	var named []string
-	for _, part := range parts {
-		if len(part.Text) > partBytes {
-			t.Errorf("a part of %d bytes, want at most %d", len(part.Text), partBytes)
-		}
-		if part.Text != "" && !utf8.RuneStart(part.Text[0]) {
-			t.Errorf("a part begins inside a character")
-		}
-		if part.Heading != "" {
-			named = append(named, part.Heading)
-		}
-		joined.WriteString(part.Text)
-	}
-	if joined.String() != text {
-		t.Error("the parts do not join into the text")
-	}
-	if strings.Join(named, ",") != "One,Inner,Two" {
-		t.Errorf("sections %v, want One, Inner and Two", named)
-	}
-	version := domain.NewVersionText(domain.TextVersion{Kind: textKind}, parts)
-	if got := version.GetHeadingsAt(0); strings.Join(got, ",") != "One,Inner" {
-		t.Errorf("names at 0 are %v, want One and Inner", got)
-	}
-	if got := version.GetHeadings(); got[2].Offset != 2*partBytes {
-		t.Errorf("Two begins at %d, want %d", got[2].Offset, 2*partBytes)
-	}
-}
-
 func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
-	raw := createImageEpub(t)
+	raw := testsupport.CreateImageEpub(t)
 	physics := hosttest.New("Physics")
 	chemistry := hosttest.New("Chemistry")
 	physics.Beside(chemistry)
@@ -196,12 +140,12 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	other := texts.With("Chemistry")
 	other.File("book.epub", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(filesOf(physics), textsOf(texts), storeOf(physics), hosttest.NewQueue())
+	server := NewWriter(filesOf(physics), textsOf(texts), storeOf(physics), hosttest.NewQueue())
 	t.Cleanup(server.Close)
 
-	createText(t, server, TextRequest{Vault: "Chemistry", Path: "book.epub"})
+	createText(t, server, Request{Vault: "Chemistry", Path: "book.epub"})
 
-	if text := readLive(t, other, "book.epub"); text.Version().Kind != textKind {
+	if text := readLive(t, other, "book.epub"); text.Version().Kind != Kind {
 		t.Errorf("Chemistry's live version is %+v", text.Version())
 	}
 	inShown, err := texts.ListVersions(t.Context(), "book.epub")
@@ -214,18 +158,18 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 }
 
 func TestEachSegmentIsSelectedByTheCFIOfItsFirstCharacter(t *testing.T) {
-	book, err := epub.Read(createGuidedEpub(t))
+	book, err := epub.Read(testsupport.CreateGuidedEpub(t))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	segments, err := getSegments(book.Text, book.Parts, book.ReadPlaces())
+	cut, err := segments.Cut(book.Text, book.Parts, book.ReadPlaces())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var got []string
-	for _, segment := range segments {
+	for _, segment := range cut {
 		selector, err := readCFISelector(segment.Selector)
 		if err != nil {
 			t.Fatal(err)
@@ -251,10 +195,10 @@ func firstWord(text string) string {
 }
 
 func TestTheTextOfABookCarriesTheCFIOfItsCharacters(t *testing.T) {
-	raw := createImageEpub(t)
+	raw := testsupport.CreateImageEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 
-	createText(t, server, TextRequest{Path: "book.epub"})
+	createText(t, server, Request{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
 	selector, err := readCFISelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
@@ -301,8 +245,8 @@ func (f *failingTexts) PutVersion(_ context.Context, _ host.TextPut) (domain.Tex
 	return domain.TextVersion{}, f.err
 }
 
-func TestTextServerLifecycleAndFailures(t *testing.T) {
-	raw := createImageEpub(t)
+func TestWriterLifecycleAndFailures(t *testing.T) {
+	raw := testsupport.CreateImageEpub(t)
 	files := hosttest.New("vault")
 	files.File("book.epub", string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
@@ -313,13 +257,13 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv := NewTextServer(filesOf(files), textsOf(texts), storeOf(files), queue)
+	srv := NewWriter(filesOf(files), textsOf(texts), storeOf(files), queue)
 
-	if err := srv.CreateText(t.Context(), TextRequest{Path: "book.epub"}); err != nil {
+	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	// Duplicate call while running is a no-op
-	if err := srv.CreateText(t.Context(), TextRequest{Path: "book.epub"}); err != nil {
+	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 	srv.Close()
@@ -327,15 +271,15 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 		t.Error(err)
 	}
 	// Call after Close is a no-op
-	if err := srv.CreateText(t.Context(), TextRequest{Path: "book.epub"}); err != nil {
+	if err := srv.CreateText(t.Context(), Request{Path: "book.epub"}); err != nil {
 		t.Fatal(err)
 	}
 
 	// Failure reporting when file does not exist
 	q2 := hosttest.NewQueue()
-	srv2 := NewTextServer(filesOf(files), textsOf(texts), storeOf(files), q2)
+	srv2 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q2)
 	t.Cleanup(srv2.Close)
-	createText(t, srv2, TextRequest{Path: "missing.epub"})
+	createText(t, srv2, Request{Path: "missing.epub"})
 	tasks := q2.ListTasks()
 	if len(tasks) != 1 || tasks[0].FailureReason == "" {
 		t.Errorf("expected failed task for missing file, got %+v", tasks)
@@ -343,53 +287,53 @@ func TestTextServerLifecycleAndFailures(t *testing.T) {
 
 	// EnqueueWork failure
 	q3 := &failingQueue{Queue: hosttest.NewQueue(), enqueueErr: errors.New("queue down")}
-	srv3 := NewTextServer(filesOf(files), textsOf(texts), storeOf(files), q3)
+	srv3 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q3)
 	t.Cleanup(srv3.Close)
-	createText(t, srv3, TextRequest{Path: "book.epub"})
+	createText(t, srv3, Request{Path: "book.epub"})
 	if tasks := q3.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "queue down") {
 		t.Errorf("expected queue down task failure, got %+v", tasks)
 	}
 
 	// ReportTask failure
 	q4 := &failingQueue{Queue: hosttest.NewQueue(), reportErr: errors.New("report failed")}
-	srv4 := NewTextServer(filesOf(files), textsOf(texts), storeOf(files), q4)
+	srv4 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q4)
 	t.Cleanup(srv4.Close)
-	createText(t, srv4, TextRequest{Path: "book.epub"})
+	createText(t, srv4, Request{Path: "book.epub"})
 	if tasks := q4.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "report failed") {
 		t.Errorf("expected report failed task failure, got %+v", tasks)
 	}
 
 	// Store Write failure
 	q5 := hosttest.NewQueue()
-	srv5 := NewTextServer(filesOf(files), textsOf(texts), func(domain.VaultID) host.StoreWriter {
+	srv5 := NewWriter(filesOf(files), textsOf(texts), func(domain.VaultID) host.StoreWriter {
 		return &failingStore{StoreWriter: files.Store(), err: errors.New("store full")}
 	}, q5)
 	t.Cleanup(srv5.Close)
-	createText(t, srv5, TextRequest{Path: "book.epub"})
+	createText(t, srv5, Request{Path: "book.epub"})
 	if tasks := q5.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "store full") {
 		t.Errorf("expected store full task failure, got %+v", tasks)
 	}
 
 	// PutVersion failure
 	q6 := hosttest.NewQueue()
-	srv6 := NewTextServer(filesOf(files), func(domain.VaultID) host.TextVersions {
+	srv6 := NewWriter(filesOf(files), func(domain.VaultID) host.TextVersions {
 		return &failingTexts{TextVersions: texts, err: errors.New("put version failed")}
 	}, storeOf(files), q6)
 	t.Cleanup(srv6.Close)
-	createText(t, srv6, TextRequest{Path: "book.epub"})
+	createText(t, srv6, Request{Path: "book.epub"})
 	if tasks := q6.ListTasks(); len(tasks) != 1 || !strings.Contains(tasks[0].FailureReason, "put version failed") {
 		t.Errorf("expected put version failed task failure, got %+v", tasks)
 	}
 
 	// Sequential CreateText after completion works (verifies delete(s.running, key))
 	q7 := hosttest.NewQueue()
-	srv7 := NewTextServer(filesOf(files), textsOf(texts), storeOf(files), q7)
+	srv7 := NewWriter(filesOf(files), textsOf(texts), storeOf(files), q7)
 	t.Cleanup(srv7.Close)
-	createText(t, srv7, TextRequest{Path: "book.epub"})
-	guided := createGuidedEpub(t)
+	createText(t, srv7, Request{Path: "book.epub"})
+	guided := testsupport.CreateGuidedEpub(t)
 	files.File("book.epub", string(guided))
 	texts.File("book.epub", guided)
-	createText(t, srv7, TextRequest{Path: "book.epub"})
+	createText(t, srv7, Request{Path: "book.epub"})
 	if live := readLive(t, texts, "book.epub"); !strings.Contains(live.Text, "Prologue") {
 		t.Errorf("second CreateText did not update live version, got %q", live.Text)
 	}
