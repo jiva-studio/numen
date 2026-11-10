@@ -60,7 +60,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
   } catch {
     // The window states what failed; the error returned by the call adds nothing the user can act on.
     one.writeQueue.status.errorMessage.value = words.unreachable
-    one.curves.shown.isWaiting.value = false
+    one.curves.current.isWaiting.value = false
     return
   }
   // A read that overlapped a write may predate it; the file change the write
@@ -77,7 +77,7 @@ export const readPreset = async (one: OpenPreset, context: ReadPresetContext): P
   if (!readItem) {
     one.problems.value = []
     one.stopped.value = StopReason.NOTHING
-    one.curves.shown.isWaiting.value = false
+    one.curves.current.isWaiting.value = false
     return
   }
   if (readItem.title) titles.set(one.path.value, readItem.title)
@@ -148,8 +148,8 @@ const createSettingUpdater =
     if (one.settings.value !== was) one.writeQueue.unsaved.dirtyFields.add(field)
 
     if (field === getGoalField(one.settings.value.goal)) {
-      const place = findGridIndex(one.curves.shown.curve.value.grid, value, context.today())
-      if (place >= 0) one.curves.shown.place.value = place
+      const place = findGridIndex(one.curves.current.curve.value.grid, value, context.today())
+      if (place >= 0) one.curves.current.place.value = place
     }
     if (getShapeKey(one.settings.value) !== one.curves.drawing.shape) {
       updateCurves(one.curves, {
@@ -168,12 +168,12 @@ const createSettingUpdater =
 const createSliderMover = (one: OpenPreset, context: PresetStateContext) => (place: number) => {
   const was = one.settings.value
   one.settings.value = produceSchedule(was, place, {
-    curve: one.curves.shown.curve.value,
+    curve: one.curves.current.curve.value,
     today: context.today(),
     within: context.bounds.value,
   })
-  one.curves.shown.place.value = place
-  one.writeQueue.unsaved.dirtyFields.add(getGoalField(one.curves.shown.curve.value.goal))
+  one.curves.current.place.value = place
+  one.writeQueue.unsaved.dirtyFields.add(getGoalField(one.curves.current.curve.value.goal))
 }
 
 const createTabCloser = (one: OpenPreset, context: PresetStateContext) => (tab: string) => {
@@ -201,10 +201,10 @@ export const createPresetState = (
   settings: one.settings,
   bounds: context.bounds,
   curves: {
-    curve: one.curves.shown.curve,
-    material: one.curves.shown.material,
-    place: one.curves.shown.place,
-    isWaiting: one.curves.shown.isWaiting,
+    curve: one.curves.current.curve,
+    material: one.curves.current.material,
+    place: one.curves.current.place,
+    isWaiting: one.curves.current.isWaiting,
   },
   status: {
     problems: one.problems,

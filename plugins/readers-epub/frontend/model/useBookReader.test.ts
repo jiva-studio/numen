@@ -199,7 +199,7 @@ describe('a book opened', () => {
     expect(await readItem.actions.goToCfi('epubcfi(/8/4!/4/4/1:600)')).toBe(true)
 
     expect(readItem.place.offset.value).toBe(3_600)
-    expect(readItem.drawn.highlights.value).toStrictEqual([{ start: 3_600, end: 3_600 }])
+    expect(readItem.rendering.highlights.value).toStrictEqual([{ start: 3_600, end: 3_600 }])
     expect(placeCalls).toStrictEqual(['offset library/Mahabharata.epub epubcfi(/8/4!/4/4/1:600)'])
   })
 
@@ -399,7 +399,7 @@ describe('a passage reached', () => {
 
     expect(readItem.place.offset.value).toBe(3_600)
     expect(readItem.place.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
-    expect(readItem.drawn.highlights.value).toStrictEqual([{ start: 3_600, end: 3_642 }])
+    expect(readItem.rendering.highlights.value).toStrictEqual([{ start: 3_600, end: 3_642 }])
   })
 
   it('leaves the other spans somewhere else to look', async () => {
@@ -409,7 +409,7 @@ describe('a passage reached', () => {
     await readItem.actions.focusSpans({ start: 100, end: 110 }, { start: 6_500, end: 6_520 })
 
     expect(readItem.place.offset.value).toBe(100)
-    expect(readItem.drawn.otherHighlights.value).toStrictEqual([{ start: 6_500, end: 6_520 }])
+    expect(readItem.rendering.otherHighlights.value).toStrictEqual([{ start: 6_500, end: 6_520 }])
   })
 
   it('is nowhere at all when nothing was requested about', async () => {
@@ -418,7 +418,7 @@ describe('a passage reached', () => {
 
     await readItem.actions.focusSpans()
 
-    expect(readItem.drawn.highlights.value).toStrictEqual([])
+    expect(readItem.rendering.highlights.value).toStrictEqual([])
   })
 })
 
@@ -432,7 +432,7 @@ describe('a book that will not open', () => {
     expect(recordedEvents.join(' ')).toContain('Numen is not responding')
     expect(recordedEvents.join(' ')).not.toContain('this file is not a book')
     expect(readItem.state.pages.value).toBe(0)
-    expect(readItem.drawn.markup.value).toBe('')
+    expect(readItem.rendering.markup.value).toBe('')
   })
 
   it('says what went wrong where a document of it will not be drawn', async () => {
@@ -455,7 +455,7 @@ describe('a book tab closed', () => {
     await readItem.actions.goToOffset(6_500)
 
     expect(markupCalls).toHaveLength(1)
-    expect(readItem.drawn.markup.value).toBe('')
+    expect(readItem.rendering.markup.value).toBe('')
   })
 })
 
@@ -468,7 +468,7 @@ describe('a link inside a book followed', () => {
     await book.actions.followLink('text/part0003.xhtml')
 
     expect(book.place.offset.value).toBe(6_000)
-    expect(book.drawn.renderedChapter.value).toBe('text/part0003.xhtml')
+    expect(book.rendering.renderedChapter.value).toBe('text/part0003.xhtml')
   })
 
   it('leads nowhere, where the book holds no such document', async () => {
@@ -479,7 +479,7 @@ describe('a link inside a book followed', () => {
     await book.actions.followLink('text/nowhere.xhtml')
 
     expect(book.place.offset.value).toBe(0)
-    expect(book.drawn.renderedChapter.value).toBe('text/part0001.xhtml')
+    expect(book.rendering.renderedChapter.value).toBe('text/part0001.xhtml')
   })
 })
 

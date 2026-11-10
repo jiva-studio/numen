@@ -18,7 +18,7 @@ import { WORDS as words } from '../words'
 
 /** Reactive state for preset curve calculations. */
 export interface CurveState {
-  readonly shown: {
+  readonly current: {
     readonly curve: Ref<Curve>
     readonly material: Ref<PresetCounts | null>
     readonly place: Ref<number>
@@ -42,7 +42,7 @@ export function createCurveState(
   bounds: SettingsBounds,
 ): CurveState {
   return {
-    shown: {
+    current: {
       curve: shallowRef<Curve>(estimateCurve(initialSettings, today, bounds)),
       material: shallowRef<PresetCounts | null>(null),
       place: ref(0),
@@ -65,15 +65,15 @@ export const getKnobPosition = (curve: Curve, settings: Settings, today: string)
 
 /** Applies a landed curve and updates the material counts. */
 export const applyCurveAnswer = (state: CurveState, curve: Curve): void => {
-  state.shown.curve.value = curve
-  state.shown.material.value = {
+  state.current.curve.value = curve
+  state.current.material.value = {
     decks: curve.decks,
     cards: curve.cards,
     overdue: curve.overdue,
     unbegun: curve.unbegun,
   }
   state.drawing.isReal = true
-  state.shown.isWaiting.value = false
+  state.current.isWaiting.value = false
 }
 
 export interface CurveContext {
@@ -91,18 +91,18 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
   const settings = getSettings()
   const shape = getShapeKey(settings)
   state.drawing.shape = shape
-  const riding = state.shown.curve.value.grid
+  const riding = state.current.curve.value.grid
 
-  const isCurrent = state.drawing.isReal && state.shown.curve.value.goal === settings.goal
+  const isCurrent = state.drawing.isReal && state.current.curve.value.goal === settings.goal
   if (isCurrent) {
-    state.shown.curve.value = { ...state.shown.curve.value, isHonest: false }
+    state.current.curve.value = { ...state.current.curve.value, isHonest: false }
   } else {
     const meanwhile = estimateCurve(settings, today, bounds)
-    state.shown.curve.value = meanwhile
-    state.shown.place.value = Math.max(meanwhile.now.index, 0)
+    state.current.curve.value = meanwhile
+    state.current.place.value = Math.max(meanwhile.now.index, 0)
   }
   state.drawing.isReal = false
-  state.shown.isWaiting.value = true
+  state.current.isWaiting.value = true
 
   let answer: Curve
   try {
@@ -111,14 +111,14 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
     // The window states what failed; the error returned by the call adds nothing the user can act on.
     if (!mine.isCurrent) return
     setErrorMessage(words.noCurve)
-    state.shown.isWaiting.value = false
+    state.current.isWaiting.value = false
     return
   }
   if (!mine.isCurrent) return
   state.requests.answers.set(shape, answer)
   applyCurveAnswer(state, answer)
   if (isCurrent && isSameGrid(riding, answer.grid)) return
-  state.shown.place.value = getKnobPosition(answer, settings, today)
+  state.current.place.value = getKnobPosition(answer, settings, today)
 }
 
 /** Calculates the curve for the goal these settings name. */
@@ -131,7 +131,7 @@ export const updateCurves = async (state: CurveState, context: CurveContext): Pr
     state.requests.asks.cancel()
     state.drawing.shape = shape
     applyCurveAnswer(state, cachedCurve)
-    state.shown.place.value = getKnobPosition(cachedCurve, settings, today)
+    state.current.place.value = getKnobPosition(cachedCurve, settings, today)
     return
   }
 

@@ -202,7 +202,7 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
   render: openAt([ACROSS]),
   play: async () => {
     const { state } = getStoryTab()
-    await waitFor(async () => await expect(state.book.drawn.renderedChapter.value).toBe('text/two.xhtml'), {
+    await waitFor(async () => await expect(state.book.rendering.renderedChapter.value).toBe('text/two.xhtml'), {
       timeout: LAYOUT_TIMEOUT,
     })
 

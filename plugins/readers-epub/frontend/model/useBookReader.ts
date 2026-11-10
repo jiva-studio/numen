@@ -260,7 +260,7 @@ export function useBookReader(
       target: nav.target,
       documentSpan: bookDocument.documentSpan,
     },
-    drawn: {
+    rendering: {
       renderedChapter: bookDocument.renderedChapter,
       markup: bookDocument.markup,
       highlights: marks.highlights,

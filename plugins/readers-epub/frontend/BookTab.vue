@@ -118,14 +118,14 @@ function onFollow(destPath: string) {
 
       <BookContent
         ref="bookContent"
-        :markup="tabState.book.drawn.markup.value"
-        :path="tabState.book.drawn.renderedChapter.value"
+        :markup="tabState.book.rendering.markup.value"
+        :path="tabState.book.rendering.renderedChapter.value"
         :document-span="tabState.book.place.documentSpan.value"
         :book-span="tabState.book.state.span.value"
         :offset="tabState.book.place.offset.value"
         :target="tabState.book.place.target.value"
-        :highlights="tabState.book.drawn.highlights.value"
-        :other-highlights="tabState.book.drawn.otherHighlights.value"
+        :highlights="tabState.book.rendering.highlights.value"
+        :other-highlights="tabState.book.rendering.otherHighlights.value"
         :chapter="tabState.book.place.chapter.value"
         :is-listing-open="isListingOpen"
         @move="onMove"

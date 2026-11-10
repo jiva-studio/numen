@@ -27,7 +27,7 @@ vi.mock('./model/useBookReader', () => ({
       target: ref(null),
       chapter: ref(null),
     },
-    drawn: {
+    rendering: {
       markup: ref(''),
       renderedChapter: ref(''),
       highlights: shallowRef([]),
