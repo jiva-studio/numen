@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { COMMAND, findIcon } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
-import { createWelcomeActions } from '@/pages/welcome'
+import { createWelcomeActions, WELCOME_WORDS } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 import { createAppCommands } from '@/testing/appCommands'
 
@@ -33,7 +33,7 @@ describe('the icon a command is drawn with', () => {
   })
 
   it('is there for every way into a vault the welcome screen offers', () => {
-    const ways = createWelcomeActions({ vault: 'physics', isReady: true }, words, 'Linux')
+    const ways = createWelcomeActions({ vault: 'physics', isReady: true }, { ...words, ...WELCOME_WORDS }, 'Linux')
     for (const one of ways) expect(findIcon(one.id), one.id).not.toBeNull()
   })
 

@@ -49,7 +49,7 @@ const ways = computed(() => {
   })
 })
 
-const onList = computed(() => createVaultRows(props.vaultList, words))
+const onList = computed(() => createVaultRows(props.vaultList, { ...words, ...WELCOME_WORDS }))
 
 /** Whether the welcome screen is the one the user is viewing and typing into. */
 const welcoming = computed(
