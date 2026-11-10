@@ -224,12 +224,14 @@ func openSecrets(c pluginsWiring) *secret.Secrets {
 	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, newSecretID, c.CredentialsPath, c.SecretGate)
 }
 
-func getCredentialsPath(c pluginsWiring) string {
-	locator, isLocator := c.KeyStore.(credentialsLocator)
-	if !isLocator {
-		return ""
+func credentialsPathOf(store pluginport.KeyStore) func() string {
+	return func() string {
+		locator, isLocator := store.(credentialsLocator)
+		if !isLocator {
+			return ""
+		}
+		return locator.GetCredentialsPath(context.Background())
 	}
-	return locator.GetCredentialsPath(context.Background())
 }
 
 func newSecretID() (string, error) {

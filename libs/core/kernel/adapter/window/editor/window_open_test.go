@@ -189,8 +189,11 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := container.OpenWindowWith(cfg, t.Context(), ports, db, "", os.Stderr, func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
-		return gateWalk(start, release)
+	installation, err := container.OpenWindowWith(cfg, t.Context(), container.WindowOpening{
+		Ports: ports, DB: db, Out: os.Stderr,
+		Wrap: func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
+			return gateWalk(start, release)
+		},
 	})
 	if err != nil {
 		t.Fatal(err)

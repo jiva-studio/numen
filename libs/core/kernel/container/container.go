@@ -264,7 +264,7 @@ func plugins(c Config) pluginsWiring {
 			PluginCatalog:   c.PluginCatalog,
 			PluginDirs:      c.PluginDirs,
 			KeyStore:        c.KeyStore,
-			CredentialsPath: func() string { return getCredentialsPath(plugins(c)) },
+			CredentialsPath: credentialsPathOf(c.KeyStore),
 		},
 		pluginSettingsAccess: pluginSettingsAccess{
 			SettingsFiles:         res.settingsFiles,

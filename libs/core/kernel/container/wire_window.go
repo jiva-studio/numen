@@ -66,17 +66,24 @@ func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*ed
 func OpenWindowOver(c Config,
 	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
 ) (*editor.Installation, error) {
-	return OpenWindowWith(c, ctx, ports, db, named, out, nil)
+	return OpenWindowWith(c, ctx, WindowOpening{Ports: ports, DB: db, Named: named, Out: out})
 }
 
-// OpenWindowWith is OpenWindowOver with the walk of the vault put through wrap, for a caller
-// that holds one back or drives it. A nil wrap leaves it as it is.
-func OpenWindowWith(c Config,
-	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
-	wrap func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc,
-) (*editor.Installation, error) {
-	w := &windowWiring{cfg: c, ports: ports, db: db, wrap: wrap}
-	return openWindow(ctx, w, named, out)
+// WindowOpening is what OpenWindowWith opens a window over: the registry and the cache already open,
+// the vault to show, where the window writes, and an optional function the walk of the vault goes through.
+type WindowOpening struct {
+	Ports registry.Ports
+	DB    *vault.Index
+	Named string
+	Out   io.Writer
+	Wrap  func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
+}
+
+// OpenWindowWith is OpenWindowOver with the walk of the vault put through Wrap, for a caller
+// that holds one back or drives it. A nil Wrap leaves it as it is.
+func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
+	w := &windowWiring{cfg: c, ports: opening.Ports, db: opening.DB, wrap: opening.Wrap}
+	return openWindow(ctx, w, opening.Named, opening.Out)
 }
 
 func openWindow(ctx context.Context, w *windowWiring, named string, out io.Writer) (*editor.Installation, error) {
