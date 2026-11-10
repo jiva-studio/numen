@@ -6,13 +6,12 @@ import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
 import { createFileCreators, type FileOpeners, type WindowTabs } from '@/entities/tab'
 import { listFiles, type CreateResult } from '@/entities/file'
-import { createInvocation, runInvocation } from '@/features/command-palette'
-import { COMMAND, findIcon, type CommandTarget, type CommandDeps } from '@/entities/command'
+import { COMMAND, findIcon, type CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 import { getKnownErrorCode } from '@/shared/api/errors'
 import { WORDS as words } from '@/shared/ui/words'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { getEntryIcon } from '../tabs/entryIcon'
+import { getEntryIcon } from './entryIcon'
 
 /** A handler that creates a file in a vault folder under the given title. */
 export type FileCreatorFn = (title: string, folder: string) => Promise<CreateResult | null>
@@ -84,14 +83,11 @@ export function createFileMakers({
 export interface VaultFilesDeps {
   readonly making: NoteCreator
   readonly getTarget: () => CommandTarget
-  readonly commandDeps: () => CommandDeps
+  readonly runCommand: (id: string, target: CommandTarget, name: string) => Promise<void>
 }
 
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
-  const { making, getTarget, commandDeps } = deps
-  const run = async (id: string, target: CommandTarget, name: string): Promise<void> => {
-    await runInvocation(createInvocation(id, target, name), commandDeps())
-  }
+  const { making, getTarget, runCommand: run } = deps
   return {
     list: (folder) => listFiles(folder),
     move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),

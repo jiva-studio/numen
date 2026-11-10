@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
@@ -9,7 +9,7 @@ import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
 import type { CommandDeps } from '@/entities/command'
-import { commands as registry } from '@/entities/command'
+import { createCommandRegistry } from '@/entities/command'
 import type { CommandTarget } from '@/entities/command'
 import CommandPalette from './CommandPalette.vue'
 
@@ -18,13 +18,12 @@ const words = { ...windowWords, ...PALETTE_WORDS }
 const COPY_PATH = 'app:file.copyPath'
 const copyPath = vi.fn()
 
+let registry = createCommandRegistry()
+
 beforeEach(() => {
   copyPath.mockClear()
-  registry.registerCommand(COPY_PATH, copyPath)
-})
-
-afterEach(() => {
-  registry.clear()
+  registry = createCommandRegistry()
+  registry.register(COPY_PATH, copyPath)
 })
 
 const ATLAS = 'org.example.atlas'
@@ -116,7 +115,7 @@ async function mountField(
     props: {
       commands,
       search,
-      doing: { writeMessage: vi.fn() } as unknown as CommandDeps,
+      doing: { writeMessage: vi.fn(), registry } as unknown as CommandDeps,
       getTarget: () => inFront,
       places: {},
       runChoice,
@@ -270,7 +269,7 @@ describe('the highlight of the search menu as groups answer', () => {
       props: {
         commands,
         search,
-        doing: {} as CommandDeps,
+        doing: { registry } as unknown as CommandDeps,
         getTarget: () => inFront,
         places: {},
         runChoice: vi.fn(),

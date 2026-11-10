@@ -13,6 +13,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -51,10 +52,10 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 }
 
 func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
-	t.Setenv(envMockML, "true")
+	t.Setenv(onnxruntime.EnvMockML, "true")
 	t.Setenv("XDG_CACHE_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	registry := GetDependencyRegistry("")
+	registry := newDependencyRegistry("")
 
 	model := manifest.DependencyRequirement{
 		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
@@ -84,7 +85,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 }
 
 func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
-	t.Setenv(envMockML, "")
+	t.Setenv(onnxruntime.EnvMockML, "")
 	t.Setenv("NUMEN_MODELS_DIR", "")
 	body := []byte("model weights")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -100,7 +101,7 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 
-	resolved, err := GetDependencyRegistry(models).Provision(t.Context(), req, nil)
+	resolved, err := newDependencyRegistry(models).Provision(t.Context(), req, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

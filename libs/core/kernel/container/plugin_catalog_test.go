@@ -101,7 +101,7 @@ func TestTheCatalogListsThePluginsOnDiskWithTheirEnabledFlagAndTheAvailableOnes(
 	writeCatalogPlugin(t, dir, "org.example.cards", `"desktop.flashcards"`)
 	availableDir := t.TempDir()
 	writeCatalogPlugin(t, availableDir, "org.example.offered", `"desktop.editor"`)
-	host := NewPluginHost("desktop.editor", dir)
+	host := newPluginHost(t, "desktop.editor", dir)
 	host.Configuration.SetSettings(map[string]map[string]any{"org.example.off": {"enabled": false}})
 	cfg := NewConfig(Config{
 		PluginHost:    host,
@@ -148,7 +148,7 @@ func findEntry(listing catalog.Listing, id string) (catalog.Entry, bool) {
 }
 
 func TestAnInstallationThatNamesNoTargetHasNoCatalog(t *testing.T) {
-	cfg := NewConfig(Config{PluginHost: NewPluginHost("desktop.editor", t.TempDir())})
+	cfg := NewConfig(Config{PluginHost: newPluginHost(t, "desktop.editor", t.TempDir())})
 
 	if getPluginCatalog(plugins(cfg)) != nil {
 		t.Error("a catalog was made with no target")

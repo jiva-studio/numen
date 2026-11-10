@@ -27,6 +27,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -185,16 +186,23 @@ func twoProviders(t *testing.T) (*plugin.Host, *providerServer, *providerServer)
 	return host, one, two
 }
 
-func TestNoAgentProviderWithoutAHost(t *testing.T) {
-	if provider := (container.NewConfig(container.Config{})).AgentProvider(); provider != nil {
-		t.Fatalf("expected no provider, got %v", provider)
-	}
+func TestAgentProviderWithoutAHostRunsNothing(t *testing.T) {
+	assertNoAgentRuns(t, container.NewConfig(container.Config{}).AgentProvider())
 }
 
-func TestNoAgentProviderInSafeMode(t *testing.T) {
+func TestAgentProviderInSafeModeRunsNothing(t *testing.T) {
 	host, _, _ := twoProviders(t)
-	if provider := (container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SafeMode: true})).AgentProvider(); provider != nil {
-		t.Fatalf("expected no provider, got %v", provider)
+	assertNoAgentRuns(t, container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SafeMode: true}).AgentProvider())
+}
+
+func assertNoAgentRuns(t *testing.T, provider agentport.AgentProvider) {
+	t.Helper()
+	programs, err := provider.GetPrograms(t.Context(), nil)
+	if err != nil || len(programs) != 0 {
+		t.Errorf("listed %v, %v", programs, err)
+	}
+	if _, err := provider.StartRun(t.Context(), agent.Task{Agent: "alpha"}); err == nil {
+		t.Error("a task was taken where no plugin runs")
 	}
 }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEnumFields } from './enums'
-import { createPluginInfo } from '@/testing/installation'
+import { createPluginInfo } from '@/pages/settings/testing/installation'
 
 describe('the fields of a plugin', () => {
   it('places secrets after their when.setting, provider, baseUrl, or at the top', () => {

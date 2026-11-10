@@ -74,7 +74,8 @@ func Run(opts ...*Options) error {
 		cfg.RegistryPath = opt.RegistryPath
 	}
 	cfg.ShouldRebuildIndex = opt.RebuildIndex
-	cfg = cfg.SetSafeMode(opt.SafeMode)
+	cfg.SafeMode = opt.SafeMode
+	cfg = container.NewConfig(cfg)
 
 	scaleFlags := scaleSettings{
 		interfaceScale: opt.InterfaceScale,

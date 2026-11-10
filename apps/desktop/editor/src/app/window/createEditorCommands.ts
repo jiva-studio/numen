@@ -19,6 +19,7 @@ import type { createMessageLog, MessageWriter } from '@/shared/model/notices/mes
 import { WORDS as words } from '@/shared/ui/words'
 import {
   type CommandItemLists,
+  type WindowFactsSource,
   getPaletteId,
   type useDeclaredCommands,
   createCommandNoteReader,
@@ -33,9 +34,8 @@ import {
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { WindowCore } from './windowCore'
-import type { WindowServices } from './createWindowServices'
+import type { WindowServices, WindowSettings } from './createWindowServices'
 import type { TabsHold } from '@/features/vault-commands'
-import type { useSettings } from '@/pages/settings'
 import type { useVaults } from '@/entities/vault'
 import type { createWindowTabMoves } from './createTabsPart'
 import { createTargetResolver } from './displayOptions'
@@ -45,8 +45,9 @@ interface WindowCommandsOptions {
   windowTabs: WindowTabs
   getTarget: () => CommandTarget
   knows: NoteLookup
-  settings: ReturnType<typeof useSettings>
+  settings: WindowSettings
   runs: ReturnType<typeof runSupport>
+  registry: WindowCore['registry']
   vaultsModule: ReturnType<typeof useVaults>
   editing: ReturnType<typeof createNoteEditors>
   writeMessage: MessageWriter
@@ -73,6 +74,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     knows: deps.knows,
     paletteLists: settings.paletteLists,
     runs: deps.runs,
+    registry: deps.registry,
     coverage: vaultsModule.coverage,
     reached: editing.reached,
     settingPalette: settings.settingPalette,
@@ -128,7 +130,7 @@ function createFeatureCommands(
     }),
     words,
   )
-  registerFeatureCommands(featureCommands)
+  registerFeatureCommands(base.registry, featureCommands)
   return featureCommands
 }
 
@@ -149,6 +151,7 @@ export function createEditorCommands(
     knows,
     settings,
     runs: base.runs,
+    registry: base.registry,
     vaultsModule: vaults,
     editing,
     writeMessage: base.writeMessage,
@@ -161,7 +164,7 @@ export function createEditorCommands(
   })
   services.renames.subscribe((renamed) => commands.commands.navigation.applyRenames(renamed))
 
-  base.plugins.facts.provide({
+  const facts: WindowFactsSource = {
     getAppCommands: () => featureCommands.commands,
     getValues: () => {
       const inFront = getTarget()
@@ -173,8 +176,8 @@ export function createEditorCommands(
         'window.isPaletteOpen': isPaletteOpen(commands),
       }
     },
-  })
-  return { getTarget, featureCommands, commands }
+  }
+  return { getTarget, featureCommands, commands, facts }
 }
 
 /** The kinds of tab the window declares, and the services the plugins are given from them. */
@@ -208,15 +211,17 @@ export function createWindowKinds(
     },
   })
 
-  base.plugins.pluginServices.provide({
-    ...kinds.services,
-    taskList: window.tasks,
-    backgroundTasks: createBackgroundTasks(base, window, settings),
-  })
-  return kinds
+  return {
+    ...kinds,
+    services: {
+      ...kinds.services,
+      taskList: window.tasks,
+      backgroundTasks: createBackgroundTasks(base, window, settings),
+    },
+  }
 }
 
-type WindowSettings = ReturnType<typeof useSettings>
+
 
 function createBackgroundTasks(
   base: WindowCore,

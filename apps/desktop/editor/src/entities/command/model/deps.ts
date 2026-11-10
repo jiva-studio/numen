@@ -5,6 +5,7 @@
  */
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { CommandInvocation, Notes, RunSupport } from '@/entities/command'
+import type { CommandRegistry } from './registry'
 
 /** Where a command of the palette takes the window. */
 interface WindowNavigator {
@@ -43,6 +44,7 @@ interface RunContext {
 
 /** What the window offers a command being carried out, one port to a job. */
 export interface CommandDeps extends TabContext, RunContext, Voice {
+  readonly registry: Pick<CommandRegistry, 'get'>
   readonly settings: SettingsWriter
   readonly emitEvent?: (event: string) => void
 }

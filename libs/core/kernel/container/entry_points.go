@@ -2,14 +2,14 @@ package container
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/startup"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -18,44 +18,34 @@ import (
 // the one shown last when none is named, and connects the plugins to the vault and the window. It returns the
 // window and the configuration with the text versions the plugins share.
 func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, Config, error) {
-	registry, err := c.Registry()
-	if err != nil {
-		return nil, c, err
-	}
-	db, err := OpenIndex(c, ctx)
-	if err != nil {
-		return nil, c, err
-	}
-	versions, err := NewTextVersions(c, db)
-	if err != nil {
-		return nil, c, errors.Join(err, db.Close())
-	}
-	c.TextVersions = versions
-
-	opened, err := OpenWindowOver(c, ctx, registry, db, named, out)
-	if err != nil {
-		return nil, c, err
-	}
-	SetPluginVaultPath(c, opened.State.GetCurrentVault().Path)
-	getShownVault := func() (domain.Vault, bool) {
-		current := opened.State.GetCurrentVault()
-		return current, current.Path != ""
-	}
-	err = InstallPluginVault(c, registry, db, getShownVault, PluginVaultHooks{
-		Written: func() {
-			if wake := opened.State.Writes.NotifyNoteWritten; wake != nil {
-				wake()
-			}
+	start := startup.OpenEditor[vaultregistry.Ports, *vault.Index, *editor.Installation]{
+		OpenRegistry: c.Registry,
+		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
+		OpenTexts: func(db *vault.Index) error {
+			versions, err := newTextVersions(vaultOf(c), db)
+			c.TextVersions = versions
+			return err
 		},
-		Notes: opened.Notes(),
-	})
-	if err != nil {
-		return nil, c, err
+		OpenWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index) (*editor.Installation, error) {
+			return OpenWindowOver(c, ctx, ports, db, named, out)
+		},
+		FollowVault: func(opened *editor.Installation) {
+			setPluginVaultPath(plugins(c), opened.State.GetCurrentVault().Path)
+		},
+		InstallVault: func(ports vaultregistry.Ports, db *vault.Index, opened *editor.Installation) error {
+			return installPluginVault(plugins(c), ports, db, opened.State.GetShownVault, PluginVaultHooks{
+				Written: opened.State.Writes.NoteWritten,
+				Notes:   opened.Notes(),
+			})
+		},
+		ShareWindow: func(db *vault.Index, opened *editor.Installation) {
+			shareVaultList(c, opened)
+			setPluginTexts(vaultOf(c))
+			shareEditorWindow(c, db, opened)
+		},
 	}
-	SetEditorPluginVaultList(c, opened)
-	SetPluginTexts(c)
-	SetEditorPluginWindow(c, db, opened)
-	return opened, c, nil
+	opened, err := start.Execute(ctx)
+	return opened, c, err
 }
 
 // Flashcards is what the flashcards application closes when it ends: CloseVaults waits until nothing is still
@@ -67,40 +57,39 @@ type Flashcards struct {
 }
 
 // OpenFlashcards opens the registry and the cache, binds the notes, the vault list, the vault indexer, the
-// plugin vault, the change feed and the themes of the flashcards window to api, and reports what it cannot
-// follow on errOut.
-func OpenFlashcards(c Config, ctx context.Context, api *shell.API, errOut io.Writer, label string) (Flashcards, error) {
-	list, err := c.Registry()
-	if err != nil {
-		return Flashcards{}, err
+// plugin vault, the change feed and the themes of the flashcards window to api, and tells notify what it
+// cannot follow.
+func OpenFlashcards(c Config,
+	ctx context.Context, api *shell.API, out io.Writer, label string, notify func(message string),
+) (Flashcards, error) {
+	start := startup.OpenFlashcards[vaultregistry.Ports, *vault.Index, *vault.OpenVaults[*vault.Index]]{
+		Label:        label,
+		OpenRegistry: c.Registry,
+		OpenIndex:    func(ctx context.Context) (*vault.Index, error) { return OpenIndex(c, ctx) },
+		OpenVaults:   func(db *vault.Index) *vault.OpenVaults[*vault.Index] { return openVaults(c, db, out, label) },
+		BindWindow: func(ctx context.Context, ports vaultregistry.Ports, db *vault.Index, vaults *vault.OpenVaults[*vault.Index]) {
+			SetShellNotes(c, api, db, vaults.UpdateIndex)
+			api.ListVaults = vaultregistry.NewList(ports.Vaults).Execute
+			BindVaultIndexer(c, ctx, api, vaults)
+		},
+		InstallVault: func(ports vaultregistry.Ports, db *vault.Index) error {
+			return installPluginVault(plugins(c), ports, db, getNoShownVault,
+				PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves})
+		},
+		FollowChanges: func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(vaultOf(c), ctx) },
+		ReportChanges: api.ReportChangesFrom,
+		BindThemes: func(say func(string)) error {
+			service, err := settingsThemes(settingsOf(c), say)
+			api.Themes = service
+			return err
+		},
+		Notify: notify,
 	}
-	// The editor's window may write the same index at the same time.
-	db, err := OpenIndex(c, ctx)
-	if err != nil {
-		return Flashcards{}, err
-	}
-	vaults := OpenVaults(c, db, errOut, label)
-	SetShellNotes(c, api, db, vaults.UpdateIndex)
-	api.ListVaults = GetVaultList(c, list).Execute
-	BindVaultIndexer(c, ctx, api, vaults)
-	started := Flashcards{CloseVaults: vaults.CloseAndWait, CloseIndex: db.Close}
-	noCurrentVault := func() (domain.Vault, bool) { return domain.Vault{}, false }
-	hooks := PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
-	if err := InstallPluginVault(c, list, db, noCurrentVault, hooks); err != nil {
-		return started, err
-	}
-	if moves, err := Moves(c, ctx); err != nil {
-		fmt.Fprintln(os.Stderr, label+": the index is not being followed:", err)
-	} else {
-		api.ReportChangesFrom(ctx, moves)
-	}
-	started.Themes = SetShellThemes(c, api, func(response string) {
-		if response != "" {
-			fmt.Fprintln(os.Stderr, "themes:", response)
-		}
-	})
-	return started, nil
+	opened, err := start.Execute(ctx)
+	return Flashcards{CloseVaults: opened.Vaults.CloseAndWait, CloseIndex: opened.Index.Close, Themes: opened.Themes}, err
 }
+
+func getNoShownVault() (domain.Vault, bool) { return domain.Vault{}, false }
 
 // FlushTimeout is how long a page may take to write its unsaved data when the vault closes.
 func FlushTimeout() time.Duration { return windowsession.FlushTimeout }
@@ -108,12 +97,9 @@ func FlushTimeout() time.Duration { return windowsession.FlushTimeout }
 // FollowVaultSwitch makes the window call after each time it puts a vault in its place, with the error
 // of that attempt. The plugins follow the vault by themselves.
 func FollowVaultSwitch(c Config, opened *editor.Installation, after func(v domain.Vault, err error)) {
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
-		err := opened.Show(ctx, v, open)
-		if err == nil {
-			SetPluginVaultPath(c, v.Path)
-		}
-		after(v, err)
-		return err
-	}
+	opened.State.OpenVault = startup.SwitchVault[*windowsession.PluginOpen]{
+		Show:        opened.Show,
+		FollowVault: func(path string) { setPluginVaultPath(plugins(c), path) },
+		After:       after,
+	}.Execute
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
-import { createCatalogEntry } from '@/testing/installation'
+import { createCatalogEntry } from '@/pages/settings/testing/installation'
 import { createManagedFromEntries } from './pluginListing'
 
 describe('the listing of a catalog entry', () => {

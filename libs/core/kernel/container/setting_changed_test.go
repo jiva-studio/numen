@@ -91,7 +91,7 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	lent := container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))
+	lent := newExternalPluginHost(t, "desktop.editor", writeEventfulPlugin(t))
 	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.Configuration.SettingsPush}
 	lent.ApplySetting, lent.Configuration.SettingsPush = host.applySetting, host
 	cfg := container.NewConfig(container.Config{

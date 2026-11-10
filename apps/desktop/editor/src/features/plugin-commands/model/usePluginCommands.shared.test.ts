@@ -2,7 +2,7 @@
  * The shared commands in the palette: one entry for each the enabled plugins handle, whose pick
  * list is its handlers, run over the target with the one picked.
  */
-import { commands, type CommandDeps } from '@/entities/command'
+import { createCommandRegistry, type CommandDeps } from '@/entities/command'
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/entities/command'
@@ -30,16 +30,16 @@ const createHost = () =>
 describe('a shared command in the palette', () => {
   it('is an entry with a pick list while a plugin handles it, and none otherwise', () => {
     const handled = usePluginCommands(
+      createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [HANDLER],
+      { getHandlers: () => [HANDLER] },
     )
     const unhandled = usePluginCommands(
+      createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [],
+      { getHandlers: () => [] },
     )
 
     expect(handled.getPaletteEntries()).toMatchObject([
@@ -50,10 +50,10 @@ describe('a shared command in the palette', () => {
 
   it('is available over a file and not over the window alone', () => {
     const [entry] = usePluginCommands(
+      createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [HANDLER],
+      { getHandlers: () => [HANDLER] },
     ).getPaletteEntries()
     const target = { path: 'scan.pdf', file: 'scan.pdf', isReady: true } as CommandTarget
 
@@ -67,10 +67,10 @@ describe('a shared command that asks for a value', () => {
 
   it('asks for its required arguments as a command of a manifest does', () => {
     const [entry] = usePluginCommands(
+      createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [importer],
+      { getHandlers: () => [importer] },
     ).getPaletteEntries()
 
     expect(entry).toMatchObject({
@@ -92,13 +92,14 @@ describe('a shared command that asks for a value', () => {
 
   it('runs its handler with the values given', async () => {
     const host = createHost()
+    const registry = createCommandRegistry()
     usePluginCommands(
+      registry,
       createCommandNoteReader({ fileKinds: async () => new Map() }),
       host,
-      undefined,
-      () => [importer],
+      { getHandlers: () => [importer] },
     )
-    const run = commands.get('app:link.import')
+    const run = registry.get('app:link.import')
 
     await run?.(
       {

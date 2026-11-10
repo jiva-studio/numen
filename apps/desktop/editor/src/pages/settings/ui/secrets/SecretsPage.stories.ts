@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
-import { createInstallation, createSecretAnswer } from '@/testing/installation'
+import { createInstallation, createSecretAnswer } from '@/pages/settings/testing/installation'
 import type { Installation } from '../../types'
 import SecretsPage from './SecretsPage.vue'
 

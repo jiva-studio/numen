@@ -6,7 +6,7 @@ import { formatError } from '@/shared/api/errors'
 import { createTabNavigation, createTabSync } from '@/entities/tab'
 import { syncTabPath } from '@/features/tab-linking'
 import { useWindowDisplay } from '@/features/window-display'
-import { useSettings } from '@/pages/settings'
+import { createWindowSettingsPart } from './windowSettings'
 import { createEmitter } from './createEmitter'
 import type { PathRename } from '@/shared/lib/paths'
 import { WORDS as words } from '@/shared/ui/words'
@@ -50,7 +50,7 @@ export function createWindowServices(base: WindowCore) {
     }),
   )
 
-  const settings = useSettings({
+  const settings = createWindowSettingsPart({
     rest: base.rest,
     words,
     log: base.log,
@@ -73,3 +73,4 @@ export function createWindowServices(base: WindowCore) {
 }
 
 export type WindowServices = ReturnType<typeof createWindowServices>
+export type WindowSettings = WindowServices['settings']

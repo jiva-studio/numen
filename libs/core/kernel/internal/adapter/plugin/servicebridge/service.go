@@ -166,20 +166,3 @@ func writeConnectError(w http.ResponseWriter, status int, code connect.Code, mes
 	}
 	return nil
 }
-
-// NoServices is the forwarding of an installation with no plugin host.
-type NoServices struct{}
-
-func (NoServices) Serves(string) bool { return false }
-
-func (NoServices) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "no plugin serves this service", http.StatusNotFound)
-}
-
-func (NoServices) ServeRoute(w http.ResponseWriter, _ *http.Request) {
-	http.Error(w, "plugin not found", http.StatusNotFound)
-}
-
-func (NoServices) ListFrameOrigins() []string { return nil }
-
-func (NoServices) GetFrameOrigins(string) []string { return nil }

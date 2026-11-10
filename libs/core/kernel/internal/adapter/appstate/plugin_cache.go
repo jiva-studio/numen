@@ -25,6 +25,15 @@ func OpenPluginCaches() (*PluginCaches, error) {
 	return PluginCachesAt(filepath.Join(dir, "numen", "plugins")), nil
 }
 
+// OpenPluginCachesIn keeps the caches in the plugins folder of root, and in the platform's own location while
+// root is empty.
+func OpenPluginCachesIn(root string) (*PluginCaches, error) {
+	if root == "" {
+		return OpenPluginCaches()
+	}
+	return PluginCachesAt(filepath.Join(root, "plugins")), nil
+}
+
 // PluginCachesAt is OpenPluginCaches with an explicit folder, so tests do not
 // touch the machine's own folder.
 func PluginCachesAt(dir string) *PluginCaches { return &PluginCaches{dir: dir} }

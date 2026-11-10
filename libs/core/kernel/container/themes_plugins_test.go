@@ -44,7 +44,7 @@ func openThemesConfig(t *testing.T, target string, pluginRoot string) Config {
 	t.Helper()
 	dir := t.TempDir()
 	return NewConfig(Config{
-		PluginHost: NewPluginHost(target, pluginRoot),
+		PluginHost: newPluginHost(t, target, pluginRoot),
 		Paths:      Paths{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")},
 	})
 }

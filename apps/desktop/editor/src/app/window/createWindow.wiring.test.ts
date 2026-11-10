@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { Puzzle } from '@lucide/vue'
 import { getNamedIcon } from '@/shared/ui/icons'
-import { COMMAND, commands as commandRegistry } from '@/entities/command'
+import { COMMAND } from '@/entities/command'
 import { createInvocation } from '@/features/command-palette'
 import { answerCore } from '@/testing/coreAnswers'
 import { ref } from 'vue'
@@ -98,9 +98,17 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   createSettingsStore: () => h.f.settings.rest,
 }))
-vi.mock('@/pages/settings/model/useSettings', () => ({
-  useSettings: (args: unknown) => {
+vi.mock('@/features/settings-commands', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createWindowSettings: (args: unknown) => {
     h.args.settings = args
+    return h.f.settings
+  },
+}))
+vi.mock('@/pages/settings', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createSettingsPage: (args: unknown) => {
+    h.args.settingsPage = args
     return h.f.settings
   },
 }))
@@ -399,7 +407,7 @@ describe('the parts of the window', () => {
     const window = createWindow()
     const target = { ...window.palette.getTarget(), tab: 't1' }
 
-    const run = commandRegistry.get(COMMAND.detachTab)
+    const run = window.palette.commandDeps.registry.get(COMMAND.detachTab)
     await run?.(createInvocation(COMMAND.detachTab, target), window.palette.commandDeps)
 
     expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
@@ -409,7 +417,7 @@ describe('the parts of the window', () => {
     const window = createWindow()
     const target = { ...window.palette.getTarget(), tab: 't1' }
 
-    const run = commandRegistry.get(COMMAND.moveTabToWindow)
+    const run = window.palette.commandDeps.registry.get(COMMAND.moveTabToWindow)
     await run?.(
       createInvocation(COMMAND.moveTabToWindow, target, 'window-b'),
       window.palette.commandDeps,
@@ -678,10 +686,10 @@ describe('the services a plugin is given', () => {
       'error',
     )
 
-    // useSettings callbacks
+    // settings callbacks
     h.args.settings.onSizeChanged()
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
-    expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
+    expect(h.args.settingsPage.getSettingsViews('p1')).toEqual(['view-1'])
 
     // background tasks & noticeTasks
     expect(h.args.noticeTasks.window).toStrictEqual({

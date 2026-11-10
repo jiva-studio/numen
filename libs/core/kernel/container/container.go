@@ -7,7 +7,6 @@ package container
 
 import (
 	"context"
-	"time"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
@@ -114,8 +113,9 @@ func NewResources() *Resources {
 	}
 }
 
-// NewConfig returns c with the resources of one container. A Config built without NewConfig and
-// without Resources opens writers, watches and settings that refuse to work.
+// NewConfig returns c with the resources of one container, and its plugin host in safe mode or out of it as
+// SafeMode says. A Config built without NewConfig and without Resources opens writers, watches and settings
+// that refuse to work. The plugin host of a Config that names none is one that runs nothing.
 func NewConfig(c Config) Config {
 	if c.Resources == nil {
 		c.Resources = NewResources()
@@ -123,6 +123,8 @@ func NewConfig(c Config) Config {
 	if c.Chunks == nil {
 		c.Chunks = &note.ChunkTokens{}
 	}
+	c.PluginHost = c.host()
+	c.PluginHost.Runtime.SetSafeMode(c.SafeMode)
 	return c
 }
 
@@ -134,6 +136,23 @@ func getResources(c Config) *Resources {
 }
 
 func getPrograms(c Config) *settingsadapter.ProgramList { return getResources(c).programs }
+
+// host returns the plugin host of the configuration, or the host that runs nothing while it names none.
+func (c Config) host() *PluginHost {
+	if c.PluginHost == nil {
+		return newAbsentHost(plugindomain.NotInstalled, nil)
+	}
+	return c.PluginHost
+}
+
+// runningHost returns the plugin host that runs plugins for the scenarios assembled here: the host of the
+// configuration, or in safe mode a host that runs nothing.
+func (c Config) runningHost() *PluginHost {
+	if c.SafeMode {
+		return newAbsentHost(plugindomain.Disabled, errSafeMode)
+	}
+	return c.host()
+}
 
 // Clock is the clock every scenario assembled here is handed.
 func (c Config) Clock() machineport.Clock {
@@ -152,19 +171,7 @@ func handleError(c Config, err error) {
 // GetWait is the wait every scenario assembled here is handed, bound to this
 // machine's timers.
 func (c Config) GetWait() machine.Wait {
-	return func(ctx context.Context, d time.Duration) error {
-		if d <= 0 {
-			return ctx.Err()
-		}
-		timer := time.NewTimer(d)
-		defer timer.Stop()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timer.C:
-			return nil
-		}
-	}
+	return clock.System{}.Wait
 }
 
 func settingsOf(c Config) settingsWiring {
@@ -189,7 +196,7 @@ func settingsOf(c Config) settingsWiring {
 			SubscribedHosts: &res.subscribedHosts,
 		},
 		settingsPluginRefs: settingsPluginRefs{
-			PluginHost:       c.PluginHost,
+			PluginHost:       c.host(),
 			KeyStore:         c.KeyStore,
 			Plugins:          func() pluginsWiring { return plugins(c) },
 			GetAgentPrograms: c.agentPrograms,
@@ -206,7 +213,7 @@ func searchOf(c Config) searchWiring {
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
 		Chunks:             c.Chunks,
 		ResolvedCompute:    c.ResolvedCompute,
-		PluginHost:         c.PluginHost,
+		PluginHost:         c.host(),
 		Clock:              c.Clock(),
 		VaultReaders:       vaultReaders(v),
 		TextReaders:        getTextReaders(v),
@@ -223,9 +230,9 @@ func vaultBase(c Config) vaultWiring {
 		IndexPath:    c.IndexPath,
 		RegistryPath: c.RegistryPath,
 		ServiceDir:   c.ServiceDir,
-		SafeMode:     c.SafeMode,
 		Clock:        c.Clock(),
-		PluginHost:   c.PluginHost,
+		PluginHost:   c.host(),
+		RunningHost:  c.runningHost(),
 		TextVersions: c.TextVersions,
 		TextReaders:  c.TextReaders,
 		VaultLocks:   res.vaultLocks,
@@ -252,19 +259,19 @@ func plugins(c Config) pluginsWiring {
 		settingsStores: settingsStores{
 			Watches: res.watches, SettingsFiles: res.settingsFiles, SettingEvents: res.settingEvents, Programs: programs,
 		},
-		settingsPluginRefs: settingsPluginRefs{PluginHost: c.PluginHost},
+		settingsPluginRefs: settingsPluginRefs{PluginHost: c.host()},
 		ErrorHandler:       func(err error) { handleError(c, err) },
 	}
 	return pluginsWiring{
 		pluginInstall: pluginInstall{
 			PluginCachePath: c.PluginCachePath,
 			ServiceDir:      c.ServiceDir,
-			SafeMode:        c.SafeMode,
-			PluginHost:      c.PluginHost,
+			PluginHost:      c.host(),
+			RunningHost:     c.runningHost(),
 			PluginCatalog:   c.PluginCatalog,
 			PluginDirs:      c.PluginDirs,
 			KeyStore:        c.KeyStore,
-			CredentialsPath: c.credentialsPath,
+			CredentialsPath: secret.GetCredentialsPath(c.KeyStore),
 		},
 		pluginSettingsAccess: pluginSettingsAccess{
 			SettingsFiles:         res.settingsFiles,
@@ -296,5 +303,3 @@ func plugins(c Config) pluginsWiring {
 func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	return getAgentPrograms(plugins(c), provider, target)
 }
-
-func (c Config) credentialsPath() string { return credentialsPathOf(c.KeyStore)() }

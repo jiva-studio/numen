@@ -4,7 +4,7 @@
  * provided run their commands with the dependencies of the window.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginServices } from '../plugins/pluginServices'
+import type { PluginServices } from '@/features/plugin-commands'
 import type * as PluginSupportModule from '../plugins/pluginSupport'
 import { COMMAND } from '@/entities/command'
 import { PALETTE_WORDS } from '@/features/command-palette'
@@ -20,7 +20,7 @@ import {
 } from '@/testing/window'
 
 /** What the window gives the plugins, read as the plugin host reads it. */
-const provided = vi.hoisted(() => ({ read: undefined as (() => PluginServices) | undefined }))
+const provided = vi.hoisted(() => ({ read: undefined as (() => Partial<PluginServices>) | undefined }))
 
 vi.mock('../plugins/pluginSupport', async (original) => {
   const module = await original<typeof PluginSupportModule>()

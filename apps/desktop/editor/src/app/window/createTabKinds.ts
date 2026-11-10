@@ -5,18 +5,22 @@ import { shallowRef } from 'vue'
 import { getCurrentDate } from '@numen/ui'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import type { FileIcons } from '@/features/command-palette'
+import { createInvocation, runInvocation, type FileIcons } from '@/features/command-palette'
 import { relations } from '@/entities/note'
 import { agentPort } from '@/entities/plugin'
 import type { WindowKindsDeps } from '../plugins/tabKindsDeps'
 import {
   createAgentHost,
+  createFileMakers,
+  createVaultFiles,
   createVaultNotes,
   createWorkspaceHost,
   type PluginServices,
-} from '../plugins/pluginServices'
-import { createFileMakers, createVaultFiles } from '../plugins/fileServices'
+} from '@/features/plugin-commands'
 import { createBufferHost } from '../plugins/bufferHost'
+
+/** The services the commands part of the window and the frame make, which the tab kinds do not. */
+type WindowOwnedServices = 'commands' | 'vaults' | 'window' | 'taskList' | 'backgroundTasks'
 
 export type { WindowKindsDeps } from '../plugins/tabKindsDeps'
 
@@ -84,7 +88,7 @@ export function createTabKinds(deps: WindowKindsDeps) {
 
   windowTabs.groups.registerKinds(settings.kinds)
 
-  const services: PluginServices = {
+  const services: Omit<PluginServices, WindowOwnedServices> = {
     workspace: createWorkspaceHost({
       ...deps,
       dragged,
@@ -100,7 +104,12 @@ export function createTabKinds(deps: WindowKindsDeps) {
       pluginNotes: deps.pluginNotes,
     }),
     relations,
-    files: createVaultFiles({ ...deps, making: editing.making }),
+    files: createVaultFiles({
+      making: editing.making,
+      getTarget: deps.getTarget,
+      runCommand: (id, target, name) =>
+        runInvocation(createInvocation(id, target, name), deps.commandDeps()).then(() => undefined),
+    }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),
     noteBuffer: editing.notes,

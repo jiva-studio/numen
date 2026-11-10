@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
@@ -15,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
@@ -103,9 +103,6 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
-	if closeEmbedder == nil {
-		closeEmbedder = func() error { return nil }
-	}
 	embedding := indexing.NewEmbedding(embedder, w.db.Chunks.Progress)
 	state := editor.NewState(tasks)
 	state.Events.Emit = func(event string) { emitPluginEvent(plugins(w.cfg), event) }
@@ -115,28 +112,18 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	var refreshing atomic.Pointer[vault.Refresh]
-	getRefresh := func() vault.Refresh {
-		if running := refreshing.Load(); running != nil {
-			return *running
-		}
-		return GetRefresh(w.cfg, w.db)
-	}
-	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
+	current := &vault.CurrentRefresh{Fallback: func() vault.Refresh { return GetRefresh(w.cfg, w.db) }}
+	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(current.Get).Execute).FollowMoves(windowView(state))
 	w.notes = &notes
 	moves := vaultVaults(vaultOf(w.cfg), w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
 
-	passes := startVault(w.cfg, w.db, &refreshing)
-	if w.wrap != nil {
-		passes = w.wrap(passes)
-	}
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
 		Window: windowsession.WindowPorts{
 			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
-			Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: passes,
+			Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: wrapPasses(w, startVault(w.cfg, w.db, current)),
 			Texts: getTextVersions(w.cfg),
 		},
 		Index: windowsession.IndexPorts{
@@ -159,13 +146,24 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	w.inst = inst
 	inst.UseScenarios(w.notes, w.vaults)
 
-	if err := mountServices(w); err != nil {
-		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
-	}
-	if err := inst.Start(ctx, first, w.server); err != nil {
+	if err := startWindow(ctx, w, first); err != nil {
 		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
 	}
 	return inst, nil
+}
+
+func startWindow(ctx context.Context, w *windowWiring, first domain.Vault) error {
+	if err := mountServices(w); err != nil {
+		return err
+	}
+	return w.inst.Start(ctx, first, w.server)
+}
+
+func wrapPasses(w *windowWiring, passes windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
+	if w.wrap == nil {
+		return passes
+	}
+	return w.wrap(passes)
 }
 
 func mountServices(w *windowWiring) error {

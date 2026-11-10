@@ -4,7 +4,7 @@ import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-
 import { createMockManifest } from '@numen/core-client/testing'
 import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { TARGET } from '@/shared/lib/window'
-import { createShellHost, createShellServices } from './host'
+import { createShellHost, createShellPort } from './host'
 import { createWindowCommands } from './windowCommands'
 
 const NOTHING = { dispose: () => undefined }
@@ -133,12 +133,12 @@ describe('createShellHost', () => {
   })
 
   it('gives a plugin the vaults and the window the window offers after the host was made', () => {
-    const services = createShellServices()
-    const { host } = createShellHost(undefined, services.get)
+    const port = createShellPort()
+    const { host } = createShellHost(undefined, port.getServices)
     const vaults = createMockVaultsHost()
     const window = createMockWindowHost()
 
-    services.provide({ vaults, window })
+    port.open({ commands: createWindowCommands(), vaults, window })
 
     const ledger = host.createContext('org.example.ledger', withVault('org.example.ledger'))
     expect(ledger.vault.vaults?.getState()).toStrictEqual(vaults.getState())

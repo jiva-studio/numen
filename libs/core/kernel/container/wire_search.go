@@ -3,9 +3,7 @@ package container
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math"
-	"slices"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
@@ -21,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -63,9 +62,6 @@ func NewSearch(c Config, db *vault.Index, asking embeddingport.Embedder, errorHa
 // coreFolder is the folder of a vault's store that holds the core's own files.
 const coreFolder = "core"
 
-// errNoteUnreadable is the error of a note read again whose file could not be read.
-var errNoteUnreadable = errors.New("the note could not be read")
-
 // searchWiring wires search, search policy, vectors and chunking of an installation.
 type searchWiring struct {
 	ServiceDir         string
@@ -82,9 +78,7 @@ type searchWiring struct {
 
 func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
-	if c.PluginHost != nil {
-		cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
-	}
+	cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
 	return cutter
 }
 
@@ -117,12 +111,18 @@ func readWholeVault(c searchWiring,
 	if err := fitIndex(c, db).Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
+	return buildReadWholeVault(c, db, embedder, v, refresh)
+}
+
+func buildReadWholeVault(c searchWiring,
+	db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+) (indexing.ReadWholeVault, error) {
 	texts, err := indexTexts(c, db, v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
 	refresh.Force = true
-	texts.ReadNote = newNoteReader(refresh.Execute)
+	texts.ReadNote = file.NewReadNoteAgain(getUnreadable(refresh)).Execute
 	embed, err := searchEmbed(c, db, embedder, v)
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
@@ -130,18 +130,10 @@ func readWholeVault(c searchWiring,
 	return indexing.NewReadWholeVault(searchScan(c, db), texts, embed), nil
 }
 
-func newNoteReader(
-	refresh func(ctx context.Context, v domain.Vault, paths []string) (vault.RefreshResult, error),
-) func(ctx context.Context, v domain.Vault, path string) error {
-	return func(ctx context.Context, v domain.Vault, path string) error {
-		res, err := refresh(ctx, v, []string{path})
-		if err != nil {
-			return err
-		}
-		if slices.Contains(res.Unreadable, path) {
-			return fmt.Errorf("%s: %w", path, errNoteUnreadable)
-		}
-		return nil
+func getUnreadable(refresh vault.Refresh) func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+	return func(ctx context.Context, v domain.Vault, paths []string) ([]string, error) {
+		result, err := refresh.Execute(ctx, v, paths)
+		return result.Unreadable, err
 	}
 }
 
@@ -199,9 +191,6 @@ func newFloorPolicy(_ searchWiring, db *vault.Index, embedder embeddingport.Embe
 }
 
 func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Embedder, errorHandler func(error)) {
-	if c.PluginHost == nil {
-		return
-	}
 	c.PluginHost.Endpoint.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
@@ -231,9 +220,6 @@ func getFloorHint(embedder embeddingport.Embedder) searchusecase.FloorHint {
 }
 
 func embedderReady(c searchWiring) bool {
-	if c.ResolvePlugin == nil {
-		return false
-	}
 	_, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
 	return err == nil
 }
@@ -263,9 +249,6 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 }
 
 func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
-	if c.ResolvePlugin == nil {
-		return nil, func() error { return nil }, nil
-	}
 	host, err := c.ResolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, domain.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
@@ -273,6 +256,10 @@ func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(er
 	if err != nil {
 		return nil, nil, err
 	}
+	return openEmbedder(c, ctx, host, onReadError)
+}
+
+func openEmbedder(c searchWiring, ctx context.Context, host *PluginHost, onReadError func(error)) (embeddingport.Embedder, func() error, error) {
 	opened, err := embedderbridge.Open(ctx, host.Runtime)
 	if err != nil {
 		return nil, nil, err

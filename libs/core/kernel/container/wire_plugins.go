@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -27,17 +28,6 @@ import (
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// SetSafeMode is the configuration started in safe mode or out of it, and its plugin host with it.
-func (c Config) SetSafeMode(enabled bool) Config {
-	c.SafeMode = setSafeMode(plugins(c), enabled).SafeMode
-	return c
-}
-
-// SetPluginVaultPath is the vault the plugins' paths are inside.
-func SetPluginVaultPath(c Config, path string) {
-	setPluginVaultPath(plugins(c), path)
-}
 
 // StopPlugins stops every plugin the host runs.
 func (c Config) StopPlugins(ctx context.Context) error {
@@ -74,12 +64,7 @@ func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.Plu
 		return c, nil, err
 	}
 	c.TextVersions = versions
-	registry, err := c.Registry()
-	if err != nil {
-		return c, nil, err
-	}
-	current := func() (domain.Vault, bool) { return v, true }
-	if err := installPluginVault(plugins(c), registry, db, current, PluginVaultHooks{}); err != nil {
+	if err := installCurrentVault(c, db, v); err != nil {
 		return c, nil, err
 	}
 	work := pluginsOpenPluginWork(plugins(c), run.NewTasks(), &run.Lock{})
@@ -87,8 +72,17 @@ func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.Plu
 	return c, work, nil
 }
 
+func installCurrentVault(c Config, db *vault.Index, v domain.Vault) error {
+	registry, err := c.Registry()
+	if err != nil {
+		return err
+	}
+	current := func() (domain.Vault, bool) { return v, true }
+	return installPluginVault(plugins(c), registry, db, current, PluginVaultHooks{})
+}
+
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func GetPluginServices(c Config) PluginServices {
+func GetPluginServices(c Config) editor.PluginServices {
 	return getPluginServices(plugins(c))
 }
 
@@ -131,6 +125,16 @@ type PluginWatch struct {
 	contenttypeport.ContentTypeTable
 }
 
+// PluginViews are the parts of the host that the settings take as they are, and that stay unset where the host runs
+// nothing: the settings then accept every secret, every plugin value and list no plugin. Follow returns the
+// subscription to the setting changes that the host follows, or none.
+type PluginViews struct {
+	Secrets settingsadapter.SecretDeclarations
+	Infos   settingsport.PluginInfos
+	Checks  settingsport.PluginSettings
+	Follow  func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber
+}
+
 // PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
 // role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
 // made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
@@ -142,6 +146,7 @@ type PluginHost struct {
 	Watch               PluginWatch
 	Endpoint            *hostendpoint.Services
 	ApplySetting        settingsport.PluginSettingApplier
+	Views               PluginViews
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 }
@@ -183,8 +188,12 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 		}).Execute,
+		Views: PluginViews{
+			Secrets: host.Config, Infos: host.Registry, Checks: host.Settings,
+			Follow: func(subscribe settingsport.ChangeSubscriber) settingsport.ChangeSubscriber { return subscribe },
+		},
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
-		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
+		RefreshDependencies: func() { host.Services.SetDependencies(newDependencyRegistry("")) },
 	}
 }
 
@@ -211,7 +220,7 @@ func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := host.Storage.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
-		host.Services.SetDependencies(GetDependencyRegistry(models))
+		host.Services.SetDependencies(newDependencyRegistry(models))
 	}
 }
 
@@ -219,10 +228,7 @@ func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
 const programsLimit = 8 * time.Second
 
 func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
-	if c.PluginHost == nil || c.SafeMode {
-		return nil
-	}
-	return agentbridge.NewRouter(c.PluginHost.Runtime)
+	return agentbridge.NewRouter(c.RunningHost.Runtime)
 }
 
 // programsWait is how long a read of the settings waits for the providers to list their programs.
@@ -231,9 +237,6 @@ func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
 const programsWait = time.Second
 
 func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
-	if provider == nil {
-		return nil
-	}
 	list := func() []agentdomain.Program {
 		ctx, stop := context.WithTimeout(context.Background(), programsLimit)
 		defer stop()
@@ -243,13 +246,8 @@ func getAgentPrograms(c pluginsWiring, provider agentport.AgentProvider, target 
 		}
 		return programs
 	}
-	if c.Programs == nil {
-		return list()
-	}
 	return c.Programs.Get(programsWait, list, c.RefreshSettingEvents)
 }
-
-var errNoCompletionProvider = errors.New("no plugin host runs agent programs")
 
 func completionAgentSettings(c pluginsWiring) completion.AgentSettings {
 	target := c.GetSettingsOrDefaults().Agent

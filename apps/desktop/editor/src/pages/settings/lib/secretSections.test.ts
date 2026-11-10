@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import { createPluginInfo, createSecretAnswer } from '@/pages/settings/testing/installation'
 import { WORDS } from '../words'
 import {
   createPageSections,

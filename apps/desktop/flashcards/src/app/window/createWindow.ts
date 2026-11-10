@@ -20,16 +20,13 @@ import { useExternalLinks } from '@/features/external-links'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { createShellHost, createShellServices, type ShellServices } from '../plugins/host'
+import { createShellHost, createShellPort, type ShellServices } from '../plugins/host'
 import { createWindowCommands } from '../plugins/windowCommands'
 import { createWindowKeys } from '../plugins/windowKeys'
 import { createWindowVaults } from '../plugins/windowVaults'
 
 /** What the window is given: how a plugin module is fetched and imported. */
-export interface WindowDeps {
-  readonly fetch?: PluginLoaderDeps['fetch']
-  readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
-}
+export type WindowDeps = Pick<PluginLoaderDeps, 'fetch' | 'dynamicImport'>
 
 function createServices(
   window: Pick<ReturnType<typeof createShellHost>, 'tab' | 'openTab' | 'notices'> & {
@@ -53,11 +50,11 @@ function createServices(
 
 export function createWindow(deps: WindowDeps = {}) {
   const windowAgent = createWindowAgent()
-  const services = createShellServices()
+  const port = createShellPort()
   const frame = useWindowFrame()
   const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
     windowAgent.agent,
-    services.get,
+    port.getServices,
     () => frame.platform.value,
   )
   const loader = createPluginLoader({
@@ -68,7 +65,7 @@ export function createWindow(deps: WindowDeps = {}) {
   const isLoading = ref(true)
   const listError = ref('')
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
-  services.provide(createServices({ vaults, tab, openTab, notices, frame }))
+  port.open(createServices({ vaults, tab, openTab, notices, frame }))
   const onKeyDown = createWindowKeys({
     getTab: () => tab.value,
     getVaults: () => (front.value ? vaults.value : []),

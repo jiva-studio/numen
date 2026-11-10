@@ -67,6 +67,12 @@ func NewState(tasks *run.Tasks) *State {
 // GetCurrentVault is the vault the window shows.
 func (s *State) GetCurrentVault() domain.Vault { return s.Runtime.GetCurrentVault() }
 
+// GetShownVault is the vault the window shows, and false while it shows none.
+func (s *State) GetShownVault() (domain.Vault, bool) {
+	current := s.GetCurrentVault()
+	return current, current.Path != ""
+}
+
 // SetIndexing sets how far the vault has been read for meaning, and the model it is read under.
 // It is set before any chunk is read: the model name and recipe determine whether
 // a chunk already carries a vector, and tell the window that chunks will be
