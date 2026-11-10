@@ -42,6 +42,6 @@ func (u *FileText) ReadLiveText(ctx context.Context, v domain.Vault, path string
 }
 
 // CreateEdit records a user's edit as a new version created from its source.
-func (u *FileText) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit) (domain.TextVersion, error) {
+func (u *FileText) CreateEdit(ctx context.Context, v domain.Vault, edit textdomain.Edit) (domain.TextVersion, error) {
 	return u.versions.CreateEdit(ctx, v, edit)
 }

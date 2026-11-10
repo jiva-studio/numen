@@ -153,7 +153,4 @@ func TestAnInstallationThatNamesNoTargetHasNoCatalog(t *testing.T) {
 	if cfg.GetPluginCatalog() != nil {
 		t.Error("a catalog was made with no target")
 	}
-	if cfg.getEditorCatalog() != nil {
-		t.Error("the editor was handed a catalog with no target")
-	}
 }

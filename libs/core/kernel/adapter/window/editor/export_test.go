@@ -3,21 +3,21 @@ package editor
 import (
 	"net/http"
 
+	"connectrpc.com/connect"
+
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
+	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -29,22 +29,16 @@ import (
 type Services struct {
 	state *State
 
-	File     *filewindow.Handler
-	Note     *notewindow.Handler
-	Search   *search.Handler
-	Settings *settings.Handler
-	Agent    *wire.AgentHandler
-	Command  *command.Handler
-	Media    *mediawindow.Handler
-	Text     *texts.Handler
+	File    *filewindow.Handler
+	Note    *notewindow.Handler
+	Command *command.Handler
+	Media   *mediawindow.Handler
 
 	Themes numenv1connect.ThemeServiceHandler
 
 	PluginServices PluginServices
 
 	Plugin numenv1connect.PluginServiceHandler
-
-	Catalog numenv1connect.CatalogServiceHandler
 
 	Extra []Route
 
@@ -71,7 +65,7 @@ type NoteUseCases struct {
 	OpeningNote    *query.GetOpeningNote
 	Types          *query.GetTypes
 	Headings       *query.GetHeadings
-	Neighborhood  *query.ShowNeighbourhood
+	Neighborhood   *query.ShowNeighbourhood
 	ResolveLinks   *query.ResolveLinks
 }
 
@@ -95,14 +89,16 @@ func createServices(state *State) *Services {
 			filewindow.NewFolders(state, state, state, nil, nil, nil, nil),
 			filewindow.NewChanges(state, state, state, state, nil, nil, nil),
 		),
-		Search:   search.NewHandler(state),
-		Settings: settings.NewHandler(),
-		Agent:    newAgentHandler(state),
-		Command:  command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
-		Media:    mediawindow.NewHandler(state, state, nil, nil),
-		Text:     texts.NewHandler(state, nil),
-		Plugin:   numenv1connect.UnimplementedPluginServiceHandler{},
-		server:   NewFileServer(state, nil, nil, nil, nil),
+		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
+		Media:   mediawindow.NewHandler(state, state, nil, nil),
+		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
+		server:  NewFileServer(state, nil, nil, nil, nil),
+	}
+	services.Extra = []Route{
+		RouteOf(state, search.NewHandler(state), search.NewRoute),
+		RouteOf(state, &settings.Handler{}, settings.NewRoute),
+		RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
+		RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
 	}
 	services.UseNotes()
 	return services
@@ -120,28 +116,45 @@ func (s *Services) pages() pageSet {
 	routes = append(routes, NewRoute(path, served, s.File))
 	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
 	routes = append(routes, NewRoute(path, served, s.Note))
-	path, served = numenv1connect.NewSearchServiceHandler(s.Search, counted)
-	routes = append(routes, NewRoute(path, served, s.Search))
-	path, served = numenv1connect.NewSettingsServiceHandler(s.Settings, counted)
-	routes = append(routes, NewRoute(path, served, s.Settings))
 	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
 	routes = append(routes, NewRoute(path, served, s.state.Window))
 	path, served = numenv1connect.NewMediaServiceHandler(s.Media, counted)
 	routes = append(routes, NewRoute(path, served, s.Media))
-	path, served = numenv1connect.NewAgentServiceHandler(s.Agent, counted)
-	routes = append(routes, NewRoute(path, served, s.Agent))
 	path, served = numenv1connect.NewCommandServiceHandler(s.Command, counted)
 	routes = append(routes, NewRoute(path, served, s.Command))
-	path, served = numenv1connect.NewTextServiceHandler(s.Text, counted)
-	routes = append(routes, NewRoute(path, served, s.Text))
 	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
-	if s.Catalog != nil {
-		path, served = numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)
-		routes = append(routes, NewRoute(path, served, s.Catalog))
-	}
 	routes = append(routes, s.Extra...)
 	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
+}
+
+// RouteOf is the route of a handler built by its own package: the path it serves and the handler
+// that serves it come from build, counted the way the container counts them.
+func RouteOf[H any](state *State, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
+	path, served := build(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// Mount puts the route in the place of the one served at its path, or beside them.
+func (s *Services) Mount(route Route) {
+	for i, one := range s.Extra {
+		if one.path == route.path {
+			s.Extra[i] = route
+			return
+		}
+	}
+	s.Extra = append(s.Extra, route)
+}
+
+// HandlerOf is the handler of the type the installation mounted.
+func HandlerOf[T any](o *Installation) T {
+	for _, one := range o.pages.routes {
+		if handler, ok := one.service.(T); ok {
+			return handler
+		}
+	}
+	var none T
+	return none
 }
 
 func (s *Services) openPlaying(playing *Loopback) { s.state.Playing.Store(playing) }
@@ -164,10 +177,6 @@ func ServicesOf(o *Installation) *Services {
 			services.File = handler
 		case *notewindow.Handler:
 			services.Note = handler
-		case *search.Handler:
-			services.Search = handler
-		case *settings.Handler:
-			services.Settings = handler
 		case *mediawindow.Handler:
 			services.Media = handler
 		}
@@ -187,6 +196,3 @@ func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Mov
 
 func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Move = *move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Write = *write }
-
-// NewWireModels is the models as the wire carries them.
-func NewWireModels(target []settingsdomain.Model) []*v1.Model { return settings.NewWireModels(target) }

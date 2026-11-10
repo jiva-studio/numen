@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
-	handler := &Handler{Get: setting.NewGet(
+	handler := &Handler{Values: Values{Get: setting.NewGet(
 		func() (string, string, error) { return `{"v":1}`, "/home/numen.json", nil },
 		nil, nil,
 		func() []plugin.Setting {
@@ -20,7 +20,7 @@ func TestGetSettingsAnswersTheDeclarationOfTheShell(t *testing.T) {
 				{Key: "appearance.interfaceScale", Type: "range", DefaultJSON: "1", ValueJSON: "1"},
 			}
 		},
-	)}
+	)}}
 
 	response, err := handler.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {

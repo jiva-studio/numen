@@ -1,4 +1,6 @@
-package wire
+// Package agent answers a window's AgentService: the tasks the user gives the agent and the end of
+// their conversations.
+package agent
 
 import (
 	"context"
@@ -11,34 +13,29 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 )
 
 // ErrNoAgent means the installation has no agent. Reachability of an agent is reported by GetAgentState.
 var ErrNoAgent = errors.New("no agent is set up for this vault")
 
-// AgentHandler answers AgentService for a window: the agent its tasks go to, the folder a task
-// naming none is started in, and why no agent can be reached.
-type AgentHandler struct {
+// Handler answers AgentService for a window: the agent its tasks go to, the folder a task naming
+// none is started in, and why no agent can be reached. A handler with no use case set has no agent.
+type Handler struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 
-	GetAgent       func() agentport.Agent
+	Start *agentuse.StartTask
+	End   *agentuse.EndConversation
+
 	GetRoot        func() string
 	GetVault       func() domain.VaultID
 	GetUnreachable func() string
 }
 
-func (h *AgentHandler) getAgent() agentport.Agent {
-	if h.GetAgent == nil {
-		return nil
-	}
-	return h.GetAgent()
-}
-
 // GetAgentState reports whether an agent can be reached at all. The installation
 // chooses which agent responds, so every window queries it here.
-func (h *AgentHandler) GetAgentState(
+func (h *Handler) GetAgentState(
 	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],
 ) (*connect.Response[v1.GetAgentStateResponse], error) {
 	var why string
@@ -48,14 +45,16 @@ func (h *AgentHandler) GetAgentState(
 	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: why}), nil
 }
 
-// AskAgent runs the task on the agent.
-func (h *AgentHandler) AskAgent(
+// AskAgent runs the task on the agent and writes its steps to the stream while the client is connected.
+// The work stops on return, so none outlives the panel that requested it. A model that thinks for a
+// minute writes nothing and a silent stream never detects a disconnect, so an empty step is sent each
+// second; a failed write ends the work.
+func (h *Handler) AskAgent(
 	ctx context.Context,
 	r *connect.Request[v1.AskAgentRequest],
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	taking := h.getAgent()
-	if taking == nil {
+	if h.Start == nil {
 		return connect.NewError(connect.CodeFailedPrecondition, ErrNoAgent)
 	}
 
@@ -68,7 +67,7 @@ func (h *AgentHandler) AskAgent(
 		vault = h.GetVault()
 	}
 
-	task := agent.Task{
+	task := agentdomain.Task{
 		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),
@@ -79,16 +78,16 @@ func (h *AgentHandler) AskAgent(
 		Root:         root,
 		Vault:        vault,
 	}
-	return StreamAgentTask(ctx, taking, task, stream)
+	return streamTask(ctx, h.Start, task, stream)
 }
 
 // FinishConversation ends the conversation on the agent.
-func (h *AgentHandler) FinishConversation(
+func (h *Handler) FinishConversation(
 	ctx context.Context,
 	r *connect.Request[v1.FinishConversationRequest],
 ) (*connect.Response[v1.FinishConversationResponse], error) {
-	if taking := h.getAgent(); taking != nil && r.Msg.GetConversation() != "" {
-		if err := taking.EndConversation(ctx, r.Msg.GetConversation()); err != nil {
+	if h.End != nil {
+		if err := h.End.Execute(ctx, r.Msg.GetConversation()); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 	}

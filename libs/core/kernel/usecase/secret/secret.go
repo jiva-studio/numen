@@ -168,13 +168,3 @@ func NewSecrets(
 		Prune:       &Prune{operation: base},
 	}
 }
-
-// NoPlugins replaces the plugin host where the installation has none: no plugin declares a
-// secret, and an operation only changes the list.
-type NoPlugins struct{}
-
-// ListDeclarations returns no declaration.
-func (NoPlugins) ListDeclarations() []plugin.DeclarationKey { return nil }
-
-// Refresh configures no plugin.
-func (NoPlugins) Refresh(context.Context, ...string) error { return nil }

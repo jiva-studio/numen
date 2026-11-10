@@ -19,26 +19,39 @@ import (
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-// Handler answers every setting read and written, and the secrets shared between plugins.
+// Handler answers every setting read and written, and the secrets shared between plugins. Each
+// part holds the use cases of one kind of call, so no value holds more than five.
 type Handler struct {
+	Values
+	PluginFolders
+	SecretItems
+	SecretGroups
+}
+
+// Values answers the reads and writes of the settings and the choice of a path. A value with no
+// use case set answers that the build serves no settings.
+type Values struct {
 	Get         *setting.Get
 	Write       *setting.Write
 	Watch       *setting.Watch
-	Secrets     *secret.Secrets
-	PluginRetry *setting.RetryPlugin
-	PluginData  PluginData
-	Vaults      VaultProvider
 	ChoosePath  *setting.ChoosePluginPath
+	ListSecrets *secret.List
 }
 
-func NewHandler() *Handler { return &Handler{} }
+// PluginFolders answers the calls about the folders plugins keep in the shown vault and the start of
+// a plugin that failed to start.
+type PluginFolders struct {
+	Retry  *setting.RetryPlugin
+	Data   PluginData
+	Vaults VaultProvider
+}
 
 // errNoSettings is what a build that serves no settings answers.
 var errNoSettings = errors.New("this build serves no settings")
 
 // GetSettings returns every setting of the file this installation is configured in,
 // and the models that settings naming a model can be set to.
-func (h *Handler) GetSettings(
+func (h *Values) GetSettings(
 	ctx context.Context, _ *connect.Request[v1.GetSettingsRequest],
 ) (*connect.Response[v1.GetSettingsResponse], error) {
 	if h.Get == nil {
@@ -55,8 +68,8 @@ func (h *Handler) GetSettings(
 		Plugins: NewWirePluginInfos(got.Plugins),
 		App:     newWirePluginSettings(got.App),
 	}
-	if h.Secrets != nil {
-		listing, err := h.Secrets.List.Execute()
+	if h.ListSecrets != nil {
+		listing, err := h.ListSecrets.Execute()
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -70,7 +83,7 @@ func (h *Handler) GetSettings(
 // WriteSettings writes settings into that file. A value the settings could not
 // be read out of again is the client's to correct, and the file is left as it
 // was.
-func (h *Handler) WriteSettings(
+func (h *Values) WriteSettings(
 	_ context.Context, r *connect.Request[v1.WriteSettingsRequest],
 ) (*connect.Response[v1.WriteSettingsResponse], error) {
 	if h.Write == nil {
@@ -188,13 +201,13 @@ func newWirePluginFailure(failure *plugin.Failure) *v1.PluginFailure {
 
 // RetryPlugin starts a plugin whose last start failed once more. A plugin that fails
 // again is answered with its reason, and one the host does not know is not found.
-func (h *Handler) RetryPlugin(
+func (h *PluginFolders) RetryPlugin(
 	ctx context.Context, r *connect.Request[v1.RetryPluginRequest],
 ) (*connect.Response[v1.RetryPluginResponse], error) {
-	if h.PluginRetry == nil {
+	if h.Retry == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	failure, err := h.PluginRetry.Execute(ctx, r.Msg.GetPluginId())
+	failure, err := h.Retry.Execute(ctx, r.Msg.GetPluginId())
 	if err != nil {
 		var unavailable *plugin.UnavailableError
 		if errors.As(err, &unavailable) && unavailable.Reason == plugin.NotInstalled {
@@ -272,7 +285,7 @@ func newWireSecrets(target []manifest.SecretDeclaration) []*v1.SecretDeclaration
 
 // ChoosePluginPath shows the machine's native picker for a plugin's path setting
 // and writes the chosen path. A path the setting does not accept returns the reason.
-func (h *Handler) ChoosePluginPath(
+func (h *Values) ChoosePluginPath(
 	ctx context.Context, r *connect.Request[v1.ChoosePluginPathRequest],
 ) (*connect.Response[v1.ChoosePluginPathResponse], error) {
 	if h.ChoosePath == nil {
@@ -308,7 +321,7 @@ func newWireReaders(readers []plugin.ReaderInfo) []*v1.PluginReader {
 }
 
 // WatchSettings streams setting changes until the client disconnects.
-func (h *Handler) WatchSettings(
+func (h *Values) WatchSettings(
 	ctx context.Context, _ *connect.Request[v1.WatchSettingsRequest], out *connect.ServerStream[v1.WatchSettingsResponse],
 ) error {
 	if h.Watch == nil {

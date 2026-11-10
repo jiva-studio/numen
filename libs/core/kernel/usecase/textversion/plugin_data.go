@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -26,23 +27,17 @@ func NewPluginData(versions *Versions, stores pluginport.PluginStores) (*PluginD
 	return &PluginData{versions: versions, stores: stores}, nil
 }
 
-// PluginDataSize is how many files a plugin's folder holds, and their bytes.
-type PluginDataSize struct {
-	FileCount int
-	ByteCount int64
-}
-
 // GetPluginData is the size of the plugin's folder in the vault.
-func (u *PluginData) GetPluginData(ctx context.Context, v domain.Vault, pluginID string) (PluginDataSize, error) {
+func (u *PluginData) GetPluginData(ctx context.Context, v domain.Vault, pluginID string) (plugin.DataSize, error) {
 	store, err := u.stores.Open(v, pluginID)
 	if err != nil {
-		return PluginDataSize{}, err
+		return plugin.DataSize{}, err
 	}
 	files, err := store.List(ctx)
 	if err != nil {
-		return PluginDataSize{}, fmt.Errorf("list the folder of %s: %w", pluginID, err)
+		return plugin.DataSize{}, fmt.Errorf("list the folder of %s: %w", pluginID, err)
 	}
-	size := PluginDataSize{FileCount: len(files)}
+	size := plugin.DataSize{FileCount: len(files)}
 	for _, one := range files {
 		size.ByteCount += one.Size
 	}
