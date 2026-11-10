@@ -27,7 +27,7 @@ func getNotes() map[string]string {
 
 func makeWindow(
 	t *testing.T,
-) (container.Config, *vault.Index, *vault.OpenVaults[container.Config, *vault.Index], *shell.API, []domain.Vault) {
+) (container.Config, *vault.Index, *vault.OpenVaults[*vault.Index], *shell.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -49,8 +49,8 @@ func makeWindow(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &vault.OpenVaults[container.Config, *vault.Index]{
-		Config: cfg, Index: db,
+	vaults := &vault.OpenVaults[*vault.Index]{
+		Opener: func(i *vault.Index) *vault.VaultOpener { return cfg.VaultOpener(i) }, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
