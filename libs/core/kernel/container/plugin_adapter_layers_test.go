@@ -142,10 +142,9 @@ func TestPluginIsolationRuleDeniesEverySiblingAdapter(t *testing.T) {
 func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 	rules := getDepguardRules(t)
 	var bridges, hosts []string
+	hosts = getDirNames(t, "../adapter/plugin")
 	for _, name := range getDirNames(t, "../internal/adapter/plugin") {
 		switch {
-		case strings.HasPrefix(name, "host"):
-			hosts = append(hosts, name)
 		case strings.HasSuffix(name, "bridge") && name != "bridge":
 			bridges = append(bridges, name)
 		}
@@ -155,7 +154,11 @@ func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 	}
 	denied := func(rule depguardRule, rest []string, ruleName string) {
 		for _, name := range rest {
-			if !hasDenied(rule, pluginRootImportPath+"/"+name) {
+			importPath := pluginRootImportPath + "/" + name
+			if slices.Contains(hosts, name) {
+				importPath = coreImportPath + "/adapter/plugin/" + name
+			}
+			if !hasDenied(rule, importPath) {
 				t.Errorf("rule %s does not deny %s", ruleName, name)
 			}
 		}
@@ -178,7 +181,7 @@ func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 		t.Fatal("the plugin-host-side rule is missing from .golangci.yml")
 	}
 	for _, name := range hosts {
-		if !slices.Contains(hostRule.Files, "**/internal/adapter/plugin/"+name+"/**") {
+		if !slices.Contains(hostRule.Files, "**/adapter/plugin/"+name+"/**") {
 			t.Errorf("rule plugin-host-side does not list the files of %s", name)
 		}
 	}

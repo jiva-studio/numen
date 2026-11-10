@@ -73,7 +73,7 @@ func getFieldCalls(file *ast.File, fields []string) []string {
 }
 
 func isDrivingAdapterFile(rel string) bool {
-	return isAmong([]string{"adapter/cli", "adapter/window"}, filepath.ToSlash(filepath.Dir(rel)))
+	return isAmong([]string{"adapter/cli", "adapter/window", "adapter/plugin"}, filepath.ToSlash(filepath.Dir(rel)))
 }
 
 // A driving adapter calls a use case. The composition root supplies any port
@@ -216,11 +216,11 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 }
 
 func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
-	got := getUncovered([]string{"**/adapter/window/**", "!**/adapter/cli/deps.go"})
+	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
-	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/cli/**"}); len(got) != 0 {
+	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/adapter/cli/**"}); len(got) != 0 {
 		t.Errorf("the rule refuses %v, want none", got)
 	}
 }
