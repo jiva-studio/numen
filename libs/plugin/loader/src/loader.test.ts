@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
+import type { PluginContext, PluginSettings, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
@@ -54,30 +54,40 @@ describe('createPluginLoader', () => {
     return {
       registerManifest: vi.fn(),
       createContext: vi.fn((pluginId: string, _manifest?: unknown) => {
+        const noop = () => ({ dispose: vi.fn() })
         const ctx: PluginContext = {
-          pluginId,
-          target: 'desktop.test',
-          subscriptions: [],
-          app: { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' },
-          openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
-          registerSlotView: vi.fn(() => ({ dispose: vi.fn() })),
-          registerReader: vi.fn(() => ({ dispose: vi.fn() })),
-          registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
-          registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
-          registerView: vi.fn(() => ({ dispose: vi.fn() })),
-          registerSettingsView: vi.fn(() => ({ dispose: vi.fn() })),
-          mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
-          registerAgentProvider: vi.fn(() => ({ dispose: vi.fn() })),
-          getSetting: vi.fn((key: string) =>
-            getSetting(pluginId, key),
-          ) as unknown as PluginContext['getSetting'],
-          onSettingChange: vi.fn((key: string, handler: (val: unknown) => void) =>
-            onSettingChange(pluginId, key, handler),
-          ),
-          onVaultChange: vi.fn(() => ({ dispose: vi.fn() })),
-          onFileSelect: vi.fn(() => ({ dispose: vi.fn() })),
-          emitVaultChange: vi.fn(),
-          emitFileSelect: vi.fn(),
+          plugin: {
+            id: pluginId,
+            target: 'desktop.test',
+            subscriptions: [],
+            app: { name: 'numen', version: '0.0.0-test', build: 1, platform: 'linux' },
+            openExternal: vi.fn(async () => ({ ok: true as const, value: null })),
+          },
+          register: {
+            slotView: vi.fn(noop),
+            reader: vi.fn(noop),
+            tabKind: vi.fn(noop),
+            command: vi.fn(noop),
+            view: vi.fn(noop),
+            settingsView: vi.fn(noop),
+            agentProvider: vi.fn(noop),
+          },
+          settings: {
+            get: vi.fn((key: string) => getSetting(pluginId, key)) as unknown as PluginSettings['get'],
+            onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
+              onSettingChange(pluginId, key, handler),
+            ),
+          },
+          events: {
+            onVaultChange: vi.fn(noop),
+            onFileSelect: vi.fn(noop),
+            emitVaultChange: vi.fn(),
+            emitFileSelect: vi.fn(),
+          },
+          tabs: {},
+          vault: {},
+          ui: { mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })) },
+          work: {},
         }
         contexts.set(pluginId, ctx)
         return ctx

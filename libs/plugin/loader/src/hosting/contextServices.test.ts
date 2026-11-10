@@ -87,21 +87,21 @@ const createContext = (permissions: readonly string[]) => {
 type Call = (context: PluginContext) => unknown
 
 const NOTE_WRITES: Record<string, Call> = {
-  createUntitledNote: (c) => c.notes!.createUntitledNote(),
-  write: (c) => c.notes!.write('a.md', 'Prose.'),
+  createUntitledNote: (c) => c.vault.notes!.createUntitledNote(),
+  write: (c) => c.vault.notes!.write('a.md', 'Prose.'),
 }
 
 const NOTE_READS: Record<string, Call> = {
-  getNeighbourhood: (c) => c.notes!.getNeighbourhood('Notes/Example.md'),
-  getHeadings: (c) => c.notes!.getHeadings(['Notes/Example.md']),
-  findNotes: (c) => c.notes!.findNotes('Example', 5),
-  read: (c) => c.notes!.read('Notes/Example.md'),
-  readProperties: (c) => c.notes!.readProperties('Notes/Example.md'),
+  getNeighbourhood: (c) => c.vault.notes!.getNeighbourhood('Notes/Example.md'),
+  getHeadings: (c) => c.vault.notes!.getHeadings(['Notes/Example.md']),
+  findNotes: (c) => c.vault.notes!.findNotes('Example', 5),
+  read: (c) => c.vault.notes!.read('Notes/Example.md'),
+  readProperties: (c) => c.vault.notes!.readProperties('Notes/Example.md'),
 }
 
 const RELATION_WRITES: Record<string, Call> = {
   saveConnection: (c) =>
-    c.relations!.saveConnection({
+    c.vault.relations!.saveConnection({
       first: 'a.md',
       second: 'b.md',
       role: 'child',
@@ -109,15 +109,15 @@ const RELATION_WRITES: Record<string, Call> = {
       firstSide: { label: '', marker: 'arrow', reason: '' },
       secondSide: null,
     }),
-  removeSide: (c) => c.relations!.removeSide('a.md', 'b.md'),
-  removeConnection: (c) => c.relations!.removeConnection('a.md', 'b.md'),
-  join: (c) => c.relations!.join('a.md', 'b.md', { role: 'child' }),
-  createRelated: (c) => c.relations!.createRelated({ from: 'a.md', role: 'child' }),
+  removeSide: (c) => c.vault.relations!.removeSide('a.md', 'b.md'),
+  removeConnection: (c) => c.vault.relations!.removeConnection('a.md', 'b.md'),
+  join: (c) => c.vault.relations!.join('a.md', 'b.md', { role: 'child' }),
+  createRelated: (c) => c.vault.relations!.createRelated({ from: 'a.md', role: 'child' }),
 }
 
 const RELATION_READS: Record<string, Call> = {
-  getConnection: (c) => c.relations!.getConnection('a.md', 'b.md'),
-  listBacklinks: (c) => c.relations!.listBacklinks('a.md'),
+  getConnection: (c) => c.vault.relations!.getConnection('a.md', 'b.md'),
+  listBacklinks: (c) => c.vault.relations!.listBacklinks('a.md'),
 }
 
 describe('the relationships a plugin writes', () => {
@@ -169,9 +169,9 @@ describe('the relationships a plugin writes', () => {
 })
 
 const FILE_WRITES: Record<string, Call> = {
-  move: (c) => c.files!.move('a.md', 'b.md'),
-  createFolder: (c) => c.files!.createFolder('dir'),
-  createNote: (c) => c.files!.createNote('dir'),
+  move: (c) => c.vault.files!.move('a.md', 'b.md'),
+  createFolder: (c) => c.vault.files!.createFolder('dir'),
+  createNote: (c) => c.vault.files!.createNote('dir'),
 }
 
 describe('a note a plugin reads and writes', () => {
@@ -242,8 +242,8 @@ describe('a note a plugin reads and writes', () => {
 })
 
 const BUFFER_WRITES: Record<string, Call> = {
-  track: (c) => c.buffers!.track({} as never),
-  addFlushHandler: (c) => c.buffers!.addFlushHandler(vi.fn(() => Promise.resolve())),
+  track: (c) => c.vault.buffers!.track({} as never),
+  addFlushHandler: (c) => c.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve())),
 }
 
 describe('the open files a plugin passes the window', () => {
@@ -369,8 +369,8 @@ describe('a command a plugin runs over the vault', () => {
   it('opens a file and shows an error without vault:write', () => {
     const { context, workspace } = createContext([])
 
-    context.ui.workspace!.openFile('a.md')
-    context.ui.workspace!.showError('no')
+    context.ui.workspace!.files.open('a.md')
+    context.ui.workspace!.messages.showError('no')
 
     expect(workspace.files.open).toHaveBeenCalledWith('a.md')
     expect(workspace.messages.showError).toHaveBeenCalledWith('no')

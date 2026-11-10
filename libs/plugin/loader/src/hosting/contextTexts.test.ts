@@ -40,7 +40,7 @@ describe('the texts of a plugin', () => {
 
   it('refuse a read without vault:read and an edit without vault:write', () => {
     const { context: noRead, texts: noReadTexts } = createContext([])
-    expect(() => noRead.texts!.readLiveText('talk.mp3')).toThrowError(
+    expect(() => noRead.vault.texts!.readLiveText('talk.mp3')).toThrowError(
       'Plugin "md.numen.player" lacks required permission "vault:read" for texts.readLiveText',
     )
     expect(noReadTexts.readLiveText).not.toHaveBeenCalled()

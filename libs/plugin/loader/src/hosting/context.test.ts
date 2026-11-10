@@ -156,15 +156,15 @@ describe('PluginContext', () => {
     const navigateTab = vi.fn(async () => 'tab-new')
     const closeTab = vi.fn()
     const hostWithTabs = createPluginContext('tabs.plugin', { ...host, navigateTab, closeTab })
-    await expect(hostWithTabs.navigateTab?.('note', 'a.md')).resolves.toBe('tab-new')
+    await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
     expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
-    hostWithTabs.closeTab?.('tab-9')
+    hostWithTabs.tabs.close?.('tab-9')
     expect(closeTab).toHaveBeenCalledWith('tab-9')
 
     const hostWithoutOpen = { ...host }
     delete (hostWithoutOpen as { openTab?: unknown }).openTab
     const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen)
-    expect(ctxWithoutOpen.openTab?.('note', 'a.md')).toBeUndefined()
+    expect(ctxWithoutOpen.tabs.open?.('note', 'a.md')).toBeUndefined()
 
     const mountedEl = document.createElement('div')
     const mounted = ctx.ui.mountView('cap', mountedEl, { k: 1 })
@@ -199,25 +199,25 @@ describe('PluginContext', () => {
       permissions: [],
     })
 
-    expect(() => ctxNoPerms.onVaultChange(vi.fn())).toThrowError(
+    expect(() => ctxNoPerms.events.onVaultChange(vi.fn())).toThrowError(
       'Plugin "restricted.plugin" lacks required permission "vault:read" for onVaultChange',
     )
-    expect(() => ctxNoPerms.onFileSelect(vi.fn())).toThrowError(
+    expect(() => ctxNoPerms.events.onFileSelect(vi.fn())).toThrowError(
       'Plugin "restricted.plugin" lacks required permission "vault:read" for onFileSelect',
     )
-    expect(() => ctxNoPerms.emitFileSelect({ path: '/test.md' })).toThrowError(
+    expect(() => ctxNoPerms.events.emitFileSelect({ path: '/test.md' })).toThrowError(
       'Plugin "restricted.plugin" lacks required permission "vault:read" for emitFileSelect',
     )
 
     const ctxUndefinedManifest = createPluginContext('no.manifest', host)
-    expect(ctxUndefinedManifest.hasPermission?.('vault:read')).toBe(false)
-    expect(() => ctxUndefinedManifest.onVaultChange(vi.fn())).toThrowError(
+    expect(ctxUndefinedManifest.plugin.hasPermission?.('vault:read')).toBe(false)
+    expect(() => ctxUndefinedManifest.events.onVaultChange(vi.fn())).toThrowError(
       'Plugin "no.manifest" lacks required permission "vault:read" for onVaultChange',
     )
 
     const ctxEmptyManifest = createPluginContext('empty.manifest', host, {})
-    expect(ctxEmptyManifest.hasPermission?.('vault:read')).toBe(false)
-    expect(() => ctxEmptyManifest.onVaultChange(vi.fn())).toThrowError(
+    expect(ctxEmptyManifest.plugin.hasPermission?.('vault:read')).toBe(false)
+    expect(() => ctxEmptyManifest.events.onVaultChange(vi.fn())).toThrowError(
       'Plugin "empty.manifest" lacks required permission "vault:read" for onVaultChange',
     )
 
@@ -228,9 +228,9 @@ describe('PluginContext', () => {
       permissions: ['vault:read'],
     })
 
-    expect(() => ctxWithRead.onVaultChange(vi.fn())).not.toThrow()
-    expect(() => ctxWithRead.onFileSelect(vi.fn())).not.toThrow()
-    expect(() => ctxWithRead.emitFileSelect({ path: '/test.md' })).not.toThrow()
+    expect(() => ctxWithRead.events.onVaultChange(vi.fn())).not.toThrow()
+    expect(() => ctxWithRead.events.onFileSelect(vi.fn())).not.toThrow()
+    expect(() => ctxWithRead.events.emitFileSelect({ path: '/test.md' })).not.toThrow()
   })
 
   it('enforces vault:write permission for emitVaultChange', () => {
@@ -242,7 +242,7 @@ describe('PluginContext', () => {
       permissions: ['vault:read'],
     })
 
-    expect(() => ctxReadOnly.emitVaultChange({ vaultPath: '/test' })).toThrowError(
+    expect(() => ctxReadOnly.events.emitVaultChange({ vaultPath: '/test' })).toThrowError(
       'Plugin "readonly.plugin" lacks required permission "vault:write" for emitVaultChange',
     )
 
@@ -253,7 +253,7 @@ describe('PluginContext', () => {
       permissions: ['vault:write'],
     })
 
-    expect(() => ctxWrite.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
+    expect(() => ctxWrite.events.emitVaultChange({ vaultPath: '/test' })).not.toThrow()
     expect(host.emitVaultChange).toHaveBeenCalledWith('writer.plugin', { vaultPath: '/test' })
   })
 
@@ -287,7 +287,7 @@ describe('PluginContext', () => {
   it('reports the application build the host runs', () => {
     const { host } = createMockHost()
 
-    expect(createPluginContext('test.plugin', host).app).toEqual({
+    expect(createPluginContext('test.plugin', host).plugin.app).toEqual({
       name: 'numen',
       version: '2026.10.1',
       build: 884,

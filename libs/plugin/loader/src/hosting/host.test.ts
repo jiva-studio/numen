@@ -58,7 +58,7 @@ describe('createPluginHost', () => {
     const ctx = host.createContext('sample.plugin')
 
     // Register reader
-    const readerSub = ctx.registerReader({
+    const readerSub = ctx.register.reader({
       id: 'custom-pdf',
       component: null,
       title: 'Custom PDF',
@@ -70,7 +70,7 @@ describe('createPluginHost', () => {
     expect(host.getRegisteredReaders()).toHaveLength(1)
 
     // Register tab kind
-    const tabSub = ctx.registerTabKind({
+    const tabSub = ctx.register.tabKind({
       kind: 'my-tab',
       component: null,
       title: 'My Tab',
@@ -80,7 +80,7 @@ describe('createPluginHost', () => {
 
     // Register command
     let executed = false
-    const cmdSub = ctx.registerCommand({
+    const cmdSub = ctx.register.command({
       id: 'test.run',
       handler: async () => {
         executed = true
@@ -149,11 +149,11 @@ describe('createPluginHost', () => {
     })
     const ctx = host.createContext('disposable.plugin')
 
-    ctx.registerReader({
+    ctx.register.reader({
       id: 'reader1',
       component: null,
     })
-    ctx.registerCommand({
+    ctx.register.command({
       id: 'cmd1',
       handler: vi.fn(() => Promise.resolve()),
     })
@@ -212,9 +212,9 @@ describe('createPluginHost', () => {
       registerEditor: vi.fn(() => undefined as unknown as () => void),
     })
     const ctxNoExt = hostNoExt.createContext('noext.plugin')
-    ctxNoExt.registerReader({ id: 'r-noext', component: null })
+    ctxNoExt.register.reader({ id: 'r-noext', component: null })
     expect(registerExtensionReader).not.toHaveBeenCalled()
-    const tabSubVoid = ctxNoExt.registerTabKind({ kind: 'void-editor', component: null })
+    const tabSubVoid = ctxNoExt.register.tabKind({ kind: 'void-editor', component: null })
     expect(() => tabSubVoid.dispose()).not.toThrow()
 
     // Host with getReaderExtensions and getTabState returning undefined vs object
@@ -226,7 +226,7 @@ describe('createPluginHost', () => {
       getTabState: (id) => stateMap.get(id),
       onError,
     })
-    hostWithExt.createContext('ext.plugin').registerReader({ id: 'r-pdf', component: null })
+    hostWithExt.createContext('ext.plugin').register.reader({ id: 'r-pdf', component: null })
     expect(extCallback).toBeDefined()
 
     // When getTabState returns undefined, selector assignment is skipped without error
@@ -260,7 +260,7 @@ describe('createPluginHost', () => {
     const clearNotices = vi.fn()
     const host = createPluginHost({ ...deps, getNotices, clearNotices })
 
-    host.createContext('test.plugin').notices?.show('Saved.')
+    host.createContext('test.plugin').ui.notices?.show('Saved.')
     host.disposePlugin('test.plugin')
 
     expect(getNotices).toHaveBeenCalledWith('test.plugin')
@@ -272,7 +272,7 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.createContext('test.plugin').notices).toBeUndefined()
+    expect(host.createContext('test.plugin').ui.notices).toBeUndefined()
   })
 
   it('gives each plugin the task host for its own id', () => {
@@ -281,7 +281,7 @@ describe('createPluginHost', () => {
     const getTasks = vi.fn(() => tasks)
     const host = createPluginHost({ ...deps, getTasks })
 
-    expect(host.createContext('test.plugin').tasks).toBe(tasks)
+    expect(host.createContext('test.plugin').work.tasks).toBe(tasks)
     expect(getTasks).toHaveBeenCalledWith('test.plugin')
   })
 
@@ -289,7 +289,7 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.createContext('test.plugin').tasks).toBeUndefined()
+    expect(host.createContext('test.plugin').work.tasks).toBeUndefined()
   })
 
   it('gives every plugin the background tasks of the window', () => {
@@ -297,16 +297,16 @@ describe('createPluginHost', () => {
     const backgroundTasks = createMockBackgroundTaskHost()
     const host = createPluginHost({ ...deps, getBackgroundTasks: () => backgroundTasks })
 
-    expect(host.createContext('test.plugin').backgroundTasks).toBe(backgroundTasks)
-    expect(host.createContext('other.plugin').backgroundTasks).toBe(backgroundTasks)
+    expect(host.createContext('test.plugin').work.backgroundTasks).toBe(backgroundTasks)
+    expect(host.createContext('other.plugin').work.backgroundTasks).toBe(backgroundTasks)
   })
 
   it('gives a plugin no background tasks where the window offers none', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost({ ...deps, getBackgroundTasks: () => undefined })
 
-    expect(host.createContext('test.plugin').backgroundTasks).toBeUndefined()
-    expect(createPluginHost(deps).createContext('test.plugin').backgroundTasks).toBeUndefined()
+    expect(host.createContext('test.plugin').work.backgroundTasks).toBeUndefined()
+    expect(createPluginHost(deps).createContext('test.plugin').work.backgroundTasks).toBeUndefined()
   })
 
   it('delegates getSetting and onSettingChange through host', () => {
@@ -411,7 +411,7 @@ describe('createPluginHost', () => {
 
     const mounted = host
       .createContext('org.example.sample')
-      .mountView(CONVERSATION, panel, { focus: 'Samples/Physics.md' })
+      .ui.mountView(CONVERSATION, panel, { focus: 'Samples/Physics.md' })
     expect(panel.textContent).toBe('Samples/Physics.md')
 
     mounted.dispose()
@@ -426,7 +426,7 @@ describe('createPluginHost', () => {
       .createContext('md.numen.chat')
       .registerView({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
-    host.createContext('org.example.sample').mountView(CONVERSATION, panel, {})
+    host.createContext('org.example.sample').ui.mountView(CONVERSATION, panel, {})
 
     host.disposePlugin('md.numen.chat')
 
@@ -436,11 +436,11 @@ describe('createPluginHost', () => {
   it('routes a drop to the handler another plugin registered until it is disposed', async () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
-    host.createContext('md.numen.links').registerDropHandler?.({
+    host.createContext('md.numen.links').register.dropHandler?.({
       types: ['text/uri-list'],
       drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
     })
-    const drops = host.createContext('md.numen.views.file.tree').drops
+    const drops = host.createContext('md.numen.views.file.tree').ui.drops
 
     expect(drops?.canDrop(['text/uri-list'])).toBe(true)
     expect(await drops?.drop('talks', { 'text/uri-list': 'clip' })).toEqual(['talks/clip.md'])
@@ -475,7 +475,7 @@ describe('a view mounted by a plugin', () => {
           props: { context: { type: Object as PropType<NoteEditorContext>, required: true } },
           setup(props) {
             const body = ref('')
-            notesPlugin.notes!.read(props.context.path).then(
+            notesPlugin.vault.notes!.read(props.context.path).then(
               (one) => (body.value = one.body),
               (error: unknown) => (body.value = `Failed: ${String(error)}`),
             )
@@ -506,7 +506,7 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createCaller([]).mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
+      createCaller([]).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
     ).toThrow(/vault:read/)
     await settle()
 
@@ -518,7 +518,7 @@ describe('a view mounted by a plugin', () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
 
-    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, {})).toThrow(/vault:read/)
+    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, {})).toThrow(/vault:read/)
     await settle()
 
     expect(read).not.toHaveBeenCalled()
@@ -535,7 +535,7 @@ describe('a view mounted by a plugin', () => {
       },
     }
 
-    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
     await settle()
 
     expect(read).not.toHaveBeenCalled()
@@ -550,7 +550,7 @@ describe('a view mounted by a plugin', () => {
       { has: () => false, get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined) },
     )
 
-    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
     await settle()
 
     expect(read).not.toHaveBeenCalled()
@@ -562,7 +562,7 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
     const context: { path?: string } = {}
 
-    expect(() => createCaller([]).mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
     context.path = 'Notes/Example.md'
     registerViews()
     await settle()
@@ -575,7 +575,7 @@ describe('a view mounted by a plugin', () => {
     const { createCaller } = createHost()
     const element = document.createElement('div')
 
-    createCaller(['vault:read']).mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' })
+    createCaller(['vault:read']).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' })
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
   })
 
@@ -583,7 +583,7 @@ describe('a view mounted by a plugin', () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
 
-    expect(() => createCaller([]).mountView(CONVERSATION, element, {})).not.toThrow()
+    expect(() => createCaller([]).ui.mountView(CONVERSATION, element, {})).not.toThrow()
     await settle()
 
     expect(element.textContent).toBe('conversation')

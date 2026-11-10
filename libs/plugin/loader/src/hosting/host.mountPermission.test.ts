@@ -34,7 +34,7 @@ const registerNoteViewer = (owner: Plugin, capability = VIEW) =>
       props: { context: { type: Object as PropType<{ path: string }>, required: true } },
       setup(props) {
         const body = ref('')
-        owner.notes!.read(props.context.path).then(
+        owner.vault.notes!.read(props.context.path).then(
           (one) => (body.value = one.body),
           (error: unknown) => (body.value = `Failed: ${String(error)}`),
         )
@@ -50,7 +50,7 @@ describe('a view kind a plugin registers itself', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createPlugin('md.numen.caller', []).mountView(VIEW, element, { path: 'Notes/Example.md' }),
+      createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, { path: 'Notes/Example.md' }),
     ).toThrow(/vault:read/)
     await settle()
 
@@ -63,7 +63,7 @@ describe('a view kind a plugin registers itself', () => {
     registerNoteViewer(createPlugin('md.numen.owner', ['vault:read', 'vault:write']))
 
     expect(() =>
-      createPlugin('md.numen.caller', ['vault:read']).mountView(
+      createPlugin('md.numen.caller', ['vault:read']).ui.mountView(
         VIEW,
         document.createElement('div'),
         { path: 'Notes/Example.md' },
@@ -76,7 +76,7 @@ describe('a view kind a plugin registers itself', () => {
     registerNoteViewer(createPlugin('md.numen.owner', ['vault:read']))
     const element = document.createElement('div')
 
-    createPlugin('md.numen.caller', ['vault:read']).mountView(VIEW, element, {
+    createPlugin('md.numen.caller', ['vault:read']).ui.mountView(VIEW, element, {
       path: 'Notes/Example.md',
     })
 
@@ -92,7 +92,7 @@ describe('a view kind a plugin registers itself', () => {
     })
     const element = document.createElement('div')
 
-    expect(() => createPlugin('md.numen.caller', []).mountView(VIEW, element, {})).not.toThrow()
+    expect(() => createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, {})).not.toThrow()
     expect(element.textContent).toBe('plain')
   })
 
@@ -102,7 +102,7 @@ describe('a view kind a plugin registers itself', () => {
     registerNoteViewer(owner)
     const element = document.createElement('div')
 
-    owner.mountView(VIEW, element, { path: 'Notes/Example.md' })
+    owner.ui.mountView(VIEW, element, { path: 'Notes/Example.md' })
 
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
   })
@@ -116,7 +116,7 @@ describe('a view capability named like a property of every object', () => {
     const caller = createPlugin('md.numen.caller', [])
     const element = document.createElement('div')
 
-    expect(() => caller.mountView(name, element, {})).not.toThrow()
+    expect(() => caller.ui.mountView(name, element, {})).not.toThrow()
     createPlugin('md.numen.owner', []).registerView({
       capability: name,
       component: defineComponent({ setup: () => () => h('p', 'late') }),
@@ -132,7 +132,7 @@ describe('a view capability named like a property of every object', () => {
     const element = document.createElement('div')
 
     expect(() =>
-      createPlugin('md.numen.caller', []).mountView(name, element, { path: 'Notes/Example.md' }),
+      createPlugin('md.numen.caller', []).ui.mountView(name, element, { path: 'Notes/Example.md' }),
     ).toThrow(/vault:read/)
     await settle()
 

@@ -42,8 +42,8 @@ function createHost(hasFrontend: boolean) {
   const fail = async () => {
     throw new Error('the tide is out')
   }
-  context.registerCommand({ id: 'tide.read', handler: fail })
-  if (hasFrontend) context.registerCommand({ id: CREATE, handler: fail })
+  context.register.command({ id: 'tide.read', handler: fail })
+  if (hasFrontend) context.register.command({ id: CREATE, handler: fail })
   return { host, onError }
 }
 

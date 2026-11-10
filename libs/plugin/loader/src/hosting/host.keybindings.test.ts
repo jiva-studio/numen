@@ -44,7 +44,7 @@ function create(
   })
   const handler = vi.fn()
   if (manifest) host.registerManifest('org.example.ledger', manifest)
-  host.createContext('org.example.ledger').registerCommand({ id: 'ledger.open', handler })
+  host.createContext('org.example.ledger').register.command({ id: 'ledger.open', handler })
   return { host, handler, windowValues, reportSlotIssue }
 }
 
@@ -154,7 +154,7 @@ describe('the keys of the plugins', () => {
     const { host, handler, windowValues } = create([LEDGER, find])
     host
       .createContext('org.example.ledger')
-      .registerCommand({ id: 'ledger.find', handler: vi.fn() })
+      .register.command({ id: 'ledger.find', handler: vi.fn() })
     host.registerKeybindings('org.example.ledger', [
       { key: 'mod+l', command: 'ledger.find', when: 'window.isFieldFocused' },
       { key: 'mod+l', command: 'ledger.open' },
