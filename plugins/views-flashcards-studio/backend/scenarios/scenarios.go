@@ -22,28 +22,23 @@ const (
 	daysCache      = "days"
 )
 
-// Notes is everything the scenarios ask the index of a vault's notes.
-type Notes interface {
-	flashcards.Notes
-	cards.CardModelQueries
-	ports.NoteTypeQueries
-}
-
 // Inputs is what the scenarios are built against. Index brings the notes a window wrote up to date
 // in the index, which is the host's.
 type Inputs struct {
-	Readers   ports.VaultReaders
-	Writers   ports.VaultWriters
-	Notes     Notes
-	Links     ports.LinkQueries
-	Problems  ports.ProblemQueries
-	Logs      ports.LogStores
-	Schedules func(name string) ports.ScheduleStore
-	Index     func(ctx context.Context, v domain.Vault, paths []string) error
-	DayStart  func() time.Duration
-	Now       ports.Clock
-	Cores     int
-	Scheduler ports.ScheduleAlgorithm
+	Readers    ports.VaultReaders
+	Writers    ports.VaultWriters
+	Notes      flashcards.Notes
+	Types      ports.NoteTypeQueries
+	CardModels cards.CardModelQueries
+	Links      ports.LinkQueries
+	Problems   ports.ProblemQueries
+	Logs       ports.LogStores
+	Schedules  func(name string) ports.ScheduleStore
+	Index      func(ctx context.Context, v domain.Vault, paths []string) error
+	DayStart   func() time.Duration
+	Now        ports.Clock
+	Cores      int
+	Scheduler  ports.ScheduleAlgorithm
 }
 
 // Scenarios is everything the plugin does to the cards of a vault.
@@ -66,7 +61,7 @@ func New(in Inputs) *Scenarios {
 	write := cards.NewWrite(in.Readers, in.Writers, in.Links, in.Index, in.Now)
 	set := cards.Scenarios{
 		Read:        read,
-		List:        cards.NewList(in.Readers, in.Notes),
+		List:        cards.NewList(in.Readers, in.CardModels),
 		Write:       write,
 		Create:      cards.NewCreate(in.Writers, in.Index, in.Now),
 		RenameField: cards.NewRenameField(in.Readers, in.Writers, in.Notes, in.Links, in.Index, in.Now),
@@ -90,6 +85,13 @@ func New(in Inputs) *Scenarios {
 	})
 	return &Scenarios{
 		Cards: set, DeckEdit: deckedit.NewScenarios(read, write), Flash: running, Day: running.Day,
-		Neighborhood: flashcards.NewShowNeighbourhood(note.NewShowLinks(in.Links), in.Notes, note.NewRead(in.Readers)),
+		Neighborhood: flashcards.NewShowNeighbourhood(
+			note.NewShowLinks(in.Links),
+			struct {
+				ports.NoteRefQueries
+				ports.NoteTypeQueries
+			}{in.Notes, in.Types},
+			note.NewRead(in.Readers),
+		),
 	}
 }

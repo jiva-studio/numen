@@ -1,6 +1,6 @@
 {
   "name": "@numen/readers.epub",
-  "version": "2026.11.16",
+  "version": "2026.11.15",
   "private": true,
   "type": "module",
   "description": "EPUB reader plugin for Numen",
