@@ -38,11 +38,11 @@ func Parse(output []byte) []Model {
 
 // Fold groups the models that differ only in their reasoning level into one family.
 func Fold(items []Model) []reasoning.Family {
-	listed := make([]reasoning.Listed, 0, len(items))
+	entries := make([]reasoning.Listed, 0, len(items))
 	for _, one := range items {
-		listed = append(listed, reasoning.Listed{Name: one.Name, Title: one.Title})
+		entries = append(entries, reasoning.Listed{Name: one.Name, Title: one.Title})
 	}
-	return reasoning.Fold(listed)
+	return reasoning.Fold(entries)
 }
 
 func cutLine(line string) (string, string, bool) {

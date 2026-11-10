@@ -13,7 +13,7 @@ import (
 
 type fakeProgram struct {
 	installed bool
-	listed    []models.Model
+	items    []models.Model
 	err       error
 	commands  [][]string
 }
@@ -22,7 +22,7 @@ func (f *fakeProgram) IsInstalled(string) bool { return f.installed }
 
 func (f *fakeProgram) List(_ context.Context, command []string) ([]models.Model, error) {
 	f.commands = append(f.commands, command)
-	return f.listed, f.err
+	return f.items, f.err
 }
 
 func TestTheCacheKeepsTheListFor15SecondsAndTheFailureFor30(t *testing.T) {
@@ -59,7 +59,7 @@ func TestTheStateNamesAMissingProgram(t *testing.T) {
 }
 
 func TestTheProgramListsTheModelsOfTheExecutablePath(t *testing.T) {
-	program := &fakeProgram{installed: true, listed: []models.Model{{Name: "m-custom", Title: "Custom"}}}
+	program := &fakeProgram{installed: true, items: []models.Model{{Name: "m-custom", Title: "Custom"}}}
 
 	got := New(program, program, false).GetPrograms(t.Context(), "/opt/agy", nil)
 
@@ -67,7 +67,7 @@ func TestTheProgramListsTheModelsOfTheExecutablePath(t *testing.T) {
 		t.Fatalf("the programs are %+v", got)
 	}
 	if len(program.commands) != 1 || !slices.Equal(program.commands[0], []string{"/opt/agy"}) {
-		t.Errorf("the models were listed with %v", program.commands)
+		t.Errorf("the models were items with %v", program.commands)
 	}
 }
 
