@@ -70,7 +70,7 @@ type CardModelQueries interface {
 	GetCardModels(ctx context.Context, vaultID domain.VaultID) ([]CardModel, error)
 }
 
-// IndexQueries tells whether the index holds a vault.
+// IndexQueries reports whether the index holds a vault.
 type IndexQueries interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
