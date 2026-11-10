@@ -7,7 +7,7 @@ import { WORDS } from '@/shared/words'
 export const FILE_WORDS = {
   newFolder: WORDS.newFolder,
   readDocument: WORDS.readDocument,
-  untitledFolder: WORDS.untitledFolder,
+  untitledFolder: 'New folder',
   errors: WORDS.errors,
   alreadyExists: WORDS.alreadyExists,
   unanswered: WORDS.unanswered,
