@@ -18,17 +18,30 @@ import (
 // Scenarios covers the vaults an installation holds, the operations on them,
 // and the vault's own tree.
 type Scenarios struct {
+	Registry   Listing
+	Change     Changing
+	Tree       Tree
+	RecordOpen RecordOpen
+}
+
+// Listing looks up the vaults on the list.
+type Listing struct {
 	List        registry.List
-	RecordOpen  RecordOpen
 	Find        registry.Find
 	FolderCheck check.FolderCheck
-	Remove      Remove
+}
 
+// Changing changes the list of vaults and the vaults on it.
+type Changing struct {
 	Add        Add
 	Rename     Rename
+	Remove     Remove
 	Unregister Unregister
 	Erase      Erase
+}
 
+// Tree moves and imports the files of a vault.
+type Tree struct {
 	Move   Move
 	Import Import
 }

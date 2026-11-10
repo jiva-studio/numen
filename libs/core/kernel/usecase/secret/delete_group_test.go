@@ -37,7 +37,7 @@ func TestDeleteGroupRemovesSecretsAndValuesInOneRound(t *testing.T) {
 	host := &countingPlugins{plugins: f.plugins}
 	f.secrets = secret.NewSecrets(f.ledger, f.keys, host, nil, nil, nil)
 
-	if err := f.secrets.DeleteGroup.Execute(t.Context(), "g"); err != nil {
+	if err := f.secrets.Groups.Delete.Execute(t.Context(), "g"); err != nil {
 		t.Fatal(err)
 	}
 	if got := idsOf(f.ledger.list); !slices.Equal(got, []string{"s00000002"}) {
@@ -53,7 +53,7 @@ func TestDeleteGroupRemovesSecretsAndValuesInOneRound(t *testing.T) {
 
 func TestDeleteGroupOfAGroupWithNoSecretIsNotFound(t *testing.T) {
 	f := newGroupFixture()
-	if err := f.secrets.DeleteGroup.Execute(t.Context(), "missing"); !errors.Is(err, secret.ErrNotFound) {
+	if err := f.secrets.Groups.Delete.Execute(t.Context(), "missing"); !errors.Is(err, secret.ErrNotFound) {
 		t.Errorf("error = %v", err)
 	}
 }
@@ -63,7 +63,7 @@ func TestDeleteGroupWithFailingStoreRestoresEntries(t *testing.T) {
 	f.keys["secret/s00000003"] = "invented-two"
 	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
 
-	err := f.secrets.DeleteGroup.Execute(t.Context(), "g")
+	err := f.secrets.Groups.Delete.Execute(t.Context(), "g")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
 		t.Errorf("error = %v", err)
 	}

@@ -76,7 +76,7 @@ func TestListStatesReportsValuePresence(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"}, plugin.Secret{ID: "s00000002", Name: "Away", Group: "g"})
 	f.keys["secret/s00000001"] = "value-that-must-stay-secret"
 
-	states, err := f.secrets.ListStates.Execute(t.Context())
+	states, err := f.secrets.Access.ListStates.Execute(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestListStatesFailsOnACancelledContext(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := f.secrets.ListStates.Execute(ctx); !errors.Is(err, context.Canceled) {
+	if _, err := f.secrets.Access.ListStates.Execute(ctx); !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v", err)
 	}
 }

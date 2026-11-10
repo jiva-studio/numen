@@ -35,7 +35,7 @@ func TestTwoOperationsNeverInterleaveTheirChanges(t *testing.T) {
 	var group sync.WaitGroup
 	for _, id := range []string{"s00000001", "s00000002"} {
 		group.Go(func() {
-			if err := f.secrets.Write.Execute(t.Context(), id, "value"); err != nil {
+			if err := f.secrets.Items.Write.Execute(t.Context(), id, "value"); err != nil {
 				t.Error(err)
 			}
 		})
@@ -70,13 +70,13 @@ func TestGateBlocksUntilPluginsAreConfigured(t *testing.T) {
 	f.secrets = secret.NewSecrets(f.ledger, f.keys, blocker, nil, nil, gate)
 
 	first := make(chan error, 1)
-	go func() { first <- f.secrets.Rename.Execute(t.Context(), "s00000001", "Office") }()
+	go func() { first <- f.secrets.Items.Rename.Execute(t.Context(), "s00000001", "Office") }()
 	<-blocker.entered
 
 	watch := make(chan error, 1)
 	go func() { watch <- gate.Enter(t.Context()) }()
 	second := make(chan error, 1)
-	go func() { second <- f.secrets.Move.Execute(t.Context(), "s00000001", "") }()
+	go func() { second <- f.secrets.Items.Move.Execute(t.Context(), "s00000001", "") }()
 	select {
 	case <-watch:
 		t.Fatal("the file watch passed the gate while the plugins were being configured")
@@ -104,12 +104,12 @@ func TestCanceledWaitOnGateChangesNothing(t *testing.T) {
 	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, gate)
 
 	holder := make(chan error, 1)
-	go func() { holder <- f.secrets.Write.Execute(t.Context(), "s00000001", "value") }()
+	go func() { holder <- f.secrets.Items.Write.Execute(t.Context(), "s00000001", "value") }()
 	<-store.entered
 
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if err := f.secrets.Rename.Execute(ctx, "s00000001", "Office"); !errors.Is(err, context.Canceled) {
+	if err := f.secrets.Items.Rename.Execute(ctx, "s00000001", "Office"); !errors.Is(err, context.Canceled) {
 		t.Errorf("error = %v, want the context error", err)
 	}
 	close(store.release)
@@ -136,7 +136,7 @@ func TestCreateRollsBackValueWhenListWriteFailsAfterCancel(t *testing.T) {
 	canceling := cancelOnSet{keys: store, cancel: cancel}
 	use := secret.NewSecrets(failing, canceling, &plugins{}, func() (string, error) { return "s00000001", nil }, nil, nil)
 
-	if _, err := use.Create.Execute(ctx, "g", "N", "value"); !errors.Is(err, errDisk) {
+	if _, err := use.Items.Create.Execute(ctx, "g", "N", "value"); !errors.Is(err, errDisk) {
 		t.Fatalf("error = %v", err)
 	}
 	if len(store) != 0 {
@@ -165,7 +165,7 @@ func (c cancelOnSet) DeleteKey(ctx context.Context, name string) error {
 func TestAFailedChangeRefreshesNoPlugin(t *testing.T) {
 	f := newFixture()
 	f.plugins.readers = []string{"left-over"}
-	if err := f.secrets.Write.Execute(t.Context(), "s00000042", "v"); !errors.Is(err, secret.ErrNotFound) {
+	if err := f.secrets.Items.Write.Execute(t.Context(), "s00000042", "v"); !errors.Is(err, secret.ErrNotFound) {
 		t.Fatalf("error = %v", err)
 	}
 	if len(f.plugins.readers) != 1 || f.plugins.readers[0] != "left-over" {

@@ -124,18 +124,33 @@ func listPluginIDs(allowed []plugin.DeclarationKey) []string {
 
 // Secrets holds every use case on the list of secrets.
 type Secrets struct {
-	Create      *Create
-	Rename      *Rename
-	Write       *Write
-	Delete      *Delete
-	DeleteGroup *DeleteGroup
-	Move        *Move
-	RenameGroup *RenameGroup
-	Allow       *Allow
-	Deny        *Deny
-	List        *List
-	ListStates  *ListStates
-	Prune       *Prune
+	Items  Items
+	Groups Groups
+	Access Access
+	List   *List
+	Prune  *Prune
+}
+
+// Items are the use cases on one secret.
+type Items struct {
+	Create *Create
+	Rename *Rename
+	Write  *Write
+	Delete *Delete
+	Move   *Move
+}
+
+// Groups are the use cases on a group of secrets.
+type Groups struct {
+	Rename *RenameGroup
+	Delete *DeleteGroup
+}
+
+// Access are the use cases on what each plugin may read.
+type Access struct {
+	Allow      *Allow
+	Deny       *Deny
+	ListStates *ListStates
 }
 
 // NewSecrets returns the use cases over the list, the key store and the plugin host. newID makes
@@ -150,17 +165,23 @@ func NewSecrets(
 	}
 	base := operation{ledger: ledger, keys: keys, plugins: plugins, gate: gate}
 	return &Secrets{
-		Create:      &Create{operation: base, newID: newID},
-		Rename:      &Rename{operation: base},
-		Write:       &Write{operation: base},
-		Delete:      &Delete{operation: base},
-		DeleteGroup: &DeleteGroup{operation: base},
-		Move:        &Move{operation: base},
-		RenameGroup: &RenameGroup{operation: base},
-		Allow:       &Allow{operation: base},
-		Deny:        &Deny{operation: base},
-		List:        &List{operation: base, credentialsPath: credentialsPath},
-		ListStates:  &ListStates{operation: base},
-		Prune:       &Prune{operation: base},
+		Items: Items{
+			Create: &Create{operation: base, newID: newID},
+			Rename: &Rename{operation: base},
+			Write:  &Write{operation: base},
+			Delete: &Delete{operation: base},
+			Move:   &Move{operation: base},
+		},
+		Groups: Groups{
+			Rename: &RenameGroup{operation: base},
+			Delete: &DeleteGroup{operation: base},
+		},
+		Access: Access{
+			Allow:      &Allow{operation: base},
+			Deny:       &Deny{operation: base},
+			ListStates: &ListStates{operation: base},
+		},
+		List:  &List{operation: base, credentialsPath: credentialsPath},
+		Prune: &Prune{operation: base},
 	}
 }

@@ -91,7 +91,7 @@ func newFixture(list ...plugin.Secret) fixture {
 func TestCreateAppendsSecretAndStoresValue(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000099", Name: "Old", Group: "openrouter"})
 
-	id, err := f.secrets.Create.Execute(t.Context(), "openrouter", "Work", "value-one")
+	id, err := f.secrets.Items.Create.Execute(t.Context(), "openrouter", "Work", "value-one")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,15 +109,18 @@ func TestCreateAppendsSecretAndStoresValue(t *testing.T) {
 func TestCreateRejectsInvalidRequestBeforeWrite(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000099", Name: "Old", Group: "openrouter"})
 	for what, call := range map[string]func() error{
-		"an empty group": func() error { _, err := f.secrets.Create.Execute(t.Context(), "", "N", "v"); return err },
-		"an empty name":  func() error { _, err := f.secrets.Create.Execute(t.Context(), "g", "", "v"); return err },
-		"a taken name":   func() error { _, err := f.secrets.Create.Execute(t.Context(), "openrouter", "Old", "v"); return err },
-		"an empty value": func() error { _, err := f.secrets.Create.Execute(t.Context(), "g", "N", ""); return err },
-		"a long name": func() error {
-			_, err := f.secrets.Create.Execute(t.Context(), "g", strings.Repeat("n", 65), "v")
+		"an empty group": func() error { _, err := f.secrets.Items.Create.Execute(t.Context(), "", "N", "v"); return err },
+		"an empty name":  func() error { _, err := f.secrets.Items.Create.Execute(t.Context(), "g", "", "v"); return err },
+		"a taken name": func() error {
+			_, err := f.secrets.Items.Create.Execute(t.Context(), "openrouter", "Old", "v")
 			return err
 		},
-		"an untrimmed one": func() error { _, err := f.secrets.Create.Execute(t.Context(), "g", "N ", "v"); return err },
+		"an empty value": func() error { _, err := f.secrets.Items.Create.Execute(t.Context(), "g", "N", ""); return err },
+		"a long name": func() error {
+			_, err := f.secrets.Items.Create.Execute(t.Context(), "g", strings.Repeat("n", 65), "v")
+			return err
+		},
+		"an untrimmed one": func() error { _, err := f.secrets.Items.Create.Execute(t.Context(), "g", "N ", "v"); return err },
 	} {
 		if err := call(); !errors.Is(err, secret.ErrInvalid) {
 			t.Errorf("%s gave %v, want ErrInvalid", what, err)
@@ -138,7 +141,7 @@ func TestCreateWithFailingStoreRedactsValueAndSkipsWrite(t *testing.T) {
 	f := newFixture()
 	f.secrets = secret.NewSecrets(f.ledger, failingStore{keys{}}, f.plugins, func() (string, error) { return "s00000001", nil }, nil, nil)
 
-	_, err := f.secrets.Create.Execute(t.Context(), "g", "N", "value-that-must-stay-secret")
+	_, err := f.secrets.Items.Create.Execute(t.Context(), "g", "N", "value-that-must-stay-secret")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) || strings.Contains(err.Error(), "value-that-must-stay-secret") {
 		t.Errorf("error = %v", err)
 	}
@@ -151,16 +154,16 @@ func TestWriteNamesTheReadersOfTheSecretOnce(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Work", Group: "openrouter", Allowed: []plugin.DeclarationKey{
 		getAlphaKey(), {Plugin: "md.numen.alpha", Name: "other"}, getBetaKey(),
 	}})
-	if err := f.secrets.Write.Execute(t.Context(), "s00000001", "value-new"); err != nil {
+	if err := f.secrets.Items.Write.Execute(t.Context(), "s00000001", "value-new"); err != nil {
 		t.Fatal(err)
 	}
 	if f.keys["secret/s00000001"] != "value-new" || !slices.Equal(f.plugins.readers, []string{"md.numen.alpha", "md.numen.beta"}) {
 		t.Errorf("store %v, readers %v", f.keys, f.plugins.readers)
 	}
-	if err := f.secrets.Write.Execute(t.Context(), "s00000001", ""); !errors.Is(err, secret.ErrInvalid) {
+	if err := f.secrets.Items.Write.Execute(t.Context(), "s00000001", ""); !errors.Is(err, secret.ErrInvalid) {
 		t.Errorf("an empty value gave %v", err)
 	}
-	if err := f.secrets.Write.Execute(t.Context(), "s00000042", "v"); !errors.Is(err, secret.ErrNotFound) {
+	if err := f.secrets.Items.Write.Execute(t.Context(), "s00000042", "v"); !errors.Is(err, secret.ErrNotFound) {
 		t.Errorf("an unknown id gave %v", err)
 	}
 }
@@ -171,26 +174,26 @@ func TestRenameKeepsTheIdPermissionsAndValue(t *testing.T) {
 		plugin.Secret{ID: "s00000002", Name: "Home", Group: "g"},
 	)
 	f.keys["secret/s00000001"] = "v"
-	if err := f.secrets.Rename.Execute(t.Context(), "s00000001", "Office"); err != nil {
+	if err := f.secrets.Items.Rename.Execute(t.Context(), "s00000001", "Office"); err != nil {
 		t.Fatal(err)
 	}
 	if got := f.ledger.list[0]; got.Name != "Office" || len(got.Allowed) != 1 || f.keys["secret/s00000001"] != "v" {
 		t.Errorf("secret = %v, store %v", got, f.keys)
 	}
-	if err := f.secrets.Rename.Execute(t.Context(), "s00000001", "Home"); !errors.Is(err, secret.ErrInvalid) {
+	if err := f.secrets.Items.Rename.Execute(t.Context(), "s00000001", "Home"); !errors.Is(err, secret.ErrInvalid) {
 		t.Errorf("a taken name gave %v", err)
 	}
 }
 
 func TestDeleteRemovesEntryAndToleratesMissingValue(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Work", Group: "g"})
-	if err := f.secrets.Delete.Execute(t.Context(), "s00000001"); err != nil {
+	if err := f.secrets.Items.Delete.Execute(t.Context(), "s00000001"); err != nil {
 		t.Fatalf("a delete with no value in the store: %v", err)
 	}
 	if len(f.ledger.list) != 0 {
 		t.Errorf("list = %v", f.ledger.list)
 	}
-	if err := f.secrets.Delete.Execute(t.Context(), "s00000001"); !errors.Is(err, secret.ErrNotFound) {
+	if err := f.secrets.Items.Delete.Execute(t.Context(), "s00000001"); !errors.Is(err, secret.ErrNotFound) {
 		t.Errorf("a second delete gave %v", err)
 	}
 }
@@ -200,22 +203,22 @@ func TestMoveStaysInsideTheGroup(t *testing.T) {
 		plugin.Secret{ID: "s00000001", Group: "a"}, plugin.Secret{ID: "s00000002", Group: "b"},
 		plugin.Secret{ID: "s00000003", Group: "a"}, plugin.Secret{ID: "s00000004", Group: "a"},
 	)
-	if err := f.secrets.Move.Execute(t.Context(), "s00000004", "s00000001"); err != nil {
+	if err := f.secrets.Items.Move.Execute(t.Context(), "s00000004", "s00000001"); err != nil {
 		t.Fatal(err)
 	}
 	if got := idsOf(f.ledger.list); !slices.Equal(got, []string{"s00000004", "s00000001", "s00000002", "s00000003"}) {
 		t.Errorf("list = %v", got)
 	}
-	if err := f.secrets.Move.Execute(t.Context(), "s00000004", ""); err != nil {
+	if err := f.secrets.Items.Move.Execute(t.Context(), "s00000004", ""); err != nil {
 		t.Fatal(err)
 	}
 	if got := idsOf(f.ledger.list); got[len(got)-1] != "s00000004" {
 		t.Errorf("list = %v, want the moved one last", got)
 	}
-	if err := f.secrets.Move.Execute(t.Context(), "s00000004", "s00000002"); !errors.Is(err, secret.ErrInvalid) {
+	if err := f.secrets.Items.Move.Execute(t.Context(), "s00000004", "s00000002"); !errors.Is(err, secret.ErrInvalid) {
 		t.Errorf("a move into another group gave %v", err)
 	}
-	if err := f.secrets.Move.Execute(t.Context(), "s00000004", "s00000077"); !errors.Is(err, secret.ErrNotFound) {
+	if err := f.secrets.Items.Move.Execute(t.Context(), "s00000004", "s00000077"); !errors.Is(err, secret.ErrNotFound) {
 		t.Errorf("a move before an unknown secret gave %v", err)
 	}
 }
@@ -225,18 +228,18 @@ func TestRenameGroupUpdatesSecretsAndValidatesTargetName(t *testing.T) {
 		plugin.Secret{ID: "s00000001", Name: "A", Group: "work"}, plugin.Secret{ID: "s00000002", Name: "B", Group: "work"},
 		plugin.Secret{ID: "s00000003", Name: "C", Group: "home"},
 	)
-	if err := f.secrets.RenameGroup.Execute(t.Context(), "work", "office"); err != nil {
+	if err := f.secrets.Groups.Rename.Execute(t.Context(), "work", "office"); err != nil {
 		t.Fatal(err)
 	}
 	if f.ledger.list[0].Group != "office" || f.ledger.list[1].Group != "office" || f.ledger.list[2].Group != "home" {
 		t.Errorf("list = %v", f.ledger.list)
 	}
 	for what, call := range map[string]func() error{
-		"a taken name":         func() error { return f.secrets.RenameGroup.Execute(t.Context(), "office", "home") },
-		"an asked-for name":    func() error { return f.secrets.RenameGroup.Execute(t.Context(), "office", "openrouter") },
-		"an asked-for group":   func() error { return f.secrets.RenameGroup.Execute(t.Context(), "openrouter", "mine") },
-		"an empty name":        func() error { return f.secrets.RenameGroup.Execute(t.Context(), "office", "") },
-		"a group of no secret": func() error { return f.secrets.RenameGroup.Execute(t.Context(), "absent", "mine") },
+		"a taken name":         func() error { return f.secrets.Groups.Rename.Execute(t.Context(), "office", "home") },
+		"an asked-for name":    func() error { return f.secrets.Groups.Rename.Execute(t.Context(), "office", "openrouter") },
+		"an asked-for group":   func() error { return f.secrets.Groups.Rename.Execute(t.Context(), "openrouter", "mine") },
+		"an empty name":        func() error { return f.secrets.Groups.Rename.Execute(t.Context(), "office", "") },
+		"a group of no secret": func() error { return f.secrets.Groups.Rename.Execute(t.Context(), "absent", "mine") },
 	} {
 		if err := call(); err == nil {
 			t.Errorf("%s was accepted", what)
@@ -247,7 +250,7 @@ func TestRenameGroupUpdatesSecretsAndValidatesTargetName(t *testing.T) {
 func TestAllowAndDenyAreIdempotentAndAllowChecksTheDeclaration(t *testing.T) {
 	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Work", Group: "openrouter"})
 	for range 2 {
-		if err := f.secrets.Allow.Execute(t.Context(), "s00000001", getAlphaKey()); err != nil {
+		if err := f.secrets.Access.Allow.Execute(t.Context(), "s00000001", getAlphaKey()); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -255,14 +258,14 @@ func TestAllowAndDenyAreIdempotentAndAllowChecksTheDeclaration(t *testing.T) {
 		t.Errorf("allowed = %v", got)
 	}
 	absent := plugin.DeclarationKey{Plugin: "md.numen.alpha", Name: "apiKey", Group: "mistral"}
-	if err := f.secrets.Allow.Execute(t.Context(), "s00000001", absent); !errors.Is(err, secret.ErrInvalid) {
+	if err := f.secrets.Access.Allow.Execute(t.Context(), "s00000001", absent); !errors.Is(err, secret.ErrInvalid) {
 		t.Errorf("an undeclared permission gave %v", err)
 	}
-	if err := f.secrets.Allow.Execute(t.Context(), "s00000042", getAlphaKey()); !errors.Is(err, secret.ErrNotFound) {
+	if err := f.secrets.Access.Allow.Execute(t.Context(), "s00000042", getAlphaKey()); !errors.Is(err, secret.ErrNotFound) {
 		t.Errorf("an unknown secret gave %v", err)
 	}
 	for range 2 {
-		if err := f.secrets.Deny.Execute(t.Context(), "s00000001", getAlphaKey()); err != nil {
+		if err := f.secrets.Access.Deny.Execute(t.Context(), "s00000001", getAlphaKey()); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -296,7 +299,7 @@ func TestDeleteWithFailingStoreRestoresEntryAndSkipsRefresh(t *testing.T) {
 	f.keys["secret/s00000002"] = "invented-value"
 	f.secrets = secret.NewSecrets(f.ledger, undeletableStore{f.keys}, f.plugins, nil, nil, nil)
 
-	err := f.secrets.Delete.Execute(t.Context(), "s00000002")
+	err := f.secrets.Items.Delete.Execute(t.Context(), "s00000002")
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
 		t.Errorf("error = %v", err)
 	}

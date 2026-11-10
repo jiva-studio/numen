@@ -13,43 +13,65 @@ import (
 // agent tools use the same set, so both enforce the same rules and a dependency
 // is configured once for both.
 type Scenarios struct {
-	Read       Read
-	Write      Write
-	Create     Create
-	Replace    Replace
-	Linking    EditLinks
-	AddLinks   AddLinks
+	Edit    Editing
+	Place   Placing
+	Connect Connecting
+	Refer   Referring
+	Browse  Browsing
+}
+
+// Editing reads and changes the text of a note.
+type Editing struct {
+	Read    Read
+	Write   Write
+	Create  Create
+	Replace Replace
+	Linking EditLinks
+}
+
+// Placing moves, renames and removes notes.
+type Placing struct {
 	Move       Move
 	Rename     Rename
 	Remove     Remove
+	RemoveNote RemoveNote
 	EmptyTrash EmptyTrash
+}
 
+// Connecting changes the relationships between notes.
+type Connecting struct {
 	SaveConnection   SaveConnection
 	RemoveSide       RemoveSide
 	RemoveConnection RemoveConnection
 	Join             Join
 	CreateInRelation CreateInRelation
+}
 
-	Links        query.ShowLinks
-	Connection   query.GetConnection
-	Backlinks    query.GetBacklinks
-	Neighborhood query.ShowNeighbourhood
-	ResolveLinks *query.ResolveLinks
+// Referring adds, lists and resolves the links of notes.
+type Referring struct {
+	AddLinks       AddLinks
+	Links          query.ShowLinks
+	Backlinks      query.GetBacklinks
+	ResolveLinks   *query.ResolveLinks
+	GetLinkAddress *query.GetLinkAddress
+}
 
+// Browsing answers questions about the notes of a vault.
+type Browsing struct {
+	Connection     query.GetConnection
+	Neighborhood   query.ShowNeighbourhood
 	GetTitles      query.GetTitles
 	GetTitle       *query.GetTitle
 	IsVaultIndexed *query.IsVaultIndexed
-	GetLinkAddress *query.GetLinkAddress
-	RemoveNote     RemoveNote
 }
 
 // FollowMoves notifies a window of each note move, so a view showing a note under
 // its old name switches to the new name. Every build with a window
 // binds it.
 func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
-	mover := n.Move
+	mover := n.Place.Move
 	mover.Drawing = view.ShowMove
-	n.Move, n.Rename = mover, NewRename(mover)
+	n.Place.Move, n.Place.Rename = mover, NewRename(mover)
 	return n
 }
 
@@ -60,7 +82,7 @@ func (n Scenarios) FollowMoves(view windowport.Window) Scenarios {
 // drawn, because the user is looking at the text they typed.
 func (n Scenarios) ShowEdits(view windowport.Window) Scenarios {
 	tell := TellEdit(view.ShowEdit)
-	n.Write.Drawing, n.Replace.Drawing = tell, tell
+	n.Edit.Write.Drawing, n.Edit.Replace.Drawing = tell, tell
 	return n
 }
 
@@ -87,19 +109,21 @@ type RelatedNoteCreator struct {
 }
 
 // NewConnectionReader takes the use case of a set of scenarios that reads a connection.
-func NewConnectionReader(n Scenarios) ConnectionReader { return ConnectionReader{get: n.Connection} }
+func NewConnectionReader(n Scenarios) ConnectionReader {
+	return ConnectionReader{get: n.Browse.Connection}
+}
 
 // NewConnectionWriter takes the use cases of a set of scenarios that write connections.
 func NewConnectionWriter(n Scenarios) ConnectionWriter {
-	return ConnectionWriter{save: n.SaveConnection, side: n.RemoveSide, remove: n.RemoveConnection}
+	return ConnectionWriter{save: n.Connect.SaveConnection, side: n.Connect.RemoveSide, remove: n.Connect.RemoveConnection}
 }
 
 // NewConnectionJoiner takes the use case of a set of scenarios that joins two notes.
-func NewConnectionJoiner(n Scenarios) ConnectionJoiner { return ConnectionJoiner{join: n.Join} }
+func NewConnectionJoiner(n Scenarios) ConnectionJoiner { return ConnectionJoiner{join: n.Connect.Join} }
 
 // NewRelatedNoteCreator takes the use case of a set of scenarios that creates a related note.
 func NewRelatedNoteCreator(n Scenarios) RelatedNoteCreator {
-	return RelatedNoteCreator{create: n.CreateInRelation}
+	return RelatedNoteCreator{create: n.Connect.CreateInRelation}
 }
 
 func (c ConnectionReader) GetConnection(ctx context.Context, v domain.Vault, a, b, kind string) (domain.Connection, error) {
