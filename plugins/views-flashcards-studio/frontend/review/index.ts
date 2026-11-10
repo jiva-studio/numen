@@ -12,14 +12,14 @@ import {
   type VaultSummaryContext,
   type ViewRegistration,
 } from '@numen/plugin-sdk'
-import ReviewTab from './app/ReviewTab.vue'
-import { useReview, type Review } from './app/review'
-import type { VaultCounts } from './app/counts'
-import { VaultSummary } from './pages/vaults'
-import type { MountView } from './shared/views'
+import ReviewTab from './ui/ReviewTab.vue'
+import { useReview, type Review } from './model/review'
+import type { VaultCounts } from './model/counts'
+import VaultSummary from './ui/vaults/VaultSummary.vue'
+import type { MountView } from './lib/views'
 
-export { createVaultCounts } from './app/counts'
-export { createNotices } from './app/notices'
+export { createVaultCounts } from './model/counts'
+export { createNotices } from './model/notices'
 
 /** The tab kind the review is rendered in. */
 export const REVIEW = 'flashcards.review'

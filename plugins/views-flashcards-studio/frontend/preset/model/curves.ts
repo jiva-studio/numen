@@ -3,7 +3,7 @@
  */
 import { ref, shallowRef, type Ref } from 'vue'
 import { createRequestGuard, type RequestGuard } from '@numen/ui'
-import { DEFAULTS, type Curve, type PresetCounts, type Presets, type Settings, type SettingsBounds } from '../../cards/lib/presets'
+import { DEFAULTS, type Curve, type PresetCounts, type Presets, type Settings, type SettingsBounds } from '../../lib/presets'
 import { getGoalValue, findNearest } from '../lib/curve'
 import { getShapeKey } from '../lib/fields'
 import { estimateCurve } from '../lib/sketch'

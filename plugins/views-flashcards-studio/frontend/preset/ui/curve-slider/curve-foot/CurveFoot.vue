@@ -3,7 +3,7 @@
  * What is read under the curve: the value at the knob, the two ends of the
  * grid, and the name of the axis they run along.
  */
-import type { Goal } from '../../../../cards/lib/presets'
+import type { Goal } from '../../../../lib/presets'
 import { WORDS as words } from '../../../words'
 import type { CurveSliderState } from '../useCurveSlider'
 import '../curve-slider.css'

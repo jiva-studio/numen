@@ -3,7 +3,7 @@
  */
 import { shallowRef, type Ref } from 'vue'
 import { Gauge } from '@lucide/vue'
-import { ERRORS } from '../cards/wire/errors'
+import { ERRORS } from '../api/wire/errors'
 import {
   getFileName,
   type BufferHost,
@@ -13,7 +13,7 @@ import {
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
 import { type PresetTabState, type SettingValue } from './types'
-import { NO_BOUNDS, type Presets, type SettingsBounds } from '../cards/lib/presets'
+import { NO_BOUNDS, type Presets, type SettingsBounds } from '../lib/presets'
 import { WORDS as words } from './words'
 import {
   createOpenPreset,

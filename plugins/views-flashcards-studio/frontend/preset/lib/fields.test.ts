@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, type Settings } from '../../cards/lib/presets'
+import { DEFAULTS, type Settings } from '../../lib/presets'
 import {
   FIELDS,
   getFieldCount,

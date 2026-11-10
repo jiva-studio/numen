@@ -1,6 +1,6 @@
 import { computed, type ComputedRef } from 'vue'
 import type { Position } from '@numen/ui'
-import type { Curve, Goal } from '../../../cards/lib/presets'
+import type { Curve, Goal } from '../../../lib/presets'
 import type { CurveSliderProps } from './useCurveSlider'
 import type { useCurvePlot } from './useCurvePlot'
 import { clearBacklog } from '../../lib/curve'

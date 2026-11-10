@@ -7,7 +7,7 @@
  */
 import type { Position } from '@numen/ui'
 import { getPointCost } from './curve'
-import type { Curve } from '../../cards/lib/presets'
+import type { Curve } from '../../lib/presets'
 
 /** Plot units. The plot is scaled uniformly, so a circle stays a circle. */
 export const PLOT_WIDTH = 560

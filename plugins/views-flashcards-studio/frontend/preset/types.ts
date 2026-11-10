@@ -3,7 +3,7 @@
  */
 import type { Ref } from 'vue'
 import type { Field } from './lib/fields'
-import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds, StopReason } from '../cards/lib/presets'
+import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds, StopReason } from '../lib/presets'
 
 export type { Field }
 

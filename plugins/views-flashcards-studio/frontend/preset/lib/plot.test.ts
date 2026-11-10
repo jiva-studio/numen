@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { NO_CURVE_POINT, type Curve, type Point } from '../../cards/lib/presets'
+import { NO_CURVE_POINT, type Curve, type Point } from '../../lib/presets'
 import {
   getExtent,
   getBacklogExtent,

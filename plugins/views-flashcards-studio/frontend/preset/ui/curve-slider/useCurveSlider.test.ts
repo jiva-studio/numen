@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
 
-import type { Curve, Point } from '../../../cards/lib/presets'
+import type { Curve, Point } from '../../../lib/presets'
 import { WORDS as words } from '../../words'
 import { useCurveSlider, type CurveSliderProps } from './useCurveSlider'
 

@@ -1,5 +1,5 @@
 import { computed, shallowRef, watch } from 'vue'
-import type { Curve } from '../../../cards/lib/presets'
+import type { Curve } from '../../../lib/presets'
 import { getKnobValue } from '../../lib/curve'
 import {
   getExtent,

@@ -14,7 +14,7 @@ import rowsSource from './preset-settings/PresetSettings.vue?raw'
 import sliderSource from './curve-slider/CurveSlider.vue?raw'
 import tilesSource from './curve-slider/CurveTiles.vue?raw'
 import { type Field, type PresetTabState, type SettingValue } from '../types'
-import { NO_BOUNDS } from '../../cards/lib/presets'
+import { NO_BOUNDS } from '../../lib/presets'
 import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
 import { WORDS as words } from '../words'
 

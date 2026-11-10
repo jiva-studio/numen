@@ -14,7 +14,7 @@ import { dayAfter } from '../../lib/day'
 
 import { usePresetTab } from '../kind'
 import { type PresetTabState } from '../types'
-import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from '../../cards/lib/presets'
+import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from '../../lib/presets'
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 

@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NO_BOUNDS, type Settings } from '../../cards/lib/presets'
+import { DEFAULTS, NO_BOUNDS, type Settings } from '../../lib/presets'
 import {
   applyGoal,
   applyTypedSetting,

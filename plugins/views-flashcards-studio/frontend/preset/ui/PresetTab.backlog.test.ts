@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import type { Curve } from '../../cards/lib/presets'
+import type { Curve } from '../../lib/presets'
 import { mountPresetTab, heights, point } from '../fixtures'
 import { WORDS as words } from '../words'
 

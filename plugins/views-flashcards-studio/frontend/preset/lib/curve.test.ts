@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULTS, NO_CURVE_POINT, type Curve, type Point, type Settings } from '../../cards/lib/presets'
+import { DEFAULTS, NO_CURVE_POINT, type Curve, type Point, type Settings } from '../../lib/presets'
 import { BOUNDS, curve as drawnCurve } from '../fixtures'
 import {
   clamp,

@@ -1,8 +1,8 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { cards } from './cards/api/cards'
-import { presets } from './cards/api/presets.wire'
-import { useDeckTabs } from './deck/model/useDeckTabs'
-import { createCardModelTabs } from './card-model/kind'
+import { cards } from './api/cards'
+import { presets } from './api/presets.wire'
+import { useDeckTabs } from './editor/model/deck/useDeckTabs'
+import { createCardModelTabs } from './editor/model/card-model/kind'
 import { usePresetTab } from './preset/kind'
 import {
   createNotices,
@@ -11,17 +11,17 @@ import {
   createVaultSummaryView,
 } from './review'
 
-export { DECK } from './deck/kind'
-export { CARD_MODEL } from './card-model/kind'
+export { DECK } from './editor/model/deck/kind'
+export { CARD_MODEL } from './editor/model/card-model/kind'
 export { PRESET } from './preset/kind'
-export { default as DeckTab } from './deck/ui/DeckTab.vue'
-export { default as CardModelTab } from './card-model/ui/CardModelTab.vue'
+export { default as DeckTab } from './editor/ui/deck/DeckTab.vue'
+export { default as CardModelTab } from './editor/ui/card-model/CardModelTab.vue'
 export { default as PresetTab } from './preset/ui/PresetTab.vue'
-export { useDeckTabs } from './deck/model/useDeckTabs'
-export { createCardModelTabs } from './card-model/kind'
+export { useDeckTabs } from './editor/model/deck/useDeckTabs'
+export { createCardModelTabs } from './editor/model/card-model/kind'
 export { usePresetTab } from './preset/kind'
-export type { DeckTabState } from './deck/types'
-export type { CardModelTabState } from './card-model/types'
+export type { DeckTabState } from './editor/lib/deck/types'
+export type { CardModelTabState } from './editor/lib/card-model/types'
 export type { PresetTabState } from './preset/types'
 
 export { REVIEW } from './review'

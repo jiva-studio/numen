@@ -3,7 +3,7 @@
  */
 import { dayAfter, daysBetween, isDay } from '../../lib/day'
 import type { SettingValue } from '../types'
-import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../cards/lib/presets'
+import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../lib/presets'
 import { clamp, findNearest } from './curve'
 import type { Field } from './fields'
 
