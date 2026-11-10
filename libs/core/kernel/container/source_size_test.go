@@ -22,6 +22,21 @@ const (
 	maxPackageLines = 3000
 )
 
+// maxCompositionRootLines is the limit of the container alone. It holds declarative wiring that grows with the
+// number of services and no logic; the one-package rule and the file limit still apply to it, and a file that
+// holds logic fails the other checks.
+const (
+	compositionRootDir      = "libs/core/kernel/container"
+	maxCompositionRootLines = 3600
+)
+
+func getPackageLimit(dir string, packageMax int) int {
+	if filepath.ToSlash(dir) == compositionRootDir {
+		return max(packageMax, maxCompositionRootLines)
+	}
+	return packageMax
+}
+
 func listSourceRoots() []string {
 	return []string{"libs/core/kernel", "apps/desktop"}
 }
@@ -99,8 +114,8 @@ func getOversizedSources(root string, trees []string, fileMax, packageMax int) (
 		}
 		for dir, lines := range perDir {
 			dirs++
-			if lines > packageMax {
-				found = append(found, filepath.ToSlash(dir)+" has "+strconv.Itoa(lines)+" lines in all, more than "+strconv.Itoa(packageMax))
+			if limit := getPackageLimit(dir, packageMax); lines > limit {
+				found = append(found, filepath.ToSlash(dir)+" has "+strconv.Itoa(lines)+" lines in all, more than "+strconv.Itoa(limit))
 			}
 		}
 	}

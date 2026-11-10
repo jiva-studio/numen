@@ -1,6 +1,7 @@
 package container
 
 import (
+	"time"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -98,4 +100,20 @@ func OpenFlashcards(c Config, ctx context.Context, api *shell.API, errOut io.Wri
 		}
 	})
 	return started, nil
+}
+
+// FlushTimeout is how long a page may take to write its unsaved data when the vault closes.
+func FlushTimeout() time.Duration { return windowsession.FlushTimeout }
+
+// FollowVaultShown makes the window call shown after each time it puts a vault in its place, with the error
+// of that attempt. The plugins follow the vault by themselves.
+func FollowVaultShown(c Config, opened *editor.Installation, shown func(v domain.Vault, err error)) {
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
+		err := opened.Show(ctx, v, open)
+		if err == nil {
+			SetPluginVaultPath(c, v.Path)
+		}
+		shown(v, err)
+		return err
+	}
 }
