@@ -1,3 +1,4 @@
+// Package service wires the window tools of the plugin to the host and registers them.
 package service
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/preview"
 )
 
 // Mount registers the window tools on s, using the vault and the window of the host the
@@ -32,9 +34,9 @@ func connectHost(endpoint hostcall.Endpoint, err error) Host {
 }
 
 func mount(s *server.Server, on Host) error {
-	manager := NewManager(clock.System{})
+	previews := preview.NewStore(clock.System{})
 	registry := tools.New()
-	if err := RegisterTools(registry, manager, on); err != nil {
+	if err := RegisterTools(registry, previews, on); err != nil {
 		return err
 	}
 	registry.Mount(s)
