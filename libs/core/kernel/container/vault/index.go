@@ -60,7 +60,7 @@ func (c Config) OpenIndex(ctx context.Context) (*vaultusecase.Index, error) {
 		Sources:       db.Sources(),
 		SourcesUnder:  db.Sources(),
 		RemovalLookup: db.Sources(),
-		SourceKnown:   db.Sources(),
+		SourceRecords:   db.Sources(),
 		SourceBacklog: db.Sources(),
 		Vectors:       db.Sources(),
 		VectorQueries: db.Sources(),

@@ -79,7 +79,7 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.SourceKnown(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 	var notes, books, made atomic.Int32
@@ -117,7 +117,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	notes.Walks = db.Walks()
 	making := vaults.NewReadWholeVault(
 		notes,
-		filetext.NewIndex(readers, db.Sources(), db.SourceKnown(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
 		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
@@ -139,7 +139,7 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.SourceKnown(), uncuttable{SourceBacklog: db.SourceBacklog(), err: stopErr}, db.RemovalLookup(), testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), uncuttable{SourceBacklog: db.SourceBacklog(), err: stopErr}, db.RemovalLookup(), testsupport.Texts{Readers: readers}),
 		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
@@ -169,7 +169,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	embed.Embedder = failing{err: stopErr}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.SourceKnown(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 
@@ -196,7 +196,7 @@ func TestReadWholeVault_ReportsCompletedTextsOnBookError(t *testing.T) {
 	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.SourceKnown(), uncutter, db.RemovalLookup(), testsupport.Texts{Readers: readers}),
+		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), uncutter, db.RemovalLookup(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 
@@ -221,7 +221,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	uncutter := uncuttable{SourceBacklog: db.SourceBacklog(), onRecipe: cancel}
-	books := filetext.NewIndex(readers, db.Sources(), db.SourceKnown(), uncutter, db.RemovalLookup(), testsupport.Texts{Readers: readers})
+	books := filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), uncutter, db.RemovalLookup(), testsupport.Texts{Readers: readers})
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	embed.Embedder = pointing{}
@@ -258,7 +258,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	stopErr := errors.New("the vault cannot be read")
 	cutting := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(unreadable{err: stopErr}, db.Sources(), db.SourceKnown(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: unreadable{err: stopErr}}),
+		filetext.NewIndex(unreadable{err: stopErr}, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: unreadable{err: stopErr}}),
 		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")

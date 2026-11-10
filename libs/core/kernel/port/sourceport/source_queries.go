@@ -19,9 +19,9 @@ type RemovalLookup interface {
 	GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (source.Text, bool, error)
 }
 
-// SourceKnown answers what the index believes each file was when it last read
+// SourceRecords answers what the index recorded about each file when it last read
 // it, in shapes that are not sources.
-type SourceKnown interface {
+type SourceRecords interface {
 	GetFileStats(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error)
 	GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]source.Text, error)
 }

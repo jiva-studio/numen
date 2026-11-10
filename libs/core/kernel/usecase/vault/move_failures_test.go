@@ -99,7 +99,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourceKnown(), f.db.SourceBacklog(), f.db.RemovalLookup(), testsupport.Texts{Readers: vaultreader.Readers{}})
+	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourceRecords(), f.db.SourceBacklog(), f.db.RemovalLookup(), testsupport.Texts{Readers: vaultreader.Readers{}})
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}

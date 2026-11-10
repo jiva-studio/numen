@@ -145,7 +145,7 @@ func (c Config) IndexTexts(db *vault.Index, v domain.Vault) (filetext.Index, err
 	if _, err := c.VaultReaders.Open(v); err != nil {
 		return filetext.Index{}, err
 	}
-	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.SourceKnown(), db.SourceBacklog(), db.RemovalLookup(), c.TextReaders)
+	index := filetext.NewIndex(c.VaultReaders, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), c.TextReaders)
 	index.ErrorHandler = c.ErrorHandler
 	cutter := c.CutNotes()
 	index.Sizes = cutter.Sizes

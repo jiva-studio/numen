@@ -45,7 +45,7 @@ type IndexPorts struct {
 	Sources       sourceport.SourceRepository
 	SourcesUnder  sourceport.SourcesUnder
 	RemovalLookup sourceport.RemovalLookup
-	SourceKnown   sourceport.SourceKnown
+	SourceRecords sourceport.SourceRecords
 	SourceBacklog sourceport.SourceBacklog
 	Vectors       embeddingport.VectorRepository
 	VectorQueries embeddingport.VectorQueries
@@ -116,7 +116,7 @@ func (i *Index) Stats() indexport.IndexStats                { return i.ports.Sta
 func (i *Index) Sources() sourceport.SourceRepository       { return i.ports.Sources }
 func (i *Index) SourcesUnder() sourceport.SourcesUnder      { return i.ports.SourcesUnder }
 func (i *Index) RemovalLookup() sourceport.RemovalLookup    { return i.ports.RemovalLookup }
-func (i *Index) SourceKnown() sourceport.SourceKnown        { return i.ports.SourceKnown }
+func (i *Index) SourceRecords() sourceport.SourceRecords    { return i.ports.SourceRecords }
 func (i *Index) SourceBacklog() sourceport.SourceBacklog    { return i.ports.SourceBacklog }
 func (i *Index) Vectors() embeddingport.VectorRepository    { return i.ports.Vectors }
 func (i *Index) VectorQueries() embeddingport.VectorQueries { return i.ports.VectorQueries }

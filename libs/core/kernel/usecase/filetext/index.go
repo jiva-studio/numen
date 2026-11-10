@@ -34,7 +34,7 @@ const versionReader = "text-version-1"
 type Index struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository
-	known   sourceport.SourceKnown
+	records sourceport.SourceRecords
 	backlog sourceport.SourceBacklog
 	lookup  sourceport.RemovalLookup
 	texts   textport.TextReaders
@@ -56,17 +56,17 @@ type Index struct {
 
 // NewIndex creates an Index from the vault readers, the source repository
 // that stores sources and chunks, the queries that report which sources the
-// index holds, which still need text and what it holds for the ones that left,
+// index records, which still need text and the text kept for the ones that left,
 // and the text readers. Nil texts means no file has text.
 func NewIndex(
 	readers vaultport.VaultReaders,
 	sources sourceport.SourceRepository,
-	known sourceport.SourceKnown,
+	records sourceport.SourceRecords,
 	backlog sourceport.SourceBacklog,
 	lookup sourceport.RemovalLookup,
 	texts textport.TextReaders,
 ) Index {
-	return Index{readers: readers, sources: sources, known: known, backlog: backlog, lookup: lookup, texts: texts}
+	return Index{readers: readers, sources: sources, records: records, backlog: backlog, lookup: lookup, texts: texts}
 }
 
 // IndexWithProgress runs Execute with onProgress reporting each step when
@@ -125,7 +125,7 @@ func (u Index) discover(
 }
 
 func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
-	stats, err := u.known.GetFileStats(ctx, v.ID, domain.KindFile)
+	stats, err := u.records.GetFileStats(ctx, v.ID, domain.KindFile)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -133,14 +133,14 @@ func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain
 }
 
 func (u Index) readNoteStats(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
-	sources, err := u.known.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	sources, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
 	if len(sources) == 0 {
 		return nil, nil
 	}
-	stats, err := u.known.GetFileStats(ctx, v.ID, domain.KindNote)
+	stats, err := u.records.GetFileStats(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -306,7 +306,7 @@ func (u Index) dropOutdatedText(
 	notePaths []string,
 	res *vaultreading.IndexResult,
 ) ([]string, error) {
-	cut, err := u.known.GetRecognisedSources(ctx, v.ID, domain.KindFile)
+	cut, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
 		return notePaths, fmt.Errorf("read index: %w", err)
 	}
@@ -318,7 +318,7 @@ func (u Index) dropOutdatedText(
 			return notePaths, err
 		}
 	}
-	notes, err := u.known.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	notes, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return notePaths, fmt.Errorf("read index: %w", err)
 	}

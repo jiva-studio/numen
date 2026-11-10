@@ -393,6 +393,6 @@ func (s *Store) GetSmallChunks(vaultID domain.VaultID) []Chunk {
 var (
 	_ sourceport.SourcesUnder  = (*Store)(nil)
 	_ sourceport.RemovalLookup = (*Store)(nil)
-	_ sourceport.SourceKnown   = (*Store)(nil)
+	_ sourceport.SourceRecords = (*Store)(nil)
 	_ sourceport.SourceBacklog = (*Store)(nil)
 )
