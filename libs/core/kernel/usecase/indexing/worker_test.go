@@ -5,19 +5,17 @@ import (
 	"errors"
 	"hash/fnv"
 	"math/rand/v2"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -58,20 +56,8 @@ func findTask(t *testing.T, r *recorder, id string) *vaultreading.Task {
 	return nil
 }
 
-func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
-	t.Helper()
-
-	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-	db, err := cfg.OpenIndex(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	testsupport.CloseAfter(t, db)
-	return container.NewEditorAssembly(cfg, vaultregistry.Ports{}, db), db
-}
-
 func newPass(
-	made container.EditorAssembly, db *container.Index, events Events, embedder embeddingport.Embedder, recipe string,
+	made readingfixture.Reading, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
 ) *pass {
 	worker := NewWorker(Config{
@@ -87,7 +73,7 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v domain.Vault) {
+func cut(t *testing.T, made readingfixture.Reading, db *vault.Index, v domain.Vault) {
 	t.Helper()
 
 	scan := vault.NewScan(
@@ -102,7 +88,7 @@ func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v dom
 	}
 }
 
-func fit(t *testing.T, db *container.Index, model embeddingport.Embedder) {
+func fit(t *testing.T, db *vault.Index, model embeddingport.Embedder) {
 	t.Helper()
 	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
@@ -157,7 +143,7 @@ func (*sulking) Concurrency() int { return 1 }
 // A model that is there and not answering leaves the pass in the list under the
 func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	model := &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -178,7 +164,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 // A completed pass does not leave its entry in the task list.
 func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -229,7 +215,7 @@ func (p *peeking) opening(id string) (vaultreading.Task, bool) {
 func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	events := newRecorder()
 	watching := &peeking{fakeEmbedder: &fakeEmbedder{dims: 64}, tasks: events.tasks}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, watching)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -249,7 +235,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // A library that would not be read is a vault searching less than it holds, and
 // the pass is left standing under what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
@@ -309,7 +295,7 @@ func (o *overheard) lists() [][]vaultreading.Task {
 func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -364,7 +350,7 @@ func (*nudging) Concurrency() int { return 1 }
 func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -416,7 +402,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -450,7 +436,7 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 func TestANoteSaveStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -513,7 +499,7 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 // embeds the vault's pending vectors.
 func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -537,7 +523,7 @@ func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 // keeps the chunks the note was cut into.
 func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -594,7 +580,7 @@ func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
 		started:      make(chan struct{}, 1),
 		stopped:      make(chan error, 1),
 	}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})

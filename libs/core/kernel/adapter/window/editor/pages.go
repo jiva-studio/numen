@@ -13,6 +13,11 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 )
@@ -41,28 +46,47 @@ type PluginServices = interface {
 	GetFrameOrigins(pluginID string) []string
 }
 
-// served is one service this build answers: where its calls arrive, and what
+// Route is one service this build answers: where its calls arrive, and what
 // answers them.
-type served struct {
-	posVal string
-	to     http.Handler
+type Route struct {
+	path    string
+	handler http.Handler
+	service any
 }
 
-func mount(pos string, to http.Handler) served { return served{posVal: pos, to: to} }
+// NewRoute is the route of a service of the schema. Handler is what the schema
+// generated for the service, and service is the handler it answers through.
+func NewRoute(path string, handler http.Handler, service any) Route {
+	return Route{path: path, handler: handler, service: service}
+}
+
+// pageSet is what answers the requests that reach a window: the routes of its
+// services and the services beside them.
+type pageSet struct {
+	state     *State
+	routes    []Route
+	themes    numenv1connect.ThemeServiceHandler
+	plugins   PluginServices
+	pluginDir func(id string) (string, bool)
+}
 
 // NewHandler puts the services in front of the pages, so a window and a browser
 // are served by one handler.
 // named lists the services this build serves, by the names the schema gives
 // them. A service left out is not mounted, so a call to it is unanswered.
 // Naming none builds the whole schema.
-func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
+func (o *Installation) NewHandler(files http.Handler, named ...string) http.Handler {
+	return o.pages.newHandler(files, named...)
+}
+
+func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 	routes := s.newRoutes(named)
 	// Only a build that answers the whole schema serves the bytes of vault files and the plugin route.
 	isWhole := len(named) == 0
 
 	// The origin recordings play from is known once the socket it is served over is
 	// open, which precedes any page request.
-	played := s.Playing.getPlayOrigins()
+	played := s.state.Playing.Load().getPlayOrigins()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.
@@ -72,14 +96,14 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 		}
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
 		isAgent := strings.HasPrefix(r.URL.Path, "/numen.v1.AgentService/")
-		if !isAgent && isWhole && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+		if !isAgent && isWhole && s.plugins != nil && s.plugins.Serves(r.URL.Path) {
 			s.setRequestVault(r)
-			s.PluginServices.ServeHTTP(w, r)
+			s.plugins.ServeHTTP(w, r)
 			return
 		}
 		for _, one := range routes {
-			if strings.HasPrefix(r.URL.Path, one.posVal) {
-				one.to.ServeHTTP(w, r)
+			if strings.HasPrefix(r.URL.Path, one.path) {
+				one.handler.ServeHTTP(w, r)
 				return
 			}
 		}
@@ -87,85 +111,30 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 	})
 }
 
-func isServed(named []string, service string) bool {
-	return len(named) == 0 || slices.Contains(named, service)
+func isServed(named []string, route Route) bool {
+	return len(named) == 0 || slices.Contains(named, strings.Trim(route.path, "/"))
 }
 
-// service is one service of the schema, and how its calls are answered.
-type service struct {
-	name   string
-	handle func(counted connect.HandlerOption) (string, http.Handler)
-}
-
-func (s *Services) newRoutes(named []string) []served {
-	counted := s.newQuestionCounter()
-	var routes []served
-	for _, one := range s.newServices() {
-		if isServed(named, one.name) {
-			routes = append(routes, mount(one.handle(counted)))
+func (s pageSet) newRoutes(named []string) []Route {
+	var routes []Route
+	for _, one := range s.routes {
+		if isServed(named, one) {
+			routes = append(routes, one)
 		}
-	}
-	// The catalog belongs to the installation, and a build put together without one serves none.
-	if s.Catalog != nil && isServed(named, numenv1connect.CatalogServiceName) {
-		routes = append(routes, mount(numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)))
 	}
 	// The themes belong to the installation and arrive here from whatever put
 	// the window together, so a build put together without a catalog serves
 	// none.
-	if s.Themes != nil && isServed(named, numenv1connect.ThemeServiceName) {
-		routes = append(routes, mount(numenv1connect.NewThemeServiceHandler(s.Themes, counted)))
+	if s.themes != nil {
+		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.state.CountQuestions())
+		if themed := NewRoute(path, handler, s.themes); isServed(named, themed) {
+			routes = append(routes, themed)
+		}
 	}
 	return routes
 }
 
-func (s *Services) newServices() []service {
-	return []service{
-		{numenv1connect.VaultServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewVaultServiceHandler(s.Vault, c)
-		}},
-		{numenv1connect.WorkspaceServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewWorkspaceServiceHandler(s.Workspace, c)
-		}},
-		{numenv1connect.FileServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewFileServiceHandler(s.File, c)
-		}},
-		{numenv1connect.NoteServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewNoteServiceHandler(s.Note, c)
-		}},
-		{numenv1connect.SearchServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewSearchServiceHandler(s.Search, c)
-		}},
-		{numenv1connect.VaultsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewVaultsServiceHandler(s.Vaults, c)
-		}},
-		{numenv1connect.SettingsServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewSettingsServiceHandler(s.Settings, c)
-		}},
-		{numenv1connect.WindowServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewWindowServiceHandler(s.state.Window, c)
-		}},
-		{numenv1connect.MediaServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewMediaServiceHandler(s.Media, c)
-		}},
-		{numenv1connect.AgentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewAgentServiceHandler(s.Agent, c)
-		}},
-		{numenv1connect.CommandServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewCommandServiceHandler(s.Command, c)
-		}},
-		{numenv1connect.TextServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			return numenv1connect.NewTextServiceHandler(s.Text, c)
-		}},
-		{numenv1connect.PluginServiceName, func(c connect.HandlerOption) (string, http.Handler) {
-			if s.Plugin == nil {
-				return numenv1connect.NewPluginServiceHandler(numenv1connect.UnimplementedPluginServiceHandler{}, c)
-			}
-			return numenv1connect.NewPluginServiceHandler(s.Plugin, c)
-		}},
-	}
-}
-
-func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
+func (s pageSet) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 		if !s.state.questions.begin() {
@@ -182,20 +151,22 @@ func (s *Services) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole
 		defer s.state.questions.finish()
 		s.serveAsset(w, r)
 	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
-		wire.WritePage(w, r, pages, s.Themes, files)
+		wire.WritePage(w, r, pages, s.themes, files)
 	default:
 		files.ServeHTTP(w, r)
 	}
 }
 
-func (s *Services) newQuestionCounter() connect.HandlerOption {
+// CountQuestions counts each call to a service among the questions the window
+// is answering, and refuses it once the window is shut.
+func (s *State) CountQuestions() connect.HandlerOption {
 	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
 		func(next connect.UnaryFunc) connect.UnaryFunc {
 			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
-				if !s.state.questions.begin() {
+				if !s.questions.begin() {
 					return nil, connect.NewError(connect.CodeUnavailable, errShut)
 				}
-				defer s.state.questions.finish()
+				defer s.questions.finish()
 				return next(ctx, r)
 			}
 		},
@@ -205,7 +176,7 @@ func (s *Services) newQuestionCounter() connect.HandlerOption {
 // assetsRoute is the path prefix where the bytes of vault files are served.
 const assetsRoute = "/assets/"
 
-func (s *Services) serveAsset(w http.ResponseWriter, r *http.Request) {
+func (s pageSet) serveAsset(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -222,7 +193,7 @@ func (s *Services) serveAsset(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "asset not found", http.StatusNotFound)
 }
 
-func (s *Services) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
+func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
 	vault := s.state.GetCurrentVault()
 	name := filepath.FromSlash(unescapedPath)
 	if vault.Path == "" || !filepath.IsLocal(name) {
@@ -259,27 +230,89 @@ func openVaultFile(vaultDir, name string) (*os.File, os.FileInfo, error) {
 	return file, info, nil
 }
 
-func (s *Services) servePluginRoute(w http.ResponseWriter, r *http.Request, isWhole bool) {
-	if wire.ServePluginFile(w, r, s.getPluginDir) {
+func (s pageSet) servePluginRoute(w http.ResponseWriter, r *http.Request, isWhole bool) {
+	if wire.ServePluginFile(w, r, s.pluginDir) {
 		return
 	}
-	if !isWhole || s.PluginServices == nil {
+	if !isWhole || s.plugins == nil {
 		http.Error(w, "plugin file not found", http.StatusNotFound)
 		return
 	}
 	s.setRequestVault(r)
-	s.PluginServices.ServeRoute(w, r)
+	s.plugins.ServeRoute(w, r)
 }
 
 // requestVaultHeader names the vault a request forwarded to a plugin works, as the host endpoint
 // reads it on the calls the plugin makes back.
 const requestVaultHeader = "Numen-Vault"
 
-func (s *Services) setRequestVault(r *http.Request) {
+func (s pageSet) setRequestVault(r *http.Request) {
 	if r.Header.Get(requestVaultHeader) != "" {
 		return
 	}
 	if v := s.state.GetCurrentVault(); v.ID != "" {
 		r.Header.Set(requestVaultHeader, string(v.ID))
 	}
+}
+
+// NewNoteRoute is the route of the notes service.
+func NewNoteRoute(state *State, handler *NoteHandler) Route {
+	path, served := numenv1connect.NewNoteServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewFileRoute is the route of the files service.
+func NewFileRoute(state *State, handler *FileHandler) Route {
+	path, served := numenv1connect.NewFileServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewVaultsRoute is the route of the service that lists and changes the vaults.
+func NewVaultsRoute(state *State, handler *VaultsHandler) Route {
+	path, served := numenv1connect.NewVaultsServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewMediaRoute is the route of the service that tells where a media file is played from.
+func NewMediaRoute(state *State, handler *MediaHandler) Route {
+	path, served := numenv1connect.NewMediaServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewSearchRoute is the route of the search service.
+func NewSearchRoute(state *State, handler *search.Handler) Route {
+	path, served := numenv1connect.NewSearchServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewSettingsRoute is the route of the settings service.
+func NewSettingsRoute(state *State, handler *settings.Handler) Route {
+	path, served := numenv1connect.NewSettingsServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewCommandRoute is the route of the service that lists and runs the commands of plugins.
+func NewCommandRoute(state *State, handler *command.Handler) Route {
+	path, served := numenv1connect.NewCommandServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewTextRoute is the route of the service that reads the text of files.
+func NewTextRoute(state *State, handler *texts.Handler) Route {
+	path, served := numenv1connect.NewTextServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewCatalogRoute is the route of the service that lists the plugins the application has.
+func NewCatalogRoute(state *State, handler *plugincatalog.Handler) Route {
+	path, served := numenv1connect.NewCatalogServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// NewPluginRoute is the route of the service plugins are managed through, which this window does
+// not implement.
+func NewPluginRoute(state *State) Route {
+	handler := numenv1connect.UnimplementedPluginServiceHandler{}
+	path, served := numenv1connect.NewPluginServiceHandler(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
 }

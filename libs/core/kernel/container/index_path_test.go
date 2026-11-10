@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"errors"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -15,8 +16,8 @@ func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
 	if _, err := cfg.OpenIndex(t.Context()); !errors.Is(err, vault.ErrNoIndexPath) {
 		t.Fatalf("OpenIndex without IndexPath: %v, want ErrNoIndexPath", err)
 	}
-	if _, err := cfg.GetEditorAssembly(t.Context()); !errors.Is(err, vault.ErrNoIndexPath) {
-		t.Fatalf("GetEditorAssembly without IndexPath: %v, want ErrNoIndexPath", err)
+	if _, err := cfg.OpenWindow(t.Context(), "", io.Discard); !errors.Is(err, vault.ErrNoIndexPath) {
+		t.Fatalf("OpenWindow without IndexPath: %v, want ErrNoIndexPath", err)
 	}
 }
 

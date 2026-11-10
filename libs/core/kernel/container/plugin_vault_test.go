@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func() (domain.Vault, bool), container.EditorAssembly) {
+func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func() (domain.Vault, bool), windowVaults) {
 	t.Helper()
 	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 	registry, err := cfg.Registry()
@@ -28,7 +28,7 @@ func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func(
 	if err := registry.Saver.Save(v); err != nil {
 		t.Fatal(err)
 	}
-	return v, func() (domain.Vault, bool) { return v, true }, container.NewEditorAssembly(cfg, registry, db)
+	return v, func() (domain.Vault, bool) { return v, true }, windowVaults{cfg: cfg, registry: registry, db: db}
 }
 
 func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {

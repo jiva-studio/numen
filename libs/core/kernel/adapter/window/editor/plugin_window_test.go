@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -34,7 +35,7 @@ func newBoundWindow(t *testing.T) (*State, pluginport.PluginWindow, <-chan domai
 	}))
 	line, unsubscribe := state.Places.subscribe()
 	t.Cleanup(unsubscribe)
-	return state, NewPluginWindow(state, nil, vaultreader.Readers{}), line
+	return state, NewPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.GetWindow())), line
 }
 
 func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {

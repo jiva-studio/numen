@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
 	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -61,7 +61,7 @@ func (c Config) GetPluginCatalog() *catalog.Service {
 	return c.plugins().GetPluginCatalog()
 }
 
-func (c Config) getEditorCatalog() assembly.PluginCatalog {
+func (c Config) getEditorCatalog() plugincatalog.Catalog {
 	return c.plugins().GetEditorCatalog()
 }
 

@@ -13,6 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
@@ -626,9 +627,9 @@ func TestRenamingANoteSavedElsewhereIsAQuestion(t *testing.T) {
 		"Old.md": "---\ntitle: Old\n---\n\n# Old\n",
 	})
 	waitForScan(t, f)
-	*f.installation.Services.NoteRename() = f.installation.Services.NoteRename().WithWriters(staleWriters{MoveWriting: f.installation.Services.NoteRename().Writers()})
+	*editor.ServicesOf(f.installation).NoteRename() = editor.ServicesOf(f.installation).NoteRename().WithWriters(staleWriters{MoveWriting: editor.ServicesOf(f.installation).NoteRename().Writers()})
 
-	out, err := f.installation.Services.Note.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
+	out, err := editor.ServicesOf(f.installation).Note.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Old.md",
 		Title: "New",
 	}))
@@ -654,8 +655,8 @@ func TestAMoveThatCameApartAfterTheFileLandedReturnsWhereItWent(t *testing.T) {
 	f := openWindow(t, nil, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
-	m := f.installation.Services.FileMove().WithSources(stuck{f.installation.Services.FileMove().Sources()})
-	f.installation.Services.SetFileMove(&m)
+	m := editor.ServicesOf(f.installation).FileMove().WithSources(stuck{editor.ServicesOf(f.installation).FileMove().Sources()})
+	editor.ServicesOf(f.installation).SetFileMove(&m)
 
 	answer, err := f.client.MoveFile(t.Context(), connect.NewRequest(&v1.MoveFileRequest{
 		From: "Entropy.md",
@@ -677,7 +678,7 @@ func TestRenameNote_ReturnsTitleWhenPostMoveStepFails(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
 	})
 	waitForScan(t, f)
-	*f.installation.Services.NoteRename() = f.installation.Services.NoteRename().WithSources(stuck{f.installation.Services.NoteRename().Sources()})
+	*editor.ServicesOf(f.installation).NoteRename() = editor.ServicesOf(f.installation).NoteRename().WithSources(stuck{editor.ServicesOf(f.installation).NoteRename().Sources()})
 
 	answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 		Path:  "Entropy.md",

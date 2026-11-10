@@ -25,7 +25,6 @@ import (
 	editorSearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
 	editorSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -45,7 +44,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func bindNotes(services *Services, db *container.Index) {
+func bindNotes(services *Services, db *vaults.Index) {
 	refs, links := db.NoteRefs(), db.Links()
 	neighborhood := query.NewShowNeighbourhood(links, refs)
 	services.Note.getOpeningNote = query.NewGetOpeningNote(db.OpeningNote())
@@ -172,7 +171,7 @@ func (failingWalkReader) WalkFiles(context.Context, func(domain.FileStat) error)
 type behind struct {
 	api         *Services
 	vault       domain.Vault
-	index       *container.Index
+	index       *vaults.Index
 	recordedVal <-chan change
 }
 
@@ -192,12 +191,8 @@ func openingWith(
 	t.Helper()
 
 	v := testsupport.NewVault(t, notes)
-	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-	db, err := cfg.OpenIndex(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	testsupport.CloseAfter(t, db)
+	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), false, nil)
+	db := wired.openIndex(t)
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
@@ -219,8 +214,8 @@ func openingWith(
 	line, isDone := api.state.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
-	made := newWatched(cfg, db, readers, watcher)
-	worker := newIndexWorker(made, api.state, embedder, idleDuration, io.Discard)
+	made := wired.sources(db, readers, watcher)
+	worker := newIndexWorker(made.ReadVault, api.state, embedder, idleDuration, io.Discard)
 	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())
@@ -283,7 +278,7 @@ func waitFor(t *testing.T, what string, is func() bool) {
 	t.Fatal(what)
 }
 
-func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
+func titleOf(t *testing.T, db *vaults.Index, v domain.Vault, path string) string {
 	t.Helper()
 	found, err := db.NoteRefs().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
@@ -504,16 +499,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "---\ntitle: Note\n---\n\n# Note\n"})
 	testsupport.WriteBook(t, v.Path, target)
 
-	cfg := container.NewConfig(container.Config{
-		IndexPath:          filepath.Join(t.TempDir(), "index.db"),
-		ShouldRebuildIndex: true,
-		TextReaders:        testsupport.Texts{Readers: vaultreader.Readers{}},
-	})
-	db, err := cfg.OpenIndex(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	testsupport.CloseAfter(t, db)
+	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), true, testsupport.Texts{Readers: vaultreader.Readers{}})
+	db := wired.openIndex(t)
 
 	readers := vaultreader.Readers{}
 	watcher := newManualWatcher()
@@ -526,8 +513,8 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api.state.setVault(v)
 
 	out := &saying{}
-	made := newWatched(cfg, db, readers, watcher)
-	worker := newIndexWorker(made, api.state, nil, quietPeriod, out)
+	made := wired.sources(db, readers, watcher)
+	worker := newIndexWorker(made.ReadVault, api.state, nil, quietPeriod, out)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	_, wait := startIndexing(ctx, made, api.state, indexJob{vault: v, rebuild: true, worker: worker, session: worker.NewSession(), out: out})
@@ -706,10 +693,10 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	})
 }
 
-func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServiceClient {
+func newThemeClient(t *testing.T, cfg themeConfig) numenv1connect.ThemeServiceClient {
 	t.Helper()
 
-	themes, err := cfg.Themes(nil)
+	themes, err := cfg.themes(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -719,9 +706,9 @@ func newThemeClient(t *testing.T, cfg container.Config) numenv1connect.ThemeServ
 	return numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
 }
 
-func newConfig(t *testing.T) container.Config {
+func newConfig(t *testing.T) themeConfig {
 	t.Helper()
-	return container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
+	return themeConfig{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")}
 }
 
 func TestTheWindowAsksTheSameHandlerAboutItsThemes(t *testing.T) {
@@ -769,7 +756,7 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 		t.Fatalf("failed: %s", reason)
 	}
 
-	response := container.DefaultSettings()
+	response := adapterSettings.DefaultFile()
 	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}
@@ -813,7 +800,7 @@ func TestASizeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 		t.Fatalf("failed: %s", reason)
 	}
 
-	response := container.DefaultSettings()
+	response := adapterSettings.DefaultFile()
 	if err := adapterSettings.NewFiles().OpenAt(file, &response); err != nil {
 		t.Fatal(err)
 	}

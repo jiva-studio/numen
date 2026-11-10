@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 )
@@ -33,7 +34,7 @@ func TestAPathNamesTheKindOfTabItsNoteOpensIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.installation.Services.SetTabKindChoice(choose)
+	editor.ServicesOf(f.installation).SetTabKindChoice(choose)
 
 	kinds := getKindsByPath(t, f, "Entropy.md", "links/tide.md", "Physics.epub")
 
@@ -73,7 +74,7 @@ func TestAListingOfAFolderNamesTheKindOfTabEachNoteOpensIn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.installation.Services.SetTabKindChoice(choose)
+	editor.ServicesOf(f.installation).SetTabKindChoice(choose)
 
 	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: "links"}))
 	if err != nil {

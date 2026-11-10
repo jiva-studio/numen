@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 )
 
 func getHeldWords() []string {
@@ -74,7 +75,7 @@ func writeNote(t *testing.T, root, name, body string) {
 func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
 	events := newRecorder()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 

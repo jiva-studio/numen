@@ -10,140 +10,169 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
+	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
-// Installation is a window put together and running: the questions a client
-// may ask, and the pieces anything else working the same vault needs.
+// Installation is a window put together and running: the pieces the services
+// of its routes and anything else working the same vault need.
 // The index and the embedder belong to the installation and are made once.
 // The passes behind a vault belong to that vault and are rebuilt when another
 // is opened.
 type Installation struct {
-	State    *State
-	Services *Services
+	State *State
 
 	Embedder embeddingport.Embedder
 	Asking   embeddingport.Embedder
 
-	notes  note.Scenarios
-	vaults vaults.Scenarios
+	notes  *note.Scenarios
+	vaults *vaults.Scenarios
 
-	made          assembly.Assembly
-	tasks         *run.Tasks
+	sources       Sources
+	pages         pageSet
+	dialogs       []func(dialog machineport.PathDialog)
 	out           io.Writer
 	checkIdentity vaults.CheckIdentity
-	models        *run.Lock
 	closing       <-chan struct{}
 	indexer       *indexing.Worker
 	embedderError error
 	stopEmbedder  func() error
+	isRebuilding  bool
 
 	shutdown  shutdownState
 	sessionMu sync.Mutex
 }
 
+// Setup is what a window is made of before any service is mounted on it.
+type Setup struct {
+	Tasks         *run.Tasks
+	Out           io.Writer
+	CheckIdentity vaults.CheckIdentity
+	Embedder      embeddingport.Embedder
+	Asking        embeddingport.Embedder
+	EmbedderError error
+	StopEmbedder  func() error
+	Progress      indexport.IndexProgress
+	OpenTabsStore windowport.OpenTabsStore
+	EmitEvent     func(event string)
+	IsRebuilding  bool
+	Closing       <-chan struct{}
+}
+
 // errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
-// Open initializes the editor window session for the specified vault.
-// When targetVault is empty, opens the most recently viewed vault.
-func Open(ctx context.Context, made assembly.Assembly, targetVault string, out io.Writer) (*Installation, error) {
-	first, err := made.OpenGetVaultToShow().Execute(targetVault)
-	if err != nil {
-		return nil, errors.Join(err, made.CloseIndex())
-	}
-
-	// One task list serves every operation and the window that displays it.
-	// A request is one task regardless of how it was issued. The list is created
-	// before any component that reports into it.
-	tasks := run.NewTasks()
-	models := &run.Lock{}
-	made.ReportPluginFailures(tasks)
-	made.SetPluginWork(tasks, models)
-
-	// Opened once, for as long as the window is. A local model is fetched and
-	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := made.OpenEmbedders(ctx, tasks)
-	if why != nil {
-		writeDiagnostic(tasks.Set, out, "not embedding: %v\n", why)
+// NewInstallation makes the state of a window and the worker that indexes its
+// vaults. Nothing is served and no vault is open until Start.
+func NewInstallation(in Setup, sources Sources) (*Installation, error) {
+	if in.EmbedderError != nil {
+		writeDiagnostic(in.Tasks.Set, in.Out, "not embedding: %v\n", in.EmbedderError)
 		// Record indexing task failure when embedding provider initialization fails.
-		tasks.Set(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
+		in.Tasks.Set(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: in.EmbedderError.Error()})
 	}
-	if closeEmbedder == nil {
-		closeEmbedder = func() error { return nil }
-	}
-
-	state, services, err := createWindow(made, tasks, embedder)
+	state, err := NewState(in.Tasks)
 	if err != nil {
-		return nil, errors.Join(err, closeEmbedder(), made.CloseIndex())
+		return nil, err
 	}
-	indexer := newIndexWorker(made, state, embedder, quietPeriod, out)
+	state.EmitEvent = in.EmitEvent
+	state.OpenTabsStore = in.OpenTabsStore
+	state.SetIndexing(in.Progress, in.Embedder)
+	indexer := newIndexWorker(sources.ReadVault, state, in.Embedder, quietPeriod, in.Out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
-	// The window's search is the application's search. It is built after the
-	// embedder is resolved; when the model could not be loaded, search uses words
-	// only. The degraded state is reported as a task because a window opened
-	// from a desktop entry has no terminal.
-	finds := made.NewSearch(asking, func(err error) {
-		state.reportTask(vaultreading.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
-	})
-	services.Search.Finds = &finds
-	made.SetPluginSearch(embedder, newFloorErrorReporter(state))
-
-	pool := &Installation{
+	return &Installation{
 		State:         state,
-		Services:      services,
-		Embedder:      embedder,
-		Asking:        asking,
-		made:          made,
-		checkIdentity: vaults.NewCheckIdentity(made.GetVaultIdentity()),
-		tasks:         tasks,
-		models:        models,
-		out:           out,
-		closing:       ctx.Done(),
+		Embedder:      in.Embedder,
+		Asking:        in.Asking,
+		sources:       sources,
+		pages:         pageSet{state: state},
+		out:           in.Out,
+		checkIdentity: in.CheckIdentity,
+		closing:       in.Closing,
 		indexer:       indexer,
-		embedderError: why,
-		stopEmbedder:  closeEmbedder,
-	}
+		embedderError: in.EmbedderError,
+		stopEmbedder:  in.StopEmbedder,
+		isRebuilding:  in.IsRebuilding,
+	}, nil
+}
 
-	pool.wireUseCases()
+// UseScenarios sets the use cases the window works its notes and its vaults
+// through. They are built once: other components working the same vault, such
+// as agent tools, use these instances and build none of their own, so both
+// observe the same errors.
+func (o *Installation) UseScenarios(notes *note.Scenarios, target *vaults.Scenarios) {
+	o.notes, o.vaults = notes, target
+}
+
+// Mount adds the services the window answers through.
+func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.routes, routes...) }
+
+// SetThemes sets the themes the window offers and puts on its pages. A window
+// put together without a catalog serves none.
+func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
+
+// GetThemes is the themes the window offers, and nil for a window put together without a catalog.
+func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
+
+// SetPlugins sets where the calls for the services plugins serve are forwarded,
+// and where the files of a plugin are read from.
+func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (string, bool)) {
+	o.pages.plugins, o.pages.pluginDir = services, dir
+}
+
+// OnFolderDialog registers what a service does with the native dialog when the
+// application gives one.
+func (o *Installation) OnFolderDialog(bind func(dialog machineport.PathDialog)) {
+	o.dialogs = append(o.dialogs, bind)
+}
+
+// SetFolderDialog sets the native file and folder dialog used when a client
+// requests one.
+func (o *Installation) SetFolderDialog(dialog machineport.PathDialog) {
+	for _, bind := range o.dialogs {
+		bind(dialog)
+	}
+}
+
+// Start opens the first vault, follows the model of the embedder and serves
+// recordings over the loopback socket.
+func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer) error {
+	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)
 
 	// Reindexing every file applies to this launch only; it is not carried to a
 	// vault opened later.
-	if err := pool.startVault(ctx, first, made.IsRebuildingIndex()); err != nil {
-		return nil, errors.Join(err, closeEmbedder(), made.CloseIndex())
+	if err := o.startVault(ctx, first, o.isRebuilding); err != nil {
+		return err
 	}
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
 	onStop := func(why error) {
-		writeDiagnostic(state.reportTask, out, "recordings will no longer play: %v\n", why)
+		writeDiagnostic(o.State.reportTask, o.out, "recordings will no longer play: %v\n", why)
 	}
-	if playing, why := Listen(ctx, services.server, onStop); why != nil {
-		writeDiagnostic(state.reportTask, out, "recordings will not play: %v\n", why)
+	if playing, why := Listen(ctx, files, onStop); why != nil {
+		writeDiagnostic(o.State.reportTask, o.out, "recordings will not play: %v\n", why)
 	} else {
-		services.openPlaying(playing)
+		o.State.Playing.Store(playing)
 	}
-	return pool, nil
+	return nil
 }
 
 // Close shuts the door on every question, stops the passes behind the vault,
@@ -155,17 +184,23 @@ func (o *Installation) Close() error {
 	o.stopVault()
 	// The socket a recording was played over answers with the vault's files, so
 	// it stops before the vault does.
-	playingErr := o.Services.Playing.Close()
+	playingErr := o.State.Playing.Load().Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
-	return errors.Join(playingErr, o.stopEmbedder(), o.made.CloseIndex())
+	return errors.Join(playingErr, o.stopEmbedder(), o.sources.CloseIndex())
 }
 
 // Problems returns the window's index cache as a port; Passages does the same.
 // Other components working the same vault in this process, including agent
 // tools, read the same index.
-func (o *Installation) Problems() problemport.ProblemQueries { return o.made.GetProblemQueries() }
-func (o *Installation) Passages() sourceport.PassageQueries  { return o.made.GetPassageQueries() }
+func (o *Installation) Problems() problemport.ProblemQueries {
+	return o.sources.GetProblemQueries()
+}
+
+// Passages is the window's index cache as a port, as Problems is.
+func (o *Installation) Passages() sourceport.PassageQueries {
+	return o.sources.GetPassageQueries()
+}
 
 // GetCurrentVault is the vault the window has open.
 func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
@@ -173,9 +208,9 @@ func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurren
 // Notes returns the use cases this window works its vault through.
 // Other components working the same vault in this process, such as agent
 // tools, use the same instances and share error behavior and dependencies.
-// Operations on the list of vaults are in Services.Vaults.
+// Operations on the list of vaults are in Vaults.
 // Activity from callers other than the user is rendered through Notes.Drawing.
-func (o *Installation) Notes() note.Scenarios { return o.notes }
+func (o *Installation) Notes() note.Scenarios { return *o.notes }
 
 // DraftingLocation locates where target text occurs in a note as UTF-16 count offsets.
 func (o *Installation) DraftingLocation(ctx context.Context, path, text string) (int, int, bool) {
@@ -197,10 +232,11 @@ func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.State.session.Load(); on != nil {
 		return on.refresh
 	}
-	return o.made.GetRefresh()
+	return o.sources.GetRefresh()
 }
 
-func (o *Installation) updateIndex(ctx context.Context, v domain.Vault, paths []string) error {
+// UpdateIndex brings the notes at the paths up to date in the index.
+func (o *Installation) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	_, err := o.Refresh().Execute(ctx, v, paths)
 	return err
 }
@@ -246,12 +282,11 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-func createWindow(
-	made assembly.Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
-) (*State, *Services, error) {
+// NewState makes the state of a window that shows no vault.
+func NewState(tasks *run.Tasks) (*State, error) {
 	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
@@ -261,106 +296,38 @@ func createWindow(
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
-	services := createServices(state)
-	services.getPluginDir = made.GetPluginDir
-	state.EmitEvent = made.EmitEvent
-	state.OpenTabsStore = made.GetOpenTabsStore()
-	readers := made.GetVaultReaders()
-	services.readFiles(readers, made.OpenPluginFile(), made.GetMediaType())
-	services.Note.getOpeningNote = made.OpenGetOpeningNote()
-	services.Note.getTypes = made.OpenGetTypes()
-	services.Note.getHeadings = made.OpenGetHeadings()
-	services.Note.resolveLinks = made.OpenResolveLinks()
-	services.Search.GetNameMatches = made.OpenGetNameMatches()
-	services.Search.GetTitles = made.OpenGetTitles()
-	services.Search.GetTypes = services.Note.getTypes
-	services.File.getFolderEntries = made.OpenGetFolderEntries(readers)
-	services.File.getFileKinds = made.OpenGetFileKinds(readers)
-	services.File.chooseTabKind = made.OpenChooseTabKind()
-	services.Note.findTabKinds = services.File.listTabKinds
-	services.Search.ListTabKinds = services.File.listTabKinds
-	services.File.createFolder = made.OpenCreateFolder()
-
 	// The editor is open on one vault, and answers which as itself.
 	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
-	state.Indexing.Progress = made.GetIndexProgress()
-	// Set before any chunk is read: the model name and recipe determine whether
-	// a chunk already carries a vector, and tell the window that chunks will be
-	// embedded.
-	if embedder != nil {
-		name, recipe := vectors.DescribeModel(embedder)
-		state.Indexing.Model.Store(name)
-		state.Indexing.Recipe.Store(recipe)
-	}
-	return state, services, nil
+	return state, nil
 }
 
-func (o *Installation) wireUseCases() {
-	made, services := o.made, o.Services
-
-	// Use cases for this installation's notes and vaults, built once. Other
-	// components working the same vault, such as agent tools, use these instances
-	// and build none of their own.
-	//
-	// A note saved by the user is refreshed in the index before the save returns,
-	// so the vault reflects its content without waiting for the watcher.
-	o.notes = made.OpenNotes(o.updateIndex).FollowMoves(o.State.GetWindow())
-	o.vaults = made.OpenVaults(o.notes.Move)
-
-	notes := &o.notes
-	services.Note.read = &notes.Read
-	services.Note.write = &notes.Write
-	services.Note.create = &notes.Create
-	services.Note.editLinks = &notes.Linking
-	services.Note.rename = &notes.Rename
-	services.Note.showNeighbourhood = &notes.Neighborhood
-	services.Note.getLinkAddress = notes.GetLinkAddress
-	services.Note.bindConnections(notes)
-	services.File.remove = &notes.Remove
-	services.File.emptyTrash = &notes.EmptyTrash
-
-	services.Settings.Get = made.OpenGetSettings()
-	services.PluginServices = made.GetPluginServices()
-	services.Playing.setPluginServices(services.PluginServices)
-	var versions command.VersionItems
-	if menu := made.OpenVersionItems(); menu != nil {
-		versions = menu
+// SetIndexing sets how far the vault has been read for meaning, and the model it is read under.
+// It is set before any chunk is read: the model name and recipe determine whether
+// a chunk already carries a vector, and tell the window that chunks will be
+// embedded.
+func (s *State) SetIndexing(progress indexport.IndexProgress, embedder embeddingport.Embedder) {
+	s.Indexing.Progress = progress
+	if embedder != nil {
+		name, recipe := vectors.DescribeModel(embedder)
+		s.Indexing.Model.Store(name)
+		s.Indexing.Recipe.Store(recipe)
 	}
-	services.Command = command.NewHandler(o.State, made.GetPluginCommands(), versions)
-	if plugins := made.GetPluginCatalog(); plugins != nil {
-		services.Catalog = plugincatalog.NewHandler(plugins)
-	}
-	if text := made.OpenFileText(); text != nil {
-		services.Text = texts.NewHandler(o.State, text)
-	}
-	services.Agent.GetAgent = made.GetAgent
-	services.Settings.Write = made.OpenWriteSettings()
-	services.Settings.Watch = made.OpenWatchSettings()
-	services.Settings.Secrets = made.OpenSecrets()
-	services.Settings.PluginRetry = made.OpenRetryPlugin()
-	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)
-	if data := made.OpenPluginData(); data != nil {
-		services.Settings.PluginData, services.Settings.Vaults = data, o.State
-	}
-	services.openChoosePath = made.OpenChoosePluginPath
+}
 
-	target := &o.vaults
-	services.File.move = &target.Move
-	services.Vaults.list = &target.List
-	services.Vaults.find = &target.Find
-	services.Vaults.folderCheck = &target.FolderCheck
-	services.Vaults.add = &target.Add
-	services.Vaults.rename = &target.Rename
-	services.Vaults.remove = &target.Remove
-	services.server.find = &target.Find
+// ReportWordsAlone records that the search runs on words only, with the reason. It is a task because
+// a window opened from a desktop entry has no terminal.
+func (s *State) ReportWordsAlone(err error) {
+	s.reportTask(vaultreading.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
+}
+
+// ReportFloorError records a similarity floor that is stored and cannot be read.
+func (s *State) ReportFloorError(err error) {
+	s.reportTask(vaultreading.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 }
 
 // Vaults returns the use cases that act on the list of vaults, built once.
 // Agent components use the same instances, so both observe the same errors.
-func (o *Installation) Vaults() *vaults.Scenarios { return &o.vaults }
-
-// GetSearch is the search the window offers.
-func (o *Installation) GetSearch() *search.Search { return o.Services.Search.Finds }
+func (o *Installation) Vaults() *vaults.Scenarios { return o.vaults }
 
 // shutdownState is whether a flush of pending writes is running and whether the
 // window has closed. Vault swaps and window close both flush, one at a time.

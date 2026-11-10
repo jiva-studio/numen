@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 const (
@@ -315,7 +314,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.TextVersions.SetListener(cutOnChange{t: t, extract: extract})
-	data := NewEditorAssembly(cfg, registry.Ports{}, nil).OpenPluginData()
+	data := cfg.vault().OpenPluginData()
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
 		t.Fatal(err)

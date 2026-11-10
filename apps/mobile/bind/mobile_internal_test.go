@@ -254,7 +254,7 @@ func TestStart_InstallsThemesForWindow(t *testing.T) {
 	startIn(t, core, t.TempDir())
 	core.mu.Lock()
 	defer core.mu.Unlock()
-	if core.running.opened.Services.Themes == nil {
+	if core.running.opened.GetThemes() == nil {
 		t.Error("the installation holds no themes")
 	}
 }

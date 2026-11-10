@@ -9,19 +9,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-func (h *noteHandler) bindConnections(notes *note.Scenarios) {
-	h.getConnection = &notes.Connection
-	h.saveConnection = &notes.SaveConnection
-	h.removeSide = &notes.RemoveSide
-	h.removeConnection = &notes.RemoveConnection
-	h.join = &notes.Join
-	h.createInRelation = &notes.CreateInRelation
-	h.getBacklinks = &notes.Backlinks
-}
 
 // connectionFailure is why a connection write did not land, as the schema
 // carries it.
@@ -31,7 +20,7 @@ type connectionFailure struct {
 	isCycle   bool
 }
 
-func (h *noteHandler) failureOf(err error) (connectionFailure, error) {
+func (h *NoteHandler) failureOf(err error) (connectionFailure, error) {
 	switch {
 	case err == nil, h.state.isIndexOutdated(err):
 		return connectionFailure{}, nil
@@ -48,7 +37,7 @@ func (h *noteHandler) failureOf(err error) (connectionFailure, error) {
 }
 
 // GetConnection answers the relationship between two notes as a whole.
-func (h *noteHandler) GetConnection(
+func (h *NoteHandler) GetConnection(
 	ctx context.Context, r *connect.Request[v1.GetConnectionRequest],
 ) (*connect.Response[v1.GetConnectionResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -64,7 +53,7 @@ func (h *noteHandler) GetConnection(
 
 // SaveConnection replaces the records between two notes in both notes or in
 // neither.
-func (h *noteHandler) SaveConnection(
+func (h *NoteHandler) SaveConnection(
 	ctx context.Context, r *connect.Request[v1.SaveConnectionRequest],
 ) (*connect.Response[v1.SaveConnectionResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -90,7 +79,7 @@ func (h *noteHandler) SaveConnection(
 }
 
 // RemoveSide removes the record one note writes about another.
-func (h *noteHandler) RemoveSide(
+func (h *NoteHandler) RemoveSide(
 	ctx context.Context, r *connect.Request[v1.RemoveSideRequest],
 ) (*connect.Response[v1.RemoveSideResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -113,7 +102,7 @@ func (h *noteHandler) RemoveSide(
 }
 
 // RemoveConnection removes the records two notes write about each other.
-func (h *noteHandler) RemoveConnection(
+func (h *NoteHandler) RemoveConnection(
 	ctx context.Context, r *connect.Request[v1.RemoveConnectionRequest],
 ) (*connect.Response[v1.RemoveConnectionResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -137,7 +126,7 @@ func (h *noteHandler) RemoveConnection(
 }
 
 // JoinNotes makes one note write a record about another.
-func (h *noteHandler) JoinNotes(
+func (h *NoteHandler) JoinNotes(
 	ctx context.Context, r *connect.Request[v1.JoinNotesRequest],
 ) (*connect.Response[v1.JoinNotesResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -165,7 +154,7 @@ func (h *noteHandler) JoinNotes(
 var errNoSide = errors.New("a join needs the record to write")
 
 // CreateRelatedNote makes a note joined to an existing one.
-func (h *noteHandler) CreateRelatedNote(
+func (h *NoteHandler) CreateRelatedNote(
 	ctx context.Context, r *connect.Request[v1.CreateRelatedNoteRequest],
 ) (*connect.Response[v1.CreateRelatedNoteResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -205,7 +194,7 @@ func (h *noteHandler) CreateRelatedNote(
 }
 
 // ListBacklinks answers the links written in other notes that point at a note.
-func (h *noteHandler) ListBacklinks(
+func (h *NoteHandler) ListBacklinks(
 	ctx context.Context, r *connect.Request[v1.ListBacklinksRequest],
 ) (*connect.Response[v1.ListBacklinksResponse], error) {
 	showing, err := h.state.getCurrentVault()

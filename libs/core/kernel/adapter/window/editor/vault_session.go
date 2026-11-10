@@ -130,11 +130,11 @@ func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := o.indexer.NewSession()
-	o.made.SetTextVersionListener(newVersionChangeReporter(o.State, indexed))
+	o.sources.SetTextVersionListener(newVersionChangeReporter(o.State, indexed))
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
-	refresh, ended := startIndexing(watching, o.made, o.State, indexJob{vault: v, rebuild: rebuild, worker: o.indexer, session: indexed, out: o.out})
+	refresh, ended := startIndexing(watching, o.sources, o.State, indexJob{vault: v, rebuild: rebuild, worker: o.indexer, session: indexed, out: o.out})
 
 	return &vaultSession{
 		refresh: refresh,

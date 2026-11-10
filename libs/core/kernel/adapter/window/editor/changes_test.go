@@ -71,7 +71,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 		t.Fatal(err)
 	}
 
-	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, settings), "", os.Stderr)
+	installation, err := settings.OpenWindow(t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, installation.Services)
+	mountQuestionsServices(mux, editor.ServicesOf(installation))
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -310,7 +310,7 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 		t.Fatal(err)
 	}
 
-	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,12 +328,12 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 		noIndex,
 		testsupport.NewClock(),
 	)
-	installation.Services.SetNoteWrite(&writing)
+	editor.ServicesOf(installation).SetNoteWrite(&writing)
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(installation.Services.Settings)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, installation.Services)
+	mountQuestionsServices(mux, editor.ServicesOf(installation))
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)

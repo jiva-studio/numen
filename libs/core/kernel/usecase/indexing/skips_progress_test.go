@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 )
 
@@ -47,7 +48,7 @@ func (l *progressLog) getCounted() []vaultreading.Task {
 func canceledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
 	t.Helper()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 

@@ -97,13 +97,13 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	if _, err := vaults.NewAdd(cfg.VaultIdentity(), registry.Vaults, registry.Lookup, registry.Saver, testsupport.NewClock()).Execute(root, "secrets"); err != nil {
 		t.Fatal(err)
 	}
-	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, installation)
 
-	path, handler := numenv1connect.NewSettingsServiceHandler(installation.Services.Settings)
+	path, handler := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
 	mux := http.NewServeMux()
 	mux.Handle(path, handler)
 	server := httptest.NewUnstartedServer(mux)

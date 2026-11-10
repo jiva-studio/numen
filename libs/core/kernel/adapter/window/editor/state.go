@@ -79,6 +79,8 @@ type State struct {
 	EmitEvent func(event string)
 
 	Indexing IndexState
+
+	Playing atomic.Pointer[Loopback]
 }
 
 // IndexState is how far the vault has been read for meaning.

@@ -21,13 +21,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -346,12 +344,8 @@ func TestEditLoad(t *testing.T) {
 	}
 
 	v := testsupport.GenerateVault(t, notes)
-	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
-	db, err := cfg.OpenIndex(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	testsupport.CloseAfter(t, db)
+	wired := newWiring(filepath.Join(t.TempDir(), "index.db"), false, nil)
+	db := wired.openIndex(t)
 
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
@@ -366,8 +360,8 @@ func TestEditLoad(t *testing.T) {
 	api.state.setVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	made := container.NewEditorAssembly(cfg, vaultregistry.Ports{}, db)
-	worker := newIndexWorker(made, api.state, nil, time.Hour, io.Discard)
+	made := wired.sources(db, wired.vaults.VaultReaders(), wired.vaults.VaultWatcher())
+	worker := newIndexWorker(made.ReadVault, api.state, nil, time.Hour, io.Discard)
 	_, wait := startIndexing(t.Context(), made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(wait)
 	for !api.state.Ready.Load() && api.state.Error.Why() == "" {

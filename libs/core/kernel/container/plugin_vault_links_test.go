@@ -26,7 +26,7 @@ func (w *windowIndex) getPaths() []string {
 	return slices.Clone(w.paths)
 }
 
-func openWindowScenarios(assembly container.EditorAssembly) (container.PluginVaultHooks, *windowIndex) {
+func openWindowScenarios(assembly windowVaults) (container.PluginVaultHooks, *windowIndex) {
 	refresh := assembly.GetRefresh()
 	index := &windowIndex{}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {

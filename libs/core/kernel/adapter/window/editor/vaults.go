@@ -21,8 +21,8 @@ import (
 // errNoVaults is what a build that serves no list of vaults answers.
 var errNoVaults = errors.New("this build serves no list of vaults")
 
-// vaultsHandler answers about the vaults this installation holds.
-type vaultsHandler struct {
+// VaultsHandler answers about the vaults this installation holds.
+type VaultsHandler struct {
 	state       *State
 	list        *registry.List
 	find        *registry.Find
@@ -36,7 +36,7 @@ type vaultsHandler struct {
 
 // ListVaults returns every vault of the installation. The active vault is
 // queried from the window.
-func (s *vaultsHandler) ListVaults(
+func (s *VaultsHandler) ListVaults(
 	_ context.Context,
 	_ *connect.Request[v1.ListVaultsRequest],
 ) (*connect.Response[v1.ListVaultsResponse], error) {
@@ -55,7 +55,7 @@ func (s *vaultsHandler) ListVaults(
 }
 
 // ChooseFolder opens this machine's native folder dialog.
-func (s *vaultsHandler) ChooseFolder(
+func (s *VaultsHandler) ChooseFolder(
 	ctx context.Context,
 	r *connect.Request[v1.ChooseFolderRequest],
 ) (*connect.Response[v1.ChooseFolderResponse], error) {
@@ -75,7 +75,7 @@ func (s *vaultsHandler) ChooseFolder(
 
 // AddVault turns a folder into a vault on the list. A name another vault has
 // gets a number appended, and is not an error here.
-func (s *vaultsHandler) AddVault(
+func (s *VaultsHandler) AddVault(
 	_ context.Context,
 	r *connect.Request[v1.AddVaultRequest],
 ) (*connect.Response[v1.AddVaultResponse], error) {
@@ -95,7 +95,7 @@ func (s *vaultsHandler) AddVault(
 
 // RenameVault sets the display name of a vault. The folder name on the
 // filesystem is unchanged.
-func (s *vaultsHandler) RenameVault(
+func (s *VaultsHandler) RenameVault(
 	ctx context.Context,
 	r *connect.Request[v1.RenameVaultRequest],
 ) (*connect.Response[v1.RenameVaultResponse], error) {
@@ -118,7 +118,7 @@ func (s *vaultsHandler) RenameVault(
 
 // RemoveVault removes a vault from the list and the index, and moves its folder
 // to the trash when the request sets the trash flag.
-func (s *vaultsHandler) RemoveVault(
+func (s *VaultsHandler) RemoveVault(
 	ctx context.Context,
 	r *connect.Request[v1.RemoveVaultRequest],
 ) (*connect.Response[v1.RemoveVaultResponse], error) {
@@ -137,7 +137,7 @@ func (s *vaultsHandler) RemoveVault(
 }
 
 // OpenVault shows another vault in this window.
-func (s *vaultsHandler) OpenVault(
+func (s *VaultsHandler) OpenVault(
 	ctx context.Context,
 	r *connect.Request[v1.OpenVaultRequest],
 ) (*connect.Response[v1.OpenVaultResponse], error) {
@@ -163,7 +163,7 @@ func (s *vaultsHandler) OpenVault(
 	return connect.NewResponse(&v1.OpenVaultResponse{Error: &reason}), nil
 }
 
-func (s *vaultsHandler) convertVaultToWire(v domain.Vault) *v1.Vault {
+func (s *VaultsHandler) convertVaultToWire(v domain.Vault) *v1.Vault {
 	return &v1.Vault{
 		Id: string(v.ID), Name: v.Name, Path: v.Path,
 		IsMissing: s.folderCheck.Execute(v),

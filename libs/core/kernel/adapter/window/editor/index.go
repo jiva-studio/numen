@@ -10,14 +10,17 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
+	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -48,20 +51,14 @@ func (e indexEvents) ReportTexts(v domain.Vault, res vaultreading.IndexResult) {
 	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
-func newFloorErrorReporter(state *State) func(error) {
-	return func(err error) {
-		state.reportTask(vaultreading.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
-	}
-}
-
 // errNoProgress is the error of a window that cannot report vector progress.
 var errNoProgress = errors.New("index progress is unknown")
 
 func newIndexWorker(
-	made assembly.Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
+	reading ReadVaultFunc, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:  made.ReadWholeVault,
+		Reading:  indexing.OpenReading(reading),
 		Embedder: embedder,
 		VectorCounts: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
 			if state.Indexing.Progress == nil {
@@ -75,7 +72,9 @@ func newIndexWorker(
 			return indexing.GetProgress(ctx, state.Indexing.Progress, v.ID, text(&state.Indexing.Recipe))
 		},
 		VectorsReady: func(_ context.Context, v domain.Vault) {
-			made.EmitEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
+			if state.EmitEvent != nil {
+				state.EmitEvent(protocol.GetVectorsReadyEvent(string(v.ID)))
+			}
 		},
 		Events: indexEvents{state: state, out: out},
 		Quiet:  idleDuration,
@@ -92,7 +91,7 @@ type indexJob struct {
 	out     io.Writer
 }
 
-func startIndexing(ctx context.Context, made assembly.Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
+func startIndexing(ctx context.Context, sources Sources, state *State, job indexJob) (vaults.Refresh, func()) {
 	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
@@ -102,11 +101,11 @@ func startIndexing(ctx context.Context, made assembly.Assembly, state *State, jo
 
 	triggerPasses := newTriggerPasses()
 	checkTexts := func(paths []string) {
-		if err := made.ReportTextFilesChanged(ctx, v, paths); err != nil {
+		if err := sources.ReportTextFilesChanged(ctx, v, paths); err != nil {
 			writeDiagnostic(state.reportTask, out, "check the text versions of %s: %v\n", v.Name, err)
 		}
 	}
-	read, run, refresh, unwatched := made.StartVault(
+	read, run, refresh, unwatched := sources.StartVault(
 		ctx, v, rebuild, newChangeReporter(state, worker, triggerPasses, checkTexts), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
@@ -120,9 +119,9 @@ func startIndexing(ctx context.Context, made assembly.Assembly, state *State, jo
 		session.Run(ctx, v, rebuild, read)
 	})
 
-	if triggers := made.OpenTriggers(); triggers != nil {
+	if triggers := sources.OpenTriggers(); triggers != nil {
 		running.Go(func() {
-			changes, stop := made.WatchPluginChanges()
+			changes, stop := sources.WatchPluginChanges()
 			defer stop()
 			runTriggers(ctx, triggers, v, triggerPasses, changes, func(err error) {
 				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
@@ -203,4 +202,42 @@ func followModel(embedder embeddingport.Embedder, state *State, worker *indexing
 			}
 		}
 	})
+}
+
+// ReadVaultFunc reads a whole vault into the index.
+type ReadVaultFunc func(
+	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+) (vaultreading.ReadWholeVault, error)
+
+// StartVaultFunc starts the walk and the watch of one vault.
+type StartVaultFunc func(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError window.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vaults.Refresh,
+	unwatched error,
+)
+
+// Sources are what the passes behind a vault run over, made by the composition root from the
+// installation's adapters. OpenTriggers returns nil where the installation runs no plugins.
+// WatchPluginChanges reports each time the plugin host applied settings or forgot the failure of a
+// plugin, and the function it returns stops the reports. ReportTextFilesChanged reports to the text
+// version listener each changed file of the vault whose live text version changed.
+type Sources struct {
+	ReadVault  ReadVaultFunc
+	StartVault StartVaultFunc
+
+	SetTextVersionListener func(listener textport.VersionListener)
+	ReportTextFilesChanged func(ctx context.Context, v domain.Vault, paths []string) error
+
+	OpenTriggers       func() *trigger.Triggers
+	WatchPluginChanges func() (<-chan struct{}, func())
+
+	GetRefresh        func() vaults.Refresh
+	CloseIndex        func() error
+	GetProblemQueries func() problemport.ProblemQueries
+	GetPassageQueries func() sourceport.PassageQueries
 }

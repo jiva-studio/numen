@@ -44,9 +44,9 @@ func eachOnce(paths []string) ([]string, error) {
 	return out, nil
 }
 
-// fileHandler serves what the vault holds and the operations on it: its tree and
+// FileHandler serves what the vault holds and the operations on it: its tree and
 // its folders.
-type fileHandler struct {
+type FileHandler struct {
 	state            *State
 	getFolderEntries *file.GetFolderEntries
 	getFileKinds     *file.GetFileKinds
@@ -59,7 +59,7 @@ type fileHandler struct {
 
 // ListFiles is what one folder of the vault holds. The vault settles the order
 // the entries come in, and they cross in it.
-func (h *fileHandler) ListFiles(
+func (h *FileHandler) ListFiles(
 	ctx context.Context, r *connect.Request[v1.ListFilesRequest],
 ) (*connect.Response[v1.ListFilesResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -103,7 +103,7 @@ func (h *fileHandler) ListFiles(
 // Whether a note exists is read from the vault and its type from the index, or
 // from the note itself when nothing has scanned it yet. A window with no vault
 // has no source, and a path with nothing at it is omitted.
-func (h *fileHandler) ListFileKinds(
+func (h *FileHandler) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],
 ) (*connect.Response[v1.ListFileKindsResponse], error) {
 	showing := h.state.GetCurrentVault()
@@ -136,7 +136,7 @@ func (h *fileHandler) ListFileKinds(
 	return connect.NewResponse(out), nil
 }
 
-func (h *fileHandler) newWireFileKind(one domain.Entry, listing file.Folder) *v1.FileKind {
+func (h *FileHandler) newWireFileKind(one domain.Entry, listing file.Folder) *v1.FileKind {
 	kind := &v1.FileKind{
 		Path:   one.Path,
 		IsNote: one.Kind == domain.KindNote,
@@ -152,7 +152,7 @@ func (h *fileHandler) newWireFileKind(one domain.Entry, listing file.Folder) *v1
 }
 
 // CreateFolder puts an empty folder in the vault, with the folders above it.
-func (h *fileHandler) CreateFolder(
+func (h *FileHandler) CreateFolder(
 	ctx context.Context, r *connect.Request[v1.CreateFolderRequest],
 ) (*connect.Response[v1.CreateFolderResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -179,7 +179,7 @@ func (h *fileHandler) CreateFolder(
 }
 
 // MoveFile puts a file or a folder somewhere else in the vault.
-func (h *fileHandler) MoveFile(
+func (h *FileHandler) MoveFile(
 	ctx context.Context, r *connect.Request[v1.MoveFileRequest],
 ) (*connect.Response[v1.MoveFileResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -230,7 +230,7 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 }
 
 // RemoveFile moves a file or a folder of the vault to the trash.
-func (h *fileHandler) RemoveFile(
+func (h *FileHandler) RemoveFile(
 	ctx context.Context, r *connect.Request[v1.RemoveFileRequest],
 ) (*connect.Response[v1.RemoveFileResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -263,7 +263,7 @@ func (h *fileHandler) RemoveFile(
 
 // EmptyTrash deletes everything the trash of the vault holds and answers the
 // paths it could not delete.
-func (h *fileHandler) EmptyTrash(
+func (h *FileHandler) EmptyTrash(
 	ctx context.Context, _ *connect.Request[v1.EmptyTrashRequest],
 ) (*connect.Response[v1.EmptyTrashResponse], error) {
 	showing, err := h.state.getCurrentVault()
