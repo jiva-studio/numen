@@ -13,7 +13,7 @@ Checks over the whole repository that no single module's lint target covers: dup
    - Runs `knip` once with the root `knip.json`, whose workspaces name every TS package and plugin frontend. Unused files, unused and unlisted dependencies fail; unused exports and types are reported. A missing `knip` binary, a missing `knip.json` or a frontend package outside its workspaces fails the check.
 
 3. **Plugin API Types (`api-types`)**:
-   - A plugin with a Go `backend/api` package and a `frontend/api/types.ts` must declare the same types, JSON fields, optional fields (a Go pointer or `omitempty` is optional; a request field is always optional in TypeScript) and enumeration values on both sides. A difference is named by plugin, type and field.
+   - A plugin with a Go `backend/api` package and a `frontend/api/types.ts` (or `frontend/lib/wire/types.ts`) must declare the same types, JSON fields, optional fields (a Go pointer or `omitempty` is optional; a request field is always optional in TypeScript) and enumeration values on both sides. A difference is named by plugin, type and field.
 
 4. **Directory Structure & Size**:
    - A directory holds at most 20 handwritten source files.

@@ -92,6 +92,12 @@ export function compareApi({ go, ts, label }) {
   return found;
 }
 
+/** Where the TypeScript types of the Go API of a plugin are declared, relative to the plugin. */
+const TYPES_FILES = [
+  ["frontend", "api", "types.ts"],
+  ["frontend", "lib", "wire", "types.ts"],
+];
+
 /** The source of the types file and of the files of the plugin it imports the enumerations from. */
 function readTypesWithImports(tsFile) {
   const source = fs.readFileSync(tsFile, "utf8");
@@ -102,8 +108,8 @@ function readTypesWithImports(tsFile) {
 }
 
 /**
- * The plugins whose frontend mirrors the Go structs of `backend/api`: the TypeScript in
- * `frontend/api/types.ts` must declare the same types, fields, optionality and enum values.
+* The plugins whose frontend mirrors the Go structs of `backend/api`: the TypeScript in
+ * `frontend/api/types.ts` or `frontend/lib/wire/types.ts` must declare the same types, fields, optionality and enum values.
  *
  * @param {{ repoRoot: string, warnOnly?: boolean }} options
  * @returns {Promise<{ id: string, name: string, pass: boolean, summary: string, details?: string, durationMs: number }>}
@@ -115,8 +121,8 @@ export async function runApiTypesCheck({ repoRoot, warnOnly = false }) {
   let compared = 0;
   for (const plugin of fs.readdirSync(pluginsDir)) {
     const apiDir = path.join(pluginsDir, plugin, "backend", "api");
-    const tsFile = path.join(pluginsDir, plugin, "frontend", "api", "types.ts");
-    if (!fs.existsSync(apiDir) || !fs.existsSync(tsFile)) continue;
+    const tsFile = TYPES_FILES.map((one) => path.join(pluginsDir, plugin, ...one)).find((one) => fs.existsSync(one));
+    if (!fs.existsSync(apiDir) || !tsFile) continue;
     const go = fs
       .readdirSync(apiDir)
       .filter((name) => name.endsWith(".go") && !name.endsWith("_test.go"))
