@@ -1,11 +1,21 @@
 /**
- * Search and lookup domain methods for the window core.
+ * The two searches of the palette, asked of the core and read into the palette's own types.
  */
-import { search } from '@/shared/api/clients'
+import { getNames, SEARCH_MODE, type SearchModeCode } from '@numen/core-client'
 import type { Selector } from '@numen/plugin-loader'
+import { search } from '@/shared/api/clients'
 import { mapNoteType, mapRange } from '@/shared/api/wire'
-import { modes } from './words'
-import type { SearchDeps } from '@/features/command-palette'
+import type { SearchDeps, SearchMode } from '../model/search/search'
+
+const queryModes: Record<SearchModeCode, SearchMode | null> = {
+  [SEARCH_MODE.UNSPECIFIED]: null,
+  [SEARCH_MODE.HYBRID]: 'hybrid',
+  [SEARCH_MODE.WORDS]: 'words',
+  [SEARCH_MODE.MEANING]: 'meaning',
+  [SEARCH_MODE.NAMES]: 'names',
+}
+
+const modes = getNames<SearchMode, SearchModeCode>(queryModes)
 
 const parseSelector = (json: string): Selector | null => {
   try {

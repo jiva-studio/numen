@@ -11,13 +11,12 @@ import {
   useNoticeTasks,
 } from '@/features/background-tasks'
 import type { WindowTabs } from '@/entities/tab'
-import type { NoteLookup, runSupport } from '@/features/command-palette'
+import { searchCore, type NoteLookup, type runSupport } from '@/features/command-palette'
 import type { Command, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { isFieldFocused } from './isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
-import { core } from '../vault'
 import type { CommandItemLists } from '../plugins/commands/commandItemLists'
 import { getPaletteId, type useDeclaredCommands } from '../plugins/commands/declaredCommands'
 import { createCommandNotes } from '../tabs/commandDeps'
@@ -69,7 +68,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     ...(deps.slots ? { slots: deps.slots } : {}),
     getAppCommands: deps.getAppCommands,
     readCommandNote: deps.readCommandNote,
-    core,
+    core: searchCore,
     words,
     log: deps.log,
     windowTabs,
@@ -161,7 +160,7 @@ export function initWindowKindsAndCommands(
 
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
   ctx.kinds = useTabKinds({
-    core,
+    core: searchCore,
     log: base.log,
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,

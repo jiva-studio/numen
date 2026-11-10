@@ -6,7 +6,7 @@
  * itself owns, the ones that close the tab in front, search the vault and open the settings, are in
  * the table below. What the window offers to do it with is `deps.ts`. Nothing here draws anything.
  */
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import type { CommandDeps, CommandHandler } from './deps'
 import { COMMAND, SETTING_COMMAND_PREFIX, type CommandInvocation } from '@/entities/command'
 import { SETTINGS } from '@/entities/tab'
@@ -44,7 +44,7 @@ async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promi
   try {
     await on.settings.chooseSetting(invocation.id, invocation.name)
   } catch (error) {
-    on.writeMessage(formatErrorMessage(error), 'error')
+    on.writeMessage(formatError(error), 'error')
   }
 }
 
@@ -69,7 +69,7 @@ export async function runInvocation(
       return made || ''
     }
   } catch (error) {
-    on.writeMessage(formatErrorMessage(error), 'error')
+    on.writeMessage(formatError(error), 'error')
   }
   return ''
 }

@@ -5,7 +5,7 @@ import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/workbench'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
-import { useDebouncedSearch, type Wait } from '@/shared/search'
+import { useDebouncedSearch, type Wait } from '../../lib/search/debounced'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,

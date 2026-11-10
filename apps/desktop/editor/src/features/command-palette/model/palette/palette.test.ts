@@ -9,7 +9,7 @@ import { defineComponent, ref } from 'vue'
 import { runSupport } from './runSupport'
 import type { NoteLookup, PaletteLists, StepGroup } from '../../types'
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import { useCommandPalette, type Commands } from './palette'
+import { createCommandPalette, type Commands } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from '../search/search'
 import { WORDS as words } from '@/shared/words'
@@ -128,7 +128,7 @@ const createPalette = (
   }
   const window = createLookup()
   const retainedItem = createLists(entries)
-  const commands = useCommandPalette(
+  const commands = createCommandPalette(
     core,
     words,
     () => activeTarget.value,
@@ -580,7 +580,7 @@ describe('a command that asks for a note', () => {
   it('says the vault could not answer, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const activeTarget = ref(front())
-    const commands = useCommandPalette(
+    const commands = createCommandPalette(
       {
         names: async () => Promise.reject(new Error('no model is set')),
         vaults: async () => installation(),
@@ -935,7 +935,7 @@ describe('a command that asks for a vault', () => {
   it('says the list could not be requested, in the window’s own words', async () => {
     vi.spyOn(console, 'error').mockImplementation(vi.fn())
     const activeTarget = ref(front())
-    const commands = useCommandPalette(
+    const commands = createCommandPalette(
       {
         names: async () => [],
         vaults: async () => Promise.reject(new Error('the list is not there')),
@@ -1097,7 +1097,7 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
     holds.push(one)
     return one.promise
   }
-  const commands = useCommandPalette(
+  const commands = createCommandPalette(
     core,
     words,
     () => front(),
@@ -1583,7 +1583,7 @@ describe('a row of a list the window holds', () => {
 describe('the icon of a command', () => {
   it('is the one its declaration gives, and none for a command that gives none', () => {
     const icon = defineComponent({ name: 'GraphIcon', render: () => null })
-    const commands = useCommandPalette(
+    const commands = createCommandPalette(
       { names: async () => [], vaults: async () => installation(vault('physics', 'Physics')) },
       words,
       () => front(),
@@ -1610,7 +1610,7 @@ describe('the icon of a command', () => {
 
 describe('runSupport, arguments steps, and palette shortcuts', () => {
   it('starts a hidden command given values', () => {
-    const commands = useCommandPalette({
+    const commands = createCommandPalette({
       core: {
         names: async () => [],
         vaults: async () => installation(vault('physics', 'Physics')),
@@ -1640,7 +1640,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
   })
 
   it('walks through multi-prompt arguments steps and handles commands without prompts', () => {
-    const commands = useCommandPalette({
+    const commands = createCommandPalette({
       core: {
         names: async () => [],
         vaults: async () => installation(vault('physics', 'Physics')),
@@ -1691,7 +1691,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
   })
 
   it('asks only for the arguments the caller did not supply and keeps the supplied ones', () => {
-    const commands = useCommandPalette({
+    const commands = createCommandPalette({
       core: {
         names: async () => [],
         vaults: async () => installation(vault('physics', 'Physics')),

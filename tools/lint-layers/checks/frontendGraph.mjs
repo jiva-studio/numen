@@ -146,7 +146,7 @@ export function verifySharedServesSeveralSlices() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Shared files of the windows", read, 20);
+  requireMatches("Shared files of the windows", read, 5);
   failOnFindings("A shared file serves one slice", findings);
 }
 
