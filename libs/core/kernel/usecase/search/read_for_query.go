@@ -11,13 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, found []domain.Passage) ([]domain.Passage, error) {
 	if len(found) == 0 {
 		return nil, nil
@@ -216,4 +213,3 @@ func proseOpens(raw string) int {
 	}
 	return 0
 }
-

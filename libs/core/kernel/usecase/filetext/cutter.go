@@ -11,12 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 // cutter is the second pass: it cuts the live text of the files that need it into chunks.
 type cutter struct {
 	sources      sourceport.SourceRepository

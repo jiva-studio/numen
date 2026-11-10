@@ -3,17 +3,14 @@ package indexing
 import (
 	"context"
 	"errors"
-	"slices"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
+
 // pass is the indexing of one vault, on the one goroutine that runs it.
 type pass struct {
 	worker    *Worker

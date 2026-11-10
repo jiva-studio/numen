@@ -3,20 +3,17 @@ package filetext
 import (
 	"context"
 	"errors"
-	"fmt"
-	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
-	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 // sourcesPerQuery is the page size of the query for sources that need text,
 // so a library of any size is processed in pages.
 const sourcesPerQuery = 100
@@ -169,4 +166,3 @@ func (noTexts) IsTextSource(context.Context, string) (bool, error) { return fals
 func (u Index) Recipe() string { return recipe(versionReader, u.sizes()) }
 
 func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }
-

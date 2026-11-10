@@ -1,27 +1,22 @@
 package vectors
 
 import (
-	"cmp"
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"slices"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
 	vectors []embedding.Vector

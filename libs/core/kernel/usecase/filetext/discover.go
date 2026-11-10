@@ -2,21 +2,17 @@ package filetext
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 // sourceQueries are the queries on the sources the index records.
 type sourceQueries struct {
 	records sourceport.SourceRecords
@@ -245,4 +241,3 @@ func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string 
 	}
 	return added
 }
-

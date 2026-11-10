@@ -4,19 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 // outdated finds the sources whose text version is no longer the live one.
 type outdated struct {
 	sources sourceport.SourceRepository
@@ -108,4 +105,3 @@ func (u outdated) statIfOutdated(
 	}
 	return ref, true, nil
 }
-

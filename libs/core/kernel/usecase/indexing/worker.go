@@ -2,7 +2,6 @@ package indexing
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
+
 const taskIndexingTexts = "Indexing file texts"
 
 // QuietPeriod is how long the vault has to have been still before the notes
@@ -225,4 +225,3 @@ func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read Re
 	p := &pass{worker: s.worker, session: s, v: v, isRebuild: rebuild}
 	p.run(ctx, read)
 }
-

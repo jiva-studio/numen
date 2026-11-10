@@ -4,24 +4,18 @@ import (
 	"cmp"
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"slices"
 	"sync"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 func getSources(chunks []domain.Passage) []string {
 	var out []string
 	for _, one := range chunks {
@@ -277,4 +271,3 @@ func (p *preparedBatch) queueText(i int, key, value string, visited map[string]i
 	p.askingMap[i] = len(p.asking)
 	p.asking = append(p.asking, value)
 }
-

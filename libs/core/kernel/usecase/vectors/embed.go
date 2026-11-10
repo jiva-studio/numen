@@ -1,27 +1,21 @@
 package vectors
 
 import (
-	"cmp"
 	"context"
-	"encoding/hex"
 	"errors"
-	"fmt"
-	"slices"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 // chunksPerQuery bounds the number of chunks lacking a vector returned per query.
 const chunksPerQuery = 200
 
@@ -161,4 +155,3 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	}
 	return release, false, nil
 }
-
