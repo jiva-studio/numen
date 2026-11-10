@@ -7,9 +7,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
 // Role is what a text is embedded for. A model that tells a question from the passage that answers
