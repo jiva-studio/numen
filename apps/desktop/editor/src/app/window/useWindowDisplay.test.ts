@@ -562,6 +562,9 @@ describe('a vault that could not be read', () => {
       watchVaultChanges: async function* () {
         await waitForever()
       },
+      watchEdits: async function* () {
+        await waitForever()
+      },
       watchFocus: async function* () {
         yield { path: 'Focused.md', ranges: [], tabId: '' }
       },
