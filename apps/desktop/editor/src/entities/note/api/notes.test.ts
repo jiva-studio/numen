@@ -29,7 +29,7 @@ const request = {
   readNote: vi.fn(),
   writeNote: vi.fn(),
   createNote: vi.fn(),
-  getNeighbourhood: vi.fn(),
+  getNeighborhood: vi.fn(),
   getOpeningNote: vi.fn(),
   renameNote: vi.fn(),
   listHeadings: vi.fn(),
@@ -249,7 +249,7 @@ describe('the edits made to notes', () => {
 
 describe('a neighborhood', () => {
   it('has its neighborhood requested of its path', async () => {
-    request.getNeighbourhood.mockResolvedValue({
+    request.getNeighborhood.mockResolvedValue({
       focus: { path: 'a.md', title: 'A' },
       related: [],
       connections: [],
@@ -258,11 +258,11 @@ describe('a neighborhood', () => {
     const neighborhood = await getNeighborhood('a.md')
 
     expect(neighborhood.focus.path).toBe('a.md')
-    expect(request.getNeighbourhood.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
+    expect(request.getNeighborhood.mock.calls.at(-1)?.[0]).toMatchObject({ path: 'a.md' })
   })
 
   it('is drawn around the note in focus, with each note in the relation it holds', async () => {
-    request.getNeighbourhood.mockResolvedValue({
+    request.getNeighborhood.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       focusType: 'sample',
       related: [
@@ -302,7 +302,7 @@ describe('a neighborhood', () => {
   })
 
   it('leaves out a note it has no relation for, and one the answer names no note at', async () => {
-    request.getNeighbourhood.mockResolvedValue({
+    request.getNeighborhood.mockResolvedValue({
       focus: { path: 'Rota.md', title: 'The rota' },
       related: [
         { note: { path: 'Odd.md', title: 'Odd' }, relation: NOTE_RELATION.UNSPECIFIED },
@@ -314,7 +314,7 @@ describe('a neighborhood', () => {
   })
 
   it('relies on nothing where the vault no longer holds the note', async () => {
-    request.getNeighbourhood.mockResolvedValue({ related: [] })
+    request.getNeighborhood.mockResolvedValue({ related: [] })
 
     expect((await getNeighborhood('Gone.md')).focus.path).toBe('')
   })

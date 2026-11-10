@@ -179,9 +179,9 @@ func (h *Outline) GetOpeningNote(
 	return connect.NewResponse(out), nil
 }
 
-func (h *Outline) GetNeighbourhood(
-	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
-) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
+func (h *Outline) GetNeighborhood(
+	ctx context.Context, r *connect.Request[v1.GetNeighborhoodRequest],
+) (*connect.Response[v1.GetNeighborhoodResponse], error) {
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ func (h *Outline) GetNeighbourhood(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.GetNeighbourhoodResponse{
+	out := &v1.GetNeighborhoodResponse{
 		Focus:        convertNoteToWire(found.Focus),
 		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
 		FocusTabKind: tabKinds[found.Focus.Path],

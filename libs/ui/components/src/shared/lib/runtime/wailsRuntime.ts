@@ -32,7 +32,8 @@ let runtime: Promise<WailsRuntime | undefined> | undefined
 
 // Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
 export const loadWailsRuntime: WailsRuntimeLoader = () => {
-  runtime ??= import(/* @vite-ignore */ RUNTIME_PATH).then(
+  // An address built at run time is not resolved by a bundler of the package that imports this one.
+  runtime ??= import(/* @vite-ignore */ new URL(RUNTIME_PATH, window.location.href).href).then(
     (loaded: WailsRuntime) => loaded,
     () => undefined,
   )

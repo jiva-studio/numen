@@ -5,7 +5,7 @@ import {
   NOTE_MARKER,
   NOTE_RELATION,
   NOTE_ROLE,
-  GetNeighbourhoodResponseSchema,
+  GetNeighborhoodResponseSchema,
   asFailure,
   asValue,
 } from '@numen/core-client'
@@ -44,7 +44,7 @@ describe('mapWriteResult', () => {
 
 describe('mapNeighborhood', () => {
   it('names an absent focus with empty strings', () => {
-    expect(mapNeighborhood(create(GetNeighbourhoodResponseSchema, {}))).toEqual({
+    expect(mapNeighborhood(create(GetNeighborhoodResponseSchema, {}))).toEqual({
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
@@ -53,7 +53,7 @@ describe('mapNeighborhood', () => {
   })
 
   it('carries the focus, and every neighbor that has a relation and a note, with their tab kinds', () => {
-    const answer = create(GetNeighbourhoodResponseSchema, {
+    const answer = create(GetNeighborhoodResponseSchema, {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',

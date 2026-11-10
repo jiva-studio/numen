@@ -244,7 +244,7 @@ describe('the notes of the vault a plugin is handed', () => {
     }))
     answerCore({
       notes: {
-        getNeighbourhood: (request) => ({
+        getNeighborhood: (request) => ({
           focus: { path: request.path, title: 'Root' },
           focusType: 'note',
           related: [],

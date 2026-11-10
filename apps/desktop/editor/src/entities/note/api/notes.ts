@@ -20,7 +20,7 @@ import { mapBaseline, mapNeighborhood, mapNoteResult, mapWriteResult, writes } f
 
 /** The notes joined to a note, and how. */
 export const getNeighborhood = async (path: string): Promise<Neighborhood> =>
-  mapNeighborhood(await notes.getNeighbourhood({ path }))
+  mapNeighborhood(await notes.getNeighborhood({ path }))
 
 /** The note the vault opens first, and null where it names none. */
 export const getInitialOpenPath = async (): Promise<{ path: string } | null> => {
