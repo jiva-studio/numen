@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 // Scenarios is everything that acts on the notes of a vault. The window and the
@@ -30,16 +31,16 @@ type Scenarios struct {
 	Join             Join
 	CreateInRelation CreateInRelation
 
-	Links        ShowLinks
-	Connection   GetConnection
-	Backlinks    GetBacklinks
-	Neighborhood ShowNeighbourhood
-	ResolveLinks *ResolveLinks
+	Links        query.ShowLinks
+	Connection   query.GetConnection
+	Backlinks    query.GetBacklinks
+	Neighborhood query.ShowNeighbourhood
+	ResolveLinks *query.ResolveLinks
 
-	GetTitles      GetTitles
-	GetTitle       *GetTitle
-	IsVaultIndexed *IsVaultIndexed
-	GetLinkAddress *GetLinkAddress
+	GetTitles      query.GetTitles
+	GetTitle       *query.GetTitle
+	IsVaultIndexed *query.IsVaultIndexed
+	GetLinkAddress *query.GetLinkAddress
 	RemoveNote     RemoveNote
 }
 
@@ -67,13 +68,13 @@ func (n Scenarios) ShowEdits(view windowport.Window) Scenarios {
 // Connections is the set of use cases that read and write the relationships
 // between notes, as one value a surface can be handed.
 type Connections struct {
-	get      GetConnection
+	get      query.GetConnection
 	save     SaveConnection
 	side     RemoveSide
 	remove   RemoveConnection
 	join     Join
 	create   CreateInRelation
-	backlink GetBacklinks
+	backlink query.GetBacklinks
 }
 
 var _ noteport.ConnectionOperations = Connections{}

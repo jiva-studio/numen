@@ -13,8 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
@@ -22,7 +22,7 @@ import (
 // pluginWindow implements PluginWindow over the window state.
 type pluginWindow struct {
 	state         *State
-	focusNote     *note.FocusNote
+	focusNote     *query.FocusNote
 	focusPassages *file.FocusPassages
 }
 
@@ -32,7 +32,7 @@ func NewPluginWindow(state *State, queries noteport.NoteQueries, readers vaultpo
 	view := state.GetWindow()
 	return pluginWindow{
 		state:         state,
-		focusNote:     note.NewFocusNote(queries, view),
+		focusNote:     query.NewFocusNote(queries, view),
 		focusPassages: file.NewFocusPassages(readers, view),
 	}
 }
@@ -58,7 +58,7 @@ func (w pluginWindow) FocusNote(ctx context.Context, path string) (domain.NoteRe
 		return domain.NoteRef{}, err
 	}
 	ref, err := w.focusNote.Execute(ctx, v, path)
-	if errors.Is(err, note.ErrNoNotePath) {
+	if errors.Is(err, query.ErrNoNotePath) {
 		return domain.NoteRef{}, invalidFocusError{err: err}
 	}
 	return ref, err

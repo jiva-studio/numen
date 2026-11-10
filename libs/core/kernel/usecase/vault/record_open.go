@@ -10,6 +10,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -18,10 +20,10 @@ import (
 type Scenarios struct {
 	Registry vaultport.VaultRegistry
 
-	List        List
+	List        registry.List
 	RecordOpen  RecordOpen
-	Find        Find
-	FolderCheck FolderCheck
+	Find        registry.Find
+	FolderCheck check.FolderCheck
 	Remove      Remove
 
 	Add        Add

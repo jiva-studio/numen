@@ -18,6 +18,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -144,10 +147,10 @@ func onAList(t *testing.T) *onTheList {
 	}
 	rename := vaults.NewRename(registry, rows)
 	erase := vaults.NewErase(identity, f.bin, forget)
-	list := vaults.NewList(registry)
-	find := vaults.NewFind(registry)
-	chooseFolder := vaults.NewChooseFolder(f.dialog)
-	folderCheck := vaults.NewFolderCheck(vaultreader.Readers{})
+	list := vaultregistry.NewList(registry)
+	find := vaultregistry.NewFind(registry)
+	chooseFolder := picker.NewChooseFolder(f.dialog)
+	folderCheck := check.NewFolderCheck(vaultreader.Readers{})
 	remove := vaults.NewRemove(find, forget, erase)
 	f.api = newBareServices()
 	f.api.readFiles(vaultreader.Readers{}, nil, nil)

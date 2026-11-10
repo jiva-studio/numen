@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -73,7 +73,7 @@ func (a *pathLookup) GetNotes(_ context.Context, _ domain.VaultID, paths []strin
 }
 
 func showGraph(g graph, refs *pathLookup, focus string) (domain.Neighborhood, error) {
-	return note.NewShowNeighbourhood(g, refs).Execute(
+	return query.NewShowNeighbourhood(g, refs).Execute(
 		context.Background(), domain.Vault{ID: graphVault}, focus)
 }
 

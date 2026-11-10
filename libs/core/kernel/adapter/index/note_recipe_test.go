@@ -4,13 +4,13 @@ import (
 	"slices"
 	"testing"
 
-	notecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func saveChunkedAt(t *testing.T, db *DB, vault domain.Vault, tokens int, notes ...domain.Note) string {
 	t.Helper()
-	splitter := notecase.NewCutNotes(tokens)
+	splitter := query.NewCutNotes(tokens)
 	if err := db.Notes().Save(t.Context(), vault.ID, splitter.Execute(notes)); err != nil {
 		t.Fatal(err)
 	}

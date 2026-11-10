@@ -12,7 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -20,7 +20,7 @@ import (
 
 // API is what the page may ask of the window itself.
 type API struct {
-	IsVaultIndexed       *note.IsVaultIndexed
+	IsVaultIndexed       *query.IsVaultIndexed
 	Themes               numenv1connect.ThemeServiceHandler
 	Window               *wire.Window
 	GetFrontendPluginIDs func() []string
@@ -28,7 +28,7 @@ type API struct {
 	PluginServices       PluginServices
 	GetAgent             func() agent.Agent
 	ListVaults           func() ([]domain.Vault, error)
-	ResolveLinks         *note.ResolveLinks
+	ResolveLinks         *query.ResolveLinks
 
 	indexRuns indexRuns
 

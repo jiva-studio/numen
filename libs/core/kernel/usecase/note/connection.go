@@ -33,7 +33,7 @@ type connectionEditor struct {
 	index     IndexUpdater
 	now       machineport.Clock
 	links     noteport.LinkQueries
-	addresses *GetLinkAddress
+	addresses *query.GetLinkAddress
 
 	connections query.GetConnection
 }
@@ -223,7 +223,7 @@ type SaveConnection struct {
 // index updater after a write, the link queries, and the clock.
 func NewSaveConnection(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) SaveConnection {
 	return SaveConnection{editor: connectionEditor{
 		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
@@ -257,7 +257,7 @@ type RemoveConnection struct {
 // NewSaveConnection.
 func NewRemoveConnection(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) RemoveConnection {
 	return RemoveConnection{editor: connectionEditor{
 		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
@@ -289,7 +289,7 @@ type RemoveSide struct {
 // NewSaveConnection.
 func NewRemoveSide(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) RemoveSide {
 	return RemoveSide{editor: connectionEditor{
 		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,
@@ -318,7 +318,7 @@ type Join struct {
 // NewJoin builds the use case over the same collaborators as NewSaveConnection.
 func NewJoin(
 	readers vaultport.VaultReaders, writers vaultport.VaultWriters, index IndexUpdater,
-	now machineport.Clock, links noteport.LinkQueries, addresses *GetLinkAddress,
+	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) Join {
 	return Join{editor: connectionEditor{
 		readers: readers, writers: writers, index: index, now: now, links: links, addresses: addresses,

@@ -22,8 +22,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -496,8 +497,8 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 	}{
 		"name taken":      {err: vaults.ErrNameTaken, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN},
 		"last vault":      {err: vaults.ErrLastVault, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT},
-		"current vault":   {err: vaults.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
-		"no such vault":   {err: vaults.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
+		"current vault":   {err: registry.ErrShowing, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT},
+		"no such vault":   {err: registry.ErrUnknown, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND},
 		"unsaved changes": {err: plugin.ErrUnsavedChanges, want: v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -600,7 +601,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 		err  error
 		want v1.HostVaultErrorCode
 	}{
-		"invalid name":   {err: note.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
+		"invalid name":   {err: query.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
 		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
 		"not found":      {err: vaultport.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
 		"conflict":       {err: vaultport.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},

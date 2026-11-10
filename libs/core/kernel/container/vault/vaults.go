@@ -17,8 +17,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	vaultusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -38,8 +42,8 @@ type Config struct {
 	VaultLocks   *vaultwriter.Locks
 	Watches      *vaultwatch.Hub
 	ErrorHandler func(error)
-	SyncSetting  note.SyncSetting
-	CutNotes     note.CutNotes
+	SyncSetting  query.SyncSetting
+	CutNotes     query.CutNotes
 	SetNoteCut   func(*vaultusecase.Scan, *Index)
 }
 
@@ -101,13 +105,13 @@ func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.M
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vaultusecase.NewUnregister(registry, db.Vaults())
 	erase := vaultusecase.NewErase(c.VaultIdentity(), c.Trash(), unregister)
-	find := vaultusecase.NewFind(registry)
+	find := vaultregistry.NewFind(registry)
 	return vaultusecase.Scenarios{
 		Registry:    registry,
-		List:        vaultusecase.NewList(registry),
+		List:        vaultregistry.NewList(registry),
 		RecordOpen:  vaultusecase.NewRecordOpen(registry),
 		Find:        find,
-		FolderCheck: vaultusecase.NewFolderCheck(c.VaultReaders()),
+		FolderCheck: check.NewFolderCheck(c.VaultReaders()),
 		Remove:      vaultusecase.NewRemove(find, unregister, erase),
 		Add:         vaultusecase.NewAdd(c.VaultIdentity(), registry, c.Clock),
 		Rename:      vaultusecase.NewRename(registry, db.Vaults()),
@@ -125,8 +129,8 @@ func (c Config) AddVault(registry vaultport.VaultRegistry, root, name string) (d
 }
 
 // GetKnownVaults builds the use case that lists known vaults and their folder state.
-func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vaultusecase.GetKnownVaults {
-	recognized := vaultusecase.NewGetKnownVaults(registry, c.VaultReaders())
+func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vaultregistry.GetKnownVaults {
+	recognized := vaultregistry.NewGetKnownVaults(registry, c.VaultReaders())
 	return &recognized
 }
 
@@ -136,15 +140,15 @@ func (Config) GetProblems(problems problemport.ProblemQueries) *vaultusecase.Get
 }
 
 // GetSummary builds the vault summary query use case.
-func (Config) GetSummary(queries noteport.NoteQueries) *vaultusecase.GetSummary {
-	return vaultusecase.NewGetSummary(queries)
+func (Config) GetSummary(queries noteport.NoteQueries) *vaultregistry.GetSummary {
+	return vaultregistry.NewGetSummary(queries)
 }
 
 // PickFolder builds the folder picker use case when a dialog is provided.
-func (c Config) PickFolder(dialog machineport.FolderDialog) *vaultusecase.PickFolder {
+func (c Config) PickFolder(dialog machineport.FolderDialog) *picker.PickFolder {
 	if dialog == nil {
 		return nil
 	}
-	pick := vaultusecase.NewPickFolder(dialog)
+	pick := picker.NewPickFolder(dialog)
 	return &pick
 }

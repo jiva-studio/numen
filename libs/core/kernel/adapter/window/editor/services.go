@@ -9,9 +9,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
@@ -96,33 +97,33 @@ func (s *Services) readFiles(readers vaultport.VaultReaders, openPluginFile *fil
 type noteHandler struct {
 	state *State
 
-	getOpeningNote *note.GetOpeningNote
-	getTypes       *note.GetTypes
+	getOpeningNote *query.GetOpeningNote
+	getTypes       *query.GetTypes
 	findTabKinds   func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-	getHeadings    *note.GetHeadings
-	resolveLinks   *note.ResolveLinks
+	getHeadings    *query.GetHeadings
+	resolveLinks   *query.ResolveLinks
 
 	read              *note.Read
 	write             *note.Write
 	create            *note.Create
 	editLinks         *note.EditLinks
 	rename            *note.Rename
-	showNeighbourhood *note.ShowNeighbourhood
-	getLinkAddress    *note.GetLinkAddress
+	showNeighbourhood *query.ShowNeighbourhood
+	getLinkAddress    *query.GetLinkAddress
 
-	getConnection    *note.GetConnection
+	getConnection    *query.GetConnection
 	saveConnection   *note.SaveConnection
 	removeSide       *note.RemoveSide
 	removeConnection *note.RemoveConnection
 	join             *note.Join
 	createInRelation *note.CreateInRelation
-	getBacklinks     *note.GetBacklinks
+	getBacklinks     *query.GetBacklinks
 }
 
 // SetFolderDialog sets the native file and folder dialog used when a client
 // requests one.
 func (s *Services) SetFolderDialog(dialog machineport.PathDialog) {
-	choose := vaults.NewChooseFolder(dialog)
+	choose := picker.NewChooseFolder(dialog)
 	s.Vaults.chooseFolder = &choose
 	if s.openChoosePath != nil && s.Settings != nil {
 		s.Settings.ChoosePath = s.openChoosePath(dialog)
@@ -131,7 +132,7 @@ func (s *Services) SetFolderDialog(dialog machineport.PathDialog) {
 
 // GetPickFolder returns the use case that lets an agent open the same dialog,
 // or nil when the window has no dialog.
-func (s *Services) GetPickFolder() *vaults.PickFolder {
+func (s *Services) GetPickFolder() *picker.PickFolder {
 	if s.Vaults.chooseFolder == nil {
 		return nil
 	}

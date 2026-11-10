@@ -30,9 +30,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
@@ -45,15 +47,15 @@ import (
 
 func bindNotes(services *Services, db *container.Index) {
 	queries, links := db.Queries(), db.Links()
-	neighborhood := note.NewShowNeighbourhood(links, queries)
-	services.Note.getOpeningNote = note.NewGetOpeningNote(queries)
-	services.Note.getTypes = note.NewGetTypes(queries)
-	services.Note.getHeadings = note.NewGetHeadings(queries)
-	services.Note.resolveLinks = note.NewResolveLinks(links)
+	neighborhood := query.NewShowNeighbourhood(links, queries)
+	services.Note.getOpeningNote = query.NewGetOpeningNote(queries)
+	services.Note.getTypes = query.NewGetTypes(queries)
+	services.Note.getHeadings = query.NewGetHeadings(queries)
+	services.Note.resolveLinks = query.NewResolveLinks(links)
 	services.Note.showNeighbourhood = &neighborhood
-	services.Note.getLinkAddress = note.NewGetLinkAddress(queries)
+	services.Note.getLinkAddress = query.NewGetLinkAddress(queries)
 	services.Search.GetNameMatches = search.NewGetNameMatches(queries)
-	services.Search.GetTitles = note.NewGetTitles(queries)
+	services.Search.GetTitles = query.NewGetTitles(queries)
 	services.Search.GetTypes = services.Note.getTypes
 }
 
@@ -673,9 +675,9 @@ func TestConvertNoteTypeToWire_MapsPlainNoteToEmpty(t *testing.T) {
 }
 
 func TestEveryNamingIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.NameSource]note.NameSource{
-		v1.NameSource_NAME_SOURCE_FRONTMATTER: note.ByFrontmatter,
-		v1.NameSource_NAME_SOURCE_FILENAME:    note.ByFilename,
+	testsupport.CheckProduced(t, map[v1.NameSource]query.NameSource{
+		v1.NameSource_NAME_SOURCE_FRONTMATTER: query.ByFrontmatter,
+		v1.NameSource_NAME_SOURCE_FILENAME:    query.ByFilename,
 	}, newWireNameSource)
 }
 
@@ -694,8 +696,8 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: vaults.ErrNameTaken,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    vaults.ErrShowing,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  vaults.ErrUnknown,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    registry.ErrShowing,
+		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  registry.ErrUnknown,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machine.ErrNoTrash,
 		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    errAnswerPending,
 	}, func(err error) v1.VaultsErrorCode {

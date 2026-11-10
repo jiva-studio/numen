@@ -17,7 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -61,7 +61,7 @@ func createLinkDeps(links, backlinks []domain.ResolvedLink) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: note.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks})}, nil
+			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{links: links, backlinks: backlinks})}, nil
 		},
 	}
 }
@@ -87,7 +87,7 @@ func TestLinksReturnsWhatWentWrong(t *testing.T) {
 		"the index cannot say what a note points at": {
 			Vaults: createVaultList(getNotebook()),
 			Links: func(context.Context) (cli.Links, error) {
-				return cli.Links{Show: note.NewShowLinks(failingLinkQueries{})}, nil
+				return cli.Links{Show: query.NewShowLinks(failingLinkQueries{})}, nil
 			},
 		},
 	} {
@@ -314,7 +314,7 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 	provided := createLinkDeps(nil, nil)
 	provided.Links = func(context.Context) (cli.Links, error) {
 		return cli.Links{
-			Show:  note.NewShowLinks(fixedLinkQueries{}),
+			Show:  query.NewShowLinks(fixedLinkQueries{}),
 			Close: func() error { closed++; return nil },
 		}, nil
 	}

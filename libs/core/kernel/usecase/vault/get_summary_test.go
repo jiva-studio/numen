@@ -3,7 +3,7 @@ package vault_test
 import (
 	"testing"
 
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -11,7 +11,7 @@ func TestGetSummaryCountsWhatTheIndexContains(t *testing.T) {
 	t.Parallel()
 	_, db, v := newRefresh(t, map[string]string{"A.md": "# A\n\n## One\n", "B.md": "# B\n"})
 
-	got, err := vaults.NewGetSummary(db.Queries()).Execute(t.Context(), v)
+	got, err := registry.NewGetSummary(db.Queries()).Execute(t.Context(), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,10 +22,10 @@ func TestGetSummaryCountsWhatTheIndexContains(t *testing.T) {
 
 func TestGetSummaryAnswersNothingWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
-	if got, err := vaults.NewGetSummary(nil).Execute(t.Context(), domain.Vault{}); err != nil || got != (domain.VaultSummary{}) {
+	if got, err := registry.NewGetSummary(nil).Execute(t.Context(), domain.Vault{}); err != nil || got != (domain.VaultSummary{}) {
 		t.Errorf("an unbound index answered %+v, %v", got, err)
 	}
-	var unmade *vaults.GetSummary
+	var unmade *registry.GetSummary
 	if got, err := unmade.Execute(t.Context(), domain.Vault{}); err != nil || got != (domain.VaultSummary{}) {
 		t.Errorf("a use case not made answered %+v, %v", got, err)
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -55,12 +56,12 @@ func (f filing) move() vaults.Move { return f.newMove(true) }
 
 func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
-func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
+func (f filing) newMove(preserved query.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Links: f.db.Links(), Names: f.db.Queries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
 	})
-	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
+	notes.Sync = func() query.SyncTitleAndFilename { return preserved }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {
 		*f.went = append(*f.went, went)
 		return nil

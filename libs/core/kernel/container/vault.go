@@ -12,8 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -102,7 +105,7 @@ func (c Config) AddVault(registry vaultport.VaultRegistry, root, name string) (d
 }
 
 // GetKnownVaults builds the use case that lists known vaults and their folder state.
-func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vault.GetKnownVaults {
+func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *registry.GetKnownVaults {
 	return c.vault().GetKnownVaults(registry)
 }
 
@@ -112,12 +115,12 @@ func (c Config) GetProblems(problems problemport.ProblemQueries) *vault.GetProbl
 }
 
 // GetSummary builds the vault summary query use case.
-func (c Config) GetSummary(queries noteport.NoteQueries) *vault.GetSummary {
+func (c Config) GetSummary(queries noteport.NoteQueries) *registry.GetSummary {
 	return c.vault().GetSummary(queries)
 }
 
 // PickFolder builds the folder picker use case when a dialog is provided.
-func (c Config) PickFolder(dialog machineport.FolderDialog) *vault.PickFolder {
+func (c Config) PickFolder(dialog machineport.FolderDialog) *picker.PickFolder {
 	return c.vault().PickFolder(dialog)
 }
 
@@ -149,12 +152,12 @@ func (c Config) Notes(
 }
 
 // FocusNote builds the use case that shows a note in the window.
-func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *note.FocusNote {
+func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *query.FocusNote {
 	return c.vault().FocusNote(queries, view)
 }
 
 // GetNamedPaths builds the note named paths query use case.
-func (c Config) GetNamedPaths(queries noteport.NoteQueries) *note.GetNamedPaths {
+func (c Config) GetNamedPaths(queries noteport.NoteQueries) *query.GetNamedPaths {
 	return c.vault().GetNamedPaths(queries)
 }
 

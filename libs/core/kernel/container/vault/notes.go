@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 // Notes is what everything that acts on the notes of a vault is called where
@@ -39,7 +40,7 @@ func (c Config) Notes(
 
 	linking := note.NewEditLinks(readers, writers, index, now)
 	remove := note.NewRemove(writers, links, indexed, index)
-	addresses := note.NewGetLinkAddress(queries)
+	addresses := query.NewGetLinkAddress(queries)
 	create := note.NewCreate(writers, queries, index, now)
 
 	return note.Scenarios{
@@ -60,28 +61,28 @@ func (c Config) Notes(
 		Join:             note.NewJoin(readers, writers, index, now, links, addresses),
 		CreateInRelation: note.NewCreateInRelation(create, addresses),
 
-		Links:        note.NewShowLinks(links),
-		Connection:   note.NewGetConnection(links),
-		Backlinks:    note.NewGetBacklinks(links),
-		Neighborhood: note.NewShowNeighbourhood(links, queries),
-		ResolveLinks: note.NewResolveLinks(links),
+		Links:        query.NewShowLinks(links),
+		Connection:   query.NewGetConnection(links),
+		Backlinks:    query.NewGetBacklinks(links),
+		Neighborhood: query.NewShowNeighbourhood(links, queries),
+		ResolveLinks: query.NewResolveLinks(links),
 
-		GetTitles:      note.NewGetTitles(queries),
-		GetTitle:       note.NewGetTitle(queries),
-		IsVaultIndexed: note.NewIsVaultIndexed(queries),
+		GetTitles:      query.NewGetTitles(queries),
+		GetTitle:       query.NewGetTitle(queries),
+		IsVaultIndexed: query.NewIsVaultIndexed(queries),
 		GetLinkAddress: addresses,
 		RemoveNote:     note.NewRemoveNote(remove, readers),
 	}
 }
 
 // FocusNote builds the use case that shows a note in the window.
-func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *note.FocusNote {
-	return note.NewFocusNote(queries, view)
+func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *query.FocusNote {
+	return query.NewFocusNote(queries, view)
 }
 
 // GetNamedPaths builds the note named paths query use case.
-func (Config) GetNamedPaths(queries noteport.NoteQueries) *note.GetNamedPaths {
-	return note.NewGetNamedPaths(queries)
+func (Config) GetNamedPaths(queries noteport.NoteQueries) *query.GetNamedPaths {
+	return query.NewGetNamedPaths(queries)
 }
 
 // Read builds the vault file reader use case.

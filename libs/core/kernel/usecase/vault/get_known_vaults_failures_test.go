@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -15,7 +15,7 @@ func TestAListThatCannotBeReadIsAnError(t *testing.T) {
 	list.fails = errors.New("the list cannot be read")
 	list.rows = nil
 
-	recognized, err := vaults.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
 	if !errors.Is(err, list.fails) {
 		t.Fatalf("got %v", err)
 	}
@@ -40,7 +40,7 @@ func TestTheLastVaultThatCannotBeReadIsAnError(t *testing.T) {
 	list, there := twoRows()
 	cannot := errors.New("the last vault cannot be read")
 
-	recognized, err := vaults.NewGetKnownVaults(forgetful{theList: list, err: cannot}, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(forgetful{theList: list, err: cannot}, there).Execute("")
 	if !errors.Is(err, cannot) {
 		t.Fatalf("got %v", err)
 	}
@@ -55,7 +55,7 @@ func TestNoVaultIsCurrentWhereNoneIsNamedAndNoneWasOpened(t *testing.T) {
 	t.Parallel()
 	list := &theList{rows: []domain.Vault{{ID: "", Name: "Nameless", Path: "/notes/nameless"}}}
 
-	recognized, err := vaults.NewGetKnownVaults(list, folders{"": true}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, folders{"": true}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}

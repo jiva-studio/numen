@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -47,7 +47,7 @@ func newNoteClient(t *testing.T, index *linkIndex) numenv1connect.NoteServiceCli
 	api.ListVaults = func() ([]domain.Vault, error) {
 		return []domain.Vault{{ID: "garden", Name: "Garden", Path: "/vaults/garden"}}, nil
 	}
-	api.ResolveLinks = note.NewResolveLinks(index)
+	api.ResolveLinks = query.NewResolveLinks(index)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 	return numenv1connect.NewNoteServiceClient(server.Client(), server.URL)

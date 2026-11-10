@@ -7,7 +7,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 const agentAt = settingswiring.AgentAt
@@ -79,7 +79,7 @@ func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
-func (c Config) SyncSetting() note.SyncSetting {
+func (c Config) SyncSetting() query.SyncSetting {
 	return c.settings().SyncSetting()
 }
 

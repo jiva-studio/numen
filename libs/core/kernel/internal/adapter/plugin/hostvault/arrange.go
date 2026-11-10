@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
@@ -67,7 +68,7 @@ func (a Vault) RenameNote(ctx context.Context, path, title string) (string, bool
 	if rename.Moved != nil || err == nil {
 		a.notifyFileWritten()
 	}
-	return rename.Path, rename.By == note.ByFilename, rename.Moved, err
+	return rename.Path, rename.By == query.ByFilename, rename.Moved, err
 }
 
 func (a Vault) MoveNote(ctx context.Context, from, to string) (domain.MoveResult, error) {

@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
@@ -29,6 +30,7 @@ import (
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
 	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -69,7 +71,7 @@ var errNoVault = errors.New("the window has no vault")
 func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer) (*Installation, error) {
 	registry := made.GetRegistry()
 
-	first, err := vaults.NewGetVaultToShow(registry).Execute(targetVault)
+	first, err := vaultregistry.NewGetVaultToShow(registry).Execute(targetVault)
 	if err != nil {
 		return nil, errors.Join(err, made.CloseIndex())
 	}
@@ -274,12 +276,12 @@ func createWindow(
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
 	services.readFiles(readers, made.OpenPluginFile(), made.GetMediaType())
-	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
-	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
-	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
-	services.Note.resolveLinks = note.NewResolveLinks(made.GetLinkQueries())
+	services.Note.getOpeningNote = query.NewGetOpeningNote(made.GetNoteQueries())
+	services.Note.getTypes = query.NewGetTypes(made.GetNoteQueries())
+	services.Note.getHeadings = query.NewGetHeadings(made.GetNoteQueries())
+	services.Note.resolveLinks = query.NewResolveLinks(made.GetLinkQueries())
 	services.Search.GetNameMatches = search.NewGetNameMatches(made.GetNoteQueries())
-	services.Search.GetTitles = note.NewGetTitles(made.GetNoteQueries())
+	services.Search.GetTitles = query.NewGetTitles(made.GetNoteQueries())
 	services.Search.GetTypes = services.Note.getTypes
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())

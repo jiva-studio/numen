@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 // Move files a note somewhere else, which is also how it is renamed: a note is
@@ -30,7 +31,7 @@ type Move struct {
 	index   IndexUpdater
 	now     machineport.Clock
 	Drawing TellMove
-	Sync    SyncSetting
+	Sync    query.SyncSetting
 }
 
 // NewMove returns a Move that files a note at another path. It takes the vault

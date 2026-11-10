@@ -25,7 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
@@ -487,13 +487,13 @@ func (c Config) IsSecretDeclared(permission plugindomain.DeclarationKey) bool {
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.
-func (c Config) SyncSetting() note.SyncSetting {
-	return func() note.SyncTitleAndFilename {
+func (c Config) SyncSetting() query.SyncSetting {
+	return func() query.SyncTitleAndFilename {
 		target, err := c.Settings()
 		if err != nil {
 			c.handleError(fmt.Errorf("read settings: %w", err))
 		}
-		return note.SyncTitleAndFilename(target.Sync())
+		return query.SyncTitleAndFilename(target.Sync())
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -38,9 +38,9 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 	return db, v
 }
 
-func links(t *testing.T, db *container.Index, v domain.Vault, path string) note.NoteLinks {
+func links(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
-	c, err := note.NewShowLinks(db.Links()).Execute(t.Context(), v, path)
+	c, err := query.NewShowLinks(db.Links()).Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -417,7 +417,7 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 		{"outgoing", failingLinks{LinkQueries: db.Links(), links: errOutgoing}, errOutgoing},
 		{"incoming", failingLinks{LinkQueries: db.Links(), backlinks: errIncoming}, errIncoming},
 	} {
-		got, err := note.NewShowLinks(tc.with).Execute(t.Context(), v, "source.md")
+		got, err := query.NewShowLinks(tc.with).Execute(t.Context(), v, "source.md")
 		if !errors.Is(err, tc.want) {
 			t.Errorf("%s: want %v, got %v", tc.name, tc.want, err)
 		}
@@ -427,7 +427,7 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 	}
 }
 
-func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) note.NoteLinks {
+func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
 	c := links(t, db, v, path)
 	if len(c.Links) != 1 {

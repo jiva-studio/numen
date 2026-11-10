@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -268,7 +269,7 @@ func openWindow(t *testing.T, hold *held, notes map[string]string) *going {
 	return opening(t, hold, notes, true)
 }
 
-func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFilename) {
+func writeNamingSettings(t *testing.T, registry string, sync query.SyncTitleAndFilename) {
 	t.Helper()
 	body := fmt.Sprintf(`{"app":{"naming":{"syncTitleAndFilename":%v}}}`, bool(sync))
 	if err := os.WriteFile(
@@ -278,7 +279,7 @@ func writeNamingSettings(t *testing.T, registry string, sync note.SyncTitleAndFi
 	}
 }
 
-func opening(t *testing.T, hold *held, notes map[string]string, sync note.SyncTitleAndFilename) *going {
+func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncTitleAndFilename) *going {
 	t.Helper()
 
 	root := t.TempDir()

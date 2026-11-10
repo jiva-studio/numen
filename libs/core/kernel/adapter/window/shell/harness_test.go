@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -34,7 +34,7 @@ func newAPI(tb testing.TB, target ...domain.Vault) *API {
 	for _, v := range target {
 		index.targetVault[v.ID] = true
 	}
-	return &API{Window: NewWindow(testWindow, run.NewTasks()), IsVaultIndexed: note.NewIsVaultIndexed(index)}
+	return &API{Window: NewWindow(testWindow, run.NewTasks()), IsVaultIndexed: query.NewIsVaultIndexed(index)}
 }
 
 func newWindowClient(t *testing.T, api *API) numenv1connect.WindowServiceClient {

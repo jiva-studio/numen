@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -30,7 +30,7 @@ func TestFocusingANoteInsertsItInFrontOfThePerson(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}
-	focus := note.NewFocusNote(c.db.Queries(), view)
+	focus := query.NewFocusNote(c.db.Queries(), view)
 
 	ref, err := focus.Execute(t.Context(), c.vault, "Heat.md")
 	if err != nil {
@@ -45,7 +45,7 @@ func TestFocusingNothingOrANoteThatIsNotThereMovesNoFocus(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 	view := &looking{}
-	focus := note.NewFocusNote(c.db.Queries(), view)
+	focus := query.NewFocusNote(c.db.Queries(), view)
 
 	if _, err := focus.Execute(t.Context(), c.vault, ""); err == nil {
 		t.Error("no path was focused")
