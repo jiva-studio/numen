@@ -9,16 +9,17 @@ import (
 	"slices"
 	"strings"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // OwnerApp is the owner of the settings of the shell. Every other first-level key of the file
 // other than the version is the id of a plugin.
-const OwnerApp = "app"
+const OwnerApp = settingsdomain.AppOwner
 
 // The fields of the object of a plugin that the host keeps. They are no settings of the manifest:
 // enabled holds a boolean.
-const fieldEnabled = "enabled"
+const fieldEnabled = settingsdomain.HostFieldEnabled
 
 // The reasons CheckWrite rejects a write.
 var (
