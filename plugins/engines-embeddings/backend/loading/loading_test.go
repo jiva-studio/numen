@@ -46,7 +46,11 @@ func newHarness(t *testing.T, openModel func(ctx context.Context, name string) (
 		Report: func(what string, err error) { h.reports = append(h.reports, what+": "+err.Error()) },
 		Opened: func(emb Embedder) { h.opened = append(h.opened, emb) },
 	})
-	t.Cleanup(func() { _ = h.loader.Close() })
+	t.Cleanup(func() {
+		if err := h.loader.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	return h
 }
 
@@ -218,7 +222,8 @@ func TestCloseEndsTheContextOfAnOpeningInProgress(t *testing.T) {
 		canceledOnce.Do(func() { close(canceled) })
 		return nil, ctx.Err()
 	})
-	go func() { _, _ = h.loader.Get(t.Context(), start("a", 0)) }()
+	ended := make(chan error, 1)
+	go func() { _, err := h.loader.Get(t.Context(), start("a", 0)); ended <- err }()
 	<-entered
 
 	if err := h.loader.Close(); err != nil {

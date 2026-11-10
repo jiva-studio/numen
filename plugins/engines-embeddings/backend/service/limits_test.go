@@ -180,7 +180,8 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 		<-release
 		return recordedEmbedder{record: record}, nil
 	}
-	go func() { _, _ = srv.getEmbedder(t.Context()) }()
+	ended := make(chan error, 1)
+	go func() { _, err := srv.getEmbedder(t.Context()); ended <- err }()
 	<-isOpening
 
 	srv.mu.Lock()
