@@ -22,7 +22,7 @@ const (
 	talkPath    = "talks/Morning talk.mp3"
 )
 
-func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain.TextVersion {
+func putTranscript(t *testing.T, db *vault.Index, v domain.Vault, words string) domain.TextVersion {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join(v.Path, talkPath))
 	if err != nil {
@@ -50,7 +50,7 @@ func putTranscript(t *testing.T, db *Index, v domain.Vault, words string) domain
 	return version
 }
 
-func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
+func readIntoIndex(t *testing.T, cfg Config, db *vault.Index, v domain.Vault) {
 	t.Helper()
 	if _, err := cfg.Scan(db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -184,7 +184,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	}
 }
 
-func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersion) {
+func newTalkIndex(t *testing.T) (Config, *vault.Index, domain.Vault, domain.TextVersion) {
 	t.Helper()
 	v := newTalkVault(t)
 	cfg := NewConfig(Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
@@ -203,7 +203,7 @@ func newTalkIndex(t *testing.T) (Config, *Index, domain.Vault, domain.TextVersio
 	return cfg, db, v, version
 }
 
-func refreshPaths(t *testing.T, cfg Config, db *Index, v domain.Vault, paths ...string) {
+func refreshPaths(t *testing.T, cfg Config, db *vault.Index, v domain.Vault, paths ...string) {
 	t.Helper()
 	if _, err := makeRefresh(cfg, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
@@ -314,7 +314,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg.TextVersions.SetListener(cutOnChange{t: t, extract: extract})
-	data := cfg.vault().OpenPluginData()
+	data := openPluginData(cfg.vault())
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {
 		t.Fatal(err)

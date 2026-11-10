@@ -1,0 +1,38 @@
+package indexing_test
+
+import (
+	"path/filepath"
+	"testing"
+
+	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/domain"
+)
+
+// The tests of the worker read vaults into an index through the composition root, which imports
+// this package and so can only be imported by its external tests.
+func TestWorker(t *testing.T) {
+	indexing.RunWorkerTests(t, func(t *testing.T) (indexing.OpenReading, vaultport.VaultReaders, *vault.Index) {
+		t.Helper()
+		cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
+		db, err := cfg.OpenIndex(t.Context())
+		if err != nil {
+			t.Fatal(err)
+		}
+		testsupport.CloseAfter(t, db)
+		read := func(
+			ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+		) (vaultreading.ReadWholeVault, error) {
+			request := cfg
+			request.ShouldRebuildIndex = rebuild
+			return request.ReadWholeVault(ctx, db, embedder, v)
+		}
+		return read, cfg.VaultReaders(), db
+	})
+}

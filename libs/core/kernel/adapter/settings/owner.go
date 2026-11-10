@@ -276,3 +276,12 @@ func (f *File) resetApp(declared manifest.Setting) {
 		f.Performance = DefaultPerformance()
 	}
 }
+
+// RegistryOptions lists the options a registry offers to the settings that draw on it, and false for
+// a registry that is not known.
+type RegistryOptions func(name string) (manifest.SettingOptions, bool)
+
+// ListRegistryOptions returns the options of the registry named.
+func (r RegistryOptions) ListRegistryOptions(name string) (manifest.SettingOptions, bool) {
+	return r(name)
+}

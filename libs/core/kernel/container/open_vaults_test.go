@@ -87,7 +87,7 @@ func getOpenVaultsSamples() map[string]string {
 	}
 }
 
-func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
+func makeOpenVaults(t *testing.T) (*vault.OpenVaults[Config, *vault.Index], []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -105,7 +105,7 @@ func makeOpenVaults(t *testing.T) (*OpenVaults, []domain.Vault) {
 		{ID: "one", Name: "One", Path: makeSampleVault(t, cfg)},
 		{ID: "two", Name: "Two", Path: makeSampleVault(t, cfg)},
 	}
-	vaults := &OpenVaults{
+	vaults := &vault.OpenVaults[Config, *vault.Index]{
 		Config: cfg, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}

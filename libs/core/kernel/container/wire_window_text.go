@@ -7,7 +7,7 @@ import (
 
 func mountText(w *windowWiring) {
 	handler := windowtext.NewHandler(w.inst.State, nil)
-	if text := w.cfg.vault().OpenFileText(); text != nil {
+	if text := openFileText(w.cfg.vault()); text != nil {
 		handler = windowtext.NewHandler(w.inst.State, text)
 	}
 	path, served := windowtext.NewRoute(handler, w.inst.State.CountQuestions())

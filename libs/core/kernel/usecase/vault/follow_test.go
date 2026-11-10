@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -61,7 +60,7 @@ func (s *sometimes) Open(v domain.Vault) (vaultport.VaultReader, error) {
 // kept level with it, and what the following reported.
 type followed struct {
 	vault domain.Vault
-	index *container.Index
+	index *vaults.Index
 	moved <-chan vaults.VaultChanges
 }
 

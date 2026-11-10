@@ -11,11 +11,8 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
-	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
-	searchwiring "github.com/jiva-studio/numen/libs/core/kernel/container/search"
-	settingswiring "github.com/jiva-studio/numen/libs/core/kernel/container/settings"
-	vaultwiring "github.com/jiva-studio/numen/libs/core/kernel/container/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
@@ -53,7 +50,7 @@ type Config struct {
 
 	Chunks *note.ChunkTokens
 
-	PluginHost *pluginswiring.Host
+	PluginHost *PluginHost
 
 	PluginCatalog catalog.Config
 
@@ -172,9 +169,9 @@ func (c Config) GetDelay() machine.Delay {
 	}
 }
 
-func (c Config) settings() settingswiring.Config {
+func (c Config) settings() settingsWiring {
 	res := c.getResources()
-	return settingswiring.Config{
+	return settingsWiring{
 		SettingsPath:     c.SettingsPath,
 		ThemesPath:       c.ThemesPath,
 		RegistryPath:     c.RegistryPath,
@@ -193,31 +190,34 @@ func (c Config) settings() settingswiring.Config {
 		SubscribedHosts:  &res.subscribedHosts,
 		ErrorHandler:     c.handleError,
 		AgentProvider:    c.AgentProvider,
-		GetAgentPrograms: c.plugins().GetAgentPrograms,
-		SetSecretSource:  c.plugins().SetSecretSource,
-		SetCompleter:     c.plugins().SetCompleter,
+		GetAgentPrograms: c.getAgentPrograms,
+		SetSecretSource:  c.setSecretSource,
+		SetCompleter:     c.setCompleter,
 	}
 }
 
-func (c Config) search() searchwiring.Config {
+func (c Config) search() searchWiring {
 	v := c.vaultBase()
-	return searchwiring.Config{
+	plugins := c.plugins()
+	return searchWiring{
 		ServiceDir:         c.ServiceDir,
 		ShouldRebuildIndex: c.ShouldRebuildIndex,
 		Chunks:             c.Chunks,
 		ResolvedCompute:    c.ResolvedCompute,
 		PluginHost:         c.PluginHost,
 		Clock:              c.Clock(),
-		VaultReaders:       v.VaultReaders(),
-		TextReaders:        v.GetTextReaders(),
+		VaultReaders:       vaultReaders(v),
+		TextReaders:        getTextReaders(v),
 		ErrorHandler:       c.handleError,
-		ResolvePlugin:      c.plugins().ResolvePlugin,
+		ResolvePlugin: func(capability string) (*PluginHost, error) {
+			return pluginsResolvePlugin(plugins, capability)
+		},
 	}
 }
 
-func (c Config) vaultBase() vaultwiring.Config {
+func (c Config) vaultBase() vaultWiring {
 	res := c.getResources()
-	return vaultwiring.Config{
+	return vaultWiring{
 		IndexPath:    c.IndexPath,
 		RegistryPath: c.RegistryPath,
 		ServiceDir:   c.ServiceDir,
@@ -232,20 +232,20 @@ func (c Config) vaultBase() vaultwiring.Config {
 	}
 }
 
-func (c Config) vault() vaultwiring.Config {
+func (c Config) vault() vaultWiring {
 	v := c.vaultBase()
 	s := c.search()
-	v.SyncSetting = c.settings().SyncSetting()
-	v.CutNotes = s.CutNotes()
-	v.SetNoteCut = s.SetNoteCut
+	v.SyncSetting = syncSetting(c.settings())
+	v.CutNotes = cutNotes(s)
+	v.SetNoteCut = func(scan *vault.Scan, db *vault.Index) { setNoteCut(s, scan, db) }
 	return v
 }
 
-func (c Config) plugins() pluginswiring.Config {
+func (c Config) plugins() pluginsWiring {
 	res := c.getResources()
 	programs := c.getPrograms()
 	v := c.vaultBase()
-	s := settingswiring.Config{
+	s := settingsWiring{
 		SettingsPath:  c.SettingsPath,
 		ThemesPath:    c.ThemesPath,
 		RegistryPath:  c.RegistryPath,
@@ -256,7 +256,7 @@ func (c Config) plugins() pluginswiring.Config {
 		Programs:      programs,
 		ErrorHandler:  c.handleError,
 	}
-	return pluginswiring.Config{
+	return pluginsWiring{
 		PluginCachePath:       c.PluginCachePath,
 		ServiceDir:            c.ServiceDir,
 		SafeMode:              c.SafeMode,
@@ -268,19 +268,22 @@ func (c Config) plugins() pluginswiring.Config {
 		SecretGate:            res.secretGate,
 		PluginChanges:         res.pluginChanges,
 		TextVersions:          c.TextVersions,
-		ListAppSettings:       s.ListAppSettings,
+		ListAppSettings:       func() []plugindomain.Setting { return listAppSettings(s) },
+		CredentialsPath:       c.getCredentialsPath,
 		Programs:              programs,
-		VaultReaders:          v.VaultReaders(),
-		NoteWriters:           v.NoteWriters(),
-		VaultLocks:            v.WriteLocks(),
-		VaultWatcher:          v.VaultWatcher(),
+		VaultReaders:          vaultReaders(v),
+		NoteWriters:           noteWriters(v),
+		VaultLocks:            writeLocks(v),
+		VaultWatcher:          vaultWatcher(v),
 		ErrorHandler:          c.handleError,
-		SettingsFile:          s.SettingsFile,
-		ReadCheckedSettings:   s.ReadCheckedSettings,
-		GetSettingsOrDefaults: s.GetSettingsOrDefaults,
-		RefreshSettingEvents:  s.RefreshSettingEvents,
-		MakeRefresh:           func(db *Index, notes noteport.NoteRepository) vault.Refresh { return c.vault().MakeRefresh(db, notes) },
-		BuildNotes:            c.Notes,
-		Moves:                 v.Moves,
+		SettingsFile:          func() (string, error) { return settingsSettingsFile(s) },
+		ReadCheckedSettings:   func() (settingsadapter.File, error) { return readCheckedSettings(s) },
+		GetSettingsOrDefaults: func() settingsadapter.File { return settingsGetSettingsOrDefaults(s) },
+		RefreshSettingEvents:  func() { refreshSettingEvents(s) },
+		MakeRefresh: func(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
+			return vaultMakeRefresh(c.vault(), db, notes)
+		},
+		BuildNotes: c.Notes,
+		Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },
 	}
 }

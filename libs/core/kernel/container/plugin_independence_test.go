@@ -405,7 +405,7 @@ func TestAnonymousAssertionRule_RejectsInterfaceAssertions(t *testing.T) {
 	}
 }
 
-// The plugin host is reached through the capabilities of container/plugins.Host. The
+// The plugin host is reached through the capabilities of container.PluginHost. The
 // container and the hosts ask it for nothing they do not declare, so a value of
 // it is never asserted to an interface spelled out at the assertion.
 func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {

@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
-	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -236,7 +235,7 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &pluginswiring.Host{SettingsPush: host}
+	cfg.PluginHost = &PluginHost{SettingsPush: host}
 
 	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {

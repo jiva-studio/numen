@@ -1,0 +1,53 @@
+package indexing
+
+import (
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+)
+
+// reading reads a vault into the index of its own that a test holds.
+type reading struct {
+	ReadWholeVault OpenReading
+	readers        vaultport.VaultReaders
+}
+
+// GetVaultReaders opens vaults for reading.
+func (r reading) GetVaultReaders() vaultport.VaultReaders { return r.readers }
+
+// openFunc opens an index in a folder of the test and returns what reads into it.
+type openFunc func(t *testing.T) (reading, *vault.Index)
+
+// ReadingProvider opens, in a folder of the test, an index and what reads a vault into it.
+type ReadingProvider func(t *testing.T) (OpenReading, vaultport.VaultReaders, *vault.Index)
+
+// RunWorkerTests runs the tests of the worker that read vaults into an index. The composition root
+// imports this package, so a test of the external package gives it the provider.
+func RunWorkerTests(t *testing.T, provide ReadingProvider) {
+	t.Helper()
+	open := func(t *testing.T) (reading, *vault.Index) {
+		t.Helper()
+		read, readers, db := provide(t)
+		return reading{ReadWholeVault: read, readers: readers}, db
+	}
+	t.Run("APassThatCouldNotEmbedStaysInTheList", func(t *testing.T) { testAPassThatCouldNotEmbedStaysInTheList(t, open) })
+	t.Run("APassThatEmbeddedPreservesTheList", func(t *testing.T) { testAPassThatEmbeddedPreservesTheList(t, open) })
+	t.Run("IndexingNamesTheSourceItIsOn", func(t *testing.T) { testIndexingNamesTheSourceItIsOn(t, open) })
+	t.Run("BooksThatCouldNotBeReadStayInTheList", func(t *testing.T) { testBooksThatCouldNotBeReadStayInTheList(t, open) })
+	t.Run("IndexingIsNeverAWordWithNothingBelowIt", func(t *testing.T) { testIndexingIsNeverAWordWithNothingBelowIt(t, open) })
+	t.Run("ARecognitionStopsTheVectorPass", func(t *testing.T) { testARecognitionStopsTheVectorPass(t, open) })
+	t.Run("AChangeOfSourcesStopsTheVectorPass", func(t *testing.T) { testAChangeOfSourcesStopsTheVectorPass(t, open) })
+	t.Run("ANoteSaveStopsTheVectorPass", func(t *testing.T) { testANoteSaveStopsTheVectorPass(t, open) })
+	t.Run("VersionChange_EmbedsPendingVaultContent", func(t *testing.T) { testVersionChangeEmbedsPendingVaultContent(t, open) })
+	t.Run("VersionChangeOfANoteKeepsItsChunks", func(t *testing.T) { testVersionChangeOfANoteKeepsItsChunks(t, open) })
+	t.Run("CancellingTheVectorTaskEndsTheEmbedCall", func(t *testing.T) { testCancellingTheVectorTaskEndsTheEmbedCall(t, open) })
+	t.Run("CancelledNoteIsSkippedUntilItChanges", func(t *testing.T) { testCancelledNoteIsSkippedUntilItChanges(t, open) })
+	t.Run("ProgressOfAPassAfterACancelReachesItsTotal", func(t *testing.T) { testProgressOfAPassAfterACancelReachesItsTotal(t, open) })
+	t.Run("VectorsReadyExcludesTheCanceledNote", func(t *testing.T) { testVectorsReadyExcludesTheCanceledNote(t, open) })
+	t.Run("APassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady", func(t *testing.T) { testAPassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady(t, open) })
+	t.Run("APassWithNothingPendingTellsAgain", func(t *testing.T) { testAPassWithNothingPendingTellsAgain(t, open) })
+	t.Run("APassThatCouldNotEmbedTellsNothing", func(t *testing.T) { testAPassThatCouldNotEmbedTellsNothing(t, open) })
+	t.Run("APassThatWasStoppedTellsNothing", func(t *testing.T) { testAPassThatWasStoppedTellsNothing(t, open) })
+	t.Run("AWorkerWithoutAListenerEmbedsAsBefore", func(t *testing.T) { testAWorkerWithoutAListenerEmbedsAsBefore(t, open) })
+}

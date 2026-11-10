@@ -8,7 +8,7 @@ import (
 
 func mountMedia(w *windowWiring) {
 	state := w.inst.State
-	resolve := file.NewResolveAddress(file.NewStatFile(w.cfg.VaultReaders()), w.cfg.vault().OpenPluginFile())
-	handler := mediawindow.NewHandler(state, state, resolve, w.cfg.vault().GetMediaType())
+	resolve := file.NewResolveAddress(file.NewStatFile(w.cfg.VaultReaders()), openPluginFile(w.cfg.vault()))
+	handler := mediawindow.NewHandler(state, state, resolve, getMediaType(w.cfg.vault()))
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }

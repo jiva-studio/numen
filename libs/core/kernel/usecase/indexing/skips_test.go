@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 )
 
 func getHeldWords() []string {
@@ -70,12 +69,11 @@ func writeNote(t *testing.T, root, name, body string) {
 	}
 }
 
-// A canceled note gets no vectors on the next pass while the other notes do,
-// and gets them again once it is edited.
-func TestCancelledNoteIsSkippedUntilItChanges(t *testing.T) {
+func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 
