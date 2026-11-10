@@ -1,10 +1,16 @@
 /**
  * Tab state and coordinator for an open flashcard preset.
  */
-import { StopReason } from '../../lib/wire/types'
+import { StopReason } from '../../lib/stop'
 import { ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
-import { DEFAULTS, type Goal, type Presets, type Settings, type SettingsBounds } from '../../lib/presets'
+import {
+  DEFAULTS,
+  type Goal,
+  type Presets,
+  type Settings,
+  type SettingsBounds,
+} from '../../lib/presets'
 import { produceSchedule } from '../lib/curve'
 import { getShapeKey, getGoalField } from '../lib/fields'
 import { WORDS as words } from '../lib/words'

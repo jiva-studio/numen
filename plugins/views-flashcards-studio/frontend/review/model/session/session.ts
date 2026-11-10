@@ -11,7 +11,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 import { RATING_BY_GRADE } from '../../lib/card/grades'
-import type { Rating } from '../../../lib/wire/types'
+import type { Rating } from '../../../lib/wire/review'
 import type { ReviewCard, Intervals } from '../../lib/card/cards'
 import type { Grade } from '../../lib/card/grades'
 

@@ -1,5 +1,5 @@
 /** How well a card was recalled, in this window's words and in the schema's. */
-import { Rating } from '../../../lib/wire/types'
+import { Rating } from '../../../lib/wire/review'
 import { getNames } from '../../../lib/wire/names'
 
 /** How well a card was recalled. The user picks one of the four. */

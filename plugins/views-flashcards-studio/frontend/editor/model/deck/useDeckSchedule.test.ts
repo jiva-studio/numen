@@ -3,9 +3,16 @@
  * choice came to.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { StopReason } from '../../../lib/wire/types'
+import { StopReason } from '../../../lib/stop'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { DEFAULTS, NO_BOUNDS, type PresetChoice, type PresetReadResult, type PresetWriteResult, type Presets } from '../../../lib/presets'
+import {
+  DEFAULTS,
+  NO_BOUNDS,
+  type PresetChoice,
+  type PresetReadResult,
+  type PresetWriteResult,
+  type Presets,
+} from '../../../lib/presets'
 import { WORDS } from '../../../words'
 import { useDeckSchedule, type ScheduledStore } from './useDeckSchedule'
 

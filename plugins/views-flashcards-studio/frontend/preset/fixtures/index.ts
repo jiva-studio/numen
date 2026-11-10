@@ -4,13 +4,20 @@
  * The window is absent: the tab's data is fabricated, and every action the tab
  * requested is recorded in order.
  */
-import { StopReason } from '../../lib/wire/types'
+import { StopReason } from '../../lib/stop'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import PresetTab from '../ui/PresetTab.vue'
-import { DEFAULTS, type Curve, type Point, type PresetCounts, type Settings, type SettingsBounds } from '../../lib/presets'
+import {
+  DEFAULTS,
+  type Curve,
+  type Point,
+  type PresetCounts,
+  type Settings,
+  type SettingsBounds,
+} from '../../lib/presets'
 import type { PresetTabState } from '../model/types'
 
 /**

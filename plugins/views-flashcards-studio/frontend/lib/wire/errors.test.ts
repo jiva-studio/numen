@@ -6,7 +6,7 @@ import {
   getErrorWords,
   isStaleAnswer,
 } from './errors'
-import { ErrorCode as ProtoErrorCode } from './types'
+import { ErrorCode as ProtoErrorCode } from './notes'
 
 describe('errors', () => {
   it('translates every note code of the schema into the plugin code', () => {

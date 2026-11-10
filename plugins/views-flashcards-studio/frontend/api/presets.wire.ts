@@ -12,7 +12,7 @@ import type {
   Preset as PresetMessage,
   ReadPresetResponse,
   SettingsBounds as SettingsBoundsMessage,
-} from '../lib/wire/types'
+} from '../lib/wire/schedule'
 import { presetsService } from './clients'
 import {
   DEFAULTS,

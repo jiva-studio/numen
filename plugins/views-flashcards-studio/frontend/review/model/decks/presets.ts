@@ -6,7 +6,7 @@
  * the decks of one preset are counted together.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { StopReason } from '../../../lib/wire/types'
+import type { StopReason } from '../../../lib/stop'
 
 import { getDeckName } from '../../lib/vault/names'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '../../lib/vault/types'

@@ -2,7 +2,7 @@
  * Why a preset schedules nothing, as a clause to display after text that
  * identifies the preset.
  */
-import { StopReason } from './types'
+import { StopReason } from '../stop'
 
 /** The day and the weekday as a window words them; a reason that names a day reads them. */
 export interface StopDetail {

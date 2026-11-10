@@ -4,12 +4,19 @@
  * browser can verify: the layout of the columns, the readout under the knob, the
  * bubble above it and the numbers along the axis.
  */
-import { StopReason } from '../../lib/wire/types'
+import { StopReason } from '../../lib/stop'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
 import PresetTab from './PresetTab.vue'
-import { DEFAULTS, type Curve, type Point, type PresetCounts, type Settings, type SettingsBounds } from '../../lib/presets'
+import {
+  DEFAULTS,
+  type Curve,
+  type Point,
+  type PresetCounts,
+  type Settings,
+  type SettingsBounds,
+} from '../../lib/presets'
 import { BACKLOG_PLOT_HEIGHT, PLOT_HEIGHT, PLOT_WIDTH } from '../lib/plot'
 import { WORDS as words } from '../lib/words'
 import type { PresetTabState } from '../model/types'

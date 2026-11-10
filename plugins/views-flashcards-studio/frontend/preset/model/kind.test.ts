@@ -9,11 +9,23 @@
 import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
-import { StopReason } from '../../lib/wire/types'
+import { StopReason } from '../../lib/stop'
 import { getGoalValue, findNearest } from '../lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { getGoalFields, getGoalField, type Field } from '../lib/fields'
-import { DEFAULTS, NO_BOUNDS, type Curve, type Goal, type Point, type Presets, type Preset, type PresetReadResult, type PresetWriteResult, type ReadPreset, type Settings } from '../../lib/presets'
+import {
+  DEFAULTS,
+  NO_BOUNDS,
+  type Curve,
+  type Goal,
+  type Point,
+  type Presets,
+  type Preset,
+  type PresetReadResult,
+  type PresetWriteResult,
+  type ReadPreset,
+  type Settings,
+} from '../../lib/presets'
 import { BOUNDS } from '../fixtures'
 import { ERRORS } from '../../lib/wire/errors'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'

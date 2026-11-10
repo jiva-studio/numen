@@ -2,7 +2,7 @@
  * What a vault has due today: the vault, the decks in it, and the presets that
  * schedule them.
  */
-import type { StopReason } from '../../../lib/wire/types'
+import type { StopReason } from '../../../lib/stop'
 
 /** One deck's share of what a vault has due. */
 export interface DeckCardsDue {

@@ -3,10 +3,16 @@
  * back, and its behavior when the file changed after it was read.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../../lib/wire/types'
+import { StopReason } from '../../../lib/stop'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { Preset } from '../../../lib/presets'
-import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../../lib/presets'
+import {
+  DEFAULTS,
+  NO_CURVE_POINT,
+  NO_BOUNDS,
+  type PresetChoice,
+  type Presets,
+} from '../../../lib/presets'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import { DECK } from './kind'
 import { useDeckTabs as useDeckTabsOriginal } from './useDeckTabs'

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { StopReason } from '../../../lib/wire/types'
+import { StopReason } from '../../../lib/stop'
 
 import { useReviewCounter } from './counts'
 import type { CardsDueClient, DueCounts, VaultCounts } from './counts'

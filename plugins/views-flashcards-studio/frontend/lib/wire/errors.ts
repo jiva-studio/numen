@@ -3,7 +3,7 @@
  * plugin's windows use. Every code of the API `ErrorCode` is
  * translated here into the plugin's own `ErrorCode`.
  */
-import { ErrorCode as ProtoErrorCode } from './types'
+import { ErrorCode as ProtoErrorCode } from './notes'
 import type { ErrorCode } from '../../types'
 
 /** The code for each schema code, and null for `CONFLICT`: the window prompts the user about that one. */

@@ -1,12 +1,12 @@
 /** What the application answers about the preset one deck is scheduled by. */
-import { StopReason } from '../../../lib/wire/types'
+import { StopReason } from '../../../lib/stop'
 import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
 import { formatErrorCodeMessage } from '../../../lib/wire/errors'
 import { parseSettings } from '../../../lib/wire/settings'
 import type { SettingsMessage } from '../../../lib/wire/settings'
 
 import type { Settings } from '../../lib/decks/types'
-import type { ErrorCode } from '../../../lib/wire/types'
+import type { ErrorCode } from '../../../lib/wire/notes'
 
 /**
  * What the application answers about the presets of a vault. Every question

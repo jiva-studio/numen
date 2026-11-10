@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '../../../lib/wire/types'
+import { StopReason } from '../../../lib/stop'
 import { DEFAULT_SETTINGS, formatSettings } from '../../../lib/wire/settings'
 import type { SettingsMessage } from '../../../lib/wire/settings'
 
@@ -11,7 +11,7 @@ import { CLOSES_NOTHING } from '../../lib/decks/types'
 import type { Budget, Preset, Settings } from '../../lib/decks/types'
 import { getGoalWords, getLeftWords, getStoppedWords, STOPPED } from '../../lib/decks/words'
 import type { BudgetKeys, PresetCardsDue, VaultCardsDue } from '../../lib/vault/types'
-import { ErrorCode } from '../../../lib/wire/types'
+import { ErrorCode } from '../../../lib/wire/notes'
 
 const settings = (fields: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',

@@ -1,6 +1,6 @@
 /** Interface copy for a preset on this screen: its goal, its day, and why it schedules nothing. */
 // Stryker disable StringLiteral: interface copy
-import { StopReason } from '../../../lib/wire/types'
+import { StopReason } from '../../../lib/stop'
 import { formatStopReasonMessage } from '../../../lib/wire/stop'
 import { many, percent } from '@numen/ui'
 import { parseDay, daysBetween } from '../../../lib/day'

@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { cardsService } from './clients'
 import { cards } from './cards'
-import { ErrorCode } from '../lib/wire/types'
+import { ErrorCode } from '../lib/wire/notes'
 
 vi.mock('./clients', () => ({
   cardsService: {
