@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -197,3 +198,9 @@ func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Tre
 
 func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Tree.Move = *move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Edit.Write = *write }
+
+// ViewOf is the view of the window as the core asks it to show something.
+func ViewOf(state *State) windowsession.View {
+	notices := state.Notices
+	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
+}

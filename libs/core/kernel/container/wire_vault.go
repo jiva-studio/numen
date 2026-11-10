@@ -32,7 +32,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -146,7 +145,7 @@ func (c Config) Notes(db *vault.Index, index note.IndexUpdater) note.Scenarios {
 }
 
 // FocusNote builds the use case that shows a note in the window.
-func (c Config) FocusNote(refs noteport.NoteRefs, view windowport.Window) *query.FocusNote {
+func (c Config) FocusNote(refs noteport.NoteRefs, view query.PlaceFocus) *query.FocusNote {
 	return vaultFocusNote(c.vault(), refs, view)
 }
 
@@ -362,9 +361,9 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 		NoteRefs:      queries,
 		OpeningNote:   queries,
 		NamedPaths:    queries,
-		Passages:      db.ChunkQueries(),
-		Progress:      db.ChunkQueries(),
-		Stats:         db.ChunkQueries(),
+		Passages:      db.ChunkSearch(),
+		Progress:      db.ChunkVectors(),
+		Stats:         db.ChunkVectors(),
 		Sources:       db.Sources(),
 		SourcesUnder:  db.Sources(),
 		RemovalLookup: db.Sources(),
@@ -374,12 +373,12 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 		VectorQueries: db.Sources(),
 		Maintenance:   db.Maintenance(),
 		Links:         queries,
-		Problems:      queries,
+		Problems:      db.NoteProblems(),
 		OpenTabs:      db.OpenTabs(),
 		TextVersions:  version.NewIndexVersions(db.TextVersions()),
 		SearchFloors:  db.SearchFloors(),
 		SearchSamples: db.SearchSamples(),
-		Nearest:       db.ChunkQueries(),
+		Nearest:       db.ChunkSearch(),
 	}), nil
 }
 
@@ -467,7 +466,7 @@ func vaultNotes(c vaultWiring, db *vault.Index, index note.IndexUpdater) note.Sc
 	}
 }
 
-func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view windowport.Window) *query.FocusNote {
+func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view query.PlaceFocus) *query.FocusNote {
 	return query.NewFocusNote(refs, view)
 }
 

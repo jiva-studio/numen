@@ -1,6 +1,4 @@
-// Package tablinkport declares what the tab links require of the process around them: the delivery of events to
-// watching windows and timers.
-package tablinkport
+package tablinks
 
 import (
 	"time"

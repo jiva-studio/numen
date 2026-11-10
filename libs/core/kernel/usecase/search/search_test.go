@@ -104,7 +104,7 @@ func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) 
 
 func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 	t.Helper()
-	unembedded, err := c.db.ChunkQueries().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)
+	unembedded, err := c.db.ChunkVectors().GetUnembeddedChunks(t.Context(), v.ID, getModel().Recipe(), chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,9 +139,9 @@ func precise(v []float32) []byte {
 func (c corpus) search(embedder embeddingport.Embedder) search.Search {
 	queries, ok := embedder.(embeddingport.QueryEmbedder)
 	if !ok {
-		return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
+		return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
 	}
-	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
+	return search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
 }
 
 func getModel() embedding.Model {
@@ -212,7 +212,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
-	dense := c.db.ChunkQueries()
+	dense := queriesOf(c.db)
 	item, err := dense.FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 20, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
@@ -303,7 +303,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 
 	var errs []error
 	unreachable := outOfReach{why: errors.New("dial tcp: network is unreachable")}
-	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil,
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil,
 		unreachable, vectorscase.NewEmbedQueries(unreachable, nil),
 		func(err error) { errs = append(errs, err) })
 
@@ -326,7 +326,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	canceled := outOfReach{why: context.Canceled}
-	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil,
+	finds := search.New(c.db.ChunkSearch(), vaultreader.Readers{}, nil,
 		canceled, vectorscase.NewEmbedQueries(canceled, nil), func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
@@ -342,7 +342,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every small chunk of the note matches.
-	hits, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "disorder", Kinds: nil, Limit: 20})
+	hits, err := c.db.ChunkSearch().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "disorder", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -402,7 +402,7 @@ func TestSearch_ReturnsRequestedSection(t *testing.T) {
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
 
-	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 20})
+	words, err := c.db.ChunkSearch().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,7 +494,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 
 	// A word that appears in no note in the vault, so no lexical match is possible.
 	const unsaid = "zzqqxx"
-	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: unsaid, Kinds: nil, Limit: 20})
+	words, err := c.db.ChunkSearch().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: unsaid, Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,7 +519,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	limit, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
+	limit, err := c.db.ChunkSearch().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,7 +527,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 
-	astray, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
+	astray, err := c.db.ChunkSearch().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -583,7 +583,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
 	c.vectorise(t, c.first, newVector(+1))
-	queries := c.db.ChunkQueries()
+	queries := queriesOf(c.db)
 	books := []domain.SourceKind{domain.KindFile}
 
 	words, err := queries.FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})

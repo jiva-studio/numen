@@ -67,6 +67,9 @@ func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.
 // put together without a catalog serves none.
 func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
 
+// GetThemes is the themes the window offers, and nil for a window put together without a catalog.
+func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
+
 // SetPlugins sets where the calls for the services plugins serve are forwarded,
 // and where the files of a plugin are read from.
 func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (string, bool)) {
@@ -133,9 +136,6 @@ func (o *Installation) FlushPending(ctx context.Context) bool {
 func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)
 }
-
-// GetCurrentVault is the vault the window has open.
-func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
 
 // Notes returns the use cases this window works its vault through.
 // Other components working the same vault in this process, such as agent

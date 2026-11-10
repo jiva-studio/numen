@@ -148,7 +148,7 @@ func (s source) save(t *testing.T, db *index.DB) {
 
 func getUnembedded(t *testing.T, db *index.DB, vault domain.VaultID) []chunk.Passage {
 	t.Helper()
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault, recipe, chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vault, recipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func getSources(found []domain.Passage) []string {
 	return out
 }
 
-func broken(t *testing.T, seed func(db *index.DB), statements ...string) *chunk.Queries {
+func broken(t *testing.T, seed func(db *index.DB), statements ...string) chunkQueries {
 	t.Helper()
 	db, path := openIndexAt(t)
 	seed(db)
@@ -208,13 +208,13 @@ func broken(t *testing.T, seed func(db *index.DB), statements ...string) *chunk.
 			t.Fatalf("%s: %v", statement, err)
 		}
 	}
-	return chunk.NewQueries(raw)
+	return queriesOfRaw(raw)
 }
 
-func closed(t *testing.T) *chunk.Queries {
+func closed(t *testing.T) chunkQueries {
 	t.Helper()
 	db := openIndex(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 	source{path: "b/x.epub", kind: "book", size: 5, mtime: 9}.save(t, db)
 	source{vault: vaultB, path: "n/other.md", kind: "note", size: 3, mtime: 9}.save(t, db)
 
-	got, err := db.ChunkQueries().GetFileStats(t.Context(), vaultA, "note")
+	got, err := db.ChunkFiles().GetFileStats(t.Context(), vaultA, "note")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +279,7 @@ func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 }
 
 func TestFingerprintsOfAVaultTheIndexHasNeverReceivedAreAnEmptyMap(t *testing.T) {
-	got, err := openIndex(t).ChunkQueries().GetFileStats(t.Context(), nobody, "note")
+	got, err := openIndex(t).ChunkFiles().GetFileStats(t.Context(), nobody, "note")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,7 +312,7 @@ func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	source{path: "physics/A Book.epub", kind: "file", size: 42}.save(t, db)
 	source{path: "physics-old/Stray.md", kind: "note", size: 43}.save(t, db)
 	source{vault: vaultB, path: "physics/Other.md", kind: "note", size: 44}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	folder, err := queries.GetSourcesUnder(t.Context(), vaultA, "physics")
 	if err != nil {
@@ -381,7 +381,7 @@ func searchFixture(t *testing.T) *index.DB {
 func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 	db := searchFixture(t)
 
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "stripes", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
+	got, err := db.ChunkSearch().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "stripes", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -405,7 +405,7 @@ func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 
 func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 	db := searchFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	all, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
 	if err != nil {
@@ -432,7 +432,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 
 func TestFindLexical_HonorsLimit(t *testing.T) {
 	db := searchFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindFile}} {
 		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 2})
 		if err != nil || len(got) != 2 {
@@ -443,7 +443,7 @@ func TestFindLexical_HonorsLimit(t *testing.T) {
 
 func TestASearchByWordsAnswersBestFirst(t *testing.T) {
 	db := searchFixture(t)
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
+	got, err := db.ChunkSearch().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -454,7 +454,7 @@ func TestASearchByWordsAnswersBestFirst(t *testing.T) {
 
 func TestAWordStillBeingTypedMatchesByItsPrefix(t *testing.T) {
 	db := searchFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	growing, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "strip", Kinds: nil, Limit: 10, IsGrowing: true})
 	if err != nil || len(growing) == 0 {
@@ -468,7 +468,7 @@ func TestAWordStillBeingTypedMatchesByItsPrefix(t *testing.T) {
 
 func TestASearchByWordsHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	db := searchFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	for _, input := range []string{"", "   "} {
 		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
@@ -485,12 +485,12 @@ func TestASearchByWordsHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 func TestASearchByWordsNeedsAPositiveLimit(t *testing.T) {
 	db := searchFixture(t)
 	for _, limit := range []int{0, -1} {
-		got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: limit})
+		got, err := db.ChunkSearch().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: limit})
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
 	}
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 1})
+	got, err := db.ChunkSearch().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 1})
 	if err != nil || len(got) != 1 {
 		t.Errorf("a limit of 1 answered %d, %v", len(got), err)
 	}
@@ -500,7 +500,7 @@ func TestASearchByWordsFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	seed := func(db *index.DB) {
 		source{path: "lib/a.epub", kind: "file", large: "zebra", smalls: []string{"zebra"}}.save(t, db)
 	}
-	for name, queries := range map[string]*chunk.Queries{
+	for name, queries := range map[string]chunkQueries{
 		"closed":      closed(t),
 		"no search":   broken(t, seed, `DROP TABLE chunks_fts`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
@@ -525,7 +525,7 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 		path: "notes/Gardening.md", kind: "note", large: "text", opens: []string{"Gardening notes"}, smalls: []string{"x"},
 	}.save(t, db)
 	source{vault: vaultB, path: "lib/other.epub", kind: "file", large: "t", opens: []string{"Gardening"}, smalls: []string{"x"}}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 10})
 	if err != nil {
@@ -570,7 +570,7 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 }
 
 func TestASearchByNameHasNothingToSayWithoutWordsOrVault(t *testing.T) {
-	queries := openIndex(t).ChunkQueries()
+	queries := queriesOf(openIndex(t))
 	for _, input := range []string{"", "  "} {
 		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
 		if err != nil || got != nil {
@@ -593,7 +593,7 @@ func TestASearchByNameFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	seed := func(db *index.DB) {
 		source{path: "lib/a.epub", kind: "file", large: "t", opens: []string{"Name"}, smalls: []string{"t"}}.save(t, db)
 	}
-	for name, queries := range map[string]*chunk.Queries{
+	for name, queries := range map[string]chunkQueries{
 		"closed":      closed(t),
 		"no sections": broken(t, seed, `DROP TABLE sections_fts`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
@@ -634,7 +634,7 @@ func meaningFixture(t *testing.T) *index.DB {
 func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	db := meaningFixture(t)
 
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
+	got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -662,7 +662,7 @@ func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 
 func TestFindNearest_HonorsLimit(t *testing.T) {
 	db := meaningFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	for _, limit := range []int{1, 3} {
 		got, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
@@ -678,7 +678,7 @@ func TestFindNearest_HonorsLimit(t *testing.T) {
 
 func TestASearchByMeaningAnswersNothingBelowTheFloor(t *testing.T) {
 	db := meaningFixture(t)
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
+	got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -694,7 +694,7 @@ func TestASearchByMeaningAnswersNothingBelowTheFloor(t *testing.T) {
 
 func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 	db := meaningFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	notes, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0x0F), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10, Floor: -1})
 	if err != nil {
@@ -714,7 +714,7 @@ func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 }
 
 func TestASearchByMeaningHasNothingToSayWithoutAQueryOrAVault(t *testing.T) {
-	queries := meaningFixture(t).ChunkQueries()
+	queries := queriesOf(meaningFixture(t))
 
 	for _, empty := range [][]float32{nil, {}} {
 		got, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: empty, Limit: 10, Floor: -1})
@@ -739,7 +739,7 @@ func TestASearchByMeaningFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 		embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	}
-	for name, queries := range map[string]*chunk.Queries{
+	for name, queries := range map[string]chunkQueries{
 		"closed":    closed(t),
 		"no coarse": broken(t, seed, `DROP TABLE chunks_vec`),
 		"no vector": broken(t, seed, `ALTER TABLE vectors RENAME TO gone`),
@@ -767,7 +767,7 @@ func TestAPassageIsWhereOneChunkIsReadFrom(t *testing.T) {
 		large: "large", smalls: []string{"first", "second"},
 	}.save(t, db)
 	source{vault: vaultB, path: "lib/b.epub", large: "other", smalls: []string{"x"}}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	unembedded := getUnembedded(t, db, vaultA)
 	if len(unembedded) != 2 {
@@ -813,7 +813,7 @@ func TestAPassageFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	seed := func(db *index.DB) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 	}
-	for name, queries := range map[string]*chunk.Queries{
+	for name, queries := range map[string]chunkQueries{
 		"no chunks":   broken(t, seed, `ALTER TABLE chunks RENAME TO gone`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
@@ -831,7 +831,7 @@ func TestSourcesWithNoSmallChunkOweTheSplit(t *testing.T) {
 	source{path: "lib/d-nothing.epub"}.save(t, db)
 	source{path: "notes/e.md", kind: "note"}.save(t, db)
 	source{vault: vaultB, path: "lib/f.epub"}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	got, err := queries.GetUnchunkedSources(t.Context(), vaultA, "book", 10)
 	if err != nil {
@@ -863,7 +863,7 @@ func TestSourcesOfAnotherRecipeOweTheExtractionAgain(t *testing.T) {
 	source{path: "lib/d-none.epub"}.save(t, db)
 	source{path: "notes/e.md", kind: "note", recipe: "old"}.save(t, db)
 	source{vault: vaultB, path: "lib/f.epub", recipe: "old"}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	got, err := queries.GetSourcesWithOtherRecipe(t.Context(), vaultA, "book", []string{"epub-2", "pdf-1"}, 10)
 	if err != nil {
@@ -928,11 +928,11 @@ func TestGetUnembeddedChunks_OtherRecipeReturnsAllChunks(t *testing.T) {
 	source{path: "lib/a.epub", large: "l", smalls: []string{"s1", "s2"}}.save(t, db)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
 
-	same, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
+	same, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
 	if err != nil || len(same) != 0 {
 		t.Errorf("the recipe the vectors were made under still needs %d, %v", len(same), err)
 	}
-	other, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, "another model", chunk.Cursor{}, 10)
+	other, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vaultA, "another model", chunk.Cursor{}, 10)
 	if err != nil || len(other) != 2 {
 		t.Errorf("another recipe needs %d, %v", len(other), err)
 	}
@@ -943,7 +943,7 @@ func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 	source{path: "lib/a.epub", mtime: century + 1, large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	source{path: "lib/b.epub", mtime: century + 2, large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 	source{path: "lib/c.epub", mtime: century + 2, large: "l", smalls: []string{"c1", "c2"}}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 	all := getUnembedded(t, db, vaultA)
 
 	for _, limit := range []int{1, 2, 3} {
@@ -979,7 +979,7 @@ func TestAWalkOfUnembeddedChunksInPagesVisitsEachOnce(t *testing.T) {
 func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century, large: "l", smalls: []string{"a1"}}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	for _, cursor := range [][3]int64{{0, 0, 5}, {0, 5, 0}, {0, 5, 5}, {5, 0, 0}, {5, 0, 5}, {5, 5, 0}} {
 		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{MTime: cursor[0], Source: cursor[1], Chunk: cursor[2]}, 10)
@@ -994,7 +994,7 @@ func TestGetUnembeddedChunks_CursorPastEndReturnsNone(t *testing.T) {
 }
 
 func TestUnembeddedChunksNeedAPositiveLimitAndAKnownVault(t *testing.T) {
-	queries := openIndex(t).ChunkQueries()
+	queries := queriesOf(openIndex(t))
 	for _, limit := range []int{0, -1} {
 		got, err := queries.GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, limit)
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
@@ -1012,7 +1012,7 @@ func TestUnembeddedChunksFailOnAClosedOrBrokenIndex(t *testing.T) {
 		t.Error("a closed index answered")
 	}
 	seed := func(db *index.DB) { source{path: "lib/a.epub", large: "l", smalls: []string{"s"}}.save(t, db) }
-	for name, queries := range map[string]*chunk.Queries{
+	for name, queries := range map[string]chunkQueries{
 		"no vectors":  broken(t, seed, `ALTER TABLE vectors RENAME TO gone`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
@@ -1028,7 +1028,7 @@ func TestGetProgress_CountsSmallChunksAndEmbeddedByRecipe(t *testing.T) {
 	source{path: "lib/b.epub", large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 	source{vault: vaultB, path: "lib/c.epub", large: "l", smalls: []string{"c1"}}.save(t, db)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	target, embedded, err := queries.GetProgress(t.Context(), vaultA, recipe)
 	if err != nil || target != 5 || embedded != 3 {
@@ -1069,7 +1069,7 @@ func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 		hashes = append(hashes, raw)
 	}
 
-	got, err := db.ChunkQueries().GetKeptVectors(t.Context(), recipe, append([][]byte{nil, {}}, hashes...))
+	got, err := db.ChunkVectors().GetKeptVectors(t.Context(), recipe, append([][]byte{nil, {}}, hashes...))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1081,18 +1081,18 @@ func TestCachedVectorsAreFoundByTheHashOfTheirTextBelowTheRecipe(t *testing.T) {
 			t.Errorf("the vector kept under %s is not the one saved", p.ChunkHash)
 		}
 	}
-	elsewhere, err := db.ChunkQueries().GetKeptVectors(t.Context(), "another model", hashes)
+	elsewhere, err := db.ChunkVectors().GetKeptVectors(t.Context(), "another model", hashes)
 	if err != nil || len(elsewhere) != 0 {
 		t.Errorf("another recipe found %d, %v", len(elsewhere), err)
 	}
-	one, err := db.ChunkQueries().GetKeptVectors(t.Context(), recipe, hashes[:1])
+	one, err := db.ChunkVectors().GetKeptVectors(t.Context(), recipe, hashes[:1])
 	if err != nil || len(one) != 1 {
 		t.Errorf("one hash found %d, %v", len(one), err)
 	}
 }
 
 func TestCachedVectorsOfNoHashAreNone(t *testing.T) {
-	queries := openIndex(t).ChunkQueries()
+	queries := queriesOf(openIndex(t))
 	for _, of := range [][][]byte{nil, {}, {nil}, {{}, nil}} {
 		got, err := queries.GetKeptVectors(t.Context(), recipe, of)
 		if err != nil || got != nil {
@@ -1121,7 +1121,7 @@ func TestASourceTextReturnsWhatMadeItAndTheFileItWasMadeFrom(t *testing.T) {
 	source{path: "lib/scan.pdf", kind: "book", size: 321, mtime: century + 7, producer: "ocr", hash: "h-scan"}.save(t, db)
 	source{path: "lib/plain.epub", size: 12}.save(t, db)
 	source{vault: vaultB, path: "lib/theirs.pdf", producer: "ocr"}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	got, found, err := queries.GetSourceText(t.Context(), vaultA, "lib/scan.pdf")
 	want := chunk.SourceText{Path: "lib/scan.pdf", Producer: "ocr", ContentHash: "h-scan", Size: 321, MTime: century + 7}
@@ -1171,7 +1171,7 @@ func TestRecognisedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
 	source{path: "lib/plain.epub"}.save(t, db)
 	source{path: "notes/n.md", kind: "note", producer: "ocr"}.save(t, db)
 	source{vault: vaultB, path: "lib/theirs.pdf", producer: "ocr"}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	got, err := queries.GetRecognisedSources(t.Context(), vaultA, "book")
 	if err != nil {
@@ -1257,7 +1257,7 @@ func TestACursorOfOneIsAPositionAndNotTheStart(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/a.epub", mtime: century, large: "l", smalls: []string{"a1"}}.save(t, db)
 	for _, cursor := range [][3]int64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}} {
-		got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{MTime: cursor[0], Source: cursor[1], Chunk: cursor[2]}, 10)
+		got, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{MTime: cursor[0], Source: cursor[1], Chunk: cursor[2]}, 10)
 		if err != nil || len(got) != 0 {
 			t.Errorf("cursor %v needs %d, %v", cursor, len(got), err)
 		}
@@ -1267,14 +1267,14 @@ func TestACursorOfOneIsAPositionAndNotTheStart(t *testing.T) {
 func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/last.epub", mtime: math.MaxInt64, large: "l", smalls: []string{"x"}}.save(t, db)
-	got, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
+	got, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vaultA, recipe, chunk.Cursor{}, 10)
 	if err != nil || len(got) != 1 {
 		t.Errorf("a walk from the start needs %d, %v", len(got), err)
 	}
 }
 
 func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
-	got, err := meaningFixture(t).ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
+	got, err := meaningFixture(t).ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
 	if err != nil || got != nil {
 		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}

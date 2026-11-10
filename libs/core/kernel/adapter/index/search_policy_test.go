@@ -134,7 +134,7 @@ func TestGetBestSimilarityIsTheNearestPassageOfTheVault(t *testing.T) {
 	db := openDB(t)
 	book(t, db, getFirst(), "library/one.epub", 0x00)
 	book(t, db, getSecond(), "library/two.epub", 0xff)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	near, err := queries.GetBestSimilarity(ctx, getFirst().ID, testRecipe, getVectorForSeed(0x00))
 	if err != nil {

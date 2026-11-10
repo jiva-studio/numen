@@ -29,7 +29,7 @@ func (w *Windows) Watch(windowID string) *Watch {
 		unsubscribe: unsubscribe,
 		windows:     w,
 	}
-	s.presence.addWatch(watch)
+	s.roster.presence.addWatch(watch)
 	return watch
 }
 
@@ -38,7 +38,7 @@ func (w *Windows) Cancel(windowID string) {
 	s := w.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.presence.cancelWatches(windowID)
+	s.roster.presence.cancelWatches(windowID)
 }
 
 // GetSnapshot returns every group and every known tab.
@@ -55,7 +55,7 @@ func (w *Windows) Highlight(windowID string, isOn bool) {
 	s := w.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.presence.hasWatch(windowID) {
+	if !s.roster.presence.hasWatch(windowID) {
 		return
 	}
 	s.events.Publish(tablink.Event{Highlight: &tablink.Highlight{WindowID: windowID, IsOn: isOn}})
@@ -71,7 +71,7 @@ func (w *Windows) WriteTabs(window tablink.Window, tabs []tablink.Tab) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	windowID := window.ID
-	if !s.presence.hasWatch(windowID) {
+	if !s.roster.presence.hasWatch(windowID) {
 		return
 	}
 	s.roster.writeWindow(window)

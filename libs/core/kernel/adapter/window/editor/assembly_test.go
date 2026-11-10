@@ -85,9 +85,9 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 		NoteRefs:      queries,
 		OpeningNote:   queries,
 		NamedPaths:    queries,
-		Passages:      db.ChunkQueries(),
-		Progress:      db.ChunkQueries(),
-		Stats:         db.ChunkQueries(),
+		Passages:      db.ChunkSearch(),
+		Progress:      db.ChunkVectors(),
+		Stats:         db.ChunkVectors(),
 		Sources:       db.Sources(),
 		SourcesUnder:  db.Sources(),
 		RemovalLookup: db.Sources(),
@@ -97,12 +97,12 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 		VectorQueries: db.Sources(),
 		Maintenance:   db.Maintenance(),
 		Links:         queries,
-		Problems:      queries,
+		Problems:      db.NoteProblems(),
 		OpenTabs:      db.OpenTabs(),
 		TextVersions:  version.NewIndexVersions(db.TextVersions()),
 		SearchFloors:  db.SearchFloors(),
 		SearchSamples: db.SearchSamples(),
-		Nearest:       db.ChunkQueries(),
+		Nearest:       db.ChunkSearch(),
 	}), nil
 }
 

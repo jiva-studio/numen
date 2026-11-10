@@ -30,7 +30,8 @@ type sources struct {
 // and which chunks need a vector. A caller that receives only queries cannot
 // write.
 type queries struct {
-	read *chunk.Queries
+	files   *chunk.Files
+	vectors *chunk.Vectors
 }
 
 // SaveSource records the current state of a file with no recipe: a source saved
@@ -63,19 +64,19 @@ func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, 
 
 // GetSourcesUnder is every source the vault holds at a path and beneath it.
 func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error) {
-	return s.read.GetSourcesUnder(ctx, vaultID, path)
+	return s.files.GetSourcesUnder(ctx, vaultID, path)
 }
 
 func (s queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error) {
-	return s.read.GetFileStats(ctx, vaultID, string(kind))
+	return s.files.GetFileStats(ctx, vaultID, string(kind))
 }
 
 func (s queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
-	return s.read.GetUnchunkedSources(ctx, vaultID, string(kind), limit)
+	return s.files.GetUnchunkedSources(ctx, vaultID, string(kind), limit)
 }
 
 func (s queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, recipes []string, limit int) ([]string, error) {
-	return s.read.GetSourcesWithOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
+	return s.files.GetSourcesWithOtherRecipe(ctx, vaultID, string(kind), recipes, limit)
 }
 
 // SaveVectors writes a group: the coarse row of each, and the vector itself
@@ -103,7 +104,7 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	if err != nil {
 		return nil, "", err
 	}
-	found, err := s.read.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
+	found, err := s.vectors.GetUnembeddedChunks(ctx, vaultID, model.Recipe(), from, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -182,13 +183,13 @@ func newChunkSource(s domain.Source) chunk.Source {
 
 // GetKeptVectors is the vectors already made for these texts under this recipe.
 func (s sources) GetKeptVectors(ctx context.Context, recipe string, of [][]byte) (map[string][]byte, error) {
-	return s.read.GetKeptVectors(ctx, recipe, of)
+	return s.vectors.GetKeptVectors(ctx, recipe, of)
 }
 
 // GetSourceText is what one source's text came from, and false where the index holds
 // no source at that path.
 func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (sourcedomain.Text, bool, error) {
-	found, target, err := s.read.GetSourceText(ctx, vaultID, path)
+	found, target, err := s.files.GetSourceText(ctx, vaultID, path)
 	if err != nil || !target {
 		return sourcedomain.Text{}, false, err
 	}
@@ -201,7 +202,7 @@ func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path
 
 // GetRecognisedSources is the sources of one kind whose text a producer made.
 func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourcedomain.Text, error) {
-	found, err := s.read.GetRecognisedSources(ctx, vaultID, string(kind))
+	found, err := s.files.GetRecognisedSources(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
 	}

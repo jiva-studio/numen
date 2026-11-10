@@ -977,7 +977,7 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.installation.Notes().Browse.GetTitles.Execute(t.Context(), f.installation.GetCurrentVault(), []string{"Entropy.md"})
+	found, err := f.installation.Notes().Browse.GetTitles.Execute(t.Context(), f.installation.State.GetCurrentVault(), []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // moveRecordingWindow is a window that records the note moves it is shown.
@@ -22,7 +21,6 @@ type moveRecordingWindow struct {
 	moves []domain.Move
 }
 
-var _ windowport.Window = (*moveRecordingWindow)(nil)
 
 func (w *moveRecordingWindow) FocusPlace(context.Context, domain.Place) error { return nil }
 

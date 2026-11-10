@@ -152,7 +152,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	list := newPluginVaultList(f.installation)
 
 	requireUnsavedChanges(t, callOpenVault(t.Context(), list, f.second.ID), "the plugin's open while a page holds unsaved changes")
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after the plugin's open was rejected, want %s", got.Name, f.first.Name)
 	}
 	if !f.installation.State.Window.IsQuestionOpen() {
@@ -166,7 +166,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	if got := page.getFlushCount(); got != 1 {
 		t.Errorf("the page received %d flush requests after the second plugin open, want 1: the open sent a new one", got)
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after the second plugin open, want %s", got.Name, f.first.Name)
 	}
 
@@ -184,7 +184,7 @@ func TestPluginOpenVaultWithUnsavedChangesPromptsTheUser(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		t.Fatal("the plugin's open after the prompt closed never returned")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s after the plugin's open, want %s", got.Name, f.second.Name)
 	}
 }
@@ -206,7 +206,7 @@ func TestPluginOpenVaultWithoutUnsavedChangesShowsVaultFirst(t *testing.T) {
 		t.Fatal("the plugin's open of a window with no unsaved changes never returned")
 	}
 
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s when the plugin's open returned, want %s", got.Name, f.second.Name)
 	}
 	if got := f.state(t).GetName(); got != f.second.Name {
@@ -254,7 +254,7 @@ func TestPluginOpenDuringClosePromptFailsAndCloseKeepsWaiting(t *testing.T) {
 	if !f.isFlushRequestedOfANewPage(t, 5*time.Second) {
 		t.Error("the plugin's open ended the flush request of the user's close")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after the plugin's open was rejected, want %s", got.Name, f.first.Name)
 	}
 
@@ -313,7 +313,7 @@ func TestPluginOpenVaultDuringWindowCloseIsRejected(t *testing.T) {
 	case <-time.After(20 * time.Second):
 		t.Fatal("the plugin's open never returned")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s", got.Name)
 	}
 }
@@ -352,7 +352,7 @@ func TestTwoPluginOpenVaultCallsAtOnceDoNotReturnUnsavedChanges(t *testing.T) {
 	if err := <-first; err != nil {
 		t.Errorf("the first open returned %v", err)
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s, want %s", got.Name, f.second.Name)
 	}
 }
@@ -370,7 +370,7 @@ func TestPluginOpenVaultOfMissingFolderReturnsUnreadable(t *testing.T) {
 	if !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Errorf("the plugin's open of a vault whose folder is gone returned %v, want ErrUnreadable", err)
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -498,7 +498,7 @@ func TestUserVaultSwitchDuringPluginOpenIsAccepted(t *testing.T) {
 		}
 	}
 	expectOpenUnavailable(t, openResult)
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s", got.Name)
 	}
 }
@@ -529,7 +529,7 @@ func TestPluginOpenVaultDuringUserSwitchIsUnavailable(t *testing.T) {
 	if err := <-switchCh; err != nil {
 		t.Errorf("the user's switch returned %v", err)
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window shows %s", got.Name)
 	}
 }
@@ -727,7 +727,7 @@ func TestAPluginCallThatEndsDuringItsOpenIsUnavailable(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the plugin's open whose call ended never returned")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window shows %s after a plugin call that ended", got.Name)
 	}
 }

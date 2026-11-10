@@ -275,7 +275,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, again)
 
-	if got := again.GetCurrentVault(); got.ID != f.second.ID {
+	if got := again.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window opened on %s, want the vault it showed last", got.Name)
 	}
 }
@@ -426,7 +426,7 @@ func TestAPageThatReturnsNothingCostsTheSwapItsBound(t *testing.T) {
 	case <-time.After(30 * time.Second):
 		t.Fatal("a page that says nothing held the swap with nothing to wait for")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.second.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.second.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -538,7 +538,7 @@ func TestVaultSession_ConcurrentSwapAndCloseDoNotCancel(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the page never wrote what it holds")
 	}
-	if got := f.installation.GetCurrentVault(); got.ID != f.first.ID {
+	if got := f.installation.State.GetCurrentVault(); got.ID != f.first.ID {
 		t.Errorf("the window is showing %s", got.Name)
 	}
 }
@@ -760,7 +760,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	}
 
 	found, err := db.Passages().FindLexical(
-		t.Context(), installation.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
+		t.Context(), installation.State.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -828,7 +828,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 func TestOpenWindow_NoVaultCreatesNothing(t *testing.T) {
 	f := openEmptyWindow(t)
 
-	if got := f.installation.GetCurrentVault(); got != (domain.Vault{}) {
+	if got := f.installation.State.GetCurrentVault(); got != (domain.Vault{}) {
 		t.Errorf("the window opened on %+v, want no vault", got)
 	}
 
@@ -954,7 +954,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				if err := f.installation.State.Notices.FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
+				if err := editor.ViewOf(f.installation.State).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
 					t.Error(err)
 				}
 			}
@@ -1111,7 +1111,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 		t.Fatalf("the vault just added would not open: %v", err)
 	}
 
-	if got := string(f.installation.GetCurrentVault().ID); got != added.Msg.GetVault().GetId() {
+	if got := string(f.installation.State.GetCurrentVault().ID); got != added.Msg.GetVault().GetId() {
 		t.Fatalf("the window is showing %q, want the vault just added", got)
 	}
 

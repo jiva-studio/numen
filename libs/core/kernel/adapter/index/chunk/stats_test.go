@@ -133,7 +133,7 @@ func TestGetIndexCounts(t *testing.T) {
 			db := openIndex(t)
 			one.setup(t, db)
 
-			got, err := db.ChunkQueries().GetIndexCounts(t.Context(), one.vault, recipe)
+			got, err := db.ChunkVectors().GetIndexCounts(t.Context(), one.vault, recipe)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -156,7 +156,7 @@ func TestGetIndexCountsFailsOnABrokenIndex(t *testing.T) {
 
 func TestGetIndexSizes(t *testing.T) {
 	db := openIndex(t)
-	empty, err := db.ChunkQueries().GetIndexSizes(t.Context())
+	empty, err := db.ChunkVectors().GetIndexSizes(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestGetIndexSizes(t *testing.T) {
 
 	source{path: "lib/a.epub", large: "l", smalls: []string{"a1", "a2", "a3"}}.save(t, db)
 	embed(t, db, vaultA, "lib/a.epub", 0xF0)
-	full, err := db.ChunkQueries().GetIndexSizes(t.Context())
+	full, err := db.ChunkVectors().GetIndexSizes(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +184,7 @@ func TestGetIndexSizesFailsOnAClosedIndex(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if _, err := openIndex(t).ChunkQueries().GetIndexSizes(ctx); err == nil {
+	if _, err := openIndex(t).ChunkVectors().GetIndexSizes(ctx); err == nil {
 		t.Error("a canceled call answered")
 	}
 }
@@ -221,7 +221,7 @@ func TestGetIndexCountsBelowTheMinimum(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := db.ChunkQueries().GetIndexCounts(t.Context(), vaultA, recipe)
+			got, err := db.ChunkVectors().GetIndexCounts(t.Context(), vaultA, recipe)
 			if err != nil {
 				t.Fatal(err)
 			}

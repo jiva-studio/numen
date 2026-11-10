@@ -133,13 +133,22 @@ func (d *DB) Maintenance() DatabaseMaintenance { return DatabaseMaintenance{d.wr
 // NoteQueries reads, so it takes the pool that does not wait for the writer.
 func (d *DB) NoteQueries() *note.Queries { return note.NewQueries(d.read) }
 
-// ChunkQueries reads, so a search answers while a scan is still writing.
-func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueriesWithMinimum(d.read, &d.minimum) }
+// NoteProblems reads what the index found wrong in the notes.
+func (d *DB) NoteProblems() *note.Problems { return note.NewProblems(d.read) }
+
+// ChunkFiles reads, so a scan decides what to read again while a search answers.
+func (d *DB) ChunkFiles() *chunk.Files { return chunk.NewFiles(d.read) }
+
+// ChunkSearch reads, so a search answers while a scan is still writing.
+func (d *DB) ChunkSearch() *chunk.Search { return chunk.NewSearch(d.read) }
+
+// ChunkVectors reads the vectors and the chunks that lack one.
+func (d *DB) ChunkVectors() *chunk.Vectors { return chunk.NewVectors(d.read, &d.minimum) }
 
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.
 func (d *DB) Sources() sources {
-	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks(), versions: d.TextVersions()}
+	return sources{queries: queries{files: d.ChunkFiles(), vectors: d.ChunkVectors()}, write: d.Chunks(), versions: d.TextVersions()}
 }
 
 // TextVersions is the text versions of every vault. A rebuild of the index

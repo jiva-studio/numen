@@ -37,7 +37,7 @@ func embedPieces(t *testing.T, db *DB, recipe string) {
 	t.Helper()
 	cutPieces(t, db)
 	ctx := t.Context()
-	pending, err := db.ChunkQueries().GetUnembeddedChunks(ctx, getFirst().ID, recipe, chunk.Cursor{}, 100)
+	pending, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, recipe, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func embedPieces(t *testing.T, db *DB, recipe string) {
 
 func pendingLengths(t *testing.T, db *DB, recipe string) []int {
 	t.Helper()
-	pending, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, recipe, chunk.Cursor{}, 100)
+	pending, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), getFirst().ID, recipe, chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func keptLengths(t *testing.T, db *DB, recipe string) []int {
 	var out []int
 	for i, length := range getShortPieceLengths() {
 		hash := hashOf(t, db, firstChunkOfLength(t, db, length))
-		kept, err := db.ChunkQueries().GetKeptVectors(t.Context(), recipe, [][]byte{hash})
+		kept, err := db.ChunkVectors().GetKeptVectors(t.Context(), recipe, [][]byte{hash})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +128,7 @@ func TestApplyMinChunkLength(t *testing.T) {
 				t.Errorf("removed %d coarse rows, want %d", removed, tc.wantRemoved)
 			}
 
-			target, embedded, err := db.ChunkQueries().GetProgress(t.Context(), getFirst().ID, recipe)
+			target, embedded, err := db.ChunkVectors().GetProgress(t.Context(), getFirst().ID, recipe)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -195,7 +195,7 @@ func TestLoweringTheMinimumChoosesTheChunksThatLostTheirVectors(t *testing.T) {
 	if got := pendingLengths(t, db, recipe); !slices.Equal(got, []int{5, 39}) {
 		t.Errorf("chosen lengths %v, want [5 39]", got)
 	}
-	target, embedded, err := db.ChunkQueries().GetProgress(t.Context(), getFirst().ID, recipe)
+	target, embedded, err := db.ChunkVectors().GetProgress(t.Context(), getFirst().ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}
