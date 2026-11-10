@@ -6,17 +6,12 @@
  * palette, commands, status corner, and quit.
  */
 // Stryker disable StringLiteral: interface copy
-import { keyChord } from '@numen/ui'
 import { commandKeyChord } from '@numen/workbench'
 import { ERRORS } from './api/errors'
 
 export { ERRORS }
 
-const toLowerFirst = (text: string): string => text.charAt(0).toLowerCase() + text.slice(1)
-
 export const WORDS = {
-  /** The name the title bar of every window starts with. */
-  appName: 'numen',
   /** The row of a submenu or a pick list of items while they are read. */
   loadingItems: 'Loading…',
   /** Status corner text shown while something about the vault is wrong. */
@@ -55,29 +50,19 @@ export const WORDS = {
   title: 'Rename note',
   remove: 'Move note to trash',
   copy: 'Copy note path',
-  /** Status corner text shown after a file menu command has run. */
-  commandRan: (title: string) => `${title}: done`,
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable: 'Unavailable: the plugin is disabled or stopped.',
   newNote: 'Create note',
   newFolder: 'Create folder',
-  /** The name a folder is made under where none was typed. */
-  untitledFolder: 'New folder',
   /** The note that points at a web address. */
   close: 'Close tab',
-  byDefault: 'default',
-  present: 'downloaded',
-  notFetched: 'not downloaded',
   settings: 'Settings',
   findKeys: commandKeyChord(navigator.userAgent),
   /** The commands, under the second of the two keystrokes the window keeps for itself. */
   commands: 'Show commands',
-  commandsKeys: keyChord('p', navigator.userAgent),
   goto: 'Go to note',
   openVault: 'Open vault',
   newVault: 'Create vault',
-  /** The list the title opens to switch the vault: its name, its search field and its empty result. */
-  newVaultDetail: 'Choose a folder',
   renameVault: 'Rename vault',
   removeVault: 'Remove vault from list',
   eraseVault: 'Erase vault',
@@ -102,8 +87,6 @@ export const WORDS = {
   typeVault: 'Search vaults',
   gone: 'Missing',
   folder: 'Choose vault folder',
-  /** The list of vaults did not answer. */
-  unlistedVaults: 'Vault list unavailable',
   /** The row a list of values opens on, which is the value in force. */
   current: 'Current',
   /** The themes could not be listed, and a theme's file could not be read. */
@@ -113,11 +96,6 @@ export const WORDS = {
   off: 'Off',
   unturned: 'Setting not saved:',
   secretFailed: 'The secret was not changed:',
-  /** Plugin failures, shown as failed tasks: "<Name> stopped: <reason>", and errors raised by plugin code. */
-  pluginStopped: (name: string, reason: string) => `${name} stopped: ${toLowerFirst(reason)}`,
-  pluginRetryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,
-  pluginError: (name: string, message: string) => `${name}: ${message}`,
-  pluginLoadFailed: 'failed to start',
   /** The settings the vault answered with could not be read. */
   unreadSettings: 'Settings unreadable. Showing the last loaded values.',
   asking: 'Confirm',

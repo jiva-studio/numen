@@ -11,7 +11,7 @@ import type { Command } from '@/entities/command'
 import { getFileKinds } from '@/entities/file'
 import { readNote, resolveLinks, writeNote } from '@/entities/note'
 import type { createMessageLog } from '@/shared/notices/messages'
-import { WORDS as words } from '@/shared/words'
+import { WINDOW_WORDS } from './words'
 import { createBackendHandlers } from '../plugins/commands/backendHandlers'
 import { createCommandItemLists, type CommandItemLists } from '../plugins/commands/commandItemLists'
 import { useDeclaredCommands } from '../plugins/commands/declaredCommands'
@@ -62,13 +62,13 @@ function createPluginReports(
     reportCommandIssue: (pluginId: string, message: string) =>
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
     reportError: (pluginId: string, error: unknown) =>
-      write(pluginId, words.pluginError(getPluginName(pluginId), formatError(error)), 'error'),
+      write(pluginId, WINDOW_WORDS.pluginError(getPluginName(pluginId), formatError(error)), 'error'),
     reportLoadError: (pluginId: string, error: unknown) =>
       write(
         pluginId,
-        words.pluginStopped(
+        WINDOW_WORDS.pluginStopped(
           getPluginName(pluginId),
-          `${words.pluginLoadFailed}: ${formatError(error)}`,
+          `${WINDOW_WORDS.pluginLoadFailed}: ${formatError(error)}`,
         ),
         'error',
       ),
