@@ -1,7 +1,6 @@
 package container_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"

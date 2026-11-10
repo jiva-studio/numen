@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
