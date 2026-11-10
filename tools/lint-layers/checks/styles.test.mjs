@@ -60,16 +60,16 @@ describe("the rule on a border and a radius", () => {
 
   it("rejects a border on one side in a rule that rounds the box", async () => {
     const rejected = ["numen/no-rounded-side-border"];
-    assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; border-radius: 4px; }"), rejected);
-    assert.deepEqual(await lint("a { border-bottom: 1px solid currentColor; border-top-left-radius: 4px; }"), rejected);
-    assert.deepEqual(await lint("a { border-inline-start: 2px solid currentColor; border-radius: 4px; }"), rejected);
+    assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; border-radius: var(--round); }"), rejected);
+    assert.deepEqual(await lint("a { border-bottom: 1px solid currentColor; border-top-left-radius: var(--round); }"), rejected);
+    assert.deepEqual(await lint("a { border-inline-start: 1px solid currentColor; border-radius: var(--round); }"), rejected);
     assert.deepEqual(await lint("a { @apply border-b rounded-md; }"), rejected);
   });
 
   it("accepts a border on one side without a radius, a radius with a border on every side, and a side border that draws nothing", async () => {
     assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; }"), []);
-    assert.deepEqual(await lint("a { border: 1px solid currentColor; border-radius: 4px; }"), []);
-    assert.deepEqual(await lint("a { border-block-end: none; border-radius: 4px; }"), []);
+    assert.deepEqual(await lint("a { border: 1px solid currentColor; border-radius: var(--round); }"), []);
+    assert.deepEqual(await lint("a { border-block-end: none; border-radius: var(--round); }"), []);
     assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; border-radius: 0; }"), []);
     assert.deepEqual(await lint("a { @apply border-b rounded-none; }"), []);
   });
