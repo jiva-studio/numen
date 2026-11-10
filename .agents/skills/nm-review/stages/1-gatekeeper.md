@@ -104,6 +104,19 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 - **A comment states the rule that holds, and stops.** Flag a comment that restates the code or argues — `rather than X`, `instead of X`, `so that we do not…`, `otherwise somebody would…` — and any comparison with a previous implementation. Benchmark numbers are stored in `docs/performance.md`.
 - **Anything that makes the same fact true in two places**, and any new dependency inside the core.
 
+### Read the checks themselves
+
+A green gate proves only what the checks look at. Read the checks the diff relies on: the tests under `libs/core/kernel/container`, `tools/lint-layers`, the ESLint configurations and `.golangci*.yml`. A check is sound when:
+
+- no exemption, allow-list, named path or name list narrows what it covers;
+- each threshold sits at the value the rules state, not just above the largest current object, so that the code is held to the rule and not to its present size;
+- it asserts that it found something to check, so a scan of an empty set or of a folder it does not walk fails;
+- it decides by structure (syntax tree, import graph, type information) and covers every package, test files and generated files included, as the rules say.
+
+A check that fails one of these is a finding on the check, reported with the rule it should enforce.
+
+Then judge each object by what it does, not by the interfaces it is cut into. For every struct, package and file the diff adds or grows, count the methods, fields and lines against the bounds in `architecture.md` §8, and ask what the object does: one technology for an adapter, one scenario for a use case, one wire and composition for a `service` package. An object that does several jobs is a finding even when each interface it implements is small and every check is green.
+
 ### Checks are passed by changing the code
 
 A change that makes a check pass without fixing what it reports is a finding. Look in the diff for:
@@ -119,7 +132,7 @@ A change that makes a check pass without fixing what it reports is a finding. Lo
 ## What not to report
 
 - Anything `gofmt`, `go vet`, `golangci-lint`, `buf lint`, `vue-tsc`, Prettier or a house ESLint rule already enforces; they all run in the gate above.
-- **A file's length, an import count, or a block size.** A file is split by responsibility.
+- **An import count.** A file is split by responsibility; its length and the size of a package are bounded by the rules and are findings when over the bound.
 - **Where a line breaks** in TypeScript, Vue, JSON or CSS. Prettier decides it, and `npm run format:check` is the check.
 - Preferences with no consequence: a helper you would have written differently, an early return you find prettier, a name that is merely not your choice.
 - Speculative structure. "This should be an interface in case we swap it" is a finding only when the second implementation is in sight.
