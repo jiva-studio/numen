@@ -82,9 +82,12 @@ func (l *Lister) Execute(ctx context.Context, requested []agentrun.ProgramComman
 func (l *Lister) getListing(ctx context.Context, agent agents.Agent) acp.Listing {
 	key := agent.Program + "\x00" + strings.Join(agent.Command, "\x00")
 	// A failed load leaves the last listing of the cache, or none, and the agent is listed with it.
-	listing, _, _ := l.models.Get(ctx, key, func(ctx context.Context) (acp.Listing, error) {
+	listing, _, err := l.models.Get(ctx, key, func(ctx context.Context) (acp.Listing, error) {
 		return l.readListing(ctx, agent)
 	})
+	if err != nil {
+		return listing
+	}
 	return listing
 }
 
