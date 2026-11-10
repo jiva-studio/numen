@@ -2,6 +2,7 @@ import { watch } from 'vue'
 import { runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
 import { registerTabKindIcon } from '@/entities/note'
+import { getPluginTexts } from '@/entities/plugin'
 import {
   DEFAULT_PLUGIN_ENABLED,
   createAppInfo,
@@ -9,7 +10,6 @@ import {
   createPluginLoader,
   createPluginNotices,
   createPluginTasks,
-  createPluginTexts,
   openExternalUrl,
   type CommandDeclaration,
   type PluginHostDeps,
@@ -20,7 +20,6 @@ import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/workbench'
 import type { useSettings } from '../window/useSettings'
 import type { WindowPlatform } from '@numen/workbench'
-import { texts } from '@/shared/api/clients'
 
 export interface PluginSupportDeps {
   readonly windowTabs: WindowTabs
@@ -184,7 +183,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
     ...createServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
-    getTexts: (pluginId: string) => createPluginTexts(texts, pluginId),
+    getTexts: (pluginId: string) => getPluginTexts(pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
   const reportLoadError = deps.reportLoadError ?? deps.reportError

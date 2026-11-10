@@ -16,9 +16,6 @@ const hoisted = vi.hoisted(() => ({
   built: {} as Record<'files' | 'vaultFiles', MockSeen & { making?: unknown }>,
 }))
 
-vi.mock('../plugins/agentPort', () => ({
-  agentPort: { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) },
-}))
 vi.mock('../plugins/fileServices', () => ({
   createFileMakers: (args: unknown) => {
     hoisted.built.files = args as MockSeen
@@ -256,10 +253,20 @@ describe('the services the window gives a plugin', () => {
   })
 
   it('offer the agent the window asks, over the port it talks on', async () => {
+    const finished: string[] = []
+    answerCore({
+      agentService: {
+        finishConversation: (request: { conversation: string }) => {
+          finished.push(request.conversation)
+          return {}
+        },
+      },
+    })
     const { deps, window } = create()
 
     expect(window.services.agent).toBeDefined()
     await expect(window.services.agent?.finish('conversation:1')).resolves.toBeUndefined()
+    expect(finished).toStrictEqual(['conversation:1'])
 
     const flushFn = vi.fn(() => Promise.resolve())
     window.services.buffers?.addFlushHandler(flushFn)

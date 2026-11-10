@@ -12,3 +12,6 @@ export const formatError = formatErrorMessage
 
 /** An error whose message is shown as it is. */
 export { ReportedError } from '@numen/core-client'
+
+/** The code the window words for a code given as text, and `unreadable` for one it has no words for. */
+export { getKnownErrorCode } from '@numen/core-client'

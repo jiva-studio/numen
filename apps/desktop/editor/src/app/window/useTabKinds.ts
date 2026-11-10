@@ -7,8 +7,8 @@ import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { FileIcons } from '@/features/command-palette'
 import { relations } from '@/entities/note'
-import { agentPort } from '../plugins/agentPort'
-import type { WindowKindsDeps } from '../kinds/deps'
+import { agentPort } from '@/entities/plugin'
+import type { WindowKindsDeps } from '../plugins/tabKindsDeps'
 import {
   createAgentHost,
   createVaultNotes,
@@ -18,7 +18,7 @@ import {
 import { createFileMakers, createVaultFiles } from '../plugins/fileServices'
 import { createBufferHost } from '../plugins/bufferHost'
 
-export type { WindowKindsDeps } from '../kinds/deps'
+export type { WindowKindsDeps } from '../plugins/tabKindsDeps'
 
 function formatLocalDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')

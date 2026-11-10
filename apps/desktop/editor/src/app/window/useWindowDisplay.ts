@@ -4,7 +4,7 @@ import type { Task } from '@/entities/window'
 import { getAgentUnreachable, getVaultState } from '@/entities/vault'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { createWindowStreams } from './useWindowStreams'
 
@@ -84,7 +84,7 @@ interface StartDisplayDeps {
 
 function startStreams(streams: ReturnType<typeof createWindowStreams>, state: DisplayState): void {
   const onError = (error: unknown) => {
-    state.failure.value = formatErrorMessage(error)
+    state.failure.value = formatError(error)
   }
   runInBackground(streams.follow(), onError)
   runInBackground(streams.watch(), onError)
@@ -113,7 +113,7 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
       await wait(100)
     }
   } catch (error) {
-    state.failure.value = formatErrorMessage(error)
+    state.failure.value = formatError(error)
     state.isIndexing.value = false
   }
 }

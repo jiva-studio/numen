@@ -1,4 +1,4 @@
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
@@ -42,7 +42,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
       // Every open tab on a moved or renamed file is navigated to the new path.
       for (const one of renamed) {
         runInBackground(Promise.resolve(getKinds().leavePath(one.from, one.to)), (error) =>
-          writeMessage(formatErrorMessage(error), 'error'),
+          writeMessage(formatError(error), 'error'),
         )
       }
       getCommands().commands.applyRenames(renamed)
@@ -52,7 +52,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
     travelTo: (path: string) => getKinds().travel(path),
     openFileAt: (path: string, spans: readonly TextRange[]) =>
       runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
-        writeMessage(formatErrorMessage(error), 'error'),
+        writeMessage(formatError(error), 'error'),
       ),
     activateTab: (id: string) => windowTabs.handle.show(id),
     reload: () => getVaults().reload(),
