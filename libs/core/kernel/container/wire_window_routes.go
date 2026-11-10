@@ -2,8 +2,22 @@ package container
 
 import (
 	"context"
+	"io"
+	"sync/atomic"
+	"time"
+
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
+	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
+	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
+	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
+	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
+	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
+	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
+	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/windowstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
@@ -20,19 +34,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"io"
-	"sync/atomic"
-	"time"
-	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
-	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
-	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
-	windowcatalog "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/catalog"
-	windowplugin "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/plugin"
-	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
-	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
-	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
-	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 )
 
 func mountCatalog(w *windowWiring) {

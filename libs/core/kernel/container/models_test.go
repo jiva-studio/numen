@@ -1,9 +1,10 @@
 package container
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"reflect"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 )
 
 // A section is placed under the key the document spells on the field that holds
