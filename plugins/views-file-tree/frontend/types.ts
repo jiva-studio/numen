@@ -154,8 +154,7 @@ export interface FilesTabTransfer {
   dropData(data: DroppedData): Promise<readonly string[]>
 }
 
-/** The menu of a row, or of no row. */
-export interface FilesTabMenu {
+/** The menu of a row, or of no row; request is where the open menu is, null while none is open. */
   /** Where the open menu is, or null while none is open. */
   readonly request: Readonly<Ref<MenuRequest | null>>
   getOverPaths(path: string): readonly string[]

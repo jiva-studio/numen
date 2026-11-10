@@ -65,7 +65,6 @@ const setUp = () => {
   }
 }
 
-/** The parts the layout reads, as one object of the recorders. */
 const flatten = (parts: unknown): Record<string, unknown> =>
   Object.assign({}, ...Object.values(parts as Record<string, object>))
 

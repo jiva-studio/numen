@@ -14,7 +14,7 @@ const THERE = 1
 /** What the strip is doing, how to move it, and the event handlers that move it. */
 export interface PanScroll {
   readonly state: {
-    readonly along: Ref<number>
+    readonly offset: Ref<number>
     readonly isDragging: Ref<boolean>
   }
   readonly moves: {
@@ -148,7 +148,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
   }
 
   const state: PanScroll = {
-    state: { along: axisOffset, isDragging },
+    state: { offset: axisOffset, isDragging },
     moves: { getScrollOffset, send, restore, isMoved, isStill },
     handlers: { onPointerDown, onPointerMove, letGo, onWheel },
   }

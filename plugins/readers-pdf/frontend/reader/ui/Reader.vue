@@ -50,7 +50,7 @@ const { viewport, measure: measureViewport } = useViewport(area)
 
 /** Row scroll state, and pointer and wheel handling. */
 const scroll = usePanScroll(area)
-const scrollOffset = scroll.state.along
+const scrollOffset = scroll.state.offset
 const { isDragging } = scroll.state
 const { onPointerDown, onPointerMove, letGo, onWheel } = scroll.handlers
 

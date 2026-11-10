@@ -33,7 +33,7 @@ describe('a row sent somewhere', () => {
     scroll.moves.send(100, 'smooth')
 
     expect(scrollTo).toHaveBeenCalledWith({ left: 100, behavior: 'smooth' })
-    expect(scroll.state.along.value).toBe(0)
+    expect(scroll.state.offset.value).toBe(0)
     expect(scroll.moves.getScrollOffset()).toBe(100)
   })
 
@@ -43,7 +43,7 @@ describe('a row sent somewhere', () => {
     scroll.moves.send(100, 'auto')
 
     expect(scrollTo).toHaveBeenCalledWith({ left: 100, behavior: 'auto' })
-    expect(scroll.state.along.value).toBe(100)
+    expect(scroll.state.offset.value).toBe(100)
   })
 
   it('is sent at once when it is within a pixel of the place', () => {
@@ -96,7 +96,7 @@ describe('how far along the row is', () => {
 
   it('is the last known place when there is no element', () => {
     const { scroll, area } = createScroll(50)
-    scroll.state.along.value = 7
+    scroll.state.offset.value = 7
     area.value = null
 
     expect(scroll.moves.getScrollOffset()).toBe(7)
@@ -115,7 +115,7 @@ describe('whether the row is standing still', () => {
     const { scroll } = createScroll(40)
 
     expect(scroll.moves.isStill()).toBe(true)
-    expect(scroll.state.along.value).toBe(40)
+    expect(scroll.state.offset.value).toBe(40)
   })
 
   it('is not while the row is travelling to where it was sent', () => {
