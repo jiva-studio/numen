@@ -68,7 +68,7 @@ const createHit = ({
   ...spot
 }: HitFields = {}): SearchHit => ({
   spot: { path: 'physics/Ontology.md', title: 'Ontology', line: -1, start: 0, length: 0, ...spot },
-  offer: { ids: actionIds },
+  actionIds,
   type,
   selector,
 })
@@ -88,9 +88,9 @@ describe('a note found by name, heading or passage', () => {
     const read = [{ id: OPEN_NOTE, text: WORDS.read }]
 
     expect(createNameItem(createName(), WORDS).item.actions).toStrictEqual(read)
-    expect(createNameItem(createName(), WORDS).hit.offer.ids).toStrictEqual([OPEN_NOTE])
+    expect(createNameItem(createName(), WORDS).hit.actionIds).toStrictEqual([OPEN_NOTE])
     expect(
-      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS).hit.offer.ids,
+      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS).hit.actionIds,
     ).toStrictEqual([OPEN_NOTE])
     expect(createPassageItem('text', createPassage(), WORDS).item.actions).toStrictEqual(read)
   })

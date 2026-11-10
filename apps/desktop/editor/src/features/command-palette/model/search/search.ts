@@ -170,7 +170,7 @@ function appendCreateNoteActions(
   const hitsById = new Map(
     [...base.hitsById].map(([id, hit]) => [
       id,
-      { ...hit, offer: { ...hit.offer, ids: [...hit.offer.ids, ...ids], creationIds: ids } },
+      { ...hit, actionIds: [...hit.actionIds, ...ids], creationIds: ids },
     ]),
   )
   return { groups, hitsById }

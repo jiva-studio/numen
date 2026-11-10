@@ -20,10 +20,13 @@ export interface SearchMenuDeps {
  */
 export interface SearchHit {
   spot: HitSpot
-  offer: HitOffer
+  actionIds: readonly string[]
   type: NoteType | null
   tabKind?: string
   selector: Selector | null
+  creationIds?: readonly string[]
+  actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
+  actionCommands?: Readonly<Record<string, string>>
 }
 
 /** Where a hit is: its file, the title shown for it, and the line and the span of the text found. */
@@ -35,13 +38,6 @@ interface HitSpot {
   length: number
 }
 
-/** The actions a hit offers, and what each of them runs. */
-interface HitOffer {
-  ids: readonly string[]
-  creationIds?: readonly string[]
-  values?: Readonly<Record<string, Readonly<Record<string, string>>>>
-  commands?: Readonly<Record<string, string>>
-}
 
 /** One item as it is drawn, beside at its current position and what it offers. */
 export interface SearchRow {
@@ -56,7 +52,8 @@ function createNoteActions(
   entries: readonly SlotItem[],
 ): {
   actions: readonly PaletteAction[]
-  offer: HitOffer
+  actionIds: readonly string[]
+  valuesOfHit: Pick<SearchHit, 'actionValues' | 'actionCommands'>
 } {
   const commands = entries
     .filter((one) => one.kind === 'command')
@@ -69,11 +66,11 @@ function createNoteActions(
   const otherIds = commands.filter(({ one, id }) => id !== one.command)
   return {
     actions,
-    offer: {
-      ids: actions.map((one) => one.id),
-      ...(withValues.length > 0 ? { values: Object.fromEntries(withValues) } : {}),
+    actionIds: actions.map((one) => one.id),
+    valuesOfHit: {
+      ...(withValues.length > 0 ? { actionValues: Object.fromEntries(withValues) } : {}),
       ...(otherIds.length > 0
-        ? { commands: Object.fromEntries(otherIds.map(({ one, id }) => [id, one.command])) }
+        ? { actionCommands: Object.fromEntries(otherIds.map(({ one, id }) => [id, one.command])) }
         : {}),
     },
   }
@@ -110,7 +107,8 @@ export function createNameItem(
         },
         hit: {
           spot: { path: one.path, title: one.title, line: one.line, start: 0, length: 0 },
-          offer: atHeading.offer,
+          actionIds: atHeading.actionIds,
+          ...atHeading.valuesOfHit,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -125,7 +123,8 @@ export function createNameItem(
         },
         hit: {
           spot: { path: one.path, title: one.title, line: -1, start: 0, length: 0 },
-          offer: byName.offer,
+          actionIds: byName.actionIds,
+          ...byName.valuesOfHit,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -139,7 +138,8 @@ function createNotePassageHit(
 ): SearchHit {
   return {
     spot: { path: one.path, title: one.title, line: one.line, start: one.start, length: one.length },
-    offer: note.offer,
+    actionIds: note.actionIds,
+    ...note.valuesOfHit,
     type: one.type,
     ...(one.tabKind ? { tabKind: one.tabKind } : {}),
     selector: null,
@@ -149,7 +149,7 @@ function createNotePassageHit(
 function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): SearchHit {
   return {
     spot: { path: one.path, title: one.title, line: -1, start: one.start, length: one.length },
-    offer: { ids: actionIds },
+    actionIds,
     type: null,
     selector: one.selector,
   }
@@ -197,9 +197,9 @@ export interface ResultChoice {
 function resolveNoteChoice(result: SearchHit, action: string): ResultChoice {
   const { path, title, line } = result.spot
   const place = { path, file: path, title }
-  const values = result.offer.values?.[action]
+  const values = result.actionValues?.[action]
   return {
-    command: result.offer.commands?.[action] ?? action,
+    command: result.actionCommands?.[action] ?? action,
     over: line >= 0 ? { ...place, line } : place,
     input: '',
     ...(values ? { values } : {}),
@@ -216,8 +216,8 @@ export function resolveChoice(
   action: string,
   typed = '',
 ): ResultChoice | null {
-  if (!result || !result.offer.ids.includes(action)) return null
-  if (result.offer.creationIds?.includes(action)) {
+  if (!result || !result.actionIds.includes(action)) return null
+  if (result.creationIds?.includes(action)) {
     return {
       command: action,
       over: null,
