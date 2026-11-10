@@ -103,7 +103,7 @@ func (c Config) openPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 	return c.getPluginCommands().Run, closeAfterWork(ctx, work, db.Close), nil
 }
 
-func (c Config) openedPluginWork(ctx context.Context, db *vault.Index, v domain.Vault) (Config, error) {
+func (c Config) openedPluginWork(db *vault.Index, v domain.Vault) (Config, error) {
 	opened, _, err := c.openPluginWork(db, v)
 	return opened, err
 }
@@ -158,10 +158,6 @@ func (c Config) getPluginName(pluginID string) string {
 
 func (c Config) setPluginVaultList(list hostendpoint.VaultList) {
 	setPluginVaultList(c.plugins(), list)
-}
-
-func (c Config) openPluginCache() (pluginport.PluginCache, error) {
-	return openPluginCache(c.plugins())
 }
 
 func (c Config) GetPluginDir(id string) (string, bool) {

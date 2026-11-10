@@ -49,10 +49,6 @@ func (c Config) ReadWholeVault(
 	return readWholeVault(c.search(), ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
 }
 
-func (c Config) fitIndex(db *vault.Index) vectorscase.FitIndex {
-	return fitIndex(c.search(), db)
-}
-
 // Embed gives a vault's chunks the vectors they need.
 func (c Config) Embed(db *vault.Index, embedder embeddingport.Embedder, v domain.Vault) (vectorscase.Embed, error) {
 	return searchEmbed(c.search(), db, embedder, v)

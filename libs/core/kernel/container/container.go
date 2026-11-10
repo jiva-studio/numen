@@ -161,12 +161,6 @@ func (c Config) GetWait() machine.Wait {
 	}
 }
 
-func (c Config) getDelay() machine.Delay {
-	return func(d time.Duration, f func()) func() bool {
-		return time.AfterFunc(d, f).Stop
-	}
-}
-
 func (c Config) settings() settingsWiring {
 	res := c.getResources()
 	return settingsWiring{

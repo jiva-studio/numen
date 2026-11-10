@@ -66,7 +66,7 @@ func (c Config) OpenCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (
 	if err != nil {
 		return cli.Scan{}, err
 	}
-	indexing, err = indexing.openedPluginWork(ctx, db, v)
+	indexing, err = indexing.openedPluginWork(db, v)
 	if err != nil {
 		return cli.Scan{}, errors.Join(err, db.Close())
 	}
@@ -94,7 +94,7 @@ func (c Config) OpenCLISearch(
 	if err != nil {
 		return cli.Search{}, err
 	}
-	asking, err := c.openedPluginWork(ctx, db, v)
+	asking, err := c.openedPluginWork(db, v)
 	if err != nil {
 		return cli.Search{}, errors.Join(err, db.Close())
 	}

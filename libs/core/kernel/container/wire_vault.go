@@ -70,10 +70,6 @@ func (c Config) VaultLocks() vaultport.VaultLocks {
 	return writeLocks(c.vault())
 }
 
-func (c Config) getImportedFiles() sourceport.ImportedFiles {
-	return getImportedFiles(c.vault())
-}
-
 func (c Config) vaultWatcher() vaultport.VaultWatcher {
 	return vaultWatcher(c.vault())
 }
@@ -103,10 +99,6 @@ func (c Config) AddVault(ports vaultregistry.Ports, root, name string) (domain.V
 	return addVault(c.vault(), ports, root, name)
 }
 
-func (c Config) getKnownVaults(ports vaultregistry.Ports) *vaultregistry.GetKnownVaults {
-	return getKnownVaults(c.vault(), ports)
-}
-
 // GetProblems holds the vault to the standard checks.
 func (c Config) GetProblems(problems problemport.ProblemQueries) *vault.GetProblems {
 	return getProblems(c.vault(), problems)
@@ -115,10 +107,6 @@ func (c Config) GetProblems(problems problemport.ProblemQueries) *vault.GetProbl
 // GetSummary builds the vault summary query use case.
 func (c Config) GetSummary(summaries noteport.VaultSummaries) *vaultregistry.GetSummary {
 	return getSummary(c.vault(), summaries)
-}
-
-func (c Config) pickFolder(dialog machineport.FolderDialog) *picker.PickFolder {
-	return pickFolder(c.vault(), dialog)
 }
 
 // OpenIndex opens the cache. The caller closes it.
@@ -298,24 +286,11 @@ func addVault(c vaultWiring, registry vaultregistry.Ports, root, name string) (d
 	return vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock).Execute(root, name)
 }
 
-func getKnownVaults(c vaultWiring, registry vaultregistry.Ports) *vaultregistry.GetKnownVaults {
-	recognized := vaultregistry.NewGetKnownVaults(registry.Vaults, registry.Last, vaultReaders(c))
-	return &recognized
-}
-
 func getProblems(_ vaultWiring, problems problemport.ProblemQueries) *vault.GetProblems {
 	return vault.NewStandardGetProblems(problems)
 }
 
 func getSummary(_ vaultWiring, summaries noteport.VaultSummaries) *vaultregistry.GetSummary {
 	return vaultregistry.NewGetSummary(summaries)
-}
-
-func pickFolder(_ vaultWiring, dialog machineport.FolderDialog) *picker.PickFolder {
-	if dialog == nil {
-		return nil
-	}
-	pick := picker.NewPickFolder(dialog)
-	return &pick
 }
 
