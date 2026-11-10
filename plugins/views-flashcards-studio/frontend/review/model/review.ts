@@ -23,7 +23,10 @@ import { createReviewKeys, type ReviewScreen } from './reviewKeys'
 import type { Grade } from '../lib/card/grades'
 import type { Report } from './session/session'
 
-/** What the review is given by the window it is opened in. */
+/**
+ * What the review is given by the window it is opened in. The heatmap is drawn for the wider of the
+ * screen and the page that `getViewport` reports, in pixels.
+ */
 export interface ReviewDeps {
   readonly vault: string
   readonly counts: VaultCounts
@@ -31,7 +34,6 @@ export interface ReviewDeps {
   readonly agent: AgentHost
   readonly mountView: MountView
   readonly goToVaults: () => void
-  /** The widths, in pixels, of the screen and of the page, whose wider the heatmap is drawn for. */
   readonly getViewport: () => { readonly screen: number; readonly page: number }
 }
 
