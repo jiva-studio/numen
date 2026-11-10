@@ -69,7 +69,7 @@ func TestGetHighlightsRefusesRangesThatAreNotRangesOfAText(t *testing.T) {
 		"backwards": {{Start: 5, End: 3}},
 	} {
 		_, err := reader.GetHighlights(t.Context(), "", "tiny.pdf", ranges)
-		if _, ok := errors.AsType[*RangeError](err); !ok {
+		if failure, ok := errors.AsType[*RangeError](err); !ok || failure == nil {
 			t.Errorf("%s: error %v, want a RangeError", name, err)
 		}
 	}
