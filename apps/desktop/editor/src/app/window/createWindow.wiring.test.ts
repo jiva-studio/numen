@@ -20,7 +20,7 @@ const h = vi.hoisted(() => ({
     fileKinds: vi.fn(),
     readOpenTabs: vi.fn(async () => ({ tabs: [], activeId: '' })),
     resolveLinks: vi.fn(async () => [{ path: 'resolved.md' }]),
-    cancelTask: vi.fn(async () => undefined),
+    cancelTask: vi.fn(async (_id: string) => undefined),
     detachTab: vi.fn(),
     writeTabLinks: vi.fn(async () => undefined),
     syncTabPath: vi.fn(async () => undefined),
