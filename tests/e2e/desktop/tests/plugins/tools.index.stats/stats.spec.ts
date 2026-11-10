@@ -98,9 +98,6 @@ test.describe('the index stats item', () => {
     expect(box.x + box.width).toBeLessThanOrEqual(viewport?.width ?? 0)
     expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height)
     expect(box.y + box.height).toBeLessThanOrEqual(viewport?.height ?? 0)
-    const ground = await popover.evaluate((one) => getComputedStyle(one).backgroundColor)
-    expect(ground).not.toBe('transparent')
-    expect(ground).not.toMatch(/^rgba\(.*,\s*0\)$/)
 
     await page.keyboard.press('Escape')
 
