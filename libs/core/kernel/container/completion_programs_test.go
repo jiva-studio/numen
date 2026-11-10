@@ -28,7 +28,7 @@ func serveCompletions(t *testing.T, host *plugin.Host, output string) (hostendpo
 		t.Fatal(err)
 	}
 	cfg.SetSettings(target)
-	completer := lent.GetCompleter()
+	completer := lent.Endpoint.GetCompleter()
 	if completer == nil {
 		t.Fatal("the host has no completer")
 	}
