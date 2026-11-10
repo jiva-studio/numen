@@ -31,14 +31,13 @@ export const LAYERED_ROOTS = [
 
 /**
  * The roots without layers, whose top-level folders are slices or segments: a plugin's `frontend` and the other
- * libraries. A library has no index.ts per area; `areas` names the folders it is cut into, so a new folder is a
- * decision made here and not an accident.
+ * libraries. A folder of a library is an area when it has an `index.ts`, the entry the rest of the library imports it by.
  */
 export const FLAT_ROOTS = [
-  { root: "libs/core/client/src", areas: ["errors", "services", "settings"], scope: "libs" },
-  { root: "libs/plugin/loader/src", areas: ["hosting", "keybindings", "loading", "slot-views", "slots", "when"], scope: "libs" },
-  { root: "libs/plugin/manager/src", areas: [], scope: "libs" },
-  { root: "libs/plugin/sdk-ts/src", areas: ["commands", "errors", "slots", "stream"], scope: "libs" },
+  { root: "libs/core/client/src", scope: "libs" },
+  { root: "libs/plugin/loader/src", scope: "libs" },
+  { root: "libs/plugin/manager/src", scope: "libs" },
+  { root: "libs/plugin/sdk-ts/src", scope: "libs" },
 ];
 
 /** The folder and file names directly below a directory, from the tracked paths. */
@@ -98,10 +97,10 @@ export function findUnplacedInLayers(files, { root, layers, shared = [] }) {
 }
 
 /** The top-level folders of a root without layers that are neither a segment, test support nor a slice. */
-export function findUnplacedFolders(files, { root, areas = [] }) {
+export function findUnplacedFolders(files, { root }) {
   const found = [];
   for (const [name, inside] of listChildren(files, root).folders) {
-    if (SEGMENTS.includes(name) || SUPPORT.includes(name) || areas.includes(name) || isSlice(inside)) continue;
+    if (SEGMENTS.includes(name) || SUPPORT.includes(name) || isSlice(inside)) continue;
     found.push({ file: `${root}/${name}`, line: 1, symbol: `folder ${name}/ is no segment and no slice: no index.ts and no segment of its own` });
   }
   return found;
