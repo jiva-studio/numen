@@ -27,8 +27,15 @@ import { cell } from './cell.mjs'
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
 // The window's shared layer, which is where the words stand.
 const UI = new URL('shared/', EDITOR)
-// The slice the commands and their keystrokes stand in.
-const PALETTE = new URL('features/command-palette/', EDITOR)
+// The slices that declare the commands the palette lists, in the order the palette draws them, and
+// the words each one names its text in. The palette's own commands name their text in the window's
+// words directly.
+const COMMAND_SLICES = [
+  { file: 'features/note-commands/model/commands.ts', words: 'features/note-commands/words.ts' },
+  { file: 'features/file-commands/model/commands.ts', words: 'features/file-commands/words.ts' },
+  { file: 'features/command-palette/lib/window-commands/windowCommands.ts' },
+  { file: 'features/vault-commands/model/commands.ts', words: 'features/vault-commands/words.ts' },
+]
 // The window the palette is drawn in, as a plugin manifest names it.
 const TARGET = 'desktop.editor'
 const GO = new URL('../../../libs/core/kernel/', import.meta.url)
@@ -81,14 +88,6 @@ const listed = (source, from) => {
   const opens = source.slice(from).match(/=>?\s*\[/)
   if (!opens) return null
   return readBracketed(source, from + opens.index + opens[0].length - 1)
-}
-
-/** The list one exported name is declared as. */
-const declaring = (source, name, what) => {
-  const at = source.indexOf(`export const ${name}`)
-  const found = at < 0 ? null : listed(source, at)
-  if (!found) die(what)
-  return found
 }
 
 /* ------------------------------------------------------------------ keys */
@@ -177,17 +176,22 @@ const keyboard = async () => {
 /* -------------------------------------------------------------- commands */
 
 /**
- * Where each row of the list begins, so that what one row says is read out of
- * the row itself and not out of a fixed number of characters after its id: a
- * row grown longer than that number is a row that stops matching.
+ * Where each row of a slice begins, so that what one row says is read out of the row itself and
+ * not out of a fixed number of characters after its id: a row grown longer than that number is a
+ * row that stops matching.
  *
- * Every command the list holds is a command read here. One written in a shape
- * this cannot find an id in stops the build.
+ * The rows of a slice stand before its handlers. Every row has an id and a group, and a count of
+ * the one held against the count of the other stops the build at a row written in a shape this
+ * cannot find an id in.
  */
-const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
+const rowsOf = (source, ids, path) => {
+  const end = source.search(/\bhandlers:/)
+  const text = end < 0 ? source : source.slice(0, end)
   const found = [...text.matchAll(/\bid:\s*(?:COMMAND|ROW)\.([A-Za-z]+)/g)]
-  if (found.length !== entries) {
-    die(`${path} lists ${entries} commands and this reads ${found.length}`)
+  const groups = [...text.matchAll(/^\s*group:\s*'/gm)].length
+  if (found.length === 0) die(`${path} declares no commands`)
+  if (found.length !== groups) {
+    die(`${path} declares ${groups} groups and this reads ${found.length} commands`)
   }
   return found.map((one, i) => ({
     id: getCommandId(ids, one[1]),
@@ -195,61 +199,37 @@ const rowsOf = ({ text, entries }, ids, path = 'table.ts') => {
   }))
 }
 
-/** The window's own commands, read from table.ts and every slice it composes, in its order. */
-const readCommands = async (ids) => {
-  const at = new URL('lib/commands/table.ts', PALETTE)
-  const source = await readFile(at, 'utf8')
-  const list = declaring(source, 'createCommands', 'table.ts no longer lists its commands')
-  const calls = [...list.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
-  if (calls.length === 0) die('table.ts composes no commands')
-  const imports = new Map(
-    [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(
-      ([, names, specifier]) => names.split(',').map((n) => [n.trim(), specifier]),
-    ),
+/** What a slice's words name in the window's words: its own name for each entry. */
+const readWordNames = (whole, path) => {
+  const names = new Map(
+    [...whole.matchAll(/^\s*([A-Za-z]+):\s*WORDS\.([A-Za-z]+),?$/gm)].map(([, own, entry]) => [
+      own,
+      entry,
+    ]),
   )
-  const rows = []
-  for (const fn of calls) {
-    const specifier = imports.get(fn)
-    if (!specifier) die(`table.ts calls '${fn}' without importing it`)
-    const path = new URL(`${specifier}.ts`, at)
-    const whole = await readFile(path, 'utf8')
-    const part = declaring(whole, fn, `${specifier} no longer lists ${fn}`)
-    rows.push(...rowsWithin(whole, part, ids, specifier))
-  }
-  return rows
+  if (names.size === 0) die(`${path} no longer names its words in the window's words`)
+  return names
 }
 
-/**
- * The rows of one list, in its order, with the rows of every list it spreads from
- * the same file standing where the spread stands: createNoteCommands draws the open and
- * show commands from a helper of its own.
- */
-const rowsWithin = (whole, part, ids, path, seen = new Set()) => {
-  const spreads = [...part.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].filter((one) =>
-    new RegExp(`^(?:export )?const ${one[1]} =`, 'm').test(whole),
-  )
-  if (spreads.length === 0) return rowsOf(part, ids, path)
+/** The rows of one slice, with their text named in the window's words. */
+const readSliceRows = async (slice, ids) => {
+  const rows = rowsOf(await read(EDITOR, slice.file), ids, slice.file)
+  if (!slice.words) return rows
+  const names = readWordNames(await read(EDITOR, slice.words), slice.words)
+  return rows.map(({ id, said: row }) => ({
+    id,
+    said: row.replace(/text:\s*[A-Z]+_WORDS\.([A-Za-z]+)/, (_whole, own) => {
+      const entry = names.get(own)
+      if (!entry) die(`${slice.words} has no words for '${own}'`)
+      return `text: words.${entry}`
+    }),
+  }))
+}
+
+/** The window's own commands, read from the slices that declare them, in the order they are drawn. */
+const readCommands = async (ids) => {
   const rows = []
-  const take = (text) => {
-    const own = [...text.matchAll(/\bid:\s*(?:COMMAND|ROW)\.([A-Za-z]+)/g)]
-    own.forEach((one, i) => {
-      rows.push({
-        id: getCommandId(ids, one[1]),
-        said: text.slice(one.index, own[i + 1]?.index ?? text.length),
-      })
-    })
-  }
-  let from = 0
-  for (const spread of spreads) {
-    if (seen.has(spread[1])) die(`${path} spreads ${spread[1]} into itself`)
-    take(part.text.slice(from, spread.index))
-    const at = whole.search(new RegExp(`^(?:export )?const ${spread[1]} =`, 'm'))
-    const inner = listed(whole, at)
-    if (!inner) die(`${path} no longer lists ${spread[1]}`)
-    rows.push(...rowsWithin(whole, inner, ids, path, new Set([...seen, spread[1]])))
-    from = spread.index
-  }
-  take(part.text.slice(from))
+  for (const slice of COMMAND_SLICES) rows.push(...(await readSliceRows(slice, ids)))
   return rows
 }
 
@@ -292,7 +272,7 @@ const checkSettingCommands = async () => {
 /**
  * The shared commands a plugin handles, in the order libs/core/protocol/commands.json lists them: over
  * the note where the command declares no required argument, and over the window where it asks for
- * one, as the window's sharedCommands.ts files them.
+ * one, as the window's shared commands file them.
  */
 const getSharedRows = (plugins) => {
   const handled = new Set(plugins.flatMap((one) => one.handled))
@@ -311,7 +291,7 @@ const commands = async () => {
   const table = readKeybindings()
 
   const declared = await readCommands(ids)
-  if (declared.length === 0) die('no commands are declared in table.ts')
+  if (declared.length === 0) die('no commands are declared in the command slices')
 
   // Every command declared is a command the page carries. One the words or the
   // groups say nothing about stops the build.
@@ -334,7 +314,7 @@ const commands = async () => {
   }
 
   // The window's own commands come first, then what the plugins add, in the
-  // order useCommands.ts hands them to the palette.
+  // order createCommands.ts hands them to the palette.
   await checkSettingCommands()
   const rows = [
     ...own,
