@@ -18,7 +18,7 @@ const purpose = "proofreading"
 // Completer sends a question to the host and returns the answer.
 type Completer func(ctx context.Context, question *ai.Question) (string, error)
 
-// Endpoint names the service that answers when the plugin asks it directly instead of the host.
+// Endpoint is the HTTP chat service a configured provider points at.
 type Endpoint struct {
 	Provider string
 	BaseURL  string
