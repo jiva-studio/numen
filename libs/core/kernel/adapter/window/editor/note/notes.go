@@ -185,7 +185,7 @@ func (h *Outline) GetNeighbourhood(
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.showNeighbourhood.Execute(ctx, showing, r.Msg.GetPath())
+	found, err := h.showNeighborhood.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
