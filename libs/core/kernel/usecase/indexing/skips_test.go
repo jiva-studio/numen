@@ -2,7 +2,6 @@ package indexing
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,6 +9,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )

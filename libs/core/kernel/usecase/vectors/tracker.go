@@ -1,9 +1,10 @@
 package vectors
 
 import (
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"slices"
 	"sync"
+
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 )
 
 // tracker reports the progress of one run in the order the changes happened,
