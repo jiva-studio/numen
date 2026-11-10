@@ -3,17 +3,13 @@ package indexing
 import (
 	"context"
 	"errors"
-	"slices"
 	"sync"
-	"sync/atomic"
-	"time"
 
 	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
+
 func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	events := p.worker.events
 	defer events.FinishTask(WalkingNotes)

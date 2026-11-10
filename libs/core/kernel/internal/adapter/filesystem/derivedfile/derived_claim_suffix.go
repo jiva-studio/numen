@@ -1,22 +1,20 @@
 package derivedfile
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
-	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 )
+
 // claimSuffix names the file a claim on a name is held on. It outlives the
 // name: a claim is held on an open file, and unlinking one lets a second caller
 // make another at the same path and hold it too.

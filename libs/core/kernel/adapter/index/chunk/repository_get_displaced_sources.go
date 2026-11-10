@@ -9,19 +9,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
-	"embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"slices"
 	"strings"
-	"time"
-	"unicode/utf8"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
+
 func getDisplacedSources(
 	ctx context.Context, tx *sqlwrite.Transaction, vault int64, from, to string,
 ) (displaced []int64, err error) {

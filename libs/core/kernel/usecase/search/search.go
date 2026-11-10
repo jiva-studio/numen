@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -275,4 +273,3 @@ func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]flo
 	}
 	return vectors[0], nil
 }
-

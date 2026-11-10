@@ -7,14 +7,10 @@ package chunk
 
 import (
 	"context"
-	"crypto/sha256"
 	"database/sql"
 	"embed"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"slices"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -270,4 +266,3 @@ func deleteMoveTarget(ctx context.Context, tx *sqlwrite.Transaction, vault int64
 	}
 	return nil
 }
-

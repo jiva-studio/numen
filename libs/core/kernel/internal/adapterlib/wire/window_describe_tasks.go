@@ -1,20 +1,14 @@
 package wire
 
 import (
-	"context"
-	"errors"
 	"strconv"
 	"sync"
-	"sync/atomic"
-	"time"
-
-	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
+
 func describeTasks(list []work.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, item := range list {

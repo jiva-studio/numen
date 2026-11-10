@@ -13,10 +13,9 @@ import (
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 func (u Index) isOutdated(ctx context.Context, on openVault, source sourcedomain.Text) (bool, error) {
 	_, outdated, err := u.statIfOutdated(ctx, on, source)
 	return outdated, err

@@ -3,8 +3,6 @@ package wire
 import (
 	"context"
 	"errors"
-	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -257,4 +255,3 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 
 // CancelFlush ends the running request and releases its waiters.
 func (w *Window) CancelFlush() { w.clients.endRequest() }
-

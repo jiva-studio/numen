@@ -11,13 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
-	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p Parameters) float64 {
 	switch {
 	case p.Floor > 0:

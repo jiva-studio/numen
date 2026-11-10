@@ -3,7 +3,6 @@ package vectors
 import (
 	"cmp"
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"slices"
@@ -12,9 +11,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -308,4 +305,3 @@ func (u Embed) inferBatches(
 	}
 	return g.Wait()
 }
-

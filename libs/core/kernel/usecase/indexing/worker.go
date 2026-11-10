@@ -2,7 +2,6 @@ package indexing
 
 import (
 	"context"
-	"errors"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -271,4 +270,3 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 		}
 	}
 }
-

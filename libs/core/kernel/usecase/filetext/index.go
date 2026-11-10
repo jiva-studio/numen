@@ -2,14 +2,12 @@ package filetext
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -355,4 +353,3 @@ func (u Index) recordIfOutdated(
 	res.Outdated++
 	return nil
 }
-

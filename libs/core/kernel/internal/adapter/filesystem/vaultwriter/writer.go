@@ -5,10 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
-	pathpkg "path"
 	"path/filepath"
 	"strings"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // VaultWriter changes one vault on disk.
@@ -261,4 +258,3 @@ func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
 	}
 	return root, name, nil
 }
-

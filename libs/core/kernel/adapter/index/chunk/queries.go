@@ -3,13 +3,10 @@ package chunk
 import (
 	"context"
 	"database/sql"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"strconv"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -316,4 +313,3 @@ func getUpperBound(prefix string) any {
 	end[len(end)-1]++
 	return string(end)
 }
-

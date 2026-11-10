@@ -1,15 +1,11 @@
 package vectors
 
 import (
-	"cmp"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"slices"
 	"sync"
-
-	"golang.org/x/sync/errgroup"
 
 	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
@@ -18,10 +14,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out chan<- completedBatch) error {
 	for {
 		select {

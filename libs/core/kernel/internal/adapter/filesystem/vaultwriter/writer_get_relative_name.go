@@ -1,7 +1,6 @@
 package vaultwriter
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -20,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
 func (w *VaultWriter) getRelativeName(target string) (string, error) {
 	name, err := filepath.Rel(w.root, target)
 	if err != nil || name == ".." || strings.HasPrefix(name, ".."+string(filepath.Separator)) {

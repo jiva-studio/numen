@@ -6,14 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 )
@@ -274,4 +271,3 @@ func truncateFile(root *os.Root, name string, to int64) error {
 	}
 	return file.Close()
 }
-
