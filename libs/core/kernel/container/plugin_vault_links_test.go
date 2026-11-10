@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
 )
 
 // windowIndex is the index updater of a window's note use cases, which records the paths it is given.

@@ -223,3 +223,9 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 	}
 	return result
 }
+
+// IsEnabled reports whether the host knows the plugin and has it enabled. In safe mode it has none.
+func (r *Registry) IsEnabled(pluginID string) bool {
+	_, ok := r.GetPlugin(pluginID)
+	return ok
+}

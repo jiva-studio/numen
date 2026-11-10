@@ -1,4 +1,4 @@
-package manifestlist
+package pluginmanifest
 
 import (
 	"testing"
@@ -70,7 +70,7 @@ func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
 		disabled: map[string]bool{"md.numen.b": true},
 	}
 
-	entries := Open(host).ListCommands()
+	entries := New(host).ListCommands()
 
 	var ids []string
 	for _, one := range entries {

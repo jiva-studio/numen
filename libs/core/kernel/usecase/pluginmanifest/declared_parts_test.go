@@ -1,4 +1,4 @@
-package manifestlist
+package pluginmanifest
 
 import (
 	"reflect"
@@ -16,7 +16,7 @@ func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 		{Manifest: manifest.Manifest{ID: "md.numen.empty", Contributes: manifest.Contributes{Commands: command}}},
 	}}
 
-	commands := Open(host)
+	commands := New(host)
 
 	want := map[string]plugin.Parts{
 		"md.numen.tree":    {HasFrontend: true},
@@ -41,7 +41,7 @@ func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
 		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}, Frontend: &manifest.Frontend{}}},
 	}}}
 
-	parts := Open(host).GetParts("md.numen.cards")
+	parts := New(host).GetParts("md.numen.cards")
 
 	if !parts.IsSuspended || !parts.HasBackend || !parts.HasFrontend {
 		t.Fatalf("got %+v", parts)
@@ -54,7 +54,7 @@ func TestGetParts_ReadsNoListingOfThePlugins(t *testing.T) {
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}}},
 	}}
 
-	parts := Open(host).GetParts("md.numen.cards")
+	parts := New(host).GetParts("md.numen.cards")
 
 	if !parts.HasBackend || parts.IsSuspended {
 		t.Errorf("got %+v", parts)
@@ -72,7 +72,7 @@ func TestGetParts_ReadsTheNameAndTheTextKindsOfThePlugin(t *testing.T) {
 		}},
 	}}
 
-	parts := Open(host).GetParts("md.numen.ears")
+	parts := New(host).GetParts("md.numen.ears")
 
 	if parts.Name != "Transcription" || parts.TextKinds["transcript"] != "Transcript" {
 		t.Fatalf("got %+v", parts)

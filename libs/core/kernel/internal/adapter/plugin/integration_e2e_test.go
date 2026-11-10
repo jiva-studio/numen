@@ -1,4 +1,4 @@
-package integration_test
+package plugin_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
@@ -13,7 +13,7 @@ import (
 )
 
 func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
-	pluginsDir, err := filepath.Abs("../../../../../plugins")
+	pluginsDir, err := filepath.Abs("../../../../plugins")
 	if err != nil {
 		t.Fatalf("resolve plugins dir: %v", err)
 	}

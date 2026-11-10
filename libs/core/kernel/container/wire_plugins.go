@@ -13,6 +13,9 @@ import (
 	"slices"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
@@ -29,9 +32,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
@@ -253,6 +254,7 @@ type PluginHost struct {
 	pluginport.PluginBinding
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
+	textport.TextPlugins
 	*hostendpoint.Services
 	ApplySetting        settingsport.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
@@ -285,6 +287,7 @@ func lendPluginHost(host *plugin.Host) *PluginHost {
 		PluginBinding:         host.Mode,
 		DependencyReporter:    host.Services,
 		ContentTypeTable:      host.ContentTypes,
+		TextPlugins:           host.Registry,
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 		}).Execute,
@@ -598,7 +601,7 @@ func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
+	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -889,7 +892,7 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 }
 
 func openSecrets(c pluginsWiring) *secret.Secrets {
-	var plugins pluginport.SecretPlugins = textbridge.NoSecretPlugins{}
+	var plugins pluginport.SecretPlugins = absentPlugins{}
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
@@ -940,7 +943,7 @@ func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
 	if c.PluginHost == nil {
 		return nil
 	}
-	choose, err := tabkind.NewChoose(manifestlist.Open(c.PluginHost), c.PluginHost, getWhenConfig(c))
+	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost), c.PluginHost, getWhenConfig(c))
 	if err != nil {
 		pluginsHandleError(c, err)
 		return nil
@@ -952,11 +955,11 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
-	var commands pluginport.PluginCommands = manifestlist.NoManifests{}
+	var commands pluginport.PluginCommands = absentPlugins{}
 	var runs pluginport.PluginCommandRuns = commandbridge.NoCommands{}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, runs, types = manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost
+		commands, runs, types = pluginmanifest.New(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost
 	}
 	run := plugincommand.NewCommands(commands, runs, types, pluginsNewNoteReader(c), getWhenConfig(c)).Run
 	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
@@ -972,7 +975,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: manifestlist.Open(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
+		Plugins: pluginmanifest.New(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
 		Notes: pluginsNewNoteReader(c), Types: c.PluginHost, Versions: c.TextVersions, Config: getWhenConfig(c),
 	})
 }

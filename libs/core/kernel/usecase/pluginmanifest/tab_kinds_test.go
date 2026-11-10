@@ -1,4 +1,4 @@
-package manifestlist
+package pluginmanifest
 
 import (
 	"testing"
@@ -19,7 +19,7 @@ func TestListTabKinds_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 		disabled: map[string]bool{"org.example.off": true},
 	}
 
-	entries := Open(host).ListTabKinds()
+	entries := New(host).ListTabKinds()
 
 	if len(entries) != 2 || entries[0].PluginID != "org.example.cards" || entries[0].TabKind != deck ||
 		entries[1].PluginID != "org.example.editor" || entries[1].TabKind != note {

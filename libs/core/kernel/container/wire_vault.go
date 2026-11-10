@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -514,9 +513,9 @@ func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteReposit
 }
 
 func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, error) {
-	var plugins textport.TextPlugins = textbridge.NoPlugins{}
+	var plugins textport.TextPlugins = absentPlugins{}
 	if c.PluginHost != nil && !c.SafeMode {
-		plugins = textbridge.NewPlugins(c.PluginHost)
+		plugins = c.PluginHost
 	}
 	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }

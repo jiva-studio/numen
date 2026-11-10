@@ -1,6 +1,6 @@
-// Package manifestlist lists what the manifests of the enabled plugins declare: commands, handlers,
+// Package pluginmanifest lists what the manifests of the enabled plugins declare: commands, handlers,
 // triggers, slot entries and tab kinds, and the parts of one plugin. It starts no plugin.
-package manifestlist
+package pluginmanifest
 
 import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -20,8 +20,8 @@ type Manifests struct {
 	host Host
 }
 
-// Open lists over the plugins of the host.
-func Open(host Host) Manifests {
+// New lists over the plugins of the host.
+func New(host Host) Manifests {
 	return Manifests{host: host}
 }
 
@@ -148,16 +148,3 @@ func listTextKinds(m manifest.Manifest) map[string]string {
 	}
 	return titles
 }
-
-// NoManifests is an installation with no plugin.
-type NoManifests struct{}
-
-func (NoManifests) ListCommands() []plugindomain.CommandEntry { return nil }
-
-func (NoManifests) ListSlots() []plugindomain.SlotEntry { return nil }
-
-func (NoManifests) ListKeybindings() []plugindomain.KeybindingEntry { return nil }
-
-func (NoManifests) ListHandlers() []plugindomain.CommandEntry { return nil }
-
-func (NoManifests) GetParts(string) plugindomain.Parts { return plugindomain.Parts{} }

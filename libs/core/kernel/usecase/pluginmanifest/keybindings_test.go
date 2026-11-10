@@ -1,4 +1,4 @@
-package manifestlist
+package pluginmanifest
 
 import (
 	"testing"
@@ -20,7 +20,7 @@ func TestListKeybindings_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) 
 		disabled: map[string]bool{"org.example.off": true},
 	}
 
-	entries := Open(host).ListKeybindings()
+	entries := New(host).ListKeybindings()
 
 	if len(entries) != 2 {
 		t.Fatalf("got %v, want the two keybindings of the enabled plugin", entries)

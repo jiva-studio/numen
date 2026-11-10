@@ -1,4 +1,4 @@
-package manifestlist
+package pluginmanifest
 
 import (
 	"testing"
@@ -24,7 +24,7 @@ func TestListSlots_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 		disabled: map[string]bool{"org.example.off": true},
 	}
 
-	entries := Open(host).ListSlots()
+	entries := New(host).ListSlots()
 
 	if len(entries) != 3 {
 		t.Fatalf("got %+v", entries)

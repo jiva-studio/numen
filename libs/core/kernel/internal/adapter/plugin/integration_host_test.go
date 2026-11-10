@@ -1,4 +1,4 @@
-package integration
+package plugin_test
 
 import (
 	"testing"

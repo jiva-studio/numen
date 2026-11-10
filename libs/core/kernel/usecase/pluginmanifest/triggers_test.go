@@ -1,4 +1,4 @@
-package manifestlist
+package pluginmanifest
 
 import (
 	"slices"
@@ -18,7 +18,7 @@ func TestListTriggers_ReadsTheTriggersOfTheEnabledPlugins(t *testing.T) {
 		disabled: map[string]bool{"org.example.off": true},
 	}
 
-	got := Open(host).ListTriggers()
+	got := New(host).ListTriggers()
 
 	if want := []plugin.TriggerEntry{{PluginID: "org.example.scans", Trigger: added}}; !slices.Equal(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
@@ -32,7 +32,7 @@ func TestListHandlers_CarriesTheArgumentsTheSharedCommandDeclares(t *testing.T) 
 		}}}},
 	}}
 
-	got := Open(host).ListHandlers()
+	got := New(host).ListHandlers()
 
 	want := manifest.GetSharedCommandArguments("app:link.import")
 	if len(got) != 1 || len(want) == 0 || !slices.Equal(got[0].Command.Arguments, want) {
