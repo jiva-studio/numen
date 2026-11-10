@@ -2,12 +2,19 @@ package container
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
 	w.inst.Mount(editor.NewPluginRoute(w.inst.State))
+}
+
+func mountCatalog(w *windowWiring) {
+	if plugins := w.cfg.getEditorCatalog(); plugins != nil {
+		w.inst.Mount(editor.NewCatalogRoute(w.inst.State, plugincatalog.NewHandler(plugins)))
+	}
 }
 
 // SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file
