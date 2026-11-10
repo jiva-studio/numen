@@ -290,14 +290,14 @@ func TestTheMockModelReportsNoFloorHint(t *testing.T) {
 func TestUpdateConfigDefaultRemoteModelsAndProviderSelection(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "openrouter"}, nil)
-	if srv.remoteModel != modelOpenRouterEmbedding3Small || srv.modelInfo.Name != modelOpenRouterEmbedding3Small {
-		t.Fatalf("openrouter default remoteModel = %q / %q, want %q", srv.remoteModel, srv.modelInfo.Name, modelOpenRouterEmbedding3Small)
+	if srv.remoteModel != "openai/text-embedding-3-small" || srv.modelInfo.Name != "openai/text-embedding-3-small" {
+		t.Fatalf("openrouter default remoteModel = %q / %q, want %q", srv.remoteModel, srv.modelInfo.Name, "openai/text-embedding-3-small")
 	}
 
 	srv2 := newEmbeddingServer()
 	srv2.updateConfig(map[string]string{"provider": "openai"}, nil)
-	if srv2.remoteModel != modelEmbedding3Small || srv2.modelInfo.Name != modelEmbedding3Small {
-		t.Fatalf("openai default remoteModel = %q / %q, want %q", srv2.remoteModel, srv2.modelInfo.Name, modelEmbedding3Small)
+	if srv2.remoteModel != "text-embedding-3-small" || srv2.modelInfo.Name != "text-embedding-3-small" {
+		t.Fatalf("openai default remoteModel = %q / %q, want %q", srv2.remoteModel, srv2.modelInfo.Name, "text-embedding-3-small")
 	}
 
 	srv3 := newEmbeddingServer()
