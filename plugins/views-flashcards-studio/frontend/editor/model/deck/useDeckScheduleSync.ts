@@ -4,10 +4,10 @@
 import { computed, shallowRef } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'
 import type { openNotes } from '../buffer/notes'
-import type { Cards, CardModelSummary } from '../../../api/cards'
 import type { Presets } from '../../../lib/presets'
 import { useDeckSchedule } from './useDeckSchedule'
 import { areCardModelChoicesEqual, createCardModelChoices } from '../../lib/deck/deck'
+import type { Cards, CardModelSummary } from '../../../types'
 
 export function useDeckScheduleSync(
   cards: Cards,

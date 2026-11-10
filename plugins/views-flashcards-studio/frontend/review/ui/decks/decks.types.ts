@@ -1,4 +1,4 @@
-import type { Tally as HeatmapTally } from '../heatmap'
+import type { Tally as HeatmapTally } from '../../lib/heatmap/heatmap'
 import type { VaultCardsDue } from '../../lib/vault/types'
 import type { Preset } from '../../lib/decks/types'
 

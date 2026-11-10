@@ -17,7 +17,7 @@ import {
   type BufferCardModel,
 } from '../../lib/card-model/card-model'
 import { createMarks, areMarksEqual, type Marks } from '../../../lib/marks'
-import type { DeckProblem } from '../../../api/cards'
+import type { DeckProblem } from '../../../types'
 
 export interface CardModelFieldsDeps {
   getBody: (id: string) => string

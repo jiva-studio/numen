@@ -5,9 +5,9 @@
  * flashcards window reads it off a preset it did not write. Two tables would
  * agree until one of them was given the next goal.
  */
-import { Goal as Goals } from '../types'
+import { Goal as Goals } from './types'
 
-import { getNames } from '../names'
+import { getNames } from './names'
 
 /** Which value the one control of a preset steers. */
 export type Goal = 'minutes' | 'retention' | 'date'

@@ -12,7 +12,6 @@ import {
 } from '@numen/plugin-sdk'
 import { openNotes } from '../buffer/notes'
 import { getFailureCode } from '../../../lib/failures'
-import type { Cards } from '../../../api/cards'
 import type { Presets } from '../../../lib/presets'
 import { createDeckAnswers } from './answers'
 import { createDeckReader } from './reader'
@@ -30,6 +29,7 @@ import {
   type BufferDeck,
 } from '../../lib/deck/deck'
 import type { DeckTabState } from '../../lib/deck/types'
+import type { Cards } from '../../../types'
 
 export type { DeckTabState }
 
@@ -59,7 +59,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     reportFailure,
   })
 
-  const kind = createDeckKind({
+  const { kind } = createDeckKind({
     store,
     vaultAnswers,
     createDeck: cards.createDeck,

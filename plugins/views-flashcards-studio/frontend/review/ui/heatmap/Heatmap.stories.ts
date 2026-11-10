@@ -10,12 +10,12 @@ import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { h } from 'vue'
 
 import Heatmap from './Heatmap.vue'
-import { ROWS } from '../lib/grid'
-import { getDayName } from '../../../../lib/day'
-import type { Tally } from '../lib/heatmap'
-import type { Words } from '../lib/words'
-import { lightness } from '../../fixtures/colour'
-import { DARK, expectDark } from '../../fixtures/theme'
+import { ROWS } from '../../lib/heatmap/grid'
+import { getDayName } from '../../../lib/day'
+import type { Tally } from '../../lib/heatmap/heatmap'
+import type { Words } from '../../lib/heatmap/words'
+import { lightness } from '../fixtures/colour'
+import { DARK, expectDark } from '../fixtures/theme'
 
 const meta = {
   title: 'Flash Cards/Heatmap',

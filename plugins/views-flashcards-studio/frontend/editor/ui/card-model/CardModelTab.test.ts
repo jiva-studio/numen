@@ -9,12 +9,12 @@
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { Cards, VaultTemplate, DeckProblem } from '../../../api/cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import CardModelTab from './CardModelTab.vue'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from '../../model/card-model/kind'
 import { WORDS as words } from '../../../words'
 import CardModelTab from './CardModelTab.vue'
+import type { Cards, VaultTemplate, DeckProblem } from '../../../types'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 

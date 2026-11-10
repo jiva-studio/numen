@@ -14,11 +14,11 @@ import { computed, ref, useTemplateRef } from 'vue'
 import { Tooltip } from './tooltip'
 import type { Box } from '@numen/ui'
 import { DaySummary } from './day-summary'
-import { measureGrid } from '../lib/grid'
-import { getCells, getDays, getGridHeight } from '../lib/heatmap'
-import type { Day, Tally } from '../lib/heatmap'
-import { useWidth } from '../model/width'
-import type { Words } from '../lib/words'
+import { measureGrid } from '../../lib/heatmap/grid'
+import { getCells, getDays, getGridHeight } from '../../lib/heatmap/heatmap'
+import type { Day, Tally } from '../../lib/heatmap/heatmap'
+import { useWidth } from '../../model/heatmap/width'
+import type { Words } from '../../lib/heatmap/words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

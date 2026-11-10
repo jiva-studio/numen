@@ -166,7 +166,7 @@ vi.mock('../api/clients', async (original) => ({
 
 const { useReview } = await import('./review')
 const { createVaultCounts } = await import('./counts')
-const { mountNothing } = await import('../lib/views')
+const { mountNothing } = await import('./views')
 
 type Review = ReturnType<typeof useReview>
 
@@ -190,7 +190,7 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
   const counts = createVaultCounts({ reportError: vi.fn() })
   const scope = effectScope()
   const review = scope.run(() =>
-    useReview({ vault: 'roots', counts, notices, agent, mountView: mountNothing, goToVaults }),
+    useReview({ vault: 'roots', counts, notices, agent, mountView: mountNothing, goToVaults, getViewportWidth: () => 0 }),
   ) as Review
   if (isPageDrawn) {
     review.notesPage.value = { scrollPage: (back: boolean) => wire.scrolled.push(back) }

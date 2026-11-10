@@ -13,7 +13,7 @@ import { getDeckNeighbourhood } from '../api/session/notes'
 import { useAgentPanel } from './session/panel'
 import { useNotesPanel } from './session/notes'
 import type { PanelPlace } from './session/carousel'
-import type { ReviewCard } from './card/cards'
+import type { ReviewCard } from '../lib/card/cards'
 
 /** What the panels ask of the window they stand in. */
 export interface PanelsDeps {

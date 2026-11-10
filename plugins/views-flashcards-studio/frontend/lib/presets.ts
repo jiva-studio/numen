@@ -1,16 +1,15 @@
 /** How the decks pointing at one preset are scheduled, and what that evaluates to. */
 import { type Result } from '@numen/plugin-sdk'
-import { type ErrorCode } from '../api/wire/errors'
 import {
   DEFAULT_SETTINGS,
   type BudgetUnit,
   type Rule,
   type Load,
   type Settings,
-} from '../api/wire/settings'
-import { type Goal } from '../api/wire/goal'
+} from './wire/settings'
+import { type Goal } from './wire/goal'
 import { StopReason, type BudgetName } from './stop'
-import type { CardsFailure } from '../types'
+import type { CardsFailure, ErrorCode } from '../types'
 
 export type { Goal, BudgetUnit, Rule, Load, Settings }
 

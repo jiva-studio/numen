@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { DeckProblem, VaultCardModel } from '../../../api/cards'
 import { serializeCardModel, createBufferCardModel } from '../../lib/card-model/card-model'
 import { createCardModelFields } from './fields'
+import type { DeckProblem, VaultCardModel } from '../../../types'
 
 const baseCardModel: VaultCardModel = {
   path: 'Animal.md',

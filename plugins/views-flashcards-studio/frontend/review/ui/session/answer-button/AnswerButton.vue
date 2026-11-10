@@ -5,10 +5,10 @@
  */
 import { Button, KeyCap } from '@numen/ui'
 
-import { GRADE_LABELS } from '../../../model/card/grades'
-import { getTimeAhead } from '../../../model/card/cards'
-import type { Grade } from '../../../model/card/grades'
-import type { Intervals } from '../../../model/card/cards'
+import { GRADE_LABELS } from '../../../lib/card/grades'
+import { getTimeAhead } from '../../../lib/card/cards'
+import type { Grade } from '../../../lib/card/grades'
+import type { Intervals } from '../../../lib/card/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{

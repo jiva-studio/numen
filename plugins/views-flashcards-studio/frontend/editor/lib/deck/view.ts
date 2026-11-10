@@ -2,12 +2,12 @@
  * UI representation mappings and comparisons for decks and card models.
  */
 import type { DeckCard, DeckSection, CardModel } from '../../../lib/cards'
-import type { CardModelSummary, VaultCard } from '../../../api/cards'
 import type { BufferDeck } from './types'
 import {
   serializeBufferCardsToVaultCards,
   serializeBufferSectionsToVaultSections,
 } from './serialize'
+import type { CardModelSummary, VaultCard } from '../../../types'
 
 export const createDeckSections = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))

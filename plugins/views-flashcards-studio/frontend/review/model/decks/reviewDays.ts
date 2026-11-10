@@ -7,8 +7,8 @@
  */
 import { getCurrentDate } from '@numen/ui'
 import { ref } from 'vue'
-import { getStretch as getHeatmapStretch } from '../../ui/heatmap'
-import type { Tally as HeatmapTally } from '../../ui/heatmap'
+import { getStretch as getHeatmapStretch } from '../../lib/heatmap/grid'
+import type { Tally as HeatmapTally } from '../../lib/heatmap/heatmap'
 
 /** What the application answers about a vault's days. */
 export interface ReviewDaysClient {

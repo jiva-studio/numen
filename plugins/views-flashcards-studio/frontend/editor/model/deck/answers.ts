@@ -1,7 +1,6 @@
-import type { ErrorCode } from '../../../api/wire/errors'
-import type { DeckProblem } from '../../../api/cards'
 import { WORDS as words } from '../../../words'
 import { getFileName } from '@numen/plugin-sdk'
+import type { ErrorCode, DeckProblem } from '../../../types'
 
 /** What the vault reported about one file the last time it was read or written. */
 export interface VaultAnswer {

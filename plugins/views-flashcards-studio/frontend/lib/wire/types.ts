@@ -7,7 +7,7 @@
  * An enumeration is a string; the empty string is the unspecified value. A response that can fail
  * on a note carries the failure in `error`.
  */
-import { BudgetName, StopReason } from '../lib/stop'
+import { BudgetName, StopReason } from '../stop'
 
 export { BudgetName, StopReason }
 

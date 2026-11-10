@@ -4,7 +4,7 @@
  */
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { formatFingerprint, parseFingerprint } from './fingerprint'
-import { findErrorCode, isStaleAnswer } from './wire/errors'
+import { findErrorCode, isStaleAnswer } from '../lib/wire/errors'
 import { cardsService } from './clients'
 import type { Cards, DeckService, CardModelService } from '../types'
 import {

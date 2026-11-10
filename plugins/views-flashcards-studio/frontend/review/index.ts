@@ -16,7 +16,7 @@ import ReviewTab from './ui/ReviewTab.vue'
 import { useReview, type Review } from './model/review'
 import type { VaultCounts } from './model/counts'
 import VaultSummary from './ui/vaults/VaultSummary.vue'
-import type { MountView } from './lib/views'
+import type { MountView } from './model/views'
 
 export { createVaultCounts } from './model/counts'
 export { createNotices } from './model/notices'
@@ -51,6 +51,8 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
         agent: deps.agent,
         mountView: deps.mountView,
         goToVaults: () => deps.closeTab(id),
+        getViewportWidth: () =>
+          Math.max(window.screen.width, document.documentElement.clientWidth),
       }),
     getTitle: (state) => state.vaultCount.value?.identity.name ?? 'Flashcards',
     onKeyPress: (state, event) => state.onKeyDown(event),

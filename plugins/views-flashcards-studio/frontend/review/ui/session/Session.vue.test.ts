@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import Session from './Session.vue'
 import type { PanelPlace } from '../../model/session/carousel'
-import { grades } from '../../model/card/grades'
-import type { ReviewCard } from '../../model/card/cards'
+import { grades } from '../../lib/card/grades'
+import type { ReviewCard } from '../../lib/card/cards'
 
 /** A card as the application provides it. */
 const card: ReviewCard = {

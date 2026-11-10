@@ -3,9 +3,9 @@
  * were read from.
  */
 import { describe, expect, it } from 'vitest'
-import type { DeckProblem } from '../../../api/cards'
 import { serializeBufferDeckToString, type BufferCard, type BufferDeck } from '../../lib/deck/deck'
 import { createDeckReader, type ShownStore } from './reader'
+import type { DeckProblem } from '../../../types'
 
 const card = (id: string, name: string): BufferCard => ({
   id,

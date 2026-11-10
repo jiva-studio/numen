@@ -7,12 +7,12 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { dayAfter, getDayName } from '../../lib/day'
-import type { Tally as HeatmapTally } from './heatmap'
+import type { Tally as HeatmapTally } from '../lib/heatmap/heatmap'
 import { h, type VNode } from 'vue'
 import Decks from './decks/Decks.vue'
 import Session from './session/Session.vue'
 import type { Preset, Settings } from '../lib/decks/types'
-import type { ReviewCard } from '../model/card/cards'
+import type { ReviewCard } from '../lib/card/cards'
 import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '../lib/vault/types'
 
 const dayBefore = (day: string, back: number): string => dayAfter(day, -back)

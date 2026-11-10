@@ -4,9 +4,9 @@
  * card model listing is compared card model by card model.
  */
 import { describe, expect, it } from 'vitest'
-import type { CardModelSummary } from '../../../api/cards'
 import type { BufferCard, BufferDeck, BufferSection } from './types'
 import { applyReadHeadings, applyScreenIds, areDecksEqual, areCardModelChoicesEqual } from './view'
+import type { CardModelSummary } from '../../../types'
 
 const card = (overrides: Partial<BufferCard> = {}): BufferCard => ({
   id: 'screen-card',

@@ -2,7 +2,7 @@ import { computed, shallowRef } from 'vue'
 import type { AgentPort, ConversationContext } from '@numen/plugin-sdk'
 
 import { WORDS as words } from '../../lib/session/agentWords'
-import type { ReviewCard } from '../card/cards'
+import type { ReviewCard } from '../../lib/card/cards'
 
 /** What the panel requires from the host window. */
 export interface AgentPanelDeps {

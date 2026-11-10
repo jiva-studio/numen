@@ -1,7 +1,7 @@
 // Stryker disable StringLiteral: interface copy
 import type { StopReason } from '../api/types.js'
-import { type ErrorCode, getErrorWords } from '../../api/wire/errors'
-import { formatStopReasonMessage } from '../../api/wire/stop'
+import { getErrorWords } from '../../lib/wire/errors'
+import { formatStopReasonMessage } from '../../lib/wire/stop'
 /** Interface copy of the preset tab: the control, its settings, and error messages. */
 import { many, percent } from '@numen/ui'
 import type { BudgetUnit, Goal, Rule } from '../../lib/presets'
@@ -21,6 +21,7 @@ import {
   formatMaterialFact,
   sayAsSentence,
 } from './formatFacts'
+import type { ErrorCode } from '../../types'
 
 export const WORDS = {
   preset: 'Preset',

@@ -5,7 +5,7 @@
  */
 import { inject, useTemplateRef } from 'vue'
 
-import { MOUNT_VIEW, mountNothing } from '../../lib/views'
+import { MOUNT_VIEW, mountNothing } from '../../model/views'
 import { useMountedConversation } from '../../model/session/mountedConversation'
 import type { AgentPanelState } from '../../model/session/panel'
 

@@ -2,10 +2,10 @@
  * Pure mutation operations for deck cards.
  */
 import { HEAD as CARD_HEAD, getRunEnd, type InsertionPoint } from '../../../lib/cards'
-import type { Value } from '../../../api/cards'
 import { generateId, type IdMaker } from '../../../lib/identity'
 import { getFileStem } from '@numen/plugin-sdk'
 import type { BufferCard, BufferDeck } from './types'
+import type { Value } from '../../../types'
 
 export interface AddCardOptions {
   cardModelPath: string

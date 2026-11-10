@@ -4,7 +4,7 @@
  */
 import { nextTick, onScopeDispose, watch, type Ref } from 'vue'
 import { CONVERSATION, type ConversationContext, type MountedView } from '@numen/plugin-sdk'
-import type { MountView } from '../../lib/views'
+import type { MountView } from '../views'
 
 export interface MountedConversationDeps {
   readonly element: Readonly<Ref<HTMLElement | null>>

@@ -3,7 +3,7 @@
  */
 import { shallowRef, type Component, type Ref } from 'vue'
 import { Gauge } from '@lucide/vue'
-import { ERRORS } from '../../api/wire/errors'
+import { ERRORS } from '../../lib/wire/errors'
 import {
   getFileName,
   type BufferHost,
@@ -78,12 +78,12 @@ interface KindDeps {
   component: Component
 }
 
-function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
+function createPresetKind(deps: KindDeps): { kind: TabKindRegistration<PresetTabState> } {
   const { context, open, titles, bounds, core, today, states, flush, component } = deps
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
-  return {
+  const kind: TabKindRegistration<PresetTabState> = {
     kind: PRESET,
     component,
     icon: Gauge,
@@ -110,6 +110,7 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
     flushPending: (one) => flush(one),
     createFile: (folder, name) => core.createPreset(name, folder),
   }
+  return { kind }
 }
 
 /**
@@ -161,7 +162,7 @@ export function usePresetTab(deps: PresetTabDeps) {
     if (one) await flushOne(one)
   }
 
-  const kind = createPresetKind({
+  const { kind } = createPresetKind({
     context,
     open,
     titles,

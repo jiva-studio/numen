@@ -3,23 +3,8 @@
  * plugin's windows use. Every code of the API `ErrorCode` is
  * translated here into the plugin's own `ErrorCode`.
  */
-import { ErrorCode as ProtoErrorCode } from '../types'
-
-/** The error code a call of this plugin answers with. */
-export type ErrorCode =
-  | 'notFound'
-  | 'notANote'
-  | 'notText'
-  | 'tooLarge'
-  | 'bodyUnwritable'
-  | 'unreadable'
-  | 'alreadyExists'
-  | 'invalidName'
-  | 'unreachable'
-  | 'notACardModel'
-  | 'notADeck'
-  | 'deckTooLarge'
-  | 'notAPreset'
+import { ErrorCode as ProtoErrorCode } from './types'
+import type { ErrorCode } from '../../types'
 
 /** The code for each schema code, and null for `CONFLICT`: the window prompts the user about that one. */
 const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {

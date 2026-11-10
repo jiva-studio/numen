@@ -10,8 +10,6 @@ import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '../../api/types.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { ErrorCode } from '../../../api/wire/errors'
-import type { Cards, VaultCard, DeckProblem } from '../../../api/cards'
 import type { Preset } from '../../../lib/presets'
 import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../../lib/presets'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
@@ -19,6 +17,7 @@ import { DECK } from '../../model/deck/kind'
 import DeckTab from './DeckTab.vue'
 import { useDeckTabs, type DeckTabState } from '../../model/deck/useDeckTabs'
 import { WORDS as words } from '../../../words'
+import type { ErrorCode, Cards, VaultCard, DeckProblem } from '../../../types'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<

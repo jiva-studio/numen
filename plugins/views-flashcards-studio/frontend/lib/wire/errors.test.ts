@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode as ProtoErrorCode } from '../types'
 import {
   ERRORS,
   findErrorCode,
@@ -7,6 +6,7 @@ import {
   getErrorWords,
   isStaleAnswer,
 } from './errors'
+import { ErrorCode as ProtoErrorCode } from './types'
 
 describe('errors', () => {
   it('translates every note code of the schema into the plugin code', () => {

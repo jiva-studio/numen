@@ -1,7 +1,6 @@
 /**
  * Tab-level card and section mutations for flashcard deck tabs.
  */
-import type { CardModelSummary, Value } from '../../../api/cards'
 import {
   addCard,
   addSection,
@@ -13,6 +12,7 @@ import {
   renameSection,
   type BufferDeck,
 } from '../../lib/deck/deck'
+import type { CardModelSummary, Value } from '../../../types'
 
 export interface DeckTabActionDeps {
   getDeck: (id: string) => BufferDeck

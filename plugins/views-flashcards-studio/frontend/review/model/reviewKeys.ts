@@ -7,7 +7,7 @@
  */
 import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey } from '../lib/keyboard/keys'
 import { canStart } from '../lib/decks/progress'
-import type { Grade } from './card/grades'
+import type { Grade } from '../lib/card/grades'
 import type { VaultCardsDue } from '../lib/vault/types'
 import type { SessionKeyIntent } from '../lib/keyboard/keys'
 import type { Preset } from '../lib/decks/types'

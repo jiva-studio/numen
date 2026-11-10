@@ -7,8 +7,8 @@ import type { AgentPort, ConversationContext } from '@numen/plugin-sdk'
 import AgentPanel from './AgentPanel.vue'
 import { useAgentPanel } from '../../model/session/panel'
 import type { AgentPanelState } from '../../model/session/panel'
-import { MOUNT_VIEW, type MountView } from '../../lib/views'
-import type { ReviewCard } from '../../model/card/cards'
+import { MOUNT_VIEW, type MountView } from '../../model/views'
+import type { ReviewCard } from '../../lib/card/cards'
 
 /** A card as the session hands one over. */
 const card: ReviewCard = {

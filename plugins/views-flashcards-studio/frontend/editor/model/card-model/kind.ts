@@ -14,10 +14,10 @@ import {
 import { getMarkOf } from '../../lib/buffer/words'
 import { openNotes } from '../buffer/notes'
 import { WORDS as words } from '../../../words'
-import type { Cards } from '../../../api/cards'
 import type { CardModelTabState } from '../../lib/card-model/types'
 import { createCardModelWire, type VaultAnswer } from '../../api/card-model/wire'
 import { createCardModelFields } from './fields'
+import type { Cards } from '../../../types'
 
 export type { CardModelTabState, VaultAnswer }
 
@@ -89,10 +89,10 @@ function createCardModelKindDefinition(deps: {
   cards: Cards
   createCardModelTabState: (id: string) => CardModelTabState
   component: Component
-}): TabKindRegistration<CardModelTabState> {
+}): { kind: TabKindRegistration<CardModelTabState> } {
   const { store, wire, cards } = deps
   const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
-  return {
+  const kind: TabKindRegistration<CardModelTabState> = {
     kind: CARD_MODEL,
     component: deps.component,
     icon: LayoutTemplate,
@@ -122,6 +122,7 @@ function createCardModelKindDefinition(deps: {
     flushPending: (one) => store.flushPending(one.id),
     createFile: (folder, name) => cards.createCardModel(name, folder, [words.newField]),
   }
+  return { kind }
 }
 
 export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions) {
@@ -148,7 +149,7 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
 
   const createCardModelTabState = (id: string): CardModelTabState =>
     createCardModelTabItem(id, { store, fields, wire, closeTab, reportFailure })
-  const kind = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState, component })
+  const { kind } = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState, component })
 
   return {
     kind,

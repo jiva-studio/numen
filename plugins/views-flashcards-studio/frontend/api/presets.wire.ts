@@ -1,9 +1,9 @@
 /** The presets of a vault, as the window requests them and as the schema defines them. */
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { formatFingerprint, parseFingerprint } from './fingerprint'
-import { findErrorCode, isStaleAnswer } from './wire/errors'
-import { formatSettings, parseSettings } from './wire/settings'
-import { goalOf } from './wire/goal'
+import { findErrorCode, isStaleAnswer } from '../lib/wire/errors'
+import { formatSettings, parseSettings } from '../lib/wire/settings'
+import { goalOf } from '../lib/wire/goal'
 import type {
   Curve as CurveMessage,
   CurvePoint as CurvePointMessage,

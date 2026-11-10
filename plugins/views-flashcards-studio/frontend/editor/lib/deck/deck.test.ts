@@ -1,7 +1,6 @@
 /** What a gesture in a deck does to the file, tested without a screen. */
 import { describe, expect, it } from 'vitest'
 import { HEAD as CARD_HEAD, createRunEnd as createCardRunEnd } from '../../../lib/cards'
-import type { VaultDeck } from '../../../api/cards'
 import {
   addCard as addCardInternal,
   serializeBufferDeckToString,
@@ -21,6 +20,7 @@ import {
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from './deck'
+import type { VaultDeck } from '../../../types'
 
 type AddCardOptions = Parameters<typeof addCardInternal>[2]
 

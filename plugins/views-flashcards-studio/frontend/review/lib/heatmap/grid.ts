@@ -2,7 +2,7 @@
  * Layout of a grid of days: the number of columns that fit the available width,
  * and the date range a grid of that width displays.
  */
-import { getDayName } from '../../../../lib/day'
+import { getDayName } from '../../../lib/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7

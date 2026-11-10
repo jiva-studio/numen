@@ -5,8 +5,6 @@
 import { describe, expect, it } from 'vitest'
 import { StopReason } from '../../api/types.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { ErrorCode } from '../../../api/wire/errors'
-import type { Cards, VaultCard, DeckProblem } from '../../../api/cards'
 import type { Preset } from '../../../lib/presets'
 import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../../lib/presets'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
@@ -14,6 +12,7 @@ import { DECK } from './kind'
 import { useDeckTabs as useDeckTabsOriginal, type DeckTabState } from './useDeckTabs'
 import { WORDS as words } from '../../../words'
 import DeckTab from '../../ui/deck/DeckTab.vue'
+import type { ErrorCode, Cards, VaultCard, DeckProblem } from '../../../types'
 
 const useDeckTabs = (cards: Cards, presets: Presets) => {
   const windowTabs = createMockTabWindow()

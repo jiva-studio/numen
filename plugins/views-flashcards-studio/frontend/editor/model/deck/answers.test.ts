@@ -4,8 +4,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { WORDS } from '../../../words'
-import type { DeckProblem } from '../../../api/cards'
 import { createDeckAnswers } from './answers'
+import type { DeckProblem } from '../../../types'
 
 const PROBLEM: DeckProblem = { kind: 'unknown', card: 0, template: null, field: '', text: 'Odd' }
 

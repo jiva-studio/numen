@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { StopReason } from '../../api/types.js'
 import { DEFAULTS, NO_BOUNDS, type Presets } from '../../../lib/presets'
-import type { Cards } from '../../../api/cards'
 import { openNotes } from '../buffer/notes'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
+import type { Cards } from '../../../types'
 
 const SUMMARY = { path: 'Animal.md', title: 'Animal', fields: ['Name'] }
 

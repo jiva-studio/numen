@@ -14,7 +14,7 @@ import AgentPanel from './session/AgentPanel.vue'
 import NotesPanel from './session/NotesPanel.vue'
 import Session from './session/Session.vue'
 import SessionSummary from './session/SessionSummary.vue'
-import { MOUNT_VIEW } from '../lib/views'
+import { MOUNT_VIEW } from '../model/views'
 import type { NotesPage, Review } from '../model/review'
 import { REVIEW_WORDS } from '../lib/words'
 

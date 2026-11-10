@@ -86,7 +86,7 @@ vi.mock('../api/clients', async (original) => ({
 const { default: ReviewTab } = await import('./ReviewTab.vue')
 const { useReview } = await import('../model/review')
 const { createVaultCounts } = await import('../model/counts')
-const { mountNothing } = await import('../lib/views')
+const { mountNothing } = await import('../model/views')
 const { Decks } = await import('../pages/decks')
 
 type Review = ReturnType<typeof useReview>
@@ -104,6 +104,7 @@ const mountReview = async (vault: string) => {
       agent: createMockAgentHost(),
       mountView: mountNothing,
       goToVaults: () => undefined,
+      getViewportWidth: () => 0,
     }),
   ) as Review
   const tab: VueWrapper = mount(ReviewTab, { props: { state } })

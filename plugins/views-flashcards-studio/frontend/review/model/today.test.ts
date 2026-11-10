@@ -6,8 +6,8 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { StopReason } from '../../api/types.js'
-import { DEFAULT_SETTINGS, formatSettings } from '../../api/wire/settings'
-import type { SettingsMessage } from '../../api/wire/settings'
+import { DEFAULT_SETTINGS, formatSettings } from '../../lib/wire/settings'
+import type { SettingsMessage } from '../../lib/wire/settings'
 
 import { useReviewCounter } from './vault/counts'
 import type { CardsDueClient } from './vault/counts'

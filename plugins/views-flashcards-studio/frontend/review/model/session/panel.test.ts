@@ -4,7 +4,7 @@ import type { AgentPort } from '@numen/plugin-sdk'
 
 import { useAgentPanel } from './panel'
 import { WORDS as words } from '../../lib/session/agentWords'
-import type { ReviewCard } from '../card/cards'
+import type { ReviewCard } from '../../lib/card/cards'
 
 const card = (
   more: Partial<ReviewCard> = {},

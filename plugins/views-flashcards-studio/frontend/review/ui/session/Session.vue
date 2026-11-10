@@ -12,11 +12,11 @@ import PanelCarousel from './PanelCarousel.vue'
 import Card from './Card.vue'
 import { AnswerButton } from './answer-button'
 import type { PanelPlace } from '../../model/session/carousel'
-import { grades } from '../../model/card/grades'
+import { grades } from '../../lib/card/grades'
 import { getDeckName } from '../../lib/vault/names'
 import { ASK_KEY, READ_KEY } from '../../lib/keyboard/keys'
-import type { ReviewCard } from '../../model/card/cards'
-import type { Grade } from '../../model/card/grades'
+import type { ReviewCard } from '../../lib/card/cards'
+import type { Grade } from '../../lib/card/grades'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{

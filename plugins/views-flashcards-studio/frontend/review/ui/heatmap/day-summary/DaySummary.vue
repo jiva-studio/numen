@@ -10,8 +10,8 @@
 import { computed } from 'vue'
 
 import { FourAnswers } from './four-answers'
-import type { Day } from '../../lib/heatmap'
-import type { Words } from '../../lib/words'
+import type { Day } from '../../../lib/heatmap/heatmap'
+import type { Words } from '../../../lib/heatmap/words'
 
 const props = defineProps<{
   day: Day

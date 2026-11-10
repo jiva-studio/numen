@@ -1,6 +1,4 @@
 import type { Result } from '@numen/plugin-sdk'
-import type { ErrorCode } from './api/wire/errors'
-import type { Surrounds } from './lib/surrounds'
 
 /** Where a deck, a card model or a preset was filed, or why none was made. */
 export type CreateResult = Result<{ readonly path: string }, ErrorCode>
@@ -195,3 +193,29 @@ export interface CardModelService {
 }
 
 export interface Cards extends DeckService, CardModelService {}
+
+/** The error code a call of this plugin answers with. */
+export type ErrorCode =
+  | 'notFound'
+  | 'notANote'
+  | 'notText'
+  | 'tooLarge'
+  | 'bodyUnwritable'
+  | 'unreadable'
+  | 'alreadyExists'
+  | 'invalidName'
+  | 'unreachable'
+  | 'notACardModel'
+  | 'notADeck'
+  | 'deckTooLarge'
+  | 'notAPreset'
+
+/**
+ * The prose around the part a card tab edits, preserved unchanged. A note
+ * belongs to its user, and the text above the first card and below the last is
+ * written back as it was read.
+ */
+export interface Surrounds {
+  readonly preamble: string
+  readonly tail: string
+}

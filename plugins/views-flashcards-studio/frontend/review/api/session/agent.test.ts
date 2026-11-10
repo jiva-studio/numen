@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
 import { createCardAgentPort } from './agent'
-import type { ReviewCard } from '../../model/card/cards'
+import type { ReviewCard } from '../../lib/card/cards'
 
 const card: ReviewCard = {
   address: { deck: 'decks/Words.md', section: '', cardId: '3f4g5h6j7k', template: 'Say it' },

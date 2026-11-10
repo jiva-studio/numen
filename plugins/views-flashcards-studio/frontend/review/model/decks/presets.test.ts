@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode } from '../../../../api/types.js'
 import { StopReason } from '../../../../api/types.js'
-import { DEFAULT_SETTINGS, formatSettings } from '../../../api/wire/settings'
-import type { SettingsMessage } from '../../../api/wire/settings'
+import { DEFAULT_SETTINGS, formatSettings } from '../../../lib/wire/settings'
+import type { SettingsMessage } from '../../../lib/wire/settings'
 
 import { useVaultPresets } from './presets'
 import { PRESET_UNREADABLE_MESSAGE } from '../../api/decks/presets'
@@ -12,6 +11,7 @@ import { CLOSES_NOTHING } from '../../lib/decks/types'
 import type { Budget, Preset, Settings } from '../../lib/decks/types'
 import { getGoalWords, getLeftWords, getStoppedWords, STOPPED } from '../../lib/decks/words'
 import type { BudgetKeys, PresetCardsDue, VaultCardsDue } from '../../lib/vault/types'
+import { ErrorCode } from '../../../lib/wire/types'
 
 const settings = (fields: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal as Goals } from '../types'
+import { Goal as Goals } from './types'
 
 import { goalNames, goalOf } from './goal'
 

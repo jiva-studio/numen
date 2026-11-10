@@ -4,7 +4,7 @@
  * Nothing here renders. The response is converted into the plain values the
  * panel uses, so schema names do not leave this file.
  */
-import { formatErrorCodeMessage } from '../../../api/wire/errors'
+import { formatErrorCodeMessage } from '../../../lib/wire/errors'
 
 import { cards } from '../clients'
 

@@ -9,7 +9,7 @@ import { nextTick } from 'vue'
 import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
 import { usePanels } from './usePanels'
-import type { ReviewCard } from './card/cards'
+import type { ReviewCard } from '../lib/card/cards'
 
 vi.mock('../api/clients', async (original) => ({
   ...(await original<typeof import('../api/clients')>()),

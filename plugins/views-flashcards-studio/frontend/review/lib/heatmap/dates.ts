@@ -5,7 +5,7 @@
  * date is displayed in the reader's own language.
  */
 
-import { parseDay } from '../../../../lib/day'
+import { parseDay } from '../../../lib/day'
 
 const full = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 

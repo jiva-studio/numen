@@ -10,10 +10,10 @@ import { getNow } from '@numen/ui'
 import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
-import { RATING_BY_GRADE } from '../card/grades'
-import type { Rating } from '../../../api/types'
-import type { ReviewCard, Intervals } from '../card/cards'
-import type { Grade } from '../card/grades'
+import { RATING_BY_GRADE } from '../../lib/card/grades'
+import type { Rating } from '../../../lib/wire/types'
+import type { ReviewCard, Intervals } from '../../lib/card/cards'
+import type { Grade } from '../../lib/card/grades'
 
 /** What a session requests of the application, and nothing more. */
 export interface SessionClient {

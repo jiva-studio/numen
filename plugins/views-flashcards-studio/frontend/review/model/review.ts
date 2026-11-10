@@ -8,8 +8,8 @@
 import { computed, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 
 import { cards } from '../api/clients'
-import { useScreens } from '../lib/screens'
-import type { MountView } from '../lib/views'
+import { useScreens } from './screens'
+import type { MountView } from './views'
 import { getDeckName } from '../lib/vault/names'
 import type { VaultCardsDue } from '../lib/vault/types'
 import { useReviewDays } from './decks/reviewDays'
@@ -20,7 +20,7 @@ import { createNotices } from './notices'
 import type { VaultCounts } from './counts'
 import { usePanels } from './usePanels'
 import { createReviewKeys, type ReviewScreen } from './reviewKeys'
-import type { Grade } from './card/grades'
+import type { Grade } from '../lib/card/grades'
 import type { Report } from './session/session'
 
 /** What the review is given by the window it is opened in. */
@@ -31,6 +31,8 @@ export interface ReviewDeps {
   readonly agent: AgentHost
   readonly mountView: MountView
   readonly goToVaults: () => void
+  /** The width of the widest thing the window can draw the heatmap in, in pixels. */
+  readonly getViewportWidth: () => number
 }
 
 /** The reading, as far as the keys reach into it. */
@@ -134,7 +136,7 @@ export const useReview = (deps: ReviewDeps) => {
   const reviewDays = useReviewDays({
     cards,
     reportError: notices.reportError,
-    widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
+    widest: deps.getViewportWidth,
   })
   const schedules = useVaultPresets({ presets: cards })
   const notesPage = shallowRef<NotesPage | null>(null)

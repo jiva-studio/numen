@@ -4,13 +4,12 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { ErrorCode } from '../../../api/wire/errors'
-import type { Cards, VaultTemplate, DeckProblem, FieldRenameResult } from '../../../api/cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
-import { ERRORS } from '../../../api/wire/errors'
+import { ERRORS } from '../../../lib/wire/errors'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from './kind'
 import { WORDS as words } from '../../../words'
 import CardModelTab from '../../ui/card-model/CardModelTab.vue'
+import type { ErrorCode, Cards, VaultTemplate, DeckProblem, FieldRenameResult } from '../../../types'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 

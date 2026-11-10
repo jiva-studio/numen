@@ -2,9 +2,8 @@
  * Wire adapters and vault communication for flashcard card model tabs.
  */
 import { asFailure, asValue, type MessageWriter, type PathRename } from '@numen/plugin-sdk'
-import { type ErrorCode, ERRORS } from '../../../api/wire/errors'
+import { ERRORS } from '../../../lib/wire/errors'
 import type { NoteBaseline } from '../../lib/buffer/types'
-import type { Cards, DeckProblem } from '../../../api/cards'
 import { getFailureCode } from '../../../lib/failures'
 import { WORDS as words } from '../../../words'
 import {
@@ -13,6 +12,7 @@ import {
   parseCardModel,
   createBufferCardModel,
 } from '../../lib/card-model/card-model'
+import type { ErrorCode, Cards, DeckProblem } from '../../../types'
 
 /** What the vault reported about one file the last time it was read or written. */
 export interface VaultAnswer {

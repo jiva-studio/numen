@@ -1,6 +1,5 @@
 /** The effect of a card model gesture on the file, tested without a screen. */
 import { describe, expect, it } from 'vitest'
-import type { VaultCardModel } from '../../../api/cards'
 import {
   addTemplate,
   addField,
@@ -16,6 +15,7 @@ import {
   writeTemplate,
   type BufferCardModel,
 } from './card-model'
+import type { VaultCardModel } from '../../../types'
 
 const createIds = () => {
   let count = 0

@@ -5,7 +5,7 @@
  * adds the card the question is about.
  */
 import type { AgentPort } from '@numen/plugin-sdk'
-import type { ReviewCard } from '../../model/card/cards'
+import type { ReviewCard } from '../../lib/card/cards'
 
 /** The keys under which the card tools read the card currently displayed. */
 export const CARD_CONTEXT = {

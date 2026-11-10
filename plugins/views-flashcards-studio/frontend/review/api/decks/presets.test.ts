@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode } from '../../../../api/types.js'
 import { Goal, StopReason } from '../../../../api/types.js'
-import { DEFAULT_SETTINGS, formatSettings } from '../../../api/wire/settings'
-import type { SettingsMessage } from '../../../api/wire/settings'
+import { DEFAULT_SETTINGS, formatSettings } from '../../../lib/wire/settings'
+import type { SettingsMessage } from '../../../lib/wire/settings'
 
 import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from './presets'
 import type { PresetsClient } from './presets'
+import { ErrorCode } from '../../../lib/wire/types'
 
 const settings = (goal: Goal): SettingsMessage => ({
   ...formatSettings(DEFAULT_SETTINGS),

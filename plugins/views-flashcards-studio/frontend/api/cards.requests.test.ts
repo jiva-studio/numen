@@ -5,9 +5,9 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { ErrorCode } from '../../api/types.js'
 import { cardsService } from './clients'
 import { cards } from './cards'
+import { ErrorCode } from '../lib/wire/types'
 
 vi.mock('./clients', () => ({
   cardsService: {

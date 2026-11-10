@@ -5,8 +5,8 @@
  * inside a component can only be tested by pressing a key on a rendered screen.
  */
 import { isTyping } from '@numen/ui'
-import { grades } from '../../model/card/grades'
-import type { Grade } from '../../model/card/grades'
+import { grades } from '../card/grades'
+import type { Grade } from '../card/grades'
 
 /** The action a keystroke requests in a session, or null when it requests none. */
 export type SessionKeyIntent =

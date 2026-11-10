@@ -6,7 +6,6 @@
  * the displayed one keeps the displayed one, so the card being edited is not
  * rendered again under a new identity.
  */
-import type { DeckProblem } from '../../../api/cards'
 import { createMarks, areMarksEqual, type Marks } from '../../../lib/marks'
 import {
   deserializeBufferDeckFromString,
@@ -15,6 +14,7 @@ import {
   areDecksEqual,
   type BufferDeck,
 } from '../../lib/deck/deck'
+import type { DeckProblem } from '../../../types'
 
 export interface ShownStore {
   getOpenNote(id: string): { body: string }

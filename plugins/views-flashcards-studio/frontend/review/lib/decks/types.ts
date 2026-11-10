@@ -1,5 +1,5 @@
 /** A preset as this screen holds one: how it schedules, and what its day holds. */
-import type { Settings as WireSettings } from '../../../api/wire/settings'
+import type { Settings as WireSettings } from '../../../lib/wire/settings'
 import type { BudgetKeys } from '../vault/types'
 
 /** A budget taking no part in the day, which nothing is weighed against. */

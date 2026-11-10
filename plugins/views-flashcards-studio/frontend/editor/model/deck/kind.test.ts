@@ -31,7 +31,7 @@ const createInside = (open: readonly string[] = []) => {
     createDeckTabState: vi.fn(() => state),
     component: DeckTab,
   }
-  return { inside, state, kind: createDeckKind(inside as unknown as DeckTabsInside) }
+  return { inside, state, kind: createDeckKind(inside as unknown as DeckTabsInside).kind }
 }
 
 describe('a deck tab opened', () => {

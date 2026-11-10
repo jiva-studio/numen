@@ -5,7 +5,7 @@
  * each cell and its shade are arithmetic, and arithmetic inside a component
  * cannot be tested without a screen.
  */
-import { parseDay, getDayName } from '../../../../lib/day'
+import { parseDay, getDayName } from '../../../lib/day'
 
 import { AHEAD, ROWS } from './grid'
 

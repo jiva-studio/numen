@@ -4,10 +4,9 @@
 import type { ComputedRef } from 'vue'
 import type { OpenNote } from '../buffer/types'
 import type { Marks } from '../../../lib/marks'
-import type { Surrounds } from '../../../lib/surrounds'
-import type { Value } from '../../../api/cards'
 import type { DeckCard, DeckSection, CardModel } from '../../../lib/cards'
 import type { Choice, DeckPreset } from '../../model/deck/useDeckSchedule'
+import type { Surrounds, Value } from '../../../types'
 
 export type { Choice, DeckPreset }
 

@@ -1,5 +1,4 @@
 /** The editors of a deck and of a card model, the tabs a vault's flashcard files open in. */
-import type { Cards } from '../api/cards'
 import type { Presets } from '../lib/presets'
 import DeckTab from './ui/deck/DeckTab.vue'
 import CardModelTab from './ui/card-model/CardModelTab.vue'
@@ -8,6 +7,7 @@ import {
   createCardModelTabs as createCardModelTabsOf,
   type CardModelTabsOptions,
 } from './model/card-model/kind'
+import type { Cards } from '../types'
 
 export { DECK } from './model/deck/kind'
 export { CARD_MODEL } from './model/card-model/kind'

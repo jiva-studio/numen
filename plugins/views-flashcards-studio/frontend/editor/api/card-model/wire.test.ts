@@ -7,10 +7,10 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { Cards, DeckProblem, FieldRenameResult, RenamedField, VaultCardModel } from '../../../api/cards'
 import { WORDS as words } from '../../../words'
-import { ERRORS } from '../../../api/wire/errors'
+import { ERRORS } from '../../../lib/wire/errors'
 import { createCardModelWire, NOTHING } from './wire'
+import type { Cards, DeckProblem, FieldRenameResult, RenamedField, VaultCardModel } from '../../../types'
 
 const cardModel = (overrides: Partial<VaultCardModel> = {}): VaultCardModel => ({
   path: 'Word.md',

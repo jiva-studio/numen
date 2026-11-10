@@ -7,7 +7,7 @@
  */
 import { ref } from 'vue'
 import { scheme } from '../../../lib/cards'
-import { CardProse } from '../../../editor/ui/cards/card-prose'
+import { CardProse } from '../card-prose'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
