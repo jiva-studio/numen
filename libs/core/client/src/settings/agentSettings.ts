@@ -1,3 +1,5 @@
+import type { Unvalidated } from '../errors/error'
+
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =
   'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file' | 'folder'
@@ -21,11 +23,10 @@ export interface CompletionChoice {
 }
 
 /** Reads the agent and model choice from a raw setting value. */
-export const readAgentChoice = (value: unknown): CompletionChoice => {
+export const parseAgentChoice = (value: Unvalidated): CompletionChoice => {
   if (typeof value !== 'object' || value === null) return { agent: '', model: '' }
-  const fields = value as Record<string, unknown>
   return {
-    agent: typeof fields['agent'] === 'string' ? fields['agent'] : '',
-    model: typeof fields['model'] === 'string' ? fields['model'] : '',
+    agent: 'agent' in value && typeof value.agent === 'string' ? value.agent : '',
+    model: 'model' in value && typeof value.model === 'string' ? value.model : '',
   }
 }

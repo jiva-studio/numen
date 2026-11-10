@@ -6,6 +6,12 @@
 import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 
+/** Whatever a try block threw or a promise rejected with. */
+export type Caught = unknown
+
+/** A value read from outside the program, typed only by the function that validates it. */
+export type Unvalidated = unknown
+
 /** The message for failures with no more precise description. */
 const UNEXPECTED = 'internal error'
 
@@ -61,7 +67,7 @@ export class ReportedError extends Error {
   }
 }
 
-const isReportedError = (error: unknown): error is { readonly message: string } =>
+const isReportedError = (error: Caught): error is { readonly message: string } =>
   typeof error === 'object' &&
   error !== null &&
   'name' in error &&
@@ -72,7 +78,7 @@ const isReportedError = (error: unknown): error is { readonly message: string } 
 /**
  * The message for a caught error, shown to the user who awaited the result.
  */
-export const formatErrorMessage = (error: unknown): string => {
+export const formatErrorMessage = (error: Caught): string => {
   const reported = isReportedError(error) ? error.message.trim() : ''
   if (reported) return reported
   const fault = ConnectError.from(error)

@@ -6,7 +6,7 @@
  * A group still loading shows that beside its name. `data-palette` names each
  * part: `title` and `silence`.
  */
-import { computed, type ComponentPublicInstance } from 'vue'
+import { computed, type ComponentPublicInstance, type VNode } from 'vue'
 import { Spinner } from '@numen/ui'
 import { PaletteRow } from '../palette-row'
 import { optionId, type PlacedGroup } from '../../../lib/place'
@@ -26,7 +26,7 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** What is drawn before a row's words. */
-  icon(props: { id: string }): unknown
+  icon(props: { id: string }): VNode[]
 }>()
 
 /** The rows as rendered, each paired with its item. */

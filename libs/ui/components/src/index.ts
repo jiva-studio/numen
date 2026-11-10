@@ -53,7 +53,7 @@ export { createWriteOrder, type WriteOrder } from './shared/lib/async/remoteValu
 export { runInBackground } from './shared/lib/async/background'
 
 /** Rethrows a rejection of a background task as an uncaught error. */
-export { reportFailure } from './shared/lib/async/report'
+export { reportFailure, type Caught, type Unvalidated } from './shared/lib/async/report'
 
 export { Spinner } from './shared/ui/spinner'
 

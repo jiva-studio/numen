@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * The vaults this installation holds, under their display names, and the row
  * offered below the list.
@@ -28,9 +29,9 @@ defineEmits<{
 
 defineSlots<{
   /** Content displayed while the list is not yet loaded. */
-  waiting?(): unknown
+  waiting?(): VNode[]
   /** How a vault on the list is drawn. */
-  vault?(props: { vault: VaultRow }): unknown
+  vault?(props: { vault: VaultRow }): VNode[]
 }>()
 </script>
 

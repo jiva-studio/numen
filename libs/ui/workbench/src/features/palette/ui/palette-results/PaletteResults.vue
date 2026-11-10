@@ -10,7 +10,7 @@
  * `data-palette` names each part: `list`, `title`, `icon`, `name`, `detail`,
  * `hint` and `silence`. A group is drawn as a group and a row as an option.
  */
-import { nextTick, useTemplateRef } from 'vue'
+import { nextTick, useTemplateRef, type VNode } from 'vue'
 import { PaletteGroup } from './palette-group'
 import { listId, type PlacedGroup } from '../../lib/place'
 
@@ -39,7 +39,7 @@ defineSlots<{
    * reserved on every row, so the text aligns down the list whether or not a
    * row renders an icon.
    */
-  icon(props: { id: string }): unknown
+  icon(props: { id: string }): VNode[]
 }>()
 
 /** The rendered groups, each with its rows. */

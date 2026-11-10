@@ -5,7 +5,13 @@ export * from './protocol'
 export { transport } from './transport'
 export { getNames } from './settings/enumNames'
 export * from './settings/agentSettings'
-export { formatErrorCodeMessage, formatErrorMessage, ReportedError } from './errors/error'
+export {
+  formatErrorCodeMessage,
+  formatErrorMessage,
+  ReportedError,
+  type Caught,
+  type Unvalidated,
+} from './errors/error'
 export { findErrorCode, isStaleAnswer, parseFingerprint } from './errors/answers'
 export { ERRORS, getKnownErrorCode } from './errors/codes'
 export { asFailure, asValue, type Result } from './result'

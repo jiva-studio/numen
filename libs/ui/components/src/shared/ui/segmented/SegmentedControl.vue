@@ -8,6 +8,7 @@
  * the ends.
  */
 import type { HTMLAttributes } from 'vue'
+import type { AcceptableValue } from 'reka-ui'
 import { RadioGroupItem, RadioGroupRoot } from 'reka-ui'
 import { cn } from '@/shared/lib/dom/classes'
 import type { SegmentedChoice } from '.'
@@ -24,7 +25,7 @@ const props = withDefaults(
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
 
-const onChoose = (value: unknown) => {
+const onChoose = (value: AcceptableValue) => {
   if (typeof value === 'string') model.value = value
 }
 

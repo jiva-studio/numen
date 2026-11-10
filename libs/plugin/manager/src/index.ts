@@ -17,6 +17,7 @@ export type {
   SecretDeclaration,
   PluginSettingCondition,
   PluginSettingInfo,
+  SettingValue,
   PluginSettingOption,
   PluginSettingOptionsBy,
   PluginSettingsViewInfo,
