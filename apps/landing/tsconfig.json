@@ -6,16 +6,6 @@
     "jsx": "preserve",
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "exactOptionalPropertyTypes": true,
-    "paths": {
-      "@plugins/*": ["../../plugins/*"],
-      "@editor-features/*": ["../desktop/editor/src/features/*"],
-      "@numen/core-client": ["../../libs/core/client/src/index.ts"],
-      "@numen/plugin-loader": ["../../libs/plugin/loader/src/index.ts"],
-      "@numen/plugin-sdk/testing": ["../../libs/plugin/sdk-ts/src/testing/index.ts"],
-      "@numen/plugin-sdk": ["../../libs/plugin/sdk-ts/src/index.ts"],
-      "@numen/protocol/numen/v1/*": ["../../libs/core/protocol/src/numen/v1/*"],
-      "@numen/protocol": ["../../libs/core/protocol/index.ts"]
-    }
+    "exactOptionalPropertyTypes": true
   }
 }

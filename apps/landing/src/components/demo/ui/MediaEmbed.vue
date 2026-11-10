@@ -9,9 +9,8 @@
  * runs in this window.
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { getDraggedHeight, getTallest, LEAST } from '../lib/height'
-import { getFrameOrigin, seekFrame } from '../lib/player'
-import { createHeightStore, type HeightStore } from '../lib/storage'
+import { getDraggedHeight, getFrameOrigin, getTallest, LEAST, seekFrame } from '../lib/frame'
+import { createHeightStore, type HeightStore } from '../model/heightStore'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(

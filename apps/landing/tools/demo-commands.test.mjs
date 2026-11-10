@@ -10,8 +10,8 @@ import test from 'node:test'
 const root = new URL('../../../', import.meta.url)
 const read = (path) => readFileSync(new URL(path, root), 'utf8')
 
-const demo = read('apps/landing/src/components/demoCommands.ts')
-const window = read('apps/landing/src/components/DemoWindow.vue')
+const demo = read('apps/landing/src/components/demo/lib/commands.ts')
+const runner = read('apps/landing/src/components/demo/model/commands.ts') + read('apps/landing/src/components/demo/lib/palette.ts')
 const declared = new Map([...demo.matchAll(/^\s+([A-Za-z]+): '([^']+)',$/gm)].map((m) => [m[2], m[1]]))
 
 /** The full id of every command a plugin registers: its plugin id and the id it registers. */
@@ -45,9 +45,7 @@ test('the demo declares every command the plugins it draws register', () => {
 })
 
 test('the demo runs each command it declares', () => {
-  const naming = window.slice(window.indexOf('const NAMING_COMMAND'), window.indexOf('function openNamingStep'))
-  const body = naming + window.slice(window.indexOf('async function runMenuCommand('))
   for (const name of declared.values()) {
-    assert.ok(body.includes(`DEMO_COMMAND.${name}`), `runVaultCommand does not handle ${name}`)
+    assert.ok(runner.includes(`DEMO_COMMAND.${name}`), `the command runner does not handle ${name}`)
   }
 })
