@@ -10,7 +10,7 @@ import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import PresetTab from '../ui/PresetTab.vue'
-import { type PresetTabState } from '../types'
+import { type PresetTabState } from '../lib/types'
 import { DEFAULTS, type Curve, type Point, type PresetCounts, type Settings, type SettingsBounds } from '../../lib/presets'
 
 /**

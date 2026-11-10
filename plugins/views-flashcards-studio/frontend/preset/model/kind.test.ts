@@ -9,17 +9,18 @@
 import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
-import type { PresetTabState, SettingValue } from './types'
+import type { PresetTabState, SettingValue } from '../lib/types'
 import { StopReason } from '../api/types.js'
-import { getGoalValue, findNearest } from './lib/curve'
+import { getGoalValue, findNearest } from '../lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { CardsFailure } from '../api/cards'
-import { getGoalFields, getGoalField, type Field } from './lib/fields'
-import { DEFAULTS, NO_BOUNDS, type Curve, type Goal, type Point, type Presets, type Preset, type PresetReadResult, type PresetWriteResult, type ReadPreset, type Settings } from '../lib/presets'
-import { BOUNDS } from './fixtures'
-import { ERRORS, type ErrorCode } from '../api/wire/errors'
+import type { CardsFailure } from '../../api/cards'
+import { getGoalFields, getGoalField, type Field } from '../lib/fields'
+import { DEFAULTS, NO_BOUNDS, type Curve, type Goal, type Point, type Presets, type Preset, type PresetReadResult, type PresetWriteResult, type ReadPreset, type Settings } from '../../lib/presets'
+import { BOUNDS } from '../fixtures'
+import { ERRORS, type ErrorCode } from '../../api/wire/errors'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
-import { WORDS as words } from './words'
+import { WORDS as words } from '../lib/words'
+import PresetTab from '../ui/PresetTab.vue'
 
 const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
@@ -127,6 +128,7 @@ const openPresetTab = async (
   }
   const buffers = createMockBufferHost()
   const kind = usePresetTab({
+    component: PresetTab,
     core,
     buffers,
     closeTab: (tab: string) => {
@@ -195,6 +197,7 @@ const opening = async (file: Partial<Settings>) => {
     curve: async () => curve,
   }
   const kind = usePresetTab({
+    component: PresetTab,
     core,
     buffers: createMockBufferHost(),
     closeTab: () => undefined,

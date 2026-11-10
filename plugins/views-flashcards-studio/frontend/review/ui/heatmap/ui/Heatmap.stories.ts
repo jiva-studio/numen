@@ -14,8 +14,8 @@ import { ROWS } from '../lib/grid'
 import { getDayName } from '../../../../lib/day'
 import type { Tally } from '../lib/heatmap'
 import type { Words } from '../lib/words'
-import { lightness } from '../../../../ui/fixtures/colour'
-import { DARK, expectDark } from '../../../../ui/fixtures/theme'
+import { lightness } from '../../fixtures/colour'
+import { DARK, expectDark } from '../../fixtures/theme'
 
 const meta = {
   title: 'Flash Cards/Heatmap',

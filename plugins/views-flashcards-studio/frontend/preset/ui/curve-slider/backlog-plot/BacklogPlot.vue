@@ -19,7 +19,7 @@ import {
   type Extent,
 } from '../../../lib/plot'
 import type { Curve } from '../../../../lib/presets'
-import { WORDS as words } from '../../../words'
+import { WORDS as words } from '../../../lib/words'
 import { BacklogChart } from './backlog-chart'
 import '../curve-slider.css'
 

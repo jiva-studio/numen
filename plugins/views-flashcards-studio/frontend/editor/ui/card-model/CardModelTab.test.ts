@@ -14,6 +14,7 @@ import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/tes
 import CardModelTab from './CardModelTab.vue'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from '../../model/card-model/kind'
 import { WORDS as words } from '../../../words'
+import CardModelTab from './CardModelTab.vue'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
@@ -60,6 +61,7 @@ const mountCardModel = async (problems: readonly DeckProblem[] = []) => {
 
   const windowTabs = createMockTabWindow()
   const cardModels = createCardModelTabs(core, {
+    component: CardModelTab,
     buffers: createMockBufferHost(),
     closeTab: windowTabs.finishClose,
   })
@@ -106,6 +108,7 @@ const mountWithRead = async (readCardModel: Cards['readCardModel']) => {
   }
   const windowTabs = createMockTabWindow()
   const cardModels = createCardModelTabs(core, {
+    component: CardModelTab,
     buffers: createMockBufferHost(),
     closeTab: windowTabs.finishClose,
   })

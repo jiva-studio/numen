@@ -2,6 +2,7 @@
  * The deck tab kind: a deck edited as a grid of cards, a tab to a file.
  */
 import { Layers } from '@lucide/vue'
+import type { Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { getMarkOf } from '../../lib/buffer/words'
 import type { Cards } from '../../../api/cards'
@@ -30,6 +31,7 @@ export interface DeckTabsInside {
   /** Shows the failure of an operation that runs in the background. */
   reportFailure(error: unknown): void
   createDeckTabState(id: string): DeckTabState
+  readonly component: Component
 }
 
 export function createDeckKind({
@@ -43,10 +45,11 @@ export function createDeckKind({
   refreshDeckPreset,
   reportFailure,
   createDeckTabState,
+  component,
 }: DeckTabsInside) {
   const kind: TabKindRegistration<DeckTabState> = {
     kind: DECK,
-    component: DeckTab,
+    component,
     icon: Layers,
     open: (path, id) => {
       store.open(id, path)

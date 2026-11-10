@@ -7,7 +7,7 @@ import { DEFAULTS, type Curve, type PresetCounts, type Presets, type Settings, t
 import { getGoalValue, findNearest } from '../lib/curve'
 import { getShapeKey } from '../lib/fields'
 import { estimateCurve } from '../lib/sketch'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 /** Reactive state for preset curve calculations. */
 export interface CurveState {

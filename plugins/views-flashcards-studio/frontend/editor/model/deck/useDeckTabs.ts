@@ -1,7 +1,7 @@
 /**
  * Window registration and tab state for flashcard deck tabs.
  */
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
 import {
   asFailure,
   asValue,
@@ -38,11 +38,12 @@ export interface DeckTabsOptions {
   readonly buffers: BufferHost
   readonly closeTab: (id: string) => void
   readonly writeMessage?: MessageWriter | undefined
+  readonly component: Component
 }
 
 export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOptions) {
   // Messages are dropped when the caller supplies no writer.
-  const { buffers, closeTab, writeMessage = () => undefined } = options
+  const { buffers, closeTab, writeMessage = () => undefined, component } = options
   const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
   const vaultAnswers = createDeckAnswers()
   const store = createDeckNoteStore(cards, vaultAnswers)
@@ -69,6 +70,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     refreshDeckPreset: wiring.scheduled.refreshDeckPreset,
     reportFailure,
     createDeckTabState,
+    component,
   })
 
   const applyPathChanges = (

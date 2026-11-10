@@ -13,11 +13,16 @@ import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/tes
 import { DECK } from './kind'
 import { useDeckTabs as useDeckTabsOriginal, type DeckTabState } from './useDeckTabs'
 import { WORDS as words } from '../../../words'
+import DeckTab from '../../ui/deck/DeckTab.vue'
 
 const useDeckTabs = (cards: Cards, presets: Presets) => {
   const windowTabs = createMockTabWindow()
   const buffers = createMockBufferHost()
-  const decks = useDeckTabsOriginal(cards, presets, { buffers, closeTab: windowTabs.finishClose })
+  const decks = useDeckTabsOriginal(cards, presets, {
+    buffers,
+    closeTab: windowTabs.finishClose,
+    component: DeckTab,
+  })
   windowTabs.register(decks.kind)
   return { windowTabs, buffers, decks }
 }

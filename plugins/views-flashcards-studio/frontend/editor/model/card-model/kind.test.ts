@@ -10,6 +10,7 @@ import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/tes
 import { ERRORS } from '../../../api/wire/errors'
 import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from './kind'
 import { WORDS as words } from '../../../words'
+import CardModelTab from '../../ui/card-model/CardModelTab.vue'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
@@ -101,6 +102,7 @@ const open = async (answers: Parameters<typeof vault>[0] = {}, path = 'Animal.md
   /** Everything the window was given to say about this card model. */
   const messages: string[] = []
   const cardModels = createCardModelTabs(one.core, {
+      component: CardModelTab,
     buffers,
     closeTab: windowTabs.finishClose,
     writeMessage: (text) => {
@@ -449,6 +451,7 @@ describe('a card model edited before its file is read', () => {
       })
     const windowTabs = createMockTabWindow()
     const cardModels = createCardModelTabs(one.core, {
+      component: CardModelTab,
       buffers: createMockBufferHost(),
       closeTab: windowTabs.finishClose,
     })

@@ -5,7 +5,7 @@ import { ref, type Ref } from 'vue'
 import { createWriteOrder, type WriteOrder } from '@numen/ui'
 import type { MessageWriter } from '@numen/plugin-sdk'
 import type { Presets, Settings } from '../../lib/presets'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 /** The pending write and the unwritten fields of one preset file. */
 export interface WriteQueue {

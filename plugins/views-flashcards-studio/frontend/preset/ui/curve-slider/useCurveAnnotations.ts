@@ -12,7 +12,7 @@ import {
   type Mark,
 } from '../../lib/label'
 import { getBacklogRun } from '../../lib/plot'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../../lib/words'
 
 interface CalloutOptions {
   curve: Curve

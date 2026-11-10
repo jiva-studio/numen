@@ -1,26 +1,26 @@
 // Stryker disable StringLiteral: interface copy
 import type { StopReason } from '../api/types.js'
-import { type ErrorCode, getErrorWords } from '../api/wire/errors'
-import { formatStopReasonMessage } from '../api/wire/stop'
+import { type ErrorCode, getErrorWords } from '../../api/wire/errors'
+import { formatStopReasonMessage } from '../../api/wire/stop'
 /** Interface copy of the preset tab: the control, its settings, and error messages. */
 import { many, percent } from '@numen/ui'
-import type { BudgetUnit, Goal, Rule } from '../lib/presets'
-import type { Field } from './lib/fields'
+import type { BudgetUnit, Goal, Rule } from '../../lib/presets'
+import type { Field } from './fields'
 import {
   getBuyFacts,
   getLearningFacts,
   getMaterialFacts,
   type BuyInput,
   type MaterialCounts,
-} from './lib/facts'
-import { BUDGET_UNITS, FIELDS, GOALS, RULES } from './lib/labels'
+} from './facts'
+import { BUDGET_UNITS, FIELDS, GOALS, RULES } from './labels'
 import {
   count,
   formatBuyFact,
   formatLearningFact,
   formatMaterialFact,
   sayAsSentence,
-} from './lib/formatFacts'
+} from './formatFacts'
 
 export const WORDS = {
   preset: 'Preset',

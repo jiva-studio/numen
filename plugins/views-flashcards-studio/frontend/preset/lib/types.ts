@@ -2,8 +2,8 @@
  * Type declarations and domain models for the flashcards preset tab.
  */
 import type { Ref } from 'vue'
-import type { Field } from './lib/fields'
-import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds, StopReason } from '../lib/presets'
+import type { Field } from './fields'
+import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds, StopReason } from '../../lib/presets'
 
 export type { Field }
 

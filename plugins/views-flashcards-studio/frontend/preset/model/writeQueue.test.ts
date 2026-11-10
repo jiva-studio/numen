@@ -12,7 +12,7 @@ import {
   flushPromises,
 } from '../fixtures/writes'
 import type { Presets, PresetWriteResult } from '../../lib/presets'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 import { createWriteQueue, flushWrites, requestWrite, sendWrite } from './writeQueue'
 
 const requestInBackground = createBackgroundRequest(requestWrite)

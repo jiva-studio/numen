@@ -1,7 +1,7 @@
 /**
  * The card model tab kind and the state of its tabs: a card model edited as its fields and templates.
  */
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
 import { LayoutTemplate } from '@lucide/vue'
 import {
   formatErrorMessage,
@@ -15,7 +15,6 @@ import { getMarkOf } from '../../lib/buffer/words'
 import { openNotes } from '../buffer/notes'
 import { WORDS as words } from '../../../words'
 import type { Cards } from '../../../api/cards'
-import CardModelTab from '../../ui/card-model/CardModelTab.vue'
 import type { CardModelTabState } from '../../lib/card-model/types'
 import { createCardModelWire, type VaultAnswer } from '../../api/card-model/wire'
 import { createCardModelFields } from './fields'
@@ -30,6 +29,7 @@ export interface CardModelTabsOptions {
   readonly buffers: BufferHost
   readonly closeTab: (id: string) => void
   readonly writeMessage?: MessageWriter | undefined
+  readonly component: Component
 }
 
 type CardModelFields = ReturnType<typeof createCardModelFields>
@@ -88,12 +88,13 @@ function createCardModelKindDefinition(deps: {
   wire: CardModelWire
   cards: Cards
   createCardModelTabState: (id: string) => CardModelTabState
+  component: Component
 }): TabKindRegistration<CardModelTabState> {
   const { store, wire, cards } = deps
   const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
   return {
     kind: CARD_MODEL,
-    component: CardModelTab,
+    component: deps.component,
     icon: LayoutTemplate,
     open: (path, id) => {
       store.open(id, path)
@@ -125,7 +126,7 @@ function createCardModelKindDefinition(deps: {
 
 export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions) {
   // Messages are dropped when the caller supplies no writer.
-  const { buffers, closeTab, writeMessage = () => undefined } = options
+  const { buffers, closeTab, writeMessage = () => undefined, component } = options
   const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
   const wire = createCardModelWire(cards, writeMessage)
   const store = openNotes({ read: wire.read, write: wire.write })
@@ -147,7 +148,7 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
 
   const createCardModelTabState = (id: string): CardModelTabState =>
     createCardModelTabItem(id, { store, fields, wire, closeTab, reportFailure })
-  const kind = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState })
+  const kind = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState, component })
 
   return {
     kind,

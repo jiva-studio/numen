@@ -7,10 +7,10 @@
 import { computed } from 'vue'
 import { SegmentedControl } from '@numen/ui'
 import CurveSlider from '../curve-slider/CurveSlider.vue'
-import { type PresetTabState } from '../../types'
+import { type PresetTabState } from '../../lib/types'
 import { GOALS, type Goal } from '../../../lib/presets'
 import { getIdleReason, getKnobValue } from '../../lib/curve'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../../lib/words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: PresetTabState }>()

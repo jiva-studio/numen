@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, reactive } from 'vue'
 
 import type { Curve, Point } from '../../../lib/presets'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../../lib/words'
 import { useCurveSlider, type CurveSliderProps } from './useCurveSlider'
 
 const point = (overrides: Partial<Point> = {}): Point => ({

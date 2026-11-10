@@ -2,6 +2,7 @@
  * What the deck tabs of a window do when one opens, becomes visible, is queried,
  * and closes.
  */
+import DeckTab from '../../ui/deck/DeckTab.vue'
 import { describe, expect, it, vi } from 'vitest'
 import { asValue } from '@numen/plugin-sdk'
 import { createDeckKind, type DeckTabsInside } from './kind'
@@ -28,6 +29,7 @@ const createInside = (open: readonly string[] = []) => {
     listPresetsAgain: vi.fn(),
     refreshDeckPreset: vi.fn(async () => undefined),
     createDeckTabState: vi.fn(() => state),
+    component: DeckTab,
   }
   return { inside, state, kind: createDeckKind(inside as unknown as DeckTabsInside) }
 }

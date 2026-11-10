@@ -1,9 +1,9 @@
 /**
  * The preset tab kind and the state of its tabs: a preset edited as its schedule settings.
  */
-import { shallowRef, type Ref } from 'vue'
+import { shallowRef, type Component, type Ref } from 'vue'
 import { Gauge } from '@lucide/vue'
-import { ERRORS } from '../api/wire/errors'
+import { ERRORS } from '../../api/wire/errors'
 import {
   getFileName,
   type BufferHost,
@@ -12,9 +12,9 @@ import {
   type PathRename,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
-import { type PresetTabState, type SettingValue } from './types'
-import { NO_BOUNDS, type Presets, type SettingsBounds } from '../lib/presets'
-import { WORDS as words } from './words'
+import { type PresetTabState, type SettingValue } from '../lib/types'
+import { NO_BOUNDS, type Presets, type SettingsBounds } from '../../lib/presets'
+import { WORDS as words } from '../lib/words'
 import {
   createOpenPreset,
   createFailureReporter,
@@ -22,9 +22,8 @@ import {
   readPreset,
   type OpenPreset,
   type PresetStateContext,
-} from './model/open'
-import { flushWrites } from './model/writeQueue'
-import PresetTab from './ui/PresetTab.vue'
+} from './open'
+import { flushWrites } from './writeQueue'
 
 export type { PresetTabState, SettingValue }
 
@@ -46,6 +45,7 @@ export interface PresetTabDeps {
   closeTab: (id: string) => void
   writeMessage: MessageWriter
   today: () => string
+  component: Component
 }
 
 function applyPathRenames(
@@ -75,16 +75,17 @@ interface KindDeps {
   today: () => string
   states: WeakMap<PresetTabState, OpenPreset>
   flush: (state: PresetTabState) => Promise<void>
+  component: Component
 }
 
 function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
-  const { context, open, titles, bounds, core, today, states, flush } = deps
+  const { context, open, titles, bounds, core, today, states, flush, component } = deps
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
   return {
     kind: PRESET,
-    component: PresetTab,
+    component,
     icon: Gauge,
     open: (path) => {
       const one = createOpenPreset(path, today(), bounds.value)
@@ -115,7 +116,7 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
  * The presets one window has open.
  */
 export function usePresetTab(deps: PresetTabDeps) {
-  const { core, buffers, closeTab, writeMessage, today } = deps
+  const { core, buffers, closeTab, writeMessage, today, component } = deps
   const titles = new Map<string, string>()
   const bounds = shallowRef<SettingsBounds>(NO_BOUNDS)
   const open = new Map<string, OpenPreset>()
@@ -169,6 +170,7 @@ export function usePresetTab(deps: PresetTabDeps) {
     today,
     states,
     flush: flushState,
+    component,
   })
 
   const applyPathChanges = (
