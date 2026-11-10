@@ -50,7 +50,7 @@ func TestAnInstallationNamingNoClockReadsTheMachinesOwn(t *testing.T) {
 func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 	cfg, path := writeSettings(t, `{not json`)
 
-	content, response, err := readSettings(cfg.settings())()
+	content, response, err := readSettings(settingsOf(cfg))()
 	if err == nil {
 		t.Fatalf("settings that are not JSON were read out as %q", content)
 	}
@@ -106,16 +106,16 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
 	cfg := NewConfig(Config{ServiceDir: ".mine"})
 
-	opened, ok := noteWriters(cfg.vault()).(vaultwriter.VaultWriters)
+	opened, ok := noteWriters(vaultOf(cfg)).(vaultwriter.VaultWriters)
 	if !ok {
-		t.Fatalf("vaults are opened for writing by %T", noteWriters(cfg.vault()))
+		t.Fatalf("vaults are opened for writing by %T", noteWriters(vaultOf(cfg)))
 	}
 	if opened.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", opened.Options)
 	}
-	read, ok := vaultReaders(cfg.vault()).(vaultreader.Readers)
+	read, ok := vaultReaders(vaultOf(cfg)).(vaultreader.Readers)
 	if !ok {
-		t.Fatalf("vaults are opened for reading by %T", vaultReaders(cfg.vault()))
+		t.Fatalf("vaults are opened for reading by %T", vaultReaders(vaultOf(cfg)))
 	}
 	if read.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", read.Options)
@@ -177,7 +177,7 @@ func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := getSettingsWriter(cfg.settings())([]settings.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `opus`}})
+	err := getSettingsWriter(settingsOf(cfg))([]settings.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `opus`}})
 	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}

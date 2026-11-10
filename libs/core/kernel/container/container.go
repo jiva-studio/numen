@@ -180,11 +180,11 @@ func settingsOf(c Config) settingsWiring {
 		SecretGate:       res.secretGate,
 		PluginChanges:    res.pluginChanges,
 		SubscribedHosts:  &res.subscribedHosts,
-		ErrorHandler:     c.handleError,
-		AgentProvider:    c.providerOfAgents,
-		GetAgentPrograms: c.getAgentPrograms,
-		SetSecretSource:  c.setSecretSource,
-		SetCompleter:     c.setCompleter,
+		ErrorHandler:     func(err error) { handleError(c, err) },
+		AgentProvider:    func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
+		GetAgentPrograms: func(p agentport.AgentProvider, t settingsadapter.Agent) []agentdomain.Program { return getAgentPrograms(plugins(c), p, t) },
+		SetSecretSource:  func() { setSecretSource(plugins(c)) },
+		SetCompleter:     func() { setCompleter(plugins(c)) },
 	}
 }
 
@@ -200,7 +200,7 @@ func searchOf(c Config) searchWiring {
 		Clock:              c.Clock(),
 		VaultReaders:       vaultReaders(v),
 		TextReaders:        getTextReaders(v),
-		ErrorHandler:       c.handleError,
+		ErrorHandler:       func(err error) { handleError(c, err) },
 		ResolvePlugin: func(capability string) (*PluginHost, error) {
 			return pluginsResolvePlugin(plugins, capability)
 		},
@@ -220,7 +220,7 @@ func vaultBase(c Config) vaultWiring {
 		TextReaders:  c.TextReaders,
 		VaultLocks:   res.vaultLocks,
 		Watches:      res.watches,
-		ErrorHandler: c.handleError,
+		ErrorHandler: func(err error) { handleError(c, err) },
 	}
 }
 
@@ -246,7 +246,7 @@ func plugins(c Config) pluginsWiring {
 		SettingsFiles: res.settingsFiles,
 		SettingEvents: res.settingEvents,
 		Programs:      programs,
-		ErrorHandler:  c.handleError,
+		ErrorHandler:  func(err error) { handleError(c, err) },
 	}
 	return pluginsWiring{
 		PluginCachePath:       c.PluginCachePath,
@@ -261,13 +261,13 @@ func plugins(c Config) pluginsWiring {
 		PluginChanges:         res.pluginChanges,
 		TextVersions:          c.TextVersions,
 		ListAppSettings:       func() []plugindomain.Setting { return listAppSettings(s) },
-		CredentialsPath:       c.getCredentialsPath,
+		CredentialsPath:       func() string { return getCredentialsPath(plugins(c)) },
 		Programs:              programs,
 		VaultReaders:          vaultReaders(v),
 		NoteWriters:           noteWriters(v),
 		VaultLocks:            writeLocks(v),
 		VaultWatcher:          vaultWatcher(v),
-		ErrorHandler:          c.handleError,
+		ErrorHandler:          func(err error) { handleError(c, err) },
 		SettingsFile:          func() (string, error) { return settingsSettingsFile(s) },
 		ReadCheckedSettings:   func() (settingsadapter.File, error) { return readCheckedSettings(s) },
 		GetSettingsOrDefaults: func() settingsadapter.File { return settingsGetSettingsOrDefaults(s) },

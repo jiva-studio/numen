@@ -21,41 +21,41 @@ func OpenCLIVaults(c Config) (cli.Vaults, error) {
 	}
 	return cli.Vaults{
 		Find:       registry.NewFind(ports.Lookup),
-		Add:        vault.NewAdd(vaultIdentity(c.vault()), ports.Vaults, ports.Lookup, ports.Saver, c.Clock()),
-		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(c.vault())),
+		Add:        vault.NewAdd(vaultIdentity(vaultOf(c)), ports.Vaults, ports.Lookup, ports.Saver, c.Clock()),
+		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, vaultReaders(vaultOf(c))),
 		RecordOpen: vault.NewRecordOpen(ports.Recorder),
 		Now:        c.Clock().Now,
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
-			db, err := openIndex(c.vault(), ctx)
+			db, err := openIndex(vaultOf(c), ctx)
 			if err != nil {
 				return cli.Renaming{}, err
 			}
 			return cli.Renaming{Rename: vault.NewRename(ports.Vaults, ports.Saver, db.Vaults()), Close: db.Close}, nil
 		},
 		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
-			db, err := openIndex(c.vault(), ctx)
+			db, err := openIndex(vaultOf(c), ctx)
 			if err != nil {
 				return cli.Unregistering{}, err
 			}
 			return cli.Unregistering{Unregister: unregister(db), Close: db.Close}, nil
 		},
 		OpenErase: func(ctx context.Context) (cli.Erasing, error) {
-			db, err := openIndex(c.vault(), ctx)
+			db, err := openIndex(vaultOf(c), ctx)
 			if err != nil {
 				return cli.Erasing{}, err
 			}
-			erase := vault.NewErase(vaultIdentity(c.vault()), vaultTrash(c.vault()), unregister(db))
+			erase := vault.NewErase(vaultIdentity(vaultOf(c)), vaultTrash(vaultOf(c)), unregister(db))
 			return cli.Erasing{Erase: erase, Close: db.Close}, nil
 		},
 	}, nil
 }
 
 func OpenCLILinks(c Config, ctx context.Context) (cli.Links, error) {
-	db, err := openIndex(c.vault(), ctx)
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return cli.Links{}, err
 	}
-	notes := c.Notes(db, updateIndex(c.vault(), db))
+	notes := c.Notes(db, updateIndex(vaultOf(c), db))
 	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
 }
 
@@ -90,7 +90,7 @@ func OpenCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (c
 func OpenCLISearch(c Config,
 	ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler,
 ) (cli.Search, error) {
-	db, err := openIndex(c.vault(), ctx)
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return cli.Search{}, err
 	}
@@ -109,15 +109,15 @@ func OpenCLISearch(c Config,
 }
 
 func OpenCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
-	db, err := openIndex(c.vault(), ctx)
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return cli.Problems{}, err
 	}
-	return cli.Problems{Problems: getProblems(c.vault(), db.Problems()), Close: db.Close}, nil
+	return cli.Problems{Problems: getProblems(vaultOf(c), db.Problems()), Close: db.Close}, nil
 }
 
 func GetCLIPluginCommands(c Config) cli.PluginCommands {
-	return cli.PluginCommands{List: getPluginCommands(c.plugins()).List, Open: c.openPluginCommands}
+	return cli.PluginCommands{List: getPluginCommands(plugins(c)).List, Open: c.openPluginCommands}
 }
 
 func closeIfOpen(closeFn func() error) error {

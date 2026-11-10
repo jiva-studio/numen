@@ -284,13 +284,13 @@ func getMediaType(_ vaultWiring) *file.GetMediaType {
 // OpenVaults is every vault a window has open over db: each is read into the index, and what it
 // reports goes to out under label.
 func OpenVaults(c Config, db *vault.Index, out io.Writer, label string) *vault.OpenVaults[*vault.Index] {
-	return &vault.OpenVaults[*vault.Index]{Opener: func(i *vault.Index) *vault.VaultOpener { return vaultOpener(c.vault(), i) }, Index: db, Out: out, Label: label}
+	return &vault.OpenVaults[*vault.Index]{Opener: func(i *vault.Index) *vault.VaultOpener { return vaultOpener(vaultOf(c), i) }, Index: db, Out: out, Label: label}
 }
 
 // SetShellNotes gives a shell the notes it answers about: whether a vault is indexed and what a link
 // resolves to. A write updates the index through updateIndex.
 func SetShellNotes(c Config, api *shell.API, db *vault.Index, updateIndex edit.IndexUpdater) {
-	notes := vaultNotes(c.vault(), db, updateIndex)
+	notes := vaultNotes(vaultOf(c), db, updateIndex)
 	api.IsVaultIndexed, api.ResolveLinks = notes.Browse.IsVaultIndexed, notes.Refer.ResolveLinks
 }
 

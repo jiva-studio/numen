@@ -31,7 +31,7 @@ import (
 // ApplySettings reads the settings file and returns the configuration with its values applied, and
 // the notices that reading it raised. An unconfigured installation applies the default settings.
 func (c Config) ApplySettings() (Config, []string, error) {
-	selected, err := settingsSettings(c.settings())
+	selected, err := settingsSettings(settingsOf(c))
 	if err != nil {
 		return c, nil, err
 	}
@@ -45,7 +45,7 @@ func applySettingsFile(c Config, s settingsadapter.File) Config {
 }
 
 func models(c Config) func() []settingsdomain.Model {
-	return c.modelsForProvider(pluginsAgentProvider(c.plugins()))
+	return c.modelsForProvider(pluginsAgentProvider(plugins(c)))
 }
 
 func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {

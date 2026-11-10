@@ -15,7 +15,7 @@ import (
 )
 
 func writeAt(cfg Config, json string, path ...string) error {
-	return getSettingsWriter(cfg.settings())([]settings.Setting{{Path: path, JSON: json}})
+	return getSettingsWriter(settingsOf(cfg))([]settings.Setting{{Path: path, JSON: json}})
 }
 
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
@@ -89,7 +89,7 @@ func TestAKeyAPluginDoesNotDeclareIsRefused(t *testing.T) {
 
 func TestAWriteOfSeveralSettingsIsRefusedWholeWhenOneIsRefused(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
-	err := getSettingsWriter(cfg.settings())([]settings.Setting{
+	err := getSettingsWriter(settingsOf(cfg))([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "appearance", "textScale"}, JSON: `9`},
 	})

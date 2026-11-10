@@ -54,7 +54,7 @@ func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*ed
 	if err != nil {
 		return nil, err
 	}
-	db, err := openIndex(c.vault(), ctx)
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -90,13 +90,13 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// before any component that reports into it.
 	tasks := run.NewTasks()
 	models := &run.Lock{}
-	reportPluginFailures(w.cfg.plugins(), tasks)
-	reportDependencies(w.cfg.plugins(), tasks)
-	setPluginWork(w.cfg.plugins(), tasks, models)
+	reportPluginFailures(plugins(w.cfg), tasks)
+	reportDependencies(plugins(w.cfg), tasks)
+	setPluginWork(plugins(w.cfg), tasks, models)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := searchEmbedders(w.cfg.search(), ctx, tasks)
+	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -117,9 +117,9 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		}
 		return GetRefresh(w.cfg, w.db)
 	}
-	notes := vaultNotes(w.cfg.vault(), w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
+	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
 	w.notes = &notes
-	moves := vaultVaults(w.cfg.vault(), w.ports, w.db, w.notes.Place.Move)
+	moves := vaultVaults(vaultOf(w.cfg), w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
 
 	passes := startVault(w.cfg, w.db, &refreshing)
@@ -131,7 +131,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
-			Identity: vault.NewCheckIdentity(vaultIdentity(w.cfg.vault())), Recorded: moves.RecordOpen, Passes: passes,
+			Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: passes,
 			Texts: getTextVersions(w.cfg),
 		},
 		Index: windowsession.IndexPorts{

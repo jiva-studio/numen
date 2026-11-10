@@ -37,7 +37,7 @@ import (
 )
 
 func mountCatalog(w *windowWiring) {
-	if plugins := getPluginCatalog(w.cfg.plugins()); plugins != nil {
+	if plugins := getPluginCatalog(plugins(w.cfg)); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
 		path, served := windowcatalog.NewRoute(handler, w.inst.State.CountQuestions())
 		w.inst.Mount(editor.NewRoute(path, served, handler))
@@ -46,7 +46,7 @@ func mountCatalog(w *windowWiring) {
 
 func mountMedia(w *windowWiring) {
 	state := w.inst.State
-	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(w.cfg.vault())), openPluginFile(vaultOf(w.cfg)))
+	resolve := file.NewResolveAddress(file.NewStatFile(vaultReaders(vaultOf(w.cfg))), openPluginFile(vaultOf(w.cfg)))
 	handler := mediawindow.NewHandler(state, state, resolve, getMediaType(vaultOf(w.cfg)))
 	w.inst.Mount(editor.NewMediaRoute(state, handler))
 }
@@ -56,7 +56,7 @@ func mountCommand(w *windowWiring) {
 	if menu := openVersionItems(plugins(w.cfg)); menu != nil {
 		versions = menu
 	}
-	handler := command.NewHandler(w.inst.State, getPluginCommands(w.cfg.plugins()), versions)
+	handler := command.NewHandler(w.inst.State, getPluginCommands(plugins(w.cfg)), versions)
 	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.CountQuestions(), handler)))
 }
 
@@ -90,21 +90,21 @@ func mountSearch(w *windowWiring) {
 	handler.GetTitles = query.NewGetTitles(w.db.NoteRefs())
 	handler.GetTypes = query.NewGetTypes(w.db.NoteTypes())
 	handler.ListTabKinds = w.files.ListTabKinds
-	finds := newSearch(w.cfg.search(), w.db, w.asking, state.ReportWordsAlone)
+	finds := newSearch(searchOf(w.cfg), w.db, w.asking, state.ReportWordsAlone)
 	handler.Finds = &finds
-	setPluginSearch(w.cfg.search(), w.db, w.embedder, state.ReportFloorError)
+	setPluginSearch(searchOf(w.cfg), w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountFile(w *windowWiring) {
 	state := w.inst.State
-	readers := vaultReaders(w.cfg.vault())
+	readers := vaultReaders(vaultOf(w.cfg))
 	folders := filewindow.NewFolders(
 		state, state,
 		file.NewGetFolderEntries(readers, w.db.NoteTypes()),
 		file.NewGetFileKinds(readers, w.db.NoteTypes()),
-		openChooseTabKind(w.cfg.plugins()),
+		openChooseTabKind(plugins(w.cfg)),
 		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))),
 	)
 	changes := filewindow.NewChanges(state, state, state, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)
@@ -167,7 +167,7 @@ func mountAgent(w *windowWiring) {
 		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
 		GetUnreachable: state.Unreachable.Why,
 	}
-	if taking := getToolProvider(w.cfg.plugins()); taking != nil {
+	if taking := getToolProvider(plugins(w.cfg)); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}
@@ -179,7 +179,7 @@ func mountAgent(w *windowWiring) {
 // has no use case where no agent is configured.
 func GetSettingsAgentHandler(c Config) *windowagent.Handler {
 	handler := &windowagent.Handler{}
-	if taking := getSettingsAgent(c.plugins()); taking != nil {
+	if taking := getSettingsAgent(plugins(c)); taking != nil {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}
@@ -187,17 +187,17 @@ func GetSettingsAgentHandler(c Config) *windowagent.Handler {
 }
 
 func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
-	return settings.NewGet(readSettings(c.settings()), modelsForProvider(c, provider), settingsPlugins(c.settings()), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
+	return settings.NewGet(readSettings(settingsOf(c)), modelsForProvider(c, provider), settingsPlugins(settingsOf(c)), func() []plugin.Setting { return listAppSettings(settingsOf(c)) })
 }
 
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	handler := &windowsettings.Handler{}
-	handler.Get = w.cfg.openGetSettings(pluginsAgentProvider(w.cfg.plugins()))
+	handler.Get = w.cfg.openGetSettings(pluginsAgentProvider(plugins(w.cfg)))
 	handler.Values.Write = openWriteSettings(settingsOf(w.cfg))
-	handler.Watch = openWatchSettings(w.cfg.settings())
-	handler.Retry = openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(w.cfg.plugins()))
-	if secrets := openSecrets(w.cfg.plugins()); secrets != nil {
+	handler.Watch = openWatchSettings(settingsOf(w.cfg))
+	handler.Retry = openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
+	if secrets := openSecrets(plugins(w.cfg)); secrets != nil {
 		handler.ListSecrets = secrets.List
 		handler.Create, handler.Rename, handler.SecretItems.Write = secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write
 		handler.Delete, handler.Move = secrets.Items.Delete, secrets.Items.Move
@@ -215,7 +215,7 @@ func mountSettings(w *windowWiring) {
 }
 
 func mountPlugin(w *windowWiring) {
-	w.inst.SetPlugins(getPluginServices(w.cfg.plugins()), w.cfg.GetPluginDir)
+	w.inst.SetPlugins(getPluginServices(plugins(w.cfg)), func(id string) (string, bool) { return getPluginDir(plugins(w.cfg), id) })
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
 }
 
@@ -224,10 +224,10 @@ func mountPlugin(w *windowWiring) {
 // so a vault opened later in the window is served without a new binding.
 func SetEditorPluginWindow(c Config, db *vault.Index, opened *editor.Installation) {
 	view := GetWindowView(opened)
-	focusPassages := file.NewFocusPassages(vaultReaders(c.vault()), view)
+	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
 		&opened.State.Runtime,
-		vaultFocusNote(c.vault(), db.NoteRefs(), view),
+		vaultFocusNote(vaultOf(c), db.NoteRefs(), view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
@@ -239,7 +239,7 @@ func SetEditorPluginWindow(c Config, db *vault.Index, opened *editor.Installatio
 // shows. It uses the vault use cases of the window, so a plugin and the user see the same errors.
 func SetEditorPluginVaultList(c Config, opened *editor.Installation) {
 	scenarios := opened.Vaults()
-	setPluginVaultList(c.plugins(), windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
+	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    scenarios.Registry.Find,
 		Missing: scenarios.Registry.FolderCheck,
@@ -310,7 +310,7 @@ func getTriggerSource(c Config) windowsession.TriggerSource {
 			}
 			return nil
 		},
-		Watch: c.watchPluginChanges,
+		Watch: func() (<-chan struct{}, func()) { return watchPluginChanges(plugins(c)) },
 	}
 }
 
@@ -321,7 +321,7 @@ func startVault(c Config, db *vault.Index, refreshing *atomic.Pointer[vault.Refr
 		request := c
 		request.ShouldRebuildIndex = rebuild
 
-		opening := vaultOpener(request.vault(), db)
+		opening := vaultOpener(vaultOf(request), db)
 		opening.ShouldRebuild = rebuild
 		opening.ErrorHandler = report.Failed
 		if report.Changed != nil {

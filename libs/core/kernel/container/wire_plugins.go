@@ -45,7 +45,7 @@ func (c Config) StopPlugins(ctx context.Context) error {
 }
 
 func openPluginCommands(c Config, ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	db, err := openIndex(c.vault(), ctx)
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
@@ -53,7 +53,7 @@ func openPluginCommands(c Config, ctx context.Context, v domain.Vault) (pluginco
 	if err != nil {
 		return plugincommand.Run{}, nil, errors.Join(err, db.Close())
 	}
-	return getPluginCommands(c.plugins()).Run, closeAfterWork(ctx, work, db.Close), nil
+	return getPluginCommands(plugins(c)).Run, closeAfterWork(ctx, work, db.Close), nil
 }
 
 func openedPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, error) {
@@ -68,8 +68,8 @@ func closeAfterWork(ctx context.Context, work *run.PluginWork, closeIndex func()
 }
 
 func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.PluginWork, error) {
-	setPluginVaultPath(c.plugins(), v.Path)
-	versions, err := newTextVersions(c.vault(), db)
+	setPluginVaultPath(plugins(c), v.Path)
+	versions, err := newTextVersions(vaultOf(c), db)
 	if err != nil {
 		return c, nil, err
 	}
@@ -79,11 +79,11 @@ func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.Plu
 		return c, nil, err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	if err := installPluginVault(c.plugins(), registry, db, current, PluginVaultHooks{}); err != nil {
+	if err := installPluginVault(plugins(c), registry, db, current, PluginVaultHooks{}); err != nil {
 		return c, nil, err
 	}
 	work := pluginsOpenPluginWork(plugins(c), run.NewTasks(), &run.Lock{})
-	setPluginTexts(c.vault())
+	setPluginTexts(vaultOf(c))
 	return c, work, nil
 }
 
