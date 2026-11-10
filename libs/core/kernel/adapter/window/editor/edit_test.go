@@ -363,7 +363,7 @@ func TestEditLoad(t *testing.T) {
 	api.state.SetVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	end := wired.startSession(t.Context(), db, api.state, v, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher(), sessionOptions{
+	end := wired.startSession(t, t.Context(), db, api.state, v, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher(), sessionOptions{
 		idle: time.Hour, out: io.Discard,
 	})
 	t.Cleanup(end)

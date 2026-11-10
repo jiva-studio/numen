@@ -211,7 +211,7 @@ func openingWith(
 	line, isDone := api.state.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
-	end := wired.startSession(t.Context(), db, api.state, v, readers, watcher, sessionOptions{
+	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
 		embedding: indexing.NewEmbedding(embedder, db.Progress()), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
@@ -504,7 +504,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api.state.SetVault(v)
 
 	out := &saying{}
-	end := wired.startSession(t.Context(), db, api.state, v, readers, watcher, sessionOptions{
+	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
 		idle: indexing.QuietPeriod, rebuild: true, out: out,
 	})
 	t.Cleanup(end)

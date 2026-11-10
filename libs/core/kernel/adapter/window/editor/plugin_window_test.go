@@ -70,6 +70,7 @@ func newWorkspace(t *testing.T, state *State) *workspace.Handler {
 }
 
 func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
+	t.Helper()
 	return newBoundWindowWith(t, 0)
 }
 
@@ -170,6 +171,7 @@ type activateFixture struct {
 }
 
 func newActivateFixture(t *testing.T) activateFixture {
+	t.Helper()
 	return newActivateFixtureWith(t, 0)
 }
 

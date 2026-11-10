@@ -208,7 +208,6 @@ type inflight struct {
 func (w *inflight) begin() bool           { return w.Inflight.Begin() }
 func (w *inflight) finish()               { w.Inflight.Finish() }
 func (w *inflight) seal() <-chan struct{} { return w.Inflight.Seal() }
-func (w *inflight) open()                 { w.Inflight.Open() }
 
 func newChangeBroadcaster() broadcaster[window.Change] {
 	return broadcaster[window.Change]{

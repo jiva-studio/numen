@@ -9,7 +9,7 @@ import (
 
 func TestFlushingTwiceAnswersTrueTheSecondTime(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 
 	first := w.scenarios.Closing.Flush.Execute(t.Context())
 	second := w.scenarios.Closing.Flush.Execute(t.Context())
@@ -21,7 +21,7 @@ func TestFlushingTwiceAnswersTrueTheSecondTime(t *testing.T) {
 
 func TestFlushPendingReturnsFalseWhileAPageAsks(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	w.pages.isAsking = true
 
 	if w.scenarios.Closing.Flush.Execute(t.Context()) {
@@ -51,7 +51,7 @@ func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t 
 		log = deps.Shutdown.Door.(door).log
 		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket"}, closing{log: log, name: "index"}}
 	})
-	w.open(t, garden)
+	w.open(t, garden())
 
 	if err := w.scenarios.Closing.Close.Execute(); err != nil {
 		t.Fatal(err)
@@ -69,7 +69,7 @@ func TestClosingReportsEveryResourceThatFailedToClose(t *testing.T) {
 		log := deps.Shutdown.Door.(door).log
 		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket", err: socket}, closing{log: log, name: "index", err: index}}
 	})
-	w.open(t, garden)
+	w.open(t, garden())
 
 	err := w.scenarios.Closing.Close.Execute()
 

@@ -11,9 +11,9 @@ import (
 
 func TestShowingAnotherVaultStopsTheFirstAndStartsTheSecond(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil); err != nil {
+	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -21,16 +21,16 @@ func TestShowingAnotherVaultStopsTheFirstAndStartsTheSecond(t *testing.T) {
 	if got := w.log.all(); !slices.Equal(got, want) {
 		t.Errorf("the window did %v, want %v", got, want)
 	}
-	if got := w.rt.GetCurrentVault(); got.ID != studio.ID {
-		t.Errorf("the window shows %q, want %q", got.ID, studio.ID)
+	if got := w.rt.GetCurrentVault(); got.ID != studio().ID {
+		t.Errorf("the window shows %q, want %q", got.ID, studio().ID)
 	}
 }
 
 func TestShowVaultPublishesAReloadAndOpensWrites(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil); err != nil {
+	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -44,9 +44,9 @@ func TestShowVaultPublishesAReloadAndOpensWrites(t *testing.T) {
 
 func TestShowingTheVaultThatIsShownChangesNothing(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), garden, nil); err != nil {
+	if err := w.scenarios.Switching.Show.Execute(t.Context(), garden(), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -57,25 +57,25 @@ func TestShowingTheVaultThatIsShownChangesNothing(t *testing.T) {
 
 func TestAPageAwaitingAnAnswerKeepsTheVaultInTheWindow(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	w.pages.isAsking = true
 
-	err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil)
+	err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil)
 
 	if !errors.Is(err, window.ErrAnswerPending) {
 		t.Fatalf("the switch returned %v, want %v", err, window.ErrAnswerPending)
 	}
-	if got := w.rt.GetCurrentVault(); got.ID != garden.ID || w.passes.retired != 0 {
-		t.Errorf("the window shows %q with %d passes retired, want %q untouched", got.ID, w.passes.retired, garden.ID)
+	if got := w.rt.GetCurrentVault(); got.ID != garden().ID || w.passes.retired != 0 {
+		t.Errorf("the window shows %q with %d passes retired, want %q untouched", got.ID, w.passes.retired, garden().ID)
 	}
 }
 
 func TestAVaultThatIsNotTheOneItsFolderCarriesIsNotShown(t *testing.T) {
 	mismatched := errors.New("the folder holds another vault")
 	w := newTestWindow(t, func(deps *Deps) { deps.Vault.Identity = identity{mismatched: mismatched} })
-	w.open(t, garden)
+	w.open(t, garden())
 
-	err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil)
+	err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil)
 
 	if !errors.Is(err, mismatched) {
 		t.Fatalf("the switch returned %v, want %v", err, mismatched)
@@ -87,12 +87,12 @@ func TestAVaultThatIsNotTheOneItsFolderCarriesIsNotShown(t *testing.T) {
 
 func TestAWindowThatClosedShowsNoOtherVault(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	if !w.scenarios.Closing.Flush.Execute(t.Context()) {
 		t.Fatal("the pages did not flush")
 	}
 
-	err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil)
+	err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil)
 
 	if !errors.Is(err, window.ErrClosing) {
 		t.Errorf("the switch returned %v, want %v", err, window.ErrClosing)
@@ -101,10 +101,10 @@ func TestAWindowThatClosedShowsNoOtherVault(t *testing.T) {
 
 func TestSwitchingStartsTheTasksOfTheNewVaultFromNothing(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	w.tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing"})
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil); err != nil {
+	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 

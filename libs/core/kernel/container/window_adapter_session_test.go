@@ -5,7 +5,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -16,14 +15,16 @@ import (
 // locked while that happens are decisions of the window session use case. A window adapter maps a
 // request onto a use case; it holds no lock and sets no bound on a wait.
 
-// waitCalls are the functions that bound or schedule a wait. The ticker of a stream that resends its
+// getWaitCalls are the functions that bound or schedule a wait. The ticker of a stream that resends its
 // last message is not one of them: it keeps a connection alive and decides nothing.
-var waitCalls = map[string]map[string]bool{
-	"context": {"WithTimeout": true, "WithDeadline": true, "WithTimeoutCause": true, "WithDeadlineCause": true},
-	"time":    {"After": true, "Sleep": true, "NewTimer": true, "Tick": true},
+func getWaitCalls() map[string]map[string]bool {
+	return map[string]map[string]bool{
+		"context": {"WithTimeout": true, "WithDeadline": true, "WithTimeoutCause": true, "WithDeadlineCause": true},
+		"time":    {"After": true, "Sleep": true, "NewTimer": true, "Tick": true},
+	}
 }
 
-func getWaitFindings(t *testing.T, name, src string) []string {
+func getWaitFindings(t *testing.T, name string, src any) []string {
 	t.Helper()
 	file, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
 	if err != nil {
@@ -39,7 +40,7 @@ func getWaitFindings(t *testing.T, name, src string) []string {
 		if !ok {
 			return true
 		}
-		if pkg, ok := selector.X.(*ast.Ident); ok && waitCalls[pkg.Name][selector.Sel.Name] {
+		if pkg, ok := selector.X.(*ast.Ident); ok && getWaitCalls()[pkg.Name][selector.Sel.Name] {
 			found = append(found, pkg.Name+"."+selector.Sel.Name)
 		}
 		return true
@@ -47,7 +48,7 @@ func getWaitFindings(t *testing.T, name, src string) []string {
 	return found
 }
 
-func getLockImports(t *testing.T, name, src string) []string {
+func getLockImports(t *testing.T, name string, src any) []string {
 	t.Helper()
 	file, err := parser.ParseFile(token.NewFileSet(), name, src, parser.ImportsOnly)
 	if err != nil {
@@ -62,21 +63,17 @@ func getLockImports(t *testing.T, name, src string) []string {
 	return found
 }
 
-func walkWindowAdapters(t *testing.T, visit func(pkg, path string, src []byte)) (files, packages int) {
+func walkWindowAdapters(t *testing.T, visit func(pkg, path string)) (files, packages int) {
 	t.Helper()
 	packageSet := map[string]bool{}
 	err := filepath.WalkDir("../adapter/window", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return err
 		}
-		src, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
 		pkg := getPackage("..", path)
 		packageSet[pkg] = true
 		files++
-		visit(pkg, path, src)
+		visit(pkg, path)
 		return nil
 	})
 	if err != nil {
@@ -87,8 +84,8 @@ func walkWindowAdapters(t *testing.T, visit func(pkg, path string, src []byte)) 
 
 func TestNoWindowAdapterBoundsAWait(t *testing.T) {
 	var wrong []string
-	files, packages := walkWindowAdapters(t, func(_, path string, src []byte) {
-		for _, call := range getWaitFindings(t, path, string(src)) {
+	files, packages := walkWindowAdapters(t, func(_, path string) {
+		for _, call := range getWaitFindings(t, path, nil) {
 			wrong = append(wrong, path+" calls "+call)
 		}
 	})
@@ -105,11 +102,11 @@ func TestNoWindowAdapterBoundsAWait(t *testing.T) {
 
 func TestEditorWindowImportsNoSync(t *testing.T) {
 	var wrong []string
-	files, _ := walkWindowAdapters(t, func(pkg, path string, src []byte) {
+	files, _ := walkWindowAdapters(t, func(pkg, path string) {
 		if !isUnder(pkg, "adapter/window/editor") {
 			return
 		}
-		for range getLockImports(t, path, string(src)) {
+		for range getLockImports(t, path, nil) {
 			wrong = append(wrong, path+" imports sync")
 		}
 	})

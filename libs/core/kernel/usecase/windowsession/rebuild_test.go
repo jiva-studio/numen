@@ -18,7 +18,7 @@ func (a *announcing) OnModelChange(fn func(isChunkSizeChanged bool)) { a.announc
 func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 	embedder := &announcing{name: "first", recipe: "mean-8"}
 	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
-	w.open(t, garden)
+	w.open(t, garden())
 
 	embedder.name, embedder.recipe = "second", "mean-16"
 	embedder.announce(false)
@@ -34,19 +34,19 @@ func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 func TestAChangeOfTheChunkSizeBuildsThePassesOfTheVaultAgainOnce(t *testing.T) {
 	embedder := &announcing{}
 	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
-	w.open(t, garden)
+	w.open(t, garden())
 
 	embedder.announce(true)
 
-	if got := w.passes.vaults(); len(got) != 2 || got[1].ID != garden.ID {
-		t.Errorf("the passes were started for %v, want the garden twice", got)
+	if got := w.passes.vaults(); len(got) != 2 || got[1].ID != garden().ID {
+		t.Errorf("the passes were started for %v, want the garden() twice", got)
 	}
 }
 
 func TestAnAnnouncementWithTheSameChunkSizeBuildsNothingAgain(t *testing.T) {
 	embedder := &announcing{}
 	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
-	w.open(t, garden)
+	w.open(t, garden())
 
 	embedder.announce(false)
 	embedder.announce(false)
@@ -59,7 +59,7 @@ func TestAnAnnouncementWithTheSameChunkSizeBuildsNothingAgain(t *testing.T) {
 func TestAWindowWithoutAnEmbedderFollowsNothing(t *testing.T) {
 	w := newTestWindow(t, nil)
 
-	w.open(t, garden)
+	w.open(t, garden())
 
 	if got := w.passes.vaults(); len(got) != 1 {
 		t.Errorf("the passes were started %d times, want once", len(got))

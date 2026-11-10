@@ -12,9 +12,9 @@ import (
 
 func TestAWindowWithoutAVaultSwitchCannotOpenAVaultForAPlugin(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 
-	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio, nil)
+	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio(), nil)
 
 	if err == nil {
 		t.Error("a window with no switch opened a vault")
@@ -23,27 +23,27 @@ func TestAWindowWithoutAVaultSwitchCannotOpenAVaultForAPlugin(t *testing.T) {
 
 func TestAPluginOpenShowsTheVaultThroughTheSwitchItIsGiven(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	show := func(ctx context.Context, v domain.Vault, open *PluginOpen) error {
 		return w.scenarios.Switching.Show.Execute(ctx, v, open)
 	}
 
-	if err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio, show); err != nil {
+	if err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio(), show); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := w.rt.GetCurrentVault(); got.ID != studio.ID {
-		t.Errorf("the window shows %q, want %q", got.ID, studio.ID)
+	if got := w.rt.GetCurrentVault(); got.ID != studio().ID {
+		t.Errorf("the window shows %q, want %q", got.ID, studio().ID)
 	}
 }
 
 func TestAPluginOpenWhileAPageAsksAQuestionAsksTheUserToSave(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	w.pages.isAsking = true
 	show := func(context.Context, domain.Vault, *PluginOpen) error { return nil }
 
-	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio, show)
+	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio(), show)
 
 	if !errors.Is(err, plugin.ErrUnsavedChanges) {
 		t.Errorf("the open returned %v, want %v", err, plugin.ErrUnsavedChanges)
@@ -52,10 +52,10 @@ func TestAPluginOpenWhileAPageAsksAQuestionAsksTheUserToSave(t *testing.T) {
 
 func TestAPluginOpenRefusedForAnUnansweredPageAsksTheUserToSave(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	show := func(context.Context, domain.Vault, *PluginOpen) error { return window.ErrAnswerPending }
 
-	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio, show)
+	err := w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio(), show)
 
 	if !errors.Is(err, plugin.ErrUnsavedChanges) {
 		t.Errorf("the open returned %v, want %v", err, plugin.ErrUnsavedChanges)
@@ -64,17 +64,17 @@ func TestAPluginOpenRefusedForAnUnansweredPageAsksTheUserToSave(t *testing.T) {
 
 func TestAUserSwitchCancelsAPluginOpenThatIsRunning(t *testing.T) {
 	w := newTestWindow(t, nil)
-	w.open(t, garden)
+	w.open(t, garden())
 	entered, canceled := make(chan struct{}), make(chan error, 1)
 	show := func(ctx context.Context, _ domain.Vault, _ *PluginOpen) error {
 		close(entered)
 		<-ctx.Done()
 		return context.Cause(ctx)
 	}
-	go func() { canceled <- w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio, show) }()
+	go func() { canceled <- w.scenarios.Switching.OpenPlugin.Execute(t.Context(), studio(), show) }()
 	<-entered
 
-	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil); err != nil {
+	if err := w.scenarios.Switching.Show.Execute(t.Context(), studio(), nil); err != nil {
 		t.Fatal(err)
 	}
 

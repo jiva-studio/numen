@@ -11,10 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-var (
-	garden = domain.Vault{ID: "v-garden", Name: "Garden", Path: "/vaults/Garden"}
-	studio = domain.Vault{ID: "v-studio", Name: "Studio", Path: "/vaults/Studio"}
-)
+func garden() domain.Vault {
+	return domain.Vault{ID: "v-garden", Name: "Garden", Path: "/vaults/Garden"}
+}
+
+func studio() domain.Vault {
+	return domain.Vault{ID: "v-studio", Name: "Studio", Path: "/vaults/Studio"}
+}
 
 // pageSet is the pages of a window: they write at once unless one holds an unanswered question.
 type pageSet struct {

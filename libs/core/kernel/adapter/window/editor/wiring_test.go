@@ -61,9 +61,10 @@ type openDoor struct{}
 func (openDoor) Close() {}
 
 func (w wiring) startSession(
-	ctx context.Context, db *vaults.Index, state *State, v domain.Vault,
+	t *testing.T, ctx context.Context, db *vaults.Index, state *State, v domain.Vault,
 	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher, opts sessionOptions,
 ) (end func()) {
+	t.Helper()
 	embedding := opts.embedding
 	worker := indexing.NewWorker(indexing.Config{
 		Reading:  w.readVault(db),
@@ -109,7 +110,7 @@ func (w wiring) startSession(
 	session.Start.Execute(ctx, v)
 	return func() {
 		if err := session.Closing.Close.Execute(); err != nil {
-			panic(err)
+			t.Error(err)
 		}
 	}
 }
