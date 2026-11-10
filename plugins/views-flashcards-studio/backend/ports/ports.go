@@ -65,18 +65,33 @@ type VaultWriters interface {
 	Lock(ctx context.Context, v domain.Vault) (release func() error, err error)
 }
 
-// NoteQueries is what the index provides about a vault's notes.
-type cardModelQueries interface {
+// CardModelQueries lists the card models of a vault.
+type CardModelQueries interface {
 	GetCardModels(ctx context.Context, vaultID domain.VaultID) ([]CardModel, error)
+}
+
+// IndexQueries tells whether the index holds a vault.
+type IndexQueries interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 
-// NoteQueries answers queries about the notes of a vault from the index.
-type NoteQueries interface {
-	cardModelQueries
+// NoteRefQueries returns the notes at paths from the index.
+type NoteRefQueries interface {
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
+}
+
+// NoteTypeQueries returns the types of the notes at paths from the index.
+type NoteTypeQueries interface {
 	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
+}
+
+// TypePathQueries returns the paths of the notes of one type from the index.
+type TypePathQueries interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+}
+
+// NameQueries returns the paths of the notes that a name resolves to.
+type NameQueries interface {
 	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 

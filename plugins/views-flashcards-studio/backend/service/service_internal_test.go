@@ -262,8 +262,8 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		env := vaulttest.New(t, map[string]string{})
 		env.Host.Hide()
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
-		cardsAPI := b.Cards()
-		presetsAPI := b.Presets()
+		cardsAPI := &cardsHandler{Backend: b}
+		presetsAPI := &presetsHandler{Backend: b}
 
 		if _, err := cardsAPI.ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeFailedPrecondition {
 			t.Fatalf("ListCardModels: %v", err)
@@ -320,13 +320,13 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			Store:  vaulttest.Folders(env.Host),
 			Now:    vaulttest.NewClock(),
 		})
-		if _, err := b.Cards().ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeInternal {
+		if _, err := (&cardsHandler{Backend: b}).ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeInternal {
 			t.Fatalf("expected CodeInternal from ListCardModels, got %v", err)
 		}
-		if _, err := b.Presets().ListPresets(ctx, &api.ListPresetsRequest{}); codeOf(err) != server.CodeInternal {
+		if _, err := (&presetsHandler{Backend: b}).ListPresets(ctx, &api.ListPresetsRequest{}); codeOf(err) != server.CodeInternal {
 			t.Fatalf("expected CodeInternal from ListPresets, got %v", err)
 		}
-		if _, err := b.Presets().GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "D.md"}); codeOf(err) != server.CodeInternal {
+		if _, err := (&presetsHandler{Backend: b}).GetDeckPreset(ctx, &api.GetDeckPresetRequest{Deck: "D.md"}); codeOf(err) != server.CodeInternal {
 			t.Fatalf("expected CodeInternal from GetDeckPreset, got %v", err)
 		}
 	})
@@ -338,8 +338,8 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 			Store:  vaulttest.Folders(env.Host),
 			Now:    vaulttest.NewClock(),
 		})
-		cardsAPI := b.Cards()
-		presetsAPI := b.Presets()
+		cardsAPI := &cardsHandler{Backend: b}
+		presetsAPI := &presetsHandler{Backend: b}
 
 		created, err := cardsAPI.CreateDeck(ctx, &api.CreateDeckRequest{Title: "Fresh"})
 		if err != nil || !created.IsIndexOutdated || created.Path != "Fresh.md" || created.Error != api.ErrorCodeUnspecified {
@@ -389,8 +389,8 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(cards.MaxBytes)+10)
 		env := vaulttest.New(t, notes)
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
-		cardsAPI := b.Cards()
-		presetsAPI := b.Presets()
+		cardsAPI := &cardsHandler{Backend: b}
+		presetsAPI := &presetsHandler{Backend: b}
 
 		if _, err := cardsAPI.CreateCardModel(ctx, &api.CreateCardModelRequest{Title: "Empty"}); codeOf(err) != server.CodeInvalidArgument {
 			t.Fatalf("expected CodeInvalidArgument for empty fields, got %v", err)
@@ -612,7 +612,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if err := bWatchErr.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+	if err := (&reviewHandler{Backend: bWatchErr}).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); codeOf(err) != server.CodeUnavailable {
 		t.Fatalf("expected CodeUnavailable when WatchMoves fails, got %v", err)
@@ -625,7 +625,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if err := bClosedMoves.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+	if err := (&reviewHandler{Backend: bClosedMoves}).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); err != nil {
 		t.Fatalf("expected nil when WatchMoves channel closes cleanly, got %v", err)
@@ -638,7 +638,7 @@ func TestReviewInternalPaths(t *testing.T) {
 		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
-	if err := bErrMoves.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
+	if err := (&reviewHandler{Backend: bErrMoves}).WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
 		return nil
 	}); codeOf(err) != server.CodeUnavailable {
 		t.Fatalf("expected CodeUnavailable when move.Err != nil, got %v", err)
@@ -658,7 +658,8 @@ func TestMountAndAllEndpoints(t *testing.T) {
 
 	const tok = "test-mount-token"
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
-		return mountAPI(s.NewAPI(""), b.Cards(), b.Presets(), b.Review())
+		cards, presets, review := &cardsHandler{Backend: b}, &presetsHandler{Backend: b}, &reviewHandler{Backend: b}
+		return mountAPI(s.NewAPI(""), cards, cards, presets, presets, review, review, review)
 	}); err == nil {
 		t.Fatal("expected mountAPI with invalid service name to return error")
 	}
