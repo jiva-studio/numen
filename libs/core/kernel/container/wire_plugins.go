@@ -222,7 +222,7 @@ func pluginsAgentProvider(c pluginsWiring) agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
-	return agentbridge.NewRouter(c.PluginHost)
+	return agentbridge.NewRouter(c.PluginHost.Runtime)
 }
 
 // programsWait is how long a read of the settings waits for the providers to list their programs.

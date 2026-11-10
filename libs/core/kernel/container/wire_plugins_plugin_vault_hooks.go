@@ -210,7 +210,7 @@ func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
 
 func emitPluginEvent(c pluginsWiring, event string) {
 	if c.PluginHost != nil {
-		var emitter pluginport.PluginEventEmitter = c.PluginHost
+		var emitter pluginport.PluginEventEmitter = c.PluginHost.Runtime
 		emitter.EmitEvent(event)
 	}
 }
@@ -229,7 +229,7 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 func openSecrets(c pluginsWiring) *secret.Secrets {
 	var plugins pluginport.SecretPlugins = plugin.Absent{}
 	if c.PluginHost != nil {
-		plugins = c.PluginHost
+		plugins = c.PluginHost.Configuration
 	}
 	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, newSecretID, c.CredentialsPath, c.SecretGate)
 }
@@ -280,7 +280,7 @@ func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
 	if c.PluginHost == nil {
 		return nil
 	}
-	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost), c.PluginHost, getWhenConfig(c))
+	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
 	if err != nil {
 		pluginsHandleError(c, err)
 		return nil
@@ -296,7 +296,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	var runs pluginport.PluginCommandRuns = commandbridge.NoCommands{}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, runs, types = pluginmanifest.New(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost
+		commands, runs, types = pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Watch
 	}
 	run := plugincommand.NewCommands(commands, runs, types, pluginsNewNoteReader(c), getWhenConfig(c)).Run
 	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
@@ -312,8 +312,8 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: pluginmanifest.New(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
-		Notes: pluginsNewNoteReader(c), Types: c.PluginHost, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
+		Plugins: pluginmanifest.New(c.PluginHost.Runtime), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
+		Notes: pluginsNewNoteReader(c), Types: c.PluginHost.Watch, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }
 

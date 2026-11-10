@@ -273,7 +273,7 @@ func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(er
 	if err != nil {
 		return nil, nil, err
 	}
-	opened, err := embedderbridge.Open(ctx, host)
+	opened, err := embedderbridge.Open(ctx, host.Runtime)
 	if err != nil {
 		return nil, nil, err
 	}

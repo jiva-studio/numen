@@ -83,8 +83,8 @@ func getToolProvider(c pluginsWiring) agentport.AgentProvider {
 	if c.PluginHost == nil || c.SafeMode {
 		return nil
 	}
-	return agentbridge.NewServingRouter(c.PluginHost, func(agent agentport.Agent, pluginID string) agentport.Agent {
-		return agenttoolsbridge.NewAgent(agent, c.PluginHost, agenttoolsbridge.Full, pluginID)
+	return agentbridge.NewServingRouter(c.PluginHost.Runtime, func(agent agentport.Agent, pluginID string) agentport.Agent {
+		return agenttoolsbridge.NewAgent(agent, c.PluginHost.Runtime, agenttoolsbridge.Full, pluginID)
 	})
 }
 
@@ -271,7 +271,7 @@ func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
+	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Watch, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -291,7 +291,7 @@ func getPluginServices(c pluginsWiring) PluginServices {
 	if c.PluginHost == nil {
 		return servicebridge.NoServices{}
 	}
-	return servicebridge.Open(c.PluginHost)
+	return servicebridge.Open(c.PluginHost.Runtime)
 }
 
 func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string) (*plugindomain.Failure, error) {

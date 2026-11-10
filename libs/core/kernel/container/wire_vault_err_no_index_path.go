@@ -203,7 +203,7 @@ func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteReposit
 func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, error) {
 	var plugins textport.TextPlugins = plugin.Absent{}
 	if c.PluginHost != nil && !c.SafeMode {
-		plugins = c.PluginHost
+		plugins = c.PluginHost.Runtime
 	}
 	return textversion.NewVersions(db.TextVersions, textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }
