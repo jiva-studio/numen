@@ -15,6 +15,11 @@ import {
 import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { createSlotCommandFinder } from '@/app/commands/pluginSlots'
+import {
+  collectFeatureCommands,
+  createFeatureDeps,
+  registerFeatureCommands,
+} from '@/app/commands/featureCommands'
 import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'
 import { WORDS } from '@/shared/words'
 import { createAppCommands } from './appCommands'
@@ -157,5 +162,22 @@ export function createRealWindow(parts: RealWindowParts) {
     pluginHost,
     slots: pluginHost.slots,
   }
-  return { pluginHost, messages, used: useCommands(toDeps(options)) }
+  const features = collectFeatureCommands(
+    createFeatureDeps({
+      making: {} as never,
+      notes: options.reached,
+      windowTabs: options.windowTabs as never,
+      travel: () => undefined,
+      leavePath: () => undefined,
+      getOpeningNote: () => '',
+      tabsHold: { pause: () => Promise.resolve(), resume: () => undefined },
+      setVaultName: () => undefined,
+      reload: () => undefined,
+      writeMessage: options.writeMessage,
+    }),
+    WORDS,
+  )
+  registerFeatureCommands(features)
+  const used = useCommands(toDeps({ ...options, getAppCommands: () => features.commands }))
+  return { pluginHost, messages, used }
 }

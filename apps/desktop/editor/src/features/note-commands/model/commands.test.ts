@@ -60,7 +60,7 @@ const createWindow = (answers: Answers = {}) => {
         }
       },
       createRelatedNote: (request: { from: string; role: number; title: string }) => {
-        const role = Object.entries(NOTE_ROLE).find(([, code]) => code === request.role)?.[0]
+        const role = Object.entries(NOTE_ROLE).find(([, code]) => code === request.role)?.[0]?.toLowerCase()
         actions.push(`createRelated ${request.title} ${request.from} ${role}`)
         return answers.isMade === false
           ? { isNameExhausted: true }

@@ -14,8 +14,8 @@ export type {
   VaultRef,
 } from './model/command'
 export { ARGUMENT, COMMAND, COMMANDS_ROW, ROW } from './lib/ids'
-export { withWhen } from './lib/availability'
+export { withWhen } from './model/availability'
 export { createRowKeys, findChordKeys, findShortcutKeys } from './lib/keys'
 export { findIcon } from './lib/icons'
-export { flushTab } from './lib/notes'
-export type { Notes } from './lib/notes'
+export { flushTab } from './model/notes'
+export type { Notes } from './model/notes'

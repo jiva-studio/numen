@@ -19,9 +19,14 @@ import { isFieldFocused } from '@/shared/isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import { core } from '../vault'
-import type { TabsHold } from '@/features/vault-commands'
 import type { CommandItemLists } from '../commands/commandItemLists'
 import { getPaletteId, type useDeclaredCommands } from '../commands/declaredCommands'
+import { createCommandNotes } from '../commands/commandDeps'
+import {
+  collectFeatureCommands,
+  createFeatureDeps,
+  registerFeatureCommands,
+} from '../commands/featureCommands'
 import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useCommands } from '../commands/useCommands'
 import { createVersionCommands } from '../commands/versionCommands'
@@ -38,12 +43,10 @@ import {
 } from './createDisplayPart'
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
-import type { useWindowDisplay } from './useWindowDisplay'
 import { createTargetResolver } from './useWindowDisplayOptions'
 import { useTabKinds } from './useTabKinds'
 
 interface WindowCommandsOptions {
-  tabsHold: TabsHold
   windowTabs: WindowTabs
   getTarget: () => CommandTarget
   knows: NoteLookup
@@ -51,8 +54,6 @@ interface WindowCommandsOptions {
   runs: ReturnType<typeof runSupport>
   vaultsModule: ReturnType<typeof useVaults>
   editing: ReturnType<typeof createNoteEditors>
-  kinds: ReturnType<typeof useTabKinds>
-  window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
   pluginHost: PluginHost
@@ -63,7 +64,7 @@ interface WindowCommandsOptions {
 }
 
 function initWindowCommands(deps: WindowCommandsOptions) {
-  const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
+  const { windowTabs, settings, vaultsModule, editing, writeMessage } = deps
   return useCommands({
     declaredCommands: deps.declaredCommands,
     ...(deps.slots ? { slots: deps.slots } : {}),
@@ -78,16 +79,9 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     paletteLists: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
-    making: editing.making,
-    setVaultName: vaultsModule.setVaultName,
-    reload: vaultsModule.reload,
-    tabsHold: deps.tabsHold,
     reached: editing.reached,
     settingPalette: settings.settingPalette,
     rest: settings.rest,
-    travel: (path) => kinds.travel(path),
-    leavePath: (from, to) => kinds.leavePath(from, to),
-    getOpeningNote: () => window.opening.value,
     writeMessage,
     pluginHost: deps.pluginHost,
   })
@@ -155,11 +149,27 @@ export function initWindowKindsAndCommands(
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
+  ctx.featureCommands = collectFeatureCommands(
+    createFeatureDeps({
+      making: editing.making,
+      notes: createCommandNotes(editing.reached, base.windowTabs),
+      windowTabs: base.windowTabs,
+      travel: (path) => getKinds(ctx).travel(path),
+      leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
+      getOpeningNote: () => window.opening.value,
+      tabsHold: {
+        pause: async () => getTabsHold(ctx).pause(),
+        resume: () => getTabsHold(ctx).resume(),
+      },
+      setVaultName: getVaults(ctx).setVaultName,
+      reload: getVaults(ctx).reload,
+      writeMessage: base.writeMessage,
+    }),
+    words,
+  )
+  registerFeatureCommands(ctx.featureCommands)
+
   ctx.commands = initWindowCommands({
-    tabsHold: {
-      pause: async () => getTabsHold(ctx).pause(),
-      resume: () => getTabsHold(ctx).resume(),
-    },
     windowTabs: base.windowTabs,
     getTarget,
     knows,
@@ -167,14 +177,12 @@ export function initWindowKindsAndCommands(
     runs: base.runs,
     vaultsModule: getVaults(ctx),
     editing,
-    kinds: getKinds(ctx),
-    window,
     writeMessage: base.writeMessage,
     log: base.log,
     pluginHost: base.pluginHost,
     declaredCommands: base.declaredCommands,
     slots: base.pluginHost.slots,
-    getAppCommands: () => getAppCommandList(ctx),
+    getAppCommands: () => getEditorCommandList(ctx),
     readCommandNote: createCommandNoteReader(base.itemLists),
   })
 
@@ -225,6 +233,6 @@ export const getAppCommandList = (ctx: WindowContext): readonly Command[] => [
 
 /** Every command of the editor: those of the features, then the rest of the application's. */
 export const getEditorCommandList = (ctx: WindowContext): readonly Command[] => [
-  ...(ctx.commands?.featureCommands ?? []),
+  ...(ctx.featureCommands?.commands ?? []),
   ...getAppCommandList(ctx),
 ]

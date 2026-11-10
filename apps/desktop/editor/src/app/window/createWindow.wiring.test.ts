@@ -33,6 +33,14 @@ vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
   registerCommand: () => () => undefined,
 }))
+vi.mock('../commands/featureCommands', () => ({
+  createFeatureDeps: (args: unknown) => {
+    h.args.featureWindow = args
+    return {}
+  },
+  collectFeatureCommands: () => ({ commands: [{ id: 'app:vault.create' }], handlers: {} }),
+  registerFeatureCommands: () => undefined,
+}))
 vi.mock('@/features/tab-linking', () => ({
   useTabLinks: (args: unknown) => {
     h.args.tabLinks = args
@@ -258,7 +266,6 @@ beforeEach(() => {
         },
       },
       commandDeps: { name: 'commandDeps' },
-      featureCommands: [{ id: 'app:vault.create' }],
       palette: {},
       onKeyDown: vi.fn(),
       pluginWays: ref([]),
@@ -402,11 +409,11 @@ describe('the parts of the window', () => {
   it('hand the commands the kinds as they stand', () => {
     createWindow()
 
-    h.args.commands.travel('a.md')
-    h.args.commands.leavePath('a.md', 'b.md')
+    h.args.featureWindow.travel('a.md')
+    h.args.featureWindow.leavePath('a.md', 'b.md')
     expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
     expect(h.f.kinds.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
-    expect(h.args.commands.getOpeningNote()).toBe('opening')
+    expect(h.args.featureWindow.getOpeningNote()).toBe('opening')
   })
 })
 
@@ -719,9 +726,9 @@ describe('the services a plugin is given', () => {
     expect(h.args.kinds).not.toHaveProperty('getFileMenuItems')
 
     // tabsHold callbacks
-    await h.args.commands.tabsHold.pause()
+    await h.args.featureWindow.tabsHold.pause()
     expect(h.f.openTabs.pause).toHaveBeenCalledOnce()
-    h.args.commands.tabsHold.resume()
+    h.args.featureWindow.tabsHold.resume()
     expect(h.f.openTabs.resume).toHaveBeenCalledOnce()
 
     // background tasks & noticeTasks

@@ -6,7 +6,6 @@ import {
   ROW,
   flushTab,
   withWhen,
-  type Command,
   type CommandInvocation,
   type FeatureCommands,
   type Notes,

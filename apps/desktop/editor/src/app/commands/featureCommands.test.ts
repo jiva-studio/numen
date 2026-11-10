@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { WORDS } from '@/shared/words'
 import { collectFeatureCommands, type FeatureCommandsDeps } from './featureCommands'
 
-const NO_WINDOW = { notes: {}, files: {}, vaults: {} } as FeatureCommandsDeps
+const NO_WINDOW: FeatureCommandsDeps = { notes: {} as never, files: {} as never, vaults: {} as never }
 
 /** The commands the palette carries out itself, with no handler declared by a feature. */
 const OWNED_BY_PALETTE = ['app:tab.close', 'app:vault.search', 'app:settings.open']

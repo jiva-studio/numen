@@ -61,7 +61,6 @@ describe('Delete text', () => {
     await commands.get(DELETE_TEXT)!(
       createInvocation(DELETE_TEXT, createTarget('talks/a.mp3'), 'v1'),
       { writeMessage } as never,
-      {} as never,
     )
 
     expect(run).toHaveBeenCalledWith(DELETE_TEXT, 'talks/a.mp3', 'v1')

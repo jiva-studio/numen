@@ -182,7 +182,7 @@ export function createWindowFrameServices(
   const windowCommands = createWindowCommands({
     getAppIds: () => [
       ...(tableIds ??= [
-        ...new Set(getCommands(ctx).featureCommands.map((one) => one.command ?? one.id)),
+        ...new Set((ctx.featureCommands?.commands ?? []).map((one) => one.command ?? one.id)),
       ]),
       ...getAppCommands().map((one) => one.id),
     ],

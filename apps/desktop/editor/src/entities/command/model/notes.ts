@@ -1,7 +1,7 @@
 /**
  * The files the window has an editor open on, as the commands reach them.
  */
-import type { CommandPlace } from '../model/command'
+import type { CommandPlace } from './command'
 
 /**
  * The files the window has an editor open on, as accessed by commands. Notes

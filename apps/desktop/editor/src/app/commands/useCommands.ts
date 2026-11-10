@@ -8,7 +8,6 @@ import { runInBackground } from '@numen/ui'
 import {
   runInvocation,
   createInvocation,
-  registerCommand,
   useCommandPalette,
   useSearch,
   type CommandDeps,
@@ -24,23 +23,19 @@ import {
   type CommandTarget,
   type Notes,
   type RunSupport,
-  type VaultRef,
 } from '@/entities/command'
 import { createCommandDeps, createCommandNotes } from './commandDeps'
-import { collectFeatureCommands, type FeatureCommandsDeps } from './featureCommands'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
 import { toRunTarget } from './runTarget'
 import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import { syncKeybindings } from './syncKeybindings'
-import type { TabsHold } from '@/features/vault-commands'
 import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
-import type { NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import type { VaultCore } from '../vault'
 import { getVaultList } from '../window/vaultList'
@@ -60,10 +55,6 @@ export interface CommandsDepsOptions {
   paletteLists: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
-  making: NoteCreator
-  setVaultName: (vault: VaultRef) => void
-  reload: () => void
-  tabsHold?: TabsHold
   reached: Notes
   settingPalette?: {
     getCommands: () => readonly Command[]
@@ -75,9 +66,6 @@ export interface CommandsDepsOptions {
     plugins?: Ref<readonly PluginInfo[]>
     getCommittedSetting?: (path: readonly string[]) => unknown
   }
-  travel: (path: string) => Promise<void> | void
-  leavePath: (from: string, to: string) => Promise<void> | void
-  getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: PluginHost | undefined
   slots?: SlotHost
@@ -100,12 +88,10 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   ...(place.selector === undefined ? {} : { selector: place.selector }),
 })
 
-const listAllCommands = (
+const listExtraCommands = (
   options: CommandsDepsOptions,
-  featureCommands: readonly Command[],
   pluginEntries: readonly Command[],
 ): readonly Command[] => [
-  ...featureCommands,
   ...(options.getAppCommands?.() ?? []),
   ...(options.settingPalette?.getCommands() ?? []),
   ...(options.declaredCommands?.paletteCommands.value ?? []),
@@ -244,42 +230,10 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   }
 }
 
-/** What the commands of the features use of the window. */
-function createFeatureDeps(options: CommandsDepsOptions, notes: Notes): FeatureCommandsDeps {
-  const { windowTabs, writeMessage } = options
-  return {
-    notes: {
-      making: options.making,
-      notes,
-      navigator: {
-        travel: async (path) => {
-          await options.travel(path)
-        },
-        leave: async (from, to) => {
-          await options.leavePath(from, to)
-        },
-        getOpeningNote: options.getOpeningNote,
-        showTab: (kind, path) =>
-          runInBackground(windowTabs.navigateTab(kind, path), (error) =>
-            writeMessage(formatErrorMessage(error), 'error'),
-          ),
-      },
-      writeMessage,
-    },
-    files: { notes, writeMessage },
-    vaults: {
-      tabsHold: options.tabsHold,
-      setVaultName: options.setVaultName,
-      reload: options.reload,
-      writeMessage,
-    },
-  }
-}
-
 function useWindowCommandPalette(
   options: CommandsDepsOptions,
   lists: PaletteLists,
-  listCommands: () => readonly Command[],
+  listExtras: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
   return useCommandPalette(
@@ -290,7 +244,7 @@ function useWindowCommandPalette(
     lists,
     runs,
     undefined,
-    listCommands,
+    listExtras,
   )
 }
 
@@ -312,19 +266,15 @@ export function useCommands(options: CommandsDepsOptions) {
   })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
-  const notes = createCommandNotes(options.reached, windowTabs)
-  const features = collectFeatureCommands(createFeatureDeps(options, notes), words)
-  for (const [id, run] of Object.entries(features.handlers)) registerCommand(id, run)
-  const listAll = () =>
-    removeEmptyCommands(listAllCommands(options, features.commands, getPaletteEntries()))
-  const commands = useWindowCommandPalette(options, lists, listAll)
+  const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
+  const commands = useWindowCommandPalette(options, lists, listExtras)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
-    notes,
+    notes: createCommandNotes(options.reached, windowTabs),
     search: () => {
       commands.setOpen(false)
       palette.setOpen(true)
@@ -390,7 +340,6 @@ export function useCommands(options: CommandsDepsOptions) {
     palette,
     commands,
     commandDeps,
-    featureCommands: features.commands,
     pluginRuns: { items, runCommandToEnd },
     runCommand,
     runChoice,

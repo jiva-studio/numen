@@ -198,7 +198,6 @@ describe('nothing to carry out', () => {
     await carry(createInvocation('', front()), one.on)
 
     expect(one.actions).toStrictEqual([])
-    expect(one.calls).toStrictEqual([])
   })
 
   it('does nothing and says nothing for a command nothing carries out', async () => {
