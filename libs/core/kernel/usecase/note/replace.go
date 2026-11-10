@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -23,7 +24,7 @@ import (
 type Replace struct {
 	readers vaultport.VaultReaders
 	writers NoteWriting
-	index   IndexUpdater
+	index   edit.IndexUpdater
 	Drawing TellEdit
 	now     machineport.Clock
 }
@@ -34,7 +35,7 @@ type Replace struct {
 // does not reflect the new content, and without the clock the note is stamped
 // with the machine's time.
 func NewReplace(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
 ) Replace {
 	return Replace{readers: readers, writers: writers, index: index, now: now}
 }
@@ -92,7 +93,7 @@ func (u Replace) Execute(
 
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.FileStat = stat
-	e.Bound = MaxBytes
+	e.Bound = edit.MaxBytes
 	pos, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
 

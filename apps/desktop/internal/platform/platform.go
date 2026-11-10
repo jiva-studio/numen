@@ -79,7 +79,7 @@ func getCatalogConfig(target string, pluginDirs []string) catalog.Config {
 }
 
 func getIndexSource(pluginDirs []string) *indexsource.Source {
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the capacity of the made value does not change what the function returns"
 	indexPaths := make([]string, 0, len(pluginDirs))
 	for _, dir := range pluginDirs {
 		indexPaths = append(indexPaths, filepath.Join(dir, indexsource.FileName))
@@ -96,7 +96,7 @@ func getPluginsDirs() []string {
 	observed := make(map[string]bool)
 	addDir := func(dir string) {
 		clean := filepath.Clean(dir)
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 		if abs, err := filepath.Abs(clean); err == nil {
 			clean = abs
 		}
@@ -111,7 +111,7 @@ func getPluginsDirs() []string {
 	}
 
 	execPath, err := os.Executable()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err == nil {
 		execDir := filepath.Dir(execPath)
 		addDir(filepath.Join(execDir, "plugins"))

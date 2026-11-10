@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	domainvault "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 func getPaths() []string {
@@ -163,14 +165,14 @@ func resolveServicePath(root, path, serviceDir string) (target, resolved string,
 		return "", "", err
 	}
 	if !isOurs(clean, serviceDir) {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", "", fmt.Errorf("%s: %w", path, domainvault.ErrOutside)
 	}
 	target, resolved, landed, err := resolveContained(root, clean)
 	if err != nil {
 		return "", "", err
 	}
 	if !isOurs(landed, serviceDir) {
-		return "", "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", "", fmt.Errorf("%s: %w", path, domainvault.ErrOutside)
 	}
 	return target, resolved, nil
 }

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )

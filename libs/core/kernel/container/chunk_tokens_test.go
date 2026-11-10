@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -243,7 +242,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 		"Hedge.md": "# Hedge\n\nThe hedge along the lane is thick and tangled.\n",
 		"Gate.md":  "# Gate\n\nThe gate of the orchard sticks in wet weather.\n",
 	})
-	recipe := query.NewCutNotes(300).Recipe()
+	recipe := chunking.NewCutNotes(300).Recipe()
 	if recipe == "" {
 		t.Fatal("a cut has no recipe")
 	}

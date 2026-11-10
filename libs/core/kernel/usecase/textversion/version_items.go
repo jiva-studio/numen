@@ -138,7 +138,7 @@ func (u *VersionItems) RunVersionItem(
 	}
 	if !slices.ContainsFunc(items, func(item VersionItem) bool { return item.Version == version }) {
 		return plugin.CommandResult{}, fmt.Errorf("%w: %s of %s offers no version %q over %s",
-			ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
+			text.ErrInvalidVersion, entry.Command.ID, entry.PluginID, version, path)
 	}
 	return u.run.Execute(ctx, v, plugin.CommandCall{
 		PluginID: entry.PluginID, Command: entry.Command.ID, Path: path,
@@ -147,7 +147,4 @@ func (u *VersionItems) RunVersionItem(
 }
 
 // The errors of the version items, for a driving adapter.
-var (
-	ErrNoText         = text.ErrNoText
-	ErrInvalidVersion = text.ErrInvalidVersion
-)
+var ()

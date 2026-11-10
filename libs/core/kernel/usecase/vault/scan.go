@@ -7,8 +7,9 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
@@ -35,7 +36,7 @@ type Scan struct {
 
 	ShouldRebuildIndex bool
 
-	OnProgress func(vaultreading.ScanResult)
+	OnProgress func(indexdomain.ScanResult)
 }
 
 // NewScan returns a Scan that reads and writes through: the vault reader, the
@@ -57,7 +58,7 @@ func NewScan(
 }
 
 // ScanWithProgress runs Execute with onProgress reporting each group when non-nil.
-func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult)) (vaultreading.ScanResult, error) {
+func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(indexdomain.ScanResult)) (indexdomain.ScanResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -69,18 +70,18 @@ func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress f
 // are read and parsed, which keeps a scan of an unchanged vault cheap.
 // One walk of a vault runs at a time among the scans sharing its turns. A walk
 // writes in groups, so its copy of a note lands last however early it was read.
-func (u Scan) Execute(ctx context.Context, v domain.Vault) (vaultreading.ScanResult, error) {
-	var res vaultreading.ScanResult
+func (u Scan) Execute(ctx context.Context, v domain.Vault) (indexdomain.ScanResult, error) {
+	var res indexdomain.ScanResult
 
 	finished, err := u.Walks.startOne(ctx, v.ID)
 	if err != nil {
-		return vaultreading.ScanResult{}, err
+		return indexdomain.ScanResult{}, err
 	}
 	defer finished()
 
 	walk, err := u.readWalk(ctx, v)
 	if err != nil {
-		return vaultreading.ScanResult{}, err
+		return indexdomain.ScanResult{}, err
 	}
 
 	group := u.newGroup(v, &res)
@@ -168,7 +169,7 @@ func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.File
 	return found, nil
 }
 
-func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult) grouping {
+func (u Scan) newGroup(v domain.Vault, res *indexdomain.ScanResult) grouping {
 	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
@@ -184,7 +185,7 @@ func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult) grouping {
 }
 
 func (u Scan) indexChanged(
-	ctx context.Context, walk vaultWalk, group *grouping, res *vaultreading.ScanResult,
+	ctx context.Context, walk vaultWalk, group *grouping, res *indexdomain.ScanResult,
 ) (map[string]bool, error) {
 	reader, found, indexed, recutPaths := walk.reader, walk.found, walk.recognized, walk.recutPaths
 	observed := make(map[string]bool, len(indexed))
@@ -216,10 +217,10 @@ func (u Scan) indexChanged(
 	return observed, nil
 }
 
-func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *vaultreading.ScanResult) ([]byte, bool) {
+func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *indexdomain.ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 		// A note saved, moved or deleted during a scan does not end the scan; the
 		// next one sees whatever it became. A file briefly absent is what an
 		// editor saving through a temporary file looks like.
@@ -235,7 +236,7 @@ func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path strin
 }
 
 func (u Scan) removeGone(
-	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *vaultreading.ScanResult,
+	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *indexdomain.ScanResult,
 ) error {
 	var removed []string
 	for path := range indexed {

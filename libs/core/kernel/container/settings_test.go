@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -47,7 +48,7 @@ func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 	if target.Appearance.Theme != "mine:sea" {
 		t.Errorf("the theme reads %q", target.Appearance.Theme)
 	}
-	if target.Appearance.Mode != settings.ModeSystem {
+	if target.Appearance.Mode != theme.SchemeSystem {
 		t.Errorf("the mode reads %q", target.Appearance.Mode)
 	}
 }

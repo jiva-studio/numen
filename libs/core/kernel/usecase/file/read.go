@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -74,7 +75,7 @@ func (u Read) Execute(
 	}
 	file, err := reader.Open(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 		out.Outcome = Missing
 		return out, nil
 	case err != nil:
@@ -128,7 +129,7 @@ func readRange(file io.ReadSeeker, path string, start, length int) (ReadResult, 
 	}
 	raw = raw[:read]
 
-	start, raw = WholeCharacters(start, raw, out.Whole)
+	start, raw = text.WholeCharacters(start, raw, out.Whole)
 	out.Start = start
 	if !utf8.Valid(raw) {
 		out.Outcome = NotText
@@ -147,7 +148,7 @@ func getReadOutcome(ctx context.Context, reader vaultport.VaultReader, path stri
 		folder = ""
 	}
 	entries, err := reader.List(ctx, folder)
-	if errors.Is(err, vaultport.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		return LeftAlone, nil
 	}
 	if err != nil {
@@ -163,10 +164,4 @@ func getReadOutcome(ctx context.Context, reader vaultport.VaultReader, path stri
 		return Ok, nil
 	}
 	return LeftAlone, nil
-}
-
-// WholeCharacters is the range with the character it opened inside and the one it
-// closed inside left off.
-func WholeCharacters(start int, raw []byte, whole int) (int, []byte) {
-	return text.WholeCharacters(start, raw, whole)
 }

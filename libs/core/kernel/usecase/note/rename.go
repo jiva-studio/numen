@@ -54,7 +54,7 @@ type RenameResult struct {
 	Path  string
 	Title string
 	By    query.NameSource
-	Moved *MoveResult
+	Moved *domain.MoveResult
 }
 
 // errFilenameNamesIt ends the edit without writing. A note its filename names

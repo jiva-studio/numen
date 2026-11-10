@@ -8,9 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
-// ErrNoTrash is a machine with no trash.
-var ErrNoTrash = machine.ErrNoTrash
-
 // ChooseFolder shows this machine's folder dialog with the given title and
 // starting folder.
 type ChooseFolder struct {

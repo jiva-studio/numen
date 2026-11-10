@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -72,7 +73,7 @@ func (s *memoryVault) Read(_ context.Context, path string) ([]byte, error) {
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
 	if !ok {
-		return nil, vaultport.ErrNotExist
+		return nil, edit.ErrNotExist
 	}
 	s.reads++
 	return []byte(content), nil
@@ -83,7 +84,7 @@ func (s *memoryVault) Open(_ context.Context, path string) (io.ReadSeekCloser, e
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
 	if !ok {
-		return nil, vaultport.ErrNotExist
+		return nil, edit.ErrNotExist
 	}
 	s.opens++
 	return nopCloser{strings.NewReader(content)}, nil
@@ -99,7 +100,7 @@ func (s *memoryVault) StatFile(_ context.Context, path string) (domain.FileStat,
 	defer s.mu.Unlock()
 	content, ok := s.files[path]
 	if !ok {
-		return domain.FileStat{}, vaultport.ErrNotExist
+		return domain.FileStat{}, edit.ErrNotExist
 	}
 	kind := domain.KindFile
 	if strings.HasSuffix(path, ".md") {

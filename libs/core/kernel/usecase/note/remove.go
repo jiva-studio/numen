@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -29,20 +30,20 @@ type Remove struct {
 	writers vaultport.FileMovers
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
-	index   IndexUpdater
+	index   edit.IndexUpdater
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what updates the index for the path it left.
 func NewRemove(
-	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index IndexUpdater,
+	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index edit.IndexUpdater,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }
 
 // WithIndex replaces the index function.
-func (u Remove) WithIndex(index IndexUpdater) Remove {
+func (u Remove) WithIndex(index edit.IndexUpdater) Remove {
 	u.index = index
 	return u
 }
@@ -164,7 +165,7 @@ func (u Remove) updateIndex(ctx context.Context, v domain.Vault, paths ...string
 		return nil
 	}
 	// The files are written, so the index follows them even when the caller is canceled.
-	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
+	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 func withSuffix(path, suffix string) string {

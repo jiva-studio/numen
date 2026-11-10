@@ -13,6 +13,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -26,15 +28,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -55,6 +53,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -309,9 +308,9 @@ func lendPluginHost(host *plugin.Host) *PluginHost {
 
 func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
 	host.Storage.SetStorageRoots(cacheRoot, dataRoot)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := host.Storage.GetModelsDir(); models != "" {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
 		host.Services.SetDependencies(GetDependencyRegistry(models))
 	}
 }
@@ -499,9 +498,9 @@ type pluginsWiring struct {
 	GetSettingsOrDefaults func() settingsadapter.File
 	RefreshSettingEvents  func()
 	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes            func(*vault.Index, note.IndexUpdater) note.Scenarios
+	BuildNotes            func(*vault.Index, edit.IndexUpdater) note.Scenarios
 	Moves                 func(context.Context) (<-chan struct{}, error)
-	PluginChanges         *pluginchanges.Signals
+	PluginChanges         *settingsusecase.PluginChanges
 	TextVersions          *textversion.Versions
 	ListAppSettings       func() []plugindomain.Setting
 	CredentialsPath       func() string
@@ -971,7 +970,7 @@ func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
 }
 
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
-	settings := whenconfig.Settings{App: c.ListAppSettings}
+	settings := settingsadapter.WhenConfig{App: c.ListAppSettings}
 	if c.PluginHost != nil {
 		settings.Plugins = c.PluginHost.GetPluginInfos
 	}

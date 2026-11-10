@@ -12,9 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// ArgumentVersion is the argument a command with items is given: the id of the text version picked.
-const ArgumentVersion = manifest.CommandArgumentVersion
-
 // SeveralHandlersError is a shared command run over a path where the handlers of several plugins hold
 // and none was picked.
 type SeveralHandlersError struct {
@@ -42,7 +39,7 @@ func (u List) ListBackendHandlers() []plugin.CommandEntry {
 // ListSharedHandlers lists the handlers of the shared command of the id as ListBackendHandlers does;
 // none where the id is no shared command.
 func (u List) ListSharedHandlers(id string) []plugin.CommandEntry {
-	if !IsSharedCommand(id) {
+	if !manifest.IsSharedCommand(id) {
 		return nil
 	}
 	return slices.DeleteFunc(u.ListBackendHandlers(), func(one plugin.CommandEntry) bool { return one.Command.ID != id })

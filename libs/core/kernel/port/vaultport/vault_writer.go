@@ -5,12 +5,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 )
-
-// ErrStale is the write error returned when the file to be replaced is not the
-// one the caller read.
-var ErrStale = edit.ErrStale
 
 // NoteWriter writes the notes of one vault.
 type NoteWriter interface {

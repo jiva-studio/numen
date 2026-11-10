@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
 
@@ -19,7 +20,7 @@ func openNoteRead(t *testing.T, notes map[string]string) (note.Read, domain.Vaul
 	return note.NewRead(vaultreader.Readers{}), testsupport.NewVault(t, notes)
 }
 
-func read(t *testing.T, u note.Read, v domain.Vault, path string) note.Contents {
+func read(t *testing.T, u note.Read, v domain.Vault, path string) edit.Contents {
 	t.Helper()
 	contents, err := u.Execute(t.Context(), v, path)
 	if err != nil {
@@ -34,7 +35,7 @@ func TestAReadProducesTheProseAndWhatTheFileWas(t *testing.T) {
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": raw})
 
 	got := read(t, u, v, "Entropy.md")
-	if got.Outcome != note.Ok {
+	if got.Outcome != edit.Ok {
 		t.Fatalf("want ok, got %q", got.Outcome)
 	}
 	if got.Body != "# Entropy\n\nA measure of disorder.\n" {
@@ -53,7 +54,7 @@ func TestAPathWithNoFileIsMissing(t *testing.T) {
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	got := read(t, u, v, "gone.md")
-	if got.Outcome != note.Missing {
+	if got.Outcome != edit.Missing {
 		t.Errorf("want missing, got %q", got.Outcome)
 	}
 	if got.Body != "" {
@@ -72,7 +73,7 @@ func TestSomethingTheVaultDoesNotHoldAsANoteIsRefused(t *testing.T) {
 	}
 
 	got := read(t, u, v, "library.epub")
-	if got.Outcome != note.NotANote {
+	if got.Outcome != edit.NotANote {
 		t.Fatalf("want not a note, got %q", got.Outcome)
 	}
 	if got.Body != "" {
@@ -88,7 +89,7 @@ func TestAFileThatIsNotTextIsRefused(t *testing.T) {
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "# Entropy\n\xff\xfe pasted\n"})
 
 	got := read(t, u, v, "Entropy.md")
-	if got.Outcome != note.NotText {
+	if got.Outcome != edit.NotText {
 		t.Fatalf("want not text, got %q", got.Outcome)
 	}
 	if got.Body != "" {
@@ -99,17 +100,17 @@ func TestAFileThatIsNotTextIsRefused(t *testing.T) {
 func TestANoteOverTheCeilingIsRefused(t *testing.T) {
 	t.Parallel()
 	u, v := openNoteRead(t, map[string]string{
-		"Entropy.md": "# Entropy\n" + strings.Repeat("a measure of disorder ", note.MaxBytes/20),
+		"Entropy.md": "# Entropy\n" + strings.Repeat("a measure of disorder ", edit.MaxBytes/20),
 	})
 
 	got := read(t, u, v, "Entropy.md")
-	if got.Outcome != note.TooLarge {
+	if got.Outcome != edit.TooLarge {
 		t.Fatalf("want too large, got %q", got.Outcome)
 	}
 	if got.Body != "" {
 		t.Errorf("a note over the ceiling came back anyway: %d bytes", len(got.Body))
 	}
-	if got.FileStat.Size <= note.MaxBytes {
+	if got.FileStat.Size <= edit.MaxBytes {
 		t.Errorf("the size that failed is not reported: %+v", got.FileStat)
 	}
 }
@@ -121,7 +122,7 @@ func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": "---\nid: [unterminated\n---\n# Entropy\n"})
 
 	got := read(t, u, v, "Entropy.md")
-	if got.Outcome != note.Unreadable {
+	if got.Outcome != edit.Unreadable {
 		t.Fatalf("want unreadable, got %q", got.Outcome)
 	}
 	if got.Body != "" {
@@ -187,7 +188,7 @@ func TestAReadStaysInTheVaultItWasGiven(t *testing.T) {
 	if !strings.Contains(fromKitchen.Body, "cardamom") || strings.Contains(fromKitchen.Body, "disorder") {
 		t.Errorf("the other vault answered: %q", fromKitchen.Body)
 	}
-	if got := read(t, u, kitchen, "Momentum.md"); got.Outcome != note.Missing {
+	if got := read(t, u, kitchen, "Momentum.md"); got.Outcome != edit.Missing {
 		t.Errorf("a note of the other vault was found here: %+v", got)
 	}
 }

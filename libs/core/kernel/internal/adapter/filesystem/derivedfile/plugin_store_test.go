@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -76,29 +77,29 @@ func TestAnEmptyFolderListsNothing(t *testing.T) {
 func TestAPluginReachesNothingOutsideItsFolder(t *testing.T) {
 	store, folder := openPluginStore(t)
 	ctx := t.Context()
-	vault := filepath.Dir(filepath.Dir(folder))
-	if err := os.WriteFile(filepath.Join(vault, "note.md"), []byte("mine"), 0o644); err != nil {
+	root := filepath.Dir(filepath.Dir(folder))
+	if err := os.WriteFile(filepath.Join(root, "note.md"), []byte("mine"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.MkdirAll(folder, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Symlink(filepath.Join(vault, "note.md"), filepath.Join(folder, "out")); err != nil {
+	if err := os.Symlink(filepath.Join(root, "note.md"), filepath.Join(folder, "out")); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, name := range []string{"", "..", "../config.json", "../md.numen.b/a", "/etc/passwd", ".hidden", `a\b`} {
-		if _, err := store.Read(ctx, name); !errors.Is(err, vaultconfig.ErrOutside) {
+		if _, err := store.Read(ctx, name); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("%q was read with %v", name, err)
 		}
-		if err := store.Append(ctx, name, []byte("x")); !errors.Is(err, vaultconfig.ErrOutside) {
+		if err := store.Append(ctx, name, []byte("x")); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("%q was appended to with %v", name, err)
 		}
 	}
-	if err := store.Append(ctx, "out", []byte("x")); !errors.Is(err, vaultconfig.ErrOutside) {
+	if err := store.Append(ctx, "out", []byte("x")); !errors.Is(err, vault.ErrOutside) {
 		t.Errorf("a link out of the folder was appended to with %v", err)
 	}
-	on, onErr := os.ReadFile(filepath.Join(vault, "note.md"))
+	on, onErr := os.ReadFile(filepath.Join(root, "note.md"))
 	if onErr != nil {
 		t.Fatal(onErr)
 	}
@@ -136,7 +137,7 @@ func TestAPluginFileIsRenamedWholeAndOpenedAtAnyPart(t *testing.T) {
 		t.Errorf("the renamed file holds %d bytes and %q from its fifth (%v)", size, rest, err)
 	}
 	for _, name := range []string{"../escape.mp4", ".hidden"} {
-		if err := store.Rename(ctx, "clip.mp4", name); !errors.Is(err, vaultconfig.ErrOutside) {
+		if err := store.Rename(ctx, "clip.mp4", name); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("a rename to %q was answered %v", name, err)
 		}
 	}

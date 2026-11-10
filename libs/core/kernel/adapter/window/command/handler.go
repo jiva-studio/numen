@@ -111,7 +111,7 @@ func getErrorCode(err error) v1.CommandErrorCode {
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND
 	case errors.Is(err, plugincommand.ErrBadArguments):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS
-	case errors.Is(err, plugincommand.ErrUnavailable):
+	case errors.Is(err, domain.ErrUnavailable):
 		return v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE
 	}
 	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED

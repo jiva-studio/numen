@@ -11,8 +11,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 )
 
 func serveCompletions(t *testing.T, host *plugin.Host, output string) (hostendpoint.Completer, string) {

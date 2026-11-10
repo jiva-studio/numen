@@ -53,7 +53,7 @@ func TestTheErrorsOfAWriteNameTheKeyAndTheFault(t *testing.T) {
 		{[]string{pluginID, "model"}, 3.0, `"md.numen.sample.speech.model": wrong type: expected a string`, settings.ErrWrongType},
 		{[]string{pluginID, "temperature"}, 5.0, `"md.numen.sample.speech.temperature": 5 is out of range 0..2`, settings.ErrOutOfRange},
 		{[]string{pluginID, "model"}, "huge", `"md.numen.sample.speech.model": "huge" is not one of the options`, settings.ErrNotAnOption},
-		{[]string{settings.OwnerApp, "appearance", "theme"}, "mine:absent", `"app.appearance.theme": "mine:absent" is not one of the options listed in themes`, settings.ErrNotAnOption},
+		{[]string{settingsdomain.AppOwner, "appearance", "theme"}, "mine:absent", `"app.appearance.theme": "mine:absent" is not one of the options listed in themes`, settings.ErrNotAnOption},
 	} {
 		err := check(one.path, one.value)
 		if err == nil || err.Error() != one.want || !errors.Is(err, one.isKind) {

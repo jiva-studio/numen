@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	domainsettings "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -12,7 +13,7 @@ const pluginID = "md.numen.sample.speech"
 
 func declaredSettings(owner string) ([]manifest.Setting, bool) {
 	switch owner {
-	case settings.OwnerApp:
+	case domainsettings.AppOwner:
 		return settings.GetAppDeclaration(), true
 	case pluginID:
 		return []manifest.Setting{
@@ -52,7 +53,7 @@ func TestAKeyOfAnUnknownOwnerIsRejected(t *testing.T) {
 }
 
 func TestAPluginMayWriteASettingOfTheShell(t *testing.T) {
-	if err := check([]string{settings.OwnerApp, "appearance", "mode"}, "dark"); err != nil {
+	if err := check([]string{domainsettings.AppOwner, "appearance", "mode"}, "dark"); err != nil {
 		t.Errorf("a declared setting of the shell was rejected: %v", err)
 	}
 }
@@ -133,7 +134,7 @@ func TestTheScalesOfTheShellTakeNothingOutsideTheirBounds(t *testing.T) {
 		"text at the top":       {"textScale", 1.75, true},
 		"text at the foot":      {"textScale", 0.8, true},
 	} {
-		err := check([]string{settings.OwnerApp, "appearance", c.key}, c.value)
+		err := check([]string{domainsettings.AppOwner, "appearance", c.key}, c.value)
 		if c.ok && err != nil {
 			t.Errorf("%s was rejected: %v", what, err)
 		}
@@ -144,28 +145,28 @@ func TestTheScalesOfTheShellTakeNothingOutsideTheirBounds(t *testing.T) {
 }
 
 func TestTheModeOfTheShellIsOneOfTheWordsItDeclares(t *testing.T) {
-	err := check([]string{settings.OwnerApp, "appearance", "mode"}, "purple")
+	err := check([]string{domainsettings.AppOwner, "appearance", "mode"}, "purple")
 	if !errors.Is(err, settings.ErrNotAnOption) {
 		t.Errorf("a mode outside the options gave %v", err)
 	}
 }
 
 func TestAThemeThatIsNotInstalledIsRejected(t *testing.T) {
-	err := check([]string{settings.OwnerApp, "appearance", "theme"}, "mine:absent")
+	err := check([]string{domainsettings.AppOwner, "appearance", "theme"}, "mine:absent")
 	if !errors.Is(err, settings.ErrNotAnOption) {
 		t.Errorf("a theme outside the registry gave %v", err)
 	}
 }
 
 func TestAThemeOfAPluginIsAcceptedWhileItIsInstalled(t *testing.T) {
-	err := check([]string{settings.OwnerApp, "appearance", "theme"}, "plugin:md.numen.sample.themes/night")
+	err := check([]string{domainsettings.AppOwner, "appearance", "theme"}, "plugin:md.numen.sample.themes/night")
 	if err != nil {
 		t.Errorf("an installed plugin theme was rejected: %v", err)
 	}
 }
 
 func TestTheNamingOfTheShellAcceptsABooleanOnly(t *testing.T) {
-	err := check([]string{settings.OwnerApp, "naming", "syncTitleAndFilename"}, "yes")
+	err := check([]string{domainsettings.AppOwner, "naming", "syncTitleAndFilename"}, "yes")
 	if !errors.Is(err, settings.ErrWrongType) {
 		t.Errorf("a string for the naming gave %v", err)
 	}

@@ -13,10 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// OwnerApp is the owner of the settings of the shell. Every other first-level key of the file
-// other than the version is the id of a plugin.
-const OwnerApp = settingsdomain.AppOwner
-
 // The fields of the object of a plugin that the host keeps. They are no settings of the manifest:
 // enabled holds a boolean.
 const fieldEnabled = settingsdomain.HostFieldEnabled
@@ -77,7 +73,7 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 }
 
 func getSettingName(owner string, key []string, value any) (string, error) {
-	if owner == OwnerApp {
+	if owner == settingsdomain.AppOwner {
 		if isOutsideDeclaration(key[0]) {
 			return "", nil
 		}
@@ -187,7 +183,7 @@ func checkOption(declared manifest.Setting, registries Registries, value any) er
 
 // GetOwner returns the values stored under an owner, the plugin id or OwnerApp.
 func (f *File) GetOwner(owner string) map[string]any {
-	if owner != OwnerApp {
+	if owner != settingsdomain.AppOwner {
 		return maps.Clone(f.Plugins[owner])
 	}
 	content, err := f.MarshalJSON()
@@ -198,7 +194,7 @@ func (f *File) GetOwner(owner string) map[string]any {
 	if err := json.Unmarshal(content, &root); err != nil {
 		return nil
 	}
-	if app, isObject := root[OwnerApp].(map[string]any); isObject {
+	if app, isObject := root[settingsdomain.AppOwner].(map[string]any); isObject {
 		return app
 	}
 	return nil
@@ -213,7 +209,7 @@ func (f *File) GetValue(path ...string) (any, bool) {
 	if value, found := lookupPath(f.GetOwner(path[0]), path[1:]); found && value != nil {
 		return value, true
 	}
-	if path[0] == OwnerApp {
+	if path[0] == settingsdomain.AppOwner {
 		if value := getAppDefault(strings.Join(path[1:], ".")); value != nil {
 			return value, true
 		}
@@ -248,7 +244,7 @@ func (f *File) DropInvalid(declared Declarations, registries Registries) {
 
 func (f *File) dropInvalidApp(declared Declarations, registries Registries) {
 	for _, one := range readAppDeclaration() {
-		path := append([]string{OwnerApp}, strings.Split(one.Key, ".")...)
+		path := append([]string{settingsdomain.AppOwner}, strings.Split(one.Key, ".")...)
 		value, found := f.GetValue(path...)
 		if !found || value == one.Default {
 			continue

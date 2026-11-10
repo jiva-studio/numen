@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -228,11 +228,11 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 	cases := []struct {
 		name  string
 		first scanFile
-		want  func(vaultreading.ScanResult) bool
+		want  func(indexdomain.ScanResult) bool
 	}{
-		{"a source of another kind", scanFile{kind: domain.KindFile, size: 1, modTime: newest}, func(r vaultreading.ScanResult) bool { return r.Assets == 1 }},
-		{"a file that vanished", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist}, func(r vaultreading.ScanResult) bool { return r.Vanished == 1 }},
-		{"a file nobody can read", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")}, func(r vaultreading.ScanResult) bool { return r.Unreadable == 1 }},
+		{"a source of another kind", scanFile{kind: domain.KindFile, size: 1, modTime: newest}, func(r indexdomain.ScanResult) bool { return r.Assets == 1 }},
+		{"a file that vanished", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist}, func(r indexdomain.ScanResult) bool { return r.Vanished == 1 }},
+		{"a file nobody can read", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")}, func(r indexdomain.ScanResult) bool { return r.Unreadable == 1 }},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

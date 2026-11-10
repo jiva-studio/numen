@@ -9,10 +9,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"

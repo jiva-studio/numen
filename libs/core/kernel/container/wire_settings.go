@@ -9,14 +9,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -142,7 +141,7 @@ type settingsWiring struct {
 	Programs                  *settingsadapter.ProgramList
 	SecretGate                *secret.Gate
 	SubscribedHosts           *settingsusecase.HostSubscriptions
-	PluginChanges             *pluginchanges.Signals
+	PluginChanges             *settingsusecase.PluginChanges
 	ErrorHandler              func(error)
 	AgentProvider             func() agentport.AgentProvider
 	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
@@ -239,7 +238,7 @@ func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvide
 		if c.GetAgentPrograms != nil {
 			programs = c.GetAgentPrograms(provider, target.Agent)
 		}
-		return prefixModels(settingsadapter.OwnerApp, settingsadapter.AgentModels(agentAt, target.Agent, programs))
+		return prefixModels(settingsdomain.AppOwner, settingsadapter.AgentModels(agentAt, target.Agent, programs))
 	}
 }
 
@@ -255,7 +254,7 @@ func prefixModels(owner string, models []settingsdomain.Model) []settingsdomain.
 
 func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 	return func(owner string) ([]manifest.Setting, bool) {
-		if owner == settingsadapter.OwnerApp {
+		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
 		if c.PluginHost == nil {

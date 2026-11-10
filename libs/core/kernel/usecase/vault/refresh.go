@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -20,6 +20,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
+// RenameFollower moves the index rows of removed files to the added files that hold the same content.
+type RenameFollower interface {
+	Execute(ctx context.Context, reader vaultport.VaultReader, vaultID domain.VaultID, removed, added []string) ([]string, error)
+}
 
 // Refresh brings named notes up to date when a watcher reports which files
 // changed. A scan inspects the whole vault; Refresh only the named files.
@@ -34,6 +39,8 @@ type Refresh struct {
 	now     machineport.Clock
 
 	Cut chunking.CutNotes
+
+	FollowRenames RenameFollower
 
 	Ledger *Ledger
 
@@ -249,7 +256,7 @@ func (u Refresh) refreshPath(ctx context.Context, run *refreshRun, path string) 
 func readListedFile(ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)
 	default:
@@ -263,11 +270,11 @@ func (u Refresh) statNote(
 ) (domain.FileStat, bool) {
 	ref, err := reader.StatFile(ctx, path)
 	switch {
-	case errors.Is(err, vaultport.ErrNotANote):
+	case errors.Is(err, edit.ErrNotANote):
 		// An attachment, an export or a note renamed out of the vault's sight is
 		// not a note that vanished, and the index holds nothing at its path.
 		res.LeftAlone = append(res.LeftAlone, path)
-	case errors.Is(err, vaultport.ErrNotExist):
+	case errors.Is(err, edit.ErrNotExist):
 		res.Removed = append(res.Removed, path)
 	case err != nil:
 		res.Unreadable = append(res.Unreadable, path)
@@ -318,11 +325,10 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	removed, err := vaultreading.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
-	if err != nil {
-		return err
+	if u.FollowRenames == nil {
+		return nil
 	}
-	_, err = vaultreading.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
+	_, err := u.FollowRenames.Execute(ctx, reader, v.ID, res.Removed, res.Assets)
 	return err
 }
 

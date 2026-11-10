@@ -15,6 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -39,7 +40,7 @@ func (v *versionItems) RunVersionItem(
 	_ context.Context, _ domain.Vault, path string, entry plugin.CommandEntry, version domain.TextVersionID,
 ) (plugin.CommandResult, error) {
 	if version != "org.example.ears/ears" {
-		return plugin.CommandResult{}, textversion.ErrInvalidVersion
+		return plugin.CommandResult{}, text.ErrInvalidVersion
 	}
 	v.ran = append(v.ran, entry.PluginID+":"+entry.Command.ID+" "+path+" "+string(version))
 	return plugin.CommandResult{Message: "Proofread"}, nil

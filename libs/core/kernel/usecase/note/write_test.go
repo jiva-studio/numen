@@ -3,14 +3,16 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 func TestWrite_EnforcesSizeLimit(t *testing.T) {
@@ -29,8 +31,8 @@ func TestWrite_EnforcesSizeLimit(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			err := note.CheckSize("Entropy.md", tc.size, tc.maxBound)
-			if got := errors.Is(err, note.ErrTooLarge); got != tc.wantErr {
+			err := edit.CheckSize("Entropy.md", tc.size, tc.maxBound)
+			if got := errors.Is(err, edit.ErrTooLarge); got != tc.wantErr {
 				t.Errorf("size %d at bound %d answered %v", tc.size, tc.maxBound, err)
 			}
 			if err != nil && !strings.Contains(err.Error(), "Entropy.md") {
@@ -45,7 +47,7 @@ func TestAWriteOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Execute(t.Context(), c.vault, "Entropy.md", "---\nid: x\n---\nMine.\n", domain.FileStat{})
-	if !errors.Is(err, note.ErrBodyUnwritable) {
+	if !errors.Is(err, edit.ErrBodyUnwritable) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
@@ -58,7 +60,7 @@ func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", "---\nid: x\n---\nMine.\n", nil)
-	if !errors.Is(err, note.ErrBodyUnwritable) {
+	if !errors.Is(err, edit.ErrBodyUnwritable) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
@@ -69,10 +71,10 @@ func TestASaveOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 func TestWrite_EnforcesWriterLimit(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
-	body := strings.Repeat("x", note.MaxBytes+1)
+	body := strings.Repeat("x", edit.MaxBytes+1)
 
 	_, err := c.newWrite().Execute(t.Context(), c.vault, "Mammals.md", body, domain.FileStat{})
-	if !errors.Is(err, note.ErrTooLarge) {
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if got := c.read(t, "Mammals.md"); got != "# Mammals\n" {
@@ -80,11 +82,11 @@ func TestWrite_EnforcesWriterLimit(t *testing.T) {
 	}
 
 	wideWrite := c.newWrite()
-	wideWrite.Bound = 2 * note.MaxBytes
+	wideWrite.Bound = 2 * edit.MaxBytes
 	if _, err := wideWrite.Execute(t.Context(), c.vault, "Mammals.md", body, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(c.read(t, "Mammals.md")); got <= note.MaxBytes {
+	if got := len(c.read(t, "Mammals.md")); got <= edit.MaxBytes {
 		t.Errorf("the note holds %d bytes, and the wider bound allowed more", got)
 	}
 }
@@ -166,7 +168,7 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 	var notified []domain.Edit
 
 	_, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.FileStat{})
-	if !errors.Is(err, note.ErrUnterminated) {
+	if !errors.Is(err, edit.ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
 	if len(notified) != 0 {
@@ -181,7 +183,7 @@ func TestWrite_SmallerWriterLimitRejectsDefaultAllowed(t *testing.T) {
 	small.Bound = 100
 
 	_, err := small.Execute(t.Context(), c.vault, "Mammals.md", strings.Repeat("x", 200), domain.FileStat{})
-	if !errors.Is(err, note.ErrTooLarge) {
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 }

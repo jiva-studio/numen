@@ -9,10 +9,12 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -103,7 +105,7 @@ func (h *Handler) deleteVersion(ctx context.Context, msg *v1.RunPluginCommandReq
 		return errNoVersions
 	}
 	err := h.versions.DeleteVersion(ctx, h.vaults.GetCurrentVault(), msg.GetPath(), domain.TextVersionID(msg.GetItemId()))
-	if errors.Is(err, textversion.ErrInvalidVersion) {
+	if errors.Is(err, text.ErrInvalidVersion) {
 		return fmt.Errorf("%w: %w", plugincommand.ErrBadArguments, err)
 	}
 	return err
@@ -124,7 +126,7 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 		return plugin.CommandResult{}, true, errNoVersions
 	}
 	result, err := h.versions.RunVersionItem(ctx, h.vaults.GetCurrentVault(), msg.GetPath(), entry, domain.TextVersionID(msg.GetItemId()))
-	if errors.Is(err, textversion.ErrInvalidVersion) {
+	if errors.Is(err, text.ErrInvalidVersion) {
 		err = fmt.Errorf("%w: %w", plugincommand.ErrBadArguments, err)
 	}
 	return result, true, err
@@ -132,7 +134,7 @@ func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandR
 
 func (h *Handler) findEntry(pluginID, command string) (plugin.CommandEntry, bool) {
 	var entries []plugin.CommandEntry
-	if plugincommand.IsSharedCommand(command) {
+	if manifest.IsSharedCommand(command) {
 		entries = h.list.ExecuteHandlers()
 	} else {
 		entries = h.list.ExecuteAll()

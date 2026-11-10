@@ -1,6 +1,4 @@
-// Package bufferednotes wraps the note repository of the index to remember which notes were written
-// through it while the first walk of a vault is still reading it.
-package bufferednotes
+package note
 
 import (
 	"context"
@@ -10,9 +8,9 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Repository is the index, keeping the paths of the notes written through it while
+// Buffered is the note repository of the index, keeping the paths of the notes written through it while
 // the first walk is still reading the vault.
-type Repository struct {
+type Buffered struct {
 	noteport.NoteRepository
 	Writes
 }
@@ -26,7 +24,7 @@ type Writes struct {
 }
 
 // Save writes the notes and records their paths.
-func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
+func (r *Buffered) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
 	for _, one := range notes {
 		r.Record(one.Note.FileStat.Path)
 	}
@@ -34,7 +32,7 @@ func (r *Repository) Save(ctx context.Context, vaultID domain.VaultID, notes []d
 }
 
 // Remove removes the notes at the paths and records the paths.
-func (r *Repository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
+func (r *Buffered) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
 		r.Record(path)
 	}

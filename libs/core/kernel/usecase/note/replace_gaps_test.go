@@ -8,9 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func TestAMissingSpanReturnsWhatItIs(t *testing.T) {
@@ -77,7 +76,7 @@ func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 	before := c.read(t, "Aggressor.md")
 
 	_, err = replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREES", first.FileStat)
-	if !errors.Is(err, vaultport.ErrStale) {
+	if !errors.Is(err, edit.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
 	if body := c.read(t, "Aggressor.md"); body != before {
@@ -101,11 +100,11 @@ func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
 
 func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 	t.Parallel()
-	was := "# Big\n\n" + strings.Repeat("a", note.MaxBytes-100) + "\nneedle\n"
+	was := "# Big\n\n" + strings.Repeat("a", edit.MaxBytes-100) + "\nneedle\n"
 	c := openChanging(t, map[string]string{"Big.md": was})
 
 	_, err := c.replace().Execute(t.Context(), c.vault, "Big.md", "needle", strings.Repeat("n", 200), domain.FileStat{})
-	if !errors.Is(err, note.ErrTooLarge) {
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Big.md"); body != was {

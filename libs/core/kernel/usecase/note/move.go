@@ -7,6 +7,7 @@ import (
 	pathpkg "path"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -26,9 +27,9 @@ type Move struct {
 	readers vaultport.VaultReaders
 	writers MoveWriting
 	links   noteport.LinkQueries
-	names   NameQueries
+	names   edit.NameQueries
 	sources sourceport.SourceRepository
-	index   IndexUpdater
+	index   edit.IndexUpdater
 	now     machineport.Clock
 	Drawing TellMove
 	Sync    query.SyncSetting
@@ -43,9 +44,9 @@ type MoveDeps struct {
 	Readers vaultport.VaultReaders
 	Writers MoveWriting
 	Links   noteport.LinkQueries
-	Names   NameQueries
+	Names   edit.NameQueries
 	Sources sourceport.SourceRepository
-	Index   IndexUpdater
+	Index   edit.IndexUpdater
 	Now     machineport.Clock
 }
 
@@ -83,12 +84,8 @@ func (u Move) Writers() MoveWriting { return u.writers }
 // Readers returns the vault readers.
 func (u Move) Readers() vaultport.VaultReaders { return u.readers }
 
-// MoveResult reports the new path of the note and the changes made to the links
-// that pointed at it.
-type MoveResult = domain.MoveResult
-
-func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (MoveResult, error) {
-	res := MoveResult{From: from, To: to}
+func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (domain.MoveResult, error) {
+	res := domain.MoveResult{From: from, To: to}
 	if from == to {
 		return res, nil
 	}
@@ -129,8 +126,8 @@ func (u Move) moveInIndex(ctx context.Context, v domain.Vault, from, to string) 
 // used the old name.
 //
 // pointing holds the links that resolved to the note before the move.
-func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (MoveResult, error) {
-	res := MoveResult{From: from, To: to, IsMoved: true}
+func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, pointing []domain.ResolvedLink) (domain.MoveResult, error) {
+	res := domain.MoveResult{From: from, To: to, IsMoved: true}
 
 	// The file is at its new path and the index is in sync. A view still showing
 	// the old name refers to a path with no file.
@@ -163,7 +160,7 @@ func (u Move) RepairLinks(ctx context.Context, v domain.Vault, from, to string, 
 }
 
 func (u Move) rewriteLink(
-	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *MoveResult,
+	ctx context.Context, v domain.Vault, address string, was domain.ResolvedLink, res *domain.MoveResult,
 ) error {
 	lands, still, err := u.getLanding(ctx, v, was)
 	if err != nil {
@@ -193,8 +190,8 @@ func (u Move) rewriteLink(
 }
 
 func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (string, error) {
-	to, err := GetAddress(ctx, u.names, v.ID, path)
-	if errors.Is(err, ErrUnaddressable) {
+	to, err := edit.GetAddress(ctx, u.names, v.ID, path)
+	if errors.Is(err, edit.ErrUnaddressable) {
 		return "", nil
 	}
 	if err != nil {
@@ -243,7 +240,7 @@ func (u Move) repair(
 		return linkUntouched, err
 	}
 	raw, err := reader.Read(ctx, in)
-	if errors.Is(err, vaultport.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		// The note that wrote the link went between the backlinks being read
 		// and this. Its link went with it.
 		return linkUntouched, nil
@@ -285,7 +282,7 @@ func (u Move) updateIndex(ctx context.Context, v domain.Vault, paths ...string) 
 		return nil
 	}
 	// The files are written, so the index follows them even when the caller is canceled.
-	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
+	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 // GetPathUnder is where a note lands when it is filed under a folder, keeping

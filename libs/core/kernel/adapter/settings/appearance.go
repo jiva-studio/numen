@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 // Appearance holds the theme, the mode and the sizes of the window. The declaration of the shell
@@ -20,11 +20,7 @@ type Appearance struct {
 }
 
 // The modes a color pair is read by.
-const (
-	ModeSystem = themedomain.SchemeSystem
-	ModeLight  = themedomain.SchemeLight
-	ModeDark   = themedomain.SchemeDark
-)
+const ()
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at. It is the default
 // the declaration of the shell gives both scales.
@@ -51,8 +47,8 @@ func getDesktopScale() float64 {
 // Check returns the first of the two scales that is outside the bounds the declaration gives it,
 // and nothing where both are within.
 func (a Appearance) Check() error {
-	if err := GetInterfaceScaleBounds().Check(OwnerApp+"."+keyInterfaceScale, a.InterfaceScale); err != nil {
+	if err := GetInterfaceScaleBounds().Check(settings.AppOwner+"."+keyInterfaceScale, a.InterfaceScale); err != nil {
 		return err
 	}
-	return GetTextScaleBounds().Check(OwnerApp+"."+keyTextScale, a.TextScale)
+	return GetTextScaleBounds().Check(settings.AppOwner+"."+keyTextScale, a.TextScale)
 }

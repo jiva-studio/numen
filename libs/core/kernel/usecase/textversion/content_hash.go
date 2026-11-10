@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -28,7 +29,7 @@ func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path stri
 		return "", err
 	}
 	stat, err := reader.StatFile(ctx, path)
-	if errors.Is(err, vaultport.ErrNotANote) {
+	if errors.Is(err, edit.ErrNotANote) {
 		return hashFile(ctx, reader, path)
 	}
 	if err != nil {

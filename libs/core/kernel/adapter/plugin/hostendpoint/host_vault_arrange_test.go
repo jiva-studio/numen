@@ -20,14 +20,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // fakeNoteVault is the vault of rivers that renames, moves and removes its notes and runs its
@@ -73,7 +72,7 @@ func (a *fakeNoteVault) RenameNote(_ context.Context, from, title string) (strin
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if _, found := a.files[from]; !found {
-		return "", false, nil, fmt.Errorf("rename %s: %w", from, vaultport.ErrNotExist)
+		return "", false, nil, fmt.Errorf("rename %s: %w", from, edit.ErrNotExist)
 	}
 	to := path.Join(path.Dir(from), title+".md")
 	a.files[to] = a.files[from]
@@ -86,7 +85,7 @@ func (a *fakeNoteVault) MoveNote(_ context.Context, from, to string) (domain.Mov
 	defer a.mu.Unlock()
 	a.moved = append(a.moved, domain.Move{From: from, To: to})
 	if _, found := a.files[from]; !found {
-		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultport.ErrNotExist)
+		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, edit.ErrNotExist)
 	}
 	if _, found := a.files[to]; found {
 		return domain.MoveResult{From: from, To: to}, fmt.Errorf("move %s: %w", from, vaultdomain.ErrAlreadyExists)
@@ -101,10 +100,10 @@ func (a *fakeNoteVault) RemoveNote(_ context.Context, target string) (string, []
 	defer a.mu.Unlock()
 	a.removed = append(a.removed, target)
 	if a.folders[target] {
-		return "", nil, fmt.Errorf("remove %s: %w", target, vaultport.ErrNotANote)
+		return "", nil, fmt.Errorf("remove %s: %w", target, edit.ErrNotANote)
 	}
 	if _, found := a.files[target]; !found {
-		return "", nil, fmt.Errorf("remove %s: %w", target, vaultport.ErrNotExist)
+		return "", nil, fmt.Errorf("remove %s: %w", target, edit.ErrNotExist)
 	}
 	delete(a.files, target)
 	return ".trash/" + target, []string{"Deltas.md"}, nil
@@ -576,10 +575,10 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 		err  error
 		want v1.HostVaultErrorCode
 	}{
-		"invalid name":   {err: query.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
+		"invalid name":   {err: domain.ErrInvalidName, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_NAME},
 		"already exists": {err: vaultdomain.ErrAlreadyExists, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
-		"not found":      {err: vaultport.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
-		"conflict":       {err: vaultport.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		"not found":      {err: edit.ErrNotExist, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
+		"conflict":       {err: edit.ErrStale, want: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 	} {
 		t.Run(name, func(t *testing.T) {
 			hostCallers := newCallers(nil)

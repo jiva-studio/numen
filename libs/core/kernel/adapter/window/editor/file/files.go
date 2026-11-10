@@ -13,6 +13,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -196,7 +197,7 @@ func (h *Changes) MoveFile(
 
 func getListCode(err error) connect.Code {
 	switch {
-	case errors.Is(err, file.ErrOutside):
+	case errors.Is(err, vault.ErrOutside):
 		return connect.CodeInvalidArgument
 	case errors.Is(err, fs.ErrNotExist):
 		return connect.CodeNotFound
@@ -269,7 +270,7 @@ func (h *Changes) EmptyTrash(
 	return connect.NewResponse(&v1.EmptyTrashResponse{Undeleted: undeleted}), nil
 }
 
-func newMoveResult(moved note.MoveResult) *v1.MoveResult {
+func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,

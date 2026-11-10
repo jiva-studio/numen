@@ -8,18 +8,7 @@ import (
 	"strings"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// ErrOutside is the core's sentinel, so a caller that never names this package
-// still recognizes it.
-var ErrOutside = vaultdomain.ErrOutside
-
-// ErrNotANote is returned for a path inside the vault that the vault does not hold
-// as a note: an attachment, a folder where a tool keeps its state, or anything the
-// vault's own rules exclude. It is the core's sentinel, so a use case sees the same
-// error from any vault.
-var ErrNotANote = vaultport.ErrNotANote
 
 // GetContainedPath converts a path relative to a vault root into a path on this
 // machine and rejects one that leaves the root.
@@ -68,16 +57,16 @@ func isOurs(clean, serviceDir string) bool {
 // It never accesses the filesystem.
 func CleanPath(path string) (string, error) {
 	if path == "" {
-		return "", fmt.Errorf("%w: it is empty", ErrOutside)
+		return "", fmt.Errorf("%w: it is empty", vaultdomain.ErrOutside)
 	}
 	// filepath.IsLocal rejects a path that is absolute or that climbs out, and on
 	// Windows one that is rooted, drive-relative, or names a reserved device.
 	if !filepath.IsLocal(path) || strings.ContainsRune(path, 0) {
-		return "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", fmt.Errorf("%s: %w", path, vaultdomain.ErrOutside)
 	}
 	clean := pathpkg.Clean(filepath.ToSlash(path))
 	if clean == "." || (runtime.GOOS == "windows" && hasReservedDeviceName(clean)) {
-		return "", fmt.Errorf("%s: %w", path, ErrOutside)
+		return "", fmt.Errorf("%s: %w", path, vaultdomain.ErrOutside)
 	}
 	return clean, nil
 }
@@ -115,7 +104,7 @@ func resolveContained(root, clean string) (target, resolved, landed string, err 
 		return "", "", "", err
 	}
 	if !IsUnderRoot(resolved, root) {
-		return "", "", "", fmt.Errorf("%s: %w", clean, ErrOutside)
+		return "", "", "", fmt.Errorf("%s: %w", clean, vaultdomain.ErrOutside)
 	}
 	return target, resolved, getRootRelativeName(resolved, root), nil
 }

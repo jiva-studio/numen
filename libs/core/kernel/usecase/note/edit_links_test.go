@@ -7,9 +7,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func toEntropy(role domain.LinkRole) domain.Link {
@@ -75,7 +74,7 @@ func TestEditLinks_ChecksCallerFingerprint(t *testing.T) {
 			return err
 		},
 	}
-	for name, edit := range edits {
+	for name, change := range edits {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Heat.md": linkedHeat})
@@ -83,7 +82,7 @@ func TestEditLinks_ChecksCallerFingerprint(t *testing.T) {
 			theirs := linkedHeat + "\nSaved in the meantime.\n"
 			c.overwrite(t, "Heat.md", theirs)
 
-			if err := edit(c, target); !errors.Is(err, vaultport.ErrStale) {
+			if err := change(c, target); !errors.Is(err, edit.ErrStale) {
 				t.Errorf("want ErrStale, got %v", err)
 			}
 			if body := c.read(t, "Heat.md"); body != theirs {

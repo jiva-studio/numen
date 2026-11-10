@@ -2,7 +2,7 @@ package container
 
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 )
 
 // Settings reads the settings file; an unconfigured installation returns the default settings.

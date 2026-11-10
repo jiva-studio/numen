@@ -9,20 +9,19 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
@@ -83,7 +82,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 
 	_, err = access.WriteFile(t.Context(), "samples/A.md", []byte("mine"), pos)
 
-	if !errors.Is(err, vaultport.ErrStale) {
+	if !errors.Is(err, edit.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)
 	}
 	if writeCount != 0 || len(indexed) != 0 {
@@ -154,7 +153,7 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, id := range []string{"", "samples", "index", "..", "a/b.c", ".a.b"} {
-		if _, err := access.OpenStore(id); !errors.Is(err, vaultconfig.ErrOutside) {
+		if _, err := access.OpenStore(id); !errors.Is(err, vault.ErrOutside) {
 			t.Errorf("the folder of %q was opened with %v", id, err)
 		}
 	}

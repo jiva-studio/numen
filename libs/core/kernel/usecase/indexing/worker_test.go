@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -40,11 +40,11 @@ type recorder struct {
 
 func newRecorder() *recorder { return &recorder{tasks: run.NewTasks()} }
 
-func (r *recorder) ReportTask(pos work.Task)                           { r.tasks.Set(pos) }
-func (r *recorder) FinishTask(id string)                               { r.tasks.Remove(id) }
-func (r *recorder) ReportError(error)                                  {}
-func (r *recorder) ReportNotes(domain.Vault, int)                      {}
-func (r *recorder) ReportTexts(domain.Vault, vaultreading.IndexResult) {}
+func (r *recorder) ReportTask(pos work.Task)                          { r.tasks.Set(pos) }
+func (r *recorder) FinishTask(id string)                              { r.tasks.Remove(id) }
+func (r *recorder) ReportError(error)                                 {}
+func (r *recorder) ReportNotes(domain.Vault, int)                     {}
+func (r *recorder) ReportTexts(domain.Vault, indexdomain.IndexResult) {}
 
 func findTask(t *testing.T, r *recorder, id string) *work.Task {
 	t.Helper()

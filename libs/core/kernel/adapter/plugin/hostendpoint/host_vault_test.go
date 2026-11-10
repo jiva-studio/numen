@@ -19,11 +19,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // memoryVault replaces the notes, links and connections of a vault behind the endpoint, which
@@ -129,7 +129,7 @@ func (m *memoryVault) WriteFile(_ context.Context, path string, content []byte, 
 		return domain.FileStat{}, err
 	}
 	if !now.ModTime.Equal(baseline.ModTime) {
-		return domain.FileStat{}, vaultport.ErrStale
+		return domain.FileStat{}, edit.ErrStale
 	}
 	m.stamp++
 	m.files[path] = string(content)
@@ -433,7 +433,7 @@ func TestAConnectionThatCannotBeSavedAnswersWithItsReason(t *testing.T) {
 	}{
 		"a cycle":          {domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},
 		"an invalid one":   {domain.ErrInvalidConnection, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION},
-		"a stale note":     {vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		"a stale note":     {edit.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 		"an exhausted set": {domain.ErrNoFreeName, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NAME_EXHAUSTED},
 	} {
 		t.Run(name, func(t *testing.T) {

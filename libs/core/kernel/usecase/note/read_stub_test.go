@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -35,7 +36,7 @@ type statedReaders struct{ reader statedReader }
 
 func (r statedReaders) Open(domain.Vault) (vaultport.VaultReader, error) { return r.reader, nil }
 
-func readStated(t *testing.T, reader statedReader) (note.Contents, error) {
+func readStated(t *testing.T, reader statedReader) (edit.Contents, error) {
 	t.Helper()
 	return note.NewRead(statedReaders{reader: reader}).Execute(t.Context(), domain.Vault{}, "Entropy.md")
 }
@@ -53,7 +54,7 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if atCeiling.Outcome != note.Ok {
+	if atCeiling.Outcome != edit.Ok {
 		t.Errorf("a note of exactly the ceiling is %q", atCeiling.Outcome)
 	}
 
@@ -64,7 +65,7 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if finished.Outcome != note.TooLarge {
+	if finished.Outcome != edit.TooLarge {
 		t.Errorf("a note one byte over the ceiling is %q", finished.Outcome)
 	}
 	if finished.Body != "" {
@@ -80,7 +81,7 @@ func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
 	if !errors.Is(err, broken) {
 		t.Fatalf("want the vault's own error, got %v", err)
 	}
-	if got != (note.Contents{}) {
+	if got != (edit.Contents{}) {
 		t.Errorf("an error came back with contents: %+v", got)
 	}
 }
@@ -93,7 +94,7 @@ func TestRead_FileAppearingAfterLookupIsNotNote(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Outcome != note.NotANote {
+	if got.Outcome != edit.NotANote {
 		t.Errorf("want not a note, got %q", got.Outcome)
 	}
 	if got.Body != "" {
@@ -126,7 +127,7 @@ func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 	if !errors.Is(err, broken) {
 		t.Fatalf("want the vault's own error, got %v", err)
 	}
-	if got != (note.Contents{}) {
+	if got != (edit.Contents{}) {
 		t.Errorf("an error came back with contents: %+v", got)
 	}
 }
@@ -134,11 +135,11 @@ func TestAVaultThatCannotBeOpenedIsAnError(t *testing.T) {
 func TestRead_PathRejectedByVaultIsNotNote(t *testing.T) {
 	t.Parallel()
 
-	got, err := readStated(t, statedReader{statErr: vaultport.ErrNotANote, raw: []byte("# Entropy\n")})
+	got, err := readStated(t, statedReader{statErr: edit.ErrNotANote, raw: []byte("# Entropy\n")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Outcome != note.NotANote || got.Path != "Entropy.md" || got.Body != "" {
+	if got.Outcome != edit.NotANote || got.Path != "Entropy.md" || got.Body != "" {
 		t.Errorf("want not a note at Entropy.md with no prose, got %+v", got)
 	}
 }

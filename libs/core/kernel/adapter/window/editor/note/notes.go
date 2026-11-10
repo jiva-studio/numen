@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // ReadNote hands the client the prose of a note.
@@ -309,11 +310,11 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
+func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &note.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
+	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
 }
 
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
@@ -454,7 +455,7 @@ func newWireNameSource(delta query.NameSource) v1.NameSource {
 	}
 }
 
-func newMoveResult(moved note.MoveResult) *v1.MoveResult {
+func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,
