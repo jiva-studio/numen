@@ -38,7 +38,7 @@ func newFailingConfig(t *testing.T) Config {
 	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return NewConfig(Config{PluginHost: LdaptPluginHost(host)})
+	return NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 }
 
 func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
