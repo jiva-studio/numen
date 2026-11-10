@@ -45,8 +45,8 @@ describe('the status made before the loader', () => {
     await loader.start()
 
     expect(status.isPluginStarting(ORCHARD)).toBe(false)
-    expect(status.activePlugins.value.has(ORCHARD)).toBe(true)
-    expect(loader.getActivePluginIds()).toStrictEqual([ORCHARD])
+    expect(status.state.activePlugins.value.has(ORCHARD)).toBe(true)
+    expect(loader.status.getActivePluginIds()).toStrictEqual([ORCHARD])
   })
 
   it('holds the failure of a plugin that did not start', async () => {
@@ -57,7 +57,7 @@ describe('the status made before the loader', () => {
     await loader.start()
 
     expect(status.getPluginFailure(ORCHARD)).toContain('the orchard is closed')
-    expect(loader.getPluginFailure(ORCHARD)).toBe(status.getPluginFailure(ORCHARD))
+    expect(loader.status.getPluginFailure(ORCHARD)).toBe(status.getPluginFailure(ORCHARD))
   })
 
   it('does not count a disabled plugin as starting once the loader runs', async () => {
@@ -68,6 +68,6 @@ describe('the status made before the loader', () => {
     await loader.start()
 
     expect(status.isPluginStarting(ORCHARD)).toBe(false)
-    expect(status.activePlugins.value.size).toBe(0)
+    expect(status.state.activePlugins.value.size).toBe(0)
   })
 })

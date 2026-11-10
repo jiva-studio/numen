@@ -4,12 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
-import {
-  createWhenReader,
-  SLOT,
-  createSlotRegistry,
-  type SlotItem,
-} from '@numen/plugin-loader'
+import { createWhenReader, SLOT, createSlotRegistry, type SlotItem } from '@numen/plugin-loader'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import type { Command } from '@/entities/command'
 import { createAppCommands } from '@/testing/appCommands'
@@ -90,8 +85,8 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     writeIssue: vi.fn(),
   })
   const findSlotCommand = slots.hostDeps.createSlotCommandFinder({
-    getPluginCommands: host.getPaletteCommands,
-    hasPluginItems: host.hasCommandItems,
+    getPluginCommands: host.commands.getPaletteCommands,
+    hasPluginItems: host.commands.hasCommandItems,
   })
   const registry = createSlotRegistry({
     getEntries: slots.hostDeps.getSlotEntries,

@@ -7,6 +7,7 @@ import type {
   SettingsViewRegistration,
   VaultChangeEvent,
   DropRegistry,
+  SlotHost,
 } from '@numen/plugin-sdk'
 import { ReportedError, type Manifest } from '@numen/core-client'
 import { createAppInfo } from '../appInfo'
@@ -21,10 +22,7 @@ import { createCommandApi } from './commandApi'
 import { createWhenReader, type WhenReader } from '../when/whenReader'
 import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER } from '../commandId'
-import {
-  createKeybindingRegistry,
-  type KeybindingSource,
-} from '../keybindings/keybindingRegistry'
+import { createKeybindingRegistry, type KeybindingSource } from '../keybindings/keybindingRegistry'
 import { createPluginPaneWrapper } from './customTabKind'
 import { registerReaderEntry, registerTabKindEntry } from './entries'
 import {
@@ -34,20 +32,25 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
-import type { PluginContextHost, PluginHostDeps } from './types'
+import type {
+  ContextEventHost,
+  ContextRegistrationHost,
+  ContextSettingHost,
+  ContextTabHost,
+  ContextVaultHost,
+  ContextViewHost,
+  ContextWindowHost,
+  PluginContextHost,
+  PluginHostDeps,
+} from './types'
 
 export { createPluginPaneWrapper }
-
-type EventBridge = Pick<
-  PluginContextHost,
-  'onVaultChange' | 'onFileSelect' | 'emitVaultChange' | 'emitFileSelect'
->
 
 function getSettingsViewKey(pluginId: string, viewId: string): string {
   return `${pluginId}:${viewId}`
 }
 
-function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventBridge {
+function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): ContextEventHost {
   return {
     onVaultChange: (pluginId, handler) =>
       addListener(registry.vaultListeners, { pluginId, handler }),
@@ -57,20 +60,10 @@ function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventB
   }
 }
 
-/** The registrations a plugin makes into the host's own registry. */
-type RegistrationBridge = Pick<
-  PluginContextHost,
-  | 'registerReader'
-  | 'registerTabKind'
-  | 'registerCommand'
-  | 'registerSettingsView'
-  | 'registerAgentProvider'
->
-
 function createRegistrationBridge(
   deps: PluginHostDeps,
   registry: HostRegistry,
-): RegistrationBridge {
+): ContextRegistrationHost {
   return {
     registerReader: (pluginId, registration) =>
       registerReaderEntry(deps, registry.readers, {
@@ -113,9 +106,7 @@ function createRegistrationBridge(
   }
 }
 
-function createSettingBridge(
-  deps: PluginHostDeps,
-): Pick<PluginContextHost, 'getSetting' | 'onSettingChange'> {
+function createSettingBridge(deps: PluginHostDeps): ContextSettingHost {
   return {
     getSetting: <T = unknown>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
@@ -137,11 +128,7 @@ function createSettingBridge(
   }
 }
 
-type SharedBridge = 'registerSlotView' | 'registerView' | 'mountView'
-
-function createSharedBridge(
-  shared: SharedRegistries,
-): Pick<PluginContextHost, SharedBridge | 'registerDropHandler' | 'drops'> {
+function createViewBridge(shared: SharedRegistries): ContextViewHost {
   const { views, drops, slotViews } = shared
   return {
     registerSlotView: slotViews.registerSlotView,
@@ -152,9 +139,7 @@ function createSharedBridge(
   }
 }
 
-function createTabBridge(
-  deps: PluginHostDeps,
-): Pick<PluginContextHost, 'openTab' | 'navigateTab' | 'closeTab'> {
+function createTabBridge(deps: PluginHostDeps): ContextTabHost {
   return {
     openTab: (kind: string, target?: string) => deps.openTab(kind, target),
     navigateTab: (kind: string, target: string) => deps.navigateTab?.(kind, target),
@@ -167,6 +152,7 @@ interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
   readonly slotViews: SlotViewRegistry
+  readonly getSlots: () => SlotHost
 }
 
 function createHostContextBridge(
@@ -175,71 +161,49 @@ function createHostContextBridge(
   shared: SharedRegistries,
 ): PluginContextHost {
   return {
-    app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
-    openExternal: (url) =>
-      deps.openExternal
-        ? deps.openExternal(url)
-        : Promise.reject(new ReportedError('This window cannot open web links')),
-    ...createRegistrationBridge(deps, registry),
-    ...createSharedBridge(shared),
-    ...createSettingBridge(deps),
-    ...createEventBridge(deps, registry),
-    ...createTabBridge(deps),
-    ...createServiceBridge(deps),
+    info: {
+      app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
+      openExternal: (url) =>
+        deps.openExternal
+          ? deps.openExternal(url)
+          : Promise.reject(new ReportedError('This window cannot open web links')),
+    },
+    registration: createRegistrationBridge(deps, registry),
+    views: createViewBridge(shared),
+    settings: createSettingBridge(deps),
+    events: createEventBridge(deps, registry),
+    tabs: createTabBridge(deps),
+    vault: createVaultServiceBridge(deps),
+    window: createWindowServiceBridge(deps, shared.getSlots),
   }
 }
 
-function createServiceBridge(
-  deps: PluginHostDeps,
-): Pick<
-  PluginContextHost,
-  | 'getWorkspace'
-  | 'getNotes'
-  | 'getRelations'
-  | 'getFiles'
-  | 'getAgent'
-  | 'getCommands'
-  | 'getVaults'
-  | 'getWindow'
-  | 'getBuffers'
-  | 'getNotices'
-  | 'getTasks'
-  | 'getBackgroundTasks'
-  | 'getTexts'
-> {
+/** The services that read and write the vault. */
+function createVaultServiceBridge(deps: PluginHostDeps): ContextVaultHost {
   return {
-    getWorkspace: () => deps.getWorkspace?.(),
     getNotes: () => deps.getNotes?.(),
     getRelations: () => deps.getRelations?.(),
     getFiles: () => deps.getFiles?.(),
-    getAgent: () => deps.getAgent?.(),
-    getCommands: () => deps.getCommands?.(),
-    getVaults: () => deps.getVaults?.(),
-    getWindow: () => deps.getWindow?.(),
-    getBuffers: () => deps.getBuffers?.(),
-    getNotices: (pluginId) => deps.getNotices?.(pluginId),
-    getTasks: (pluginId) => deps.getTasks?.(pluginId),
-    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
     getTexts: (pluginId) => deps.getTexts?.(pluginId),
+    getBuffers: () => deps.getBuffers?.(),
+    getVaults: () => deps.getVaults?.(),
   }
 }
 
-function createHostRegistry(): HostRegistry {
+/** The services of the window itself: its workspace, commands, notices and tasks, slots and agent. */
+function createWindowServiceBridge(
+  deps: PluginHostDeps,
+  getSlots: () => SlotHost,
+): ContextWindowHost {
   return {
-    readers: new Map(),
-    tabKinds: new Map(),
-    commands: shallowRef(new Map()),
-    handlers: shallowRef(new Map()),
-    settingsViews: shallowRef(new Map()),
-    agentProviders: new Map(),
-    contexts: new Map(),
-    manifests: new Map(),
-    activated: shallowRef(new Set()),
-    starting: shallowRef(new Set()),
-    disposed: new Set(),
-    reportedIssues: new Set(),
-    vaultListeners: new Set(),
-    fileListeners: new Set(),
+    getWorkspace: () => deps.getWorkspace?.(),
+    getAgent: () => deps.getAgent?.(),
+    getCommands: () => deps.getCommands?.(),
+    getWindow: () => deps.getWindow?.(),
+    getNotices: (pluginId) => deps.getNotices?.(pluginId),
+    getTasks: (pluginId) => deps.getTasks?.(pluginId),
+    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
+    getSlots,
   }
 }
 
@@ -278,20 +242,29 @@ function createKeybindingApi(deps: PluginHostDeps & { readonly whenReader: WhenR
     keybindings.unregister(pluginId)
   }
   return {
-    keybindings,
+    registry: keybindings,
     registerKeybindings,
     unregisterKeybindings,
     unregisterAllKeybindings: () => [...owners].forEach(unregisterKeybindings),
+    /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */
+    getKeyFor: keybindings.getKeyFor,
   }
 }
 
-function createContextApi(
-  registry: HostRegistry,
-  contextHost: PluginContextHost,
-  registerKeybindings: (pluginId: string, sources: readonly KeybindingSource[]) => void,
-) {
+type KeybindingApi = ReturnType<typeof createKeybindingApi>
+
+type EntryParts = Parameters<typeof disposeAllEntries>[0]
+
+interface LifecycleParts {
+  readonly registry: HostRegistry
+  readonly contextHost: PluginContextHost
+  readonly keybindings: KeybindingApi
+  readonly entries: EntryParts
+}
+
+/** What the loader requires of the host: the contexts of the plugins and their disposal. */
+function createLifecycleApi({ registry, contextHost, keybindings, entries }: LifecycleParts) {
   return {
-    contextHost,
     createContext: (pluginId: string, manifest?: Manifest): PluginContext => {
       let ctx = registry.contexts.get(pluginId)
       if (!ctx) {
@@ -312,29 +285,48 @@ function createContextApi(
         )
       }
       registry.manifests.set(pluginId, manifest)
-      registerKeybindings(pluginId, manifest.contributes?.keybindings ?? [])
+      keybindings.registerKeybindings(pluginId, manifest.contributes?.keybindings ?? [])
     },
+    disposePlugin: (pluginId: string) => {
+      disposePluginEntry(pluginId, entries)
+      keybindings.unregisterKeybindings(pluginId)
+    },
+    disposeAll: () => {
+      disposeAllEntries(entries)
+      keybindings.unregisterAllKeybindings()
+    },
+    getSetting: contextHost.settings.getSetting,
+    onSettingChange: contextHost.settings.onSettingChange,
   }
 }
 
 export function createPluginHost(windowDeps: PluginHostDeps) {
   const whenReader = windowDeps.whenReader ?? createWhenReader()
   const deps = { ...windowDeps, whenReader }
-  const registry = createHostRegistry()
+  const registry: HostRegistry = {
+    readers: new Map(),
+    tabKinds: new Map(),
+    commands: shallowRef(new Map()),
+    handlers: shallowRef(new Map()),
+    settingsViews: shallowRef(new Map()),
+    agentProviders: new Map(),
+    contexts: new Map(),
+    manifests: new Map(),
+    activated: shallowRef(new Set()),
+    starting: shallowRef(new Set()),
+    disposed: new Set(),
+    reportedIssues: new Set(),
+    vaultListeners: new Set(),
+    fileListeners: new Set(),
+  }
   const slotViews = createSlotViewRegistry(
     deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
   )
-  const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(),
-    drops: createDropRegistry(),
-    slotViews,
-  })
-  const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
-    createKeybindingApi(deps)
-  const commandApi = createCommandApi(deps, registry, keybindings)
+  const keybindings = createKeybindingApi(deps)
+  const commands = createCommandApi(deps, registry, keybindings.registry)
   const findSlotCommand = deps.createSlotCommandFinder?.({
-    getPluginCommands: commandApi.getPaletteCommands,
-    hasPluginItems: commandApi.hasCommandItems,
+    getPluginCommands: commands.getPaletteCommands,
+    hasPluginItems: commands.hasCommandItems,
   })
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
@@ -345,34 +337,26 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
     whenReader,
   })
-  contextHost.getSlots = () => slots
-  const parts = { registry, slotViews, deps }
+  const contextHost = createHostContextBridge(deps, registry, {
+    views: createViewRegistry(),
+    drops: createDropRegistry(),
+    slotViews,
+    getSlots: () => slots,
+  })
+  const entries = { registry, slotViews, deps }
 
   return {
-    ...createContextApi(registry, contextHost, registerKeybindings),
-    ...commandApi,
-    registerKeybindings,
-    unregisterKeybindings,
-    /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */
-    getKeyFor: keybindings.getKeyFor,
-    ...createRegisteredApi(registry),
-    getSetting: contextHost.getSetting,
-    onSettingChange: contextHost.onSettingChange,
+    lifecycle: createLifecycleApi({ registry, contextHost, keybindings, entries }),
+    commands,
+    keybindings,
+    registered: createRegisteredApi(registry),
+    /** The entries of the slots of the window, as their owners read them. */
+    slots,
+    slotViews,
+    contextHost,
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),
-    disposePlugin: (pluginId: string) => {
-      disposePluginEntry(pluginId, parts)
-      unregisterKeybindings(pluginId)
-    },
-    disposeAll: () => {
-      disposeAllEntries(parts)
-      unregisterAllKeybindings()
-    },
-    /** The entries of the slots of the window, as their owners read them. */
-    slots,
-    /** The view a slot of the window draws, or null while no plugin registered one; reactive. */
-    getSlotView: slotViews.getSlotView,
   }
 }
 

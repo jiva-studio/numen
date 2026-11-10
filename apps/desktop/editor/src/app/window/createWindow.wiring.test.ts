@@ -299,18 +299,22 @@ beforeEach(() => {
     },
     pluginHost: {
       notifyVaultChange: vi.fn(),
-      hasCommandItems: vi.fn(() => false),
-      getPaletteCommands: vi.fn(() => [
-        { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
-      ]),
-      getRegisteredSettingsViews: vi.fn(() => ['view-1']),
-      getSlotView: vi.fn(() => ref(null)),
+      commands: {
+        hasCommandItems: vi.fn(() => false),
+        getPaletteCommands: vi.fn(() => [
+          { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
+        ]),
+      },
+      registered: { getRegisteredSettingsViews: vi.fn(() => ['view-1']) },
+      slotViews: { getSlotView: vi.fn(() => ref(null)) },
     },
     pluginLoader: {
       trackPlugins: vi.fn(async () => undefined),
       start: vi.fn(async () => undefined),
-      waitForInterface: vi.fn(async () => undefined),
-      waitForTabPlugins: vi.fn(async () => undefined),
+      status: {
+        waitForInterface: vi.fn(async () => undefined),
+        waitForTabPlugins: vi.fn(async () => undefined),
+      },
       close: vi.fn(async () => undefined),
     },
     navigation: { travel: vi.fn(), leavePath: vi.fn(async () => undefined) },
@@ -781,7 +785,7 @@ describe('the services a plugin is given', () => {
     // Returned window methods
     window.palette.runCommand('cmd-2', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-2', target)
-    window.settings.openSettings('p1', 'ocr')
+    window.openSettings('p1', 'ocr')
     expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1', 'ocr')
 
     h.f.windowTabs.restored.openPlacedTabs.mockImplementationOnce(
@@ -959,7 +963,7 @@ describe('tab links wiring', () => {
       const tabPluginsSettled = new Promise<undefined>((resolve) => {
         settleTabPlugins = () => resolve(undefined)
       })
-      h.f.pluginLoader.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
+      h.f.pluginLoader.status.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
       h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
       h.f.windowTabs.restored.openPlacedTabs.mockClear()
       h.args.bootstrap.startPlugins().catch(() => undefined)

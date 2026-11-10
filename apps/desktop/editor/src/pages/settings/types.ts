@@ -85,7 +85,7 @@ interface InstallationPluginFiles {
  * The secrets, each a name in a group with the plugin declarations that may read it. A value
  * is entered once and is never read back. Each call reads the settings again.
  */
-interface InstallationSecrets {
+export interface InstallationSecrets {
   readonly sections: Readonly<Ref<readonly SecretSection[]>>
   readonly menus: Readonly<Ref<readonly SecretMenu[]>>
   readonly states: Readonly<Ref<ReadonlyMap<string, boolean>>>

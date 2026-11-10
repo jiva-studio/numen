@@ -31,12 +31,7 @@ import { openExternalUrl } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
 import { TARGET } from '@/shared/lib/window'
 
-import {
-  createFrontView,
-  createWindowSlots,
-  createWindowTab,
-  type PluginView,
-} from './hostParts'
+import { createFrontView, createWindowSlots, createWindowTab, type PluginView } from './hostParts'
 
 export type { PluginView, WindowTab } from './hostParts'
 
@@ -107,23 +102,31 @@ export function createShellHost(
   const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
   const contextHost = createIdleContextHost({
-    app: createWindowAppInfo(getPlatform),
-    target: TARGET,
-    openExternal: (url) => openExternalUrl(url),
-    registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
-    registerView: (pluginId, registration, permissions) =>
-      declaredViews.registerView(pluginId, registration, permissions),
-    registerSlotView: (pluginId, slot, registration) =>
-      slotViews.registerSlotView(pluginId, slot, registration),
-    mountView: (capability, element, viewContext, access) =>
-      declaredViews.mountView(capability, element, viewContext, access),
-    closeTab: (id) => closeTab(id),
-    getSlots: () => windowSlots.slots,
-    getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-    getCommands: () => getServices().commands,
-    getVaults: () => getServices().vaults,
-    getWindow: () => getServices().window,
-    getAgent: () => agent,
+    info: {
+      app: createWindowAppInfo(getPlatform),
+      target: TARGET,
+      openExternal: (url) => openExternalUrl(url),
+    },
+    registration: {
+      registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
+    },
+    views: {
+      registerView: (pluginId, registration, permissions) =>
+        declaredViews.registerView(pluginId, registration, permissions),
+      registerSlotView: (pluginId, slot, registration) =>
+        slotViews.registerSlotView(pluginId, slot, registration),
+      mountView: (capability, element, viewContext, access) =>
+        declaredViews.mountView(capability, element, viewContext, access),
+    },
+    tabs: { closeTab: (id) => closeTab(id) },
+    vault: { getVaults: () => getServices().vaults },
+    window: {
+      getSlots: () => windowSlots.slots,
+      getNotices: (pluginId) => createPluginNotices(notices, pluginId),
+      getCommands: () => getServices().commands,
+      getWindow: () => getServices().window,
+      getAgent: () => agent,
+    },
   })
 
   const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {

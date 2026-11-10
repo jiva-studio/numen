@@ -26,13 +26,16 @@ export function createPluginStatus(deps: PluginStatusDeps) {
     failures,
   })
   return {
-    activePlugins,
-    failures,
-    moduleLoaders,
-    tracked,
-    isRunning,
-    isEnabled: deps.isEnabled,
-    listPlugins,
+    /** What the loader keeps and changes; the rest only reads it. */
+    state: {
+      activePlugins,
+      failures,
+      moduleLoaders,
+      tracked,
+      isRunning,
+      isEnabled: deps.isEnabled,
+      listPlugins,
+    },
     settlePlugin: starts.settlePlugin,
     isPluginStarting: starts.isPluginStarting,
     getPluginFailure: (id: string): string | undefined => failures.value.get(id),

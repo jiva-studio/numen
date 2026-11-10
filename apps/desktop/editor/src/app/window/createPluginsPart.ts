@@ -137,7 +137,7 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
   })
   const declaredCommands = useDeclaredCommands({
     state: declared,
-    isListed: (id) => pluginHost.getPaletteCommands().some((one) => one.id === id),
+    isListed: (id) => pluginHost.commands.getPaletteCommands().some((one) => one.id === id),
     hasBackend: (pluginId) => hasPluginBackend(rest, pluginId),
     listItems: itemLists.listItems,
   })
@@ -165,7 +165,8 @@ export function createWindowFrameServices(
   const appIds = [...new Set(commands.featureCommands.commands.map((one) => one.command ?? one.id))]
   const windowCommands = createWindowCommands({
     getAppIds: () => appIds,
-    getPluginIds: () => base.plugins.host.pluginHost.getPaletteCommands().map((one) => one.id),
+    getPluginIds: () =>
+      base.plugins.host.pluginHost.commands.getPaletteCommands().map((one) => one.id),
     runCommandToEnd,
     listItems: items.listCommandItems,
     runWithItem: items.runWithItem,
@@ -184,6 +185,6 @@ export function createWindowFrameServices(
 }
 
 export const getPluginViews = (pluginHost: PluginHost) => ({
-  titleBarView: pluginHost.getSlotView(SLOT.titleBar),
-  statusBarView: pluginHost.getSlotView(SLOT.statusBar),
+  titleBarView: pluginHost.slotViews.getSlotView(SLOT.titleBar),
+  statusBarView: pluginHost.slotViews.getSlotView(SLOT.statusBar),
 })

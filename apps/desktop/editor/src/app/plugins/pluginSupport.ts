@@ -204,7 +204,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   })
   const reportLoadError = deps.reportLoadError ?? deps.reportError
   const pluginLoader = createPluginLoader({
-    host: pluginHost,
+    host: pluginHost.lifecycle,
     status,
     ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
   })

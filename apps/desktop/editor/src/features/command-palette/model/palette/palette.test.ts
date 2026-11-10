@@ -477,7 +477,7 @@ describe('removing a note', () => {
     const others = ['physics/Heat.pdf']
 
     expect(
-      commands.palette.startCommand('app:file.remove', front({ others }))?.others,
+      commands.palette.startCommand('app:file.remove', front({ others }))?.target.others,
     ).toStrictEqual(others)
   })
 
@@ -1799,7 +1799,7 @@ describe('a command started with the text typed for it', () => {
     const { commands } = createPalette()
 
     for (const id of NAMING.slice(1)) {
-      expect(commands.palette.startCommand(id, front(), 'Entropy')?.path).toBe(
+      expect(commands.palette.startCommand(id, front(), 'Entropy')?.target.path).toBe(
         'physics/Ontology.md',
       )
     }

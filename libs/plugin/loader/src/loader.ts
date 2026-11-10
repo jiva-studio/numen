@@ -156,7 +156,7 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   }
 }
 
-type LoaderState = Pick<PluginStatus, 'activePlugins' | 'failures' | 'moduleLoaders'> & {
+type LoaderState = Pick<PluginStatus['state'], 'activePlugins' | 'failures' | 'moduleLoaders'> & {
   readonly manifests: Map<string, Manifest>
 }
 
@@ -169,7 +169,8 @@ interface Activation {
 }
 
 function createTabPluginsWait(status: PluginStatus, activation: Activation) {
-  const { isEnabled, listPlugins, settlePlugin } = status
+  const { isEnabled, listPlugins } = status.state
+  const { settlePlugin } = status
   return async (): Promise<void> => {
     const withTabs = await Promise.all(
       listPlugins()
@@ -180,10 +181,31 @@ function createTabPluginsWait(status: PluginStatus, activation: Activation) {
   }
 }
 
+/** Where each plugin of the window stands: active, failed, or still starting. */
+function createLoaderStatus(
+  status: PluginStatus,
+  activation: Activation,
+  waitForInterface: () => Promise<void>,
+) {
+  const { activePlugins, failures } = status.state
+  return {
+    isPluginActive: (id: string) => activePlugins.value.has(id),
+    getActivePluginIds: () => [...activePlugins.value.keys()],
+    getPluginFailure: status.getPluginFailure,
+    getFailedPlugins: (): { id: string; error: string }[] =>
+      [...failures.value].map(([id, error]) => ({ id, error })),
+    isPluginStarting: status.isPluginStarting,
+    settlePlugin: status.settlePlugin,
+    waitForTabPlugins: createTabPluginsWait(status, activation),
+    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
+    waitForInterface,
+  }
+}
+
 function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation: Activation) {
   const { host } = deps
   const { activatePlugin, deactivatePlugin, loadModule } = activation
-  const { activePlugins, moduleLoaders, tracked, isRunning, isEnabled, listPlugins } = status
+  const { activePlugins, moduleLoaders, tracked, isRunning, isEnabled, listPlugins } = status.state
   const settingSubscriptions = new Map<string, Disposable>()
   const interfaceStarted = createSignal()
 
@@ -202,9 +224,7 @@ function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation:
   }
 
   return {
-    settlePlugin: status.settlePlugin,
-    isPluginStarting: status.isPluginStarting,
-    waitForTabPlugins: createTabPluginsWait(status, activation),
+    status: createLoaderStatus(status, activation, () => interfaceStarted.promise),
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
       if (isRunning.value) {
@@ -230,8 +250,6 @@ function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation:
         onInterfaceStarted,
       )
     },
-    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
-    waitForInterface: (): Promise<void> => interfaceStarted.promise,
     close: async (): Promise<void> => {
       isRunning.value = false
       await closeLoader(
@@ -251,26 +269,25 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
       isEnabled: (id) => isPluginEnabledValue(host.getSetting?.(id, 'enabled')),
     })
   const state: LoaderState = {
-    activePlugins: status.activePlugins,
-    failures: status.failures,
-    moduleLoaders: status.moduleLoaders,
+    activePlugins: status.state.activePlugins,
+    failures: status.state.failures,
+    moduleLoaders: status.state.moduleLoaders,
     manifests: new Map(),
   }
-  const { activePlugins, failures, manifests } = state
   const activation = createActivation(deps, state)
+  const runtime = createRuntime(deps, status, activation)
 
   return {
-    ...createRuntime(deps, status, activation),
-    ...activation,
+    registerPluginModule: runtime.registerPluginModule,
     registerPluginManifest: (id: string, manifest: Manifest) => {
-      manifests.set(id, manifest)
+      state.manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },
-    isPluginActive: (id: string) => activePlugins.value.has(id),
-    getActivePluginIds: () => [...activePlugins.value.keys()],
-    getPluginFailure: status.getPluginFailure,
-    getFailedPlugins: (): { id: string; error: string }[] =>
-      [...failures.value].map(([id, error]) => ({ id, error })),
+    trackPlugins: runtime.trackPlugins,
+    start: runtime.start,
+    close: runtime.close,
+    activation,
+    status: runtime.status,
   }
 }
 export type PluginLoader = ReturnType<typeof createPluginLoader>

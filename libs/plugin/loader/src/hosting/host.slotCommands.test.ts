@@ -28,7 +28,7 @@ const create = (finder: SlotCommandFinder = () => undefined) => {
 describe('the finder of the commands a slot draws', () => {
   it('is made once with the commands the host lists and the commands that offer items', () => {
     const { host, createSlotCommandFinder } = create()
-    host
+    host.lifecycle
       .createContext(LEDGER.pluginId)
       .register.command({ id: 'ledger.open', handler: vi.fn(), listItems: async () => [] })
 
