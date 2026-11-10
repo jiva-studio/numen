@@ -41,6 +41,17 @@ func getPortFields(file *ast.File) []string {
 	return found
 }
 
+func countStructTypes(file *ast.File) int {
+	count := 0
+	ast.Inspect(file, func(node ast.Node) bool {
+		if _, is := node.(*ast.StructType); is {
+			count++
+		}
+		return true
+	})
+	return count
+}
+
 func getFieldCalls(file *ast.File, fields []string) []string {
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -71,6 +82,7 @@ func isDrivingAdapterFile(rel string) bool {
 func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	fields := map[string][]string{}
 	files := map[string]*ast.File{}
+	structs := 0
 	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") ||
 			strings.HasSuffix(path, "_test.go") {
@@ -85,6 +97,7 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 			return err
 		}
 		files[rel] = file
+		structs += countStructTypes(file)
 		dir := filepath.Dir(rel)
 		fields[dir] = append(fields[dir], getPortFields(file)...)
 		return nil
@@ -94,9 +107,16 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	}
 
 	// A walk that read no driving adapter is a rule checked against nothing. A driving adapter holds no
-	// port in a field, so no field is needed to prove the walk; the fixture test proves the rule fires.
+	// port in a field, so no field proves the walk; the packages and struct types read do, and the fixture
+	// test proves the rule fires.
 	if len(files) < 30 {
 		t.Fatalf("%d files of the driving adapters read: the walk is not reading them", len(files))
+	}
+	if packagesRead := len(fields); packagesRead < 15 {
+		t.Fatalf("%d driving-adapter packages read, want at least 15: the walk is not reading them", packagesRead)
+	}
+	if structs < 85 {
+		t.Fatalf("%d struct types of the driving adapters read, want at least 85: the walk is not reading them", structs)
 	}
 
 	for rel, file := range files {
