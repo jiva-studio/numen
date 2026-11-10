@@ -360,6 +360,136 @@ export function verifyPluginsFrontend() {
   }
 }
 
+/** The files at the root of a plugin frontend: the entry, the words and types the slices share, and the stylesheet. */
+const FRONTEND_ROOT_FILES = ['index.ts', 'words.ts', 'types.ts', 'styles.css']
+
+/** The folders at the root of a frontend that belong to no slice: the shared `api` and `lib`, and the `ui` and `model` that compose the slices. */
+const FRONTEND_ROOT_SEGMENTS = ['api', 'lib', 'model', 'ui']
+
+/** The segments of a slice. */
+const SLICE_SEGMENTS = ['ui', 'model', 'api', 'lib']
+
+/** The folders that hold test support at any depth; their files are not shipped. */
+const SUPPORT_FOLDERS = ['fixtures', 'testdata', 'testing']
+
+const FRONTEND_FILE = /^plugins\/([^/]+)\/frontend\/(.+)$/
+
+/** The frontend files of `files`, as `{ file, plugin, parts }` with the path below `frontend/` split; tests, stories and test support are left out. */
+function listShippedFrontendFiles(files) {
+  const found = []
+  for (const file of files) {
+    const match = FRONTEND_FILE.exec(file)
+    if (!match) continue
+    const parts = match[2].split('/')
+    if (/\.(test|stories)\.ts$/.test(file) || parts.some((one) => SUPPORT_FOLDERS.includes(one))) continue
+    found.push({ file, plugin: match[1], parts })
+  }
+  return found
+}
+
+/** The slices of the plugin frontends in `files`: every folder at the root of a frontend that is none of the shared or composing segments. */
+export function listPluginSlices(files) {
+  const slices = new Set()
+  for (const { plugin, parts } of listShippedFrontendFiles(files)) {
+    if (parts.length > 1 && !FRONTEND_ROOT_SEGMENTS.includes(parts[0])) slices.add(`${plugin}/${parts[0]}`)
+  }
+  return [...slices].sort()
+}
+
+/**
+ * Lists what breaks the shape of a plugin frontend: a file at its root besides the entry, the words, the
+ * types and the stylesheet; a slice with a file or a folder that is neither its `index.ts` nor a segment;
+ * a slice with no `index.ts`.
+ */
+export function findPluginSliceShapeViolations(files) {
+  const found = []
+  const entries = new Set()
+  for (const { file, plugin, parts } of listShippedFrontendFiles(files)) {
+    if (parts.length === 1) {
+      if (!FRONTEND_ROOT_FILES.includes(parts[0])) {
+        found.push({ file, line: 1, symbol: `${parts[0]} lies at the root of the frontend, which holds ${FRONTEND_ROOT_FILES.join(', ')} and the slices` })
+      }
+      continue
+    }
+    if (FRONTEND_ROOT_SEGMENTS.includes(parts[0])) continue
+    if (parts.length === 2) {
+      if (parts[1] === 'index.ts') entries.add(`${plugin}/${parts[0]}`)
+      else found.push({ file, line: 1, symbol: `${parts[1]} lies in the slice ${parts[0]} outside its segments (${SLICE_SEGMENTS.join(', ')})` })
+    } else if (!SLICE_SEGMENTS.includes(parts[1])) {
+      found.push({ file, line: 1, symbol: `${parts[1]} is not a segment of the slice ${parts[0]} (${SLICE_SEGMENTS.join(', ')})` })
+    }
+  }
+  for (const slice of listPluginSlices(files)) {
+    if (!entries.has(slice)) {
+      const [plugin, name] = slice.split('/')
+      found.push({ file: `plugins/${plugin}/frontend/${name}`, line: 1, symbol: `the slice ${name} has no index.ts` })
+    }
+  }
+  return found
+}
+
+/** A frontend of two slices that breaks each import rule once: a deep import into a slice from the entry, an import of a sibling slice through its index, and one through its files. */
+export const PLANTED_SLICE_FRONTEND = {
+  'frontend/index.ts': ["import { alpha } from './alpha'", "import { total } from './alpha/model/total'", 'export const both = [alpha, total]', ''].join('\n'),
+  'frontend/alpha/index.ts': ["export { total as alpha } from './model/total'", ''].join('\n'),
+  'frontend/alpha/model/total.ts': 'export const total = 1\n',
+  'frontend/beta/index.ts': ["export { count } from './ui/count'", ''].join('\n'),
+  'frontend/beta/ui/count.ts': ["import { alpha } from '../../alpha'", "import { total } from '../../alpha/model/total'", 'export const count = alpha + total', ''].join('\n'),
+}
+
+/** The lines of `frontend/` files that `PLANTED_SLICE_FRONTEND` must be refused at. */
+export const PLANTED_SLICE_REFUSALS = { 'frontend/index.ts': [2], 'frontend/beta/ui/count.ts': [1, 2] }
+
+/** The lines of the boundaries findings in an ESLint JSON report, by file name below the linted folder. */
+export function readBoundaryLines(report, folder) {
+  const lines = {}
+  for (const result of report) {
+    const hits = result.messages.filter((one) => one.ruleId?.startsWith('boundaries/')).map((one) => one.line)
+    if (hits.length > 0) lines[path.relative(folder, result.filePath)] = [...new Set(hits)].sort((a, b) => a - b)
+  }
+  return lines
+}
+
+/** Lints `files` in a copy of the golden template and returns the lines of the slice findings by file. */
+export function lintPlantedFrontend(files) {
+  const template = path.join(REPO_ROOT, 'plugins/.example')
+  const dir = fs.mkdtempSync(path.join(REPO_ROOT, 'plugins', '.slices-self-test-'))
+  try {
+    for (const name of ['eslint.config.js', 'numen-rules.mjs', 'tsconfig.json']) {
+      fs.copyFileSync(path.join(template, name), path.join(dir, name))
+    }
+    for (const [name, text] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true })
+      fs.writeFileSync(path.join(dir, name), text)
+    }
+    const res = spawnSync(path.join(REPO_ROOT, 'node_modules/.bin/eslint'), ['-f', 'json', 'frontend'], { cwd: dir, encoding: 'utf8' })
+    return readBoundaryLines(JSON.parse(res.stdout || '[]'), dir)
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+const MINIMUM_SLICES = 10
+const MINIMUM_FRONTEND_FILES = 500
+
+/**
+ * The slices of every plugin frontend hold their shape, and the rule that keeps them apart is live: the
+ * slices and files it saw are counted, and a planted frontend must be refused where it breaks each import rule.
+ */
+export function verifyPluginFrontendSlices() {
+  const files = listShippedFiles(['plugins'])
+  requireMatches('plugin frontend slices', listPluginSlices(files).length, MINIMUM_SLICES)
+  requireMatches('plugin frontend files', listShippedFrontendFiles(files).length, MINIMUM_FRONTEND_FILES)
+  failOnFindings('A plugin frontend breaks its shape', findPluginSliceShapeViolations(files))
+  const refused = lintPlantedFrontend(PLANTED_SLICE_FRONTEND)
+  const sorted = (lines) => JSON.stringify(Object.entries(lines).sort(([a], [b]) => a.localeCompare(b)))
+  if (sorted(refused) !== sorted(PLANTED_SLICE_REFUSALS)) {
+    throw new Error(
+      `the slice rule of plugins/.example/eslint.config.js refused ${JSON.stringify(refused)} in the planted frontend, expected ${JSON.stringify(PLANTED_SLICE_REFUSALS)}`,
+    )
+  }
+}
+
 export const PLUGIN_VERIFIERS = [
   {
     id: 'plugin-config-golden-parity',
@@ -400,6 +530,14 @@ export const PLUGIN_VERIFIERS = [
     module: 'plugins',
     name: 'Plugins Import the SDK and UI Through Their Main Entry (only the test entry, stylesheets and build entries a package declares in exports)',
     run: verifyPluginsUseMainEntry,
+  },
+  {
+    id: 'plugin-frontend-slices',
+    isLint: true,
+    scope: 'plugins',
+    module: 'plugins',
+    name: 'Plugin Frontend Slices (a slice is its index and four segments; no sibling slice, no deep import; the rule is proven on a planted frontend)',
+    run: verifyPluginFrontendSlices,
   },
   {
     id: 'plugins-frontend',

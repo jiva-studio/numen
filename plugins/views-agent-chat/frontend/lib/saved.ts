@@ -3,7 +3,7 @@
  * The agent itself does not keep the conversation, so the turns are shown and a new question
  * starts a new conversation with the agent.
  */
-import type { Turn, Voice } from '../thread/lib/turn'
+import type { Turn, Voice } from '../types'
 
 /** One settled turn, as an agent tab saves it. */
 export interface SavedTurn {

@@ -9,10 +9,11 @@
 import { computed, onMounted, onScopeDispose, ref, type ShallowRef } from 'vue'
 import { getWideBox } from './expansion'
 import { useTitleWidths } from './measure'
-import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
+import { getNodeHeadings } from '../../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
 import type { Viewport } from '@numen/ui'
+import type { PlexHeading } from '../../../types'
 
 /** The assumed size of the plex until it has been measured. */
 const FALLBACK = { width: 1200, height: 800 }

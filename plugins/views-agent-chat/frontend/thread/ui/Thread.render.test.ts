@@ -5,7 +5,7 @@ import { mount } from '@vue/test-utils'
 import type { Component } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Thread from './Thread.vue'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 
 const { renderSpy } = vi.hoisted(() => ({ renderSpy: vi.fn() }))
 

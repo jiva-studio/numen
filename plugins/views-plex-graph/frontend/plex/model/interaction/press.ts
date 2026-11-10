@@ -14,7 +14,8 @@ import {
 } from '../../lib/node'
 import type { MenuTrigger } from '@numen/ui'
 import type { PlexBehaviour } from '../behaviour'
-import { getDestination, mergeListeners, type PlexDestination } from './destination'
+import { getDestination, mergeListeners } from './destination'
+import type { PlexDestination } from '../../../types'
 
 /** The callbacks a node invokes when a press resolves to an action. */
 export interface NodePressReport {

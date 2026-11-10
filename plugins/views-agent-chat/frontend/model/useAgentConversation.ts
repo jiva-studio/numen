@@ -3,7 +3,8 @@
  */
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
 import type { AgentModelOption } from '../message-composer'
-import type { Conversation, Turn } from '../thread'
+import type { Conversation } from '../thread'
+import type { Turn } from '../types'
 import {
   areLinkTargetsEqual,
   parseLinkTarget,

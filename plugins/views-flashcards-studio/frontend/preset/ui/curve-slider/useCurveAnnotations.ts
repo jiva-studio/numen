@@ -1,6 +1,6 @@
 import { computed, type ComputedRef } from 'vue'
 import type { Position } from '@numen/ui'
-import type { Curve, Goal } from '../../types'
+import type { Curve, Goal } from '../../../lib/presets'
 import type { CurveSliderProps } from './useCurveSlider'
 import type { useCurvePlot } from './useCurvePlot'
 import { clearBacklog } from '../../lib/curve'
@@ -12,7 +12,7 @@ import {
   type Mark,
 } from '../../lib/label'
 import { getBacklogRun } from '../../lib/plot'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../../lib/words'
 
 interface CalloutOptions {
   curve: Curve

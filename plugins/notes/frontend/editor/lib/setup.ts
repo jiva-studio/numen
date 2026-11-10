@@ -32,14 +32,14 @@ import {
 } from '@codemirror/view'
 import { follow } from './extensions/address'
 import { pendingChange, changeMarks, createPacePlugin, type EditorChange } from './change/change'
-import { highlighting } from '../config/highlight'
-import { LANGUAGES } from '../config/languages'
+import { highlighting } from './config/highlight'
+import { LANGUAGES } from './config/languages'
 import { live, sourceWikilinks, wholeLines } from './live/live'
 import { renderBracketMatch } from './live/wikilinks'
 import { HEADING } from './live/styles'
 import { GFM } from '@lezer/markdown'
 import { saveHandler } from './outside'
-import { monospaced, theme } from '../config/theme'
+import { monospaced, theme } from './config/theme'
 
 /** What can be changed without the editor being built again. */
 export const previewCompartment = new Compartment()

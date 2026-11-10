@@ -4,7 +4,8 @@
  * Finding the line that holds an offset is the decision under test.
  */
 import { describe, expect, it } from 'vitest'
-import { findLineAt, type ContentsEntry } from './contents'
+import { findLineAt } from './contents'
+import type { ContentsEntry } from '../../../types'
 
 /** A book naming four places, in the order its text runs. */
 const PARTS: readonly ContentsEntry[] = [
