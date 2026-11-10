@@ -17,26 +17,68 @@ function rethrow(error: unknown): never {
   throw error
 }
 
-const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: boolean } = {}) => {
+type Hooks = NonNullable<AnyTabKind['display']> &
+  NonNullable<AnyTabKind['events']> &
+  NonNullable<AnyTabKind['address']>
+type KindOptions = Partial<
+  Pick<AnyTabKind, 'kind' | 'pluginId' | 'open' | 'pane' | 'getTitle'> & Hooks
+>
+
+const PART_OF_HOOK: Readonly<Record<keyof Hooks, 'display' | 'events' | 'address'>> = {
+  onShow: 'display',
+  getMark: 'display',
+  icon: 'display',
+  placement: 'display',
+  isTool: 'display',
+  onClose: 'events',
+  onDestroy: 'events',
+  flushPending: 'events',
+  receiveText: 'events',
+  onKeyPress: 'events',
+  isAsking: 'events',
+  getState: 'address',
+  identity: 'address',
+  navigate: 'address',
+  getTarget: 'address',
+  getOpenTab: 'address',
+  createFile: 'address',
+}
+
+/** Puts the hooks a test writes flat into the part of the kind each belongs to. */
+const groupHooks = (hooks: Partial<Hooks>) => {
+  const parts: Record<string, Record<string, unknown>> = { display: {}, events: {}, address: {} }
+  for (const [name, hook] of Object.entries(hooks)) {
+    parts[PART_OF_HOOK[name as keyof Hooks]]![name] = hook
+  }
+  return parts as unknown as Pick<AnyTabKind, 'display' | 'events' | 'address'>
+}
+
+const kind = ({ isKept = false, ...options }: KindOptions & { isKept?: boolean } = {}) => {
   const openedTab: string[] = []
   const closedPaths: string[] = []
   const observed: string[] = []
+  const { kind: kindId, pluginId, open, pane, getTitle, ...hooks } = options
   const one: AnyTabKind = {
-    kind: 'thing',
-    open: (targetPath: string) => {
-      openedTab.push(targetPath)
-      return { targetPath, title: targetPath || 'a thing' }
-    },
-    getTitle: (state: { title: string }) => state.title,
-    pane: {},
-    onClose: (state: { targetPath: string }) => {
-      closedPaths.push(state.targetPath)
-      return !isKept
-    },
-    onShow: (state: { targetPath: string }) => {
-      observed.push(state.targetPath)
-    },
-    ...options,
+    kind: kindId ?? 'thing',
+    ...(pluginId === undefined ? {} : { pluginId }),
+    open:
+      open ??
+      ((targetPath: string) => {
+        openedTab.push(targetPath)
+        return { targetPath, title: targetPath || 'a thing' }
+      }),
+    pane: pane ?? {},
+    getTitle: getTitle ?? ((state: { title: string }) => state.title),
+    ...groupHooks({
+      onClose: (state: { targetPath: string }) => {
+        closedPaths.push(state.targetPath)
+        return !isKept
+      },
+      onShow: (state: { targetPath: string }) => {
+        observed.push(state.targetPath)
+      },
+      ...hooks,
+    }),
   }
   return { declared: () => one, one, opened: openedTab, closedPaths, inspected: observed }
 }
@@ -150,7 +192,9 @@ describe('a tab of a kind', () => {
     expect(onScreen(window.panes.layout.value)).toEqual([id])
     expect(window.tabs.getTab(id)?.kind.kind).toBe('nothing')
     expect(window.tabs.getTab(id)?.kind.getTitle?.(window.tabs.getTab(id)!.state)).toBe('One.md')
-    expect(window.tabs.getTab(id)?.kind.getOpenTab?.(window.tabs.getTab(id)!.state)).toEqual({
+    expect(
+      window.tabs.getTab(id)?.kind.address?.getOpenTab?.(window.tabs.getTab(id)!.state),
+    ).toEqual({
       path: 'One.md',
     })
   })
@@ -714,7 +758,7 @@ describe('a key struck on the window, offered in turn', () => {
 describe('a tab release', () => {
   it('closes where its kind has nothing to finish', async () => {
     const simpleKind = kind()
-    delete simpleKind.one.onClose
+    delete simpleKind.one.events?.onClose
     const window = notifiedCalls([simpleKind.declared])
     const id = await window.tabs.openTabOfKind('thing', 'Note.md')
 
@@ -792,7 +836,7 @@ describe('a tab opened on nothing', () => {
 describe('a window going, with kinds that say nothing about it', () => {
   it('closes without a word to a tab whose kind has neither way of going', async () => {
     const closingKind = kind()
-    delete closingKind.one.onClose
+    delete closingKind.one.events?.onClose
     const window = notifiedCalls([closingKind.declared])
     await window.tabs.openTabOfKind('thing', 'x')
 
@@ -955,8 +999,10 @@ describe('the kinds the window holds', () => {
     window.groups.registerKind(kind().one)
     window.groups.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
-    expect(window.groups.findKind((one) => one.receiveText !== undefined)?.kind).toBe('chat')
-    expect(window.groups.findKind((one) => one.isTool === true)).toBeUndefined()
+    expect(window.groups.findKind((one) => one.events?.receiveText !== undefined)?.kind).toBe(
+      'chat',
+    )
+    expect(window.groups.findKind((one) => one.display?.isTool === true)).toBeUndefined()
   })
 })
 
@@ -994,7 +1040,7 @@ describe('a window opened with nothing to restore', () => {
     window.groups.registerKinds([
       {
         ...placedTab('plex', 'main', 0),
-        identity: () => 'main',
+        address: { identity: () => 'main' },
       },
       placedTab('agent', 'aside', 0),
       kind({ kind: 'settings' }).one,
@@ -1231,10 +1277,12 @@ const pagedKind = (pluginId = 'viewer.plugin'): AnyTabKind => ({
     targetPath,
     page: (saved as { page?: number } | undefined)?.page ?? 1,
   }),
-  getState: (state: { page: number }) => ({ page: state.page }),
-  getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
-  identity: (targetPath: string) => targetPath,
   pane: {},
+  address: {
+    getState: (state: { page: number }) => ({ page: state.page }),
+    getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
+    identity: (targetPath: string) => targetPath,
+  },
 })
 
 describe('the tabs the core kept', () => {
@@ -1254,7 +1302,7 @@ describe('the tabs the core kept', () => {
     window.groups.registerKind({
       ...pagedKind('aside.plugin'),
       kind: 'aside-kind',
-      placement: { pane: 'aside', order: 0 },
+      display: { placement: { pane: 'aside', order: 0 } },
     })
 
     const alreadyOpen = await window.tabs.openTabOfKind('paged', 'existing.bin')
@@ -1305,7 +1353,7 @@ describe('the tabs the core kept', () => {
     )
 
     const one = window.tabs.getTab('paged:a.bin')
-    expect(one?.kind.getState?.(one.state)).toStrictEqual({ page: 4 })
+    expect(one?.kind.address?.getState?.(one.state)).toStrictEqual({ page: 4 })
     expect(window.tabs.tabs.value[0]?.title).toBe('Saved Title')
     expect(getPanes(window.panes.layout.value.root).map((p) => p.tabs)).toStrictEqual([
       ['paged:a.bin'],
@@ -1328,9 +1376,9 @@ describe('the tabs of a plugin that stops', () => {
           page: (saved as { page?: number } | undefined)?.page ?? 1,
         }
       },
-      ...(withDestroy
+      events: withDestroy
         ? { onDestroy: (_s: unknown, id: string) => destroyed.push(id) }
-        : { onClose: (_s: unknown, id: string) => (closed.push(id), true) }),
+        : { onClose: (_s: unknown, id: string) => (closed.push(id), true) },
     })
 
     const unregister = window.groups.registerKind(makeKind(true))
@@ -1353,7 +1401,7 @@ describe('the tabs of a plugin that stops', () => {
     unregister()
     const placeholder = window.tabs.getTab('paged:a.bin')
     expect(placeholder?.kind.pluginId).toBeUndefined()
-    expect(placeholder?.kind.getState?.(placeholder.state)).toStrictEqual({ page: 4 })
+    expect(placeholder?.kind.address?.getState?.(placeholder.state)).toStrictEqual({ page: 4 })
 
     // Re-registering `paged` reopens `paged:a.bin`, leaves `other:b.bin` as placeholder, and leaves active tabs alone
     const parentReopen = effectScope()
@@ -1433,9 +1481,9 @@ describe('a saved tab whose kind fails to open it', () => {
     expect(window.tabs.getTabStateIn('paged:c.bin', 'paged')).toMatchObject({ page: 1 })
     const failed = window.tabs.getTab('paged:bad.bin')
     expect(failed?.state).toMatchObject({ message: 'cannot read bad.bin' })
-    expect(failed?.kind.getState?.(failed.state)).toStrictEqual({ page: 7 })
-    expect(failed?.kind.getOpenTab?.(failed.state)).toStrictEqual({ path: 'dir/bad.bin' })
-    expect(failed?.kind.identity?.('dir/bad.bin')).toBe('dir/bad.bin')
+    expect(failed?.kind.address?.getState?.(failed.state)).toStrictEqual({ page: 7 })
+    expect(failed?.kind.address?.getOpenTab?.(failed.state)).toStrictEqual({ path: 'dir/bad.bin' })
+    expect(failed?.kind.address?.identity?.('dir/bad.bin')).toBe('dir/bad.bin')
     expect(window.tabs.getTab('paged:empty')?.state).toMatchObject({ message: 'string failure' })
     expect(window.groups.handle.front()?.id).toBe('paged:c.bin')
   })

@@ -3,7 +3,7 @@ import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
 import { createBufferedNoteState } from './customTabBuffer'
-import { getCustomTabKind, createPluginPaneWrapper, getReaderTabKind } from './customTabKind'
+import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
 import {
   attachPluginRoot,
   extractFilename,
@@ -78,9 +78,9 @@ describe('createPluginPaneWrapper', () => {
   })
 })
 
-describe('getReaderTabKind', () => {
+describe('createReaderTabKind', () => {
   it('computes dynamic title and book target for epub reader', () => {
-    const readerKind = getReaderTabKind('md.numen.readers.epub', {
+    const readerKind = createReaderTabKind('md.numen.readers.epub', {
       id: 'reader-epub',
       component: STUB_COMPONENT,
       title: 'EPUB Reader',
@@ -110,7 +110,7 @@ describe('getReaderTabKind', () => {
     })
     expect(dynamicRefTitle).toBe('Through the Looking-Glass')
 
-    const target = readerKind.getTarget!({
+    const target = readerKind.address?.getTarget!({
       path: 'books/alice.epub',
       title: 'Alice in Wonderland',
     })
@@ -122,9 +122,9 @@ describe('getReaderTabKind', () => {
   })
 })
 
-describe('getCustomTabKind', () => {
+describe('createCustomTabKind', () => {
   it('computes note title and note target', () => {
-    const customKind = getCustomTabKind('md.numen.notes', {
+    const customKind = createCustomTabKind('md.numen.notes', {
       kind: 'note',
       component: STUB_COMPONENT,
       title: 'Markdown Note',
@@ -154,7 +154,7 @@ describe('getCustomTabKind', () => {
     })
     expect(customTitle).toBe('Brainstorming Session')
 
-    const target = customKind.getTarget!({
+    const target = customKind.address?.getTarget!({
       path: 'notes/ideas.md',
       title: 'Brainstorming Session',
     })
@@ -167,7 +167,7 @@ describe('getCustomTabKind', () => {
 
   it('populates note body from readNote dependency', async () => {
     let savedBody = ''
-    const customKind = getCustomTabKind(
+    const customKind = createCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -203,7 +203,7 @@ describe('getCustomTabKind', () => {
   })
 })
 
-describe('getCustomTabKind (loading)', () => {
+describe('createCustomTabKind (loading)', () => {
   const registration = { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' }
   const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
     registerKind: () => vi.fn(),
@@ -212,7 +212,7 @@ describe('getCustomTabKind (loading)', () => {
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
-    getCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
+    createCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
       'notes/test.md',
       'tab',
     ) as { isLoading: { value: boolean } }
@@ -240,7 +240,7 @@ describe('getCustomTabKind (loading)', () => {
   })
 })
 
-describe('getCustomTabKind (failed writes)', () => {
+describe('createCustomTabKind (failed writes)', () => {
   const host = (writeNote: (path: string, body: string) => Promise<void>) => ({
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
@@ -248,7 +248,7 @@ describe('getCustomTabKind (failed writes)', () => {
     writeNote,
   })
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
-    getCustomTabKind(
+    createCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' },
       host(writeNote),
@@ -304,32 +304,32 @@ describe('getCustomTabKind (failed writes)', () => {
   })
 })
 
-describe('getReaderTabKind (place)', () => {
+describe('createReaderTabKind (place)', () => {
   it('opens at the place saved before a restart and saves the place the reader shows', () => {
-    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
 
     const state = kind.open('a.bin', 'tab', { page: 4 }) as {
       selector: unknown
       savePlace: (place: unknown) => void
     }
     expect(state.selector).toEqual({ page: 4 })
-    expect(kind.getState?.(state)).toEqual({ page: 4 })
+    expect(kind.address?.getState?.(state)).toEqual({ page: 4 })
 
     state.savePlace({ page: 9 })
-    expect(kind.getState?.(state)).toEqual({ page: 9 })
+    expect(kind.address?.getState?.(state)).toEqual({ page: 9 })
   })
 
   it('opens a new tab at no place and saves none', () => {
-    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
 
     const state = kind.open('a.bin', 'tab')
 
     expect((state as { selector: unknown }).selector).toBeNull()
-    expect(kind.getState?.(state)).toBeUndefined()
+    expect(kind.address?.getState?.(state)).toBeUndefined()
   })
 
   it('reports to the open tabs the last place the reader reports', () => {
-    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('library/Wading Birds.pdf', 'tab') as {
       reportPlace: (place: unknown) => void
     }
@@ -337,33 +337,33 @@ describe('getReaderTabKind (place)', () => {
     state.reportPlace({ page: 7, pageCount: 12 })
     state.reportPlace({ page: 8, pageCount: 12 })
 
-    expect(kind.getOpenTab?.(state)).toStrictEqual({
+    expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'library/Wading Birds.pdf',
       place: { page: 8, pageCount: 12 },
     })
   })
 
   it('leaves the place out of the open tab while the reader has reported none', () => {
-    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
 
     const state = kind.open('library/Wading Birds.pdf', 'tab', { page: 4 })
 
-    expect(kind.getOpenTab?.(state)).toStrictEqual({ path: 'library/Wading Birds.pdf' })
+    expect(kind.address?.getOpenTab?.(state)).toStrictEqual({ path: 'library/Wading Birds.pdf' })
   })
 
   it('keeps the place it saves for a restart apart from the place it reports', () => {
-    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
       savePlace: (place: unknown) => void
       reportPlace: (place: unknown) => void
     }
 
     state.savePlace({ t: [66.5, 70] })
-    expect(kind.getOpenTab?.(state)).toStrictEqual({ path: 'talks/Heron Talk.mp3' })
+    expect(kind.address?.getOpenTab?.(state)).toStrictEqual({ path: 'talks/Heron Talk.mp3' })
 
     state.reportPlace({ positionSeconds: 66.5 })
-    expect(kind.getState?.(state)).toEqual({ t: [66.5, 70] })
-    expect(kind.getOpenTab?.(state)).toStrictEqual({
+    expect(kind.address?.getState?.(state)).toEqual({ t: [66.5, 70] })
+    expect(kind.address?.getOpenTab?.(state)).toStrictEqual({
       path: 'talks/Heron Talk.mp3',
       place: { positionSeconds: 66.5 },
     })
@@ -371,18 +371,18 @@ describe('getReaderTabKind (place)', () => {
 
   it('carries the icon the reader registers', () => {
     const icon = { name: 'Icon' }
-    const kind = getReaderTabKind('viewer-plugin', {
+    const kind = createReaderTabKind('viewer-plugin', {
       id: 'viewer',
       component: STUB_COMPONENT,
       icon,
     })
 
-    expect(kind.icon).toBe(icon)
+    expect(kind.display?.icon).toBe(icon)
   })
 
   it('omits title from top-level VNode props so it never leaks as a native HTML tooltip', () => {
     const FakeReader = { name: 'FakeReader', render: () => null }
-    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: FakeReader })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: FakeReader })
     const state = kind.open('audio/730707BG.LON.mp3', 'tab')
     const nodes = renderPaneContent({
       pluginId: 'viewer-plugin',
@@ -397,15 +397,14 @@ describe('getReaderTabKind (place)', () => {
     expect(childProps.pluginId).toBe('viewer-plugin')
     expect(childProps.title).toBeUndefined()
     expect((childProps.state as { title?: string })?.title).toBe('730707BG.LON.mp3')
-
   })
 })
 
-describe('getCustomTabKind (notes)', () => {
+describe('createCustomTabKind (notes)', () => {
   it('navigates note tab in place and syncs path when shown', async () => {
     const syncPath = vi.fn(() => true)
     const writeCalls: Array<{ path: string; body: string }> = []
-    const kind = getCustomTabKind(
+    const kind = createCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -425,7 +424,7 @@ describe('getCustomTabKind (notes)', () => {
       },
     )
 
-    expect(typeof kind.navigate).toBe('function')
+    expect(typeof kind.address?.navigate).toBe('function')
 
     const state = kind.open('notes/first.md', 'note:notes/first.md') as {
       path: string
@@ -438,7 +437,7 @@ describe('getCustomTabKind (notes)', () => {
     expect(state.body.value).toBe('# First')
     expect(kind.getTitle!(state)).toBe('first')
 
-    await kind.navigate!(state, 'notes/second.md', 'Second Note')
+    await kind.address?.navigate!(state, 'notes/second.md', 'Second Note')
     await new Promise((resolve) => setTimeout(resolve, 10))
 
     expect(state.path).toBe('notes/second.md')
@@ -449,7 +448,7 @@ describe('getCustomTabKind (notes)', () => {
     state.updateBody('# Second Edited')
     expect(writeCalls).toEqual([{ path: 'notes/second.md', body: '# Second Edited' }])
 
-    kind.onShow!(state, 'note:notes/first.md')
+    kind.display?.onShow!(state, 'note:notes/first.md')
     expect(syncPath).toHaveBeenCalledWith('note:notes/first.md', 'notes/second.md', 'Second Note')
   })
 
@@ -457,21 +456,25 @@ describe('getCustomTabKind (notes)', () => {
     const measure = vi.fn()
     const focusTab = vi.fn()
 
-    const prefixedReader = getReaderTabKind('p', {
+    const prefixedReader = createReaderTabKind('p', {
       id: 'reader:pdf',
       component: STUB_COMPONENT,
     })
     expect(prefixedReader.kind).toBe('reader:pdf')
     const emptyReaderTab = prefixedReader.open('', 't0')
     expect(prefixedReader.getTitle!(emptyReaderTab)).toBe('')
-    expect(prefixedReader.getTarget!(emptyReaderTab)).toStrictEqual({ file: '', path: '', title: '' })
-    expect(prefixedReader.getOpenTab!(emptyReaderTab)).toStrictEqual({ path: '' })
+    expect(prefixedReader.address?.getTarget!(emptyReaderTab)).toStrictEqual({
+      file: '',
+      path: '',
+      title: '',
+    })
+    expect(prefixedReader.address?.getOpenTab!(emptyReaderTab)).toStrictEqual({ path: '' })
     const readerTab = prefixedReader.open('a.pdf', 't1')
-    expect(prefixedReader.getOpenTab!(readerTab)).toStrictEqual({ path: 'a.pdf' })
-    expect(prefixedReader.identity!('a.pdf')).toBe('a.pdf')
-    expect(prefixedReader.getState!(readerTab)).toBeUndefined()
+    expect(prefixedReader.address?.getOpenTab!(readerTab)).toStrictEqual({ path: 'a.pdf' })
+    expect(prefixedReader.address?.identity!('a.pdf')).toBe('a.pdf')
+    expect(prefixedReader.address?.getState!(readerTab)).toBeUndefined()
 
-    const middleReader = getReaderTabKind('p', {
+    const middleReader = createReaderTabKind('p', {
       id: 'my-reader:2',
       component: STUB_COMPONENT,
       title: 'Fallback Reader',
@@ -483,19 +486,19 @@ describe('getCustomTabKind (notes)', () => {
     ).toBeNull()
     expect((middleReader.open('a.pdf', 't', 'str') as { selector: unknown }).selector).toBeNull()
 
-    prefixedReader.onShow!(readerTab, 't1')
+    prefixedReader.display?.onShow!(readerTab, 't1')
     ;(readerTab as { attachReader(reader: ReaderHandle): void }).attachReader({
       measure,
       focus: focusTab,
     })
-    prefixedReader.onShow!(readerTab, 't1')
+    prefixedReader.display?.onShow!(readerTab, 't1')
     expect(measure).toHaveBeenCalledTimes(1)
     expect(focusTab).toHaveBeenCalledTimes(1)
 
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
 
-    const kindWithDispatch = getCustomTabKind(
+    const kindWithDispatch = createCustomTabKind(
       'p',
       {
         kind: 'custom',
@@ -518,7 +521,7 @@ describe('getCustomTabKind (notes)', () => {
     const st = kindWithDispatch.open('notes/slow.md', 't1') as Record<string, unknown>
     // Save while loading & unedited is ignored
     const writeNote = vi.fn(async () => undefined)
-    const kindSaveGuard = getCustomTabKind(
+    const kindSaveGuard = createCustomTabKind(
       'p',
       { kind: 'note', component: STUB_COMPONENT },
       {
@@ -565,23 +568,23 @@ describe('getCustomTabKind (notes)', () => {
 
     // navigate hook ignores non-note paths
     const navSpy = vi.fn()
-    await kindWithDispatch.navigate!({ navigate: navSpy }, 'books/book.epub', 'Book')
+    await kindWithDispatch.address?.navigate!({ navigate: navSpy }, 'books/book.epub', 'Book')
     expect(navSpy).not.toHaveBeenCalled()
-    await kindWithDispatch.navigate!({ navigate: navSpy }, 'notes/a.md', 'A')
+    await kindWithDispatch.address?.navigate!({ navigate: navSpy }, 'notes/a.md', 'A')
     expect(navSpy).toHaveBeenCalledWith('notes/a.md', 'A')
 
     // onShow measures the state and syncs its path
     const m1 = vi.fn()
-    kindWithDispatch.onShow!({ path: 'notes/no-id.md', title: '', measure: vi.fn() }, '')
-    kindWithDispatch.onShow!({ measure: m1, path: '', title: '' }, 't1')
+    kindWithDispatch.display?.onShow!({ path: 'notes/no-id.md', title: '', measure: vi.fn() }, '')
+    kindWithDispatch.display?.onShow!({ measure: m1, path: '', title: '' }, 't1')
     expect(m1).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
-    const kindNoDeps = getCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
+    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
     expect(() =>
-      kindNoDeps.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
+      kindNoDeps.display?.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
     ).not.toThrow()
-    const kindUndefWorkspace = getCustomTabKind(
+    const kindUndefWorkspace = createCustomTabKind(
       'p',
       { kind: 'custom', component: STUB_COMPONENT },
       {
@@ -592,10 +595,13 @@ describe('getCustomTabKind (notes)', () => {
       },
     )
     expect(() =>
-      kindUndefWorkspace.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
+      kindUndefWorkspace.display?.onShow!(
+        { path: 'notes/a.md', title: '', measure: vi.fn() },
+        't1',
+      ),
     ).not.toThrow()
 
-    kindWithDispatch.onShow!(
+    kindWithDispatch.display?.onShow!(
       { path: 'notes/at-only.md', title: 'At Title', measure: vi.fn() },
       't1',
     )
@@ -604,15 +610,19 @@ describe('getCustomTabKind (notes)', () => {
     // getTitle, identity, getTarget, getOpenTab fallbacks
     expect(kindWithDispatch.getTitle!({ title: '', path: '' })).toBe('custom')
     expect(kindWithDispatch.getTitle!({ title: '', path: 'notes/from-at.md' })).toBe('from-at')
-    expect(kindWithDispatch.identity!('notes/a.md')).toBe('notes/a.md')
-    expect(kindWithDispatch.identity!('')).toBe('custom')
-    expect(kindWithDispatch.getTarget!({ title: '', path: '' })).toStrictEqual({ title: 'custom' })
-    expect(kindWithDispatch.getTarget!({ title: '', path: 'notes/from-at.md' })).toStrictEqual({
+    expect(kindWithDispatch.address?.identity!('notes/a.md')).toBe('notes/a.md')
+    expect(kindWithDispatch.address?.identity!('')).toBe('custom')
+    expect(kindWithDispatch.address?.getTarget!({ title: '', path: '' })).toStrictEqual({
+      title: 'custom',
+    })
+    expect(
+      kindWithDispatch.address?.getTarget!({ title: '', path: 'notes/from-at.md' }),
+    ).toStrictEqual({
       file: 'notes/from-at.md',
       path: 'notes/from-at.md',
       title: 'from-at',
     })
-    expect(kindWithDispatch.getOpenTab!({ path: 'notes/from-path.md' })).toStrictEqual({
+    expect(kindWithDispatch.address?.getOpenTab!({ path: 'notes/from-path.md' })).toStrictEqual({
       path: 'notes/from-path.md',
     })
   })
@@ -622,13 +632,16 @@ describe('the pane of a custom note tab', () => {
   it('keeps the refs of a tab state out of the props of its component', async () => {
     const messages: string[] = []
     const Probe = defineComponent({
-      props: { errorMessage: { type: String, default: '' }, state: { type: Object, default: null } },
+      props: {
+        errorMessage: { type: String, default: '' },
+        state: { type: Object, default: null },
+      },
       setup: (props) => () => {
         messages.push(props.errorMessage.trim())
         return h('span', 'note')
       },
     })
-    const kind = getCustomTabKind('p', { kind: 'custom', component: Probe })
+    const kind = createCustomTabKind('p', { kind: 'custom', component: Probe })
     const state = kind.open('notes/a.md', 't1')
     const view = mount(kind.pane, { props: { state } })
     await view.vm.$nextTick()
@@ -674,7 +687,7 @@ describe('createBufferedNoteState', () => {
       addr === 'missing' ? '' : `notes/${addr}.md`,
     )
 
-    const customKind = getCustomTabKind(
+    const customKind = createCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: STUB_COMPONENT, title: 'Note' },
       {
@@ -785,7 +798,7 @@ describe('createBufferedNoteState', () => {
 
     // Non-note custom tab kind does not open note buffer even when getNoteBuffer is provided
     vi.mocked(buffer.open).mockClear()
-    const nonNoteWithBuffer = getCustomTabKind(
+    const nonNoteWithBuffer = createCustomTabKind(
       'p',
       { kind: 'custom-other', component: STUB_COMPONENT },
       {

@@ -118,7 +118,7 @@ function createFeatureCommands(
         tabLinks,
         getTabs: () => windowTabs.tabs.tabs.value,
         getKind: (id) => windowTabs.tabs.getTab(id)?.kind.kind,
-        isLinkable: (id) => windowTabs.tabs.getTab(id)?.kind.navigate !== undefined,
+        isLinkable: (id) => windowTabs.tabs.getTab(id)?.kind.address?.navigate !== undefined,
         windowId: moves.windowId,
         isAsking: moves.isTabAsking,
         detach: moves.detachTabInPlace,

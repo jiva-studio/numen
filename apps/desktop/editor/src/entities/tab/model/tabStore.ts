@@ -45,9 +45,10 @@ export function createTabStore(
 
 /** The path a tab reports, else the one its target names. */
 export const getTabPath = (tab: WindowTab): string => {
-  const openedTab = tab.kind.getOpenTab?.(tab.state)
-  if (openedTab?.path) return openedTab.path
-  const target = tab.kind.getTarget?.(tab.state)
+  const address = tab.kind.address
+  const reportedPath = address?.getOpenTab?.(tab.state).path
+  if (reportedPath) return reportedPath
+  const target = address?.getTarget?.(tab.state)
   // Stryker disable next-line StringLiteral: reconcileTab returns before comparing when the requested path is empty, so the empty fallback is never compared
   return target?.path || target?.file || ''
 }

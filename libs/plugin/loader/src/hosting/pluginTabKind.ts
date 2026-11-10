@@ -4,7 +4,7 @@
  */
 import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
-import type { AnyTabKind, TabKind } from './tabKinds'
+import type { AnyTabKind, TabKindAddress, TabKindDisplay, TabKindEvents } from './tabKinds'
 import { adoptPluginStyle, getPluginStyle } from '../styles'
 import { parsePluginComponent, renderFallback, type PluginComponentSource } from './pane/pluginView'
 
@@ -18,26 +18,6 @@ export const isDeclaredTabKind = (
   registration: TabKindRegistration,
 ): registration is DeclaredTabKindRegistration => typeof registration.open === 'function'
 
-/** The hooks of a registration that the window takes unchanged. */
-type DeclaredHook =
-  | 'identity'
-  | 'onShow'
-  | 'receiveText'
-  | 'onKeyPress'
-  | 'getTarget'
-  | 'getOpenTab'
-  | 'onClose'
-  | 'onDestroy'
-  | 'navigate'
-  | 'isAsking'
-  | 'flushPending'
-  | 'createFile'
-  | 'getMark'
-  | 'isTool'
-  | 'icon'
-  | 'placement'
-  | 'getState'
-
 /** The fields of an object that are set. */
 type DefinedParts<T> = { [K in keyof T]?: Exclude<T[K], undefined> }
 
@@ -50,28 +30,38 @@ function pickDefined<T extends object>(parts: T): DefinedParts<T> {
 }
 
 /** The hooks of the registration the window takes unchanged, each only where the registration declares one. */
-export function pickDeclaredHooks<State extends object>(
+export function pickDeclaredParts<State extends object>(
   registration: TabKindRegistration<State>,
-): Partial<Pick<TabKind<State>, DeclaredHook>> {
-  return pickDefined({
-    identity: registration.identity,
-    onShow: registration.onShow,
-    receiveText: registration.receiveText,
-    onKeyPress: registration.onKeyPress,
-    getTarget: registration.getTarget,
-    getOpenTab: registration.getOpenTab,
-    onClose: registration.onClose,
-    onDestroy: registration.onDestroy,
-    navigate: registration.navigate,
-    isAsking: registration.isAsking,
-    flushPending: registration.flushPending,
-    createFile: registration.createFile,
-    getMark: registration.getMark,
-    isTool: registration.isTool,
-    icon: registration.icon,
-    placement: registration.placement,
-    getState: registration.getState,
-  })
+): {
+  readonly display: TabKindDisplay<State>
+  readonly events: TabKindEvents<State>
+  readonly address: TabKindAddress<State>
+} {
+  return {
+    display: pickDefined({
+      onShow: registration.onShow,
+      getMark: registration.getMark,
+      icon: registration.icon,
+      placement: registration.placement,
+      isTool: registration.isTool,
+    }),
+    events: pickDefined({
+      onClose: registration.onClose,
+      onDestroy: registration.onDestroy,
+      flushPending: registration.flushPending,
+      receiveText: registration.receiveText,
+      onKeyPress: registration.onKeyPress,
+      isAsking: registration.isAsking,
+    }),
+    address: pickDefined({
+      getState: registration.getState,
+      identity: registration.identity,
+      navigate: registration.navigate,
+      getTarget: registration.getTarget,
+      getOpenTab: registration.getOpenTab,
+      createFile: registration.createFile,
+    }),
+  }
 }
 
 function createDeclaredPane(
@@ -109,17 +99,20 @@ function createDeclaredPane(
 }
 
 /** The kind a plugin declared whole, as the window keeps it. */
-export function getDeclaredTabKind(
+export function createDeclaredTabKind(
   pluginId: string,
   registration: DeclaredTabKindRegistration,
 ): AnyTabKind {
   const { kind, title, getTitle } = registration
+  const declared = pickDeclaredParts(registration)
   return {
-    ...pickDeclaredHooks(registration),
     kind,
     pluginId,
     open: (targetPath, id, saved) => registration.open(targetPath, id, saved),
-    getTitle: (state) => getTitle?.(state) ?? title ?? kind,
     pane: createDeclaredPane(pluginId, registration.component),
+    getTitle: (state) => getTitle?.(state) ?? title ?? kind,
+    display: declared.display,
+    events: declared.events,
+    address: declared.address,
   }
 }

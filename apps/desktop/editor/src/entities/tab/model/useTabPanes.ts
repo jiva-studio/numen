@@ -21,7 +21,7 @@ export function useTabPanes(store: TabStore) {
       if (!id || proposed.has(id) || !activeTabIds.includes(id)) continue
       proposed.add(id)
       const one = open.value.get(id)
-      if (one?.kind.onKeyPress?.(one.state, event)) return true
+      if (one?.kind.events?.onKeyPress?.(one.state, event)) return true
     }
     return false
   }

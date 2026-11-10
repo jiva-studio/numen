@@ -35,8 +35,10 @@ const create = (
   const windowTabs = {
     groups: {
       handle: { front: () => front },
-      findKind: (isWanted: (kind: { kind: string; icon?: unknown }) => boolean) =>
-        entries.map((one) => ({ kind: one.kind ?? 'note', icon: one.icon })).find(isWanted),
+      findKind: (isWanted: (kind: { kind: string }) => boolean) =>
+        entries
+          .map((one) => ({ kind: one.kind ?? 'note', display: { icon: one.icon } }))
+          .find(isWanted),
     },
     tabs: {
       tabs,
@@ -47,10 +49,12 @@ const create = (
           state: {},
           kind: {
             kind: one.kind ?? 'note',
-            icon: one.icon,
-            ...(one.openTab ? { getOpenTab: () => one.openTab } : {}),
-            ...(one.savedState !== undefined ? { getState: () => one.savedState } : {}),
-            ...(one.takesText ? { receiveText: vi.fn() } : {}),
+            display: { icon: one.icon },
+            address: {
+              ...(one.openTab ? { getOpenTab: () => one.openTab } : {}),
+              ...(one.savedState !== undefined ? { getState: () => one.savedState } : {}),
+            },
+            events: one.takesText ? { receiveText: vi.fn() } : {},
           },
         }
       },

@@ -37,6 +37,9 @@ export interface TabMoverDeps {
 }
 
 export function createTabMover(deps: TabMoverDeps) {
+  const getTitleOf = (id: string): string =>
+    deps.windowTabs.tabs.tabs.value.find((tab) => tab.id === id)?.title ?? ''
+
   /**
    * Flushes pending writes of the tab and returns it with its saved state. Returns null for a
    * tab id that is not open or a tab that is asking.
@@ -49,9 +52,9 @@ export function createTabMover(deps: TabMoverDeps) {
     return {
       id,
       kind: one.kind.kind,
-      path: one.kind.getOpenTab?.(one.state).path ?? '',
-      title: deps.windowTabs.tabs.tabs.value.find((tab) => tab.id === id)?.title ?? '',
-      state: formatSavedState(one.kind.getState?.(one.state)),
+      path: one.kind.address?.getOpenTab?.(one.state).path ?? '',
+      title: getTitleOf(id),
+      state: formatSavedState(one.kind.address?.getState?.(one.state)),
     }
   }
 

@@ -24,13 +24,13 @@ export const formatSavedState = (saved: JsonValue | undefined): string =>
 function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
   const one = windowTabs.tabs.getTab(id)
   if (!one) return { id, kind: '', title, path: '', state: '' }
-  const openTab = one.kind.getOpenTab?.(one.state)
+  const openTab = one.kind.address?.getOpenTab?.(one.state)
   return {
     id,
     kind: one.kind.kind,
     title,
     path: openTab?.path ?? '',
-    state: formatSavedState(one.kind.getState?.(one.state)),
+    state: formatSavedState(one.kind.address?.getState?.(one.state)),
     ...(openTab?.place ? { place: openTab.place } : {}),
   }
 }
@@ -43,7 +43,7 @@ export function useOpenTabs({
 }: OpenTabsDeps) {
   /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
   const isTakingText = (id: string): boolean =>
-    windowTabs.tabs.getTab(id)?.kind.receiveText !== undefined
+    windowTabs.tabs.getTab(id)?.kind.events?.receiveText !== undefined
 
   /** The tab in front, and the last one that takes no text where the one in front does. */
   const getActiveTabId = (): string => {
@@ -106,13 +106,13 @@ export function useOpenTabs({
 
   /** Returns the declared icon of a kind, or its built-in icon. Tabs of other windows use it. */
   const getKindIcon = (kind: string): Component | null =>
-    windowTabs.groups.findKind((one) => one.kind === kind)?.icon ?? findTabKindIcon(kind)
+    windowTabs.groups.findKind((one) => one.kind === kind)?.display?.icon ?? findTabKindIcon(kind)
 
   /** The icon the tab's kind declares, or the one the window keeps for that kind. */
   const getTabIcon = (id: string): Component | null => {
     const kind = windowTabs.tabs.getTab(id)?.kind
     // Stryker disable next-line StringLiteral: no kind and the empty kind both map to no icon
-    return kind?.icon ?? findTabKindIcon(kind?.kind ?? '')
+    return kind?.display?.icon ?? findTabKindIcon(kind?.kind ?? '')
   }
 
   return {

@@ -21,7 +21,7 @@ interface WindowTabMenuDeps {
 
 const getTabFileTarget = (windowTabs: WindowTabMenuDeps['windowTabs'], id: string): RunTarget => {
   const tab = windowTabs.tabs.getTab(id)
-  const on = tab ? tab.kind.getTarget?.(tab.state) : undefined
+  const on = tab ? tab.kind.address?.getTarget?.(tab.state) : undefined
   return {
     path: on?.file || on?.path || '',
     title: on?.title ?? '',

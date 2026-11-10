@@ -12,8 +12,8 @@ import type {
   Caught,
 } from '@numen/plugin-sdk'
 import { reportError } from './events'
-import { getReaderTabKind, getCustomTabKind } from './customTabKind'
-import { getDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
+import { createReaderTabKind, createCustomTabKind } from './customTabKind'
+import { createDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
 import type { PluginHostDeps } from './types'
 import type { PluginItemRegistration, RegisteredReader, RegisteredTabKind } from './registry'
 
@@ -27,7 +27,7 @@ export function registerReaderEntry(
     ? registration.id
     : `reader:${registration.id}`
   const cleanups: (() => void)[] = [
-    deps.registerKind(getReaderTabKind(pluginId, registration, getContext)),
+    deps.registerKind(createReaderTabKind(pluginId, registration, getContext)),
   ]
   for (const ext of deps.getReaderExtensions?.(pluginId, registration.id) ?? []) {
     cleanups.push(
@@ -79,8 +79,8 @@ export function registerTabKindEntry(
 ): Disposable {
   const { pluginId, registration, getContext } = item
   const kind = isDeclaredTabKind(registration)
-    ? getDeclaredTabKind(pluginId, registration)
-    : getCustomTabKind(pluginId, registration, { ...deps, getContext })
+    ? createDeclaredTabKind(pluginId, registration)
+    : createCustomTabKind(pluginId, registration, { ...deps, getContext })
   const cleanups: (() => void)[] = [deps.registerKind(kind)]
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(

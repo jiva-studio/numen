@@ -34,15 +34,18 @@ interface Graph {
 }
 
 /** A tab kind that accepts text. */
-const CHAT = { kind: 'chat', isTool: true, receiveText: vi.fn() }
+const CHAT = {
+  kind: 'chat',
+  display: { isTool: true },
+  events: { receiveText: vi.fn() },
+}
 
 const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } = {}) => {
   const writer = vi.fn()
   const graphKind = {
     kind: 'graph',
-    isTool: true,
-    navigate: vi.fn(),
-    getTarget: () => graph?.target,
+    display: { isTool: true },
+    address: { navigate: vi.fn(), getTarget: () => graph?.target },
   }
   const open = new Map<string, { kind: object; state: string }>([
     ['graph:1', { kind: graphKind, state: 'graph state' }],
@@ -122,20 +125,18 @@ describe('the note the window relies on', () => {
     })
     const earlierGraph = {
       kind: 'graph',
-      isTool: true,
-      navigate: vi.fn(),
-      getTarget: () => ({ path: 'Old.md', title: 'Old' }),
+      display: { isTool: true },
+      address: { navigate: vi.fn(), getTarget: () => ({ path: 'Old.md', title: 'Old' }) },
     }
     const nonToolWithNav = {
       kind: 'note',
-      isTool: false,
-      navigate: vi.fn(),
-      getTarget: () => ({ path: 'Note.md', title: 'Note' }),
+      display: { isTool: false },
+      address: { navigate: vi.fn(), getTarget: () => ({ path: 'Note.md', title: 'Note' }) },
     }
     const toolWithoutGetTarget = {
       kind: 'tool-no-target',
-      isTool: true,
-      navigate: vi.fn(),
+      display: { isTool: true },
+      address: { navigate: vi.fn() },
     }
     ;(deps.windowTabs.tabs.tabs as { value: unknown }).value = [
       { id: 'graph:0' },

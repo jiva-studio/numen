@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { TextRange } from '@numen/plugin-sdk'
-import { getReaderTabKind } from './customTabKind'
+import { createReaderTabKind } from './customTabKind'
 import { createPluginHost } from './host'
 import type { SourceReader } from './tabKinds'
 import type { PluginHostDeps } from './types'
@@ -12,7 +12,7 @@ import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('the ranges of a reader tab', () => {
   it('are none on a tab just opened', () => {
-    const kind = getReaderTabKind('sample.plugin', {
+    const kind = createReaderTabKind('sample.plugin', {
       id: 'reader:bin',
       component: STUB_COMPONENT,
     })

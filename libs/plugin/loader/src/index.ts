@@ -49,7 +49,7 @@ export { requireMountAccess } from './hosting/guards/viewPermissions'
 export { createPluginContext } from './hosting/context'
 export { createIdleContextHost, type IdleContextHostParts } from './hosting/idleContextHost'
 export { disposeSubscriptions } from './hosting/guards/subscriptions'
-export { getCustomTabKind } from './hosting/customTabKind'
+export { createCustomTabKind } from './hosting/customTabKind'
 export type {
   NoteBuffer,
   PluginContextHost,

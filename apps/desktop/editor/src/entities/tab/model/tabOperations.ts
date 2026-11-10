@@ -5,7 +5,7 @@
 import { effectScope } from 'vue'
 import type { JsonValue } from '@/shared/api/json'
 import { closeTab, openTabAdjacent, paneById } from '@numen/workbench'
-import type { ActiveTab, AnyTabKind, KindTab, WindowHandle } from '../lib/kinds'
+import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
 import { generateId } from '../lib/workspace'
 import { createRestoreFailedKind } from './restoreFailed'
@@ -13,6 +13,13 @@ import { createUnavailableKind, isUnavailableKind, type UnavailableState } from 
 import { getTabPath, omitEntry, openInScope, showTab, type TabStore } from './tabStore'
 
 const generatePaneId = () => crypto.randomUUID()
+
+/** A tab released as the window or its plugin goes: the kind's destroy hook, or its close hook where it has none. */
+const destroyTab = (one: WindowTab, id: string): void => {
+  const events = one.kind.events
+  if (events?.onDestroy) events.onDestroy(one.state, id)
+  else events?.onClose?.(one.state, id)
+}
 
 export function createPlaceholders(store: TabStore) {
   /** One tab replaced by a tab of another kind opened on the same path with the same state. */
@@ -28,12 +35,11 @@ export function createPlaceholders(store: TabStore) {
   const closeTabsOfPlugin = (pluginId: string) => {
     for (const [id, one] of store.open.value) {
       if (one.kind.pluginId !== pluginId) continue
-      const saved = one.kind.getState?.(one.state)
+      const saved = one.kind.address?.getState?.(one.state)
       const title = one.kind.getTitle?.(one.state)
-      const icon = one.kind.icon
+      const icon = one.kind.display?.icon
       const path = getTabPath(one)
-      if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
-      else one.kind.onClose?.(one.state, id)
+      destroyTab(one, id)
       replaceTab(
         id,
         createUnavailableKind(
@@ -140,10 +146,11 @@ export function createTabOpeners(store: TabStore) {
   /** The open tab a path already has, where the kind gives a tab one identity per path. */
   const findTabOfPath = (one: AnyTabKind, kind: string, targetPath: string) =>
     // Stryker disable next-line LogicalOperator: empty targetPath matches singleton tabs via candidateId below
-    targetPath && one.identity ? findOpenTabAt(kind, targetPath) : undefined
+    targetPath && one.address?.identity ? findOpenTabAt(kind, targetPath) : undefined
 
   const getCandidateId = (one: AnyTabKind, kind: string, targetPath: string, wantedId: string) =>
-    wantedId || (one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind))
+    wantedId ||
+    (one.address?.identity ? `${kind}:${one.address.identity(targetPath)}` : generateId(kind))
 
   const createTabNow = (kind: string, targetPath: string, wantedId = ''): string => {
     const one = getKind(kind)
@@ -206,13 +213,13 @@ export function createTabClosers(store: TabStore) {
     const one = store.open.value.get(id)
     if (!one) return
     store.open.value = new Map([...omitEntry(store.open.value, id), [id, one]])
-    one.kind.onShow?.(one.state, id)
+    one.kind.display?.onShow?.(one.state, id)
   }
 
   const releaseTab = (id: string): boolean => {
     const one = store.open.value.get(id)
     if (!one) return true
-    if (one.kind.onClose && !one.kind.onClose(one.state, id)) return false
+    if (one.kind.events?.onClose?.(one.state, id) === false) return false
     store.open.value = omitEntry(store.open.value, id)
     store.drop(id)
     return true
@@ -225,15 +232,14 @@ export function createTabClosers(store: TabStore) {
   const reconcileTab = (path: string, newKind: string) => {
     if (!path) return
     for (const [id, one] of store.open.value) {
-      if (one.kind.kind === newKind || one.kind.isTool) continue
+      if (one.kind.kind === newKind || one.kind.display?.isTool) continue
       if (getTabPath(one) === path) requestClose(id)
     }
   }
 
   const close = () => {
     for (const [id, one] of store.open.value) {
-      if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
-      else one.kind.onClose?.(one.state, id)
+      destroyTab(one, id)
       store.drop(id)
     }
   }
@@ -255,7 +261,7 @@ export function createTabNavigation(
     if (!last) return openers.openTabOfKind(kind, targetPath)
     const [id, one] = last
     showTab(store, id)
-    await one.kind.navigate?.(one.state, targetPath, '')
+    await one.kind.address?.navigate?.(one.state, targetPath, '')
     return id
   }
 
@@ -269,13 +275,13 @@ export function createTabNavigation(
     onMove?: (tabId: string) => void,
   ): Promise<void> => {
     const matchingTabs = [...open.value].filter(
-      ([, one]) => one.kind.navigate && getTabPath(one) === from,
+      ([, one]) => one.kind.address?.navigate && getTabPath(one) === from,
     )
     await Promise.all(
       matchingTabs.map(([id, one]) => {
         onMove?.(id)
-        // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.navigate above.
-        return Promise.resolve(one.kind.navigate?.(one.state, to, ''))
+        // Stryker disable next-line OptionalChaining: matchingTabs is filtered by one.kind.address.navigate above.
+        return Promise.resolve(one.kind.address?.navigate?.(one.state, to, ''))
       }),
     )
   }
@@ -289,7 +295,7 @@ export function createTabNavigation(
     const id = last?.[0] ?? (await openers.openTabOfKind(kind))
     const one = open.value.get(id)
     // Stryker disable next-line OptionalChaining: id is either in open.value or just created by openTabOfKind.
-    one?.kind.receiveText?.(one.state, text)
+    one?.kind.events?.receiveText?.(one.state, text)
     showTab(store, id)
     return id
   }

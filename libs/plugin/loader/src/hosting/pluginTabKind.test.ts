@@ -11,9 +11,9 @@ import {
   unregisterPluginStyle,
 } from '../styles'
 import {
-  getDeclaredTabKind,
+  createDeclaredTabKind,
   isDeclaredTabKind,
-  pickDeclaredHooks,
+  pickDeclaredParts,
   type DeclaredTabKindRegistration,
 } from './pluginTabKind'
 import type { PluginHostDeps } from './types'
@@ -43,7 +43,7 @@ const declare = (overrides: Partial<TabKindRegistration<Held>> = {}): DeclaredTa
   }) as DeclaredTabKindRegistration
 
 const createDeclaredPane = (pluginId: string, component: unknown) =>
-  getDeclaredTabKind(pluginId, declare({ component: component as never })).pane
+  createDeclaredTabKind(pluginId, declare({ component: component as never })).pane
 
 describe('a registration that says what its tabs hold', () => {
   it('is distinguished from one that holds a note', () => {
@@ -52,7 +52,7 @@ describe('a registration that says what its tabs hold', () => {
   })
 
   it('opens its tabs itself, under the identity the window gives them', () => {
-    const kind = getDeclaredTabKind('md.numen.sample', declare())
+    const kind = createDeclaredTabKind('md.numen.sample', declare())
 
     expect(kind.open('Graph.md', 'target: 1')).toEqual({
       at: 'Graph.md',
@@ -65,10 +65,10 @@ describe('a registration that says what its tabs hold', () => {
 
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
     const getTitle = (state: Held) => state.title
-    const named = getDeclaredTabKind('p', declare({ getTitle }))
-    const plainKind = getDeclaredTabKind('p', declare())
+    const named = createDeclaredTabKind('p', declare({ getTitle }))
+    const plainKind = createDeclaredTabKind('p', declare())
     const { title: _title, ...untitled } = declare()
-    const bareKind = getDeclaredTabKind('p', untitled)
+    const bareKind = createDeclaredTabKind('p', untitled)
 
     expect(named.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Focus')
     expect(plainKind.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
@@ -79,18 +79,18 @@ describe('a registration that says what its tabs hold', () => {
     const navigate = vi.fn()
     const receiveText = vi.fn()
     const placement = { pane: 'main', order: 0 } as const
-    const kind = getDeclaredTabKind(
+    const kind = createDeclaredTabKind(
       'p',
       declare({ navigate, receiveText, isTool: true, placement }),
     )
 
-    expect(kind.navigate).toBe(navigate)
-    expect(kind.receiveText).toBe(receiveText)
-    expect(kind.isTool).toBe(true)
-    expect(kind.placement).toBe(placement)
-    expect(kind).not.toHaveProperty('identity')
-    expect(kind).not.toHaveProperty('onClose')
-    expect(kind).not.toHaveProperty('getTarget')
+    expect(kind.address?.navigate).toBe(navigate)
+    expect(kind.events?.receiveText).toBe(receiveText)
+    expect(kind.display?.isTool).toBe(true)
+    expect(kind.display?.placement).toBe(placement)
+    expect(kind.address).not.toHaveProperty('identity')
+    expect(kind.events).not.toHaveProperty('onClose')
+    expect(kind.address).not.toHaveProperty('getTarget')
   })
 })
 
@@ -99,11 +99,14 @@ describe('the hooks a registration passes over', () => {
     const onClose = () => true
     const icon = { name: 'Icon' }
 
-    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT, onClose, icon })).toStrictEqual({
-      onClose,
-      icon,
+    expect(
+      pickDeclaredParts({ kind: 'k', component: STUB_COMPONENT, onClose, icon }),
+    ).toStrictEqual({ display: { icon }, events: { onClose }, address: {} })
+    expect(pickDeclaredParts({ kind: 'k', component: STUB_COMPONENT })).toStrictEqual({
+      display: {},
+      events: {},
+      address: {},
     })
-    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT })).toStrictEqual({})
   })
 
   it('include what the window asks of the kind that edits a file', () => {
@@ -114,7 +117,9 @@ describe('the hooks a registration passes over', () => {
       createFile: async () => ({ ok: true as const, value: { path: 'a.md' } }),
     }
 
-    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT, ...hooks })).toStrictEqual(hooks)
+    const parts = pickDeclaredParts({ kind: 'k', component: STUB_COMPONENT, ...hooks })
+
+    expect({ ...parts.display, ...parts.events, ...parts.address }).toStrictEqual(hooks)
   })
 })
 
@@ -222,8 +227,8 @@ describe('a declared kind registered through a plugin context', () => {
       isTool: true,
     })
 
-    const [kind] = registered as ReturnType<typeof getDeclaredTabKind>[]
-    expect(kind?.isTool).toBe(true)
+    const [kind] = registered as ReturnType<typeof createDeclaredTabKind>[]
+    expect(kind?.display?.isTool).toBe(true)
     expect(kind?.open('A.md', 'target: 1')).toEqual({ at: 'A.md', id: 'target: 1', title: 'T' })
     sub.dispose()
     expect(registered).toHaveLength(0)

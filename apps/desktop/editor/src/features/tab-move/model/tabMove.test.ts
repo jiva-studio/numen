@@ -15,8 +15,10 @@ const createTab = () => {
     state,
     kind: {
       kind: 'plex',
-      getOpenTab: (one: typeof state) => ({ path: one.path }),
-      getState: (one: typeof state) => ({ focus: one.focus }),
+      address: {
+        getOpenTab: (one: typeof state) => ({ path: one.path }),
+        getState: (one: typeof state) => ({ focus: one.focus }),
+      },
     },
   }
 }

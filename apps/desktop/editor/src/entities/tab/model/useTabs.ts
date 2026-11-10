@@ -9,7 +9,7 @@ import type { TabStore } from './tabStore'
 export function useTabs(store: TabStore) {
   const tabs = computed<readonly Tab[]>(() =>
     [...store.open.value].map(([id, one]): Tab => {
-      const mark = one.kind.getMark?.(one.state)
+      const mark = one.kind.display?.getMark?.(one.state)
       const title = one.kind.getTitle?.(one.state) ?? ''
       return { id, title, ...(mark ? { mark } : {}) }
     }),

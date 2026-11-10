@@ -7,8 +7,8 @@ import { createTestTabs } from '@/testing/tabs'
 const thing: AnyTabKind = {
   kind: 'thing',
   open: (targetPath: string) => ({ targetPath, title: targetPath }),
-  getTitle: (state: { title: string }) => state.title,
   pane: {},
+  getTitle: (state: { title: string }) => state.title,
 }
 
 describe('the show of the window handle', () => {

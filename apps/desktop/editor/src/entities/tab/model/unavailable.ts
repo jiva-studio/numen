@@ -4,7 +4,6 @@ import { getFileName } from '@/shared/lib/paths'
 import { findTabKindPlugin } from '../api/tabKindPlugin'
 import type { JsonValue } from '@/shared/api/json'
 import type { AnyTabKind, TabKind } from '../lib/kinds'
-import type { Writable } from '../lib/writable'
 import type { UnavailableLookup } from '../lib/unavailableView'
 
 /** What a placeholder asks of the window: the changes it makes. */
@@ -69,7 +68,7 @@ export const createUnavailableKind = (
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const placeholder: Writable<TabKind<UnavailableState>> = {
+  const placeholder: TabKind<UnavailableState> = {
     kind,
     open: (targetPath: string, _id: string, saved?: JsonValue): UnavailableState => ({
       kind,
@@ -79,18 +78,20 @@ export const createUnavailableKind = (
       lookup: startLookup(kind),
       services,
     }),
+    pane,
     getTitle: (state) =>
       state.title ||
       getFileName(state.targetPath) ||
       options?.title ||
       getDeclaredTitle(state.lookup.value) ||
       kind,
-    getOpenTab: (state) => ({ path: state.targetPath }),
-    getState: (state) => state.saved,
-    pane,
-    identity: (targetPath: string) => targetPath,
+    ...(options?.icon ? { display: { icon: options.icon } } : {}),
+    address: {
+      getState: (state) => state.saved,
+      getOpenTab: (state) => ({ path: state.targetPath }),
+      identity: (targetPath: string) => targetPath,
+    },
   }
-  if (options?.icon) placeholder.icon = options.icon
   placeholders.add(placeholder)
   return placeholder
 }
