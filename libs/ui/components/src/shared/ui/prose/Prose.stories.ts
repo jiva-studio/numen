@@ -147,7 +147,7 @@ export const IgnoresAPressOnText: Story = {
     wasPrevented.length = 0
   },
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByText('Tools are kept in the shed.'))
+    await userEvent.click(within(canvasElement).getByText('Tools'))
     await expect(onFollow).not.toHaveBeenCalled()
   },
 }
