@@ -1,6 +1,7 @@
 package container
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"reflect"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 		field      string
 		targetPath string
 	}{
-		{Settings{}, "Agent", agentAt},
+		{settings.File{}, "Agent", agentAt},
 	} {
 		field, there := reflect.TypeOf(one.in).FieldByName(one.field)
 		if !there {

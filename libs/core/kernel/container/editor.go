@@ -147,7 +147,7 @@ func (c Config) startVault(db *Index) func(
 		opening.ShouldRebuild = rebuild
 		opening.ErrorHandler = handleError
 		if notified != nil {
-			opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+			opening.Told = func(m vault.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
 		}
 
 		open := opening.Begin(ctx, v)

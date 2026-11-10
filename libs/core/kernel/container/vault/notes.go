@@ -9,11 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
-// Notes is what everything that acts on the notes of a vault is called where
-// it is built. An application is handed the set and names it here, so naming it
-// is not reaching for a scenario.
-type Notes = note.Scenarios
-
 // Notes builds everything that acts on the notes of a vault, against this
 // installation's vault readers and writers.
 //

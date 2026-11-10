@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -35,7 +36,7 @@ var ErrNoteUnreadable = errors.New("the note could not be read")
 type Config struct {
 	ServiceDir         string
 	ShouldRebuildIndex bool
-	Chunks             *ChunkTokens
+	Chunks             *note.ChunkTokens
 	ResolvedCompute    hardware.ResolvedCompute
 	PluginHost         pluginport.PluginManager
 	Clock              machineport.Clock

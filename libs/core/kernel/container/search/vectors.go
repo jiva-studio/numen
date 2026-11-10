@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -76,7 +77,7 @@ func (c Config) OpenEmbedder(ctx context.Context, onReadError func(error)) (embe
 }
 
 // FollowChunkTokens updates cell whenever embedder reports a new chunk token limit.
-func FollowChunkTokens(cell *ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
+func FollowChunkTokens(cell *note.ChunkTokens, embedder embeddingport.Embedder, onChange func(func())) {
 	cell.Set(embedder.GetModel().ChunkTokens)
 	onChange(func() { cell.Set(embedder.GetModel().ChunkTokens) })
 }

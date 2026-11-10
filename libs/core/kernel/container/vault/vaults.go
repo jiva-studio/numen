@@ -28,9 +28,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Vaults is what everything that acts on the vault list and vaults is called.
-type Vaults = vaultusecase.Scenarios
-
 // Config wires vaults, opening, notes, text versions, index and open vaults.
 type Config struct {
 	IndexPath    string
@@ -46,7 +43,7 @@ type Config struct {
 	ErrorHandler func(error)
 	SyncSetting  query.SyncSetting
 	CutNotes     chunking.CutNotes
-	SetNoteCut   func(*vaultusecase.Scan, *Index)
+	SetNoteCut   func(*vaultusecase.Scan, *vaultusecase.Index)
 }
 
 // Registry opens the vault registry for this installation.
@@ -103,7 +100,7 @@ func (c Config) handleError(err error) {
 // tree, against this installation's list and index.
 // notes settles each note a move sent somewhere else. It is the same note.Move
 // a rename goes through, so a note settles one way however it traveled.
-func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.Move) vaultusecase.Scenarios {
+func (c Config) Vaults(registry vaultport.VaultRegistry, db *vaultusecase.Index, notes note.Move) vaultusecase.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
 	unregister := vaultusecase.NewUnregister(registry, db.Vaults())
 	erase := vaultusecase.NewErase(c.VaultIdentity(), c.Trash(), unregister)

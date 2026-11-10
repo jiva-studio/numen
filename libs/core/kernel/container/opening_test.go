@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -118,8 +119,8 @@ func TestARescanDoesNotRunAdjacentTheFirstWalk(t *testing.T) {
 	readers := makeStagedReaders()
 	opening := cfg.VaultOpenerWith(db, readers, watcher)
 
-	changesCh := make(chan container.VaultChanges, 8)
-	opening.Told = func(m container.VaultChanges) { changesCh <- m }
+	changesCh := make(chan vault.VaultChanges, 8)
+	opening.Told = func(m vault.VaultChanges) { changesCh <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())

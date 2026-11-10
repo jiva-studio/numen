@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -91,8 +92,8 @@ func TestVaultOpener_ReportsFollowErrorsAndEnd(t *testing.T) {
 	opening := cfg.VaultOpenerWith(db, cfg.VaultReaders(), watcher)
 	received := make(chan error, 4)
 	opening.ErrorHandler = func(err error) { received <- err }
-	changesCh := make(chan container.VaultChanges, 4)
-	opening.Told = func(m container.VaultChanges) { changesCh <- m }
+	changesCh := make(chan vault.VaultChanges, 4)
+	opening.Told = func(m vault.VaultChanges) { changesCh <- m }
 
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
@@ -193,14 +194,14 @@ func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 func TestShouldReadAssets_TrueForAssetsOrReload(t *testing.T) {
 	for _, one := range []struct {
 		what string
-		got  container.VaultChanges
+		got  vault.VaultChanges
 		want bool
 	}{
-		{"nothing", container.VaultChanges{}, false},
-		{"a note", container.VaultChanges{Paths: []string{"a.md"}}, false},
-		{"an asset", container.VaultChanges{Assets: []string{"a.png"}}, true},
-		{"everything", container.VaultChanges{ShouldReload: true}, true},
-		{"both", container.VaultChanges{ShouldReload: true, Assets: []string{"a.png"}}, true},
+		{"nothing", vault.VaultChanges{}, false},
+		{"a note", vault.VaultChanges{Paths: []string{"a.md"}}, false},
+		{"an asset", vault.VaultChanges{Assets: []string{"a.png"}}, true},
+		{"everything", vault.VaultChanges{ShouldReload: true}, true},
+		{"both", vault.VaultChanges{ShouldReload: true, Assets: []string{"a.png"}}, true},
 	} {
 		if got := one.got.ShouldReadAssets(); got != one.want {
 			t.Errorf("%s: %v", one.what, got)

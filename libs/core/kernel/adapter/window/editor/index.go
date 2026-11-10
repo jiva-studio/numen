@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -57,7 +58,7 @@ func newFloorErrorReporter(state *State) func(error) {
 var errNoProgress = errors.New("index progress is unknown")
 
 func newIndexWorker(
-	made Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
+	made assembly.Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:  made.ReadWholeVault,
@@ -91,7 +92,7 @@ type indexJob struct {
 	out     io.Writer
 }
 
-func startIndexing(ctx context.Context, made Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
+func startIndexing(ctx context.Context, made assembly.Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
 	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.

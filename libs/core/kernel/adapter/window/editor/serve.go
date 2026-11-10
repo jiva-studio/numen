@@ -50,7 +50,7 @@ type Installation struct {
 	notes  note.Scenarios
 	vaults vaults.Scenarios
 
-	made          Assembly
+	made          assembly.Assembly
 	tasks         *run.Tasks
 	out           io.Writer
 	checkIdentity vaults.CheckIdentity
@@ -69,7 +69,7 @@ var errNoVault = errors.New("the window has no vault")
 
 // Open initializes the editor window session for the specified vault.
 // When targetVault is empty, opens the most recently viewed vault.
-func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer) (*Installation, error) {
+func Open(ctx context.Context, made assembly.Assembly, targetVault string, out io.Writer) (*Installation, error) {
 	registry := made.GetRegistry()
 
 	first, err := vaultregistry.NewGetVaultToShow(registry).Execute(targetVault)
@@ -257,7 +257,7 @@ func (o *Installation) Report(messages []string) {
 }
 
 func createWindow(
-	made Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
+	made assembly.Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
 ) (*State, *Services, error) {
 	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
 	if err != nil {
@@ -512,14 +512,6 @@ func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) boo
 // the vault closes. A page with a pending user prompt counts as responded;
 // further waiting depends on the user.
 const FlushTimeout = 3 * time.Second
-
-type Assembly = assembly.Assembly
-type VaultAssembly = assembly.VaultAssembly
-type IndexAssembly = assembly.IndexAssembly
-type PluginAssembly = assembly.PluginAssembly
-type SettingsAssembly = assembly.SettingsAssembly
-type WorkerAssembly = assembly.WorkerAssembly
-type ScenarioAssembly = assembly.ScenarioAssembly
 
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "import files"

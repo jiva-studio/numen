@@ -12,12 +12,8 @@ import (
 
 const agentAt = settingswiring.AgentAt
 
-// Settings is the file that configures this installation: one object whose
-// fields are its sections, in file order.
-type Settings = settingswiring.Settings
-
 // DefaultSettings returns the settings of an unconfigured installation.
-func DefaultSettings() Settings {
+func DefaultSettings() settingsadapter.File {
 	return settingswiring.DefaultSettings()
 }
 
@@ -33,21 +29,21 @@ func CheckTextScale(name string, scale float64) error {
 
 // Settings reads the settings file. An unconfigured installation returns the
 // default settings.
-func (c Config) Settings() (Settings, error) {
+func (c Config) Settings() (settingsadapter.File, error) {
 	return c.settings().Settings()
 }
 
-func (c Config) getSettingsAt(path string) (Settings, error) {
+func (c Config) getSettingsAt(path string) (settingsadapter.File, error) {
 	return c.settings().GetSettingsAt(path)
 }
 
-func (c Config) getSettingsOrDefaults() Settings {
+func (c Config) getSettingsOrDefaults() settingsadapter.File {
 	return c.settings().GetSettingsOrDefaults()
 }
 
 // SetSettings returns the configuration with the values of a settings file
 // applied. Both entry points use it.
-func (c Config) SetSettings(s Settings) Config {
+func (c Config) SetSettings(s settingsadapter.File) Config {
 	c.Hardware, c.ResolvedCompute = c.settings().ResolveCompute(s)
 	c.settings().ConfigurePluginHost(s)
 	return c

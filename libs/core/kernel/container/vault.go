@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 
-	vaultwiring "github.com/jiva-studio/numen/libs/core/kernel/container/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
@@ -20,36 +19,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Vaults is what everything that acts on the vault list and vaults is called.
-type Vaults = vaultwiring.Vaults
-
 // Index is the cache, exposed as the ports that the core uses.
-type Index = vaultwiring.Index
-
-// ErrNoIndexPath is a configuration that names no index database.
-var ErrNoIndexPath = vaultwiring.ErrNoIndexPath
+type Index = vault.Index
 
 // Notes is what everything that acts on the notes of a vault is called where
 // it is built.
-type Notes = vaultwiring.Notes
-
-// VaultOpener is how this installation opens a vault.
-type VaultOpener = vaultwiring.VaultOpener
-
-// VaultChanges is what an opener reports to its callers.
-type VaultChanges = vaultwiring.VaultChanges
-
-// OpenVault is one vault an application has opened.
-type OpenVault = vaultwiring.OpenVault
-
-type bufferedNoteRepository = vaultwiring.BufferedNoteRepository
-
-type noteRepository = noteport.NoteRepository
-
-type vaultRefresh = vault.Refresh
-
-// ErrClosing is returned for work requested after the window began closing.
-var ErrClosing = vaultwiring.ErrClosing
+type Notes = note.Scenarios
 
 // OpenVaults is every vault this window has open.
 type OpenVaults = vault.OpenVaults[Config, *Index]
@@ -168,7 +143,7 @@ func (c Config) Read() file.Read {
 
 // VaultOpener is how this installation opens a vault, the way the settings say
 // one is read and watched.
-func (c Config) VaultOpener(db *Index) *VaultOpener {
+func (c Config) VaultOpener(db *Index) *vault.VaultOpener {
 	return c.vault().VaultOpener(db)
 }
 
@@ -176,7 +151,7 @@ func (c Config) VaultOpener(db *Index) *VaultOpener {
 // the vault through, in place of the installation's own.
 func (c Config) VaultOpenerWith(
 	db *Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
-) *VaultOpener {
+) *vault.VaultOpener {
 	return c.vault().VaultOpenerWith(db, walking, watcher)
 }
 

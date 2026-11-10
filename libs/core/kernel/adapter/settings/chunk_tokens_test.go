@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
 )
@@ -15,7 +16,7 @@ import (
 // The size a note is cut at is a setting of the embedding plugin, and the core settings hold none.
 
 func TestTheSettingsFileHasNoIndexingSection(t *testing.T) {
-	if _, has := reflect.TypeFor[container.Settings]().FieldByName("Indexing"); has {
+	if _, has := reflect.TypeFor[settings.File]().FieldByName("Indexing"); has {
 		t.Error("the settings still have an Indexing section")
 	}
 	raw, err := json.Marshal(container.DefaultSettings())

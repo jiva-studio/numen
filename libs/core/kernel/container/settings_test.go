@@ -40,7 +40,7 @@ func TestTheSettingsReadOutHoldWhatTheFilePreservesOut(t *testing.T) {
 		t.Errorf("the settings stand at %q, not %q", response, path)
 	}
 
-	var target Settings
+	var target settings.File
 	if err := json.Unmarshal([]byte(content), &target); err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +119,7 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	if why == nil {
 		t.Fatal("no reason")
 	}
-	if !reflect.DeepEqual(target, Settings{}) {
+	if !reflect.DeepEqual(target, settings.File{}) {
 		t.Errorf("got settings: %+v", target)
 	}
 }
@@ -134,7 +134,7 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	if why == nil {
 		t.Fatal("no reason")
 	}
-	if !reflect.DeepEqual(target, Settings{}) {
+	if !reflect.DeepEqual(target, settings.File{}) {
 		t.Errorf("got settings: %+v", target)
 	}
 }
@@ -170,7 +170,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 
 // A notice is stored for the settings reader to display to the user.
 func TestSettings_AddNoticeAccumulatesNotices(t *testing.T) {
-	var target Settings
+	var target settings.File
 	target.AddNotice("first")
 	target.AddNotice("second")
 	if !slices.Equal(target.Notices, []string{"first", "second"}) {

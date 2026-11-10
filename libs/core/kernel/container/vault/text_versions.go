@@ -10,13 +10,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // NewTextVersions is the text versions of the vaults' files: recorded in the
 // index database, their files in the plugin folders of each vault's store,
 // made by the enabled plugins that declare a text input.
-func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
+func (c Config) NewTextVersions(db *vault.Index) (*textversion.Versions, error) {
 	var plugins textport.TextPlugins = textbridge.NoPlugins{}
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = textbridge.NewPlugins(c.PluginHost)

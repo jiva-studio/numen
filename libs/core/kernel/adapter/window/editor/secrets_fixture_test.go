@@ -20,6 +20,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -446,7 +447,7 @@ func ids(secrets []*v1.Secret) []string {
 	return list
 }
 
-func applySettings(t *testing.T, cfg container.Config, loaded container.Settings) container.Config {
+func applySettings(t *testing.T, cfg container.Config, loaded settings.File) container.Config {
 	t.Helper()
 	cfg = cfg.SetSettings(loaded)
 	t.Cleanup(cfg.UnsubscribeHost)

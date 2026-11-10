@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -35,7 +36,7 @@ func NewWireModels(target []settingsdomain.Model) []*v1.Model { return settings.
 
 // NewAssembly is the window's assembly over a configuration, bound the way an
 // application binds one. The index it opens is the window's to close.
-func NewAssembly(t *testing.T, cfg container.Config) Assembly {
+func NewAssembly(t *testing.T, cfg container.Config) assembly.Assembly {
 	t.Helper()
 
 	made, err := cfg.GetEditorAssembly(t.Context())
@@ -87,7 +88,7 @@ func (w watched) StartVault(
 	opening.ShouldRebuild = rebuild
 	opening.ErrorHandler = handleError
 	if notified != nil {
-		opening.Told = func(m container.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+		opening.Told = func(m vaults.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v)

@@ -22,6 +22,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -446,7 +447,7 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 // gatedWalk is an assembly whose first walk of the notes starts when release is
 // closed.
 type gatedWalk struct {
-	Assembly
+	assembly.Assembly
 
 	release <-chan struct{}
 }

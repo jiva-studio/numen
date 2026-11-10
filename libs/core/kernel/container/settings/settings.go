@@ -34,13 +34,6 @@ import (
 // AgentAt is the key of the agent section in the settings file.
 const AgentAt = "agent"
 
-// Settings is the file that configures this installation: one object whose
-// fields are its sections, in file order. The settings adapter owns the file
-// and the window sections; each adapter defines the shape of its own section,
-// and the union of the sections is assembled here, where every adapter is
-// bound.
-type Settings = settingsadapter.File
-
 // Config wires the settings, setting change events and themes of an installation.
 type Config struct {
 	SettingsPath              string
@@ -66,34 +59,34 @@ type Config struct {
 }
 
 // DefaultSettings returns the settings of an unconfigured installation.
-func DefaultSettings() Settings {
+func DefaultSettings() settingsadapter.File {
 	return settingsadapter.DefaultFile()
 }
 
 // Settings reads the settings file. An unconfigured installation returns the
 // default settings.
-func (c Config) Settings() (Settings, error) {
+func (c Config) Settings() (settingsadapter.File, error) {
 	path, err := c.SettingsFile()
 	if err != nil {
-		return Settings{}, err
+		return settingsadapter.File{}, err
 	}
 	return c.GetCheckedSettingsAt(path)
 }
 
 // GetSettingsAt reads the settings file at path without filtering plugin declarations.
-func (c Config) GetSettingsAt(path string) (Settings, error) {
+func (c Config) GetSettingsAt(path string) (settingsadapter.File, error) {
 	target := DefaultSettings()
 	if err := c.SettingsFiles.OpenAt(path, &target); err != nil {
-		return Settings{}, err
+		return settingsadapter.File{}, err
 	}
 	return target, nil
 }
 
 // GetCheckedSettingsAt reads the settings file at path and drops invalid values.
-func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
+func (c Config) GetCheckedSettingsAt(path string) (settingsadapter.File, error) {
 	target, err := c.GetSettingsAt(path)
 	if err != nil {
-		return Settings{}, err
+		return settingsadapter.File{}, err
 	}
 	if c.PluginHost != nil {
 		target.DropInvalid(c.GetDeclarations(), c.GetRegistries())
@@ -105,7 +98,7 @@ func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 }
 
 // GetSettingsOrDefaults returns the checked settings or DefaultSettings on failure.
-func (c Config) GetSettingsOrDefaults() Settings {
+func (c Config) GetSettingsOrDefaults() settingsadapter.File {
 	if path, err := c.SettingsFile(); err == nil {
 		if target, err := c.GetCheckedSettingsAt(path); err == nil {
 			return target
@@ -115,13 +108,13 @@ func (c Config) GetSettingsOrDefaults() Settings {
 }
 
 // ResolveCompute detects the machine hardware and resolves the compute plan for s.
-func (c Config) ResolveCompute(s Settings) (hardware.Specs, hardware.ResolvedCompute) {
+func (c Config) ResolveCompute(s settingsadapter.File) (hardware.Specs, hardware.ResolvedCompute) {
 	specs := hardware.Detect()
 	return specs, hardware.ResolveCompute(s.Performance.Profile, specs)
 }
 
 // ConfigurePluginHost applies the settings s to the plugin host and subscribes it to changes.
-func (c Config) ConfigurePluginHost(s Settings) {
+func (c Config) ConfigurePluginHost(s settingsadapter.File) {
 	if c.PluginHost == nil {
 		return
 	}
@@ -305,10 +298,10 @@ func (c Config) readSettingValues() (settingevents.Values, error) {
 }
 
 // ReadCheckedSettings reads and validates the active settings file, or returns defaults if missing.
-func (c Config) ReadCheckedSettings() (Settings, error) {
+func (c Config) ReadCheckedSettings() (settingsadapter.File, error) {
 	path, err := c.SettingsFile()
 	if err != nil {
-		return Settings{}, err
+		return settingsadapter.File{}, err
 	}
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return DefaultSettings(), nil
@@ -330,7 +323,7 @@ const hostFieldEnabled = "enabled"
 
 const settingKeySecrets = "secrets"
 
-func (c Config) listSettingValues(target Settings) (settingevents.Values, error) {
+func (c Config) listSettingValues(target settingsadapter.File) (settingevents.Values, error) {
 	values := settingevents.Values{}
 	var failures []error
 	add := func(path []string, value any) {
@@ -376,7 +369,7 @@ func getAgentUseValue(target settingsadapter.Agent, programs []agent.Program) st
 	return programs[0].Name
 }
 
-func listPluginValues(target Settings, plugin plugindomain.Info, add func([]string, any), values settingevents.Values) {
+func listPluginValues(target settingsadapter.File, plugin plugindomain.Info, add func([]string, any), values settingevents.Values) {
 	for _, declared := range plugin.Settings {
 		path := []string{plugin.ID, declared.Key}
 		if value, found := target.GetValue(path...); found {
