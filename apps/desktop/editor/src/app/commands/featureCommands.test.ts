@@ -99,7 +99,7 @@ describe('the commands over a tab', () => {
           ...NO_WINDOW.tabs,
           tabLinks: {
             ...NO_WINDOW.tabs.tabLinks,
-            tabs: [{ id: 'dock', title: 'Dock', kind: 'note' }],
+            tabs: [{ id: 'dock', title: 'Dock', kind: 'note', windowId: 'main' }],
             windows: [
               { id: 'main', isMain: true, activeTitle: 'Atlas', activeKind: 'note', tabCount: 3 },
               { id: 'here', isMain: false, activeTitle: 'Reef', activeKind: 'note', tabCount: 1 },

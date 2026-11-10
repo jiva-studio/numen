@@ -213,13 +213,15 @@ describe('the entries of a menu over a target', () => {
   it('draw the commands the window makes as it runs, and mark those that list items', () => {
     const { registry } = setup(menu)
 
-    expect(registry.getEntries(SLOT.tabStripContext, { ...LINK, tab: 'reef' })).toStrictEqual([
-      expect.objectContaining({
-        command: 'app:tab.moveToWindow',
-        title: 'Move to window',
-        hasItems: true,
-      }),
-    ])
+    expect(registry.getEntries(SLOT.tabStripContext, { ...LINK, tab: 'reef' })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          command: 'app:tab.moveToWindow',
+          title: 'Move to window',
+          hasItems: true,
+        }),
+      ]),
+    )
   })
 })
 

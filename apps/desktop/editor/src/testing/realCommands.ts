@@ -175,6 +175,22 @@ export function createRealWindow(parts: RealWindowParts) {
       setVaultName: () => undefined,
       reload: () => undefined,
       writeMessage: options.writeMessage,
+      tabs: {
+        tabLinks: {
+          tabs: [],
+          windows: [],
+          linkTabs: () => undefined,
+          unlinkTab: () => undefined,
+          getGroupOf: () => null,
+        },
+        getTabs: () => [],
+        getKind: () => undefined,
+        isLinkable: () => false,
+        isAsking: () => false,
+        detach: () => undefined,
+        move: () => undefined,
+      },
+      listVersionItems: () => Promise.resolve([]),
     }),
     WORDS,
   )

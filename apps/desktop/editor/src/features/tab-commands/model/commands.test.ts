@@ -15,7 +15,7 @@ const UNLINK = 'app:tab.unlink'
 const MOVE = 'app:tab.moveToWindow'
 const LINK = 'app:tab.link'
 
-const ELSEWHERE: LinkableTab = { id: 'dock', title: 'Dock', kind: 'note' }
+const ELSEWHERE: LinkableTab = { id: 'dock', title: 'Dock', kind: 'note', windowId: 'main' }
 
 const createLinks = (groups: Record<string, TabLinkGroup> = {}) => ({
   tabs: [ELSEWHERE],
@@ -58,7 +58,7 @@ const setup = (
       { id: 'plex', title: 'Plex' },
       { id: 'chat', title: 'Chat' },
     ],
-    getKind: (tab) => (tab === 'chat' ? 'agent' : 'note'),
+    getKind: (tab) => (tab === 'chat' ? 'agent' : ['dock', 'lost'].includes(tab) ? undefined : 'note'),
     isLinkable: (tab) => tab !== 'chat',
     windowId: 'here',
     isAsking: () => options.isAsking ?? false,
@@ -104,8 +104,8 @@ describe('the commands of a tab', () => {
   it('offer linking with the tabs the listing finds eligible, named by title or else by kind', () => {
     const { set, listing } = setup({
       eligible: [
-        { id: 'plex', title: 'Plex', kind: 'note', isLinked: false },
-        { id: 'dock', title: '', kind: 'note', isLinked: false },
+        { id: 'plex', title: 'Plex', kind: 'note' },
+        { id: 'dock', title: '', kind: 'note' },
       ],
     })
     const link = set.commands.find((one) => one.id === LINK)!

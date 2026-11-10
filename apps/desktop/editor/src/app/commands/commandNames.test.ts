@@ -31,6 +31,11 @@ const TITLES: Readonly<Record<string, string>> = {
   'app:vault.remove': 'Remove vault from list',
   'app:vault.erase': 'Erase vault',
   'app:trash.empty': 'Empty trash',
+  'app:tab.detach': 'Detach tab',
+  'app:tab.unlink': 'Unlink tab',
+  'app:tab.moveToWindow': 'Move to window',
+  'app:tab.link': 'Link with tab',
+  'app:version.delete': 'Delete text',
 }
 
 describe('the commands of the editor', () => {

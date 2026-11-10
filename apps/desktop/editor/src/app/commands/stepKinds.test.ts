@@ -42,8 +42,10 @@ describe('the input a command of the palette asks for', () => {
     ])
   })
 
-  it('is no choice for a command of the editor, whose settings offer theirs', () => {
-    expect(getIdsAsking('items')).toStrictEqual([])
+  it('is a choice among items for moving and linking a tab and deleting a text version only', () => {
+    expect(getIdsAsking('items').sort()).toStrictEqual(
+      ['app:tab.moveToWindow', 'app:tab.link', 'app:version.delete'].sort(),
+    )
   })
 
   it('is a confirmation for the command that empties the trash', () => {
