@@ -14,10 +14,22 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
-// store is where the files of a vault are kept.
-type store interface {
+// vaultFiles is where the files of a vault are kept. The root is the folder of a vault on disk, and
+// empty for a vault in memory.
+type vaultFiles struct {
 	fileReader
 	fileWriter
+	root string
+}
+
+func inMemory() vaultFiles {
+	m := newMemory()
+	return vaultFiles{fileReader: m, fileWriter: m}
+}
+
+func onDisk(root string) vaultFiles {
+	d := disk{root: root}
+	return vaultFiles{fileReader: d, fileWriter: d, root: root}
 }
 
 // fileReader reads the files of a vault.

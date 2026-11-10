@@ -79,9 +79,23 @@ type LibraryReadOutput struct {
 	Ranges    []LibraryRange `json:"ranges,omitempty" jsonschema:"the ranges of the returned text with their places in the source, in order"`
 }
 
-// WithLibrary sets the text versions and the search index of the vaults that the library tools use.
-func (t *Tools) WithLibrary(texts host.Texts, search host.Search) *Tools {
-	t.texts, t.search = texts, search
+// Library is the calls the library tools make on the text versions and the search index of one vault,
+// each through the narrow interface it needs.
+type Library struct {
+	Versions VersionLister
+	Texts    host.TextReader
+	Search   host.PassageSearch
+}
+
+// VersionLister lists the text versions of a file.
+type VersionLister interface {
+	ListVersions(ctx context.Context, path string) (host.TextListing, error)
+}
+
+// WithLibrary sets the calls on the text versions and the search index of the vault with an identity,
+// which the library tools use.
+func (t *Tools) WithLibrary(library func(domain.VaultID) Library) *Tools {
+	t.library = library
 	return t
 }
 
@@ -123,10 +137,10 @@ func (t *Tools) searchLibrary(ctx context.Context, in LibrarySearchInput) (Libra
 	for i, kind := range in.Kinds {
 		kinds[i] = domain.SourceKind(kind)
 	}
-	if t.search == nil {
+	if t.lib.Search == nil {
 		return out, errNoLibrary
 	}
-	found, err := t.search.SearchPassages(ctx, host.PassageQuery{
+	found, err := t.lib.Search.SearchPassages(ctx, host.PassageQuery{
 		Query: in.Query, Limit: in.Limit, Kinds: kinds, PathPrefix: getFolderPrefix(in.Folder),
 	})
 	if err != nil {
@@ -230,10 +244,10 @@ func (t *Tools) readLibrary(ctx context.Context, in LibraryReadInput) (LibraryRe
 	if err := checkReadRange(in); err != nil {
 		return LibraryReadOutput{}, err
 	}
-	if t.texts == nil {
+	if t.lib.Texts == nil {
 		return LibraryReadOutput{}, errNoLibrary
 	}
-	listing, err := t.texts.ListVersions(ctx, in.Path)
+	listing, err := t.lib.Versions.ListVersions(ctx, in.Path)
 	if err != nil {
 		return LibraryReadOutput{}, fmt.Errorf("list the text versions of %s: %w", in.Path, err)
 	}
@@ -301,7 +315,7 @@ func (t *Tools) readVersion(ctx context.Context, in LibraryReadInput, live domai
 		}
 		start, length = pageStart, min(pageEnd-pageStart, length)
 	}
-	read, err := t.texts.ReadTextRange(ctx, in.Path, live.GetID(), start, length)
+	read, err := t.lib.Texts.ReadTextRange(ctx, in.Path, live.GetID(), start, length)
 	if err != nil {
 		return LibraryReadOutput{}, err
 	}
@@ -328,7 +342,7 @@ func (t *Tools) findVersionPage(ctx context.Context, path string, id domain.Text
 	var places []place
 	cursor, offset := "", 0
 	for {
-		read, err := t.texts.ReadText(ctx, path, id, cursor)
+		read, err := t.lib.Texts.ReadText(ctx, path, id, cursor)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -460,7 +474,7 @@ func checkReadRange(in LibraryReadInput) error {
 }
 
 func (t *Tools) readEmptyPage(ctx context.Context, path string, live domain.TextVersion, start int) (LibraryReadOutput, error) {
-	read, err := t.texts.ReadTextRange(ctx, path, live.GetID(), start, 1)
+	read, err := t.lib.Texts.ReadTextRange(ctx, path, live.GetID(), start, 1)
 	if err != nil {
 		return LibraryReadOutput{}, err
 	}

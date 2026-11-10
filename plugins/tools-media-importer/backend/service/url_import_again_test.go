@@ -66,7 +66,7 @@ func newRefetchFixture(t *testing.T, fetchErr error) *importFixture {
 	sites := &revisedSites{fakeSites: fakeSites{video: download.NewMock(), release: release}, fetchErr: fetchErr}
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  store, Texts: texts, Queue: hosttest.NewQueue(),
+		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
 		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,

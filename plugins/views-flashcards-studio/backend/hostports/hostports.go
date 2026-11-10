@@ -42,7 +42,7 @@ type Vault struct {
 // New returns the ports over the host vault and the plugin's folder. A call on a
 // vault names it by identity, so the same ports serve a window for one vault and a
 // window that counts all of them.
-func New(vaults func(domain.VaultID) Vault, store host.Store) Ports {
+func New(vaults func(domain.VaultID) Vault, store func(domain.VaultID) Folder) Ports {
 	return Ports{
 		Readers:   Readers{Vaults: vaults},
 		Writers:   Writers{Vaults: vaults},
@@ -187,15 +187,22 @@ func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]do
 	return p.Vaults(id).Index.GetParseProblems(ctx)
 }
 
+// Folder is the plugin's folder in the store of a vault, as the review logs use it.
+type Folder interface {
+	Read(ctx context.Context, name string) ([]byte, error)
+	Append(ctx context.Context, name string, content []byte) error
+	List(ctx context.Context) ([]host.StoreFile, error)
+}
+
 // Logs opens the plugin's folder of a vault's store, which the answers are kept in.
-type Logs struct{ Store host.Store }
+type Logs struct{ Store func(domain.VaultID) Folder }
 
 // Open returns the log store of the vault v.
 func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
-	return store{folder: l.Store.With(v.ID)}, nil
+	return store{folder: l.Store(v.ID)}, nil
 }
 
-type store struct{ folder host.Store }
+type store struct{ folder Folder }
 
 func fileOf(run string) string { return run + reviewLogSuffix }
 

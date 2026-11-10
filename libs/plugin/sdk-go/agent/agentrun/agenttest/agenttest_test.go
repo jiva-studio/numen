@@ -24,7 +24,8 @@ func TestARecordingProgramRecordsTheFolderAndTheArguments(t *testing.T) {
 	path, read := agenttest.RecordingProgram(t, "prog")
 	root := t.TempDir()
 
-	agenttest.Ask(t, agenttest.Serve(t, &runner{}), &agentrun.Request{
+	run := &runner{}
+	agenttest.Ask(t, agenttest.Serve(t, run, run), &agentrun.Request{
 		Command: []string{path, "--flag", "two words"},
 		Root:    root,
 	})

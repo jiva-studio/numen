@@ -48,8 +48,9 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-func mount(s *server.Server, client *host.Client, store host.Store) error {
-	backend := New(Config{Vaults: vaultsOf(client), Store: store, DayStart: nil, Now: clock.System{}, Cores: 0, Scheduler: nil})
+func mount(s *server.Server, client *host.Client, store *host.StoreClient) error {
+	folders := func(id domain.VaultID) hostports.Folder { return store.With(id) }
+	backend := New(Config{Vaults: vaultsOf(client), Store: folders, DayStart: nil, Now: clock.System{}, Cores: 0, Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string, _ server.Secrets) error {
 		backend.Configure(values)
 		return nil

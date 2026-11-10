@@ -42,8 +42,8 @@ type Engines func(ctx context.Context) (engine.TranscriberPort, error)
 // and reports each as a task and as a timed text version that grows as the transcript is written.
 type Transcriber struct {
 	files   Files
-	stores  host.Store
-	texts   host.Texts
+	stores  func(domain.VaultID) Folder
+	texts   func(domain.VaultID) host.TextVersions
 	queue   host.Queue
 	engines Engines
 
@@ -57,7 +57,7 @@ type Transcriber struct {
 }
 
 // NewTranscriber is the transcriber over what the host gives the plugin.
-func NewTranscriber(files Files, stores host.Store, texts host.Texts, queue host.Queue, engines Engines) *Transcriber {
+func NewTranscriber(files Files, stores func(domain.VaultID) Folder, texts func(domain.VaultID) host.TextVersions, queue host.Queue, engines Engines) *Transcriber {
 	return &Transcriber{
 		files: files, stores: stores, texts: texts, queue: queue, engines: engines,
 		closing: make(chan struct{}), closeOnce: sync.Once{}, wg: sync.WaitGroup{},
@@ -203,7 +203,7 @@ func (t *Transcriber) isRunning(vault domain.VaultID, path string) bool {
 }
 
 func (t *Transcriber) findLiveVersionOfWholeTranscript(ctx context.Context, vault domain.VaultID, path string) (domain.TextVersion, bool, error) {
-	listing, err := t.texts.With(vault).ListVersions(ctx, path)
+	listing, err := t.texts(vault).ListVersions(ctx, path)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
@@ -269,7 +269,7 @@ type job struct {
 	key      string
 	fileHash string
 	store    transcripts
-	texts    host.Texts
+	texts    host.TextVersions
 	turn     host.Turn
 }
 
@@ -279,10 +279,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return fmt.Errorf("read %s: %w", path, err)
 	}
 	fileHash := domain.HashContent(raw)
-	stores, texts := t.stores, t.texts
-	if vault != "" {
-		stores, texts = stores.With(vault), texts.With(vault)
-	}
+	stores, texts := t.stores(vault), t.texts(vault)
 	j := &job{
 		vault: vault, path: path, key: getTranscriptionKey(fileHash), fileHash: fileHash,
 		store: transcripts{store: stores}, texts: texts, turn: nil,

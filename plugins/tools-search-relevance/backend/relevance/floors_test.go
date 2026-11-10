@@ -16,7 +16,7 @@ func newFloors(t *testing.T, hint float64) (*relevance.Floors, *hosttest.Search,
 	t.Helper()
 	search, vault := newHost(hint)
 	fill(search, vault, 25, passagesOf(60, 3))
-	return relevance.New(relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}, newClock()), search, vault
+	return relevance.New(relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, newClock()), search, vault
 }
 
 func TestGetShowsTheHintOfTheModelBeforeAnythingIsStored(t *testing.T) {
@@ -528,7 +528,7 @@ func TestGetAndEnsureIgnoreNonPositiveStoredFloors(t *testing.T) {
 }
 
 type faultSearch struct {
-	host.Search
+	*hosttest.Search
 	failStateAt int
 	stateCalls  int
 	failGetAt   int
@@ -536,11 +536,6 @@ type faultSearch struct {
 	failSet     error
 	failBest    error
 	embedFn     func(ctx context.Context, texts []string) (host.EmbeddedTexts, error)
-}
-
-func (s *faultSearch) With(id domain.VaultID) host.Search {
-	s.Search = s.Search.With(id)
-	return s
 }
 
 func (s *faultSearch) GetEmbeddingState(ctx context.Context) (host.EmbeddingState, error) {
@@ -583,15 +578,10 @@ func (s *faultSearch) GetBestSimilarity(ctx context.Context, recipe string, quer
 }
 
 type faultStore struct {
-	host.Store
+	*hosttest.Store
 	failReadAt int
 	readCalls  int
 	failWrite  error
-}
-
-func (s *faultStore) With(id domain.VaultID) host.Store {
-	s.Store = s.Store.With(id)
-	return s
 }
 
 func (s *faultStore) Read(ctx context.Context, name string) ([]byte, error) {
@@ -616,7 +606,17 @@ func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 		s := &faultSearch{Search: rawSearch}
 		st := &faultStore{Store: vault.Store()}
 		configure(s, st, rawSearch)
-		return relevance.New(relevance.Host{Search: s, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: st}, newClock())
+		return relevance.New(relevance.Host{
+			Search: func(id domain.VaultID) relevance.Search {
+				s.Search = rawSearch.With(id)
+				return relevance.Search{Index: s, Policy: s}
+			},
+			Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) },
+			Store: func(id domain.VaultID) relevance.Folder {
+				st.Store = vault.Store().With(id)
+				return st
+			},
+		}, newClock())
 	}
 
 	if _, err := newFaulty(func(s *faultSearch, _ *faultStore, _ *hosttest.Search) {
@@ -722,4 +722,17 @@ func TestFloorsPropagatesEveryHostAndStoreFailure(t *testing.T) {
 	}).Ensure(t.Context(), ""); !errors.Is(err, host.ErrPermissionDenied) {
 		t.Errorf("Ensure read failure gave %v", err)
 	}
+}
+
+// searchOf gives the calls on the search of the vault with an identity.
+func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
+	return func(id domain.VaultID) relevance.Search {
+		on := search.With(id)
+		return relevance.Search{Index: on, Policy: on}
+	}
+}
+
+// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the vault.
+func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Folder {
+	return func(id domain.VaultID) relevance.Folder { return vault.Store().With(id) }
 }

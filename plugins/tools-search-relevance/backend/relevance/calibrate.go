@@ -70,7 +70,7 @@ func NewCalibrator(clock Clock) Calibrator {
 }
 
 // Calibrate measures the vault the search and the notes work, under the recipe of the state.
-func (c Calibrator) Calibrate(ctx context.Context, index host.Search, notes host.NoteLookup, state host.EmbeddingState) (Outcome, Calibration, error) {
+func (c Calibrator) Calibrate(ctx context.Context, index host.SearchIndex, notes host.NoteLookup, state host.EmbeddingState) (Outcome, Calibration, error) {
 	titles, err := readTitles(ctx, notes)
 	if err != nil {
 		return 0, Calibration{}, err
@@ -150,7 +150,7 @@ func readTitles(ctx context.Context, notes host.NoteLookup) ([]noteTitle, error)
 	return titles, nil
 }
 
-func embedTitles(ctx context.Context, index host.Search, recipe string, titles []noteTitle) ([]host.SimilarityQuery, error) {
+func embedTitles(ctx context.Context, index host.SearchIndex, recipe string, titles []noteTitle) ([]host.SimilarityQuery, error) {
 	texts := make([]string, len(titles))
 	for i, title := range titles {
 		texts[i] = clipText(title.text, host.MaxEmbeddedBytes)

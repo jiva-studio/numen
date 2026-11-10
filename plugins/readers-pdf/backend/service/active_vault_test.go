@@ -59,7 +59,7 @@ func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
 	texts.File("books/tiny.pdf", raw)
 	queue := hosttest.NewQueue()
 	texts.SetStore(pluginID, atlas.Store())
-	server := NewTextServer(vaults, texts, atlas.Store(), queue, newTestWorkers(t))
+	server := newTextServerOver(t, vaults, atlas, texts, queue)
 	t.Cleanup(server.Close)
 	held, err := queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {

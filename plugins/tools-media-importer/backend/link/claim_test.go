@@ -42,7 +42,7 @@ func TestTimeSelectorEncodeRejectsNaN(t *testing.T) {
 }
 
 type hookStore struct {
-	host.Store
+	*hosttest.Store
 	withVault domain.VaultID
 	readErr   func(name string) error
 	writeErr  func(name string) error
@@ -51,11 +51,6 @@ type hookStore struct {
 	listErr   func(call int) error
 	renameErr error
 	listCalls int
-}
-
-func (s *hookStore) With(id domain.VaultID) host.Store {
-	s.withVault = id
-	return s
 }
 
 func (s *hookStore) Read(ctx context.Context, name string) ([]byte, error) {
@@ -112,14 +107,10 @@ func (s *hookStore) Rename(ctx context.Context, from, to string) error {
 }
 
 type hookTexts struct {
-	host.Texts
+	Texts
+	fake      *hosttest.Texts
 	withVault domain.VaultID
 	putErr    error
-}
-
-func (x *hookTexts) With(id domain.VaultID) host.Texts {
-	x.withVault = id
-	return x
 }
 
 func (x *hookTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
@@ -230,7 +221,7 @@ func TestFolderOperationsAndErrorBranches(t *testing.T) {
 
 	v := hosttest.New("Vault")
 	hs := &hookStore{Store: v.Store()}
-	f := folder{store: hs}
+	f := folder{store: Folder{Files: hs, Writer: hs}}
 
 	rec, ok, err := f.findRecord(ctx, "missing")
 	if err != nil || ok || rec != (record{}) {
@@ -355,7 +346,7 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 	hs = &hookStore{Store: v.Store()}
 	texts := hosttest.NewTexts(v.Vault().ID, "plug")
 	texts.SetStore("plug", v.Store())
-	ht = &hookTexts{Texts: texts}
+	ht = &hookTexts{Texts: texts, fake: texts}
 	hq = &hookQueue{Queue: hosttest.NewQueue()}
 	sf = &stubFetcher{
 		canCopy:   true,
@@ -371,7 +362,13 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 		}
 		other := v.With(id)
 		return Vault{Files: other, Writer: other}
-	}, Store: hs, Texts: ht, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
+	}, Store: func(id domain.VaultID) Folder {
+		hs.withVault = id
+		return Folder{Files: hs, Writer: hs}
+	}, Texts: func(id domain.VaultID) Texts {
+		ht.withVault = id
+		return ht
+	}, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
 		func() Fetcher { return sf },
 		func() Settings { return Settings{CopyMaxSize: *copyMaxSize} })
 	return l, v, hv, hs, ht, hq, sf, copyMaxSize
@@ -384,8 +381,8 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 	// Scoping with empty vs non-empty Vault.
 	hs.withVault = "dirty"
 	_ = l.getStore(Link{Vault: ""})
-	if hs.withVault != "dirty" {
-		t.Errorf("getStore(empty) called With(%q)", hs.withVault)
+	if hs.withVault != "" {
+		t.Errorf("getStore(empty) asked for the folder of %q", hs.withVault)
 	}
 	_ = l.getStore(Link{Vault: "v-1"})
 	if hs.withVault != "v-1" {
@@ -393,8 +390,8 @@ func TestLinksCloseReadAndStoreScoping(t *testing.T) {
 	}
 	ht.withVault = "dirty"
 	_ = l.getTexts(Link{Vault: ""})
-	if ht.withVault != "dirty" {
-		t.Errorf("getTexts(empty) called With(%q)", ht.withVault)
+	if ht.withVault != "" {
+		t.Errorf("getTexts(empty) asked for the texts of %q", ht.withVault)
 	}
 	_ = l.getTexts(Link{Vault: "v-1"})
 	if ht.withVault != "v-1" {
@@ -462,11 +459,7 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 		t.Fatal(err)
 	}
 	rawNote, _ := v.Content(made.Path)
-	fakeTexts, ok := ht.Texts.(*hosttest.Texts)
-	if !ok {
-		t.Fatalf("ht.Texts = %T, want *hosttest.Texts", ht.Texts)
-	}
-	fakeTexts.File(made.Path, []byte(rawNote))
+	ht.fake.File(made.Path, []byte(rawNote))
 
 	// Claim contention on FetchText and Copy.
 	l.claim("text", made, made.Key)
@@ -514,7 +507,7 @@ func TestLinksFetchCopyAndDeleteErrorBranches(t *testing.T) {
 	if len(hq.tasks) == 0 || hq.tasks[0].CompletedCount != 0 || hq.tasks[0].TotalCount != 0 {
 		t.Errorf("FetchText initial task = %+v", hq.tasks)
 	}
-	rec, err := (folder{store: hs}).readRecord(ctx, made.Key)
+	rec, err := (folder{store: Folder{Files: hs, Writer: hs}}).readRecord(ctx, made.Key)
 	if err != nil || rec.Downloader != "tool v2" {
 		t.Errorf("record Downloader = %q (%v), want %q", rec.Downloader, err, "tool v2")
 	}

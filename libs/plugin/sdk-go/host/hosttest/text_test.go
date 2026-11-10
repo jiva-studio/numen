@@ -46,11 +46,7 @@ func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 		t.Fatalf("live %q, want the proofreading", listing.Live)
 	}
 
-	fixerStore, isStore := ocr.GetStore("org.example.fixer").(*hosttest.Store)
-	if !isStore {
-		t.Fatal("the store is not a hosttest.Store")
-	}
-	fixerStore.File("b.jsonl", []byte(`{"text":"changed"}`+"\n"))
+	ocr.GetStore("org.example.fixer").File("b.jsonl", []byte(`{"text":"changed"}`+"\n"))
 	if listing, err := fixer.ListVersions(ctx, "a.pdf"); err != nil || listing.Live != a.GetID() {
 		t.Fatalf("live %q with the proofreading's file changed, want the recognition", listing.Live)
 	}
@@ -83,10 +79,7 @@ func TestAVersionThatIsNotOneIsRefused(t *testing.T) {
 func TestHostTestTextsWithKeepEachVaultApart(t *testing.T) {
 	ctx := t.Context()
 	physics := hosttest.NewTexts("v1", "org.example.ocr")
-	other, isTexts := physics.With("v2").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of another vault are not hosttest.Texts")
-	}
+	other := physics.With("v2")
 	if err := host.WriteText(ctx, other.GetStore("org.example.ocr"), "k.jsonl", []domain.TextSegment{{Text: "x"}}); err != nil {
 		t.Fatal(err)
 	}

@@ -28,7 +28,7 @@ func TestTheProgramListNamesCodexWithTheModelsItLists(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x","displayName":"GPT X","isDefault":true},{"model":"hid","hidden":true}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, &agentServer{})
 
 	programs, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "codex", Command: []string{appServer}}})
 	if err != nil {
@@ -50,7 +50,7 @@ func TestTheProgramListNamesCodexWithTheModelsItLists(t *testing.T) {
 // A program that is not installed is listed so, and Codex is not started for its models.
 func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, &agentServer{})
 
 	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, &agentServer{})
 
 	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "codex", Command: []string{appServer}}})
 	if err != nil {
@@ -171,7 +171,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.Request{
+	agenttest.Ask(t, serveAgent(t, &agentServer{}), &agentrun.Request{
 		Prompt:     "the question",
 		Command:    []string{script, "--first"},
 		Root:       root,
@@ -198,7 +198,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A program that fails is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAFailedRun(t *testing.T) {
 	script := agenttest.WriteScript(t, "codex", "echo 'not signed in' >&2\nexit 2\n")
-	stream, err := agenttest.Serve(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
+	stream, err := serveAgent(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
 		Command: []string{script},
 	})
 	if err != nil {
@@ -222,7 +222,7 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.Request{
+	agenttest.Ask(t, serveAgent(t, &agentServer{}), &agentrun.Request{
 		Prompt:       "the question",
 		Instructions: "be brief",
 		Command:      []string{script},
@@ -253,4 +253,9 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	if _, err := os.Stat(dir); err == nil {
 		t.Errorf("the folder %q is still there", dir)
 	}
+}
+
+func serveAgent(t *testing.T, agent *agentServer) *agentrun.Client {
+	t.Helper()
+	return agenttest.Serve(t, agent, agent)
 }

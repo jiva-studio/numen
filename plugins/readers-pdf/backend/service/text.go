@@ -29,8 +29,8 @@ const textKind domain.TextKind = "page-text"
 // written as background work in the host's queue.
 type TextServer struct {
 	vaults func(domain.VaultID) vaultFiles
-	texts  host.Texts
-	store  host.Store
+	texts  func(domain.VaultID) host.TextVersions
+	store  func(domain.VaultID) host.StoreWriter
 	queue  host.Queue
 
 	wg sync.WaitGroup
@@ -53,7 +53,7 @@ type TextRequest struct {
 // NewTextServer is the text layers of the files read through vaults, written into store and reported
 // to texts, each written in a turn of queue.
 func NewTextServer(
-	vaults func(domain.VaultID) vaultFiles, texts host.Texts, store host.Store, queue host.Queue, workers *pdf.Workers,
+	vaults func(domain.VaultID) vaultFiles, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue, workers *pdf.Workers,
 ) *TextServer {
 	return &TextServer{
 		vaults: vaults, texts: texts, store: store, queue: queue,
@@ -172,7 +172,7 @@ func (s *TextServer) putLayer(ctx context.Context, req TextRequest, task host.Ta
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.vaults(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
+	files, texts, store := s.vaults(req.Vault), s.texts(req.Vault), s.store(req.Vault)
 	read, err := s.readLayer(ctx, files, req.Path)
 	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
 		return nil

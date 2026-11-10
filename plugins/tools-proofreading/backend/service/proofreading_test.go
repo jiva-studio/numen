@@ -35,7 +35,7 @@ type scene struct {
 	vault    *hosttest.Vault
 	texts    *hosttest.Texts
 	queue    *hosttest.Queue
-	store    host.Store
+	store    *hosttest.Store
 	model    *modelHost
 	settings *settings
 	run      *Proofreading
@@ -70,7 +70,11 @@ func newScene(t *testing.T) *scene {
 	s.texts.File(scanPath, []byte("the scan"))
 	s.texts.File(talkPath, []byte("the recording"))
 	s.texts.SetStore(PluginID, s.store)
-	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, getProofreadKinds(), newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
+	s.run = newProofreading(Host{
+		Store: func(id domain.VaultID) host.StoreWriter { return s.store.With(id) },
+		Texts: func(id domain.VaultID) Texts { return s.texts.With(id) },
+		Queue: s.queue,
+	}, getProofreadKinds(), newAskModel(s.model.complete, s.settings.getConfig), s.settings.getConfig)
 	return s
 }
 
@@ -362,10 +366,7 @@ func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s := newScene(t)
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
-	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of the vault are not hosttest texts")
-	}
+	other := s.texts.With("Chemistry")
 	other.File(scanPath, []byte("the scan"))
 	other.SetStore(PluginID, chemistry.Store())
 	if err := host.WriteText(t.Context(), other.GetStore(ocrID), "recognition.jsonl", []domain.TextSegment{{Text: "A rotor spinnig.\n\n"}}); err != nil {

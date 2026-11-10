@@ -487,7 +487,7 @@ func TestAskAgentStreamsTheStepsOverConnect(t *testing.T) {
 	vault := &fakeVault{}
 	s := newServer(model.serve(t).URL)
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewHandler(s))
+	mux.Handle(agentrun.NewHandler(s, s))
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 

@@ -68,7 +68,11 @@ type searchVault struct {
 	setCount      int
 }
 
-var _ host.Search = (*Search)(nil)
+var (
+	_ host.SearchIndex   = (*Search)(nil)
+	_ host.PassageSearch = (*Search)(nil)
+	_ host.SearchPolicy  = (*Search)(nil)
+)
 
 // NewSearch is the search of a host that shows the vault given, and also knows the others. The host has
 // no model until SetModel is called.
@@ -81,7 +85,7 @@ func NewSearch(current domain.VaultID, others ...domain.VaultID) *Search {
 }
 
 // With is the search of the vault of the identity. The vault is unknown to the host unless NewSearch named it.
-func (s *Search) With(id domain.VaultID) host.Search {
+func (s *Search) With(id domain.VaultID) *Search {
 	return &Search{all: s.all, vault: id}
 }
 

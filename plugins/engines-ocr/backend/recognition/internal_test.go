@@ -114,7 +114,7 @@ func (q *stubQueue) FinishTask(_ context.Context, id string) error {
 }
 
 type stubStore struct {
-	host.Store
+	Folder
 	readData        []byte
 	readErr         error
 	writeErr        error
@@ -126,7 +126,7 @@ func (s *stubStore) Read(ctx context.Context, name string) ([]byte, error) {
 	if s.readErr != nil || s.readData != nil {
 		return s.readData, s.readErr
 	}
-	return s.Store.Read(ctx, name)
+	return s.Folder.Read(ctx, name)
 }
 
 func (s *stubStore) Write(ctx context.Context, name string, data []byte) error {
@@ -139,18 +139,18 @@ func (s *stubStore) Write(ctx context.Context, name string, data []byte) error {
 	if s.writeErr != nil {
 		return s.writeErr
 	}
-	return s.Store.Write(ctx, name, data)
+	return s.Folder.Write(ctx, name, data)
 }
 
 func (s *stubStore) Delete(ctx context.Context, name string) error {
 	if s.deleteErr != nil {
 		return s.deleteErr
 	}
-	return s.Store.Delete(ctx, name)
+	return s.Folder.Delete(ctx, name)
 }
 
 type stubTexts struct {
-	host.Texts
+	host.TextVersions
 	listRes host.TextListing
 	listErr error
 	putErr  error
@@ -160,25 +160,25 @@ func (t *stubTexts) ListVersions(ctx context.Context, path string) (host.TextLis
 	if t.listErr != nil || len(t.listRes.Versions) > 0 {
 		return t.listRes, t.listErr
 	}
-	return t.Texts.ListVersions(ctx, path)
+	return t.TextVersions.ListVersions(ctx, path)
 }
 
 func (t *stubTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.TextVersion, error) {
 	if t.putErr != nil {
 		return domain.TextVersion{}, t.putErr
 	}
-	return t.Texts.PutVersion(ctx, req)
+	return t.TextVersions.PutVersion(ctx, req)
 }
 
 func TestReadRecordHandlesErrorsAndCorruptJSON(t *testing.T) {
 	v := hosttest.New("Physics")
 	readSentinel := errors.New("disk read failed")
-	s := &stubStore{Store: v.Store(), readData: []byte("{}"), readErr: readSentinel}
+	s := &stubStore{Folder: v.Store(), readData: []byte("{}"), readErr: readSentinel}
 	if rec, err := readRecord(t.Context(), s, "books/scan.pdf"); rec != nil || !errors.Is(err, readSentinel) {
 		t.Fatalf("readRecord on read error: %+v, %v", rec, err)
 	}
 
-	s = &stubStore{Store: v.Store(), readData: []byte("{invalid-json"), readErr: nil}
+	s = &stubStore{Folder: v.Store(), readData: []byte("{invalid-json"), readErr: nil}
 	if rec, err := readRecord(t.Context(), s, "books/scan.pdf"); rec != nil || err == nil {
 		t.Fatalf("readRecord on invalid JSON: %+v, %v", rec, err)
 	}
@@ -283,10 +283,10 @@ func TestNewBlockPartsAndFractions(t *testing.T) {
 func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	v := hosttest.New("Physics")
 	q := &stubQueue{}
-	s := &stubStore{Store: v.Store()}
+	s := &stubStore{Folder: v.Store()}
 	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
 	recEngine := &stubRecogniser{blocks: []Block{{Text: "line"}}}
-	r, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: s, Texts: texts, Queue: q}, func(context.Context) (Recogniser, error) {
+	r, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(s), Texts: versionsOf(texts), Queue: q}, func(context.Context) (Recogniser, error) {
 		return recEngine, nil
 	})
 	if err != nil {
@@ -318,7 +318,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	}
 
 	qInitErr := &stubQueue{reportErr: errors.New("initial report failed"), reportErrAt: 1}
-	rInitErr, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: s, Texts: texts, Queue: qInitErr}, func(context.Context) (Recogniser, error) {
+	rInitErr, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(s), Texts: versionsOf(texts), Queue: qInitErr}, func(context.Context) (Recogniser, error) {
 		return recEngine, nil
 	})
 	if err != nil {
@@ -344,7 +344,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 		t.Fatalf("readPages recognize error = %v", err)
 	}
 
-	sWriteErr := &stubStore{Store: v.Store(), writeErr: errors.New("store write failed")}
+	sWriteErr := &stubStore{Folder: v.Store(), writeErr: errors.New("store write failed")}
 	if err := r.readPages(t.Context(), pageReading{
 		doc: stubDocument{pages: 8}, recogniser: recEngine, dpi: 72, store: sWriteErr, task: &host.Task{},
 	}, &record{Path: "books/scan.pdf", PageCount: 8}); err == nil {
@@ -352,7 +352,7 @@ func TestReadPagesBatchesAndReportsProgress(t *testing.T) {
 	}
 
 	qStepErr := &stubQueue{reportErr: errors.New("step report failed"), reportErrAt: 2}
-	rStepErr, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: s, Texts: texts, Queue: qStepErr}, func(context.Context) (Recogniser, error) {
+	rStepErr, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(s), Texts: versionsOf(texts), Queue: qStepErr}, func(context.Context) (Recogniser, error) {
 		return recEngine, nil
 	})
 	if err != nil {
@@ -371,7 +371,7 @@ func TestRecognitionVersionStorage(t *testing.T) {
 	texts.SetStore("md.numen.engines.ocr", v.Store())
 
 	emptyRec := &record{Path: "books/scan.pdf", InputHash: "h1", PageCount: 1}
-	delErrStore := &stubStore{Store: v.Store(), deleteErr: errors.New("delete failed")}
+	delErrStore := &stubStore{Folder: v.Store(), deleteErr: errors.New("delete failed")}
 	if _, err := putVersion(t.Context(), reach{vault: v, store: delErrStore, texts: texts}, emptyRec); err == nil {
 		t.Fatal("putVersion on empty record succeeded when Delete failed")
 	}
@@ -382,12 +382,12 @@ func TestRecognitionVersionStorage(t *testing.T) {
 		PageCount: 1,
 		Pages:     [][]part{{{Text: "some text\n\n"}}},
 	}
-	writeErrStore := &stubStore{Store: v.Store(), writeErr: errors.New("write failed")}
+	writeErrStore := &stubStore{Folder: v.Store(), writeErr: errors.New("write failed")}
 	if _, err := putVersion(t.Context(), reach{vault: v, store: writeErrStore, texts: texts}, fullRec); err == nil {
 		t.Fatal("putVersion succeeded when WriteText failed")
 	}
 
-	putErrTexts := &stubTexts{Texts: texts, putErr: errors.New("put version failed")}
+	putErrTexts := &stubTexts{TextVersions: texts, putErr: errors.New("put version failed")}
 	if _, err := putVersion(t.Context(), reach{vault: v, store: v.Store(), texts: putErrTexts}, fullRec); err == nil {
 		t.Fatal("putVersion succeeded when PutVersion failed")
 	}
@@ -412,7 +412,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	v.Refuse("refused.png", readSentinel)
 	reportSentinel := errors.New("report task failed")
 	qReportFail := &stubQueue{reportErr: reportSentinel}
-	rReportFail, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: qReportFail}, func(context.Context) (Recogniser, error) {
+	rReportFail, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qReportFail}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{}, nil
 	})
 	if err != nil {
@@ -430,7 +430,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	cancelCtx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 	qCancel := &stubQueue{onRelease: cancel, releaseErr: context.Canceled, finishErr: errors.New("finish ignored when recognition failed")}
-	rCancel, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: qCancel}, func(context.Context) (Recogniser, error) {
+	rCancel, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qCancel}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
 	})
 	if err != nil {
@@ -446,7 +446,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	// 3. FinishTask error returned with non-zero Result when recognition succeeds.
 	finishSentinel := errors.New("finish task failed")
 	qFinishErr := &stubQueue{finishErr: finishSentinel}
-	rFinishErr, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: qFinishErr}, func(context.Context) (Recogniser, error) {
+	rFinishErr, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qFinishErr}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
 	})
 	if err != nil {
@@ -457,7 +457,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	}
 
 	qOK := &stubQueue{}
-	rOK, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: qOK}, func(context.Context) (Recogniser, error) {
+	rOK, err := New(Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qOK}, func(context.Context) (Recogniser, error) {
 		return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
 	})
 	if err != nil {
@@ -467,7 +467,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	// 6. readRecord error in Recognize.
 	storeReadSentinel := errors.New("store read failed")
 	rStoreErr, err := New(
-		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: &stubStore{Store: v.Store(), readErr: storeReadSentinel}, Texts: texts, Queue: qOK},
+		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(&stubStore{Folder: v.Store(), readErr: storeReadSentinel}), Texts: versionsOf(texts), Queue: qOK},
 		func(context.Context) (Recogniser, error) { return &stubRecogniser{}, nil },
 	)
 	if err != nil {
@@ -486,7 +486,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	// 8. EnqueueWork error in Recognize.
 	enqueueSentinel := errors.New("queue full")
 	rEnqueueErr, err := New(
-		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: &stubQueue{enqueueErr: enqueueSentinel}},
+		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: &stubQueue{enqueueErr: enqueueSentinel}},
 		func(context.Context) (Recogniser, error) { return &stubRecogniser{}, nil },
 	)
 	if err != nil {
@@ -499,7 +499,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	// 9. Recogniser open error in Recognize.
 	openSentinel := errors.New("open failed")
 	rOpenErr, err := New(
-		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: qOK},
+		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: qOK},
 		func(context.Context) (Recogniser, error) { return nil, openSentinel },
 	)
 	if err != nil {
@@ -512,7 +512,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	// 10. Turn Release error joins with nil err and preserves non-zero Result (both with and without ReportTask error).
 	releaseSentinel := errors.New("turn release failed")
 	rReleaseErr, err := New(
-		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: &stubQueue{releaseErr: releaseSentinel}},
+		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: &stubQueue{releaseErr: releaseSentinel}},
 		func(context.Context) (Recogniser, error) {
 			return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
 		},
@@ -525,7 +525,7 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	}
 
 	rReleaseAndReportErr, err := New(
-		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: v.Store(), Texts: texts, Queue: &stubQueue{releaseErr: releaseSentinel, reportErr: reportSentinel, reportErrAt: 3}},
+		Host{Vaults: func(id domain.VaultID) Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: versionsOf(texts), Queue: &stubQueue{releaseErr: releaseSentinel, reportErr: reportSentinel, reportErrAt: 3}},
 		func(context.Context) (Recogniser, error) {
 			return &stubRecogniser{blocks: []Block{{Text: "hello"}}}, nil
 		},
@@ -538,6 +538,12 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	}
 }
 
-func (s *stubStore) With(domain.VaultID) host.Store { return s }
+// foldersOf gives the folder given for every vault.
+func foldersOf(folder Folder) func(domain.VaultID) Folder {
+	return func(domain.VaultID) Folder { return folder }
+}
 
-func (t *stubTexts) With(domain.VaultID) host.Texts { return t }
+// versionsOf gives the text versions given for every vault.
+func versionsOf(texts host.TextVersions) func(domain.VaultID) host.TextVersions {
+	return func(domain.VaultID) host.TextVersions { return texts }
+}

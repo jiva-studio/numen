@@ -7,10 +7,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 // SearchClient works the search index and the search floor through HostSearchService.
@@ -19,7 +19,11 @@ type SearchClient struct {
 	vault string
 }
 
-var _ Search = (*SearchClient)(nil)
+var (
+	_ SearchIndex   = (*SearchClient)(nil)
+	_ PassageSearch = (*SearchClient)(nil)
+	_ SearchPolicy  = (*SearchClient)(nil)
+)
 
 // NewSearchClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost
 // where the host named none.
@@ -50,7 +54,9 @@ func NewSearchClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoi
 	return &SearchClient{rpc: numenv1connect.NewHostSearchServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-func (c *SearchClient) With(id domain.VaultID) Search {
+// With returns the client for the vault with the given identity, used as the shown vault is. A call on
+// it returns ErrUnknownVault when the installation has no such vault.
+func (c *SearchClient) With(id domain.VaultID) *SearchClient {
 	linked := *c
 	linked.vault = string(id)
 	return &linked

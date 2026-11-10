@@ -97,7 +97,7 @@ func (p *pages) getPageCount() int {
 
 // textsOfVault are texts that reject a version of a missing file, as the host does.
 type textsOfVault struct {
-	*hosttest.Texts
+	host.TextVersions
 	vault *hosttest.Vault
 }
 
@@ -105,21 +105,23 @@ func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (doma
 	if _, isThere := t.vault.Content(params.Path); !isThere {
 		return domain.TextVersion{}, fmt.Errorf("%s: %w", params.Path, host.ErrNotExist)
 	}
-	return t.Texts.PutVersion(ctx, params)
+	return t.TextVersions.PutVersion(ctx, params)
 }
 
-func (t textsOfVault) With(id domain.VaultID) host.Texts {
-	texts, isTexts := t.Texts.With(id).(*hosttest.Texts)
-	if !isTexts {
-		return t.Texts.With(id)
-	}
-	return textsOfVault{Texts: texts, vault: t.vault.With(id)}
+// textsOf gives the text versions of the vault with an identity, rejecting a version of a missing file.
+func (s *scene) textsOf(id domain.VaultID) host.TextVersions {
+	return textsOfVault{TextVersions: s.texts.With(id), vault: s.vault.With(id)}
+}
+
+// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the store.
+func foldersOf(store *hosttest.Store) func(domain.VaultID) recognition.Folder {
+	return func(id domain.VaultID) recognition.Folder { return store.With(id) }
 }
 
 // scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
 type scene struct {
 	vault      *hosttest.Vault
-	store      host.Store
+	store      *hosttest.Store
 	texts      *hosttest.Texts
 	queue      *hosttest.Queue
 	recogniser *pages
@@ -151,7 +153,7 @@ func newScene(t *testing.T) *scene {
 		s.texts.File(path, []byte(raw))
 	}
 	run, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: s.store, Texts: textsOfVault{Texts: s.texts, vault: s.vault}, Queue: s.queue},
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
 	)
 	if err != nil {
@@ -381,7 +383,8 @@ func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 func TestNewRequiresHostAndRecogniser(t *testing.T) {
 	v := hosttest.New("Physics")
 	open := func(context.Context) (recognition.Recogniser, error) { return &pages{}, nil }
-	full := recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) }, Store: v.Store(), Texts: hosttest.NewTexts("Physics", pluginID), Queue: hosttest.NewQueue()}
+	texts := hosttest.NewTexts("Physics", pluginID)
+	full := recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) }, Store: foldersOf(v.Store()), Texts: func(id domain.VaultID) host.TextVersions { return texts.With(id) }, Queue: hosttest.NewQueue()}
 	for name, h := range map[string]recognition.Host{
 		"no vault": {Store: full.Store, Texts: full.Texts, Queue: full.Queue},
 		"no store": {Vaults: full.Vaults, Texts: full.Texts, Queue: full.Queue},
@@ -403,10 +406,7 @@ func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
 	s.vault.Beside(chemistry)
 	raw := readFixture(t, "scan.pdf")
 	chemistry.File("books/scan.pdf", raw)
-	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	other := s.texts.With("Chemistry")
 	other.SetStore(pluginID, chemistry.Store())
 	other.File("books/scan.pdf", []byte(raw))
 
@@ -440,10 +440,7 @@ func TestRecogniseInTwoVaultsOnTheSamePathReportsTwoTasks(t *testing.T) {
 	s.vault.Beside(chemistry)
 	raw := readFixture(t, "scan.pdf")
 	chemistry.File("books/scan.pdf", raw)
-	other, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	other := s.texts.With("Chemistry")
 	other.SetStore(pluginID, chemistry.Store())
 	other.File("books/scan.pdf", []byte(raw))
 

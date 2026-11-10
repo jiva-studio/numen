@@ -41,11 +41,11 @@ func QuoteShell(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
-// Serve serves the agent over HTTP for the length of the test and returns a client of it.
-func Serve(t *testing.T, agent agentrun.Agent) *agentrun.Client {
+// Serve serves the runner and the tool store of an agent over HTTP for the length of the test and returns a client of it.
+func Serve(t *testing.T, runner agentrun.Runner, tools agentrun.ToolStore) *agentrun.Client {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewHandler(agent))
+	mux.Handle(agentrun.NewHandler(runner, tools))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return agentrun.NewClient(http.DefaultClient, server.URL)

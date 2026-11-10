@@ -6,10 +6,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 // StoreClient works the plugin's folder through HostStoreService.
@@ -18,7 +18,10 @@ type StoreClient struct {
 	vault string
 }
 
-var _ Store = (*StoreClient)(nil)
+var (
+	_ StoreReader = (*StoreClient)(nil)
+	_ StoreWriter = (*StoreClient)(nil)
+)
 
 // NewStoreClientFromEnv connects to the host the process was started for. It returns hostcall.ErrNoHost
 // where the host named none.
@@ -49,7 +52,9 @@ func NewStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoin
 	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-func (c *StoreClient) With(id domain.VaultID) Store {
+// With returns the folder in the vault with the given identity, used as the shown vault is. A call on
+// it returns ErrUnknownVault when the installation has no such vault.
+func (c *StoreClient) With(id domain.VaultID) *StoreClient {
 	linked := *c
 	linked.vault = string(id)
 	return &linked

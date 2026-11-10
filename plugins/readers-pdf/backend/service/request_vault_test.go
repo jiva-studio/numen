@@ -34,13 +34,10 @@ func newTwoVaults(t *testing.T) twoVaults {
 	other := hosttest.OnDisk(t, "Chemistry", map[string]string{"tiny.pdf": string(raw)})
 	current.Beside(other)
 	texts := hosttest.NewTexts("Physics", pluginID)
-	chemistry, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of the vault are not hosttest texts")
-	}
+	chemistry := texts.With("Chemistry")
 	chemistry.File("tiny.pdf", raw)
 	chemistry.SetStore(pluginID, other.Store())
-	server := NewTextServer(func(id domain.VaultID) vaultFiles { return current.With(id) }, texts, current.Store(), hosttest.NewQueue(), newTestWorkers(t))
+	server := newTextServerOver(t, filesOf(current), current, texts, hosttest.NewQueue())
 	t.Cleanup(server.Close)
 	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
 	return twoVaults{current: current, other: other, texts: texts, server: server}
@@ -71,7 +68,7 @@ func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string
 
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, v.texts, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, func(id domain.VaultID) LiveTexts { return v.texts.With(id) }, newTestWorkers(t))
 	var res GetHighlightsResponse
 
 	code := postAPI(t, documents, "GetHighlights", "Chemistry", `{"path":"tiny.pdf","ranges":[{"start":0,"end":4}]}`, &res)
@@ -86,7 +83,7 @@ func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, v.texts, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, func(id domain.VaultID) LiveTexts { return v.texts.With(id) }, newTestWorkers(t))
 	var res GetDocumentResponse
 
 	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)
@@ -134,7 +131,7 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts.SetStore(pluginID, files.Store())
-	server := NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, files.Store(), queue, newTestWorkers(t))
+	server := newTextServerOver(t, filesOf(files), files, texts, queue)
 	t.Cleanup(server.Close)
 
 	if err := server.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {

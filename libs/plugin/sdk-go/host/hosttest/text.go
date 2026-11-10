@@ -43,12 +43,15 @@ type textWorld struct {
 	vault    domain.VaultID
 	versions []domain.TextVersion
 	files    map[string][]byte
-	stores   map[string]host.Store
+	stores   map[string]*Store
 	changes  []string
 	clock    time.Time
 }
 
-var _ host.Texts = (*Texts)(nil)
+var (
+	_ host.TextVersions = (*Texts)(nil)
+	_ host.TextReader   = (*Texts)(nil)
+)
 
 // NewTexts is the texts of the vault of the identity, as the plugin of the id works them.
 func NewTexts(vault domain.VaultID, pluginID string) *Texts {
@@ -76,7 +79,7 @@ func (h *textHost) getWorld(vault domain.VaultID) *textWorld {
 	w, ok := h.worlds[vault]
 	if !ok {
 		w = &textWorld{
-			all: h, vault: vault, files: map[string][]byte{}, stores: map[string]host.Store{},
+			all: h, vault: vault, files: map[string][]byte{}, stores: map[string]*Store{},
 			clock: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 		}
 		h.worlds[vault] = w
@@ -84,7 +87,11 @@ func (h *textHost) getWorld(vault domain.VaultID) *textWorld {
 	return w
 }
 
-func (t *Texts) With(id domain.VaultID) host.Texts {
+// With returns the texts of the vault of the identity. The empty identity is the texts themselves.
+func (t *Texts) With(id domain.VaultID) *Texts {
+	if id == "" {
+		return t
+	}
 	return &Texts{world: t.world.all.getWorld(id), pluginID: t.pluginID}
 }
 
@@ -99,7 +106,7 @@ func (t *Texts) File(path string, raw []byte) {
 }
 
 // SetStore is the folder the host reads a plugin's version files from.
-func (t *Texts) SetStore(pluginID string, store host.Store) {
+func (t *Texts) SetStore(pluginID string, store *Store) {
 	t.world.mu.Lock()
 	defer t.world.mu.Unlock()
 	t.world.stores[pluginID] = store
@@ -107,13 +114,13 @@ func (t *Texts) SetStore(pluginID string, store host.Store) {
 
 // GetStore is the folder of a plugin's version files: the one SetStore named, or a folder in
 // memory made on first use.
-func (t *Texts) GetStore(pluginID string) host.Store {
+func (t *Texts) GetStore(pluginID string) *Store {
 	t.world.mu.Lock()
 	defer t.world.mu.Unlock()
 	return t.world.getStore(pluginID)
 }
 
-func (w *textWorld) getStore(pluginID string) host.Store {
+func (w *textWorld) getStore(pluginID string) *Store {
 	store, ok := w.stores[pluginID]
 	if !ok {
 		store = New(pluginID).Store()

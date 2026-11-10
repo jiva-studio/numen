@@ -129,7 +129,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
+	return mount(s, recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: func(id domain.VaultID) recognition.Folder { return store.With(id) }, Texts: func(id domain.VaultID) host.TextVersions { return texts.With(id) }, Queue: queue}, newEngines(getConfig(), newEngineOpener(engine.NewLibrary())))
 }
 
 func getConfig() engine.Config {

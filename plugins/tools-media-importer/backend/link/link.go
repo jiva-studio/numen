@@ -82,12 +82,24 @@ type Vault struct {
 	Writer host.FileWriter
 }
 
+// Folder is the plugin's folder in the store of a vault, through the narrow interface of each of its calls.
+type Folder struct {
+	Files  host.StoreReader
+	Writer host.StoreWriter
+}
+
+// Texts is the text versions of a vault: recorded, listed and read.
+type Texts interface {
+	host.TextVersions
+	host.TextReader
+}
+
 // Host is what the plugin works through the host.
 type Host struct {
 	PluginID string
 	Vaults   func(domain.VaultID) Vault
-	Store    host.Store
-	Texts    host.Texts
+	Store    func(domain.VaultID) Folder
+	Texts    func(domain.VaultID) Texts
 	Queue    host.Queue
 	Clock    Clock
 }
@@ -231,7 +243,7 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 	target, store := l.getVaultByID(vault), l.getStoreByID(vault)
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
 	key := getKey(parsed)
-	if page, ok, err := writePage(ctx, store, key, parsed); err != nil {
+	if page, ok, err := writePage(ctx, store.Writer, key, parsed); err != nil {
 		return Link{}, err
 	} else if ok {
 		// gomutants:disable-next-line BRANCH_IF reason="SetScalar on a valid frontmatter key of a new document cannot fail"
@@ -303,12 +315,7 @@ func (l *Links) findByAddress(ctx context.Context, vault Files, parsed address.U
 
 func (l *Links) getVaultByID(vault domain.VaultID) Vault { return l.host.Vaults(vault) }
 
-func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
-	if vault == "" {
-		return l.host.Store
-	}
-	return l.host.Store.With(vault)
-}
+func (l *Links) getStoreByID(vault domain.VaultID) Folder { return l.host.Store(vault) }
 
 func (l *Links) getAddress(name string) string {
 	// The core resolves plugin://<plugin id>/<path> to the file at path in that plugin's store.
@@ -338,14 +345,9 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 
 func (l *Links) getVault(link Link) Vault { return l.getVaultByID(link.Vault) }
 
-func (l *Links) getStore(link Link) host.Store { return l.getStoreByID(link.Vault) }
+func (l *Links) getStore(link Link) Folder { return l.getStoreByID(link.Vault) }
 
-func (l *Links) getTexts(link Link) host.Texts {
-	if link.Vault == "" {
-		return l.host.Texts
-	}
-	return l.host.Texts.With(link.Vault)
-}
+func (l *Links) getTexts(link Link) Texts { return l.host.Texts(link.Vault) }
 
 func (l *Links) claim(work string, link Link, key string) bool {
 	l.mu.Lock()
@@ -609,13 +611,13 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 
 	part := link.Key + partExt
 	store := l.getStore(link)
-	if err := store.Delete(ctx, part); err != nil {
+	if err := store.Writer.Delete(ctx, part); err != nil {
 		return 0, err
 	}
 	into := &storeWriter{
 		limit: settings.CopyMaxSize,
 		appendChunk: func(chunk []byte) error {
-			return store.Append(ctx, part, chunk)
+			return store.Writer.Append(ctx, part, chunk)
 		},
 		report: func(byteCount int64) {
 			task.CompletedCount, task.TotalCount = byteCount, meta.Bytes
@@ -629,14 +631,14 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 		err = into.flush()
 	}
 	if err != nil {
-		return 0, errors.Join(err, store.Delete(context.WithoutCancel(ctx), part))
+		return 0, errors.Join(err, store.Writer.Delete(context.WithoutCancel(ctx), part))
 	}
 	ext := strings.ToLower(copied.Extension)
 	if !isCopyExt(ext) {
-		return 0, errors.Join(fmt.Errorf("a copy in a %q file is not played", ext), store.Delete(ctx, part))
+		return 0, errors.Join(fmt.Errorf("a copy in a %q file is not played", ext), store.Writer.Delete(ctx, part))
 	}
 	name := getCopyName(link.Key, media, ext)
-	if err := store.Rename(ctx, part, name); err != nil {
+	if err := store.Writer.Rename(ctx, part, name); err != nil {
 		return 0, err
 	}
 	return into.byteCount, l.publishCopy(ctx, link, name)
@@ -675,7 +677,7 @@ func (l *Links) deleteUnreferencedCopies(ctx context.Context, link Link) error {
 	var errs []error
 	for _, name := range names {
 		if !referred[l.getAddress(name)] {
-			errs = append(errs, store.Delete(ctx, name))
+			errs = append(errs, store.Writer.Delete(ctx, name))
 		}
 	}
 	return errors.Join(errs...)

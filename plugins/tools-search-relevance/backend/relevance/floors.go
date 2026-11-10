@@ -50,9 +50,15 @@ type ProbeResult struct {
 // Host is the part of the host the floors work through: the search index, the notes of the vault and
 // the plugin's own folder.
 type Host struct {
-	Search host.Search
+	Search func(domain.VaultID) Search
 	Vaults func(domain.VaultID) host.NoteLookup
-	Store  host.Store
+	Store  func(domain.VaultID) Folder
+}
+
+// Search is the calls the floors make on the search of one vault, each through the narrow interface it needs.
+type Search struct {
+	Index  host.SearchIndex
+	Policy host.SearchPolicy
 }
 
 // Floors measures, sets and applies the search floor of the vaults.
@@ -70,23 +76,19 @@ func New(h Host, clock Clock) *Floors {
 
 // scope is the search, the notes and the records of one vault.
 type scope struct {
-	search  host.Search
+	search  Search
 	notes   host.NoteLookup
 	records Records
 }
 
 func (f *Floors) open(vault domain.VaultID) scope {
-	search, notes, store := f.host.Search, f.host.Vaults(vault), f.host.Store
-	if vault != "" {
-		search, store = search.With(vault), store.With(vault)
-	}
-	return scope{search: search, notes: notes, records: NewRecords(store)}
+	return scope{search: f.host.Search(vault), notes: f.host.Vaults(vault), records: NewRecords(f.host.Store(vault))}
 }
 
 // Get returns the floor in force for the vault. An installation with no model has the default floor.
 func (f *Floors) Get(ctx context.Context, vault domain.VaultID) (State, error) {
 	s := f.open(vault)
-	state, err := s.search.GetEmbeddingState(ctx)
+	state, err := s.search.Index.GetEmbeddingState(ctx)
 	if errors.Is(err, host.ErrNoModel) {
 		return State{
 			Floor: defaultFloor, Source: SourceDefault, Model: "", AutomaticFloor: defaultFloor,
@@ -100,7 +102,7 @@ func (f *Floors) Get(ctx context.Context, vault domain.VaultID) (State, error) {
 }
 
 func (f *Floors) getState(ctx context.Context, s scope, embedding host.EmbeddingState) (State, error) {
-	applied, err := s.search.GetSearchFloor(ctx, embedding.Recipe)
+	applied, err := s.search.Policy.GetSearchFloor(ctx, embedding.Recipe)
 	if err != nil {
 		return State{}, fmt.Errorf("read the floor: %w", err)
 	}
@@ -152,11 +154,11 @@ func (f *Floors) Calibrate(ctx context.Context, vault domain.VaultID) (Outcome, 
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	s := f.open(vault)
-	embedding, err := s.search.GetEmbeddingState(ctx)
+	embedding, err := s.search.Index.GetEmbeddingState(ctx)
 	if err != nil {
 		return 0, State{}, fmt.Errorf("read the embedding state: %w", err)
 	}
-	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, s.notes, embedding)
+	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search.Index, s.notes, embedding)
 	if err != nil {
 		return 0, State{}, err
 	}
@@ -190,7 +192,7 @@ func (f *Floors) Set(ctx context.Context, vault domain.VaultID, isManual bool, f
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	s := f.open(vault)
-	embedding, err := s.search.GetEmbeddingState(ctx)
+	embedding, err := s.search.Index.GetEmbeddingState(ctx)
 	if err != nil {
 		return State{}, fmt.Errorf("read the embedding state: %w", err)
 	}
@@ -222,14 +224,14 @@ func apply(ctx context.Context, s scope, record Record) error {
 	case record.Calibration != nil && record.Calibration.Floor > 0:
 		wanted = record.Calibration.Floor
 	}
-	applied, err := s.search.GetSearchFloor(ctx, record.Recipe)
+	applied, err := s.search.Policy.GetSearchFloor(ctx, record.Recipe)
 	if err != nil {
 		return fmt.Errorf("read the floor: %w", err)
 	}
 	if applied.Stored == wanted {
 		return nil
 	}
-	if err := s.search.SetSearchFloor(ctx, record.Recipe, wanted); err != nil {
+	if err := s.search.Policy.SetSearchFloor(ctx, record.Recipe, wanted); err != nil {
 		return fmt.Errorf("set the floor: %w", err)
 	}
 	return nil
@@ -239,25 +241,25 @@ func apply(ctx context.Context, s scope, record Record) error {
 // embedded and has no passage near it.
 func (f *Floors) Probe(ctx context.Context, vault domain.VaultID, query string) (ProbeResult, error) {
 	s := f.open(vault)
-	embedding, err := s.search.GetEmbeddingState(ctx)
+	embedding, err := s.search.Index.GetEmbeddingState(ctx)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("read the embedding state: %w", err)
 	}
-	applied, err := s.search.GetSearchFloor(ctx, embedding.Recipe)
+	applied, err := s.search.Policy.GetSearchFloor(ctx, embedding.Recipe)
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("read the floor: %w", err)
 	}
 	if strings.TrimSpace(query) == "" {
 		return ProbeResult{BestSimilarity: 0, Floor: applied.Floor, DoesPass: false}, nil
 	}
-	embedded, err := s.search.EmbedTexts(ctx, []string{clipText(query, host.MaxEmbeddedBytes)})
+	embedded, err := s.search.Index.EmbedTexts(ctx, []string{clipText(query, host.MaxEmbeddedBytes)})
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("embed the query: %w", err)
 	}
 	if len(embedded.Vectors) != 1 {
 		return ProbeResult{}, fmt.Errorf("embed the query: %w: %d vectors for one query", host.ErrEmbeddingFailed, len(embedded.Vectors))
 	}
-	best, err := s.search.GetBestSimilarity(ctx, embedded.Recipe, embedded.Vectors[0])
+	best, err := s.search.Index.GetBestSimilarity(ctx, embedded.Recipe, embedded.Vectors[0])
 	if err != nil {
 		return ProbeResult{}, fmt.Errorf("read the nearest passage: %w", err)
 	}
@@ -272,7 +274,7 @@ func (f *Floors) Ensure(ctx context.Context, vault domain.VaultID) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	s := f.open(vault)
-	embedding, err := s.search.GetEmbeddingState(ctx)
+	embedding, err := s.search.Index.GetEmbeddingState(ctx)
 	if errors.Is(err, host.ErrNoModel) {
 		return nil
 	}
@@ -289,7 +291,7 @@ func (f *Floors) Ensure(ctx context.Context, vault domain.VaultID) error {
 	if found && (record.IsManual || record.Calibration != nil) {
 		return apply(ctx, s, record)
 	}
-	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search, s.notes, embedding)
+	outcome, calibration, err := f.calibrator.Calibrate(ctx, s.search.Index, s.notes, embedding)
 	// gomutants:disable-next-line EXPRESSION_REMOVE reason="Failed calibration always returns a zero outcome."
 	if err != nil || outcome != Calibrated {
 		return err

@@ -24,7 +24,7 @@ const playerPage = `<!doctype html>
 </body></html>
 `
 
-func writePage(ctx context.Context, store host.Store, key string, link address.URL) (string, bool, error) {
+func writePage(ctx context.Context, store host.StoreWriter, key string, link address.URL) (string, bool, error) {
 	player, ok := address.GetPlayerURL(link)
 	if !ok {
 		return "", false, nil

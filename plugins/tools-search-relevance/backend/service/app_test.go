@@ -72,7 +72,7 @@ func newFixture(t *testing.T, hint float64) *fixture {
 	setNotes(vault, 25)
 	queue := hosttest.NewQueue()
 	app := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()},
+		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  queue,
 	}, clock.NewFake(getMeasuredAt()))
 
@@ -333,10 +333,10 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 		name  string
 		hosts service.Hosts
 	}{
-		{"missing search", service.Hosts{Floors: relevance.Host{Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}, Queue: queue}},
-		{"missing vault", service.Hosts{Floors: relevance.Host{Search: search, Store: vault.Store()}, Queue: queue}},
-		{"missing store", service.Hosts{Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
-		{"missing queue", service.Hosts{Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()}}},
+		{"missing search", service.Hosts{Floors: relevance.Host{Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}, Queue: queue}},
+		{"missing vault", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Store: foldersOf(vault)}, Queue: queue}},
+		{"missing store", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }}, Queue: queue}},
+		{"missing queue", service.Hosts{Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			app := service.NewAppOver(tc.hosts, clk)
@@ -355,7 +355,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 	setNotes(vault, 25)
 
 	appReportFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()},
+		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, reportErr: errReport},
 	}, clk)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appReportFail.Mount); err != nil {
@@ -369,7 +369,7 @@ func TestMountAndEventReportingValidateDependenciesAndQueueErrors(t *testing.T) 
 
 	search.FailEmbedding(nil)
 	appFinishFail := service.NewAppOver(service.Hosts{
-		Floors: relevance.Host{Search: search, Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: vault.Store()},
+		Floors: relevance.Host{Search: searchOf(search), Vaults: func(id domain.VaultID) host.NoteLookup { return vault.With(id) }, Store: foldersOf(vault)},
 		Queue:  failingQueue{Queue: queue, finishErr: errFinish},
 	}, clk)
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": token}, appFinishFail.Mount); err != nil {
@@ -385,4 +385,17 @@ func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	if err := app.HandleEvent(t.Context(), host.GetVectorsReadyEvent("physics")); err != nil {
 		t.Errorf("got %v, want the event ignored", err)
 	}
+}
+
+// searchOf gives the calls on the search of the vault with an identity.
+func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
+	return func(id domain.VaultID) relevance.Search {
+		on := search.With(id)
+		return relevance.Search{Index: on, Policy: on}
+	}
+}
+
+// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the vault.
+func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Folder {
+	return func(id domain.VaultID) relevance.Folder { return vault.Store().With(id) }
 }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -59,7 +60,7 @@ func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, 
 	for _, one := range notes {
 		target = append(target, installation.Add(tb, one))
 	}
-	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: installation.Host.Store(), Now: vaulttest.NewClock()})
+	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: vaulttest.Folders(installation.Host), Now: vaulttest.NewClock()})
 	return &reviewHandler{Backend: backend}, target, installation
 }
 
@@ -166,7 +167,7 @@ func TestRecordReview_ErrorsOnRunOfOtherVault(t *testing.T) {
 	}
 }
 
-func getRunFiles(t *testing.T, store host.Store) []string {
+func getRunFiles(t *testing.T, store hostports.Folder) []string {
 	t.Helper()
 	entries, err := store.List(t.Context())
 	if err != nil {

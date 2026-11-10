@@ -22,7 +22,7 @@ import (
 // header names.
 type DocumentServer struct {
 	vaults  func(domain.VaultID) host.FileReader
-	texts   host.Texts
+	texts   func(domain.VaultID) LiveTexts
 	workers *pdf.Workers
 }
 
@@ -50,9 +50,15 @@ func newWorkers() *pdf.Workers {
 	return workers
 }
 
+// LiveTexts reads the live text version of a file.
+type LiveTexts interface {
+	ListVersions(ctx context.Context, path string) (host.TextListing, error)
+	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error)
+}
+
 // NewDocumentServer returns a DocumentServer that reads files from vaults on the workers, and text
 // versions from texts.
-func NewDocumentServer(vaults func(domain.VaultID) host.FileReader, texts host.Texts, workers *pdf.Workers) *DocumentServer {
+func NewDocumentServer(vaults func(domain.VaultID) host.FileReader, texts func(domain.VaultID) LiveTexts, workers *pdf.Workers) *DocumentServer {
 	return &DocumentServer{vaults: vaults, texts: texts, workers: workers}
 }
 
@@ -123,11 +129,7 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 		end = max(end, run.End)
 	}
 
-	texts := s.texts
-	if id := host.GetRequestVault(server.GetHeader(ctx)); id != "" {
-		texts = texts.With(id)
-	}
-	text, err := readLiveText(ctx, texts, req.Path, end)
+	text, err := readLiveText(ctx, s.texts(host.GetRequestVault(server.GetHeader(ctx))), req.Path, end)
 	if err != nil {
 		return GetHighlightsResponse{}, server.NewAPIError(server.CodeUnavailable, fmt.Sprintf("read the text of %s: %v", req.Path, err))
 	}
@@ -138,7 +140,7 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 	return out, nil
 }
 
-func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (domain.VersionText, error) {
+func readLiveText(ctx context.Context, texts LiveTexts, path string, end int) (domain.VersionText, error) {
 	listing, err := texts.ListVersions(ctx, path)
 	if errors.Is(err, host.ErrNotExist) {
 		return domain.VersionText{Text: ""}, nil

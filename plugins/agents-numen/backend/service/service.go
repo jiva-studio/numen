@@ -31,7 +31,7 @@ func Mount(s *server.Server) error {
 		agent.Configure(values)
 		agent.ApplySecrets(secrets)
 	})
-	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
+	s.Register(agentrun.NewHandler(agent, agent, s.HandlerOptions()...))
 	s.OnClose(agent.Close)
 	return nil
 }

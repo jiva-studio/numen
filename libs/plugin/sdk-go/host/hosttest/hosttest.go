@@ -27,7 +27,7 @@ type Vault struct {
 	world      *world
 	vault      domain.Vault
 	isShown    bool
-	files      store
+	files      vaultFiles
 	indexed    map[string]domain.Note
 	rejected   map[string]error
 	unwritable map[string]error
@@ -57,7 +57,7 @@ var (
 
 // New is a vault of the name, shown by the host, whose files are held in memory.
 func New(name string) *Vault {
-	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, newMemory())
+	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, inMemory())
 }
 
 // OnDisk is a vault of the notes given, written into a folder of the test's own. The notes are
@@ -74,13 +74,13 @@ func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 			tb.Fatal(err)
 		}
 	}
-	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, disk{root: root})
+	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, onDisk(root))
 	v.tb = tb
 	v.Reindex()
 	return v
 }
 
-func newVault(v domain.Vault, files store) *Vault {
+func newVault(v domain.Vault, files vaultFiles) *Vault {
 	made := &Vault{
 		vault:    v,
 		isShown:  true,
@@ -165,8 +165,8 @@ func (v *Vault) Move() {
 var errGone = errors.New("the vault's folder is gone")
 
 func (v *Vault) reach() error {
-	if on, isDisk := v.files.(disk); isDisk {
-		if _, err := os.Stat(on.root); err != nil {
+	if v.files.root != "" {
+		if _, err := os.Stat(v.files.root); err != nil {
 			return errGone
 		}
 	}

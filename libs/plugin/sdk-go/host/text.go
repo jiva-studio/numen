@@ -54,13 +54,11 @@ type TextPage struct {
 	NextCursor string
 }
 
-// Texts is the text versions of the vault the host shows, as a plugin works them. TextClient works
-// them through HostTextService; tests work them through hosttest.Texts.
-type Texts interface {
-	// With is the text versions of the vault of the identity. A call on it returns ErrUnknownVault
-	// when the installation has no such vault.
-	With(id domain.VaultID) Texts
-
+// TextVersions records the text versions of a plugin in the vault the host shows. TextClient records
+// them through HostTextService; tests record them through hosttest.Texts. A plugin that works another
+// vault than the shown one calls With on TextClient and keeps the narrow interface of the calls it
+// needs on the result.
+type TextVersions interface {
 	// PutVersion records a version of the plugin from the file it wrote, or replaces the one it has
 	// under the key, and reindexes the file.
 	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)
@@ -68,11 +66,10 @@ type Texts interface {
 	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
 	ListVersions(ctx context.Context, path string) (TextListing, error)
-	textReader
 }
 
-// textReader reads the segments of the text versions of the vault.
-type textReader interface {
+// TextReader reads the segments of the text versions of the vault.
+type TextReader interface {
 	// ReadText is one page of any version's segments, read by the host from the version's file, or
 	// ErrNotExist.
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (TextPage, error)
@@ -85,7 +82,7 @@ type textReader interface {
 var errRepeatedCursor = errors.New("host: the same page was returned twice")
 
 // ReadWholeText is every page of a version's segments, joined.
-func ReadWholeText(ctx context.Context, texts Texts, version domain.TextVersion) (domain.VersionText, error) {
+func ReadWholeText(ctx context.Context, texts TextReader, version domain.TextVersion) (domain.VersionText, error) {
 	var segments []domain.TextSegment
 	cursor := ""
 	for {
@@ -106,7 +103,7 @@ func ReadWholeText(ctx context.Context, texts Texts, version domain.TextVersion)
 
 // WriteText writes segments as a version file of the plugin's folder, replacing the file
 // atomically. The plugin puts the version after the write.
-func WriteText(ctx context.Context, store Store, name string, segments []domain.TextSegment) error {
+func WriteText(ctx context.Context, store StoreWriter, name string, segments []domain.TextSegment) error {
 	raw, err := textfile.Encode(segments)
 	if err != nil {
 		return err
@@ -116,7 +113,7 @@ func WriteText(ctx context.Context, store Store, name string, segments []domain.
 
 // AppendText adds segments to the end of a version file of the plugin's folder, making the file
 // where it is not there.
-func AppendText(ctx context.Context, store Store, name string, segments []domain.TextSegment) error {
+func AppendText(ctx context.Context, store StoreWriter, name string, segments []domain.TextSegment) error {
 	raw, err := textfile.Encode(segments)
 	if err != nil {
 		return err
@@ -125,7 +122,7 @@ func AppendText(ctx context.Context, store Store, name string, segments []domain
 }
 
 // ReadTextFile reads the segments of a version file of the plugin's folder.
-func ReadTextFile(ctx context.Context, store Store, name string) ([]domain.TextSegment, error) {
+func ReadTextFile(ctx context.Context, store StoreReader, name string) ([]domain.TextSegment, error) {
 	raw, err := store.Read(ctx, name)
 	if err != nil {
 		return nil, err

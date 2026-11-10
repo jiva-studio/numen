@@ -11,7 +11,7 @@ import (
 func newConfiguredBackend(t *testing.T, values map[string]string) *Backend {
 	t.Helper()
 	env := vaulttest.New(t, map[string]string{"Term.md": getDeck()["Term.md"]})
-	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()})
+	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 	b.Configure(values)
 	return b
 }

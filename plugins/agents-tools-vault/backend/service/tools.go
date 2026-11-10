@@ -17,11 +17,11 @@ var errNoVault = errors.New("the call names no vault")
 
 // Tools provides MCP tools for AI agents interacting with the knowledge vault.
 type Tools struct {
-	vaults func(domain.VaultID) Vault
-	vault  Vault
-	texts  host.Texts
-	search host.Search
-	list   host.VaultList
+	vaults  func(domain.VaultID) Vault
+	vault   Vault
+	library func(domain.VaultID) Library
+	lib     Library
+	list    host.VaultList
 }
 
 // Vault is the calls the tools make on one vault, each through the narrow interface it needs.
@@ -39,7 +39,7 @@ type Vault struct {
 // New creates a Tools instance. vaults gives the calls on the vault with an identity, and on the vault
 // the host shows for the empty identity.
 func New(vaults func(domain.VaultID) Vault) *Tools {
-	return &Tools{vaults: vaults, vault: Vault{}, texts: nil, search: nil, list: nil}
+	return &Tools{vaults: vaults, vault: Vault{}, library: nil, lib: Library{}, list: nil}
 }
 
 // WithVaultList sets the installation's list of vaults, which vault_list reads and the
@@ -56,12 +56,9 @@ func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, 
 			var none Out
 			return none, errNoVault
 		}
-		call := &Tools{vaults: t.vaults, vault: t.vaults(domain.VaultID(id)), texts: nil, search: nil, list: t.list}
-		if t.texts != nil {
-			call.texts = t.texts.With(domain.VaultID(id))
-		}
-		if t.search != nil {
-			call.search = t.search.With(domain.VaultID(id))
+		call := &Tools{vaults: t.vaults, vault: t.vaults(domain.VaultID(id)), library: t.library, lib: Library{}, list: t.list}
+		if t.library != nil {
+			call.lib = t.library(domain.VaultID(id))
 		}
 		return run(call, ctx, in)
 	}

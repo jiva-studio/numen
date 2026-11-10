@@ -28,7 +28,16 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue))
+	return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), newTextServer(files, texts, store, queue))
+}
+
+// newTextServer is the text server over the clients of the host.
+func newTextServer(files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) *TextServer {
+	return NewTextServer(
+		func(id domain.VaultID) vaultFiles { return files.With(id) },
+		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		func(id domain.VaultID) host.StoreWriter { return store.With(id) },
+		queue)
 }
 
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
@@ -81,6 +90,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue))
+		return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), newTextServer(files, texts, store, queue))
 	})
 }
