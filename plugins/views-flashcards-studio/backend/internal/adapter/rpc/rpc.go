@@ -8,8 +8,6 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 )
 
-// handle registers a unary method. A request with no body arrives as an empty one, and a response
-// leaves with every collection present.
 func handle[Req, Res any](a *server.API, method string, fn func(context.Context, *Req) (*Res, error)) {
 	server.Handle(a, method, func(ctx context.Context, req *Req) (*Res, error) {
 		if req == nil {
@@ -24,7 +22,6 @@ func handle[Req, Res any](a *server.API, method string, fn func(context.Context,
 	})
 }
 
-// stream registers a streaming method, with the same treatment of the request and of each message sent.
 func stream[Req, Res any](
 	a *server.API, method string, fn func(context.Context, *Req, func(*Res) error) error,
 ) {
