@@ -12,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/api"
+	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/preview"
 	"github.com/jiva-studio/numen/plugins/agents-tools-window/backend/service"
 )
 
@@ -45,7 +47,7 @@ func newWindowTools(t *testing.T) windowTools {
 func newRegistry(t *testing.T, on service.Host) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
-	manager := service.NewManager(clock.NewFake(time.Unix(1_700_000_000, 0)))
+	manager := preview.NewStore(clock.NewFake(time.Unix(1_700_000_000, 0)))
 	if err := service.RegisterTools(registry, manager, on); err != nil {
 		t.Fatal(err)
 	}
@@ -340,8 +342,8 @@ func TestWindowTabListReturnsNoErrorForAnyTab(t *testing.T) {
 			t.Errorf("the tab %s returns the error %s", tab["tabId"], message)
 		}
 	}
-	if _, hasError := reflect.TypeFor[service.TabInfo]().FieldByName("Error"); hasError {
-		t.Error("service.TabInfo has the field Error; a tab whose reader reported no place has no place and no error")
+	if _, hasError := reflect.TypeFor[api.TabInfo]().FieldByName("Error"); hasError {
+		t.Error("api.TabInfo has the field Error; a tab whose reader reported no place has no place and no error")
 	}
 }
 
