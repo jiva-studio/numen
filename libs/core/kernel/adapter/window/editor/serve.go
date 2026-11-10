@@ -67,6 +67,9 @@ func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.
 // put together without a catalog serves none.
 func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
 
+// GetThemes returns the themes the window offers.
+func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
+
 // SetPlugins sets where the calls for the services plugins serve are forwarded,
 // and where the files of a plugin are read from.
 func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (string, bool)) {

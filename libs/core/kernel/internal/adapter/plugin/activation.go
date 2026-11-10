@@ -5,10 +5,10 @@ import (
 	"crypto/subtle"
 	"errors"
 	"fmt"
-	"net/http"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -25,9 +25,9 @@ type Activation struct {
 	refreshListeners func(ctx context.Context, pluginID string)
 }
 
-// GetClient returns the HTTP client for calls to the plugin process the endpoint belongs to.
-func (a *Activation) GetClient(endpoint plugindomain.Endpoint) *http.Client {
-	return a.t.clients.Get(endpoint)
+// ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
+func (a *Activation) ClientLookup() transport.ClientLookup {
+	return transport.NewClientLookup(a.t.clients)
 }
 
 func newActivation(t *table, clock machineport.Clock, failures *Failures, processes *Processes) *Activation {

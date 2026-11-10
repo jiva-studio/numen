@@ -216,7 +216,7 @@ func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
 	got := getUncovered([]string{"**/adapter/window/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli", "internal/adapter/plugin/hostendpoint", "internal/adapter/plugin/hostsearch",
 		"internal/adapter/plugin/hosttext", "internal/adapter/plugin/hostvault", "internal/adapter/theme",
-		"internal/adapterlib/triggerpasses", "internal/adapterlib/wire"}; !slices.Equal(got, want) {
+		"internal/adapterlib/wire"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
 	if got := getUncovered([]string{

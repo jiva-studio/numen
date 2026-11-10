@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
@@ -256,6 +255,7 @@ type PluginHost struct {
 	pluginport.PluginBinding
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
+	transport.ClientLookup
 	ApplySetting        settingsport.PluginSettingApplier
 	SetCompleter        func(completer hostendpoint.Completer)
 	SetPluginWork       func(work hostendpoint.WorkQueue)
@@ -267,15 +267,6 @@ type PluginHost struct {
 	SetPluginVaultList  func(list hostendpoint.VaultList)
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
-	getClient           func(endpoint plugindomain.Endpoint) *http.Client
-}
-
-// GetClient returns the HTTP client for calls to the plugin process the endpoint belongs to.
-func (h *PluginHost) GetClient(endpoint plugindomain.Endpoint) *http.Client {
-	if h.getClient == nil {
-		return transport.NewClients().Get(endpoint)
-	}
-	return h.getClient(endpoint)
 }
 
 // AdaptPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
@@ -316,7 +307,7 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 		SetPluginVaultList:  host.Services.SetPluginVaultList,
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
 		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
-		getClient:           host.Activation.GetClient,
+		ClientLookup:        host.Activation.ClientLookup(),
 	}
 }
 

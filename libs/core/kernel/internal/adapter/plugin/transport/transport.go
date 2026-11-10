@@ -92,6 +92,21 @@ func (c *Clients) Get(e plugin.Endpoint) *http.Client {
 	return newUnpooledClient()
 }
 
+// ClientLookup finds the client of an endpoint among the clients of a plugin host. The zero value
+// finds an unpooled client for every endpoint.
+type ClientLookup struct{ clients *Clients }
+
+// NewClientLookup returns the lookup over the clients.
+func NewClientLookup(clients *Clients) ClientLookup { return ClientLookup{clients: clients} }
+
+// GetClient returns the client kept for the endpoint, or an unpooled client when none is kept.
+func (l ClientLookup) GetClient(e plugin.Endpoint) *http.Client {
+	if l.clients == nil {
+		return newUnpooledClient()
+	}
+	return l.clients.Get(e)
+}
+
 // ClientSource is a plugin host that keeps the client of each endpoint it started.
 type ClientSource interface {
 	GetClient(e plugin.Endpoint) *http.Client

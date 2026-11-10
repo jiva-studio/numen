@@ -7,6 +7,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -27,7 +28,7 @@ func newConfigPush(t *table, errs *errorSink, settings *Settings) *ConfigPush {
 		getConfigSnapshot: c.getConfigSnapshot,
 		listPluginIDs:     c.listPluginIDs,
 		reportError:       errs.report,
-		getClient:         t.clients.Get,
+		getClient:         transport.NewClientLookup(t.clients).GetClient,
 	})
 	return c
 }
