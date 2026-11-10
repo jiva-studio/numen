@@ -114,9 +114,12 @@ export function useBookColumns(options: BookColumnsOptions) {
    * The columns are as wide as the box is at this moment, and the viewport learns that width only
    * after the frame, so the width the marks are read against is taken off the box. The column
    * count is the one the CSS was last set at.
+   *
+   * Returns the column height in pixels, which is also written to `--book-paper` on the text.
    */
-  const readColumns = (box: HTMLElement, text: HTMLElement): void => {
-    text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
+  const readColumns = (box: HTMLElement, text: HTMLElement): number => {
+    const paperHeight = columnHeight(box.clientHeight, getLine(text))
+    text.style.setProperty('--book-paper', `${paperHeight}px`)
     runMarks.gather()
     const readFlow: Flow = { ...viewportFlow.value, width: box.clientWidth }
     const isSingleColumn =
@@ -126,6 +129,7 @@ export function useBookColumns(options: BookColumnsOptions) {
       countFilledColumns(runMarks.marks.value, readFlow) === 1
     contentWidth.value = isSingleColumn ? box.clientWidth : text.scrollWidth
     laidFlow.value = { ...readFlow, contentWidth: contentWidth.value }
+    return paperHeight
   }
 
   return {
