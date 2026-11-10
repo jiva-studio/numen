@@ -499,7 +499,10 @@ describe('tab detach and move wiring', () => {
 
   it('reports a tab as asking when its kind is asking', () => {
     h.f.editing.reached.asking = vi.fn(() => false)
-    h.f.windowTabs.tabs.getTab.mockReturnValue({ kind: { isAsking: () => true }, state: {} })
+    h.f.windowTabs.tabs.getTab.mockReturnValue({
+      kind: { events: { isAsking: () => true } },
+      state: {},
+    })
     const window = createWindow()
 
     expect(window.tabs.moves.isTabAsking('t1')).toBe(true)

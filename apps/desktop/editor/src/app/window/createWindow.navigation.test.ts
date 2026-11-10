@@ -8,6 +8,7 @@ import {
   changed,
   getWindowParts,
   mountWindowWithPalette,
+  registerNoteTabs,
   outside,
   requests,
   settle,
@@ -19,6 +20,13 @@ type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
 
 const ENTROPY = 'physics/Entropy.md'
 const HEAT = 'physics/Heat.md'
+
+/** A window with the palette that opens the notes of the vault in tabs of a registered kind. */
+const mountWithNotes = async (): Promise<Window> => {
+  const window = await mountWindowWithPalette()
+  registerNoteTabs(getWindowParts(window))
+  return window
+}
 
 const readSavedPaths = (): readonly string[] =>
   requests.openTabs.at(-1)?.tabs.map((one) => one.path) ?? []
@@ -36,7 +44,7 @@ const renameNote = async (from: string, to: string): Promise<void> => {
 
 describe('a note the core asks the window to show', () => {
   it('opens in a tab, which the open tabs record', async () => {
-    await mountWindowWithPalette()
+    await mountWithNotes()
 
     await showNote(ENTROPY)
 
@@ -46,7 +54,7 @@ describe('a note the core asks the window to show', () => {
 
 describe('a note created by a command of the window', () => {
   it('opens in a tab, which the open tabs record', async () => {
-    const window = await mountWindowWithPalette()
+    const window = await mountWithNotes()
     const { palette } = getWindowParts(window)
 
     palette.runCommand(COMMAND.createNote, palette.getTarget())
@@ -61,7 +69,7 @@ describe('a note created by a command of the window', () => {
 
 describe('a note renamed', () => {
   it('moves the tab that holds it', async () => {
-    await mountWindowWithPalette()
+    await mountWithNotes()
     await showNote(ENTROPY)
 
     await renameNote(ENTROPY, HEAT)
@@ -81,7 +89,7 @@ describe('a note renamed', () => {
     }
 
     it('is carried out over the new path of the note', async () => {
-      const window = await mountWindowWithPalette()
+      const window = await mountWithNotes()
       askForNewName(window)
       await settle()
 

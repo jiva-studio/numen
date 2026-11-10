@@ -116,9 +116,8 @@ describe('the open files a command can access', () => {
               ? {
                   state: {},
                   kind: {
-                    getOpenTab: () => ({ path: 'Tab.md' }),
-                    isAsking: () => true,
-                    flushPending: flushTab,
+                    address: { getOpenTab: () => ({ path: 'Tab.md' }) },
+                    events: { isAsking: () => true, flushPending: flushTab },
                   },
                 }
               : null,

@@ -3,11 +3,7 @@ import { computed } from 'vue'
 import { createLostConnection } from '@numen/core-client/testing'
 import { answerCore } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
-import {
-  createTabLinkSession,
-  getWindowReport,
-  type TabLinkSessionDeps,
-} from './tabLinkSession'
+import { createTabLinkSession, getWindowReport, type TabLinkSessionDeps } from './tabLinkSession'
 import { createTabReports } from './tabReports'
 
 const SNAPSHOT = {
@@ -203,8 +199,8 @@ describe('createTabLinkSession', () => {
 
 describe('getWindowReport', () => {
   it('returns the tabs whose kind supports navigate, with kind and title', () => {
-    const kinds: Record<string, { kind: string; navigate?: () => void }> = {
-      'plex:1': { kind: 'plex', navigate: () => undefined },
+    const kinds: Record<string, { kind: string; address?: { navigate: () => void } }> = {
+      'plex:1': { kind: 'plex', address: { navigate: () => undefined } },
       'agent:1': { kind: 'agent' },
     }
     const windowTabs = {
@@ -446,8 +442,8 @@ describe('stream events for this window', () => {
 
 describe('getWindowReport', () => {
   it('returns the active tab title and kind and the tab count', () => {
-    const kinds: Record<string, { kind: string; navigate?: () => void }> = {
-      'plex:1': { kind: 'plex', navigate: () => undefined },
+    const kinds: Record<string, { kind: string; address?: { navigate: () => void } }> = {
+      'plex:1': { kind: 'plex', address: { navigate: () => undefined } },
       'agent:1': { kind: 'agent' },
     }
     const windowTabs = {

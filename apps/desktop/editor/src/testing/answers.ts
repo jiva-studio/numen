@@ -20,6 +20,7 @@ interface MockVaultState {
   savedTabs: OpenTabs
   detachedTab: Tab | null
   types: Record<string, string>
+  tabKind: string
   embedded: number
   listable: boolean
   isOpenRefused: boolean
@@ -48,6 +49,8 @@ export const mockVaultState: MockVaultState = {
    * entry is an ordinary note.
    */
   types: {},
+  /** The kind of tab a plugin registered for the notes, or none. */
+  tabKind: '',
   /** How many of the spans the index holds carry a vector. */
   embedded: 0,
   /** Whether the list of vaults answers at all. */
@@ -91,7 +94,11 @@ export const folders: Record<string, readonly Entry[]> = {
 /** Whether the file at a path is a note, and which type, as the vault answers it. */
 export const getFileKind = (path: string) => {
   if (!/\.(md|note)$/u.test(path)) return { isNote: false, type: 'note' as const }
-  return { isNote: true, type: mockVaultState.types[path] ?? ('note' as const) }
+  return {
+    isNote: true,
+    type: mockVaultState.types[path] ?? ('note' as const),
+    tabKind: mockVaultState.tabKind,
+  }
 }
 
 /** A stream that stays open, so nothing the window follows ever ends. */
@@ -225,6 +232,7 @@ export const forgetAnswers = () => {
   mockVaultState.savedTabs = { tabs: [], activeId: '' }
   mockVaultState.detachedTab = null
   mockVaultState.types = {}
+  mockVaultState.tabKind = ''
   mockVaultState.embedded = 0
   mockVaultState.listable = true
   mockVaultState.isOpenRefused = false

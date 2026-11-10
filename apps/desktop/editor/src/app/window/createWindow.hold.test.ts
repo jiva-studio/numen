@@ -9,6 +9,8 @@ import {
   getTabs,
   getWindowParts,
   mountWindow,
+  openNoteTab,
+  registerNoteTabs,
   requests,
   settle,
   vaultState,
@@ -30,6 +32,17 @@ const closeFrontTab = (): void => {
   )
 }
 
+/** A window holding two notes in tabs, the second in front. */
+const mountWithNotes = async (): Promise<Window> => {
+  const window = await mountWindow()
+  const parts = getWindowParts(window)
+  registerNoteTabs(parts)
+  await openNoteTab(parts, 'physics/Entropy.md')
+  await openNoteTab(parts, 'physics/Heat.md')
+  await settle()
+  return window
+}
+
 const openOtherVault = async (window: Window): Promise<void> => {
   const { palette } = getWindowParts(window)
   const target = { ...palette.getTarget(), vault: { id: 'heat', name: 'Heat' } }
@@ -39,9 +52,10 @@ const openOtherVault = async (window: Window): Promise<void> => {
 
 describe('the window leaving its vault', () => {
   it('saves the open tabs as they are when the core is asked to open the other vault', async () => {
-    const window = await mountWindow()
+    const window = await mountWithNotes()
     const open = getTabs(window).length
     closeFrontTab()
+    await settle()
 
     await openOtherVault(window)
 
@@ -50,7 +64,7 @@ describe('the window leaving its vault', () => {
   })
 
   it('writes no tabs once the other vault is open', async () => {
-    const window = await mountWindow()
+    const window = await mountWithNotes()
     await openOtherVault(window)
     const savedCount = requests.openTabs.length
 
@@ -62,7 +76,7 @@ describe('the window leaving its vault', () => {
 
   it('writes the tabs again where the core refuses the other vault', async () => {
     vaultState.isOpenRefused = true
-    const window = await mountWindow()
+    const window = await mountWithNotes()
     await openOtherVault(window)
     const savedCount = requests.openTabs.length
 

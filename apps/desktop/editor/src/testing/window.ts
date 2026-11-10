@@ -31,6 +31,7 @@ import {
   sourceAnswer,
 } from './answers'
 import { book, editor, reader } from './stubs'
+import { openNoteTab, registerNoteTabs } from './noteTabs'
 import type { createWindow } from '@/app/window/createWindow'
 
 const App = (await import('@/app/App.vue')).default
@@ -185,4 +186,6 @@ export {
   settle,
   sourceAnswer,
   getTabs,
+  openNoteTab,
+  registerNoteTabs,
 }

@@ -29,9 +29,11 @@ const createWindowTabs = (
             ...(tab.hasOpenTab === false
               ? {}
               : {
-                  getOpenTab: (state: { path?: string }) => ({ path: state.path ?? '' }),
+                  address: {
+                    getOpenTab: (state: { path?: string }) => ({ path: state.path ?? '' }),
+                  },
                 }),
-            ...(tab.editsFiles ? { flushPending: () => Promise.resolve() } : {}),
+            ...(tab.editsFiles ? { events: { flushPending: () => Promise.resolve() } } : {}),
           },
         }
       },

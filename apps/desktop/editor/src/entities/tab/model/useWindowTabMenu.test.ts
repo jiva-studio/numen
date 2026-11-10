@@ -30,10 +30,12 @@ describe('the target the entries of the menu of a tab run over', () => {
       : {
           state: id,
           kind: {
-            getTarget: (state: unknown) =>
-              state === 'book'
-                ? { path: '', file: 'books/Atlas.pdf', title: 'Atlas' }
-                : { path: 'Reef.md', file: '', title: 'Reef' },
+            address: {
+              getTarget: (state: unknown) =>
+                state === 'book'
+                  ? { path: '', file: 'books/Atlas.pdf', title: 'Atlas' }
+                  : { path: 'Reef.md', file: '', title: 'Reef' },
+            },
           },
         }
   const windowTabs = { tabs: { tabs: { value: [] }, getTab } } as never
