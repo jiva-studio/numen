@@ -8,6 +8,7 @@
 import { doc } from '@numen/ui'
 import { readonly, ref, type Ref } from 'vue'
 import { WORDS } from '../words'
+import type { Caught } from '@numen/plugin-sdk'
 
 // The codes a MediaError carries, under the names the standard gives them. A
 // window with no media element of its own defines none of them.
@@ -254,7 +255,7 @@ export function createMediaPlayer(create: MediaFactory = createVideoElement): Pl
     play: (url) => {
       const audio = load(url)
       if (!audio) return
-      audio.play().catch((thrown: unknown) => {
+      audio.play().catch((thrown: Caught) => {
         isPlaying.value = false
         // An AbortError from a play interrupted by the window is not a failure. Any other
         // rejection is a play request with no effect and fires no `error` event, so the

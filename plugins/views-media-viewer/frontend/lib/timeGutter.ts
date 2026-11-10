@@ -177,7 +177,9 @@ export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
     if (!view) return
     const was = view.state.field(timeGutterField)
     if (isSame(was, state)) return
-    const effects: StateEffect<unknown>[] = [setTimeGutterState.of(state)]
+    const effects: (StateEffect<TimeGutterState> | ReturnType<typeof EditorView.scrollIntoView>)[] = [
+      setTimeGutterState.of(state),
+    ]
     const isMoved = state.current !== was.current || state.isFollowing !== was.isFollowing
     if (
       may &&

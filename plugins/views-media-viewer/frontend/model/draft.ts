@@ -4,7 +4,7 @@
  */
 import { ref, type Ref } from 'vue'
 import { applyCues, isSame } from '../lib/cues'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type Caught } from '@numen/plugin-sdk'
 import type { Cue } from '../types'
 
 /** What the words being edited are kept against. */
@@ -86,7 +86,7 @@ export function useTranscriptDraft(how: DraftOptions) {
   }
 
   /** Reports the failure of a write that ran in the background. */
-  const reportFailure = (failure: unknown) => {
+  const reportFailure = (failure: Caught) => {
     error.value = formatErrorMessage(failure)
   }
 
