@@ -1,6 +1,5 @@
 /**
- * The slots in the context of a plugin: the views it registers, in the slots its manifest places
- * them, and the entries of the slots, which the owner of a slot reads and runs.
+ * The views a plugin registers, in the slots its manifest places them.
  */
 import type { Disposable, SlotViewRegistration } from '@numen/plugin-sdk'
 import { getDeclaredSlots, type SlotViewManifest } from '../slot-views/slotViews'
@@ -11,20 +10,16 @@ export interface SlotContextPlugin {
   readonly manifest?: SlotViewManifest | undefined
 }
 
-export function createSlotContext(
+export function createSlotViewRegistration(
   plugin: SlotContextPlugin,
   host: PluginContextHost,
   add: (disposable: Disposable) => Disposable,
-) {
+): (registration: SlotViewRegistration) => Disposable {
   const { pluginId, manifest } = plugin
-  const slots = host.getSlots?.()
-  return {
-    ...(slots ? { slots } : {}),
-    registerSlotView: (reg: SlotViewRegistration) => {
-      const registrations = getDeclaredSlots(pluginId, manifest, reg.id).map((slot) =>
-        host.registerSlotView(pluginId, slot, reg),
-      )
-      return add({ dispose: () => registrations.forEach((one) => one.dispose()) })
-    },
+  return (reg) => {
+    const registrations = getDeclaredSlots(pluginId, manifest, reg.id).map((slot) =>
+      host.registerSlotView(pluginId, slot, reg),
+    )
+    return add({ dispose: () => registrations.forEach((one) => one.dispose()) })
   }
 }

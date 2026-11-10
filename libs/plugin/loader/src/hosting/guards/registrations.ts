@@ -6,8 +6,11 @@ import type {
   CommandRegistration,
   Disposable,
   DropRegistration,
+  MountedView,
+  PluginRegistrations,
   ReaderRegistration,
   SettingsViewRegistration,
+  SlotViewRegistration,
   TabKindRegistration,
   ViewRegistration,
 } from '@numen/plugin-sdk'
@@ -28,24 +31,32 @@ export function createRegistrations(
   pluginId: string,
   host: PluginContextHost,
   guard: RegistrationGuard,
-) {
+  slotView: (registration: SlotViewRegistration) => Disposable,
+): PluginRegistrations {
   const { target, add } = guard
   const permissions = target.manifest?.permissions ?? []
   return {
-    registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
-    registerSettingsView: (reg: SettingsViewRegistration) =>
-      add(host.registerSettingsView(pluginId, reg)),
-    registerTabKind: <State>(reg: TabKindRegistration<State>) =>
-      add(host.registerTabKind(pluginId, reg)),
-    registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
-    registerAgentProvider: (reg: AgentProviderRegistration) =>
+    reader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
+    settingsView: (reg: SettingsViewRegistration) => add(host.registerSettingsView(pluginId, reg)),
+    slotView,
+    tabKind: <State>(reg: TabKindRegistration<State>) => add(host.registerTabKind(pluginId, reg)),
+    command: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
+    agentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),
-    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg, permissions)),
-    mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      const access = requireMountAccess(capability, target)
-      const view = host.mountView(capability, element, context, access)
-      return { focus: () => view.focus(), ...add(view) }
-    },
-    registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
+    view: (reg: ViewRegistration) => add(host.registerView(pluginId, reg, permissions)),
+    dropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
+  }
+}
+
+/** Draws the view a plugin declares into an element, after the access check of the plugin. */
+export function createMountView(
+  host: PluginContextHost,
+  guard: RegistrationGuard,
+): (capability: string, element: HTMLElement, context: unknown) => MountedView {
+  const { target, add } = guard
+  return (capability, element, context) => {
+    const access = requireMountAccess(capability, target)
+    const view = host.mountView(capability, element, context, access)
+    return { focus: () => view.focus(), ...add(view) }
   }
 }

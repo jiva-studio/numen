@@ -209,7 +209,7 @@ describe('a declared kind registered through a plugin context', () => {
     }
     const context = createPluginHost(deps).createContext('md.numen.sample')
 
-    const sub = context.registerTabKind<Held>({
+    const sub = context.register.tabKind<Held>({
       kind: 'member',
       component: Pane,
       open: (folderPath, id) => ({ at: folderPath, id, title: 'T' }),
@@ -245,8 +245,8 @@ describe('the services a plugin context is given', () => {
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
 
-    expect(context.workspace).toMatchObject(workspace)
-    await expect(context.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
+    expect(context.ui.workspace).toMatchObject(workspace)
+    await expect(context.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
       body: 'Pruning notes.',
     })
     expect(read).toHaveBeenCalledWith('Orchard/Pruning.md')

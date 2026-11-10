@@ -3,7 +3,7 @@
  * the files made and moved, and the icons the window draws commands and entries with.
  */
 import type { Component } from 'vue'
-import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
+import type { VaultFiles, WorkspaceIcons } from '@numen/plugin-loader'
 import { createFileCreators, type FileOpeners, type WindowTabs } from '@/entities/tab'
 import { listFiles, type CreateResult } from '@/entities/file'
 import { createInvocation, runInvocation, type CommandDeps } from '@/features/command-palette'
@@ -113,12 +113,10 @@ export interface IconHostDeps {
 }
 
 /** The icons the window draws commands and the entries of the vault with. */
-export function createIconHost(
-  deps: IconHostDeps,
-): Pick<WorkspaceHost, 'getCommandIcon' | 'getEntryIcon'> {
+export function createIconHost(deps: IconHostDeps): WorkspaceIcons {
   return {
-    getCommandIcon: (id) =>
+    getCommand: (id) =>
       (deps.getPluginCommandIcon?.(id) as Component | undefined) ?? findIcon(id) ?? null,
-    getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
+    getEntry: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
 }

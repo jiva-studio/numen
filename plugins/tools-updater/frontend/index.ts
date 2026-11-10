@@ -34,9 +34,9 @@ export function createStatusView(context: PluginContext, updates: Updates) {
     name: 'UpdateStatusView',
     setup: () => () =>
       h(UpdateIndicator, {
-        version: context.app.version,
+        version: context.plugin.app.version,
         update: updates.announced.value,
-        platform: context.app.platform,
+        platform: context.plugin.app.platform,
         onDownload: () => showFailure(context, updates.openDownload()),
         onReleaseNotes: () => showFailure(context, updates.openNotes()),
         onDismiss: () => updates.dismiss(),
@@ -47,38 +47,38 @@ export function createStatusView(context: PluginContext, updates: Updates) {
 function showFailure(context: PluginContext, opening: ReturnType<Updates['openDownload']>): void {
   opening.then(
     (result) => {
-      if (!result.ok) context.notices?.show(result.error, 'error')
+      if (!result.ok) context.ui.notices?.show(result.error, 'error')
     },
-    (error: unknown) => context.notices?.show(String(error), 'error'),
+    (error: unknown) => context.ui.notices?.show(String(error), 'error'),
   )
 }
 
 function showMissingAddress(context: PluginContext): void {
-  const address = context.getSetting<string>('endpoint')
-  if (context.getSetting<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return
-  context.notices?.show(words.missingAddress, 'error')
+  const address = context.settings.get<string>('endpoint')
+  if (context.settings.get<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return
+  context.ui.notices?.show(words.missingAddress, 'error')
 }
 
 export const activate = (context: PluginContext, parts: UpdateParts = browserParts): void => {
   const updates = createUpdates({
     api: parts.api,
-    app: context.app,
-    openExternal: (url) => context.openExternal(url),
-    getIntervalHours: () => context.getSetting('checkIntervalHours'),
+    app: context.plugin.app,
+    openExternal: (url) => context.plugin.openExternal(url),
+    getIntervalHours: () => context.settings.get('checkIntervalHours'),
     timer: parts.timer,
   })
-  context.registerSlotView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
-  context.onSettingChange('checkIntervalHours', () => updates.reschedule())
+  context.register.slotView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
+  context.settings.onChange('checkIntervalHours', () => updates.reschedule())
   const warnOfMissingAddress = () => showMissingAddress(context)
-  context.onSettingChange('endpoint', () => {
+  context.settings.onChange('endpoint', () => {
     updates.checkSoon()
     warnOfMissingAddress()
   })
-  context.onSettingChange('channel', () => {
+  context.settings.onChange('channel', () => {
     updates.checkSoon()
     warnOfMissingAddress()
   })
-  context.subscriptions.push({ dispose: () => updates.stop() })
+  context.plugin.subscriptions.push({ dispose: () => updates.stop() })
   updates.start()
   warnOfMissingAddress()
 }

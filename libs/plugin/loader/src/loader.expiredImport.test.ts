@@ -72,7 +72,7 @@ describe('a plugin that started within the limit', () => {
     await loader.trackPlugins([HARBOR])
     await loader.start()
     await vi.advanceTimersByTimeAsync(30_000 + 1_000)
-    context?.registerCommand({ id: 'harbor.open', handler: () => undefined })
+    context?.register.command({ id: 'harbor.open', handler: () => undefined })
 
     expect(loader.isPluginActive(HARBOR)).toBe(true)
     expect(registerCommand).toHaveBeenCalledTimes(1)

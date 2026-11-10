@@ -54,10 +54,10 @@ describe('view-plex-graph plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(5)
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
 
     ctx.dispose()
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
@@ -180,7 +180,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
     requested.headings.length = 0
 
-    ctx.emitVaultChange({ paths: ['One.md'] })
+    ctx.events.emitVaultChange({ paths: ['One.md'] })
     await settle()
     await settle()
 

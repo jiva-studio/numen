@@ -46,8 +46,8 @@ function followCommands(host: ReturnType<typeof createPluginHost>): string[][] {
 describe('a command a plugin registers while it starts', () => {
   it('is not reported as missing when the commands are read between two of its registrations', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
-      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
     followCommands(host)
 
@@ -59,8 +59,8 @@ describe('a command a plugin registers while it starts', () => {
   it('is not reported as missing when the commands are read before the plugin registers any', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
       host.getPaletteCommands()
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
-      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
 
     await loader.start()
@@ -70,8 +70,8 @@ describe('a command a plugin registers while it starts', () => {
 
   it('is not reported as missing by a read after the plugin has started', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
-      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
     followCommands(host)
 
@@ -84,9 +84,9 @@ describe('a command a plugin registers while it starts', () => {
   it('is listed while the plugin starts, as the other commands it declares', async () => {
     let commands: string[] = []
     const { host, loader } = createWindow((context) => {
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
       commands = host.getPaletteCommands().map((one) => one.id)
-      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
 
     await loader.start()
@@ -98,7 +98,7 @@ describe('a command a plugin registers while it starts', () => {
 describe('a command whose handler is missing after the plugin has started', () => {
   it('is reported once, whether it is read while the plugin starts or after', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
       host.getPaletteCommands()
     })
     followCommands(host)
@@ -118,8 +118,8 @@ describe('a command whose handler is missing after the plugin has started', () =
 describe('the commands of a plugin that is turned off', () => {
   it('are not reported as missing while its handlers are removed', async () => {
     const { host, loader, reportCommandIssue } = createWindow((context) => {
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
-      context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.showNote', handler: () => undefined })
     })
     await loader.start()
     const reports = followCommands(host)
@@ -136,9 +136,9 @@ describe('a plugin whose start passes 30 s', () => {
     vi.useFakeTimers()
     try {
       const { host, loader, onError } = createWindow(async (context) => {
-        context.registerCommand({ id: 'graph.open', handler: () => undefined })
+        context.register.command({ id: 'graph.open', handler: () => undefined })
         await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
-        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+        context.register.command({ id: 'graph.showNote', handler: () => undefined })
       })
 
       const started = loader.start()
@@ -171,8 +171,8 @@ describe('a start cancelled at 30 s that ends after a newer start', () => {
           await new Promise((resolve) => setTimeout(resolve, 30_000 + 2_000))
           return
         }
-        context.registerCommand({ id: 'graph.open', handler: () => undefined })
-        context.registerCommand({ id: 'graph.showNote', handler: () => undefined })
+        context.register.command({ id: 'graph.open', handler: () => undefined })
+        context.register.command({ id: 'graph.showNote', handler: () => undefined })
       })
       const started = loader.start()
       await vi.advanceTimersByTimeAsync(30_000 + 100)
@@ -195,7 +195,7 @@ describe('a start cancelled at 30 s that ends after a newer start', () => {
 describe('a plugin whose activation throws', () => {
   it('reports its own failure and no command as missing', async () => {
     const { host, loader, reportCommandIssue, onError } = createWindow((context) => {
-      context.registerCommand({ id: 'graph.open', handler: () => undefined })
+      context.register.command({ id: 'graph.open', handler: () => undefined })
       host.getPaletteCommands()
       throw new Error('the plex needs the notes of the vault')
     })

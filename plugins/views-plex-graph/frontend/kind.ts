@@ -59,7 +59,7 @@ async function refreshTabs(
   for (const state of tabs) state.followMoves(event.renamed ?? [])
   if (tabs.some((state) => !state.view.here.value)) {
     try {
-      await host.workspace.readOpeningPath()
+      await host.workspace.window.readOpeningPath()
     } catch {
       // The next change retries.
     }
@@ -67,7 +67,7 @@ async function refreshTabs(
   await Promise.all(
     tabs.map(async (state) => {
       const path =
-        state.view.nextPath.value || state.view.here.value || host.workspace.openingPath.value
+        state.view.nextPath.value || state.view.here.value || host.workspace.window.openingPath.value
       if (path) await state.view.go(path)
       await state.readHeadings()
     }),
@@ -93,12 +93,12 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
         readSavedFocus(saved) ||
         targetPath ||
         tabs.getCurrentPath() ||
-        host.workspace.openingPath.value
+        host.workspace.window.openingPath.value
       const state = createPlexTab(createView(), createPlexTabDeps(host, id))
       tabs.add(id, state)
       if (from) state.view.go(from).catch(state.reportFailure)
       watch(state.view.here, (path) => {
-        if (path) host.workspace.syncPath(id, path, state.getName(path))
+        if (path) host.workspace.files.syncPath(id, path, state.getName(path))
       })
       return state
     },

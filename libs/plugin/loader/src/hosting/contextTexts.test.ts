@@ -33,7 +33,7 @@ describe('the texts of a plugin', () => {
   it('read the live text with vault:read', async () => {
     const { context, texts } = createContext(['vault:read'])
 
-    await context.texts!.readLiveText('talk.mp3')
+    await context.vault.texts!.readLiveText('talk.mp3')
 
     expect(texts.readLiveText).toHaveBeenCalledWith('talk.mp3')
   })
@@ -47,7 +47,7 @@ describe('the texts of a plugin', () => {
 
     const { context, texts } = createContext(['vault:read'])
 
-    expect(() => context.texts!.createEdit('talk.mp3', 'p/k', [])).toThrowError(
+    expect(() => context.vault.texts!.createEdit('talk.mp3', 'p/k', [])).toThrowError(
       'Plugin "md.numen.player" lacks required permission "vault:write" for texts.createEdit',
     )
     expect(texts.createEdit).not.toHaveBeenCalled()
@@ -56,7 +56,7 @@ describe('the texts of a plugin', () => {
   it('record an edit with vault:write', async () => {
     const { context, texts } = createContext(['vault:read', 'vault:write'])
 
-    await context.texts!.createEdit('talk.mp3', 'p/k', [{ text: 'Hello.\n' }])
+    await context.vault.texts!.createEdit('talk.mp3', 'p/k', [{ text: 'Hello.\n' }])
 
     expect(texts.createEdit).toHaveBeenCalledWith('talk.mp3', 'p/k', [{ text: 'Hello.\n' }])
   })

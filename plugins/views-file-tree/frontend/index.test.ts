@@ -23,7 +23,7 @@ const createContext = () => {
     workspace: host.workspace,
     files: host.files,
   })
-  ctx.slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
+  ctx.ui.slots.setEntries(SLOT.fileTreeContext, ROW_MENU)
   return { ctx, recorded, folders }
 }
 
@@ -72,10 +72,10 @@ describe('view-file-tree plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(4)
+    expect(ctx.plugin.subscriptions).toHaveLength(4)
 
     ctx.dispose()
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredCommands()).toHaveLength(0)
   })
@@ -186,7 +186,7 @@ describe('view-file-tree plugin', () => {
     expect(state.list.rows.value.map((row) => row.entry.path)).toStrictEqual(['A.md'])
 
     folders[''] = [note('B.md')]
-    ctx.emitVaultChange({ paths: [], renamed: [{ from: 'A.md', to: 'B.md' }] })
+    ctx.events.emitVaultChange({ paths: [], renamed: [{ from: 'A.md', to: 'B.md' }] })
     await settle()
 
     expect(state.list.rows.value.map((row) => row.entry.path)).toStrictEqual(['B.md'])
@@ -199,7 +199,7 @@ describe('view-file-tree plugin', () => {
     expect(state.getMenuItems('A.md').map((one) => one.id)).toContain(TRASH.key)
     state.chooseMenuItem(TRASH.key)
 
-    expect(ctx.commands.getRuns()).toStrictEqual([
+    expect(ctx.ui.commands.getRuns()).toStrictEqual([
       {
         command: 'app:file.remove',
         target: {
@@ -249,27 +249,27 @@ describe('view-file-tree plugin', () => {
 
   it('has no command to make a folder, which the Create folder entry runs through the window', async () => {
     const { ctx, state } = await openTab()
-    ctx.commands.setResult('app:folder.create', 'New folder')
+    ctx.ui.commands.setResult('app:folder.create', 'New folder')
 
     state.openMenu({ path: null, at: { x: 0, y: 0 } })
     state.chooseMenuItem(NEW_MENU.entries[1]!.key)
     await settle()
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('tree.createFolder')
-    expect(ctx.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:folder.create'])
+    expect(ctx.ui.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:folder.create'])
     expect(state.renamingPath.value).toBe('New folder')
   })
 
   it('has no command to make a note, which the New note entry runs through the window', async () => {
     const { ctx, state } = await openTab()
-    ctx.commands.setResult('app:note.create', 'Untitled note 1.md')
+    ctx.ui.commands.setResult('app:note.create', 'Untitled note 1.md')
 
     state.openMenu({ path: null, at: { x: 0, y: 0 } })
     state.chooseMenuItem(NEW_MENU.entries[0]!.key)
     await settle()
 
     expect(ctx.getRegisteredCommands().map((one) => one.id)).not.toContain('tree.createNote')
-    expect(ctx.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:note.create'])
+    expect(ctx.ui.commands.getRuns().map((one) => one.command)).toStrictEqual(['app:note.create'])
     expect(state.renamingPath.value).toBe('Untitled note 1.md')
   })
 

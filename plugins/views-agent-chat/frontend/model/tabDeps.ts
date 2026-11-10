@@ -28,8 +28,8 @@ export function createAgentTabDeps({
   getReasoning,
 }: AgentChatHost): AgentTabDeps {
   return {
-    openFileAt: (path, ...spans) => workspace.openFileAt(path, spans),
-    openFileAdjacent: (path) => workspace.openFile(path, { placement: 'split' }),
+    openFileAt: (path, ...spans) => workspace.files.openAt(path, spans),
+    openFileAdjacent: (path) => workspace.files.open(path, { placement: 'split' }),
     resolveLinks: (text) => agent.resolveLinks(text),
     unreachable: () => agent.getUnreachable(),
     writeSetting: (path, value) => agent.writeSetting(path, value),
@@ -39,7 +39,7 @@ export function createAgentTabDeps({
     openSettings: () => {
       commands
         ?.run(OPEN_SETTINGS)
-        .catch((error: unknown) => workspace.showError(formatErrorMessage(error)))
+        .catch((error: unknown) => workspace.messages.showError(formatErrorMessage(error)))
     },
   }
 }

@@ -80,7 +80,7 @@ describe('notes plugin lifecycle', () => {
       },
     } as unknown as PluginContext
 
-    expect(readMarkdownEditorPreferences(context.getSetting)).toStrictEqual({
+    expect(readMarkdownEditorPreferences(context.settings.get)).toStrictEqual({
       softWrap: false,
       lineNumbers: true,
     })

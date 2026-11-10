@@ -8,7 +8,7 @@ export { FloorPanel }
 export { useFloor } from './floor/model/useFloor'
 
 export function activate(context: PluginContext): void {
-  context.registerSettingsView({ id: 'floor', component: FloorPanel })
+  context.register.settingsView({ id: 'floor', component: FloorPanel })
 }
 
 export function deactivate(): void {

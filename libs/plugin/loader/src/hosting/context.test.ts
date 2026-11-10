@@ -79,79 +79,79 @@ describe('PluginContext', () => {
       permissions: ['vault:read', 'vault:write'],
     })
 
-    expect(ctx.pluginId).toBe('test.plugin')
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.id).toBe('test.plugin')
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
 
-    const sub1 = ctx.registerReader({
+    const sub1 = ctx.register.reader({
       id: 'pdf',
       component: null,
     })
-    expect(ctx.subscriptions).toHaveLength(1)
+    expect(ctx.plugin.subscriptions).toHaveLength(1)
     expect(host.registerReader).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'pdf' }),
     )
 
-    const sub2 = ctx.registerCommand({
+    const sub2 = ctx.register.command({
       id: 'cmd1',
       handler: vi.fn(() => Promise.resolve()),
     })
-    expect(ctx.subscriptions).toHaveLength(2)
+    expect(ctx.plugin.subscriptions).toHaveLength(2)
     expect(host.registerCommand).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'cmd1' }),
     )
 
-    const sub3 = ctx.registerTabKind({
+    const sub3 = ctx.register.tabKind({
       kind: 'custom-tab',
       component: null,
     })
-    expect(ctx.subscriptions).toHaveLength(3)
+    expect(ctx.plugin.subscriptions).toHaveLength(3)
     expect(host.registerTabKind).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ kind: 'custom-tab' }),
     )
 
-    const sub4 = ctx.registerAgentProvider({
+    const sub4 = ctx.register.agentProvider({
       id: 'agent1',
       name: 'Agent 1',
       createAgent: vi.fn(),
     })
-    expect(ctx.subscriptions).toHaveLength(4)
+    expect(ctx.plugin.subscriptions).toHaveLength(4)
     expect(host.registerAgentProvider).toHaveBeenCalledWith(
       'test.plugin',
       expect.objectContaining({ id: 'agent1' }),
     )
 
-    expect(ctx.getSetting('enabled')).toBe(true)
+    expect(ctx.settings.get('enabled')).toBe(true)
     expect(host.getSetting).toHaveBeenCalledWith('test.plugin', 'enabled')
 
-    const sub5 = ctx.onSettingChange('enabled', vi.fn())
-    expect(ctx.subscriptions).toHaveLength(5)
+    const sub5 = ctx.settings.onChange('enabled', vi.fn())
+    expect(ctx.plugin.subscriptions).toHaveLength(5)
     expect(host.onSettingChange).toHaveBeenCalledWith(
       'test.plugin',
       'enabled',
       expect.any(Function),
     )
 
-    const sub6 = ctx.onVaultChange(vi.fn())
-    expect(ctx.subscriptions).toHaveLength(6)
+    const sub6 = ctx.events.onVaultChange(vi.fn())
+    expect(ctx.plugin.subscriptions).toHaveLength(6)
 
-    const sub7 = ctx.onFileSelect(vi.fn())
-    expect(ctx.subscriptions).toHaveLength(7)
+    const sub7 = ctx.events.onFileSelect(vi.fn())
+    expect(ctx.plugin.subscriptions).toHaveLength(7)
 
-    ctx.emitVaultChange({ vaultPath: '/path' })
+    ctx.events.emitVaultChange({ vaultPath: '/path' })
     expect(host.emitVaultChange).toHaveBeenCalledWith('test.plugin', { vaultPath: '/path' })
 
-    ctx.emitFileSelect({ path: '/file.md' })
+    ctx.events.emitFileSelect({ path: '/file.md' })
     expect(host.emitFileSelect).toHaveBeenCalledWith('test.plugin', { path: '/file.md' })
 
-    const openedTab = await ctx.openTab?.('url', 'https://example.com')
+    const openedTab = await ctx.tabs.open?.('url', 'https://example.com')
     expect(openedTab).toBe('opened-tab-id')
     expect(host.openTab).toHaveBeenCalledWith('url', 'https://example.com')
 
-    expect(ctx.navigateTab?.('url', 'https://example.com')).toBeUndefined()
-    expect(() => ctx.closeTab?.('tab-1')).not.toThrow()
+    expect(ctx.tabs.navigate?.('url', 'https://example.com')).toBeUndefined()
+    expect(() => ctx.tabs.close?.('tab-1')).not.toThrow()
 
     const navigateTab = vi.fn(async () => 'tab-new')
     const closeTab = vi.fn()
@@ -167,27 +167,27 @@ describe('PluginContext', () => {
     expect(ctxWithoutOpen.openTab?.('note', 'a.md')).toBeUndefined()
 
     const mountedEl = document.createElement('div')
-    const mounted = ctx.mountView('cap', mountedEl, { k: 1 })
+    const mounted = ctx.ui.mountView('cap', mountedEl, { k: 1 })
     mounted.focus()
     const mountResult = vi.mocked(host.mountView).mock.results[0]?.value
     expect(mountResult.focus).toHaveBeenCalledTimes(1)
     mounted.dispose()
 
-    expect(ctx.hasPermission?.('vault:read')).toBe(true)
-    expect(ctx.hasPermission?.('unknown:perm')).toBe(false)
+    expect(ctx.plugin.hasPermission?.('vault:read')).toBe(true)
+    expect(ctx.plugin.hasPermission?.('unknown:perm')).toBe(false)
 
     // Calling dispose twice on sub1 must not splice another subscription
     sub1.dispose()
-    expect(ctx.subscriptions).toHaveLength(6)
+    expect(ctx.plugin.subscriptions).toHaveLength(6)
     sub1.dispose()
-    expect(ctx.subscriptions).toHaveLength(6)
+    expect(ctx.plugin.subscriptions).toHaveLength(6)
     sub2.dispose()
     sub3.dispose()
     sub4.dispose()
     sub5.dispose()
     sub6.dispose()
     sub7.dispose()
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
   })
 
   it('enforces vault:read permission for onVaultChange, onFileSelect, and emitFileSelect', () => {
@@ -266,9 +266,9 @@ describe('PluginContext', () => {
       contributes: { slots: [{ slot: 'titleBar', placed: { case: 'view', value: 'bar' } }] },
     } as unknown as Parameters<typeof createPluginContext>[2])
 
-    ctx.registerSlotView({ id: 'bar', component: null })
+    ctx.register.slotView({ id: 'bar', component: null })
 
-    expect(ctx.subscriptions).toHaveLength(1)
+    expect(ctx.plugin.subscriptions).toHaveLength(1)
     expect(host.registerSlotView).toHaveBeenCalledWith(
       'org.example.orchard',
       'titleBar',
@@ -280,7 +280,7 @@ describe('PluginContext', () => {
     const { host } = createMockHost()
     const ctx = createPluginContext('org.example.orchard', host)
 
-    expect(() => ctx.registerSlotView({ id: 'bar', component: null })).toThrow(/places nowhere/)
+    expect(() => ctx.register.slotView({ id: 'bar', component: null })).toThrow(/places nowhere/)
     expect(host.registerSlotView).not.toHaveBeenCalled()
   })
 
@@ -299,8 +299,8 @@ describe('PluginContext', () => {
     const { host } = createMockHost()
     const ctx = createPluginContext('test.plugin', host)
 
-    expect(await ctx.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
-    expect((await ctx.openExternal('file:///etc/passwd')).ok).toBe(false)
+    expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect((await ctx.plugin.openExternal('file:///etc/passwd')).ok).toBe(false)
     expect(host.openExternal).toHaveBeenCalledTimes(1)
     expect(host.openExternal).toHaveBeenCalledWith('https://numen.md/')
   })

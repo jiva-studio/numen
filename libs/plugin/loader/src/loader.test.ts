@@ -113,7 +113,7 @@ describe('createPluginLoader', () => {
 
     const mockPluginModule: PluginLifecycle = {
       activate: async (ctx) => {
-        expect(ctx.pluginId).toBe('sample.plugin')
+        expect(ctx.plugin.id).toBe('sample.plugin')
         activated = true
       },
       deactivate: async () => {

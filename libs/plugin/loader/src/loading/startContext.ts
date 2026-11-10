@@ -1,6 +1,6 @@
 /**
  * The context one start of a plugin receives. The start keeps every disposable it is handed through
- * the context and its services (`commands.watch`, `buffers.track`, `mountView`, a register call) and
+ * the context and its services (`ui.commands.watch`, `vault.buffers.track`, `ui.mountView`, a `register` call) and
  * every one it pushes into its subscriptions, and cancelling the start disposes them all. Once the
  * start is cancelled, a register or on call answers a disposable that holds nothing, and whatever
  * else the start is handed or pushes is disposed at once. Once the start has ended, the context
@@ -8,8 +8,8 @@
  */
 import type { Disposable, PluginContext } from '@numen/plugin-sdk'
 
-const isRegistration = (key: string | symbol): boolean =>
-  typeof key === 'string' && /^(register|on)[A-Z]/.test(key)
+const isRegistration = (group: string | symbol, key: string | symbol): boolean =>
+  group === 'register' || (typeof key === 'string' && /^on[A-Z]/.test(key))
 
 const EMPTY: Disposable = { dispose: () => undefined }
 
@@ -90,20 +90,34 @@ export function createStartScope(): StartScope {
     return service
   }
 
-  const wrapContext = (context: PluginContext): PluginContext => {
-    if (Array.isArray(context.subscriptions)) subscriptionLists.add(context.subscriptions)
-    return new Proxy(context, {
+  const wrapGroup = (name: string | symbol, group: object): object =>
+    new Proxy(group, {
       get(target, key) {
         const value: unknown = Reflect.get(target, key)
         if (!isReplaceable(target, key)) return value
         if (key === 'subscriptions' && Array.isArray(value)) return wrapSubscriptions(value, keeper)
         if (typeof value === 'function') {
           const call = wrapCall(value as Call, target, keeper)
-          if (!isRegistration(key)) return call
+          if (!isRegistration(name, key)) return call
           return (...args: unknown[]): unknown => (keeper.isCancelled() ? EMPTY : call(...args))
         }
         if (typeof value !== 'object' || value === null || Array.isArray(value)) return value
         return getService(value)
+      },
+    })
+
+  const groups = new WeakMap<object, object>()
+  const wrapContext = (context: PluginContext): PluginContext => {
+    if (Array.isArray(context.plugin.subscriptions)) {
+      subscriptionLists.add(context.plugin.subscriptions)
+    }
+    return new Proxy(context, {
+      get(target, key) {
+        const value: unknown = Reflect.get(target, key)
+        if (typeof value !== 'object' || value === null || !isReplaceable(target, key)) return value
+        const group = groups.get(value) ?? wrapGroup(key, value)
+        groups.set(value, group)
+        return group
       },
     })
   }

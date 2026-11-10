@@ -9,13 +9,9 @@ const base: Task = {
   id: 't',
   label: 'Reading',
   about: '',
-  completedCount: 1,
-  total: 4,
-  counting: 'items',
+  progress: { done: 1, total: 4, counting: 'items' },
   error: '',
-  isUserStarted: false,
-  pluginId: '',
-  pluginName: '',
+  source: { isUserStarted: false, pluginId: '', pluginName: '' },
   isCancellable: true,
   kind: 'work',
 }
@@ -54,25 +50,23 @@ describe('the tasks of the window as background tasks', () => {
       label: 'Reading',
       about: '',
       state: 'running',
-      done: 1,
-      total: 4,
-      counting: '',
+      progress: { done: 1, total: 4, counting: '' },
       error: '',
-      canCancel: true,
-      canRetry: false,
-      actionLabel: '',
-      actionPluginId: '',
+      allowed: { cancel: true, retry: false },
+      action: { label: '', pluginId: '' },
     })
   })
 
   it('counts nothing for a task without a total', () => {
-    expect(first({ ...base, completedCount: 3, total: 0 })).toMatchObject({ done: 0, total: 0 })
+    expect(first({ ...base, progress: { ...base.progress, done: 3, total: 0 } })).toMatchObject({
+      progress: { done: 0, total: 0 },
+    })
   })
 
   it('carries what the task is about and what it counts', () => {
-    expect(first({ ...base, about: 'doc.pdf', counting: 'seconds' })).toMatchObject({
+    expect(first({ ...base, about: 'doc.pdf', progress: { ...base.progress, counting: 'seconds' } })).toMatchObject({
       about: 'doc.pdf',
-      counting: 'seconds',
+      progress: { counting: 'seconds' },
     })
   })
 
@@ -80,7 +74,7 @@ describe('the tasks of the window as background tasks', () => {
     expect(first({ ...base, error: 'File is corrupted' })).toMatchObject({
       state: 'failed',
       error: 'File is corrupted',
-      canCancel: false,
+      allowed: { cancel: false },
     })
   })
 
@@ -92,21 +86,23 @@ describe('the tasks of the window as background tasks', () => {
   })
 
   it('offers no cancel for a task the core cannot cancel', () => {
-    expect(first({ ...base, isCancellable: false }).canCancel).toBe(false)
+    expect(first({ ...base, isCancellable: false }).allowed.cancel).toBe(false)
   })
 
   it('carries the settings action of a failed task of a plugin', () => {
-    const task: Task = { ...base, error: 'OAuth session expired', pluginId: 'md.example.agent' }
+    const task: Task = { ...base, error: 'OAuth session expired', source: { ...base.source, pluginId: 'md.example.agent' } }
     const host = createBackgroundTaskHost(
       createDeps([base, task], {
-        resolveAction: (one) => ({ label: 'Configure', pluginId: one.pluginId }),
+        resolveAction: (one) => ({ label: 'Configure', pluginId: one.source.pluginId }),
       }),
     )
 
     const [running, failed] = readTasks(host)
 
-    expect(running).toMatchObject({ actionLabel: '', actionPluginId: '' })
-    expect(failed).toMatchObject({ actionLabel: 'Configure', actionPluginId: 'md.example.agent' })
+    expect(running).toMatchObject({ action: { label: '', pluginId: '' } })
+    expect(failed).toMatchObject({
+      action: { label: 'Configure', pluginId: 'md.example.agent' },
+    })
   })
 
   it('calls a watcher again when the tasks of the window change, and not after dispose', async () => {
@@ -126,8 +122,8 @@ describe('the tasks of the window as background tasks', () => {
 
   it('lists the same ids in the same order through every report of a task', async () => {
     const report = (step: number): readonly Task[] => [
-      { ...base, id: 'vectors', label: 'Indexing', about: `file ${step}`, completedCount: step },
-      { ...base, id: 'texts', label: 'Reading', pluginName: 'Reader' },
+      { ...base, id: 'vectors', label: 'Indexing', about: `file ${step}`, progress: { ...base.progress, done: step } },
+      { ...base, id: 'texts', label: 'Reading', source: { ...base.source, pluginName: 'Reader' } },
       { ...base, id: 'lost', error: 'The vault is gone' },
     ]
     const deps = createDeps(report(1))
@@ -165,7 +161,7 @@ describe('the actions on a background task', () => {
     await host.cancel('t')
     expect(deps.cancelTask).toHaveBeenCalledTimes(1)
 
-    deps.tasks.value = [{ ...base, completedCount: 2 }]
+    deps.tasks.value = [{ ...base, progress: { ...base.progress, done: 2 } }]
     await nextTick()
     expect(pick(readTasks(host), 0).state).toBe('cancelling')
 

@@ -107,8 +107,8 @@ describe('the bar', () => {
 
   it('draws the entries of the start and of the end in their parts', () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
-    context.slots.setEntries('statusBar.right', [createCommand('lang', 'Language')])
+    context.ui.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
+    context.ui.slots.setEntries('statusBar.right', [createCommand('lang', 'Language')])
 
     const wrapper = mountBar(view)
 
@@ -120,7 +120,7 @@ describe('the bar', () => {
     const { context, view } = activateBar()
     const wrapper = mountBar(view)
 
-    context.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
+    context.ui.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
     await flushPromises()
 
     expect(wrapper.find('[data-status-bar-slot="statusBar.left"]').text()).toBe('Count words')
@@ -142,12 +142,12 @@ describe('the bar', () => {
 describe('a command', () => {
   it('is a button that runs the command with no target', async () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
+    context.ui.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
 
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: `${PLUGIN}:count`, target: undefined, itemId: undefined },
     ])
   })
@@ -157,8 +157,8 @@ describe('a command', () => {
     const context = createMockPluginContext({ pluginId: manifest.id, notices })
     activate(context)
     const view = context.getRegisteredSlotViews()[0]!.component as Component
-    context.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
-    vi.spyOn(context.commands, 'run').mockRejectedValueOnce(new Error('the words are gone'))
+    context.ui.slots.setEntries('statusBar.left', [createCommand('count', 'Count words')])
+    vi.spyOn(context.ui.commands, 'run').mockRejectedValueOnce(new Error('the words are gone'))
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
@@ -169,7 +169,7 @@ describe('a command', () => {
 
   it('shows the icon of the command with its title and shortcut as the hover text', () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.left', [
+    context.ui.slots.setEntries('statusBar.left', [
       createCommand('count', 'Count words', { icon, shortcut: 'mod+shift+w' }),
     ])
 
@@ -185,7 +185,7 @@ describe('a command', () => {
 describe('a separator', () => {
   it('is a gap between two groups', () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.left', [
+    context.ui.slots.setEntries('statusBar.left', [
       createCommand('count', 'Count words'),
       createSeparator('sep-1'),
       createCommand('lang', 'Language'),
@@ -205,7 +205,7 @@ describe('a separator', () => {
 describe('a view', () => {
   it('is drawn in place', () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.right', [createView('words', '1 024 words')])
+    context.ui.slots.setEntries('statusBar.right', [createView('words', '1 024 words')])
 
     const wrapper = mountBar(view)
 
@@ -231,7 +231,7 @@ describe('a submenu', () => {
 
   it('is a button that opens the list of its entries', async () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.right', [submenu])
+    context.ui.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     expect(getMenus()).toHaveLength(0)
 
@@ -251,7 +251,7 @@ describe('a submenu', () => {
 
   it('runs a command of the list and closes it', async () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.right', [submenu])
+    context.ui.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
     await flushPromises()
@@ -259,7 +259,7 @@ describe('a submenu', () => {
     getRows(getMenus()[0])[0]!.click()
     await flushPromises()
 
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: `${PLUGIN}:count`, target: undefined, itemId: undefined },
     ])
     expect(getMenus()).toHaveLength(0)
@@ -267,7 +267,7 @@ describe('a submenu', () => {
 
   it('opens a nested submenu from its row', async () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.right', [submenu])
+    context.ui.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
     await flushPromises()
@@ -281,14 +281,14 @@ describe('a submenu', () => {
     expect(nested?.textContent?.trim()).toBe('English')
     getRows(nested)[0]!.click()
     await flushPromises()
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: `${PLUGIN}:english`, target: undefined, itemId: undefined },
     ])
   })
 
   it('closes on Escape', async () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.right', [submenu])
+    context.ui.slots.setEntries('statusBar.right', [submenu])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
     await flushPromises()
@@ -301,7 +301,7 @@ describe('a submenu', () => {
 
   it('draws a view among its entries as a row that holds it', async () => {
     const { context, view } = activateBar()
-    context.slots.setEntries('statusBar.right', [
+    context.ui.slots.setEntries('statusBar.right', [
       createSubmenu('words.more', 'Words', [createView('words', '1 024 words')]),
     ])
     const wrapper = mountBar(view)
@@ -320,11 +320,11 @@ describe('a command with items', () => {
 
   it('is a button that opens a dropdown of the items of the command', async () => {
     const { context, view } = activateBar()
-    context.commands.setItems(LANGUAGE.command, [
+    context.ui.commands.setItems(LANGUAGE.command, [
       { id: 'en', title: 'English' },
       { id: 'sa', title: 'Sanskrit' },
     ])
-    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    context.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
@@ -338,8 +338,8 @@ describe('a command with items', () => {
 
   it('opens no dropdown where the command lists no item', async () => {
     const { context, view } = activateBar()
-    context.commands.setItems(LANGUAGE.command, [])
-    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    context.ui.commands.setItems(LANGUAGE.command, [])
+    context.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(view)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
@@ -350,13 +350,13 @@ describe('a command with items', () => {
 
   it('opens on the next click after a click whose command listed no item', async () => {
     const { context, view } = activateBar()
-    context.commands.setItems(LANGUAGE.command, [])
-    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    context.ui.commands.setItems(LANGUAGE.command, [])
+    context.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
     await flushPromises()
 
-    context.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])
+    context.ui.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
     await flushPromises()
 
@@ -366,9 +366,9 @@ describe('a command with items', () => {
   it('shows the error of a list that failed to read', async () => {
     const notices = createMockNoticeHost()
     const context = createMockPluginContext({ pluginId: manifest.id, notices })
-    vi.spyOn(context.commands, 'listItems').mockRejectedValue(new Error('the languages are gone'))
+    vi.spyOn(context.ui.commands, 'listItems').mockRejectedValue(new Error('the languages are gone'))
     activate(context)
-    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    context.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(context.getRegisteredSlotViews()[0]!.component as Component)
 
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
@@ -381,8 +381,8 @@ describe('a command with items', () => {
 
   it('runs the command with the item picked as its itemId', async () => {
     const { context, view } = activateBar()
-    context.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])
-    context.slots.setEntries('statusBar.right', [LANGUAGE])
+    context.ui.commands.setItems(LANGUAGE.command, [{ id: 'sa', title: 'Sanskrit' }])
+    context.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(view)
     await wrapper.find('button[data-status-bar-entry]').trigger('click')
     await flushPromises()
@@ -390,7 +390,7 @@ describe('a command with items', () => {
     getRows(getMenus()[0])[0]!.click()
     await flushPromises()
 
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: LANGUAGE.command, target: undefined, itemId: 'sa' },
     ])
   })

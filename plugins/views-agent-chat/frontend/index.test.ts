@@ -74,7 +74,7 @@ describe('view-agent-chat plugin', () => {
 
     ctx.dispose()
 
-    expect(ctx.subscriptions).toHaveLength(0)
+    expect(ctx.plugin.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredViews()).toHaveLength(0)
   })
@@ -152,7 +152,7 @@ describe('view-agent-chat plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(4)
+    expect(ctx.plugin.subscriptions).toHaveLength(4)
   })
 
   it('refuses to activate in a window that offers no workspace or agent', () => {

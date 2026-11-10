@@ -29,9 +29,9 @@ export const readerPreferences = reactive<PDFReaderPreferences>({ defaultZoom: '
 export function bindPDFReaderPreferences(
   context: Pick<Partial<PluginContext>, 'getSetting' | 'onSettingChange'>,
 ): PDFReaderPreferences {
-  const getSetting = context.getSetting?.bind(context)
+  const getSetting = context.settings.get?.bind(context)
   readerPreferences.defaultZoom = readPDFReaderPreferences(getSetting).defaultZoom
-  context.onSettingChange?.(DEFAULT_ZOOM, (value) => {
+  context.settings.onChange?.(DEFAULT_ZOOM, (value) => {
     readerPreferences.defaultZoom = isFit(value) ? value : 'page'
   })
   return readerPreferences

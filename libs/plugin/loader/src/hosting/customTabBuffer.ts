@@ -77,7 +77,7 @@ function createLinkFollower(deps: PluginHostDeps | undefined, getPath: () => str
     if (!resolve || !workspace) return
     resolve(getPath(), address)
       .then((path) => {
-        if (path) workspace.openFile(path, { placement: 'split' })
+        if (path) workspace.files.open(path, { placement: 'split' })
       })
       .catch(() => undefined)
   }

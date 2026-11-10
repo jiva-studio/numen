@@ -35,14 +35,14 @@ export function activate(context: PluginContext): void {
       )
     }
     const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
-    context.subscriptions.push({ dispose: counts.dispose })
-    context.registerView(createVaultSummaryView(counts))
-    context.registerTabKind(
+    context.plugin.subscriptions.push({ dispose: counts.dispose })
+    context.register.view(createVaultSummaryView(counts))
+    context.register.tabKind(
       createReviewKind({
         counts,
         notices,
         agent,
-        mountView: (capability, element, view) => context.mountView(capability, element, view),
+        mountView: (capability, element, view) => context.ui.mountView(capability, element, view),
         closeTab: (id) => closeTab(id),
       }),
     )
@@ -51,31 +51,31 @@ export function activate(context: PluginContext): void {
   if (!buffers) {
     throw new Error('the flashcards need the window their tabs are drawn in and its open files')
   }
-  const closeTab = (id: string): void => context.closeTab?.(id)
+  const closeTab = (id: string): void => context.tabs.close?.(id)
   const decks = useDeckTabs(cards, presets, {
     buffers,
     closeTab,
-    writeMessage: workspace.getMessageWriter('deck'),
+    writeMessage: workspace.messages.getWriter('deck'),
   })
   const cardModels = createCardModelTabs(cards, {
     buffers,
     closeTab,
-    writeMessage: workspace.getMessageWriter('card-model'),
+    writeMessage: workspace.messages.getWriter('card-model'),
   })
   const schedules = usePresetTab({
     core: presets,
     buffers,
     closeTab,
-    writeMessage: workspace.getMessageWriter('preset'),
-    today: () => workspace.getToday(),
+    writeMessage: workspace.messages.getWriter('preset'),
+    today: () => workspace.window.getToday(),
   })
-  context.registerTabKind(decks.kind)
-  context.registerTabKind(cardModels.kind)
-  context.registerTabKind(schedules.kind)
-  context.registerCommand({
+  context.register.tabKind(decks.kind)
+  context.register.tabKind(cardModels.kind)
+  context.register.tabKind(schedules.kind)
+  context.register.command({
     id: 'preset.open',
     handler: async (note) => {
-      await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))
+      await schedules.openPresetOf(note, (kind, path) => context.tabs.open?.(kind, path))
     },
   })
 }

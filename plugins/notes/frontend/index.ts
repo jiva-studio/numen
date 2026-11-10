@@ -27,19 +27,19 @@ export type { WikilinkOption, WikilinkOptions, FrontmatterResult, MarkdownEditor
 export function activate(context: PluginContext): void {
   const preferences = bindMarkdownEditorPreferences(context)
 
-  context.registerReader({
+  context.register.reader({
     id: 'markdown',
     component: MarkdownNoteEditor,
     title: 'Markdown Note Editor',
   })
 
-  context.registerTabKind({
+  context.register.tabKind({
     kind: 'note',
     component: MarkdownNoteEditor,
     title: 'Note',
   })
 
-  if (context.notes) context.registerView(createNoteEditorView(context.notes, preferences))
+  if (context.vault.notes) context.register.view(createNoteEditorView(context.vault.notes, preferences))
 }
 
 export function deactivate(): void {

@@ -6,13 +6,9 @@ const failed: Task = {
   id: 'task',
   label: 'Working',
   about: 'notes/one.md',
-  completedCount: 0,
-  total: 0,
-  counting: 'items',
+  progress: { done: 0, total: 0, counting: 'items' },
   error: 'OAuth session expired and could not be refreshed',
-  isUserStarted: false,
-  pluginId: 'md.example.engine',
-  pluginName: 'Example Engine',
+  source: { isUserStarted: false, pluginId: 'md.example.engine', pluginName: 'Example Engine' },
   isCancellable: false,
   kind: 'work',
 }
@@ -50,6 +46,6 @@ describe('resolveTaskAction', () => {
   })
 
   it('returns undefined for a core task', () => {
-    expect(resolveTaskAction({ ...failed, pluginId: '', pluginName: '' })).toBeUndefined()
+    expect(resolveTaskAction({ ...failed, source: { ...failed.source, pluginId: '', pluginName: '' } })).toBeUndefined()
   })
 })

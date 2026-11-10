@@ -33,13 +33,13 @@ export function createFilesTabDeps(
 ): FilesTabDeps {
   return {
     openEntry: ({ path, name, isNote }) => {
-      if ((isNote || isNotePath(path)) && workspace.syncPath(id, path, getFileStem(name))) return
-      workspace.openFile(path, { title: name || path, placement: 'current' })
+      if ((isNote || isNotePath(path)) && workspace.files.syncPath(id, path, getFileStem(name))) return
+      workspace.files.open(path, { title: name || path, placement: 'current' })
     },
     onSelectPath: (path, state) => {
       const entry = state.list.getEntryAt(path)
       if (entry && !entry.isFolder && (entry.isNote || isNotePath(path))) {
-        workspace.syncPath(id, path, getFileStem(entry.name))
+        workspace.files.syncPath(id, path, getFileStem(entry.name))
       }
     },
     getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],
@@ -47,10 +47,10 @@ export function createFilesTabDeps(
     runCommand: (command, target, itemId, values) =>
       commands?.run(command, target, itemId, values) ?? Promise.resolve(''),
     movePath: (from, to) => files.move(from, to),
-    setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
+    setDraggedPaths: (paths) => workspace.dragged.setPaths(paths),
     canDropData: (types) => drops?.canDrop(types) ?? false,
     dropData: async (folder, data) => (drops ? drops.drop(folder, data) : []),
-    showError: (text) => workspace.showError(text),
-    getEntryIcon: (entry, isOpen) => workspace.getEntryIcon(entry, isOpen),
+    showError: (text) => workspace.messages.showError(text),
+    getEntryIcon: (entry, isOpen) => workspace.icons.getEntry(entry, isOpen),
   }
 }

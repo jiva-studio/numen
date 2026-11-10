@@ -72,7 +72,7 @@ const getMenuRows = () =>
   )
 
 const setVaults = async (context: MockPluginContext, current = ORCHARD) => {
-  context.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current })
+  context.vault.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current })
   await nextTick()
 }
 
@@ -118,7 +118,7 @@ describe('the commands of the slots', () => {
   it('draws the commands of titleBar.commands as buttons in the order of the slot', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual([
@@ -130,7 +130,7 @@ describe('the commands of the slots', () => {
   it('draws the icon of the command and names the button by its title', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
 
     const button = getButton(bar, 'org.example.tide:chart.open')
@@ -141,7 +141,7 @@ describe('the commands of the slots', () => {
   it('writes the title as the button of a command without an icon', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open', { icon: undefined })])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open', { icon: undefined })])
     await nextTick()
 
     expect(getButton(bar, 'org.example.tide:chart.open').text()).toBe('Open chart.open')
@@ -150,7 +150,7 @@ describe('the commands of the slots', () => {
   it('shows the title and the shortcut in the tooltip, written for the platform', async () => {
     const { context, bar } = mountBar({ platform: 'darwin' })
 
-    context.slots.setEntries(SLOT.titleBarCommands, [
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [
       command('chart.open', { shortcut: 'mod+shift+e' }),
       command('map.open'),
     ])
@@ -164,12 +164,12 @@ describe('the commands of the slots', () => {
 
   it('runs the command of a button through the commands of the context, with no target', async () => {
     const { context, bar } = mountBar()
-    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
 
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:chart.open', target: undefined, itemId: undefined },
     ])
   })
@@ -182,9 +182,9 @@ describe('the commands of the slots', () => {
       attachTo: document.body,
     })
     mounted.push(bar)
-    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open')])
     await nextTick()
-    vi.spyOn(context.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
+    vi.spyOn(context.ui.commands, 'run').mockRejectedValueOnce(new Error('the chart is gone'))
 
     await getButton(bar, 'org.example.tide:chart.open').trigger('click')
     await flushPromises()
@@ -194,10 +194,10 @@ describe('the commands of the slots', () => {
 
   it('follows a change of the entries of the slot', async () => {
     const { context, bar } = mountBar()
-    context.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open'), command('map.open')])
     await nextTick()
 
-    context.slots.setEntries(SLOT.titleBarCommands, [command('map.open')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('map.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarCommands)).toStrictEqual(['org.example.tide:map.open'])
@@ -206,7 +206,7 @@ describe('the commands of the slots', () => {
   it('draws a separator as a gap between two groups', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarCommands, [
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [
       command('chart.open'),
       separator(1),
       command('map.open'),
@@ -224,7 +224,7 @@ describe('the commands of the slots', () => {
   it('draws a command placed in titleBar.status as a button there', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarStatus, [command('log.open')])
+    context.ui.slots.setEntries(SLOT.titleBarStatus, [command('log.open')])
     await nextTick()
 
     expect(listButtonIds(bar, SLOT.titleBarStatus)).toStrictEqual(['org.example.tide:log.open'])
@@ -235,7 +235,7 @@ describe('the views of the slots', () => {
   it('draws a view of titleBar.status in its place among the entries', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarStatus, [
+    context.ui.slots.setEntries(SLOT.titleBarStatus, [
       view('tasks'),
       command('log.open'),
       view('stats'),
@@ -253,7 +253,7 @@ describe('the views of the slots', () => {
   it('draws a view placed in titleBar.commands', async () => {
     const { context, bar } = mountBar()
 
-    context.slots.setEntries(SLOT.titleBarCommands, [view('due')])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [view('due')])
     await nextTick()
 
     expect(
@@ -264,7 +264,7 @@ describe('the views of the slots', () => {
 
 describe('a submenu in a slot', () => {
   const placeSubmenu = async (context: MockPluginContext) => {
-    context.slots.setEntries(SLOT.titleBarCommands, [
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [
       submenu('tide.new', [command('chart.create'), separator(1), command('log.create')]),
     ])
     await nextTick()
@@ -290,7 +290,7 @@ describe('a submenu in a slot', () => {
     document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')[1]!.click()
     await nextTick()
 
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: 'org.example.tide:log.create', target: undefined, itemId: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()
@@ -306,13 +306,13 @@ describe('dragging the window', () => {
 
   it('marks every entry of both slots as no-drag', async () => {
     const { context, bar } = mountBar()
-    context.slots.setEntries(SLOT.titleBarCommands, [
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [
       command('chart.open'),
       separator(1),
       submenu('tide.new', [command('chart.create')]),
       view('due'),
     ])
-    context.slots.setEntries(SLOT.titleBarStatus, [view('tasks'), command('log.open')])
+    context.ui.slots.setEntries(SLOT.titleBarStatus, [view('tasks'), command('log.open')])
     await nextTick()
 
     const entries = bar.findAll('[data-title-bar-entry]')
@@ -333,7 +333,7 @@ describe('the title', () => {
   it('names only the application while the window shows no vault', async () => {
     const { context, bar } = mountBar()
 
-    context.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current: null })
+    context.vault.vaults.setState({ vaults: [ORCHARD, GREENHOUSE], current: null })
     await nextTick()
 
     expect(bar.find('[data-title]').text()).toBe('numen')
@@ -349,12 +349,12 @@ describe('the title', () => {
     document.body.querySelectorAll<HTMLElement>('[role="option"]')[1]!.click()
     await nextTick()
 
-    expect(context.vaults.getSwitches()).toStrictEqual(['greenhouse'])
+    expect(context.vault.vaults.getSwitches()).toStrictEqual(['greenhouse'])
   })
 
   it('runs the command of the window that creates a vault from the last row of the list', async () => {
     const { context, bar } = mountBar()
-    context.commands.setIds(['app:vault.create'])
+    context.ui.commands.setIds(['app:vault.create'])
     await setVaults(context)
 
     await bar.find('[data-title]').trigger('click')
@@ -364,10 +364,10 @@ describe('the title', () => {
     options.at(-1)!.click()
     await nextTick()
 
-    expect(context.commands.getRuns()).toStrictEqual([
+    expect(context.ui.commands.getRuns()).toStrictEqual([
       { command: 'app:vault.create', target: undefined, itemId: undefined },
     ])
-    expect(context.vaults.getSwitches()).toStrictEqual([])
+    expect(context.vault.vaults.getSwitches()).toStrictEqual([])
   })
 
   it('draws the row that creates a vault only while the window runs that command', async () => {
@@ -380,7 +380,7 @@ describe('the title', () => {
     await nextTick()
     expect(labels()).not.toContain('Create vault')
 
-    context.commands.setIds(['app:vault.create'])
+    context.ui.commands.setIds(['app:vault.create'])
     await nextTick()
     expect(labels()).toContain('Create vault')
   })
@@ -394,7 +394,7 @@ describe('the title', () => {
     document.body.querySelectorAll<HTMLElement>('[role="option"]')[0]!.click()
     await nextTick()
 
-    expect(context.vaults.getSwitches()).toStrictEqual([])
+    expect(context.vault.vaults.getSwitches()).toStrictEqual([])
   })
 
   it('follows a switch of the vault', async () => {
@@ -415,7 +415,7 @@ describe('the window buttons', () => {
     await getControl(bar, 'toggle-maximize').trigger('click')
     await getControl(bar, 'close').trigger('click')
 
-    expect(context.window.getActions()).toStrictEqual(['minimize', 'toggleMaximize', 'close'])
+    expect(context.ui.window.getActions()).toStrictEqual(['minimize', 'toggleMaximize', 'close'])
   })
 
   it('toggle maximize on a double click on the free space', async () => {
@@ -423,14 +423,14 @@ describe('the window buttons', () => {
 
     await bar.find('[data-title-bar]').trigger('dblclick')
 
-    expect(context.window.getActions()).toStrictEqual(['toggleMaximize'])
+    expect(context.ui.window.getActions()).toStrictEqual(['toggleMaximize'])
   })
 
   it('draw the state of the window and follow its change', async () => {
     const { context, bar } = mountBar()
     expect(getControl(bar, 'toggle-maximize').attributes('title')).toBe('Maximize')
 
-    context.window.setState({ isMaximized: true, isFullscreen: false })
+    context.ui.window.setState({ isMaximized: true, isFullscreen: false })
     await nextTick()
 
     expect(getControl(bar, 'toggle-maximize').attributes('title')).toBe('Restore')
@@ -441,7 +441,7 @@ describe('the window buttons', () => {
     const { context, bar } = mountBar({ platform: 'darwin' })
     expect(bar.find('[data-mac-buttons-inset]').exists()).toBe(true)
 
-    context.window.setState({ isMaximized: false, isFullscreen: true })
+    context.ui.window.setState({ isMaximized: false, isFullscreen: true })
     await nextTick()
 
     expect(bar.find('[data-mac-buttons-inset]').exists()).toBe(false)
@@ -479,7 +479,7 @@ describe('the window buttons by the setting', () => {
 
 describe('the setting hideInFullscreen', () => {
   const setFullscreen = async (context: MockPluginContext, isFullscreen: boolean) => {
-    context.window.setState({ isMaximized: false, isFullscreen })
+    context.ui.window.setState({ isMaximized: false, isFullscreen })
     await nextTick()
   }
 
@@ -511,7 +511,7 @@ describe('the setting hideInFullscreen', () => {
 
   it('draws no bar in a window that opens in full screen with the setting on', () => {
     const { context, view: component } = activateBar({ settings: { hideInFullscreen: true } })
-    context.window.setState({ isMaximized: false, isFullscreen: true })
+    context.ui.window.setState({ isMaximized: false, isFullscreen: true })
 
     const bar = mount(component, { attachTo: document.body })
     mounted.push(bar)

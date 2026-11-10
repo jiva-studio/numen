@@ -9,17 +9,26 @@ import type { TallyUnit } from '@numen/workbench'
  * Every work item is a Task, and the window renders the list it
  * receives.
  */
+export interface TaskProgress {
+  readonly done: number
+  readonly total: number
+  readonly counting: TallyUnit
+}
+
+/** Who started a task: the plugin that runs it, or none where the core does. */
+export interface TaskSource {
+  readonly isUserStarted: boolean
+  readonly pluginId: string
+  readonly pluginName: string
+}
+
 export interface Task {
   readonly id: string
   readonly label: string
   readonly about: string
-  readonly completedCount: number
-  readonly total: number
-  readonly counting: TallyUnit
+  readonly progress: TaskProgress
   readonly error: string
-  readonly isUserStarted: boolean
-  readonly pluginId: string
-  readonly pluginName: string
+  readonly source: TaskSource
   readonly isCancellable: boolean
   readonly kind: 'work' | 'notice'
 }
