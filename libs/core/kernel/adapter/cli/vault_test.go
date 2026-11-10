@@ -64,16 +64,15 @@ func (b brokenRegistry) RecordOpened(id domain.VaultID) error {
 	return b.list.Recorder.RecordOpened(id)
 }
 
-func (s *session) runBroken(adjust func(*cli.Vaults), args ...string) (string, error) {
+func (s *session) runBroken(adjust func(*vaultParts), args ...string) (string, error) {
 	s.t.Helper()
 	var out bytes.Buffer
 	err := cli.Run(s.t.Context(), &out, &s.reply, append(s.base, args...), func(where cli.Locations) cli.Deps {
 		provided := s.deps(where)
-		open := provided.Vaults
 		provided.Vaults = func() (cli.Vaults, error) {
-			v, err := open()
-			adjust(&v)
-			return v, err
+			parts := s.parts(where)
+			adjust(&parts)
+			return parts.build(), nil
 		}
 		return provided
 	})
@@ -186,8 +185,8 @@ func TestVaultCommand_ReturnsVaultListError(t *testing.T) {
 		s.addVault("second")
 		b := s.trash(nil)
 
-		out, err := s.runBroken(func(v *cli.Vaults) {
-			v.Registry = brokenRegistry{list: v.Registry, breaks: c.breaks}.ports()
+		out, err := s.runBroken(func(v *vaultParts) {
+			v.ports = brokenRegistry{list: v.ports, breaks: c.breaks}.ports()
 		}, c.args...)
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%s answered %v", name, err)
@@ -213,8 +212,8 @@ func TestVaultCommand_ReturnsIndexError(t *testing.T) {
 		s.addVault("second")
 		b := s.trash(nil)
 
-		out, err := s.runBroken(func(v *cli.Vaults) {
-			v.Rows = func(context.Context) (cli.VaultRows, error) { return cli.VaultRows{}, errRefused }
+		out, err := s.runBroken(func(v *vaultParts) {
+			v.rows = func(context.Context) (vaultport.VaultRepository, func() error, error) { return nil, nil, errRefused }
 		}, args...)
 		if !errors.Is(err, errRefused) {
 			t.Errorf("%v answered %v", args, err)
@@ -239,15 +238,14 @@ func TestVaultRemove_IndexErrorKeepsListAndFolder(t *testing.T) {
 	s.trash(nil)
 
 	for _, args := range [][]string{{"vault", "remove", "first"}, {"vault", "erase", "first", "--yes"}} {
-		out, err := s.runBroken(func(v *cli.Vaults) {
-			open := v.Rows
-			v.Rows = func(ctx context.Context) (cli.VaultRows, error) {
-				rows, err := open(ctx)
+		out, err := s.runBroken(func(v *vaultParts) {
+			open := v.rows
+			v.rows = func(ctx context.Context) (vaultport.VaultRepository, func() error, error) {
+				rows, closeRows, err := open(ctx)
 				if err != nil {
-					return rows, err
+					return rows, closeRows, err
 				}
-				rows.Vaults = refusingToForget{rows.Vaults}
-				return rows, nil
+				return refusingToForget{rows}, closeRows, nil
 			}
 		}, args...)
 		if !errors.Is(err, errRefused) {

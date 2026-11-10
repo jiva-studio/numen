@@ -1,4 +1,4 @@
-package app
+package folderdialog
 
 import (
 	"os"
@@ -12,7 +12,8 @@ import (
 // toolkit this binary is linked against, so when the machine does not put them on
 // the search path, the toolkit is queried for their location.
 
-func setSchemasDir() error {
+// SetSchemasDir adds the toolkit's settings schemas to the search path when the machine does not provide them.
+func SetSchemasDir() error {
 	if hasSchemas() {
 		return nil
 	}

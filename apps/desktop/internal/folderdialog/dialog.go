@@ -1,4 +1,4 @@
-package app
+package folderdialog
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
-// folderDialog is the system folder dialog, opened by the toolkit that owns the
+// Dialog is the system folder dialog, opened by the toolkit that owns the
 // window. It belongs to that window and opens over it.
 //
 // One dialog is open at a time.
-type folderDialog struct {
+type Dialog struct {
 	window application.Window
 
 	mu     sync.Mutex
@@ -24,7 +24,7 @@ type folderDialog struct {
 // ChooseFolder returns the folder the user selected, and false when the user closed the dialog.
 // The wait for user input is not bounded.
 // It is called on a goroutine serving the page: the toolkit opens the dialog on the thread that owns the window and returns the result here, so the wait happens off that thread.
-func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
+func (d *Dialog) ChooseFolder(_ context.Context, title, startingAt string) (string, bool, error) {
 	// The dialog library terminates the process when the machine has no settings
 	// schemas to read, which closes the window and discards unsaved state.
 	if !hasSchemas() {
@@ -54,7 +54,12 @@ func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string)
 	return selected, selected != "", nil
 }
 
-func (d *folderDialog) tryAcquire() bool {
+// New returns the dialog that opens over window.
+func New(window application.Window) *Dialog {
+	return &Dialog{window: window}
+}
+
+func (d *Dialog) tryAcquire() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -65,7 +70,7 @@ func (d *folderDialog) tryAcquire() bool {
 	return true
 }
 
-func (d *folderDialog) release() {
+func (d *Dialog) release() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.isOpen = false
@@ -74,7 +79,7 @@ func (d *folderDialog) release() {
 // ChooseFile returns the file the user selected, and false when the user closed
 // the dialog. The dialog shows the files whose extension is one of accept, or
 // every file when accept is empty.
-func (d *folderDialog) ChooseFile(_ context.Context, title, startingAt string, accept []string) (string, bool, error) {
+func (d *Dialog) ChooseFile(_ context.Context, title, startingAt string, accept []string) (string, bool, error) {
 	if !hasSchemas() {
 		return "", false, machine.ErrNoFolderDialog
 	}
