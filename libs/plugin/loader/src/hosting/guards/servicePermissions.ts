@@ -213,6 +213,12 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
 
 type Members = Record<string, unknown>
 
+/** What a refusal needs: the check of the permissions, and the path of the service for the message. */
+export interface Guard {
+  readonly check: RequirePermission
+  readonly path?: string
+}
+
 function requireAll(
   rule: Rule,
   operation: string,
@@ -228,11 +234,11 @@ function requireAll(
 
 function guardMember(
   service: Members,
-  key: string,
-  rule: Rule,
-  check: RequirePermission,
-  operation: string,
+  entry: { readonly key: string; readonly rule: Rule },
+  guard: { readonly check: RequirePermission; readonly operation: string },
 ): PropertyDescriptor {
+  const { key, rule } = entry
+  const { check, operation } = guard
   if (typeof service[key] === 'function') {
     return {
       enumerable: true,
@@ -257,24 +263,27 @@ function guardMember(
 /**
  * The service as the plugin may use it: only the members the rules list, each checked when it is
  * used. A member the service has and the rules do not list is not reachable; a member the service
- * lacks is absent. `name` prefixes the operation named in a refusal.
+ * lacks is absent. `guard.path` prefixes the operation named in a refusal.
  */
 export function guardService<S extends object>(
   service: S,
   rules: RulesOf<S>,
-  check: RequirePermission,
-  name = '',
+  guard: Guard,
 ): S {
   const source = service as Members
   const guarded: Members = {}
   for (const [key, rule] of Object.entries(rules as unknown as Record<string, Rule | object>)) {
     const member = source[key]
     if (member === undefined) continue
-    const operation = name === '' ? key : `${name}.${key}`
+    const operation = guard.path === undefined ? key : `${guard.path}.${key}`
     if (rule instanceof Rule) {
-      Object.defineProperty(guarded, key, guardMember(source, key, rule, check, operation))
+      const descriptor = guardMember(source, { key, rule }, { check: guard.check, operation })
+      Object.defineProperty(guarded, key, descriptor)
     } else if (typeof member === 'object' && member !== null) {
-      guarded[key] = guardService(member, rule as RulesOf<object>, check, operation)
+      guarded[key] = guardService(member, rule as RulesOf<object>, {
+        check: guard.check,
+        path: operation,
+      })
     }
   }
   return guarded as S

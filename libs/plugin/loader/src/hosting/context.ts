@@ -128,7 +128,7 @@ export function createPluginContext(
   const add = (d: Disposable) => trackSubscription(subscriptions, d)
   const target: PermissionTarget = { pluginId, manifest }
   const check: RequirePermission = (p, op) => checkPermission(target, p, op)
-  const guard = { target, add }
+  const registration = { target, add }
   const slotView = createSlotViewRegistration(
     { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
     host,
@@ -146,18 +146,15 @@ export function createPluginContext(
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
     register: guardService(
-      createRegistrations(pluginId, host, { ...guard, slotView }),
-      rules.register,
-      check,
-    ),
-    settings: guardService(createSettings(pluginId, host, add), rules.settings, check),
-    events: guardService(createEvents(pluginId, host, add), rules.events, check),
-    tabs: guardService(createTabs(host), rules.tabs, check),
-    vault: guardService(createVault(pluginId, host, add), rules.vault, check),
+      createRegistrations(pluginId, host, { ...registration, slotView }), rules.register, { check }),
+    settings: guardService(createSettings(pluginId, host, add), rules.settings, { check }),
+    events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
+    tabs: guardService(createTabs(host), rules.tabs, { check }),
+    vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
     ui: {
-      ...guardService(createUi(pluginId, host), rules.ui, check),
-      mountView: createMountView(host, guard),
+      ...guardService(createUi(pluginId, host), rules.ui, { check }),
+      mountView: createMountView(host, registration),
     },
-    work: guardService(createWork(pluginId, host), rules.work, check),
+    work: guardService(createWork(pluginId, host), rules.work, { check }),
   }
 }
