@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
@@ -475,7 +475,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Errorf("%d full-text rows name a chunk that is gone", got)
 	}
 
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: opening, Kinds: nil, Limit: 10})
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: opening, Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,7 +487,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 			t.Errorf("%s answered for a word of %s", p.Source, n.FileStat.Path)
 		}
 	}
-	typed, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
+	typed, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -589,7 +589,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	n := parseNote("notes/Entropy.md", body)
 	save(t, db, getFirst(), n)
 
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Sectiona", Kinds: nil, Limit: 10})
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Sectiona", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -747,7 +747,7 @@ func checkVaultsAnswerOnlyForThemselves(t *testing.T, db *DB) {
 		{getSecond(), "quasar", true},
 		{getFirst(), "quasar", false},
 	} {
-		found, err := db.ChunkQueries().FindLexical(t.Context(), ask.vault.ID, sourceport.LexicalQuery{Text: ask.word, Kinds: nil, Limit: 10})
+		found, err := db.ChunkQueries().FindLexical(t.Context(), ask.vault.ID, sourcedomain.LexicalQuery{Text: ask.word, Kinds: nil, Limit: 10})
 		if err != nil {
 			t.Fatal(err)
 		}

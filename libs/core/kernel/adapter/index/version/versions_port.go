@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -44,10 +45,10 @@ func (r vaultVersions) RemovePluginVersions(ctx context.Context, pluginID string
 	return r.repo.RemovePluginVersions(ctx, r.vault, pluginID)
 }
 
-func (r vaultVersions) FindContentHash(ctx context.Context, path string) (textport.ContentHash, bool, error) {
+func (r vaultVersions) FindContentHash(ctx context.Context, path string) (text.ContentHash, bool, error) {
 	return r.repo.FindContentHash(ctx, r.vault, path)
 }
 
-func (r vaultVersions) SaveContentHash(ctx context.Context, record textport.ContentHash) error {
+func (r vaultVersions) SaveContentHash(ctx context.Context, record text.ContentHash) error {
 	return r.repo.SaveContentHash(ctx, r.vault, record)
 }

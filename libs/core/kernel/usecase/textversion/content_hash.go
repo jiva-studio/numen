@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -54,7 +54,7 @@ func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path stri
 	if err != nil {
 		return "", err
 	}
-	err = repo.SaveContentHash(ctx, textport.ContentHash{
+	err = repo.SaveContentHash(ctx, text.ContentHash{
 		Path: path, Hash: hash, Size: stat.Size, ModTime: stat.ModTime, FileID: stat.FileID, HashTime: u.clock.Now(),
 	})
 	if err != nil && ctx.Err() != nil {
@@ -70,14 +70,14 @@ func markFileFailure(ctx context.Context, err error) error {
 	return fmt.Errorf("%w: %w", ErrFileUnreadable, err)
 }
 
-func isRecordCurrent(record textport.ContentHash, stat domain.FileStat) bool {
+func isRecordCurrent(record text.ContentHash, stat domain.FileStat) bool {
 	if record.Hash == "" || record.Size != stat.Size || !record.ModTime.Equal(stat.ModTime) || record.FileID != stat.FileID {
 		return false
 	}
 	return !isRacy(record)
 }
 
-func isRacy(record textport.ContentHash) bool {
+func isRacy(record text.ContentHash) bool {
 	if record.HashTime.IsZero() {
 		return true
 	}

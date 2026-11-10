@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -20,15 +20,15 @@ type floorSpy struct {
 	recipes []string
 }
 
-func (s *floorSpy) FindLexical(context.Context, domain.VaultID, sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (s *floorSpy) FindLexical(context.Context, domain.VaultID, sourcedomain.LexicalQuery) ([]domain.Passage, error) {
 	return nil, nil
 }
 
-func (s *floorSpy) GetNamedPassages(context.Context, domain.VaultID, sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (s *floorSpy) GetNamedPassages(context.Context, domain.VaultID, sourcedomain.LexicalQuery) ([]domain.Passage, error) {
 	return nil, nil
 }
 
-func (s *floorSpy) FindNearest(_ context.Context, _ domain.VaultID, q sourceport.NearestQuery) ([]domain.Passage, error) {
+func (s *floorSpy) FindNearest(_ context.Context, _ domain.VaultID, q sourcedomain.NearestQuery) ([]domain.Passage, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.floors = append(s.floors, q.Floor)

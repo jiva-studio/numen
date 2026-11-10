@@ -8,9 +8,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -102,7 +102,7 @@ func seedCoarseRanks(t *testing.T, exact int) (domain.VaultID, *chunk.Queries, [
 
 func TestTheCoarsePassKeepsEightCandidatesForEachAnswer(t *testing.T) {
 	vault, queries, query, hitAt := seedCoarseRanks(t, 8)
-	got, err := queries.FindNearest(t.Context(), vault, sourceport.NearestQuery{Recipe: "model", Vector: query, Limit: 1, Floor: 0.5})
+	got, err := queries.FindNearest(t.Context(), vault, sourcedomain.NearestQuery{Recipe: "model", Vector: query, Limit: 1, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestTheCoarsePassKeepsEightCandidatesForEachAnswer(t *testing.T) {
 
 func TestTheCoarsePassDropsTheNinthCandidateOfOneAnswer(t *testing.T) {
 	vault, queries, query, _ := seedCoarseRanks(t, 9)
-	got, err := queries.FindNearest(t.Context(), vault, sourceport.NearestQuery{Recipe: "model", Vector: query, Limit: 1, Floor: 0.5})
+	got, err := queries.FindNearest(t.Context(), vault, sourcedomain.NearestQuery{Recipe: "model", Vector: query, Limit: 1, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -18,7 +19,6 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -46,7 +46,7 @@ func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.Kind
 
 func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
-	found, err := db.Passages().FindLexical(t.Context(), v.ID, sourceport.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
+	found, err := db.Passages().FindLexical(t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}

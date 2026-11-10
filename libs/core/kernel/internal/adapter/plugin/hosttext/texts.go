@@ -7,9 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
-	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
 )
 
 // Texts is the text versions of the vaults, for the plugins that call the host. Each call works
@@ -41,7 +41,7 @@ func (p Texts) RemoveVersion(ctx context.Context, v domain.Vault, pluginID, path
 func (p Texts) ListVersions(ctx context.Context, v domain.Vault, path string) (pluginport.PluginTextListing, error) {
 	contentHash, err := p.versions.GetContentHash(ctx, v, path)
 	if errors.Is(err, textversion.ErrFileUnreadable) {
-		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
+		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", text.ErrNoText, err)
 	}
 	if err != nil {
 		return pluginport.PluginTextListing{}, err

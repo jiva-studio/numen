@@ -13,8 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -63,11 +63,11 @@ func answerText(ctx context.Context, err error) (v1.TextErrorCode, error) {
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
-	case errors.Is(err, textport.ErrNoText):
+	case errors.Is(err, text.ErrNoText):
 		return v1.TextErrorCode_TEXT_ERROR_CODE_MISSING, nil
-	case errors.Is(err, textport.ErrInvalidVersion):
+	case errors.Is(err, text.ErrInvalidVersion):
 		return v1.TextErrorCode_TEXT_ERROR_CODE_INVALID, nil
-	case errors.Is(err, textport.ErrNotTextPlugin):
+	case errors.Is(err, text.ErrNotTextPlugin):
 		return v1.TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER, nil
 	}
 	return 0, connect.NewError(connect.CodeInternal, err)

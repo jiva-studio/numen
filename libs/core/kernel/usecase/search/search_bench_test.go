@@ -11,6 +11,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -22,14 +24,14 @@ import (
 )
 
 type benchEmbedder struct {
-	model embeddingport.EmbeddingModel
+	model embedding.Model
 }
 
-func newBenchEmbedder(model embeddingport.EmbeddingModel) *benchEmbedder {
+func newBenchEmbedder(model embedding.Model) *benchEmbedder {
 	return &benchEmbedder{model: model}
 }
 
-func (e *benchEmbedder) GetModel() embeddingport.EmbeddingModel {
+func (e *benchEmbedder) GetModel() embedding.Model {
 	return e.model
 }
 
@@ -96,7 +98,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	v := testsupport.GenerateVault(b, notes)
 	const maxTokens = 256
-	model := embeddingport.EmbeddingModel{Name: "bench", Dimensions: 384, MaxTokens: maxTokens, Pooling: "mean"}
+	model := embedding.Model{Name: "bench", Dimensions: 384, MaxTokens: maxTokens, Pooling: "mean"}
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
 	cfg := container.NewConfig(container.Config{
@@ -133,7 +135,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	searchMock := cfg.NewSearch(db, mock, nil)
 
 	passages := db.Passages()
-	candidates, err := passages.FindLexical(ctx, v.ID, sourceport.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
+	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -272,7 +274,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindLexical(ctx, c.vault.ID, sourceport.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
+					res, err := c.passages.FindLexical(ctx, c.vault.ID, source.LexicalQuery{Text: queryLexical, Kinds: nil, Limit: 100})
 					if err != nil {
 						b.Fatal(err)
 					}
@@ -286,7 +288,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					if _, err := c.passages.GetNamedPassages(ctx, c.vault.ID, sourceport.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
+					if _, err := c.passages.GetNamedPassages(ctx, c.vault.ID, source.LexicalQuery{Text: "Section", Kinds: nil, Limit: 20}); err != nil {
 						b.Fatal(err)
 					}
 				}
@@ -296,7 +298,7 @@ func BenchmarkComponents(b *testing.B) {
 				b.ReportAllocs()
 				b.ResetTimer()
 				for b.Loop() {
-					res, err := c.passages.FindNearest(ctx, c.vault.ID, sourceport.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
+					res, err := c.passages.FindNearest(ctx, c.vault.ID, source.NearestQuery{Recipe: c.recipe, Vector: c.queryVec, Limit: 20, Floor: 0.1})
 					if err != nil {
 						b.Fatal(err)
 					}

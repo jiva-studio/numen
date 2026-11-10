@@ -6,6 +6,7 @@ import (
 	"math/rand/v2"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 
@@ -25,8 +26,8 @@ type embedder struct {
 	seenCount []string
 }
 
-func (e *embedder) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: e.dims, MinChunkLength: e.minLen}
+func (e *embedder) GetModel() embedding.Model {
+	return embedding.Model{Name: "fake", Dimensions: e.dims, MinChunkLength: e.minLen}
 }
 
 func (*embedder) Close() error { return nil }
@@ -40,7 +41,7 @@ type interruptedStore struct {
 	saved  int
 }
 
-func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []embeddingport.Vector) error {
+func (s *interruptedStore) SaveVectors(ctx context.Context, vectors []embedding.Vector) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}

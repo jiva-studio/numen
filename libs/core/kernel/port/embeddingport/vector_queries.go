@@ -3,13 +3,9 @@ package embeddingport
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// ChunkCursor is a place in a walk over the chunks of one vault. The index
-// writes it and reads it back, and the empty cursor is the beginning: a caller
-// carries it from one answer to the next and reads nothing out of it.
-type ChunkCursor string
 
 // VectorQueries answers what the vector index does not hold. Progress is
 // derived from the data: a chunk that needs a vector is one that has none from
@@ -21,5 +17,5 @@ type VectorQueries interface {
 	//
 	// A large chunk carries no vector and is never in the answer. Neither is
 	// the text: a chunk is a place in a file, and the file holds the words.
-	GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model EmbeddingModel, after ChunkCursor, limit int) ([]domain.Passage, ChunkCursor, error)
+	GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model embedding.Model, after embedding.ChunkCursor, limit int) ([]domain.Passage, embedding.ChunkCursor, error)
 }

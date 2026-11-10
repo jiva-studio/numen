@@ -6,8 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 func BenchmarkEmbedDuplicates(b *testing.B) {
@@ -98,7 +98,7 @@ func BenchmarkEmbedBatchDuplicates(b *testing.B) {
 				}
 			}
 
-			model := embeddingport.EmbeddingModel{Name: "fake", Dimensions: dimensions}
+			model := embedding.Model{Name: "fake", Dimensions: dimensions}
 			index := indexfake.NewStore()
 			embed := newEmbed(indexfake.Vaults{}, index, index)
 			embed.Embedder = &embedder{dims: dimensions}

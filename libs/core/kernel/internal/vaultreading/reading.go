@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -199,8 +200,8 @@ func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string)
 // read has no hash and matches nothing.
 func FindRemovedSources(
 	ctx context.Context, queries sourceport.SourceQueries, vaultID domain.VaultID, paths []string,
-) ([]sourceport.SourceText, error) {
-	var out []sourceport.SourceText
+) ([]source.Text, error) {
+	var out []source.Text
 	for _, path := range paths {
 		under, err := queries.GetSourcesUnder(ctx, vaultID, path)
 		if err != nil {
@@ -230,7 +231,7 @@ func MoveRenamedSources(
 	sources sourceport.SourceRepository,
 	reader vaultport.VaultReader,
 	vaultID domain.VaultID,
-	removed []sourceport.SourceText,
+	removed []source.Text,
 	added []string,
 ) ([]string, error) {
 	var moved []string
@@ -251,9 +252,9 @@ func MoveRenamedSources(
 	return moved, nil
 }
 
-func findSameContent(ctx context.Context, reader vaultport.VaultReader, path string, removed []sourceport.SourceText) int {
+func findSameContent(ctx context.Context, reader vaultport.VaultReader, path string, removed []source.Text) int {
 	ref, err := reader.StatFile(ctx, path)
-	if err != nil || !slices.ContainsFunc(removed, func(old sourceport.SourceText) bool { return old.Size == ref.Size }) {
+	if err != nil || !slices.ContainsFunc(removed, func(old source.Text) bool { return old.Size == ref.Size }) {
 		return -1
 	}
 	raw, err := reader.Read(ctx, path)
@@ -261,5 +262,5 @@ func findSameContent(ctx context.Context, reader vaultport.VaultReader, path str
 		return -1
 	}
 	hash := domain.HashContent(raw)
-	return slices.IndexFunc(removed, func(old sourceport.SourceText) bool { return old.ContentHash == hash })
+	return slices.IndexFunc(removed, func(old source.Text) bool { return old.ContentHash == hash })
 }

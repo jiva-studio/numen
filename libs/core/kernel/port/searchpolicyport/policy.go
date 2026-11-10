@@ -3,6 +3,7 @@ package searchpolicyport
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -16,14 +17,6 @@ type FloorStore interface {
 	DeleteFloor(ctx context.Context, v domain.Vault, recipe string) error
 }
 
-// Passage is a small chunk that carries a vector, and the source it belongs to.
-// Vector is the stored form of the vector.
-type Passage struct {
-	Source int64
-	Path   string
-	Vector []byte
-}
-
 // Samples reads the vectors that a plugin measures a vault with.
 //
 // The order is a function of the content hashes in the index, so the same index
@@ -31,7 +24,7 @@ type Passage struct {
 type Samples interface {
 	// ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
 	// vector under the recipe.
-	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]Passage, error)
+	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error)
 }
 
 // Nearest reads the similarity of the best passage of a vault to a vector.

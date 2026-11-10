@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
@@ -143,7 +143,7 @@ func BenchmarkSearch(b *testing.B) {
 			b.ResetTimer()
 			for range b.N {
 				if _, err := queries.FindLexical(
-					b.Context(), v.ID, sourceport.LexicalQuery{Text: "entropy observer", Kinds: getNotesOnly(), Limit: 20}); err != nil {
+					b.Context(), v.ID, source.LexicalQuery{Text: "entropy observer", Kinds: getNotesOnly(), Limit: 20}); err != nil {
 					b.Fatal(err)
 				}
 			}
@@ -205,7 +205,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 	queries := db.Passages()
 	b.ResetTimer()
 	for range b.N {
-		if _, err := queries.FindLexical(ctx, v.ID, sourceport.LexicalQuery{Text: "entropy observer", Kinds: getNotesOnly(), Limit: 20}); err != nil {
+		if _, err := queries.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy observer", Kinds: getNotesOnly(), Limit: 20}); err != nil {
 			b.Fatal(err)
 		}
 	}

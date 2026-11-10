@@ -7,13 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"math"
 	"strconv"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"golang.org/x/text/unicode/norm"
 )
@@ -136,7 +136,7 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 //
 // The result is the large chunk enclosing each hit, which is what a result
 // displays.
-func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery) ([]domain.Passage, error) {
 	if query.Limit <= 0 {
 		// How many candidates to keep is a retrieval decision. The caller makes
 		// it, and arriving here without one is a mistake in the caller.
@@ -150,7 +150,7 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 //
 // A section is represented by the chunk it opens, so a result is the chapter
 // about the query and not the paragraph that repeats the name most often.
-func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery) ([]domain.Passage, error) {
 	if query.Limit <= 0 {
 		return nil, fmt.Errorf("a search by name needs a positive limit, got %d", query.Limit)
 	}
@@ -164,7 +164,7 @@ type passageSearch struct {
 	kinds string
 }
 
-func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, query sourceport.LexicalQuery, search passageSearch) (_ []domain.Passage, err error) {
+func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, query source.LexicalQuery, search passageSearch) (_ []domain.Passage, err error) {
 	expression := Expression(query.Text, query.IsGrowing)
 	if expression == "" {
 		return nil, nil
@@ -208,7 +208,7 @@ func (q *Queries) findPassages(ctx context.Context, vaultID domain.VaultID, quer
 // The coarse pass over the bit vectors keeps several times `search.Limit`
 // candidates and the full-precision vectors order them.
 // A chunk below the similarity floor is not a result.
-func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, search sourceport.NearestQuery) ([]domain.Passage, error) {
+func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, search source.NearestQuery) ([]domain.Passage, error) {
 	if search.Limit <= 0 {
 		return nil, fmt.Errorf("a search by meaning needs a positive limit, got %d", search.Limit)
 	}

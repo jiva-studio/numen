@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -432,8 +433,8 @@ type constantEmbedder struct{}
 
 const width = 1024
 
-func (constantEmbedder) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (constantEmbedder) GetModel() embedding.Model {
+	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (constantEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {

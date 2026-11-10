@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -176,7 +176,7 @@ func TestTheCoarsePassStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	nearVal := func(vault domain.Vault, seed byte) []domain.Passage {
-		matches, err := queries.FindNearest(ctx, vault.ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(seed), Limit: 10, Floor: search.DefaultFloor})
+		matches, err := queries.FindNearest(ctx, vault.ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(seed), Limit: 10, Floor: search.DefaultFloor})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -212,7 +212,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	// "opening" is in both vaults, so what separates them is the filter.
-	shared, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
+	shared, err := queries.FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +226,7 @@ func TestASearchByWordsStaysInsideItsVault(t *testing.T) {
 	}
 
 	// A word only the other vault holds is not in this one.
-	leaked, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
+	leaked, err := queries.FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -243,7 +243,7 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	book(t, db, getFirst(), "library/first.epub", 0x00)
 
 	queries := db.ChunkQueries()
-	dense, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
+	dense, err := queries.FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 	}
 	// The words half finds the small chunks, which is one row per small chunk
 	// of the book.
-	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "first", Kinds: nil, Limit: 10})
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "first", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -292,15 +292,15 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 		"Entropy.md":        domain.KindNote,
 	}
 
-	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
-	named, err := queries.GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
+	named, err := queries.GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "opening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
-	dense, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
+	dense, err := queries.FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,14 +420,14 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 		t.Errorf("%d rows in the vector index describe a note that has been rewritten", got)
 	}
 	// The words of the note currently now are what the full-text index holds.
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "longer", Kinds: nil, Limit: 10})
+	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "longer", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(found) == 0 || found[0].Source != note.FileStat.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
-	if stale, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "first", Kinds: nil, Limit: 10}); err != nil {
+	if stale, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "first", Kinds: nil, Limit: 10}); err != nil {
 		t.Fatal(err)
 	} else if len(stale) != 0 {
 		t.Errorf("the words of the note before it was rewritten still answer: %+v", stale)
@@ -481,14 +481,14 @@ func TestRemovingASourcePreservesNothingSearchable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	matches, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
+	matches, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(matches) != 0 {
 		t.Errorf("a removed book still answers a search: %+v", matches)
 	}
-	words, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "first", Kinds: nil, Limit: 10})
+	words, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "first", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -901,7 +901,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	book(t, db, getFirst(), "library/first.epub", 0x00)
 	queries := db.ChunkQueries()
 
-	far, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 10, Floor: search.DefaultFloor})
+	far, err := queries.FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -910,7 +910,7 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, queried with a vector it contains.
-	val, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
+	val, err := queries.FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -948,7 +948,7 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	data, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 1, Floor: search.DefaultFloor})
+	data, err := db.ChunkQueries().FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0xff), Limit: 1, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1050,7 +1050,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass matches because the bits are present. The follow-up
 	// full-precision query is model-specific, and this vector belongs to another model.
-	itemVal, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: 0.5})
+	itemVal, err := queries.FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1059,7 +1059,7 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 	}
 
 	// Queried with the model that created them, the same rows match.
-	its, err := queries.FindNearest(ctx, getFirst().ID, sourceport.NearestQuery{Recipe: "another-model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: 0.5})
+	its, err := queries.FindNearest(ctx, getFirst().ID, sourcedomain.NearestQuery{Recipe: "another-model", Vector: getVectorForSeed(0x00), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1222,7 +1222,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 	queries := db.ChunkQueries()
 
-	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	lexical, err := queries.FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1233,7 +1233,7 @@ func TestASectionIsFoundByItsName(t *testing.T) {
 		t.Fatal("the words half already answers with the section, and this proves nothing")
 	}
 
-	named, err := queries.GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := queries.GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1259,7 +1259,7 @@ func TestOnlyTheChunkThatOpensASectionCarriesItsName(t *testing.T) {
 	db := openDB(t)
 	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1274,7 +1274,7 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 	saveSectionedBook(t, db, getFirst(), "library/chaitanya.pdf")
 	saveSectionedBook(t, db, getSecond(), "library/chaitanya.pdf")
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1321,7 +1321,7 @@ func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Thermodynamics", Kinds: nil, Limit: 10})
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Thermodynamics", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1348,7 +1348,7 @@ func TestASectionSplitAwayIsNotFoundByItsName(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1382,7 +1382,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
+	named, err := db.ChunkQueries().GetNamedPassages(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

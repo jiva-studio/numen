@@ -6,6 +6,5 @@ import "github.com/jiva-studio/numen/libs/core/kernel/port/searchpolicyport"
 type (
 	FloorStore = searchpolicyport.FloorStore
 	Nearest    = searchpolicyport.Nearest
-	Passage    = searchpolicyport.Passage
 	Samples    = searchpolicyport.Samples
 )

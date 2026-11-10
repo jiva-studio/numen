@@ -12,10 +12,10 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
 // Host provides plugin resolution and activation for embeddings.
@@ -32,13 +32,13 @@ type Embedder struct {
 	service     bridge.Service[numenv1connect.EmbeddingServiceClient]
 	lease       *bridge.Lease
 	mu          sync.Mutex
-	model       embeddingport.EmbeddingModel
+	model       embedding.Model
 	concurrency int
 	floorHint   float64
 
 	announceMu  sync.Mutex
 	changeMu    sync.Mutex
-	announced   embeddingport.EmbeddingModel
+	announced   embedding.Model
 	listeners   []func()
 	onReadError func(error)
 	stopWatch   func()
@@ -79,18 +79,18 @@ func readClientModel(
 	ctx context.Context,
 	pluginID string,
 	client numenv1connect.EmbeddingServiceClient,
-) (embeddingport.EmbeddingModel, int, float64, error) {
+) (embedding.Model, int, float64, error) {
 	modelCtx, cancel := context.WithTimeout(ctx, transport.ModelInfoTimeout)
 	defer cancel()
 	resp, err := client.GetEmbeddingModel(modelCtx, connect.NewRequest(&v1.GetEmbeddingModelRequest{}))
 	if err != nil {
-		return embeddingport.EmbeddingModel{}, 0, 0, fmt.Errorf("get embedding model %s: %w", pluginID, err)
+		return embedding.Model{}, 0, 0, fmt.Errorf("get embedding model %s: %w", pluginID, err)
 	}
 	concurrency := 1
 	if resp.Msg.GetConcurrency() > 0 {
 		concurrency = int(resp.Msg.GetConcurrency())
 	}
-	model := embeddingport.EmbeddingModel{
+	model := embedding.Model{
 		Name:           resp.Msg.GetName(),
 		Dimensions:     int(resp.Msg.GetDimensions()),
 		MaxTokens:      int(resp.Msg.GetMaxTokens()),
@@ -104,7 +104,7 @@ func readClientModel(
 }
 
 // GetModel returns the active model of the embedding plugin.
-func (b *Embedder) GetModel() embeddingport.EmbeddingModel {
+func (b *Embedder) GetModel() embedding.Model {
 	ctx, cancel := context.WithTimeout(context.Background(), transport.ModelRefreshTimeout)
 	defer cancel()
 	if client, call, err := b.service.Open(ctx); err == nil {

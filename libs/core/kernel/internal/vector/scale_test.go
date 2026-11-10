@@ -7,14 +7,13 @@ import (
 
 	"pgregory.net/rapid"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 // step is what one stored byte is worth: the whole scale over the 127 levels a
 // signed byte has on either side of zero.
-const step = embeddingport.Int8Scale / 127
+const step = embedding.Int8Scale / 127
 
 func getWidths() []int { return []int{384, 768, 1024, 1536, 3072} }
 

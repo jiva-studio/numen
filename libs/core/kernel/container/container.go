@@ -16,6 +16,7 @@ import (
 	searchwiring "github.com/jiva-studio/numen/libs/core/kernel/container/search"
 	settingswiring "github.com/jiva-studio/numen/libs/core/kernel/container/settings"
 	vaultwiring "github.com/jiva-studio/numen/libs/core/kernel/container/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
@@ -144,7 +145,7 @@ func (c Config) handleError(err error) {
 
 // GetWait is the wait every scenario assembled here is handed, bound to this
 // machine's timers.
-func (c Config) GetWait() machineport.Wait {
+func (c Config) GetWait() machine.Wait {
 	return func(ctx context.Context, d time.Duration) error {
 		if d <= 0 {
 			return ctx.Err()
@@ -162,7 +163,7 @@ func (c Config) GetWait() machineport.Wait {
 
 // GetDelay is the delayed call every scenario assembled here is handed, bound
 // to this machine's timers.
-func (c Config) GetDelay() machineport.Delay {
+func (c Config) GetDelay() machine.Delay {
 	return func(d time.Duration, f func()) func() bool {
 		return time.AfterFunc(d, f).Stop
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -113,8 +114,8 @@ type fakeEmbedder struct {
 	dims int
 }
 
-func (a *fakeEmbedder) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "fake", Dimensions: a.dims}
+func (a *fakeEmbedder) GetModel() embedding.Model {
+	return embedding.Model{Name: "fake", Dimensions: a.dims}
 }
 
 func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -277,7 +278,7 @@ type overheard struct {
 }
 
 // GetModel is called at the start of every pass, before a source is opened.
-func (o *overheard) GetModel() embeddingport.EmbeddingModel {
+func (o *overheard) GetModel() embedding.Model {
 	o.keep()
 	return o.fakeEmbedder.GetModel()
 }
