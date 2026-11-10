@@ -45,19 +45,20 @@ export interface NoteCommandsDeps {
 }
 
 const getPlace = (invocation: CommandInvocation): CommandPlace | undefined => {
-  if (invocation.selector !== undefined) return { selector: invocation.selector }
-  return invocation.line === undefined ? undefined : { line: invocation.line }
+  const { selector, line } = invocation.target
+  if (selector !== undefined) return { selector }
+  return line === undefined ? undefined : { line }
 }
 
 const openFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void => {
-  const file = invocation.path || invocation.file
+  const file = invocation.target.path || invocation.target.file
   const placement = invocation.values?.[ARGUMENT.placement] === 'split' ? 'split' : 'current'
-  deps.notes.openFile(file, invocation.title || file, placement, getPlace(invocation))
+  deps.notes.openFile(file, invocation.target.title || file, placement, getPlace(invocation))
 }
 
 const revealFile = (invocation: CommandInvocation, deps: NoteCommandsDeps): void => {
   const kind = invocation.values?.[ARGUMENT.kind]
-  if (kind) deps.navigator.showTab(kind, invocation.path)
+  if (kind) deps.navigator.showTab(kind, invocation.target.path)
 }
 
 const createNoteCommand = async (
@@ -66,16 +67,16 @@ const createNoteCommand = async (
   relation: ConnectionRole | null,
 ): Promise<string | void> => {
   if (!invocation.name) {
-    if (invocation.isFolder) return deps.making.createUntitled(invocation.path)
+    if (invocation.target.isFolder) return deps.making.createUntitled(invocation.target.path)
     return
   }
   const made = await deps.making.createWithTitle(
     invocation.name,
-    relation ? invocation.path : '',
+    relation ? invocation.target.path : '',
     relation,
   )
   if (!made) return
-  if (invocation.kind === NOTE) {
+  if (invocation.target.kind === NOTE) {
     deps.notes.openFile(made.path, made.title, 'split')
   } else if (made.path) {
     await deps.navigator.travel(made.path)
@@ -89,10 +90,10 @@ const renameNoteCommand = async (
   invocation: CommandInvocation,
   deps: NoteCommandsDeps,
 ): Promise<void> => {
-  if (!invocation.name || invocation.name === invocation.title) return
-  const tab = await flushTab(invocation.path, deps.notes)
+  if (!invocation.name || invocation.name === invocation.target.title) return
+  const tab = await flushTab(invocation.target.path, deps.notes)
   if (tab.isWaiting) return deps.writeMessage(NOTE_WORDS.unanswered, 'warning')
-  const answer = await renameNote(invocation.path, invocation.name)
+  const answer = await renameNote(invocation.target.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'changed') return deps.writeMessage(NOTE_WORDS.stale, 'warning')
   deps.writeMessage(NOTE_WORDS.errors[answer.error], 'error')
@@ -107,7 +108,7 @@ const removeFiles = async (
   let isWaiting = false
   const opening = deps.navigator.getOpeningNote()
 
-  for (const path of [invocation.path, ...invocation.others]) {
+  for (const path of [invocation.target.path, ...invocation.target.others]) {
     const tab = await flushTab(path, deps.notes)
     if (tab.isWaiting) {
       isWaiting = true
@@ -131,7 +132,7 @@ const removeFiles = async (
 const copyPath = (invocation: CommandInvocation, deps: NoteCommandsDeps): void => {
   const clipboard = navigator.clipboard as Clipboard | undefined
   if (!clipboard) return
-  runInBackground(clipboard.writeText(invocation.path), (error) =>
+  runInBackground(clipboard.writeText(invocation.target.path), (error) =>
     deps.writeMessage(formatError(error), 'error'),
   )
 }

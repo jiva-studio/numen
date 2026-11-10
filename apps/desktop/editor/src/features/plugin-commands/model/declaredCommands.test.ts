@@ -94,15 +94,17 @@ describe('a declared command with items', () => {
   }
   const invocation = (name: string) => ({
     id: getPaletteId(proofread),
-    path: 'talks/a.mp3',
-    vault: { id: 'v', name: 'V' },
+    target: {
+      path: 'talks/a.mp3',
+      vault: { id: 'v', name: 'V' },
+      title: '',
+      file: 'talks/a.mp3',
+      others: [],
+      kind: null,
+      tab: 'tab',
+    },
     note: null,
-    title: '',
-    file: 'talks/a.mp3',
-    others: [],
     name,
-    kind: null,
-    tab: 'tab',
   })
 
   it('asks for one of its items, which it lists over the file of the target', async () => {
@@ -157,17 +159,19 @@ describe('a run of a declared command', () => {
     await runInvocation(
       {
         id: getPaletteId(createSample),
-        path: 'Glaciers',
-        vault: { id: 'v', name: 'V' },
+        target: {
+          path: 'Glaciers',
+          vault: { id: 'v', name: 'V' },
+          title: 'Glaciers',
+          file: 'Glaciers',
+          others: [],
+          kind: null,
+          tab: '',
+          isTargetNamed: true,
+        },
         note: null,
-        title: 'Glaciers',
-        file: 'Glaciers',
-        others: [],
         name: '',
-        kind: null,
-        tab: '',
         values: { title: 'Moraines' },
-        isTargetNamed: true,
       },
       { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
     )
@@ -200,15 +204,17 @@ describe('a run of a declared command', () => {
     await runInvocation(
       {
         id: getPaletteId(createSample),
-        path: '',
-        vault: { id: 'v', name: 'V' },
+        target: {
+          path: '',
+          vault: { id: 'v', name: 'V' },
+          title: '',
+          file: 'a.md',
+          others: [],
+          kind: null,
+          tab: 'tab',
+        },
         note: null,
-        title: '',
-        file: 'a.md',
-        others: [],
         name: '',
-        kind: null,
-        tab: 'tab',
         values: { title: 'Verbs' },
       },
       { writeMessage, notes: { openFile } } as unknown as CommandDeps,
@@ -237,15 +243,17 @@ describe('a run of a declared command', () => {
     await commands.get(getPaletteId(convert))?.(
       {
         id: getPaletteId(convert),
-        path: 'a.pdf',
-        vault: { id: 'v', name: 'V' },
+        target: {
+          path: 'a.pdf',
+          vault: { id: 'v', name: 'V' },
+          title: '',
+          file: 'a.pdf',
+          others: [],
+          kind: null,
+          tab: 'tab',
+        },
         note: null,
-        title: '',
-        file: 'a.pdf',
-        others: [],
         name: '',
-        kind: null,
-        tab: 'tab',
       },
       { writeMessage } as unknown as CommandDeps,
     )
@@ -280,15 +288,17 @@ describe('a run that opens a file', () => {
     const path = await commands.get(getPaletteId(createSample))?.(
       {
         id: getPaletteId(createSample),
-        path: '',
-        vault: { id: 'v', name: 'V' },
+        target: {
+          path: '',
+          vault: { id: 'v', name: 'V' },
+          title: '',
+          file: '',
+          others: [],
+          kind: null,
+          tab: 'tab',
+        },
         note: null,
-        title: '',
-        file: '',
-        others: [],
         name: '',
-        kind: null,
-        tab: 'tab',
       },
       { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
     )
@@ -310,15 +320,17 @@ describe('a run that opens a file and says nothing', () => {
     await commands.get(getPaletteId(createSample))?.(
       {
         id: getPaletteId(createSample),
-        path: '',
-        vault: { id: 'v', name: 'V' },
+        target: {
+          path: '',
+          vault: { id: 'v', name: 'V' },
+          title: '',
+          file: '',
+          others: [],
+          kind: null,
+          tab: 'tab',
+        },
         note: null,
-        title: '',
-        file: '',
-        others: [],
         name: '',
-        kind: null,
-        tab: 'tab',
         values: { title: 'Verbs' },
       },
       { writeMessage, notes: { openFile } } as unknown as CommandDeps,
@@ -340,15 +352,17 @@ describe('a run that opens a file and says nothing', () => {
     await commands.get(getPaletteId(createSample))?.(
       {
         id: getPaletteId(createSample),
-        path: '',
-        vault: { id: 'v', name: 'V' },
+        target: {
+          path: '',
+          vault: { id: 'v', name: 'V' },
+          title: '',
+          file: '',
+          others: [],
+          kind: null,
+          tab: 'tab',
+        },
         note: null,
-        title: '',
-        file: '',
-        others: [],
         name: '',
-        kind: null,
-        tab: 'tab',
       },
       { writeMessage, notes: { openFile } } as unknown as CommandDeps,
     )

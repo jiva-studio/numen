@@ -108,7 +108,7 @@ describe('pluggable command registry', () => {
   it('registers dynamic commands and carries them out', async () => {
     const executed: string[] = []
     const unregister = registerCommand('customAction', (invocation) => {
-      executed.push(`custom:${invocation.path}`)
+      executed.push(`custom:${invocation.target.path}`)
     })
 
     const one = window()
@@ -173,7 +173,7 @@ describe('a note that moved between the answer and the invocation', () => {
     const one = window()
     const paths: string[] = []
     registerCommand('over', (invocation) => {
-      paths.push(invocation.path)
+      paths.push(invocation.target.path)
     })
 
     await carry(createInvocation('over', front(), '', 'member'), one.on)
@@ -185,7 +185,7 @@ describe('a note that moved between the answer and the invocation', () => {
     const one = window()
     const paths: string[] = []
     registerCommand('over', (invocation) => {
-      paths.push(invocation.path)
+      paths.push(invocation.target.path)
     })
 
     await carry(createInvocation('over', front()), one.on)

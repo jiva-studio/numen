@@ -8,6 +8,7 @@ export type {
   CommandTarget,
   ConfirmWords,
   FeatureCommands,
+  InvocationTarget,
   PromptStep,
   RetypeWords,
   RunSupport,

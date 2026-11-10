@@ -364,10 +364,10 @@ describe('a plugin command over a note', () => {
     const one = setupPlugin()
     const [id, handler] = h.registerCommand.mock.calls[0] as [
       string,
-      (invocation: { path: string; title: string }) => Promise<void>,
+      (invocation: { target: { path: string; title: string } }) => Promise<void>,
     ]
 
-    await handler({ path: 'Animals.md', title: 'Animals' })
+    await handler({ target: { path: 'Animals.md', title: 'Animals' } })
 
     expect(id).toBe(SUMMARY.id)
     expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(SUMMARY.id, {
@@ -592,10 +592,13 @@ describe('a plugin command with items in the palette', () => {
     const { executeCommand } = setupItems()
     const call = h.registerCommand.mock.calls.find(([id]) => id === MOVE.id) as [
       string,
-      (invocation: { path: string; title: string; name: string }) => Promise<void>,
+      (invocation: {
+        target: { path: string; title: string }
+        name: string
+      }) => Promise<void>,
     ]
 
-    await call[1]({ path: 'Tide.md', title: 'Tide', name: 'w2' })
+    await call[1]({ target: { path: 'Tide.md', title: 'Tide' }, name: 'w2' })
 
     expect(executeCommand).toHaveBeenCalledExactlyOnceWith(
       MOVE.id,

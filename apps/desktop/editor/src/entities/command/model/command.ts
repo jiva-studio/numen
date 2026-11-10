@@ -137,21 +137,29 @@ export interface Command {
   listItems?(target: CommandTarget): readonly CommandItem[] | Promise<readonly CommandItem[]>
 }
 
-/** One command as it is carried out: what it is over, and what was typed for it. */
-export interface CommandInvocation {
-  readonly id: string
+/** What a command was invoked over: the target of the palette without whether it is ready. */
+export interface InvocationTarget {
   readonly path: string
   readonly vault: VaultRef
-  readonly note: string | null
   readonly title: string
   readonly file: string
   readonly line?: number
   readonly selector?: Selector
   readonly isFolder?: boolean
+  readonly isTargetNamed?: boolean
   readonly others: readonly string[]
-  readonly name: string
   readonly kind: string | null
   readonly tab: string
+}
+
+/**
+ * One command as it is carried out: what it is over, the tab the note is open in, and what was
+ * typed for it (the name) or set for it (the values).
+ */
+export interface CommandInvocation {
+  readonly id: string
+  readonly target: InvocationTarget
+  readonly note: string | null
+  readonly name: string
   readonly values?: Readonly<Record<string, string>>
-  readonly isTargetNamed?: boolean
 }

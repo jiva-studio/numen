@@ -123,9 +123,9 @@ const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration 
 }
 
 const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => ({
-  path: invocation.file,
+  path: invocation.target.file,
   values: invocation.values ?? {},
-  ...(invocation.isTargetNamed ? { isTargetNamed: true } : {}),
+  ...(invocation.target.isTargetNamed ? { isTargetNamed: true } : {}),
   ...(one.hasItems ? { itemId: invocation.name } : {}),
 })
 
