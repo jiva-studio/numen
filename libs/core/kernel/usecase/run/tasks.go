@@ -8,6 +8,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 )
 
+// Task is the unit of work the composition root names: it may not import internal/vaultreading.
+type Task = vaultreading.Task
+
+// Bytes is the unit of a download, which the composition root names.
+const Bytes = vaultreading.Bytes
+
 // Tasks is what the application is doing now.
 //
 // It is safe to use from several goroutines: work reports itself from wherever

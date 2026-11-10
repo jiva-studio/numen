@@ -10,8 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -48,7 +46,7 @@ type Config struct {
 
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
-func (c Config) CutNotes() chunking.CutNotes {
+func (c Config) CutNotes() query.CutNotes {
 	cutter := query.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
 		cutter.Profiles = c.PluginHost.ResolveNoteProfile
@@ -88,19 +86,19 @@ func (c Config) Scan(db *vault.Index) vault.Scan {
 // searchable in a window are the same vault.
 func (c Config) ReadWholeVault(
 	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
-) (vaultreading.ReadWholeVault, error) {
+) (vault.ReadWholeVault, error) {
 	if err := c.FitIndex(db).Execute(ctx, embedder); err != nil {
-		return vaultreading.ReadWholeVault{}, err
+		return vault.ReadWholeVault{}, err
 	}
 	texts, err := c.IndexTexts(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
-		return vaultreading.ReadWholeVault{}, err
+		return vault.ReadWholeVault{}, err
 	}
 	refresh.Force = true
 	texts.ReadNote = NewNoteReader(refresh.Execute)
 	embed, err := c.Embed(db, embedder, v)
 	if err != nil {
-		return vaultreading.ReadWholeVault{}, err
+		return vault.ReadWholeVault{}, err
 	}
 	return vault.NewReadWholeVault(c.Scan(db), texts, embed), nil
 }

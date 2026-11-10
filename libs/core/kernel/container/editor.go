@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -91,7 +90,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 		GetRefreshFn: func() vault.Refresh {
 			return makeRefresh(cfg, db, db.Notes())
 		},
-		ReadWholeVaultFn: func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaultreading.ReadWholeVault, error) {
+		ReadWholeVaultFn: func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vault.ReadWholeVault, error) {
 			request := cfg
 			request.ShouldRebuildIndex = rebuild
 			return request.ReadWholeVault(ctx, db, embedder, v)

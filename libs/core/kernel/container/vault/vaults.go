@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -39,10 +37,10 @@ type Config struct {
 	TextVersions *textversion.Versions
 	TextReaders  textport.TextReaders
 	VaultLocks   *vaultwriter.Locks
-	Watches      *watchhub.Hub
+	Watches      *vaultwatch.Hub
 	ErrorHandler func(error)
 	SyncSetting  query.SyncSetting
-	CutNotes     chunking.CutNotes
+	CutNotes     query.CutNotes
 	SetNoteCut   func(*vaultusecase.Scan, *vaultusecase.Index)
 }
 

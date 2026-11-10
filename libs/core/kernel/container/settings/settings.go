@@ -19,9 +19,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -44,7 +44,7 @@ type Config struct {
 	ResolvedCompute           hardware.ResolvedCompute
 	PluginHost                pluginport.PluginManager
 	KeyStore                  pluginport.KeyStore
-	Watches                   *watchhub.Hub
+	Watches                   *vaultwatch.Hub
 	SettingsFiles             *settingsadapter.Files
 	SettingEvents             *settingevents.Events
 	Programs                  *settingsadapter.ProgramList

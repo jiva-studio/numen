@@ -9,3 +9,6 @@ import (
 func NewReadWholeVault(notes vaultreading.NoteScanner, texts vaultreading.TextIndexer, vectors vaultreading.VectorEmbedder) vaultreading.ReadWholeVault {
 	return vaultreading.NewReadWholeVault(notes, texts, vectors)
 }
+
+// ReadWholeVault is the three passes the composition root names: it may not import internal/vaultreading.
+type ReadWholeVault = vaultreading.ReadWholeVault
