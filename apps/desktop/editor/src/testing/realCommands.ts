@@ -14,7 +14,7 @@ import {
   type PluginHost,
 } from '@numen/plugin-loader'
 import { runSupport } from '@/features/command-palette'
-import type { CommandTarget } from '@/entities/command'
+import { createCommandRegistry, type CommandTarget } from '@/entities/command'
 import { createSlotCommandFinder } from '@/features/plugin-commands'
 import { createCommands, type CommandsDepsOptions } from '@/app/window/createCommands'
 import {
@@ -138,6 +138,7 @@ const toDeps = (options: object): CommandsDepsOptions => options as CommandsDeps
 export function createRealWindow(parts: RealWindowParts) {
   const messages: string[] = []
   const pluginHost = createHost(parts)
+  const registry = createCommandRegistry()
   const options = {
     core: createCore(parts.emitEvent),
     words: WORDS,
@@ -154,6 +155,7 @@ export function createRealWindow(parts: RealWindowParts) {
     knows: { getTitle: () => '', getTabAt: () => null },
     paletteLists: { getStepGroups: () => [], previewItem: () => undefined },
     runs: runSupport(),
+    registry,
     coverage: () => ({}),
     reached: {
       getTabAt: () => null,
@@ -199,7 +201,7 @@ export function createRealWindow(parts: RealWindowParts) {
     }),
     WORDS,
   )
-  registerFeatureCommands(features)
+  registerFeatureCommands(registry, features)
   const used = createCommands(toDeps({ ...options, getAppCommands: () => features.commands }))
   return { pluginHost, messages, used }
 }

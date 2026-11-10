@@ -170,7 +170,11 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	api := makeWindowAPI(cfg)
 	api.SetVaultIndexer(t.Context(), nil)
 
-	cfg.PluginHost = container.NewPluginHost("md.numen.test", t.TempDir())
+	host, err := container.NewPluginHost("md.numen.test", t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.PluginHost = host
 	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		t.Fatal(err)
 	}

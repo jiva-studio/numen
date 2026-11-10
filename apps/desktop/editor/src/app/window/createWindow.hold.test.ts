@@ -4,7 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as PluginSupportModule from '@/app/plugins/pluginSupport'
-import { COMMAND, commands as commandRegistry } from '@/entities/command'
+import { COMMAND } from '@/entities/command'
 import { createInvocation } from '@/features/command-palette'
 import {
   getTabs,
@@ -53,7 +53,7 @@ const openOtherVault = async (window: Window): Promise<void> => {
   const { palette } = getWindowParts(window)
   const target = { ...palette.getTarget(), vault: { id: 'heat', name: 'Heat' } }
   const invocation = createInvocation(COMMAND.openVault, target)
-  await commandRegistry.get(COMMAND.openVault)?.(invocation, palette.commandDeps)
+  await palette.commandDeps.registry.get(COMMAND.openVault)?.(invocation, palette.commandDeps)
 }
 
 describe('the window leaving its vault', () => {

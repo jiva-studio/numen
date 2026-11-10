@@ -5,6 +5,7 @@ package workspace
 import (
 	"context"
 	"errors"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"math"
 	"net/http"
 	"time"
@@ -25,7 +26,7 @@ import (
 type Window interface {
 	GetCurrentVault() domain.Vault
 	// ReportOpenTabs keeps the tabs the window reported as the ones it has open.
-	ReportOpenTabs(open domain.OpenTabs)
+	ReportOpenTabs(open windowdomain.OpenTabs)
 }
 
 // Focus delivers the requests to show a place or to bring a tab forward.
@@ -42,12 +43,12 @@ type TabWindows interface {
 
 // OpenTabsWriter stores the open tabs of a vault.
 type OpenTabsWriter interface {
-	Execute(ctx context.Context, v domain.Vault, open domain.OpenTabs) error
+	Execute(ctx context.Context, v domain.Vault, open windowdomain.OpenTabs) error
 }
 
 // OpenTabsReader loads the open tabs stored for a vault.
 type OpenTabsReader interface {
-	Execute(ctx context.Context, v domain.Vault) (domain.OpenTabs, error)
+	Execute(ctx context.Context, v domain.Vault) (windowdomain.OpenTabs, error)
 }
 
 // Handler answers the window's workspace state: the open tabs, the focus requests and the tab links.
@@ -87,9 +88,9 @@ func (h *Handler) WriteOpenTabs(
 	ctx context.Context, r *connect.Request[v1.WriteOpenTabsRequest],
 ) (*connect.Response[v1.WriteOpenTabsResponse], error) {
 	tabs := r.Msg.GetTabs()
-	open := domain.OpenTabs{Tabs: make([]domain.Tab, 0, len(tabs)), ActiveID: r.Msg.GetActiveId()}
+	open := windowdomain.OpenTabs{Tabs: make([]windowdomain.Tab, 0, len(tabs)), ActiveID: r.Msg.GetActiveId()}
 	for _, one := range tabs {
-		open.Tabs = append(open.Tabs, domain.Tab{
+		open.Tabs = append(open.Tabs, windowdomain.Tab{
 			ID:    one.GetId(),
 			Kind:  one.GetKind(),
 			Path:  one.GetPath(),
@@ -216,11 +217,11 @@ func convertByteRangesToWire(pos []domain.ByteRange) []*v1.Range {
 	return out
 }
 
-func convertTabPlaceFromWire(place *v1.TabPlace) *domain.TabPlace {
+func convertTabPlaceFromWire(place *v1.TabPlace) *windowdomain.TabPlace {
 	if place == nil {
 		return nil
 	}
-	out := &domain.TabPlace{
+	out := &windowdomain.TabPlace{
 		Page:      int(place.GetPage()),
 		PageCount: int(place.GetPageCount()),
 		CFI:       place.GetCfi(),

@@ -2,9 +2,9 @@ package command_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	"connectrpc.com/connect"
@@ -32,7 +32,7 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	if err := host.Discovery.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := plugincommand.NewCommands(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), pluginhost.Join(host), nil, nil)
+	commands := plugincommand.NewCommands(pluginmanifest.New(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), host.ContentTypes, nil, nil)
 	return command.NewHandler(shownVault{}, commands, &versionItems{})
 }
 

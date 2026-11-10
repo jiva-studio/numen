@@ -3,6 +3,7 @@
 package app
 
 import (
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"context"
 	"flag"
 	"net/http"
@@ -57,7 +58,7 @@ func (d *DebugOptions) serveHTTP(
 	opened *editor.Installation,
 	pages http.Handler,
 ) error {
-	opened.State.NotifyOpenTabs = func(domain.OpenTabs) {}
+	opened.State.NotifyOpenTabs = func(windowdomain.OpenTabs) {}
 	container.FollowVaultSwitch(cfg, opened, func(domain.Vault, error) {})
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }

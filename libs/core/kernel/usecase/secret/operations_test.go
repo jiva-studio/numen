@@ -84,7 +84,7 @@ func newFixture(list ...plugin.Secret) fixture {
 		counter++
 		return "s0000000" + string(rune('0'+counter)), nil
 	}
-	f.secrets = secret.NewSecrets(f.ledger, f.keys, f.plugins, newID, func() string { return "/credentials.json" }, nil)
+	f.secrets = secret.NewSecrets(f.ledger, f.keys, f.plugins, newID, func(context.Context) string { return "/credentials.json" }, nil)
 	return f
 }
 

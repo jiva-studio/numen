@@ -26,7 +26,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/entities/command', async (importOriginal) => ({
   ...(await importOriginal<typeof CommandModule>()),
-  registerCommand: h.registerCommand,
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
 }))
 vi.mock('@/features/command-palette', () => ({
@@ -79,6 +78,7 @@ const setup = (isPrevented = false, pluginHost?: object) => {
     knows: {},
     paletteLists: {},
     runs: {},
+    registry: { register: h.registerCommand, get: () => undefined },
     coverage: () => ({}),
     settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage: (text: string, severity: string) => content.push([text, severity]),
@@ -331,6 +331,7 @@ describe('a plugin command over a note', () => {
       knows: {},
       paletteLists: {},
       runs: {},
+      registry: { register: h.registerCommand, get: () => undefined },
       coverage: () => ({}),
       settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
       writeMessage,
@@ -534,6 +535,7 @@ describe('a plugin command with items in the palette', () => {
       knows: {},
       paletteLists: windowLists,
       runs: {},
+      registry: { register: h.registerCommand, get: () => undefined },
       coverage: () => ({}),
       settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
       writeMessage: vi.fn(),

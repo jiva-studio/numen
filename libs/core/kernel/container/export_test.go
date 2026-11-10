@@ -7,8 +7,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -74,3 +76,6 @@ func (c Config) VaultOpenerWith(db *vault.Index, walking vaultport.VaultReaders,
 }
 
 func (c Config) VaultWatcher() vaultport.VaultWatcher { return vaultWatcher(vaultOf(c)) }
+
+// AbsentBinding is the binding of a plugin host that runs nothing.
+func AbsentBinding() pluginport.PluginBinding { return bridge.AbsentRuntime{} }

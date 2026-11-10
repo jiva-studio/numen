@@ -44,9 +44,7 @@ func newLinkedHost(t *testing.T) *Host {
 func TestRequirementsFollowTheModelSetting(t *testing.T) {
 	host := newLinkedHost(t)
 	getIDs := func() []string {
-		host.Registry.t.mu.RLock()
-		defer host.Registry.t.mu.RUnlock()
-		return host.Registry.t.getRequirementIDsLocked("md.numen.sample")
+		return host.Registry.set.getRequirementIDs("md.numen.sample")
 	}
 	if got := getIDs(); !slices.Equal(got, []string{"large-weights"}) {
 		t.Errorf("requirements = %v, want the large weights", got)

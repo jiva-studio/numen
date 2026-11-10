@@ -1,6 +1,7 @@
 package opentabs_test
 
 import (
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"reflect"
 	"testing"
 
@@ -34,8 +35,8 @@ func TestReadOpenTabsReturnsNoneForANewVault(t *testing.T) {
 
 func TestReadOpenTabsReturnsTabsInOrderWithStateAndFront(t *testing.T) {
 	repo := openRepository(t)
-	want := domain.OpenTabs{
-		Tabs: []domain.Tab{
+	want := windowdomain.OpenTabs{
+		Tabs: []windowdomain.Tab{
 			{ID: "reader:viewer:a.bin", Kind: "reader:viewer", Path: "a.bin", Title: "a", State: `{"page":4}`},
 			{ID: "graph:1", Kind: "graph"},
 		},
@@ -55,14 +56,14 @@ func TestReadOpenTabsReturnsTabsInOrderWithStateAndFront(t *testing.T) {
 
 func TestWriteOpenTabsReplacesTheTabsOfOneVaultOnly(t *testing.T) {
 	repo := openRepository(t)
-	otherTabs := domain.OpenTabs{Tabs: []domain.Tab{{ID: "note:b.md", Kind: "note", Path: "b.md"}}}
+	otherTabs := windowdomain.OpenTabs{Tabs: []windowdomain.Tab{{ID: "note:b.md", Kind: "note", Path: "b.md"}}}
 	if err := repo.WriteOpenTabs(t.Context(), getSecond(), otherTabs); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.WriteOpenTabs(t.Context(), getFirst(), domain.OpenTabs{Tabs: []domain.Tab{{ID: "x", Kind: "x"}}}); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirst(), windowdomain.OpenTabs{Tabs: []windowdomain.Tab{{ID: "x", Kind: "x"}}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.WriteOpenTabs(t.Context(), getFirst(), domain.OpenTabs{}); err != nil {
+	if err := repo.WriteOpenTabs(t.Context(), getFirst(), windowdomain.OpenTabs{}); err != nil {
 		t.Fatal(err)
 	}
 	gotFirst, err := repo.ReadOpenTabs(t.Context(), getFirst())

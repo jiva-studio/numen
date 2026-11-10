@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"math"
 	"reflect"
 	"testing"
@@ -17,13 +18,13 @@ import (
 )
 
 // memoryTabs keeps the open tabs of each vault in memory.
-type memoryTabs map[domain.VaultID]domain.OpenTabs
+type memoryTabs map[domain.VaultID]windowdomain.OpenTabs
 
-func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (domain.OpenTabs, error) {
+func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (windowdomain.OpenTabs, error) {
 	return m[v.ID], nil
 }
 
-func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open domain.OpenTabs) error {
+func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open windowdomain.OpenTabs) error {
 	m[v.ID] = open
 	return nil
 }
@@ -67,9 +68,9 @@ func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := domain.OpenTabs{
+	want := windowdomain.OpenTabs{
 		ActiveID: "two",
-		Tabs: []domain.Tab{
+		Tabs: []windowdomain.Tab{
 			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
 			{ID: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
 		},
@@ -111,9 +112,9 @@ func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
 }
 
 func TestAttendingTellsWhoeverIsListening(t *testing.T) {
-	var received []domain.OpenTabs
+	var received []windowdomain.OpenTabs
 	state := newState()
-	state.NotifyOpenTabs = func(open domain.OpenTabs) { received = append(received, open) }
+	state.NotifyOpenTabs = func(open windowdomain.OpenTabs) { received = append(received, open) }
 	api := newHandlerOver(t, showing{State: state}, memoryTabs{})
 
 	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -135,20 +136,20 @@ func TestAttendingTellsWhoeverIsListening(t *testing.T) {
 
 func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
 	for name, c := range map[string]struct {
-		open domain.OpenTabs
+		open windowdomain.OpenTabs
 		want string
 	}{
 		"a tab in front": {
-			open: domain.OpenTabs{
+			open: windowdomain.OpenTabs{
 				ActiveID: "two",
-				Tabs:     []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
+				Tabs:     []windowdomain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
 			},
 			want: "Talk.mp3",
 		},
-		"nothing open":     {open: domain.OpenTabs{}},
-		"a tab it lets go": {open: domain.OpenTabs{ActiveID: "three", Tabs: []domain.Tab{{ID: "one"}}}},
+		"nothing open":     {open: windowdomain.OpenTabs{}},
+		"a tab it lets go": {open: windowdomain.OpenTabs{ActiveID: "three", Tabs: []windowdomain.Tab{{ID: "one"}}}},
 		"a tab with no identity": {
-			open: domain.OpenTabs{Tabs: []domain.Tab{{Path: "Entropy.md"}}},
+			open: windowdomain.OpenTabs{Tabs: []windowdomain.Tab{{Path: "Entropy.md"}}},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

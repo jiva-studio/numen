@@ -45,14 +45,14 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 	vault := domain.Vault{ID: "one", Name: "Notes"}
 	for name, c := range map[string]struct {
 		vault domain.Vault
-		open  domain.OpenTabs
+		open  windowdomain.OpenTabs
 		want  string
 	}{
 		"a note in front": {
 			vault: vault,
-			open: domain.OpenTabs{
+			open: windowdomain.OpenTabs{
 				ActiveID: "two",
-				Tabs: []domain.Tab{
+				Tabs: []windowdomain.Tab{
 					{ID: "one", Kind: "plex", Path: "Entropy.md"},
 					{ID: "two", Kind: "note", Path: "Reading/Order.md"},
 				},
@@ -61,15 +61,15 @@ func TestTheWindowIsNamedAfterTheFileInFrontOfThePerson(t *testing.T) {
 		},
 		"a tab holding no file": {
 			vault: vault,
-			open: domain.OpenTabs{
+			open: windowdomain.OpenTabs{
 				ActiveID: "one",
-				Tabs:     []domain.Tab{{ID: "one", Kind: "settings"}},
+				Tabs:     []windowdomain.Tab{{ID: "one", Kind: "settings"}},
 			},
 			want: "numen — Notes",
 		},
 		"a window with nothing open": {vault: vault, want: "numen — Notes"},
 		"a window standing on no vault": {
-			open: domain.OpenTabs{ActiveID: "one", Tabs: []domain.Tab{{ID: "one", Kind: "files"}}},
+			open: windowdomain.OpenTabs{ActiveID: "one", Tabs: []windowdomain.Tab{{ID: "one", Kind: "files"}}},
 			want: "numen",
 		},
 	} {

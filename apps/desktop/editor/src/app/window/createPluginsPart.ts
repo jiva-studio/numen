@@ -12,21 +12,20 @@ import { readNote, resolveLinks, writeNote } from '@/entities/note'
 import type { createMessageLog } from '@/shared/model/notices/messages'
 import {
   createBackendHandlers,
+  createHostPort,
+  createPluginNotes,
+  createWindowCommands,
   createCommandItemLists,
   createDeclaredState,
   type DeclaredState,
   useDeclaredCommands,
 } from '@/features/plugin-commands'
-import { createPluginNotes } from '../plugins/pluginNotes'
-import { createPluginServices } from '../plugins/pluginServices'
-import { createWindowFacts } from '../plugins/windowFacts'
 import { createPluginSupport } from '../plugins/pluginSupport'
-import type { createEditorCommands } from './createEditorCommands'
+import type { createEditorCommands, createWindowKinds } from './createEditorCommands'
 import type { PluginsCore, TabsCore, WindowCore } from './windowCore'
 import type { WindowServices } from './createWindowServices'
 import { getSettingsConfig } from '@/features/settings-commands'
 import type { SettingsStore } from '@/entities/settings'
-import { createWindowCommands } from '../plugins/windowCommands'
 import { createWindowSlots } from '../plugins/windowSlots'
 import { createEditorVaults } from '../plugins/windowVaults'
 
@@ -95,13 +94,14 @@ interface PluginsCoreDeps {
   readonly tabOpeners: TabsCore['tabOpeners']
   readonly rest: SettingsStore
   readonly status: PluginStatus
+  readonly registry: WindowCore['registry']
 }
 
 export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
-  const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, rest, status } = deps
+  const { log, writeMessage, frame, windowTabs, tabLinks, tabOpeners, rest, status, registry } = deps
   const getPluginName = (pluginId: string): string =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
-  const pluginServices = createPluginServices()
+  const hostPort = createHostPort()
   const pluginNotices = createNoticeQueue()
   const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
   const itemLists = createCommandItemLists({
@@ -109,10 +109,9 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
     fileKinds: getFileKinds,
   })
   const declared = createDeclaredState({ getConfig: () => getWindowConfig(rest) })
-  const facts = createWindowFacts()
   const slots = createWindowSlots({
     declaredCommands: declared,
-    facts,
+    facts: hostPort,
     writeIssue: (pluginId, message, severity) =>
       log.getWriter(`plugin:${pluginId}`)(`${getPluginName(pluginId)}: ${message}`, severity),
   })
@@ -126,7 +125,7 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
     rest,
     status,
     getPlatform: () => frame.platform.value,
-    getServices: pluginServices.get,
+    getServices: hostPort.getServices,
     notices: pluginNotices,
     ...createPluginReports(log, getPluginName),
     ...pluginNotes,
@@ -137,6 +136,7 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
   })
   const declaredCommands = useDeclaredCommands({
     state: declared,
+    registry,
     isListed: (id) => pluginHost.commands.getPaletteCommands().some((one) => one.id === id),
     hasBackend: (pluginId) => hasPluginBackend(rest, pluginId),
     listItems: itemLists.listItems,
@@ -145,10 +145,9 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
     declaredCommands,
     itemLists,
     host: { pluginHost, pluginLoader },
-    pluginServices,
+    hostPort,
     pluginNotices,
     pluginNotes,
-    facts,
   }
 }
 
@@ -157,8 +156,9 @@ export function createWindowFrameServices(
   services: Pick<WindowServices, 'vaults'>,
   commands: Pick<
     ReturnType<typeof createEditorCommands>,
-    'getTarget' | 'featureCommands' | 'commands'
+    'getTarget' | 'featureCommands' | 'commands' | 'facts'
   >,
+  kinds: Pick<ReturnType<typeof createWindowKinds>, 'services'>,
 ) {
   const { frame } = base
   const { items, runCommandToEnd } = commands.commands.pluginRuns
@@ -172,14 +172,18 @@ export function createWindowFrameServices(
     runWithItem: items.runWithItem,
     getTarget: commands.getTarget,
   })
-  base.plugins.pluginServices.provide({
-    commands: windowCommands,
-    vaults: createEditorVaults({
+  base.plugins.hostPort.open({
+    services: {
+      ...kinds.services,
+      commands: windowCommands,
+      vaults: createEditorVaults({
       vaultList: services.vaults.vaultList,
       getTarget: commands.getTarget,
       commandDeps: commands.commands.commandDeps,
     }),
-    window: createWindowHost(frame, (error) => base.writeMessage(formatError(error), 'error')),
+      window: createWindowHost(frame, (error) => base.writeMessage(formatError(error), 'error')),
+    },
+    facts: commands.facts,
   })
   return { frame, slots: base.plugins.host.pluginHost.slots, windowCommands }
 }

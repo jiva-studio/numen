@@ -6,7 +6,6 @@
  */
 import type { Entry } from '@/entities/file'
 import type { Tab } from '@/entities/tab'
-import type { OpenTabs } from '@/entities/tab/lib/tab'
 import type { PluginSettingInfo } from '@/entities/settings'
 import type { JsonObject, JsonValue } from '@/shared/api/json'
 
@@ -17,7 +16,7 @@ interface MockVaultState {
   opening: string | null
   names: ReturnType<typeof nameAnswer>[]
   passages: (ReturnType<typeof passageAnswer> | ReturnType<typeof sourceAnswer>)[]
-  savedTabs: OpenTabs
+  savedTabs: { readonly tabs: readonly Tab[]; readonly activeId: string }
   detachedTab: Tab | null
   types: Record<string, string>
   tabKind: string

@@ -1,7 +1,7 @@
 import { type CommandDeps } from '@/entities/command'
 import { runInBackground } from '@numen/ui'
 import type { SearchDeps } from '@/features/command-palette'
-import type { Notes, RunSupport } from '@/entities/command'
+import type { CommandRegistry, Notes, RunSupport } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
@@ -12,6 +12,7 @@ export interface CommandDepsOptions {
   reached: Notes
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   runs: RunSupport
+  registry: Pick<CommandRegistry, 'get'>
   writeMessage: MessageWriter
   search?: () => void
 }
@@ -89,13 +90,14 @@ export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Note
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, windowTabs, reached, runs, writeMessage } = options
+  const { core, windowTabs, reached, runs, registry, writeMessage } = options
 
   return {
     navigator: createNavigationCommands(options),
     settings: createSettingsCommands(options),
     notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,
+    registry,
     writeMessage,
     emitEvent: (event) => (core as { emitEvent?: (event: string) => void }).emitEvent?.(event),
   }

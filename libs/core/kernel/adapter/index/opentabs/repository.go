@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
@@ -30,18 +31,18 @@ func NewRepository(read, write *sql.DB) *Repository {
 }
 
 // ReadOpenTabs returns the tabs last written for the vault, and none where nothing was written.
-func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (_ domain.OpenTabs, err error) {
+func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (_ windowdomain.OpenTabs, err error) {
 	rows, err := r.read.QueryContext(ctx, listSQL, string(v.ID))
 	if err != nil {
-		return domain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
+		return windowdomain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
 	}
 	defer func() { err = sqlwrite.JoinClose(err, rows.Close()) }()
-	var open domain.OpenTabs
+	var open windowdomain.OpenTabs
 	for rows.Next() {
-		var tab domain.Tab
+		var tab windowdomain.Tab
 		var isFront bool
 		if err := rows.Scan(&tab.ID, &tab.Kind, &tab.Path, &tab.Title, &tab.State, &isFront); err != nil {
-			return domain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
+			return windowdomain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
 		}
 		if isFront {
 			open.ActiveID = tab.ID
@@ -49,13 +50,13 @@ func (r *Repository) ReadOpenTabs(ctx context.Context, v domain.Vault) (_ domain
 		open.Tabs = append(open.Tabs, tab)
 	}
 	if err := rows.Err(); err != nil {
-		return domain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
+		return windowdomain.OpenTabs{}, fmt.Errorf("read the open tabs of %s: %w", v.ID, err)
 	}
 	return open, nil
 }
 
 // WriteOpenTabs replaces the tabs kept for the vault in one transaction.
-func (r *Repository) WriteOpenTabs(ctx context.Context, v domain.Vault, open domain.OpenTabs) error {
+func (r *Repository) WriteOpenTabs(ctx context.Context, v domain.Vault, open windowdomain.OpenTabs) error {
 	return sqlwrite.InTransaction(ctx, r.write, func(tx *sqlwrite.Transaction) error {
 		if _, err := tx.ExecContext(ctx, getStatement("clear"), string(v.ID)); err != nil {
 			return fmt.Errorf("clear the open tabs of %s: %w", v.ID, err)

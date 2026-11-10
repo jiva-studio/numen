@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { APP_MAX_LINES, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findLateBindings, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
+import { APP_MAX_LINES, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findDeepSliceImports, findLateBindings, findPageImports, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
 
 /** A module of the resolved graph with local imports `{ specifier: resolvedPath }`. */
 function moduleOf(source, imports = {}) {
@@ -146,31 +146,56 @@ describe("the app layer rule", () => {
 
 describe("the late binding rule of the app layer", () => {
   const file = `${WINDOW}/app/window/createWindow.ts`;
+  const symbols = (text) => findLateBindings([{ file, text }]).findings.map((one) => `${one.line} ${one.symbol}`);
 
   it("fails a holder, its assignment and an Object.assign onto an object made before", () => {
-    const text = [
-      "const hostHolder: { current?: PluginHost } = {}",
-      "hostHolder.current = pluginHost",
-      "Object.assign(services, { vaults })",
-    ].join("\n");
-    const { findings, read } = findLateBindings([{ file, text }]);
-    assert.deepEqual(
-      findings.map((one) => `${one.line} ${one.symbol}`),
-      ["1 a holder with an optional current", "2 a holder assigned after it was made", "3 Object.assign fills an object that was made before"],
-    );
-    assert.equal(read, 1);
+    const text = ["interface Holder { current?: Host }", "hostHolder.current = pluginHost", "Object.assign(services, { vaults })"].join("\n");
+    assert.deepEqual(symbols(text), ["1 a holder with an optional current", "2 a holder assigned after it was made", "3 Object.assign fills an object that was made before"]);
   });
 
-  it("passes a state with methods, a fresh object, a comparison and a comment", () => {
+  it("fails a provide call on a state, wherever it is written", () => {
+    assert.deepEqual(symbols("base.plugins.pluginServices.provide({ vaults })"), ["1 provide fills a state that was made before"]);
+    assert.deepEqual(symbols("const run = () => {\n  facts\n    .provide(next)\n}"), ["2 provide fills a state that was made before"]);
+  });
+
+  it("fails a ref, shallowRef or reactive that starts empty or as a stub of empty functions", () => {
+    const text = [
+      "const stored = shallowRef<Services>({})",
+      "const source = shallowRef<Source>({ getCommands: () => [], getValues: () => ({}) })",
+      "const state = reactive({})",
+      "const list = ref({ read() { return undefined } })",
+    ].join("\n");
+    assert.deepEqual(symbols(text), [
+      "1 shallowRef starts as an empty stub that is filled later",
+      "2 shallowRef starts as an empty stub that is filled later",
+      "3 reactive starts as an empty stub that is filled later",
+      "4 ref starts as an empty stub that is filled later",
+    ]);
+  });
+
+  it("fails an interface whose fields are all optional", () => {
+    assert.deepEqual(symbols("export interface Services {\n  notes?: Notes\n  files?: Files\n}"), ["1 interface Services has only optional fields"]);
+  });
+
+  it("reads the script of a component", () => {
+    const text = "<template><i /></template>\n<script setup lang=\"ts\">\nconst stored = shallowRef({})\n</script>";
+    assert.deepEqual(findLateBindings([{ file: `${WINDOW}/app/App.vue`, text }]).findings.map((one) => one.symbol), ["shallowRef starts as an empty stub that is filled later"]);
+  });
+
+  it("passes a state with its own methods, a made ref, a fresh object, a comparison, a comment and an interface with a required field", () => {
     const text = [
       "const services = createServices()",
-      "services.provide({ vaults })",
       "const merged = Object.assign({}, a, b)",
+      "const open = ref(false)",
+      "const list = shallowRef<readonly string[]>([])",
+      "const view = shallowRef({ name: \"one\" })",
+      "provide(KEY, value)",
       "if (holder.current === undefined) return",
       "// the old holder.current = host is gone",
-      " * a { current?: Host } is not made",
+      "interface Deps { read: () => string; write?: () => void }",
+      "interface Options { limit?: number }",
     ].join("\n");
-    assert.deepEqual(findLateBindings([{ file, text }]).findings, []);
+    assert.deepEqual(symbols(text), []);
   });
 
   it("leaves a test, a story and a file outside the shipped sources alone", () => {
@@ -179,5 +204,48 @@ describe("the late binding rule of the app layer", () => {
     const { findings, read } = findLateBindings(files);
     assert.deepEqual(findings, []);
     assert.equal(read, 0);
+  });
+});
+
+describe("the page rule of the layers around pages", () => {
+  const at = (file, text) => findPageImports([{ file: `${WINDOW}/${file}`, text }]).findings.map((one) => one.symbol);
+
+  it("fails a feature, an entity and a shared file that import a page", () => {
+    assert.deepEqual(at("features/tabs/model/a.ts", "import { x } from \"@/pages/settings\""), ["features imports @/pages/settings"]);
+    assert.deepEqual(at("entities/note/lib/a.ts", "export { x } from \"@/pages/welcome\""), ["entities imports @/pages/welcome"]);
+    assert.deepEqual(at("shared/lib/a.ts", "import type { T } from \"@/pages/settings/types\""), ["shared imports @/pages/settings/types"]);
+  });
+
+  it("fails app that takes a state a page owns, a type of it, or the whole module", () => {
+    assert.deepEqual(at("app/window/a.ts", "import { useSettings } from \"@/pages/settings\""), ["app takes useSettings from @/pages/settings"]);
+    assert.deepEqual(at("app/window/a.ts", "import type { useSettings } from \"@/pages/settings\""), ["app takes useSettings from @/pages/settings"]);
+    assert.deepEqual(at("app/window/a.ts", "import \"@/pages/settings\""), ["app imports @/pages/settings as a whole"]);
+  });
+
+  it("passes app that composes a page, draws a screen, and a file that imports no page", () => {
+    assert.deepEqual(at("app/window/a.ts", "import { createSettingsPage } from \"@/pages/settings\""), []);
+    assert.deepEqual(at("app/App.vue", "<script setup lang=\"ts\">\nimport { WelcomeScreen } from \"@/pages/welcome\"\n</script>"), []);
+    assert.deepEqual(at("app/window/a.ts", "import { WelcomeScreen } from \"@/pages/welcome\""), ["app takes WelcomeScreen from @/pages/welcome"]);
+    assert.deepEqual(at("features/tabs/model/a.ts", "import { x } from \"@/entities/tab\""), []);
+  });
+
+  it("leaves tests and stories alone, and counts what it read", () => {
+    const text = "import { useSettings } from \"@/pages/settings\"";
+    const { findings, read } = findPageImports([`${WINDOW}/app/a.test.ts`, `${WINDOW}/app/window/b.ts`].map((file) => ({ file, text })));
+    assert.equal(findings.length, 1);
+    assert.equal(read, 1);
+  });
+});
+
+describe("the deep import rule of the test support", () => {
+  const at = (text) => findDeepSliceImports([{ file: `${WINDOW}/testing/a.ts`, text }]).findings.map((one) => one.symbol);
+
+  it("fails an import and a re-export of a file inside a slice", () => {
+    assert.deepEqual(at("export { a } from \"@/entities/settings/lib/settingAt\""), ["@/entities/settings/lib/settingAt is not the index of a slice"]);
+    assert.deepEqual(at("import type { B } from \"@/pages/settings/types\""), ["@/pages/settings/types is not the index of a slice"]);
+  });
+
+  it("passes the index of a slice and a shared file", () => {
+    assert.deepEqual(at("import { a } from \"@/entities/settings\"\nimport { b } from \"@/shared/api/errors\""), []);
   });
 });

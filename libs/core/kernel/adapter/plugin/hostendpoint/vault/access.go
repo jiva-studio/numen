@@ -39,8 +39,6 @@ type FileWriter interface {
 	// WriteFile replaces the file if it still matches the baseline, and returns the new file stat.
 	WriteFile(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	CreateFile(ctx context.Context, path string, content []byte) error
-	// Lock holds the vault's writers until the release is called.
-	Lock(ctx context.Context) (release func(), err error)
 	// Scan updates the index for the files named.
 	Scan(ctx context.Context, paths []string) error
 }
@@ -150,6 +148,15 @@ type Access struct {
 	Switch      Switch
 	Stores      StoreOpener
 	Cache       CacheStore
+	Locks       Locks
+}
+
+// Locks holds the writers of a vault for a plugin, until the plugin releases them or the hold ends.
+type Locks interface {
+	// Execute waits while another holder has the writers of the vault, holds them, and returns the id of the hold.
+	Execute(ctx context.Context, v domain.Vault) (string, error)
+	// Release gives the writers of the hold back.
+	Release(id string)
 }
 
 // List is the installation's list of vaults and the vault the window shows, changed by the

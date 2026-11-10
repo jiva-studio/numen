@@ -27,37 +27,38 @@ func openCLIVaults(c Config) (cli.Vaults, error) {
 		RecordOpen: vault.NewRecordOpen(ports.Recorder),
 		Now:        c.Clock().Now,
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
-			db, err := openIndex(vaultOf(c), ctx)
-			if err != nil {
-				return cli.Renaming{}, err
-			}
-			return cli.Renaming{Rename: vault.NewRename(ports.Vaults, ports.Saver, db.Stores.Vaults), Close: db.Close}, nil
+			return openWithIndex(c, ctx, func(db *vault.Index) cli.Renaming {
+				return cli.Renaming{Rename: vault.NewRename(ports.Vaults, ports.Saver, db.Stores.Vaults), Close: db.Close}
+			})
 		},
 		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
-			db, err := openIndex(vaultOf(c), ctx)
-			if err != nil {
-				return cli.Unregistering{}, err
-			}
-			return cli.Unregistering{Unregister: unregister(db), Close: db.Close}, nil
+			return openWithIndex(c, ctx, func(db *vault.Index) cli.Unregistering {
+				return cli.Unregistering{Unregister: unregister(db), Close: db.Close}
+			})
 		},
 		OpenErase: func(ctx context.Context) (cli.Erasing, error) {
-			db, err := openIndex(vaultOf(c), ctx)
-			if err != nil {
-				return cli.Erasing{}, err
-			}
-			erase := vault.NewErase(vaultIdentity(vaultOf(c)), vaultTrash(vaultOf(c)), unregister(db))
-			return cli.Erasing{Erase: erase, Close: db.Close}, nil
+			return openWithIndex(c, ctx, func(db *vault.Index) cli.Erasing {
+				erase := vault.NewErase(vaultIdentity(vaultOf(c)), vaultTrash(vaultOf(c)), unregister(db))
+				return cli.Erasing{Erase: erase, Close: db.Close}
+			})
 		},
 	}, nil
 }
 
-func openCLILinks(c Config, ctx context.Context) (cli.Links, error) {
+func openWithIndex[T any](c Config, ctx context.Context, build func(db *vault.Index) T) (T, error) {
 	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
-		return cli.Links{}, err
+		var none T
+		return none, err
 	}
-	notes := Notes(c, db, updateIndex(vaultOf(c), db))
-	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
+	return build(db), nil
+}
+
+func openCLILinks(c Config, ctx context.Context) (cli.Links, error) {
+	return openWithIndex(c, ctx, func(db *vault.Index) cli.Links {
+		notes := Notes(c, db, updateIndex(vaultOf(c), db))
+		return cli.Links{Show: notes.Refer.Links, Close: db.Close}
+	})
 }
 
 func openCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
@@ -67,14 +68,22 @@ func openCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (c
 	if err != nil {
 		return cli.Scan{}, err
 	}
-	indexing, err = openedPluginWork(indexing, db, v)
+	scan, err := readCLIScan(indexing, ctx, db, v)
 	if err != nil {
 		return cli.Scan{}, errors.Join(err, db.Close())
 	}
-	embedder, closeEmbedder, why := searchEmbedder(searchOf(indexing), ctx)
-	read, err := ReadWholeVault(indexing, ctx, db, embedder, v)
+	return scan, nil
+}
+
+func readCLIScan(c Config, ctx context.Context, db *vault.Index, v domain.Vault) (cli.Scan, error) {
+	opened, err := openedPluginWork(c, db, v)
 	if err != nil {
-		return cli.Scan{}, errors.Join(err, closeIfOpen(closeEmbedder), db.Close())
+		return cli.Scan{}, err
+	}
+	embedder, closeEmbedder, why := searchEmbedder(searchOf(opened), ctx)
+	read, err := ReadWholeVault(opened, ctx, db, embedder, v)
+	if err != nil {
+		return cli.Scan{}, errors.Join(err, closeIfOpen(closeEmbedder))
 	}
 	return cli.Scan{
 		Read: read,
@@ -110,11 +119,9 @@ func openCLISearch(c Config,
 }
 
 func openCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
-	db, err := openIndex(vaultOf(c), ctx)
-	if err != nil {
-		return cli.Problems{}, err
-	}
-	return cli.Problems{Problems: getProblems(vaultOf(c), db.NoteQueries.Problems), Close: db.Close}, nil
+	return openWithIndex(c, ctx, func(db *vault.Index) cli.Problems {
+		return cli.Problems{Problems: getProblems(vaultOf(c), db.NoteQueries.Problems), Close: db.Close}
+	})
 }
 
 func getCLIPluginCommands(c Config) cli.PluginCommands {
@@ -128,11 +135,6 @@ func closeIfOpen(closeFn func() error) error {
 		return nil
 	}
 	return closeFn()
-}
-
-// GetVaultList builds the use case that lists the vaults of the registry given.
-func GetVaultList(_ Config, ports registry.Ports) registry.List {
-	return registry.NewList(ports.Vaults)
 }
 
 // OpenCLI returns what the command line calls to reach the vaults, the scan, the search, the links, the

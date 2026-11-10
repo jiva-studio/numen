@@ -21,10 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
-// vaultLockHold is the longest a plugin holds the writers of the vault. A plugin that goes without
-// releasing them must not stop the vault being written.
-const vaultLockHold = 2 * time.Minute
-
 const vaultWatchPoll = time.Second
 
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
@@ -125,7 +121,7 @@ func readKind(f *v1.HostFileStat) domain.SourceKind {
 }
 
 func (e *filesCalls) GetHostVault(
-	ctx context.Context, req *connect.Request[v1.GetHostVaultRequest],
+	_ context.Context, req *connect.Request[v1.GetHostVaultRequest],
 ) (*connect.Response[v1.GetHostVaultResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
@@ -166,133 +162,107 @@ func (e *filesCalls) ListHostVaults(
 func (e *filesCalls) EnsureVaultIndexed(
 	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
 ) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.EnsureVaultIndexedResponse{Error: noVault}), nil
-	}
-	state, err := vault.Switch.EnsureIndexed(ctx)
-	code, err := answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.EnsureVaultIndexedResponse{Error: code}), err
-	}
-	out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
-	switch state.Status {
-	case plugin.Indexed:
-		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED
-	case plugin.Indexing:
-		out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXING
-	case plugin.IndexFailed:
-		out.State = v1.HostIndexState_HOST_INDEX_STATE_FAILED
-	}
-	return connect.NewResponse(out), nil
+	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+		func(code v1.HostVaultErrorCode) *v1.EnsureVaultIndexedResponse {
+			return &v1.EnsureVaultIndexedResponse{Error: code}
+		},
+		func(vault *Access) (*v1.EnsureVaultIndexedResponse, error) {
+			state, err := vault.Switch.EnsureIndexed(ctx)
+			if err != nil {
+				return nil, err
+			}
+			out := &v1.EnsureVaultIndexedResponse{Reason: state.Reason}
+			switch state.Status {
+			case plugin.Indexed:
+				out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXED
+			case plugin.Indexing:
+				out.State = v1.HostIndexState_HOST_INDEX_STATE_INDEXING
+			case plugin.IndexFailed:
+				out.State = v1.HostIndexState_HOST_INDEX_STATE_FAILED
+			}
+			return out, nil
+		})
 }
 
 func (e *filesCalls) StatFile(
 	ctx context.Context, req *connect.Request[v1.StatFileRequest],
 ) (*connect.Response[v1.StatFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.StatFileResponse{Error: noVault}), nil
-	}
-	pos, err := vault.Files.StatFile(ctx, req.Msg.GetPath())
-	code, err := answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.StatFileResponse{Error: code}), err
-	}
-	return connect.NewResponse(&v1.StatFileResponse{Stat: writeFileStat(pos)}), nil
+	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+		func(code v1.HostVaultErrorCode) *v1.StatFileResponse { return &v1.StatFileResponse{Error: code} },
+		func(vault *Access) (*v1.StatFileResponse, error) {
+			pos, err := vault.Files.StatFile(ctx, req.Msg.GetPath())
+			if err != nil {
+				return nil, err
+			}
+			return &v1.StatFileResponse{Stat: writeFileStat(pos)}, nil
+		})
 }
 
 func (e *filesCalls) ReadFile(
 	ctx context.Context, req *connect.Request[v1.ReadFileRequest],
 ) (*connect.Response[v1.ReadFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.ReadFileResponse{Error: noVault}), nil
-	}
-	if req.Msg.Length != nil {
-		return serveFileRange(ctx, vault.Files, req.Msg)
-	}
-	content, pos, err := vault.Files.Read(ctx, req.Msg.GetPath())
-	code, err := answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
-	}
-	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Stat: writeFileStat(pos)}), nil
+	return serve(ctx, e.calls, req, manifest.PermissionVaultRead,
+		func(code v1.HostVaultErrorCode) *v1.ReadFileResponse { return &v1.ReadFileResponse{Error: code} },
+		func(vault *Access) (*v1.ReadFileResponse, error) {
+			if req.Msg.Length != nil {
+				return serveFileRange(ctx, vault.Files, req.Msg)
+			}
+			content, pos, err := vault.Files.Read(ctx, req.Msg.GetPath())
+			if err != nil {
+				return nil, err
+			}
+			return &v1.ReadFileResponse{Content: content, Stat: writeFileStat(pos)}, nil
+		})
 }
 
 func (e *filesCalls) WriteFile(
 	ctx context.Context, req *connect.Request[v1.WriteFileRequest],
 ) (*connect.Response[v1.WriteFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.WriteFileResponse{Error: noVault}), nil
-	}
-	pos, err := vault.Writer.WriteFile(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
-	code, err := answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.WriteFileResponse{Error: code}), err
-	}
-	return connect.NewResponse(&v1.WriteFileResponse{Stat: writeFileStat(pos)}), nil
+	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+		func(code v1.HostVaultErrorCode) *v1.WriteFileResponse { return &v1.WriteFileResponse{Error: code} },
+		func(vault *Access) (*v1.WriteFileResponse, error) {
+			pos, err := vault.Writer.WriteFile(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
+			if err != nil {
+				return nil, err
+			}
+			return &v1.WriteFileResponse{Stat: writeFileStat(pos)}, nil
+		})
 }
 
 func (e *filesCalls) CreateFile(
 	ctx context.Context, req *connect.Request[v1.CreateFileRequest],
 ) (*connect.Response[v1.CreateFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.CreateFileResponse{Error: noVault}), nil
-	}
-	code, err := answer(ctx, vault.Writer.CreateFile(ctx, req.Msg.GetPath(), req.Msg.GetContent()))
-	return connect.NewResponse(&v1.CreateFileResponse{Error: code}), err
+	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+		func(code v1.HostVaultErrorCode) *v1.CreateFileResponse { return &v1.CreateFileResponse{Error: code} },
+		func(vault *Access) (*v1.CreateFileResponse, error) {
+			return &v1.CreateFileResponse{}, vault.Writer.CreateFile(ctx, req.Msg.GetPath(), req.Msg.GetContent())
+		})
 }
 
 func (e *filesCalls) LockVault(
 	ctx context.Context, req *connect.Request[v1.LockVaultRequest],
 ) (*connect.Response[v1.LockVaultResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.LockVaultResponse{Error: noVault}), nil
-	}
-	release, err := vault.Writer.Lock(ctx)
-	code, err := answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.LockVaultResponse{Error: code}), err
-	}
-	e.mu.Lock()
-	e.next++
-	id := fmt.Sprintf("lock-%d", e.next)
-	e.locks[id] = release
-	e.mu.Unlock()
-	time.AfterFunc(vaultLockHold, func() { e.unlock(id) })
-	return connect.NewResponse(&v1.LockVaultResponse{Lock: id}), nil
+	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+		func(code v1.HostVaultErrorCode) *v1.LockVaultResponse { return &v1.LockVaultResponse{Error: code} },
+		func(vault *Access) (*v1.LockVaultResponse, error) {
+			v, showing := vault.Switch.GetVault()
+			locks := e.getLocks()
+			if !showing || locks == nil {
+				return &v1.LockVaultResponse{Error: noVault}, nil
+			}
+			id, err := locks.Execute(ctx, v)
+			if err != nil {
+				return nil, err
+			}
+			return &v1.LockVaultResponse{Lock: id}, nil
+		})
 }
 
-func (e *filesCalls) unlock(id string) {
-	e.mu.Lock()
-	release := e.locks[id]
-	delete(e.locks, id)
-	e.mu.Unlock()
-	if release != nil {
-		release()
+func (e *filesCalls) getLocks() Locks {
+	if base := e.source.GetPluginVault(); base != nil {
+		return base.Locks
 	}
+	return nil
 }
 
 func (e *filesCalls) UnlockVault(
@@ -301,35 +271,30 @@ func (e *filesCalls) UnlockVault(
 	if _, _, err := e.begin(req.Header(), manifest.PermissionVaultWrite); err != nil {
 		return nil, err
 	}
-	e.unlock(req.Msg.GetLock())
+	if locks := e.getLocks(); locks != nil {
+		locks.Release(req.Msg.GetLock())
+	}
 	return connect.NewResponse(&v1.UnlockVaultResponse{}), nil
 }
 
 func (e *filesCalls) ScanFiles(
 	ctx context.Context, req *connect.Request[v1.ScanFilesRequest],
 ) (*connect.Response[v1.ScanFilesResponse], error) {
-	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
-	if err != nil {
-		return nil, err
-	}
-	if vault == nil {
-		return connect.NewResponse(&v1.ScanFilesResponse{Error: noVault}), nil
-	}
-	code, err := answer(ctx, vault.Writer.Scan(ctx, req.Msg.GetPaths()))
-	return connect.NewResponse(&v1.ScanFilesResponse{Error: code}), err
+	return serve(ctx, e.calls, req, manifest.PermissionVaultWrite,
+		func(code v1.HostVaultErrorCode) *v1.ScanFilesResponse { return &v1.ScanFilesResponse{Error: code} },
+		func(vault *Access) (*v1.ScanFilesResponse, error) {
+			return &v1.ScanFilesResponse{}, vault.Writer.Scan(ctx, req.Msg.GetPaths())
+		})
 }
 
-func serveFileRange(ctx context.Context, vault FileReader, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
+func serveFileRange(ctx context.Context, vault FileReader, req *v1.ReadFileRequest) (*v1.ReadFileResponse, error) {
 	if req.GetStart() < 0 || req.GetLength() < 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("invalid range of %s: start %d and length %d must be >= 0", req.GetPath(), req.GetStart(), req.GetLength()))
 	}
 	read, err := vault.ReadRange(ctx, req.GetPath(), int(req.GetStart()), int(min(req.GetLength(), math.MaxInt32)))
-	code, err := answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
+	if err != nil {
+		return nil, err
 	}
-	return connect.NewResponse(&v1.ReadFileResponse{
-		Content: []byte(read.Text), Stat: writeFileStat(read.Stat), Start: int64(read.Start),
-	}), nil
+	return &v1.ReadFileResponse{Content: []byte(read.Text), Stat: writeFileStat(read.Stat), Start: int64(read.Start)}, nil
 }

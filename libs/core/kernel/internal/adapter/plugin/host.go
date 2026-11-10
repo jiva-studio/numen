@@ -4,25 +4,29 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/contenttypes"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/errsink"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Host manages the discovery, lifecycle, activation, and communication endpoints of plugins. It is
-// the roles that do this, built over one table of plugins and wired to each other; it does
-// nothing itself.
+// the roles that do this: each keeps its own state and is made from the roles it needs, so that
+// none reaches back to one made after it.
 type Host struct {
 	Registry     *Registry
 	Discovery    *Discovery
 	Activation   *Activation
-	Processes    *Processes
+	Retry        *Retry
+	Processes    *supervision.Processes
 	Teardown     *Teardown
-	Failures     *Failures
+	Failures     *supervision.Failures
 	Settings     *Settings
 	Config       *ConfigPush
 	Listeners    *Listeners
-	Services     *Services
+	Services     *supervision.Services
 	ContentTypes *ContentTypes
 	Storage      *storage.Storage
 	Events       *Events
@@ -54,38 +58,43 @@ func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPl
 // NewHost creates a new plugin host for the specified target application and search paths.
 // The host reads the time from clock.
 func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
-	t := newTable()
-	errs := &errorSink{}
-	failures := newFailures(t, clock, errs)
-	services := newServices(t)
-	storage := storage.New(errs.report, func(pluginID string) string {
-		t.mu.RLock()
-		defer t.mu.RUnlock()
-		return t.plugins[pluginID].Manifest.Version
-	})
-	contentTypes := newContentTypes(t)
-	processes := newProcesses(t, clock, errs, services, storage)
-	listeners := newListeners(t, clock, errs, failures)
-	settings := newSettings(t, errs, listeners)
-	config := newConfigPush(t, errs, settings)
-	settings.config = config
-	registry := newRegistry(t, failures, contentTypes)
-	activation := newActivation(t, clock, failures, processes)
-	teardown := newTeardown(t, clock, errs, processes, services)
-	discovery := newDiscovery(t, errs, target, dirs)
-	events := newEvents(t, clock, activation)
-	mode := newMode(t, errs, teardown, listeners)
+	errs := &errsink.Sink{}
+	mode := newMode()
+	values := newSettingValues()
+	readers := &contenttypes.Lookup{}
 
-	activation.config, activation.discovery, activation.refreshListeners = config, discovery, listeners.RefreshListeners
-	listeners.activation = activation
-	teardown.listeners, teardown.events = listeners, events
-	discovery.teardown, discovery.listeners, discovery.storage, discovery.config = teardown, listeners, storage, config
-	discovery.dropEndpoint, processes.dropEndpoint = teardown.dropEndpoint, teardown.dropEndpoint
-	config.prune = discovery.pruneSecretPermissions
+	services := supervision.NewServices(mode)
+	sups := supervision.NewSupervisors(errs.Report, services.ClearPlugin)
+	failures := supervision.NewFailures(sups, clock, errs)
+	set := newPluginSet(sups, values, mode)
+	registry := newRegistry(set, mode, sups, failures, readers)
+	files := storage.New(errs.Report, func(pluginID string) string {
+		p, _ := set.getKnown(pluginID)
+		return p.Manifest.Version
+	})
+	processes := supervision.NewProcesses(sups, clock, errs.Report, services, files)
+	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)
+
+	config := newConfigPush(registry, sups, errs.Report)
+	activation := newActivation(registry, mode, sups, processes, failures, config, clock)
+	events := newEvents(registry, mode, sups, activation, clock)
+	listeners := newListeners(registry, mode, sups, activation, failures, clock, errs.Report)
 
 	return &Host{
-		Registry: registry, Discovery: discovery, Activation: activation, Processes: processes, Teardown: teardown,
-		Failures: failures, Settings: settings, Config: config, Listeners: listeners, Services: services,
-		ContentTypes: contentTypes, Storage: storage, Events: events, Mode: mode,
+		Registry:     registry,
+		Discovery:    newDiscovery(registry, mode, sups, stopper, listeners, files, config, errs.Report, target, dirs),
+		Activation:   activation,
+		Retry:        newRetry(registry, failures, activation, listeners),
+		Processes:    processes,
+		Teardown:     newTeardown(mode, sups, stopper, events, listeners, errs.Report),
+		Failures:     failures,
+		Settings:     newSettings(values, registry, listeners, config, errs.Report),
+		Config:       config,
+		Listeners:    listeners,
+		Services:     services,
+		ContentTypes: newContentTypes(registry, readers),
+		Storage:      files,
+		Events:       events,
+		Mode:         mode,
 	}
 }

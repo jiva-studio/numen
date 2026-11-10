@@ -16,7 +16,8 @@ const hoisted = vi.hoisted(() => ({
   built: {} as Record<'files' | 'vaultFiles', MockSeen & { making?: unknown }>,
 }))
 
-vi.mock('../plugins/fileServices', () => ({
+vi.mock('@/features/plugin-commands', async (original) => ({
+  ...(await original<object>()),
   createFileMakers: (args: unknown) => {
     hoisted.built.files = args as MockSeen
     return 'made'

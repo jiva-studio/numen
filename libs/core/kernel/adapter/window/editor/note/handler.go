@@ -84,18 +84,18 @@ type Prose struct {
 	writes    Writes
 	addresses *Addresses
 	read      *note.Read
-	write     *note.Write
-	create    *note.Create
+	save      *note.SaveProse
+	create    *note.CreateNote
 	rename    *note.Rename
 }
 
 // NewProse is the part of NoteService that reads and changes the prose of notes.
 func NewProse(
 	session Session, addresses *Addresses,
-	read *note.Read, write *note.Write, create *note.Create, rename *note.Rename,
+	read *note.Read, save *note.SaveProse, create *note.CreateNote, rename *note.Rename,
 ) *Prose {
 	return &Prose{
-		vault: session, writes: session, addresses: addresses, read: read, write: write, create: create, rename: rename,
+		vault: session, writes: session, addresses: addresses, read: read, save: save, create: create, rename: rename,
 	}
 }
 

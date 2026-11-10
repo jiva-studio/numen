@@ -79,10 +79,3 @@ func readCommandError(ctx context.Context, pluginID string, err error) error {
 	}
 	return &plugin.UnavailableError{PluginID: pluginID, Reason: plugin.Failed, Err: err}
 }
-
-// NoCommands is an installation with no plugin to run a command.
-type NoCommands struct{}
-
-func (NoCommands) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
-	return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.NotInstalled}
-}

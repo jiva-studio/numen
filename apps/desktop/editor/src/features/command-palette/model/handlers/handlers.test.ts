@@ -1,10 +1,9 @@
 /** Command execution against a window double: the registry, the commands of the palette, and the settings. */
-import { afterEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { ReportedError } from '@numen/core-client'
 import {
-  commands,
-  registerCommand,
+  createCommandRegistry,
   type CommandDeps,
   type CommandInvocation,
   type CommandTarget,
@@ -22,6 +21,12 @@ const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
   ...override,
+})
+
+let registry = createCommandRegistry()
+
+beforeEach(() => {
+  registry = createCommandRegistry()
 })
 
 const window = (override: Partial<CommandDeps> = {}) => {
@@ -56,6 +61,7 @@ const window = (override: Partial<CommandDeps> = {}) => {
       },
     },
     runSupport: runSupport(),
+    registry,
     writeMessage: (text, kind) => {
       calls.push([text, kind])
       if (!text) return
@@ -70,15 +76,11 @@ const window = (override: Partial<CommandDeps> = {}) => {
 const carry = async (invocation: CommandInvocation | null, on: CommandDeps) =>
   runInvocation(invocation, on)
 
-afterEach(() => {
-  commands.clear()
-})
-
 describe('the invocation of a command', () => {
   it('emits onCommand:<id> when a command is executed', async () => {
     const events: string[] = []
     const one = window({ emitEvent: (event) => events.push(event) })
-    registerCommand('app:file.open', () => undefined)
+    registry.register('app:file.open', () => undefined)
 
     await carry(createInvocation('app:file.open', front()), one.on)
 
@@ -87,7 +89,7 @@ describe('the invocation of a command', () => {
 
   it('clears the message of the last command before it runs', async () => {
     const one = window()
-    registerCommand('app:file.open', () => undefined)
+    registry.register('app:file.open', () => undefined)
 
     await carry(createInvocation('app:file.open', front()), one.on)
 
@@ -96,8 +98,8 @@ describe('the invocation of a command', () => {
 
   it('answers the path a command made, and nothing for a command that made none', async () => {
     const one = window()
-    registerCommand('makes', () => 'Entropy.md')
-    registerCommand('makes-none', () => undefined)
+    registry.register('makes', () => 'Entropy.md')
+    registry.register('makes-none', () => undefined)
 
     expect(await carry(createInvocation('makes', front()), one.on)).toBe('Entropy.md')
     expect(await carry(createInvocation('makes-none', front()), one.on)).toBe('')
@@ -107,7 +109,7 @@ describe('the invocation of a command', () => {
 describe('pluggable command registry', () => {
   it('registers dynamic commands and carries them out', async () => {
     const executed: string[] = []
-    const unregister = registerCommand('customAction', (invocation) => {
+    const unregister = registry.register('customAction', (invocation) => {
       executed.push(`custom:${invocation.target.path}`)
     })
 
@@ -120,9 +122,9 @@ describe('pluggable command registry', () => {
     expect(executed).toHaveLength(1)
   })
 
-  it('allows overriding the commands of the palette via commands.registerCommand', async () => {
+  it('allows overriding the commands of the palette via the registry', async () => {
     const executed: string[] = []
-    const unregister = commands.registerCommand('app:tab.close', () => {
+    const unregister = registry.register('app:tab.close', () => {
       executed.push('custom-close')
     })
 
@@ -137,15 +139,15 @@ describe('pluggable command registry', () => {
   })
 
   it('does not delete a newer handler when an older unregister function is called', () => {
-    const firstUnregister = commands.registerCommand('dup', () => undefined)
+    const firstUnregister = registry.register('dup', () => undefined)
     const secondHandler = () => undefined
-    const secondUnregister = commands.registerCommand('dup', secondHandler)
+    const secondUnregister = registry.register('dup', secondHandler)
 
     firstUnregister()
-    expect(commands.get('dup')).toBe(secondHandler)
+    expect(registry.get('dup')).toBe(secondHandler)
 
     secondUnregister()
-    expect(commands.get('dup')).toBeUndefined()
+    expect(registry.get('dup')).toBeUndefined()
   })
 })
 
@@ -172,7 +174,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is carried out over its current position, not the one the invocation was made over', async () => {
     const one = window()
     const paths: string[] = []
-    registerCommand('over', (invocation) => {
+    registry.register('over', (invocation) => {
       paths.push(invocation.target.path)
     })
 
@@ -184,7 +186,7 @@ describe('a note that moved between the answer and the invocation', () => {
   it('is left at the position it was made over where no tab holds it', async () => {
     const one = window()
     const paths: string[] = []
-    registerCommand('over', (invocation) => {
+    registry.register('over', (invocation) => {
       paths.push(invocation.target.path)
     })
 
@@ -216,7 +218,7 @@ describe('nothing to carry out', () => {
 
   it('says what a command could not request of the core, and asks no further', async () => {
     const one = window()
-    registerCommand('app:file.remove', () => Promise.reject(createLostConnection('gone')))
+    registry.register('app:file.remove', () => Promise.reject(createLostConnection('gone')))
 
     await carry(createInvocation('app:file.remove', front()), one.on)
 

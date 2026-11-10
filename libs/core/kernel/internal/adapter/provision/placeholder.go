@@ -68,3 +68,17 @@ func (p *PlaceholderProvisioner) Status(ctx context.Context, req manifest.Depend
 		ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved,
 	}, nil
 }
+
+// GetPlaceholderDir returns where placeholders are kept: the numen folder of the user's cache, or a
+// temporary folder while the machine names no cache, or a folder under the working folder where it cannot make
+// one, which still lets a mock run start.
+func GetPlaceholderDir() string {
+	dir, err := os.UserCacheDir()
+	if err == nil {
+		return filepath.Join(dir, "numen", "placeholder-dependencies")
+	}
+	if dir, err = os.MkdirTemp("", "numen-placeholder-dependencies-"); err != nil {
+		return "numen-placeholder-dependencies"
+	}
+	return dir
+}

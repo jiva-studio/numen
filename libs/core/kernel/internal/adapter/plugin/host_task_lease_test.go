@@ -48,9 +48,7 @@ func newTaskClient(t *testing.T, host *Host) numenv1connect.HostQueueServiceClie
 	if err != nil || port == 0 {
 		t.Fatalf("the host endpoint is not serving: port %d, %v", port, err)
 	}
-	host.Registry.t.mu.RLock()
-	token := host.Registry.t.endpoints[workingPlugin].Token
-	host.Registry.t.mu.RUnlock()
+	token := endpointOf(host, workingPlugin).Token
 	return numenv1connect.NewHostQueueServiceClient(
 		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
@@ -160,7 +158,7 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 	w.reportTask(t, "scan.sample", 0, 4)
 
 	plugintest.KillProcess(t, w.process)
-	waitForProcessExit(t, w.host.Registry.t.supervisors[workingPlugin].GetExitSignal())
+	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
 
 	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatalf("restart after the crash: %v", err)

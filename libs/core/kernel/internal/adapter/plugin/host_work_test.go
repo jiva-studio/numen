@@ -72,6 +72,6 @@ func TestCrashedPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
 	plugintest.KillProcess(t, w.process)
-	waitForProcessExit(t, w.host.Registry.t.supervisors[workingPlugin].GetExitSignal())
+	waitForProcessExit(t, supervisorOf(w.host, workingPlugin).GetExitSignal())
 	w.checkCleared(t)
 }

@@ -77,7 +77,7 @@ func (s *Services) UseNotes() {
 	addresses := notewindow.NewAddresses(s.state, use.GetLinkAddress)
 	s.Note = notewindow.NewHandler(
 		s.state.Notices,
-		notewindow.NewProse(session, addresses, use.Read, use.Write, use.Create, use.Rename),
+		notewindow.NewProse(session, addresses, use.Read, saveProse(use.Write, session), createNote(use.Create, session), use.Rename),
 		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
 		notewindow.NewLinks(session, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
 		notewindow.NewConnections(session, nil, nil, nil, nil, nil),
@@ -203,4 +203,20 @@ func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Edit.W
 func ViewOf(state *State) windowsession.View {
 	notices := state.Notices
 	return windowsession.NewView(&notices.Places, &notices.Edits, &notices.ChangeEvents)
+}
+
+func saveProse(write *note.Write, session Session) *note.SaveProse {
+	if write == nil {
+		return nil
+	}
+	saved := note.NewSaveProse(write, session, session)
+	return &saved
+}
+
+func createNote(create *note.Create, session Session) *note.CreateNote {
+	if create == nil {
+		return nil
+	}
+	made := note.NewCreateNote(create, session, session)
+	return &made
 }

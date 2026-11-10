@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"io/fs"
 	"math"
 	"net/http"
@@ -33,7 +34,7 @@ type recordingWindow struct {
 	reads     int
 	activated []string
 	err       error
-	open      *domain.OpenTabs
+	open      *windowdomain.OpenTabs
 }
 
 func (w *recordingWindow) FocusNote(_ context.Context, path string) (domain.NoteRef, error) {
@@ -56,31 +57,31 @@ func (w *recordingWindow) FocusPassages(_ context.Context, path string, passages
 	return nil
 }
 
-func (w *recordingWindow) ReadOpenTabs(context.Context) (domain.OpenTabs, error) {
+func (w *recordingWindow) ReadOpenTabs(context.Context) (windowdomain.OpenTabs, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.reads++
 	if w.err != nil {
-		return domain.OpenTabs{}, w.err
+		return windowdomain.OpenTabs{}, w.err
 	}
 	if w.open != nil {
 		return *w.open, nil
 	}
-	return domain.OpenTabs{
+	return windowdomain.OpenTabs{
 		ActiveID: "tab-2",
-		Tabs: []domain.Tab{
+		Tabs: []windowdomain.Tab{
 			{ID: "tab-1", Kind: "note", Path: "notes/Heron.md", Title: "Grey Heron"},
-			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"zoom":2}`, Place: &domain.TabPlace{Page: 4, PageCount: 80}},
+			{ID: "tab-2", Kind: "reader:reader-pdf", Path: "library/Birds.pdf", Title: "Birds", State: `{"page":4,"zoom":2}`, Place: &windowdomain.TabPlace{Page: 4, PageCount: 80}},
 		},
 	}, nil
 }
 
 // ActivateTab records the id and returns the fixed open tabs, whose active id stays tab-2. An id none of
 // them has is fs.ErrNotExist.
-func (w *recordingWindow) ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error) {
+func (w *recordingWindow) ActivateTab(ctx context.Context, id string) (windowdomain.OpenTabs, error) {
 	open, err := w.ReadOpenTabs(ctx)
 	if err != nil {
-		return domain.OpenTabs{}, err
+		return windowdomain.OpenTabs{}, err
 	}
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -90,7 +91,7 @@ func (w *recordingWindow) ActivateTab(ctx context.Context, id string) (domain.Op
 			return open, nil
 		}
 	}
-	return domain.OpenTabs{}, fmt.Errorf("no open tab has id %q: %w", id, fs.ErrNotExist)
+	return windowdomain.OpenTabs{}, fmt.Errorf("no open tab has id %q: %w", id, fs.ErrNotExist)
 }
 
 func (w *recordingWindow) getActivatedIDs() []string {
@@ -302,11 +303,11 @@ func readWindowCode[T any, M interface {
 
 func TestHostWindowReturnsEveryPlaceFieldEachReaderReported(t *testing.T) {
 	atStart, pastAnHour := 0.0, 3723.9
-	window := &recordingWindow{open: &domain.OpenTabs{ActiveID: "tab-1", Tabs: []domain.Tab{
-		{ID: "tab-1", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &domain.TabPlace{PositionSeconds: &atStart}},
-		{ID: "tab-2", Kind: "recording", Path: "talks/Marsh Talk.mp3", Title: "Marsh Talk", Place: &domain.TabPlace{PositionSeconds: &pastAnHour}},
-		{ID: "tab-3", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &domain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
-		{ID: "tab-4", Kind: "recording", Path: "talks/Bees.mp3", Title: "Bees", Place: &domain.TabPlace{}},
+	window := &recordingWindow{open: &windowdomain.OpenTabs{ActiveID: "tab-1", Tabs: []windowdomain.Tab{
+		{ID: "tab-1", Kind: "recording", Path: "talks/Heron Talk.mp3", Title: "Heron Talk", Place: &windowdomain.TabPlace{PositionSeconds: &atStart}},
+		{ID: "tab-2", Kind: "recording", Path: "talks/Marsh Talk.mp3", Title: "Marsh Talk", Place: &windowdomain.TabPlace{PositionSeconds: &pastAnHour}},
+		{ID: "tab-3", Kind: "reader:reader-epub", Path: "library/Marsh.epub", Title: "Marsh", Place: &windowdomain.TabPlace{CFI: "epubcfi(/6/4!/4/2/1:0)", Chapter: "The Reed Beds"}},
+		{ID: "tab-4", Kind: "recording", Path: "talks/Bees.mp3", Title: "Bees", Place: &windowdomain.TabPlace{}},
 	}}}
 	client, _ := newWindowClient(t, window, "token-a")
 

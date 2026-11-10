@@ -8,7 +8,7 @@ import type { Installation } from './types'
 import { WORDS as words } from './words'
 import { SETTINGS } from '@/entities/tab'
 import type { WindowHandle } from '@/entities/tab'
-import { createInstallation } from '@/testing/installation'
+import { createInstallation } from '@/pages/settings/testing/installation'
 
 const window_ = () => {
   const openedTab: string[] = []

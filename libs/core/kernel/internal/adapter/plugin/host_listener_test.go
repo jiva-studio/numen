@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net"
 	"os"
@@ -139,7 +140,7 @@ func serveEcho(t *testing.T) int {
 	return port
 }
 
-func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken string) Launcher {
+func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken string) supervision.Launcher {
 	t.Helper()
 	pingPort := plugintest.ServeHostPing(t)
 	ready := fmt.Sprintf("NUMEN_READY port=%d", pingPort)

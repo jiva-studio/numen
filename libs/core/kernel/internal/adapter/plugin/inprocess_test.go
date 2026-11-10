@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"net/http"
 	"os"
@@ -353,16 +354,14 @@ func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
-	host.Registry.t.mu.RLock()
-	sup := host.Registry.t.supervisors[firstBuiltInID]
-	host.Registry.t.mu.RUnlock()
+	sup := supervisorOf(host, firstBuiltInID)
 
-	endpoint, err := host.Processes.start(t.Context(), p, sup)
+	endpoint, err := host.Processes.Start(t.Context(), host.Registry.set.getLaunch(p), sup)
 
 	if !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("expected errActivationAborted, got %v", err)
 	}
-	if !isEmptyEndpoint(endpoint) {
+	if !supervision.IsNoEndpoint(endpoint) {
 		t.Fatalf("expected no endpoint, got %+v", endpoint)
 	}
 	if sup.GetState() != lifecycle.StateDormant {
@@ -463,11 +462,9 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
 	p, _ := host.Registry.GetPlugin(firstBuiltInID)
-	host.Registry.t.mu.RLock()
-	sup := host.Registry.t.supervisors[firstBuiltInID]
-	host.Registry.t.mu.RUnlock()
+	sup := supervisorOf(host, firstBuiltInID)
 
-	if _, err := host.Processes.start(t.Context(), p, sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
+	if _, err := host.Processes.Start(t.Context(), host.Registry.set.getLaunch(p), sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("activatePlugin = %v, want errActivationAborted", err)
 	}
 

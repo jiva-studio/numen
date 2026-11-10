@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 )
@@ -41,12 +42,12 @@ type Roles struct {
 	*plugin.Registry
 	*plugin.Settings
 	*plugin.ConfigPush
-	*plugin.Failures
+	*supervision.Failures
 	*plugin.Events
 	*plugin.Mode
 	*plugin.ContentTypes
 	*plugin.Discovery
-	*plugin.Services
+	*supervision.Services
 }
 
 // Join presents the roles of host as one value.

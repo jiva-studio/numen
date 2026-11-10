@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 import { openExternalUrl, runInBackground } from '@numen/ui'
-import type { PluginServices } from './pluginServices'
+import type { PluginServices } from '@/features/plugin-commands'
 import { registerTabKindIcon } from '@/entities/note'
 import { getPluginTexts } from '@/entities/plugin'
 import {
@@ -39,7 +39,7 @@ export interface PluginSupportDeps {
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
   readonly status?: PluginStatus
-  readonly getServices?: () => PluginServices
+  readonly getServices?: () => Partial<PluginServices>
   readonly notices?: NoticeQueue
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   readonly handlers?: Pick<
@@ -98,7 +98,7 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
-function createVaultServiceAccess(getServices: (() => PluginServices) | undefined) {
+function createVaultServiceAccess(getServices: (() => Partial<PluginServices>) | undefined) {
   /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
   return {
     getWorkspace: () => getServices?.().workspace,
@@ -113,7 +113,7 @@ function createVaultServiceAccess(getServices: (() => PluginServices) | undefine
   /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
 }
 
-function createWindowServiceAccess(getServices: (() => PluginServices) | undefined) {
+function createWindowServiceAccess(getServices: (() => Partial<PluginServices>) | undefined) {
   /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
   return {
     getBuffers: () => getServices?.().buffers,
