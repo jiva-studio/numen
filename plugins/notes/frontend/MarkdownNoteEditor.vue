@@ -62,7 +62,7 @@ defineExpose({
     return frontmatter.value
   },
   getContent: () => docContent.value,
-  setContent,
+  setContent: (value: string) => setContent(value),
 })
 
 /* --------------------------------- State ---------------------------------- */

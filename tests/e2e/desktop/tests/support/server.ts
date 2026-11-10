@@ -49,15 +49,8 @@ export interface OwnServerOptions {
   readonly settings?: string
 }
 
-/**
- * Starts the debug server on a copy of the test vault with the plugins installed, and waits until it
- * listens. It serves the certificate and key of the shared server of the project, which the browser
- * trusts.
- */
-export const startOwnServer = async (
-  installed: readonly InstalledPlugin[],
-  options: OwnServerOptions = {},
-): Promise<OwnServer> => {
+/** The folders of one run: its vault copy, its home, its config, and the folder the app keeps its settings in. */
+const createRunFolders = () => {
   // The core refuses to run a plugin from the temporary folder, so the run's folders are kept under the e2e folder.
   const parent = path.join(e2eRoot, 'test-results')
   fs.mkdirSync(parent, { recursive: true })
@@ -73,6 +66,15 @@ export const startOwnServer = async (
     process.platform === 'darwin'
       ? path.join(home, 'Library', 'Application Support', 'numen')
       : path.join(config, 'numen')
+  return { root, vault, home, config, settings }
+}
+
+/** Puts the files of the installed plugins, and the settings file where the scenario gives one, in the settings folder. */
+const writeServerFiles = (
+  settings: string,
+  installed: readonly InstalledPlugin[],
+  settingsText: string | undefined,
+): void => {
   for (const plugin of installed) {
     for (const [file, content] of Object.entries(plugin.files)) {
       const target = path.join(settings, 'plugins', plugin.id, file)
@@ -80,10 +82,23 @@ export const startOwnServer = async (
       fs.writeFileSync(target, content, { mode: file.startsWith('bin/') ? 0o755 : 0o644 })
     }
   }
-  if (options.settings !== undefined) {
+  if (settingsText !== undefined) {
     fs.mkdirSync(settings, { recursive: true })
-    fs.writeFileSync(path.join(settings, 'numen.json'), options.settings)
+    fs.writeFileSync(path.join(settings, 'numen.json'), settingsText)
   }
+}
+
+/**
+ * Starts the debug server on a copy of the test vault with the plugins installed, and waits until it
+ * listens. It serves the certificate and key of the shared server of the project, which the browser
+ * trusts.
+ */
+export const startOwnServer = async (
+  installed: readonly InstalledPlugin[],
+  options: OwnServerOptions = {},
+): Promise<OwnServer> => {
+  const { root, vault, home, config, settings } = createRunFolders()
+  writeServerFiles(settings, installed, options.settings)
   // The server writes it once it is bound: a new connection waits for the handshake from then on.
   const certificate = path.join(root, 'certificate.pem')
   const port = await getFreePort()

@@ -70,10 +70,6 @@ function onPathClear(setting: PluginSettingInfo, targetPath?: string): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-function isKeyRequested(key: string): boolean {
-  return installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
-}
-
 function hasManyPaths(setting: PluginSettingInfo): boolean {
   return setting.type === 'file' && setting.multiple === true
 }
