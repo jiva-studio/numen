@@ -1,7 +1,7 @@
 /**
  * Editing, conflict handling, and flushing for open notes.
  */
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { openNotes, createNoteWriter } from '@/entities/note'
 import { reportFlush, watchQuit } from '@/entities/window'
@@ -46,7 +46,7 @@ function createNoted(windowTabs: Pick<WindowTabs, 'tabs'>) {
 function createNotedStore(
   notes: ReturnType<typeof openNotes>,
   windowTabs: Pick<WindowTabs, 'tabs'>,
-  reportError: (error: unknown) => void,
+  reportError: (error: Caught) => void,
 ): Store {
   return {
     has: (id) => notes.has(id),

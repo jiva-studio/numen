@@ -2,7 +2,7 @@
  * The plugins of the window: the host and the loader, the services a plugin is given, and the words
  * a plugin's errors are reported in.
  */
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { createWindowHost, SLOT, type PluginHost, type PluginStatus } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
 import { listDeclaredItemLists, PLUGIN_FAILURE_WORDS, runDeclaredHandler } from '@/entities/plugin'
@@ -54,13 +54,13 @@ function createPluginReports(
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'error'),
     reportCommandIssue: (pluginId: string, message: string) =>
       write(pluginId, `${getPluginName(pluginId)}: ${message}`, 'warning'),
-    reportError: (pluginId: string, error: unknown) =>
+    reportError: (pluginId: string, error: Caught) =>
       write(
         pluginId,
         PLUGIN_FAILURE_WORDS.error(getPluginName(pluginId), formatError(error)),
         'error',
       ),
-    reportLoadError: (pluginId: string, error: unknown) =>
+    reportLoadError: (pluginId: string, error: Caught) =>
       write(
         pluginId,
         PLUGIN_FAILURE_WORDS.stopped(

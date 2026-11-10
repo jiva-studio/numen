@@ -23,7 +23,7 @@ import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
 import { getNeighborhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/entities/window'
 import type { useSettings } from '@/pages/settings'
@@ -91,12 +91,12 @@ function createWorkspaceFiles(deps: WorkspaceHostDeps): WorkspaceFiles {
           ...(options?.line === undefined ? {} : { line: options.line }),
           ...(options?.selector ? { selector: options.selector } : {}),
         })
-        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
+        .catch((error: Caught) => writeMessage(formatError(error), 'error'))
     },
     openAt: (path, spans) => {
       tabOpeners
         .openFileAt(path, spans)
-        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
+        .catch((error: Caught) => writeMessage(formatError(error), 'error'))
     },
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
   }

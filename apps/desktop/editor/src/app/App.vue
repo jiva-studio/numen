@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Caught } from '@/shared/api/errors'
 /**
  * The window: one vault, and tabs to divide the screen between.
  *
@@ -63,7 +64,7 @@ const tabMenu = useWindowTabMenu({
   slots,
   commands: windowCommands,
   readNoteKind,
-  reportError: (error: unknown) => commandDeps.writeMessage(formatError(error), 'error'),
+  reportError: (error: Caught) => commandDeps.writeMessage(formatError(error), 'error'),
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

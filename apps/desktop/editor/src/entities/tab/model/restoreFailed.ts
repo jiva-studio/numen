@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import type { AnyTabKind } from '../lib/kinds'
+import type { Caught } from '@/shared/api/errors'
 
 /** What a tab holds in place of a saved tab that could not be restored. */
 export interface RestoreFailedState {
@@ -18,7 +19,7 @@ export const createRestoreFailedKind = (
   pane: Component,
   kind: string,
   title: string | undefined,
-  error: unknown,
+  error: Caught,
 ): AnyTabKind => ({
   kind,
   open: (targetPath: string, _id: string, saved?: unknown): RestoreFailedState => ({

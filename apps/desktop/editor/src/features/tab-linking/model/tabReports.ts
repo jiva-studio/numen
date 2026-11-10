@@ -5,6 +5,7 @@
  */
 import type { WindowTabsReport } from '@/entities/tab'
 import { writeTabLinks } from '../api/tab-links'
+import type { Caught } from '@/shared/api/errors'
 
 /** How long a failed tab report waits before it is sent again. */
 export const REPORT_RETRY_MS = 2000
@@ -12,8 +13,8 @@ export const REPORT_RETRY_MS = 2000
 export interface TabReportsDeps {
   readonly windowId: string
   readonly getReport: () => WindowTabsReport
-  readonly wait: (ms: number) => Promise<unknown>
-  readonly onError: (error: unknown) => void
+  readonly wait: (ms: number) => Promise<void>
+  readonly onError: (error: Caught) => void
 }
 
 export function createTabReports(deps: TabReportsDeps) {

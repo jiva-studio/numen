@@ -23,6 +23,7 @@ import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/workbench'
 import type { SettingsStore } from '@/entities/settings'
 import type { WindowPlatform } from '@numen/workbench'
+import type { Caught } from '@/shared/api/errors'
 
 export interface PluginSupportDeps {
   readonly windowTabs: WindowTabs
@@ -33,8 +34,8 @@ export interface PluginSupportDeps {
   readonly readNote?: (
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
-  readonly reportError?: (pluginId: string, error: unknown) => void
-  readonly reportLoadError?: (pluginId: string, error: unknown) => void
+  readonly reportError?: (pluginId: string, error: Caught) => void
+  readonly reportLoadError?: (pluginId: string, error: Caught) => void
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
   readonly status?: PluginStatus
@@ -78,7 +79,7 @@ export const createWindowPluginStatus = (rest: SettingsStore): PluginStatus =>
 
 function createPluginSettingsAccessor(
   rest: SettingsStore,
-  reportError: (pluginId: string, error: unknown) => void,
+  reportError: (pluginId: string, error: Caught) => void,
 ) {
   const getSetting = (pluginId: string, key: string): JsonValue | undefined =>
     getPluginSetting(rest, pluginId, key)
@@ -227,7 +228,7 @@ export const getFrontendPluginIds = (
 export function watchPluginSettings(
   rest: SettingsStore,
   pluginLoader: PluginLoader,
-  reportError: (error: unknown) => void,
+  reportError: (error: Caught) => void,
 ) {
   watch(
     () => rest.state.plugins.value,

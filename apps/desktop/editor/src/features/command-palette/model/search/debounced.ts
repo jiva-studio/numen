@@ -9,7 +9,7 @@ import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@nu
 export const SEARCH_DEBOUNCE_MS = 120
 
 /** Resolves after the given milliseconds. */
-export type Wait = (ms: number) => Promise<unknown>
+export type Wait = (ms: number) => Promise<void>
 
 const sleep: Wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 

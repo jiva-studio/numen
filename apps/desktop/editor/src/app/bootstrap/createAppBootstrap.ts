@@ -5,6 +5,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { INTERFACE_WAIT_MS } from '@numen/plugin-loader'
 import { waitFor } from './waitFor'
+import type { Caught } from '@/shared/api/errors'
 
 export interface BootstrapDeps {
   loadVaults(): Promise<void>
@@ -22,7 +23,7 @@ export interface BootstrapDeps {
   closeSettings(): void
   closePlugins?(): void | Promise<void>
   /** Receives the failure of a start or a close that is not awaited. */
-  reportError(this: void, error: unknown): void
+  reportError(this: void, error: Caught): void
 }
 
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */

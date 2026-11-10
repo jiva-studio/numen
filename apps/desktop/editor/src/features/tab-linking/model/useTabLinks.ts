@@ -13,10 +13,11 @@ import type {
   TabLinksSnapshot,
   TabWindow,
 } from '@/entities/tab'
+import type { Caught } from '@/shared/api/errors'
 
 export interface TabLinksDeps {
   readonly write: TabLinksWriter
-  readonly onError: (error: unknown) => void
+  readonly onError: (error: Caught) => void
 }
 
 function findGroupOf(groups: ReadonlyMap<string, TabLinkGroup>, tabId: TabId): TabLinkGroup | null {

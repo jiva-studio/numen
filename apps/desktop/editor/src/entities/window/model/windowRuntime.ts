@@ -3,6 +3,7 @@
  */
 import { watch, type Ref } from 'vue'
 import { loadWailsRuntime, type WailsRuntime, type WailsRuntimeLoader } from '@numen/ui'
+import type { Caught } from '@/shared/api/errors'
 
 /** The Wails runtime API for the current window. */
 export type WindowRuntime = WailsRuntime
@@ -24,7 +25,7 @@ export interface EmptyWindowCloseDeps {
   readonly isLayoutReady: Readonly<Ref<boolean>>
   readonly tabCount: () => number
   readonly closeWindow: () => Promise<void>
-  readonly onError: (error: unknown) => void
+  readonly onError: (error: Caught) => void
 }
 
 /** Closes the window when the layout is ready and the tab count drops to zero. */

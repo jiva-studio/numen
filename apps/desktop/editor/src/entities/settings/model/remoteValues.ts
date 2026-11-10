@@ -8,6 +8,7 @@
  */
 import { shallowRef } from 'vue'
 import { createWriteOrder } from '@numen/ui'
+import type { Caught } from '@/shared/api/errors'
 
 /** One read in flight: its place in the order of reads, and the writes when it began. */
 type PendingRead = ReturnType<ReturnType<typeof createWriteOrder>['beginRead']>
@@ -20,7 +21,7 @@ interface Requested<V> {
 
 interface Waiter {
   readonly resolve: () => void
-  readonly reject: (error: unknown) => void
+  readonly reject: (error: Caught) => void
 }
 
 export function createRemoteValues<V>(send: (values: ReadonlyMap<string, V>) => Promise<void>) {

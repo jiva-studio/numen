@@ -18,6 +18,7 @@ import {
 } from '@numen/plugin-loader'
 import type { WindowTabs } from './windowTabs'
 import { WORDS } from '@/shared/words'
+import type { Caught } from '@/shared/api/errors'
 
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
@@ -28,7 +29,7 @@ export interface TabMenuDeps {
     target: RunTarget,
     itemId?: string,
     values?: Readonly<Record<string, string>>,
-  ): Promise<unknown>
+  ): Promise<void>
   /** The items a command of an entry offers over the tab. */
   listItems?(command: string, target: RunTarget): Promise<readonly CommandItem[]>
   /** The tab and the file it shows, which the commands of the entries run over. */
@@ -36,7 +37,7 @@ export interface TabMenuDeps {
   /** Turns the highlight of another window on or off while the pointer is over its item. */
   onHighlight?(this: void, windowId: string, isOn: boolean): void
   /** Receives the failure of a command that runs after the menu closed, or of a list read. */
-  reportError?(this: void, error: unknown): void
+  reportError?(this: void, error: Caught): void
   /** The type and the properties of the note of the path, which the entries are asked for over. */
   readNoteKind?(this: void, path: string): Promise<NoteKind>
 }
@@ -137,7 +138,7 @@ export function useTabMenu(deps: TabMenuDeps) {
     ;(
       deps.runCommand?.(choice.command, choice.target.target, choice.itemId, choice.values) ??
       Promise.resolve()
-    ).catch((error: unknown) => deps.reportError?.(error))
+    ).catch((error: Caught) => deps.reportError?.(error))
   }
 
   /** The icon of the command or submenu of the entry a row stands for. */
@@ -156,7 +157,7 @@ export interface WindowTabMenuDeps {
   /** The type and the properties of the note of the path. */
   readNoteKind?(this: void, path: string): Promise<NoteKind>
   /** Shows the error of a command of the menu that failed, or of items that could not be read. */
-  reportError?(this: void, error: unknown): void
+  reportError?(this: void, error: Caught): void
 }
 
 /** The tab of the window and the file it shows, as the commands of its menu run over them. */

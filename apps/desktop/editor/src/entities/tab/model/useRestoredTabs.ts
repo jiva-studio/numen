@@ -10,6 +10,7 @@ import { createWorkspace } from '../lib/workspace'
 import { createTabClosers, createTabOpeners } from './tabOperations'
 import type { TabStore } from './tabStore'
 import { useTabPanes } from './useTabPanes'
+import type { Caught } from '@/shared/api/errors'
 
 const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
   // Stryker disable next-line OptionalChaining: comparePlacement is only called on kinds filtered by kind.placement.
@@ -19,7 +20,7 @@ const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
 }
 
 /** The error callback for a placed kind whose tab failed to open. */
-type PlacementError = (kind: string, error: unknown) => void
+type PlacementError = (kind: string, error: Caught) => void
 
 async function createPlacedWorkspace(
   kinds: readonly AnyTabKind[],

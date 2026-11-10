@@ -31,6 +31,7 @@ import {
   getWhenGroup,
   type WindowWhenContext,
 } from '../lib/whenContext'
+import type { Caught } from '@/shared/api/errors'
 
 /** The items a command of a plugin offers over a file. */
 type ListItems = (
@@ -188,7 +189,7 @@ export function createDeclaredState(deps: DeclaredStateDeps = {}) {
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
     load: (): Promise<void> =>
-      read().catch((error: unknown) => {
+      read().catch((error: Caught) => {
         onFirstList()
         throw error
       }),

@@ -3,7 +3,7 @@
  */
 import { shallowRef } from 'vue'
 import { getCurrentDate } from '@numen/ui'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { FileIcons } from '@/features/command-palette'
 import { relations } from '@/entities/note'
@@ -39,7 +39,7 @@ function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessag
       }
       windowTabs.groups
         .sendText(textKind.kind, text)
-        .catch((error: unknown) => writeMessage(formatError(error), 'error'))
+        .catch((error: Caught) => writeMessage(formatError(error), 'error'))
     },
   }
 }

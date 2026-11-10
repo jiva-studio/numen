@@ -7,11 +7,12 @@ import { findTabKindIcon } from '../lib/icons'
 import { writeOpenTabs } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
+import type { Caught } from '@/shared/api/errors'
 
 export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
-  reportError: (error: unknown) => void
+  reportError: (error: Caught) => void
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */

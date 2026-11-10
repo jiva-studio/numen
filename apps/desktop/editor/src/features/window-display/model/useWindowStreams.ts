@@ -13,7 +13,7 @@ export interface WindowStreamsDeps {
   readonly listening: AbortController
   readonly isOpen: () => boolean
   readonly setLost: (response: string) => void
-  readonly wait: (ms: number) => Promise<unknown>
+  readonly wait: (ms: number) => Promise<void>
   readonly opening: Ref<string>
   readonly tasks: ShallowRef<readonly Task[]>
   readonly isVaultSwapped: () => Promise<boolean>
@@ -24,7 +24,7 @@ export interface WindowStreamsDeps {
     versionPaths: readonly string[],
   ) => Promise<void> | void
   readonly readInitialNote: () => Promise<string>
-  readonly ask: () => Promise<unknown>
+  readonly ask: () => Promise<void>
   readonly reportChange: (edit: NoteEdit) => void
   readonly travelTo: (path: string) => Promise<void> | void
   readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
@@ -47,7 +47,7 @@ async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): 
   await attempt(deps.ask)
 }
 
-async function attempt(step: () => Promise<unknown>): Promise<boolean> {
+async function attempt(step: () => Promise<void>): Promise<boolean> {
   try {
     await step()
     return true

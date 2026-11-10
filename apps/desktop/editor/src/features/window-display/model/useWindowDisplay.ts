@@ -3,7 +3,7 @@ import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { createWindowStreams } from './useWindowStreams'
 import { useDisplayHealth, type DisplayHealth } from './useDisplayHealth'
@@ -21,7 +21,7 @@ import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVaul
  */
 /** What the window passes for reading a vault, alongside the vault itself. */
 export interface DisplayOptions {
-  wait?(this: void, ms: number): Promise<unknown>
+  wait?(this: void, ms: number): Promise<void>
   /**
    * Receives vault change notifications, and is awaited. A change carrying no
    * paths is empty: everything showing the vault reads again.
@@ -49,16 +49,16 @@ export interface DisplayOptions {
 
 interface StartDisplayDeps {
   health: DisplayHealth
-  ask: () => Promise<unknown>
+  ask: () => Promise<void>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
   streams: ReturnType<typeof createWindowStreams>
-  wait: (ms: number) => Promise<unknown>
+  wait: (ms: number) => Promise<void>
   isOpen: () => boolean
 }
 
 function startStreams(streams: ReturnType<typeof createWindowStreams>, health: DisplayHealth): void {
-  const onError = (error: unknown) => {
+  const onError = (error: Caught) => {
     health.failure.value = formatError(error)
   }
   runInBackground(streams.follow(), onError)

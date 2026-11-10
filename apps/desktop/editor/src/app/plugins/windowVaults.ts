@@ -7,7 +7,7 @@ import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
 import { createInvocation, runInvocation } from '@/features/command-palette'
 import { COMMAND, type CommandTarget, type VaultRef, type CommandDeps } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 
 interface WindowVaultsDeps {
   readonly vaultList: Readonly<Ref<VaultList>>
@@ -49,7 +49,7 @@ export function createEditorVaults(window: {
         commandDeps,
       ).then(
         () => undefined,
-        (error: unknown) => commandDeps.writeMessage(formatError(error), 'error'),
+        (error: Caught) => commandDeps.writeMessage(formatError(error), 'error'),
       ),
   })
 }
