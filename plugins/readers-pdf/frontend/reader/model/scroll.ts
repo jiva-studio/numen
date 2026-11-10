@@ -32,7 +32,6 @@ export interface PanScroll {
   }
 }
 
-/** Whether the element holds the pointer; one that is gone is held by the strip over the scroll area. */
 function followPointer(element: HTMLElement | null, event: PointerEvent): boolean {
   if (!element) return false
   if (element.hasPointerCapture(event.pointerId)) return true
