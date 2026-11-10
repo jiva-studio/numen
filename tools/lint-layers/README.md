@@ -5,7 +5,7 @@ libraries, plugins, and desktop applications.
 
 ## Invariants Checked
 
-Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node check.mjs --list` prints them. The checks that only run the ESLint or golangci-lint configuration of a package (`ui-components-lint`, `workbench-lint`, `plugin-loader-lint`, `desktop-editor-fsd`, `desktop-flashcards-fsd`, `plugins-frontend`, `core-depguard`, `notes-depguard`, `sdk-isolation`) repeat the lint target of that package; `--without-lint` leaves them out. The checks that run Go tests (`go-structure`, `notes-hexagon`, `plugins-independence`) repeat tests that `go test ./...` of `libs/core/kernel` and `libs/note` runs; `--without-go-tests` leaves them out. `plugins-independence` is left out when `go-structure` runs, because that runs every test of `libs/core/kernel/container`.
+Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node check.mjs --list` prints them. The checks that only run the ESLint or golangci-lint configuration of a package (`ui-components-lint`, `workbench-lint`, `plugin-loader-lint`, `desktop-editor-fsd`, `desktop-flashcards-fsd`, `mobile-fsd`, `plugins-frontend`, `core-depguard`, `notes-depguard`, `sdk-isolation`) repeat the lint target of that package; `--without-lint` leaves them out. The checks that run Go tests (`go-structure`, `notes-hexagon`, `plugins-independence`) repeat tests that `go test ./...` of `libs/core/kernel` and `libs/note` runs; `--without-go-tests` leaves them out. `plugins-independence` is left out when `go-structure` runs, because that runs every test of `libs/core/kernel/container`.
 
 1. **Libraries (`libs`)**:
    - `go-structure`: every test of `libs/core/kernel/container`, the package that contains the structural Go tests. They load the modules of `go.work` with go/packages, go/types, the AST and golang.org/x/mod/modfile: the layers of the core and the direction of its imports, the machine clock read only by a clock port implementation, no alias of another core package's type, the role of each adapter read from what it references and implements, no port reference from a driving adapter, the full method set of an interface within the interfacebloat maximum, no interface call inside a port, no package below the composition root, the plugin dependency rule over the type-checked import graph and over the direct requirements of each `plugins/*/go.mod`, and the plugin SDK encapsulating the whole `libs/core/protocol` module. It runs on any change to a Go file, a `go.mod` or `go.work`.
@@ -41,8 +41,9 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
 3. **Applications (`apps`)**:
    - `core-client-only-in-api`: in every application that declares `@numen/core-client` and is cut into layers (an entry `src/main.ts` and an `app` layer), only the entry and the shipped files of an `api` segment import `@numen/core-client`, read from the resolved import graph.
    - `shared-serves-several-slices`: in the same applications, each shipped file of `src/shared` is used by more than one slice (`layer/slice` on `pages`, `features` and `entities`, the layer otherwise). Its users are the files outside `shared` that import it, and the users of the shared files that import it. It fails when it reads fewer than 20 shared files.
-   - `desktop-editor-fsd`, `desktop-flashcards-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `pages` → `app`), by `npm run lint` in each window.
+   - `desktop-editor-fsd`, `desktop-flashcards-fsd`, `mobile-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `pages` → `app`), by `npm run lint` in each window.
    - `desktop-flashcards-fsd`: Desktop Flashcards FSD Layer Hierarchy.
+   - `mobile-fsd`: Mobile FSD Layer Hierarchy.
 
 ## Structural checks
 

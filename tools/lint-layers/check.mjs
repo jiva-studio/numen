@@ -14,7 +14,7 @@
  *   all       - Run all architectural layer checks (default)
  *   libs      - All library boundaries (core hexagon, notes, ui, shell and plugin host isolation, sdk isolation)
  *   plugins   - Native plugin sandboxing, non-leakage, and frontend contracts
- *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
+ *   apps      - Application FSD layer hierarchies (desktop editor, flashcards, mobile)
  *
  * Modules:
  *   the `module` of each verifier; `node check.mjs --help` lists them

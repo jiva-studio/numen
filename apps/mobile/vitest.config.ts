@@ -13,6 +13,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@numen/core-client': fileURLToPath(
         new URL('../../libs/core/client/src/index.ts', import.meta.url),
       ),

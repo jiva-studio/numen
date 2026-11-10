@@ -2,12 +2,10 @@
 /**
  * One note on the phone, as plain text until the note editor view is mounted here.
  */
-import { onMounted, ref, useTemplateRef } from 'vue'
-import { formatErrorCodeMessage } from '@numen/core-client'
-import { NoteBar } from './note-bar'
-import type { Core } from '../core'
-
-type NoteBaselineAt = NonNullable<Awaited<ReturnType<Core['notes']['readNote']>>['at']>
+import { onMounted, useTemplateRef } from 'vue'
+import type { Core } from '@/entities/core'
+import { useNote } from '../../model/useNote'
+import NoteBar from '../NoteBar/NoteBar.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ core: Core; path: string }>()
@@ -19,37 +17,25 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const prose = ref('')
-const loadedNote = ref<{ prose: string; at: NoteBaselineAt } | null>(null)
-const isReading = ref(true)
+const { prose, isReading, read, keep } = useNote(props.core, props.path)
 const editor = useTemplateRef<HTMLTextAreaElement>('editor')
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(async () => {
-  try {
-    const answer = await props.core.notes.readNote({ path: props.path })
-    if (answer.error) {
-      emit('error', formatErrorCodeMessage(answer.error))
-      emit('close')
-      return
-    }
-    prose.value = answer.body
-    loadedNote.value = answer.at ? { prose: answer.body, at: answer.at } : null
-  } finally {
-    isReading.value = false
+  const answer = await read()
+  if (!answer.ok) {
+    emit('error', answer.error)
+    emit('close')
+    return
   }
   editor.value?.focus()
 })
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onKeep() {
-  const answer = await props.core.notes.writeNote({
-    path: props.path,
-    body: prose.value,
-    baseline: loadedNote.value ?? undefined,
-  })
-  if (answer.error) {
-    emit('error', formatErrorCodeMessage(answer.error))
+  const answer = await keep()
+  if (!answer.ok) {
+    emit('error', answer.error)
     return
   }
   emit('close')

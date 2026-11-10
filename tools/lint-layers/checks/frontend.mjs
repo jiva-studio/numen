@@ -54,4 +54,6 @@ export const FRONTEND_VERIFIERS = [
     "Desktop Editor FSD Layer Hierarchy (shared -> entities -> features -> pages -> app)"),
   createLintVerifier("desktop-flashcards-fsd", "apps", "desktop", "apps/desktop/flashcards",
     "Desktop Flashcards FSD Layer Hierarchy"),
+  createLintVerifier("mobile-fsd", "apps", "mobile", "apps/mobile",
+    "Mobile FSD Layer Hierarchy"),
 ];
