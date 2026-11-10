@@ -142,18 +142,20 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
 .agent__thread {
   --behind: calc(var(--agent-room) + var(--lift));
   --clear: calc(var(--behind) + 1rem);
+  --thread-pad-start: 1rem;
 
   flex: 1;
   min-height: 0;
-  padding-block-start: 1rem;
+  padding-block-start: var(--thread-pad-start);
   padding-block-end: var(--clear);
 }
 
 .agent__scrim {
+  --scrim-extra: 2rem;
   position: absolute;
   inset-inline: 0;
   inset-block-end: 0;
-  block-size: calc(var(--agent-room) + var(--lift) + 2rem);
+  block-size: calc(var(--agent-room) + var(--lift) + var(--scrim-extra));
   pointer-events: none;
   background: linear-gradient(
     to bottom,

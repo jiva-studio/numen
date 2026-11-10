@@ -139,10 +139,14 @@ function onSelectReasoning(id: string) {
 .composer {
   /* Lines of typing it grows to before it scrolls. */
   --lines: 10;
+  --pad-top: 0.75rem;
+  --pad-inline: 0.75rem;
+  --pad-bottom: 0.5rem;
+  --line-min: 1.75rem;
 
   position: relative;
   min-block-size: var(--numen-field-min);
-  padding: 0.75rem 0.75rem 0.5rem;
+  padding: var(--pad-top) var(--pad-inline) var(--pad-bottom);
   background-color: var(--numen-raised);
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius-panel);
@@ -153,7 +157,7 @@ function onSelectReasoning(id: string) {
 .composer__empty {
   flex: 1;
   margin: 0;
-  min-height: 1.75rem;
+  min-height: var(--line-min);
   line-height: var(--numen-line-height);
 }
 
@@ -164,12 +168,13 @@ function onSelectReasoning(id: string) {
   color: inherit;
   font: inherit;
   text-decoration: underline dotted;
-  text-underline-offset: 0.2em;
+  --underline-offset: 0.2em;
+  text-underline-offset: var(--underline-offset);
 }
 
 .composer__grow {
   flex: 1;
-  min-height: 1.75rem;
+  min-height: var(--line-min);
 }
 
 .composer__grow > * {
@@ -182,9 +187,11 @@ function onSelectReasoning(id: string) {
 }
 
 .composer__mirror {
+  --mirror-pad: 2rem;
+  --line-unit: 1em;
   visibility: hidden;
   overflow: hidden;
-  max-block-size: calc((var(--lines) - 1) * var(--numen-line-height) * 1em + 2rem);
+  max-block-size: calc((var(--lines) - 1) * var(--numen-line-height) * var(--line-unit) + var(--mirror-pad));
 }
 
 .composer__placeholder {
