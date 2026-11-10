@@ -1,7 +1,6 @@
-package service
+package books
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
@@ -10,39 +9,20 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 )
 
-func createGuidedEpub(t *testing.T) []byte {
-	t.Helper()
-	return createZipEpub(t, map[string][]byte{
-		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
-<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
-  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Guided</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
-  <manifest>
-    <item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>
-    <item id="c2" href="c2.xhtml" media-type="application/xhtml+xml"/>
-  </manifest>
-  <guide><reference type="text" href="c1.xhtml"/></guide>
-  <spine><itemref idref="c1"/><itemref idref="c2"/></spine>
-</package>`),
-		"EPUB/c1.xhtml": []byte(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
-<body><h1>Prologue</h1><p>   ` + strings.Repeat("word ", 20_000) + `</p></body></html>`),
-		"EPUB/c2.xhtml": []byte(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Two</title></head>
-<body><p>Epilogue of the  guided book</p></body></html>`),
-	})
-}
-
-func newGuidedBookServer(t *testing.T) (*BookServer, *hosttest.Vault) {
+func newGuidedReader(t *testing.T) (*Reader, *hosttest.Vault) {
 	t.Helper()
 	files := hosttest.New("vault")
-	files.File("guided.epub", string(createGuidedEpub(t)))
-	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	files.File("guided.epub", string(testsupport.CreateGuidedEpub(t)))
+	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	return books, files
 }
 
 func TestGetCfiNamesTheCharacterAtAnOffset(t *testing.T) {
-	books, _ := newGuidedBookServer(t)
+	books, _ := newGuidedReader(t)
 	book, err := books.GetBook(t.Context(), api.GetBookRequest{Path: "guided.epub"})
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +37,7 @@ func TestGetCfiNamesTheCharacterAtAnOffset(t *testing.T) {
 }
 
 func TestFindOffsetReturnsTheOffsetACFINames(t *testing.T) {
-	books, _ := newGuidedBookServer(t)
+	books, _ := newGuidedReader(t)
 	book, err := books.GetBook(t.Context(), api.GetBookRequest{Path: "guided.epub"})
 	if err != nil {
 		t.Fatal(err)
@@ -73,12 +53,12 @@ func TestFindOffsetReturnsTheOffsetACFINames(t *testing.T) {
 }
 
 func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
-	books, files := newGuidedBookServer(t)
+	books, files := newGuidedReader(t)
 	first, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "guided.epub", Offset: 0})
 	if err != nil {
 		t.Fatal(err)
 	}
-	files.File("guided.epub", string(createImageEpub(t)))
+	files.File("guided.epub", string(testsupport.CreateImageEpub(t)))
 
 	second, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "guided.epub", Offset: 0})
 
@@ -88,7 +68,7 @@ func TestGetCfiAndFindOffsetFollowTheFileWhenItChanges(t *testing.T) {
 }
 
 func TestFindOffset_ErrorsOnInvalidCFI(t *testing.T) {
-	books, _ := newGuidedBookServer(t)
+	books, _ := newGuidedReader(t)
 
 	_, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "guided.epub", Cfi: "/8/4!/4/2"})
 
@@ -98,7 +78,7 @@ func TestFindOffset_ErrorsOnInvalidCFI(t *testing.T) {
 }
 
 func TestFindOffsetFindsNoDocumentTheSpineDoesNotHold(t *testing.T) {
-	books, _ := newGuidedBookServer(t)
+	books, _ := newGuidedReader(t)
 
 	_, err := books.FindOffset(t.Context(), api.FindOffsetRequest{Path: "guided.epub", Cfi: "epubcfi(/6/4!/4/2/1:0)"})
 
@@ -108,7 +88,7 @@ func TestFindOffsetFindsNoDocumentTheSpineDoesNotHold(t *testing.T) {
 }
 
 func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
-	books, _ := newGuidedBookServer(t)
+	books, _ := newGuidedReader(t)
 
 	_, err := books.GetCfi(t.Context(), api.GetCfiRequest{})
 
@@ -124,7 +104,7 @@ func TestGetCfi_ErrorsOnEmptyPath(t *testing.T) {
 }
 
 func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
-	raw := createZipEpub(t, map[string][]byte{
+	raw := testsupport.CreateZipEpub(t, map[string][]byte{
 		"EPUB/package.opf": []byte(`<package xmlns="http://www.idpf.org/2007/opf" version="3.0"><metadata/>
 <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
 <spine><itemref idref="c1"/></spine></package>`),
@@ -133,7 +113,7 @@ func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("blank.epub", string(raw))
 	files.File("corrupt.epub", "not an epub")
-	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 
 	_, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "blank.epub"})

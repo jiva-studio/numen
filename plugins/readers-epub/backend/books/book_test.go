@@ -1,4 +1,4 @@
-package service
+package books
 
 import (
 	"archive/zip"
@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/testsupport"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -61,7 +62,7 @@ func createMinimalEpub(t *testing.T) []byte {
 	return buf.Bytes()
 }
 
-func TestBookServerVaultBoundary(t *testing.T) {
+func TestReaderVaultBoundary(t *testing.T) {
 	outsideDir := t.TempDir()
 	outsidePath := filepath.Join(outsideDir, "outside.epub")
 	data := createMinimalEpub(t)
@@ -73,7 +74,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	})
 	vaultDir := files.Vault().Path
 
-	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	ctx := t.Context()
 
 	// 1. GetBook outside vault -> PermissionDenied
@@ -147,7 +148,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	// 8. Hidden vault -> PermissionDenied
 	hiddenVault := hosttest.New("vault")
 	hiddenVault.Hide()
-	emptyServer := NewBookServer(func(id domain.VaultID) host.FileReader { return hiddenVault.With(id) })
+	emptyServer := NewReader(func(id domain.VaultID) host.FileReader { return hiddenVault.With(id) })
 	_, err = emptyServer.GetBook(ctx, api.GetBookRequest{
 		Path: "inside.epub",
 	})
@@ -156,11 +157,11 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 }
 
-func TestBookServerPartsPagesAndErrors(t *testing.T) {
+func TestReaderPartsPagesAndErrors(t *testing.T) {
 	files, name, _, _ := writeBook(t)
 	files.File("bad.epub", "not an epub")
-	files.File("enc.epub", string(createEncryptedEpub(t)))
-	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
+	files.File("enc.epub", string(testsupport.CreateEncryptedEpub(t)))
+	books := NewReader(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	ctx := t.Context()
 

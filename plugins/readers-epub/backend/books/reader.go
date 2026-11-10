@@ -1,5 +1,6 @@
-// Package service implements the methods of the md.numen.readers.epub plugin service.
-package service
+// Package books reads EPUB books of a vault for the md.numen.readers.epub service: their structure, the
+// markup of their documents, the entries of their archives and the places of their text.
+package books
 
 import (
 	"context"
@@ -14,24 +15,20 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
-// errChanged is the error of reading an entry when the bytes of the file differ
-// from the bytes the caller read.
-var errChanged = errors.New("the file changed")
-
 // gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="mostListed caps the maximum number of items returned in a book summary"
 const mostListed = 1000
 
-func (s *BookServer) readBookFile(ctx context.Context, path string) ([]byte, error) {
-	raw, _, err := s.vaults(getRequestVault(ctx)).Read(ctx, path)
+func (s *Reader) readBookFile(ctx context.Context, path string) ([]byte, error) {
+	raw, _, err := s.vaults(getVault(ctx)).Read(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)
 	}
 	return raw, nil
 }
 
-// BookServer implements the methods of the md.numen.readers.epub service. Each call works the vault its context
-// names with withRequestVault.
-type BookServer struct {
+// Reader implements the book methods of the md.numen.readers.epub service. Each call works the vault its
+// context names with WithVault.
+type Reader struct {
 	vaults func(domain.VaultID) host.FileReader
 
 	books *bookCache
@@ -40,9 +37,9 @@ type BookServer struct {
 	placed placedBook
 }
 
-// NewBookServer returns a BookServer that reads the vault of a request through vaults.
-func NewBookServer(vaults func(domain.VaultID) host.FileReader) *BookServer {
-	return &BookServer{
+// NewReader returns a Reader that reads the vault of a request through vaults.
+func NewReader(vaults func(domain.VaultID) host.FileReader) *Reader {
+	return &Reader{
 		vaults: vaults,
 		books:  newBookCache(),
 		mu:     sync.Mutex{},
@@ -52,7 +49,7 @@ func NewBookServer(vaults func(domain.VaultID) host.FileReader) *BookServer {
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
-func (s *BookServer) GetBook(ctx context.Context, req api.GetBookRequest) (api.GetBookResponse, error) {
+func (s *Reader) GetBook(ctx context.Context, req api.GetBookRequest) (api.GetBookResponse, error) {
 	if req.Path == "" {
 		return api.GetBookResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
@@ -96,7 +93,7 @@ func (s *BookServer) GetBook(ctx context.Context, req api.GetBookRequest) (api.G
 }
 
 // ReadBookMarkup returns rendered HTML markup for an EPUB document spine.
-func (s *BookServer) ReadBookMarkup(ctx context.Context, req api.ReadBookMarkupRequest) (api.ReadBookMarkupResponse, error) {
+func (s *Reader) ReadBookMarkup(ctx context.Context, req api.ReadBookMarkupRequest) (api.ReadBookMarkupResponse, error) {
 	if req.Path == "" {
 		return api.ReadBookMarkupResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
@@ -119,16 +116,16 @@ func (s *BookServer) ReadBookMarkup(ctx context.Context, req api.ReadBookMarkupR
 }
 
 // ReadBookEntry returns the bytes of one entry of an EPUB's archive. A baseline that does not name
-// the bytes of the file fails with errChanged.
-func (s *BookServer) ReadBookEntry(ctx context.Context, req api.ReadBookEntryRequest) (api.ReadBookEntryResponse, error) {
+// the bytes of the file fails with a failed-precondition error.
+func (s *Reader) ReadBookEntry(ctx context.Context, req api.ReadBookEntryRequest) (api.ReadBookEntryResponse, error) {
 	if req.Path == "" {
 		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
 	if req.Entry == "" {
 		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeInvalidArgument, "entry required")
 	}
-	files := s.vaults(getRequestVault(ctx))
-	book, err := s.books.acquire(ctx, files, getRequestVault(ctx), req.Path)
+	files := s.vaults(getVault(ctx))
+	book, err := s.books.acquire(ctx, files, getVault(ctx), req.Path)
 	if err != nil {
 		if errors.Is(err, errCacheClosed) {
 			return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeUnavailable, fmt.Sprintf("read book %s: %v", req.Path, err))
@@ -140,7 +137,7 @@ func (s *BookServer) ReadBookEntry(ctx context.Context, req api.ReadBookEntryReq
 	}
 	defer s.books.release(book)
 	if req.Baseline != nil && !isStatOf(*req.Baseline, book.size, book.mtime) {
-		return api.ReadBookEntryResponse{}, fmt.Errorf("read book %s: %w", req.Path, errChanged)
+		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeFailedPrecondition, fmt.Sprintf("read book %s: the file changed", req.Path))
 	}
 	body, err := book.archive.Entry(req.Entry)
 	if err != nil {
@@ -164,6 +161,6 @@ func newReadError(err error) error {
 }
 
 // Close closes the cached books.
-func (s *BookServer) Close() {
+func (s *Reader) Close() {
 	s.books.Close()
 }

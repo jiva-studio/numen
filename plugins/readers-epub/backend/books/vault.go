@@ -1,10 +1,9 @@
-package service
+package books
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -12,23 +11,19 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/vault"
 )
 
-type requestVaultKey struct{}
+type vaultKey struct{}
 
-func withRequestVault(ctx context.Context, header http.Header) context.Context {
-	return context.WithValue(ctx, requestVaultKey{}, host.GetRequestVault(header))
+// WithVault returns a context whose calls read the vault id names; an empty id is the vault the
+// host shows.
+func WithVault(ctx context.Context, id domain.VaultID) context.Context {
+	return context.WithValue(ctx, vaultKey{}, id)
 }
 
-func getRequestVault(ctx context.Context) domain.VaultID {
-	if id, ok := ctx.Value(requestVaultKey{}).(domain.VaultID); ok {
+func getVault(ctx context.Context) domain.VaultID {
+	if id, ok := ctx.Value(vaultKey{}).(domain.VaultID); ok {
 		return id
 	}
 	return ""
-}
-
-// vaultFiles is what the text server reads of a vault: its files and its name.
-type vaultFiles interface {
-	host.FileReader
-	GetVault(ctx context.Context) (domain.Vault, error)
 }
 
 func readVaultError(path string, err error) error {
