@@ -11,7 +11,6 @@ const onFollow = fn((_href: string, press: MouseEvent) => {
   wasPrevented.push(press.defaultPrevented)
 })
 
-/** Keeps a pressed link from leaving the story, after the prose has reported it. */
 const keepLinksInPlace: Decorator = (story) => ({
   components: { story },
   template: '<div @click.prevent><story /></div>',
