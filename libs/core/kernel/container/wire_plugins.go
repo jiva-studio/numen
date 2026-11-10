@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/dependencyenv"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -32,11 +34,6 @@ import (
 func (c Config) SetSafeMode(enabled bool) Config {
 	c.SafeMode = setSafeMode(plugins(c), enabled).SafeMode
 	return c
-}
-
-// SetPluginVaultPath is the vault the plugins' paths are inside.
-func SetPluginVaultPath(c Config, path string) {
-	setPluginVaultPath(plugins(c), path)
 }
 
 // StopPlugins stops every plugin the host runs.
@@ -88,7 +85,7 @@ func openPluginWork(c Config, db *vault.Index, v domain.Vault) (Config, *run.Plu
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func GetPluginServices(c Config) PluginServices {
+func GetPluginServices(c Config) shell.PluginServices {
 	return getPluginServices(plugins(c))
 }
 
@@ -184,7 +181,7 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 		}).Execute,
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
-		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
+		RefreshDependencies: func() { host.Services.SetDependencies(dependencyenv.Open("")) },
 	}
 }
 
@@ -211,7 +208,7 @@ func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
 	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := host.Storage.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
-		host.Services.SetDependencies(GetDependencyRegistry(models))
+		host.Services.SetDependencies(dependencyenv.Open(models))
 	}
 }
 

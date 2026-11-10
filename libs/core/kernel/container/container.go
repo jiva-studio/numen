@@ -152,19 +152,7 @@ func handleError(c Config, err error) {
 // GetWait is the wait every scenario assembled here is handed, bound to this
 // machine's timers.
 func (c Config) GetWait() machine.Wait {
-	return func(ctx context.Context, d time.Duration) error {
-		if d <= 0 {
-			return ctx.Err()
-		}
-		timer := time.NewTimer(d)
-		defer timer.Stop()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-timer.C:
-			return nil
-		}
-	}
+	return clock.System{}.Wait
 }
 
 func settingsOf(c Config) settingsWiring {
@@ -264,7 +252,7 @@ func plugins(c Config) pluginsWiring {
 			PluginCatalog:   c.PluginCatalog,
 			PluginDirs:      c.PluginDirs,
 			KeyStore:        c.KeyStore,
-			CredentialsPath: c.credentialsPath,
+			CredentialsPath: secret.GetCredentialsPath(c.KeyStore),
 		},
 		pluginSettingsAccess: pluginSettingsAccess{
 			SettingsFiles:         res.settingsFiles,
@@ -296,5 +284,3 @@ func plugins(c Config) pluginsWiring {
 func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	return getAgentPrograms(plugins(c), provider, target)
 }
-
-func (c Config) credentialsPath() string { return credentialsPathOf(c.KeyStore)() }

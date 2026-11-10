@@ -130,11 +130,6 @@ func closeIfOpen(closeFn func() error) error {
 	return closeFn()
 }
 
-// GetVaultList builds the use case that lists the vaults of the registry given.
-func GetVaultList(_ Config, ports registry.Ports) registry.List {
-	return registry.NewList(ports.Vaults)
-}
-
 // OpenCLI returns what the command line calls to reach the vaults, the scan, the search, the links, the
 // problems and the plugin commands of the installation c describes.
 func OpenCLI(c Config) cli.Deps {

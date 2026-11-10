@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"io"
-	"sync/atomic"
 	"time"
 
 	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
@@ -220,10 +219,10 @@ func mountPlugin(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
-// SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file
+// shareEditorWindow gives the plugins the window: it focuses a note and the passages of a file
 // in it and returns the tabs it last reported. The window reads the vault of its state on each call,
 // so a vault opened later in the window is served without a new binding.
-func SetEditorPluginWindow(c Config, db *vault.Index, opened *editor.Installation) {
+func shareEditorWindow(c Config, db *vault.Index, opened *editor.Installation) {
 	view := GetWindowView(opened)
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
@@ -236,9 +235,9 @@ func SetEditorPluginWindow(c Config, db *vault.Index, opened *editor.Installatio
 	))
 }
 
-// SetEditorPluginVaultList gives the plugins the list of vaults of the window and the vault it
+// shareVaultList gives the plugins the list of vaults of the window and the vault it
 // shows. It uses the vault use cases of the window, so a plugin and the user see the same errors.
-func SetEditorPluginVaultList(c Config, opened *editor.Installation) {
+func shareVaultList(c Config, opened *editor.Installation) {
 	scenarios := opened.Vaults()
 	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
 		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
@@ -280,7 +279,7 @@ func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Em
 		VectorsReady: state.Events.EmitVectorsReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
-		After:        time.After,
+		After:        clock.System{}.After,
 	})
 }
 
@@ -315,7 +314,7 @@ func getTriggerSource(c Config) windowsession.TriggerSource {
 	}
 }
 
-func startVault(c Config, db *vault.Index, refreshing *atomic.Pointer[vault.Refresh]) windowsession.VaultPassesFunc {
+func startVault(c Config, db *vault.Index, current *vault.CurrentRefresh) windowsession.VaultPassesFunc {
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
 	) windowsession.Started {
@@ -335,8 +334,8 @@ func startVault(c Config, db *vault.Index, refreshing *atomic.Pointer[vault.Refr
 			Read:      open.Read,
 			Run:       open.Run,
 			Unwatched: open.GetUnwatchedReason(),
-			Publish:   func() { refreshing.Store(&refresh) },
-			Retire:    func() { refreshing.Store(nil) },
+			Publish:   func() { current.Publish(refresh) },
+			Retire:    current.Retire,
 		}
 	}
 }

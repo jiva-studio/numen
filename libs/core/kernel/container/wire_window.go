@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
@@ -115,19 +114,13 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	var refreshing atomic.Pointer[vault.Refresh]
-	getRefresh := func() vault.Refresh {
-		if running := refreshing.Load(); running != nil {
-			return *running
-		}
-		return GetRefresh(w.cfg, w.db)
-	}
-	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
+	current := &vault.CurrentRefresh{Fallback: func() vault.Refresh { return GetRefresh(w.cfg, w.db) }}
+	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(current.Get).Execute).FollowMoves(windowView(state))
 	w.notes = &notes
 	moves := vaultVaults(vaultOf(w.cfg), w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
 
-	passes := startVault(w.cfg, w.db, &refreshing)
+	passes := startVault(w.cfg, w.db, current)
 	if w.wrap != nil {
 		passes = w.wrap(passes)
 	}

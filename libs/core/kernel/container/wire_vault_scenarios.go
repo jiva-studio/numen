@@ -2,10 +2,7 @@ package container
 
 import (
 	"context"
-	"errors"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 
@@ -17,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/indexfolder"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
@@ -32,21 +30,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
-// ErrNoIndexPath is a configuration that names no index database.
-var ErrNoIndexPath = errors.New("the configuration names no index database: the application sets IndexPath")
-
-func resolveIndexPath(c vaultWiring) (string, error) {
-	if c.IndexPath == "" {
-		return "", ErrNoIndexPath
-	}
-	if err := os.MkdirAll(filepath.Dir(c.IndexPath), 0o755); err != nil {
-		return "", err
-	}
-	return c.IndexPath, nil
-}
-
 func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
-	path, err := resolveIndexPath(c)
+	path, err := indexfolder.Prepare(c.IndexPath)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +85,7 @@ func updateIndex(c vaultWiring, db *vault.Index) edit.IndexUpdater {
 }
 
 func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
-	path, err := resolveIndexPath(c)
+	path, err := indexfolder.Prepare(c.IndexPath)
 	if err != nil {
 		return nil, err
 	}
@@ -261,9 +246,9 @@ func getMediaType(_ vaultWiring) *file.GetMediaType {
 	return file.NewGetMediaType(sharedmimeinfo.Open())
 }
 
-// OpenVaults is every vault a window has open over db: each is read into the index, and what it
+// openVaults is every vault a window has open over db: each is read into the index, and what it
 // reports goes to out under label.
-func OpenVaults(c Config, db *vault.Index, out io.Writer, label string) *vault.OpenVaults[*vault.Index] {
+func openVaults(c Config, db *vault.Index, out io.Writer, label string) *vault.OpenVaults[*vault.Index] {
 	return &vault.OpenVaults[*vault.Index]{Opener: func(i *vault.Index) *vault.VaultOpener { return vaultOpener(vaultOf(c), i) }, Index: db, Out: out, Label: label}
 }
 

@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
@@ -13,6 +12,7 @@ import (
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
@@ -68,13 +68,6 @@ func GetSettingsWriter(c Config) func(entries []settingsdomain.Setting) error {
 func SetThemes(c Config, inst *editor.Installation, say func(string)) error {
 	service, err := settingsThemes(settingsOf(c), say)
 	inst.SetThemes(service)
-	return err
-}
-
-// SetShellThemes gives the shell the themes it can use, as SetThemes does the window.
-func SetShellThemes(c Config, api *shell.API, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c), say)
-	api.Themes = service
 	return err
 }
 
@@ -200,24 +193,10 @@ func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 }
 
 func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvider) func() []settingsdomain.Model {
-	return func() []settingsdomain.Model {
+	return settingsusecase.NewListAppModels(func() []settingsdomain.Model {
 		target := settingsGetSettingsOrDefaults(c)
-		var programs []agentdomain.Program
-		if c.GetAgentPrograms != nil {
-			programs = c.GetAgentPrograms(provider, target.Agent)
-		}
-		return prefixModels(settingsdomain.AppOwner, settingsadapter.AgentModels(agentAt, target.Agent, programs))
-	}
-}
-
-func prefixModels(owner string, models []settingsdomain.Model) []settingsdomain.Model {
-	for place := range models {
-		models[place].Path = append([]string{owner}, models[place].Path...)
-		for index := range models[place].Writes {
-			models[place].Writes[index].Path = append([]string{owner}, models[place].Writes[index].Path...)
-		}
-	}
-	return models
+		return settingsadapter.AgentModels(agentAt, target.Agent, c.GetAgentPrograms(provider, target.Agent))
+	}).Execute
 }
 
 func getDeclarations(c settingsWiring) settingsadapter.Declarations {
@@ -233,35 +212,25 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 }
 
 func getRegistries(c settingsWiring) settingsadapter.Registries {
-	return func(name string) ([]string, bool) {
-		options, found := listRegistryOptions(c, name)
-		names := make([]string, 0, len(options))
-		for _, one := range options {
-			names = append(names, one.Value)
-		}
-		return names, found
-	}
+	return themeRegistry(c).GetNames()
 }
 
-func listRegistryOptions(c settingsWiring, name string) (manifest.SettingOptions, bool) {
-	if name != settingsadapter.RegistryThemes {
-		return nil, false
-	}
+func themeRegistry(c settingsWiring) settingsadapter.RegistryOptions {
+	return settingsadapter.ThemeRegistry(func() []themedomain.Theme { return listThemes(c) })
+}
+
+func listThemes(c settingsWiring) []themedomain.Theme {
 	files, err := openThemeFiles(c)
 	if err != nil {
 		settingsHandleError(c, err)
 	}
-	var options manifest.SettingOptions
-	for _, one := range themeusecase.NewListThemes(getThemeSources(c, files)).Execute() {
-		options = append(options, manifest.SettingOption{Value: one.Name, Title: one.Title})
-	}
-	return options, true
+	return themeusecase.NewListThemes(getThemeSources(c, files)).Execute()
 }
 
 func listAppSettings(c settingsWiring) []plugindomain.Setting {
 	return settingsusecase.NewListAppSettings(
 		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{},
-		settingsadapter.RegistryOptions(func(name string) (manifest.SettingOptions, bool) { return listRegistryOptions(c, name) }),
+		themeRegistry(c),
 	).Execute()
 }
 
@@ -292,20 +261,7 @@ func getSettingsWriter(c settingsWiring) func(entries []settingsdomain.Setting) 
 }
 
 func settingsSettingsFile(c settingsWiring) (string, error) {
-	if c.SettingsPath != "" {
-		return c.SettingsPath, nil
-	}
-	if file, selected := getAdjacentPath(c, "numen.json"); selected {
-		return file, nil
-	}
-	return settingsadapter.Path()
-}
-
-func getAdjacentPath(c settingsWiring, name string) (string, bool) {
-	if c.RegistryPath == "" {
-		return "", false
-	}
-	return filepath.Join(filepath.Dir(c.RegistryPath), name), true
+	return settingsadapter.LocateFile(c.SettingsPath, c.RegistryPath)
 }
 
 func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
@@ -449,10 +405,7 @@ func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sour
 }
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
-	if c.ThemesPath != "" {
-		return themefiles.OpenAt(c.ThemesPath, c.Watches.GetShared())
-	}
-	if folder, selected := getAdjacentPath(c, "themes"); selected {
+	if folder, isSet := settingsadapter.LocateThemes(c.ThemesPath, c.RegistryPath); isSet {
 		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
 	return themefiles.Open(c.Watches.GetShared())

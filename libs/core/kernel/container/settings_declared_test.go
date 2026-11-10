@@ -157,7 +157,7 @@ func TestSettingsWriteOfUsedPluginPortFailsAndKeepsTheFile(t *testing.T) {
 	}
 	_, takenPort := listenOnLoopback(t)
 	cfg, path := writeSettings(t, `{}`)
-	host := NewPluginHost("desktop.editor", writeRelayPlugin(t, defaultPort))
+	host := newPluginHost(t, "desktop.editor", writeRelayPlugin(t, defaultPort))
 	t.Cleanup(func() {
 		if err := host.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Errorf("TeardownAll: %v", err)

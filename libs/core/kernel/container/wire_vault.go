@@ -94,17 +94,6 @@ func makeRefresh(c Config, db *vault.Index, notes noteport.NoteRepository) vault
 	return vaultMakeRefresh(vaultOf(c), db, notes)
 }
 
-// NewTextVersions is the text versions of the vaults' files.
-func NewTextVersions(c Config, db *vault.Index) (*textversion.Versions, error) {
-	return newTextVersions(vaultOf(c), db)
-}
-
-// SetPluginTexts provides the text versions of the vaults to the plugins through
-// the host.
-func SetPluginTexts(c Config) {
-	setPluginTexts(vaultOf(c))
-}
-
 // vaultWiring wires vaults, opening, notes, text versions, index and open vaults.
 type vaultWiring struct {
 	IndexPath    string

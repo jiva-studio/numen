@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"os"
-	"path/filepath"
 	"slices"
 	"time"
 
@@ -15,16 +12,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/dependencyenv"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -88,59 +84,13 @@ func getToolProvider(c pluginsWiring) agentport.AgentProvider {
 	})
 }
 
-const dependencyTaskPrefix = "provision:"
-
-// envMockML names the variable that runs the plugins on mock models.
-const envMockML = "NUMEN_MOCK_ML"
-
-// GetDependencyRegistry returns the registry of the dependencies the plugins provision, in the folder
-// given unless the environment names another.
-func GetDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
-	if os.Getenv(envMockML) == "true" {
-		return provision.NewRegistry(newPlaceholders())
-	}
-	dir := defaultDir
-	if models := os.Getenv(onnxruntime.EnvDir); models != "" {
-		dir = models
-	}
-	runtimeConfig := onnxruntime.FromEnvironment(clock.System{})
-	runtimeConfig.Dir = dir
-	return provision.NewRegistry(
-		onnxruntime.NewONNXProvisioner(runtimeConfig),
-		provision.NewFileProvisioner(provision.Config{Dir: dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
-	)
-}
-
-func newPlaceholders() *provision.PlaceholderProvisioner {
-	dir, err := os.UserCacheDir()
-	if err == nil {
-		dir = filepath.Join(dir, "numen", "placeholder-dependencies")
-	} else if dir, err = os.MkdirTemp("", "numen-placeholder-dependencies-"); err != nil {
-		// Placeholders written under the working folder still let a mock run start.
-		dir = "numen-placeholder-dependencies"
-	}
-	return provision.NewPlaceholderProvisioner(dir, map[string]func(string) map[string]string{
-		plugindomain.RuntimeONNX: func(primary string) map[string]string {
-			return map[string]string{onnxruntime.EnvLibrary: primary, onnxruntime.EnvProvider: "cpu"}
-		},
-	})
-}
-
 func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
+	show := run.NewDependencyTasks(tasks)
 	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
-		id := dependencyTaskPrefix + req.ID
-		switch status.State {
-		case plugindomain.DependencyStateReady:
-			tasks.Remove(id)
-		case plugindomain.DependencyStateMissing, plugindomain.DependencyStateProvisioning, plugindomain.DependencyStateFailed:
-			tasks.Set(work.Task{
-				ID: id, Title: "Downloading " + req.ID, Unit: work.Bytes,
-				Count: status.BytesDownloaded, Total: status.BytesTotal, Error: status.Error, IsUserStarted: false,
-			})
-		}
+		show.Execute(req.ID, status)
 	})
 }
 
@@ -214,23 +164,16 @@ const pluginGracePeriod = 2 * time.Second
 // errSafeMode is an installation started in safe mode, which starts no plugin.
 var errSafeMode = errors.New("numen is running in safe mode")
 
-const pluginFailureTaskPrefix = "plugin-failed:"
-
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
-// provider NUMEN_ONNX_PROVIDER names (auto when unset).
-func NewPluginHost(target string, dirs ...string) *PluginHost {
-	return adaptPluginHost(openPluginHost(target, dirs...))
-}
-
-func openPluginHost(target string, dirs ...string) *plugin.Host {
+// provider NUMEN_ONNX_PROVIDER names (auto when unset). The host is returned also when the discovery of the
+// plugins failed, with the failure.
+func NewPluginHost(target string, dirs ...string) (*PluginHost, error) {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
-	host.Services.SetDependencies(GetDependencyRegistry(""))
-	if err := host.Discovery.Discover(); err != nil {
-		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
-	}
-	return host
+	host.Services.SetDependencies(dependencyenv.Open(""))
+	err := host.Discovery.Discover()
+	return adaptPluginHost(host), err
 }
 
 func pluginsResolvePlugin(c pluginsWiring, capability string) (*PluginHost, error) {
@@ -274,20 +217,8 @@ func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Watch, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
-// PluginServices is where a window forwards the calls it receives for the services plugins serve.
-type PluginServices interface {
-	http.Handler
-	// Serves reports whether an enabled plugin serves the service the path names.
-	Serves(urlPath string) bool
-	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
-	ServeRoute(w http.ResponseWriter, r *http.Request)
-	// ListFrameOrigins lists the origins the pages of every enabled plugin frame.
-	ListFrameOrigins() []string
-	// GetFrameOrigins lists the origins the pages of one enabled plugin frame.
-	GetFrameOrigins(pluginID string) []string
-}
-
-func getPluginServices(c pluginsWiring) PluginServices {
+// getPluginServices is where a window forwards the calls it receives for the services plugins serve.
+func getPluginServices(c pluginsWiring) shell.PluginServices {
 	if c.PluginHost == nil {
 		return servicebridge.NoServices{}
 	}
@@ -307,18 +238,10 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.Runtime.SetOnPluginFailed(func(failure plugindomain.Failure) {
-		tasks.Set(work.Task{
-			ID:         pluginFailureTaskPrefix + failure.PluginID,
-			Title:      "Plugin stopped",
-			About:      failure.Name,
-			Error:      failure.Reason,
-			PluginID:   failure.PluginID,
-			PluginName: failure.Name,
-		})
-	})
+	show := run.NewPluginFailureTasks(tasks)
+	c.PluginHost.Runtime.SetOnPluginFailed(show.Report)
 	c.PluginHost.Runtime.SetOnFailureCleared(func(pluginID string) {
-		tasks.Remove(pluginFailureTaskPrefix + pluginID)
+		show.Clear(pluginID)
 		signalPluginChanges(c)
 	})
 }
@@ -358,10 +281,7 @@ func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
 }
 
 func openPluginCache(c pluginsWiring) (pluginport.PluginCache, error) {
-	if c.PluginCachePath != "" {
-		return appstate.PluginCachesAt(filepath.Join(c.PluginCachePath, "plugins")), nil
-	}
-	retained, err := appstate.OpenPluginCaches()
+	retained, err := appstate.OpenPluginCachesIn(c.PluginCachePath)
 	if err != nil {
 		return nil, err
 	}

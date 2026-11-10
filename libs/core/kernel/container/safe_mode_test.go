@@ -33,7 +33,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 
 	cfg := NewConfig(Config{
 		SafeMode:   true,
-		PluginHost: NewPluginHost("desktop.editor", tmp),
+		PluginHost: newPluginHost(t, "desktop.editor", tmp),
 	})
 
 	ctx := t.Context()

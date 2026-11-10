@@ -2,10 +2,6 @@ package container
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
-	"fmt"
-	"io/fs"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -23,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
@@ -106,7 +103,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		Session: hostvault.Session{
 			Current:    current,
 			Vaults:     registry.Vaults.List,
-			Find:       findVault(registry),
+			Find:       vaultregistry.NewFindByID(registry.Lookup).Execute,
 			IndexState: hooks.IndexState,
 			Moved:      hooks.Moved,
 			Written:    hooks.Written,
@@ -142,38 +139,12 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		vaults.Session.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
 	}
 	if vaults.Session.IndexState == nil {
-		vaults.Session.IndexState = getIndexState(db)
+		vaults.Session.IndexState = query.NewGetIndexState(db.NoteQueries.VaultHolds).Execute
 	}
 	if vaults.Session.Moved == nil {
 		vaults.Session.Moved = c.Moves
 	}
 	return vaults.Access(), nil
-}
-
-func findVault(registry vaultregistry.Ports) func(id domain.VaultID) (domain.Vault, error) {
-	return func(id domain.VaultID) (domain.Vault, error) {
-		found, isFound, err := registry.Lookup.FindVault(string(id))
-		if err != nil {
-			return domain.Vault{}, err
-		}
-		if !isFound {
-			return domain.Vault{}, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
-		}
-		return found, nil
-	}
-}
-
-func getIndexState(db *vault.Index) func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
-	return func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
-		has, err := db.NoteQueries.VaultHolds.Has(ctx, v.ID)
-		if err != nil {
-			return plugindomain.IndexState{}, err
-		}
-		if has {
-			return plugindomain.IndexState{Status: plugindomain.Indexed}, nil
-		}
-		return plugindomain.IndexState{Status: plugindomain.Indexing}, nil
-	}
 }
 
 func getPluginDir(c pluginsWiring, id string) (string, bool) {
@@ -215,13 +186,6 @@ func emitPluginEvent(c pluginsWiring, event string) {
 	}
 }
 
-// credentialsLocator is a key store that keeps its values in a file when the machine has no keychain.
-type credentialsLocator interface {
-	// GetCredentialsPath returns the file the values are kept in, or the empty text while the
-	// system keychain is in use.
-	GetCredentialsPath(ctx context.Context) string
-}
-
 func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 	return settingsadapter.NewSecretLedger(c.SettingsFiles, c.SettingsFile, c.ReadCheckedSettings, c.RefreshSettingEvents)
 }
@@ -231,25 +195,7 @@ func openSecrets(c pluginsWiring) *secret.Secrets {
 	if c.PluginHost != nil {
 		plugins = c.PluginHost.Configuration
 	}
-	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, newSecretID, c.CredentialsPath, c.SecretGate)
-}
-
-func credentialsPathOf(store pluginport.KeyStore) func() string {
-	return func() string {
-		locator, isLocator := store.(credentialsLocator)
-		if !isLocator {
-			return ""
-		}
-		return locator.GetCredentialsPath(context.Background())
-	}
-}
-
-func newSecretID() (string, error) {
-	var random [4]byte
-	if _, err := rand.Read(random[:]); err != nil {
-		return "", fmt.Errorf("read random bytes for the id of a secret: %w", err)
-	}
-	return "s" + hex.EncodeToString(random[:]), nil
+	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, settingsadapter.CreateSecretID, c.CredentialsPath, c.SecretGate)
 }
 
 func setSecretSource(c pluginsWiring) {
