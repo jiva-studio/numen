@@ -13,21 +13,26 @@ const SHELL_APPEARANCE = ['app', 'appearance'] as const
 
 const isMode = (value: unknown): value is Mode => MODES.some((one) => one === value)
 
+const isScale = (key: string | undefined): key is typeof INTERFACE_SCALE | typeof TEXT_SCALE =>
+  key === INTERFACE_SCALE || key === TEXT_SCALE
+
+function previewAppearance(
+  keyboard: ReturnType<typeof createWindowAppearance>['preview']['keyboard'],
+  key: string | undefined,
+  value: unknown,
+): void {
+  if (key === 'theme' && typeof value === 'string') keyboard.previewTheme(value)
+  else if (key === 'mode' && isMode(value)) keyboard.previewMode(value)
+  else if (isScale(key) && typeof value === 'number') keyboard.previewSize(key, value)
+}
+
 function createWindowPreview(
   appearance: ReturnType<typeof createWindowAppearance>,
 ): SettingPreview {
   return {
     apply: (path, value) => {
       if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
-      const key = path[2]
-      if (key === 'theme' && typeof value === 'string') appearance.preview.previewTheme(value)
-      if (key === 'mode' && isMode(value)) appearance.preview.previewMode(value)
-      if (key === INTERFACE_SCALE && typeof value === 'number') {
-        appearance.preview.previewSize(INTERFACE_SCALE, value)
-      }
-      if (key === TEXT_SCALE && typeof value === 'number') {
-        appearance.preview.previewSize(TEXT_SCALE, value)
-      }
+      previewAppearance(appearance.preview.keyboard, path[2], value)
     },
     restore: () => appearance.preview.restore(),
   }

@@ -59,6 +59,20 @@ const readmeText = ref('')
 const countReads = createRequestGuard()
 const readmeReads = createRequestGuard()
 
+/* ---------------------------------- Hooks --------------------------------- */
+watch(
+  () => props.plugin.id,
+  (pluginId) => {
+    deleteProblem.value = ''
+    readmeText.value = ''
+    fileCount.value = 0
+    runInBackground(Promise.all([readFileCount(pluginId), readReadme(pluginId)]), (error) => {
+      if (props.plugin.id === pluginId) deleteProblem.value = formatError(error)
+    })
+  },
+  { immediate: true },
+)
+
 /* -------------------------------- Handlers -------------------------------- */
 function onBack(): void {
   emit('back')
@@ -97,19 +111,6 @@ async function readReadme(pluginId: string): Promise<void> {
   const text = await fetchPluginReadme(pluginId)
   if (request.isCurrent) readmeText.value = text
 }
-
-watch(
-  () => props.plugin.id,
-  (pluginId) => {
-    deleteProblem.value = ''
-    readmeText.value = ''
-    fileCount.value = 0
-    runInBackground(Promise.all([readFileCount(pluginId), readReadme(pluginId)]), (error) => {
-      if (props.plugin.id === pluginId) deleteProblem.value = formatError(error)
-    })
-  },
-  { immediate: true },
-)
 </script>
 
 <template>

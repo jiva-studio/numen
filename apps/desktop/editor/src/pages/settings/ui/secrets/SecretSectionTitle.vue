@@ -34,6 +34,10 @@ const emit = defineEmits<{
   (e: 'delete-group', opener: HTMLElement): void
 }>()
 
+defineExpose({
+  focusAdd: () => (addButton.value?.$el as HTMLElement | undefined)?.focus(),
+})
+
 /* --------------------------------- State ---------------------------------- */
 const items: readonly MenuItem[] = [
   { id: 'rename', text: words.secretGroupRename },
@@ -45,10 +49,6 @@ const nameProblem = ref<'' | 'long' | 'taken'>('')
 const info = computed(() => getServiceInfo(props.group))
 const nameInput = useTemplateRef<InstanceType<typeof SecretInput>>('nameInput')
 const addButton = useTemplateRef<InstanceType<typeof Button>>('addButton')
-
-defineExpose({
-  focusAdd: () => (addButton.value?.$el as HTMLElement | undefined)?.focus(),
-})
 
 onMounted(async () => {
   if (props.isNew) await onStartRename()

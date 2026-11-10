@@ -31,16 +31,27 @@ export interface WindowStreamsDeps {
   readonly activateTab: (id: string) => void
 }
 
+function isChangeEmpty(change: VaultChange): boolean {
+  return (
+    change.paths.length === 0 &&
+    change.renamed.length === 0 &&
+    !change.shouldReload &&
+    change.versionPaths.length === 0
+  )
+}
+
+async function reportVaultChange(change: VaultChange, deps: WindowStreamsDeps): Promise<void> {
+  if (change.shouldReload) await deps.onVaultChanged([], change.renamed, [])
+  else await deps.onVaultChanged(change.paths, change.renamed, change.versionPaths)
+}
+
 async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): Promise<void> {
-  const { versionPaths } = change
-  const isEmpty = change.paths.length === 0 && change.renamed.length === 0
-  if (isEmpty && !change.shouldReload && versionPaths.length === 0) return
+  if (isChangeEmpty(change)) return
   if (change.shouldReload && (await deps.isVaultSwapped())) {
     deps.reload()
     return
   }
-  if (change.shouldReload) await deps.onVaultChanged([], change.renamed, [])
-  else await deps.onVaultChanged(change.paths, change.renamed, versionPaths)
+  await reportVaultChange(change, deps)
   if (change.renamed.some((went) => went.from === deps.opening.value)) {
     try {
       await deps.readInitialNote()

@@ -45,6 +45,20 @@ function createPaletteCommands(session: PaletteSession) {
     return isOffered || command.isAvailable(target, deps.runs)
   }
 
+  const startStep = (
+    command: Command,
+    step: NonNullable<Command['input']>,
+    target: CommandTarget,
+    input: string | undefined,
+  ): CommandInvocation | null => {
+    const name = input?.trim() ?? ''
+    if (step === 'name' && name !== '') return invocation(command.id, target, name)
+    if (isNameOmittable(command, target)) return invocation(command.id, target)
+    openSteps()
+    steps.stack.pushStep({ step, command, on: target })
+    return null
+  }
+
   /** Starts a command; the text typed for it, where given, answers a step that asks for a name. */
   const startCommand = (
     id: string,
@@ -53,16 +67,10 @@ function createPaletteCommands(session: PaletteSession) {
     values?: Readonly<Record<string, string>>,
   ): CommandInvocation | null => {
     const command = rows.byId.value.get(id)
-    if (!command) return null
-    if (!isStartable(command, target, values)) return null
+    if (!command || !isStartable(command, target, values)) return null
     if (!command.input) return invocation(command.id, target)
     if (command.input === 'arguments' && values) return startArguments(command, target, values)
-    const name = input?.trim() ?? ''
-    if (command.input === 'name' && name !== '') return invocation(command.id, target, name)
-    if (isNameOmittable(command, target)) return invocation(command.id, target)
-    openSteps()
-    steps.stack.pushStep({ step: command.input, command, on: target })
-    return null
+    return startStep(command, command.input, target, input)
   }
 
   const getObjection = (id: string, target: CommandTarget): string => {

@@ -25,6 +25,14 @@ const emit = defineEmits<{
   (event: 'toggle', id: string, isOn: boolean): void
 }>()
 
+defineExpose({
+  /** The element itself, for a caller that has to reach past these props. */
+  get element() {
+    return element.value
+  },
+  focus: (how?: FocusOptions) => element.value?.focus(how),
+})
+
 /* ---------------------------------- State --------------------------------- */
 const query = ref('')
 const trigger = useTemplateRef<InstanceType<typeof SelectTrigger>>('trigger')
@@ -39,12 +47,6 @@ const displayText = computed(() => {
   return rest.length === 0
     ? getChosenText(first)
     : `${getChosenText(first)} ${props.getMoreText(rest.length)}`
-})
-
-defineExpose({
-  /** The element itself, for a caller that has to reach past these props. */
-  element,
-  focus: (how?: FocusOptions) => element.value?.focus(how),
 })
 
 /* -------------------------------- Handlers -------------------------------- */

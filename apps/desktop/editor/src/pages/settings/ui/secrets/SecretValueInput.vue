@@ -22,6 +22,8 @@ const emit = defineEmits<{
   (e: 'commit', value: string): void
 }>()
 
+defineExpose({ focus: () => input.value?.focus() })
+
 /* --------------------------------- State ---------------------------------- */
 const entry = ref('')
 const isSending = ref(false)
@@ -31,8 +33,6 @@ const stateId = useId()
 const failureId = useId()
 const hasFailed = computed(() => failedValue.value !== null)
 const describedBy = computed(() => (hasFailed.value ? `${stateId} ${failureId}` : stateId))
-
-defineExpose({ focus: () => input.value?.focus() })
 
 /* -------------------------------- Handlers -------------------------------- */
 async function onCommit(): Promise<void> {

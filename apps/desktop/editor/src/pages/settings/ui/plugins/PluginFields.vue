@@ -39,10 +39,6 @@ const {
   () => props.state.installation.settings.getPlatform?.() ?? '',
 )
 
-function isKeyRequested(key: string): boolean {
-  return installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
-}
-
 /** Why a path setting did not accept the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
 const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
@@ -70,6 +66,10 @@ function onPathClear(setting: PluginSettingInfo, targetPath?: string): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function isKeyRequested(key: string): boolean {
+  return installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
+}
+
 function hasManyPaths(setting: PluginSettingInfo): boolean {
   return setting.type === 'file' && setting.multiple === true
 }

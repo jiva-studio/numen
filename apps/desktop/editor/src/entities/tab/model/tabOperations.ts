@@ -132,22 +132,25 @@ export function createTabOpeners(store: TabStore) {
     return undefined
   }
 
-  const createTabNow = (kind: string, targetPath: string, wantedId = ''): string => {
-    const one =
-      store.byKind.value.get(kind) ??
-      createUnavailableKind(store.panes.unavailable, kind, undefined, store.unavailable)
+  const getKind = (kind: string): AnyTabKind =>
+    store.byKind.value.get(kind) ??
+    createUnavailableKind(store.panes.unavailable, kind, undefined, store.unavailable)
+
+  /** The open tab a path already has, where the kind gives a tab one identity per path. */
+  const findTabOfPath = (one: AnyTabKind, kind: string, targetPath: string) =>
     // Stryker disable next-line LogicalOperator: empty targetPath matches singleton tabs via candidateId below
-    if (targetPath && one.identity) {
-      const matchedId = findOpenTabAt(kind, targetPath)
-      if (matchedId) return matchedId
-    }
-    const candidateId =
-      wantedId || (one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind))
+    targetPath && one.identity ? findOpenTabAt(kind, targetPath) : undefined
+
+  const getCandidateId = (one: AnyTabKind, kind: string, targetPath: string, wantedId: string) =>
+    wantedId || (one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind))
+
+  const createTabNow = (kind: string, targetPath: string, wantedId = ''): string => {
+    const one = getKind(kind)
+    const matchedId = findTabOfPath(one, kind, targetPath)
+    if (matchedId) return matchedId
+    const candidateId = getCandidateId(one, kind, targetPath, wantedId)
     const existing = store.open.value.get(candidateId)
-    if (existing) {
-      const existingPath = getTabPath(existing)
-      if (!targetPath || !existingPath) return candidateId
-    }
+    if (existing && (!targetPath || !getTabPath(existing))) return candidateId
     const id = existing ? generateId(kind) : candidateId
     const scope = effectScope(true)
     const state = openInScope(scope, () => one.open(targetPath, id))

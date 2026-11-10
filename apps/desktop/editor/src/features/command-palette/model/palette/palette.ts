@@ -16,15 +16,7 @@ export function createCommandPalette(deps: CommandPaletteDeps) {
   const view = usePaletteView(session)
   const palette = createPalette(session, view)
 
-  return {
-    palette,
-    view: {
-      groups: view.groups,
-      findTabKind: view.findTabKind,
-      findCommandIcon: view.findCommandIcon,
-    },
-    navigation,
-  }
+  return { palette, view, navigation }
 }
 
 export type Commands = ReturnType<typeof createCommandPalette>
