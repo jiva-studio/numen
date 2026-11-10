@@ -154,6 +154,21 @@ The host checks both sides. For a backend, the host endpoint authenticates the b
 
 A plugin reads and writes the vault through `host.Client`, which implements the capability interfaces (`host.FileReader`, `host.FileWriter`, `host.NoteLookup`, `host.LinkLookup` and the others), and each plugin declares the narrow one it needs. A plugin keeps its own files through `host.StoreReader` and `host.StoreWriter`, or in the directories `NUMEN_PLUGIN_DATA_DIR` and `NUMEN_PLUGIN_CACHE_DIR` name. A frontend that shows notes holds `vault:read`, and one that edits them also `vault:write`.
 
+## Size and role
+
+A structure is judged by what one object does, not by the interfaces it is cut into.
+
+- The `service` package of a backend is the composition root and the wire: it builds adapters and use cases and holds one handler per method. A rule of the plugin is in a domain or use case package.
+- A backend struct has the bounds of [`architecture.md`](../../rules/architecture.md) §8: adapters at most 20 methods and 15 fields, use cases at most 12 and 12. A file has at most 500 lines.
+- An adapter owns one technology (host, process, http, filesystem) and holds no business rule.
+- Shared code inside a plugin is a domain, a port, a use case or a package named after what it computes. A plugin does not collect reuse in a folder named by kind.
+- A frontend is a set of slices. The rest of the plugin imports a slice through its `index.ts` only.
+- A permission is a row in the manifest and a deny-by-default table in the host: a call with no row is refused. The plugin declares each permission its calls use.
+- A value of unknown type, such as a JSON body or a host reply, is parsed once at the edge of `api` or the host client into a named type.
+- One host concern has one runtime port in the plugin: the clock, the filesystem and the process each enter through one interface.
+- A `catch` or an error branch handles the failure: it returns a typed error or reports it.
+- Production code carries no seam that only a test mock uses.
+
 ## What the checks enforce
 
 The complete list, with the verifier of each, is in [`checks.md`](checks.md). In short:
