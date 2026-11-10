@@ -214,6 +214,8 @@ export interface PluginContextHost {
     registration: SlotViewRegistration,
   ): Disposable
   readonly app: AppInfo
+  /** The target the plugins activate in; the editor where none is given. */
+  readonly target?: string
   openExternal(this: void, url: string): Promise<void>
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable

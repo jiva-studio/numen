@@ -37,7 +37,7 @@
     ],
     "keybindings": [{ "key": "mod+shift+a", "command": "chat.open" }]
   },
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "vault:write"],
   "settings": [
     {
       "key": "reasoning",
