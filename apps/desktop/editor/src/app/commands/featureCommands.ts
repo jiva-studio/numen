@@ -10,7 +10,6 @@ import type { Words } from '@/features/command-palette'
 import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
 import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
 import { createTabCommands, type TabCommandsDeps } from '@/features/tab-commands'
-import { getAllTabs, getEligibleTabs, getWindowName } from '@/features/tab-linking'
 import { createVersionCommands, type VersionCommandsDeps } from '@/features/version-commands'
 import {
   createVaultCommands,
@@ -45,7 +44,7 @@ export interface FeatureWindow {
   readonly setVaultName: (vault: VaultRef) => void
   readonly reload: () => void
   readonly writeMessage: MessageWriter
-  readonly tabs: Omit<TabCommandsDeps, 'listing'>
+  readonly tabs: TabCommandsDeps
   readonly listVersionItems: VersionCommandsDeps['listItems']
 }
 
@@ -78,7 +77,7 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
       reload: parts.reload,
       writeMessage,
     },
-    tabs: { ...parts.tabs, listing: { getAllTabs, getEligibleTabs, getWindowName } },
+    tabs: parts.tabs,
     versions: { listItems: parts.listVersionItems, writeMessage },
   }
 }

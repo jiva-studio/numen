@@ -11,36 +11,23 @@ import {
   type Tab,
   type TabMoveError,
   type WindowTabs,
-  type detachTab,
-  type moveTab,
 } from '@/entities/tab'
 import type { Notes } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
-
-type Point = { readonly x: number; readonly y: number }
-
-/** The box of a pane in viewport coordinates. */
-export type PaneRect = Point & { readonly width: number; readonly height: number }
-
-const MOVE_ERRORS: Record<TabMoveError, string> = {
-  'window-closed': 'the target window closed',
-  timeout: 'the target window did not accept the tab in time',
-  'not-owner': 'another window has this tab',
-  cancelled: 'a newer move of the tab or a cancel ended this move',
-}
-
-export const ASKING_MESSAGE = 'The tab is waiting for an answer and was not moved'
-
-export const STILL_OPEN_MESSAGE = 'The tab opened in the other window and did not close here'
-
-/** How many times a window sends AcceptTabMove when the request throws. */
-export const ACCEPT_ATTEMPTS = 3
-
-/** How long a window waits before it sends a thrown AcceptTabMove again. */
-export const ACCEPT_RETRY_MS = 1000
+import { detachTab, moveTab } from '../api/tab-move'
+import {
+  ACCEPT_ATTEMPTS,
+  ACCEPT_RETRY_MS,
+  ASKING_MESSAGE,
+  getPlaceAt,
+  getPlaceOver,
+  MOVE_ERRORS,
+  STILL_OPEN_MESSAGE,
+  type PaneRect,
+  type Point,
+} from '../lib/move'
 
 export interface TabMoverDeps {
-  readonly core: { readonly detachTab: typeof detachTab; readonly moveTab: typeof moveTab }
   readonly windowId: string
   readonly windowTabs: Pick<WindowTabs, 'getTab' | 'tabs'>
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
@@ -89,38 +76,28 @@ export function createTabMover(deps: TabMoverDeps) {
   }
 
   const sendDetach = (id: string, place: PaneRect): Promise<void> =>
-    sendTab(id, (tab) => deps.core.detachTab(tab, place), 'The tab did not open in a new window')
+    sendTab(id, (tab) => detachTab(tab, place), 'The tab did not open in a new window')
 
   /** Opens a tab in a new window at a screen point, with the size of the pane of the tab. */
-  const detachTab = (id: string, point: Point): Promise<void> => {
-    const rect = deps.getPaneRect(id)
-    return sendDetach(id, { ...point, width: rect?.width ?? 0, height: rect?.height ?? 0 })
-  }
+  const detachTabAt = (id: string, point: Point): Promise<void> =>
+    sendDetach(id, getPlaceAt(point, deps.getPaneRect(id)))
 
-  /**
-   * Opens a tab in a new window over the pane of the tab, with its size. A 0 position and size
-   * leave the window where and as large as the system makes it.
-   */
-  const detachTabInPlace = (id: string): Promise<void> => {
-    const rect = deps.getPaneRect(id)
-    if (!rect) return sendDetach(id, { x: 0, y: 0, width: 0, height: 0 })
-    return sendDetach(id, {
-      x: globalThis.screenX + rect.x,
-      y: globalThis.screenY + rect.y,
-      width: rect.width,
-      height: rect.height,
-    })
-  }
+  /** Opens a tab in a new window over the pane of the tab, with its size. */
+  const detachTabInPlace = (id: string): Promise<void> =>
+    sendDetach(
+      id,
+      getPlaceOver(deps.getPaneRect(id), { x: globalThis.screenX, y: globalThis.screenY }),
+    )
 
   /** Moves a tab into another open window. */
-  const moveTab = (id: string, targetWindowId: string): Promise<void> =>
+  const moveTabTo = (id: string, targetWindowId: string): Promise<void> =>
     sendTab(
       id,
-      (tab) => deps.core.moveTab(deps.windowId, targetWindowId, tab),
+      (tab) => moveTab(deps.windowId, targetWindowId, tab),
       'The tab did not move to the window',
     )
 
-  return { detachTab, detachTabInPlace, moveTab }
+  return { detachTab: detachTabAt, detachTabInPlace, moveTab: moveTabTo }
 }
 
 export interface MovedTabOpenerDeps {

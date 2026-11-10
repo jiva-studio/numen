@@ -1,16 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import {
-  ACCEPT_ATTEMPTS,
-  ACCEPT_RETRY_MS,
-  ASKING_MESSAGE,
-  createMovedTabOpener,
-  createTabMover,
-  STILL_OPEN_MESSAGE,
-  type PaneRect,
-  type TabMoverDeps,
-} from './tabMove'
-import type { TabMoveError } from '@/entities/tab'
+import { TAB_MOVE_ERROR_CODE, type TabMoveErrorCodeValue } from '@numen/core-client'
+import type { Tab } from '@/entities/tab'
+import { answerCore } from '@/testing/coreAnswers'
+import { ACCEPT_ATTEMPTS, ACCEPT_RETRY_MS, ASKING_MESSAGE, STILL_OPEN_MESSAGE } from '../lib/move'
+import type { PaneRect } from '../lib/move'
+import { createMovedTabOpener, createTabMover, type TabMoverDeps } from './tabMove'
 
 const ORBITS_ID = 'plex:7c1e'
 
@@ -30,20 +25,29 @@ const setup = (asking: () => boolean = () => false) => {
   const tab = createTab()
   const open = new Map([[ORBITS_ID, tab]])
   const steps: string[] = []
+  type Sent = { tab: object; x?: number; y?: number; width?: number; height?: number }
   const core = {
-    detachTab: vi.fn(
-      async (): Promise<{ ok: true; value: undefined } | { ok: false; error: TabMoveError }> => {
-        steps.push('detach')
-        return { ok: true, value: undefined }
+    detachTab: vi.fn(async (_sent: Sent): Promise<{ error: TabMoveErrorCodeValue }> => {
+      steps.push('detach')
+      return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+    }),
+    moveTab: vi.fn(
+      async (_sent: Sent & { windowId: string; targetWindowId: string }): Promise<{ error: TabMoveErrorCodeValue }> => {
+        steps.push('move')
+        return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
       },
     ),
-    moveTab: vi.fn(async () => {
-      steps.push('move')
-      return { ok: true as const, value: undefined }
-    }),
   }
+  const toTab = ({ id, kind, path, title, state }: Tab) => ({ id, kind, path, title, state })
+  answerCore({
+    workspace: {
+      detachTab: ({ tab, x, y, width, height }) =>
+        core.detachTab({ tab: toTab(tab!), x, y, width, height }),
+      moveTab: ({ windowId, targetWindowId, tab }) =>
+        core.moveTab({ windowId, targetWindowId, tab: toTab(tab!) }),
+    },
+  })
   const deps = {
-    core,
     windowId: 'window-a',
     windowTabs: {
       getTab: (id: string) => open.get(id) ?? null,
@@ -64,7 +68,6 @@ const setup = (asking: () => boolean = () => false) => {
     writeMessage: vi.fn(),
     getPaneRect: vi.fn((_id: string): PaneRect | null => null),
   } as unknown as TabMoverDeps & {
-    core: typeof core
     notes: { flushPending: ReturnType<typeof vi.fn<() => Promise<void>>> }
     closeTab: ReturnType<typeof vi.fn>
     writeMessage: ReturnType<typeof vi.fn>
@@ -87,13 +90,17 @@ describe('moveTab', () => {
     await mover.moveTab(ORBITS_ID, 'window-b')
 
     expect(steps).toStrictEqual(['flush', 'move', 'close'])
-    expect(core.moveTab).toHaveBeenCalledExactlyOnceWith('window-a', 'window-b', SAVED_ORBITS)
+    expect(core.moveTab).toHaveBeenCalledExactlyOnceWith({
+      windowId: 'window-a',
+      targetWindowId: 'window-b',
+      tab: SAVED_ORBITS,
+    })
     expect(deps.closeTab).toHaveBeenCalledExactlyOnceWith(ORBITS_ID)
   })
 
   it('keeps the tab and writes the error when the target window does not accept it', async () => {
     const { core, deps, mover } = setup()
-    core.moveTab.mockResolvedValueOnce({ ok: false, error: 'window-closed' } as never)
+    core.moveTab.mockResolvedValueOnce({ error: TAB_MOVE_ERROR_CODE.WINDOW_CLOSED })
 
     await mover.moveTab(ORBITS_ID, 'window-b')
 
@@ -106,7 +113,7 @@ describe('moveTab', () => {
 
   it('shows the cancelled message when a newer transfer ends the move', async () => {
     const { core, deps, mover } = setup()
-    core.moveTab.mockResolvedValueOnce({ ok: false, error: 'cancelled' } as never)
+    core.moveTab.mockResolvedValueOnce({ error: TAB_MOVE_ERROR_CODE.CANCELED })
 
     await mover.moveTab(ORBITS_ID, 'window-b')
 
@@ -166,7 +173,8 @@ describe('detachTab', () => {
     await mover.detachTab(ORBITS_ID, { x: 100, y: 200 })
 
     expect(steps).toStrictEqual(['flush', 'detach', 'close'])
-    expect(core.detachTab).toHaveBeenCalledExactlyOnceWith(SAVED_ORBITS, {
+    expect(core.detachTab).toHaveBeenCalledExactlyOnceWith({
+      tab: SAVED_ORBITS,
       x: 100,
       y: 200,
       width: 0,
@@ -181,7 +189,8 @@ describe('detachTab', () => {
     await mover.detachTab(ORBITS_ID, { x: 100, y: 200 })
 
     expect(deps.getPaneRect).toHaveBeenCalledWith(ORBITS_ID)
-    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, {
+    expect(core.detachTab).toHaveBeenCalledWith({
+      tab: SAVED_ORBITS,
       x: 100,
       y: 200,
       width: 600,
@@ -191,7 +200,7 @@ describe('detachTab', () => {
 
   it('keeps the source tab open until the new window accepts the tab', async () => {
     const { core, deps, mover } = setup()
-    core.detachTab.mockResolvedValueOnce({ ok: false, error: 'timeout' })
+    core.detachTab.mockResolvedValueOnce({ error: TAB_MOVE_ERROR_CODE.TIMEOUT })
 
     await mover.detachTab(ORBITS_ID, { x: 100, y: 200 })
 
@@ -213,7 +222,8 @@ describe('detachTab', () => {
       vi.unstubAllGlobals()
     }
 
-    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, {
+    expect(core.detachTab).toHaveBeenCalledWith({
+      tab: SAVED_ORBITS,
       x: 1030,
       y: 540,
       width: 600,
@@ -226,7 +236,8 @@ describe('detachTab', () => {
 
     await mover.detachTabInPlace(ORBITS_ID)
 
-    expect(core.detachTab).toHaveBeenCalledWith(SAVED_ORBITS, {
+    expect(core.detachTab).toHaveBeenCalledWith({
+      tab: SAVED_ORBITS,
       x: 0,
       y: 0,
       width: 0,
@@ -256,10 +267,13 @@ describe('detachTab', () => {
 
     await mover.detachTab('settings:settings', { x: 1, y: 2 })
 
-    expect(core.detachTab).toHaveBeenCalledWith(
-      { id: 'settings:settings', kind: 'settings', path: '', title: '', state: '' },
-      { x: 1, y: 2, width: 0, height: 0 },
-    )
+    expect(core.detachTab).toHaveBeenCalledWith({
+      tab: { id: 'settings:settings', kind: 'settings', path: '', title: '', state: '' },
+      x: 1,
+      y: 2,
+      width: 0,
+      height: 0,
+    })
   })
 })
 

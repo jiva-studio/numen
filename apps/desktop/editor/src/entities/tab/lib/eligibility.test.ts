@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getAllTabs, getEligibleTabs } from './eligibility'
-import type { TabLinkGroup } from '@/entities/tab'
+import type { TabLinkGroup } from './links'
 
 const TABS = [
   { id: 'a', title: 'A' },
