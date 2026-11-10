@@ -29,14 +29,13 @@ import {
   type WindowHost,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import { createPluginContext } from './context'
-import { disposeSubscriptions } from './guards/subscriptions'
-import { Rule, SERVICE_RULES } from './guards/servicePermissions'
-import type { PluginContextHost } from './types'
+import { createPluginContext } from '../context'
+import { disposeSubscriptions } from './subscriptions'
+import { Rule, SERVICE_RULES } from './servicePermissions'
+import type { PluginContextHost } from '../types'
 
 type Tree = { [key: string]: Rule | Tree }
 
-/** A service made from the rules: a spy for every rule, an object for every nested set of rules. */
 function createFake(rules: Tree): Record<string, unknown> {
   const fake: Record<string, unknown> = {}
   for (const [key, rule] of Object.entries(rules)) {
@@ -125,7 +124,7 @@ describe('every member of a service that lists a permission', () => {
       const missing = member.rule.permissions[0] ?? ''
       const denied = createPluginContext('md.numen.sample', host, MANIFEST([]))
 
-      const refusal = member.rule.isAsync
+      const failure = member.rule.isAsync
         ? await Promise.resolve()
             .then(() => call(denied, member.path))
             .catch((error: unknown) => error)
@@ -137,7 +136,7 @@ describe('every member of a service that lists a permission', () => {
             }
             return undefined
           })()
-      expect(String(refusal)).toContain(`lacks required permission "${missing}"`)
+      expect(String(failure)).toContain(`lacks required permission "${missing}"`)
 
       const allowed = createPluginContext(
         'md.numen.sample',

@@ -28,17 +28,14 @@ export class Rule {
   ) {}
 }
 
-/** A member that throws where the plugin lacks a permission. */
 function requirePermissions(...permissions: string[]): Rule {
   return new Rule(permissions, false, '')
 }
 
-/** A member that returns a promise, which rejects where the plugin lacks a permission. */
 function requirePermissionsAsync(...permissions: string[]): Rule {
   return new Rule(permissions, true, '')
 }
 
-/** A member that needs no permission; the reason is the fact that makes it safe. */
 function requireNothing(reason: string): Rule {
   return new Rule([], false, reason)
 }
@@ -243,19 +240,19 @@ function guardMember(
     return {
       enumerable: true,
       value: (...args: unknown[]) => {
-        const refusal = requireAll(rule, operation, check)
-        if (refusal === undefined)
+        const failure = requireAll(rule, operation, check)
+        if (failure === undefined)
           return Reflect.apply(service[key] as () => unknown, service, args)
-        if (rule.isAsync) return Promise.reject(refusal.error)
-        throw refusal.error
+        if (rule.isAsync) return Promise.reject(failure.error)
+        throw failure.error
       },
     }
   }
   return {
     enumerable: true,
     get: () => {
-      const refusal = requireAll(rule, operation, check)
-      if (refusal !== undefined) throw refusal.error
+      const failure = requireAll(rule, operation, check)
+      if (failure !== undefined) throw failure.error
       return service[key]
     },
   }

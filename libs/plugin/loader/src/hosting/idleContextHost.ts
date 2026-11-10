@@ -12,7 +12,7 @@ export type IdleContextHostParts = Pick<
 
 /**
  * The host of a window that has no services of the editor: nothing is read, listened to or dropped,
- * and the registrations the window has no place for are kept by nobody. The window gives the
+ * and the registrations the window has no place for are dropped. The window gives the
  * registrations it draws and the services it offers; `createPluginContext` wires the permissions.
  */
 export function createIdleContextHost(parts: IdleContextHostParts): PluginContextHost {
