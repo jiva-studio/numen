@@ -168,16 +168,23 @@ interface Activation {
   readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
-function createRuntime(
-  deps: PluginLoaderDeps,
-  status: PluginStatus,
-  state: LoaderState,
-  activation: Activation,
-) {
+/** Settles once every enabled plugin with a kind of tab has started or failed. */
+function createTabPluginsWait(status: PluginStatus, activation: Activation) {
+  const { isEnabled, listPlugins, settlePlugin } = status
+  return async (): Promise<void> => {
+    const withTabs = await Promise.all(
+      listPlugins()
+        .filter((id) => isEnabled(id))
+        .map(async (id) => ((await activation.hasTabKinds(id)) ? [id] : [])),
+    )
+    await Promise.all(withTabs.flat().map(settlePlugin))
+  }
+}
+
+function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation: Activation) {
   const { host } = deps
   const { activatePlugin, deactivatePlugin, loadModule } = activation
-  const { activePlugins, moduleLoaders } = state
-  const { tracked, isRunning, isEnabled, listPlugins, settlePlugin, isPluginStarting } = status
+  const { activePlugins, moduleLoaders, tracked, isRunning, isEnabled, listPlugins } = status
   const settingSubscriptions = new Map<string, Disposable>()
   const interfaceStarted = createSignal()
 
@@ -196,17 +203,9 @@ function createRuntime(
   }
 
   return {
-    settlePlugin,
-    isPluginStarting,
-    /** Settles once every enabled plugin with a kind of tab has started or failed. */
-    waitForTabPlugins: async (): Promise<void> => {
-      const withTabs = await Promise.all(
-        listPlugins()
-          .filter((id) => isEnabled(id))
-          .map(async (id) => ((await activation.hasTabKinds(id)) ? [id] : [])),
-      )
-      await Promise.all(withTabs.flat().map(settlePlugin))
-    },
+    settlePlugin: status.settlePlugin,
+    isPluginStarting: status.isPluginStarting,
+    waitForTabPlugins: createTabPluginsWait(status, activation),
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
       if (isRunning.value) {
@@ -262,7 +261,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
   const activation = createActivation(deps, state)
 
   return {
-    ...createRuntime(deps, status, state, activation),
+    ...createRuntime(deps, status, activation),
     ...activation,
     registerPluginManifest: (id: string, manifest: Manifest) => {
       manifests.set(id, manifest)
