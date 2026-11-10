@@ -238,12 +238,12 @@ export interface RegistrationPort {
     permissions?: readonly string[],
   ) => Disposable
   readonly registerDropHandler: (pluginId: string, registration: DropRegistration) => Disposable
-  readonly mountView: (
+  mountView(
     capability: string,
     element: HTMLElement,
     context: object,
     access: MountAccess,
-  ) => MountedView
+  ): MountedView
 }
 
 /** The settings of the plugins as the window holds them. */

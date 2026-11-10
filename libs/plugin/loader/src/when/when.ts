@@ -161,7 +161,7 @@ export function parseWhen(text: string): Result<WhenCondition, string> {
       const bindings = Object.fromEntries(
         WHEN_VARIABLES.map((one) => [one.name, toCelMap(values[one.name] ?? getDefault(one.type))]),
       )
-      const result = run(bindings as Parameters<typeof run>[0])
+      const result = run(bindings)
       return !isCelError(result) && result === true
     },
     evaluatePartial: (values) => {
