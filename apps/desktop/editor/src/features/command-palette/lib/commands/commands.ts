@@ -3,8 +3,6 @@
  */
 import type { Command, CommandGroup } from '@/entities/command'
 
-export { createCommands } from './table'
-
 const getNestedCommandIds = (commands: readonly Command[]): ReadonlySet<string | undefined> =>
   new Set(commands.map((one) => one.also))
 

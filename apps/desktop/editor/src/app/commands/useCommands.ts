@@ -10,36 +10,32 @@ import {
   createInvocation,
   useCommandPalette,
   useSearch,
-  ANSWER_WORDS,
   type CommandDeps,
   type ResultChoice,
   type SearchMenuDeps,
-  type Notes,
   type NoteLookup,
   type PaletteLists,
 } from '@/features/command-palette'
-import type {
-  Command,
-  CommandInvocation,
-  CommandTarget,
-  RunSupport,
-  VaultRef,
+import {
+  COMMAND,
+  type Command,
+  type CommandInvocation,
+  type CommandTarget,
+  type Notes,
+  type RunSupport,
 } from '@/entities/command'
 import { createCommandDeps } from './commandDeps'
-import { COMMAND } from '@/shared/commandIds'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
 import { toRunTarget } from './runTarget'
 import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import { syncKeybindings } from './syncKeybindings'
-import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
-import type { NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import type { VaultCore } from '../vault'
 import { getVaultList } from '../window/vaultList'
@@ -59,10 +55,6 @@ export interface CommandsDepsOptions {
   paletteLists: PaletteLists
   runs: RunSupport
   coverage: () => IndexCoverage
-  making: NoteCreator
-  setVaultName: (vault: VaultRef) => void
-  reload: () => void
-  tabsHold?: TabsHold
   reached: Notes
   settingPalette?: {
     getCommands: () => readonly Command[]
@@ -74,9 +66,6 @@ export interface CommandsDepsOptions {
     plugins?: Ref<readonly PluginInfo[]>
     getCommittedSetting?: (path: readonly string[]) => unknown
   }
-  travel: (path: string) => Promise<void> | void
-  leavePath: (from: string, to: string) => Promise<void> | void
-  getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: PluginHost | undefined
   slots?: SlotHost
@@ -162,7 +151,7 @@ async function runInvocationToEnd(
     if (severity === 'error') errors.push(text)
     else deps.writeMessage(text, severity)
   }
-  const made = await runInvocation(invocation, { ...deps, writeMessage }, ANSWER_WORDS)
+  const made = await runInvocation(invocation, { ...deps, writeMessage })
   if (errors[0] !== undefined) throw new Error(errors[0])
   return made
 }
@@ -213,7 +202,7 @@ export function createCommandRunner(parts: CommandRunnerParts) {
     if (invocation) {
       const deps = parts.getCommandDeps()
       const run = withValues(invocation, way.values)
-      return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps, ANSWER_WORDS)
+      return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps)
     }
     if (commands.open.value) {
       palette.setOpen(false)
@@ -316,7 +305,7 @@ export function useCommands(options: CommandsDepsOptions) {
    */
   const runKeyWithValues = (command: string, values: Values): void => {
     const invocation = withValues(createInvocation(command, getTarget()), values)
-    runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), (error) =>
+    runInBackground(runInvocation(invocation, commandDeps), (error) =>
       writeMessage(formatErrorMessage(error), 'error'),
     )
   }

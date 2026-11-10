@@ -7,7 +7,7 @@
  * two.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { COMMAND, ROW } from '@/shared/commandIds'
+import { COMMAND, ROW } from '@/entities/command'
 import {
   useSearch,
   type SearchDeps,

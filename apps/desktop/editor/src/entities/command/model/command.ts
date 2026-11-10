@@ -90,6 +90,22 @@ export interface CommandTarget {
 }
 
 /**
+ * What carries a command out. A command that made a note or a folder answers with its path; one
+ * that made none answers nothing.
+ */
+export type CommandRun = (invocation: CommandInvocation) => Promise<string | void> | string | void
+
+/**
+ * What a feature declares: the rows it offers, and what carries out each command by its id. A row
+ * that runs another command through `command` has no handler of its own, and a command that is
+ * only run, as by a plugin, has a handler and no row.
+ */
+export interface FeatureCommands {
+  readonly commands: readonly Command[]
+  readonly handlers: Readonly<Record<string, CommandRun>>
+}
+
+/**
  * A command a user can invoke, as one row. A row is run under its `id`; a row whose `command` is
  * set runs that command with its `values` as the arguments.
  */

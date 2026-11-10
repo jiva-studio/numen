@@ -6,12 +6,12 @@
  */
 import { describe, expect, it } from 'vitest'
 
-import { COMMAND } from '@/shared/commandIds'
-import { findIcon, getNamedIcon } from '@/shared/icons'
+import { COMMAND, findIcon } from '@/entities/command'
+import { getNamedIcon } from '@/shared/icons'
 import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
-import { createCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
+import { createAppCommands } from '@/testing/appCommands'
 
 describe('the icon a command is drawn with', () => {
   it('is there for every command the window places in the menu of a row of the file tree', () => {
@@ -21,7 +21,7 @@ describe('the icon a command is drawn with', () => {
   })
 
   it('is there for every command the palette draws', () => {
-    for (const one of createCommands(words)) expect(findIcon(one.id), one.id).not.toBeNull()
+    for (const one of createAppCommands()) expect(findIcon(one.id), one.id).not.toBeNull()
   })
 
   it('is there for declared plugin commands and plugin settings, with distinct icons', () => {

@@ -13,6 +13,7 @@ import {
 } from '@numen/plugin-loader'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import type { Command } from '@/entities/command'
+import { createAppCommands } from '@/testing/appCommands'
 import { createWindowSlots } from './windowSlots'
 
 const TIDE = 'org.example.tide'
@@ -84,7 +85,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     },
     hostHolder: { current: host as unknown as PluginHost },
     writeIssue: vi.fn(),
-    getAppCommands: () => [MOVE],
+    getAppCommands: () => [...createAppCommands(), MOVE],
   })
   const registry = createSlotRegistry({
     getEntries: slots.hostDeps.getSlotEntries,

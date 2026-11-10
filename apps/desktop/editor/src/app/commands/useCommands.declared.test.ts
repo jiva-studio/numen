@@ -7,12 +7,14 @@ import type { DeclaredCommands } from './declaredCommands'
 const isOpen = ref(false)
 
 vi.mock('@/features/command-palette', () => ({
-  ANSWER_WORDS: {},
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
   useCommandPalette: () => ({ open: isOpen }),
 }))
-vi.mock('./commandDeps', () => ({ createCommandDeps: () => ({}) }))
+vi.mock('./commandDeps', () => ({ createCommandDeps: () => ({}), createCommandNotes: () => ({}) }))
+vi.mock('./featureCommands', () => ({
+  collectFeatureCommands: () => ({ commands: [], handlers: {} }),
+}))
 
 const setup = (load: () => Promise<void>, plugins?: Ref<{ id: string; isActive: boolean }[]>) => {
   const messages: [string, string][] = []

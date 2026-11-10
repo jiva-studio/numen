@@ -4,8 +4,6 @@
  */
 import { describe, expect, it } from 'vitest'
 import { APP_KEYBINDINGS } from '@numen/plugin-loader'
-import { createCommands } from '../commands/commands'
-import { WORDS as words } from '@/shared/words'
 import { createRowKeys, findChordKeys, findShortcutKeys } from './keys'
 
 describe('how a key is drawn on the row that names it', () => {
@@ -80,23 +78,6 @@ describe('how a key a plugin declares is drawn', () => {
 })
 
 describe('every key the application holds', () => {
-  const APPLE = 'MacIntel'
-  const OPENS_A_PALETTE = ['app:vault.search', 'app:commands.open']
-  const appKeys = APP_KEYBINDINGS.filter((one) => !OPENS_A_PALETTE.includes(one.command))
-
-  it('names a row the palette has, unless it opens a palette', () => {
-    const recognized = new Set(createCommands(words, APPLE).map((one) => one.id))
-    for (const one of appKeys) expect(recognized.has(one.command)).toBe(true)
-  })
-
-  it('is drawn on the row of the command it names', () => {
-    const commands = createCommands(words, APPLE)
-    for (const one of appKeys) {
-      const row = commands.find((command) => command.id === one.command)
-      expect(row?.keys).toEqual(findChordKeys(one.command, APPLE))
-    }
-  })
-
   it('is the only key holding that chord under that condition', () => {
     const chords = APP_KEYBINDINGS.map((one) => `${one.key}|${one.when}`)
     expect(new Set(chords).size).toBe(chords.length)

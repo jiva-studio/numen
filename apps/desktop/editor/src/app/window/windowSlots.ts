@@ -10,9 +10,7 @@ import {
   type PluginHostDeps,
   type WhenValues,
 } from '@numen/plugin-loader'
-import { createCommands } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
-import { WORDS as words } from '@/shared/words'
 import type { DeclaredCommands } from '../commands/declaredCommands'
 import { createSlotCommandFinder, readSlotEntries } from '../commands/pluginSlots'
 import { getPaletteId } from '../commands/declaredCommands'
@@ -41,7 +39,6 @@ type WindowHostDeps = Required<
 >
 
 export function createWindowSlots(deps: WindowSlotsDeps) {
-  let editorCommands: readonly Command[] | undefined
   /** The window variables of when, and the settings as config; set once the window can say what is in front. */
   const windowValues: { current?: () => WhenValues } = {}
   const { whenContext } = deps.declaredCommands
@@ -62,10 +59,7 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
     getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
     getHandlerDeclarations: () => deps.declaredCommands.contributions.handlers.value,
-    getEditorCommands: () => [
-      ...(editorCommands ??= createCommands(words)),
-      ...(deps.getAppCommands?.() ?? []),
-    ],
+    getEditorCommands: () => deps.getAppCommands?.() ?? [],
     hasPluginItems: (command) =>
       (deps.hostHolder.current?.hasCommandItems(command) ?? false) ||
       (deps.declaredCommands.commands.value?.some(

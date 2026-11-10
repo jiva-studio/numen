@@ -27,4 +27,17 @@ describe('an invocation made from a target', () => {
   it('is not marked where the target is the tab in front', () => {
     expect(createInvocation('x', TARGET).isTargetNamed).toBeUndefined()
   })
+
+  it('keeps the selector of the target, and has none where the target has none', () => {
+    expect(createInvocation('x', { ...TARGET, selector: { page: 3 } }).selector).toEqual({
+      page: 3,
+    })
+    expect(createInvocation('x', TARGET).selector).toBeUndefined()
+  })
+
+  it('keeps the line of the target, the first line included, and has none where it has none', () => {
+    expect(createInvocation('x', { ...TARGET, line: 7 }).line).toBe(7)
+    expect(createInvocation('x', { ...TARGET, line: 0 }).line).toBe(0)
+    expect(createInvocation('x', TARGET).line).toBeUndefined()
+  })
 })

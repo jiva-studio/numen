@@ -1,67 +1,27 @@
-import { formatErrorMessage } from '@numen/core-client'
-import { openAfterSavingTabs, type TabsHold } from './leaveVault'
 import { runInBackground } from '@numen/ui'
-import { vaults } from '@/entities/vault'
 import type { VaultCore } from '../vault'
-import type { CommandDeps, Notes, VaultWriter } from '@/features/command-palette'
-import type { RunSupport, VaultRef } from '@/entities/command'
+import type { CommandDeps } from '@/features/command-palette'
+import type { Notes, RunSupport } from '@/entities/command'
+import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
-import { renameNote, type NoteCreator } from '@/entities/note'
-import { createFolder, emptyTrash, listFiles, moveFile, removeFile } from '@/entities/file'
-import type { Model, SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
   core: VaultCore
   windowTabs: WindowTabs
-  making: NoteCreator
-  setVaultName: (vault: VaultRef) => void
-  reload: () => void
-  tabsHold?: TabsHold
   reached: Notes
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }
-  rest: {
-    writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
-    getModelsAt?: (targetPath: readonly string[]) => readonly Model[]
-  }
-  travel: (path: string) => Promise<void> | void
-  leavePath: (from: string, to: string) => Promise<void> | void
-  getOpeningNote: () => string
   runs: RunSupport
   writeMessage: MessageWriter
   search?: () => void
 }
 
-function createFileCommands(making: NoteCreator): VaultWriter {
-  return {
-    createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
-    createUntitled: (folder) => making.createUntitled(folder),
-    rename: (path, title) => renameNote(path, title),
-    remove: (path) => removeFile(path),
-    emptyTrash: () => emptyTrash(),
-    move: (from, to) => moveFile(from, to),
-    listNames: async (folder) => (await listFiles(folder)).map((one) => one.name),
-    createFolder: (path) => createFolder(path),
-  }
-}
-
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
-  const { travel, leavePath, windowTabs, getOpeningNote, search, writeMessage } = options
+  const { windowTabs, search, writeMessage } = options
   return {
-    travel: async (path) => {
-      await travel(path)
-    },
-    leave: async (from, to) => {
-      await leavePath(from, to)
-    },
-    getOpeningNote,
     openTab: (kind) =>
       runInBackground(windowTabs.openTabOfKind(kind), (error) =>
-        writeMessage(formatErrorMessage(error), 'error'),
-      ),
-    showTab: (kind, path) =>
-      runInBackground(windowTabs.navigateTab(kind, path), (error) =>
-        writeMessage(formatErrorMessage(error), 'error'),
+        writeMessage(formatError(error), 'error'),
       ),
     closeTab: (tab) => windowTabs.requestClose(tab),
     // Without a palette to open, searching does nothing.
@@ -126,28 +86,13 @@ export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Note
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, setVaultName, reload, reached, windowTabs, runs, writeMessage, tabsHold } =
-    options
+  const { core, windowTabs, reached, runs, writeMessage } = options
 
   return {
-    files: createFileCommands(making),
-    vaults: {
-      ...vaults,
-      ...(tabsHold ? { open: openAfterSavingTabs(vaults.open, tabsHold) } : {}),
-      setVaultName,
-      reload,
-    },
     navigator: createNavigationCommands(options),
     settings: createSettingsCommands(options),
     notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,
-    copyPath: (path) => {
-      const clipboard = navigator.clipboard as Clipboard | undefined
-      if (!clipboard) return
-      runInBackground(clipboard.writeText(path), (error) =>
-        writeMessage(formatErrorMessage(error), 'error'),
-      )
-    },
     writeMessage,
     emitEvent: (event) => (core as { emitEvent?: (event: string) => void }).emitEvent?.(event),
   }

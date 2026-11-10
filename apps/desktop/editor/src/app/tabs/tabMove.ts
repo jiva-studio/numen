@@ -14,7 +14,7 @@ import {
   type detachTab,
   type moveTab,
 } from '@/entities/tab'
-import type { Notes } from '@/features/command-palette'
+import type { Notes } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 
 type Point = { readonly x: number; readonly y: number }

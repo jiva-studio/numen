@@ -1,7 +1,7 @@
 import type { Component } from 'vue'
 import { File, Undo2 } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
-import { findIcon } from '@/shared/icons'
+import { findIcon } from '@/entities/command'
 import { KEEP_SUFFIX } from './view/stepGroups'
 import type { Commands } from './palette/palette'
 import type { SearchState } from './search/search'

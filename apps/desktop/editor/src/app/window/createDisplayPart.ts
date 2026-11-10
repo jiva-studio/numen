@@ -5,7 +5,7 @@
 import { formatError } from '@/shared/api/errors'
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import type { runSupport } from '@/features/command-palette'
-import type { Command } from '@/entities/command'
+import type { Command, FeatureCommands } from '@/entities/command'
 import { createTabSync, syncTabPath, type fileOpeners, type WindowTabs } from '@/entities/tab'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
@@ -13,7 +13,7 @@ import type { useTabLinks } from '@/features/tab-linking'
 import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
-import type { TabsHold } from '../commands/leaveVault'
+import type { TabsHold } from '@/features/vault-commands'
 import type { useCommands } from '../commands/useCommands'
 import type { TabCommands } from '../tabs/tabCommands'
 import type { createVersionCommands } from '../commands/versionCommands'
@@ -56,6 +56,7 @@ export interface WindowContext {
   tabsHold?: TabsHold
   tabCommands?: TabCommands
   versionCommands?: ReturnType<typeof createVersionCommands>
+  featureCommands?: FeatureCommands
 }
 
 export function getCommands(ctx: WindowContext): NonNullable<WindowContext['commands']> {

@@ -3,10 +3,9 @@
  * asked, in the field `input`, and the steps that follow it use the same nouns.
  */
 import { describe, expect, it } from 'vitest'
-import { WORDS as words } from '@/shared/words'
-import { createCommands } from './commands'
+import { createAppCommands } from '@/testing/appCommands'
 
-const commands = createCommands(words)
+const commands = createAppCommands()
 
 const getIdsAsking = (kind: string): string[] =>
   commands.filter((one) => one.input === kind).map((one) => one.id)

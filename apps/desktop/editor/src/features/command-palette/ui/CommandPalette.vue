@@ -16,7 +16,6 @@ import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
-import { ANSWER_WORDS } from '../words'
 import { WORDS as words } from '@/shared/words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -79,7 +78,7 @@ async function onChoose(item: string, action: string) {
     const invocation = props.commands.chooseItem(item, action)
     if (!invocation) return
     setCommandsOpen(false)
-    await runInvocation(invocation, props.doing, ANSWER_WORDS)
+    await runInvocation(invocation, props.doing)
     return
   }
   const choice = props.search.chooseResult(item, action)

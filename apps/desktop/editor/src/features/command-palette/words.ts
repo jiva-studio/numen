@@ -1,36 +1,12 @@
 /**
- * The palette's display strings: every command as offered, and every answer
- * shown after a command has been carried out.
+ * The palette's display strings: the commands it owns and the steps it draws.
  *
  * Contains no decisions. `types.ts` defines what a command is and
  * `lib/table.ts` lists which commands exist; this file holds only their text.
  */
 // Stryker disable StringLiteral: interface copy
 import type { Keystroke } from '@numen/ui'
-import { VAULT_ERRORS } from '@/entities/vault'
-import type { VaultErrorCode } from '@/entities/vault'
-import type { ErrorCode } from '@/shared/api/errors'
-import { WORDS } from '@/shared/words'
 import type { EmptyWords } from './model/search/search'
-
-export const ANSWER_WORDS: AnswerWords = {
-  ...WORDS,
-  vaultErrors: VAULT_ERRORS,
-}
-
-/** The text shown for the outcome of carrying out a command. */
-export interface AnswerWords {
-  readonly errors: Record<ErrorCode, string>
-  readonly vaultErrors: Record<VaultErrorCode, string>
-  readonly folder: string
-  readonly untitledFolder: string
-  readonly dangling: string
-  readonly undeleted: (count: number) => string
-  readonly nowhere: string
-  readonly unanswered: string
-  readonly stale: string
-  readonly alreadyExists: string
-}
 
 /** Everything the commands say in the window's voice. */
 export interface Words extends EmptyWords {

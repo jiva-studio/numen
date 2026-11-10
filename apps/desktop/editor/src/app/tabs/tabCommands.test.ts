@@ -112,21 +112,17 @@ describe('the commands of a tab', () => {
     await commands.get(TAB_COMMAND.detach)!(
       createInvocation(TAB_COMMAND.detach, createTabTarget('reef')),
       {} as never,
-      {} as never,
     )
     await commands.get(TAB_COMMAND.unlink)!(
       createInvocation(TAB_COMMAND.unlink, createTabTarget('reef')),
-      {} as never,
       {} as never,
     )
     await commands.get(TAB_COMMAND.moveToWindow)!(
       createInvocation(TAB_COMMAND.moveToWindow, createTabTarget('reef'), 'main'),
       {} as never,
-      {} as never,
     )
     await commands.get(TAB_COMMAND.link)!(
       createInvocation(TAB_COMMAND.link, createTabTarget('reef'), 'chat'),
-      {} as never,
       {} as never,
     )
 
@@ -143,16 +139,13 @@ describe('the commands of a tab', () => {
     await commands.get(TAB_COMMAND.detach)!(
       createInvocation(TAB_COMMAND.detach, createTabTarget('')),
       {} as never,
-      {} as never,
     )
     await commands.get(TAB_COMMAND.moveToWindow)!(
       createInvocation(TAB_COMMAND.moveToWindow, createTabTarget('reef')),
       {} as never,
-      {} as never,
     )
     await commands.get(TAB_COMMAND.link)!(
       createInvocation(TAB_COMMAND.link, createTabTarget('reef')),
-      {} as never,
       {} as never,
     )
     unregister()

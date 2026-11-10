@@ -4,8 +4,8 @@
  * resolves to nothing.
  */
 import type { Selector } from '@numen/plugin-loader'
-import type { Notes, Store } from '../../types'
-import type { CommandPlace } from '@/entities/command'
+import type { Store } from '../../types'
+import type { CommandPlace, Notes } from '@/entities/command'
 
 /** What opens a file: in the current tab or beside it, at a line of the note where one is given. */
 export interface NoteOpeners {

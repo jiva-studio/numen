@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import type { PaletteGroup } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
 import { WORDS as words } from '@/shared/words'
-import { createCommands } from '../lib/commands/table'
+import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from './palette/runSupport'
 import { useCommandPalette } from './palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
@@ -109,13 +109,15 @@ const listCommands = (target: CommandTarget) => {
     { getTitle: () => '', getTabAt: () => null },
     { getStepGroups: () => [], previewItem: () => undefined },
     runSupport(),
+    undefined,
+    createAppCommands,
   )
   commands.setOpen(true)
   return commands
 }
 
 describe('the actions of the palette', () => {
-  const commandIds = new Set([...createCommands(words).map((one) => one.id), SHOW.command])
+  const commandIds = new Set([...createAppCommands().map((one) => one.id), SHOW.command])
 
   const expectCommands = (ids: readonly string[]) => {
     expect(ids.length).toBeGreaterThan(0)

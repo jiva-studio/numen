@@ -2,8 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import type { SlotCommand, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
-import { COMMAND, ROW } from '@/shared/commandIds'
-import type { CommandTarget } from '@/entities/command'
+import { COMMAND, ROW, type CommandTarget } from '@/entities/command'
 import { useSearch, type NameMatch, type Passage, type SearchDeps, type Words } from './search'
 
 const WORDS: Words = {

@@ -4,7 +4,7 @@
  */
 import { parseWhen } from '@numen/plugin-loader'
 import { getPaletteValues } from '@/shared/paletteValues'
-import type { CommandTarget } from '@/entities/command'
+import type { CommandTarget } from './command'
 
 /**
  * The availability of a command of the application by its condition, read once. Its conditions read
