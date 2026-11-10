@@ -8,13 +8,12 @@ import numen from './numen-rules.mjs'
 const contract = ['plugin-sdk', 'ui']
 
 // The shape of a frontend: `index.ts`, `words.ts` and `types.ts` at its root; slices, each a folder
-// `<slice>/` of `index.ts` and the segments `ui`, `model`, `api`, `lib`; and, for a plugin with one
-// thing to show, those segments at the root, with a `lib` that the slices share. A slice is reached
-// only through its `index.ts` and reaches no sibling slice.
+// `<slice>/` of `index.ts` and the segments `ui`, `model`, `api`, `lib`; and, at the root, the parts the
+// slices share and the entry composes: `api` and `lib` are reached by the slices, `ui` and `model` compose
+// them. A slice is reached only through its `index.ts` and reaches no sibling slice.
 const sameSlice = { slice: '{{ from.element.captured.slice }}' }
-const sliceParts = ['slice-ui', 'slice-model', 'slice-api', 'slice-lib', 'slice']
 const sharedFiles = { file: { categories: 'root-shared' } }
-const sharedLib = { element: { type: 'lib' } }
+const sharedParts = { element: { type: ['api', 'lib'] } }
 const otherSlice = { element: { type: 'slice' }, file: { categories: 'public' } }
 const own = (types) => ({ element: { type: types, captured: sameSlice } })
 const slicePolicies = [
@@ -22,55 +21,51 @@ const slicePolicies = [
   {
     from: { file: { categories: 'root-index' } },
     allow: {
-      to: [
-        sharedFiles,
-        sharedLib,
-        otherSlice,
-        { element: { type: ['shell-ui', 'shell-model', 'shell-api'] } },
-      ],
+      to: [sharedFiles, sharedParts, otherSlice, { element: { type: ['ui', 'model'] } }],
     },
   },
   {
-    from: { element: { type: 'shell-ui' } },
+    from: { element: { type: 'ui' } },
     allow: {
-      to: [
-        sharedFiles,
-        sharedLib,
-        otherSlice,
-        { element: { type: ['shell-ui', 'shell-model', 'shell-api'] } },
-      ],
+      to: [sharedFiles, sharedParts, otherSlice, { element: { type: ['ui', 'model'] } }],
     },
   },
   {
-    from: { element: { type: 'shell-model' } },
-    allow: {
-      to: [sharedFiles, sharedLib, otherSlice, { element: { type: ['shell-model', 'shell-api'] } }],
-    },
+    from: { element: { type: 'model' } },
+    allow: { to: [sharedFiles, sharedParts, otherSlice, { element: { type: 'model' } }] },
   },
   {
-    from: { element: { type: 'shell-api' } },
-    allow: { to: [sharedFiles, sharedLib, { element: { type: 'shell-api' } }] },
+    from: { element: { type: 'api' } },
+    allow: { to: [sharedFiles, sharedParts] },
   },
-  { from: { element: { type: 'lib' } }, allow: { to: [sharedFiles, sharedLib] } },
+  { from: { element: { type: 'lib' } }, allow: { to: [sharedFiles, { element: { type: 'lib' } }] } },
   {
     from: { element: { type: 'slice-ui' } },
-    allow: { to: [sharedFiles, sharedLib, own(sliceParts.slice(0, 4))] },
+    allow: {
+      to: [sharedFiles, sharedParts, own(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])],
+    },
   },
   {
     from: { element: { type: 'slice-model' } },
-    allow: { to: [sharedFiles, sharedLib, own(sliceParts.slice(1, 4))] },
+    allow: { to: [sharedFiles, sharedParts, own(['slice-model', 'slice-api', 'slice-lib'])] },
   },
   {
     from: { element: { type: 'slice-api' } },
-    allow: { to: [sharedFiles, sharedLib, own(sliceParts.slice(2, 4))] },
+    allow: { to: [sharedFiles, sharedParts, own(['slice-api', 'slice-lib'])] },
   },
   {
     from: { element: { type: 'slice-lib' } },
-    allow: { to: [sharedFiles, sharedLib, own(['slice-lib'])] },
+    allow: { to: [sharedFiles, { element: { type: 'lib' } }, own(['slice-lib'])] },
   },
   {
     from: { element: { type: 'slice' } },
-    allow: { to: [sharedFiles, sharedLib, own(sliceParts)] },
+    allow: {
+      to: [
+        sharedFiles,
+        sharedParts,
+        own(['slice-ui', 'slice-model', 'slice-api', 'slice-lib', 'slice']),
+      ],
+    },
   },
 ]
 
@@ -184,9 +179,9 @@ export default [
     settings: {
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/elements': [
-        { type: 'shell-ui', pattern: 'frontend/ui' },
-        { type: 'shell-model', pattern: 'frontend/model' },
-        { type: 'shell-api', pattern: 'frontend/api' },
+        { type: 'ui', pattern: 'frontend/ui' },
+        { type: 'model', pattern: 'frontend/model' },
+        { type: 'api', pattern: 'frontend/api' },
         { type: 'lib', pattern: 'frontend/lib' },
         { type: 'slice-ui', pattern: 'frontend/*/ui', capture: ['slice'] },
         { type: 'slice-model', pattern: 'frontend/*/model', capture: ['slice'] },
