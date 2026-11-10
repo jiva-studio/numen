@@ -84,7 +84,7 @@ function createHost(
       ...overrides.vault,
     },
     ui: {
-      drops: ui.drops,
+      drops: ui.drops as never,
       getWorkspace: () => ui.workspace,
       getWindow: () => ui.window,
       getCommands: () => ui.commands,

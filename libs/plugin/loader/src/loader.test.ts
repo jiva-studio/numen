@@ -490,9 +490,9 @@ describe('createPluginLoader failures, order and toggles', () => {
     try {
       const { host } = createHost()
       const log: string[] = []
-      let finishReading: (module: unknown) => void = () => undefined
+      let finishReading: (module: object) => void = () => undefined
       const slow = () =>
-        new Promise<unknown>((resolve) => {
+        new Promise<object>((resolve) => {
           finishReading = resolve
         })
       const quick = async () => ({
