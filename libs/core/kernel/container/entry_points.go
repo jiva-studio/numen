@@ -59,8 +59,8 @@ func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*ed
 // writing to the index, CloseIndex closes it, and Themes is why the themes could not be loaded, or nil.
 type Flashcards struct {
 	CloseVaults func()
-	CloseIndex func() error
-	Themes error
+	CloseIndex  func() error
+	Themes      error
 }
 
 // OpenFlashcards opens the registry and the cache, binds the notes, the vault list, the vault indexer, the
