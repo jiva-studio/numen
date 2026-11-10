@@ -20,7 +20,7 @@ const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const { dragged, picture: neighbourhood } = props.state.canvas
-const { menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
+const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
 const { quickLink } = props.state.quickLink
 const { linkInspector } = props.state.inspector
 const { maxHeadings } = props.state.headings

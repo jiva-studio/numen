@@ -311,7 +311,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   return {
     reportFailure,
     canvas: { view, picture, empty, dragged, creatable: deps.creatable },
-    menu: { menu, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem },
+    menu: { request: menu, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem },
     headings: {
       maxHeadings: deps.notes.headings,
       getType,

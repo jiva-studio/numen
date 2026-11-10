@@ -44,7 +44,7 @@ export function usePlexCanvas(options: PlexCanvasOptions) {
   }
 
   function closeMenu(id?: string) {
-    const node = state.menu.menu.value?.node ?? null
+    const node = state.menu.request.value?.node ?? null
     if (id === undefined) state.menu.dismiss()
     else state.menu.chooseMenuItem(id)
     if (node !== null) picture.value?.focusNode(node)

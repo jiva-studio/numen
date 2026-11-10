@@ -239,7 +239,7 @@ describe('the menu on a node', () => {
     one.state.menu.chooseMenuItem(OPEN_ROW)
 
     expect(one.ran).toEqual([['app:file.open', 'Child.md', 'Child']])
-    expect(one.state.menu.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
   })
 
   it('draws the entries of the slot over the note of the node, and runs nothing it does not offer', () => {
@@ -297,7 +297,7 @@ describe('the menu on a node', () => {
 
     one.state.menu.dismiss()
 
-    expect(one.state.menu.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
   })
 })
 
@@ -375,7 +375,7 @@ describe('the menu of a place with no node', () => {
     await settle()
 
     expect(one.ran).toStrictEqual([['app:note.create', '', '']])
-    expect(one.state.menu.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
   })
 
   it('shows the note the run made', async () => {
@@ -1274,13 +1274,13 @@ describe('createPlexTab edge cases and helpers', () => {
 
     one.state.menu.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
     one.state.menu.dismiss()
-    expect(one.state.menu.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
     expect(one.state.quickLink.quickLink.value).toBeNull()
     expect(one.state.inspector.linkInspector.value).toBeNull()
 
     one.state.menu.openMenu({ node: null, at: { x: 10, y: 10 }, opening: 'pointer' })
     one.state.menu.chooseMenuItem('other-id')
-    expect(one.state.menu.menu.value).toBeNull()
+    expect(one.state.menu.request.value).toBeNull()
 
     expect(one.state.canvas.empty.value).toBe(false)
     expect(one.state.canvas.dragged.value).toEqual([])

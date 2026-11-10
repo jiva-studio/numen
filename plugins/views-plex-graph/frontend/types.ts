@@ -172,7 +172,7 @@ export interface PlexViewState {
 }
 
 export interface PlexMenuState {
-  readonly menu: Readonly<Ref<MenuRequest | null>>
+  readonly request: Readonly<Ref<MenuRequest | null>>
   readonly menuItems: ComputedRef<readonly MenuItem[]>
   getMenuIcon(id: string): Component | null
   /** The icon a node is drawn with, and nothing for an ordinary note. */
