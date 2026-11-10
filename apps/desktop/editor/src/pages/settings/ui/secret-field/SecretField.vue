@@ -7,9 +7,8 @@
  */
 import { computed } from 'vue'
 import { KeyRound } from '@lucide/vue'
-import { getServiceInfo } from '@numen/core-client'
 import { Button } from '@numen/ui'
-import { isAllowed, type Secret, type SecretMenu } from '@/entities/settings'
+import { getServiceInfo, isAllowed, type Secret, type SecretMenu } from '@/entities/settings'
 import {
   getMenuSecrets,
   hasGroupSecrets,

@@ -7,7 +7,7 @@
  * settings values are restored as soon as the keyboard leaves the list. What a
  * list offers and what choosing a row writes belong to the adapter of the settings.
  */
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import { ref, watch, type Ref } from 'vue'
 import { createFollower, createRequestGuard } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -220,7 +220,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     start: async () => {
       await loadAppearance(true)
       // Stryker disable next-line ArrowFunction: createFollower handles stream errors internally.
-      watcher.follow().catch((error: unknown) => write(formatErrorMessage(error), 'error'))
+      watcher.follow().catch((error: unknown) => write(formatError(error), 'error'))
     },
     close: () => {
       watcher.stop()

@@ -7,9 +7,14 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { getServiceInfo } from '@numen/core-client'
 import { Button, type MenuItem } from '@numen/ui'
-import { MAX_NAME_LENGTH, isGroupNameTaken, isNameTooLong, trimName } from '@/entities/settings'
+import {
+  MAX_NAME_LENGTH,
+  getServiceInfo,
+  isGroupNameTaken,
+  isNameTooLong,
+  trimName,
+} from '@/entities/settings'
 import { WORDS as words } from '../../words'
 import SecretInput from './SecretInput.vue'
 import SecretMenu from './SecretMenu.vue'

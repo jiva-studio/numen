@@ -4,7 +4,6 @@
 import { filesCore } from './files'
 import { notesCore } from './notes'
 import { searchCore } from './search'
-import { settingsCore } from './settings'
 import { tabLinksCore } from './tabLinks'
 import { tabSessionCore } from './tabSession'
 import type { CommandsDeps, SearchDeps } from '@/features/command-palette'
@@ -15,7 +14,6 @@ export type VaultCore = Core & SearchDeps & Pick<CommandsDeps, 'names'>
 export const core: VaultCore = {
   ...notesCore,
   ...filesCore,
-  ...settingsCore,
   ...tabSessionCore,
   ...tabLinksCore,
   ...searchCore,

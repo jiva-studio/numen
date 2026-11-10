@@ -1,6 +1,6 @@
 /**
- * The mapping from the plugin catalog entries, which are protocol messages, to the listings the
- * plugin manager components render.
+ * The mapping from the plugin catalog entries to the listings the plugin manager components
+ * render.
  */
 import {
   createManagedPlugins,
@@ -8,7 +8,7 @@ import {
   type PluginInfo,
   type PluginListing,
 } from '@numen/plugin-manager'
-import { CATALOG_STATE, type CatalogEntry } from '@numen/core-client'
+import type { CatalogEntry } from '@/entities/plugin'
 
 /** The listing of one catalog entry: its category in lowercase and whether a source offers it. */
 export const createPluginListing = (entry: CatalogEntry): PluginListing => ({
@@ -16,10 +16,10 @@ export const createPluginListing = (entry: CatalogEntry): PluginListing => ({
   name: entry.name,
   version: entry.version,
   description: entry.description,
-  category: (entry.contributes?.category || entry.category || '').toLowerCase(),
-  feature: entry.contributes?.feature ?? '',
-  tabKinds: entry.contributes?.tabKinds.map((one) => one.kind) ?? [],
-  isAvailable: entry.state === CATALOG_STATE.AVAILABLE,
+  category: entry.category.toLowerCase(),
+  feature: entry.feature,
+  tabKinds: [...entry.tabKinds],
+  isAvailable: entry.isAvailable,
 })
 
 /** The plugins the host knows, each with its catalog entry, followed by the entries on offer. */

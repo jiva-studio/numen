@@ -1,3 +1,4 @@
+export type { CatalogEntry } from './lib/catalogEntry'
 export { useCatalogEntries } from './model/catalogEntries'
 export {
   listDeclaredItemLists,

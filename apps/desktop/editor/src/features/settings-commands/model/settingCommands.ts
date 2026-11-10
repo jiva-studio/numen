@@ -8,23 +8,17 @@
  * and restored when the step is left without a choice.
  */
 import { parseWhen } from '@numen/plugin-loader'
-import type { PaletteLists } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
 import { getPaletteValues } from '@/shared/paletteValues'
 import type { StepGroup, StepRow } from '@/shared/steps'
 import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
-import { getSettingWhen, getSettingsConfig } from './settingsConfig'
+import {
+  APP_OWNER,
+  getSettingWhen,
+  getSettingsConfig,
+  type SettingOwner,
+} from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/icons'
-
-/** The owner whose settings the core declares. */
-export const APP_OWNER = 'app'
-
-/** An owner of settings and the settings it declares, with the values in force the core resolved. */
-export interface SettingOwner {
-  readonly id: string
-  readonly name: string
-  readonly settings: readonly PluginSettingInfo[]
-}
 
 /** The words a row is drawn with. */
 export interface SettingWords {
@@ -51,7 +45,10 @@ export interface SettingPaletteDeps {
 export interface SettingPalette {
   /** The commands of the settings flagged for the palette. */
   getCommands(): readonly Command[]
-  readonly lists: PaletteLists
+  readonly lists: {
+    getStepGroups(command: string, typed: string): readonly StepGroup[]
+    previewItem(command: string, item: string): void
+  }
   /** Writes the row chosen in the step of a command. */
   choose(command: string, item: string): Promise<void>
 }

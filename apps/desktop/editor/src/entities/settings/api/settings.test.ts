@@ -5,7 +5,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AGENT_PROVIDER_CAPABILITY, MODEL_PRESENCE } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
-import { settingsCore as core } from './settings'
+import * as settingsApi from './settings'
+import * as secretsApi from './secrets'
+
+const core = { ...settingsApi, ...secretsApi }
 
 const request = {
   getSettings: vi.fn(),

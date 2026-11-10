@@ -8,7 +8,9 @@ import './vaultMock'
 import { afterEach, beforeEach } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { vaultAnswers } from './mocks/vault'
+import { settingsAnswers } from './mocks/settings'
 import { readWindowTasks, windowAnswers } from './mocks/window'
+import { mergeAnswers } from './mergeAnswers'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { getPanes, WorkspaceLayout, type Workspace } from '@numen/workbench'
 import { requests, forgetRequests } from './requests'
@@ -41,7 +43,7 @@ const windows: { unmount(): void }[] = []
 let restoreCore: () => void = () => undefined
 
 beforeEach(() => {
-  restoreCore = installCoreAnswers({ ...vaultAnswers, ...windowAnswers })
+  restoreCore = installCoreAnswers(mergeAnswers(vaultAnswers, windowAnswers, settingsAnswers))
 })
 
 afterEach(() => {
