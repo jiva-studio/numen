@@ -64,9 +64,8 @@ const getPluginSetting = (
   pluginId: string,
   key: string,
 ): JsonValue | undefined => {
-  // The vault stores a setting as JSON.
   // Stryker disable next-line StringLiteral: rest reads under the plugin id.
-  const value = rest.read.getCommittedSetting([pluginId, key]) as JsonValue | undefined
+  const value = rest.read.getCommittedSetting([pluginId, key])
   if (value !== undefined) return value
   return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
 }
@@ -197,7 +196,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     openTabAdjacent: windowTabs.tabs.openTabAdjacentOfKind,
     navigateTab: windowTabs.tabs.navigateTab,
     closeTab: windowTabs.panes.finishClose,
-    getTabState: (id: string) => windowTabs.tabs.getTab(id)?.state as object | undefined,
+    getTabState: (id: string) => windowTabs.tabs.getTab(id)?.state,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,

@@ -116,7 +116,7 @@ export interface IconHostDeps {
 export function createIconHost(deps: IconHostDeps): WorkspaceIcons {
   return {
     getCommand: (id) =>
-      (deps.getPluginCommandIcon?.(id) as Component | undefined) ?? findIcon(id) ?? null,
+      deps.getPluginCommandIcon?.(id) ?? findIcon(id) ?? null,
     getEntry: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
 }

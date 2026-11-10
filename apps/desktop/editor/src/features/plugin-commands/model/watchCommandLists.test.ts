@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { watchCommandLists } from './watchCommandLists'
 import type { DeclaredCommands } from './declaredCommands'
-import type { JsonObject, JsonValue } from '@/shared/api/json'
+import type { JsonValue } from '@/shared/api/json'
 
 const PLEX = 'org.example.plex'
 

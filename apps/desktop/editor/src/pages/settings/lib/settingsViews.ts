@@ -1,18 +1,17 @@
+import type { ViewComponent } from '../types'
 import type { PluginInfo, PluginSettingsViewInfo } from '@/entities/settings'
 import { getValueInForce, type ReadPluginSetting } from './enums'
-import type { Component } from 'vue'
 import type { JsonValue } from '@/shared/api/json'
 
 /** A view the plugin declares and its frontend registered. */
-export interface MountedSettingsView {
+export interface MountedSettingsView extends ViewComponent {
   readonly id: string
-  readonly component: Component
 }
 
 /** The declared views that the frontend registered, in declared order. */
 export function getRegisteredViews(
   declared: readonly PluginSettingsViewInfo[],
-  registered: ReadonlyMap<string, { readonly component: Component }>,
+  registered: ReadonlyMap<string, ViewComponent>,
 ): readonly MountedSettingsView[] {
   const views: MountedSettingsView[] = []
   for (const one of declared) {

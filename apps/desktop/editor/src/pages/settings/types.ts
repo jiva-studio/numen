@@ -29,6 +29,11 @@ export interface Installation {
  * The settings of the installation, read and written in place. `getPlatform` answers the operating
  * system of the window: darwin, windows or linux; the `app.platform` of conditions.
  */
+/** The component a plugin registered for a view of its settings page. */
+export interface ViewComponent {
+  readonly component: Component
+}
+
 export interface InstallationSettings {
   /**
    * names one can be set to, and settings written in place.
@@ -66,7 +71,7 @@ export interface InstallationPlugin {
    * was chosen.
    */
   choosePath(pluginId: string, key: string): Promise<string>
-  getSettingsViews(pluginId: string): ReadonlyMap<string, { readonly component: Component }>
+  getSettingsViews(pluginId: string): ReadonlyMap<string, ViewComponent>
   readonly files: InstallationPluginFiles
 }
 

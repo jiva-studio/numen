@@ -175,8 +175,7 @@ export function createAgentHost({ port, window, settings }: AgentHostDeps): Agen
     finish: (conversation) => port.finish(conversation),
     resolveLinks: (text, vault) => resolveLinks('', text, vault),
     getUnreachable: () => window.vault.unreachable.value,
-    // The vault stores a setting as JSON.
-    getSetting: (path) => settings.rest.read.getSetting(path) as JsonValue | undefined,
+    getSetting: (path) => settings.rest.read.getSetting(path),
     writeSetting: (path, value) => settings.rest.write.writeSetting(path, value),
     getModelsAt: (path) => settings.rest.read.getModelsAt(path),
   }

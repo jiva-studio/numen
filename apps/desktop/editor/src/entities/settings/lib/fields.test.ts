@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Model, SettingEdit } from './configuration'
 import { createSettingFields } from './fields'
-import type { JsonObject, JsonValue } from '@/shared/api/json'
+import type { JsonValue } from '@/shared/api/json'
 
 const AT = ['agent', 'model']
 
