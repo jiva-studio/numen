@@ -19,4 +19,5 @@ export type { NameMatch, ResultChoice, SearchMenuDeps } from './model/search/loo
 export type { CommandDeps } from './model/handlers/deps'
 export { PALETTE_WORDS } from './words'
 export type { Words } from './words'
+export type { IndexCoverage } from './model/coverage'
 export type { CommandsDeps, NoteLookup, PaletteLists, Store } from './types'
