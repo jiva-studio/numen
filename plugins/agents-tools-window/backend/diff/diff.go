@@ -1,4 +1,5 @@
-package service
+// Package diff builds a unified diff of two texts and counts its changed lines.
+package diff
 
 import (
 	"fmt"
@@ -26,8 +27,8 @@ type diffHunk struct {
 	lines     []string
 }
 
-// CreateUnifiedDiff creates a unified diff between original and proposed content.
-func CreateUnifiedDiff(filePath, original, proposed string) (string, int, int) {
+// CreateUnified creates a unified diff between original and proposed content.
+func CreateUnified(filePath, original, proposed string) (string, int, int) {
 	// gomutants:disable-next-line BRANCH_IF reason="Identical inputs also produce zero hunks and return the same empty diff result."
 	if original == proposed {
 		return "", 0, 0
@@ -58,8 +59,8 @@ func CreateUnifiedDiff(filePath, original, proposed string) (string, int, int) {
 	return builder.String(), additions, deletions
 }
 
-// CountDiffChanges counts additions and deletions in unified diff text.
-func CountDiffChanges(diffText string) (int, int) {
+// CountChanges counts additions and deletions in unified diff text.
+func CountChanges(diffText string) (int, int) {
 	var additions, deletions int
 	lines := strings.SplitSeq(diffText, "\n")
 	for line := range lines {
