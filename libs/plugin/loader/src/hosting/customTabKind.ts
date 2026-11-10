@@ -32,6 +32,7 @@ import {
   attachPluginRoot,
   extractFilename,
   parsePluginComponent,
+  parseTitle,
   renderFallback,
   renderPaneContent,
   renderWrapper,
@@ -152,7 +153,9 @@ export function createReaderTabKind(
       state.measure()
       state.focusTab()
     },
-    getTitle: (state) => state.title || extractFilename(state.path) || registration.title || '',
+    // A reader may keep the title as a ref, which the state of a tab does not unwrap.
+    getTitle: (state) =>
+      parseTitle(state.title) || extractFilename(state.path) || registration.title || '',
     pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
     identity: (targetPath) => targetPath,
     getTarget: (state) => ({ file: state.path, path: state.path, title: state.title }),
