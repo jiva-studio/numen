@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
-import type { PluginContext } from '../src/types'
+import type { PluginVault, PluginWork } from '../src/types'
 import { CONVERSATION } from '../src/views'
 
 describe('mock plugin context', () => {
@@ -49,7 +49,7 @@ describe('mock plugin context', () => {
       app: { name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' },
     })
     expect(ctx.plugin.app).toEqual({ name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' })
-    expect(createMockPluginContext().app.platform).toBe('linux')
+    expect(createMockPluginContext().plugin.app.platform).toBe('linux')
   })
 
   it('opens web addresses only', async () => {
@@ -217,15 +217,15 @@ describe('mock plugin context', () => {
   })
 
   it('passes over the agent it is given, and none where it is given none', () => {
-    const agent = { name: 'agent' } as unknown as NonNullable<PluginContext['agent']>
+    const agent = { name: 'agent' } as unknown as NonNullable<PluginWork['agent']>
 
-    expect(createMockPluginContext({ agent }).agent).toBe(agent)
-    expect(createMockPluginContext()).not.toHaveProperty('agent')
+    expect(createMockPluginContext({ agent }).work.agent).toBe(agent)
+    expect(createMockPluginContext().work).not.toHaveProperty('agent')
   })
 
   it('forwards the provided buffers and closeTab and omits them when not provided', () => {
     const buffers = { track: () => ({ dispose: vi.fn() }) } as unknown as NonNullable<
-      PluginContext['buffers']
+      PluginVault['buffers']
     >
     const closeTab = vi.fn()
 
@@ -233,7 +233,7 @@ describe('mock plugin context', () => {
 
     expect(ctx.vault.buffers).toBe(buffers)
     expect(ctx.tabs.close).toBe(closeTab)
-    expect(createMockPluginContext()).not.toHaveProperty('buffers')
-    expect(createMockPluginContext()).not.toHaveProperty('closeTab')
+    expect(createMockPluginContext().vault).not.toHaveProperty('buffers')
+    expect(createMockPluginContext().tabs).not.toHaveProperty('close')
   })
 })
