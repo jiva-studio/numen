@@ -11,20 +11,16 @@ type Closer interface {
 }
 
 // OpenEditor opens the editor window over the registry and the index, and connects the plugins to the vault
-// the window shows and to the window.
+// the window shows and to the window. OpenWindow closes the index where it fails; InstallVault lets the plugins
+// work the vault the window shows, and ShareWindow gives them the vault list, the text versions and the window.
 type OpenEditor[Registry any, Index Closer, Window any] struct {
 	OpenRegistry func() (Registry, error)
 	OpenIndex    func(ctx context.Context) (Index, error)
-	// OpenTexts opens the text versions the window and the plugins share.
-	OpenTexts func(index Index) error
-	// OpenWindow opens the window over the registry and the index, and closes the index where it fails.
-	OpenWindow func(ctx context.Context, registry Registry, index Index) (Window, error)
-	// FollowVault points the plugins at the vault the window shows.
-	FollowVault func(window Window)
-	// InstallVault lets the plugins work the vault the window shows.
+	OpenTexts    func(index Index) error
+	OpenWindow   func(ctx context.Context, registry Registry, index Index) (Window, error)
+	FollowVault  func(window Window)
 	InstallVault func(registry Registry, index Index, window Window) error
-	// ShareWindow gives the plugins the vault list, the text versions and the window itself.
-	ShareWindow func(index Index, window Window)
+	ShareWindow  func(index Index, window Window)
 }
 
 // Execute returns the window opened, with the plugins connected to it.

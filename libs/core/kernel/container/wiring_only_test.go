@@ -54,9 +54,6 @@ func getComplexity(fn *ast.FuncDecl) int {
 	return complexity
 }
 
-// getWiringFindings returns what the files of the package at path hold that wiring does not: an import of a
-// package that reaches the machine, a call that prints, and a function that decides more than
-// maxWiringComplexity, with the number of functions read.
 func getWiringFindings(pkgs []*packages.Package, path string) (found []finding, functions int) {
 	for _, pkg := range pkgs {
 		if pkg.PkgPath != path {
