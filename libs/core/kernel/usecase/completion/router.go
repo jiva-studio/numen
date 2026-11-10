@@ -23,18 +23,31 @@ type Answerer interface {
 	Execute(ctx context.Context, task agent.Task) (string, error)
 }
 
+// ProgramSource finds the program a route names and starts the tasks that
+// carry the questions to it.
+type ProgramSource interface {
+	// GetProgram returns the program named, or, when the name is empty, the one
+	// the settings name, else the default of the plugins. A program that is not
+	// installed or that no plugin lists fails with completion.ErrNoRoute, and plugins that
+	// cannot be reached with ErrUnavailable.
+	GetProgram(ctx context.Context, name string) (agent.Program, error)
+	// StartRun starts the task on the program it names, under that program's
+	// section of the settings.
+	StartRun(ctx context.Context, task agent.Task) (agentport.Run, error)
+}
+
 // Router answers a plugin's question with the default agent and model of the
 // settings.
 type Router struct {
 	config   func() Config
-	programs agentport.CompletionPrograms
+	programs ProgramSource
 	answerer Answerer
 	limits   *limits
 }
 
 // NewRouter returns a router reading the settings at every question, so a default
 // edited in the settings applies to the next one.
-func NewRouter(config func() Config, programs agentport.CompletionPrograms, answerer Answerer) (*Router, error) {
+func NewRouter(config func() Config, programs ProgramSource, answerer Answerer) (*Router, error) {
 	if config == nil {
 		return nil, errNoConfig
 	}

@@ -26,7 +26,7 @@ func (c Config) OpenCLIVaults() (cli.Vaults, error) {
 		Add:        vault.NewAdd(c.VaultIdentity(), ports.Vaults, ports.Lookup, ports.Saver, c.Clock()),
 		Known:      registry.NewGetKnownVaults(ports.Vaults, ports.Last, c.VaultReaders()),
 		RecordOpen: vault.NewRecordOpen(ports.Recorder),
-		Now:        c.Clock(),
+		Now:        c.Clock().Now,
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
 			db, err := c.OpenIndex(ctx)
 			if err != nil {
@@ -59,7 +59,7 @@ func (c Config) OpenCLILinks(ctx context.Context) (cli.Links, error) {
 		return cli.Links{}, err
 	}
 	notes := c.Notes(db, c.UpdateIndex(db))
-	return cli.Links{Show: notes.Links, Close: db.Close}, nil
+	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
 }
 
 // OpenCLIScan builds the reading of one vault into the index, with the vectors when a model is

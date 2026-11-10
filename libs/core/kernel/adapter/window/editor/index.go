@@ -2,24 +2,22 @@ package editor
 
 import (
 	"context"
-	"errors"
 	"io"
 	"slices"
 	"sync"
 	"time"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
 // quietPeriod is how long the vault must be unchanged before the notes written
@@ -34,7 +32,7 @@ type indexEvents struct {
 	out   io.Writer
 }
 
-func (e indexEvents) ReportTask(pos vaultreading.Task) { e.state.reportTask(pos) }
+func (e indexEvents) ReportTask(pos work.Task) { e.state.reportTask(pos) }
 
 func (e indexEvents) FinishTask(id string) { e.state.finishTask(id) }
 
@@ -49,25 +47,18 @@ func (e indexEvents) ReportTexts(v domain.Vault, res vaultreading.IndexResult) {
 	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
-// errNoProgress is the error of a window that cannot report vector progress.
-var errNoProgress = errors.New("index progress is unknown")
-
 func newIndexWorker(
-	reading ReadVaultFunc, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
+	reading indexing.OpenReading, state *State, embedding *indexing.Embedding, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:  indexing.OpenReading(reading),
-		Embedder: embedder,
+		Reading:  reading,
+		Embedder: embedding.GetEmbedder(),
 		VectorCounts: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
-			if state.Indexing.Progress == nil {
-				return 0, 0, errNoProgress
+			if !embedding.HasProgress() {
+				return 0, 0, indexing.ErrNoProgress
 			}
-			if embedder != nil {
-				name, recipe := vectors.DescribeModel(embedder)
-				state.Indexing.Model.Store(name)
-				state.Indexing.Recipe.Store(recipe)
-			}
-			return indexing.GetProgress(ctx, state.Indexing.Progress, v.ID, text(&state.Indexing.Recipe))
+			state.storeModel(embedding)
+			return embedding.CountProgress(ctx, v.ID, text(&state.Indexing.Recipe))
 		},
 		VectorsReady: func(_ context.Context, v domain.Vault) {
 			if state.EmitEvent != nil {
@@ -95,7 +86,7 @@ func startIndexing(
 	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
-	state.reportTask(vaultreading.Task{ID: walkingNotes, Title: "Indexing the vault"})
+	state.reportTask(work.Task{ID: walkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
 
@@ -173,37 +164,17 @@ func watchVault(ctx context.Context, state *State, run func(context.Context), un
 	}
 }
 
-// modelWatcher is an embedder that reports a change of its model.
-type modelWatcher interface {
-	OnModelChange(fn func())
-}
-
-func followModel(embedder embeddingport.Embedder, state *State, worker *indexing.Worker, recut func()) {
-	watcher, ok := embedder.(modelWatcher)
-	if !ok {
-		return
-	}
-	chunkTokens := embedder.GetModel().ChunkTokens
-	watcher.OnModelChange(func() {
-		name, recipe := vectors.DescribeModel(embedder)
-		state.Indexing.Model.Store(name)
-		state.Indexing.Recipe.Store(recipe)
+func followModel(embedding *indexing.Embedding, state *State, worker *indexing.Worker, recut func()) {
+	embedding.OnModelChange(func(isChunkSizeChanged bool) {
+		state.storeModel(embedding)
 		if worker != nil {
 			worker.WakeSources()
 		}
-		if tokens := embedder.GetModel().ChunkTokens; tokens != chunkTokens {
-			chunkTokens = tokens
-			if recut != nil {
-				recut()
-			}
+		if isChunkSizeChanged && recut != nil {
+			recut()
 		}
 	})
 }
-
-// ReadVaultFunc reads a whole vault into the index.
-type ReadVaultFunc func(
-	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-) (vaultreading.ReadWholeVault, error)
 
 // StartVaultFunc starts the walk and the watch of one vault.
 type StartVaultFunc func(
@@ -222,7 +193,7 @@ type StartVaultFunc func(
 // file of the vault whose live text version changed. GetRefresh brings named notes up to date.
 type SessionSource struct {
 	StartVault             StartVaultFunc
-	SetTextVersionListener func(listener textport.VersionListener)
+	SetTextVersionListener func(listener textdomain.VersionListener)
 	ReportTextFilesChanged func(ctx context.Context, v domain.Vault, paths []string) error
 	GetRefresh             func() vaults.Refresh
 }

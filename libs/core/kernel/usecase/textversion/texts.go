@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // GetLiveText is the text of the file's live version, or textdomain.ErrNoText.
@@ -109,7 +108,7 @@ func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.
 }
 
 // Open is the text of one vault, as the index, the search and the highlighting read it.
-func (u *Versions) Open(v domain.Vault) (textport.VaultTexts, error) {
+func (u *Versions) Open(v domain.Vault) (textdomain.VaultTexts, error) {
 	return vaultTexts{versions: u, vault: v}, nil
 }
 

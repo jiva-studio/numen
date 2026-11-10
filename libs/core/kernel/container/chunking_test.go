@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"

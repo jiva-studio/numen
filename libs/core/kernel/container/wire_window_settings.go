@@ -5,7 +5,6 @@ import (
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -29,15 +28,15 @@ func mountSettings(w *windowWiring) {
 	handler.Retry = openRetryPlugin(w.cfg.settings(), w.cfg.GetPluginRetrier())
 	if secrets := w.cfg.OpenSecrets(); secrets != nil {
 		handler.ListSecrets = secrets.List
-		handler.Create, handler.Rename, handler.SecretItems.Write = secrets.Create, secrets.Rename, secrets.Write
-		handler.Delete, handler.Move = secrets.Delete, secrets.Move
-		handler.RenameGroup, handler.DeleteGroup = secrets.RenameGroup, secrets.DeleteGroup
-		handler.Allow, handler.Deny, handler.ListStates = secrets.Allow, secrets.Deny, secrets.ListStates
+		handler.Create, handler.Rename, handler.SecretItems.Write = secrets.Items.Create, secrets.Items.Rename, secrets.Items.Write
+		handler.Delete, handler.Move = secrets.Items.Delete, secrets.Items.Move
+		handler.RenameGroup, handler.DeleteGroup = secrets.Groups.Rename, secrets.Groups.Delete
+		handler.Allow, handler.Deny, handler.ListStates = secrets.Access.Allow, secrets.Access.Deny, secrets.Access.ListStates
 	}
 	if data := openPluginData(w.cfg.vault()); data != nil {
 		handler.Data, handler.Vaults = data, state
 	}
-	w.inst.OnFolderDialog(func(dialog machineport.PathDialog) {
+	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.ChoosePath = openChoosePluginPath(w.cfg.settings(), dialog)
 	})
 	path, served := windowsettings.NewRoute(handler, state.CountQuestions())

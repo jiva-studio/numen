@@ -23,7 +23,7 @@ func mountPlugin(w *windowWiring) {
 // in it and returns the tabs it last reported. The window reads the vault of its state on each call,
 // so a vault opened later in the window is served without a new binding.
 func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installation) {
-	view := opened.State.GetWindow()
+	view := GetWindowView(opened)
 	focusNote := c.FocusNote(db.NoteRefs(), view)
 	focusPassages := file.NewFocusPassages(c.VaultReaders(), view)
 	c.SetPluginWindow(windowfocus.Window{
@@ -42,16 +42,16 @@ func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installati
 func (c Config) SetEditorPluginVaultList(opened *editor.Installation) {
 	scenarios := opened.Vaults()
 	c.SetPluginVaultList(windowvaults.List{
-		Add:  func(root, name string) (domain.Vault, error) { return scenarios.Add.Execute(root, name) },
-		Find: func(id string) (domain.Vault, error) { return scenarios.Find.Execute(id) },
+		Add:  func(root, name string) (domain.Vault, error) { return scenarios.Change.Add.Execute(root, name) },
+		Find: func(id string) (domain.Vault, error) { return scenarios.Registry.Find.Execute(id) },
 		Rename: func(ctx context.Context, v domain.Vault, name string) (domain.Vault, error) {
-			return scenarios.Rename.Execute(ctx, v, name)
+			return scenarios.Change.Rename.Execute(ctx, v, name)
 		},
 		Remove: func(ctx context.Context, id string, current domain.VaultID, isErasing bool) error {
-			return scenarios.Remove.Execute(ctx, id, current, isErasing)
+			return scenarios.Change.Remove.Execute(ctx, id, current, isErasing)
 		},
 		GetShown:    opened.State.GetCurrentVault,
 		Open:        opened.OpenPluginVault,
-		CheckFolder: func(v domain.Vault) bool { return scenarios.FolderCheck.Execute(v) },
+		CheckFolder: func(v domain.Vault) bool { return scenarios.Registry.FolderCheck.Execute(v) },
 	})
 }

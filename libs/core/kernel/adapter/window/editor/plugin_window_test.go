@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
@@ -72,7 +73,7 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 	}))
 	line, unsubscribe := state.Places.subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.GetWindow())), line
+	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, windowview.View{Notices: state})), line
 }
 
 func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
@@ -192,7 +193,7 @@ func (f activateFixture) waitSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
 	for {
-		if err := f.state.GetWindow().FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
+		if err := (windowview.View{Notices: f.state}).FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
 			t.Fatal(err)
 		}
 		select {

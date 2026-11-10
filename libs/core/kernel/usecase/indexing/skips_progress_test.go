@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 )
 
 // progressLog is a recorder that also keeps every report of the vector pass.
@@ -14,10 +14,10 @@ type progressLog struct {
 	*recorder
 
 	mu      sync.Mutex
-	reports []vaultreading.Task
+	reports []work.Task
 }
 
-func (l *progressLog) ReportTask(pos vaultreading.Task) {
+func (l *progressLog) ReportTask(pos work.Task) {
 	if pos.ID == MakingVectors {
 		l.mu.Lock()
 		l.reports = append(l.reports, pos)
@@ -26,16 +26,16 @@ func (l *progressLog) ReportTask(pos vaultreading.Task) {
 	l.recorder.ReportTask(pos)
 }
 
-func (l *progressLog) getReports() []vaultreading.Task {
+func (l *progressLog) getReports() []work.Task {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return append([]vaultreading.Task(nil), l.reports...)
+	return append([]work.Task(nil), l.reports...)
 }
 
-func (l *progressLog) getCounted() []vaultreading.Task {
+func (l *progressLog) getCounted() []work.Task {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	var counted []vaultreading.Task
+	var counted []work.Task
 	for _, pos := range l.reports {
 		if pos.Total > 0 {
 			counted = append(counted, pos)

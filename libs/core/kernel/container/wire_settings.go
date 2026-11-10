@@ -366,7 +366,7 @@ func feed(c settingsWiring) settingevents.Feed {
 			return values
 		},
 		Report: func(err error) { settingsHandleError(c, err) },
-		Hub:    c.Watches,
+		Hub:    c.Watches.GetShared(),
 	}
 }
 
@@ -464,10 +464,10 @@ func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sour
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
 	if c.ThemesPath != "" {
-		return themefiles.OpenAt(c.ThemesPath, c.Watches)
+		return themefiles.OpenAt(c.ThemesPath, c.Watches.GetShared())
 	}
 	if folder, selected := getAdjacentPath(c, "themes"); selected {
-		return themefiles.OpenAt(folder, c.Watches)
+		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
-	return themefiles.Open(c.Watches)
+	return themefiles.Open(c.Watches.GetShared())
 }

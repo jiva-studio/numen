@@ -9,13 +9,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // versionTexts is one text version every path reads as.
 type versionTexts struct{ text domain.VersionText }
 
-func (t versionTexts) Open(domain.Vault) (textport.VaultTexts, error) { return t, nil }
+func (t versionTexts) Open(domain.Vault) (textdomain.VaultTexts, error) { return t, nil }
 
 func (t versionTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
 	return t.text.Version().GetID(), nil

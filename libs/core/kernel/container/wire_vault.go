@@ -7,10 +7,14 @@ import (
 	"os"
 	"path/filepath"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/bufferednotes"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
@@ -199,12 +203,12 @@ type vaultWiring struct {
 	Clock        machineport.Clock
 	PluginHost   *PluginHost
 	TextVersions *textversion.Versions
-	TextReaders  textport.TextReaders
+	TextReaders  textdomain.Readers
 	VaultLocks   *vaultwriter.Locks
 	Watches      *vaultwatch.Hub
 	ErrorHandler func(error)
 	SyncSetting  query.SyncSetting
-	CutNotes     query.CutNotes
+	CutNotes     chunking.CutNotes
 	SetNoteCut   func(*vault.Scan, *vault.Index)
 }
 
@@ -246,7 +250,7 @@ func getImportedFiles(_ vaultWiring) sourceport.ImportedFiles {
 }
 
 func vaultWatcher(c vaultWiring) vaultport.VaultWatcher {
-	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches}
+	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}
 }
 
 func vaultIdentity(c vaultWiring) vaultport.VaultIdentity {
@@ -275,18 +279,23 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, n
 	erase := vault.NewErase(vaultIdentity(c), vaultTrash(c), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
 	return vault.Scenarios{
-		List:        vaultregistry.NewList(registry.Vaults),
-		RecordOpen:  vault.NewRecordOpen(registry.Recorder),
-		Find:        find,
-		FolderCheck: check.NewFolderCheck(vaultReaders(c)),
-		Remove:      vault.NewRemove(find, unregister, erase),
-		Add:         vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock),
-		Rename:      vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
-		Unregister:  unregister,
-		Erase:       erase,
-		Move: vault.NewMove(
-			vaultWriters(c), db.Links(), db.SourcesUnder(), db.Sources(), notes),
-		Import: vault.NewImport(vaultWriters(c), getImportedFiles(c)),
+		Registry: vault.Listing{
+			List:        vaultregistry.NewList(registry.Vaults),
+			Find:        find,
+			FolderCheck: check.NewFolderCheck(vaultReaders(c)),
+		},
+		Change: vault.Changing{
+			Add:        vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock),
+			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
+			Remove:     vault.NewRemove(find, unregister, erase),
+			Unregister: unregister,
+			Erase:      erase,
+		},
+		Tree: vault.Tree{
+			Move:   vault.NewMove(vaultWriters(c), db.Links(), db.SourcesUnder(), db.Sources(), notes),
+			Import: vault.NewImport(vaultWriters(c), getImportedFiles(c)),
+		},
+		RecordOpen: vault.NewRecordOpen(registry.Recorder),
 	}
 }
 
@@ -396,7 +405,7 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches}.File(ctx, path)
+	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}.File(ctx, path)
 }
 
 func vaultNotes(c vaultWiring, db *vault.Index, index note.IndexUpdater) note.Scenarios {
@@ -420,34 +429,41 @@ func vaultNotes(c vaultWiring, db *vault.Index, index note.IndexUpdater) note.Sc
 	create := note.NewCreate(writers, names, index, now)
 
 	return note.Scenarios{
-		Read:       note.NewRead(readers),
-		Write:      note.NewWrite(readers, writers, index, now),
-		Create:     create,
-		Replace:    note.NewReplace(readers, writers, index, now),
-		Linking:    linking,
-		AddLinks:   note.NewAddLinks(linking),
-		Move:       mover,
-		Rename:     note.NewRename(mover),
-		Remove:     remove,
-		EmptyTrash: note.NewEmptyTrash(writers),
-
-		SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, addresses),
-		RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, addresses),
-		RemoveConnection: note.NewRemoveConnection(readers, writers, index, now, links, addresses),
-		Join:             note.NewJoin(readers, writers, index, now, links, addresses),
-		CreateInRelation: note.NewCreateInRelation(create, addresses),
-
-		Links:        query.NewShowLinks(links),
-		Connection:   query.NewGetConnection(links),
-		Backlinks:    query.NewGetBacklinks(links),
-		Neighborhood: query.NewShowNeighbourhood(links, refs),
-		ResolveLinks: query.NewResolveLinks(links),
-
-		GetTitles:      query.NewGetTitles(refs),
-		GetTitle:       query.NewGetTitle(refs),
-		IsVaultIndexed: query.NewIsVaultIndexed(db.VaultHolds()),
-		GetLinkAddress: addresses,
-		RemoveNote:     note.NewRemoveNote(remove, readers),
+		Edit: note.Editing{
+			Read:    note.NewRead(readers),
+			Write:   note.NewWrite(readers, writers, index, now),
+			Create:  create,
+			Replace: note.NewReplace(readers, writers, index, now),
+			Linking: linking,
+		},
+		Place: note.Placing{
+			Move:       mover,
+			Rename:     note.NewRename(mover),
+			Remove:     remove,
+			RemoveNote: note.NewRemoveNote(remove, readers),
+			EmptyTrash: note.NewEmptyTrash(writers),
+		},
+		Connect: note.Connecting{
+			SaveConnection:   note.NewSaveConnection(readers, writers, index, now, links, addresses),
+			RemoveSide:       note.NewRemoveSide(readers, writers, index, now, links, addresses),
+			RemoveConnection: note.NewRemoveConnection(readers, writers, index, now, links, addresses),
+			Join:             note.NewJoin(readers, writers, index, now, links, addresses),
+			CreateInRelation: note.NewCreateInRelation(create, addresses),
+		},
+		Refer: note.Referring{
+			AddLinks:       note.NewAddLinks(linking),
+			Links:          query.NewShowLinks(links),
+			Backlinks:      query.NewGetBacklinks(links),
+			ResolveLinks:   query.NewResolveLinks(links),
+			GetLinkAddress: addresses,
+		},
+		Browse: note.Browsing{
+			Connection:     query.NewGetConnection(links),
+			Neighborhood:   query.NewShowNeighbourhood(links, refs),
+			GetTitles:      query.NewGetTitles(refs),
+			GetTitle:       query.NewGetTitle(refs),
+			IsVaultIndexed: query.NewIsVaultIndexed(db.VaultHolds()),
+		},
 	}
 }
 
@@ -482,7 +498,7 @@ func vaultOpenerWith(c vaultWiring,
 	}
 	scan.Walks = db.Walks()
 
-	buffered := &vault.BufferedNoteRepository{NoteRepository: db.Notes()}
+	buffered := &bufferednotes.Repository{NoteRepository: db.Notes()}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))
 }
 
@@ -501,7 +517,7 @@ func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, err
 	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }
 
-func getTextReaders(c vaultWiring) textport.TextReaders {
+func getTextReaders(c vaultWiring) textdomain.Readers {
 	if c.TextReaders != nil {
 		return c.TextReaders
 	}
@@ -546,7 +562,7 @@ func openFileText(c vaultWiring) *textversion.FileText {
 	return text
 }
 
-func setTextVersionListener(c vaultWiring, listener textport.VersionListener) {
+func setTextVersionListener(c vaultWiring, listener textdomain.VersionListener) {
 	if c.TextVersions != nil {
 		c.TextVersions.SetListener(listener)
 	}
@@ -577,7 +593,7 @@ func (c Config) OpenVaults(db *vault.Index, out io.Writer, label string) *vault.
 // resolves to. A write updates the index through updateIndex.
 func (c Config) SetShellNotes(api *shell.API, db *vault.Index, updateIndex note.IndexUpdater) {
 	notes := c.Notes(db, updateIndex)
-	api.IsVaultIndexed, api.ResolveLinks = notes.IsVaultIndexed, notes.ResolveLinks
+	api.IsVaultIndexed, api.ResolveLinks = notes.Browse.IsVaultIndexed, notes.Refer.ResolveLinks
 }
 
 // BindVaultIndexer has a shell read a vault into the index through vaults, and report a change each

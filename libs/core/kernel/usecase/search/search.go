@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -85,7 +84,7 @@ type Search struct {
 	readers      vaultport.VaultReaders
 	embedder     embeddingport.Embedder
 	queries      QueryEmbedder
-	texts        textport.TextReaders
+	texts        textdomain.Readers
 	floorSource  FloorSource
 	errorHandler window.ErrorHandler
 	cache        *QueryCache
@@ -97,7 +96,7 @@ type Search struct {
 // not run and the word search answers alone, since the vector index is optional.
 // A nil `texts` means only notes return their text. `queries` embeds the queries.
 // `errorHandler` receives the error of a search mode that could not answer; nil ignores such errors.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, queries QueryEmbedder, errorHandler window.ErrorHandler) Search {
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textdomain.Readers, embedder embeddingport.Embedder, queries QueryEmbedder, errorHandler window.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}
@@ -424,7 +423,7 @@ var errUnreadable = errors.New("nothing could be read from the source")
 // the text version every other source was cut from.
 type sourceTexts struct {
 	files vaultport.VaultReader
-	texts textport.Texts
+	texts textdomain.Texts
 }
 
 func (s sourceTexts) getText(ctx context.Context, path, version string) (string, *domain.VersionText, error) {

@@ -14,9 +14,9 @@ func mountSearch(w *windowWiring) {
 	handler.GetTitles = query.NewGetTitles(w.db.NoteRefs())
 	handler.GetTypes = query.NewGetTypes(w.db.NoteTypes())
 	handler.ListTabKinds = w.files.ListTabKinds
-	finds := w.cfg.NewSearch(w.db, w.inst.Asking, state.ReportWordsAlone)
+	finds := w.cfg.NewSearch(w.db, w.asking, state.ReportWordsAlone)
 	handler.Finds = &finds
-	w.cfg.SetPluginSearch(w.db, w.inst.Embedder, state.ReportFloorError)
+	w.cfg.SetPluginSearch(w.db, w.embedder, state.ReportFloorError)
 	path, served := windowsearch.NewRoute(handler, state.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

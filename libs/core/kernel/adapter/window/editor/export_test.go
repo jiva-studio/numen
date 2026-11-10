@@ -188,11 +188,11 @@ func ServicesOf(o *Installation) *Services {
 // services hold pointers into the scenarios of the installation, so the one wrapped there is the
 // one they call.
 
-func (s *Services) NoteCreate() *note.Create { return &s.installation.notes.Create }
-func (s *Services) NoteWrite() *note.Write   { return &s.installation.notes.Write }
-func (s *Services) NoteRename() *note.Rename { return &s.installation.notes.Rename }
-func (s *Services) FileRemove() *note.Remove { return &s.installation.notes.Remove }
-func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Move }
+func (s *Services) NoteCreate() *note.Create { return &s.installation.notes.Edit.Create }
+func (s *Services) NoteWrite() *note.Write   { return &s.installation.notes.Edit.Write }
+func (s *Services) NoteRename() *note.Rename { return &s.installation.notes.Place.Rename }
+func (s *Services) FileRemove() *note.Remove { return &s.installation.notes.Place.Remove }
+func (s *Services) FileMove() *vaults.Move   { return &s.installation.vaults.Tree.Move }
 
-func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Move = *move }
-func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Write = *write }
+func (s *Services) SetFileMove(move *vaults.Move)  { s.installation.vaults.Tree.Move = *move }
+func (s *Services) SetNoteWrite(write *note.Write) { s.installation.notes.Edit.Write = *write }

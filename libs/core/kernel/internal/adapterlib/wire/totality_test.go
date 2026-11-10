@@ -6,8 +6,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -21,17 +21,17 @@ func TestEveryModeCrossesBothWays(t *testing.T) {
 }
 
 func TestEveryUnitIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Unit]vaultreading.Unit{
-		v1.Unit_UNIT_THINGS:  vaultreading.Things,
-		v1.Unit_UNIT_BYTES:   vaultreading.Bytes,
-		v1.Unit_UNIT_SECONDS: vaultreading.Seconds,
+	testsupport.CheckProduced(t, map[v1.Unit]work.Unit{
+		v1.Unit_UNIT_THINGS:  work.Things,
+		v1.Unit_UNIT_BYTES:   work.Bytes,
+		v1.Unit_UNIT_SECONDS: work.Seconds,
 	}, convertUnit)
 }
 
 func TestConvertKindMapsEveryTaskKind(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.TaskKind]vaultreading.Kind{
-		v1.TaskKind_TASK_KIND_UNSPECIFIED: vaultreading.KindWork,
-		v1.TaskKind_TASK_KIND_NOTICE:      vaultreading.KindNotice,
+	testsupport.CheckProduced(t, map[v1.TaskKind]work.Kind{
+		v1.TaskKind_TASK_KIND_UNSPECIFIED: work.KindWork,
+		v1.TaskKind_TASK_KIND_NOTICE:      work.KindNotice,
 	}, convertKind)
 }
 

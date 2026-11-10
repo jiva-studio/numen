@@ -7,7 +7,11 @@ import (
 	"math"
 	"slices"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
@@ -16,9 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -30,7 +34,7 @@ import (
 
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
-func (c Config) CutNotes() query.CutNotes {
+func (c Config) CutNotes() chunking.CutNotes {
 	return cutNotes(c.search())
 }
 
@@ -44,7 +48,7 @@ func (c Config) Scan(db *vault.Index) vault.Scan {
 // notes read, the file texts cut, and the vectors made.
 func (c Config) ReadWholeVault(
 	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault,
-) (vault.ReadWholeVault, error) {
+) (indexing.ReadWholeVault, error) {
 	return readWholeVault(c.search(), ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
 }
 
@@ -116,12 +120,12 @@ type searchWiring struct {
 	PluginHost         *PluginHost
 	Clock              machineport.Clock
 	VaultReaders       vaultport.VaultReaders
-	TextReaders        textport.TextReaders
+	TextReaders        textdomain.Readers
 	ErrorHandler       func(error)
 	ResolvePlugin      func(capability string) (*PluginHost, error)
 }
 
-func cutNotes(c searchWiring) query.CutNotes {
+func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := query.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
 		cutter.Profiles = c.PluginHost.ResolveNoteProfile
@@ -154,21 +158,21 @@ func searchScan(c searchWiring, db *vault.Index) vault.Scan {
 
 func readWholeVault(c searchWiring,
 	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
-) (vault.ReadWholeVault, error) {
+) (indexing.ReadWholeVault, error) {
 	if err := fitIndex(c, db).Execute(ctx, embedder); err != nil {
-		return vault.ReadWholeVault{}, err
+		return indexing.ReadWholeVault{}, err
 	}
 	texts, err := indexTexts(c, db, v)
 	if err != nil {
-		return vault.ReadWholeVault{}, err
+		return indexing.ReadWholeVault{}, err
 	}
 	refresh.Force = true
 	texts.ReadNote = newNoteReader(refresh.Execute)
 	embed, err := searchEmbed(c, db, embedder, v)
 	if err != nil {
-		return vault.ReadWholeVault{}, err
+		return indexing.ReadWholeVault{}, err
 	}
-	return vault.NewReadWholeVault(searchScan(c, db), texts, embed), nil
+	return indexing.NewReadWholeVault(searchScan(c, db), texts, embed), nil
 }
 
 func newNoteReader(
@@ -187,7 +191,7 @@ func newNoteReader(
 }
 
 func fitIndex(c searchWiring, db *vault.Index) vectorscase.FitIndex {
-	fit := vectorscase.NewFitIndex(db)
+	fit := vectorscase.NewFitIndex(db.VectorIndex())
 	fit.ShouldRebuildIndex = c.ShouldRebuildIndex
 	fit.ErrorHandler = c.ErrorHandler
 	return fit
@@ -294,7 +298,7 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 		return nil
 	}
 	return func(err error) {
-		tasks.Set(run.Task{ID: readingTheModel, Title: "Read embedding model", Error: err.Error()})
+		tasks.Set(work.Task{ID: readingTheModel, Title: "Read embedding model", Error: err.Error()})
 	}
 }
 

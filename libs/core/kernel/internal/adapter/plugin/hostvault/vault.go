@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
 // NoteWriter writes and creates the notes of one vault.
@@ -169,7 +168,7 @@ func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (p
 		return plugin.FileRange{}, err
 	}
 	pos, err := a.Stat.Execute(ctx, v, path)
-	if errors.Is(err, vaultport.ErrNotANote) {
+	if errors.Is(err, edit.ErrNotANote) {
 		return plugin.FileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, fs.ErrNotExist)
 	}
 	if err != nil {

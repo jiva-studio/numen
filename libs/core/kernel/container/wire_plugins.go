@@ -16,6 +16,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
@@ -447,8 +448,8 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 		case plugindomain.DependencyStateReady:
 			tasks.Remove(id)
 		case plugindomain.DependencyStateMissing, plugindomain.DependencyStateProvisioning, plugindomain.DependencyStateFailed:
-			tasks.Set(run.Task{
-				ID: id, Title: "Downloading " + req.ID, Unit: run.Bytes,
+			tasks.Set(work.Task{
+				ID: id, Title: "Downloading " + req.ID, Unit: work.Bytes,
 				Count: status.BytesDownloaded, Total: status.BytesTotal, Error: status.Error, IsUserStarted: false,
 			})
 		}
@@ -607,7 +608,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 		return
 	}
 	c.PluginHost.SetOnPluginFailed(func(failure plugindomain.Failure) {
-		tasks.Set(run.Task{
+		tasks.Set(work.Task{
 			ID:         pluginFailureTaskPrefix + failure.PluginID,
 			Title:      "Plugin stopped",
 			About:      failure.Name,
@@ -676,12 +677,12 @@ type PluginVaultHooks struct {
 }
 
 func hasReaders(notes note.Scenarios) bool {
-	return notes.Move.Readers() != nil
+	return notes.Place.Move.Readers() != nil
 }
 
 func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
 	return hostvault.NoteChanges{
-		Rename: notes.Rename, Move: notes.Move, Remove: notes.RemoveNote, Links: notes.Linking, AddLinks: notes.AddLinks,
+		Rename: notes.Place.Rename, Move: notes.Place.Move, Remove: notes.Place.RemoveNote, Links: notes.Edit.Linking, AddLinks: notes.Refer.AddLinks,
 	}
 }
 

@@ -7,6 +7,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -33,10 +36,12 @@ type windowWiring struct {
 	notes  *note.Scenarios
 	vaults *vault.Scenarios
 
-	inst   *editor.Installation
-	files  *filewindow.Handler
-	server *editor.FileServer
-	wrap   func(editor.StartVaultFunc) editor.StartVaultFunc
+	embedder embeddingport.Embedder
+	asking   embeddingport.Embedder
+	inst     *editor.Installation
+	files    *filewindow.Handler
+	server   *editor.FileServer
+	wrap     func(editor.StartVaultFunc) editor.StartVaultFunc
 }
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
@@ -89,6 +94,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
 	embedder, asking, closeEmbedder, why := w.cfg.Embedders(ctx, tasks)
+	w.embedder, w.asking = embedder, asking
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
@@ -100,13 +106,11 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		Tasks:         tasks,
 		Out:           out,
 		CheckIdentity: vault.NewCheckIdentity(w.cfg.VaultIdentity()),
-		Embedder:      embedder,
-		Asking:        asking,
+		Embedding:     indexing.NewEmbedding(embedder, w.db.Progress()),
 		EmbedderError: why,
 		StopEmbedder:  closeEmbedder,
 		ReadVault:     getReadVault(w.cfg, w.db),
 		CloseIndex:    w.db.Close,
-		Progress:      w.db.Progress(),
 		EmitEvent:     func(event string) { emitPluginEvent(w.cfg.plugins(), event) },
 		IsRebuilding:  w.cfg.ShouldRebuildIndex,
 		Closing:       ctx.Done(),
@@ -115,9 +119,9 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(inst.Refresh).Execute).FollowMoves(inst.State.GetWindow())
+	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(inst.Refresh).Execute).FollowMoves(GetWindowView(inst))
 	w.notes = &notes
-	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Move)
+	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
 	inst.UseScenarios(w.notes, w.vaults)
 
@@ -148,4 +152,9 @@ func mountServices(w *windowWiring) error {
 	mountPlugin(w)
 	mountCatalog(w)
 	return nil
+}
+
+// GetWindowView returns the window as the core asks it to show a place, a move, an edit or a tab.
+func GetWindowView(inst *editor.Installation) windowport.Window {
+	return GetWindowView(inst)
 }

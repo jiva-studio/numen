@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
@@ -71,11 +71,11 @@ func splitRebuildFlag(args []string) (rebuild bool, rest []string) {
 	return rebuild, rest
 }
 
-func readClock(source machinecontract.Clock) time.Time {
-	if source == nil {
+func readClock(now func() time.Time) time.Time {
+	if now == nil {
 		return time.Time{}
 	}
-	return source.Now()
+	return now()
 }
 
 func describeSources(r vaultreading.IndexResult) string {
@@ -90,7 +90,7 @@ func describeSources(r vaultreading.IndexResult) string {
 	return s
 }
 
-func showProgress(making *vaultreading.ReadWholeVault, r *reporter) {
+func showProgress(making *indexing.ReadWholeVault, r *reporter) {
 	making.OnNotesProgress = func(res vaultreading.ScanResult) {
 		r.Printf("  %d indexed\r", res.Indexed)
 	}
@@ -104,7 +104,7 @@ func showProgress(making *vaultreading.ReadWholeVault, r *reporter) {
 	}
 }
 
-func reportMade(r *reporter, vaultName string, made vaultreading.ReadWholeVaultResult) {
+func reportMade(r *reporter, vaultName string, made indexing.ReadWholeVaultResult) {
 	if made.Texts.Seen > 0 {
 		r.Println(describeSources(made.Texts))
 	}

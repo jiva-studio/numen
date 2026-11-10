@@ -10,8 +10,8 @@ package shell
 import (
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -51,6 +51,6 @@ func NewWindow(name string, tasks *run.Tasks) *wire.Window {
 	return &wire.Window{Named: name, Tasking: tasks}
 }
 
-func (a *API) reportTask(task vaultreading.Task) { a.Window.AddTask(task) }
+func (a *API) reportTask(task work.Task) { a.Window.AddTask(task) }
 
 func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }

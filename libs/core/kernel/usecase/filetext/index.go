@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -37,7 +36,7 @@ type Index struct {
 	records sourceport.SourceRecords
 	backlog sourceport.SourceBacklog
 	lookup  sourceport.RemovalLookup
-	texts   textport.TextReaders
+	texts   text.Readers
 
 	Sizes chunking.Sizes
 
@@ -64,7 +63,7 @@ func NewIndex(
 	records sourceport.SourceRecords,
 	backlog sourceport.SourceBacklog,
 	lookup sourceport.RemovalLookup,
-	texts textport.TextReaders,
+	texts text.Readers,
 ) Index {
 	return Index{readers: readers, sources: sources, records: records, backlog: backlog, lookup: lookup, texts: texts}
 }
@@ -633,7 +632,7 @@ func recipe(reader string, s chunking.Sizes) string {
 // openVault is one vault as a cut reads it: its files and the text versions of them.
 type openVault struct {
 	files vaultport.VaultReader
-	texts textport.VaultTexts
+	texts text.VaultTexts
 }
 
 func (u Index) open(v domain.Vault) (openVault, error) {

@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
 // NoteChanges has the use cases that rename, move and remove the notes of a vault, repairing the
@@ -89,7 +87,7 @@ func (a Vault) RemoveNote(ctx context.Context, path string) (string, []string, e
 	}
 	removal, err := a.Arranger.getChanges(v).Remove.Execute(ctx, v, path, false)
 	if errors.Is(err, note.ErrFolder) {
-		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; pass the paths of the notes to remove", path), vaultport.ErrNotANote, err)
+		return "", nil, domain.NewDetailError(fmt.Sprintf("%s is a folder; pass the paths of the notes to remove", path), edit.ErrNotANote, err)
 	}
 	if removal.Trashed != "" {
 		a.notifyFileWritten()

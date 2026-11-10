@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -20,7 +21,7 @@ type wiring struct {
 	reading readingParts
 }
 
-func newWiring(indexPath string, shouldRebuild bool, texts textport.TextReaders) wiring {
+func newWiring(indexPath string, shouldRebuild bool, texts textdomain.Readers) wiring {
 	return wiring{reading: newReadingParts(indexPath, shouldRebuild, texts)}
 }
 
@@ -34,7 +35,7 @@ func (w wiring) openIndex(t *testing.T) *vaults.Index {
 	return db
 }
 
-func (w wiring) readVault(db *vaults.Index) ReadVaultFunc {
+func (w wiring) readVault(db *vaults.Index) indexing.OpenReading {
 	return testPasses{wiring: w, db: db}.ReadWholeVault
 }
 
@@ -42,7 +43,7 @@ func (w wiring) session(db *vaults.Index, readers vaultport.VaultReaders, watche
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	return SessionSource{
 		StartVault:             passes.StartVault,
-		SetTextVersionListener: func(textport.VersionListener) {},
+		SetTextVersionListener: func(textdomain.VersionListener) {},
 		ReportTextFilesChanged: func(context.Context, domain.Vault, []string) error { return nil },
 		GetRefresh:             passes.GetRefresh,
 	}
@@ -57,7 +58,7 @@ type testPasses struct {
 
 func (p testPasses) ReadWholeVault(
 	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-) (vaultreading.ReadWholeVault, error) {
+) (indexing.ReadWholeVault, error) {
 	return p.reading.ReadWholeVault(ctx, p.db, embedder, v, rebuild)
 }
 

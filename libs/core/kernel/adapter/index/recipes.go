@@ -7,12 +7,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 )
 
-// DeleteOtherRecipeVectors deletes every vector stored under a recipe other than the
+// DeleteVectorsOfOtherRecipes deletes every vector stored under a recipe other than the
 // current one and returns the number deleted.
 // A vector is addressed by its source text and its recipe, so a changed recipe
 // leaves the old vectors on disk; they stay for a user who restores the old
 // model and are deleted only on an explicit full rebuild.
-func (d *DB) DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64, error) {
+func (d *DB) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) (int64, error) {
 	if recipe == "" {
 		return 0, nil
 	}

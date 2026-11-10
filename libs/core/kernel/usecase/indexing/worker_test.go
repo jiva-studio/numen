@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -39,13 +40,13 @@ type recorder struct {
 
 func newRecorder() *recorder { return &recorder{tasks: run.NewTasks()} }
 
-func (r *recorder) ReportTask(pos vaultreading.Task)                   { r.tasks.Set(pos) }
+func (r *recorder) ReportTask(pos work.Task)                           { r.tasks.Set(pos) }
 func (r *recorder) FinishTask(id string)                               { r.tasks.Remove(id) }
 func (r *recorder) ReportError(error)                                  {}
 func (r *recorder) ReportNotes(domain.Vault, int)                      {}
 func (r *recorder) ReportTexts(domain.Vault, vaultreading.IndexResult) {}
 
-func findTask(t *testing.T, r *recorder, id string) *vaultreading.Task {
+func findTask(t *testing.T, r *recorder, id string) *work.Task {
 	t.Helper()
 	for _, item := range r.tasks.List() {
 		if item.ID == id {
@@ -89,7 +90,7 @@ func cut(t *testing.T, made reading, db *vault.Index, v domain.Vault) {
 
 func fit(t *testing.T, db *vault.Index, model embeddingport.Embedder) {
 	t.Helper()
-	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
+	if err := db.VectorIndex().FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -184,7 +185,7 @@ type peeking struct {
 	tasks *run.Tasks
 
 	mu    sync.Mutex
-	while []vaultreading.Task
+	while []work.Task
 }
 
 func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -198,7 +199,7 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 
 func (*peeking) Concurrency() int { return 1 }
 
-func (p *peeking) opening(id string) (vaultreading.Task, bool) {
+func (p *peeking) opening(id string) (work.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	for _, item := range p.while {
@@ -206,7 +207,7 @@ func (p *peeking) opening(id string) (vaultreading.Task, bool) {
 			return item, true
 		}
 	}
-	return vaultreading.Task{}, false
+	return work.Task{}, false
 }
 
 func testIndexingNamesTheSourceItIsOn(t *testing.T, openReading openFunc) {
@@ -258,7 +259,7 @@ type overheard struct {
 	tasks *run.Tasks
 
 	mu      sync.Mutex
-	visited [][]vaultreading.Task
+	visited [][]work.Task
 }
 
 // GetModel is called at the start of every pass, before a source is opened.
@@ -280,7 +281,7 @@ func (o *overheard) keep() {
 	o.mu.Unlock()
 }
 
-func (o *overheard) lists() [][]vaultreading.Task {
+func (o *overheard) lists() [][]work.Task {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return o.visited

@@ -270,4 +270,3 @@ func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	path, served := numenv1connect.NewMediaServiceHandler(handler, state.CountQuestions())
 	return NewRoute(path, served, handler)
 }
-

@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 const noStoreVault = v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_NO_VAULT
@@ -75,9 +75,9 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 	switch {
 	case errors.Is(err, plugin.ErrNoVault):
 		return noStoreVault, nil
-	case errors.Is(err, vaultport.ErrLockedByAnother):
+	case errors.Is(err, vaultdomain.ErrLockedByAnother):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER, nil
-	case errors.Is(err, vaultport.ErrOutside):
+	case errors.Is(err, vaultdomain.ErrOutside):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE, nil
 	case errors.Is(err, fs.ErrNotExist):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING, nil

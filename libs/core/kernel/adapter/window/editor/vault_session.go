@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -158,7 +158,7 @@ func (o *Installation) resetStatus() {
 		o.State.finishTask(pass)
 	}
 	if o.embedderError != nil {
-		o.State.reportTask(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
+		o.State.reportTask(work.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
 }
 

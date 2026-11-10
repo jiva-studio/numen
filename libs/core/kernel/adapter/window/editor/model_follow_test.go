@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
 // announcing is an embedder whose model changes when its plugin says so.
@@ -37,7 +38,7 @@ func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 	state.Indexing.Model.Store(embedder.model.String())
 	state.Indexing.Recipe.Store(embedder.model.Recipe())
 
-	followModel(embedder, state, nil, nil)
+	followModel(indexing.NewEmbedding(embedder, nil), state, nil, nil)
 	second := embedding.Model{Name: "second", Dimensions: 16, Pooling: "mean"}
 	embedder.change(second)
 
@@ -52,7 +53,7 @@ func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 // An embedder that announces nothing is followed by nothing, and a window without an embedder follows nothing.
 func TestAnEmbedderThatAnnouncesNothingIsNotFollowed(t *testing.T) {
 	followModel(nil, &State{}, nil, nil)
-	followModel(silent{}, &State{}, nil, nil)
+	followModel(indexing.NewEmbedding(silent{}, nil), &State{}, nil, nil)
 }
 
 // silent is an embedder that cannot announce a change.
@@ -75,7 +76,7 @@ func TestAChangeOfTheChunkSizeBuildsTheVaultSessionAgainOnce(t *testing.T) {
 	embedder := newChunking(256)
 	rebuilt := 0
 
-	followModel(embedder, &State{}, nil, func() { rebuilt++ })
+	followModel(indexing.NewEmbedding(embedder, nil), &State{}, nil, func() { rebuilt++ })
 	changed := embedder.model
 	changed.ChunkTokens = 128
 	embedder.change(changed)
@@ -90,7 +91,7 @@ func TestAnAnnouncementWithTheSameChunkSizeBuildsNothingAgain(t *testing.T) {
 	embedder := newChunking(256)
 	rebuilt := 0
 
-	followModel(embedder, &State{}, nil, func() { rebuilt++ })
+	followModel(indexing.NewEmbedding(embedder, nil), &State{}, nil, func() { rebuilt++ })
 	embedder.change(embedder.model)
 	other := embedder.model
 	other.Name = "second"
@@ -105,7 +106,7 @@ func TestEachChangeOfTheChunkSizeBuildsTheVaultSessionAgain(t *testing.T) {
 	embedder := newChunking(256)
 	rebuilt := 0
 
-	followModel(embedder, &State{}, nil, func() { rebuilt++ })
+	followModel(indexing.NewEmbedding(embedder, nil), &State{}, nil, func() { rebuilt++ })
 	for _, tokens := range []int{128, 128, 256} {
 		changed := embedder.model
 		changed.ChunkTokens = tokens
@@ -122,7 +123,7 @@ func TestAChunkSizeThatBecomesKnownBuildsTheVaultSessionAgain(t *testing.T) {
 	embedder := newChunking(0)
 	rebuilt := 0
 
-	followModel(embedder, &State{}, nil, func() { rebuilt++ })
+	followModel(indexing.NewEmbedding(embedder, nil), &State{}, nil, func() { rebuilt++ })
 	changed := embedder.model
 	changed.ChunkTokens = 256
 	embedder.change(changed)
@@ -137,7 +138,7 @@ func TestAChangeOfTheChunkSizeKeepsTheRecordedModelCurrent(t *testing.T) {
 	embedder := newChunking(256)
 	state := &State{}
 
-	followModel(embedder, state, nil, func() {})
+	followModel(indexing.NewEmbedding(embedder, nil), state, nil, func() {})
 	changed := embedder.model
 	changed.ChunkTokens = 128
 	changed.Name = "second"

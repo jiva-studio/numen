@@ -3,11 +3,13 @@ package container
 import (
 	"context"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -19,10 +21,10 @@ func mountVault(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getReadVault(cfg Config, db *vault.Index) editor.ReadVaultFunc {
+func getReadVault(cfg Config, db *vault.Index) indexing.OpenReading {
 	return func(
 		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-	) (vault.ReadWholeVault, error) {
+	) (indexing.ReadWholeVault, error) {
 		request := cfg
 		request.ShouldRebuildIndex = rebuild
 		return request.ReadWholeVault(ctx, db, embedder, v)
@@ -32,7 +34,7 @@ func getReadVault(cfg Config, db *vault.Index) editor.ReadVaultFunc {
 func getWindowSession(cfg Config, db *vault.Index) editor.SessionSource {
 	return editor.SessionSource{
 		StartVault:             cfg.startVault(db),
-		SetTextVersionListener: func(listener textport.VersionListener) { setTextVersionListener(cfg.vault(), listener) },
+		SetTextVersionListener: func(listener textdomain.VersionListener) { setTextVersionListener(cfg.vault(), listener) },
 		ReportTextFilesChanged: func(ctx context.Context, v domain.Vault, paths []string) error {
 			return reportTextFilesChanged(cfg.vault(), ctx, v, paths)
 		},

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	taskwork "github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 )
 
 func enqueueAfter(
@@ -113,9 +113,9 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("got %d tasks, want 2: %+v", len(got), got)
 	}
-	want := vaultreading.Task{
+	want := taskwork.Task{
 		ID: "plugin:transcriber:a.mp3", Title: "Transcribing", About: "a.mp3", Count: 3, Total: 10,
-		Unit: vaultreading.Seconds, IsUserStarted: true, PluginID: "transcriber",
+		Unit: taskwork.Seconds, IsUserStarted: true, PluginID: "transcriber",
 	}
 	if !reflect.DeepEqual(got[0], want) {
 		t.Errorf("got %+v, want %+v", got[0], want)

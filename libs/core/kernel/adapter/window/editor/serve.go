@@ -9,22 +9,24 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
-	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
+
+// PathDialog is the native dialog the application gives the window to choose a file or a folder. It
+// answers the folder a person chose, and false when none was chosen.
+type PathDialog interface {
+	ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error)
+	ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error)
+}
 
 // Installation is a window put together and running: the pieces the services
 // of its routes and anything else working the same vault need.
@@ -34,17 +36,15 @@ import (
 type Installation struct {
 	State *State
 
-	Embedder embeddingport.Embedder
-	Asking   embeddingport.Embedder
-
 	notes  *note.Scenarios
 	vaults *vaults.Scenarios
 
 	session       SessionSource
 	triggers      triggerpasses.Source
 	closeIndex    func() error
+	embedding     *indexing.Embedding
 	pages         pageSet
-	dialogs       []func(dialog machineport.PathDialog)
+	dialogs       []func(dialog PathDialog)
 	out           io.Writer
 	checkIdentity vaults.CheckIdentity
 	closing       <-chan struct{}
@@ -62,13 +62,11 @@ type Setup struct {
 	Tasks         *run.Tasks
 	Out           io.Writer
 	CheckIdentity vaults.CheckIdentity
-	Embedder      embeddingport.Embedder
-	Asking        embeddingport.Embedder
+	Embedding     *indexing.Embedding
 	EmbedderError error
 	StopEmbedder  func() error
-	ReadVault     ReadVaultFunc
+	ReadVault     indexing.OpenReading
 	CloseIndex    func() error
-	Progress      indexport.IndexProgress
 	EmitEvent     func(event string)
 	IsRebuilding  bool
 	Closing       <-chan struct{}
@@ -83,18 +81,17 @@ func NewInstallation(in Setup, session SessionSource) *Installation {
 	if in.EmbedderError != nil {
 		writeDiagnostic(in.Tasks.Set, in.Out, "not embedding: %v\n", in.EmbedderError)
 		// Record indexing task failure when embedding provider initialization fails.
-		in.Tasks.Set(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: in.EmbedderError.Error()})
+		in.Tasks.Set(work.Task{ID: makingVectors, Title: "Indexing", Error: in.EmbedderError.Error()})
 	}
 	state := NewState(in.Tasks)
 	state.EmitEvent = in.EmitEvent
-	state.SetIndexing(in.Progress, in.Embedder)
-	indexer := newIndexWorker(in.ReadVault, state, in.Embedder, quietPeriod, in.Out)
+	state.SetIndexing(in.Embedding)
+	indexer := newIndexWorker(in.ReadVault, state, in.Embedding, quietPeriod, in.Out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
 	return &Installation{
 		State:         state,
-		Embedder:      in.Embedder,
-		Asking:        in.Asking,
+		embedding:     in.Embedding,
 		session:       session,
 		closeIndex:    in.CloseIndex,
 		pages:         pageSet{state: state},
@@ -139,13 +136,13 @@ func (o *Installation) SetPlugins(services PluginServices, dir func(id string) (
 
 // OnFolderDialog registers what a service does with the native dialog when the
 // application gives one.
-func (o *Installation) OnFolderDialog(bind func(dialog machineport.PathDialog)) {
+func (o *Installation) OnFolderDialog(bind func(dialog PathDialog)) {
 	o.dialogs = append(o.dialogs, bind)
 }
 
 // SetFolderDialog sets the native file and folder dialog used when a client
 // requests one.
-func (o *Installation) SetFolderDialog(dialog machineport.PathDialog) {
+func (o *Installation) SetFolderDialog(dialog PathDialog) {
 	for _, bind := range o.dialogs {
 		bind(dialog)
 	}
@@ -154,7 +151,7 @@ func (o *Installation) SetFolderDialog(dialog machineport.PathDialog) {
 // Start opens the first vault, follows the model of the embedder and serves
 // recordings over the loopback socket.
 func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer) error {
-	followModel(o.Embedder, o.State, o.indexer, o.rebuildSession)
+	followModel(o.embedding, o.State, o.indexer, o.rebuildSession)
 
 	// Reindexing every file applies to this launch only; it is not carried to a
 	// vault opened later.
@@ -236,17 +233,17 @@ func (o *Installation) SayTheme(message string) {
 		o.State.finishTask(applyingTheme)
 		return
 	}
-	o.State.reportTask(vaultreading.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.State.reportTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.State.reportTask(vaultreading.Task{
+		o.State.reportTask(work.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
-			Kind:  vaultreading.KindNotice,
+			Kind:  work.KindNotice,
 		})
 	}
 }
@@ -269,24 +266,20 @@ func NewState(tasks *run.Tasks) *State {
 // It is set before any chunk is read: the model name and recipe determine whether
 // a chunk already carries a vector, and tell the window that chunks will be
 // embedded.
-func (s *State) SetIndexing(progress indexport.IndexProgress, embedder embeddingport.Embedder) {
-	s.Indexing.Progress = progress
-	if embedder != nil {
-		name, recipe := vectors.DescribeModel(embedder)
-		s.Indexing.Model.Store(name)
-		s.Indexing.Recipe.Store(recipe)
-	}
+func (s *State) SetIndexing(embedding *indexing.Embedding) {
+	s.Indexing.Embedding = embedding
+	s.storeModel(embedding)
 }
 
 // ReportWordsAlone records that the search runs on words only, with the reason. It is a task because
 // a window opened from a desktop entry has no terminal.
 func (s *State) ReportWordsAlone(err error) {
-	s.reportTask(vaultreading.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
+	s.reportTask(work.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
 }
 
 // ReportFloorError records a similarity floor that is stored and cannot be read.
 func (s *State) ReportFloorError(err error) {
-	s.reportTask(vaultreading.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
+	s.reportTask(work.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 }
 
 // Vaults returns the use cases that act on the list of vaults, built once.
@@ -449,10 +442,10 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	pos := vaultreading.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
+	pos := work.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.reportTask(pos)
 
-	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
+	imported, err := o.vaults.Tree.Import.Execute(ctx, showing, into, paths)
 	if direct := imported.DirectChildren(into); len(direct) > 0 {
 		state.ChangeEvents.publish(window.Change{Paths: direct})
 	}

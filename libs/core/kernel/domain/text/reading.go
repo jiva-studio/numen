@@ -1,4 +1,4 @@
-package textport
+package text
 
 import (
 	"context"
@@ -10,16 +10,16 @@ import (
 // highlighting read it: the text of a version, read from the plugin that made
 // it. contentHash is domain.HashContent of the file as it is now.
 type Texts interface {
-	// FindLiveVersion is the file's live version, or text.ErrNoText where none is live.
+	// FindLiveVersion is the file's live version, or ErrNoText where none is live.
 	FindLiveVersion(ctx context.Context, path, contentHash string) (domain.TextVersionID, error)
-	// GetLiveText is the text of the file's live version, or text.ErrNoText where none is live.
+	// GetLiveText is the text of the file's live version, or ErrNoText where none is live.
 	GetLiveText(ctx context.Context, path, contentHash string) (domain.VersionText, error)
-	// GetVersionText is the text of one version, live or not, or text.ErrNoText.
+	// GetVersionText is the text of one version, live or not, or ErrNoText.
 	GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error)
 }
 
-// TextReaders opens the text of one vault.
-type TextReaders interface {
+// Readers opens the text of one vault.
+type Readers interface {
 	Open(v domain.Vault) (VaultTexts, error)
 }
 
@@ -31,4 +31,10 @@ type VaultTexts interface {
 	// IsTextSource reports whether the index keeps the text of the file: it has
 	// text versions.
 	IsTextSource(ctx context.Context, path string) (bool, error)
+}
+
+// VersionListener is notified that the versions of a file changed: one was added,
+// removed or moved, so the live version may differ.
+type VersionListener interface {
+	ReportVersionsChanged(v domain.Vault, path string)
 }

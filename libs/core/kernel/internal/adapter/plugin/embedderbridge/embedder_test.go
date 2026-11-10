@@ -25,7 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
+	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 // The bridge makes query vectors apart from document vectors, which search relies on through the port.

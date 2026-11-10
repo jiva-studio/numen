@@ -9,8 +9,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -56,7 +56,7 @@ func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 		t.Fatalf("expected 0 tasks, got %d", len(first))
 	}
 
-	tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan"})
+	tasks.Set(work.Task{ID: "recognition", Title: "Recognizing a scan"})
 	for telling := range 2 {
 		list := receiveTasks(t, stream)
 		if len(list) != 1 || list[0].GetId() != "recognition" {
@@ -111,7 +111,7 @@ func TestWatchTasksSendsThePluginOfEachTask(t *testing.T) {
 	stream := openTaskStream(t, tasks)
 	receiveTasks(t, stream)
 
-	tasks.Set(vaultreading.Task{ID: "one", Title: "Reading", PluginID: "md.example.engine", PluginName: "Example Engine"})
+	tasks.Set(work.Task{ID: "one", Title: "Reading", PluginID: "md.example.engine", PluginName: "Example Engine"})
 	list := receiveTasks(t, stream)
 	if len(list) != 1 || list[0].GetPluginId() != "md.example.engine" || list[0].GetPluginName() != "Example Engine" {
 		t.Fatalf("got %v, want the task of md.example.engine named Example Engine", list)
@@ -122,10 +122,10 @@ func TestWatchTasksSendsThePluginOfEachTask(t *testing.T) {
 // the list, which its work removes once it has stopped.
 func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
 	tasks := run.NewTasks()
-	work, cancel := context.WithCancel(t.Context())
+	running, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	tasks.Set(vaultreading.Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
-	tasks.Set(vaultreading.Task{ID: "plugin:md.example.engine:one", Title: "Reading"})
+	tasks.Set(work.Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
+	tasks.Set(work.Task{ID: "plugin:md.example.engine:one", Title: "Reading"})
 
 	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
 	mux := http.NewServeMux()
@@ -145,7 +145,7 @@ func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
 	})); err != nil {
 		t.Fatal(err)
 	}
-	if work.Err() == nil {
+	if running.Err() == nil {
 		t.Fatal("the task's context is not canceled")
 	}
 

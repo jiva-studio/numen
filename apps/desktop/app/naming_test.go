@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -16,7 +17,7 @@ import (
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		titles, err := opened.Notes().GetTitles.Execute(t.Context(), v, []string{path})
+		titles, err := opened.Notes().Browse.GetTitles.Execute(t.Context(), v, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -57,8 +58,8 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			// walk that first reads the file files it at two paths at once.
 			waitForIndex(t, opened, v, "Entropy.md")
 
-			notes := opened.Notes().ShowEdits(opened.State.GetWindow())
-			renamed, err := notes.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
+			notes := opened.Notes().ShowEdits(container.GetWindowView(opened))
+			renamed, err := notes.Place.Rename.Execute(t.Context(), v, "Entropy.md", "Disorder")
 			if err != nil {
 				t.Fatal(err)
 			}

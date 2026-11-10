@@ -19,7 +19,6 @@ import (
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -36,7 +35,7 @@ type Embed struct {
 	chunks  embeddingport.VectorQueries
 	vectors embeddingport.VectorRepository
 
-	Texts textport.TextReaders
+	Texts textdomain.Readers
 	Claim vaultport.IndexClaim
 
 	Embedder embeddingport.Embedder
@@ -535,7 +534,7 @@ func packVector(q []int8) []byte {
 // chunks of one source are processed together.
 type extracted struct {
 	files     vaultport.VaultReader
-	texts     textport.Texts
+	texts     textdomain.Texts
 	path      string
 	text      string
 	isIndexed bool

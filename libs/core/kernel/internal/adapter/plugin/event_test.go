@@ -26,7 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )

@@ -18,6 +18,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -491,7 +492,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 				embed.Embedder = s.embedder
 			}
 			return cli.Scan{
-				Read: vaults.NewReadWholeVault(notes, books, embed),
+				Read: indexing.NewReadWholeVault(notes, books, embed),
 				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
 					if s.summary != nil {
 						return domain.VaultSummary{}, s.summary

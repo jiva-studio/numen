@@ -30,17 +30,17 @@ const immediateBound = editor.FlushTimeout / 2
 func newPluginVaultList(o *editor.Installation) hostendpoint.VaultList {
 	scenarios := o.Vaults()
 	return windowvaults.List{
-		Add:  func(root, name string) (domain.Vault, error) { return scenarios.Add.Execute(root, name) },
-		Find: func(id string) (domain.Vault, error) { return scenarios.Find.Execute(id) },
+		Add:  func(root, name string) (domain.Vault, error) { return scenarios.Change.Add.Execute(root, name) },
+		Find: func(id string) (domain.Vault, error) { return scenarios.Registry.Find.Execute(id) },
 		Rename: func(ctx context.Context, v domain.Vault, name string) (domain.Vault, error) {
-			return scenarios.Rename.Execute(ctx, v, name)
+			return scenarios.Change.Rename.Execute(ctx, v, name)
 		},
 		Remove: func(ctx context.Context, id string, current domain.VaultID, isErasing bool) error {
-			return scenarios.Remove.Execute(ctx, id, current, isErasing)
+			return scenarios.Change.Remove.Execute(ctx, id, current, isErasing)
 		},
 		GetShown:    o.State.GetCurrentVault,
 		Open:        o.OpenPluginVault,
-		CheckFolder: func(v domain.Vault) bool { return scenarios.FolderCheck.Execute(v) },
+		CheckFolder: func(v domain.Vault) bool { return scenarios.Registry.FolderCheck.Execute(v) },
 	}
 }
 

@@ -21,8 +21,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -40,7 +42,7 @@ func TestAChangeReachesEveryoneDrawing(t *testing.T) {
 	response := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := state.GetWindow().ShowEdit(t.Context(), response); err != nil {
+	if err := (windowview.View{Notices: state}).ShowEdit(t.Context(), response); err != nil {
 		t.Fatal(err)
 	}
 
@@ -358,7 +360,7 @@ func TestEditLoad(t *testing.T) {
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Indexing.Progress = db.Progress()
+	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
 	api.state.setVault(v)
 
 	startTime := testsupport.GetMachine().Now()

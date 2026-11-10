@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -16,7 +15,7 @@ import (
 // bytes the vault holds now.
 type bookTexts struct{ readers vaultport.VaultReaders }
 
-func (b bookTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
+func (b bookTexts) Open(v domain.Vault) (text.VaultTexts, error) {
 	files, err := b.readers.Open(v)
 	if err != nil {
 		return nil, err

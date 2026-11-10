@@ -12,16 +12,13 @@ import (
 	"sync/atomic"
 	"time"
 
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 )
 
 // State is the vault the window is looking at and what every handler of it
@@ -76,9 +73,16 @@ type State struct {
 
 // IndexState is how far the vault has been read for meaning.
 type IndexState struct {
-	Progress indexport.IndexProgress
-	Model    atomic.Value
-	Recipe   atomic.Value
+	Embedding *indexing.Embedding
+	Model     atomic.Value
+	Recipe    atomic.Value
+}
+
+// storeModel records the name and the recipe of the model the vault is embedded under.
+func (s *State) storeModel(embedding *indexing.Embedding) {
+	name, recipe := embedding.Describe()
+	s.Indexing.Model.Store(name)
+	s.Indexing.Recipe.Store(recipe)
 }
 
 // GetCurrentVault is the vault the window has open. A window standing on nothing
@@ -104,8 +108,8 @@ func (s *State) GetVaultState(ctx context.Context) window.VaultState {
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered currently. A window standing on nothing holds no
 	// chunks and counts none.
-	if s.Indexing.Progress != nil && showing.ID != "" {
-		if target, embedded, err := indexing.GetProgress(ctx, s.Indexing.Progress, showing.ID, text(&s.Indexing.Recipe)); err == nil {
+	if s.Indexing.Embedding.HasProgress() && showing.ID != "" {
+		if target, embedded, err := s.Indexing.Embedding.CountProgress(ctx, showing.ID, text(&s.Indexing.Recipe)); err == nil {
 			out.ChunkCount, out.EmbeddedCount = target, embedded
 		}
 	}
@@ -158,7 +162,7 @@ func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 
 func (s *State) setSession(on *vaultSession) { s.session.Store(on) }
 
-func (s *State) reportTask(pos vaultreading.Task) { s.Window.AddTask(pos) }
+func (s *State) reportTask(pos work.Task) { s.Window.AddTask(pos) }
 
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 
@@ -170,7 +174,7 @@ func (s *State) isIndexOutdated(err error) bool {
 	if !errors.Is(err, note.ErrIndexOutdated) {
 		return false
 	}
-	s.reportTask(vaultreading.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
+	s.reportTask(work.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
 	return true
 }
 
@@ -192,27 +196,16 @@ func text(v *atomic.Value) string {
 	return s
 }
 
-// GetWindow returns the window handle for requesting place focus.
-func (s *State) GetWindow() View { return View{state: s} }
+// PublishPlace asks the subscribed clients to show the place.
+func (s *State) PublishPlace(pos domain.Place) { s.Places.publish(pos) }
 
-// View forwards window requests to the subscribed clients. A place requested
-// while no client is subscribed is not shown.
-type View struct{ state *State }
-
-func (v View) FocusPlace(_ context.Context, pos domain.Place) error {
-	v.state.Places.publish(pos)
-	return nil
+// PublishMove tells the subscribed clients that a note moved.
+func (s *State) PublishMove(went domain.Move) {
+	s.ChangeEvents.publish(window.Change{Renamed: []domain.Move{went}})
 }
 
-func (v View) ShowMove(_ context.Context, went domain.Move) error {
-	v.state.ChangeEvents.publish(window.Change{Renamed: []domain.Move{went}})
-	return nil
-}
-
-func (v View) ShowEdit(_ context.Context, edit domain.Edit) error {
-	v.state.Edits.publish(edit)
-	return nil
-}
+// PublishEdit tells the subscribed clients that a change to a note is in progress.
+func (s *State) PublishEdit(edit domain.Edit) { s.Edits.publish(edit) }
 
 type broadcaster[T any] struct {
 	broadcast.Broadcaster[T]
@@ -262,10 +255,8 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 	}
 }
 
-func (v View) ActivateTab(_ context.Context, id string) error {
-	v.state.TabIDs.publish(id)
-	return nil
-}
+// PublishTab asks the subscribed clients to bring the tab to the front.
+func (s *State) PublishTab(id string) { s.TabIDs.publish(id) }
 
 // reportSignal closes a channel when a report arrives. The zero value is ready to use.
 type reportSignal struct {

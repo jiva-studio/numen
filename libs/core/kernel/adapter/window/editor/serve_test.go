@@ -30,6 +30,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -202,17 +203,17 @@ func openingWith(
 	api.UseNotes()
 	api.state.setVault(v)
 	if embedder != nil {
-		if err := db.FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
+		if err := db.VectorIndex().FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
 			t.Fatal(err)
 		}
 		api.state.Indexing.Model.Store(embedder.GetModel().String())
-		api.state.Indexing.Progress = db.Progress()
+		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
 	}
 	line, isDone := api.state.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
 	made := wired.session(db, readers, watcher)
-	worker := newIndexWorker(wired.readVault(db), api.state, embedder, idleDuration, io.Discard)
+	worker := newIndexWorker(wired.readVault(db), api.state, indexing.NewEmbedding(embedder, db.Progress()), idleDuration, io.Discard)
 	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())

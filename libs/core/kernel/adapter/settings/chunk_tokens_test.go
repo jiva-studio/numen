@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 )
 
 // The size a note is cut at is a setting of the embedding plugin, and the core settings hold none.

@@ -23,12 +23,19 @@ const Backlog = 65536
 // scheduling; the bound that decides anything is Backlog.
 const handover = 1024
 
-// Hub is the hub the watchers of one container share. The composition root may not import internal/adapterlib, so
-// it names the hub through this adapter.
-type Hub = watchhub.Hub
+// Hub holds the folder watches that every adapter of one container shares.
+type Hub struct{ shared *watchhub.Hub }
 
 // NewHub returns the hub of one container.
-func NewHub() *watchhub.Hub { return watchhub.NewHub() }
+func NewHub() *Hub { return &Hub{shared: watchhub.NewHub()} }
+
+// GetShared returns the folder watches the hub holds, and none for a missing hub.
+func (h *Hub) GetShared() *watchhub.Hub {
+	if h == nil {
+		return nil
+	}
+	return h.shared
+}
 
 // Watcher follows vaults on disk.
 type Watcher struct {

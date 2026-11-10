@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 // bookReader is the plugin whose version every book the stand-in reads has.
@@ -56,7 +55,7 @@ func (s *libraryTexts) drop(path string) {
 	delete(s.extra, path)
 }
 
-func (s *libraryTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
+func (s *libraryTexts) Open(v domain.Vault) (text.VaultTexts, error) {
 	return libraryVaultTexts{texts: s, vault: v}, nil
 }
 

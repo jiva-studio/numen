@@ -132,10 +132,11 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	if installation.Embedder == nil {
+	name, _ := installation.State.Indexing.Embedding.Describe()
+	if name == "" {
 		t.Fatal("the vault opened with no embedder on hand")
 	}
-	if got := installation.Embedder.GetModel().Name; got != "asked-for" {
+	if got, _, _ := strings.Cut(name, "@"); got != "asked-for" {
 		t.Errorf("got %q", got)
 	}
 }
@@ -148,8 +149,8 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	if installation.Embedder != nil {
-		t.Errorf("got an embedder: %v", installation.Embedder.GetModel())
+	if name, _ := installation.State.Indexing.Embedding.Describe(); name != "" {
+		t.Errorf("got an embedder: %v", name)
 	}
 }
 

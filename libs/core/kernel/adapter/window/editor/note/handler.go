@@ -96,11 +96,11 @@ func NewProse(
 // Outline answers what a note stands among: the note a vault opens on, its neighborhood and the
 // headings of notes.
 type Outline struct {
-	vault             Vault
-	findTabKinds      func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-	getOpeningNote    *query.GetOpeningNote
-	getTypes          *query.GetTypes
-	getHeadings       *query.GetHeadings
+	vault            Vault
+	findTabKinds     func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
+	getOpeningNote   *query.GetOpeningNote
+	getTypes         *query.GetTypes
+	getHeadings      *query.GetHeadings
 	showNeighborhood *query.ShowNeighbourhood
 }
 

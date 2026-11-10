@@ -56,7 +56,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 		}
 	}
 
-	removed, err := db.DeleteOtherRecipeVectors(ctx, now)
+	removed, err := db.DeleteVectorsOfOtherRecipes(ctx, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	}
 
 	// run that has no model to say what it is holding vectors for.
-	if removedVal, err := db.DeleteOtherRecipeVectors(ctx, ""); err != nil || removedVal != 0 {
+	if removedVal, err := db.DeleteVectorsOfOtherRecipes(ctx, ""); err != nil || removedVal != 0 {
 		t.Errorf("forgetting under no recipe took %d vectors out: %v", removedVal, err)
 	}
 	if err := db.Compact(ctx); err != nil {
@@ -101,7 +101,7 @@ func TestForgettingAndCompactingReportTheirFailure(t *testing.T) {
 		run    func(db *DB) error
 	}{
 		{"forgetting", "DELETE FROM vectors", func(db *DB) error {
-			n, err := db.DeleteOtherRecipeVectors(t.Context(), "current")
+			n, err := db.DeleteVectorsOfOtherRecipes(t.Context(), "current")
 			if n != 0 {
 				t.Errorf("a deletion that failed counted %d", n)
 			}

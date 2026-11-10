@@ -4,14 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
@@ -52,7 +52,7 @@ type Vaults struct {
 	Add        vault.Add
 	Known      registry.GetKnownVaults
 	RecordOpen vault.RecordOpen
-	Now        machineport.Clock
+	Now        func() time.Time
 
 	OpenRename     func(ctx context.Context) (Renaming, error)
 	OpenUnregister func(ctx context.Context) (Unregistering, error)
@@ -87,7 +87,7 @@ type Erasing struct {
 
 // Scan is one vault made searchable.
 type Scan struct {
-	Read       vaultreading.ReadWholeVault
+	Read       indexing.ReadWholeVault
 	Summary    func(ctx context.Context) (domain.VaultSummary, error)
 	Unembedded error
 	Close      func() error

@@ -1,8 +1,6 @@
 package vault
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -14,13 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
-// IndexBackend represents lifecycle and vector-maintenance operations of an index store.
+// IndexBackend is the lifecycle and the vector index of an index store.
 type IndexBackend interface {
 	Close() error
-	FitVectors(ctx context.Context, dims int, recipe string) error
-	DeleteOtherRecipeVectors(ctx context.Context, recipe string) (int64, error)
-	ApplyMinChunkLength(ctx context.Context, length int) (int64, error)
-	Compact(ctx context.Context) error
+	embeddingport.VectorIndex
 }
 
 // IndexPorts bundles the ports and backend of an open index database.
@@ -79,24 +74,8 @@ func (i *Index) Walks() *Walks { return &i.walks }
 // Ledger returns the shared refresh ledger of this index.
 func (i *Index) Ledger() *Ledger { return i.ledger }
 
-// FitVectors makes the vector index hold vectors of the width given.
-func (i *Index) FitVectors(ctx context.Context, dims int, recipe string) error {
-	return i.ports.Backend.FitVectors(ctx, dims, recipe)
-}
-
-// DeleteVectorsOfOtherRecipes takes out the vectors kept under any recipe but the one in use.
-func (i *Index) DeleteVectorsOfOtherRecipes(ctx context.Context, recipe string) (int64, error) {
-	return i.ports.Backend.DeleteOtherRecipeVectors(ctx, recipe)
-}
-
-// ApplyMinChunkLength sets the shortest small chunk that gets a vector and takes out the vectors of the
-// shorter ones.
-func (i *Index) ApplyMinChunkLength(ctx context.Context, length int) (int64, error) {
-	return i.ports.Backend.ApplyMinChunkLength(ctx, length)
-}
-
-// Compact reclaims the space the index does not use.
-func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Compact(ctx) }
+// VectorIndex returns the store of vectors as a whole.
+func (i *Index) VectorIndex() embeddingport.VectorIndex { return i.ports.Backend }
 
 func (i *Index) Vaults() vaultport.VaultRepository          { return i.ports.Vaults }
 func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Notes }

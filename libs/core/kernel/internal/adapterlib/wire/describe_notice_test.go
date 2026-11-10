@@ -3,13 +3,13 @@ package wire
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
 func TestDescribeTasksCarriesTheKind(t *testing.T) {
-	described := describeTasks([]vaultreading.Task{
-		{ID: "a", About: "a key is ignored", Kind: vaultreading.KindNotice},
+	described := describeTasks([]work.Task{
+		{ID: "a", About: "a key is ignored", Kind: work.KindNotice},
 		{ID: "b"},
 	})
 

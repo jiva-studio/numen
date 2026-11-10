@@ -33,7 +33,7 @@ type Versions struct {
 	clock   machineport.Clock
 
 	mu       sync.Mutex
-	listener textport.VersionListener
+	listener text.VersionListener
 	lives    map[liveKey]domain.TextVersionID
 }
 
@@ -60,7 +60,7 @@ func NewVersions(
 
 // SetListener sets the listener of version changes, the index of the displayed
 // vault. Nil disables notifications.
-func (u *Versions) SetListener(listener textport.VersionListener) {
+func (u *Versions) SetListener(listener text.VersionListener) {
 	if listener == nil {
 		listener = noListener{}
 	}

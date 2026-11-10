@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -32,7 +33,7 @@ const QuietPeriod = 8 * time.Second
 type Events interface {
 	// ReportTask puts one piece of work in the list of what is being done, and
 	// FinishTask takes it out.
-	ReportTask(offset vaultreading.Task)
+	ReportTask(offset work.Task)
 	FinishTask(id string)
 	// ReportError reports why a pass could not run.
 	ReportError(err error)
@@ -45,7 +46,7 @@ type Events interface {
 // OpenReading is the three passes over a vault, for the embedder given.
 type OpenReading func(
 	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-) (vaultreading.ReadWholeVault, error)
+) (ReadWholeVault, error)
 
 // ReadNotes is the first walk over a vault. It answers how many notes it read.
 type ReadNotes func(ctx context.Context, during func()) (int, error)
@@ -120,7 +121,7 @@ func (w *Worker) ClearSkips(paths []string) { w.skips.clear(paths) }
 
 func (w *Worker) openReading(
 	ctx context.Context, v domain.Vault, rebuild bool,
-) (vaultreading.ReadWholeVault, error) {
+) (ReadWholeVault, error) {
 	making, err := w.reading(ctx, w.embedder, v, rebuild)
 	if err != nil {
 		return making, err
@@ -275,7 +276,7 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	events := p.worker.events
 	defer events.FinishTask(WalkingNotes)
 
-	events.ReportTask(vaultreading.Task{ID: WalkingNotes, Title: "Indexing the vault"})
+	events.ReportTask(work.Task{ID: WalkingNotes, Title: "Indexing the vault"})
 	notes, err := read(ctx, nil)
 
 	switch {
@@ -313,7 +314,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	events := p.worker.events
 	making, err := p.worker.openReading(ctx, p.v, rebuild)
 	if err != nil {
-		events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
+		events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return
 	}
 	texts, cancel := newTaskCancel(ctx)
@@ -323,7 +324,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		if res.CurrentSource != "" {
 			current.set([]string{res.CurrentSource})
 		}
-		events.ReportTask(vaultreading.Task{
+		events.ReportTask(work.Task{
 			ID: IndexingTexts, Title: taskIndexingTexts, About: res.CurrentSource,
 			// Every file the walk found leaves this pass one of four ways, and all
 			// four count as done.
@@ -333,7 +334,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		})
 	}
 
-	events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, Cancel: cancel.request})
+	events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, Cancel: cancel.request})
 	res, read := making.IndexTexts(texts, p.v)
 	switch {
 	case read == nil:
@@ -352,7 +353,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		events.FinishTask(IndexingTexts)
 	default:
 		// A failed pass stays in the task list until the user dismisses it.
-		events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: read.Error()})
+		events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: read.Error()})
 	}
 
 	p.embed(ctx)
@@ -364,7 +365,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	}
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(vaultreading.Task{ID: IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
+		events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
 	}
 
 	making, err := p.worker.openReading(ctx, v, false)
@@ -466,7 +467,7 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(vaultreading.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
+		events.ReportTask(work.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
 	making, err := p.worker.openReading(ctx, p.v, false)
@@ -482,7 +483,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	var current currentSources
 	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
 		current.set(getEmbeddingSources(res))
-		pos := vaultreading.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
+		pos := work.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
 			pos.Count, pos.Total = int64(res.Embedded), plan.getTotal(res)
 		}

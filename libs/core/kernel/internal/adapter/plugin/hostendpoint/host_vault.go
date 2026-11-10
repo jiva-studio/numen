@@ -17,10 +17,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
 // vaultLockHold is the longest a plugin holds the writers of the vault. A plugin that goes without
@@ -115,11 +116,11 @@ type errorEntry struct {
 func getErrorEntries() []errorEntry {
 	return []errorEntry{
 		{plugin.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
-		{vaultport.ErrOutside, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT},
-		{vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
-		{vaultport.ErrAlreadyExists, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
-		{vaultport.ErrLockedByAnother, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED},
-		{vaultport.ErrNotANote, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
+		{vaultdomain.ErrOutside, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT},
+		{edit.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
+		{vaultdomain.ErrAlreadyExists, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
+		{vaultdomain.ErrLockedByAnother, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_LOCKED},
+		{edit.ErrNotANote, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE},
 		{fs.ErrNotExist, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND},
 		{plugin.ErrNotText, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_TEXT},
 		{domain.ErrHierarchyCycle, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HIERARCHY_CYCLE},

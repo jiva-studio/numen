@@ -13,9 +13,9 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -106,9 +106,9 @@ func TestReportTaskUsesCallerPluginID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := vaultreading.Task{
+	want := work.Task{
 		ID: "plugin:md.numen.a:scan.pdf", Title: "Recognizing", About: "scan.pdf", Count: 2, Total: 9,
-		Unit: vaultreading.Bytes, IsUserStarted: true, PluginID: "md.numen.a",
+		Unit: work.Bytes, IsUserStarted: true, PluginID: "md.numen.a",
 	}
 	if got := tasks.List(); len(got) != 1 || !reflect.DeepEqual(got[0], want) {
 		t.Fatalf("got %+v, want %+v", got, want)

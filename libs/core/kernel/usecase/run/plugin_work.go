@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 )
 
 // pluginTaskPrefix starts the id a plugin's task is listed under. The plugin's
@@ -36,7 +36,6 @@ type pluginState struct {
 	leases map[*Lease]bool
 	waits  map[uint64]context.CancelFunc
 }
-
 
 // NewPluginWork opens the lock and the list of tasks to the plugins. getName
 // returns the name a plugin's tasks are listed under; nil lists them unnamed.
@@ -102,7 +101,7 @@ func (w *PluginWork) ReportTask(pluginID string, task plugin.Task) {
 	w.getStateLocked(pluginID).tasks[task.ID] = task.Error == ""
 	w.notifyLocked()
 	w.mu.Unlock()
-	w.tasks.Set(vaultreading.Task{
+	w.tasks.Set(work.Task{
 		ID:            getPluginTaskID(pluginID, task.ID),
 		Title:         task.Title,
 		About:         task.About,
@@ -211,19 +210,19 @@ func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + plu
 
 func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
 
-func getUnits() map[plugin.TaskUnit]vaultreading.Unit {
-	return map[plugin.TaskUnit]vaultreading.Unit{
-		plugin.TaskUnitThings:  vaultreading.Things,
-		plugin.TaskUnitBytes:   vaultreading.Bytes,
-		plugin.TaskUnitSeconds: vaultreading.Seconds,
+func getUnits() map[plugin.TaskUnit]work.Unit {
+	return map[plugin.TaskUnit]work.Unit{
+		plugin.TaskUnitThings:  work.Things,
+		plugin.TaskUnitBytes:   work.Bytes,
+		plugin.TaskUnitSeconds: work.Seconds,
 	}
 }
 
-func readUnit(unit plugin.TaskUnit) vaultreading.Unit {
+func readUnit(unit plugin.TaskUnit) work.Unit {
 	if listed, isKnown := getUnits()[unit]; isKnown {
 		return listed
 	}
-	return vaultreading.Things
+	return work.Things
 }
 
 // Lease is a plugin's hold on the lock.

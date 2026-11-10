@@ -9,6 +9,8 @@ import (
 	"context"
 	"time"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
@@ -23,7 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -60,7 +61,7 @@ type Config struct {
 
 	TextVersions *textversion.Versions
 
-	TextReaders textport.TextReaders
+	TextReaders textdomain.Readers
 
 	ShouldRebuildIndex bool
 

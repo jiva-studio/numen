@@ -54,16 +54,3 @@ type AgentProvider interface {
 	// and the error reports it alongside the programs of the other providers.
 	GetPrograms(ctx context.Context, commands map[string][]string) ([]agentdomain.Program, error)
 }
-
-// CompletionPrograms finds the program a route names and starts the tasks that
-// carry the questions to it.
-type CompletionPrograms interface {
-	// GetProgram returns the program named, or, when the name is empty, the one
-	// the settings name, else the default of the plugins. A program that is not
-	// installed or that no plugin lists fails with completion.ErrNoRoute, and plugins that
-	// cannot be reached with ErrUnavailable.
-	GetProgram(ctx context.Context, name string) (agentdomain.Program, error)
-	// StartRun starts the task on the program it names, under that program's
-	// section of the settings.
-	StartRun(ctx context.Context, task agentdomain.Task) (Run, error)
-}

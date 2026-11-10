@@ -8,10 +8,12 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/note/edit"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
 
 // An outcome or a write's error as the error code the schema carries.
@@ -42,7 +44,7 @@ func ConvertOutcomeToErrorCode(o note.ReadOutcome) (v1.ErrorCode, bool) {
 // all. Anything else is the vault being unreachable.
 func GetErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
-	case errors.Is(err, vaultport.ErrStale):
+	case errors.Is(err, edit.ErrStale):
 		return v1.ErrorCode_ERROR_CODE_CONFLICT, true
 	case errors.Is(err, note.ErrNoNote):
 		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
@@ -57,11 +59,11 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
 	case errors.Is(err, note.ErrBodyUnwritable):
 		return v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true
-	case errors.Is(err, vaultport.ErrNotANote):
+	case errors.Is(err, edit.ErrNotANote):
 		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
 	// A file standing where a folder of the path must be is a file in the way,
 	// the same as a file standing where the note itself would go.
-	case errors.Is(err, vaultport.ErrAlreadyExists), errors.Is(err, syscall.ENOTDIR):
+	case errors.Is(err, vaultdomain.ErrAlreadyExists), errors.Is(err, syscall.ENOTDIR):
 		return v1.ErrorCode_ERROR_CODE_ALREADY_EXISTS, true
 	default:
 		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
@@ -72,7 +74,7 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 // with. A path that does not stay in the vault is the client's to correct;
 // anything else is the vault being out of reach.
 func GetCode(err error) connect.Code {
-	if errors.Is(err, vaultport.ErrOutside) {
+	if errors.Is(err, vaultdomain.ErrOutside) {
 		return connect.CodeInvalidArgument
 	}
 	return connect.CodeInternal

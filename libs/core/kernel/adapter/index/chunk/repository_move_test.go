@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 

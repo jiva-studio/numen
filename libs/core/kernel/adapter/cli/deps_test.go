@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -76,7 +77,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			embed.Texts = testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
-				Read: vaults.NewReadWholeVault(notes, books, embed),
+				Read: indexing.NewReadWholeVault(notes, books, embed),
 				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
 					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},
@@ -126,7 +127,7 @@ func (p vaultParts) build() cli.Vaults {
 		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
 		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
 		RecordOpen: vaults.NewRecordOpen(p.ports.Recorder),
-		Now:        p.now,
+		Now:        p.now.Now,
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
 			rows, closeRows, err := p.rows(ctx)
 			if err != nil {

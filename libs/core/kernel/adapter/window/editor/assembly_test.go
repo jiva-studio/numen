@@ -6,10 +6,16 @@ import (
 	"math"
 	"slices"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+
+	"path/filepath"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/bufferednotes"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -18,13 +24,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -33,7 +38,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-	"path/filepath"
 )
 
 // derivedCoreFolder is the folder of a vault's store that holds the core's own files.
@@ -44,12 +48,12 @@ const derivedCoreFolder = "core"
 type readingParts struct {
 	indexPath          string
 	shouldRebuildIndex bool
-	texts              textport.TextReaders
+	texts              textdomain.Readers
 	chunks             *note.ChunkTokens
 	watches            *vaultwatch.Hub
 }
 
-func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textport.TextReaders) readingParts {
+func newReadingParts(indexPath string, shouldRebuildIndex bool, texts textdomain.Readers) readingParts {
 	return readingParts{
 		indexPath:          indexPath,
 		shouldRebuildIndex: shouldRebuildIndex,
@@ -107,10 +111,10 @@ func (w readingParts) GetVaultReaders() vaultport.VaultReaders { return vaultrea
 
 // GetVaultWatcher monitors vaults for external filesystem changes.
 func (w readingParts) GetVaultWatcher() vaultport.VaultWatcher {
-	return vaultwatch.Watcher{Hub: w.watches}
+	return vaultwatch.Watcher{Hub: w.watches.GetShared()}
 }
 
-func (w readingParts) cutNotes() query.CutNotes {
+func (w readingParts) cutNotes() chunking.CutNotes {
 	return query.NewCutNotes(w.chunks.Get())
 }
 
@@ -150,21 +154,21 @@ func (w readingParts) OpenVaultWith(
 	scan := vault.NewScan(walking, db.Vaults(), db.Notes(), db.FileStats(), db.Maintenance())
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
-	buffered := &vault.BufferedNoteRepository{NoteRepository: db.Notes()}
+	buffered := &bufferednotes.Repository{NoteRepository: db.Notes()}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
 }
 
 // ReadWholeVault reads the notes, cuts the file texts and makes the vectors of a vault.
 func (w readingParts) ReadWholeVault(
 	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-) (vaultreading.ReadWholeVault, error) {
-	fit := vectors.NewFitIndex(db)
+) (indexing.ReadWholeVault, error) {
+	fit := vectors.NewFitIndex(db.VectorIndex())
 	fit.ShouldRebuildIndex = rebuild
 	if err := fit.Execute(ctx, embedder); err != nil {
-		return vault.ReadWholeVault{}, err
+		return indexing.ReadWholeVault{}, err
 	}
 	if _, err := w.GetVaultReaders().Open(v); err != nil {
-		return vault.ReadWholeVault{}, err
+		return indexing.ReadWholeVault{}, err
 	}
 	texts := filetext.NewIndex(w.GetVaultReaders(), db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), w.texts)
 	cutter := w.cutNotes()
@@ -185,19 +189,19 @@ func (w readingParts) ReadWholeVault(
 	}
 	store, err := derivedfile.OpenDerived(v.Path, vaultconfig.Options{}, derivedCoreFolder)
 	if err != nil {
-		return vault.ReadWholeVault{}, err
+		return indexing.ReadWholeVault{}, err
 	}
 	embed := vectors.NewEmbed(w.GetVaultReaders(), db.VectorQueries(), db.Vectors())
 	embed.Claim = store.NewIndexClaim(derivedCoreFolder + "/indexing")
 	embed.Texts = w.texts
 	embed.Embedder = embedder
-	return vault.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
+	return indexing.NewReadWholeVault(w.scan(db, rebuild), texts, embed), nil
 }
 
 func openThemes(registryPath string, interfaceScale, textScale float64, say func(string)) (*theme.Service, error) {
 	folder := filepath.Dir(registryPath)
 	hub := vaultwatch.NewHub()
-	files, err := themefiles.OpenAt(filepath.Join(folder, "themes"), hub)
+	files, err := themefiles.OpenAt(filepath.Join(folder, "themes"), hub.GetShared())
 	sources := themeusecase.Sources{Presets: files, Own: files, Plugins: nil}
 	getPath := func() (string, error) { return filepath.Join(folder, "numen.json"), nil }
 
@@ -233,7 +237,7 @@ func openThemes(registryPath string, interfaceScale, textScale float64, say func
 			return values
 		},
 		Report: func(error) {},
-		Hub:    hub,
+		Hub:    hub.GetShared(),
 	}
 	var noPlugins settingsport.PluginSettings
 	check := settingsusecase.NewCheckSettings(

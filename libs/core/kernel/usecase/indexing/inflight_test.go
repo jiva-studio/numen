@@ -105,8 +105,8 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 				started:  make(chan struct{}, 1),
 			}
 			worker := NewWorker(Config{
-				Reading: func(context.Context, embeddingport.Embedder, domain.Vault, bool) (vaultreading.ReadWholeVault, error) {
-					return vaultreading.NewReadWholeVault(nil, nil, script), nil
+				Reading: func(context.Context, embeddingport.Embedder, domain.Vault, bool) (ReadWholeVault, error) {
+					return NewReadWholeVault(nil, nil, script), nil
 				},
 				Embedder: &fakeEmbedder{dims: 8},
 				Events:   events,

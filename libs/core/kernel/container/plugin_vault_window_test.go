@@ -217,7 +217,7 @@ func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
 	if _, err := shared.MoveNote(t.Context(), "Danube.md", "Donau.md"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := scenarios.Move.Execute(t.Context(), v, "Deltas.md", "Delta.md"); err != nil {
+	if _, err := scenarios.Place.Move.Execute(t.Context(), v, "Deltas.md", "Delta.md"); err != nil {
 		t.Fatal(err)
 	}
 	moves := window.getMoves()

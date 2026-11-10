@@ -2,14 +2,20 @@ package vault
 
 import (
 	"context"
-	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
+
+// WriteRecorder holds the paths written through the index while a walk reads a vault.
+type WriteRecorder interface {
+	// StartRecording starts holding the paths, for the length of one walk.
+	StartRecording()
+	// StopRecording returns every path held and ends the holding.
+	StopRecording() []string
+}
 
 // VaultOpener opens a vault for this installation: the walk that brings the
 // index up to date with it, the watch that keeps it up to date while open, and
@@ -21,12 +27,12 @@ type VaultOpener struct {
 
 	watcher  vaultport.VaultWatcher
 	scan     Scan
-	Buffered *BufferedNoteRepository
+	Buffered WriteRecorder
 	Refresh  Refresh
 }
 
 // ConfigureVaultOpener constructs a VaultOpener with the given watcher, scan, buffered repository, and refresh.
-func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Scan, buffered *BufferedNoteRepository, refresh Refresh) *VaultOpener {
+func ConfigureVaultOpener(watcher vaultport.VaultWatcher, scan Scan, buffered WriteRecorder, refresh Refresh) *VaultOpener {
 	return &VaultOpener{
 		watcher:  watcher,
 		scan:     scan,
@@ -117,68 +123,4 @@ func (o *OpenVault) handleError(err error) {
 	if o.follow.ErrorHandler != nil {
 		o.follow.ErrorHandler(err)
 	}
-}
-
-// BufferedNoteRepository is the index, keeping the paths of the notes written through it while
-// the first walk is still reading the vault.
-type BufferedNoteRepository struct {
-	noteport.NoteRepository
-	BufferedWrites
-}
-
-// BufferedWrites is every path written through the index while a walk is reading the vault.
-type BufferedWrites struct {
-	mu       sync.Mutex
-	paths    []string
-	recorded map[string]bool
-	isOver   bool
-}
-
-func (b *BufferedNoteRepository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
-	for _, one := range notes {
-		b.Record(one.Note.FileStat.Path)
-	}
-	return b.NoteRepository.Save(ctx, vaultID, notes)
-}
-
-func (b *BufferedNoteRepository) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
-	for _, path := range paths {
-		b.Record(path)
-	}
-	return b.NoteRepository.Remove(ctx, vaultID, paths)
-}
-
-// StartRecording holds the paths written through this, for the length of one walk.
-func (w *BufferedWrites) StartRecording() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.isOver = false
-	w.paths, w.recorded = nil, nil
-}
-
-// Record takes the path before the write it belongs to.
-func (w *BufferedWrites) Record(path string) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if w.isOver || w.recorded[path] {
-		return
-	}
-	if w.recorded == nil {
-		w.recorded = map[string]bool{}
-	}
-	w.recorded[path] = true
-	w.paths = append(w.paths, path)
-}
-
-// StopRecording is every path held, and the end of the holding.
-func (w *BufferedWrites) StopRecording() []string {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	w.isOver = true
-	paths := w.paths
-	w.paths, w.recorded = nil, nil
-	return paths
 }
