@@ -232,13 +232,13 @@ func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []
 	values := make([]*v1.SecretValue, 0, len(secrets))
 	for _, one := range secrets {
 		if store == nil {
-			return values, pluginport.ErrNoKeyStore
+			return values, plugindomain.ErrNoKeyStore
 		}
 		value, err := store.GetKey(ctx, secret.GetEntryName(one.ID))
 		switch {
 		case err == nil:
 			values = append(values, &v1.SecretValue{Id: one.ID, Name: one.Name, Group: one.Group, Value: value})
-		case errors.Is(err, pluginport.ErrNoKey):
+		case errors.Is(err, plugindomain.ErrNoKey):
 		default:
 			return values, err
 		}
@@ -323,7 +323,7 @@ func getSignature(lists []allowedList) string {
 func (d *secretDelivery) getReadError(listErr error, failures []error) error {
 	problems := []error{listErr}
 	for _, failure := range failures {
-		if errors.Is(failure, pluginport.ErrNoKeyStore) {
+		if errors.Is(failure, plugindomain.ErrNoKeyStore) {
 			d.noKeyStoreOnce.Do(func() { d.host.reportError(failure) })
 			continue
 		}

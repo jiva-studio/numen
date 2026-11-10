@@ -3,10 +3,10 @@ package container
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	settingswiring "github.com/jiva-studio/numen/libs/core/kernel/container/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
@@ -55,7 +55,7 @@ func (c Config) SetSettings(s Settings) Config {
 
 // Plugins returns a function that lists the discovered plugins and their
 // settings schemas.
-func (c Config) Plugins() func() []pluginport.PluginInfo {
+func (c Config) Plugins() func() []plugin.Info {
 	return c.settings().Plugins()
 }
 

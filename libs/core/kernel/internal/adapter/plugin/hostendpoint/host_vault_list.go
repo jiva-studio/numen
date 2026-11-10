@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
@@ -34,7 +35,7 @@ func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
 	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
-	case errors.Is(err, pluginport.ErrUnsavedChanges):
+	case errors.Is(err, plugin.ErrUnsavedChanges):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
 	default:
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSPECIFIED, false

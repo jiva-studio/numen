@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -25,7 +24,7 @@ type versionItems struct {
 	deleted []string
 }
 
-func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ pluginport.PluginCommandEntry) ([]textversion.VersionItem, error) {
+func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path string, _ plugin.CommandEntry) ([]textversion.VersionItem, error) {
 	if path == "gone.mp3" {
 		return nil, errors.New("gone.mp3 is not in the vault")
 	}
@@ -36,7 +35,7 @@ func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path 
 }
 
 func (v *versionItems) RunVersionItem(
-	_ context.Context, _ domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
+	_ context.Context, _ domain.Vault, path string, entry plugin.CommandEntry, version domain.TextVersionID,
 ) (plugin.CommandResult, error) {
 	if version != "org.example.ears/ears" {
 		return plugin.CommandResult{}, textversion.ErrInvalidVersion
@@ -210,8 +209,8 @@ func TestRunPluginCommand_RejectsAnItemNotListedAndARunWithoutAnItem(t *testing.
 // the window.
 type conditionalCommands struct{ pluginCommands }
 
-func (conditionalCommands) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (conditionalCommands) ListCommands() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{
 			ID: "proofreading.create", Title: "Proofread text",
 			When: "version.isLive",
@@ -223,8 +222,8 @@ func (conditionalCommands) ListCommands() []plugincommand.Entry {
 // comparingCommands declares two commands with items and one without.
 type comparingCommands struct{ pluginCommands }
 
-func (comparingCommands) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{
+func (comparingCommands) ListCommands() []plugin.CommandEntry {
+	return []plugin.CommandEntry{
 		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{ID: "proofreading.create", Title: "Proofread text", When: "version.isLive"}},
 		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{ID: "proofreading.compare", Title: "Compare text", When: "version.isLive"}},
 		{PluginID: "md.numen.tools.updater", Command: plugincommand.Command{ID: "updater.check", Title: "Check for updates"}},
@@ -234,7 +233,7 @@ func (comparingCommands) ListCommands() []plugincommand.Entry {
 // brokenComparison lists the versions of versionItems, and fails for proofreading.compare.
 type brokenComparison struct{ versionItems }
 
-func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry pluginport.PluginCommandEntry) ([]textversion.VersionItem, error) {
+func (b *brokenComparison) ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugin.CommandEntry) ([]textversion.VersionItem, error) {
 	if entry.Command.ID == "proofreading.compare" {
 		return nil, errors.New("the comparison cannot read the versions")
 	}

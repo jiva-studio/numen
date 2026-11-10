@@ -6,6 +6,7 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -44,7 +45,7 @@ type Config struct {
 	Moves                 func(context.Context) (<-chan struct{}, error)
 	PluginChanges         *pluginchanges.Signals
 	TextVersions          *textversion.Versions
-	ListAppSettings       func() []pluginport.PluginSetting
+	ListAppSettings       func() []plugin.Setting
 }
 
 // GetPluginCatalog is the catalog of the plugins on disk, the disabled ones too, and of the sources

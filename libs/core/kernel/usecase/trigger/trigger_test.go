@@ -134,7 +134,7 @@ func (types) ListExtensions(domain.ContentType) []string { return nil }
 // plugin in unavailable cannot be reached.
 type plugins struct {
 	mu          sync.Mutex
-	triggers    []pluginport.PluginTriggerEntry
+	triggers    []plugin.TriggerEntry
 	ran         []string
 	failing     map[string]bool
 	unavailable map[string]bool
@@ -143,7 +143,7 @@ type plugins struct {
 	started     chan struct{}
 }
 
-func (p *plugins) ListTriggers() []pluginport.PluginTriggerEntry {
+func (p *plugins) ListTriggers() []plugin.TriggerEntry {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return slices.Clone(p.triggers)
@@ -151,12 +151,12 @@ func (p *plugins) ListTriggers() []pluginport.PluginTriggerEntry {
 
 // ListHandlers lists a handler of each command a trigger runs, under the condition handlerWhen gives
 // its command, or none.
-func (p *plugins) ListHandlers() []pluginport.PluginCommandEntry {
+func (p *plugins) ListHandlers() []plugin.CommandEntry {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	var out []pluginport.PluginCommandEntry
+	var out []plugin.CommandEntry
 	for _, one := range p.triggers {
-		out = append(out, pluginport.PluginCommandEntry{PluginID: one.PluginID, Command: pluginport.PluginCommand{
+		out = append(out, plugin.CommandEntry{PluginID: one.PluginID, Command: pluginport.PluginCommand{
 			ID: one.Trigger.Command, When: p.handlerWhen[one.Trigger.Command],
 		}})
 	}
@@ -215,7 +215,7 @@ type scene struct {
 	triggers    *trigger.Triggers
 }
 
-func newScene(t *testing.T, files map[string]string, entries ...pluginport.PluginTriggerEntry) *scene {
+func newScene(t *testing.T, files map[string]string, entries ...plugin.TriggerEntry) *scene {
 	t.Helper()
 	s := &scene{
 		memoryVault: newMemoryVault(files),
@@ -235,22 +235,22 @@ func (s *scene) runAll(t *testing.T) []string {
 	return s.plugins.take()
 }
 
-func getExtractText() pluginport.PluginTriggerEntry {
-	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+func getExtractText() plugin.TriggerEntry {
+	return plugin.TriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		Event: manifest.EventFileAdded, Command: "app:file.createText",
 		When: "target.contentType == 'application/pdf' && !target.versions.exists(v, v.kind == 'text-layer' && v.isValid)",
 	}}
 }
 
-func getRecognizeWhenOn() pluginport.PluginTriggerEntry {
-	return pluginport.PluginTriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
+func getRecognizeWhenOn() plugin.TriggerEntry {
+	return plugin.TriggerEntry{PluginID: scanner, Trigger: manifest.Trigger{
 		Event: manifest.EventFileAdded, Command: "app:file.createText",
 		When: "target.contentType == 'image/png' && config.org.example.scans.isAutomatic == true",
 	}}
 }
 
-func getCaptionsOnLink() pluginport.PluginTriggerEntry {
-	return pluginport.PluginTriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
+func getCaptionsOnLink() plugin.TriggerEntry {
+	return plugin.TriggerEntry{PluginID: linker, Trigger: manifest.Trigger{
 		Event: manifest.EventFileAdded, Command: "app:file.createText", When: "target.noteType == 'link' && has(target.properties.url)",
 	}}
 }

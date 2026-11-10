@@ -4,14 +4,9 @@ import (
 	"context"
 	"io"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// PluginStoreFile is a file of a plugin's folder: its name, and how many bytes it holds.
-type PluginStoreFile struct {
-	Name string
-	Size int64
-}
 
 // PluginStore is one plugin's own folder in a vault's store, `.numen/<plugin id>/`. A name is a file
 // directly in that folder; one that holds a slash or begins with a dot gets vault.ErrOutside.
@@ -25,7 +20,7 @@ type pluginStoreMutator interface {
 type PluginStore interface {
 	pluginStoreMutator
 	Read(ctx context.Context, name string) ([]byte, error)
-	List(ctx context.Context) ([]PluginStoreFile, error)
+	List(ctx context.Context) ([]plugin.StoreFile, error)
 	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
 }
 
@@ -44,22 +39,6 @@ type PluginCache interface {
 	Read(ctx context.Context, pluginID string, vaultID domain.VaultID, name string) ([]byte, bool, error)
 	// Write replaces what is kept under the name, whole.
 	Write(ctx context.Context, pluginID string, vaultID domain.VaultID, name string, content []byte) error
-}
-
-type PluginIndexStatus int
-
-const (
-	// PluginIndexed is a vault the index carries.
-	PluginIndexed PluginIndexStatus = iota + 1
-	// PluginIndexing is a vault being read into the index.
-	PluginIndexing
-	// PluginIndexFailed is a vault that could not be read into the index.
-	PluginIndexFailed
-)
-
-type PluginIndexState struct {
-	Status PluginIndexStatus
-	Reason string
 }
 
 // PluginVaultReader provides read access to files, notes, links, and index problems of a vault.
@@ -103,7 +82,7 @@ type pluginVaultFileReader interface {
 	// ReadRange reads at most length bytes of a file from start as text, truncated at whole
 	// characters. A range that is not UTF-8 returns plugin.ErrNotText; a folder or a path not in the vault
 	// returns fs.ErrNotExist.
-	ReadRange(ctx context.Context, path string, start, length int) (PluginFileRange, error)
+	ReadRange(ctx context.Context, path string, start, length int) (plugin.FileRange, error)
 }
 
 type PluginVaultReader interface {
@@ -144,7 +123,7 @@ type PluginVaultLifecycle interface {
 	GetVault() (domain.Vault, bool)
 	GetVaults() ([]domain.Vault, error)
 	With(id domain.VaultID) (PluginVault, error)
-	EnsureIndexed(ctx context.Context) (PluginIndexState, error)
+	EnsureIndexed(ctx context.Context) (plugin.IndexState, error)
 }
 
 // pluginVaultArranger renames, moves and removes the notes of a vault, repairing the links that
@@ -167,7 +146,7 @@ type pluginVaultArranger interface {
 type pluginVaultLinkEditor interface {
 	// AddLinks writes links into the frontmatter links of notes, grouped by note: the links of one
 	// note are one write against one file stat. The result has one entry per addition, in order.
-	AddLinks(ctx context.Context, additions []PluginLinkAddition) ([]PluginLinkAdded, error)
+	AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error)
 	// UpdateLinks changes the role, type, label and note of the links the note at from has to the
 	// target, keeping the target. An empty field is kept.
 	UpdateLinks(ctx context.Context, from string, to domain.Address, change domain.Link, baseline domain.FileStat) (domain.FileStat, error)
@@ -187,24 +166,3 @@ type PluginVault interface {
 	PluginVaultLifecycle
 }
 
-// PluginFileRange is a ranged read of a file: the text, its start in the file, and the file stat of
-// the file it was read from.
-type PluginFileRange struct {
-	Text  string
-	Start int
-	Stat  domain.FileStat
-}
-
-// PluginLinkAddition is one link to write into the note at From, which the caller read as Baseline.
-type PluginLinkAddition struct {
-	From     string
-	Baseline domain.FileStat
-	Link     domain.Link
-}
-
-// PluginLinkAdded is the outcome of one addition: the note after the write, or the error of a link
-// not written.
-type PluginLinkAdded struct {
-	Stat domain.FileStat
-	Err  error
-}

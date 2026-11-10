@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
@@ -22,7 +23,7 @@ import (
 // starts each on demand.
 type Host interface {
 	pluginport.PluginActivator
-	GetPluginInfos() []pluginport.PluginInfo
+	GetPluginInfos() []plugin.Info
 }
 
 // Server is the set of tools a window allows an agent, as a tool declares the servers it is

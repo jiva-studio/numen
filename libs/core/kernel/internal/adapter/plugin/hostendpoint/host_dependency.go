@@ -82,7 +82,7 @@ func (e *dependencyEndpoint) ProvisionDependency(
 		return connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if !catalog.CanProvision(requirement) {
-		return connect.NewError(connect.CodeNotFound, pluginport.ErrNoProvisioner)
+		return connect.NewError(connect.CodeNotFound, plugin.ErrNoProvisioner)
 	}
 	updates := make(chan plugin.DependencyStatus, dependencyStreamBuffer)
 	errc := make(chan error, 1)

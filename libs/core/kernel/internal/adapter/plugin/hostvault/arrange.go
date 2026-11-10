@@ -8,10 +8,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
@@ -111,7 +111,7 @@ func (a Vault) GetProblems(ctx context.Context, checks []domain.Check) ([]domain
 	}
 	return report.Ran, report.Found, nil
 }
-func (a Vault) AddLinks(ctx context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+func (a Vault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
@@ -124,10 +124,10 @@ func (a Vault) AddLinks(ctx context.Context, additions []pluginport.PluginLinkAd
 	if err != nil {
 		return nil, err
 	}
-	out := make([]pluginport.PluginLinkAdded, len(added))
+	out := make([]plugin.LinkAdded, len(added))
 	isWritten := false
 	for i, one := range added {
-		out[i] = pluginport.PluginLinkAdded{Stat: one.FileStat, Err: one.Error}
+		out[i] = plugin.LinkAdded{Stat: one.FileStat, Err: one.Error}
 		isWritten = isWritten || one.Error == nil || errors.Is(one.Error, edit.ErrIndexOutdated)
 	}
 	if isWritten {

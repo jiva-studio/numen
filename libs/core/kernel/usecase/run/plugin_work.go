@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -94,7 +95,7 @@ func (w *PluginWork) EnqueueWork(
 
 // ReportTask lists the task under the plugin's own id, with the plugin's id
 // and name on it. A task with no id is not listed.
-func (w *PluginWork) ReportTask(pluginID string, task pluginport.PluginTask) {
+func (w *PluginWork) ReportTask(pluginID string, task plugin.Task) {
 	if task.ID == "" {
 		return
 	}
@@ -211,15 +212,15 @@ func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + plu
 
 func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
 
-func getUnits() map[pluginport.TaskUnit]Unit {
-	return map[pluginport.TaskUnit]Unit{
-		pluginport.TaskUnitThings:  Things,
-		pluginport.TaskUnitBytes:   Bytes,
-		pluginport.TaskUnitSeconds: Seconds,
+func getUnits() map[plugin.TaskUnit]Unit {
+	return map[plugin.TaskUnit]Unit{
+		plugin.TaskUnitThings:  Things,
+		plugin.TaskUnitBytes:   Bytes,
+		plugin.TaskUnitSeconds: Seconds,
 	}
 }
 
-func readUnit(unit pluginport.TaskUnit) Unit {
+func readUnit(unit plugin.TaskUnit) Unit {
 	if listed, isKnown := getUnits()[unit]; isKnown {
 		return listed
 	}

@@ -108,7 +108,7 @@ func getErrorCode(err error) v1.CommandErrorCode {
 	return v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED
 }
 
-func newWireCommand(list plugincommand.List, entry plugincommand.Entry) *v1.PluginCommand {
+func newWireCommand(list plugincommand.List, entry plugin.CommandEntry) *v1.PluginCommand {
 	arguments := make([]*v1.CommandArgument, 0, len(entry.Command.Arguments))
 	for _, one := range entry.Command.Arguments {
 		arguments = append(arguments, &v1.CommandArgument{
@@ -128,7 +128,7 @@ func newWireCommand(list plugincommand.List, entry plugincommand.Entry) *v1.Plug
 	}
 }
 
-func newWireKeybindings(entries []plugincommand.KeybindingEntry) []*v1.PluginKeybinding {
+func newWireKeybindings(entries []plugin.KeybindingEntry) []*v1.PluginKeybinding {
 	wire := make([]*v1.PluginKeybinding, 0, len(entries))
 	for _, one := range entries {
 		wire = append(wire, &v1.PluginKeybinding{
@@ -144,7 +144,7 @@ func newWireKeybindings(entries []plugincommand.KeybindingEntry) []*v1.PluginKey
 	return wire
 }
 
-func newWireSlotEntry(one plugincommand.SlotEntry) *v1.PluginSlotEntry {
+func newWireSlotEntry(one plugin.SlotEntry) *v1.PluginSlotEntry {
 	entry := &v1.ManifestSlotEntry{
 		Slot:   one.Entry.Slot,
 		Title:  one.Entry.Title,

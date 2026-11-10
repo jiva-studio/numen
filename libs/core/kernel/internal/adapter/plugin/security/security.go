@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 var (
@@ -55,11 +55,11 @@ func (v VaultPathValidator) ValidatePath(vaultRoot, targetPath string) (string, 
 
 	rel, err := filepath.Rel(cleanVault, cleanTarget)
 	if err != nil {
-		return "", pluginport.ErrPathTraversal
+		return "", plugin.ErrPathTraversal
 	}
 
 	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return "", pluginport.ErrPathTraversal
+		return "", plugin.ErrPathTraversal
 	}
 
 	realVault, errV := filepath.EvalSymlinks(cleanVault)
@@ -82,12 +82,12 @@ func checkVaultSymlinks(realVault, cleanTarget string) error {
 
 	checkPath, err := resolveSymlinkTarget(cleanTarget)
 	if err != nil {
-		return pluginport.ErrPathTraversal
+		return plugin.ErrPathTraversal
 	}
 
 	realParent, err := resolveDeepestParent(checkPath)
 	if err != nil {
-		return pluginport.ErrPathTraversal
+		return plugin.ErrPathTraversal
 	}
 
 	return checkParentInside(realVault, realParent)
@@ -96,7 +96,7 @@ func checkVaultSymlinks(realVault, cleanTarget string) error {
 func checkPathInside(realVault, target string) error {
 	relReal, errRel := filepath.Rel(realVault, target)
 	if errRel != nil || relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)) {
-		return pluginport.ErrPathTraversal
+		return plugin.ErrPathTraversal
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func checkPathInside(realVault, target string) error {
 func checkParentInside(realVault, parent string) error {
 	relReal, errRel := filepath.Rel(realVault, parent)
 	if errRel != nil || (relReal != "." && (relReal == ".." || strings.HasPrefix(relReal, ".."+string(filepath.Separator)))) {
-		return pluginport.ErrPathTraversal
+		return plugin.ErrPathTraversal
 	}
 	return nil
 }

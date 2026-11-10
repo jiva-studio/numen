@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // The fallback file is a flat JSON object keyed by the same entry names as the keychain.
@@ -51,7 +51,7 @@ func (s *Store) readFromFile(name string) (string, error) {
 	}
 	key, found := entries[name]
 	if !found {
-		return "", fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+		return "", fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 	}
 	return key, nil
 }
@@ -74,7 +74,7 @@ func (s *Store) removeFromFile(ctx context.Context, name string) error {
 			return err
 		}
 		if _, found := entries[name]; !found {
-			return fmt.Errorf("%w: %q", pluginport.ErrNoKey, name)
+			return fmt.Errorf("%w: %q", plugin.ErrNoKey, name)
 		}
 		delete(entries, name)
 		return s.writeEntries(entries)

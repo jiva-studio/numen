@@ -20,9 +20,9 @@ type PluginCommands struct {
 	Open func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error)
 }
 
-func findPluginCommand(deps Deps, name string) (plugincommand.Entry, bool) {
+func findPluginCommand(deps Deps, name string) (plugin.CommandEntry, bool) {
 	if deps.PluginCommands == nil {
-		return plugincommand.Entry{}, false
+		return plugin.CommandEntry{}, false
 	}
 	return deps.PluginCommands().List.Find(name)
 }
@@ -60,7 +60,7 @@ func getPluginCommandSynopsis(list plugincommand.List, command plugincommand.Com
 }
 
 func runPluginCommand(
-	ctx context.Context, out io.Writer, deps Deps, entry plugincommand.Entry, args []string,
+	ctx context.Context, out io.Writer, deps Deps, entry plugin.CommandEntry, args []string,
 ) (err error) {
 	declared := entry.Command
 	list := deps.PluginCommands().List

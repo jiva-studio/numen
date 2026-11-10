@@ -13,9 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // cancelMode is what the canceling vault does on the call that cancels the batch.
@@ -295,9 +294,9 @@ type cancellingLinkVault struct {
 	cancel context.CancelFunc
 }
 
-func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []pluginport.PluginLinkAddition) ([]pluginport.PluginLinkAdded, error) {
+func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []plugin.LinkAddition) ([]plugin.LinkAdded, error) {
 	first := additions[0].From
-	var written []pluginport.PluginLinkAddition
+	var written []plugin.LinkAddition
 	for _, one := range additions {
 		if one.From == first {
 			written = append(written, one)
@@ -308,7 +307,7 @@ func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []pluginpo
 		return nil, err
 	}
 	c.cancel()
-	out := make([]pluginport.PluginLinkAdded, len(additions))
+	out := make([]plugin.LinkAdded, len(additions))
 	next := 0
 	for i, one := range additions {
 		if one.From == first {
@@ -316,7 +315,7 @@ func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []pluginpo
 			next++
 			continue
 		}
-		out[i] = pluginport.PluginLinkAdded{
+		out[i] = plugin.LinkAdded{
 			Err: fmt.Errorf("the call was canceled before the links were added to %s: %w", one.From, note.ErrNotAttempted),
 		}
 	}

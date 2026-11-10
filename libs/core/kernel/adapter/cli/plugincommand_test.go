@@ -15,18 +15,18 @@ import (
 
 // pluginCommands declares the commands it is given and records every call made to run one.
 type pluginCommands struct {
-	entries  []plugincommand.Entry
-	handlers []plugincommand.Entry
+	entries  []plugin.CommandEntry
+	handlers []plugin.CommandEntry
 	calls    []plugin.CommandCall
 }
 
-func (p *pluginCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
+func (p *pluginCommands) ListKeybindings() []plugin.KeybindingEntry { return nil }
 
-func (p *pluginCommands) ListSlots() []plugincommand.SlotEntry { return nil }
+func (p *pluginCommands) ListSlots() []plugin.SlotEntry { return nil }
 
-func (p *pluginCommands) ListHandlers() []plugincommand.Entry { return p.handlers }
+func (p *pluginCommands) ListHandlers() []plugin.CommandEntry { return p.handlers }
 
-func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
+func (p *pluginCommands) ListCommands() []plugin.CommandEntry { return p.entries }
 
 func (p *pluginCommands) GetParts(string) plugin.Parts {
 	return plugin.Parts{HasBackend: true}
@@ -38,7 +38,7 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugin.CommandCall) 
 }
 
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
-	declared := &pluginCommands{entries: []plugincommand.Entry{
+	declared := &pluginCommands{entries: []plugin.CommandEntry{
 		{PluginID: "org.example.sample", Command: plugincommand.Command{
 			ID: "sample.create", Title: "Create a sample",
 			Arguments: []plugincommand.Argument{
@@ -184,7 +184,7 @@ func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 }
 
 func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
-	declared := &pluginCommands{entries: []plugincommand.Entry{{
+	declared := &pluginCommands{entries: []plugin.CommandEntry{{
 		PluginID: "md.numen.engines.transcription",
 		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
@@ -235,7 +235,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 }
 
 func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
-	declared := &pluginCommands{entries: []plugincommand.Entry{{
+	declared := &pluginCommands{entries: []plugin.CommandEntry{{
 		PluginID: "md.numen.links",
 		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
@@ -254,7 +254,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 }
 
 func TestVersionCommandRequiresFile(t *testing.T) {
-	declared := &pluginCommands{entries: []plugincommand.Entry{{
+	declared := &pluginCommands{entries: []plugin.CommandEntry{{
 		PluginID: "md.numen.tools.proofreading",
 		Command:  plugincommand.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}

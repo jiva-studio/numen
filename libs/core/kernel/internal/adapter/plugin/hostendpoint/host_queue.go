@@ -10,6 +10,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
@@ -88,7 +89,7 @@ func (e *queueEndpoint) ReportTask(
 		return nil, err
 	}
 	task := req.Msg.GetTask()
-	work.ReportTask(pluginID, pluginport.PluginTask{
+	work.ReportTask(pluginID, plugin.Task{
 		ID:            task.GetId(),
 		Title:         task.GetTitle(),
 		About:         task.GetAbout(),
@@ -124,14 +125,14 @@ func isTaskFinished(task *v1.Task) bool {
 	return task.GetError() != "" || (task.GetTotal() > 0 && task.GetDone() >= task.GetTotal())
 }
 
-func readWireUnit(unit v1.Unit) pluginport.TaskUnit {
+func readWireUnit(unit v1.Unit) plugin.TaskUnit {
 	switch unit {
 	case v1.Unit_UNIT_BYTES:
-		return pluginport.TaskUnitBytes
+		return plugin.TaskUnitBytes
 	case v1.Unit_UNIT_SECONDS:
-		return pluginport.TaskUnitSeconds
+		return plugin.TaskUnitSeconds
 	case v1.Unit_UNIT_THINGS, v1.Unit_UNIT_UNSPECIFIED:
-		return pluginport.TaskUnitThings
+		return plugin.TaskUnitThings
 	}
-	return pluginport.TaskUnitThings
+	return plugin.TaskUnitThings
 }

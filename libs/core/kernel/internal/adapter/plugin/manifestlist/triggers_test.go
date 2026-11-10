@@ -4,6 +4,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -20,7 +21,7 @@ func TestListTriggers_ReadsTheTriggersOfTheEnabledPlugins(t *testing.T) {
 
 	got := Open(host).ListTriggers()
 
-	if want := []pluginport.PluginTriggerEntry{{PluginID: "org.example.scans", Trigger: added}}; !slices.Equal(got, want) {
+	if want := []plugin.TriggerEntry{{PluginID: "org.example.scans", Trigger: added}}; !slices.Equal(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
 }

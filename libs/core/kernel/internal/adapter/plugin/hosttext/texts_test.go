@@ -13,12 +13,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -213,7 +213,7 @@ func getScannedMaps() text.ContentHash {
 	return text.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
 }
 
-func checkLive(t *testing.T, listing pluginport.PluginTextListing, err error) {
+func checkLive(t *testing.T, listing plugin.TextListing, err error) {
 	t.Helper()
 	if err != nil || len(listing.Versions) != 1 || listing.Live != listing.Versions[0].GetID() {
 		t.Fatalf("the listing is %+v (%v), want the one version live", listing, err)

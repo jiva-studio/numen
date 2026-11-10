@@ -14,18 +14,18 @@ import (
 // pluginFlag is the flag that picks the plugin whose handler of a shared command runs.
 const pluginFlag = "plugin"
 
-func listSharedHandlers(deps Deps, id string) []plugincommand.Entry {
+func listSharedHandlers(deps Deps, id string) []plugin.CommandEntry {
 	if deps.PluginCommands == nil {
 		return nil
 	}
 	return deps.PluginCommands().List.ListSharedHandlers(id)
 }
 
-func isOverFile(list plugincommand.List, handlers []plugincommand.Entry) bool {
-	return slices.ContainsFunc(handlers, func(one plugincommand.Entry) bool { return list.HasTargetVariable(one.Command) })
+func isOverFile(list plugincommand.List, handlers []plugin.CommandEntry) bool {
+	return slices.ContainsFunc(handlers, func(one plugin.CommandEntry) bool { return list.HasTargetVariable(one.Command) })
 }
 
-func getSharedCommandSynopsis(list plugincommand.List, handlers []plugincommand.Entry) string {
+func getSharedCommandSynopsis(list plugincommand.List, handlers []plugin.CommandEntry) string {
 	declared := handlers[0].Command
 	for _, one := range handlers {
 		if list.HasTargetVariable(one.Command) {
@@ -60,7 +60,7 @@ func writeSharedCommandUsage(r *reporter, deps Deps) {
 }
 
 func runSharedCommand(
-	ctx context.Context, out io.Writer, deps Deps, handlers []plugincommand.Entry, args []string,
+	ctx context.Context, out io.Writer, deps Deps, handlers []plugin.CommandEntry, args []string,
 ) (err error) {
 	list := deps.PluginCommands().List
 	usage := errors.New("usage: numen-cli " + getSharedCommandSynopsis(list, handlers))
