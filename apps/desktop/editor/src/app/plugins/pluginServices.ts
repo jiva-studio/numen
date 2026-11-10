@@ -8,7 +8,6 @@ import type {
   BackgroundTaskHost,
   BufferHost,
   CommandsHost,
-  JsonValue,
   NoteRef,
   VaultFiles,
   VaultNotes,

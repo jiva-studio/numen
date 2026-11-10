@@ -70,7 +70,7 @@ const DECLARED = [
 const getValueAt = (tree: JsonValue | undefined, key: string): JsonValue | undefined =>
   key
     .split('.')
-    .reduce<JsonValue | undefined>((one, step) => (one as JsonObject | undefined)?.[step], tree)
+    .reduce<JsonValue | undefined>((one, step) => (one as Record<string, JsonValue> | undefined)?.[step], tree)
 
 const declare = (): readonly PluginSettingInfo[] =>
   DECLARED.map((one) => {
