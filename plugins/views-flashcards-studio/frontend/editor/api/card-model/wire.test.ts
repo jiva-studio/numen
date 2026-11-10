@@ -9,8 +9,14 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { WORDS as words } from '../../../words'
 import { ERRORS } from '../../../lib/wire/errors'
-import { createCardModelWire, NOTHING } from './wire'
-import type { Cards, DeckProblem, FieldRenameResult, RenamedField, VaultCardModel } from '../../../types'
+import { createCardModelState, createCardModelWire, NOTHING } from './wire'
+import type {
+  Cards,
+  DeckProblem,
+  FieldRenameResult,
+  RenamedField,
+  VaultCardModel,
+} from '../../../types'
 
 const cardModel = (overrides: Partial<VaultCardModel> = {}): VaultCardModel => ({
   path: 'Word.md',
@@ -45,33 +51,34 @@ const vault = () => ({
 
 const createWire = (cards: ReturnType<typeof vault>) => {
   const messages: { text: string; how: string | undefined }[] = []
-  const wire = createCardModelWire(cards as unknown as Cards, (text, how) => {
+  const state = createCardModelState()
+  const wire = createCardModelWire(cards as unknown as Cards, state, (text, how) => {
     messages.push({ text, how })
   })
-  return { wire, messages }
+  return { wire, state, messages }
 }
 
 describe('reading a card model', () => {
   it('arrives back as the body the tab is dirty against', async () => {
     const cards = vault()
     cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12 34 Word.md' }))
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     const answer = await wire.read('Word.md')
 
     expect(answer.ok && answer.value.at).toBe('12 34 Word.md')
     expect(JSON.parse(answer.ok ? answer.value.body : '{}').fields).toEqual(['Front', 'Back'])
-    expect(wire.getTitle('Word.md')).toBe('Word')
+    expect(state.getTitle('Word.md')).toBe('Word')
   })
 
   it('carries no body at all where the read failed', async () => {
     const cards = vault()
     cards.readCardModel.mockResolvedValue(asFailure('notACardModel'))
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     expect(await wire.read('Notes.md')).toEqual(asFailure('notACardModel'))
-    expect(wire.getProblems('Notes.md')).toEqual([])
-    expect(wire.getTitle('Notes.md')).toBeUndefined()
+    expect(state.getProblems('Notes.md')).toEqual([])
+    expect(state.getTitle('Notes.md')).toBeUndefined()
   })
 
   it('is recorded as no failure of the file where the file moved past the tab', async () => {
@@ -103,11 +110,11 @@ describe('reading a card model', () => {
     cards.readCardModel.mockResolvedValue(
       asValue({ cardModel: cardModel({ problems: [problem] }), at: '' }),
     )
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     await wire.read('Word.md')
 
-    expect(wire.getProblems('Word.md')).toEqual([problem])
+    expect(state.getProblems('Word.md')).toEqual([problem])
   })
 })
 
@@ -153,56 +160,56 @@ describe('writing a card model', () => {
     const cards = vault()
     cards.readCardModel.mockResolvedValue(asValue({ cardModel: cardModel(), at: '12 34 Word.md' }))
     cards.writeCardModel.mockResolvedValue(asFailure('unreadable'))
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     await wire.read('Word.md')
     await wire.write('Word.md', '')
 
-    expect(wire.getErrorMessage('Word.md', 'unreadable')).toBe(words.notSaved)
+    expect(state.getErrorMessage('Word.md', 'unreadable')).toBe(words.notSaved)
   })
 })
 
 describe('what is shown for a fault', () => {
   it('is nothing at all where there is no fault', () => {
-    const { wire } = createWire(vault())
+    const { state } = createWire(vault())
 
-    expect(wire.getErrorMessage('Word.md', null)).toBe('')
+    expect(state.getErrorMessage('Word.md', null)).toBe('')
   })
 
   it('says the vault was out of reach where neither a read nor a write failed', () => {
-    const { wire } = createWire(vault())
+    const { state } = createWire(vault())
 
-    expect(wire.getErrorMessage('Word.md', 'unreadable')).toBe(words.unreachable)
+    expect(state.getErrorMessage('Word.md', 'unreadable')).toBe(words.unreachable)
   })
 
   it('says the note is no card model where the read failed for that', async () => {
     const cards = vault()
     cards.readCardModel.mockResolvedValue(asFailure('notACardModel'))
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     await wire.read('Notes.md')
 
-    expect(wire.getErrorMessage('Notes.md', 'notACardModel')).toBe(words.notACardModel)
+    expect(state.getErrorMessage('Notes.md', 'notACardModel')).toBe(words.notACardModel)
   })
 
   it('says the file could not be read where the read failed for anything else', async () => {
     const cards = vault()
     cards.readCardModel.mockResolvedValue(asFailure('notFound'))
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     await wire.read('Notes.md')
 
-    expect(wire.getErrorMessage('Notes.md', 'notFound')).toBe(words.notRead)
+    expect(state.getErrorMessage('Notes.md', 'notFound')).toBe(words.notRead)
   })
 
   it('says the note is no card model where the write failed for that', async () => {
     const cards = vault()
     cards.writeCardModel.mockResolvedValue(asFailure('notACardModel'))
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
 
     await wire.write('Notes.md', '')
 
-    expect(wire.getErrorMessage('Notes.md', 'notACardModel')).toBe(words.notACardModel)
+    expect(state.getErrorMessage('Notes.md', 'notACardModel')).toBe(words.notACardModel)
   })
 })
 
@@ -295,7 +302,7 @@ describe('renaming a field', () => {
   it('writes no message at all where the wire was given nowhere to write one', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('unreadable'))
-    const wire = createCardModelWire(cards as unknown as Cards)
+    const wire = createCardModelWire(cards as unknown as Cards, createCardModelState())
 
     await expect(
       wire.renameField('Word.md', { from: 'Front', to: 'Template' }, vi.fn()),
@@ -305,10 +312,10 @@ describe('renaming a field', () => {
 
 describe('what the window remembers of a file', () => {
   it('is nothing where the vault has returned nothing about it', () => {
-    const { wire } = createWire(vault())
+    const { state } = createWire(vault())
 
-    expect(wire.getProblems('Word.md')).toEqual(NOTHING.problems)
-    expect(wire.getTitle('Word.md')).toBeUndefined()
+    expect(state.getProblems('Word.md')).toEqual(NOTHING.problems)
+    expect(state.getTitle('Word.md')).toBeUndefined()
   })
 
   it('is release when the last tab on it closes', async () => {
@@ -316,15 +323,15 @@ describe('what the window remembers of a file', () => {
     cards.readCardModel.mockResolvedValue(
       asValue({ cardModel: cardModel({ problems: [problem] }), at: '' }),
     )
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
     await wire.read('Word.md')
 
-    wire.forget('Word.md', true)
-    expect(wire.getProblems('Word.md')).toEqual([problem])
+    state.forget('Word.md', true)
+    expect(state.getProblems('Word.md')).toEqual([problem])
 
-    wire.forget('Word.md', false)
-    expect(wire.getProblems('Word.md')).toEqual([])
-    expect(wire.getTitle('Word.md')).toBeUndefined()
+    state.forget('Word.md', false)
+    expect(state.getProblems('Word.md')).toEqual([])
+    expect(state.getTitle('Word.md')).toBeUndefined()
   })
 
   it('follows the file where it moved, and leaves nothing behind', async () => {
@@ -332,19 +339,19 @@ describe('what the window remembers of a file', () => {
     cards.readCardModel.mockResolvedValue(
       asValue({ cardModel: cardModel({ problems: [problem] }), at: '' }),
     )
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
     await wire.read('Word.md')
 
-    wire.movePaths([
+    state.movePaths([
       { from: 'Word.md', to: 'Root.md' },
       { from: 'Gone.md', to: 'Still.md' },
     ])
 
-    expect(wire.getProblems('Root.md')).toEqual([problem])
-    expect(wire.getTitle('Root.md')).toBe('Word')
-    expect(wire.getProblems('Word.md')).toEqual([])
-    expect(wire.getTitle('Still.md')).toBeUndefined()
-    expect(wire.getTitle('Word.md')).toBeUndefined()
+    expect(state.getProblems('Root.md')).toEqual([problem])
+    expect(state.getTitle('Root.md')).toBe('Word')
+    expect(state.getProblems('Word.md')).toEqual([])
+    expect(state.getTitle('Still.md')).toBeUndefined()
+    expect(state.getTitle('Word.md')).toBeUndefined()
   })
 
   it('leaves the transcript of the file moved onto where the one moved from was never read', async () => {
@@ -352,20 +359,20 @@ describe('what the window remembers of a file', () => {
     cards.readCardModel.mockResolvedValue(
       asValue({ cardModel: cardModel({ problems: [problem] }), at: '' }),
     )
-    const { wire } = createWire(cards)
+    const { wire, state } = createWire(cards)
     await wire.read('Still.md')
 
-    wire.movePaths([{ from: 'Gone.md', to: 'Still.md' }])
+    state.movePaths([{ from: 'Gone.md', to: 'Still.md' }])
 
-    expect(wire.getProblems('Still.md')).toEqual([problem])
-    expect(wire.getTitle('Still.md')).toBe('Word')
+    expect(state.getProblems('Still.md')).toEqual([problem])
+    expect(state.getTitle('Still.md')).toBe('Word')
   })
 
   it('takes a title the tab read out of the file itself', () => {
-    const { wire } = createWire(vault())
+    const { state } = createWire(vault())
 
-    wire.setTitle('Word.md', 'Root')
+    state.setTitle('Word.md', 'Root')
 
-    expect(wire.getTitle('Word.md')).toBe('Root')
+    expect(state.getTitle('Word.md')).toBe('Root')
   })
 })

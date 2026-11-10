@@ -265,7 +265,7 @@ export function useReviewSession(deps: SessionDeps) {
   let displayedAt = now()
   const cards = useSessionCards()
 
-  const { start, forget } = createSessionOpener({
+  const opener = createSessionOpener({
     cardsClient: deps.cards,
     reportError: deps.reportError,
     now,
@@ -277,7 +277,7 @@ export function useReviewSession(deps: SessionDeps) {
     },
   })
 
-  const { answer, takeBack } = createAnswerActions({
+  const answering = createAnswerActions({
     cardsClient: deps.cards,
     reportError: deps.reportError,
     now,
@@ -293,23 +293,12 @@ export function useReviewSession(deps: SessionDeps) {
 
   return {
     ids: { vault: vault as Ref<string>, run },
-    queue: {
-      cardList: cards.queue.cardList,
-      cardIndex: cards.queue.cardIndex,
-      isAnswerShown: cards.queue.isAnswerShown,
-      answers: cards.queue.answers,
-      card: cards.queue.card,
-      writing,
-    },
-    progress: cards.progress,
-    actions: {
-      start,
-      show: () => {
-        cards.queue.isAnswerShown.value = true
-      },
-      answer,
-      takeBack,
-      forget,
+    writing,
+    cards,
+    opener,
+    answering,
+    show: () => {
+      cards.queue.isAnswerShown.value = true
     },
   }
 }

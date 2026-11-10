@@ -76,7 +76,7 @@ function createReviewActions(deps: ReviewActionDeps) {
   const readSchedules = () => deps.schedules.read(deps.vaultCount.value, deps.counts.day.value)
 
   const openSession = async (deck: string, preset?: string) => {
-    const report = await deps.state.actions.start(deps.vault, deck, preset)
+    const report = await deps.state.opener.start(deps.vault, deck, preset)
     if (!report) return
     deps.goTo('session')
     reportSessionNotice(report, deps.showNotice)
@@ -100,7 +100,7 @@ function createReviewActions(deps: ReviewActionDeps) {
 
   const recordReview = async (how: Grade) => {
     deps.agentPanel.endConversation()
-    await deps.state.actions.answer(how)
+    await deps.state.answering.answer(how)
   }
 
   const refresh = async () => {
@@ -147,7 +147,7 @@ export const useReview = (deps: ReviewDeps) => {
   const notesPage = shallowRef<NotesPage | null>(null)
 
   const panels = usePanels({
-    card: () => state.queue.card.value,
+    card: () => state.cards.queue.card.value,
     agent: deps.agent,
     unreachable: () => deps.agent.getUnreachable(),
     resolveLinks: (text) => deps.agent.resolveLinks(text, deps.vault),
@@ -157,7 +157,7 @@ export const useReview = (deps: ReviewDeps) => {
 
   const { on, goTo } = useScreens(['decks', 'session'] as const, {
     session: [
-      state.actions.forget,
+      state.opener.forget,
       panels.agentPanel.endConversation,
       panels.notesPanel.actions.endSession,
     ],
@@ -185,17 +185,17 @@ export const useReview = (deps: ReviewDeps) => {
     getScreen: () => on.value,
     getChosenVault: () => vaultCount.value,
     getPresetsByDeck: () => schedules.byDeck.value,
-    isShown: () => state.queue.isAnswerShown.value,
+    isShown: () => state.cards.queue.isAnswerShown.value,
     getShowing: () => panels.showing.value,
     start: (deck) => {
       actions.start(deck).catch(notices.reportError)
     },
-    show: state.actions.show,
+    show: state.show,
     answer: (how) => {
       actions.recordReview(how).catch(notices.reportError)
     },
     takeBack: () => {
-      state.actions.takeBack().catch(notices.reportError)
+      state.answering.takeBack().catch(notices.reportError)
     },
     leave: () => {
       actions.leave().catch(notices.reportError)

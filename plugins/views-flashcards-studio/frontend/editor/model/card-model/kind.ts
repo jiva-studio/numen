@@ -14,7 +14,12 @@ import {
 import { getMarkOf } from '../../lib/buffer/words'
 import { openNotes } from '../buffer/notes'
 import { WORDS as words } from '../../../words'
-import { createCardModelWire, type VaultAnswer } from '../../api/card-model/wire'
+import {
+  createCardModelState,
+  createCardModelWire,
+  type CardModelState,
+  type VaultAnswer,
+} from '../../api/card-model/wire'
 import { createCardModelFields } from './fields'
 import type { Cards } from '../../../types'
 import type { CardModelTabState } from './types'
@@ -33,19 +38,18 @@ export interface CardModelTabsOptions {
 }
 
 type CardModelFields = ReturnType<typeof createCardModelFields>
-type CardModelWire = ReturnType<typeof createCardModelWire>
 
 function createCardModelTabItem(
   id: string,
   deps: {
     store: ReturnType<typeof openNotes>
     fields: CardModelFields
-    wire: CardModelWire
+    state: CardModelState
     closeTab: (id: string) => void
     reportFailure: (error: unknown) => void
   },
 ): CardModelTabState {
-  const { store, fields, wire, closeTab, reportFailure } = deps
+  const { store, fields, state, closeTab, reportFailure } = deps
   const close = (tab: string) => {
     const path = store.getPath(id)
     store
@@ -53,7 +57,7 @@ function createCardModelTabItem(
       .then((removed) => {
         if (!removed) return
         fields.forget(id)
-        wire.forget(
+        state.forget(
           path,
           store.getOpenIds().some((one) => store.getPath(one) === path),
         )
@@ -70,7 +74,7 @@ function createCardModelTabItem(
       cardModel: computed(() => fields.getCardModel(id)),
       marks: computed(() => fields.getMarks(id)),
       errorMessage: computed(() =>
-        wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
+        state.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
       ),
     },
     fields: actions.fields,
@@ -85,13 +89,13 @@ function createCardModelTabItem(
 
 function createCardModelKindDefinition(deps: {
   store: ReturnType<typeof openNotes>
-  wire: CardModelWire
+  state: CardModelState
   cards: Cards
   createCardModelTabState: (id: string) => CardModelTabState
   component: Component
 }): { kind: TabKindRegistration<CardModelTabState> } {
-  const { store, wire, cards } = deps
-  const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
+  const { store, state, cards } = deps
+  const getTitle = (path: string): string => state.getTitle(path) || getFileName(path)
   const kind: TabKindRegistration<CardModelTabState> = {
     kind: CARD_MODEL,
     component: deps.component,
@@ -129,13 +133,14 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
   // Messages are dropped when the caller supplies no writer.
   const { buffers, closeTab, writeMessage = () => undefined, component } = options
   const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
-  const wire = createCardModelWire(cards, writeMessage)
+  const state = createCardModelState()
+  const wire = createCardModelWire(cards, state, writeMessage)
   const store = openNotes({ read: wire.read, write: wire.write })
   buffers.track(store)
   const fields = createCardModelFields(
     (id) => store.getOpenNote(id).body,
     (id, body) => store.setBody(id, body),
-    (id) => wire.getProblems(store.getPath(id)),
+    (id) => state.getProblems(store.getPath(id)),
     // The vault renames the field in the file on disk, so the edits the tab holds are written first.
     (id, field, name) => {
       store
@@ -148,17 +153,23 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
   )
 
   const createCardModelTabState = (id: string): CardModelTabState =>
-    createCardModelTabItem(id, { store, fields, wire, closeTab, reportFailure })
-  const { kind } = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState, component })
+    createCardModelTabItem(id, { store, fields, state, closeTab, reportFailure })
+  const { kind } = createCardModelKindDefinition({
+    store,
+    state,
+    cards,
+    createCardModelTabState,
+    component,
+  })
 
   return {
     kind,
     createCardModelTabState,
     applyPathChanges: (paths: readonly string[], renames: readonly PathRename[] = []) => {
-      wire.movePaths(renames)
+      state.movePaths(renames)
       store.applyPathChanges(paths, renames)
     },
-    getTitle: (path: string): string => wire.getTitle(path) || getFileName(path),
+    getTitle: (path: string): string => state.getTitle(path) || getFileName(path),
     store,
   }
 }
