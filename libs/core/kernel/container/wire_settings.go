@@ -3,16 +3,15 @@ package container
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
@@ -68,13 +67,6 @@ func GetSettingsWriter(c Config) func(entries []settingsdomain.Setting) error {
 func SetThemes(c Config, inst *editor.Installation, say func(string)) error {
 	service, err := settingsThemes(settingsOf(c), say)
 	inst.SetThemes(service)
-	return err
-}
-
-// SetShellThemes gives the shell the themes it can use, as SetThemes does the window.
-func SetShellThemes(c Config, api *shell.API, say func(string)) error {
-	service, err := settingsThemes(settingsOf(c), say)
-	api.Themes = service
 	return err
 }
 
@@ -154,9 +146,6 @@ func resolveCompute(_ settingsWiring, s settingsadapter.File) (hardware.Specs, h
 }
 
 func configurePluginHost(c settingsWiring, s settingsadapter.File) {
-	if c.PluginHost == nil {
-		return
-	}
 	hosts := c.SubscribedHosts
 	if hosts == nil {
 		hosts = &settingsusecase.HostSubscriptions{}
@@ -166,13 +155,13 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 		subscribe = feed(c).Subscribe
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Config, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
-		Subscribe: subscribe, Hosts: hosts, Setup: func() { setUpPluginHost(c) },
+		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
+		Subscribe: c.PluginHost.Views.Follow(subscribe), Hosts: hosts, Setup: func() { setUpPluginHost(c) },
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
 func setUpPluginHost(c settingsWiring) {
-	c.PluginHost.Host.Config.SetKeyStore(c.KeyStore)
+	c.PluginHost.Configuration.SetKeyStore(c.KeyStore)
 	if c.Plugins != nil {
 		setSecretSource(c.Plugins())
 		setCompleter(c.Plugins())
@@ -180,10 +169,10 @@ func setUpPluginHost(c settingsWiring) {
 }
 
 func unsubscribeHost(c settingsWiring) {
-	if c.SubscribedHosts == nil || c.PluginHost == nil {
+	if c.SubscribedHosts == nil {
 		return
 	}
-	c.SubscribedHosts.Unsubscribe(c.PluginHost.Config)
+	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
 }
 
 func notifyHost(c settingsWiring, batch []settingsdomain.Setting) {
@@ -191,33 +180,14 @@ func notifyHost(c settingsWiring, batch []settingsdomain.Setting) {
 }
 
 func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
-	return func() []plugindomain.Info {
-		if c.PluginHost == nil {
-			return nil
-		}
-		return c.PluginHost.Runtime.GetPluginInfos()
-	}
+	return c.PluginHost.Runtime.GetPluginInfos
 }
 
 func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvider) func() []settingsdomain.Model {
-	return func() []settingsdomain.Model {
+	return settingsusecase.NewListAppModels(func() []settingsdomain.Model {
 		target := settingsGetSettingsOrDefaults(c)
-		var programs []agentdomain.Program
-		if c.GetAgentPrograms != nil {
-			programs = c.GetAgentPrograms(provider, target.Agent)
-		}
-		return prefixModels(settingsdomain.AppOwner, settingsadapter.AgentModels(agentAt, target.Agent, programs))
-	}
-}
-
-func prefixModels(owner string, models []settingsdomain.Model) []settingsdomain.Model {
-	for place := range models {
-		models[place].Path = append([]string{owner}, models[place].Path...)
-		for index := range models[place].Writes {
-			models[place].Writes[index].Path = append([]string{owner}, models[place].Writes[index].Path...)
-		}
-	}
-	return models
+		return settingsadapter.AgentModels(agentAt, target.Agent, c.GetAgentPrograms(provider, target.Agent))
+	}).Execute
 }
 
 func getDeclarations(c settingsWiring) settingsadapter.Declarations {
@@ -225,43 +195,30 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 		if owner == settingsdomain.AppOwner {
 			return settingsadapter.GetAppDeclaration(), true
 		}
-		if c.PluginHost == nil {
-			return nil, false
-		}
-		return c.PluginHost.Host.Registry.GetPluginSettingDeclarations(owner)
+		return c.PluginHost.Configuration.GetPluginSettingDeclarations(owner)
 	}
 }
 
 func getRegistries(c settingsWiring) settingsadapter.Registries {
-	return func(name string) ([]string, bool) {
-		options, found := listRegistryOptions(c, name)
-		names := make([]string, 0, len(options))
-		for _, one := range options {
-			names = append(names, one.Value)
-		}
-		return names, found
-	}
+	return themeRegistry(c).GetNames()
 }
 
-func listRegistryOptions(c settingsWiring, name string) (manifest.SettingOptions, bool) {
-	if name != settingsadapter.RegistryThemes {
-		return nil, false
-	}
+func themeRegistry(c settingsWiring) settingsadapter.RegistryOptions {
+	return settingsadapter.ThemeRegistry(func() []themedomain.Theme { return listThemes(c) })
+}
+
+func listThemes(c settingsWiring) []themedomain.Theme {
 	files, err := openThemeFiles(c)
 	if err != nil {
 		settingsHandleError(c, err)
 	}
-	var options manifest.SettingOptions
-	for _, one := range themeusecase.NewListThemes(getThemeSources(c, files)).Execute() {
-		options = append(options, manifest.SettingOption{Value: one.Name, Title: one.Title})
-	}
-	return options, true
+	return themeusecase.NewListThemes(getThemeSources(c, files)).Execute()
 }
 
 func listAppSettings(c settingsWiring) []plugindomain.Setting {
 	return settingsusecase.NewListAppSettings(
 		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{},
-		settingsadapter.RegistryOptions(func(name string) (manifest.SettingOptions, bool) { return listRegistryOptions(c, name) }),
+		themeRegistry(c),
 	).Execute()
 }
 
@@ -292,20 +249,7 @@ func getSettingsWriter(c settingsWiring) func(entries []settingsdomain.Setting) 
 }
 
 func settingsSettingsFile(c settingsWiring) (string, error) {
-	if c.SettingsPath != "" {
-		return c.SettingsPath, nil
-	}
-	if file, selected := getAdjacentPath(c, "numen.json"); selected {
-		return file, nil
-	}
-	return settingsadapter.Path()
-}
-
-func getAdjacentPath(c settingsWiring, name string) (string, bool) {
-	if c.RegistryPath == "" {
-		return "", false
-	}
-	return filepath.Join(filepath.Dir(c.RegistryPath), name), true
+	return settingsadapter.LocateFile(c.SettingsPath, c.RegistryPath)
 }
 
 func openWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
@@ -329,11 +273,7 @@ func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*p
 }
 
 func settingsStore(c settingsWiring) *settingsadapter.Store {
-	var secrets settingsadapter.SecretDeclarations
-	if c.PluginHost != nil {
-		secrets = c.PluginHost.Host.Config
-	}
-	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, getDeclarations(c), getRegistries(c), secrets)
+	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, getDeclarations(c), getRegistries(c), c.PluginHost.Views.Secrets)
 }
 
 func feed(c settingsWiring) settingevents.Feed {
@@ -355,37 +295,22 @@ func feed(c settingsWiring) settingevents.Feed {
 }
 
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
-	var plugins settingsport.PluginInfos
-	if c.PluginHost != nil {
-		plugins = c.PluginHost.Host.Registry
-	}
-	var late settingsport.LatePrograms
-	if c.Programs != nil {
-		late = c.Programs
-	}
 	return settingsusecase.NewListSettingValues(
-		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, plugins, late,
+		settingsadapter.JSONCodec{}, settingsStore(c), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c.PluginHost.Views.Infos, c.Programs,
 	)
 }
 
 func settingsWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
-	var plugins settingsport.PluginSettings
-	if c.PluginHost != nil {
-		plugins = c.PluginHost.Host.Settings
-	}
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), plugins,
+		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), c.PluginHost.Views.Checks,
 	)
 	return settingsusecase.NewWriteSettings(check, settingsStore(c), feed(c))
 }
 
 func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
-	var signal func()
-	if c.PluginChanges != nil {
-		signal = c.PluginChanges.Signal
-	}
+	signal := c.PluginChanges.Signal
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Config,
+		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
 		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
 		ResolveProfile: func(profile string) string { return resolveProfile(c, profile) }, Signal: signal,
 		Report: func(err error) { settingsHandleError(c, err) },
@@ -397,7 +322,7 @@ func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {
 		return err
 	}
 	defer c.SecretGate.Leave()
-	return c.PluginHost.Host.Config.Refresh(ctx)
+	return c.PluginHost.Configuration.Refresh(ctx)
 }
 
 func resolveProfile(c settingsWiring, profile string) string {
@@ -441,18 +366,11 @@ func CheckTextScale(name string, scale float64) error {
 }
 
 func getThemeSources(c settingsWiring, files themefiles.Files) themeusecase.Sources {
-	sources := themeusecase.Sources{Presets: files, Own: files, Plugins: nil}
-	if c.PluginHost != nil {
-		sources.Plugins = themebridge.Open(c.PluginHost.Runtime)
-	}
-	return sources
+	return themeusecase.Sources{Presets: files, Own: files, Plugins: themebridge.Open(c.PluginHost.Runtime)}
 }
 
 func openThemeFiles(c settingsWiring) (themefiles.Files, error) {
-	if c.ThemesPath != "" {
-		return themefiles.OpenAt(c.ThemesPath, c.Watches.GetShared())
-	}
-	if folder, selected := getAdjacentPath(c, "themes"); selected {
+	if folder, isSet := settingsadapter.LocateThemes(c.ThemesPath, c.RegistryPath); isSet {
 		return themefiles.OpenAt(folder, c.Watches.GetShared())
 	}
 	return themefiles.Open(c.Watches.GetShared())

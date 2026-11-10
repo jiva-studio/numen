@@ -24,3 +24,8 @@ type DependencyRegistry interface {
 	List(ctx context.Context) ([]plugin.DependencyStatus, error)
 	SetObserver(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
 }
+
+// DependencyReporter receives the function that observes each change of the state of a dependency.
+type DependencyReporter interface {
+	ObserveDependencies(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
+}

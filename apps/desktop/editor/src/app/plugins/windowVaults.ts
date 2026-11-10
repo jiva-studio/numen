@@ -8,7 +8,7 @@ import { createInvocation, runInvocation } from '@/features/command-palette'
 import { COMMAND, type CommandTarget, type CommandDeps } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 import { formatError, type Caught } from '@/shared/api/errors'
-import { createWindowVaults } from './createWindowVaults'
+import { createWindowVaults } from '@/features/plugin-commands'
 
 /** The vaults of the editor over its vault list, opening a vault through the use case of the palette. */
 export function createEditorVaults(window: {

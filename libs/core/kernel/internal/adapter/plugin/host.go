@@ -98,9 +98,3 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		Mode:         mode,
 	}
 }
-
-// Runtime is what the bridges to the plugins call through: it starts a plugin, finds the client that
-// calls it, and says which plugins the host knows.
-func (h *Host) Runtime() Runtime {
-	return Runtime{registry: h.Registry, activation: h.Activation, failures: h.Failures, config: h.Config}
-}

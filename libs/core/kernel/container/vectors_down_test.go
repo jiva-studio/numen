@@ -1,41 +1,72 @@
 package container_test
 
 import (
-	"os"
-	"path/filepath"
+	"context"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
-// openDownEmbeddingHost lends a host whose embedding plugin is installed and cannot start: the binary
-// its manifest names is missing.
-func openDownEmbeddingHost(t *testing.T) *container.PluginHost {
+// downEmbeddingHost resolves an embedding plugin whose process is not listening.
+type downEmbeddingHost struct {
+	pluginport.PluginResolver
+	endpoint plugin.Endpoint
+	released atomic.Int32
+	acquired atomic.Int32
+}
+
+func (h *downEmbeddingHost) FindPluginByCapability(string) (manifest.Discovered, bool) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, true
+}
+
+func (h *downEmbeddingHost) ResolveCapability(string) (manifest.Discovered, error) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, nil
+}
+
+func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
+	return manifest.Discovered{}, false
+}
+
+func (h *downEmbeddingHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
+	h.acquired.Add(1)
+	return h.endpoint, nil
+}
+
+func (h *downEmbeddingHost) Release(string) { h.released.Add(1) }
+
+func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	t.Helper()
-	dir := t.TempDir()
-	pluginDir := filepath.Join(dir, "embeddings")
-	if err := os.MkdirAll(pluginDir, 0o755); err != nil {
-		t.Fatal(err)
+	server := httptest.NewServer(http.NotFoundHandler())
+	addr, isTCP := server.Listener.Addr().(*net.TCPAddr)
+	if !isTCP {
+		t.Fatalf("expected *net.TCPAddr, got %T", server.Listener.Addr())
 	}
-	text := `{
-		"id": "md.numen.embeddings", "name": "Embeddings", "version": "1.0.0",
-		"capabilities": ["embedding"], "targets": ["desktop.editor"], "permissions": [],
-		"backend": {"entrypoint": "bin/embed"}
-	}`
-	if err := os.WriteFile(filepath.Join(pluginDir, "manifest.json"), []byte(text), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	return container.AdaptPluginHost(pluginhost.Open("desktop.editor", dir))
+	serverPort := addr.Port
+	server.Close()
+	return &downEmbeddingHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: serverPort}}
+}
+
+func (h *downEmbeddingHost) lend() *container.PluginHost {
+	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, PluginActivator: h, PluginBinding: container.AbsentBinding()}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a
 // model leaves the vectors of the index where they are.
 func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) {
 	db, v := makeSwitchedIndex(t)
-	host := openDownEmbeddingHost(t)
+	host := newDownEmbeddingHost(t)
 	target := container.NewConfig(container.Config{
-		PluginHost:         host,
+		PluginHost:         host.lend(),
 		ShouldRebuildIndex: true,
 		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
@@ -46,6 +77,9 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 	}
 	if indexing != nil || asking != nil {
 		t.Fatalf("an embedder was made without a model: %v, %v", indexing, asking)
+	}
+	if host.acquired.Load() != host.released.Load() {
+		t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 	}
 
 	whole, err := container.ReadWholeVault(target, t.Context(), db, indexing, v)
@@ -58,4 +92,8 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 	if got := unembeddedTo(t, db, v, unit{"first"}); got != 0 {
 		t.Errorf("%d chunks lost the vector of the first model", got)
 	}
+}
+
+func (h *downEmbeddingHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
+	return domain.NoteProfile{}, false
 }

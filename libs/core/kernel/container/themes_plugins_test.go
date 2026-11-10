@@ -44,7 +44,7 @@ func openThemesConfig(t *testing.T, target string, pluginRoot string) Config {
 	t.Helper()
 	dir := t.TempDir()
 	return NewConfig(Config{
-		PluginHost: NewPluginHost(target, pluginRoot),
+		PluginHost: newPluginHost(t, target, pluginRoot),
 		Paths:      Paths{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")},
 	})
 }
@@ -126,7 +126,7 @@ func TestListThemesListsNoThemeOfADisabledPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg.PluginHost.Config.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	if names := listThemeNames(t, cfg); slices.Contains(names, name) {
 		t.Errorf("themes = %v, want no %s", names, name)
@@ -156,7 +156,7 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	if err != nil || written.Msg.GetError() != "" {
 		t.Fatalf("written: %v %v", written, err)
 	}
-	cfg.PluginHost.Config.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 

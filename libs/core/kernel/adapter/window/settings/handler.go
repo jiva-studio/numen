@@ -69,7 +69,7 @@ func (h *Values) GetSettings(
 		App:     newWirePluginSettings(got.App),
 	}
 	if h.ListSecrets != nil {
-		listing, err := h.ListSecrets.Execute()
+		listing, err := h.ListSecrets.Execute(ctx)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}

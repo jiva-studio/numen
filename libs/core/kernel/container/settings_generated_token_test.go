@@ -34,9 +34,9 @@ func writeTokenPlugin(t *testing.T) string {
 
 func loadTokenSettings(t *testing.T, cfg Config, plugins, path string) any {
 	t.Helper()
-	host := NewPluginHost("desktop.editor", plugins)
+	host := newPluginHost(t, "desktop.editor", plugins)
 	t.Cleanup(func() {
-		if err := host.Host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Watch.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Errorf("TeardownAll: %v", err)
 		}
 	})

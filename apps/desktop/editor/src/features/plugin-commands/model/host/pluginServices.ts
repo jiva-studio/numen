@@ -1,7 +1,7 @@
 /**
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
-import { computed, shallowRef, type Ref, type ShallowRef } from 'vue'
+import { computed, type Ref, type ShallowRef } from 'vue'
 import type {
   AgentHost,
   AgentPort,
@@ -17,7 +17,6 @@ import type {
   WorkspaceFiles,
   WorkspaceHost,
 } from '@numen/plugin-loader'
-import type { SearchDeps } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
 import { getNeighborhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
@@ -25,42 +24,26 @@ import { getFileKinds } from '@/entities/file'
 import { formatError, type Caught } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
-import type { useSettings } from '@/pages/settings'
 import { createIconHost, type IconHostDeps } from './fileServices'
+import type { SettingsStore } from '@/entities/settings'
 import type { PluginNotes } from './pluginNotes'
 import type { NoteBuffer } from '@numen/plugin-loader'
 
-/** The window and the notes a plugin is given, once the window has made them. */
+/** The window and the notes a plugin is given. */
 export interface PluginServices {
-  workspace?: WorkspaceHost
-  notes?: VaultNotes
-  relations?: VaultRelations
-  files?: VaultFiles
-  agent?: AgentHost
-  buffers?: BufferHost
-  noteBuffer?: NoteBuffer
-  commands?: CommandsHost
-  vaults?: VaultsHost
-  window?: WindowHost
-  taskList?: Readonly<Ref<readonly Task[]>>
-  backgroundTasks?: BackgroundTaskHost
+  readonly workspace: WorkspaceHost
+  readonly notes: VaultNotes
+  readonly relations: VaultRelations
+  readonly files: VaultFiles
+  readonly agent: AgentHost
+  readonly buffers: BufferHost
+  readonly noteBuffer: NoteBuffer
+  readonly commands: CommandsHost
+  readonly vaults: VaultsHost
+  readonly window: WindowHost
+  readonly taskList: Readonly<Ref<readonly Task[]>>
+  readonly backgroundTasks: BackgroundTaskHost
 }
-
-/**
- * The services a plugin is given, stored from the start of the window: the plugin host reads them when
- * a plugin asks, and the parts of the window that make them provide them once they exist.
- */
-export function createPluginServices() {
-  const stored = shallowRef<PluginServices>({})
-  return {
-    get: (): PluginServices => stored.value,
-    provide: (services: PluginServices): void => {
-      stored.value = { ...stored.value, ...services }
-    },
-  }
-}
-
-export type PluginServicesStore = ReturnType<typeof createPluginServices>
 
 /** What the window hands a plugin's tabs. */
 export interface WorkspaceHostDeps extends IconHostDeps {
@@ -132,7 +115,12 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
 
 /** What the notes of the vault are read and written through. */
 export interface VaultNotesDeps {
-  readonly search: Pick<SearchDeps, 'names'>
+  readonly search: {
+    readonly names: (
+      query: string,
+      limit: number,
+    ) => Promise<readonly { path: string; title: string }[]>
+  }
   readonly making: NoteCreator
   readonly pluginNotes: PluginNotes
 }
@@ -160,10 +148,10 @@ export interface AgentHostDeps {
   readonly settings: {
     readonly rest: {
       readonly read: Pick<
-        ReturnType<typeof useSettings>['rest']['read'],
+        SettingsStore['read'],
         'getSetting' | 'getModelsAt'
       >
-      readonly write: Pick<ReturnType<typeof useSettings>['rest']['write'], 'writeSetting'>
+      readonly write: Pick<SettingsStore['write'], 'writeSetting'>
     }
   }
 }

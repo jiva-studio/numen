@@ -14,7 +14,7 @@ import {
   type VaultCommandsDeps,
 } from '@/features/vault-commands'
 import {
-  registerCommand,
+  type CommandRegistry,
   type FeatureCommands,
   type Notes,
   type VaultRef,
@@ -120,6 +120,9 @@ export function collectFeatureCommands(
 }
 
 /** Puts the handlers of the commands in the registry the palette carries commands out through. */
-export function registerFeatureCommands(features: FeatureCommands): void {
-  for (const [id, run] of Object.entries(features.handlers)) registerCommand(id, run)
+export function registerFeatureCommands(
+  registry: Pick<CommandRegistry, 'register'>,
+  features: FeatureCommands,
+): void {
+  for (const [id, run] of Object.entries(features.handlers)) registry.register(id, run)
 }

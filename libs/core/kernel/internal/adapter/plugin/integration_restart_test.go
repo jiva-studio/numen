@@ -3,6 +3,7 @@ package plugin_test
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -142,7 +143,7 @@ func TestABridgeReachesItsPluginStartedAgainOnAnotherPort(t *testing.T) {
 			launcher := &restartingLauncher{t: t}
 			host.Processes.SetLauncher(launcher.launch)
 
-			bridge, call, err := tc.open(t.Context(), host.Runtime())
+			bridge, call, err := tc.open(t.Context(), pluginhost.Join(host))
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}

@@ -21,7 +21,8 @@ import {
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
-import { useSettings } from './useSettings'
+import { createWindowSettings } from '@/features/settings-commands'
+import { createSettingsPage } from './createSettingsPage'
 
 type Tree = Record<string, Record<string, unknown>>
 
@@ -179,15 +180,20 @@ const create = (timing: Timing) => {
   } as unknown as SettingsCore
   restore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
-  const settings = useSettings({
-    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
-    words: WORDS,
-    log,
-    windowTabs: createTestTabs(),
-    onSizeChanged: vi.fn(),
-    getSettingsViews: () => new Map(),
-    getPlatform: () => 'linux',
-  })
+  const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
+  const windowSettings = createWindowSettings({ rest, words: WORDS, log, onSizeChanged: vi.fn() })
+  const settings = {
+    rest,
+    ...windowSettings,
+    ...createSettingsPage({
+      rest,
+      appearance: windowSettings.appearance,
+      log,
+      windowTabs: createTestTabs(),
+      getSettingsViews: () => new Map(),
+      getPlatform: () => 'linux',
+    }),
+  }
   const page = mount(SettingsTab, {
     props: {
       state: { ...settings.configured.state, initialPluginId: ref<string | null>('system') },

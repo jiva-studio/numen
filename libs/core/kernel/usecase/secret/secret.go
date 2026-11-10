@@ -158,7 +158,7 @@ type Access struct {
 // Use cases that share a gate never change the key store and the list at once; a nil gate is a new one.
 func NewSecrets(
 	ledger pluginport.SecretLedger, keys pluginport.KeyStore, plugins pluginport.SecretPlugins,
-	newID func() (string, error), credentialsPath func() string, gate *Gate,
+	newID func() (string, error), credentialsPath func(ctx context.Context) string, gate *Gate,
 ) *Secrets {
 	if gate == nil {
 		gate = NewGate()

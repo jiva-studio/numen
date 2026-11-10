@@ -2,6 +2,7 @@ package embedderbridge
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -70,7 +71,7 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
 
-	bridge, err := Open(t.Context(), host.Runtime())
+	bridge, err := Open(t.Context(), pluginhost.Join(host))
 	if err != nil {
 		t.Fatal(err)
 	}

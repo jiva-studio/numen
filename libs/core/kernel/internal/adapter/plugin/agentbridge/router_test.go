@@ -3,6 +3,7 @@ package agentbridge
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -62,7 +63,7 @@ func writeAgentProvider(t *testing.T, dir, id string) {
 // providerHost is a plugin host whose agent provider plugins are served by the handlers given, by
 // plugin id, with the plugins of the ids in disabled switched off. It records the plugins it launches.
 type providerHost struct {
-	plugin.Runtime
+	pluginhost.Roles
 
 	mu       sync.Mutex
 	launched []string
@@ -89,7 +90,7 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 	}
 
 	inner := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", dir)
-	host := &providerHost{Runtime: inner.Runtime()}
+	host := &providerHost{Roles: pluginhost.Join(inner)}
 	settings := map[string]map[string]any{}
 	for _, id := range disabled {
 		settings[id] = map[string]any{"enabled": false}

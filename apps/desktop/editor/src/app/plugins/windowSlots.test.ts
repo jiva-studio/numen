@@ -8,7 +8,6 @@ import { createWhenReader, SLOT, createSlotRegistry, type SlotItem } from '@nume
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
 import type { Command } from '@/entities/command'
 import { createAppCommands } from '@/testing/appCommands'
-import { createWindowFacts } from './windowFacts'
 import { createWindowSlots } from './windowSlots'
 
 const TIDE = 'org.example.tide'
@@ -63,7 +62,11 @@ const SLOTS: DeclaredSlot[] = [
 ]
 
 function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
-  const facts = createWindowFacts()
+  const state = { isVaultOpen: true }
+  const facts = {
+    getAppCommands: () => [...createAppCommands(), MOVE],
+    getValues: () => ({ 'window.isVaultOpen': state.isVaultOpen }),
+  }
   const host = {
     commands: {
       getPaletteCommands: () => [],
@@ -95,11 +98,7 @@ function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
     getWhenValues: slots.hostDeps.getSlotWhenValues,
     whenReader: slots.hostDeps.whenReader,
   })
-  facts.provide({
-    getAppCommands: () => [...createAppCommands(), MOVE],
-    getValues: () => ({ 'window.isVaultOpen': true }),
-  })
-  return { registry, hostDeps: slots.hostDeps, facts, findSlotCommand }
+  return { registry, hostDeps: slots.hostDeps, state, findSlotCommand }
 }
 
 const describeItems = (items: readonly SlotItem[]) =>
@@ -140,23 +139,20 @@ describe('the buttons of the title bar while no vault is open', () => {
   const declaredSlots: DeclaredSlot[] = [
     { pluginId: TIDE, slot: SLOT.titleBarCommands, command: 'tide.vault', group: 'navigate' },
   ]
-  const setVault = (facts: ReturnType<typeof setup>['facts'], isOpen: boolean) => {
-    facts.provide({
-      getAppCommands: () => [...createAppCommands(), MOVE],
-      getValues: () => ({ 'window.isVaultOpen': isOpen }),
-    })
+  const setVault = (state: ReturnType<typeof setup>['state'], isOpen: boolean) => {
+    state.isVaultOpen = isOpen
   }
 
   it('are none, the settings button too', () => {
-    const { registry, facts } = setup(declaredSlots)
-    setVault(facts, false)
+    const { registry, state } = setup(declaredSlots)
+    setVault(state, false)
 
     expect(describeItems(registry.getEntries(SLOT.titleBarCommands))).toStrictEqual([])
   })
 
   it('appear when a vault is open', () => {
-    const { registry, facts } = setup(declaredSlots)
-    setVault(facts, true)
+    const { registry, state } = setup(declaredSlots)
+    setVault(state, true)
 
     expect(describeItems(registry.getEntries(SLOT.titleBarCommands))).toStrictEqual([
       `${TIDE}:tide.vault`,
@@ -166,8 +162,8 @@ describe('the buttons of the title bar while no vault is open', () => {
   })
 
   it('leave the command of the settings available to the palette and the shortcut', () => {
-    const { findSlotCommand, facts } = setup(declaredSlots)
-    setVault(facts, false)
+    const { findSlotCommand, state } = setup(declaredSlots)
+    setVault(state, false)
 
     expect(findSlotCommand('app:settings.open', undefined)).toMatchObject({
       title: expect.any(String),

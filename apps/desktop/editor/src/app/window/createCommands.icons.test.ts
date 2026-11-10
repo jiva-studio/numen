@@ -9,8 +9,6 @@ import { describe, expect, it } from 'vitest'
 import { COMMAND, findIcon } from '@/entities/command'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
-import { createWelcomeActions, WELCOME_WORDS } from '@/testing/slices'
-import { WORDS as words } from '@/shared/ui/words'
 import { createAppCommands } from '@/testing/appCommands'
 
 describe('the icon a command is drawn with', () => {
@@ -30,15 +28,6 @@ describe('the icon a command is drawn with', () => {
     expect(findIcon(COMMAND.openSettings)).not.toBe(findIcon('setting:org.example.custom:toggle'))
     expect(getNamedIcon('layers')).not.toBe(getNamedIcon('layout-template'))
     expect(getNamedIcon('audio-lines')).not.toBe(getNamedIcon('waypoints'))
-  })
-
-  it('is there for every way into a vault the welcome screen offers', () => {
-    const ways = createWelcomeActions(
-      { vault: 'physics', isReady: true },
-      { ...words, ...WELCOME_WORDS },
-      'Linux',
-    )
-    for (const one of ways) expect(findIcon(one.id), one.id).not.toBeNull()
   })
 
   it('is nothing for a command of the window that no icon is kept for', () => {

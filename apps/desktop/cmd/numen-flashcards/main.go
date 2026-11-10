@@ -74,7 +74,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg)
-	started, err := container.OpenFlashcards(cfg, ctx, api, os.Stderr, appName)
+	started, err := container.OpenFlashcards(cfg, ctx, api, os.Stderr, appName, notifyUser)
 	if err != nil {
 		return err
 	}
@@ -130,4 +130,8 @@ func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 		URL:    "/",
 	}))
 	return app.Run()
+}
+
+func notifyUser(message string) {
+	fmt.Fprintln(os.Stderr, message)
 }

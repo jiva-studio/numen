@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -108,7 +109,7 @@ func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bridge, err := Open(t.Context(), host.Runtime())
+	bridge, err := Open(t.Context(), pluginhost.Join(host))
 	if err == nil {
 		t.Fatal("expected error when no embedding plugin found, got nil")
 	}
@@ -162,7 +163,7 @@ func TestEmbedderBridge(t *testing.T) {
 	})
 
 	ctx := t.Context()
-	bridge, err := Open(ctx, host.Runtime())
+	bridge, err := Open(ctx, pluginhost.Join(host))
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge failed: %v", err)
 	}

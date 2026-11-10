@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
@@ -18,7 +19,7 @@ func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
 
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
-	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(&applied)}})
+	c := NewConfig(Config{PluginHost: &PluginHost{Runtime: PluginRuntime{PluginBinding: bridge.AbsentRuntime{}}, ApplySetting: applyingHost(&applied)}})
 	changes, stop := watchPluginChanges(plugins(c))
 	defer stop()
 
@@ -35,7 +36,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 }
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
-	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(new([]string))}})
+	c := NewConfig(Config{PluginHost: &PluginHost{Runtime: PluginRuntime{PluginBinding: bridge.AbsentRuntime{}}, ApplySetting: applyingHost(new([]string))}})
 	changes, stop := watchPluginChanges(plugins(c))
 	stop()
 

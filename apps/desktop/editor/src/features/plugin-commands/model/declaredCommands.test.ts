@@ -2,8 +2,12 @@
  * The commands the plugins declare as the palette offers them, and a run of
  * one as the palette carries it out.
  */
-import { commands, type CommandDeps, type CommandInvocation } from '@/entities/command'
-import { describe, expect, it, vi } from 'vitest'
+import {
+  createCommandRegistry,
+  type CommandDeps,
+  type CommandInvocation,
+} from '@/entities/command'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DeclaredCommand, listDeclaredCommands } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'
 import { getPaletteId, useDeclaredCommands } from './declaredCommands'
@@ -11,12 +15,19 @@ import { getPaletteId, useDeclaredCommands } from './declaredCommands'
 type DeclaredList = Awaited<ReturnType<typeof listDeclaredCommands>>
 type DeclaredCommandsDeps = NonNullable<Parameters<typeof useDeclaredCommands>[0]>
 
+let registry = createCommandRegistry()
+
+beforeEach(() => {
+  registry = createCommandRegistry()
+})
+
 const createPaletteCommands = async (
   declared: readonly DeclaredCommand[],
   contentTypes: Readonly<Record<string, string>> = {},
   deps: DeclaredCommandsDeps = {},
 ) => {
   const commands = useDeclaredCommands({
+    registry,
     list: async () => ({ commands: declared, slots: [], contentTypes }),
     ...deps,
   })
@@ -56,7 +67,7 @@ const front = (file: string, isReady = true) => ({
 })
 
 const runInvocation = (invocation: CommandInvocation, on: CommandDeps) =>
-  commands.get(invocation.id)?.(invocation, on)
+  registry.get(invocation.id)?.(invocation, on)
 
 describe('a declared command in the palette', () => {
   it('asks for its required arguments, one step each, and leaves the optional ones out', async () => {
@@ -135,6 +146,7 @@ describe('a declared command with items', () => {
   it('runs over the file with the item picked as its itemId', async () => {
     const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [proofread], slots: [] }),
       run,
     })
@@ -161,6 +173,7 @@ describe('a run of a declared command', () => {
   it('sends that a place named its target', async () => {
     const run = vi.fn().mockResolvedValue({ ok: true, value: { message: '', openedPath: '' } })
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run,
     })
@@ -203,6 +216,7 @@ describe('a run of a declared command', () => {
       value: { message: 'Made a sample', openedPath: 'Verbs.md' },
     })
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run,
     })
@@ -244,13 +258,14 @@ describe('a run of a declared command', () => {
 
   it('that failed says why as an error', async () => {
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [convert], slots: [] }),
       run: async () => ({ ok: false, error: 'the disk is full' }),
     })
     await declared.load()
     const writeMessage = vi.fn()
 
-    await commands.get(getPaletteId(convert))?.(
+    await registry.get(getPaletteId(convert))?.(
       {
         id: getPaletteId(convert),
         target: {
@@ -274,6 +289,7 @@ describe('a run of a declared command', () => {
   it('is no longer handled once the plugins no longer declare it', async () => {
     let commandList: readonly DeclaredCommand[] = [convert]
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: commandList, slots: [] }),
       run: vi.fn(),
     })
@@ -282,7 +298,7 @@ describe('a run of a declared command', () => {
     commandList = []
     await declared.load()
 
-    expect(commands.get(getPaletteId(convert))).toBeUndefined()
+    expect(registry.get(getPaletteId(convert))).toBeUndefined()
     expect(declared.paletteCommands.value).toStrictEqual([])
   })
 })
@@ -290,12 +306,13 @@ describe('a run of a declared command', () => {
 describe('a run that opens a file', () => {
   it('answers the path it opened', async () => {
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
     })
     await declared.load()
 
-    const path = await commands.get(getPaletteId(createSample))?.(
+    const path = await registry.get(getPaletteId(createSample))?.(
       {
         id: getPaletteId(createSample),
         target: {
@@ -320,6 +337,7 @@ describe('a run that opens a file', () => {
 describe('a run that opens a file and says nothing', () => {
   it('writes no message', async () => {
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run: async () => ({ ok: true, value: { message: '', openedPath: 'Verbs.md' } }),
     })
@@ -327,7 +345,7 @@ describe('a run that opens a file and says nothing', () => {
     const writeMessage = vi.fn()
     const openFile = vi.fn()
 
-    await commands.get(getPaletteId(createSample))?.(
+    await registry.get(getPaletteId(createSample))?.(
       {
         id: getPaletteId(createSample),
         target: {
@@ -352,6 +370,7 @@ describe('a run that opens a file and says nothing', () => {
 
   it('does not open a file when openedPath is empty', async () => {
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [createSample], slots: [] }),
       run: async () => ({ ok: true, value: { message: 'Done', openedPath: '' } }),
     })
@@ -359,7 +378,7 @@ describe('a run that opens a file and says nothing', () => {
     const writeMessage = vi.fn()
     const openFile = vi.fn()
 
-    await commands.get(getPaletteId(createSample))?.(
+    await registry.get(getPaletteId(createSample))?.(
       {
         id: getPaletteId(createSample),
         target: {
@@ -390,6 +409,7 @@ describe('the declared commands read more than once', () => {
     })
     const lists = [first, Promise.resolve({ commands: [convert], slots: [] })]
     const declared = useDeclaredCommands({
+    registry,
       list: () => lists.shift() as Promise<DeclaredList>,
     })
 
@@ -403,6 +423,7 @@ describe('the declared commands read more than once', () => {
 
   it('keep the lists they hold, and register no command again, when a read answers the same', async () => {
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({
         commands: [{ ...createSample, arguments: [...createSample.arguments] }],
         slots: [
@@ -431,7 +452,8 @@ describe('the declared commands read more than once', () => {
       { commands: [createSample], slots: [] },
       { commands: [convert], slots: [] },
     ]
-    const declared = useDeclaredCommands({ list: async () => lists.shift() as DeclaredList })
+    const declared = useDeclaredCommands({
+    registry, list: async () => lists.shift() as DeclaredList })
     await declared.load()
 
     await declared.load()
@@ -442,6 +464,7 @@ describe('the declared commands read more than once', () => {
   it('resolves waitForFirstList after the first list arrives', async () => {
     let answer: (list: DeclaredList) => void = () => undefined
     const declared = useDeclaredCommands({
+    registry,
       list: () => new Promise<DeclaredList>((resolve) => (answer = resolve)),
     })
     let isSettled = false
@@ -458,7 +481,8 @@ describe('the declared commands read more than once', () => {
   })
 
   it('settle the wait for the first list when the read fails', async () => {
-    const declared = useDeclaredCommands({ list: () => Promise.reject(new Error('core gone')) })
+    const declared = useDeclaredCommands({
+    registry, list: () => Promise.reject(new Error('core gone')) })
 
     await expect(declared.load()).rejects.toThrow('core gone')
 
@@ -466,7 +490,8 @@ describe('the declared commands read more than once', () => {
   })
 
   it('are none until the first read has answered', async () => {
-    const declared = useDeclaredCommands({ list: async () => ({ commands: [convert], slots: [] }) })
+    const declared = useDeclaredCommands({
+    registry, list: async () => ({ commands: [convert], slots: [] }) })
 
     expect(declared.declarations.value).toBeUndefined()
     await declared.load()
@@ -478,6 +503,7 @@ describe('the declared commands read more than once', () => {
 describe('a declared command the palette leaves out', () => {
   it('is one the plugin host lists', async () => {
     const declared = useDeclaredCommands({
+    registry,
       list: async () => ({ commands: [createSample, convert], slots: [] }),
       isListed: () => true,
     })

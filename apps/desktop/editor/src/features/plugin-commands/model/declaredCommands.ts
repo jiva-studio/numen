@@ -3,7 +3,7 @@
  * for each required argument (an optional one is for a caller that is not a person),
  * and the run handed to the plugin's backend.
  */
-import { registerCommand } from '@/entities/command'
+import type { CommandRegistry } from '@/entities/command'
 import { computed, shallowRef, watch } from 'vue'
 import {
   createWhenReader,
@@ -105,6 +105,7 @@ export interface DeclaredStateDeps {
 
 export interface DeclaredCommandsDeps extends DeclaredStateDeps {
   readonly state?: DeclaredState
+  readonly registry?: Pick<CommandRegistry, 'register'>
   readonly run?: typeof runDeclaredCommand
   readonly isListed?: (id: string) => boolean
   readonly hasBackend?: (pluginId: string) => boolean
@@ -219,8 +220,10 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     backendCommands,
     (commands) => {
       for (const unregister of unregisterAll) unregister()
+      const { registry } = deps
+      if (!registry) return
       unregisterAll = commands.map((one) =>
-        registerCommand(getPaletteId(one), async (invocation, on) => {
+        registry.register(getPaletteId(one), async (invocation, on) => {
           const outcome = await run(
             one,
             toDeclaredRun(one, invocation),

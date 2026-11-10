@@ -3,8 +3,6 @@ package container
 import (
 	"context"
 	"encoding/json"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"math"
 	"os"
 	"path/filepath"
@@ -18,7 +16,7 @@ import (
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func writeSettings(t *testing.T, output string) (Config, string) {
@@ -228,7 +226,7 @@ func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
 
 // profileHost records the profiles the container gives the plugin host.
 type profileHost struct {
-	settingsport.PluginConfig
+	pluginport.SettingsPush
 	profiles []string
 }
 
@@ -240,7 +238,7 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = lendHostWithConfig(host)
+	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{SettingsPush: host}}
 
 	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {
@@ -249,11 +247,4 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	if len(host.profiles) != 0 {
 		t.Errorf("profiles sent to the host = %v, want none", host.profiles)
 	}
-}
-
-// lendHostWithConfig lends a plugin host that has no plugin and hands the plugins the settings through config.
-func lendHostWithConfig(config settingsport.PluginConfig) *PluginHost {
-	lent := adaptPluginHost(plugin.NewHost(clock.System{}, "desktop.editor"))
-	lent.Config = config
-	return lent
 }

@@ -11,7 +11,7 @@ import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
 import { createPluginSupport } from '@/app/plugins/pluginSupport'
-import { useSettings } from '@/pages/settings'
+import { createWindowSettingsPart } from './windowSettings'
 
 const file = { current: {} as Record<string, unknown> }
 
@@ -69,7 +69,7 @@ const create = () => {
   restoreCore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = createTestTabs()
-  const settings = useSettings({
+  const settings = createWindowSettingsPart({
     rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
     words: WORDS,
     log,

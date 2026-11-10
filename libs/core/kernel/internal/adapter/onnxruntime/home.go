@@ -45,3 +45,23 @@ func getOfflineValues() []string { return []string{"1", "true", "yes", "on"} }
 func FromEnvironment(clock machineport.Clock) Config {
 	return Config{Provider: os.Getenv(EnvProvider), Offline: IsOffline(), Clock: clock}
 }
+
+// EnvMockML names the variable that runs the plugins on mock models.
+const EnvMockML = "NUMEN_MOCK_ML"
+
+// IsMockML reports whether EnvMockML runs the plugins on mock models.
+func IsMockML() bool { return os.Getenv(EnvMockML) == "true" }
+
+// GetModelsDir returns the folder EnvDir names, or defaultDir while it names none.
+func GetModelsDir(defaultDir string) string {
+	if models := os.Getenv(EnvDir); models != "" {
+		return models
+	}
+	return defaultDir
+}
+
+// GetPlaceholderEnv returns the variables a mock run hands a plugin for a runtime whose placeholder is at primary:
+// the placeholder as the library, on the CPU provider.
+func GetPlaceholderEnv(primary string) map[string]string {
+	return map[string]string{EnvLibrary: primary, EnvProvider: "cpu"}
+}

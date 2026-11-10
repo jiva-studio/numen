@@ -6,6 +6,7 @@
 package platform
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -40,7 +41,10 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // that target.
 func GetConfigFor(target string) container.Config {
 	dirs := getPluginsDirs()
-	host := container.NewPluginHost(target, dirs...)
+	host, discoverErr := container.NewPluginHost(target, dirs...)
+	if discoverErr != nil {
+		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", discoverErr)
+	}
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
 	host.SetStorage(cacheRoot, dataRoot)
 	cfg := container.NewConfig(container.Config{

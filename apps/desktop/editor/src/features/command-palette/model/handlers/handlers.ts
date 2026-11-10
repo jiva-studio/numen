@@ -9,7 +9,6 @@
 import { formatError } from '@/shared/api/errors'
 import {
   COMMAND,
-  commands,
   SETTING_COMMAND_PREFIX,
   type CommandDeps,
   type CommandHandler,
@@ -43,7 +42,7 @@ export async function runInvocation(
 ): Promise<string> {
   if (!invocation) return ''
   const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
-  const handler = commands.get(invocation.id) ?? HANDLERS[invocation.id]
+  const handler = on.registry.get(invocation.id) ?? HANDLERS[invocation.id]
   if (!isSetting && !handler) return ''
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)

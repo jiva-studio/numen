@@ -102,8 +102,10 @@ func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 	}
 }
 
-func TestNoSettingsAgentWithoutAHost(t *testing.T) {
-	if agent := (container.NewConfig(container.Config{})).GetSettingsAgent(); agent != nil {
-		t.Errorf("a configuration without a host has the agent %v", agent)
+func TestTheSettingsAgentWithoutAHostRunsNothing(t *testing.T) {
+	agent := container.NewConfig(container.Config{}).GetSettingsAgent()
+
+	if _, err := agent.StartRun(t.Context(), agentdomain.Task{Question: "q"}); err == nil {
+		t.Error("a task was taken where no plugin runs")
 	}
 }

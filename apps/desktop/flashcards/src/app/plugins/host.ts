@@ -40,23 +40,28 @@ const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginVie
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
 }
 
-/** The commands, the vaults and the window the plugins read, once the window has made them. */
+/** The commands, the vaults and the window the plugins read. */
 export interface ShellServices {
-  commands?: CommandsHost
-  vaults?: VaultsHost
-  window?: WindowHost
+  readonly commands: CommandsHost
+  readonly vaults: VaultsHost
+  readonly window: WindowHost
 }
 
 /**
- * The services a plugin is given, stored from the start of the window: the host reads them when a
- * plugin asks, and the window provides them once it has made them.
+ * The one place the host and the window depend on each other: the host is made first, because the
+ * services are made from its notices and its tab. The window opens the port with the
+ * services it made. A read before that is a fault of the composition and throws.
  */
-export function createShellServices() {
-  const stored = shallowRef<ShellServices>({})
+export function createShellPort() {
+  let made: ShellServices | undefined
   return {
-    get: (): ShellServices => stored.value,
-    provide: (services: ShellServices): void => {
-      stored.value = { ...stored.value, ...services }
+    getServices: (): ShellServices => {
+      if (made === undefined) throw new Error('The host was asked before the window was composed')
+      return made
+    },
+    open: (services: ShellServices): void => {
+      if (made !== undefined) throw new Error('The port of the host is open already')
+      made = services
     },
   }
 }
@@ -84,7 +89,7 @@ function mountDeclaredView(
  */
 export function createShellHost(
   agent?: AgentHost,
-  getServices: () => ShellServices = () => ({}),
+  getServices: () => Partial<ShellServices> = () => ({}),
   getPlatform: () => WindowPlatform = () => 'windows',
 ) {
   const views = shallowRef<readonly PluginView[]>([])

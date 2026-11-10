@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 )
@@ -33,4 +34,27 @@ func dependencies() *provision.Registry {
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
 		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
 	)
+}
+
+// Roles presents the roles of a host as one value, for a test that gives a bridge the whole host.
+type Roles struct {
+	*plugin.Activation
+	*plugin.Registry
+	*plugin.Settings
+	*plugin.ConfigPush
+	*supervision.Failures
+	*plugin.Events
+	*plugin.Mode
+	*plugin.ContentTypes
+	*plugin.Discovery
+	*supervision.Services
+}
+
+// Join presents the roles of host as one value.
+func Join(host *plugin.Host) Roles {
+	return Roles{
+		Activation: host.Activation, Registry: host.Registry, Settings: host.Settings, ConfigPush: host.Config,
+		Failures: host.Failures, Events: host.Events, Mode: host.Mode, ContentTypes: host.ContentTypes,
+		Discovery: host.Discovery, Services: host.Services,
+	}
 }
