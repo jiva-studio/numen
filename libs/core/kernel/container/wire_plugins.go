@@ -111,21 +111,21 @@ type pluginRuntime struct {
 	pluginport.PluginBinding
 	transport.ClientLookup
 	textport.TextPlugins
+	pluginport.PluginFailures
+	pluginport.ConfigWatcher
 }
 
 // pluginConfiguration is what carries the settings and the secrets to the plugins.
 type pluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
 	pluginport.SecretConfigurator
-	pluginport.ConfigWatcher
 	pluginport.SettingsPush
 	pluginport.SettingChecker
 	pluginport.PersistHook
 }
 
-// pluginWatch is what follows the failures, the shutdown, the dependencies and the content types of the plugins.
+// pluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
 type pluginWatch struct {
-	pluginport.PluginFailures
 	pluginport.PluginShutdown
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
@@ -164,17 +164,17 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 			PluginBinding:      host.Mode,
 			ClientLookup:       host.Activation.ClientLookup(),
 			TextPlugins:        host.Registry,
+			PluginFailures:     host.Failures,
+			ConfigWatcher:      host.Config,
 		},
 		Configuration: pluginConfiguration{
 			PluginSettingDeclarer: host.Registry,
 			SecretConfigurator:    host.Config,
-			ConfigWatcher:         host.Config,
 			SettingsPush:          host.Settings,
 			SettingChecker:        host.Settings,
 			PersistHook:           host.Settings,
 		},
 		Watch: pluginWatch{
-			PluginFailures:     host.Failures,
 			PluginShutdown:     host.Teardown,
 			DependencyReporter: host.Services,
 			ContentTypeTable:   host.ContentTypes,

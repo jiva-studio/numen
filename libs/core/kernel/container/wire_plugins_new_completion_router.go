@@ -307,7 +307,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.Watch.SetOnPluginFailed(func(failure plugindomain.Failure) {
+	c.PluginHost.Runtime.SetOnPluginFailed(func(failure plugindomain.Failure) {
 		tasks.Set(work.Task{
 			ID:         pluginFailureTaskPrefix + failure.PluginID,
 			Title:      "Plugin stopped",
@@ -317,7 +317,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 			PluginName: failure.Name,
 		})
 	})
-	c.PluginHost.Watch.SetOnFailureCleared(func(pluginID string) {
+	c.PluginHost.Runtime.SetOnFailureCleared(func(pluginID string) {
 		tasks.Remove(pluginFailureTaskPrefix + pluginID)
 		signalPluginChanges(c)
 	})
