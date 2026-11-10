@@ -32,6 +32,13 @@ func (readerIdentity) GetPluginIDByToken(token string) (string, bool) {
 
 func (readerIdentity) CheckPluginPermission(string, string) error { return nil }
 
+// noWindow is a host with no window, so no list of vaults to change.
+type noWindow struct{}
+
+func (noWindow) GetPluginWindow() hostendpoint.WindowControl { return nil }
+
+func (noWindow) GetPluginVaultList() hostendpoint.VaultList { return nil }
+
 type shownVault struct{ access *hostendpoint.VaultAccess }
 
 func (s shownVault) GetPluginVault() *hostendpoint.VaultAccess { return s.access }
@@ -39,7 +46,7 @@ func (s shownVault) GetPluginVault() *hostendpoint.VaultAccess { return s.access
 func openReadEndpoint(t *testing.T, access *hostendpoint.VaultAccess) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
-		Identity: readerIdentity{}, Vault: shownVault{access: access},
+		Identity: readerIdentity{}, Vault: shownVault{access: access}, Window: noWindow{},
 	})
 	if err != nil {
 		t.Fatal(err)

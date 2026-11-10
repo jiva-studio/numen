@@ -29,10 +29,10 @@ func (u *ReadAppearance) Execute() (themedomain.Appearance, error) {
 	if err != nil {
 		return themedomain.Appearance{}, err
 	}
-	themeName, _ := getAppearanceValue(stored, "theme").(string)
-	mode, _ := getAppearanceValue(stored, "mode").(string)
-	interfaceScale, _ := getAppearanceValue(stored, "interfaceScale").(float64)
-	textScale, _ := getAppearanceValue(stored, "textScale").(float64)
+	themeName := getAppearanceValue[string](stored, "theme")
+	mode := getAppearanceValue[string](stored, "mode")
+	interfaceScale := getAppearanceValue[float64](stored, "interfaceScale")
+	textScale := getAppearanceValue[float64](stored, "textScale")
 	return themedomain.Appearance{
 		ThemeName:      themeName,
 		Mode:           themedomain.ParseColorScheme(mode),
@@ -41,9 +41,14 @@ func (u *ReadAppearance) Execute() (themedomain.Appearance, error) {
 	}, nil
 }
 
-func getAppearanceValue(stored settingsdomain.Stored, key string) any {
+func getAppearanceValue[T any](stored settingsdomain.Stored, key string) T {
 	value, _ := stored.GetValue(appearancePath(key)...)
-	return value
+	typed, isTyped := value.(T)
+	if !isTyped {
+		var none T
+		return none
+	}
+	return typed
 }
 
 // WriteAppearance writes the theme, the mode and the scales into the settings file. A scale of zero

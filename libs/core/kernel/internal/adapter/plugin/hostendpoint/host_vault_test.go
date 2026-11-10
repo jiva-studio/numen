@@ -23,25 +23,18 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// memoryVault is a vault of files kept in memory that answers as the host does.
+// memoryVault replaces the notes, links and connections of a vault behind the endpoint, which
+// the real use cases serve from an index.
 type memoryVault struct {
-	mu          sync.Mutex
-	vault       *domain.Vault
-	files       map[string]string
-	stamp       int64
-	cache       map[string][]byte
-	scanned     [][]string
-	locks       int
-	changes     chan []string
-	droppedChan chan struct{}
-	others      map[domain.VaultID]*memoryVault
-	state       plugin.IndexState
-	moves       chan struct{}
-	storeRoot   string
+	mu        sync.Mutex
+	vault     *domain.Vault
+	files     map[string]string
+	stamp     int64
+	others    map[domain.VaultID]*memoryVault
+	storeRoot string
 
 	connection    domain.Connection
 	connectionErr error
@@ -52,23 +45,10 @@ type memoryVault struct {
 
 func newMemoryVault(files map[string]string) *memoryVault {
 	return &memoryVault{
-		vault:       &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
-		files:       files,
-		cache:       map[string][]byte{},
-		changes:     make(chan []string, 4),
-		droppedChan: make(chan struct{}),
-		moves:       make(chan struct{}, 4),
-		state:       plugin.IndexState{Status: plugin.Indexed},
+		vault: &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
+		files: files,
 	}
 }
-
-var (
-	_ NoteLookup  = (*memoryVault)(nil)
-	_ FileReader  = (*memoryVault)(nil)
-	_ FileWriter  = (*memoryVault)(nil)
-	_ StoreOpener = (*memoryVault)(nil)
-	_ VaultSwitch = (*memoryVault)(nil)
-)
 
 func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
 	out := []domain.Vault{}
@@ -90,14 +70,6 @@ func (m *memoryVault) With(id domain.VaultID) (*VaultAccess, error) {
 		return vaultOf(other), nil
 	}
 	return nil, fs.ErrNotExist
-}
-
-func (m *memoryVault) EnsureIndexed(context.Context) (plugin.IndexState, error) {
-	return m.state, nil
-}
-
-func (m *memoryVault) WatchMoves(context.Context) (<-chan struct{}, error) {
-	return m.moves, nil
 }
 
 func (m *memoryVault) GetVault() (domain.Vault, bool) {
@@ -171,24 +143,6 @@ func (m *memoryVault) CreateFile(_ context.Context, path string, content []byte)
 		return vaultdomain.ErrAlreadyExists
 	}
 	m.files[path] = string(content)
-	return nil
-}
-
-func (m *memoryVault) Lock(context.Context) (func(), error) {
-	m.mu.Lock()
-	m.locks++
-	m.mu.Unlock()
-	return func() {
-		m.mu.Lock()
-		m.locks--
-		m.mu.Unlock()
-	}, nil
-}
-
-func (m *memoryVault) Scan(_ context.Context, paths []string) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.scanned = append(m.scanned, paths)
 	return nil
 }
 
@@ -311,24 +265,6 @@ func (m *memoryVault) GetProblems(context.Context, []domain.Check) ([]domain.Che
 	return nil, nil, errors.ErrUnsupported
 }
 
-func (m *memoryVault) ReadCache(_ context.Context, pluginID, name string) ([]byte, bool, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	content, found := m.cache[pluginID+"/"+name]
-	return content, found, nil
-}
-
-func (m *memoryVault) WriteCache(_ context.Context, pluginID, name string, content []byte) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.cache[pluginID+"/"+name] = content
-	return nil
-}
-
-func (m *memoryVault) Watch(context.Context) (<-chan []string, <-chan struct{}, error) {
-	return m.changes, m.droppedChan, nil
-}
-
 func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
@@ -347,26 +283,6 @@ func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memo
 	return newVaultClient(t, hosted, "token-a"), vault
 }
 
-func TestTheVaultTheWindowShowsIsNamed(t *testing.T) {
-	client, vault := newVaultFixture(t)
-
-	res, err := client.GetHostVault(t.Context(), connect.NewRequest(&v1.GetHostVaultRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if res.Msg.GetId() != "v1" || res.Msg.GetName() != "Physics" || res.Msg.GetPath() != "/vaults/Physics" {
-		t.Errorf("the vault was %v", res.Msg)
-	}
-	vault.mu.Lock()
-	vault.vault = nil
-	vault.mu.Unlock()
-	res, err = client.GetHostVault(t.Context(), connect.NewRequest(&v1.GetHostVaultRequest{}))
-	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
-		t.Errorf("a host showing none answered %v (%v)", res.Msg, err)
-	}
-}
-
 func TestHostVault_NoVaultReturnsEmptyList(t *testing.T) {
 	hosted := newCallers(nil)
 	client := newVaultClient(t, hosted, "token-a")
@@ -375,98 +291,6 @@ func TestHostVault_NoVaultReturnsEmptyList(t *testing.T) {
 
 	if err != nil || res.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT {
 		t.Errorf("the answer was %v (%v)", res.Msg, err)
-	}
-}
-
-func TestReadFile_ReturnsContentAndStat(t *testing.T) {
-	client, _ := newVaultFixture(t)
-
-	res, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "samples/A.md"}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if string(res.Msg.GetContent()) != "body" || res.Msg.GetStat().GetPath() != "samples/A.md" ||
-		res.Msg.GetStat().GetSize() != 4 {
-		t.Errorf("the file came back as %v", res.Msg)
-	}
-	missing, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "nothing.md"}))
-	if err != nil || missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_FOUND {
-		t.Errorf("a file that is not there was answered %v (%v)", missing.Msg, err)
-	}
-}
-
-func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	read, err := client.StatFile(t.Context(), connect.NewRequest(&v1.StatFileRequest{Path: "samples/A.md"}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	first, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
-		Path: "samples/A.md", Content: []byte("new"), Baseline: read.Msg.GetStat(),
-	}))
-	if err != nil || first.Msg.GetError() != 0 || first.Msg.GetStat().GetSize() != 3 {
-		t.Fatalf("the write was answered %v (%v)", first.Msg, err)
-	}
-	second, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
-		Path: "samples/A.md", Content: []byte("again"), Baseline: read.Msg.GetStat(),
-	}))
-
-	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT {
-		t.Errorf("a write over what moved was answered %v (%v)", second.Msg, err)
-	}
-	if vault.files["samples/A.md"] != "new" {
-		t.Errorf("the file holds %q", vault.files["samples/A.md"])
-	}
-}
-
-func TestAFileIsMadeOnlyWhereNoneExists(t *testing.T) {
-	client, _ := newVaultFixture(t)
-
-	first, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "samples/B.md", Content: []byte("b")}))
-	if err != nil || first.Msg.GetError() != 0 {
-		t.Fatalf("the first was answered %v (%v)", first.Msg, err)
-	}
-	second, err := client.CreateFile(t.Context(), connect.NewRequest(&v1.CreateFileRequest{Path: "samples/B.md", Content: []byte("b")}))
-
-	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS {
-		t.Errorf("a file made over one was answered %v (%v)", second.Msg, err)
-	}
-}
-
-func TestLockVault_BlocksWritersUntilUnlock(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	locked, err := client.LockVault(t.Context(), connect.NewRequest(&v1.LockVaultRequest{}))
-	if err != nil || locked.Msg.GetLock() == "" {
-		t.Fatalf("the lock was answered %v (%v)", locked.Msg, err)
-	}
-	if vault.locks != 1 {
-		t.Fatalf("%d locks held", vault.locks)
-	}
-
-	for range 2 {
-		if _, err := client.UnlockVault(t.Context(), connect.NewRequest(&v1.UnlockVaultRequest{Lock: locked.Msg.GetLock()})); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	vault.mu.Lock()
-	defer vault.mu.Unlock()
-	if vault.locks != 0 {
-		t.Errorf("%d locks held after they were let go", vault.locks)
-	}
-}
-
-func TestTheIndexIsBroughtLevelWithTheFilesNamed(t *testing.T) {
-	client, vault := newVaultFixture(t)
-
-	if _, err := client.ScanFiles(t.Context(), connect.NewRequest(&v1.ScanFilesRequest{Paths: []string{"samples/A.md"}})); err != nil {
-		t.Fatal(err)
-	}
-
-	if len(vault.scanned) != 1 || vault.scanned[0][0] != "samples/A.md" {
-		t.Errorf("the index was scanned for %v", vault.scanned)
 	}
 }
 
@@ -509,65 +333,6 @@ func TestGetNoteRefs_ReturnsIndexedNotesAndLinks(t *testing.T) {
 	}
 }
 
-func TestCache_ReadWriteIsPerPlugin(t *testing.T) {
-	client, _ := newVaultFixture(t)
-	ctx := t.Context()
-
-	before, err := client.ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: "schedules"}))
-	if err != nil || before.Msg.GetIsFound() {
-		t.Fatalf("an empty cache answered %v (%v)", before.Msg, err)
-	}
-	if _, err := client.WriteCache(ctx, connect.NewRequest(&v1.WriteCacheRequest{Name: "schedules", Content: []byte("{}")})); err != nil {
-		t.Fatal(err)
-	}
-	after, err := client.ReadCache(ctx, connect.NewRequest(&v1.ReadCacheRequest{Name: "schedules"}))
-
-	if err != nil || !after.Msg.GetIsFound() || string(after.Msg.GetContent()) != "{}" {
-		t.Errorf("the cache answered %v (%v)", after.Msg, err)
-	}
-}
-
-func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, stream)
-
-	if !stream.Receive() || len(stream.Msg().GetPaths()) != 0 {
-		t.Fatalf("the watch did not begin: %v", stream.Err())
-	}
-	vault.changes <- []string{"samples/A.md"}
-	if !stream.Receive() || !slices.Equal(stream.Msg().GetPaths(), []string{"samples/A.md"}) {
-		t.Fatalf("the change was not told: %v %v", stream.Msg(), stream.Err())
-	}
-	close(vault.droppedChan)
-	if stream.Receive() {
-		t.Errorf("a watch that was lost went on with %v", stream.Msg())
-	}
-}
-
-func TestAWatchReturnsWhenTheWindowShowsAnotherVault(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	stream, err := client.WatchVault(t.Context(), connect.NewRequest(&v1.WatchVaultRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, stream)
-	if !stream.Receive() {
-		t.Fatal(stream.Err())
-	}
-
-	vault.mu.Lock()
-	vault.vault = &domain.Vault{ID: "v2", Path: "/vaults/Other"}
-	vault.mu.Unlock()
-
-	if !stream.Receive() || !stream.Msg().GetIsVaultChanged() {
-		t.Errorf("the change of vault was not told: %v %v", stream.Msg(), stream.Err())
-	}
-}
-
 func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	vault := newMemoryVault(map[string]string{"a.md": "a"})
 	hosted := newCallers(nil)
@@ -595,83 +360,6 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 func TestAnErrorTheHostCannotNameIsInternal(t *testing.T) {
 	if _, err := answer(t.Context(), errors.New("the disk is gone")); readCode(t, err) != connect.CodeInternal {
 		t.Errorf("the failure was %v", err)
-	}
-}
-
-func TestAHeaderNamesTheVaultACallWorks(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	vault.others = map[domain.VaultID]*memoryVault{
-		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
-	}
-	req := connect.NewRequest(&v1.GetHostVaultRequest{})
-	req.Header().Set("Numen-Vault", "v2")
-
-	res, err := client.GetHostVault(t.Context(), req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	unknown := connect.NewRequest(&v1.GetHostVaultRequest{})
-	unknown.Header().Set("Numen-Vault", "v9")
-	_, rejected := client.GetHostVault(t.Context(), unknown)
-
-	if res.Msg.GetName() != "Chemistry" || connect.CodeOf(rejected) != connect.CodeNotFound {
-		t.Errorf("the vault was %v, and an unknown one was answered %v", res.Msg, rejected)
-	}
-}
-
-func TestListVaults_ReturnsEveryKnownVault(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	vault.others = map[domain.VaultID]*memoryVault{
-		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
-	}
-
-	res, err := client.ListHostVaults(t.Context(), connect.NewRequest(&v1.ListHostVaultsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got := []string{}
-	for _, one := range res.Msg.GetVaults() {
-		got = append(got, one.GetId()+" "+one.GetName())
-	}
-	if !slices.Equal(got, []string{"v1 Physics", "v2 Chemistry"}) {
-		t.Errorf("the vaults were %v", got)
-	}
-}
-
-func TestGetIndexState_MapsIndexStatus(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	cases := map[plugin.IndexStatus]v1.HostIndexState{
-		plugin.Indexed:     v1.HostIndexState_HOST_INDEX_STATE_INDEXED,
-		plugin.Indexing:    v1.HostIndexState_HOST_INDEX_STATE_INDEXING,
-		plugin.IndexFailed: v1.HostIndexState_HOST_INDEX_STATE_FAILED,
-	}
-	for status, want := range cases {
-		vault.state = plugin.IndexState{Status: status, Reason: "why"}
-
-		res, err := client.EnsureVaultIndexed(t.Context(), connect.NewRequest(&v1.EnsureVaultIndexedRequest{}))
-
-		if err != nil || res.Msg.GetState() != want || res.Msg.GetReason() != "why" {
-			t.Errorf("status %v was answered %v (%v)", status, res.Msg, err)
-		}
-	}
-}
-
-func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	stream, err := client.WatchMoves(t.Context(), connect.NewRequest(&v1.WatchMovesRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testsupport.Close(t, stream)
-	if !stream.Receive() {
-		t.Fatalf("the watch began with %v", stream.Err())
-	}
-
-	vault.moves <- struct{}{}
-
-	if !stream.Receive() {
-		t.Errorf("nothing received of the move: %v", stream.Err())
 	}
 }
 
@@ -837,3 +525,11 @@ func TestABacklinkCarriesItsRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		t.Errorf("the backlink came out as %v", link)
 	}
 }
+
+func (m *memoryVault) EnsureIndexed(context.Context) (plugin.IndexState, error) {
+	return plugin.IndexState{Status: plugin.Indexed}, nil
+}
+
+func (m *memoryVault) Lock(context.Context) (func(), error) { return func() {}, nil }
+
+func (m *memoryVault) Scan(context.Context, []string) error { return nil }

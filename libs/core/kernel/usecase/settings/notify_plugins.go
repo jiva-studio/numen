@@ -33,10 +33,11 @@ func NewNotifyPlugins(
 	}
 }
 
-var (
-	secretsPath     = []string{settingsdomain.SecretsKey}
-	performancePath = []string{settingsdomain.AppOwner, "performance", "profile"}
-)
+func getSecretsPath() []string { return []string{settingsdomain.SecretsKey} }
+
+func getPerformancePath() []string {
+	return []string{settingsdomain.AppOwner, "performance", "profile"}
+}
 
 // Execute gives the plugins a batch of changed settings: their own settings, the secrets and the
 // performance profile. A failure is reported and the rest of the batch is still given.
@@ -47,11 +48,11 @@ func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 	}
 	for _, one := range batch {
 		switch {
-		case slices.Equal(one.Path, secretsPath):
+		case slices.Equal(one.Path, getSecretsPath()):
 			if err := u.refreshSecrets(context.Background()); err != nil {
 				u.report(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
 			}
-		case slices.Equal(one.Path, performancePath):
+		case slices.Equal(one.Path, getPerformancePath()):
 			value, err := u.codec.Decode(one.JSON)
 			profile, isText := value.(string)
 			if err != nil || !isText {

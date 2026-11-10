@@ -256,3 +256,33 @@ func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 		t.Errorf("the file-written notification fired %d times, want 0", writeCount)
 	}
 }
+
+func TestAVaultNamedByIdentityIsWorkedAsTheVaultShown(t *testing.T) {
+	access, current := diskVault(t, map[string]string{"samples/A.md": "body"})
+	other := testsupport.NewVault(t, map[string]string{"Baikal.md": "# Baikal\n"})
+	access.Find = func(id domain.VaultID) (domain.Vault, error) {
+		if id == other.ID {
+			return other, nil
+		}
+		return domain.Vault{}, fs.ErrNotExist
+	}
+
+	linked, err := access.With(other.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, isShowing := linked.GetVault()
+	_, _, readErr := linked.Read(t.Context(), "Baikal.md")
+	_, _, notThere := linked.Read(t.Context(), "samples/A.md")
+	_, unknown := access.With("nobody")
+
+	if !isShowing || got.ID != other.ID || readErr != nil || !errors.Is(notThere, fs.ErrNotExist) {
+		t.Errorf("the linked vault was %+v (%v), read %v and %v", got, isShowing, readErr, notThere)
+	}
+	if !errors.Is(unknown, fs.ErrNotExist) {
+		t.Errorf("a vault nobody holds was %v", unknown)
+	}
+	if now, _ := access.GetVault(); now.ID != current.ID {
+		t.Errorf("the vault current changed to %v", now.ID)
+	}
+}
