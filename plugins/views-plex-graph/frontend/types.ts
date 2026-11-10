@@ -9,7 +9,7 @@ import type {
   SlotItem,
   Connection,
   ConnectionRole,
-  NoteNeighbour,
+  NoteNeighbor,
   PathRename,
   PluginContext,
   VaultRelations,
@@ -25,24 +25,24 @@ export interface NoteHeading {
   readonly line: number
 }
 
-/** Focus of a neighbourhood. */
+/** Focus of a neighborhood. */
 export interface Focus {
   readonly path: string
   readonly title: string
 }
 
 /** One note joined to the focus. */
-export type Neighbour = NoteNeighbour
+export type Neighbor = NoteNeighbor
 
 /**
- * A neighbourhood of a note: the note in focus, the notes joined to it, and the connection of
+ * A neighborhood of a note: the note in focus, the notes joined to it, and the connection of
  * every line drawn between them.
  */
-export interface Neighbourhood {
+export interface Neighborhood {
   readonly focus: Focus
   readonly focusType: NoteType
   readonly focusTabKind?: string
-  readonly related: readonly Neighbour[]
+  readonly related: readonly Neighbor[]
   readonly connections: readonly Connection[]
 }
 
@@ -52,9 +52,9 @@ export type NoteRelation = PlexRelation
 /** A path rename. */
 export type { PathRename }
 
-/** The one query a plex makes of the vault: the neighbours of a note. */
-export interface Neighbours {
-  neighbourhood(path: string): Promise<Neighbourhood>
+/** The one query a plex makes of the vault: the neighbors of a note. */
+export interface Neighbors {
+  neighborhood(path: string): Promise<Neighborhood>
 }
 
 /** Position of the menu and the node it was requested on. */
@@ -102,7 +102,7 @@ export interface OpenNoteOptions {
 }
 
 export interface PlexView {
-  readonly neighbourhood: Ref<Neighbourhood | null>
+  readonly neighborhood: Ref<Neighborhood | null>
   readonly here: Ref<string>
   readonly error: Ref<string>
   readonly nextPath: Ref<string>
@@ -164,7 +164,7 @@ export interface PlexTabDeps {
 
 export interface PlexViewState {
   readonly view: PlexView
-  readonly picture: ComputedRef<PlexNeighbourhood | null>
+  readonly picture: ComputedRef<PlexNeighborhood | null>
   readonly empty: ComputedRef<boolean>
   readonly dragged: ComputedRef<readonly string[]>
   readonly creatable: readonly PlexRelation[]
@@ -280,8 +280,8 @@ export interface PlexEdge {
   readonly arrows?: readonly EdgeArrow[]
 }
 
-/** One neighbourhood: the node in focus and everything shown around it. */
-export interface PlexNeighbourhood {
+/** One neighborhood: the node in focus and everything shown around it. */
+export interface PlexNeighborhood {
   readonly nodes: readonly PlexNode[]
   readonly edges: readonly PlexEdge[]
 }

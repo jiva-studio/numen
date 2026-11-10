@@ -65,7 +65,7 @@ type NoteUseCases struct {
 	OpeningNote    *query.GetOpeningNote
 	Types          *query.GetTypes
 	Headings       *query.GetHeadings
-	Neighborhood   *query.ShowNeighbourhood
+	Neighborhood   *query.ShowNeighborhood
 	ResolveLinks   *query.ResolveLinks
 }
 

@@ -38,8 +38,8 @@ var passageSQL string
 //go:embed sql/progress.sql
 var progressSQL string
 
-//go:embed sql/recognised.sql
-var recognisedSQL string
+//go:embed sql/recognized.sql
+var recognizedSQL string
 
 //go:embed sql/rerank.sql
 var rerankSQL string

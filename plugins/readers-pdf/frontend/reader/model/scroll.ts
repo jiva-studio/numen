@@ -32,12 +32,14 @@ export interface PanScroll {
   readonly onWheel: (event: WheelEvent) => void
 }
 
-function followPointer(element: HTMLElement | null, event: PointerEvent): void {
-  if (!element || element.hasPointerCapture(event.pointerId)) return
+function followPointer(element: HTMLElement | null, event: PointerEvent): boolean {
+  if (!element) return false
+  if (element.hasPointerCapture(event.pointerId)) return true
   try {
     element.setPointerCapture(event.pointerId)
+    return true
   } catch {
-    // The pointer stays captured by the strip while it is over the scroll area.
+    return false
   }
 }
 

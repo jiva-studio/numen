@@ -3,7 +3,7 @@
  * values of the palette.
  */
 import { parseWhen } from '@numen/plugin-loader'
-import { getPaletteValues } from '@/shared/lib/paletteValues'
+import { getPaletteValues } from './paletteValues'
 import type { CommandTarget } from './command'
 
 /**

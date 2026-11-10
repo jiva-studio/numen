@@ -230,6 +230,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
+        'numen/no-comment-only-catch': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/consistent-type-assertions': [
           'error',
@@ -437,6 +438,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
         'numen/no-double-type-assertion': 'off',
+        'numen/no-comment-only-catch': 'off',
         '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
         complexity: 'off',

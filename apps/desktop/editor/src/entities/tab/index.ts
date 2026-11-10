@@ -4,6 +4,7 @@ export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
 export type { FileOpener, FileOpeners, OpenPlacement } from './model/openers'
 export type { OpenTabs, Tab } from './lib/tab'
+export type { Writable } from './lib/writable'
 export type {
   LinkableTab,
   MovedTab,

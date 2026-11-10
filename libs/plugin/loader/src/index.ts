@@ -34,7 +34,6 @@ export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,
   isWebAddress,
-  openExternalUrl,
   type ExternalOpener,
 } from './externalOpener'
 export { createAgentPort, type AgentClient } from './agentPort'

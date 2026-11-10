@@ -96,7 +96,7 @@ func readTrimmedRun(body []byte, from, to int) (string, int) {
 		begin = next
 	}
 	end = getTrimmedEnd(body, begin, end)
-	return markdown.Normalise(string(body[begin:end])), end
+	return markdown.Normalize(string(body[begin:end])), end
 }
 
 func getTrimmedEnd(body []byte, from, to int) int {

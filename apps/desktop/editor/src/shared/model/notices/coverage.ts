@@ -2,7 +2,7 @@
  * How much of the vault the index has covered, and whether it is still working.
  *
  * A search by meaning queries the vectors, and a vault with none returns nothing
- * however it is queried. The corner and the palette both report this, from here.
+ * however it is queried. The corner and the palette both report this.
  */
 
 /** The vault's state with respect to being indexed for meaning. */

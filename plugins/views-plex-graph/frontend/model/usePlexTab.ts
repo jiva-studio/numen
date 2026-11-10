@@ -11,26 +11,12 @@ import {
   useSlotMenu,
   type CommandTarget,
 } from '@numen/plugin-sdk'
-import { convertNeighbourhood, getNoteTypes, getTabKinds } from '../lib/picture'
+import { convertNeighborhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
 import { WORDS as words } from '../words'
-import type {
-  LinkInspectorRequest,
-  MenuRequest,
-  PlexEditor,
-  PlexTabDeps,
-  PlexMenuState,
-  PlexTabState,
-  QuickLinkRequest,
-  PlexView,
-  PathRename,
-  NoteType,
-  PlexNeighbourhood,
-  PlexRelation,
-  PlexDestination,
-} from '../types'
+import type { LinkInspectorRequest, MenuRequest, PlexEditor, PlexTabDeps, PlexTabState, QuickLinkRequest, PlexView, PathRename, NoteType, PlexNeighborhood, PlexRelation, PlexDestination } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'
@@ -45,10 +31,10 @@ export type {
 }
 
 function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
-  const picture = computed<PlexNeighbourhood | null>(() => {
-    const neighbourhood = view.neighbourhood.value
-    if (!deps.window.isReady.value || !neighbourhood) return null
-    return convertNeighbourhood(neighbourhood, map.getNodeId)
+  const picture = computed<PlexNeighborhood | null>(() => {
+    const neighborhood = view.neighborhood.value
+    if (!deps.window.isReady.value || !neighborhood) return null
+    return convertNeighborhood(neighborhood, map.getNodeId)
   })
 
   // Stryker disable next-line ArrayDeclaration: node ids are numeric strings, so an extra entry retains nothing.
@@ -69,45 +55,38 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
       deps.window.isReady.value &&
       !view.here.value &&
       !deps.window.openingPath.value &&
-      !view.neighbourhood.value,
+      !view.neighborhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {
     const here = view.here.value
-    if (!deps.window.isReady.value || !view.neighbourhood.value || !here) return []
+    if (!deps.window.isReady.value || !view.neighborhood.value || !here) return []
     return deps.window.dragged.value.filter((path) => path !== here)
   })
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
-    const neighbourhood = view.neighbourhood.value
-    return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
+    const neighborhood = view.neighborhood.value
+    return neighborhood ? getNoteTypes(neighborhood) : new Map()
   })
 
+  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
+
   const tabKinds = computed<ReadonlyMap<string, string>>(() => {
-    const neighbourhood = view.neighbourhood.value
-    return neighbourhood ? getTabKinds(neighbourhood) : new Map()
+    const neighborhood = view.neighborhood.value
+    return neighborhood ? getTabKinds(neighborhood) : new Map()
   })
 
   const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
 
   const activePaths = computed<readonly string[]>(() => {
-    const neighbourhood = view.neighbourhood.value
-    if (!neighbourhood) return []
-    const paths = [neighbourhood.focus.path]
-    for (const related of neighbourhood.related) paths.push(related.path)
+    const neighborhood = view.neighborhood.value
+    if (!neighborhood) return []
+    const paths = [neighborhood.focus.path]
+    for (const related of neighborhood.related) paths.push(related.path)
     return paths.filter(Boolean)
   })
 
-  return {
-    view,
-    picture,
-    empty,
-    dragged,
-    creatable: deps.creatable,
-    types,
-    getTabKind,
-    drawn: activePaths,
-  }
+  return { picture, empty, dragged, types, getType, getTabKind, drawn: activePaths }
 }
 
 function createPlexNodeActions(options: {
@@ -182,12 +161,7 @@ function createPlexNodeActions(options: {
     deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
-  const followMoves = (renames: readonly PathRename[]) => {
-    view.followMoves(renames)
-    map.updateRenamedNodes(renames)
-  }
-
-  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading, followMoves, getName }
+  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading }
 }
 
 /** The words of the rows the menu on a node writes itself. */
@@ -204,12 +178,9 @@ function usePlexMenu(options: {
   tabDeps: PlexTabDeps
   getName: (path: string) => string
   getType: (node: string) => NoteType
-  getTabKind: (node: string) => string | undefined
   showCreated: (path: string) => Promise<void>
-  /** Closes what else a tab opens beside the menu. */
-  dismissOthers: () => void
-}): PlexMenuState {
-  const { map, tabDeps: deps, getName, getType, getTabKind, showCreated, dismissOthers } = options
+}) {
+  const { map, tabDeps: deps, getName, getType, showCreated } = options
   const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
     listItems: (command, { target }) => deps.menu.listItems(command, target),
@@ -236,16 +207,6 @@ function usePlexMenu(options: {
 
   const close = () => nodeMenu.close()
 
-  const dismiss = () => {
-    close()
-    dismissOthers()
-  }
-
-  const getNodeIcon = (node: string): Component | null => {
-    const tabKind = getTabKind(node)
-    return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
-  }
-
   const openMenu = (request: MenuRequest) => {
     close()
     const path = request.node === null ? '' : map.getNodePath(request.node)
@@ -271,51 +232,92 @@ function usePlexMenu(options: {
   const getMenuIcon = (id: string): Component | null =>
     (nodeMenu.getIcon(id) as Component | undefined) ?? null
 
-  return { request: menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, getNodeIcon, dismiss }
+  return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close }
 }
 
-function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
-  if (neighbourhood?.focus.path === path && neighbourhood.focus.title)
-    return neighbourhood.focus.title
-  const foundNode = neighbourhood?.related.find((one) => one.path === path)
+function getPlexNodeName(neighborhood: PlexView['neighborhood']['value'], path: string): string {
+  if (neighborhood?.focus.path === path && neighborhood.focus.title)
+    return neighborhood.focus.title
+  const foundNode = neighborhood?.related.find((one) => one.path === path)
   return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const canvas = usePlexImage(view, deps, map)
+  const {
+    picture,
+    empty,
+    dragged,
+    types,
+    getType,
+    getTabKind,
+    drawn: drawnNodes,
+  } = usePlexImage(view, deps, map)
 
-  const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
-  const quickLink = useQuickLink(view, deps, map)
-  const headings = usePlexHeadings(canvas.drawn, canvas.types, deps, map)
-  const inspector = useLinkInspector(
+  const getName = (path: string): string => getPlexNodeName(view.neighborhood.value, path)
+  const quickLinkModel = useQuickLink(view, deps, map)
+  const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
+  const linkInspectorModel = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },
     map,
     getName,
   )
 
-  const nodes = createPlexNodeActions({
+  const nodeActions = createPlexNodeActions({
     view,
     tabDeps: deps,
     map,
     getName,
-    openQuickLink: quickLink.openQuickLink,
+    openQuickLink: quickLinkModel.openQuickLink,
   })
-  const menu = usePlexMenu({
+  const { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close } = usePlexMenu({
     map,
     tabDeps: deps,
     getName,
-    getType: headings.getType,
-    getTabKind: canvas.getTabKind,
+    getType,
     showCreated: (path) => view.go(path),
-    dismissOthers: () => {
-      quickLink.dismissQuickLink()
-      inspector.dismissLinkInspector()
-    },
   })
 
   const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
 
-  return { reportFailure, canvas, menu, headings, nodes, quickLink, inspector }
+  const getNodeIcon = (node: string): Component | null => {
+    const tabKind = getTabKind(node)
+    return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
+  }
+
+  const dismiss = () => {
+    close()
+    quickLinkModel.dismissQuickLink()
+    linkInspectorModel.dismissLinkInspector()
+  }
+
+  const followMoves = (renames: readonly PathRename[]) => {
+    view.followMoves(renames)
+    map.updateRenamedNodes(renames)
+  }
+
+  return {
+    reportFailure,
+    canvas: { view, picture, empty, dragged, creatable: deps.creatable },
+    menu: { request: menu, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem },
+    headings: {
+      maxHeadings: deps.notes.headings,
+      getType,
+      getHeadings,
+      readHeadings,
+      openHeading: nodeActions.openHeading,
+    },
+    nodes: {
+      activate: nodeActions.activate,
+      createNode: nodeActions.createNode,
+      joinNodes: nodeActions.joinNodes,
+      dropNodes: nodeActions.dropNodes,
+      openNode: nodeActions.openNode,
+      followMoves,
+      getName,
+    },
+    quickLink: quickLinkModel,
+    inspector: linkInspectorModel,
+  }
 }

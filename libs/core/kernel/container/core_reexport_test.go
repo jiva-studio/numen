@@ -8,9 +8,9 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-func getReexports(pkgs []*packages.Package) ([]finding, int) {
+func getReexports(pkgs, owned []*packages.Package) ([]finding, int) {
 	members := map[string]bool{}
-	for _, pkg := range pkgs {
+	for _, pkg := range slices.Concat(pkgs, owned) {
 		members[pkg.PkgPath] = true
 	}
 	var found []finding
@@ -43,19 +43,20 @@ func getReexports(pkgs []*packages.Package) ([]finding, int) {
 func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 	t.Helper()
 	pkgs := getModulePackages(t, workspace, "libs/core/kernel")
-	found, read := getReexports(pkgs)
+	notes := getModulePackages(t, workspace, "libs/note")
+	found, read := getReexports(pkgs, notes)
 	for _, one := range found {
 		t.Errorf("%s re-exports %s: name the type in the package that declares it", one.position, one.name)
 	}
 
 	// A walk that read few packages or few type names checks nothing.
-	if len(pkgs) < 50 || read < 300 {
+	if len(pkgs) < 50 || len(notes) < 5 || read < 300 {
 		t.Fatalf("%d packages of libs/core/kernel and %d type names read: the rule is checked against nothing", len(pkgs), read)
 	}
 }
 
-// The rule rejects an alias of a type another package of the module declares, and accepts an alias of a
-// type of its own package or of a package outside the module.
+// The rule rejects an alias of a type another package of the module or of the owned library declares, and
+// accepts an alias of a type of its own package or of a package outside both.
 func TestReexportRule_RejectsAnAliasOfAnotherPackagesType(t *testing.T) {
 	dir := writeTreeFixture(t, map[string]string{
 		"port/port.go": `package port
@@ -83,11 +84,24 @@ type Builder = strings.Builder
 type Notes = []port.Note
 `,
 	})
-	found, read := getReexports(loadFixture(t, dir))
+	found, read := getReexports(loadFixture(t, dir), nil)
 	if want := []string{"contract.go:9 contract.Reader = fixture/port.Reader"}; !slices.Equal(formatFindings(found), want) {
 		t.Errorf("the rule rejects %v, want %v", formatFindings(found), want)
 	}
 	if read != 7 {
 		t.Errorf("%d type names read, want 7", read)
+	}
+
+	var declaring, owned []*packages.Package
+	for _, pkg := range loadFixture(t, dir) {
+		if pkg.Types.Name() == "contract" {
+			declaring = append(declaring, pkg)
+		} else {
+			owned = append(owned, pkg)
+		}
+	}
+	found, _ = getReexports(declaring, owned)
+	if want := []string{"contract.go:9 contract.Reader = fixture/port.Reader"}; !slices.Equal(formatFindings(found), want) {
+		t.Errorf("the rule rejects %v for a type of the owned library, want %v", formatFindings(found), want)
 	}
 }

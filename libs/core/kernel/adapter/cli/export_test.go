@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 )
 
 // DescribeSources is the sentence a scan reports about the books it read.

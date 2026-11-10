@@ -2,12 +2,12 @@
 /**
  * The plex: one focused node, with all other nodes placed by their relation to it.
  *
- * Takes a neighbourhood and emits an identifier when one is chosen. It does not
+ * Takes a neighborhood and emits an identifier when one is chosen. It does not
  * fetch data, does not interpret what an identifier addresses, and does not
  * compute who is related to whom. The caller answers `activate` with the next
- * neighbourhood, and the plex transitions to it.
+ * neighborhood, and the plex transitions to it.
  */
-import { computed, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
@@ -41,14 +41,6 @@ const emit = defineEmits<PlexEvents>()
 
 defineSlots<PlexSlots>()
 
-defineExpose({
-  get isMoving() {
-    return isMoving.value
-  },
-  /** Restores keyboard focus to a node. */
-  focusNode: (id: string) => view.value?.focusNode(id),
-})
-
 /* --------------------------------- State ---------------------------------- */
 const frameElement = useTemplateRef<HTMLElement>('frame')
 /** The drawing, which a drag crossing the plex is measured against. */
@@ -71,7 +63,7 @@ const behaviour = computed<PlexBehaviour>(() => ({
 }))
 
 const { frame, isMoving } = usePlexTransition(
-  () => props.neighbourhood,
+  () => props.neighborhood,
   () => ({
     options: { ...props.options, viewport: room.value },
     placement: props.placement,
@@ -127,6 +119,17 @@ const dragging = usePlexDrag({
   commit: (dragged, relation) => emit('bring', dragged, relation),
 })
 
+/* --------------------------------- Hooks ---------------------------------- */
+/**
+ * A neighborhood is drawn from the node it is seen from, so every node walks
+ * to a new relation when another one arrives. A menu is anchored where one of them
+ * was.
+ */
+watch(
+  () => props.neighborhood,
+  () => emit('dismiss'),
+)
+
 /**
  * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
  * the labels through the `overflow` slot.
@@ -141,16 +144,11 @@ const frameStyle = computed(() => ({
   '--plex-move': `${props.duration}ms`,
 }))
 
-/* --------------------------------- Hooks ---------------------------------- */
-/**
- * A neighbourhood is drawn from the node it is seen from, so every node walks
- * to a new relation when another one arrives. A menu is anchored where one of them
- * was.
- */
-watch(
-  () => props.neighbourhood,
-  () => emit('dismiss'),
-)
+defineExpose({
+  isMoving: toRef(isMoving),
+  /** Restores keyboard focus to a node. */
+  focusNode: (id: string) => view.value?.focusNode(id),
+})
 </script>
 
 <template>

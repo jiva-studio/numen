@@ -93,7 +93,7 @@ const hue = computed(() => ({
 }))
 
 /* --------------------------------- Hooks ---------------------------------- */
-// A box that has begun to open is already over its neighbours.
+// A box that has begun to open is already over its neighbors.
 watch(
   () => open.value > 0,
   (now) => emit('settle', now),

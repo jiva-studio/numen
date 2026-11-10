@@ -8,9 +8,7 @@
  * and restored when the step is left without a choice.
  */
 import { parseWhen } from '@numen/plugin-loader'
-import { SETTING_COMMAND_PREFIX, type Command } from '@/entities/command'
-import { getPaletteValues } from '@/shared/lib/paletteValues'
-import type { StepGroup, StepRow } from '@/shared/lib/steps'
+import { getPaletteValues, SETTING_COMMAND_PREFIX, type Command, type StepGroup, type StepRow } from '@/entities/command'
 import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
 import {
   APP_OWNER,
@@ -18,7 +16,7 @@ import {
   getSettingsConfig,
   type SettingOwner,
 } from '../lib/settingsConfig'
-import { getNamedIcon } from '@/shared/ui/icons'
+import { getNamedIcon } from '@/shared/icons'
 
 /** The words a row is drawn with. */
 export interface SettingWords {

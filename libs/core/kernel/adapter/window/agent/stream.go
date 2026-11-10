@@ -28,7 +28,7 @@ func streamTask(
 	}
 	defer func() { err = errors.Join(err, work.Stop()) }()
 
-	repeat := time.NewTicker(wire.Again)
+	repeat := time.NewTicker(wire.ResendInterval)
 	defer repeat.Stop()
 
 	for {

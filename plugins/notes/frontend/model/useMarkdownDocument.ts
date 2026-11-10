@@ -300,17 +300,13 @@ export function useMarkdownDocument(
 
   async function readContentFromPath(filePath: string): Promise<void> {
     if (!filePath) return
-    try {
-      const res = await fetch(getAssetUrl(filePath))
-      if (res.ok) {
-        const text = await res.text()
-        if (!docContent.value) {
-          docContent.value = text
-          initialContent.value = text
-        }
+    const res = await fetch(getAssetUrl(filePath))
+    if (res.ok) {
+      const text = await res.text()
+      if (!docContent.value) {
+        docContent.value = text
+        initialContent.value = text
       }
-    } catch {
-      // Ignore fetch failures on test mocks
     }
   }
 

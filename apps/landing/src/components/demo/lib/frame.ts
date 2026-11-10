@@ -23,6 +23,15 @@ export function getDraggedHeight(was: number, distance: number, windowHeight: nu
 }
 
 
+/** What the text parses to as JSON, and nothing where it is not JSON. */
+export function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
 /** Where a message to a frame is addressed: the origin of its address. */
 export function getFrameOrigin(embed: string): string | null {
   try {

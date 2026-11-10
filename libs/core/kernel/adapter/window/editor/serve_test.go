@@ -44,7 +44,7 @@ import (
 
 func bindNotes(services *Services, db *vaults.Index) {
 	refs, links := db.NoteQueries.NoteRefs, db.NoteQueries.Links
-	neighborhood := query.NewShowNeighbourhood(links, refs)
+	neighborhood := query.NewShowNeighborhood(links, refs)
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
 	services.NoteCases.Types = query.NewGetTypes(db.NoteQueries.NoteTypes)
 	services.NoteCases.Headings = query.NewGetHeadings(db.NoteQueries.Headings)

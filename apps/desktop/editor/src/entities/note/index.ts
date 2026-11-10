@@ -1,7 +1,7 @@
 /** A note of the vault: its contents, who it is joined to, and the tab it is open in. */
 export { getNoteIcon, registerTabKindIcon } from './model/icons'
 export type {
-  Neighbourhood,
+  Neighborhood,
   NewNote,
   NoteEdit,
   NoteHeading,
@@ -20,7 +20,7 @@ export type { NoteCreator, NoteRef } from './model/maker'
 export { WORDS } from './words'
 export {
   getInitialOpenPath,
-  getNeighbourhood,
+  getNeighborhood,
   listHeadings,
   readNote,
   renameNote,

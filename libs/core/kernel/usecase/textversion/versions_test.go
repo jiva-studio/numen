@@ -26,7 +26,7 @@ const (
 
 // scene is one vault holding one PDF, and the three plugins of the worked example:
 // a reader of the PDF's own text layer that runs on its own and declares no menu
-// entry, a recogniser, and a proofreader of both kinds of text.
+// entry, a recognizer, and a proofreader of both kinds of text.
 type scene struct {
 	vault    domain.Vault
 	versions *textversion.Versions

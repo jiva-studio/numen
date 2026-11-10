@@ -37,7 +37,7 @@ func (h *Handler) WatchTabLinks(
 		return err
 	}
 
-	repeat := time.NewTicker(wire.Again)
+	repeat := time.NewTicker(wire.ResendInterval)
 	defer repeat.Stop()
 
 	for {

@@ -6,7 +6,7 @@ export type Relation = 'parent' | 'child' | 'jump' | 'sibling'
  * A note drawn around the note in focus, and how it is joined to it. A sibling hangs from `through`, a
  * parent of the note in focus; `label` is the word written on the link.
  */
-export interface Neighbour {
+export interface Neighbor {
   readonly path: string
   readonly title: string
   readonly relation: Relation
@@ -14,9 +14,9 @@ export interface Neighbour {
   readonly label: string
 }
 
-export interface Neighbourhood {
+export interface Neighborhood {
   readonly focus: { readonly path: string; readonly title: string }
-  readonly related: readonly Neighbour[]
+  readonly related: readonly Neighbor[]
 }
 
 export type Notes = Readonly<Record<string, VaultNote>>
@@ -62,11 +62,11 @@ function getLabel(labels: EdgeLabels, relation: Relation, focus: string, path: s
 }
 
 /** The note in focus with its parents, children, jumps and the first two siblings. */
-export function getNeighbourhood(notes: Notes, labels: EdgeLabels, focusPath: string): Neighbourhood {
+export function getNeighborhood(notes: Notes, labels: EdgeLabels, focusPath: string): Neighborhood {
   const resolved = notes[focusPath] ? focusPath : ENTROPY_PATH
   const focus = notes[resolved]
   if (!focus) throw new Error(`the demo vault has no note at ${ENTROPY_PATH}`)
-  const related: Neighbour[] = []
+  const related: Neighbor[] = []
   const seen = new Set<string>([resolved])
   const add = (path: string, relation: Relation, through = '') => {
     const note = notes[path]

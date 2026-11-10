@@ -31,7 +31,7 @@ export function createDemoWindow() {
   const layout = createLayout({
     vault,
     links,
-    getPlexTitle: () => plex.neighbourhood.value.focus.title,
+    getPlexTitle: () => plex.neighborhood.value.focus.title,
     syncPath: (tab, path) => holder.sync(tab, path),
   })
   const agent = createAgent(() => getFocusNote().title)

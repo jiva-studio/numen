@@ -810,7 +810,7 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 
 func getCardHeading(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
-	for line := range strings.SplitSeq(markdown.Normalise(body), "\n") {
+	for line := range strings.SplitSeq(markdown.Normalize(body), "\n") {
 		if strings.HasPrefix(line, "## ") && strings.HasSuffix(line, "^"+string(card)) {
 			return strings.TrimPrefix(line, "## ")
 		}
@@ -1373,7 +1373,7 @@ func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("card model body: %v", err)
 			}
-			if want := markdown.Normalise(doc.Body()); body != want {
+			if want := markdown.Normalize(doc.Body()); body != want {
 				t.Errorf("the round trip changed the card model\n want %q\n  got %q", want, body)
 			}
 		})
@@ -1417,7 +1417,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("body: %v", err)
 			}
-			if want := markdown.Normalise(doc.Body()); body != want {
+			if want := markdown.Normalize(doc.Body()); body != want {
 				t.Errorf("the round trip changed the file\n want %q\n  got %q", want, body)
 			}
 		})
@@ -1445,7 +1445,7 @@ func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	want := strings.Replace(markdown.Normalise(doc.Body()), "{{Height}}\n\n## Name it",
+	want := strings.Replace(markdown.Normalize(doc.Body()), "{{Height}}\n\n## Name it",
 		"**{{Height}}**\n\n## Name it", 1)
 	if body != want {
 		t.Errorf("the write reached further than the template\n want %q\n  got %q", want, body)

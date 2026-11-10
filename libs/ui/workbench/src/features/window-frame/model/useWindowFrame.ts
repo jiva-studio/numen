@@ -4,7 +4,7 @@
  * tests) gets a frame that does nothing.
  */
 import { computed, getCurrentScope, onScopeDispose, ref, watch, type Ref } from 'vue'
-import { runInBackground } from '@numen/ui'
+import { loadWailsRuntime, runInBackground, type WailsRuntime, type WailsRuntimeLoader } from '@numen/ui'
 import {
   getWindowEdge as getTopEdge,
   getWindowRadius,
@@ -15,28 +15,11 @@ import {
 } from '../lib/corners'
 import { MAC_BUTTONS_INSET } from '../lib/sizes'
 
-/** The path the window serves its Wails runtime module at. */
-const RUNTIME_PATH = '/wails/runtime.js'
-
 /** The part of the Wails runtime module the frame uses, under the names Wails gives it. */
-export interface FrameRuntime {
-  readonly Window?: {
-    readonly Minimise?: () => Promise<void>
-    readonly ToggleMaximise?: () => Promise<void>
-    readonly Close?: () => Promise<void>
-    readonly IsMaximised?: () => Promise<boolean>
-    readonly IsFullscreen?: () => Promise<boolean>
-  }
-  readonly System?: {
-    readonly IsMac?: () => boolean
-    readonly IsWindows?: () => boolean
-    readonly IsLinux?: () => boolean
-    readonly Environment?: () => Promise<{ readonly OSInfo?: { readonly Version?: string } }>
-  }
-}
+export type FrameRuntime = WailsRuntime
 
 /** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
-export type FrameRuntimeLoader = () => Promise<FrameRuntime | undefined>
+export type FrameRuntimeLoader = WailsRuntimeLoader
 
 /** The room the system buttons take in the top corners of the window, in pixels. */
 export interface FrameEdge {
@@ -55,16 +38,6 @@ export interface WindowFrame {
   closeWindow(): Promise<void>
 }
 
-let runtime: Promise<FrameRuntime | undefined> | undefined
-
-// Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
-const loadRuntime: FrameRuntimeLoader = () => {
-  runtime ??= import(/* @vite-ignore */ RUNTIME_PATH).then(
-    (loaded: FrameRuntime) => loaded,
-    () => undefined,
-  )
-  return runtime
-}
 
 function getPlatform(system: FrameRuntime['System']): WindowPlatform {
   if (system?.IsMac?.()) return 'darwin'
@@ -94,7 +67,7 @@ async function readMacVersion(system: FrameRuntime['System']): Promise<number | 
  * The frame of the window this page is drawn in, read through the Wails runtime: its platform, its
  * maximized and full screen state, which a resize reads again, and its buttons.
  */
-export function useWindowFrame(load: FrameRuntimeLoader = loadRuntime): WindowFrame {
+export function useWindowFrame(load: FrameRuntimeLoader = loadWailsRuntime): WindowFrame {
   const platform = ref<WindowPlatform>('windows')
   const isMaximized = ref(false)
   const isFullscreen = ref(false)

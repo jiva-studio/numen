@@ -67,10 +67,9 @@ export function useOpenTabs({
       pendingWrite = null
       try {
         await writeOpenTabs(current)
-      } catch {
-        // A list that did not reach the core is written again by the next tab
-        // opened, closed or moved, and the window renders from its own state
-        // meanwhile. There is no user action to take here.
+      } catch (error) {
+        // The next tab opened, closed or moved writes the list again.
+        reportError(error)
       }
     }
     sending = null

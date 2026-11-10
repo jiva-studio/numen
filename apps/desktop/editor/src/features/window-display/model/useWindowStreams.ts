@@ -53,16 +53,17 @@ async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): 
   }
   await reportVaultChange(change, deps)
   if (change.renamed.some((went) => went.from === deps.opening.value)) {
-    try {
-      await deps.readInitialNote()
-    } catch {
-      // The next change retries.
-    }
+    await attempt(deps.readInitialNote)
   }
+  await attempt(deps.ask)
+}
+
+async function attempt(step: () => Promise<unknown>): Promise<boolean> {
   try {
-    await deps.ask()
+    await step()
+    return true
   } catch {
-    // What a change means is already drawn; the counts come round with the next one.
+    return false
   }
 }
 
@@ -125,11 +126,7 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
         const ran = tasks.value.length > 0
         tasks.value = list
         if (!ran || list.length > 0) return
-        try {
-          await deps.ask()
-        } catch {
-          // The next pass retries.
-        }
+        await attempt(deps.ask)
       },
     )
 

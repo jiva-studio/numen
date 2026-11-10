@@ -7,9 +7,8 @@
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-loader'
-import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import type { StepGroup } from '@/shared/lib/steps'
-import { WORDS } from '@/shared/ui/words'
+import type { Command, CommandTarget, RunSupport, StepGroup } from '@/entities/command'
+import { WORDS } from '@/shared/words'
 import { toRunTarget } from '../lib/runTarget'
 
 /** The lists of the steps of the commands the window offers besides the plugin commands. */
@@ -18,7 +17,7 @@ export interface WindowLists {
   previewItem(command: string, item: string): void
 }
 
-type ItemHost = Pick<PluginHost['commands'], 'hasCommandItems' | 'listCommandItems'> | undefined
+type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
 
 /** The items a command offered over one target, kept with the key of that target. */
 interface ListedItems {

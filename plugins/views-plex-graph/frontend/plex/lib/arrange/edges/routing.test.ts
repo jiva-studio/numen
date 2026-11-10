@@ -14,10 +14,10 @@ import {
   routeEdges,
   createRouting,
 } from './routing'
-import { neighbourhoods } from '../../../fixtures/neighbourhoods'
+import { neighborhoods } from '../../../fixtures/neighborhoods'
 import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'
-import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNodeRelation } from '../../../../types'
+import type { EdgeArrow, PlexEdge, PlexNeighborhood, PlexNodeRelation } from '../../../../types'
 
 /** The ink of the label font, as the window measures it. */
 const TYPE = { ascent: 9, descent: 3, xHeight: 6 }
@@ -32,7 +32,7 @@ const getFocus = (frame: { nodes: readonly PlacedNode[] }) => {
 }
 describe('edges', () => {
   it('leaves the focus by one gate and arrives at the top of each child', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const focus = getFocus(layout)
     const children = getNodesByRelation(layout, 'child')
 
@@ -48,7 +48,7 @@ describe('edges', () => {
   })
 
   it('sets off and arrives along the axis, never across it', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const outermost = getNodesByRelation(layout, 'child').reduce((a, b) =>
       Math.abs(a.x) > Math.abs(b.x) ? a : b,
     )
@@ -64,7 +64,7 @@ describe('edges', () => {
   })
 
   it('runs sideways for a relation that runs sideways', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const focus = getFocus(layout)
     const jump = getNodesByRelation(layout, 'jump')[0]!
     const edge = layout.edges.find((e) => e.from === jump.id)!
@@ -76,7 +76,7 @@ describe('edges', () => {
   })
 
   it('starts and ends on a border, not in a centre', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const byId = new Map(layout.nodes.map((node) => [node.id, node]))
 
     for (const edge of layout.edges) {
@@ -100,7 +100,7 @@ describe('edges', () => {
   it('joins two nodes on the same line with no room between them by a bow, not through the boxes', () => {
     // The relation is vertical, there is no vertical space between them, and the
     // gap beside them is too small for a line to carry its words and heads.
-    const layout = arrangePlex(neighbourhoods.diamond)
+    const layout = arrangePlex(neighborhoods.diamond)
     const edge = layout.edges.find((e) => e.from === 'parent-0' && e.to === 'parent-1')
     expect(edge).toBeDefined()
     expect(edge!.labels?.[0]?.text).toBe('contains')
@@ -115,7 +115,7 @@ describe('edges', () => {
   })
 
   it('takes the heading from the curve, and not from the relation', () => {
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
 
     // A sibling is below a parent, and its line runs left to right.
     for (const sibling of getNodesByRelation(layout, 'sibling')) {
@@ -132,7 +132,7 @@ describe('edges', () => {
 
   it('takes a curve running up the page the other way round', () => {
     // A parent is above the focus, and the line is written from it downwards.
-    const layout = arrangePlex(neighbourhoods.typical)
+    const layout = arrangePlex(neighborhoods.typical)
     const down = layout.edges.find((e) => e.to === 'focus' && e.from === 'parent-0')!
     expect(down.fromPoint.y).toBeLessThan(down.toPoint.y)
     expect(getHeading(down, MIDDLE)).toBe('along')
@@ -177,7 +177,7 @@ describe('edges', () => {
  * to it. The stored text is unchanged; the rendered text is the truncation.
  */
 describe('a title cut to the line it is set on', () => {
-  const sideways: PlexNeighbourhood = {
+  const sideways: PlexNeighborhood = {
     nodes: [
       { id: 'focus', title: 'Here', relation: 'focus' },
       { id: 'aside', title: 'Aside', relation: 'jump' },
@@ -660,11 +660,11 @@ describe('the position of a label', () => {
     const measureLabel = (words: string) => 6 * [...words].length
     let measured = 0
 
-    for (const [name, neighbourhood] of Object.entries(neighbourhoods)) {
+    for (const [name, neighborhood] of Object.entries(neighborhoods)) {
       const frame = arrangePlex(
         {
-          ...neighbourhood,
-          edges: neighbourhood.edges.map((edge) => ({
+          ...neighborhood,
+          edges: neighborhood.edges.map((edge) => ({
             ...edge,
             labels: [{ text: 'guides' }, { text: 'shelters' }],
           })),

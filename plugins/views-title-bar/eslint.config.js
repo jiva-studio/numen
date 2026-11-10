@@ -331,7 +331,10 @@ export default [
     files: ['**/*.{ts,vue}'],
     ignores: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**', '**/testing/**'],
     plugins: { numen },
-    rules: { 'numen/max-composable-return-properties': ['error', { max: 8 }] },
+    rules: {
+      'numen/max-composable-return-properties': ['error', { max: 8 }],
+      'numen/no-comment-only-catch': 'error',
+    },
   },
   {
     files: ['**/*.vue'],

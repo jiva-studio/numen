@@ -9,8 +9,7 @@ import {
   type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/entities/command'
-import { getPaletteValues } from '@/shared/lib/paletteValues'
+import { getPaletteValues, type CommandTarget } from '@/entities/command'
 
 export interface WindowWhenContext {
   readonly getContentTypes: () => Readonly<Record<string, string>>
