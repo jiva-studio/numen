@@ -6,12 +6,13 @@
  * holds, and a handle that moves reports shares back; the model is the only
  * place they are stored.
  */
-import { computed, inject, resolveComponent, useTemplateRef, type Component, type Ref } from 'vue'
+import { computed, inject, resolveComponent, useTemplateRef, type Component, type Ref, type VNode } from 'vue'
 import { SplitterGroup } from 'reka-ui'
 import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
 import { getOrientation, type Branch, type Orientation, type TabId } from '../../lib/node'
 import { atLeast, fit } from '../../lib/shares'
+import { getSlotProps } from '../../lib/slotBinding'
 import { useViewport } from '@numen/ui'
 import { useBranchResize } from '../../model/resize'
 
@@ -25,10 +26,10 @@ const props = defineProps<{
 }>()
 
 const slots = defineSlots<{
-  tab(props: { id: TabId }): unknown
-  icon(props: { id: TabId }): unknown
-  mark(props: { id: TabId; mark: string }): unknown
-  silence(): unknown
+  tab(props: { id: TabId }): VNode[]
+  icon(props: { id: TabId }): VNode[]
+  mark(props: { id: TabId; mark: string }): VNode[]
+  silence(): VNode[]
 }>()
 
 /* ---------------------------------- State --------------------------------- */
@@ -76,8 +77,6 @@ const { onLayout, onHold: onSplitterHold } = useBranchResize({
   resize: (id, shares) => workspace.value.resize(id, shares),
 })
 
-/* --------------------------------- Helpers -------------------------------- */
-const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 </script>
 
 <template>

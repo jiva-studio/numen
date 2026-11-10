@@ -4,7 +4,7 @@
  * right. The title carries the id the control is labelled by, because a switch has no element a
  * `<label for>` can target.
  */
-import { computed } from 'vue'
+import { computed, type VNode } from 'vue'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -15,7 +15,7 @@ const props = defineProps<{
 
 defineSlots<{
   /** The control, given the id of the title that labels it. */
-  default(props: { labelledBy: string }): unknown
+  default(props: { labelledBy: string }): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */

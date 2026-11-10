@@ -6,7 +6,7 @@
  * A menu with a current item offers a choice between its items, and each row
  * indicates whether it is the current one.
  */
-import { useTemplateRef } from 'vue'
+import { useTemplateRef, type VNode } from 'vue'
 import type { GroupedItem } from './items/item'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -30,7 +30,7 @@ defineEmits<{
 
 defineSlots<{
   /** What is drawn before the words. */
-  default(): unknown
+  default(): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */

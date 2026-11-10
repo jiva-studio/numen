@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, useTemplateRef } from 'vue'
+import { computed, provide, useTemplateRef, type VNode } from 'vue'
 import { browserClock } from '@numen/ui'
 import { DragPreview, Menu } from '@numen/ui'
 import { WorkspaceBranch } from './branch'
@@ -11,6 +11,7 @@ import { findTopPanes, getStripEdge } from '../lib/edges'
 import { useTabDrag } from '../model/drag'
 import { TAB_HOSTS, createTabHosts } from '../model/hosts'
 import { createNodeIdFactory } from '../lib/identity'
+import { getSlotProps } from '../lib/slotBinding'
 import { activateTab, closeTab, focusPane, resizeBranch } from '../lib/edit'
 import { type NodeId, type Tab, type TabId, type Workspace } from '../lib/node'
 
@@ -37,11 +38,11 @@ const emit = defineEmits<{
 }>()
 
 const slots = defineSlots<{
-  tab(props: { id: TabId }): unknown
-  icon(props: { id: TabId }): unknown
-  mark(props: { id: TabId; mark: string }): unknown
-  silence(): unknown
-  'tab-menu-icon'(props: { id: string }): unknown
+  tab(props: { id: TabId }): VNode[]
+  icon(props: { id: TabId }): VNode[]
+  mark(props: { id: TabId; mark: string }): VNode[]
+  silence(): VNode[]
+  'tab-menu-icon'(props: { id: string }): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -52,8 +53,6 @@ const passed = computed(
       'tab-menu-icon'
     >[],
 )
-
-const getSlotProps = (bound: unknown) => (bound ?? {}) as { id: TabId; mark: string }
 
 const findTab = (id: TabId): Tab | undefined => props.tabs.find((tab) => tab.id === id)
 

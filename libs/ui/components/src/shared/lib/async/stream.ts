@@ -23,7 +23,7 @@ export interface StreamDeps {
   isOpen(): boolean
   /** Reports the lost connection, until the stream resumes. */
   setLost(message: string): void
-  wait(ms: number): Promise<unknown>
+  wait(ms: number): Promise<void>
   /**
    * What the follower releases when a stream ends: whatever it holds answers
    * to that reading of the stream alone.

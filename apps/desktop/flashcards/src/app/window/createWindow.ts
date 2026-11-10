@@ -18,7 +18,7 @@ import { useVaults } from '@/entities/vault'
 import { useAppearance } from '@/features/appearance'
 import { useExternalLinks } from '@/features/external-links'
 import { useWindowTasks } from '@/features/window-tasks'
-import { formatError } from '@/shared/api/errors'
+import { formatError, type Caught } from '@/shared/api/errors'
 import { WINDOW_SOURCE } from '@/shared/config/window'
 import { createShellHost, createShellServices, type ShellServices } from '../plugins/host'
 import { createWindowCommands } from '../plugins/windowCommands'
@@ -106,7 +106,7 @@ export function createWindow(deps: WindowDeps = {}) {
   onUnmounted(() => {
     clearTimeout(startTimer)
     window.removeEventListener('keydown', onKeyDown)
-    loader.close().catch((error: unknown) => {
+    loader.close().catch((error: Caught) => {
       listError.value = formatError(error)
     })
     windowAgent.dispose()

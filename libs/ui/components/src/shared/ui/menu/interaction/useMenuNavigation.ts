@@ -6,6 +6,7 @@ import {
   getCurrentScope,
   onScopeDispose,
   ref,
+  type ComponentPublicInstance,
   type ComputedRef,
   type Ref,
   type ShallowRef,
@@ -19,7 +20,7 @@ import {
   type MenuTrigger,
 } from '../items/item'
 import { createSubmenuAim, type MenuBox } from './aim'
-import { useMenuKeys } from './keys'
+import { isMenuRowHandle, useMenuKeys, type MenuRowHandle } from './keys'
 import { isInside } from './outside'
 
 interface ActiveSubmenu {
@@ -32,7 +33,7 @@ interface ActiveSubmenu {
 interface MenuSubmenuState {
   readonly active: Ref<ActiveSubmenu | null>
   readonly trigger: Ref<MenuTrigger>
-  readonly onRegisterRow: (id: string, row: unknown) => void
+  readonly onRegisterRow: (id: string, row: Element | ComponentPublicInstance | null) => void
   readonly onRowHover: (item: MenuItem, event?: MouseEvent) => void
   readonly onMenuLeave: (event?: MouseEvent) => void
   readonly onChoose: (item: MenuItem) => void
@@ -69,13 +70,13 @@ export interface MenuNavigationState {
 function useSubmenuActions(options: MenuNavigationOptions) {
   const active = ref<ActiveSubmenu | null>(null)
   const trigger = ref<MenuTrigger>('pointer')
-  const rowElements = new Map<string, { getElement?: () => HTMLElement | null }>()
+  const rowElements = new Map<string, MenuRowHandle | null>()
 
   const onOpenSubmenu = (item: MenuItem, how: MenuTrigger): void => {
     // Stryker disable next-line ConditionalExpression,LogicalOperator: callers check children before opening and TypeScript narrows item.children
     if (item.isDisabled || !item.children || item.children.length === 0) return
     const rowInst = rowElements.get(item.id)
-    const el = rowInst?.getElement?.() ?? null
+    const el = rowInst?.getElement() ?? null
     const position = options.getSubmenuPosition(el) ?? options.getFallbackPosition()
     active.value = {
       id: item.id,
@@ -138,9 +139,10 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
   const submenuActions = useSubmenuActions(options)
   const { onOpenSubmenu, onCloseSubmenu, onChoose } = submenuActions
 
-  const onRegisterRow = (id: string, row: unknown): void => {
-    holdRow(id, row)
-    submenuActions.rowElements.set(id, row as { getElement?: () => HTMLElement | null })
+  const onRegisterRow = (id: string, row: Element | ComponentPublicInstance | null): void => {
+    const handle = isMenuRowHandle(row) ? row : null
+    holdRow(id, handle)
+    submenuActions.rowElements.set(id, handle)
   }
 
   const visibleItems = computed(() => options.items())

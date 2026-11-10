@@ -1,3 +1,4 @@
+import type { VNode } from 'vue'
 import type { Position, Size } from '@/shared/lib/math/geometry'
 import type { ListItem } from './rows'
 
@@ -24,9 +25,9 @@ export interface SearchableListPopupProps {
 
 export interface SearchableListSlots {
   /** What is drawn before the words of an item. */
-  leading(props: { item: ListItem }): unknown
+  leading(props: { item: ListItem }): VNode[]
   /** What is drawn after the words of an item. */
-  trailing(props: { item: ListItem }): unknown
+  trailing(props: { item: ListItem }): VNode[]
   /** The action row that stands first, given the query as typed. */
-  action(props: { query: string }): unknown
+  action(props: { query: string }): VNode[]
 }

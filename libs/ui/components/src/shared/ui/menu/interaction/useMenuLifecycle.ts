@@ -4,6 +4,9 @@
 import { nextTick, watch } from 'vue'
 import { useMenuOpen } from './open'
 
+/** A value whose change re-measures an open menu. */
+export type WatchedDep = string | number | boolean | object | null
+
 export interface MenuLifecycleOptions {
   readonly isOpen: () => boolean
   readonly listen: () => void
@@ -12,7 +15,7 @@ export interface MenuLifecycleOptions {
   readonly focusInitial: () => void
   readonly onReset: () => void
   readonly getFrom: () => HTMLElement | SVGElement | null
-  readonly getWatchedDeps: () => readonly unknown[]
+  readonly getWatchedDeps: () => readonly WatchedDep[]
 }
 
 export function useMenuLifecycle(options: MenuLifecycleOptions): void {

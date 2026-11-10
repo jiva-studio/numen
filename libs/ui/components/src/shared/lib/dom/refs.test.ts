@@ -17,7 +17,7 @@ describe('the refs of a loop', () => {
   it('notifies of an element as it is set, and of null as it goes', () => {
     const calls: [string, unknown][] = []
     const { getRef } = createRefRegistry<string>((key, element) => calls.push([key, element]))
-    const element = {}
+    const element = document.createElement('div')
 
     getRef('a')(element)
     getRef('a')(null)
@@ -32,8 +32,8 @@ describe('the refs of a loop', () => {
     const { getRef } = createRefRegistry<string>(vi.fn())
     const first = getRef('a')
 
-    first({})
-    first({})
+    first(document.createElement('div'))
+    first(document.createElement('div'))
 
     expect(getRef('a')).toBe(first)
   })

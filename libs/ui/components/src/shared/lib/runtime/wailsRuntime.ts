@@ -22,7 +22,7 @@ export interface WailsRuntime {
     readonly IsLinux?: () => boolean
     readonly Environment?: () => Promise<{ readonly OSInfo?: { readonly Version?: string } }>
   }
-  readonly Browser?: { readonly OpenURL?: (href: string) => unknown }
+  readonly Browser?: { readonly OpenURL?: (href: string) => void | Promise<void> }
 }
 
 /** Loads the runtime module; resolves to undefined where the page is not served by Wails. */

@@ -1,3 +1,4 @@
+import type { VNode } from 'vue'
 import type { Position, Size } from '@/shared/lib/math/geometry'
 import type { MenuItem, MenuTrigger } from './items/item'
 
@@ -35,7 +36,7 @@ export interface MenuSlots {
    * item once the slot is filled, so the text aligns down the menu whether or
    * not each item draws anything.
    */
-  icon(props: { id: string }): unknown
+  icon(props: { id: string }): VNode[]
   /** The content shown when there is nothing to choose. */
-  silence(): unknown
+  silence(): VNode[]
 }

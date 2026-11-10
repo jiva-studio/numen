@@ -10,7 +10,7 @@
  * `field`, `announcement`, `nothing`, `key` and `more`. The list below the field marks
  * its own parts.
  */
-import { computed, useId, useTemplateRef } from 'vue'
+import { computed, useId, useTemplateRef, type VNode } from 'vue'
 import { reportFailure, runInBackground } from '@numen/ui'
 import { getUserAgent } from '@/shared/lib/dom'
 import PaletteKeyHints from './PaletteKeyHints.vue'
@@ -72,9 +72,9 @@ defineSlots<{
    * the slot is filled, so the text aligns down the list whether or not a row
    * renders anything.
    */
-  icon(props: { id: string }): unknown
+  icon(props: { id: string }): VNode[]
   /** Rendered when there is no group to show. */
-  silence(): unknown
+  silence(): VNode[]
 }>()
 
 /* ---------------------------------- State --------------------------------- */

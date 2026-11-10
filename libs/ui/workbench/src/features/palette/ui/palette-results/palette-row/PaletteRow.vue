@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * One row of the list: the leading element, the label with its hits marked, and the key
  * that selects it, shown at the end.
@@ -24,7 +25,7 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  icon(props: { id: string }): unknown
+  icon(props: { id: string }): VNode[]
 }>()
 </script>
 

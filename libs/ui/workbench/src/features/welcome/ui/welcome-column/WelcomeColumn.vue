@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
 /**
  * The column of the welcome screen: the mark and the entry points at its head, the
  * vaults below them.
@@ -32,9 +33,9 @@ defineEmits<{
 
 defineSlots<{
   /** Content shown in place of the list while no list is loaded. */
-  waiting?(): unknown
+  waiting?(): VNode[]
   /** How a vault on the list is drawn. */
-  vault?(props: { vault: VaultRow }): unknown
+  vault?(props: { vault: VaultRow }): VNode[]
 }>()
 </script>
 

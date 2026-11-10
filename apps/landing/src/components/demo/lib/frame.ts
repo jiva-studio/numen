@@ -23,8 +23,17 @@ export function getDraggedHeight(was: number, distance: number, windowHeight: nu
 }
 
 
+/** A value that survives JSON.stringify and JSON.parse unchanged. */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | readonly JsonValue[]
+  | { readonly [key: string]: JsonValue }
+
 /** What the text parses to as JSON, and nothing where it is not JSON. */
-export function parseJson(text: string): unknown {
+export function parseJson(text: string): JsonValue | undefined {
   try {
     return JSON.parse(text)
   } catch {

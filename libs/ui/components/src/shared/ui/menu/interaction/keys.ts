@@ -7,6 +7,7 @@
  */
 import { ref, type Ref, type ShallowRef } from 'vue'
 import { stepTo } from '@/shared/lib/dom/roving'
+import type { Unvalidated } from '@/shared/lib/async/report'
 import { canLandOn, type MenuItem } from '../items/item'
 import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from '../items/typeahead'
 
@@ -15,9 +16,23 @@ interface RowHandle {
   readonly focus: (options?: FocusOptions) => void
 }
 
+/** A rendered menu row as the row component exposes it. */
+export interface MenuRowHandle extends RowHandle {
+  readonly getElement: () => HTMLElement | null
+}
+
+/** Whether a function ref received a menu row component rather than an element or nothing. */
+export const isMenuRowHandle = (value: Unvalidated): value is MenuRowHandle =>
+  typeof value === 'object' &&
+  value !== null &&
+  'focus' in value &&
+  typeof value.focus === 'function' &&
+  'getElement' in value &&
+  typeof value.getElement === 'function'
+
 export interface MenuKeysState {
   readonly here: Ref<number>
-  readonly holdRow: (item: string, row: unknown) => void
+  readonly holdRow: (item: string, row: RowHandle | null) => void
   readonly goTo: (pos: number) => void
   readonly pointTo: (pos: number) => void
   readonly onKey: (event: KeyboardEvent) => void
@@ -82,8 +97,8 @@ export function useMenuKeys(
   /** Each rendered row, stored under its item. */
   const renderedRows = new Map<string, RowHandle | null>()
 
-  const holdRow = (item: string, row: unknown): void => {
-    renderedRows.set(item, row as RowHandle | null)
+  const holdRow = (item: string, row: RowHandle | null): void => {
+    renderedRows.set(item, row)
   }
 
   const goTo = (pos: number): void => {

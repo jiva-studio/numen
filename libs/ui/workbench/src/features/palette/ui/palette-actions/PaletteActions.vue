@@ -9,8 +9,16 @@
  * `data-actions` names each part: `panel`, `list`, `name`, `hint`, `silence`
  * and `search`. An action is an option.
  */
-import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
-import { reportFailure, runInBackground } from '@numen/ui'
+import {
+  computed,
+  nextTick,
+  ref,
+  useId,
+  useTemplateRef,
+  watch,
+  type ComponentPublicInstance,
+} from 'vue'
+import { reportFailure, runInBackground, type Unvalidated } from '@numen/ui'
 import ActionRow from './ActionRow.vue'
 import { findKeptAction, placeActions, type ActionWords } from '../../lib/actions'
 import { getSteppedIndex, type PaletteAction } from '../../lib/item'
@@ -134,8 +142,11 @@ async function reveal(): Promise<void> {
   actionRows.get(activeActionId.value)?.element?.scrollIntoView({ block: 'nearest' })
 }
 
-function hold(action: string, row: unknown): void {
-  if (row) actionRows.set(action, row as RowHandle)
+const isRowHandle = (value: Unvalidated): value is RowHandle =>
+  typeof value === 'object' && value !== null && 'element' in value
+
+function hold(action: string, row: Element | ComponentPublicInstance | null): void {
+  if (isRowHandle(row)) actionRows.set(action, row)
   else actionRows.delete(action)
 }
 </script>

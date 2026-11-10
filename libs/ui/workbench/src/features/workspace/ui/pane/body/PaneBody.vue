@@ -7,7 +7,7 @@
  * of a tab is drawn into a host element here and belongs to the workspace, so a
  * tab moved to another pane is not rendered again.
  */
-import { inject } from 'vue'
+import { inject, type ComponentPublicInstance, type VNode } from 'vue'
 import { TAB_HOSTS } from '../../../model/hosts'
 import { getPanelName, getTabName } from '../names'
 import type { Pane, TabId } from '../../../lib/node'
@@ -24,8 +24,8 @@ const emit = defineEmits<{
 }>()
 
 defineSlots<{
-  tab(props: { id: TabId }): unknown
-  silence(): unknown
+  tab(props: { id: TabId }): VNode[]
+  silence(): VNode[]
 }>()
 
 /* ---------------------------------- State --------------------------------- */
@@ -44,9 +44,9 @@ function onPanelEscape(event: KeyboardEvent): void {
 
 /* -------------------------------- Helpers --------------------------------- */
 /** One function per tab, so a render does not detach and attach the same host. */
-const hostRefs = new Map<TabId, (element: unknown) => void>()
+const hostRefs = new Map<TabId, (element: Element | ComponentPublicInstance | null) => void>()
 
-function createHostRef(tab: TabId): (element: unknown) => void {
+function createHostRef(tab: TabId): (element: Element | ComponentPublicInstance | null) => void {
   let ref = hostRefs.get(tab)
   if (!ref) {
     ref = (element) => {
