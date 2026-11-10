@@ -17,13 +17,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // Host provides plugin resolution and activation for AI agents.
 type Host interface {
-	pluginport.PluginResolver
-	pluginport.PluginActivator
+	bridge.Activator
 }
 
 // Agent connects port.Agent calls to an out-of-process agent plugin via Connect-RPC.

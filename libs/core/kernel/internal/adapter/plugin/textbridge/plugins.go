@@ -1,12 +1,12 @@
 package textbridge
 
 import (
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Host finds the enabled plugins.
 type Host interface {
-	pluginport.PluginResolver
+	GetPlugin(id string) (manifest.Discovered, bool)
 }
 
 // Plugins is the enabled plugins of the host, which may record text versions.

@@ -99,7 +99,7 @@ func run(cfg container.Config, debug debugOptions) error {
 	}
 
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
-	api.ListVaults = list.Vaults.List
+	api.ListVaults = cfg.GetVaultList(list).Execute
 	bindVaultIndexer(ctx, api, vaults)
 	lent, err := openPluginVault(cfg, db, api)
 	if err != nil {

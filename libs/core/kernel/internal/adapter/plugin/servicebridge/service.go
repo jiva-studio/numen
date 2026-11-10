@@ -14,14 +14,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Plugins finds the plugin that serves a service to the windows and activates it, and lists the
 // plugins installed.
 type Plugins interface {
-	pluginport.PluginResolver
-	pluginport.PluginActivator
+	bridge.Activator
+	ResolveService(service string) (manifest.Discovered, bool)
+	GetPlugin(id string) (manifest.Discovered, bool)
 	GetPluginInfos() []plugin.Info
 }
 

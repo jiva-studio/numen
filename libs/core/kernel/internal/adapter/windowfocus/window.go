@@ -13,16 +13,11 @@ import (
 
 // Window is the main window of the vault, as the window moves it.
 type Window struct {
-	// GetVault returns the vault the window shows, or a vault with no path.
-	GetVault func() domain.Vault
-	// Note makes the note at the path of the vault the current one and returns it.
-	Note func(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error)
-	// Passages opens the file at the path at the first passage and highlights every passage.
-	Passages func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error
-	// GetOpenTabs returns the tabs the window last reported.
+	GetVault    func() domain.Vault
+	Note        func(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error)
+	Passages    func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error
 	GetOpenTabs func() domain.OpenTabs
-	// ShowTab makes the open tab with the id the active one and returns the tabs the window reports then.
-	ShowTab func(ctx context.Context, id string) (domain.OpenTabs, error)
+	ShowTab     func(ctx context.Context, id string) (domain.OpenTabs, error)
 }
 
 func (w Window) getVault() (domain.Vault, error) {

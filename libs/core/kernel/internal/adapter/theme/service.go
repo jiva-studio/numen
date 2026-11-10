@@ -1,63 +1,35 @@
+// Package theme maps the theme service of the protocol onto the theme use cases.
 package theme
 
 import (
 	"context"
 	"errors"
-	"fmt"
-	"slices"
-	"time"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/appearance"
+	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 )
 
-// Appearance is the window's appearance: the theme, the color scheme its
-// tokens are read as, and the interface and text scales.
-type Appearance struct {
-	ThemeName string
-	Mode      appearance.ColorScheme
-
-	InterfaceScale, TextScale float64
-}
-
-// Bounds is the allowed range of a scale setting, reported to clients that
-// prompt for a number.
-type Bounds struct{ Min, Max float64 }
-
-// AsDesigned is the multiplier that draws everything the size it was drawn at.
-const AsDesigned = 1
-
-// Appearances is the store of the window's appearance. The persistence location
-// is outside this adapter, so settings are exposed as read and write operations.
-type Appearances interface {
-	// Read returns the appearance stored in the settings.
-	Read() (Appearance, error)
-
-	// Write persists the appearance settings. Out-of-bounds scale values are
-	// rejected without writing.
-	Write(Appearance) error
-
-	// Warn reports non-fatal configuration issues or missing themes. An empty text withdraws the
-	// warning an earlier call reported, because nothing is missing now.
-	Warn(string)
-}
-
 // Service answers what a client may ask about themes.
-//
-// The catalog is the files, and Settings is where a choice out of them is
-// kept. A build with no settings behind it offers what it ships and writes
-// nothing.
 type Service struct {
-	Catalog  Catalog
-	Settings Appearances
+	getThemes       *themeusecase.GetThemes
+	readTheme       *themeusecase.ReadTheme
+	writeAppearance *themeusecase.WriteAppearance
+	watchThemes     *themeusecase.WatchThemes
+}
 
-	InterfaceScaleBounds, TextScaleBounds Bounds
-
-	DebounceDelay time.Duration
+// NewService answers the requests of the theme service with the use cases.
+func NewService(
+	getThemes *themeusecase.GetThemes,
+	readTheme *themeusecase.ReadTheme,
+	writeAppearance *themeusecase.WriteAppearance,
+	watchThemes *themeusecase.WatchThemes,
+) *Service {
+	return &Service{getThemes: getThemes, readTheme: readTheme, writeAppearance: writeAppearance, watchThemes: watchThemes}
 }
 
 // ListThemes returns every theme and the one applied.
@@ -65,17 +37,9 @@ func (s *Service) ListThemes(
 	_ context.Context,
 	_ *connect.Request[v1.ListThemesRequest],
 ) (*connect.Response[v1.ListThemesResponse], error) {
-	current := s.getAppearance()
-	applied, missing := s.Catalog.GetApplied(current.ThemeName)
-	if missing != "" {
-		s.warn(fmt.Sprintf("Theme not found: %s. Applied: %s", missing, applied))
-	} else {
-		s.warn("")
-	}
-
-	themes := s.Catalog.Themes()
-	items := make([]*v1.Theme, 0, len(themes))
-	for _, one := range themes {
+	answer := s.getThemes.Execute()
+	items := make([]*v1.Theme, 0, len(answer.List))
+	for _, one := range answer.List {
 		items = append(items, &v1.Theme{
 			Name:       one.Name,
 			Title:      one.Title,
@@ -87,16 +51,16 @@ func (s *Service) ListThemes(
 	}
 	return connect.NewResponse(&v1.ListThemesResponse{
 		Themes:               items,
-		Applied:              applied,
-		Mode:                 wire.ConvertModeToWire(current.Mode),
-		InterfaceScale:       current.InterfaceScale,
-		TextScale:            current.TextScale,
-		InterfaceScaleBounds: encodeBounds(s.InterfaceScaleBounds),
-		TextScaleBounds:      encodeBounds(s.TextScaleBounds),
+		Applied:              answer.Applied,
+		Mode:                 wire.ConvertModeToWire(answer.Appearance.Mode),
+		InterfaceScale:       answer.Appearance.InterfaceScale,
+		TextScale:            answer.Appearance.TextScale,
+		InterfaceScaleBounds: encodeBounds(answer.InterfaceScaleBounds),
+		TextScaleBounds:      encodeBounds(answer.TextScaleBounds),
 	}), nil
 }
 
-func encodeBounds(bounds Bounds) *v1.Bounds {
+func encodeBounds(bounds themeusecase.Bounds) *v1.Bounds {
 	return &v1.Bounds{Min: bounds.Min, Max: bounds.Max}
 }
 
@@ -106,17 +70,14 @@ func (s *Service) ReadTheme(
 	_ context.Context,
 	req *connect.Request[v1.ReadThemeRequest],
 ) (*connect.Response[v1.ReadThemeResponse], error) {
-	text, err := s.Catalog.Text(req.Msg.GetName())
-	if errors.Is(err, ErrNoTheme) || errors.Is(err, ErrNoFolder) {
-		return connect.NewResponse(&v1.ReadThemeResponse{}), nil
-	}
+	text, err := s.readTheme.Execute(req.Msg.GetName())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&v1.ReadThemeResponse{Css: text}), nil
 }
 
-// WriteAppearance validates and saves theme name, mode, and interface/text scale values.
+// WriteAppearance saves theme name, mode, and interface/text scale values.
 // Invalid inputs return an error message in the response without updating settings.
 func (s *Service) WriteAppearance(
 	_ context.Context,
@@ -127,160 +88,45 @@ func (s *Service) WriteAppearance(
 	}
 
 	name := req.Msg.GetName()
-	if _, err := s.Catalog.Text(name); err != nil {
-		return respond(err.Error())
-	}
 	if req.Msg.GetMode() == v1.Mode_MODE_UNSPECIFIED {
-		return respond(fmt.Sprintf("%s: which half of a pair to read was not said", name))
+		return respond(name + ": which half of a pair to read was not said")
 	}
-	if s.Settings == nil {
-		return respond("this build writes no settings")
-	}
-	selected := Appearance{
+	selected := themedomain.Appearance{
 		ThemeName:      name,
 		Mode:           wire.ConvertModeFromWire(req.Msg.GetMode()),
 		InterfaceScale: req.Msg.GetInterfaceScale(),
 		TextScale:      req.Msg.GetTextScale(),
 	}
-	if err := s.Settings.Write(selected); err != nil {
+	if err := s.writeAppearance.Execute(selected); err != nil {
 		return respond(err.Error())
 	}
-	// The theme current is found, so a warning about the one that was missing is withdrawn.
-	s.warn("")
 	return connect.NewResponse(&v1.WriteAppearanceResponse{}), nil
 }
 
 // WatchThemes notifies the client when the themes folder or the set of plugin
 // themes changes, until the client disconnects.
-// The plugin set is compared on each keepalive tick, and the names added or
-// removed are reported in place of the empty keepalive.
 func (s *Service) WatchThemes(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchThemesRequest],
 	stream *connect.ServerStream[v1.WatchThemesResponse],
 ) error {
-	// The folder watch ends with this call, whichever way it ends.
-	watching, stop := context.WithCancel(ctx)
-	defer stop()
-
-	changed, err := s.Catalog.Watch(watching, s.DebounceDelay)
-	if errors.Is(err, ErrNoFolder) && s.Catalog.HasPlugins() {
-		changed, err = nil, nil
-	}
-	if err != nil {
+	err := s.watchThemes.Execute(ctx, func(names []string) error {
+		return stream.Send(&v1.WatchThemesResponse{Names: names})
+	})
+	if errors.Is(err, themeusecase.ErrWatchUnavailable) {
 		return connect.NewError(connect.CodeUnavailable, err)
 	}
-
-	previous := s.Catalog.ListPluginThemeNames()
-
-	// Empty keepalive responses make a write to a disconnected client fail. The
-	// request context belongs to the process and does not reflect whether the page
-	// that opened the stream is still open.
-	repeat := time.NewTicker(keepaliveInterval)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-repeat.C:
-			current := s.Catalog.ListPluginThemeNames()
-			response := &v1.WatchThemesResponse{Names: listDifference(previous, current)}
-			previous = current
-			if err := stream.Send(response); err != nil {
-				return err
-			}
-		case names, open := <-changed:
-			if !open {
-				return nil
-			}
-			if err := stream.Send(&v1.WatchThemesResponse{Names: names}); err != nil {
-				return err
-			}
-		}
-	}
+	return err
 }
 
-func listDifference(before, after []string) []string {
-	var different []string
-	for _, name := range before {
-		if !slices.Contains(after, name) {
-			different = append(different, name)
-		}
-	}
-	for _, name := range after {
-		if !slices.Contains(before, name) {
-			different = append(different, name)
-		}
-	}
-	return different
-}
-
-// keepaliveInterval is the interval between keepalive responses. A failed write
-// is how a handler detects that its client has disconnected.
-const keepaliveInterval = time.Second
-
-func (s *Service) getAppearance() Appearance {
-	current := Appearance{
-		ThemeName:      Default,
-		Mode:           appearance.System,
-		InterfaceScale: AsDesigned,
-		TextScale:      AsDesigned,
-	}
-	if s.Settings == nil {
-		return current
-	}
-	response, err := s.Settings.Read()
-	if err != nil {
-		s.warn(fmt.Sprintf("Settings not read, applied %s: %v", Default, err))
-		return current
-	}
-	if response.ThemeName != "" {
-		current.ThemeName = response.ThemeName
-	}
-	current.Mode = response.Mode
-	if response.InterfaceScale > 0 {
-		current.InterfaceScale = response.InterfaceScale
-	}
-	if response.TextScale > 0 {
-		current.TextScale = response.TextScale
-	}
-	return current
-}
-
-func (s *Service) warn(why string) {
-	if s.Settings != nil {
-		s.Settings.Warn(why)
-	}
-}
-
-func encodeOrigin(origin Origin) v1.Origin {
+func encodeOrigin(origin themedomain.Origin) v1.Origin {
 	switch origin {
-	case Preset:
+	case themedomain.Preset:
 		return v1.Origin_ORIGIN_PRESET
-	case Mine:
+	case themedomain.Mine:
 		return v1.Origin_ORIGIN_MINE
-	case Plugin:
+	case themedomain.Plugin:
 		return v1.Origin_ORIGIN_PLUGIN
 	}
 	return v1.Origin_ORIGIN_UNSPECIFIED
-}
-
-// NewAppearances adapts read, write, and warn callbacks into Appearances.
-func NewAppearances(read func() (Appearance, error), write func(Appearance) error, warn func(string)) Appearances {
-	return callbackAppearances{read: read, write: write, warn: warn}
-}
-
-type callbackAppearances struct {
-	read  func() (Appearance, error)
-	write func(Appearance) error
-	warn  func(string)
-}
-
-func (a callbackAppearances) Read() (Appearance, error)     { return a.read() }
-func (a callbackAppearances) Write(choice Appearance) error { return a.write(choice) }
-func (a callbackAppearances) Warn(why string) {
-	if a.warn != nil {
-		a.warn(why)
-	}
 }

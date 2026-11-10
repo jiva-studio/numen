@@ -8,13 +8,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
-	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
-	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
 // Locations are the paths a user may set for this installation, as typed. An
@@ -45,31 +44,45 @@ type Deps struct {
 	PluginCommands func() PluginCommands
 }
 
-// Vaults is what the vault commands operate on: the list this installation keeps,
-// the folders it names, the folder identity, the trash location of this
-// machine, and the clock.
+// Vaults is what the vault commands operate on: the use cases over the list this
+// installation keeps, and the clock. The commands that also change what the index
+// remembers about a vault open it when they run.
 type Vaults struct {
-	Registry registry.Ports
-	Readers  vaultport.VaultReaders
-	Identity vaultport.VaultIdentity
-	Trash    machineport.Trash
-	Now      machineport.Clock
+	Find       registry.Find
+	Add        vault.Add
+	Known      registry.GetKnownVaults
+	RecordOpen vault.RecordOpen
+	Now        machineport.Clock
 
-	Rows func(ctx context.Context) (VaultRows, error)
+	OpenRename     func(ctx context.Context) (Renaming, error)
+	OpenUnregister func(ctx context.Context) (Unregistering, error)
+	OpenErase      func(ctx context.Context) (Erasing, error)
 }
 
 func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
-	target, err := registry.NewFind(v.Registry.Lookup).Execute(nameOrPath)
+	target, err := v.Find.Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}
 	return target, nil
 }
 
-// VaultRows is what the index remembers about vaults, open.
-type VaultRows struct {
-	Vaults vaultport.VaultRepository
+// Renaming is the rename of a vault over an open index.
+type Renaming struct {
+	Rename vault.Rename
 	Close  func() error
+}
+
+// Unregistering takes a vault off the list over an open index.
+type Unregistering struct {
+	Unregister vault.Unregister
+	Close      func() error
+}
+
+// Erasing removes a vault and moves its folder to the trash, over an open index.
+type Erasing struct {
+	Erase vault.Erase
+	Close func() error
 }
 
 // Scan is one vault made searchable.
@@ -95,11 +108,10 @@ type Links struct {
 
 // Problems is what a scan could not act on, as reported by the index.
 //
-// The checks are not opened here. The set of checks applied to a vault is part of
-// the core's vocabulary and not of an installation, so the terminal uses the
-// standard set and this opens what evaluates them.
+// The set of checks applied to a vault is part of the core's vocabulary and not of
+// an installation, so the terminal uses the standard set.
 type Problems struct {
-	Problems problemport.ProblemQueries
+	Problems *vault.GetProblems
 	Close    func() error
 }
 

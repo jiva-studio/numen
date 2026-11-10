@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/appearance"
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
 // Appearance holds the theme, the mode and the sizes of the window. The declaration of the shell
@@ -28,21 +28,21 @@ const (
 
 // Mode is the word this file writes read back, and Word is the word for one. A
 // word this file does not name is the machine's own choice.
-func Mode(word string) appearance.ColorScheme {
+func Mode(word string) themedomain.ColorScheme {
 	switch word {
 	case ModeLight:
-		return appearance.Light
+		return themedomain.Light
 	case ModeDark:
-		return appearance.Dark
+		return themedomain.Dark
 	}
-	return appearance.System
+	return themedomain.System
 }
 
-func GetModeName(mode appearance.ColorScheme) string {
+func GetModeName(mode themedomain.ColorScheme) string {
 	switch mode {
-	case appearance.Light:
+	case themedomain.Light:
 		return ModeLight
-	case appearance.Dark:
+	case themedomain.Dark:
 		return ModeDark
 	default:
 		return ModeSystem

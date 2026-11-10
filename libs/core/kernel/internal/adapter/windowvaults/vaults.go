@@ -10,19 +10,12 @@ import (
 
 // List is the vaults of the installation and the vault the window shows, as the window changes them.
 type List struct {
-	// Add registers the folder at the absolute root under the name, or under the folder's name.
-	Add func(root, name string) (domain.Vault, error)
-	// Find returns the vault the id names.
-	Find func(id string) (domain.Vault, error)
-	// Rename renames a vault.
-	Rename func(ctx context.Context, v domain.Vault, name string) (domain.Vault, error)
-	// Remove takes the vault out of the list and the index; the folder stays when isErasing is false.
-	Remove func(ctx context.Context, id string, current domain.VaultID, isErasing bool) error
-	// GetShown returns the vault the window shows.
-	GetShown func() domain.Vault
-	// Open shows the vault in the window and returns once the window shows it.
-	Open func(ctx context.Context, v domain.Vault) error
-	// CheckFolder reports whether the folder of the vault is missing.
+	Add         func(root, name string) (domain.Vault, error)
+	Find        func(id string) (domain.Vault, error)
+	Rename      func(ctx context.Context, v domain.Vault, name string) (domain.Vault, error)
+	Remove      func(ctx context.Context, id string, current domain.VaultID, isErasing bool) error
+	GetShown    func() domain.Vault
+	Open        func(ctx context.Context, v domain.Vault) error
 	CheckFolder func(v domain.Vault) bool
 }
 

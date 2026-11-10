@@ -10,14 +10,19 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
+
+// Activator starts a plugin on demand and releases the reference the start took.
+type Activator interface {
+	EnsureActive(ctx context.Context, pluginID string) (plugin.Endpoint, error)
+	Release(pluginID string)
+}
 
 // Lease is the one reference a bridge holds on its plugin, from the moment
 // the plugin is activated until the bridge is closed.
 type Lease struct {
-	Host     pluginport.PluginActivator
+	Host     Activator
 	PluginID string
 	once     sync.Once
 }
@@ -36,7 +41,7 @@ func (l *Lease) Close() error {
 // it is.
 func Open[C any](
 	ctx context.Context,
-	host pluginport.PluginActivator,
+	host Activator,
 	pluginID string,
 	newClient func(connect.HTTPClient, string, ...connect.ClientOption) C,
 ) (C, *Lease, error) {
@@ -65,7 +70,7 @@ func ConvertActivationError(pluginID string, err error) error {
 // the plugin is at when a call is made. A plugin started again on another port
 // is reached there.
 type Service[C any] struct {
-	Host      pluginport.PluginActivator
+	Host      Activator
 	PluginID  string
 	NewClient func(connect.HTTPClient, string, ...connect.ClientOption) C
 }

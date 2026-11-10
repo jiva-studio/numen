@@ -1,17 +1,15 @@
-package theme
+package themefiles
 
 import (
 	"context"
-	"errors"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/rjeczalik/notify"
-)
 
-// ErrNoFolder is returned by a catalog with no folder to read user themes from.
-var ErrNoFolder = errors.New("there is no themes folder")
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
+)
 
 // Backlog is how many events are held while they are being debounced. The folder
 // holds a handful of files.
@@ -22,21 +20,21 @@ const Backlog = 256
 // that is several events.
 const DefaultDebounceDelay = 50 * time.Millisecond
 
-// Watch reports changes to the user's themes, by name, until ctx ends.
+// WatchOwnThemes reports changes to the user's themes, by title, until ctx ends.
 //
 // The watch is on the folder, not on a file: a watch on a file ends at the first
 // save, which replaces the file. The watch is one level deep, which is as deep as
 // a theme is.
-func (c Catalog) Watch(ctx context.Context, hold time.Duration) (<-chan []string, error) {
-	if c.dir == "" {
-		return nil, ErrNoFolder
+func (f Files) WatchOwnThemes(ctx context.Context, hold time.Duration) (<-chan []string, error) {
+	if f.dir == "" {
+		return nil, themedomain.ErrNoFolder
 	}
 	if hold <= 0 {
 		hold = DefaultDebounceDelay
 	}
 
 	raw := make(chan notify.EventInfo, Backlog)
-	stop, err := c.hub.Watch(c.dir, false, raw)
+	stop, err := f.hub.Watch(f.dir, false, raw)
 	if err != nil {
 		return nil, err
 	}
@@ -45,12 +43,12 @@ func (c Catalog) Watch(ctx context.Context, hold time.Duration) (<-chan []string
 	go func() {
 		defer stop()
 		defer close(debounced)
-		c.debounce(ctx, hold, raw, debounced)
+		f.debounce(ctx, hold, raw, debounced)
 	}()
 	return debounced, nil
 }
 
-func (c Catalog) debounce(
+func (f Files) debounce(
 	ctx context.Context,
 	hold time.Duration,
 	raw <-chan notify.EventInfo,
@@ -78,11 +76,11 @@ func (c Catalog) debounce(
 			if !open {
 				return
 			}
-			name, is := c.getThemeName(event.Path())
+			title, is := f.getTitle(event.Path())
 			if !is {
 				continue
 			}
-			batch.pending[name] = true
+			batch.pending[title] = true
 			// Measured from the first event of a batch, so a folder being
 			// written to continuously is still reported.
 			if target == nil {
@@ -96,7 +94,7 @@ func (c Catalog) debounce(
 	}
 }
 
-// themeBatch is the themes an event named, and the themes a hold has closed
+// themeBatch is the titles an event named, and the themes a hold has closed
 // over.
 type themeBatch struct {
 	pending map[string]bool
@@ -123,17 +121,17 @@ func (b *themeBatch) closeHold() {
 	clear(b.pending)
 }
 
-func (c Catalog) getThemeName(absolute string) (string, bool) {
-	if filepath.Clean(filepath.Dir(absolute)) != filepath.Clean(c.dir) {
+func (f Files) getTitle(absolute string) (string, bool) {
+	if filepath.Clean(filepath.Dir(absolute)) != filepath.Clean(f.dir) {
 		return "", false
 	}
 	filename := filepath.Base(absolute)
-	if !strings.HasSuffix(filename, Extension) {
+	if !strings.HasSuffix(filename, themedomain.Extension) {
 		return "", false
 	}
-	title := strings.TrimSuffix(filename, Extension)
-	if !isPlainName(title) {
+	title := strings.TrimSuffix(filename, themedomain.Extension)
+	if !themedomain.IsPlainTitle(title) {
 		return "", false
 	}
-	return string(Mine) + ":" + title, true
+	return title, true
 }
