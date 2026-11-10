@@ -21,6 +21,7 @@ import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { WORDS } from '@/shared/words'
+import { WINDOW_WORDS } from './words'
 import type { WindowTabs } from '@/entities/tab'
 
 type Words = typeof WORDS
@@ -185,7 +186,7 @@ export function useSettings({
     refresh: () => rest.start(),
   })
   const retry = createPluginRetry({
-    words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
+    words: { stopped: WINDOW_WORDS.pluginStopped, retryFailed: WINDOW_WORDS.pluginRetryFailed },
     notify: log.getWriter('plugins'),
     refresh: () => rest.start(),
     getName: getPluginName,

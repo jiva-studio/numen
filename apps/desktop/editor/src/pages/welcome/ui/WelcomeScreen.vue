@@ -15,10 +15,11 @@ import {
 } from '@/features/command-palette'
 import { COMMAND, createRowKeys, findIcon, type VaultRef } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
-import { getUserAgent } from '@/shared/lib/dom'
+import { getUserAgent } from '../lib/dom'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
 import { WORDS as words } from '@/shared/words'
+import { WELCOME_WORDS } from '../words'
 import type { WelcomeScreenProps } from './welcomeScreen.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -29,7 +30,7 @@ const adding = computed(() => {
   const icon = findIcon(COMMAND.createVault)
   return {
     text: words.newVault,
-    detail: words.newVaultDetail,
+    detail: WELCOME_WORDS.newVaultDetail,
     ...(icon ? { icon } : {}),
     ...createRowKeys(COMMAND.createVault, getUserAgent()),
   }
@@ -39,7 +40,7 @@ const ways = computed(() => {
   const target = props.getTarget()
   return createWelcomeActions(
     { vault: target.vault.id, isReady: target.isReady },
-    words,
+    { ...words, ...WELCOME_WORDS },
     getUserAgent(),
     props.pluginWays,
   ).map((one) => {

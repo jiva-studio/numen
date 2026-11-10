@@ -22,6 +22,7 @@ import { createWindow } from './window/createWindow'
 import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
+import { WINDOW_WORDS } from './window/words'
 import { WORDS as note } from '@/entities/note'
 
 /* --------------------------------- State ---------------------------------- */
@@ -96,7 +97,7 @@ function onShowTab(id: string) {
 <template>
   <!-- The window is drawn once the plugins of the window slots have started or the wait for them has
        passed, so the layout does not move when the bar is drawn. -->
-  <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
+  <LoadingIndicator v-if="!isStarted" class="starting" :label="WINDOW_WORDS.appName" />
 
   <main v-else :class="{ 'is-highlighted': isHighlighted }">
     <SlotViewHost :view="titleBarView" />
