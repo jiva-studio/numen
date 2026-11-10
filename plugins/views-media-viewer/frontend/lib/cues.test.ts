@@ -7,7 +7,8 @@
  * computed times.
  */
 import { describe, expect, it } from 'vitest'
-import { applyCues, findCueAt, isSame, spanCues, getText, type Cue } from './cues'
+import { applyCues, findCueAt, isSame, spanCues, getText } from './cues'
+import type { Cue } from '../types'
 
 const CUES: readonly Cue[] = [
   { text: 'A bell over the door.', from: 1_000, to: 3_000 },

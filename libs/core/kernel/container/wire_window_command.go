@@ -11,5 +11,5 @@ func mountCommand(w *windowWiring) {
 		versions = menu
 	}
 	handler := command.NewHandler(w.inst.State, w.cfg.GetPluginCommands(), versions)
-	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.CountQuestions(), handler)))
+	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.Gate.CountQuestions(), handler)))
 }

@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import PlexView from './PlexView.vue'
 import PlexNodeView from './PlexNodeView.vue'
 import { arrangePlex, DEFAULT_OPTIONS, interpolatePlex } from '../../lib/arrange'
-import type { PlexNeighborhood } from '../../lib/neighborhood'
 import type { PlacedNode } from '../../lib/node'
+import type { PlexNeighborhood } from '../../../types'
 
 const before: PlexNeighborhood = {
   nodes: [

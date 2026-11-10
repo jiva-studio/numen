@@ -74,7 +74,7 @@ func newScene(t *testing.T) *scene {
 		t.Fatal(err)
 	}
 	s.versions = versions
-	versions.SetListener(s.listener)
+	versions.Changes.SetListener(s.listener)
 	for _, p := range []*fakeProvider{s.reader, s.ocr, s.fixer} {
 		p.versions, p.vault, p.folders = versions, s.vault, s.folders
 	}
@@ -85,14 +85,14 @@ func (s *scene) getContentHash() string { return domain.HashContent(s.files[scan
 
 func (s *scene) getLive(t *testing.T) (domain.TextVersionID, string) {
 	t.Helper()
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
+	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if listing.Live == "" {
 		return "", ""
 	}
-	text, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash())
+	text, err := s.versions.Texts.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {
 		t.Fatalf("read the live text: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestADisabledPluginsVersionStaysLiveAndReadable(t *testing.T) {
 	s.plugins.setEnabled(ocr, false)
 
 	s.requireLive(t, "OCR disabled", c, "scanned thw ")
-	text, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, c)
+	text, err := s.versions.Texts.GetVersionText(t.Context(), s.vault, scanPath, c)
 	if err != nil || text.Text != "scanned thw " {
 		t.Fatalf("the version of a disabled plugin reads %q (%v)", text.Text, err)
 	}
@@ -179,7 +179,7 @@ func TestAVersionWhoseFileChangedIsNotLive(t *testing.T) {
 	s.folders.write(proofreader+"/"+strings.TrimPrefix(string(b), proofreader+"/")+".jsonl", []byte(`{"text":"tampered"}`+"\n"))
 
 	s.requireLive(t, "after B's file changed", s.getReaderVersion(), "layer thw ")
-	if _, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, b); !errors.Is(err, textdomain.ErrNoText) {
+	if _, err := s.versions.Texts.GetVersionText(t.Context(), s.vault, scanPath, b); !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("reading a changed version file: got %v, want ErrNoText", err)
 	}
 }
@@ -235,7 +235,7 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	if id, _ := s.getLive(t); id != "" {
 		t.Fatalf("%s is live after the file was replaced", id)
 	}
-	if _, err := s.versions.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash()); !errors.Is(err, textdomain.ErrNoText) {
+	if _, err := s.versions.Texts.GetLiveText(t.Context(), s.vault, scanPath, s.getContentHash()); !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("the live text of a replaced file: got %v, want ErrNoText", err)
 	}
 
@@ -245,7 +245,7 @@ func TestReplacingTheFileMakesItsVersionsStale(t *testing.T) {
 	}
 	s.requireLive(t, "after the replacement", s.getReaderVersion(), "layer thw ")
 
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, first)
+	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, scanPath, first)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestDeletePluginVersionsRemovesTheRecordsAndReportsTheFiles(t *testing.T) {
 	if err := s.versions.DeletePluginVersions(t.Context(), s.vault, ocr); err != nil {
 		t.Fatal(err)
 	}
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
+	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,7 +361,7 @@ func (s *scene) putTalkVersion(t *testing.T, key, text string) domain.TextVersio
 
 func (s *scene) getTalkLive(t *testing.T) domain.TextVersionID {
 	t.Helper()
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
+	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +379,7 @@ func TestAPropertyVersionStaysLiveAfterAnEditElsewhereInTheNote(t *testing.T) {
 	if got := s.getTalkLive(t); got != version.GetID() {
 		t.Fatalf("after an edit of the title and body the live version is %q, want %q", got, version.GetID())
 	}
-	text, err := s.versions.GetLiveText(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
+	text, err := s.versions.Texts.GetLiveText(t.Context(), s.vault, talkPath, domain.HashContent(s.files[talkPath]))
 	if err != nil || text.Text != "The article." {
 		t.Fatalf("live text %q (%v)", text.Text, err)
 	}
@@ -431,14 +431,14 @@ func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 func TestGetTextPageReadsTheVersionFileInPages(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
-	page, err := s.versions.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "")
+	page, err := s.versions.Texts.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(page.Segments) != 2 || page.NextCursor != "" || page.Segments[1].Selector != `{"page":2}` {
 		t.Fatalf("page %+v, want both segments with their selectors and no next page", page)
 	}
-	if _, err := s.versions.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "x"); !errors.Is(err, textdomain.ErrNoText) {
+	if _, err := s.versions.Texts.GetTextPage(t.Context(), s.vault, scanPath, s.getReaderVersion(), "x"); !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("a cursor that is no number: got %v, want ErrNoText", err)
 	}
 }

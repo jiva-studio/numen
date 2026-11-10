@@ -5,8 +5,8 @@ import { usePlexTransition as baseUsePlexTransition, type Clock } from './transi
 import { rowsAndColumns, type ArrangeInput } from '../lib/arrange'
 import { neighborhoods } from '../fixtures/neighborhoods'
 import { stubClock } from '../../fixtures/clock'
-import type { PlexNeighborhood } from '../lib/neighborhood'
 import type { PlacedNode } from '../lib/node'
+import type { PlexNeighborhood } from '../../types'
 
 const usePlexTransition = (
   neighborhood: () => PlexNeighborhood,

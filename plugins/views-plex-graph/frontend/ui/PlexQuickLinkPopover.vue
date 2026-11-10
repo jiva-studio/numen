@@ -4,9 +4,9 @@
  */
 import { computed, ref, watch } from 'vue'
 import { SearchableList, type ListItem } from '@numen/ui'
-import type { PlexRelation } from '../plex'
 import { useSearchResults } from '../model/useSearchResults'
 import { WORDS as words } from '../words'
+import type { PlexRelation } from '../types'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{

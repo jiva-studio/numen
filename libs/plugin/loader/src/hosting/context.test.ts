@@ -155,7 +155,11 @@ describe('PluginContext', () => {
 
     const navigateTab = vi.fn(async () => 'tab-new')
     const closeTab = vi.fn()
-    const hostWithTabs = createPluginContext('tabs.plugin', { ...host, navigateTab, closeTab })
+    const hostWithTabs = createPluginContext(
+      'tabs.plugin',
+      { ...host, navigateTab, closeTab },
+      { permissions: ['vault:read'] },
+    )
     await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
     expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
     hostWithTabs.tabs.close?.('tab-9')
@@ -163,7 +167,9 @@ describe('PluginContext', () => {
 
     const hostWithoutOpen = { ...host }
     delete (hostWithoutOpen as { openTab?: unknown }).openTab
-    const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen)
+    const ctxWithoutOpen = createPluginContext('noopen.plugin', hostWithoutOpen, {
+      permissions: ['vault:read'],
+    })
     expect(ctxWithoutOpen.tabs.open?.('note', 'a.md')).toBeUndefined()
 
     const mountedEl = document.createElement('div')

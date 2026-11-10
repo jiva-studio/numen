@@ -9,7 +9,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent } from 'storybook/test'
 import { computed } from 'vue'
 import PlexNodeHandle from './PlexNodeHandle.vue'
-import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
+import { RELATION_NAMES } from '../../lib/relation'
+import type { PlexNodeRelation } from '../../../types'
 
 interface Knobs {
   x: number

@@ -5,9 +5,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { defineComponent, h, ref } from 'vue'
-import type { Conversation, Turn } from '../thread'
+import type { Conversation } from '../thread'
+import type { Turn } from '../types'
 import AgentTab from './AgentTab.vue'
-import { createAgentKind } from '../kind'
+import { createAgentKind } from '../model/kind'
 import { createHost } from '../fixtures'
 import { useAgentConversation } from '../model/useAgentConversation'
 
@@ -36,7 +37,7 @@ const createTab = (turn: readonly Turn[]) =>
           ...deps,
           settings: { ...deps.settings, getModelsAt: getStoryModels },
         })
-      })
+      }, AgentTab)
       const state = kind.open!('', 'agent:story')
       return () =>
         h('div', { style: { width: '100vw', height: '100vh' } }, [h(AgentTab, { state })])

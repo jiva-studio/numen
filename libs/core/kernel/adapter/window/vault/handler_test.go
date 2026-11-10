@@ -31,7 +31,7 @@ func (s *showing) SubscribeChanges() (<-chan window.Change, func()) { return s.c
 func serve(t *testing.T, current *showing) numenv1connect.VaultServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewVaultServiceHandler(NewHandler(current)))
+	mux.Handle(numenv1connect.NewVaultServiceHandler(NewHandler(current, current)))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewVaultServiceClient(server.Client(), server.URL)

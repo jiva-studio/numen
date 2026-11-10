@@ -3,8 +3,8 @@ import { onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
 import { arrangePlex, easeOut, interpolatePlex } from '../lib/arrange'
 import type { ArrangeInput } from '../lib/arrange'
 import type { PlexFrame } from '../lib/frame'
-import type { PlexNeighborhood } from '../lib/neighborhood'
 import { browserClock, type Clock } from '@numen/ui'
+import type { PlexNeighborhood } from '../../types'
 
 export { browserClock, type Clock }
 

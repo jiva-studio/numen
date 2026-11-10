@@ -14,9 +14,9 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tablinks"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,6 +26,10 @@ type Window interface {
 	GetCurrentVault() domain.Vault
 	// ReportOpenTabs keeps the tabs the window reported as the ones it has open.
 	ReportOpenTabs(open domain.OpenTabs)
+}
+
+// Focus delivers the requests to show a place or to bring a tab forward.
+type Focus interface {
 	SubscribePlaces() (<-chan domain.Place, func())
 	SubscribeTabIDs() (<-chan string, func())
 }
@@ -49,22 +53,23 @@ type OpenTabsReader interface {
 // Handler answers the window's workspace state: the open tabs, the focus requests and the tab links.
 type Handler struct {
 	window     Window
+	focus      Focus
 	tabWindows TabWindows
 	write      OpenTabsWriter
 	read       OpenTabsReader
-	links      *tablinks.Registry
+	links      *tablinks.Tabs
 }
 
 // NewHandler is the handler of the workspace service of one window.
 func NewHandler(
-	current Window, tabWindows TabWindows, write OpenTabsWriter, read OpenTabsReader, links *tablinks.Registry,
+	current Window, focus Focus, tabWindows TabWindows, write OpenTabsWriter, read OpenTabsReader, links *tablinks.Tabs,
 ) *Handler {
-	return &Handler{window: current, tabWindows: tabWindows, write: write, read: read, links: links}
+	return &Handler{window: current, focus: focus, tabWindows: tabWindows, write: write, read: read, links: links}
 }
 
 // NewLinks is the registry of the tab links of one window.
-func NewLinks() (*tablinks.Registry, error) {
-	return tablinks.NewRegistry(LinkGrace, tablinks.ScheduleAfter)
+func NewLinks() (*tablinks.Tabs, error) {
+	return tablinks.New(LinkGrace, scheduleAfter, newLinkEvents())
 }
 
 // NewRoute is where the workspace service answers: its path and the handler of its calls. Each call
@@ -139,7 +144,7 @@ func (h *Handler) DetachTab(
 	if tab.ID == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("a tab id is required"))
 	}
-	result := h.links.Detach(tab)
+	result := h.links.Transfers.Detach(tab)
 	if err := h.tabWindows.OpenTabWindow(ctx, window.DetachedTab{
 		ID:     tab.ID,
 		X:      int(r.Msg.GetX()),
@@ -147,12 +152,12 @@ func (h *Handler) DetachTab(
 		Width:  int(r.Msg.GetWidth()),
 		Height: int(r.Msg.GetHeight()),
 	}); err != nil {
-		h.links.CancelDetach(tab.ID)
+		h.links.Transfers.CancelDetach(tab.ID)
 		return nil, err
 	}
 	select {
 	case <-ctx.Done():
-		h.links.CancelDetach(tab.ID)
+		h.links.Transfers.CancelDetach(tab.ID)
 		return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
 	case outcome := <-result:
 		return connect.NewResponse(&v1.DetachTabResponse{Error: convertMoveErrorToWire(outcome)}), nil
@@ -165,9 +170,9 @@ func (h *Handler) WatchFocus(
 	_ *connect.Request[v1.WatchFocusRequest],
 	out *connect.ServerStream[v1.WatchFocusResponse],
 ) error {
-	places, stopPlaces := h.window.SubscribePlaces()
+	places, stopPlaces := h.focus.SubscribePlaces()
 	defer stopPlaces()
-	tabIDs, stopTabIDs := h.window.SubscribeTabIDs()
+	tabIDs, stopTabIDs := h.focus.SubscribeTabIDs()
 	defer stopTabIDs()
 
 	repeat := time.NewTicker(wire.ResendInterval)

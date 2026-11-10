@@ -120,8 +120,8 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 // method-not-allowed error.
 func TestHandler_MountsEveryVaultService(t *testing.T) {
 	services := newBareServices()
-	vaultHandler := windowvault.NewHandler(services.state)
-	vaultPath, vaultServed := windowvault.NewRoute(vaultHandler, services.state.CountQuestions())
+	vaultHandler := windowvault.NewHandler(services.state, services.state.Notices)
+	vaultPath, vaultServed := windowvault.NewRoute(vaultHandler, services.state.Gate.CountQuestions())
 	services.Extra = append(services.Extra, NewRoute(vaultPath, vaultServed, vaultHandler))
 	handler := services.NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
@@ -161,7 +161,7 @@ func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 		}
 	}
 
-	services.state.Close()
+	services.state.Gate.Close()
 
 	for _, path := range request {
 		if code := getResponse(t, handler, path).Code; code != http.StatusServiceUnavailable {
@@ -368,7 +368,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	check := check.NewFolderCheck(vaultreader.Readers{})
 	api := newBareServices()
 	vaultsHandler := windowvaults.NewHandler(api.state, windowvaults.Uses{List: list, FolderCheck: check})
-	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.CountQuestions())
+	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.Gate.CountQuestions())
 	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
 	handler := api.NewHandler(http.NotFoundHandler())
 
@@ -384,7 +384,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	shutCh := make(chan struct{})
 	go func() {
 		defer close(shutCh)
-		api.state.Close()
+		api.state.Gate.Close()
 	}()
 
 	select {

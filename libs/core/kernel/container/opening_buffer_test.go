@@ -125,8 +125,8 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		opening := cfg.VaultOpener(db)
 		broken := errors.New("index unavailable")
 		opening.Refresh = vault.NewRefresh(
-			cfg.VaultReaders(), db.Vaults(), repositoryAnswering{err: broken},
-			db.RemovalLookup(), db.Sources(), cfg.Clock(),
+			cfg.VaultReaders(), db.Stores.Vaults, repositoryAnswering{err: broken},
+			db.Source.RemovalLookup, db.Source.Sources, cfg.Clock(),
 		)
 		var received []error
 		opening.ErrorHandler = func(err error) { received = append(received, err) }

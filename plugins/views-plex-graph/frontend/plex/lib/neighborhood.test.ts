@@ -1,8 +1,7 @@
 /** The two invariants every neighborhood holds. */
 import { describe, expect, it } from 'vitest'
 import { assertNeighborhood } from './neighborhood'
-import type { PlexNode } from './node'
-import type { PlexNodeRelation } from './relation'
+import type { PlexNode, PlexNodeRelation } from '../../types'
 
 const node = (id: string, relation: PlexNodeRelation): PlexNode => ({ id, title: id, relation })
 

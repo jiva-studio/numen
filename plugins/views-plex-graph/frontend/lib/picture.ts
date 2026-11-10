@@ -6,15 +6,7 @@
  * has no concept of drawing.
  */
 import type { Connection, ConnectionSide } from '@numen/plugin-sdk'
-import type { Neighborhood, NoteHeading, NoteType } from '../types'
-import type {
-  EdgeArrow,
-  EdgeLabel,
-  PlexEdge,
-  PlexNeighborhood,
-  PlexNode,
-  PlexHeading,
-} from '../plex'
+import type { Neighborhood, NoteHeading, NoteType, EdgeArrow, EdgeLabel, PlexEdge, PlexNeighborhood, PlexNode, PlexHeading } from '../types'
 
 /**
  * plex draws a note of a plugin-declared type with that type's icon.

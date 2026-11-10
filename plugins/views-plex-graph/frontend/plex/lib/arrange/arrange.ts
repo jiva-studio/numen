@@ -7,9 +7,9 @@
  */
 import type { LabelType } from '../edge'
 import { getExtent, type PlexFrame } from '../frame'
-import { assertNeighborhood, type PlexNeighborhood } from '../neighborhood'
-import type { PlacedNode, PlexNode } from '../node'
-import { RELATION_NAMES, type PlexRelation } from '../relation'
+import { assertNeighborhood } from '../neighborhood'
+import type { PlacedNode } from '../node'
+import { RELATION_NAMES } from '../relation'
 import { measureCrowding } from './layout/crowding'
 import { getLimits, type Limits } from './layout/limits'
 import { resolveOptions, type PlexOptions, type PlexOptionsInput, type Size } from './options'
@@ -22,6 +22,7 @@ import {
 import { routeEdges, createRouting } from './edges/routing'
 import { findSpacing, type Spacing } from './layout/spacing'
 import { separateTitles } from './edges/titles'
+import type { PlexNeighborhood, PlexNode, PlexRelation } from '../../../types'
 
 export interface ArrangeInput {
   readonly options?: PlexOptionsInput | undefined

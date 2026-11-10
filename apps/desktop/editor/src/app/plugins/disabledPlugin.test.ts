@@ -14,7 +14,10 @@ import { createPluginSupport } from './pluginSupport'
 
 const PLUGIN_ID = 'sample.decks'
 
-const manifest: Manifest = createMockManifest(PLUGIN_ID, { name: 'Decks' })
+const manifest: Manifest = createMockManifest(PLUGIN_ID, {
+  name: 'Decks',
+  permissions: ['vault:read'],
+})
 
 const DeckPane = defineComponent({ render: () => h('div', { class: 'deck' }, 'the deck') })
 

@@ -1,11 +1,11 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import PlexGraphView from './PlexGraphView.vue'
-import { createPlexKind, PLEX } from './kind'
+import PlexGraphView from './ui/PlexGraphView.vue'
+import { createPlexKind, PLEX } from './model/kind'
 import { usePlexView } from './model/usePlexView'
 import { readNesting } from './model/nesting'
 
 export { PlexGraphView, PlexGraphView as PlexTab }
-export { createPlexKind, PLEX } from './kind'
+export { createPlexKind, PLEX } from './model/kind'
 export { createPlexTab } from './model/usePlexTab'
 export { usePlexView } from './model/usePlexView'
 export * from './types'
@@ -29,6 +29,7 @@ export function activate(context: PluginContext): void {
       nesting: readNesting(context),
     },
     () => usePlexView({ neighborhood: (path) => notes.getNeighborhood(path) }),
+    PlexGraphView,
   )
   context.register.tabKind(plexes.kind)
   context.events.onVaultChange((event) => plexes.refresh(event))

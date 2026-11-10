@@ -2,6 +2,25 @@
  * Types and interfaces for agent conversation tabs.
  */
 import type { AgentModel, TextLink, TextRange } from '@numen/plugin-sdk'
+import type { LinkPiece } from '@numen/ui'
+
+/** The voice of a turn of a conversation. */
+export type Voice = 'prompt' | 'response' | 'doing'
+
+/** How far along a turn is. Defaults to settled. */
+export type TurnState = 'settled' | 'arriving' | 'failed'
+
+export interface Turn {
+  readonly id: string
+  readonly voice: Voice
+  readonly text: string
+  readonly subject?: string
+  readonly aside?: string
+  readonly state?: TurnState
+  readonly canOpen?: boolean
+  readonly unresolved?: readonly string[]
+  readonly links?: readonly LinkPiece[]
+}
 
 /** External dependencies required by an agent tab. */
 export interface AgentTabDeps {

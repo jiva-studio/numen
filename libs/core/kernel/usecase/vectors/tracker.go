@@ -14,11 +14,11 @@ import (
 // The sources being worked on are those of the oldest batches that left the
 // producer and are not yet stored, as many batches as there are infer workers.
 type tracker struct {
-	u       Embed
-	workers int
-	res     *vaultreading.EmbedResult
-	mu      *sync.Mutex
-	order   sync.Mutex
+	onProgress func(vaultreading.EmbedResult)
+	workers    int
+	res        *vaultreading.EmbedResult
+	mu         *sync.Mutex
+	order      sync.Mutex
 
 	flightMu sync.Mutex
 	nextID   uint64
@@ -31,8 +31,8 @@ type flightBatch struct {
 	sources []string
 }
 
-func newTracker(u Embed, workers int, res *vaultreading.EmbedResult, mu *sync.Mutex) *tracker {
-	return &tracker{u: u, workers: workers, res: res, mu: mu}
+func newTracker(onProgress func(vaultreading.EmbedResult), workers int, res *vaultreading.EmbedResult, mu *sync.Mutex) *tracker {
+	return &tracker{onProgress: onProgress, workers: workers, res: res, mu: mu}
 }
 
 func (t *tracker) enter(sources []string) uint64 {
@@ -85,7 +85,9 @@ func (t *tracker) publish(change func(res *vaultreading.EmbedResult)) {
 	}
 	snapshot := *t.res
 	t.mu.Unlock()
-	t.u.progress(snapshot)
+	if t.onProgress != nil {
+		t.onProgress(snapshot)
+	}
 }
 
 func (t *tracker) publishNext(source string) {

@@ -15,6 +15,7 @@ import {
 } from '@numen/plugin-sdk'
 import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
+import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
 
 const createServices = () => {
@@ -290,7 +291,7 @@ describe('the registrations of a plugin in the open files', () => {
     context.vault.buffers!.track({} as never)
     context.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
     expect(context.plugin.subscriptions).toHaveLength(2)
-    for (const one of [...context.plugin.subscriptions]) one.dispose()
+    disposeSubscriptions(context.plugin.subscriptions)
 
     expect(released).toHaveBeenCalledTimes(2)
   })
@@ -347,8 +348,8 @@ describe('a command a plugin runs over the vault', () => {
     'md.numen.engines.transcription:transcript.create',
   ]
 
-  it.each(WRITES)('runs %s through the commands of the window with no permission', async (id) => {
-    const { context, commands } = createContext([])
+  it.each(WRITES)('runs %s through the commands of the window with vault:write', async (id) => {
+    const { context, commands } = createContext(['vault:write'])
 
     await context.ui.commands!.run(id, target)
 
@@ -366,8 +367,8 @@ describe('a command a plugin runs over the vault', () => {
     expect(handler).toHaveBeenLastCalledWith(['app:vault.create'])
   })
 
-  it('opens a file and shows an error without vault:write', () => {
-    const { context, workspace } = createContext([])
+  it('opens a file with vault:read and shows an error without a permission', () => {
+    const { context, workspace } = createContext(['vault:read'])
 
     context.ui.workspace!.files.open('a.md')
     context.ui.workspace!.messages.showError('no')
@@ -384,7 +385,7 @@ const getAgent = (context: PluginContext): AgentHost => {
 
 const ASKING: Record<string, [string, Call]> = {
   ask: [
-    'vault:read',
+    'vault:write',
     (c) =>
       getAgent(c).ask({
         question: 'q',
@@ -427,7 +428,7 @@ describe('the agent a plugin asks', () => {
   })
 
   it('reads, writes and lists the settings under agent, and no others', async () => {
-    const { context, agent } = createContext([])
+    const { context, agent } = createContext(['vault:read', 'vault:write'])
     const request = getAgent(context)
 
     await request.writeSetting(['app', 'agent', 'use'], 'zeta')

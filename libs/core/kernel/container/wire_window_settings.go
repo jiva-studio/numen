@@ -39,6 +39,6 @@ func mountSettings(w *windowWiring) {
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.ChoosePath = openChoosePluginPath(w.cfg.settings(), dialog)
 	})
-	path, served := windowsettings.NewRoute(handler, state.CountQuestions())
+	path, served := windowsettings.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

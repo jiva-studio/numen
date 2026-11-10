@@ -4,11 +4,10 @@ import { arrangePlex } from './arrange'
 import { DEFAULT_OPTIONS } from './options'
 import { neighborhoods } from '../../fixtures/neighborhoods'
 import type { PlexFrame } from '../frame'
-import type { PlexNeighborhood } from '../neighborhood'
-import type { PlacedNode, PlexNode } from '../node'
-import type { PlexRelation, PlexNodeRelation } from '../relation'
+import type { PlacedNode } from '../node'
 import { rowsAndColumns, type Placement } from './layout/placement'
 import { build } from '../../fixtures/build'
+import type { PlexNeighborhood, PlexNode, PlexRelation, PlexNodeRelation } from '../../../types'
 
 const every = Object.entries(neighborhoods)
 

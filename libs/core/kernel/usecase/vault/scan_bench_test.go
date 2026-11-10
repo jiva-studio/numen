@@ -39,10 +39,10 @@ func openIndexFor(b *testing.B) *vaults.Index {
 func scanFor(db *vaults.Index) vaults.Scan {
 	return vaults.NewScan(
 		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 }
 
@@ -138,7 +138,7 @@ func BenchmarkSearch(b *testing.B) {
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
 			}
-			queries := db.Passages()
+			queries := db.Chunks.Passages
 
 			b.ResetTimer()
 			for range b.N {
@@ -202,7 +202,7 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 		}
 	}()
 
-	queries := db.Passages()
+	queries := db.Chunks.Passages
 	b.ResetTimer()
 	for range b.N {
 		if _, err := queries.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy observer", Kinds: getNotesOnly(), Limit: 20}); err != nil {
@@ -240,7 +240,7 @@ func BenchmarkLinks(b *testing.B) {
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
 			}
-			links := db.Links()
+			links := db.NoteQueries.Links
 			const of = "00/note-000000.md"
 
 			b.ResetTimer()
@@ -267,7 +267,7 @@ func BenchmarkBacklinks(b *testing.B) {
 			if _, err := scanFor(db).Execute(b.Context(), v); err != nil {
 				b.Fatal(err)
 			}
-			links := db.Links()
+			links := db.NoteQueries.Links
 			const to = "00/note-000000.md"
 
 			b.ResetTimer()

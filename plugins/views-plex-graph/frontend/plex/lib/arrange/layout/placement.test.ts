@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest'
 import { rowsAndColumns, type NodesByRelation, type Widths } from './placement'
 import { DEFAULT_OPTIONS, type PlexOptions } from '../options'
 import type { Limits, RoleLimits } from './limits'
-import type { PlacedNode, PlexNode } from '../../node'
-import { RELATION_NAMES, type PlexRelation } from '../../relation'
+import type { PlacedNode } from '../../node'
+import { RELATION_NAMES } from '../../relation'
+import type { PlexNode, PlexRelation } from '../../../../types'
 
 const { nodeSize, focusSize, gap, lineGap, focusGap } = DEFAULT_OPTIONS
 

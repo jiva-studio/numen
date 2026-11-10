@@ -6,7 +6,7 @@ import { defineComponent, h } from 'vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { statsApi, type StatsApi } from './api/wire'
 import { createIndexStats, type Activity, type IndexStats, type Timer } from './model/stats'
-import StatsIndicator from './StatsIndicator.vue'
+import StatsIndicator from './ui/StatsIndicator.vue'
 import './styles.css'
 
 export { StatsIndicator }

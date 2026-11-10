@@ -14,8 +14,8 @@ import { awkwardLabels } from '../../fixtures/neighborhoods'
 import { hoverOver, lightness } from '../../../fixtures/colour'
 import { DARK, expectDark } from '../../../fixtures/theme'
 import type { GestureRole, PlacedNode } from '../../lib/node'
-import { RELATION_NAMES, type PlexNodeRelation } from '../../lib/relation'
-import type { PlexDestination } from '../../model/interaction/destination'
+import { RELATION_NAMES } from '../../lib/relation'
+import type { PlexNodeRelation, PlexDestination } from '../../../types'
 
 interface Knobs {
   title: string

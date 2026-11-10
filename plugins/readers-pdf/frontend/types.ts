@@ -52,3 +52,9 @@ export interface PageHandle {
   /** Gives the pages keyboard focus, so key presses reach them. */
   focusPages(): void
 }
+
+/**
+ * How a document is drawn when it opens: a whole page in the viewport, a page as wide
+ * as the viewport, or a page at its printed size.
+ */
+export type Fit = 'page' | 'width' | '100%'

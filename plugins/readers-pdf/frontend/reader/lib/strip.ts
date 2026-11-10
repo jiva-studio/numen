@@ -6,6 +6,7 @@
  * test evaluates them without a browser.
  */
 import type { Size } from '@numen/ui'
+import type { Fit } from '../../types'
 import { getPageNavigationAction } from '@numen/ui'
 
 export interface Rect {
@@ -202,12 +203,6 @@ export const WIDTH_DEBOUNCE = 150
 export function clampZoom(zoom: number): number {
   return Math.min(Math.max(zoom, FURTHEST), CLOSEST)
 }
-
-/**
- * How a document is drawn when it opens: a whole page in the viewport, a page as wide
- * as the viewport, or a page at its printed size.
- */
-export type Fit = 'page' | 'width' | '100%'
 
 /** CSS pixels per point of a page: 96 CSS pixels and 72 points to the inch. */
 const PIXELS_PER_POINT = 96 / 72

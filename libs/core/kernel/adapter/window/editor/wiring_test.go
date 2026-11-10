@@ -74,19 +74,19 @@ func (w wiring) startSession(
 				return 0, 0, indexing.ErrNoProgress
 			}
 			name, recipe := embedding.Describe()
-			state.RecordModel(name, recipe)
+			state.Runtime.RecordModel(name, recipe)
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		VectorsReady: state.EmitVectorsReady,
+		VectorsReady: state.Events.EmitVectorsReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
 		Quiet:        opts.idle,
 		After:        time.After,
 	})
-	state.NotifyNoteWritten = worker.WakeNotes
+	state.Writes.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
 		Window: windowsession.WindowPorts{
-			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
+			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
 			Identity: noIdentity{}, Recorded: noRecord{}, Passes: windowsession.VaultPassesFunc(passes.StartVault),

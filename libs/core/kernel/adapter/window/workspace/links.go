@@ -9,7 +9,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace/tablinks"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 )
 
@@ -30,7 +30,7 @@ func (h *Handler) WatchTabLinks(
 	if r.Msg.GetWindowId() == "" {
 		return connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 	}
-	watch := h.links.Watch(r.Msg.GetWindowId())
+	watch := h.links.Windows.Watch(r.Msg.GetWindowId())
 	defer watch.Close()
 
 	if err := out.Send(convertSnapshotToWire(watch.Initial)); err != nil {
@@ -62,7 +62,7 @@ func (h *Handler) WatchTabLinks(
 	}
 }
 
-func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablinks.Event) error {
+func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], windowID string, event tablink.Event) error {
 	if !event.IsFor(windowID) {
 		return nil
 	}
@@ -73,7 +73,7 @@ func sendTabLinksEvent(out *connect.ServerStream[v1.WatchTabLinksResponse], wind
 func (h *Handler) CancelWatchTabLinks(
 	_ context.Context, r *connect.Request[v1.CancelWatchTabLinksRequest],
 ) (*connect.Response[v1.CancelWatchTabLinksResponse], error) {
-	h.links.Cancel(r.Msg.GetWindowId())
+	h.links.Windows.Cancel(r.Msg.GetWindowId())
 	return connect.NewResponse(&v1.CancelWatchTabLinksResponse{}), nil
 }
 
@@ -83,14 +83,14 @@ func (h *Handler) WriteTabLinks(
 ) (*connect.Response[v1.WriteTabLinksResponse], error) {
 	switch change := r.Msg.GetChange().(type) {
 	case *v1.WriteTabLinksRequest_Link:
-		h.links.Link(change.Link.GetSourceTabId(), change.Link.GetTargetTabId())
+		h.links.Links.Link(change.Link.GetSourceTabId(), change.Link.GetTargetTabId())
 	case *v1.WriteTabLinksRequest_UnlinkTabId:
-		h.links.Unlink(change.UnlinkTabId)
+		h.links.Links.Unlink(change.UnlinkTabId)
 	case *v1.WriteTabLinksRequest_Tabs:
 		if r.Msg.GetWindowId() == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 		}
-		h.links.WriteTabs(
+		h.links.Windows.WriteTabs(
 			convertWindowFromWire(r.Msg.GetWindowId(), change.Tabs.GetWindow()),
 			convertTabsFromWire(change.Tabs.GetTabs()),
 		)
@@ -102,20 +102,20 @@ func (h *Handler) WriteTabLinks(
 func (h *Handler) SyncTabPath(
 	_ context.Context, r *connect.Request[v1.SyncTabPathRequest],
 ) (*connect.Response[v1.SyncTabPathResponse], error) {
-	h.links.SyncPath(r.Msg.GetSourceTabId(), r.Msg.GetPath(), r.Msg.GetTitle())
+	h.links.Links.SyncPath(r.Msg.GetSourceTabId(), r.Msg.GetPath(), r.Msg.GetTitle())
 	return connect.NewResponse(&v1.SyncTabPathResponse{}), nil
 }
 
-func convertTabsFromWire(tabs []*v1.LinkableTab) []tablinks.Tab {
-	out := make([]tablinks.Tab, 0, len(tabs))
+func convertTabsFromWire(tabs []*v1.LinkableTab) []tablink.Tab {
+	out := make([]tablink.Tab, 0, len(tabs))
 	for _, one := range tabs {
-		out = append(out, tablinks.Tab{ID: one.GetId(), Kind: one.GetKind(), Title: one.GetTitle()})
+		out = append(out, tablink.Tab{ID: one.GetId(), Kind: one.GetKind(), Title: one.GetTitle()})
 	}
 	return out
 }
 
-func convertWindowFromWire(windowID string, window *v1.TabWindow) tablinks.Window {
-	return tablinks.Window{
+func convertWindowFromWire(windowID string, window *v1.TabWindow) tablink.Window {
+	return tablink.Window{
 		ID:          windowID,
 		IsMain:      window.GetIsMain(),
 		ActiveTitle: window.GetActiveTitle(),
@@ -124,7 +124,7 @@ func convertWindowFromWire(windowID string, window *v1.TabWindow) tablinks.Windo
 	}
 }
 
-func convertEventToWire(event tablinks.Event) *v1.WatchTabLinksResponse {
+func convertEventToWire(event tablink.Event) *v1.WatchTabLinksResponse {
 	switch {
 	case event.Sync != nil:
 		return &v1.WatchTabLinksResponse{Event: &v1.WatchTabLinksResponse_Sync{Sync: &v1.TabPathSync{
@@ -148,7 +148,7 @@ func convertEventToWire(event tablinks.Event) *v1.WatchTabLinksResponse {
 	}
 }
 
-func convertSnapshotToWire(snapshot tablinks.Snapshot) *v1.WatchTabLinksResponse {
+func convertSnapshotToWire(snapshot tablink.Snapshot) *v1.WatchTabLinksResponse {
 	links := &v1.TabLinks{
 		Groups: make([]*v1.TabLinkGroup, 0, len(snapshot.Groups)),
 		Tabs:   make([]*v1.LinkableTab, 0, len(snapshot.Tabs)),

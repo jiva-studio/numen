@@ -20,16 +20,25 @@ import (
 type Window interface {
 	// GetVaultState is what the window knows about the vault it shows now.
 	GetVaultState(ctx context.Context) window.VaultState
+}
+
+// Changes delivers the changes of the vault.
+type Changes interface {
 	// SubscribeChanges delivers each change of the vault until the returned function is called.
 	SubscribeChanges() (<-chan window.Change, func())
 }
 
 // Handler answers what the vault in the window is doing: whether it has been scanned, and what
 // moved in it.
-type Handler struct{ window Window }
+type Handler struct {
+	window  Window
+	changes Changes
+}
 
 // NewHandler is the handler of the vault service of one window.
-func NewHandler(current Window) *Handler { return &Handler{window: current} }
+func NewHandler(current Window, changes Changes) *Handler {
+	return &Handler{window: current, changes: changes}
+}
 
 // NewRoute is where the vault service answers: its path and the handler of its calls. Each call
 // goes through counted.
@@ -65,7 +74,7 @@ func (h *Handler) WatchVaultChanges(
 	_ *connect.Request[v1.WatchVaultChangesRequest],
 	out *connect.ServerStream[v1.WatchVaultChangesResponse],
 ) error {
-	line, isDone := h.window.SubscribeChanges()
+	line, isDone := h.changes.SubscribeChanges()
 	defer isDone()
 
 	// An initial empty message confirms the subscription. A stream that sends

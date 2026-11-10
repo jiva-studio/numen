@@ -1,4 +1,4 @@
-import type { Curve, PresetCounts } from '../../types'
+import type { Curve, PresetCounts } from '../../../lib/presets'
 import { useCurvePlot } from './useCurvePlot'
 import { useSliderInteractions } from './useSliderInteractions'
 import { useCurveAnnotations } from './useCurveAnnotations'

@@ -16,6 +16,6 @@ func mountVaults(w *windowWiring) {
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetFolderChooser(picker.NewChooseFolder(dialog))
 	})
-	path, served := vaults.NewRoute(handler, state.CountQuestions())
+	path, served := vaults.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

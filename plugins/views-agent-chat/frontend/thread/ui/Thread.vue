@@ -9,7 +9,8 @@
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { ThreadTurn } from './thread-turn'
 import { atFoot, getFoot } from '../lib/foot'
-import { placeTurns, type PlacedTurn, type Turn } from '../lib/turn'
+import { placeTurns, type PlacedTurn } from '../lib/turn'
+import type { Turn } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

@@ -4,13 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 func TestTheNoticesOfTheSettingsReachTheWindowAsNoticesAndNotAsFailedTasks(t *testing.T) {
 	const notice = "numen.json: no installed plugin md.numen.proofreading; its settings are ignored"
-	state := &State{Window: &wire.Window{Name: wire.Editor, Tasks: run.NewTasks()}}
+	state := NewState(run.NewTasks())
 
 	(&Installation{State: state}).Report([]string{notice})
 

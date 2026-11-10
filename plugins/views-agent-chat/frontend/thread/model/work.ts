@@ -2,7 +2,8 @@
  * The status line showing the tool the agent is running, and the wait line
  * under it, shown whenever no more specific status is known.
  */
-import { writeCharCount, type Turn } from '../lib/turn'
+import { writeCharCount } from '../lib/turn'
+import type { Turn } from '../../types'
 import type { SourceLocation } from '@numen/plugin-sdk'
 
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
