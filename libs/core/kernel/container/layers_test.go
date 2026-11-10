@@ -628,8 +628,6 @@ func mount() {
 // adapter. An adapter that only builds its messages or clients calls out and is driven.
 const schema = wire + "/gen/numen/v1/numenv1connect"
 
-// namesHandler reports whether the file names a handler type or handler constructor of the generated
-// connect package.
 func namesHandler(file *ast.File) bool {
 	name := ""
 	for _, one := range file.Imports {
