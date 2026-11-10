@@ -475,7 +475,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
-	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesKnown(), c.index)
+	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesUnder(), c.index)
 
 	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)

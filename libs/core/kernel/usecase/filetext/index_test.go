@@ -30,7 +30,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			raw := indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 400), indexfake.GetWords(indexfake.GetSanskrit(), 400))
 			shelf.Put(bookPath, domain.KindFile, raw, 1)
 
-			extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+			extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 			extract.Sizes = c.sizes
 			res, err := extract.Execute(ctx, indexfake.GetFirst())
 			if err != nil {
@@ -101,7 +101,7 @@ func TestABookThatWillNotParseDoesNotStopTheOthers(t *testing.T) {
 	shelf.Put("library/z.epub", domain.KindFile, indexfake.CreateBook(t, "Z", indexfake.GetWords(indexfake.GetSanskrit(), 200)), 1)
 	shelf.Put("notes/one.md", domain.KindNote, []byte("# One\n\nA note.\n"), 1)
 
-	res, err := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index).Execute(ctx, indexfake.GetFirst())
+	res, err := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index).Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatalf("one book that will not parse ended the run: %v", err)
 	}
@@ -139,7 +139,7 @@ func TestWhatHasNotChangedIsNotOpenedAgain(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 300)), 1)
 
-	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestIndex_RecipeFollowsSizesAndDrivesStaleness(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 300)), 1)
 
-	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	extract.Sizes = one
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
@@ -247,7 +247,7 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 	shelves[indexfake.GetSecond().ID].Put("library/latin.epub", domain.KindFile,
 		indexfake.CreateBook(t, "Latin", indexfake.GetWords(indexfake.GetLatin(), 300), indexfake.GetWords(indexfake.GetLatin(), 300)), 1)
 
-	extract := newIndex(shelves, index, index)
+	extract := newIndex(shelves, index)
 	for _, v := range []domain.Vault{indexfake.GetFirst(), indexfake.GetSecond()} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -301,7 +301,7 @@ func TestABookTheVaultNoLongerContainsIsTakenOut(t *testing.T) {
 	shelf.Put("library/kept.epub", domain.KindFile, indexfake.CreateBook(t, "Kept", indexfake.GetWords(indexfake.GetSanskrit(), 200)), 1)
 	shelf.Put("library/gone.epub", domain.KindFile, indexfake.CreateBook(t, "Gone", indexfake.GetWords(indexfake.GetLatin(), 200)), 1)
 
-	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,7 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 
 	shelf.Put("library/A.epub", domain.KindFile, before, 1)
 
-	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract := newIndex(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	if res, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	} else if res.Extracted != 1 {
@@ -397,7 +397,7 @@ func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, _ := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, _ := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	res, err := extract.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
 		t.Fatal(err)
@@ -418,7 +418,7 @@ func TestIndexSkipsAFileWithNoTextSource(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put("pictures/cover.sample", domain.KindFile, []byte("pixels"), 1)
 
-	run, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	run, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	texts.leaveOut("pictures/cover.sample")
 	res, err := run.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
@@ -438,7 +438,7 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	transcript := texts.put(indexfake.GetFirst(), talkPath, "test.transcriber", "transcript", timedParts())
 	res, err := extract.Execute(ctx, indexfake.GetFirst())
 	if err != nil {
@@ -463,7 +463,7 @@ func TestSourceExtractedFromOutdatedVersionIsExtractedAgain(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	texts.put(indexfake.GetFirst(), talkPath, "test.transcriber", "transcript", timedParts())
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
@@ -494,7 +494,7 @@ func TestExtractOneUsesTheLiveVersion(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(talkPath, domain.KindFile, []byte("ID3 and then the samples"), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}
@@ -517,7 +517,7 @@ func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 	index, shelf := indexfake.NewStore(), indexfake.NewLibrary()
 	shelf.Put(bookPath, domain.KindFile, indexfake.CreateBook(t, "A Book", indexfake.GetWords(indexfake.GetSanskrit(), 200)), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	texts.failure = errors.New("the plugin is not running")
 	var errs []error
 	extract.ErrorHandler = func(err error) { errs = append(errs, err) }
@@ -548,7 +548,7 @@ func TestANoteWhoseVersionIsDeletedIsReadAsANoteAgain(t *testing.T) {
 	shelf.Put(linkPath, domain.KindNote, []byte("---\nurl: http://tidal-mills.test\n---\n"), 1)
 	shelf.Put("notes/plain.md", domain.KindNote, []byte("# Plain\n\nA note.\n"), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	var reread []string
 	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
 		reread = append(reread, path)
@@ -580,7 +580,7 @@ func TestExecuteIndexesNoteTextVersion(t *testing.T) {
 	shelf.Put(linkPath, domain.KindNote, []byte("---\nurl: http://tidal-mills.test\n---\n"), 1)
 	shelf.Put("notes/plain.md", domain.KindNote, []byte("# Plain\n\nA note.\n"), 1)
 
-	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract, texts := newIndexWithTexts(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	var reread []string
 	extract.ReadNote = func(_ context.Context, _ domain.Vault, path string) error {
 		reread = append(reread, path)

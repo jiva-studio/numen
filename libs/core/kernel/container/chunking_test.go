@@ -31,7 +31,7 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	target := container.NewConfig(container.Config{ServiceDir: ".numen"})
 	target.Chunks.Set(512)
 
-	trimmed, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
+	trimmed, err := target.IndexTexts(db, domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}

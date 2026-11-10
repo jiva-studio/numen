@@ -34,7 +34,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
-		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), testsupport.NewClock())
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.RemovalLookup(), db.Sources(), testsupport.NewClock())
 	return changing{
 		db:    db,
 		vault: v,
@@ -62,7 +62,7 @@ func (c changing) move() note.Move {
 
 func (c changing) remove() note.Remove {
 	return note.NewRemove(
-		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesKnown(), c.index)
+		vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesUnder(), c.index)
 }
 
 func (c changing) newEditLinks() note.EditLinks {

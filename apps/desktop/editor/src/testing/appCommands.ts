@@ -5,7 +5,6 @@
 import { collectFeatureCommands, type FeatureCommandsDeps } from '@/app/window/createCommands'
 import type { Command, Notes } from '@/entities/command'
 import { createNoteWriter } from '@/entities/note'
-import { getAllTabs, getEligibleTabs, getWindowName } from '@/features/tab-linking'
 import { WORDS } from '@/shared/words'
 
 const noop = (): void => undefined
@@ -42,7 +41,6 @@ export const createEmptyWindow = (): FeatureCommandsDeps => ({
       unlinkTab: noop,
       getGroupOf: () => null,
     },
-    listing: { getAllTabs, getEligibleTabs, getWindowName },
     getTabs: () => [],
     getKind: () => undefined,
     isLinkable: () => false,

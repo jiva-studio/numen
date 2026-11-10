@@ -11,25 +11,21 @@ import type {
   TabMoveError,
   TabPathSync,
   WindowTabsReport,
-  acceptTabMove,
-  cancelTabLinksWatch,
-  watchTabLinks,
-  writeTabLinks,
 } from '@/entities/tab'
-import type { TabLinksState } from '@/features/tab-linking'
+import { cancelTabLinksWatch, watchTabLinks, writeTabLinks } from '../api/tab-links'
+import type { TabLinksState } from '../types'
 
 /** How long a failed tab report waits before it is sent again. */
 export const REPORT_RETRY_MS = 2000
 
 export interface TabLinkSessionDeps {
-  readonly core: {
-    readonly watchTabLinks: typeof watchTabLinks
-    readonly cancelTabLinksWatch: typeof cancelTabLinksWatch
-    readonly writeTabLinks: typeof writeTabLinks
-    readonly acceptTabMove: typeof acceptTabMove
-  }
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
+  readonly acceptTabMove: (
+    windowId: string,
+    tabId: string,
+    moveId: string,
+  ) => Promise<Result<void, TabMoveError>>
   readonly applySync: (sync: TabPathSync) => void
   readonly applyGroupPaths: (groups: readonly TabLinkGroup[]) => void
   readonly openMovedTab: (moved: MovedTab) => void
@@ -68,7 +64,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
       const report = pendingReport
       pendingReport = null
       try {
-        await deps.core.writeTabLinks(deps.windowId, report)
+        await writeTabLinks(deps.windowId, report)
         hasFailed = false
       } catch (error) {
         if (!hasFailed) deps.onError(error)
@@ -94,14 +90,14 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
    * made before the tab opened does not reach the core after the accept.
    */
   const acceptMove = (tabId: string, moveId: string): Promise<Result<void, TabMoveError>> =>
-    waitForReports().then(() => deps.core.acceptTabMove(deps.windowId, tabId, moveId))
+    waitForReports().then(() => deps.acceptTabMove(deps.windowId, tabId, moveId))
 
   /** Reads the stream until close; reports the tabs again on each new stream. */
   const start = (): Promise<void> =>
     followStream(
       () => {
         isNewStream = true
-        return deps.core.watchTabLinks(deps.windowId, abortController.signal)
+        return watchTabLinks(deps.windowId, abortController.signal)
       },
       (event) => {
         if (isNewStream) {
@@ -134,7 +130,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
     if (!isOpen) return
     isOpen = false
     abortController.abort()
-    deps.core.cancelTabLinksWatch(deps.windowId).catch(deps.onError)
+    cancelTabLinksWatch(deps.windowId).catch(deps.onError)
   }
 
   /** Starts the stream again after close; does nothing while the session is open. */

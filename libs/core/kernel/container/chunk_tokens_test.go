@@ -193,12 +193,12 @@ func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	cfg.Chunks.Set(256)
-	small, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
+	small, err := cfg.IndexTexts(db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.Chunks.Set(512)
-	large, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
+	large, err := cfg.IndexTexts(db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +218,7 @@ func TestEverySiteThatChunksNotesUsesTheSizeThePluginReports(t *testing.T) {
 	if got := cfg.Scan(db).Cut.Sizes.Limit; got != limit {
 		t.Errorf("Scan cuts at %d characters, want %d", got, limit)
 	}
-	texts, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
+	texts, err := cfg.IndexTexts(db, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 		t.Fatal(err)
 	}
 
-	other, err := db.SourcesKnown().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{recipe}, 10)
+	other, err := db.SourceBacklog().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{recipe}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

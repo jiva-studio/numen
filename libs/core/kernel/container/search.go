@@ -58,8 +58,8 @@ func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault
 }
 
 // IndexTexts cuts the text versions of a vault's files into chunks.
-func (c Config) IndexTexts(sources sourceport.SourceRepository, queries sourceport.SourceQueries, v domain.Vault) (filetext.Index, error) {
-	return c.search().IndexTexts(sources, queries, v)
+func (c Config) IndexTexts(db *Index, v domain.Vault) (filetext.Index, error) {
+	return c.search().IndexTexts(db, v)
 }
 
 // NewSearch is the search a question is answered by, put together the one way.

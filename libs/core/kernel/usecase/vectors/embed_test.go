@@ -24,7 +24,7 @@ const dimensions = 32
 
 func cutBooks(tb testing.TB, index *indexfake.Store, shelf *indexfake.Library, v domain.Vault) []indexfake.Chunk {
 	tb.Helper()
-	if _, err := (newExtract(indexfake.Vaults{v.ID: shelf}, index, index)).Execute(tb.Context(), v); err != nil {
+	if _, err := (newExtract(indexfake.Vaults{v.ID: shelf}, index)).Execute(tb.Context(), v); err != nil {
 		tb.Fatal(err)
 	}
 	small := index.GetSmallChunks(v.ID)
@@ -257,7 +257,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	shelves[indexfake.GetSecond().ID].Put("library/latin.epub", domain.KindFile,
 		indexfake.CreateBook(t, "Latin", indexfake.GetWords(indexfake.GetLatin(), 400)), 1)
 
-	extract := newExtract(shelves, index, index)
+	extract := newExtract(shelves, index)
 	for _, v := range []domain.Vault{indexfake.GetFirst(), indexfake.GetSecond()} {
 		if _, err := extract.Execute(ctx, v); err != nil {
 			t.Fatal(err)
@@ -425,7 +425,7 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 	shelf.Put("library/old.epub", domain.KindFile, indexfake.CreateBook(t, "Old Book", indexfake.GetWords(indexfake.GetSanskrit(), 400)), 100)
 	shelf.Put("library/recent.epub", domain.KindFile, indexfake.CreateBook(t, "Recent Book", indexfake.GetWords(indexfake.GetLatin(), 400)), 200)
 
-	extract := newExtract(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index, index)
+	extract := newExtract(indexfake.Vaults{indexfake.GetFirst().ID: shelf}, index)
 	if _, err := extract.Execute(ctx, indexfake.GetFirst()); err != nil {
 		t.Fatal(err)
 	}

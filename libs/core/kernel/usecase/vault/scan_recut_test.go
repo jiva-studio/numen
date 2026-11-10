@@ -37,14 +37,14 @@ func scanAt(db *container.Index, tokens int) vaults.Scan {
 	scan.Cut = query.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
-		return db.SourcesKnown().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
+		return db.SourceBacklog().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, []string{recipe}, math.MaxInt32)
 	}
 	return scan
 }
 
 func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
 	t.Helper()
-	paths, err := db.SourcesKnown().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{query.NewCutNotes(tokens).Recipe()}, 100)
+	paths, err := db.SourceBacklog().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{query.NewCutNotes(tokens).Recipe()}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}

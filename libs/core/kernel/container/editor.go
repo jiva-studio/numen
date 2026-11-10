@@ -75,7 +75,6 @@ func NewEditorAssembly(cfg Config, ports registry.Ports, db *Index) EditorAssemb
 		ProblemQueriesFn:   func() problemport.ProblemQueries { return db.Problems() },
 		IndexProgressFn:    func() indexport.IndexProgress { return db.Progress() },
 		SourceRepositoryFn: func() sourceport.SourceRepository { return db.Sources() },
-		SourceQueriesFn:    func() sourceport.SourceQueries { return db.SourcesKnown() },
 		PassageQueriesFn:   func() sourceport.PassageQueries { return db.Passages() },
 		CloseIndexFn:       func() error { return db.Close() },
 		OpenGetSettingsFn: func() *settings.Get {

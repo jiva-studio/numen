@@ -38,7 +38,6 @@ type noteViewAssembly interface {
 
 type indexSourceAssembly interface {
 	GetSourceRepository() sourceport.SourceRepository
-	GetSourceQueries() sourceport.SourceQueries
 	GetPassageQueries() sourceport.PassageQueries
 }
 

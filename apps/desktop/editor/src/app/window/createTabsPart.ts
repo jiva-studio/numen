@@ -7,39 +7,26 @@ import { runInBackground } from '@numen/ui'
 import { getTabPaneRect } from '@numen/workbench'
 import { getFileKinds } from '@/entities/file'
 import {
-  acceptTabMove,
-  cancelTabLinksWatch,
   createWindowTabs,
-  detachTab,
   fileOpeners,
-  highlightWindow,
-  moveTab,
   type MovedTab,
   RestoreFailedPane,
   UnavailablePane,
   useOpenTabs,
-  watchTabLinks,
-  writeTabLinks,
 } from '@/entities/tab'
-import { useTabLinks } from '@/features/tab-linking'
+import {
+  createTabLinkSession,
+  getWindowReport,
+  highlightWindow,
+  useTabLinks,
+  writeTabLinks,
+} from '@/features/tab-linking'
+import { acceptTabMove, createMovedTabOpener, createTabMover } from '@/features/tab-move'
 import { createCommandNotes } from '../tabs/commandDeps'
-import { createTabLinkSession, getWindowReport } from '../tabs/tabLinkSession'
-import { createMovedTabOpener, createTabMover } from '../tabs/tabMove'
 import type { WindowCore, WindowServices } from './createDisplayPart'
 import { isSecondaryWindow } from './createLifecyclePart'
 import type { useSettings } from './useSettings'
 import { focusWindow } from '@/entities/window'
-
-/** The calls of the core that the tab links, the tab moves and the tab reports make. */
-const core = {
-  acceptTabMove,
-  cancelTabLinksWatch,
-  detachTab,
-  highlightWindow,
-  moveTab,
-  watchTabLinks,
-  writeTabLinks,
-}
 
 interface TabsCoreDeps {
   readonly writeMessage: WindowCore['writeMessage']
@@ -66,7 +53,7 @@ export function createTabsCore(deps: TabsCoreDeps) {
   // waits for the pending tab reports. The tab links session sets the wait.
   const tabReports = { wait: (): Promise<void> => Promise.resolve() }
   const tabLinks = useTabLinks({
-    write: (change) => tabReports.wait().then(() => core.writeTabLinks(windowId, change)),
+    write: (change) => tabReports.wait().then(() => writeTabLinks(windowId, change)),
     onError: (error) => writeMessage(`The tabs were not linked: ${formatError(error)}`, 'error'),
   })
   const tabOpeners = fileOpeners({ fileKinds: getFileKinds, reconcileTab: windowTabs.reconcileTab })
@@ -107,7 +94,7 @@ export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps)
   const onError = (error: unknown) =>
     base.writeMessage(`The tab links were not written: ${formatError(error)}`, 'error')
   const session = createTabLinkSession({
-    core,
+    acceptTabMove,
     windowId: base.windowId,
     tabLinks: base.tabLinks,
     applySync: deps.tabSync.applySync,
@@ -153,7 +140,6 @@ export function createWindowTabMoves(
 ) {
   const notes = createCommandNotes(editing.reached, base.windowTabs)
   const mover = createTabMover({
-    core,
     windowId: base.windowId,
     windowTabs: base.windowTabs,
     notes,
@@ -171,9 +157,7 @@ export function createWindowTabMoves(
     windowId: base.windowId,
     isTabAsking: (id: string) => notes.asking(id),
     highlightWindow: (windowId: string, isOn: boolean) => {
-      lastHighlight = lastHighlight
-        .then(() => core.highlightWindow(windowId, isOn))
-        .catch(ignoreError)
+      lastHighlight = lastHighlight.then(() => highlightWindow(windowId, isOn)).catch(ignoreError)
     },
     detachTab: (id: string, point: Point) =>
       runInBackground(mover.detachTab(id, point), ignoreError),

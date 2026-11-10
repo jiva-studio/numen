@@ -11,6 +11,8 @@ import { createWindow } from './createWindow'
 import type * as BackgroundTasksModule from '@/features/background-tasks'
 import type * as WindowModule from '@/entities/window'
 import type * as TabModule from '@/entities/tab'
+import type * as TabLinkingModule from '@/features/tab-linking'
+import type * as TabMoveModule from '@/features/tab-move'
 
 /** What each part was made with, and what it was made as. */
 const h = vi.hoisted(() => ({
@@ -20,7 +22,6 @@ const h = vi.hoisted(() => ({
     name: 'core',
     readOpenTabs: vi.fn(async () => ({ tabs: [], activeId: '' })),
     cancelTask: vi.fn(async (_id: string) => undefined),
-    detachTab: vi.fn(async (_tab: unknown, _place: unknown) => undefined),
     writeTabLinks: vi.fn(async (_windowId: string, _change: unknown) => undefined),
     syncTabPath: vi.fn(async (_sync: unknown) => undefined),
     readDetachedTab: vi.fn(async (_windowId: string, _tabId: string): Promise<unknown> => null),
@@ -45,10 +46,31 @@ vi.mock('./createCommands', () => ({
   collectFeatureCommands: () => ({ commands: [{ id: 'app:vault.create' }], handlers: {} }),
   registerFeatureCommands: () => undefined,
 }))
-vi.mock('@/features/tab-linking', () => ({
+vi.mock('@/features/tab-linking', async (importOriginal) => ({
+  ...(await importOriginal<typeof TabLinkingModule>()),
   useTabLinks: (args: unknown) => {
     h.args.tabLinks = args
     return h.f.tabLinks
+  },
+  createTabLinkSession: (args: unknown) => {
+    h.args.tabLinkSession = args
+    return h.f.tabLinkSession
+  },
+  getWindowReport: () => h.f.windowReport.value,
+  writeTabLinks: (windowId: string, change: unknown) => h.core.writeTabLinks(windowId, change),
+  syncTabPath: (sync: unknown) => h.core.syncTabPath(sync),
+  highlightWindow: (windowId: string, isOn: boolean) => h.core.highlightWindow(windowId, isOn),
+}))
+vi.mock('@/features/tab-move', async (importOriginal) => ({
+  ...(await importOriginal<typeof TabMoveModule>()),
+  readDetachedTab: (windowId: string, tabId: string) => h.core.readDetachedTab(windowId, tabId),
+  createTabMover: (args: unknown) => {
+    h.args.tabMover = args
+    return h.f.tabMover
+  },
+  createMovedTabOpener: (args: unknown) => {
+    h.args.movedTabOpener = args
+    return h.f.openMovedTab
   },
 }))
 vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
@@ -73,11 +95,6 @@ vi.mock('@/entities/tab', async (importOriginal) => ({
     return h.f.openTabs
   },
   readOpenTabs: () => h.core.readOpenTabs(),
-  readDetachedTab: (windowId: string, tabId: string) => h.core.readDetachedTab(windowId, tabId),
-  writeTabLinks: (windowId: string, change: unknown) => h.core.writeTabLinks(windowId, change),
-  syncTabPath: (sync: unknown) => h.core.syncTabPath(sync),
-  highlightWindow: (windowId: string, isOn: boolean) => h.core.highlightWindow(windowId, isOn),
-  detachTab: (tab: unknown, place: unknown) => h.core.detachTab(tab, place),
 }))
 vi.mock('../tabs/useNoteEditors', () => ({
   createNoteEditors: (args: unknown) => {
@@ -116,23 +133,6 @@ vi.mock('@/features/background-tasks', async (original) => ({
   },
 }))
 vi.mock('@/features/hotkeys', () => ({ useAppHotkeys: vi.fn() }))
-vi.mock('../tabs/tabLinkSession', () => ({
-  createTabLinkSession: (args: unknown) => {
-    h.args.tabLinkSession = args
-    return h.f.tabLinkSession
-  },
-  getWindowReport: () => h.f.windowReport.value,
-}))
-vi.mock('../tabs/tabMove', () => ({
-  createTabMover: (args: unknown) => {
-    h.args.tabMover = args
-    return h.f.tabMover
-  },
-  createMovedTabOpener: (args: unknown) => {
-    h.args.movedTabOpener = args
-    return h.f.openMovedTab
-  },
-}))
 vi.mock('@/entities/window', async (original) => ({
   ...(await original<typeof WindowModule>()),
   cancelTask: (id: string) => h.core.cancelTask(id),
@@ -535,9 +535,6 @@ describe('tab detach and move wiring', () => {
     expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
     expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
     expect(h.args.tabMover.windowId).toBe(window.tabs.moves.windowId)
-    const place = { x: 1, y: 2, width: 3, height: 4 }
-    await h.args.tabMover.core.detachTab({ id: 't1' }, place)
-    expect(h.core.detachTab).toHaveBeenCalledWith({ id: 't1' }, place)
   })
 
   it('closes the source tab through the tab closer', () => {

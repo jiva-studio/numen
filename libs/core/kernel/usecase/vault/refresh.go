@@ -29,7 +29,7 @@ type Refresh struct {
 	readers vaultport.VaultReaders
 	vaults  vaultport.VaultRepository
 	notes   noteport.NoteRepository
-	queries sourceport.SourceQueries
+	queries sourceport.RemovalLookup
 	sources sourceport.SourceRepository
 	now     machineport.Clock
 
@@ -121,13 +121,13 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 }
 
 // NewRefresh creates a Refresh from the vault readers, the vault repository,
-// the note repository, the source queries, the source repository that deletes the rows
+// the note repository, what the index holds about sources, the source repository that deletes the rows
 // of other files, and the clock that identifies recently modified notes.
 func NewRefresh(
 	readers vaultport.VaultReaders,
 	vaults vaultport.VaultRepository,
 	notes noteport.NoteRepository,
-	queries sourceport.SourceQueries,
+	queries sourceport.RemovalLookup,
 	sources sourceport.SourceRepository,
 	now machineport.Clock,
 ) Refresh {

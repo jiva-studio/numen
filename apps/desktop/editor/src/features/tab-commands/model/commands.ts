@@ -10,7 +10,15 @@ import {
   type CommandTarget,
   type FeatureCommands,
 } from '@/entities/command'
-import type { LinkableTab, TabId, TabLinkGroup, TabWindow } from '@/entities/tab'
+import {
+  getAllTabs,
+  getEligibleTabs,
+  getWindowName,
+  type LinkableTab,
+  type TabId,
+  type TabLinkGroup,
+  type TabWindow,
+} from '@/entities/tab'
 import { TAB_WORDS } from '../words'
 
 /** The tabs of every window and the links between them, as the commands read and change them. */
@@ -27,25 +35,8 @@ interface TabEntry {
   readonly title: string
 }
 
-/** What the tab links answer of which tabs and windows are offered, and under which names. */
-export interface TabListing {
-  /** The tabs of this window, then the linkable tabs of other windows. */
-  getAllTabs(own: readonly TabEntry[], linkable: readonly LinkableTab[]): readonly TabEntry[]
-  /** The tabs a link from one tab may end at. */
-  getEligibleTabs(input: {
-    readonly from: TabId
-    readonly tabs: readonly TabEntry[]
-    getKind(tab: TabId): string | undefined
-    isLinkable(tab: TabId): boolean
-    getGroupOf(tab: TabId): TabLinkGroup | null
-  }): readonly (TabEntry & { readonly kind: string })[]
-  /** The name of a window in a list of windows. */
-  getWindowName(window: TabWindow): string
-}
-
 export interface TabCommandsDeps {
   readonly tabLinks: TabLinks
-  readonly listing: TabListing
   /** The tabs of this window. */
   getTabs(): readonly TabEntry[]
   getKind(tab: TabId): string | undefined
@@ -59,7 +50,7 @@ export interface TabCommandsDeps {
 }
 
 const createRows = (deps: TabCommandsDeps): readonly Command[] => {
-  const { listing, tabLinks } = deps
+  const { tabLinks } = deps
   const getKind = (tab: TabId): string | undefined =>
     deps.getKind(tab) ?? tabLinks.tabs.find((one) => one.id === tab)?.kind
   const isLinkable = (tab: TabId): boolean =>
@@ -70,15 +61,13 @@ const createRows = (deps: TabCommandsDeps): readonly Command[] => {
   const isMovable = (target: CommandTarget) => target.tab !== '' && !deps.isAsking(target.tab)
 
   const getLinkItems = (target: CommandTarget): readonly CommandItem[] =>
-    listing
-      .getEligibleTabs({
-        from: target.tab,
-        tabs: listing.getAllTabs(deps.getTabs(), tabLinks.tabs),
-        getKind,
-        isLinkable,
-        getGroupOf: tabLinks.getGroupOf,
-      })
-      .map((tab) => ({ id: tab.id, title: tab.title || tab.kind }))
+    getEligibleTabs({
+      from: target.tab,
+      tabs: getAllTabs(deps.getTabs(), tabLinks.tabs),
+      getKind,
+      isLinkable,
+      getGroupOf: tabLinks.getGroupOf,
+    }).map((tab) => ({ id: tab.id, title: tab.title || tab.kind }))
 
   return [
     {
@@ -99,8 +88,7 @@ const createRows = (deps: TabCommandsDeps): readonly Command[] => {
       group: 'window',
       input: 'items',
       isAvailable: (target) => isMovable(target) && getWindows().length > 0,
-      listItems: () =>
-        getWindows().map((one) => ({ id: one.id, title: listing.getWindowName(one) })),
+      listItems: () => getWindows().map((one) => ({ id: one.id, title: getWindowName(one) })),
     },
     {
       id: COMMAND.linkTab,
