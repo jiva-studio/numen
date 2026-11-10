@@ -30,16 +30,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// startFake returns the command line that runs the fake agent with the behavior, and the path of the
-// file the agent records the messages it reads in.
 func startFake(t *testing.T, behavior string) (command []string, record string) {
 	t.Helper()
 	record = filepath.Join(t.TempDir(), "record")
 	return []string{os.Args[0], "fake-acp", behavior, record}, record
 }
 
-// readRecord returns the messages the agent recorded by method; the replies of the client are under
-// the key reply.
 func readRecord(t *testing.T, record string) map[string][]map[string]any {
 	t.Helper()
 	raw, err := os.ReadFile(record)
@@ -249,7 +245,6 @@ func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
 	}})
 	a.read()
 }
-
 // getField returns the value of key in a JSON object, and fails the test when it is not a T.
 func getField[T any](t *testing.T, object any, key string) T {
 	t.Helper()

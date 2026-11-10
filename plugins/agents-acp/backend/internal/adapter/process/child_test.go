@@ -97,13 +97,13 @@ func TestAnOutputThatIsAlreadySetFailsToStart(t *testing.T) {
 
 func TestTheTailBufferKeepsTheLastBytes(t *testing.T) {
 	var tail tailBuffer
-	kept := strings.Repeat("k", stderrTailBytes)
+	tailText := strings.Repeat("k", stderrTailBytes)
 
-	if _, err := tail.Write([]byte("dropped-" + kept)); err != nil {
+	if _, err := tail.Write([]byte("dropped-" + tailText)); err != nil {
 		t.Fatal(err)
 	}
 
-	if tail.String() != kept {
-		t.Errorf("tail len = %d, want %d", len(tail.String()), len(kept))
+	if tail.String() != tailText {
+		t.Errorf("tail len = %d, want %d", len(tail.String()), len(tailText))
 	}
 }
