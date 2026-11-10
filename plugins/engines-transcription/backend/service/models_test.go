@@ -25,10 +25,10 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 	} {
 		var got engine.Config
 		var opens int
-		model := &models{cfg: NewConfig("", ""), open: func(_ context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
+		model := &models{cfg: getConfig(), open: func(_ context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
 			opens++
 			got = cfg
-			return &heardModel{}, nil
+			return engine.NewMockTranscriber(), nil
 		}}
 		model.updateConfig(tc.values)
 		first, err := model.get(t.Context())
@@ -60,25 +60,21 @@ func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
 	}
 }
 
-func TestNewConfigOverridesFromEnvAndArguments(t *testing.T) {
+func TestGetConfigOverridesFromEnv(t *testing.T) {
 	t.Setenv(engine.EnvDir, "")
 	t.Setenv("NUMEN_ONNX_RUNTIME", "")
-	base := NewConfig("", "")
+	base := getConfig()
 	if base.Dir != "" || base.Runtime != "" {
 		t.Fatalf("expected empty Dir and Runtime, got %+v", base)
 	}
 
 	t.Setenv(engine.EnvDir, "/env/models")
 	t.Setenv("NUMEN_ONNX_RUNTIME", "/env/ort.so")
-	fromEnv := NewConfig("", "")
+	fromEnv := getConfig()
 	if fromEnv.Dir != "/env/models" || fromEnv.Runtime != "/env/ort.so" {
 		t.Fatalf("expected env overrides, got %+v", fromEnv)
 	}
 
-	fromArgs := NewConfig("/arg/models", "/arg/ort.so")
-	if fromArgs.Dir != "/arg/models" || fromArgs.Runtime != "/arg/ort.so" {
-		t.Fatalf("expected arg overrides, got %+v", fromArgs)
-	}
 }
 
 // Each model the manifest offers is one the engine provisions.
@@ -117,4 +113,28 @@ func readManifestModels(t *testing.T) []string {
 		}
 	}
 	return models
+}
+
+func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
+	model := &models{isMock: true}
+
+	recognizer, err := model.getRecognizer(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	heard, err := recognizer.Open(t.Context(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	segments, err := heard.GetSegments(t.Context(), 0, 16)
+	if err != nil || len(segments) != 1 || segments[0].From != 0 || segments[0].To != 1000 {
+		t.Fatalf("GetSegments = %+v, %v, want the one stretch the mock engine hears", segments, err)
+	}
+	words, err := recognizer.Transcribe(t.Context(), segments[0])
+	if err != nil || words != "Mock transcribed text for automated test." {
+		t.Errorf("Transcribe = %q, %v", words, err)
+	}
+	if err := heard.Close(); err != nil {
+		t.Error(err)
+	}
 }
