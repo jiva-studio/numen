@@ -22,6 +22,8 @@ export const SLOT = {
   plexGraphContext: 'plexGraph.context',
   // The actions of a search result that is a note, over that note, drawn by the palette.
   paletteSearchResult: 'palette.searchResult',
+  // The commands of the palette over the note in front, drawn by the palette.
+  paletteNote: 'palette.note',
 } as const
 
 // SlotName is a slot of a window.

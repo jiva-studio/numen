@@ -40,7 +40,7 @@ const waitForMadeNote = async (page: Page, title: string): Promise<string> => {
 }
 
 const showInPlex = async (page: Page, title: string) => {
-  await runPaletteCommand(page, 'Open plex graph', 'Open plex graph')
+  await runPaletteCommand(page, 'Show in plex', 'Show in plex')
   await expect(getPlexNode(page, title, 'focus')).toBeAttached()
 }
 

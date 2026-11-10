@@ -36,6 +36,7 @@ import {
   usePluginCommands,
   createItemLists,
   createCommandItems,
+  createSlotPaletteCommands,
   watchCommandLists,
   type DeclaredCommands,
 } from '@/features/plugin-commands'
@@ -87,6 +88,12 @@ const listExtraCommands = (
   ...(options.getAppCommands?.() ?? []),
   ...(options.settingPalette?.getCommands() ?? []),
   ...(options.declaredCommands?.paletteCommands.value ?? []),
+  ...(options.declaredCommands
+    ? createSlotPaletteCommands(
+        options.declaredCommands.slots.value,
+        options.declaredCommands.whenContext,
+      )
+    : []),
   ...pluginEntries,
 ]
 

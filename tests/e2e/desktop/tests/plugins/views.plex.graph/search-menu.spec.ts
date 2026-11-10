@@ -6,6 +6,7 @@ import {
   runCommand,
   waitForWindow,
 } from '../../support/workspace.js'
+import { openNote } from '../../support/vault.js'
 
 const OPEN_NOTE = 'Open note'
 const SHOW_IN_PLEX = 'Show in plex'
@@ -100,6 +101,38 @@ test.describe('The actions of a note found by its name, with the plex plugin ena
     await rows.filter({ hasText: SHOW_IN_PLEX }).click()
 
     await expect(getGraph(page).getByRole('img', { name: `${NOTE}, focus` })).toBeAttached()
+  })
+})
+
+test.describe('The command Show in plex over the note in front', () => {
+  test.afterEach(async ({ page }) => {
+    await openWindow(page)
+    await setPlexEnabled(page, true)
+  })
+
+  test('is in the palette while the plex plugin is enabled and gone while it is disabled', async ({
+    page,
+  }) => {
+    const options = (name: string) =>
+      page.getByRole('option').filter({
+        has: page.locator('[data-palette="name"]', { hasText: new RegExp(`^${name}$`) }),
+      })
+    const searchPalette = async (query: string) => {
+      await page.keyboard.press('Control+p')
+      await getPaletteField(page).fill(query)
+    }
+
+    await openWorkspace(page)
+    await openNote(page, 'notes/Entropy.md')
+    await searchPalette(SHOW_IN_PLEX)
+    await expect(options(SHOW_IN_PLEX)).toHaveCount(1)
+    await page.keyboard.press('Escape')
+
+    await setPlexEnabled(page, false)
+    await openNote(page, 'notes/Entropy.md')
+    await searchPalette('Show in')
+    await expect(options(SHOW_IN_FILE_TREE)).toHaveCount(1)
+    await expect(options(SHOW_IN_PLEX)).toHaveCount(0)
   })
 })
 

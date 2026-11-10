@@ -32,13 +32,16 @@ const SlotPlexGraphContext = "plexGraph.context"
 // SlotPaletteSearchResult is the actions of a search result that is a note, over that note, drawn by the palette.
 const SlotPaletteSearchResult = "palette.searchResult"
 
+// SlotPaletteNote is the commands of the palette over the note in front, drawn by the palette.
+const SlotPaletteNote = "palette.note"
+
 // Slots are the slots of a window, in the order slots.json lists them.
-var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPaletteSearchResult}
+var Slots = []string{SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPaletteSearchResult, SlotPaletteNote}
 
 // IsSlot reports whether the name is a slot of a window.
 func IsSlot(name string) bool {
 	switch name {
-	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPaletteSearchResult:
+	case SlotTitleBar, SlotStatusBar, SlotTitleBarCommands, SlotTitleBarStatus, SlotStatusBarLeft, SlotStatusBarRight, SlotFileTreeContext, SlotTabStripContext, SlotPlexGraphContext, SlotPaletteSearchResult, SlotPaletteNote:
 		return true
 	}
 	return false
