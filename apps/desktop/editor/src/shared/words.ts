@@ -31,8 +31,6 @@ export const WORDS = {
   /** The commands, and the groups they are drawn in. */
   beside: 'Open note beside',
   reveal: 'Show note',
-  revealInPlex: 'Show in plex',
-  revealInFiles: 'Show in file tree',
   child: 'Create child note',
   parent: 'Create parent note',
   jump: 'Create jump note',

@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
-import { createSecretAnswer } from '@/testing/installation'
+import { createInstallation, createSecretAnswer, createSettingsState } from '@/testing/installation'
 import type { Installation } from '../../types'
 import SecretsPage from './SecretsPage.vue'
 
@@ -26,15 +26,9 @@ const plugins = [
   }),
 ]
 
-const createInstallation = (): Installation => ({
-  settings: {
-    getSetting: () => undefined,
-    getModels: () => [],
-    write: () => undefined,
-    file: ref('/numen.json'),
-  },
-  plugin: { retryPlugin: () => undefined, choosePath: async () => '', plugins: ref(plugins) },
-  secrets: {
+const createSecretsInstallation = (): Installation =>
+  createInstallation({
+    plugins: ref(plugins),
     ...createSecretAnswer(plugins, [
       {
         id: 's00000001',
@@ -47,18 +41,7 @@ const createInstallation = (): Installation => ({
       { id: 's00000003', name: 'Personal', group: 'travel', allowed: [], hasValue: false },
     ]),
     credentialsPath: ref(''),
-    edit: {
-      createSecret: async () => 's00000009',
-      renameSecret: () => undefined,
-      writeSecret: () => undefined,
-      deleteSecret: () => undefined,
-      deleteSecretGroup: () => undefined,
-      moveSecret: () => undefined,
-      renameSecretGroup: () => undefined,
-    },
-    access: { allowPluginSecret: () => undefined, denyPluginSecret: () => undefined },
-  },
-})
+  })
 
 const meta: Meta<typeof SecretsPage> = {
   title: 'Window/Secrets page',
@@ -66,7 +49,7 @@ const meta: Meta<typeof SecretsPage> = {
   parameters: { layout: 'fullscreen' },
   render: () => ({
     components: { SecretsPage },
-    setup: () => ({ state: { installation: createInstallation() } }),
+    setup: () => ({ state: createSettingsState(createSecretsInstallation()) }),
     template: `
       <div class="numen" style="container-type:inline-size;inline-size:36rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
         <SecretsPage :state="state" />
@@ -124,7 +107,7 @@ export const NewSecretWaitsForAValue: Story = {
 }
 
 const emptyInstallation = (): Installation => {
-  const installation = createInstallation()
+  const installation = createSecretsInstallation()
   return {
     ...installation,
     plugin: { ...installation.plugin, plugins: ref([]) },
@@ -134,7 +117,7 @@ const emptyInstallation = (): Installation => {
 
 const renderEmpty = () => ({
   components: { SecretsPage },
-  setup: () => ({ state: { installation: emptyInstallation() } }),
+  setup: () => ({ state: createSettingsState(emptyInstallation()) }),
   template: `
     <div class="numen" style="container-type:inline-size;inline-size:36rem;padding:1rem;background:var(--numen-surface);--settings-measure:54rem;--settings-apart:1.75rem;--settings-choice:16rem">
       <SecretsPage :state="state" />

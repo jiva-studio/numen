@@ -107,7 +107,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	cfg := NewConfig(Config{PluginHost: LdaptPluginHost(host)})
 
 	cfg.SetPluginVaultPath("vault")
-	if got := host.GetVaultPath(); got != "vault" {
+	if got := host.Mode.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
 	if !cfg.EmbedderReady() {

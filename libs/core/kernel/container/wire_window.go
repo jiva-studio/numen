@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"sync/atomic"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
@@ -15,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 )
 
 // GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
@@ -42,7 +44,7 @@ type windowWiring struct {
 	inst     *editor.Installation
 	files    *filewindow.Handler
 	server   *editor.FileServer
-	wrap     func(editor.StartVaultFunc) editor.StartVaultFunc
+	wrap     func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
 }
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
@@ -71,7 +73,7 @@ func (c Config) OpenWindowOver(
 // that holds one back or drives it. A nil wrap leaves it as it is.
 func (c Config) OpenWindowWith(
 	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
-	wrap func(editor.StartVaultFunc) editor.StartVaultFunc,
+	wrap func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc,
 ) (*editor.Installation, error) {
 	w := &windowWiring{cfg: c, ports: ports, db: db, wrap: wrap}
 	return openWindow(ctx, w, named, out)
@@ -99,31 +101,57 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
-	session := getWindowSession(w.cfg, w.db)
-	if w.wrap != nil {
-		session.StartVault = w.wrap(session.StartVault)
-	}
-	inst := editor.NewInstallation(editor.Setup{
-		Tasks:         tasks,
-		Out:           out,
-		CheckIdentity: vault.NewCheckIdentity(w.cfg.VaultIdentity()),
-		Embedding:     indexing.NewEmbedding(embedder, w.db.Progress()),
-		EmbedderError: why,
-		StopEmbedder:  closeEmbedder,
-		ReadVault:     getReadVault(w.cfg, w.db),
-		CloseIndex:    w.db.Close,
-		EmitEvent:     func(event string) { emitPluginEvent(w.cfg.plugins(), event) },
-		IsRebuilding:  w.cfg.ShouldRebuildIndex,
-		Closing:       ctx.Done(),
-	}, session)
-	w.inst = inst
+	embedding := indexing.NewEmbedding(embedder, w.db.Progress())
+	state := editor.NewState(tasks)
+	state.EmitEvent = func(event string) { emitPluginEvent(w.cfg.plugins(), event) }
+	state.SetIndexing(embedding)
+	indexer := newIndexWorker(w, state, embedding, out)
+	state.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(inst.Refresh).Execute).FollowMoves(GetWindowView(inst))
+	var refreshing atomic.Pointer[vault.Refresh]
+	getRefresh := func() vault.Refresh {
+		if running := refreshing.Load(); running != nil {
+			return *running
+		}
+		return w.cfg.GetRefresh(w.db)
+	}
+	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
 	w.notes = &notes
 	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
+
+	passes := w.cfg.startVault(w.db, &refreshing)
+	if w.wrap != nil {
+		passes = w.wrap(passes)
+	}
+	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
+		Window: windowsession.WindowPorts{
+			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
+		},
+		Vault: windowsession.VaultPorts{
+			Identity: vault.NewCheckIdentity(w.cfg.VaultIdentity()), Recorded: moves.RecordOpen, Passes: passes,
+			Texts: w.cfg.getTextVersions(),
+		},
+		Index: windowsession.IndexPorts{
+			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: w.cfg.getTriggerSource(), Model: embedding,
+		},
+		Shutdown: windowsession.ShutdownPorts{
+			Door: state,
+			Closers: []windowsession.Closer{
+				windowsession.CloseFunc(state.ClosePlaying),
+				windowsession.CloseFunc(func(context.Context) error { return closeEmbedder() }),
+				windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
+			},
+		},
+		Out:           out,
+		EmbedderError: why,
+		Closing:       ctx.Done(),
+		IsRebuilding:  w.cfg.ShouldRebuildIndex,
+	})
+	inst := editor.NewInstallation(state, session, out)
+	w.inst = inst
 	inst.UseScenarios(w.notes, w.vaults)
 
 	if err := mountServices(w); err != nil {
@@ -157,5 +185,9 @@ func mountServices(w *windowWiring) error {
 
 // GetWindowView returns the window as the core asks it to show a place, a move, an edit or a tab.
 func GetWindowView(inst *editor.Installation) windowport.Window {
-	return windowview.View{Notices: inst.State}
+	return windowView(inst.State)
+}
+
+func windowView(state *editor.State) windowport.Window {
+	return windowview.View{Notices: state}
 }

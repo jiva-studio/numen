@@ -1,6 +1,7 @@
+import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { describe, expect, it, vi } from 'vitest'
 import { createCommandDeps, createCommandNotes, type CommandDepsOptions } from './commandDeps'
-import { useSettings } from '../window/useSettings'
+import { useSettings } from '@/pages/settings'
 import { WORDS } from '@/shared/words'
 
 const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
@@ -156,10 +157,13 @@ describe('useSettings step groups', () => {
     } as never
 
     const settings = useSettings({
+      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
       words: WORDS,
       log,
       windowTabs,
       onSizeChanged: vi.fn(),
+      getSettingsViews: () => new Map(),
+      getPlatform: () => 'linux',
     })
 
     const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')

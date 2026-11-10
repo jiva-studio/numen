@@ -194,11 +194,11 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	host.plugins[secretPluginID] = manifest.Discovered{Manifest: manifest.Manifest{
+	host.Registry.t.plugins[secretPluginID] = manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      secretPluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: "apiKey", Title: "API key"}},
 		Settings: []manifest.Setting{
@@ -207,12 +207,12 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	}}
 	sup := lifecycle.New(testsupport.GetMachine())
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
-	host.supervisors[secretPluginID] = sup
-	host.endpoints[secretPluginID] = plugindomain.Endpoint{
+	host.Registry.t.supervisors[secretPluginID] = sup
+	host.Registry.t.endpoints[secretPluginID] = plugindomain.Endpoint{
 		Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "launch-name",
 	}
 	if store != nil {
-		host.SetKeyStore(store)
+		host.Config.SetKeyStore(store)
 	}
 	return host, probe
 }
@@ -252,9 +252,9 @@ func listed(t *testing.T, probe *configured, name string) []*v1.SecretValue {
 // The value arrives in the entry of its declaration and nowhere else in the call.
 func TestTheValueReachesThePluginOnlyInTheEntryOfItsDeclaration(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
-	host.SetSecretSource(allowOne(secretPluginID))
+	host.Config.SetSecretSource(allowOne(secretPluginID))
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	call := probe.last(t)
@@ -273,10 +273,10 @@ func TestTheValueReachesThePluginOnlyInTheEntryOfItsDeclaration(t *testing.T) {
 
 func TestEmptyDeclarationSkipsKeyStoreRead(t *testing.T) {
 	host, probe := newSecretHost(t, untouchable{t})
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := updateSetting(t.Context(), host, secretPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 	if got := listed(t, probe, declared); len(got) != 0 {
@@ -287,8 +287,8 @@ func TestEmptyDeclarationSkipsKeyStoreRead(t *testing.T) {
 // A secret the store has no value for is left out of the list.
 func TestASecretWithNoValueInTheStoreIsLeftOut(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if got := listed(t, probe, declared); len(got) != 0 {
@@ -299,9 +299,9 @@ func TestASecretWithNoValueInTheStoreIsLeftOut(t *testing.T) {
 // A key typed into the settings file under the name of a secret is not a key.
 func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": "opus"}})
+	host.Settings.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": "opus"}})
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	call := probe.last(t)
@@ -312,12 +312,12 @@ func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	if call.GetValues()["model"] != "opus" {
 		t.Errorf("values = %v: the other settings are still passed", call.GetValues())
 	}
-	cfg, err := host.GetPluginConfigJSON(secretPluginID)
+	cfg, err := host.Settings.GetPluginConfigJSON(secretPluginID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertNoKey(t, "the configuration json", cfg, fromSettings, fromKeychain)
-	if _, found := host.GetPluginSettings(secretPluginID)["apiKey"]; found {
+	if _, found := host.Settings.GetPluginSettings(secretPluginID)["apiKey"]; found {
 		t.Error("the settings the window reads hold a secret")
 	}
 }
@@ -334,11 +334,11 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 	}
 	const fromSetting = "value-of-a-setting"
 	host, _ := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
-	host.SetSecretSource(allowOne(secretPluginID))
-	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": fromSetting}})
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	host.Settings.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": fromSetting}})
 
 	const launchName = "launch-name"
-	vars, err := host.getLaunchVars(t.Context(), secretPluginID, nil, 4000, launchName)
+	vars, err := host.Processes.getLaunchVars(t.Context(), secretPluginID, nil, 4000, launchName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -361,9 +361,9 @@ func TestUnreadableKeyStoreFailsAndSendsEmptyDeclaration(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = errLockedKeychain
 	host, probe := newSecretHost(t, store)
-	host.SetSecretSource(allowOne(secretPluginID))
+	host.Config.SetSecretSource(allowOne(secretPluginID))
 
-	err := host.NotifyPluginConfig(t.Context(), secretPluginID)
+	err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID)
 	if !errors.Is(err, errLockedKeychain) {
 		t.Errorf("error = %v, want the error of the store", err)
 	}
@@ -381,14 +381,14 @@ func TestAMachineWithoutAKeyStoreDoesNotFailConfigure(t *testing.T) {
 	store := newKeys(map[string]string{})
 	store.failed = plugindomain.ErrNoKeyStore
 	host, probe := newSecretHost(t, store)
-	host.SetSecretSource(allowOne(secretPluginID))
+	host.Config.SetSecretSource(allowOne(secretPluginID))
 	var reported []error
-	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Errorf("configure: %v", err)
 	}
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := updateSetting(t.Context(), host, secretPluginID, "model", "opus"); err != nil {
 		t.Errorf("a change of a setting: %v", err)
 	}
 	if got := listed(t, probe, declared); len(got) != 0 {
@@ -424,20 +424,20 @@ func (u untouchable) DeleteKey(context.Context, string) error {
 func TestARefreshConfiguresOnlyAPluginWhoseListChanged(t *testing.T) {
 	store := newKeys(map[string]string{"secret/" + secretID: fromKeychain})
 	host, probe := newSecretHost(t, store)
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	calls := len(probe.calls)
 
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if len(probe.calls) != calls {
 		t.Errorf("%d Configure calls after a refresh with nothing changed, want %d", len(probe.calls), calls)
 	}
 
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.Refresh(t.Context()); err != nil {
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if len(probe.calls) != calls+1 || len(listed(t, probe, declared)) != 1 {
@@ -449,8 +449,8 @@ func TestARefreshConfiguresOnlyAPluginWhoseListChanged(t *testing.T) {
 func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
 	store := newKeys(map[string]string{"secret/" + secretID: fromKeychain})
 	host, probe := newSecretHost(t, store)
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -468,7 +468,7 @@ func TestAPluginNamedByAnOperationIsConfiguredAgain(t *testing.T) {
 // A refused operation configures no plugin.
 func TestAnOperationThatFailsConfiguresNoPlugin(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	calls := len(probe.calls)
@@ -484,14 +484,14 @@ func TestAnOperationThatFailsConfiguresNoPlugin(t *testing.T) {
 func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	source := newListing("Work")
-	host.SetSecretSource(source.source())
+	host.Config.SetSecretSource(source.source())
 	entered, release := probe.setHold(t)
 
 	refreshDone := make(chan error, 1)
-	go func() { refreshDone <- host.Refresh(t.Context()) }()
+	go func() { refreshDone <- host.Config.Refresh(t.Context()) }()
 	<-entered
 	configureDone := make(chan error, 1)
-	go func() { configureDone <- host.NotifyPluginConfig(t.Context(), secretPluginID) }()
+	go func() { configureDone <- host.Config.NotifyPluginConfig(t.Context(), secretPluginID) }()
 	select {
 	case err := <-configureDone:
 		t.Fatalf("a Configure ran during a refresh: %v", err)
@@ -512,7 +512,7 @@ func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
 // The declarations are listed for every installed plugin, with the group each declares.
 func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
-	host.plugins["md.numen.other"] = manifest.Discovered{Manifest: manifest.Manifest{
+	host.Registry.t.plugins["md.numen.other"] = manifest.Discovered{Manifest: manifest.Manifest{
 		ID: "md.numen.other",
 		Secrets: []manifest.SecretDeclaration{
 			{Name: "token", Title: "Token", Group: "mistral"},
@@ -522,7 +522,7 @@ func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 		{Plugin: secretPluginID, Name: declared},
 		{Plugin: "md.numen.other", Name: "token", Group: "mistral"},
 	}
-	if got := host.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []plugindomain.DeclarationKey{want[1], want[0]}) {
+	if got := host.Config.ListDeclarations(); !slices.Equal(got, want) && !slices.Equal(got, []plugindomain.DeclarationKey{want[1], want[0]}) {
 		t.Errorf("declarations = %v, want %v", got, want)
 	}
 }
@@ -532,19 +532,19 @@ func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
 	var pruned [][]plugindomain.DeclarationKey
-	host.SetSecretSource(plugindomain.SecretSource{Prune: func(declared []plugindomain.DeclarationKey) error {
+	host.Config.SetSecretSource(plugindomain.SecretSource{Prune: func(declared []plugindomain.DeclarationKey) error {
 		pruned = append(pruned, declared)
 		return nil
 	}})
-	host.hasScanned = true
+	host.Discovery.hasScanned = true
 
-	host.pruneSecretPermissions()
+	host.Discovery.pruneSecretPermissions()
 	if len(pruned) != 1 || len(pruned[0]) != 1 || pruned[0][0].Plugin != secretPluginID {
 		t.Fatalf("pruned with %v, want the declarations of the installed plugin", pruned)
 	}
 
-	host.problems = append(host.problems, manifestjson.DiscoveryProblem{Dir: "/plugins/broken", Err: errors.New("unreadable")})
-	host.pruneSecretPermissions()
+	host.Registry.t.problems = append(host.Registry.t.problems, manifestjson.DiscoveryProblem{Dir: "/plugins/broken", Err: errors.New("unreadable")})
+	host.Discovery.pruneSecretPermissions()
 	if len(pruned) != 1 {
 		t.Errorf("a scan with a problem pruned again: %v", pruned)
 	}
@@ -554,12 +554,12 @@ func TestPermissionsOfRemovedDeclarationsAreDroppedAfterAScan(t *testing.T) {
 // Configure of the activation reads the list as it is, so a refresh sends nothing to it.
 func TestAPluginAwaitingItsActivationConfigureIsNotDueOne(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
-	host.SetSecretSource(allowOne(secretPluginID))
-	host.secrets.mu.Lock()
-	host.secrets.awaitingFirstConfigure[secretPluginID] = true
-	host.secrets.mu.Unlock()
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	host.Config.delivery.mu.Lock()
+	host.Config.delivery.awaitingFirstConfigure[secretPluginID] = true
+	host.Config.delivery.mu.Unlock()
 
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != 0 {

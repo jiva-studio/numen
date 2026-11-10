@@ -18,14 +18,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginlend"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -103,7 +102,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	serverPort := serverAddress.Port
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -119,7 +118,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 		}
 	}()
 
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
@@ -155,19 +154,13 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 }
 
-func gateWalk(start editor.StartVaultFunc, release <-chan struct{}) editor.StartVaultFunc {
+func gateWalk(start windowsession.VaultPassesFunc, release <-chan struct{}) windowsession.VaultPassesFunc {
 	return func(
-		ctx context.Context, v domain.Vault, rebuild bool,
-		notified func(paths, assets []string, reload bool),
-		handleError windowdomain.ErrorHandler,
-	) (
-		read func(ctx context.Context, during func()) (notes int, err error),
-		run func(ctx context.Context),
-		refresh vaults.Refresh,
-		unwatched error,
-	) {
-		walk, run, refresh, unwatched := start(ctx, v, rebuild, notified, handleError)
-		read = func(ctx context.Context, during func()) (int, error) {
+		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
+	) windowsession.Started {
+		started := start(ctx, v, rebuild, report)
+		walk := started.Read
+		started.Read = func(ctx context.Context, during func()) (int, error) {
 			select {
 			case <-release:
 				return walk(ctx, during)
@@ -175,7 +168,7 @@ func gateWalk(start editor.StartVaultFunc, release <-chan struct{}) editor.Start
 				return 0, ctx.Err()
 			}
 		}
-		return read, run, refresh, unwatched
+		return started
 	}
 }
 
@@ -197,7 +190,7 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(start editor.StartVaultFunc) editor.StartVaultFunc {
+	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(start windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
 		return gateWalk(start, release)
 	})
 	if err != nil {

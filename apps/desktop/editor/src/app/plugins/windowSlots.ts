@@ -11,9 +11,12 @@ import {
   type WhenValues,
 } from '@numen/plugin-loader'
 import type { Command } from '@/entities/command'
-import type { DeclaredCommands } from './commands/declaredCommands'
-import { createSlotCommandFinder, readSlotEntries } from './commands/pluginSlots'
-import { getPaletteId } from './commands/declaredCommands'
+import {
+  type DeclaredCommands,
+  createSlotCommandFinder,
+  readSlotEntries,
+  getPaletteId,
+} from '@/features/plugin-commands'
 
 export interface WindowSlotsDeps {
   readonly declaredCommands: Pick<

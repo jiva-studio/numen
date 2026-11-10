@@ -38,12 +38,12 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 		t.Fatalf("write manifest: %v", err)
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", dir)
-	host.SetContentTypeTable(sharedmimeinfo.Open())
-	if err := host.Discover(); err != nil {
+	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	launches := 0
-	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		launches++
 		return nil, nil, errors.New("no process is started in this test")
 	})
@@ -53,9 +53,9 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
 	var failures []plugindomain.Failure
-	host.SetOnPluginFailed(func(failure plugindomain.Failure) { failures = append(failures, failure) })
+	host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) { failures = append(failures, failure) })
 
-	_, err := host.EnsureActive(t.Context(), "md.numen.views.sketch")
+	_, err := host.Activation.EnsureActive(t.Context(), "md.numen.views.sketch")
 
 	var unavailable *plugindomain.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.WithoutBackend {
@@ -67,7 +67,7 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	if len(failures) != 0 {
 		t.Fatalf("the host reported %v for a plugin without a backend", failures)
 	}
-	for _, info := range host.GetPluginInfos() {
+	for _, info := range host.Registry.GetPluginInfos() {
 		if info.Failure != nil {
 			t.Fatalf("plugin %s is listed as failed: %v", info.ID, info.Failure.Reason)
 		}
@@ -77,7 +77,7 @@ func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
 
-	activated, err := host.TriggerEvent(t.Context(), "onFile:pdf")
+	activated, err := host.Events.TriggerEvent(t.Context(), "onFile:pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestAnEventForTheFilesOfAFrontendPluginStartsNothing(t *testing.T) {
 func TestPluginInfosMarkThePartsOfThePlugins(t *testing.T) {
 	host, _ := newFrontendOnlyHost(t)
 
-	infos := host.GetPluginInfos()
+	infos := host.Registry.GetPluginInfos()
 	if len(infos) != 1 || !infos[0].HasFrontend || infos[0].HasBackend {
 		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend and no backend", infos)
 	}

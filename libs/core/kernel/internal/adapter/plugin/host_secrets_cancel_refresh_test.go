@@ -16,10 +16,10 @@ func getOperationNames() []string {
 func (c *cancelSetup) operations() map[string]func(ctx context.Context) error {
 	return map[string]func(ctx context.Context) error{
 		"Refresh": func(ctx context.Context) error {
-			return c.host.Refresh(ctx)
+			return c.host.Config.Refresh(ctx)
 		},
 		"NotifyPluginConfig": func(ctx context.Context) error {
-			return c.host.NotifyPluginConfig(ctx, secretPluginID)
+			return c.host.Config.NotifyPluginConfig(ctx, secretPluginID)
 		},
 	}
 }
@@ -125,14 +125,14 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefreshConfiguresThePlugin(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
-	if err := c.host.secrets.lockSecrets(t.Context()); err != nil {
+	if err := c.host.Config.delivery.lockSecrets(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	isLocked := true
 	unlock := func() {
 		if isLocked {
 			isLocked = false
-			c.host.secrets.unlockSecrets()
+			c.host.Config.delivery.unlockSecrets()
 		}
 	}
 	defer unlock()
@@ -142,7 +142,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	activation := make(chan error, 1)
 	go func() { activation <- activate(ctx) }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return c.host.secrets.isAwaitingFirstConfigure(secretPluginID)
+		return c.host.Config.delivery.isAwaitingFirstConfigure(secretPluginID)
 	})
 	cancel()
 	select {
@@ -153,13 +153,13 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	case <-time.After(configureCallTimeout):
 		t.Fatal("the activation still waits for the lock after its context ended")
 	}
-	if c.host.secrets.isAwaitingFirstConfigure(secretPluginID) {
+	if c.host.Config.delivery.isAwaitingFirstConfigure(secretPluginID) {
 		t.Error("the plugin still awaits a Configure that will not be sent")
 	}
 
 	unlock()
 	c.assertNothingSent(t, calls)
-	if err := c.host.Refresh(t.Context()); err != nil {
+	if err := c.host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	c.assertNothingSent(t, calls+1)
@@ -174,11 +174,11 @@ func TestAnOperationCancelledAfterItsCommitIsRepairedByTheNextRefresh(t *testing
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	if err := c.host.Refresh(ctx); !errors.Is(err, context.Canceled) {
+	if err := c.host.Config.Refresh(ctx); !errors.Is(err, context.Canceled) {
 		t.Fatalf("the refresh returned %v, want the context error", err)
 	}
 	c.assertNothingSent(t, calls)
-	if err := c.host.Refresh(t.Context()); err != nil {
+	if err := c.host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	c.assertNothingSent(t, calls+1)
@@ -199,11 +199,11 @@ func TestAWriteCancelledAfterItsCommitIsRepairedByTheNextRefresh(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	if err := c.host.Refresh(ctx, secretPluginID); !errors.Is(err, context.Canceled) {
+	if err := c.host.Config.Refresh(ctx, secretPluginID); !errors.Is(err, context.Canceled) {
 		t.Fatalf("the refresh returned %v, want the context error", err)
 	}
 	c.assertNothingSent(t, calls)
-	if err := c.host.Refresh(t.Context()); err != nil {
+	if err := c.host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	c.assertNothingSent(t, calls+1)
@@ -221,7 +221,7 @@ func TestAConfigureEndedByTheContextOfTheCallerIsSentAgainByTheNextRefresh(t *te
 	c.source.rename("Renamed")
 	ctx, cancel := context.WithCancel(t.Context())
 	result := make(chan error, 1)
-	go func() { result <- c.host.Refresh(ctx) }()
+	go func() { result <- c.host.Config.Refresh(ctx) }()
 	<-entered
 	cancel()
 	if err := <-result; err == nil {
@@ -230,7 +230,7 @@ func TestAConfigureEndedByTheContextOfTheCallerIsSentAgainByTheNextRefresh(t *te
 	release()
 	c.assertNothingSent(t, calls)
 
-	if err := c.host.Refresh(t.Context()); err != nil {
+	if err := c.host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if got := deliveredName(t, c.probe); got != "Renamed" {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -104,11 +105,11 @@ func (s *mockEmbeddingServer) EmbedBatch(
 
 func TestOpenEmbedderBridgeNoPlugin(t *testing.T) {
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", t.TempDir())
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	bridge, err := Open(t.Context(), host)
+	bridge, err := Open(t.Context(), pluginhost.Join(host))
 	if err == nil {
 		t.Fatal("expected error when no embedding plugin found, got nil")
 	}
@@ -150,19 +151,19 @@ func TestEmbedderBridge(t *testing.T) {
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
 	cmd := plugintest.StartSleepProcess(t)
 
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
 	ctx := t.Context()
-	bridge, err := Open(ctx, host)
+	bridge, err := Open(ctx, pluginhost.Join(host))
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge failed: %v", err)
 	}

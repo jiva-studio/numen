@@ -38,7 +38,7 @@ func isGone(t *testing.T, root, path string) bool {
 
 func waitForScan(t *testing.T, f *going) {
 	t.Helper()
-	testsupport.WaitFor(t, f.installation.State.Ready.Load)
+	testsupport.WaitFor(t, f.installation.State.IsReady)
 }
 
 // TestRenamingWritesTheNoteAndMovesTheFile. A note is shown by its title, so

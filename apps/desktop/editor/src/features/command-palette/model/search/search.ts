@@ -6,7 +6,7 @@ import type { PaletteGroup } from '@numen/workbench'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from './debounced'
-import type { IndexCoverage } from '../coverage'
+import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
   createPassageItem,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"net/http"
 	"slices"
 	"strings"
@@ -78,12 +79,12 @@ func newMCPCaller() testPlugin {
 func openToolsOfHost(t *testing.T, host *plugin.Host) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	host.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.GetEndpointCallers())
+	host.Services.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
+	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.Services.GetEndpointCallers())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +93,7 @@ func openToolsOfHost(t *testing.T, host *plugin.Host) numenv1connect.PluginToolS
 			t.Error(err)
 		}
 	})
-	caller, err := host.EnsureActive(t.Context(), mcpPlugin)
+	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,7 +206,7 @@ func TestDisablingAPluginRemovesItsToolsAndTheirSentences(t *testing.T) {
 		t.Fatalf("before the plugin is disabled the host lists the tools %v", before)
 	}
 
-	if err := host.SetPluginEnabled(t.Context(), zitherPlugin, false); err != nil {
+	if err := setEnabled(t.Context(), host, zitherPlugin, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -238,12 +239,12 @@ func TestReadingCatalogListsOnlyReadingToolsWithSentences(t *testing.T) {
 		newMCPCaller(),
 	)
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
 
-	specs := agenttoolsbridge.NewCatalog(host, agenttoolsbridge.Server(v1.ToolServer_TOOL_SERVER_READING)).ListTools(t.Context(), mcpPlugin)
+	specs := agenttoolsbridge.NewCatalog(pluginhost.Join(host), agenttoolsbridge.Server(v1.ToolServer_TOOL_SERVER_READING)).ListTools(t.Context(), mcpPlugin)
 
 	if len(specs) != 1 || specs[0].GetName() != "atlas_open" || !slices.Equal(specs[0].GetInstructions(), []string{atlasOpenSentence}) {
 		t.Errorf("the reading catalog lists %v, want atlas_open alone with its sentence", specs)

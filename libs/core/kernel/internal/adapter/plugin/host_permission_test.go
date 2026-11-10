@@ -32,7 +32,7 @@ func createManifestedHost(t *testing.T, manifests map[string]string) *Host {
 
 func createRawVaultClient(t *testing.T, host *Host, token string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	endpoint, err := hostendpoint.Open(t.Context(), host.hostAddress, host.GetEndpointCallers())
+	endpoint, err := hostendpoint.Open(t.Context(), host.Services.hostAddress, host.Services.GetEndpointCallers())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestACallWithoutTheManifestPermissionIsRefusedByTheCore(t *testing.T) {
 
 func createRawSearchClient(t *testing.T, host *Host, token string) numenv1connect.HostSearchServiceClient {
 	t.Helper()
-	endpoint, err := hostendpoint.Open(t.Context(), host.hostAddress, host.GetEndpointCallers())
+	endpoint, err := hostendpoint.Open(t.Context(), host.Services.hostAddress, host.Services.GetEndpointCallers())
 	if err != nil {
 		t.Fatal(err)
 	}

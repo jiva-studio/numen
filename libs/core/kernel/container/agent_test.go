@@ -145,10 +145,10 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		serverPort, served := ports[p.Manifest.ID]
 		if !served {
 			return nil, nil, errors.New("this plugin cannot be started")

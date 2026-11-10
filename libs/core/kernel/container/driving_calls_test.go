@@ -115,8 +115,8 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	if packagesRead := len(fields); packagesRead < 15 {
 		t.Fatalf("%d driving-adapter packages read, want at least 15: the walk is not reading them", packagesRead)
 	}
-	if structs < 85 {
-		t.Fatalf("%d struct types of the driving adapters read, want at least 85: the walk is not reading them", structs)
+	if structs < 75 {
+		t.Fatalf("%d struct types of the driving adapters read, want at least 75: the walk is not reading them", structs)
 	}
 
 	for rel, file := range files {

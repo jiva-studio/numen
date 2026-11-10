@@ -9,6 +9,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/service"
 )
@@ -19,15 +21,15 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
 	vault := hosttest.New("vault")
 	texts := hosttest.NewTexts("vault", "md.numen.readers.pdf")
-	documents := service.NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, func(id domain.VaultID) service.LiveTexts { return texts.With(id) }, pdf.NewWorkers())
+	documents := service.NewDocumentServer(document.NewReader(func(id domain.VaultID) host.FileReader { return vault.With(id) }, func(id domain.VaultID) document.LiveTexts { return texts.With(id) }, pdf.NewWorkers()))
 
-	_, err := documents.GetDocument(t.Context(), service.GetDocumentRequest{Path: outsidePath})
+	_, err := documents.GetDocument(t.Context(), api.GetDocumentRequest{Path: outsidePath})
 	assertDenied(t, err, "GetDocument outside the vault")
 
-	_, err = documents.GetDocument(t.Context(), service.GetDocumentRequest{Path: filepath.Join(vaultDir, "..", "outside.pdf")})
+	_, err = documents.GetDocument(t.Context(), api.GetDocumentRequest{Path: filepath.Join(vaultDir, "..", "outside.pdf")})
 	assertDenied(t, err, "GetDocument of a traversal path")
 
-	_, err = documents.GetHighlights(t.Context(), service.GetHighlightsRequest{Path: outsidePath})
+	_, err = documents.GetHighlights(t.Context(), api.GetHighlightsRequest{Path: outsidePath})
 	assertDenied(t, err, "GetHighlights outside the vault")
 }
 

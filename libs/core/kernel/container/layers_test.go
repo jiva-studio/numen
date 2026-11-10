@@ -39,7 +39,6 @@ func getDriving() map[string]bool {
 		"internal/adapter/plugin/hosttext":     true,
 		"internal/adapter/plugin/hostvault":    true,
 		"internal/adapter/theme":               true,
-		"internal/adapterlib/triggerpasses":    true,
 		"internal/adapterlib/wire":             true,
 	}
 }

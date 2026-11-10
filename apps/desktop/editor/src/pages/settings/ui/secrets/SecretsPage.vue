@@ -34,17 +34,17 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const plugins = computed(() => installation.value.plugin.plugins?.value ?? [])
-const credentialsPath = computed(() => installation.value.secrets.credentialsPath?.value ?? '')
+const plugins = computed(() => installation.value.plugin.plugins.value)
+const credentialsPath = computed(() => installation.value.secrets.credentialsPath.value)
 const drafts = useSecretDrafts()
 /** The group whose name is edited as it appears. */
 const newGroup = ref('')
 const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
 const sections = computed(() =>
   createPageSections(
-    installation.value.secrets.sections?.value ?? [],
+    installation.value.secrets.sections.value,
     drafts.emptyGroups.value,
-    installation.value.secrets.states?.value ?? new Map(),
+    installation.value.secrets.states.value,
   ),
 )
 const groups = computed(() => sections.value.map((one) => one.group))
@@ -55,7 +55,7 @@ const deletion = useSecretDeletion(
   () => plugins.value,
 )
 
-onMounted(() => installation.value.secrets.loadStates?.())
+onMounted(() => installation.value.secrets.loadStates())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {

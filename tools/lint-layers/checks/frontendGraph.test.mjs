@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { findComponentsBelowUi, findCoreClientOutsideApi, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
+import { APP_MAX_LINES, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
 
 /** A module of the resolved graph with local imports `{ specifier: resolvedPath }`. */
 function moduleOf(source, imports = {}) {
@@ -104,5 +104,42 @@ describe("the shared layer rule of windows", () => {
       ],
     );
     assert.equal(read, 6);
+  });
+});
+
+describe("the app layer rule", () => {
+  const lines = (count) => "const a = 1;\n".repeat(count);
+
+  it("fails a file over the limit, a composable file and a composable exported from another file", () => {
+    const { findings, read } = findAppOverreach([
+      { file: `${WINDOW}/app/window/createBig.ts`, text: lines(APP_MAX_LINES + 1) },
+      { file: `${WINDOW}/app/window/useTabs.ts`, text: lines(3) },
+      { file: `${WINDOW}/app/window/createWindow.ts`, text: "const x = 1;\nexport function useSneaky() {}\n" },
+      { file: `${WINDOW}/app/window/createCore.ts`, text: lines(APP_MAX_LINES) },
+    ]);
+    assert.deepEqual(
+      findings.map((one) => `${one.file.split("/").at(-1)}:${one.line} ${one.symbol}`),
+      [
+        `createBig.ts:${APP_MAX_LINES + 1} ${APP_MAX_LINES + 1} lines, at most ${APP_MAX_LINES} are allowed in app`,
+        "useTabs.ts:1 a composable file in app",
+        "createWindow.ts:2 composable useSneaky is exported from app",
+      ],
+    );
+    assert.equal(read, 4);
+  });
+
+  it("leaves tests, stories and the testing folder out of what it reads", () => {
+    const { findings, read } = findAppOverreach([
+      { file: `${WINDOW}/app/window/useTabs.test.ts`, text: lines(APP_MAX_LINES * 2) },
+      { file: `${WINDOW}/app/screens.stories.ts`, text: lines(APP_MAX_LINES * 2) },
+      { file: `${WINDOW}/app/App.vue`, text: lines(5) },
+    ]);
+    assert.deepEqual(findings, []);
+    assert.equal(read, 1);
+  });
+
+  it("counts a file that ends without a newline by its last line", () => {
+    const { findings } = findAppOverreach([{ file: `${WINDOW}/app/a.ts`, text: lines(3).trimEnd() }], 3);
+    assert.deepEqual(findings, []);
   });
 });

@@ -69,7 +69,7 @@ func TestAnEmbeddingPluginIsReadyWherePluginIsAvailable(t *testing.T) {
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cfg.PluginHost = container.LdaptPluginHost(host)
@@ -117,7 +117,7 @@ func writeEmbeddingPlugin(t *testing.T, manifest string) *plugin.Host {
 		t.Fatal(err)
 	}
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
@@ -154,7 +154,7 @@ func TestSearchWithDisabledEmbeddingProviderMatchesWords(t *testing.T) {
 		"targets": ["desktop.editor"],
 		"backend": {"entrypoint": "bin/vectors"}
 	}`)
-	host.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
+	host.Settings.SetSettings(map[string]map[string]any{"test.vectors": {"enabled": false}})
 	cfg, vault := makeScannedVault(t)
 	cfg.PluginHost = container.LdaptPluginHost(host)
 

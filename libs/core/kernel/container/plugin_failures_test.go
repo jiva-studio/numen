@@ -35,7 +35,7 @@ func newFailingConfig(t *testing.T) Config {
 		t.Fatal(err)
 	}
 	host := pluginhost.Open("desktop.editor", root)
-	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
 	return NewConfig(Config{PluginHost: LdaptPluginHost(host)})
@@ -57,7 +57,7 @@ func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {
 		t.Fatalf("tasks = %+v, want one error naming Sample with %q", list, failure.Reason)
 	}
 
-	if err := cfg.PluginHost.UpdatePluginSetting(t.Context(), "md.numen.sample", "enabled", true); err != nil {
+	if err := cfg.PluginHost.ApplySetting(t.Context(), "md.numen.sample", "enabled", true); err != nil {
 		t.Fatal(err)
 	}
 	if list := tasks.List(); len(list) != 0 {

@@ -362,10 +362,10 @@ func (f *going) read(t *testing.T) {
 	t.Helper()
 
 	for range 500 {
-		if f.installation.State.Ready.Load() {
+		if f.installation.State.IsReady() {
 			return
 		}
-		if why := f.installation.State.Error.Why(); why != "" {
+		if why := f.installation.State.GetError(); why != "" {
 			t.Fatalf("the vault could not be read: %v", why)
 		}
 		time.Sleep(10 * time.Millisecond)

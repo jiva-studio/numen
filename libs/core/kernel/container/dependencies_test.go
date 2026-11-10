@@ -24,12 +24,12 @@ import (
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	registry := provision.NewRegistry()
-	host.SetDependencies(registry)
+	host.Services.SetDependencies(registry)
 	tasks := run.NewTasks()
 	NewConfig(Config{PluginHost: LdaptPluginHost(host)}).ReportDependencies(tasks)
 	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}

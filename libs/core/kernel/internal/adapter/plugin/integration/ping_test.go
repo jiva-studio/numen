@@ -50,13 +50,13 @@ func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			host := newDiscoveredHost(t)
 			var failedID string
 			var reason string
-			host.SetOnPluginFailed(func(failed plugindomain.Failure) {
+			host.Failures.SetOnPluginFailed(func(failed plugindomain.Failure) {
 				failedID, reason = failed.PluginID, failed.Reason
 			})
 			var procs []*os.Process
-			host.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
+			host.Processes.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
-			_, err := host.EnsureActive(t.Context(), "org.example.sample")
+			_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
 			if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, manifest.ErrUnsupportedProtocol, tc.want)
 			}
@@ -66,7 +66,7 @@ func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
-			if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+			if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 				t.Fatalf("second EnsureActive() = %v, want a new start that fails with %v", err, manifest.ErrUnsupportedProtocol)
 			}
 			if len(procs) != 2 {
@@ -79,13 +79,13 @@ func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 func TestAPluginThatUsesTheHostsProtocolIsActivated(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var procs []*os.Process
-	host.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
+	host.Processes.SetLauncher(launchAnsweringPing(t, manifest.ProtocolVersion, &procs))
 
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive() = %v, want the plugin active", err)
 	}
-	host.Release("org.example.sample")
-	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	host.Activation.Release("org.example.sample")
+	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
