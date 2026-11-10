@@ -11,11 +11,13 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -23,9 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
-	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -43,7 +43,9 @@ type Installation struct {
 	notes  *note.Scenarios
 	vaults *vaults.Scenarios
 
-	sources       Sources
+	session       SessionSource
+	triggers      triggerpasses.Source
+	closeIndex    func() error
 	pages         pageSet
 	dialogs       []func(dialog machineport.PathDialog)
 	out           io.Writer
@@ -67,6 +69,8 @@ type Setup struct {
 	Asking        embeddingport.Embedder
 	EmbedderError error
 	StopEmbedder  func() error
+	ReadVault     ReadVaultFunc
+	CloseIndex    func() error
 	Progress      indexport.IndexProgress
 	EmitEvent     func(event string)
 	IsRebuilding  bool
@@ -78,7 +82,7 @@ var errNoVault = errors.New("the window has no vault")
 
 // NewInstallation makes the state of a window and the worker that indexes its
 // vaults. Nothing is served and no vault is open until Start.
-func NewInstallation(in Setup, sources Sources) *Installation {
+func NewInstallation(in Setup, session SessionSource) *Installation {
 	if in.EmbedderError != nil {
 		writeDiagnostic(in.Tasks.Set, in.Out, "not embedding: %v\n", in.EmbedderError)
 		// Record indexing task failure when embedding provider initialization fails.
@@ -87,14 +91,15 @@ func NewInstallation(in Setup, sources Sources) *Installation {
 	state := NewState(in.Tasks)
 	state.EmitEvent = in.EmitEvent
 	state.SetIndexing(in.Progress, in.Embedder)
-	indexer := newIndexWorker(sources.ReadVault, state, in.Embedder, quietPeriod, in.Out)
+	indexer := newIndexWorker(in.ReadVault, state, in.Embedder, quietPeriod, in.Out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
 	return &Installation{
 		State:         state,
 		Embedder:      in.Embedder,
 		Asking:        in.Asking,
-		sources:       sources,
+		session:       session,
+		closeIndex:    in.CloseIndex,
 		pages:         pageSet{state: state},
 		out:           in.Out,
 		checkIdentity: in.CheckIdentity,
@@ -116,6 +121,11 @@ func (o *Installation) UseScenarios(notes *note.Scenarios, target *vaults.Scenar
 
 // Mount adds the services the window answers through.
 func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.routes, routes...) }
+
+// SetTriggers sets where the passes of the plugins' triggers come from.
+func (o *Installation) SetTriggers(open func() *trigger.Triggers, watch func() (<-chan struct{}, func())) {
+	o.triggers = triggerpasses.Source{Open: open, Watch: watch}
+}
 
 // SetThemes sets the themes the window offers and puts on its pages. A window
 // put together without a catalog serves none.
@@ -181,19 +191,7 @@ func (o *Installation) Close() error {
 	playingErr := o.State.Playing.Load().Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
-	return errors.Join(playingErr, o.stopEmbedder(), o.sources.CloseIndex())
-}
-
-// Problems returns the window's index cache as a port; Passages does the same.
-// Other components working the same vault in this process, including agent
-// tools, read the same index.
-func (o *Installation) Problems() problemport.ProblemQueries {
-	return o.sources.GetProblemQueries()
-}
-
-// Passages is the window's index cache as a port, as Problems is.
-func (o *Installation) Passages() sourceport.PassageQueries {
-	return o.sources.GetPassageQueries()
+	return errors.Join(playingErr, o.stopEmbedder(), o.closeIndex())
 }
 
 // GetCurrentVault is the vault the window has open.
@@ -226,7 +224,7 @@ func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.State.session.Load(); on != nil {
 		return on.refresh
 	}
-	return o.sources.GetRefresh()
+	return o.session.GetRefresh()
 }
 
 // UpdateIndex brings the notes at the paths up to date in the index.

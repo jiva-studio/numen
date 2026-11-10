@@ -6,10 +6,12 @@ import (
 	"context"
 	"errors"
 	"math"
+	"net/http"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -34,6 +36,13 @@ type Handler struct {
 // over; without them such a command lists and runs nothing.
 func NewHandler(vaults VaultProvider, commands plugincommand.Commands, versions VersionItems) *Handler {
 	return &Handler{vaults: vaults, list: commands.List, run: commands.Run, versions: versions}
+}
+
+// NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
+// handler it answers through; the window turns the three into a route.
+func NewRoute(options connect.HandlerOption, handler *Handler) (path string, served http.Handler, service any) {
+	path, served = numenv1connect.NewCommandServiceHandler(handler, options)
+	return path, served, handler
 }
 
 // ListCommands lists the commands and the handlers of shared commands of every enabled plugin,

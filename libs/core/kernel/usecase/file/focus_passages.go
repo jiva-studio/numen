@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
@@ -56,14 +57,14 @@ func (u *FocusPassages) Execute(ctx context.Context, v domain.Vault, in FocusPas
 
 func checkPassages(in FocusPassagesInput) error {
 	if in.Path == "" {
-		return fmt.Errorf("path is empty: %w", ErrInvalidPassage)
+		return plugin.InvalidFocus(fmt.Errorf("path is empty: %w", ErrInvalidPassage))
 	}
 	if len(in.Passages) > maxPassages {
-		return fmt.Errorf("too many passages: at most %d: %w", maxPassages, ErrInvalidPassage)
+		return plugin.InvalidFocus(fmt.Errorf("too many passages: at most %d: %w", maxPassages, ErrInvalidPassage))
 	}
 	for _, passage := range in.Passages {
 		if passage.Start < 0 || passage.Empty() {
-			return fmt.Errorf("passage start must be >= 0 and length > 0: %w", ErrInvalidPassage)
+			return plugin.InvalidFocus(fmt.Errorf("passage start must be >= 0 and length > 0: %w", ErrInvalidPassage))
 		}
 	}
 	return nil

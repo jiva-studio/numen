@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
@@ -29,7 +30,7 @@ func NewFocusNote(queries noteport.NoteRefs, view windowport.Window) *FocusNote 
 // index returns vaultport.ErrNotExist.
 func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error) {
 	if path == "" {
-		return domain.NoteRef{}, ErrNoNotePath
+		return domain.NoteRef{}, plugin.InvalidFocus(ErrNoNotePath)
 	}
 	found, err := u.queries.GetNotes(ctx, v.ID, []string{path})
 	if err != nil {
