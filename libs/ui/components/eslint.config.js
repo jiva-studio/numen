@@ -7,10 +7,12 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
+import storybook from 'eslint-plugin-storybook'
 import {
   createBaseConfig,
   createPortConfig,
   createPureSegmentConfig,
+  createStoryConfig,
 } from '../../../tools/lint-layers/base-eslint.mjs'
 import { createDomainImports, createLibraryLayerConfigs, createOwnImportConfig } from '../../../tools/lint-layers/layers.mjs'
 
@@ -70,4 +72,6 @@ export default tseslint.config(
   }),
 
   createPureSegmentConfig(clockFunctions),
+
+  ...createStoryConfig(storybook),
 )

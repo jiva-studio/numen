@@ -30,6 +30,8 @@ import { LINT_CONFIG_VERIFIERS } from "./checks/lintConfig.mjs";
 import { PLUGIN_VERIFIERS } from "./checks/plugins.mjs";
 import { SDK_VERIFIERS } from "./checks/sdkProtocol.mjs";
 import { STYLE_VERIFIERS } from "./checks/styles.mjs";
+import { STORY_VERIFIERS } from "./checks/stories.mjs";
+import { STORY_LINT_VERIFIERS } from "./checks/storyLint.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
 import { TYPECHECK_SCOPE_VERIFIERS } from "./checks/typecheckScope.mjs";
 import { FRONTEND_GRAPH_VERIFIERS } from "./checks/frontendGraph.mjs";
@@ -42,6 +44,8 @@ const VERIFIERS = [
   ...DEPENDENCY_VERIFIERS,
   ...FRONTEND_GRAPH_VERIFIERS.filter((v) => v.scope === "libs"),
   ...STYLE_VERIFIERS,
+  ...STORY_VERIFIERS,
+  ...STORY_LINT_VERIFIERS,
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "libs"),
   ...LINT_CONFIG_VERIFIERS,
   ...TYPECHECK_SCOPE_VERIFIERS,

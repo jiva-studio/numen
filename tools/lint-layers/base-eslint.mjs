@@ -1253,3 +1253,15 @@ export function createPlainLibraryConfig(dirname) {
     prettier,
   ]
 }
+
+/**
+ * The recommended rules of `eslint-plugin-storybook` for story files, with `csf-component` off: the link from a
+ * story to its component is the import graph (`public-component-has-story`), and a screen story has no single
+ * component.
+ *
+ * @param {{ configs: Record<string, Array> }} storybook The `eslint-plugin-storybook` module, imported by the package that declares it
+ * @returns {Array}
+ */
+export function createStoryConfig(storybook) {
+  return [...storybook.configs['flat/recommended'], { files: ['**/*.stories.ts'], rules: { 'storybook/csf-component': 'off' } }]
+}

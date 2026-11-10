@@ -172,6 +172,9 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `plugins-isolation-capture`: a file under `plugins/(X)/` references no other plugin.
 - `plugins-hold-no-schema`: no `.proto` file under `plugins/(*)/`.
 - `no-component-below-ui`: no `.vue` file of a library, a window or a plugin frontend lies in a `lib`, `api` or `model` segment.
+- `public-component-has-story`: every component exported from the public entry of `@numen/ui` or `@numen/workbench` is rendered by a story file of its library. A story file renders a component when it imports it, directly or through a folder `index.ts`, and uses the import.
+- `emitting-component-has-play-story`: every public component whose script calls `defineEmits` or `defineModel` is rendered by a story file with a `play` function, on an exported story or on the default export.
+- `story-files-lint-storybook-recommended`: a story file of `@numen/ui` and `@numen/workbench` resolves every rule of the recommended config of `eslint-plugin-storybook` at the severity the plugin gives it, and `storybook/csf-component` is off.
 - `core-client-only-in-api`: a window imports `@numen/core-client` only from an `api` segment and from its entry `src/main.ts`.
 - `shared-serves-several-slices`: a shipped file of a window's `shared` layer is imported, directly or through other shared files, from more than one slice; a file one slice uses belongs in that slice.
 - `desktop-editor-fsd`: the FSD layer hierarchy of the editor (§4).
