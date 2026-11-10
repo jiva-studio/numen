@@ -45,7 +45,7 @@ func applySettingsFile(c Config, s settingsadapter.File) Config {
 }
 
 func models(c Config) func() []settingsdomain.Model {
-	return c.modelsForProvider(pluginsAgentProvider(plugins(c)))
+	return modelsForProvider(c, pluginsAgentProvider(plugins(c)))
 }
 
 func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {

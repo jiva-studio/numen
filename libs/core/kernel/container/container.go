@@ -14,6 +14,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
@@ -25,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -275,7 +277,7 @@ func plugins(c Config) pluginsWiring {
 		MakeRefresh: func(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
 			return vaultMakeRefresh(vaultOf(c), db, notes)
 		},
-		BuildNotes: c.Notes,
+		BuildNotes: func(db *vault.Index, index edit.IndexUpdater) note.Scenarios { return Notes(c, db, index) },
 		Moves:      func(ctx context.Context) (<-chan struct{}, error) { return vaultMoves(v, ctx) },
 	}
 }

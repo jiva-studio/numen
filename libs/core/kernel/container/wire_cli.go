@@ -55,14 +55,14 @@ func OpenCLILinks(c Config, ctx context.Context) (cli.Links, error) {
 	if err != nil {
 		return cli.Links{}, err
 	}
-	notes := c.Notes(db, updateIndex(vaultOf(c), db))
+	notes := Notes(c, db, updateIndex(vaultOf(c), db))
 	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
 }
 
 func OpenCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 	indexing := c
 	indexing.ShouldRebuildIndex = rebuild
-	db, err := openIndex(indexing.vault(), ctx)
+	db, err := openIndex(vaultOf(indexing), ctx)
 	if err != nil {
 		return cli.Scan{}, err
 	}
@@ -70,7 +70,7 @@ func OpenCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (c
 	if err != nil {
 		return cli.Scan{}, errors.Join(err, db.Close())
 	}
-	embedder, closeEmbedder, why := searchEmbedder(indexing.search(), ctx)
+	embedder, closeEmbedder, why := searchEmbedder(searchOf(indexing), ctx)
 	read, err := ReadWholeVault(indexing, ctx, db, embedder, v)
 	if err != nil {
 		return cli.Scan{}, errors.Join(err, closeIfOpen(closeEmbedder), db.Close())
@@ -98,9 +98,9 @@ func OpenCLISearch(c Config,
 	if err != nil {
 		return cli.Search{}, errors.Join(err, db.Close())
 	}
-	embedder, closeEmbedder, why := searchEmbedder(asking.search(), ctx)
+	embedder, closeEmbedder, why := searchEmbedder(searchOf(asking), ctx)
 	return cli.Search{
-		Search: newSearch(asking.search(), db, embedder, errorHandler),
+		Search: newSearch(searchOf(asking), db, embedder, errorHandler),
 		Words:  why,
 		Close: func() error {
 			return errors.Join(closeIfOpen(closeEmbedder), db.Close())
@@ -117,7 +117,7 @@ func OpenCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
 }
 
 func GetCLIPluginCommands(c Config) cli.PluginCommands {
-	return cli.PluginCommands{List: getPluginCommands(plugins(c)).List, Open: c.openPluginCommands}
+	return cli.PluginCommands{List: getPluginCommands(plugins(c)).List, Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) { return openPluginCommands(c, ctx, v) }}
 }
 
 func closeIfOpen(closeFn func() error) error {

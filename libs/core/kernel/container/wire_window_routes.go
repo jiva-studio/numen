@@ -193,7 +193,7 @@ func openGetSettings(c Config, provider agentport.AgentProvider) *settings.Get {
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	handler := &windowsettings.Handler{}
-	handler.Get = w.cfg.openGetSettings(pluginsAgentProvider(plugins(w.cfg)))
+	handler.Get = openGetSettings(w.cfg, pluginsAgentProvider(plugins(w.cfg)))
 	handler.Values.Write = openWriteSettings(settingsOf(w.cfg))
 	handler.Watch = openWatchSettings(settingsOf(w.cfg))
 	handler.Retry = openRetryPlugin(settingsOf(w.cfg), getPluginRetrier(plugins(w.cfg)))
