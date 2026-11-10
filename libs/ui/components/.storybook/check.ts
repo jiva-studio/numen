@@ -24,7 +24,7 @@ const RESTLESS =
 export type Reach = false | { readonly keeps: string }
 
 /** One hook that runs after a story, as a corpus lists it beside the others. */
-export type StoryCheck = Extract<NonNullable<Preview['afterEach']>, (...args: never[]) => void | Promise<void>>
+export type StoryCheck = Extract<NonNullable<Preview['afterEach']>, (...args: never[]) => unknown>
 
 /** The check, wired to a corpus by the story it is proved against. */
 export const reachCheck =
