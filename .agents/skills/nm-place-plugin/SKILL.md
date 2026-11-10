@@ -152,7 +152,7 @@ A plugin declares in `permissions` each host capability it uses: `vault:read`, `
 
 The host checks both sides. For a backend, the host endpoint authenticates the bearer token (`NUMEN_PLUGIN_TOKEN`) as a plugin id and checks the permission of that plugin's manifest on each call (`authorize` in `libs/core/kernel/internal/adapter/plugin/hostendpoint/host_endpoint.go`; `libs/core/kernel/internal/adapter/plugin/host_permission_test.go` tests it for any client). For a frontend, `libs/plugin/loader/src/hosting/context.ts` wraps each service of the context so that a call without the permission throws (`requirePerm`).
 
-A plugin reads and writes the vault through `host.Client`, which implements the capability interfaces (`host.FileReader`, `host.FileWriter`, `host.NoteLookup`, `host.LinkLookup` and the others), and each plugin declares the narrow one it needs. A plugin keeps its own files in `host.Store` or in the directories `NUMEN_PLUGIN_DATA_DIR` and `NUMEN_PLUGIN_CACHE_DIR` name. A frontend that shows notes holds `vault:read`, and one that edits them also `vault:write`.
+A plugin reads and writes the vault through `host.Client`, which implements the capability interfaces (`host.FileReader`, `host.FileWriter`, `host.NoteLookup`, `host.LinkLookup` and the others), and each plugin declares the narrow one it needs. A plugin keeps its own files through `host.StoreReader` and `host.StoreWriter`, or in the directories `NUMEN_PLUGIN_DATA_DIR` and `NUMEN_PLUGIN_CACHE_DIR` name. A frontend that shows notes holds `vault:read`, and one that edits them also `vault:write`.
 
 ## What the checks enforce
 

@@ -15,12 +15,18 @@ const textKind domain.TextKind = "transcript"
 
 func getTranscriptionKey(fileHash string) string { return fileHash }
 
+// Folder is the plugin's folder in the store of a vault, as the transcripts use it.
+type Folder interface {
+	host.StoreWriter
+	Read(ctx context.Context, name string) ([]byte, error)
+}
+
 // transcripts are the transcripts kept in the plugin's folder of a vault's store, in the common
 // format of text versions: `<key>.jsonl` whole, and `<key>.partial.jsonl` while a transcription is
 // under way. `<key>.reached` records how far the partial transcript got and how many of its bytes
 // that is, after every batch of cues it claims.
 type transcripts struct {
-	store host.Store
+	store Folder
 }
 
 func getFileName(key string) string    { return key + ".jsonl" }

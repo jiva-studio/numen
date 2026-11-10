@@ -30,7 +30,7 @@ The plugin runs scenarios over notes in a vault: cards, decks, review, schedules
 
 - `backend/ports/ports.go` declares what the scenarios require, in their vocabulary: `Clock` (`:32`), `VaultReader` (`:37`), and the writers, queries and stores after it. The package comment states that a use case does not depend on how the host implements them.
 - `backend/cards`, `backend/flashcards` and `backend/review` are the scenario and domain packages; `format`, `note` and `cardid` hold what a card and a note are.
-- `backend/hostports/hostports.go:21-45` builds every port from one function giving the narrow vault interfaces per vault identity and one `host.Store`. It is the adapter to the host; the target is to place it at `backend/internal/adapter/host/`, since it is an adapter named after the technology it uses.
+- `backend/hostports/hostports.go:21-45` builds every port from one function giving the narrow vault interfaces per vault identity and one function giving the plugin folder per vault identity. It is the adapter to the host; the target is to place it at `backend/internal/adapter/host/`, since it is an adapter named after the technology it uses.
 - `service/` holds the handlers of the JSON methods and the conversions to `api` (`cardwire`, `presetwire`).
 - `service` is the only package that calls `hostports.New`, so a use case is tested with a fake port.
 
@@ -39,7 +39,7 @@ Placing a new feature here: a new question the scenarios ask of the vault is a m
 ## Host clients and closing: `plugins/readers-pdf/backend/service/mount.go`
 
 - `Mount` (`:14-33`) builds each host client from the environment, once: `host.NewTextClientFromEnv`, `NewStoreClientFromEnv`, `NewClientFromEnv`, `NewQueueClientFromEnv`.
-- It passes them to the servers as narrow SDK interfaces such as `host.FileReader` and `host.Texts` (`mount`, `:35`), so `hosttest` fakes replace them in tests.
+- It passes them to the servers as narrow SDK interfaces such as `host.FileReader` and `host.TextVersions` (`mount`, `:35`), so `hosttest` fakes replace them in tests.
 - It registers the API (`s.NewAPI(APIService)`), the page route, the commands (`command.Mount`) and what to close (`s.OnClose`).
 - The engine is the package `backend/pdf`, outside `service`. `service` calls it, and `pdf` imports nothing of `service`.
 - The manifest declares `vault:read` and `vault:write` (`manifest.json:50`), the permissions the vault calls need; the host rejects a call of a backend without them in `hostendpoint.authorize` (`libs/core/kernel/internal/adapter/plugin/hostendpoint/host_endpoint.go:185`).

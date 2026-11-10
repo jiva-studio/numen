@@ -65,10 +65,19 @@ func openFromEnv() (Hosts, error) {
 		return Hosts{}, err
 	}
 	client := host.NewClient(endpoint)
+	search := host.NewSearchClient(endpoint)
+	store := host.NewStoreClient(endpoint)
 	notes := func(id domain.VaultID) host.NoteLookup { return client.With(id) }
 	return Hosts{
-		Floors: relevance.Host{Search: host.NewSearchClient(endpoint), Vaults: notes, Store: host.NewStoreClient(endpoint)},
-		Queue:  host.NewQueueClient(endpoint),
+		Floors: relevance.Host{
+			Search: func(id domain.VaultID) relevance.Search {
+				on := search.With(id)
+				return relevance.Search{Index: on, Policy: on}
+			},
+			Vaults: notes,
+			Store:  func(id domain.VaultID) relevance.Folder { return store.With(id) },
+		},
+		Queue: host.NewQueueClient(endpoint),
 	}, nil
 }
 

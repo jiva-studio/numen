@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/tools-search-relevance/backend/relevance"
 )
 
-func calibrate(t *testing.T, search host.Search, vault host.NoteLookup) (relevance.Outcome, relevance.Calibration, error) {
+func calibrate(t *testing.T, search host.SearchIndex, vault host.NoteLookup) (relevance.Outcome, relevance.Calibration, error) {
 	t.Helper()
 	state, err := search.GetEmbeddingState(t.Context())
 	if err != nil {
@@ -270,13 +270,13 @@ func TestCalibrateClipsALongTitleAtTheEmbeddingLimit(t *testing.T) {
 
 // changingSearch is a search whose model or index changes between calls.
 type changingSearch struct {
-	host.Search
+	host.SearchIndex
 	answer func(embedded host.EmbeddedTexts) (host.EmbeddedTexts, error)
 	sample func(ctx context.Context, recipe string, queries []host.SimilarityQuery) (host.SimilaritySample, error)
 }
 
 func (s changingSearch) EmbedTexts(ctx context.Context, texts []string) (host.EmbeddedTexts, error) {
-	embedded, err := s.Search.EmbedTexts(ctx, texts)
+	embedded, err := s.SearchIndex.EmbedTexts(ctx, texts)
 	if err != nil {
 		return embedded, err
 	}
@@ -290,7 +290,7 @@ func (s changingSearch) SampleSimilarities(ctx context.Context, recipe string, q
 	if s.sample != nil && queries != nil {
 		return s.sample(ctx, recipe, queries)
 	}
-	return s.Search.SampleSimilarities(ctx, recipe, queries)
+	return s.SearchIndex.SampleSimilarities(ctx, recipe, queries)
 }
 
 func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
@@ -329,7 +329,7 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			changing := changingSearch{Search: search, answer: tc.answer, sample: tc.sample}
+			changing := changingSearch{SearchIndex: search, answer: tc.answer, sample: tc.sample}
 
 			outcome, got, err := relevance.NewCalibrator(newClock()).Calibrate(t.Context(), changing, vault, state)
 			if !errors.Is(err, relevance.ErrRecipeChanged) {
@@ -351,7 +351,7 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	shrinking := changingSearch{
-		Search: search,
+		SearchIndex: search,
 		sample: func(_ context.Context, _ string, queries []host.SimilarityQuery) (host.SimilaritySample, error) {
 			return host.SimilaritySample{PassageCount: 10, SourceCount: 3, Rows: make([][]float64, len(queries))}, nil
 		},
@@ -364,12 +364,12 @@ func TestCalibrateKeepsNothingWhenTheModelChangesDuringTheRun(t *testing.T) {
 func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		set  func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup)
+		set  func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup)
 		want error
 	}{
 		{
 			name: "a model that fails",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				search.FailEmbedding(errors.New("the plugin is not running"))
 				return search, vault
 			},
@@ -377,7 +377,7 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 		},
 		{
 			name: "a permission that is denied",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				search.Deny(host.PermissionIndexRead)
 				return search, vault
 			},
@@ -385,14 +385,14 @@ func TestCalibrateReportsTheFailuresOfTheHost(t *testing.T) {
 		},
 		{
 			name: "listing notes fails",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				return search, noteLookup{NoteLookup: vault, pathsErr: host.ErrUnknownVault}
 			},
 			want: host.ErrUnknownVault,
 		},
 		{
 			name: "reading note titles fails",
-			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.Search, host.NoteLookup) {
+			set: func(search *hosttest.Search, vault *hosttest.Vault) (host.SearchIndex, host.NoteLookup) {
 				return search, noteLookup{
 					NoteLookup: vault,
 					getNotes: func(context.Context, []string) (map[string]domain.NoteRef, error) {

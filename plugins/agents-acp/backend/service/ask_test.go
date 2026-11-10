@@ -22,7 +22,7 @@ import (
 
 func askAgent(t *testing.T, svc *agentServer, task *agentrun.Request) (said, stopReason string) {
 	t.Helper()
-	stream, err := agenttest.Serve(t, svc).Ask(t.Context(), task)
+	stream, err := serveAgent(t, svc).Ask(t.Context(), task)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestAskAgentAllowsTheToolsOfTheTaskByTheirNames(t *testing.T) {
 // of its tool, and its end once.
 func TestAskAgentReportsTheToolCallsOfTheAgent(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "tools")
-	stream, err := agenttest.Serve(t, serveAgents(agent)).Ask(t.Context(), &agentrun.Request{
+	stream, err := serveAgent(t, serveAgents(agent)).Ask(t.Context(), &agentrun.Request{
 		Agent: "acp:fake", Prompt: "why?", Tools: []string{"note_read"},
 		ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "secret",
 		ToolDeclarations: []toolcall.ToolDeclaration{{Name: "note_read", Title: "Read a note", Kind: "read", About: "path"}},
@@ -357,7 +357,7 @@ func TestAskAgentStopsTheAgentWhenCancelled(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
 
-	stream, err := agenttest.Serve(t, serveAgents(agent)).Ask(ctx, &agentrun.Request{Agent: "acp:fake", Prompt: "why?"})
+	stream, err := serveAgent(t, serveAgents(agent)).Ask(ctx, &agentrun.Request{Agent: "acp:fake", Prompt: "why?"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -463,7 +463,7 @@ func serveAgents(agents ...acpAgent) *agentServer {
 func TestGetAgentPrograms_ReturnsDepthsForCurrentModel(t *testing.T) {
 	agent, _ := fakeACPAgent(t, "fake", "thought")
 
-	got, err := agenttest.Serve(t, serveAgents(agent)).GetPrograms(t.Context(), nil)
+	got, err := serveAgent(t, serveAgents(agent)).GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -638,4 +638,9 @@ func TestAskAndSessionEdgeCases(t *testing.T) {
 	if tb.String() != tail {
 		t.Errorf("tailBuffer len = %d, want %d", len(tb.String()), len(tail))
 	}
+}
+
+func serveAgent(t *testing.T, agent *agentServer) *agentrun.Client {
+	t.Helper()
+	return agenttest.Serve(t, agent, agent)
 }

@@ -31,6 +31,11 @@ type Queries struct {
 	hostports.Problems
 }
 
+// Folders gives the plugin folder in the store of the vault with an identity, seen from the vault.
+func Folders(host *hosttest.Vault) func(domain.VaultID) hostports.Folder {
+	return func(id domain.VaultID) hostports.Folder { return host.Store().With(id) }
+}
+
 // Env is a vault written to a folder of the test's own, and the ports over it.
 type Env struct {
 	Host    *hosttest.Vault
@@ -55,7 +60,7 @@ func createVaultName(tb testing.TB) string {
 
 // Of is the ports over a vault the test made.
 func Of(host *hosttest.Vault) Env {
-	ports := hostports.New(Vaults(host), host.Store())
+	ports := hostports.New(Vaults(host), Folders(host))
 	return Env{
 		Host:    host,
 		Store:   host.Store(),
@@ -78,7 +83,7 @@ type Installation struct {
 func NewInstallation() Installation {
 	host := hosttest.New("installation")
 	host.Hide()
-	ports := hostports.New(Vaults(host), host.Store())
+	ports := hostports.New(Vaults(host), Folders(host))
 	return Installation{
 		vaults:  map[domain.VaultID]*hosttest.Vault{},
 		Host:    host,

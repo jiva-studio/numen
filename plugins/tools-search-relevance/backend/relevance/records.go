@@ -21,6 +21,12 @@ type Record struct {
 	Calibration *Calibration
 }
 
+// Folder is the part of the plugin's folder in the store of a vault that the records use.
+type Folder interface {
+	Read(ctx context.Context, name string) ([]byte, error)
+	Write(ctx context.Context, name string, content []byte) error
+}
+
 // Records keeps the record of each recipe of one vault.
 type Records interface {
 	// Read returns the record kept for the recipe, and false where none is kept.
@@ -31,11 +37,11 @@ type Records interface {
 
 // storeRecords keeps one JSON file for each recipe in the plugin's folder of the vault's store.
 type storeRecords struct {
-	store host.Store
+	store Folder
 }
 
 // NewRecords returns the records kept in the store folder.
-func NewRecords(store host.Store) Records {
+func NewRecords(store Folder) Records {
 	return storeRecords{store: store}
 }
 

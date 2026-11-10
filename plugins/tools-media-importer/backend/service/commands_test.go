@@ -26,7 +26,7 @@ func newMockLinks(t *testing.T) (*link.Links, *hosttest.Store, link.Host) {
 	store := vault.Store()
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, store)
-	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: store, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	links := link.New(hosted,
 		func() link.Fetcher { return download.NewMock() },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })
@@ -171,11 +171,9 @@ func (f *configurableFetcher) Download(ctx context.Context, _ string, _ download
 }
 
 type errListStore struct {
-	host.Store
+	*hosttest.Store
 	listErr error
 }
-
-func (s *errListStore) With(domain.VaultID) host.Store { return s }
 
 func (s *errListStore) List(ctx context.Context) ([]host.StoreFile, error) {
 	if s.listErr != nil {
@@ -196,7 +194,7 @@ func TestDescribeSizeBoundariesAndCommandErrorPaths(t *testing.T) {
 	es := &errListStore{Store: vault.Store()}
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
-	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: es, Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: func(domain.VaultID) link.Folder { return link.Folder{Files: es, Writer: es} }, Texts: textsOf(texts), Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	cf := &configurableFetcher{}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
@@ -269,7 +267,7 @@ func newConfiguredCommands(t *testing.T, cf *configurableFetcher) (*command.Regi
 	texts := hosttest.NewTexts(vault.Vault().ID, PluginID)
 	texts.SetStore(PluginID, vault.Store())
 	queue := hosttest.NewQueue()
-	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: vault.Store(), Texts: texts, Queue: queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
+	hosted := link.Host{PluginID: PluginID, Vaults: vaultsOf(vault), Store: foldersOf(vault), Texts: textsOf(texts), Queue: queue, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))}
 	links := link.New(hosted,
 		func() link.Fetcher { return cf },
 		func() link.Settings { return link.Settings{IsAutomatic: true} })

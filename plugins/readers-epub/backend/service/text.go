@@ -30,8 +30,8 @@ const textKind domain.TextKind = "book-text"
 // written as background work in the host's queue.
 type TextServer struct {
 	vaults func(domain.VaultID) vaultFiles
-	texts  host.Texts
-	store  host.Store
+	texts  func(domain.VaultID) host.TextVersions
+	store  func(domain.VaultID) host.StoreWriter
 	queue  host.Queue
 
 	wg sync.WaitGroup
@@ -51,7 +51,7 @@ type TextRequest struct {
 
 // NewTextServer is the texts of the books read through vaults, written into store and reported to
 // texts, each written in a turn of queue.
-func NewTextServer(vaults func(domain.VaultID) vaultFiles, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
+func NewTextServer(vaults func(domain.VaultID) vaultFiles, texts func(domain.VaultID) host.TextVersions, store func(domain.VaultID) host.StoreWriter, queue host.Queue) *TextServer {
 	return &TextServer{
 		vaults: vaults, texts: texts, store: store, queue: queue,
 		wg:       sync.WaitGroup{},
@@ -183,7 +183,7 @@ func (s *TextServer) putText(ctx context.Context, req TextRequest, task host.Tas
 	if err := s.queue.ReportTask(ctx, task); err != nil {
 		return err
 	}
-	files, texts, store := s.vaults(req.Vault), s.texts.With(req.Vault), s.store.With(req.Vault)
+	files, texts, store := s.vaults(req.Vault), s.texts(req.Vault), s.store(req.Vault)
 	read, err := s.readBook(ctx, files, req.Path)
 	if isUnreadable(err) {
 		return nil

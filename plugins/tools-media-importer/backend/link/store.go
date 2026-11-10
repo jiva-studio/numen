@@ -37,7 +37,7 @@ const (
 
 // folder is what is kept for the links of one vault.
 type folder struct {
-	store host.Store
+	store Folder
 }
 
 // record is what fetched the text of a link.
@@ -73,7 +73,7 @@ func getSegments(fetched download.Text) ([]domain.TextSegment, error) {
 }
 
 func (f folder) writeText(ctx context.Context, key string, segments []domain.TextSegment, rec record) error {
-	if err := host.WriteText(ctx, f.store, key+textExt, segments); err != nil {
+	if err := host.WriteText(ctx, f.store.Writer, key+textExt, segments); err != nil {
 		return err
 	}
 	return f.writeRecord(ctx, key, rec)
@@ -85,11 +85,11 @@ func (f folder) writeRecord(ctx context.Context, key string, rec record) error {
 	if err != nil {
 		return err
 	}
-	return f.store.Write(ctx, key+recordExt, raw)
+	return f.store.Writer.Write(ctx, key+recordExt, raw)
 }
 
 func (f folder) findRecord(ctx context.Context, key string) (record, bool, error) {
-	raw, err := f.store.Read(ctx, key+recordExt)
+	raw, err := f.store.Files.Read(ctx, key+recordExt)
 	if errors.Is(err, host.ErrNotExist) {
 		// gomutants:disable-next-line RETURN_ZERO reason="explicit empty fields equal zero record"
 		return record{Address: "", Title: "", Producer: "", Downloader: "", Kind: ""}, false, nil
@@ -107,7 +107,7 @@ func (f folder) readRecord(ctx context.Context, key string) (record, error) {
 }
 
 func (f folder) findCopy(ctx context.Context, key string, media download.Media) (host.StoreFile, bool, error) {
-	files, err := f.store.List(ctx)
+	files, err := f.store.Files.List(ctx)
 	if err != nil {
 		return host.StoreFile{}, false, err
 	}
@@ -121,7 +121,7 @@ func (f folder) findCopy(ctx context.Context, key string, media download.Media) 
 }
 
 func (f folder) listCopies(ctx context.Context, key string) ([]string, error) {
-	files, err := f.store.List(ctx)
+	files, err := f.store.Files.List(ctx)
 	if err != nil {
 		return nil, err
 	}

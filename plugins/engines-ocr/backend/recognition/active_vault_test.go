@@ -56,7 +56,7 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 				return files
 			}
 			return s.vault.With(id)
-		}, Store: s.store, Texts: s.texts, Queue: s.queue},
+		}, Store: foldersOf(s.store), Texts: s.textsOf, Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
 	)
 	if err != nil {

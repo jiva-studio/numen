@@ -3,8 +3,8 @@ package host
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 // ConnectionReader reads the relationships between the notes of the vault.
@@ -17,7 +17,9 @@ type ConnectionReader interface {
 	ListBacklinks(ctx context.Context, to string) ([]domain.Backlink, error)
 }
 
-// ConnectionWriter writes the relationships between the notes of the vault.
+// ConnectionWriter writes the relationships between the notes of the vault. The host enforces the
+// rules of a connection: the inverse role of the record in the other note, a hierarchy without
+// cycles, and an atomic write of both notes.
 type ConnectionWriter interface {
 	// SaveConnection makes the records between two notes exactly the ones given,
 	// in both notes or in neither.
@@ -32,17 +34,17 @@ type ConnectionWriter interface {
 	Join(ctx context.Context, from, to string, side domain.Side) error
 }
 
-// Relations reads and writes the relationships between the notes of the vault.
-// The host enforces the rules of a connection: the inverse role of the record in
-// the other note, a hierarchy without cycles, and an atomic write of both notes.
-type Relations interface {
-	ConnectionReader
-	ConnectionWriter
+// RelatedNoteCreator creates a note joined to an existing one.
+type RelatedNoteCreator interface {
 	// CreateInRelation creates a note joined to an existing one and returns its path.
 	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
 }
 
-var _ Relations = (*Client)(nil)
+var (
+	_ ConnectionReader   = (*Client)(nil)
+	_ ConnectionWriter   = (*Client)(nil)
+	_ RelatedNoteCreator = (*Client)(nil)
+)
 
 func writeRole(role domain.LinkRole) v1.Role {
 	switch role {

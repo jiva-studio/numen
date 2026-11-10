@@ -74,9 +74,25 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
 	texts.SetStore(pluginID, files.Store())
-	server := NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, files.Store(), hosttest.NewQueue(), newTestWorkers(t))
+	server := newTextServerOver(t, filesOf(files), files, texts, hosttest.NewQueue())
 	t.Cleanup(server.Close)
 	return texts, server, raw
+}
+
+// newTextServerOver is the text server over the vault files given, the texts and the queue; it writes
+// into the store folders of the vaults of home.
+func newTextServerOver(t *testing.T, vaults func(domain.VaultID) vaultFiles, home *hosttest.Vault, texts *hosttest.Texts, queue host.Queue) *TextServer {
+	t.Helper()
+	return NewTextServer(
+		vaults,
+		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		func(id domain.VaultID) host.StoreWriter { return home.Store().With(id) },
+		queue, newTestWorkers(t))
+}
+
+// filesOf gives the files of the vault with an identity, seen from the vault.
+func filesOf(vault *hosttest.Vault) func(domain.VaultID) vaultFiles {
+	return func(id domain.VaultID) vaultFiles { return vault.With(id) }
 }
 
 func createText(t *testing.T, server *TextServer, req TextRequest) {
@@ -297,8 +313,8 @@ func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 	}
 }
 
-func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
-	return NewDocumentServer(func(id domain.VaultID) host.FileReader { return server.vaults(id) }, texts, server.workers)
+func newDocumentServer(server *TextServer, texts *hosttest.Texts) *DocumentServer {
+	return NewDocumentServer(func(id domain.VaultID) host.FileReader { return server.vaults(id) }, func(id domain.VaultID) liveTexts { return texts.With(id) }, server.workers)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
@@ -311,13 +327,10 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	physics.Beside(chemistry)
 	chemistry.File("tiny.pdf", string(raw))
 	texts := hosttest.NewTexts("Physics", pluginID)
-	other, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of the vault are not hosttest texts")
-	}
+	other := texts.With("Chemistry")
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(func(id domain.VaultID) vaultFiles { return physics.With(id) }, texts, physics.Store(), hosttest.NewQueue(), newTestWorkers(t))
+	server := newTextServerOver(t, filesOf(physics), physics, texts, hosttest.NewQueue())
 	t.Cleanup(server.Close)
 
 	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
@@ -358,7 +371,7 @@ func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts.SetStore(pluginID, files.Store())
-	srv := NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, files.Store(), queue, newTestWorkers(t))
+	srv := newTextServerOver(t, filesOf(files), files, texts, queue)
 
 	if err := srv.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)

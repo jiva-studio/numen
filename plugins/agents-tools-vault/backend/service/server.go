@@ -44,8 +44,8 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-func mount(s *server.Server, client *host.Client, texts host.Texts, search host.Search) error {
-	registry, err := New(vaultsOf(client)).WithLibrary(texts, search).WithVaultList(client).Registry()
+func mount(s *server.Server, client *host.Client, texts *host.TextClient, search *host.SearchClient) error {
+	registry, err := New(vaultsOf(client)).WithLibrary(libraryOf(texts, search)).WithVaultList(client).Registry()
 	if err != nil {
 		return err
 	}
@@ -59,5 +59,13 @@ func vaultsOf(client *host.Client) func(domain.VaultID) Vault {
 	return func(id domain.VaultID) Vault {
 		on := client.With(id)
 		return Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
+	}
+}
+
+// libraryOf gives the calls on the text versions and the search index of the vault with an identity.
+func libraryOf(texts *host.TextClient, search *host.SearchClient) func(domain.VaultID) Library {
+	return func(id domain.VaultID) Library {
+		on := texts.With(id)
+		return Library{Versions: on, Texts: on, Search: search.With(id)}
 	}
 }

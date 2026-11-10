@@ -7,13 +7,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
-// Agent is what an agent plugin implements. NewHandler serves it over the agent service.
-type Agent interface {
-	Runner
-	ToolStore
-}
-
-// Runner is the part of an agent that works tasks.
+// Runner is the part of an agent that works tasks. An agent plugin implements Runner and ToolStore,
+// and NewHandler serves them over the agent service.
 type Runner interface {
 	// Ask works the task and reports each step to send, in the order it happens, until the work is
 	// done. A canceled ctx stops the work.

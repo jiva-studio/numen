@@ -46,7 +46,7 @@ func newFixtureWithSites(t *testing.T, fetcher link.Fetcher) *importFixture {
 	texts.SetStore(PluginID, store)
 	hosted := link.Host{
 		Vaults: textVault{Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts}}.vaults(),
-		Store:  store, Texts: texts, Queue: hosttest.NewQueue(),
+		Store:  foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
 		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,

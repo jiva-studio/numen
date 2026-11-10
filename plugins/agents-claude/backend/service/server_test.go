@@ -24,7 +24,7 @@ func startAgent(t *testing.T, agentSvc *agentServer) *agentrun.Client {
 		agentSvc.clock = &steppingClock{tick: time.Unix(0, 0), step: time.Second}
 	}
 	mux := http.NewServeMux()
-	mux.Handle(agentrun.NewHandler(agentSvc))
+	mux.Handle(agentrun.NewHandler(agentSvc, agentSvc))
 	testServer := httptest.NewServer(mux)
 	t.Cleanup(testServer.Close)
 	return agentrun.NewClient(http.DefaultClient, testServer.URL)

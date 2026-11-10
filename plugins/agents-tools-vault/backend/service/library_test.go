@@ -138,12 +138,20 @@ func newLibrary(t *testing.T) library {
 		{Path: talkPath, Text: "Today we speak about the heron.", Location: "00:04", Start: 27, Length: 32, Selector: `{"t":[4.5,9]}`},
 	})
 
-	svc := service.New(vaultsOf(vault)).WithLibrary(texts, search)
+	svc := service.New(vaultsOf(vault)).WithLibrary(libraryOf(texts, search))
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
 	return library{vault: vault, texts: texts, search: search, registry: registry}
+}
+
+// libraryOf gives the library calls of the vault with an identity, over the texts and the search given.
+func libraryOf(texts *hosttest.Texts, search *hosttest.Search) func(domain.VaultID) service.Library {
+	return func(id domain.VaultID) service.Library {
+		on := texts.With(id)
+		return service.Library{Versions: on, Texts: on, Search: search.With(id)}
+	}
 }
 
 func putText(t *testing.T, texts *hosttest.Texts, pluginID, path, kind string, file []byte, segments []domain.TextSegment) {
@@ -317,12 +325,8 @@ func TestLibrarySearchUsesTheNamedVault(t *testing.T) {
 	vault.Beside(garden)
 	search := hosttest.NewSearch(testVault, "garden-vault")
 	search.SetIndexedPassages([]host.Passage{{Path: "Physics.md", Text: "heron physics", Start: 0, Length: 13}})
-	gardenSearch, isFake := search.With("garden-vault").(*hosttest.Search)
-	if !isFake {
-		t.Fatal("the search of another vault is not a fake")
-	}
-	gardenSearch.SetIndexedPassages([]host.Passage{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
-	registry, err := service.New(vaultsOf(vault)).WithLibrary(hosttest.NewTexts(testVault, readerID), search).Registry()
+	search.With("garden-vault").SetIndexedPassages([]host.Passage{{Path: "Beds.md", Text: "heron beds", Start: 0, Length: 10}})
+	registry, err := service.New(vaultsOf(vault)).WithLibrary(libraryOf(hosttest.NewTexts(testVault, readerID), search)).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -354,7 +358,7 @@ func TestLibraryReadStopsAtCharacterBoundary(t *testing.T) {
 	cyrillic.File("ru.pdf", []byte(pdfBytes))
 	putText(t, cyrillic, readerID, "ru.pdf", "page-text", []byte(pdfBytes), []domain.TextSegment{{Text: "Ачарьи говорят", Selector: `{"page":1}`}})
 	l.vault.File("ru.pdf", pdfBytes)
-	svc := service.New(vaultsOf(l.vault)).WithLibrary(cyrillic, l.search)
+	svc := service.New(vaultsOf(l.vault)).WithLibrary(libraryOf(cyrillic, l.search))
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatal(err)

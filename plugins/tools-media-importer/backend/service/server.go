@@ -28,14 +28,19 @@ const PluginID = "md.numen.tools.media.importer"
 
 func openHostAt(endpoint hostcall.Endpoint) link.Host {
 	client := host.NewClient(endpoint)
+	store := host.NewStoreClient(endpoint)
+	texts := host.NewTextClient(endpoint)
 	return link.Host{
 		PluginID: PluginID,
 		Vaults: func(id domain.VaultID) link.Vault {
 			on := client.With(id)
 			return link.Vault{Files: on, Writer: on}
 		},
-		Store: host.NewStoreClient(endpoint),
-		Texts: host.NewTextClient(endpoint),
+		Store: func(id domain.VaultID) link.Folder {
+			on := store.With(id)
+			return link.Folder{Files: on, Writer: on}
+		},
+		Texts: func(id domain.VaultID) link.Texts { return texts.With(id) },
 		Queue: host.NewQueueClient(endpoint),
 		Clock: clock.System{},
 	}

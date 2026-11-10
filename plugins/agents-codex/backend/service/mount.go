@@ -15,7 +15,7 @@ func Mount(s *server.Server) error {
 	agent.codexModels.clock = clock.System{}
 	s.OnClose(agent.Close)
 	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
-	s.Register(agentrun.NewHandler(agent, s.HandlerOptions()...))
+	s.Register(agentrun.NewHandler(agent, agent, s.HandlerOptions()...))
 	return nil
 }
 

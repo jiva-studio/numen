@@ -16,7 +16,10 @@ type Store struct {
 	vault *Vault
 }
 
-var _ host.Store = (*Store)(nil)
+var (
+	_ host.StoreReader = (*Store)(nil)
+	_ host.StoreWriter = (*Store)(nil)
+)
 
 // folder is what the plugin's folder of a vault holds.
 type folder struct {
@@ -53,7 +56,12 @@ func (s *Store) File(name string, content []byte) {
 	s.vault.getFolder().files[name] = bytes.Clone(content)
 }
 
-func (s *Store) With(id domain.VaultID) host.Store {
+// With is the plugin's folder in the store of the vault of the identity. The empty identity is the
+// folder itself.
+func (s *Store) With(id domain.VaultID) *Store {
+	if id == "" {
+		return s
+	}
 	s.vault.world.mu.Lock()
 	defer s.vault.world.mu.Unlock()
 	return &Store{vault: s.vault.find(id)}

@@ -29,11 +29,21 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	workers := newWorkers()
-	return mount(s, func(id domain.VaultID) host.FileReader { return files.With(id) }, texts, NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue, workers), workers)
+	return mountClients(s, files, texts, store, queue)
 }
 
-func mount(s *server.Server, files func(domain.VaultID) host.FileReader, texts host.Texts, provider *TextServer, workers *pdf.Workers) error {
+// mountClients mounts the services over the clients of the host.
+func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) error {
+	workers := newWorkers()
+	readers := func(id domain.VaultID) host.FileReader { return files.With(id) }
+	live := func(id domain.VaultID) liveTexts { return texts.With(id) }
+	vaults := func(id domain.VaultID) vaultFiles { return files.With(id) }
+	versions := func(id domain.VaultID) host.TextVersions { return texts.With(id) }
+	folders := func(id domain.VaultID) host.StoreWriter { return store.With(id) }
+	return mount(s, readers, live, NewTextServer(vaults, versions, folders, queue, workers), workers)
+}
+
+func mount(s *server.Server, files func(domain.VaultID) host.FileReader, texts func(domain.VaultID) liveTexts, provider *TextServer, workers *pdf.Workers) error {
 	if err := NewDocumentServer(files, texts, workers).Mount(s.NewAPI(APIService)); err != nil {
 		return err
 	}
@@ -70,7 +80,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		workers := newWorkers()
-		return mount(s, func(id domain.VaultID) host.FileReader { return files.With(id) }, texts, NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue, workers), workers)
+		return mountClients(s, files, texts, store, queue)
 	})
 }

@@ -13,3 +13,16 @@ func vaultsOf(v *hosttest.Vault) func(domain.VaultID) link.Vault {
 		return link.Vault{Files: on, Writer: on}
 	}
 }
+
+// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the vault.
+func foldersOf(v *hosttest.Vault) func(domain.VaultID) link.Folder {
+	return func(id domain.VaultID) link.Folder {
+		on := v.Store().With(id)
+		return link.Folder{Files: on, Writer: on}
+	}
+}
+
+// textsOf gives the text versions of the vault with an identity.
+func textsOf(texts *hosttest.Texts) func(domain.VaultID) link.Texts {
+	return func(id domain.VaultID) link.Texts { return texts.With(id) }
+}

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/core/protocol"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
 
 var (
@@ -146,20 +146,9 @@ type SearchFloor struct {
 	Default float64
 }
 
-// Search is the search index and the search floor of the vault the host shows.
-// A call naming a recipe other than the one of the model in use returns
-// ErrRecipeMismatch, a call with no model installed returns ErrNoModel, and a
-// call while the host shows no vault returns ErrNoVault.
-type Search interface {
-	// With is the search of the vault of the identity. A call on it returns ErrUnknownVault when the
-	// installation has no such vault.
-	With(id domain.VaultID) Search
-	SearchIndex
-	passageSearch
-	SearchPolicy
-}
-
-// SearchIndex reads the search index of a vault. It needs the index:read permission.
+// SearchIndex reads the search index of a vault. It needs the index:read permission. A call naming a
+// recipe other than the one of the model in use returns ErrRecipeMismatch, a call with no model
+// installed returns ErrNoModel, and a call while the host shows no vault returns ErrNoVault.
 type SearchIndex interface {
 	// GetEmbeddingState is the model in use and how far the vault is embedded under it. It is read
 	// from the index at each call, so a plugin that starts after the vectors exist reads the same
@@ -184,8 +173,8 @@ type SearchIndex interface {
 	GetBestSimilarity(ctx context.Context, recipe string, query []float32) (float64, error)
 }
 
-// passageSearch searches the text of a vault. It needs the index:read permission.
-type passageSearch interface {
+// PassageSearch searches the text of a vault. It needs the index:read permission.
+type PassageSearch interface {
 	// SearchPassages returns the passages of the vault matching the query, best first, from the index of
 	// every source and every text version: by keywords, and by embedding when the installation has
 	// an embedding model. An installation with no model searches by keywords only, so the call
@@ -242,7 +231,8 @@ type Passage struct {
 }
 
 // SearchPolicy reads and sets the floor that a search by meaning applies to a vault. It needs the
-// search:policy permission.
+// search:policy permission. A plugin that works another vault than the shown one
+// calls With on SearchClient and keeps the narrow interface of the calls it needs on the result.
 type SearchPolicy interface {
 	// GetSearchFloor is the floor a search applies to the vault under the recipe, and where it comes from.
 	GetSearchFloor(ctx context.Context, recipe string) (SearchFloor, error)

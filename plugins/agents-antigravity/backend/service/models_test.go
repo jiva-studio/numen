@@ -35,7 +35,7 @@ func TestGetAgentPrograms_ModelListGroupedByLevel(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy",
 		`if [ "$1" = models ]; then printf 'Fetching available models...\nm-high\tModel (High)\nm-low\tModel (Low)\n'; fi`+"\n")
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, &agentServer{})
 
 	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "antigravity", Command: []string{script}}})
 	if err != nil {
@@ -58,7 +58,7 @@ func TestGetAgentPrograms_ModelListFailure(t *testing.T) {
 	agenttest.NeedsShell(t)
 	t.Setenv("HOME", t.TempDir())
 	script := agenttest.WriteScript(t, "agy", "exit 1\n")
-	client := agenttest.Serve(t, &agentServer{})
+	client := serveAgent(t, &agentServer{})
 
 	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "antigravity", Command: []string{script}}})
 	if err != nil {
@@ -111,7 +111,7 @@ esac
 
 func askStub(t *testing.T, script, model, level string) (said, stopReason string) {
 	t.Helper()
-	stream, err := agenttest.Serve(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
+	stream, err := serveAgent(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
 		Command: []string{script}, Model: model, Reasoning: level, Prompt: "q",
 	})
 	if err != nil {

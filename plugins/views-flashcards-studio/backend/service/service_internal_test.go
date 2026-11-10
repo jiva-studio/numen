@@ -114,7 +114,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 		{1, 1},
 		{3, 3},
 	} {
-		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock(), Cores: tc.cores})
+		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock(), Cores: tc.cores})
 		if got := b.scenarios().flash.ReviewCards.Cores; got != tc.want {
 			t.Fatalf("Cores=%d: expected %d, got %d", tc.cores, tc.want, got)
 		}
@@ -126,7 +126,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 	countingVault := &faultyVault{Vault: env.Host}
 	bCountEmpty := New(Config{
 		Vaults: countingVault.vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if got := bCountEmpty.getTitle(t.Context(), env.Vault, ""); got != "" {
@@ -141,7 +141,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 
 	bNotesErr := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, getNotesErr: errors.New("notes boom")}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if got := bNotesErr.getTitle(t.Context(), env.Vault, "Term.md"); got != "" {
@@ -150,7 +150,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 
 	bVaultErr := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, getVaultErr: errors.New("vault boom")}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if v, err := bVaultErr.getCurrentVault(t.Context()); v != (domain.Vault{}) || codeOf(err) != server.CodeInternal {
@@ -161,7 +161,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 	}
 
 	env.Host.Hide()
-	bNoVault := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()})
+	bNoVault := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 	if v, err := bNoVault.getCurrentVault(t.Context()); v != (domain.Vault{}) || codeOf(err) != server.CodeFailedPrecondition {
 		t.Fatalf("expected CodeFailedPrecondition from getCurrentVault, got %+v, %v", v, err)
 	}
@@ -208,7 +208,7 @@ func TestCardsLimitsErrorCodesAndCreateCardNote(t *testing.T) {
 	}
 
 	env := vaulttest.New(t, map[string]string{})
-	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()})
+	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 	ctx := t.Context()
 
 	made, code, outdated, err := b.createCardNote(ctx, func(domain.Vault, cards.New) (cards.CreateNoteResult, error) {
@@ -261,7 +261,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 	t.Run("no vault open", func(t *testing.T) {
 		env := vaulttest.New(t, map[string]string{})
 		env.Host.Hide()
-		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()})
+		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 		cardsAPI := b.Cards()
 		presetsAPI := b.Presets()
 
@@ -317,7 +317,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		env := vaulttest.New(t, map[string]string{})
 		b := New(Config{
 			Vaults: (&faultyVault{Vault: env.Host, getPathsErr: errors.New("paths boom"), getLinksErr: errors.New("links boom")}).vaults(),
-			Store:  env.Store,
+			Store:  vaulttest.Folders(env.Host),
 			Now:    vaulttest.NewClock(),
 		})
 		if _, err := b.Cards().ListCardModels(ctx, &api.ListCardModelsRequest{}); codeOf(err) != server.CodeInternal {
@@ -335,7 +335,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		env := vaulttest.New(t, getPointed())
 		b := New(Config{
 			Vaults: (&faultyVault{Vault: env.Host, scanErr: errors.New("scan boom")}).vaults(),
-			Store:  env.Store,
+			Store:  vaulttest.Folders(env.Host),
 			Now:    vaulttest.NewClock(),
 		})
 		cardsAPI := b.Cards()
@@ -388,7 +388,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 		notes := getPointed()
 		notes["Huge.md"] = "---\ntype: deck\n---\n\n" + strings.Repeat("x", int(cards.MaxBytes)+10)
 		env := vaulttest.New(t, notes)
-		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()})
+		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 		cardsAPI := b.Cards()
 		presetsAPI := b.Presets()
 
@@ -503,7 +503,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 func TestCommandsErrorCodesAndFileStatHelpers(t *testing.T) {
 	env := vaulttest.New(t, map[string]string{})
 	env.Host.Hide()
-	cmds, err := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()}).Commands()
+	cmds, err := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()}).Commands()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -570,7 +570,7 @@ func TestReviewInternalPaths(t *testing.T) {
 	env := vaulttest.New(t, getDeck())
 	bEnsureErr := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, ensureIndexedErr: errors.New("ensure boom")}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	hEnsureErr := &reviewHandler{Backend: bEnsureErr}
@@ -580,7 +580,7 @@ func TestReviewInternalPaths(t *testing.T) {
 
 	bDueErr := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, getPathsErr: errors.New("due boom")}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	hDueErr := &reviewHandler{Backend: bDueErr}
@@ -609,7 +609,7 @@ func TestReviewInternalPaths(t *testing.T) {
 
 	bWatchErr := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, watchMovesErr: errors.New("watch boom")}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if err := bWatchErr.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
@@ -622,7 +622,7 @@ func TestReviewInternalPaths(t *testing.T) {
 	close(closedMoves)
 	bClosedMoves := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, watchMovesChan: closedMoves}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if err := bClosedMoves.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
@@ -635,7 +635,7 @@ func TestReviewInternalPaths(t *testing.T) {
 	errMoves <- host.Move{Err: errors.New("move boom")}
 	bErrMoves := New(Config{
 		Vaults: (&faultyVault{Vault: env.Host, watchMovesChan: errMoves}).vaults(),
-		Store:  env.Store,
+		Store:  vaulttest.Folders(env.Host),
 		Now:    vaulttest.NewClock(),
 	})
 	if err := bErrMoves.Review().WatchReloads(ctx, &api.WatchReloadsRequest{}, func(*api.WatchReloadsResponse) error {
@@ -654,7 +654,7 @@ func TestReviewInternalPaths(t *testing.T) {
 
 func TestMountAndAllEndpoints(t *testing.T) {
 	env := vaulttest.New(t, getPointed())
-	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: env.Store, Now: vaulttest.NewClock()})
+	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	const tok = "test-mount-token"
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
@@ -726,7 +726,7 @@ func TestMountAndAllEndpoints(t *testing.T) {
 	}
 
 	emptyEnv := vaulttest.New(t, map[string]string{})
-	emptyB := New(Config{Vaults: vaulttest.Vaults(emptyEnv.Host), Store: emptyEnv.Store, Now: vaulttest.NewClock()})
+	emptyB := New(Config{Vaults: vaulttest.Vaults(emptyEnv.Host), Store: vaulttest.Folders(emptyEnv.Host), Now: vaulttest.NewClock()})
 	emptyHandler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, emptyB.Mount)
 	if err != nil {
 		t.Fatal(err)

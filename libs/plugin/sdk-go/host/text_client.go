@@ -7,10 +7,10 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 )
 
 // TextClient works the text versions of a vault through HostTextService.
@@ -19,7 +19,10 @@ type TextClient struct {
 	vault string
 }
 
-var _ Texts = (*TextClient)(nil)
+var (
+	_ TextVersions = (*TextClient)(nil)
+	_ TextReader   = (*TextClient)(nil)
+)
 
 // NewTextClientFromEnv connects to the host the process was started for. It
 // returns hostcall.ErrNoHost when the environment names no host.
@@ -50,7 +53,9 @@ func NewTextClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint
 	return &TextClient{rpc: numenv1connect.NewHostTextServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-func (c *TextClient) With(id domain.VaultID) Texts {
+// With returns the client for the vault with the given identity, used as the shown vault is. A call on
+// it returns ErrUnknownVault when the installation has no such vault.
+func (c *TextClient) With(id domain.VaultID) *TextClient {
 	linked := *c
 	linked.vault = string(id)
 	return &linked

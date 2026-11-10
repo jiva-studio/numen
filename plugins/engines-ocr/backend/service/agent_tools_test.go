@@ -94,6 +94,16 @@ func (q recordingQueue) ReportTask(ctx context.Context, task host.Task) error {
 	return q.Queue.ReportTask(ctx, task)
 }
 
+// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the store.
+func foldersOf(store *hosttest.Store) func(domain.VaultID) recognition.Folder {
+	return func(id domain.VaultID) recognition.Folder { return store.With(id) }
+}
+
+// textsOf gives the text versions of the vault with an identity.
+func textsOf(texts *hosttest.Texts) func(domain.VaultID) host.TextVersions {
+	return func(id domain.VaultID) host.TextVersions { return texts.With(id) }
+}
+
 // toolFixture is the recognition tool over the open vault Physics with the scan, and the vault
 // Chemistry with a scan of its own.
 type toolFixture struct {
@@ -127,10 +137,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 	chemistry := hosttest.New("Chemistry")
 	vault.Beside(chemistry)
 	chemistry.File(chemistryScan, string(raw))
-	chemTexts, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 	chemTexts.File(chemistryScan, raw)
 
@@ -142,7 +149,7 @@ func newToolFixture(t *testing.T) *toolFixture {
 		},
 	}
 	recognitions, err := recognition.New(
-		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: vault.Store(), Texts: texts, Queue: s.queue},
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return vault.With(id) }, Store: foldersOf(vault.Store()), Texts: textsOf(texts), Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) {
 			s.openCount.Add(1)
 			return s.recogniser, nil
@@ -625,32 +632,13 @@ func (v countingVault) Read(ctx context.Context, path string) ([]byte, domain.Fi
 
 // countingStore is the plugin's folder, which has its version files, with each read counted.
 type countingStore struct {
-	host.Store
+	recognition.Folder
 	counts *readCounts
-}
-
-func (s countingStore) With(id domain.VaultID) host.Store {
-	return countingStore{Store: s.Store.With(id), counts: s.counts}
 }
 
 func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 	s.counts.addVersion()
-	return s.Store.Read(ctx, name)
-}
-
-// countingTexts is the host's texts with each read of a version's contents counted.
-type countingTexts struct {
-	host.Texts
-	counts *readCounts
-}
-
-func (t countingTexts) With(id domain.VaultID) host.Texts {
-	return countingTexts{Texts: t.Texts.With(id), counts: t.counts}
-}
-
-func (t countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
-	t.counts.addVersion()
-	return t.Texts.ReadText(ctx, path, id, cursor)
+	return s.Folder.Read(ctx, name)
 }
 
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
@@ -659,8 +647,10 @@ func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	counted := countingVault{Vault: s.vault, counts: counts}
 	recognitions, err := recognition.New(
 		recognition.Host{
-			Vaults: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: countingStore{Store: s.vault.Store(), counts: counts},
-			Texts: countingTexts{Texts: s.texts, counts: counts}, Queue: s.queue,
+			Vaults: func(id domain.VaultID) recognition.Files { return counted.With(id) }, Store: func(id domain.VaultID) recognition.Folder {
+				return countingStore{Folder: s.vault.Store().With(id), counts: counts}
+			},
+			Texts: textsOf(s.texts), Queue: s.queue,
 		},
 		func(context.Context) (recognition.Recogniser, error) {
 			s.openCount.Add(1)

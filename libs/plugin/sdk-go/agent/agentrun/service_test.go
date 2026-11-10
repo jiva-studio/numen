@@ -7,5 +7,6 @@ import (
 )
 
 func TestServiceIsAnAgent(t *testing.T) {
-	var _ agentrun.Agent = &agentrun.Service{}
+	var _ agentrun.Runner = &agentrun.Service{}
+	var _ agentrun.ToolStore = &agentrun.Service{}
 }

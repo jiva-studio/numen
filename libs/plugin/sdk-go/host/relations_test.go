@@ -8,11 +8,11 @@ import (
 
 	"connectrpc.com/connect"
 
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 )
 
 // relating is a host that serves the calls on connections and records what it was asked.
@@ -85,7 +85,7 @@ func (r *relating) GetBacklinks(
 	}}}), nil
 }
 
-func relationsTo(t *testing.T, r *relating) host.Relations {
+func relationsTo(t *testing.T, r *relating) *host.Client {
 	t.Helper()
 	server := httptest.NewServer(handler(r))
 	t.Cleanup(server.Close)

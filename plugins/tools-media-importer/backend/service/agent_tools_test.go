@@ -132,10 +132,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 	texts.SetStore(PluginID, store)
 	chemistry := hosttest.New("Chemistry")
 	vault.Beside(chemistry)
-	chemTexts, isTexts := texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	chemTexts := texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 
 	sites := fakeSites{video: download.NewMock(), release: release}
@@ -143,7 +140,7 @@ func newImportFixture(t *testing.T, release chan struct{}) *importFixture {
 		Vaults: textVault{
 			Vault: vault, texts: texts, all: map[domain.VaultID]*hosttest.Texts{"Mills": texts, "Chemistry": chemTexts},
 		}.vaults(),
-		Store: store, Texts: texts, Queue: hosttest.NewQueue(),
+		Store: foldersOf(vault), Texts: textsOf(texts), Queue: hosttest.NewQueue(),
 		Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}
 	links := link.New(hosted,

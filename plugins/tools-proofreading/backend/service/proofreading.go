@@ -69,10 +69,7 @@ func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, erro
 }
 
 func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (result Result, err error) {
-	store, texts := p.host.Store, p.host.Texts
-	if req.Vault != "" {
-		store, texts = store.With(req.Vault), texts.With(req.Vault)
-	}
+	store, texts := p.host.Store(req.Vault), p.host.Texts(req.Vault)
 	source, err := p.findSource(ctx, texts, req.Path, req.Source)
 	if err != nil {
 		return Result{}, err
@@ -113,7 +110,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	return Result{Lines: len(lines), Corrected: len(corrections), Uncorrected: uncorrected, Version: version}, nil
 }
 
-func (p *Proofreading) findSource(ctx context.Context, texts host.Texts, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
+func (p *Proofreading) findSource(ctx context.Context, texts Texts, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
 	listing, err := texts.ListVersions(ctx, filePath)
 	if err != nil {
 		return domain.TextVersion{}, err
@@ -136,7 +133,7 @@ func (p *Proofreading) findSource(ctx context.Context, texts host.Texts, filePat
 	return domain.TextVersion{}, fmt.Errorf("%s of %s: %w", id, filePath, host.ErrNotExist)
 }
 
-func readParts(ctx context.Context, texts host.Texts, version domain.TextVersion) ([]domain.TextSegment, error) {
+func readParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]domain.TextSegment, error) {
 	var parts []domain.TextSegment
 	for cursor := ""; ; {
 		page, err := texts.ReadText(ctx, version.Path, version.GetID(), cursor)

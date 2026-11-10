@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -47,15 +48,23 @@ type completer func(ctx context.Context, question *ai.Question) (string, error)
 // Host provides the plugin's host services: the store folder for corrected
 // texts, the text versions it reads and reports, and the queue it runs in.
 type Host struct {
-	Store host.Store
-	Texts host.Texts
+	Store func(domain.VaultID) host.StoreWriter
+	Texts func(domain.VaultID) Texts
 	Queue host.Queue
 }
 
+// Texts is the text versions of a vault: listed, read and reported.
+type Texts interface {
+	host.TextVersions
+	host.TextReader
+}
+
 func openHostAt(endpoint hostcall.Endpoint) Host {
+	store := host.NewStoreClient(endpoint)
+	texts := host.NewTextClient(endpoint)
 	return Host{
-		Store: host.NewStoreClient(endpoint),
-		Texts: host.NewTextClient(endpoint),
+		Store: func(id domain.VaultID) host.StoreWriter { return store.With(id) },
+		Texts: func(id domain.VaultID) Texts { return texts.With(id) },
 		Queue: host.NewQueueClient(endpoint),
 	}
 }

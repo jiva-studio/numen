@@ -47,7 +47,7 @@ func getVersionName(path string) string {
 // textKind labels the text versions the plugin creates.
 const textKind domain.TextKind = "recognition"
 
-func readRecord(ctx context.Context, store host.Store, path string) (*record, error) {
+func readRecord(ctx context.Context, store Folder, path string) (*record, error) {
 	raw, err := store.Read(ctx, getRecordName(path))
 	if errors.Is(err, host.ErrNotExist) {
 		return nil, nil
@@ -62,7 +62,7 @@ func readRecord(ctx context.Context, store host.Store, path string) (*record, er
 	return &rec, nil
 }
 
-func writeRecord(ctx context.Context, store host.Store, rec *record) error {
+func writeRecord(ctx context.Context, store Folder, rec *record) error {
 	raw, err := json.Marshal(rec)
 	if err != nil {
 		return err

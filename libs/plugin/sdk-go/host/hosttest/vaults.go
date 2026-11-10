@@ -71,7 +71,7 @@ func (v *Vault) AddVault(ctx context.Context, root, name string) (domain.Vault, 
 		name = path.Base(root)
 	}
 	name = v.getFreeName(name)
-	added := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, newMemory())
+	added := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, inMemory())
 	added.world = v.world
 	v.world.members = append(v.world.members, added)
 	return added.vault, nil

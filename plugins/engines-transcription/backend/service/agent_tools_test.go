@@ -159,10 +159,7 @@ func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture 
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
 	chemistry.File(chemistryLecture, chemistrySound)
-	chemTexts, isTexts := s.texts.With("Chemistry").(*hosttest.Texts)
-	if !isTexts {
-		t.Fatal("the texts of Chemistry are not hosttest texts")
-	}
+	chemTexts := s.texts.With("Chemistry")
 	chemTexts.SetStore(PluginID, chemistry.Store())
 	chemTexts.File(chemistryLecture, []byte(chemistrySound))
 	s.chemistry = chemistry
@@ -172,7 +169,7 @@ func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture 
 		Queue: s.queue, doneCh: make(chan string, 64), failCh: make(chan host.Task, 64), calls: &queueCalls{},
 	}
 	s.blocking = &blockingModel{heardModel: s.model, startCh: make(chan struct{}), release: make(chan struct{})}
-	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}), s.store, s.texts, s.finishing,
+	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}), storesOf(s.store), textsOf(s.texts), s.finishing,
 		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
 	registry, err := NewTools(s.transcriber, func(id domain.VaultID) VaultReader { return s.vault.With(id) }).Registry()
@@ -792,39 +789,20 @@ func (v countingVault) Read(ctx context.Context, path string) ([]byte, domain.Fi
 
 // countingStore is the plugin's folder, which has its version files, with each read counted.
 type countingStore struct {
-	host.Store
+	Folder
 	counts *readCounts
-}
-
-func (s countingStore) With(id domain.VaultID) host.Store {
-	return countingStore{Store: s.Store.With(id), counts: s.counts}
 }
 
 func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 	s.counts.addVersion()
-	return s.Store.Read(ctx, name)
-}
-
-// countingTexts is the host's texts with each read of a version's contents counted.
-type countingTexts struct {
-	host.Texts
-	counts *readCounts
-}
-
-func (t countingTexts) With(id domain.VaultID) host.Texts {
-	return countingTexts{Texts: t.Texts.With(id), counts: t.counts}
-}
-
-func (t countingTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
-	t.counts.addVersion()
-	return t.Texts.ReadText(ctx, path, id, cursor)
+	return s.Folder.Read(ctx, name)
 }
 
 func (s *toolFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}
 	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}, counts: counts},
-		countingStore{Store: s.store, counts: counts}, countingTexts{Texts: s.texts, counts: counts}, s.finishing,
+		func(id domain.VaultID) Folder { return countingStore{Folder: s.store.With(id), counts: counts} }, textsOf(s.texts), s.finishing,
 		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
 	counted := countingVault{Vault: s.vault, counts: counts}

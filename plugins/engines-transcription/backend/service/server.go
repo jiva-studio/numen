@@ -33,17 +33,19 @@ type VaultReader interface {
 // Host is what the plugin works through the host.
 type Host struct {
 	Vaults func(domain.VaultID) VaultReader
-	Store  host.Store
-	Texts  host.Texts
+	Store  func(domain.VaultID) Folder
+	Texts  func(domain.VaultID) host.TextVersions
 	Queue  host.Queue
 }
 
 func openHostAt(endpoint hostcall.Endpoint) Host {
 	client := host.NewClient(endpoint)
+	store := host.NewStoreClient(endpoint)
+	texts := host.NewTextClient(endpoint)
 	return Host{
 		Vaults: func(id domain.VaultID) VaultReader { return client.With(id) },
-		Store:  host.NewStoreClient(endpoint),
-		Texts:  host.NewTextClient(endpoint),
+		Store:  func(id domain.VaultID) Folder { return store.With(id) },
+		Texts:  func(id domain.VaultID) host.TextVersions { return texts.With(id) },
 		Queue:  host.NewQueueClient(endpoint),
 	}
 }

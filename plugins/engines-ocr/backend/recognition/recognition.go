@@ -65,12 +65,19 @@ type Files interface {
 	GetVault(ctx context.Context) (domain.Vault, error)
 }
 
+// Folder is the part of the plugin's folder in the store of a vault that a recognition keeps its progress and
+// its text in.
+type Folder interface {
+	host.StoreWriter
+	Read(ctx context.Context, name string) ([]byte, error)
+}
+
 // Host is what a recognition works through: the vaults the file is read from, the plugin's folder
 // the text is stored in, the text versions it is reported to, and the queue it runs in.
 type Host struct {
 	Vaults func(domain.VaultID) Files
-	Store  host.Store
-	Texts  host.Texts
+	Store  func(domain.VaultID) Folder
+	Texts  func(domain.VaultID) host.TextVersions
 	Queue  host.Queue
 }
 
@@ -208,11 +215,7 @@ func getRunKey(vault domain.VaultID, filePath string) string {
 // made from it. A recognition writes VersionKey only once it is complete. The host keeps live only a
 // version whose chain matches the file as it is now. An empty vault ID means the vault the host shows.
 func (r *Recognition) FindLiveDerivedVersion(ctx context.Context, vault domain.VaultID, filePath, pluginID string) (domain.TextVersion, bool, error) {
-	texts := r.host.Texts
-	if vault != "" {
-		texts = texts.With(vault)
-	}
-	listing, err := texts.ListVersions(ctx, filePath)
+	listing, err := r.host.Texts(vault).ListVersions(ctx, filePath)
 	if err != nil {
 		return domain.TextVersion{}, false, err
 	}
@@ -245,10 +248,7 @@ func newTask(req Request) host.Task {
 }
 
 func (r *Recognition) runRecognition(ctx context.Context, req Request) (Result, error) {
-	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store, texts: r.host.Texts}
-	if req.Vault != "" {
-		on.store, on.texts = on.store.With(req.Vault), on.texts.With(req.Vault)
-	}
+	on := reach{vault: r.host.Vaults(req.Vault), store: r.host.Store(req.Vault), texts: r.host.Texts(req.Vault)}
 	task := newTask(req)
 	res, err := r.recognize(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil && !isMissing(ctx, on.vault, req.Path) {
@@ -286,8 +286,8 @@ func isMissing(ctx context.Context, vault host.FileReader, filePath string) bool
 // reach is the vault a recognition reads, its store and its text versions, all of one vault.
 type reach struct {
 	vault host.FileReader
-	store host.Store
-	texts host.Texts
+	store Folder
+	texts host.TextVersions
 }
 
 func (r *Recognition) recognize(ctx context.Context, on reach, req Request, task *host.Task) (res Result, err error) {
@@ -346,7 +346,7 @@ type pageReading struct {
 	doc        document.Document
 	recogniser Recogniser
 	dpi        int
-	store      host.Store
+	store      Folder
 	task       *host.Task
 }
 

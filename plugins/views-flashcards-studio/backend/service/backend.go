@@ -34,7 +34,7 @@ var errNoVault = errors.New("no vault is open")
 // Config is what the backend is made from.
 type Config struct {
 	Vaults    func(domain.VaultID) hostports.Vault
-	Store     host.Store
+	Store     func(domain.VaultID) hostports.Folder
 	DayStart  func() time.Duration
 	Now       ports.Clock
 	Cores     int
