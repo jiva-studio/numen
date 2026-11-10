@@ -1,3 +1,4 @@
+// Package plugin serves the route on which the windows reach the services plugins offer.
 package plugin
 
 import (

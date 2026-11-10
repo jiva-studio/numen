@@ -2,6 +2,7 @@ package container_test
 
 import (
 	"encoding/json"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"os"
 	"path/filepath"
 	"slices"
@@ -38,9 +39,11 @@ func openDisabledCourier(t *testing.T) (container.Config, string, *recordingHost
 	if err := os.WriteFile(path, []byte(`{"`+courierPlugin+`":{"enabled":false}}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	pluginHost := container.NewPluginHost("desktop.editor", root)
-	host := &recordingHost{PluginManager: pluginHost}
-	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: host})
+	pluginHost := pluginswiring.OpenPluginHost("desktop.editor", root)
+	lent := container.LendPluginHost(pluginHost)
+	host := &recordingHost{SettingUpdater: lent.SettingUpdater, SettingsPush: lent.SettingsPush}
+	lent.SettingUpdater, lent.SettingsPush = host, host
+	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
 	selected, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)

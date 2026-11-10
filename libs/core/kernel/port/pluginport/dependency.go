@@ -16,18 +16,13 @@ type DependencyProvisioner interface {
 	Status(ctx context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error)
 }
 
-// DependencyCatalog is the provisioners combined: it routes a requirement to the
-// provisioner that handles it, shares one run between identical requests and reports
-// on every requirement it has seen.
-type dependencyRegistry interface {
-	Register(req manifest.DependencyRequirement)
-	Lookup(id string) (manifest.DependencyRequirement, bool)
-}
-
-type DependencyCatalog interface {
-	DependencyProvisioner
-	dependencyRegistry
+// DependencyLookup reports the state of the dependencies the plugins declare.
+type DependencyLookup interface {
 	GetStatus(ctx context.Context, id string) (plugin.DependencyStatus, error)
 	List(ctx context.Context) ([]plugin.DependencyStatus, error)
-	SetObserver(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
+}
+
+// DependencyReporter receives the function that observes each change of the state of a dependency.
+type DependencyReporter interface {
+	ObserveDependencies(observer func(manifest.DependencyRequirement, plugin.DependencyStatus))
 }

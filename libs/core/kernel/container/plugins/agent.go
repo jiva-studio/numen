@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 )
@@ -95,9 +94,7 @@ func (c Config) SetCompleter() {
 		c.handleError(err)
 		return
 	}
-	if host, ok := c.PluginHost.(completionport.CompleterHost); ok {
-		host.SetCompleter(router)
-	}
+	c.PluginHost.SetCompleter(router)
 }
 
 // GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at

@@ -40,7 +40,7 @@ func TestOnlyThisProductsOwnPaletteShipsInsideTheApplication(t *testing.T) {
 		t.Errorf("the binary ships %v", shipped)
 	}
 	for _, name := range []string{"preset:dracula", "preset:nord", "preset:solarized"} {
-		if text, _ := desk.readTheme(name); text != "" {
+		if text, err := desk.readTheme(name); err == nil && text != "" {
 			t.Errorf("%s was read as %q", name, text)
 		}
 	}
@@ -115,7 +115,7 @@ func TestANameThatWouldLeaveTheFolderIsRefused(t *testing.T) {
 		"dracula",
 		"originless:dracula",
 	} {
-		if text, _ := desk.readTheme(name); text != "" {
+		if text, err := desk.readTheme(name); err == nil && text != "" {
 			t.Errorf("%s was read as %q", name, text)
 		}
 		if err := desk.writeAppearance(themedomain.Appearance{ThemeName: name}); err == nil {

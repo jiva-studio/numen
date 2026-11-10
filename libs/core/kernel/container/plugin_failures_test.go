@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"errors"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"io"
 	"os"
 	"path/filepath"
@@ -33,11 +34,11 @@ func newFailingConfig(t *testing.T) Config {
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(sampleManifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewPluginHost("desktop.editor", root)
+	host := pluginswiring.OpenPluginHost("desktop.editor", root)
 	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return nil, nil, errors.New("exec format error")
 	})
-	return NewConfig(Config{PluginHost: host})
+	return NewConfig(Config{PluginHost: LendPluginHost(host)})
 }
 
 func TestReportPluginFailures_TaskPersistsUntilRecovery(t *testing.T) {

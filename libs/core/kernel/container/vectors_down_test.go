@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -19,7 +20,7 @@ import (
 
 // downEmbeddingHost resolves an embedding plugin whose process is not listening.
 type downEmbeddingHost struct {
-	pluginport.PluginManager
+	pluginport.PluginResolver
 	endpoint plugin.Endpoint
 	released atomic.Int32
 	acquired atomic.Int32
@@ -56,6 +57,10 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	return &downEmbeddingHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
+func (h *downEmbeddingHost) lend() *pluginswiring.Host {
+	return &pluginswiring.Host{PluginResolver: h, PluginActivator: h}
+}
+
 // A plugin that does not answer names no model, and a vault read without a
 // model leaves the vectors of the index where they are.
 func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) {
@@ -63,7 +68,7 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 	host := newDownEmbeddingHost(t)
 	target := container.NewConfig(container.Config{
 		ServiceDir:         ".numen",
-		PluginHost:         host,
+		PluginHost:         host.lend(),
 		ShouldRebuildIndex: true,
 	})
 

@@ -1,3 +1,4 @@
+// Package wire converts between the values of the core and the messages the windows exchange.
 package wire
 
 import (

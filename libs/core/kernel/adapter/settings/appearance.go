@@ -21,33 +21,10 @@ type Appearance struct {
 
 // The modes a color pair is read by.
 const (
-	ModeSystem = "system"
-	ModeLight  = "light"
-	ModeDark   = "dark"
+	ModeSystem = themedomain.SchemeSystem
+	ModeLight  = themedomain.SchemeLight
+	ModeDark   = themedomain.SchemeDark
 )
-
-// Mode is the word this file writes read back, and Word is the word for one. A
-// word this file does not name is the machine's own choice.
-func Mode(word string) themedomain.ColorScheme {
-	switch word {
-	case ModeLight:
-		return themedomain.Light
-	case ModeDark:
-		return themedomain.Dark
-	}
-	return themedomain.System
-}
-
-func GetModeName(mode themedomain.ColorScheme) string {
-	switch mode {
-	case themedomain.Light:
-		return ModeLight
-	case themedomain.Dark:
-		return ModeDark
-	default:
-		return ModeSystem
-	}
-}
 
 // AsDesigned is the multiplier that draws everything the size it was drawn at. It is the default
 // the declaration of the shell gives both scales.

@@ -10,13 +10,11 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // fakeCatalog provisions the requirements whose id it holds and records the requests.
 type fakeCatalog struct {
-	pluginport.DependencyCatalog
 	resolved map[string]plugindomain.ResolvedDependency
 	err      error
 	calls    []manifest.DependencyRequirement
@@ -27,7 +25,14 @@ func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
 	return ok
 }
 
-func (f *fakeCatalog) Register(manifest.DependencyRequirement) {}
+func (f *fakeCatalog) GetStatus(context.Context, string) (plugindomain.DependencyStatus, error) {
+	return plugindomain.DependencyStatus{}, nil
+}
+
+func (f *fakeCatalog) List(context.Context) ([]plugindomain.DependencyStatus, error) { return nil, nil }
+
+func (f *fakeCatalog) SetObserver(func(manifest.DependencyRequirement, plugindomain.DependencyStatus)) {
+}
 
 func (f *fakeCatalog) Provision(_ context.Context, req manifest.DependencyRequirement, _ func(plugindomain.DependencyStatus)) (plugindomain.ResolvedDependency, error) {
 	f.calls = append(f.calls, req)

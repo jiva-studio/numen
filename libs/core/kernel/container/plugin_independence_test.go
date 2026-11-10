@@ -405,8 +405,8 @@ func TestAnonymousAssertionRule_RejectsInterfaceAssertions(t *testing.T) {
 	}
 }
 
-// The plugin manager is reached through the methods of port.PluginManager. The
-// container and the hosts ask it for nothing it does not declare, so a value of
+// The plugin host is reached through the capabilities of container/plugins.Host. The
+// container and the hosts ask it for nothing they do not declare, so a value of
 // it is never asserted to an interface spelled out at the assertion.
 func TestNoHostOrContainerSourceAssertsToAnAnonymousInterface(t *testing.T) {
 	roots := []string{

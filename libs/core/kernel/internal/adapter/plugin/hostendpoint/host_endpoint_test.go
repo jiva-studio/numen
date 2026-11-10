@@ -63,7 +63,7 @@ func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 
 func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
 func (c *callers) GetPluginSearch() pluginport.PluginSearch      { return c.search }
-func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
+func (c *callers) GetDependencies() Dependencies { return nil }
 func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work }
 func (c *callers) GetPluginTools() PluginTools                   { return c.tools }
 

@@ -7,7 +7,7 @@ import (
 	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -27,26 +27,12 @@ const programsLimit = pluginswiring.ProgramsLimit
 type PluginVaultHooks = pluginswiring.PluginVaultHooks
 
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
-func NewPluginHost(target string, dirs ...string) *plugin.Host {
+func NewPluginHost(target string, dirs ...string) *pluginswiring.Host {
 	return pluginswiring.NewPluginHost(target, dirs...)
 }
 
-// NewDependencies returns the provisioners as the environment names them now.
-func NewDependencies() pluginport.DependencyCatalog {
-	return pluginswiring.NewDependencies()
-}
-
-// NewDependenciesIn is NewDependencies with the dependencies kept in dir where NUMEN_MODELS_DIR names no folder.
-func NewDependenciesIn(dir string) pluginport.DependencyCatalog {
-	return pluginswiring.NewDependenciesIn(dir)
-}
-
-func newDependencies(defaultDir string) *provision.Registry {
-	reg, ok := pluginswiring.NewDependenciesIn(defaultDir).(*provision.Registry)
-	if !ok {
-		return nil
-	}
-	return reg
+func newDependencies(defaultDir string) plugin.Dependencies {
+	return pluginswiring.NewDependenciesIn(defaultDir)
 }
 
 // ReportDependencies keeps one task in the list for each dependency being provisioned.
@@ -60,7 +46,7 @@ func (c Config) GetPluginCatalog() *catalog.Service {
 	return c.plugins().GetPluginCatalog()
 }
 
-func (c Config) resolvePlugin(capability string) (pluginport.PluginManager, error) {
+func (c Config) resolvePlugin(capability string) (*pluginswiring.Host, error) {
 	return c.plugins().ResolvePlugin(capability)
 }
 
@@ -224,4 +210,21 @@ func (c Config) OpenChooseTabKind() *tabkind.Choose {
 // that succeeded. The returned function stops the reports.
 func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
 	return c.plugins().WatchPluginChanges()
+}
+
+// InstallPluginVault lets the plugins work through the host the vault OpenPluginVault opens.
+func (c Config) InstallPluginVault(
+	vaults vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+) error {
+	opened, err := c.OpenPluginVault(vaults, db, current, hooks)
+	if err != nil {
+		return err
+	}
+	c.SetPluginVault(opened)
+	return nil
+}
+
+// LendPluginHost is the capabilities of host, as the configuration holds them.
+func LendPluginHost(host *plugin.Host) *pluginswiring.Host {
+	return pluginswiring.NewHost(host)
 }

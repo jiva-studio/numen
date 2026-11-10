@@ -124,7 +124,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	})
 
 	cfg := vaultConfig(t)
-	cfg.PluginHost = host
+	cfg.PluginHost = container.LendPluginHost(host)
 
 	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
 	if err != nil {

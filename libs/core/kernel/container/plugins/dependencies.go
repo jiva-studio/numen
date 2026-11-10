@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
+	pluginhost "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -19,7 +19,9 @@ const dependencyTaskPrefix = "provision:"
 // EnvMockML names the variable that runs the plugins on mock models.
 const EnvMockML = "NUMEN_MOCK_ML"
 
-func newDependencies(defaultDir string) *provision.Registry {
+// NewDependenciesIn returns the provisioners as the environment names them now, keeping the
+// dependencies in defaultDir where NUMEN_MODELS_DIR names no folder.
+func NewDependenciesIn(defaultDir string) pluginhost.Dependencies {
 	if os.Getenv(EnvMockML) == "true" {
 		return provision.NewRegistry(newPlaceholders())
 	}
@@ -50,24 +52,13 @@ func newPlaceholders() *provision.PlaceholderProvisioner {
 	})
 }
 
-// NewDependencies returns the provisioners as the environment names them now: a
-// host made before NUMEN_MOCK_ML was set is handed these again.
-func NewDependencies() pluginport.DependencyCatalog { return newDependencies("") }
-
-// NewDependenciesIn is NewDependencies with the dependencies kept in dir where NUMEN_MODELS_DIR names no folder.
-func NewDependenciesIn(dir string) pluginport.DependencyCatalog { return newDependencies(dir) }
-
 // ReportDependencies keeps one task in the list for each dependency being provisioned. The
 // task counts bytes, and is taken out when the dependency is ready; one that failed stays with its error.
 func (c Config) ReportDependencies(tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	catalog := c.PluginHost.GetDependencies()
-	if catalog == nil {
-		return
-	}
-	catalog.SetObserver(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
+	c.PluginHost.ObserveDependencies(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		id := dependencyTaskPrefix + req.ID
 		switch status.State {
 		case plugin.DependencyStateReady:

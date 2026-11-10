@@ -23,7 +23,7 @@ type Config struct {
 	PluginCachePath       string
 	ServiceDir            string
 	SafeMode              bool
-	PluginHost            pluginport.PluginManager
+	PluginHost            *Host
 	PluginCatalog         catalog.Config
 	PluginDirs            []string
 	KeyStore              pluginport.KeyStore

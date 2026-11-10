@@ -181,7 +181,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	api.SetVaultIndexer(t.Context(), nil)
 
-	lent, err := openPluginVault(cfg, db, api)
+	lent, err := cfg.OpenPluginVault(registry, db, getNoCurrentVault, getPluginVaultHooks(api))
 	if err != nil {
 		t.Fatal(err)
 	}

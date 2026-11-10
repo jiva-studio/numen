@@ -24,7 +24,7 @@ func (window) GetMediaAddress(v domain.Vault, stat domain.FileStat) string {
 	return "http://127.0.0.1:1/" + string(v.ID) + "/" + stat.Path
 }
 
-func (window) GetPluginFileAddress(v domain.Vault, address file.Address, size int64) string {
+func (window) GetPluginFileAddress(_ domain.Vault, address file.Address, _ int64) string {
 	return "http://127.0.0.1:1/plugin/" + address.PluginID + "/" + address.Path
 }
 

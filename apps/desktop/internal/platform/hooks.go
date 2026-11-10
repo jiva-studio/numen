@@ -6,23 +6,17 @@ import (
 	"runtime"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 )
 
 // storageFolder is the folder of the application inside the cache and data folders that holds
 // what the plugins store.
 const storageFolder = "plugin-storage"
 
-func newPluginHost(target string, dirs ...string) pluginport.PluginManager {
+func newPluginHost(target string, dirs ...string) *pluginswiring.Host {
 	host := container.NewPluginHost(target, dirs...)
 	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
-	host.SetStorageRoots(cacheRoot, dataRoot)
-	// gomutants:disable-next-line
-	if models := host.GetModelsDir(); models != "" {
-		// gomutants:disable-next-line
-		host.SetDependencies(container.NewDependenciesIn(models))
-	}
+	host.SetStorage(cacheRoot, dataRoot)
 	return host
 }
 

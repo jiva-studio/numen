@@ -2,7 +2,6 @@ package editor
 
 import (
 	"context"
-	"sync"
 	"testing"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -21,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -139,7 +139,7 @@ func (c themeConfig) themes(say func(string)) (*theme.Service, error) {
 		SettingsFiles:   settingsadapter.NewFiles(),
 		SettingEvents:   settingevents.New(),
 		SecretGate:      secret.NewGate(),
-		SubscribedHosts: &sync.Map{},
+		SubscribedHosts: &settingsusecase.HostSubscriptions{},
 		PluginChanges:   &pluginchanges.Signals{},
 		Programs:        &settingsadapter.ProgramList{},
 	}.Themes(say)

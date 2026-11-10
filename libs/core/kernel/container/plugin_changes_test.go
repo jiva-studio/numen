@@ -5,13 +5,14 @@ import (
 	"slices"
 	"testing"
 
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // applyingHost records each setting the host applies.
 type applyingHost struct {
-	pluginport.PluginManager
+	pluginport.SettingUpdater
 	applied *[]string
 }
 
@@ -22,7 +23,7 @@ func (h applyingHost) UpdatePluginSetting(_ context.Context, pluginID, key strin
 
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
-	c := NewConfig(Config{PluginHost: applyingHost{applied: &applied}})
+	c := NewConfig(Config{PluginHost: &pluginswiring.Host{SettingUpdater: applyingHost{applied: &applied}}})
 	changes, stop := c.WatchPluginChanges()
 	defer stop()
 
@@ -39,7 +40,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 }
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
-	c := NewConfig(Config{PluginHost: applyingHost{applied: new([]string)}})
+	c := NewConfig(Config{PluginHost: &pluginswiring.Host{SettingUpdater: applyingHost{applied: new([]string)}}})
 	changes, stop := c.WatchPluginChanges()
 	stop()
 

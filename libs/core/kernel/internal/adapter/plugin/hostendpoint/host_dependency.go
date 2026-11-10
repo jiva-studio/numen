@@ -18,6 +18,14 @@ import (
 // dependencyStreamBuffer is how many statuses a streaming caller may lag behind.
 const dependencyStreamBuffer = 32
 
+// Dependencies is what the host provisions the dependencies of the plugins with, and answers their
+// questions about them.
+type Dependencies interface {
+	pluginport.DependencyLookup
+	CanProvision(req manifest.DependencyRequirement) bool
+	Provision(ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error)
+}
+
 var errNoDependencies = errors.New("the host provisions no dependencies")
 
 // dependencyEndpoint answers DependencyService for the plugins that call the host.
@@ -27,7 +35,7 @@ type dependencyEndpoint struct {
 
 var _ numenv1connect.DependencyServiceHandler = (*dependencyEndpoint)(nil)
 
-func (e *dependencyEndpoint) begin(header http.Header) (pluginport.DependencyCatalog, error) {
+func (e *dependencyEndpoint) begin(header http.Header) (Dependencies, error) {
 	if _, err := e.endpoint.authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}

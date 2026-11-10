@@ -61,7 +61,7 @@ type Services interface {
 	GetCompleter() completionport.Completer
 	GetPluginVault() pluginport.PluginVault
 	GetPluginTexts() pluginport.PluginTexts
-	GetDependencies() pluginport.DependencyCatalog
+	GetDependencies() Dependencies
 	workServices
 }
 

@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -28,11 +27,6 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 		"use fast mock ML models, and an empty placeholder file for every dependency a plugin declares")
 }
 
-// dependencySetter is a plugin host whose dependency catalog can be replaced.
-type dependencySetter interface {
-	SetDependencies(pluginport.DependencyCatalog)
-}
-
 func (d *DebugOptions) apply(cfg *container.Config) error {
 	if d.isServingHTTP() {
 		cfg.KeyStore = debugserve.NewKeyStore()
@@ -43,8 +37,8 @@ func (d *DebugOptions) apply(cfg *container.Config) error {
 	if err := os.Setenv("NUMEN_MOCK_ML", "true"); err != nil {
 		return err
 	}
-	if host, ok := cfg.PluginHost.(dependencySetter); ok {
-		host.SetDependencies(container.NewDependencies())
+	if cfg.PluginHost != nil {
+		cfg.PluginHost.RefreshDependencies()
 	}
 	return nil
 }
