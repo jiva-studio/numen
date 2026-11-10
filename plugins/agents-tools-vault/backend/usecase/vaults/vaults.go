@@ -6,13 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/api"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/ports"
+	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/vaultaddress"
 )
 
 // Vault is what the use case reads of one vault.
@@ -157,16 +157,8 @@ func (u *UseCase) find(ctx context.Context, address string) (host.VaultEntry, er
 	if err != nil {
 		return host.VaultEntry{}, err
 	}
-	for _, isMatch := range []func(host.VaultEntry) bool{
-		func(entry host.VaultEntry) bool { return string(entry.ID) == address },
-		func(entry host.VaultEntry) bool { return entry.Name == address },
-		func(entry host.VaultEntry) bool { return filepath.Clean(entry.Path) == filepath.Clean(address) },
-	} {
-		for _, entry := range entries {
-			if isMatch(entry) {
-				return entry, nil
-			}
-		}
+	if entry, ok := vaultaddress.Find(entries, address); ok {
+		return entry, nil
 	}
 	return host.VaultEntry{}, fmt.Errorf("unknown vault %q: no vault has this identifier, name or folder; call vault_list", address)
 }
