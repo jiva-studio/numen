@@ -203,13 +203,13 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
   play: async () => {
     const { state } = getStoryTab()
     await waitFor(
-      async () => await expect(state.book.rendering.renderedChapter.value).toBe('text/two.xhtml'),
+      async () => await expect(state.book.bookDocument.renderedChapter.value).toBe('text/two.xhtml'),
       {
         timeout: LAYOUT_TIMEOUT,
       },
     )
 
-    await state.book.actions.goToOffset(THREE.span.start)
+    await state.book.navigation.goToOffset(THREE.span.start)
 
     // The heading of the third chapter is part of the passage, and the markup sets a line between
     // the heading and the paragraph.

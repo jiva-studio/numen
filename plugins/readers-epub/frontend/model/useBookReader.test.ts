@@ -151,7 +151,7 @@ describe('a book still being read', () => {
 
     expect(readItem.state.isLoading.value).toBe(true)
 
-    await readItem.actions.goToOffset(0)
+    await readItem.navigation.goToOffset(0)
 
     expect(readItem.state.isLoading.value).toBe(false)
   })
@@ -160,7 +160,7 @@ describe('a book still being read', () => {
     const { books } = shelf(new Error('no such book'))
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(0)
+    await readItem.navigation.goToOffset(0)
 
     expect(readItem.state.isLoading.value).toBe(false)
   })
@@ -171,8 +171,8 @@ describe('a book opened', () => {
     const { books, requests } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(3_000)
-    await readItem.actions.goToOffset(0)
+    await readItem.navigation.goToOffset(3_000)
+    await readItem.navigation.goToOffset(0)
 
     expect(requests).toStrictEqual(['library/Mahabharata.epub'])
   })
@@ -183,10 +183,10 @@ describe('a book opened', () => {
 
     await settle()
 
-    expect(readItem.place.offset.value).toBe(0)
+    expect(readItem.navigation.offset.value).toBe(0)
     expect(readItem.state.pages.value).toBe(3)
-    expect(readItem.place.page.value).toBe(1)
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
+    expect(readItem.progress.page.value).toBe(1)
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
     expect(markupCalls).toStrictEqual([
       'library/Mahabharata.epub text/part0001.xhtml 20480 1700000000000000000 mahabharata.epub',
     ])
@@ -198,8 +198,8 @@ describe('a book opened', () => {
 
     expect(await readItem.actions.goToCfi('epubcfi(/8/4!/4/4/1:600)')).toBe(true)
 
-    expect(readItem.place.offset.value).toBe(3_600)
-    expect(readItem.rendering.highlights.value).toStrictEqual([{ start: 3_600, end: 3_600 }])
+    expect(readItem.navigation.offset.value).toBe(3_600)
+    expect(readItem.marks.highlights.value).toStrictEqual([{ start: 3_600, end: 3_600 }])
     expect(placeCalls).toStrictEqual(['offset library/Mahabharata.epub epubcfi(/8/4!/4/4/1:600)'])
   })
 
@@ -209,7 +209,7 @@ describe('a book opened', () => {
 
     expect(await readItem.actions.goToCfi('epubcfi(/8/10!/4/2)')).toBe(false)
 
-    expect(readItem.place.offset.value).toBe(0)
+    expect(readItem.navigation.offset.value).toBe(0)
   })
 
   it('asks the backend for the CFI of an offset of its book', async () => {
@@ -234,10 +234,10 @@ describe('where the person is standing', () => {
     const { books, markupCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(6_500)
-    await readItem.actions.goToOffset(6_600)
+    await readItem.navigation.goToOffset(6_500)
+    await readItem.navigation.goToOffset(6_600)
 
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 6_000, end: 9_000 })
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 6_000, end: 9_000 })
     expect(markupCalls).toHaveLength(2)
     expect(markupCalls[1]).toContain('text/part0003.xhtml')
   })
@@ -246,116 +246,116 @@ describe('where the person is standing', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(6_144)
+    await readItem.navigation.goToOffset(6_144)
 
-    expect(readItem.place.page.value).toBe(3)
+    expect(readItem.progress.page.value).toBe(3)
   })
 
   it('is never past either end of the book', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(-40)
-    expect(readItem.place.offset.value).toBe(0)
+    await readItem.navigation.goToOffset(-40)
+    expect(readItem.navigation.offset.value).toBe(0)
 
-    await readItem.actions.goToOffset(9_000)
-    expect(readItem.place.offset.value).toBe(8_999)
+    await readItem.navigation.goToOffset(9_000)
+    expect(readItem.navigation.offset.value).toBe(8_999)
   })
 
   it('names each jump with a new target, so that a jump to the same offset is seen', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(100)
-    const first = readItem.place.target.value
-    await readItem.actions.goToOffset(100)
+    await readItem.navigation.goToOffset(100)
+    const first = readItem.navigation.target.value
+    await readItem.navigation.goToOffset(100)
 
     expect(first).toStrictEqual({ offset: 100 })
-    expect(readItem.place.target.value).toStrictEqual({ offset: 100 })
-    expect(readItem.place.target.value).not.toBe(first)
+    expect(readItem.navigation.target.value).toStrictEqual({ offset: 100 })
+    expect(readItem.navigation.target.value).not.toBe(first)
   })
 
   it('records an offset reported inside the drawn document without a jump', async () => {
     const { books, markupCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
-    await readItem.actions.goToOffset(100)
-    const jump = readItem.place.target.value
+    await readItem.navigation.goToOffset(100)
+    const jump = readItem.navigation.target.value
 
-    await readItem.actions.moveTo(2_500)
+    await readItem.navigation.moveTo(2_500)
 
-    expect(readItem.place.offset.value).toBe(2_500)
-    expect(readItem.place.target.value).toBe(jump)
+    expect(readItem.navigation.offset.value).toBe(2_500)
+    expect(readItem.navigation.target.value).toBe(jump)
     expect(markupCalls).toHaveLength(1)
   })
 
   it('drops a document that arrives after a turn back inside the drawn one', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
-    await readItem.actions.goToOffset(100)
+    await readItem.navigation.goToOffset(100)
     let arrive!: (markup: string) => void
     books.readMarkup = () =>
       new Promise<string>((resolve) => {
         arrive = resolve
       })
 
-    const crossing = readItem.actions.moveTo(3_000)
+    const crossing = readItem.navigation.moveTo(3_000)
     await settle()
-    await readItem.actions.moveTo(2_500)
+    await readItem.navigation.moveTo(2_500)
     arrive('<p data-offset="3000">next</p>')
     await crossing
     await settle()
 
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
-    expect(readItem.place.offset.value).toBe(2_500)
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 0, end: 3_000 })
+    expect(readItem.navigation.offset.value).toBe(2_500)
   })
 
   it('jumps to an offset reported past the end of the drawn document', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
-    await readItem.actions.goToOffset(100)
+    await readItem.navigation.goToOffset(100)
 
-    await readItem.actions.moveTo(3_000)
+    await readItem.navigation.moveTo(3_000)
 
-    expect(readItem.place.offset.value).toBe(3_000)
-    expect(readItem.place.target.value).toStrictEqual({ offset: 3_000 })
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+    expect(readItem.navigation.offset.value).toBe(3_000)
+    expect(readItem.navigation.target.value).toStrictEqual({ offset: 3_000 })
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
   })
 
   it('jumps once to a document that a second press past the end names while it is drawn', async () => {
     const { books, markupCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
-    await readItem.actions.goToOffset(100)
+    await readItem.navigation.goToOffset(100)
     let arrive!: (markup: string) => void
     books.readMarkup = () =>
       new Promise<string>((resolve) => {
         arrive = resolve
       })
 
-    const first = readItem.actions.moveTo(3_000)
+    const first = readItem.navigation.moveTo(3_000)
     await settle()
-    const jump = readItem.place.target.value
-    const second = readItem.actions.moveTo(3_000)
+    const jump = readItem.navigation.target.value
+    const second = readItem.navigation.moveTo(3_000)
     await settle()
     arrive('<p data-offset="3000">next</p>')
     await Promise.all([first, second])
 
-    expect(readItem.place.target.value).toBe(jump)
+    expect(readItem.navigation.target.value).toBe(jump)
     expect(markupCalls).toHaveLength(1)
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
   })
 
   it('jumps again to the same document once it is drawn and the person is back before it', async () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
-    await readItem.actions.goToOffset(100)
-    await readItem.actions.moveTo(3_000)
-    const jump = readItem.place.target.value
+    await readItem.navigation.goToOffset(100)
+    await readItem.navigation.moveTo(3_000)
+    const jump = readItem.navigation.target.value
 
-    await readItem.actions.moveTo(2_999)
-    await readItem.actions.moveTo(3_000)
+    await readItem.navigation.moveTo(2_999)
+    await readItem.navigation.moveTo(3_000)
 
-    expect(readItem.place.target.value).not.toBe(jump)
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+    expect(readItem.navigation.target.value).not.toBe(jump)
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
   })
 
   it('drops a CFI offset that arrives after a page turn', async () => {
@@ -367,24 +367,24 @@ describe('where the person is standing', () => {
       })
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
     await settle()
-    const jump = readItem.place.target.value
+    const jump = readItem.navigation.target.value
 
     const restore = readItem.actions.goToCfi('epubcfi(/8/2!/4/2/1:100)')
     await settle()
-    await readItem.actions.moveTo(2_500)
+    await readItem.navigation.moveTo(2_500)
     answerOffset(100)
 
     expect(await restore).toBe(false)
-    expect(readItem.place.offset.value).toBe(2_500)
-    expect(readItem.place.target.value).toBe(jump)
+    expect(readItem.navigation.offset.value).toBe(2_500)
+    expect(readItem.navigation.target.value).toBe(jump)
   })
 
   it('draws nothing again where the offset stays in the document on screen', async () => {
     const { books, markupCalls } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(100)
-    await readItem.actions.goToOffset(2_900)
+    await readItem.navigation.goToOffset(100)
+    await readItem.navigation.goToOffset(2_900)
 
     expect(markupCalls).toHaveLength(1)
   })
@@ -397,9 +397,9 @@ describe('a passage reached', () => {
 
     await readItem.actions.focusSpans({ start: 3_600, end: 3_642 })
 
-    expect(readItem.place.offset.value).toBe(3_600)
-    expect(readItem.place.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
-    expect(readItem.rendering.highlights.value).toStrictEqual([{ start: 3_600, end: 3_642 }])
+    expect(readItem.navigation.offset.value).toBe(3_600)
+    expect(readItem.bookDocument.documentSpan.value).toStrictEqual({ start: 3_000, end: 6_000 })
+    expect(readItem.marks.highlights.value).toStrictEqual([{ start: 3_600, end: 3_642 }])
   })
 
   it('leaves the other spans somewhere else to look', async () => {
@@ -408,8 +408,8 @@ describe('a passage reached', () => {
 
     await readItem.actions.focusSpans({ start: 100, end: 110 }, { start: 6_500, end: 6_520 })
 
-    expect(readItem.place.offset.value).toBe(100)
-    expect(readItem.rendering.otherHighlights.value).toStrictEqual([{ start: 6_500, end: 6_520 }])
+    expect(readItem.navigation.offset.value).toBe(100)
+    expect(readItem.marks.otherHighlights.value).toStrictEqual([{ start: 6_500, end: 6_520 }])
   })
 
   it('is nowhere at all when nothing was requested about', async () => {
@@ -418,7 +418,7 @@ describe('a passage reached', () => {
 
     await readItem.actions.focusSpans()
 
-    expect(readItem.rendering.highlights.value).toStrictEqual([])
+    expect(readItem.marks.highlights.value).toStrictEqual([])
   })
 })
 
@@ -427,12 +427,12 @@ describe('a book that will not open', () => {
     const { books } = shelf(new Error('this file is not a book'))
     const readItem = useBookReader(books, 'library/Broken.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(400)
+    await readItem.navigation.goToOffset(400)
 
     expect(recordedEvents.join(' ')).toContain('Numen is not responding')
     expect(recordedEvents.join(' ')).not.toContain('this file is not a book')
     expect(readItem.state.pages.value).toBe(0)
-    expect(readItem.rendering.markup.value).toBe('')
+    expect(readItem.bookDocument.markup.value).toBe('')
   })
 
   it('says what went wrong where a document of it will not be drawn', async () => {
@@ -452,10 +452,10 @@ describe('a book tab closed', () => {
     await settle()
 
     readItem.close()
-    await readItem.actions.goToOffset(6_500)
+    await readItem.navigation.goToOffset(6_500)
 
     expect(markupCalls).toHaveLength(1)
-    expect(readItem.rendering.markup.value).toBe('')
+    expect(readItem.bookDocument.markup.value).toBe('')
   })
 })
 
@@ -465,10 +465,10 @@ describe('a link inside a book followed', () => {
     const book = useBookReader(books, 'library/mbh.epub', WORDS, writeMessage)
     await settle()
 
-    await book.actions.followLink('text/part0003.xhtml')
+    await book.navigation.followLink('text/part0003.xhtml')
 
-    expect(book.place.offset.value).toBe(6_000)
-    expect(book.rendering.renderedChapter.value).toBe('text/part0003.xhtml')
+    expect(book.navigation.offset.value).toBe(6_000)
+    expect(book.bookDocument.renderedChapter.value).toBe('text/part0003.xhtml')
   })
 
   it('leads nowhere, where the book holds no such document', async () => {
@@ -476,10 +476,10 @@ describe('a link inside a book followed', () => {
     const book = useBookReader(books, 'library/mbh.epub', WORDS, writeMessage)
     await settle()
 
-    await book.actions.followLink('text/nowhere.xhtml')
+    await book.navigation.followLink('text/nowhere.xhtml')
 
-    expect(book.place.offset.value).toBe(0)
-    expect(book.rendering.renderedChapter.value).toBe('text/part0001.xhtml')
+    expect(book.navigation.offset.value).toBe(0)
+    expect(book.bookDocument.renderedChapter.value).toBe('text/part0001.xhtml')
   })
 })
 
@@ -499,23 +499,23 @@ describe('the chapter the person is in', () => {
     const { books } = shelf()
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(3_599)
-    expect(readItem.place.chapter.value).toBe('Ādi Parva')
+    await readItem.navigation.goToOffset(3_599)
+    expect(readItem.progress.chapter.value).toBe('Ādi Parva')
 
-    await readItem.actions.goToOffset(3_600)
-    expect(readItem.place.chapter.value).toBe('Сказание о сожжении леса')
+    await readItem.navigation.goToOffset(3_600)
+    expect(readItem.progress.chapter.value).toBe('Сказание о сожжении леса')
 
-    await readItem.actions.goToOffset(0)
-    expect(readItem.place.chapter.value).toBe('Ādi Parva')
+    await readItem.navigation.goToOffset(0)
+    expect(readItem.progress.chapter.value).toBe('Ādi Parva')
   })
 
   it('is none where the offset remains before the first place of the contents', async () => {
     const { books } = shelf({ ...BOOK, parts: [{ title: 'Late', offset: 100, level: 0 }] })
     const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(0)
+    await readItem.navigation.goToOffset(0)
 
-    expect(readItem.place.chapter.value).toBe('')
+    expect(readItem.progress.chapter.value).toBe('')
   })
 })
 
@@ -524,9 +524,9 @@ describe('a book that holds no document', () => {
     const { books, markupCalls } = shelf({ ...BOOK, documents: [] })
     const readItem = useBookReader(books, 'library/Empty.epub', WORDS, writeMessage)
 
-    await readItem.actions.goToOffset(500)
+    await readItem.navigation.goToOffset(500)
 
-    expect(readItem.place.offset.value).toBe(0)
+    expect(readItem.navigation.offset.value).toBe(0)
     expect(markupCalls).toStrictEqual([])
   })
 })
@@ -565,10 +565,10 @@ describe('a book tab closed after the book landed', () => {
     expect(readItem.state.contents.value).toHaveLength(2)
 
     readItem.close()
-    await readItem.actions.goToOffset(6_500)
+    await readItem.navigation.goToOffset(6_500)
 
     expect(readItem.state.contents.value).toStrictEqual([])
-    expect(readItem.place.offset.value).toBe(0)
+    expect(readItem.navigation.offset.value).toBe(0)
   })
 })
 
@@ -580,7 +580,7 @@ describe('what is returned of a book that will not open', () => {
       response.push(level),
     )
 
-    await readItem.actions.goToOffset(0)
+    await readItem.navigation.goToOffset(0)
 
     expect(response).toStrictEqual(['error'])
   })
@@ -595,7 +595,7 @@ describe('a book the books service fails to read', () => {
         fetch: answer,
       })
       const readItem = useBookReader(createBooks(api), 'library/Broken.epub')
-      const going = readItem.actions.goToOffset(400)
+      const going = readItem.navigation.goToOffset(400)
       await vi.runAllTimersAsync()
       await going
       return recordedEvents.join(' ')

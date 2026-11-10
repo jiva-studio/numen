@@ -9,13 +9,24 @@ import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, reactive, ref, shallowRef } from 'vue'
 
+import type { useBookColumns } from './columns'
 import { useBookLayout } from './layout'
+import type { useBookTurns } from './turns'
 import type { BookLink } from '../lib/link'
 import type { SettledBookProps } from '../lib/props'
 
+type BookColumns = ReturnType<typeof useBookColumns>
+type BookTurns = ReturnType<typeof useBookTurns>
+
 const fake = vi.hoisted(() => ({
   frames: [] as Array<() => void>,
-  columns: {} as Record<string, unknown>,
+  columns: {} as {
+    sizing: object
+    runMarks: object
+    laid: object
+    isStood: unknown
+    readColumns: unknown
+  },
   turns: {} as Record<string, unknown>,
 }))
 
@@ -25,9 +36,6 @@ vi.mock('@numen/ui', async (importOriginal) => ({
     fake.frames.push(run)
   },
 }))
-vi.mock('./columns', () => ({ useBookColumns: () => fake.columns }))
-/** The place the running turn of the paper goes to when the paper is copied. */
-vi.mock('./turns', () => ({ useBookTurns: () => fake.turns, getTurnTarget: () => -900 }))
 
 const KEPT = 77
 const SPREAD_OF = (pos: number) => pos + 1000
@@ -35,22 +43,23 @@ const SPREAD_OF = (pos: number) => pos + 1000
 const setUp = () => {
   fake.frames.length = 0
   fake.columns = {
-    state: {
+    sizing: {
       textSize: ref(1),
       viewport: ref({ width: 300, height: 200 }),
       isMeasured: ref(true),
-      isStood: ref(false),
       setting: ref({}),
-    },
-    laid: { flow: ref({}), spreadCount: ref(5), marks: shallowRef([]) },
-    actions: {
       measure: vi.fn(),
-      readColumns: vi.fn(),
+    },
+    runMarks: {
+      marks: shallowRef([]),
       findFragmentOffset: vi.fn(),
       markRuns: vi.fn(),
       markCopy: vi.fn(),
       unmarkCopy: vi.fn(),
     },
+    laid: { flow: ref({}), spreadCount: ref(5) },
+    isStood: ref(false),
+    readColumns: vi.fn(),
   }
   fake.turns = {
     position: { front: ref({}), leftInChapter: ref(0), standing: ref(0) },
@@ -69,7 +78,15 @@ const flatten = (parts: unknown): Record<string, unknown> =>
   Object.assign({}, ...Object.values(parts as Record<string, object>))
 
 const columns = () =>
-  flatten(fake.columns) as {
+  ({
+    ...flatten({
+      sizing: fake.columns.sizing,
+      runMarks: fake.columns.runMarks,
+      laid: fake.columns.laid,
+    }),
+    isStood: fake.columns.isStood,
+    readColumns: fake.columns.readColumns,
+  }) as {
     viewport: { value: { width: number; height: number } }
     textSize: { value: number }
     isMeasured: { value: boolean }
@@ -146,7 +163,8 @@ const room = (options: Options = {}) => {
           props,
           onMove,
           takeLed,
-          getEdge: () => 0,
+          column: fake.columns as unknown as BookColumns,
+          turns: fake.turns as unknown as BookTurns,
         })
         return () => null
       },
@@ -168,7 +186,7 @@ describe('setting the columns', () => {
     turns().stand.mockClear()
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
@@ -183,7 +201,7 @@ describe('setting the columns', () => {
     const { layout } = room()
     columns().measure.mockClear()
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     expect(fake.frames).toHaveLength(0)
@@ -194,7 +212,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasArea: false })
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -206,7 +224,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasPaper: false })
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -221,7 +239,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
+    layout().settling.settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
@@ -235,7 +253,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(0)
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40, { path: '', fragment: 'top' })
+    layout().settling.settle(() => 40, { path: '', fragment: 'top' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('top')
@@ -248,7 +266,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
+    layout().settling.settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -261,7 +279,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(undefined)
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40, { path: '', fragment: 'missing' })
+    layout().settling.settle(() => 40, { path: '', fragment: 'missing' })
     flushFrames()
 
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(40), 'auto')
@@ -272,7 +290,7 @@ describe('the place a link led to', () => {
     const { layout, onMove } = room()
     fake.frames.length = 0
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -361,7 +379,7 @@ describe('the room or the type changing size', () => {
       columns().viewport.value = { width: 301, height: 200 }
     })
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
     await nextTick()
     flushAllFrames()
 
@@ -440,7 +458,7 @@ describe('a page turned while another document is drawn', () => {
     columns().isMeasured.value = false
     columns().isStood.value = false
 
-    layout().actions.turn('next')
+    layout().turn('next')
 
     expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
   })
@@ -449,7 +467,7 @@ describe('a page turned while another document is drawn', () => {
     const { layout } = room()
     flushFrames()
 
-    layout().actions.turn('next')
+    layout().turn('next')
 
     expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
   })
@@ -460,8 +478,8 @@ describe('a page turned while another document is drawn', () => {
     props.markup = '<p>two</p>'
     await nextTick()
 
-    layout().actions.turn('next')
-    layout().actions.turn('next')
+    layout().turn('next')
+    layout().turn('next')
     expect(turns().turn).not.toHaveBeenCalled()
 
     flushFrames()
@@ -476,7 +494,7 @@ describe('a page turned while another document is drawn', () => {
     flushFrames()
     props.markup = '<p>two</p>'
     await nextTick()
-    layout().actions.turn('back')
+    layout().turn('back')
     flushFrames()
     await nextTick()
 
@@ -494,7 +512,7 @@ describe('a page turned while another document is drawn', () => {
     props.markup = '<p>two</p>'
     await nextTick()
 
-    for (let press = 0; press < 20; press += 1) layout().actions.turn('next')
+    for (let press = 0; press < 20; press += 1) layout().turn('next')
     flushFrames()
     await nextTick()
 
@@ -711,9 +729,9 @@ describe('the text set again for a picture or a face that arrives', () => {
     flushFrames()
     turns().stand.mockClear()
 
-    layout().actions.settleKept()
-    layout().actions.settleKept()
-    layout().actions.settleKept()
+    layout().settling.settleKept()
+    layout().settling.settleKept()
+    layout().settling.settleKept()
     flushFrames()
     flushFrames()
 
@@ -758,7 +776,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
     columns().readColumns.mockClear()
     turns().stand.mockClear()
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -773,7 +791,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
     const picture = appendImage(text)
     columns().readColumns.mockClear()
 
-    layout().actions.settle(() => 40)
+    layout().settling.settle(() => 40)
     flushFrames()
     picture.dispatchEvent(new Event('error'))
 
@@ -787,8 +805,10 @@ describe('a page turned into the adjacent document', () => {
     const { props, layout, text } = setup
     flushFrames()
     text.innerHTML = '<p data-offset="190">one</p>'
+    // The place the running turn of the paper goes to when the paper is copied.
+    text.style.translate = '-900px 0'
     turns().turn.mockReturnValue(200)
-    layout().actions.turn('next')
+    layout().turn('next')
     props.at = offset
     props.span = { start: 200, end: 300 }
     props.markup = '<p>two</p>'
