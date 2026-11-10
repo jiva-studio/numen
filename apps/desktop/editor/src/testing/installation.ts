@@ -7,7 +7,8 @@ import { readPluginReadme, type CatalogEntry } from '@/entities/plugin'
 
 /** What a test puts over the defaults of an installation, named without the group it belongs to. */
 export type InstallationOverrides = Partial<Installation['settings']> &
-  Partial<Installation['plugin']> &
+  Partial<Omit<Installation['plugin'], 'files'>> &
+  Partial<Installation['plugin']['files']> &
   Partial<Omit<Installation['secrets'], 'edit' | 'access'>> &
   Partial<Installation['secrets']['edit']> &
   Partial<Installation['secrets']['access']>
