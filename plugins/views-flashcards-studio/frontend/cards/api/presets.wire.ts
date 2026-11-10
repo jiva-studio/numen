@@ -12,7 +12,7 @@ import type {
   Preset as PresetMessage,
   ReadPresetResponse,
   SettingsBounds as SettingsBoundsMessage,
-} from '../../api/types.js'
+} from '../../api/presets.js'
 import { presetsService } from './clients'
 import {
   DEFAULTS,

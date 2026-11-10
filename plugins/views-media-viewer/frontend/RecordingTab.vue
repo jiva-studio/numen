@@ -35,6 +35,17 @@ const { pageUrl } = tab.content
 /** Whether there is media to play: a note that names neither media nor a page draws no player. */
 const hasMedia = computed(() => url.value !== '' || !isNotePath(targetPath))
 
+const seekToSelector = (selector: Selector | null | undefined): number | null => {
+  const start = getSelectorStart(selector)
+  if (start !== null) tab.playback.controls.go(start)
+  return start
+}
+
+// The window sets a selector for a search hit and for the place saved before a restart. The one the
+// tab opens with is already stored by the window, so it is reported and only a later one is saved.
+const initialTime = seekToSelector(props.state?.selector)
+if (initialTime !== null) props.state?.reportPlace?.({ positionSeconds: initialTime / 1000 })
+
 /* --------------------------------- Hooks ---------------------------------- */
 const saveTime = (ms: number) => {
   props.state?.savePlace?.(createTimeSelector(ms))
@@ -53,16 +64,6 @@ onMounted(() => {
   }
 })
 
-const seekToSelector = (selector: Selector | null | undefined): number | null => {
-  const start = getSelectorStart(selector)
-  if (start !== null) tab.playback.controls.go(start)
-  return start
-}
-
-// The window sets a selector for a search hit and for the place saved before a restart. The one the
-// tab opens with is already stored by the window, so it is reported and only a later one is saved.
-const initialTime = seekToSelector(props.state?.selector)
-if (initialTime !== null) props.state?.reportPlace?.({ positionSeconds: initialTime / 1000 })
 watch(
   () => props.state?.selector,
   (selector: Selector | null | undefined) => {

@@ -21,6 +21,13 @@ const emit = defineEmits<{
   (event: 'write', text: string): void
 }>()
 
+defineExpose({
+  /** The box itself, for a caller that puts the caret somewhere in its contents. */
+  get box() {
+    return box.value
+  },
+})
+
 const attrs = useAttrs()
 
 /** What the caller handed the box itself. */
@@ -32,11 +39,6 @@ const handed = computed(() => {
 const ownId = useId()
 
 const box = useTemplateRef<HTMLTextAreaElement>('box')
-
-defineExpose({
-  /** The box itself, for a caller that puts the caret somewhere in its contents. */
-  box,
-})
 </script>
 
 <template>

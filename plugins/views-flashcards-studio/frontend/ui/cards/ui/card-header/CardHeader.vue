@@ -43,14 +43,14 @@ const release = (): void => {
   win.removeEventListener('pointercancel', release)
 }
 
+onScopeDispose(release)
+
 const onPress = (event: PointerEvent): void => {
   if ((event.target as HTMLElement | null)?.closest?.(WORKED) == null) return
   isDraggable.value = false
   win.addEventListener('pointerup', release)
   win.addEventListener('pointercancel', release)
 }
-
-onScopeDispose(release)
 
 const onStep = (event: KeyboardEvent): void => {
   const direction = parseStepKey(event.key)

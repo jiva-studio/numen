@@ -86,10 +86,10 @@ function createCardModelKindDefinition(deps: {
   wire: CardModelWire
   cards: Cards
   createCardModelTabState: (id: string) => CardModelTabState
-}): TabKindRegistration<CardModelTabState> {
+}): { kind: TabKindRegistration<CardModelTabState> } {
   const { store, wire, cards } = deps
   const getTitle = (path: string): string => wire.getTitle(path) || getFileName(path)
-  return {
+  const kind: TabKindRegistration<CardModelTabState> = {
     kind: CARD_MODEL,
     component: CardModelTab,
     icon: LayoutTemplate,
@@ -119,6 +119,7 @@ function createCardModelKindDefinition(deps: {
     flushPending: (one) => store.flushPending(one.id),
     createFile: (folder, name) => cards.createCardModel(name, folder, [words.newField]),
   }
+  return { kind }
 }
 
 export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions) {
@@ -145,7 +146,7 @@ export function createCardModelTabs(cards: Cards, options: CardModelTabsOptions)
 
   const createCardModelTabState = (id: string): CardModelTabState =>
     createCardModelTabItem(id, { store, fields, wire, closeTab, reportFailure })
-  const kind = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState })
+  const { kind } = createCardModelKindDefinition({ store, wire, cards, createCardModelTabState })
 
   return {
     kind,

@@ -107,7 +107,7 @@ const tab = (
 describe('a row activated', () => {
   it('takes the person to the note it remains for', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.activate('Entropy.md')
 
@@ -116,7 +116,7 @@ describe('a row activated', () => {
 
   it('takes the person to the book it remains for', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.activate('Heat.pdf')
 
@@ -125,7 +125,7 @@ describe('a row activated', () => {
 
   it('takes the person to a file the vault holds no source for', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.activate('Cover.png')
 
@@ -134,7 +134,7 @@ describe('a row activated', () => {
 
   it('leaves it the whole of what is chosen', async () => {
     const { list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.activate('Entropy.md')
 
@@ -143,7 +143,7 @@ describe('a row activated', () => {
 
   it('does nothing at all for a row the tree does not draw', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.activate('physics/Kelvin.md')
 
@@ -152,7 +152,7 @@ describe('a row activated', () => {
 
   it('opens nothing for a folder, and selects it', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.activate('physics')
 
@@ -164,7 +164,7 @@ describe('a row activated', () => {
 describe('what the menu offers', () => {
   it('is the entries of the slot over the row it was requested on', async () => {
     const { list, one, targets } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     const items = one.menu.getItems('Entropy.md')
 
@@ -185,7 +185,7 @@ describe('what the menu offers', () => {
     const { list, one, targets } = tab(false, {
       [ROOT]: [file('Pier.md', { type: 'link' }), file('Cover.png', { isNote: false })],
     })
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.menu.getItems('Pier.md')
     one.menu.getItems('Cover.png')
@@ -195,7 +195,7 @@ describe('what the menu offers', () => {
 
   it('asks for the entries over a folder as a folder', async () => {
     const { list, one, targets } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.menu.getItems('physics')
 
@@ -214,8 +214,8 @@ describe('what the menu offers', () => {
 
   it('asks for the entries over the row and the others selected with it', async () => {
     const { list, one, targets } = tab()
-    await list.navigation.openFolder(ROOT)
-    list.navigation.selectPaths(['Entropy.md', 'Cover.png'])
+    await list.folders.openFolder(ROOT)
+    list.selectPaths(['Entropy.md', 'Cover.png'])
 
     one.menu.getItems('Entropy.md')
 
@@ -233,7 +233,7 @@ describe('what the menu offers', () => {
 
   it('draws a command with the icon of its entry, and an entry of the vault with the window’s', async () => {
     const { list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     one.menu.open({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     expect(one.menu.getIcon(ROW_MENU[0]!.key)).toBe((ROW_MENU[0] as { icon: unknown }).icon)
@@ -243,7 +243,7 @@ describe('what the menu offers', () => {
 
   it('draws the component of a view entry in its row', async () => {
     const { list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     one.menu.open({ path: 'Entropy.md', at: { x: 0, y: 0 } })
     const view = ROW_MENU.find((entry) => entry.kind === 'view')!
     const row = one.menu.getItems('Entropy.md').find((item) => item.id === view.key)
@@ -258,7 +258,7 @@ describe('what the menu offers', () => {
 describe('rows dragged out of the tree', () => {
   it('are the note the row remains for', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.transfer.drag(['Entropy.md'])
 
@@ -267,8 +267,8 @@ describe('rows dragged out of the tree', () => {
 
   it('are every note of a selection, in the order the rows were dragged', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
-    await list.navigation.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
 
     one.transfer.drag(['Entropy.md', 'physics/Kelvin.md'])
 
@@ -277,7 +277,7 @@ describe('rows dragged out of the tree', () => {
 
   it('are the notes of a mixed selection, and the rest keep their positions', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.transfer.drag(['physics', 'Entropy.md', 'Heat.pdf', 'Cover.png'])
 
@@ -286,7 +286,7 @@ describe('rows dragged out of the tree', () => {
 
   it('are nothing where the rows hold no note at all', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.transfer.drag(['physics', 'Heat.pdf', 'Cover.png'])
 
@@ -303,7 +303,7 @@ describe('rows dragged out of the tree', () => {
 
   it('are nothing once they have been release', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.transfer.drag(['Entropy.md'])
     one.transfer.drop()
@@ -315,7 +315,7 @@ describe('rows dragged out of the tree', () => {
 describe('rows release', () => {
   it('are filed in the folder they went into, under the names they carry', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.transfer.move(['Entropy.md'], { into: 'physics' })
 
@@ -324,8 +324,8 @@ describe('rows release', () => {
 
   it('are filed in the folder holding the row they came before', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
-    await list.navigation.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
 
     await one.transfer.move(['Entropy.md'], { before: 'physics/Kelvin.md' })
 
@@ -334,7 +334,7 @@ describe('rows release', () => {
 
   it('are a folder dragged whole, under the name it carries', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.transfer.move(['physics'], { into: 'notes' })
 
@@ -343,7 +343,7 @@ describe('rows release', () => {
 
   it('all land in the one folder', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.transfer.move(['Entropy.md', 'Heat.pdf', 'Cover.png'], { into: 'notes' })
 
@@ -380,7 +380,7 @@ describe('rows release', () => {
         dropData: async () => [],
       },
     })
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     request.length = 0
 
     await one.transfer.move(['Entropy.md', 'Heat.pdf'], { into: 'notes' })
@@ -390,7 +390,7 @@ describe('rows release', () => {
 
   it('leave behind the one whose name that folder holds, and say which', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.transfer.move(['Entropy.md', 'Heat.pdf'], { into: 'heat' })
 
@@ -402,8 +402,8 @@ describe('rows release', () => {
 
   it('ask nothing where they landed where they already were', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
-    await list.navigation.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
 
     await one.transfer.move(['physics/Kelvin.md'], { into: 'physics' })
 
@@ -412,7 +412,7 @@ describe('rows release', () => {
 
   it('ask nothing at all where nothing was dragged', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.transfer.move([], { into: 'physics' })
 
@@ -423,7 +423,7 @@ describe('rows release', () => {
 describe('rows requested to go', () => {
   it('are handed to the window as one command over all of them', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.remove(['Entropy.md', 'Cover.png'])
 
@@ -432,7 +432,7 @@ describe('rows requested to go', () => {
 
   it('shows the failure of the command the window runs', async () => {
     const { recorded, list, one } = tab(true)
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.remove(['Entropy.md'])
     await settle()
@@ -442,7 +442,7 @@ describe('rows requested to go', () => {
 
   it('ask for nothing where nothing is selected', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.remove([])
 
@@ -453,7 +453,7 @@ describe('rows requested to go', () => {
 describe('a name given to a row', () => {
   it('moves the file within the folder it is in', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.entries.rename('Entropy.md', 'Order.md')
 
@@ -462,7 +462,7 @@ describe('a name given to a row', () => {
 
   it('asks the vault for nothing where the name is the one it carries', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.entries.rename('Entropy.md', 'Entropy.md')
 
@@ -471,7 +471,7 @@ describe('a name given to a row', () => {
 
   it('keeps the ending the file carries, so a note typed over stays a note', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.entries.rename('Entropy.md', 'Order')
 
@@ -480,7 +480,7 @@ describe('a name given to a row', () => {
 
   it('takes what was typed for a folder', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.entries.rename('physics', 'heat')
 
@@ -491,7 +491,7 @@ describe('a name given to a row', () => {
 describe('an item chosen in the menu on a row', () => {
   const openRowMenu = async (path: string | null = 'Entropy.md', fails = false) => {
     const pendingState = tab(fails)
-    await pendingState.list.navigation.openFolder(ROOT)
+    await pendingState.list.folders.openFolder(ROOT)
     pendingState.one.menu.open({ path, at: { x: 0, y: 0 } })
     return pendingState
   }
@@ -522,7 +522,7 @@ describe('an item chosen in the menu on a row', () => {
 
   it('passes the whole selection, on a row standing in it', async () => {
     const pendingState = await openRowMenu()
-    pendingState.list.navigation.selectPaths(['Entropy.md', 'Cover.png'])
+    pendingState.list.selectPaths(['Entropy.md', 'Cover.png'])
     pendingState.one.menu.open({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     pendingState.one.menu.choose(TRASH.key)
@@ -534,7 +534,7 @@ describe('an item chosen in the menu on a row', () => {
 
   it('passes the one row, on a row standing outside the selection', async () => {
     const pendingState = await openRowMenu()
-    pendingState.list.navigation.selectPaths(['Cover.png'])
+    pendingState.list.selectPaths(['Cover.png'])
     pendingState.one.menu.open({ path: 'Entropy.md', at: { x: 0, y: 0 } })
 
     pendingState.one.menu.choose(TRASH.key)
@@ -586,7 +586,7 @@ describe('an item chosen in the menu on a row', () => {
 describe('a folder made by the Create folder entry of the menu', () => {
   const choose = async (path: string | null, fails = false) => {
     const pendingState = tab(fails)
-    await pendingState.list.navigation.openFolder(ROOT)
+    await pendingState.list.folders.openFolder(ROOT)
     pendingState.one.menu.open({ path, at: { x: 0, y: 0 } })
     pendingState.one.menu.choose(NEW_MENU.entries[1]!.key)
     await settle()
@@ -622,7 +622,7 @@ describe('a folder made by the Create folder entry of the menu', () => {
 describe('a note made by the New note entry of the menu', () => {
   const choose = async (path: string | null, fails = false) => {
     const pendingState = tab(fails)
-    await pendingState.list.navigation.openFolder(ROOT)
+    await pendingState.list.folders.openFolder(ROOT)
     pendingState.one.menu.open({ path, at: { x: 0, y: 0 } })
     pendingState.one.menu.choose(NEW_MENU.entries[0]!.key)
     await settle()
@@ -658,7 +658,7 @@ describe('a note made by the New note entry of the menu', () => {
 describe('useFilesTab helper and interaction methods', () => {
   it('covers folder operations, selections, renaming and dismiss', async () => {
     const { list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.entries.open('physics')
     one.entries.close('physics')
@@ -682,7 +682,7 @@ describe('useFilesTab helper and interaction methods', () => {
 describe('a field already holding a name, and a file rejected', () => {
   it('leaves the field alone where the folder failed', async () => {
     const { one, list } = tab(true)
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     one.renaming.setPath('Cover.png')
     one.menu.open({ path: 'physics', at: { x: 0, y: 0 } })
     one.menu.choose(NEW_MENU.entries[1]!.key)
@@ -695,7 +695,7 @@ describe('a field already holding a name, and a file rejected', () => {
 describe('the target a command of the menu runs over', () => {
   it('reports whether the row is a folder', async () => {
     const { list, one, runs } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     one.menu.open({ path: 'physics', at: { x: 0, y: 0 } })
     one.menu.choose(TRASH.key)
@@ -718,8 +718,8 @@ describe('the target a command of the menu runs over', () => {
 describe('rows release, in more detail', () => {
   it('are filed at the top of the vault under the names they carry', async () => {
     const { recorded, list, one } = tab()
-    await list.navigation.openFolder(ROOT)
-    await list.navigation.openFolder('physics')
+    await list.folders.openFolder(ROOT)
+    await list.folders.openFolder('physics')
 
     await one.transfer.move(['physics/Kelvin.md'], { into: null })
 
@@ -760,7 +760,7 @@ describe('rows release, in more detail', () => {
 describe('a folder closed in the tab', () => {
   it('draws nothing under it', async () => {
     const { list, one } = tab()
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
     one.entries.open('physics')
     await settle()
     expect(list.queries.isFolderOpen('physics')).toBe(true)
@@ -774,7 +774,7 @@ describe('a folder closed in the tab', () => {
 describe('a name given to a row, in more detail', () => {
   it('is taken whole for a folder whose name carries a dot', async () => {
     const { recorded, list, one } = tab(false, { [ROOT]: [...target[ROOT]!, folder('v1.0')] })
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     await one.entries.rename('v1.0', 'v2')
 
@@ -804,7 +804,7 @@ describe('notes a drop made or found', () => {
 
   it('leave the selection as it was when the drop returns none', async () => {
     const { one, list } = tab()
-    list.navigation.selectPaths(['Entropy.md'])
+    list.selectPaths(['Entropy.md'])
 
     await one.transfer.dropData(drop)
 

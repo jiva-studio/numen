@@ -7,7 +7,7 @@
  * compute who is related to whom. The caller answers `activate` with the next
  * neighbourhood, and the plex transitions to it.
  */
-import { computed, toRef, useSlots, useTemplateRef, watch } from 'vue'
+import { computed, useSlots, useTemplateRef, watch } from 'vue'
 import PlexView from './render/PlexView.vue'
 import type { PlexEvents, PlexProps, PlexSlots } from './props'
 import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
@@ -39,6 +39,14 @@ const props = withDefaults(defineProps<PlexProps>(), {
 const emit = defineEmits<PlexEvents>()
 
 defineSlots<PlexSlots>()
+
+defineExpose({
+  get isMoving() {
+    return isMoving.value
+  },
+  /** Restores keyboard focus to a node. */
+  focusNode: (id: string) => view.value?.focusNode(id),
+})
 
 /* --------------------------------- State ---------------------------------- */
 const frameElement = useTemplateRef<HTMLElement>('frame')
@@ -118,17 +126,6 @@ const dragging = usePlexDrag({
   commit: (dragged, relation) => emit('bring', dragged, relation),
 })
 
-/* --------------------------------- Hooks ---------------------------------- */
-/**
- * A neighbourhood is drawn from the node it is seen from, so every node walks
- * to a new relation when another one arrives. A menu is anchored where one of them
- * was.
- */
-watch(
-  () => props.neighbourhood,
-  () => emit('dismiss'),
-)
-
 /**
  * The overflow, as `[relation, count]` pairs. The renderer of the plex supplies
  * the labels through the `overflow` slot.
@@ -143,11 +140,16 @@ const frameStyle = computed(() => ({
   '--plex-move': `${props.duration}ms`,
 }))
 
-defineExpose({
-  isMoving: toRef(isMoving),
-  /** Restores keyboard focus to a node. */
-  focusNode: (id: string) => view.value?.focusNode(id),
-})
+/* --------------------------------- Hooks ---------------------------------- */
+/**
+ * A neighbourhood is drawn from the node it is seen from, so every node walks
+ * to a new relation when another one arrives. A menu is anchored where one of them
+ * was.
+ */
+watch(
+  () => props.neighbourhood,
+  () => emit('dismiss'),
+)
 </script>
 
 <template>

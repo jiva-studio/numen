@@ -1,6 +1,6 @@
 /** Interface copy for a preset on this screen: its goal, its day, and why it schedules nothing. */
 // Stryker disable StringLiteral: interface copy
-import { StopReason } from '../../../api/types.js'
+import { StopReason } from '../../../api/presets.js'
 import { formatStopReasonMessage } from '../../../cards/wire/stop'
 import { many, percent } from '@numen/ui'
 import { parseDay, daysBetween } from '../../../lib/day'

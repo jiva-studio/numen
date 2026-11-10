@@ -3,7 +3,7 @@
  * choice came to.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../api/presets.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import {
   DEFAULTS,

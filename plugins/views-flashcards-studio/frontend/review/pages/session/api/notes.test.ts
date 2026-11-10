@@ -7,8 +7,9 @@ import { getDeckNeighbourhood } from './notes'
 
 const { requests } = vi.hoisted(() => ({ requests: [] as unknown[] }))
 
-vi.mock('../../../shared/clients', () => ({
-  cards: {
+vi.mock('../../../../api/client', async (original) => ({
+  ...(await original<typeof import('../../../../api/client')>()),
+  reviewService: {
     getDeckNeighbourhood: async (request: unknown) => {
       requests.push(request)
       return {

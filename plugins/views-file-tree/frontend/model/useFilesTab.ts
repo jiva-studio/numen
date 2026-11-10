@@ -18,6 +18,8 @@ import type {
   DropPosition,
   Entry,
   FilesTabDeps,
+  FilesTabEntries,
+  FilesTabMenu,
   FilesTabState,
   FileTree,
   MenuRequest,
@@ -35,7 +37,7 @@ function createFileMoves(list: FileTree, deps: FilesTabDeps) {
     if (paths.length === 0) return
 
     const into = resolveDropFolder(target)
-    await list.navigation.loadFolder(into)
+    await list.sync.loadFolder(into)
     const existingNames = new Set(list.queries.getEntriesInFolder(into).map((one) => one.name))
     const conflictedNames: string[] = []
 
@@ -102,7 +104,7 @@ function useFileMenu(
   list: FileTree,
   deps: FilesTabDeps,
   showCreated: (folder: string, path: string) => Promise<void>,
-) {
+): FilesTabMenu {
   const reportFailure = createFailureReporter(deps)
   const slotMenu = useSlotMenu<FileMenuTarget>({
     listItems: (command, { target }) => deps.menu.listItems(command, target),
@@ -150,24 +152,26 @@ function useFileMenu(
   }
 
   return {
-    menu,
-    openMenu,
-    dismissMenu: slotMenu.close,
-    chooseMenuItem,
+    request: menu,
+    open: openMenu,
+    dismiss: slotMenu.close,
+    choose: chooseMenuItem,
     getOverPaths,
-    getMenuItems,
-    getMenuIcon,
+    getItems: getMenuItems,
+    getIcon: getMenuIcon,
   }
 }
 
 function createFileActions(list: FileTree, deps: FilesTabDeps) {
+  const reportFailure = createFailureReporter(deps)
+
   const getNameOf = (path: string): string =>
     list.queries.getEntryAt(path)?.name ?? getFileName(path)
 
   const activate = (path: string) => {
     const entry = list.queries.getEntryAt(path)
     if (!entry) return
-    list.navigation.selectPaths([path])
+    list.selectPaths([path])
     if (!entry.isFolder) deps.window.openEntry(entry)
   }
 
@@ -192,18 +196,31 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
     if (first === undefined) return
     deps.menu
       .runCommand(TRASH_FILE, getPathTarget(list, first, paths.slice(1)))
-      .catch(createFailureReporter(deps))
+      .catch(reportFailure)
   }
 
-  return { getNameOf, activate, rename, drag, remove }
+  const entries: FilesTabEntries = {
+    activate,
+    open: (path) => {
+      list.folders.openFolder(path).catch(reportFailure)
+    },
+    close: (path) => list.folders.closeFolder(path),
+    select: (paths) => list.selectPaths(paths),
+    rename,
+    remove,
+    getNameOf,
+    getEntryIcon: (entry, isOpen) => deps.window.getEntryIcon(entry, isOpen),
+  }
+
+  return { entries, drag }
 }
 
 async function selectDropped(list: FileTree, paths: readonly string[]) {
   const first = paths[0]
   if (first === undefined) return
   await list.sync.refresh()
-  await list.navigation.revealPath(first)
-  list.navigation.selectPaths(paths)
+  await list.revealPath(first)
+  list.selectPaths(paths)
 }
 
 export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
@@ -215,7 +232,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   const actions = createFileActions(list, deps)
   const { move } = createFileMoves(list, deps)
   const fileMenu = useFileMenu(list, deps, async (folder, path) => {
-    await list.navigation.openFolder(folder)
+    await list.folders.openFolder(folder)
     renamingPath.value = path
   })
 
@@ -224,18 +241,7 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
   return {
     list,
     reportFailure,
-    entries: {
-      activate: actions.activate,
-      open: (path) => {
-        list.navigation.openFolder(path).catch(reportFailure)
-      },
-      close: (path) => list.navigation.closeFolder(path),
-      select: (paths) => list.navigation.selectPaths(paths),
-      rename: actions.rename,
-      remove: actions.remove,
-      getNameOf: actions.getNameOf,
-      getEntryIcon: (entry, isOpen) => deps.window.getEntryIcon(entry, isOpen),
-    },
+    entries: actions.entries,
     renaming: { path: renamingPath, setPath: setRenamingPath },
     transfer: {
       getFolderFor: (path) => create.getFolderFor(list, path),
@@ -250,14 +256,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
         return paths
       },
     },
-    menu: {
-      request: fileMenu.menu,
-      getOverPaths: fileMenu.getOverPaths,
-      open: fileMenu.openMenu,
-      dismiss: fileMenu.dismissMenu,
-      choose: fileMenu.chooseMenuItem,
-      getItems: fileMenu.getMenuItems,
-      getIcon: fileMenu.getMenuIcon,
-    },
+    menu: fileMenu,
   }
 }

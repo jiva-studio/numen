@@ -11,9 +11,9 @@ import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 import { usePanels } from './usePanels'
 import type { ReviewCard } from '../entities/card'
 
-vi.mock('../shared/clients', async (original) => ({
-  ...(await original<typeof import('../shared/clients')>()),
-  cards: {
+vi.mock('../../api/client', async (original) => ({
+  ...(await original<typeof import('../../api/client')>()),
+  reviewService: {
     getDeckNeighbourhood: async () => ({ notes: [], unread: 0 }),
   },
 }))

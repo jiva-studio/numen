@@ -156,7 +156,7 @@ function createTreeRefresh(deps: TreeRefreshDeps) {
     await loadFolders([...folders])
   }
 
-  return { loadFolders, loadFolder, refresh, refreshChanged }
+  return { loadFolder, refresh, refreshChanged }
 }
 
 function createFolderOperations(
@@ -184,7 +184,7 @@ function createFolderOperations(
     else await openFolder(folder)
   }
 
-  return { isFolderOpen, openFolder, closeFolder, toggleFolder }
+  return { openFolder, closeFolder, toggleFolder }
 }
 
 function initTreeState() {
@@ -248,31 +248,17 @@ export function createFileTree(core: Folders): FileTree {
 
   return {
     state: {
-      rows: queries.rows,
-      openRows: queries.openRows,
       selectedPaths: state.selectedPaths,
       errorMessage: state.errorMessage,
       isLoaded: state.isLoaded,
     },
-    queries: {
-      getEntriesInFolder: queries.getEntriesInFolder,
-      isFolderOpen: queries.isFolderOpen,
-      getEntryAt: queries.getEntryAt,
+    queries,
+    folders: folderOps,
+    sync: refreshControl,
+    selectPaths: (paths: readonly string[]) => {
+      state.selectedPaths.value = paths
     },
-    navigation: {
-      loadFolder: refreshControl.loadFolder,
-      openFolder: folderOps.openFolder,
-      closeFolder: folderOps.closeFolder,
-      toggleFolder: folderOps.toggleFolder,
-      selectPaths: (paths: readonly string[]) => {
-        state.selectedPaths.value = paths
-      },
-      revealPath,
-    },
-    sync: {
-      refresh: refreshControl.refresh,
-      refreshChanged: refreshControl.refreshChanged,
-      close,
-    },
+    revealPath,
+    close,
   }
 }

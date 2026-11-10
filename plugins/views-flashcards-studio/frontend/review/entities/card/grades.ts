@@ -1,5 +1,5 @@
 /** How well a card was recalled, in this window's words and in the schema's. */
-import { Rating } from '../../../api/types.js'
+import { Rating } from '../../../api/review.js'
 import { getNames } from '../../../api/names'
 
 /** How well a card was recalled. The user picks one of the four. */

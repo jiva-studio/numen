@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode as ProtoErrorCode } from '../../api/types'
+import { ErrorCode as ProtoErrorCode } from '../../api/common'
 import {
   ERRORS,
   findErrorCode,

@@ -4,7 +4,7 @@
  * A goal renders the settings it schedules by and no others, and a preset with
  * nothing to schedule reports that where the curve would be.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../api/presets.js'
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'

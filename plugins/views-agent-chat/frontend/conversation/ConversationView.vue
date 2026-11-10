@@ -11,12 +11,12 @@ import { useConversationView } from './useConversationView'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ context: ConversationContext }>()
 
+// The panel it is mounted in may still be moving, so taking the keyboard scrolls nothing.
+defineExpose({ focus: () => agent.value?.focus({ preventScroll: true }) })
+
 /* --------------------------------- State ---------------------------------- */
 const view = useConversationView(props.context)
 const agent = useTemplateRef<InstanceType<typeof Agent>>('agent')
-
-// The panel it is mounted in may still be moving, so taking the keyboard scrolls nothing.
-defineExpose({ focus: () => agent.value?.focus({ preventScroll: true }) })
 </script>
 
 <template>

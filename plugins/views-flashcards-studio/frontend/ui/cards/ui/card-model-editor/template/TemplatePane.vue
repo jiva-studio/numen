@@ -24,12 +24,12 @@ const emit = defineEmits<{
   (event: 'aim'): void
 }>()
 
-const textareaRef = useTemplateRef<InstanceType<typeof AutosizeTextarea>>('written')
-
 defineExpose({
   /** The box this half is written in, for a caller that puts the caret in it. */
   box: computed<HTMLTextAreaElement | null>(() => textareaRef.value?.box ?? null),
 })
+
+const textareaRef = useTemplateRef<InstanceType<typeof AutosizeTextarea>>('written')
 </script>
 
 <template>

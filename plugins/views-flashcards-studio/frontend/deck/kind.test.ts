@@ -29,7 +29,7 @@ const createInside = (open: readonly string[] = []) => {
     refreshDeckPreset: vi.fn(async () => undefined),
     createDeckTabState: vi.fn(() => state),
   }
-  return { inside, state, kind: createDeckKind(inside as unknown as DeckTabsInside) }
+  return { inside, state, ...createDeckKind(inside as unknown as DeckTabsInside) }
 }
 
 describe('a deck tab opened', () => {

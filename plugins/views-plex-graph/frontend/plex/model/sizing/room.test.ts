@@ -17,15 +17,10 @@ const stand = vi.hoisted(() => ({
   metrics: undefined as unknown,
 }))
 
-vi.mock('./measure', async () => {
-  const { shallowRef: createRef } = await import('vue')
-  return {
-    useTitleWidths: (icon: () => number) => {
-      stand.icon = icon
-      return createRef(stand.metrics)
-    },
-  }
-})
+const measureTitles = (icon: () => number) => {
+  stand.icon = icon
+  return shallowRef(stand.metrics as PlexMetrics | undefined)
+}
 
 const METRICS: PlexMetrics = {
   node: () => 1000,
@@ -70,7 +65,7 @@ function mountFreeSpace(
   const wrapper = mount(
     defineComponent({
       setup() {
-        result = useFreeSpace(element, props, hasIcon)
+        result = useFreeSpace(element, props, hasIcon, measureTitles)
         return () => h('div')
       },
     }),

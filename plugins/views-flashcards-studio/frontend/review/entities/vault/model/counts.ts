@@ -10,7 +10,7 @@
  * the list alone, without a count.
  */
 import { ref, shallowRef } from 'vue'
-import type { StopReason } from '../../../../api/types.js'
+import type { StopReason } from '../../../../api/presets.js'
 
 import type { VaultCardsDue } from '../types'
 

@@ -66,7 +66,7 @@ function onShowNode(node: string, how: PlexDestination) {
 }
 
 function onEnterHeading(node: string, heading: string) {
-  props.state.headings.openHeading(node, heading)
+  props.state.nodes.openHeading(node, heading)
 }
 
 function onDismissImage() {

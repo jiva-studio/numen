@@ -39,12 +39,6 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const isHovered = ref(false)
 const lastAbout = ref(props.task.about)
-watch(
-  () => props.task.about,
-  (about) => {
-    if (about) lastAbout.value = about
-  },
-)
 const isNotice = computed(() => props.task.state === 'notice')
 const isFailed = computed(() => props.task.state === 'failed')
 const isCancelling = computed(() => props.task.state === 'cancelling')
@@ -61,6 +55,14 @@ const isDismissShown = computed(
   () => isNotice.value || (isFailed.value && !props.task.allowed.retry),
 )
 const hasAction = computed(() => isCancelShown.value || isRetryShown.value || isDismissShown.value)
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(
+  () => props.task.about,
+  (about) => {
+    if (about) lastAbout.value = about
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onPointerEnter() {

@@ -22,6 +22,7 @@ import type {
   MenuRequest,
   PlexEditor,
   PlexTabDeps,
+  PlexMenuState,
   PlexTabState,
   QuickLinkRequest,
   PlexView,
@@ -80,8 +81,6 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
     return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
   })
 
-  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
-
   const tabKinds = computed<ReadonlyMap<string, string>>(() => {
     const neighbourhood = view.neighbourhood.value
     return neighbourhood ? getTabKinds(neighbourhood) : new Map()
@@ -97,7 +96,16 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
     return paths.filter(Boolean)
   })
 
-  return { picture, empty, dragged, types, getType, getTabKind, drawn: activePaths }
+  return {
+    view,
+    picture,
+    empty,
+    dragged,
+    creatable: deps.creatable,
+    types,
+    getTabKind,
+    drawn: activePaths,
+  }
 }
 
 function createPlexNodeActions(options: {
@@ -172,7 +180,12 @@ function createPlexNodeActions(options: {
     deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
-  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading }
+  const followMoves = (renames: readonly PathRename[]) => {
+    view.followMoves(renames)
+    map.updateRenamedNodes(renames)
+  }
+
+  return { activate, createNode, joinNodes, dropNodes, openNode, openHeading, followMoves, getName }
 }
 
 /** The words of the rows the menu on a node writes itself. */
@@ -189,9 +202,12 @@ function usePlexMenu(options: {
   tabDeps: PlexTabDeps
   getName: (path: string) => string
   getType: (node: string) => NoteType
+  getTabKind: (node: string) => string | undefined
   showCreated: (path: string) => Promise<void>
-}) {
-  const { map, tabDeps: deps, getName, getType, showCreated } = options
+  /** Closes what else a tab opens beside the menu. */
+  dismissOthers: () => void
+}): PlexMenuState {
+  const { map, tabDeps: deps, getName, getType, getTabKind, showCreated, dismissOthers } = options
   const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
     listItems: (command, { target }) => deps.menu.listItems(command, target),
@@ -218,6 +234,16 @@ function usePlexMenu(options: {
 
   const close = () => nodeMenu.close()
 
+  const dismiss = () => {
+    close()
+    dismissOthers()
+  }
+
+  const getNodeIcon = (node: string): Component | null => {
+    const tabKind = getTabKind(node)
+    return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
+  }
+
   const openMenu = (request: MenuRequest) => {
     close()
     const path = request.node === null ? '' : map.getNodePath(request.node)
@@ -243,7 +269,7 @@ function usePlexMenu(options: {
   const getMenuIcon = (id: string): Component | null =>
     (nodeMenu.getIcon(id) as Component | undefined) ?? null
 
-  return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close }
+  return { request: menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, getNodeIcon, dismiss }
 }
 
 function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
@@ -255,80 +281,39 @@ function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path
 
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
-  const {
-    picture,
-    empty,
-    dragged,
-    types,
-    getType,
-    getTabKind,
-    drawn: drawnNodes,
-  } = usePlexImage(view, deps, map)
+  const canvas = usePlexImage(view, deps, map)
 
   const getName = (path: string): string => getPlexNodeName(view.neighbourhood.value, path)
-  const quickLinkModel = useQuickLink(view, deps, map)
-  const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
-  const linkInspectorModel = useLinkInspector(
+  const quickLink = useQuickLink(view, deps, map)
+  const headings = usePlexHeadings(canvas.drawn, canvas.types, deps, map)
+  const inspector = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },
     map,
     getName,
   )
 
-  const nodeActions = createPlexNodeActions({
+  const nodes = createPlexNodeActions({
     view,
     tabDeps: deps,
     map,
     getName,
-    openQuickLink: quickLinkModel.openQuickLink,
+    openQuickLink: quickLink.openQuickLink,
   })
-  const { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon, close } = usePlexMenu({
+  const menu = usePlexMenu({
     map,
     tabDeps: deps,
     getName,
-    getType,
+    getType: headings.getType,
+    getTabKind: canvas.getTabKind,
     showCreated: (path) => view.go(path),
+    dismissOthers: () => {
+      quickLink.dismissQuickLink()
+      inspector.dismissLinkInspector()
+    },
   })
 
   const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
 
-  const getNodeIcon = (node: string): Component | null => {
-    const tabKind = getTabKind(node)
-    return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
-  }
-
-  const dismiss = () => {
-    close()
-    quickLinkModel.dismissQuickLink()
-    linkInspectorModel.dismissLinkInspector()
-  }
-
-  const followMoves = (renames: readonly PathRename[]) => {
-    view.followMoves(renames)
-    map.updateRenamedNodes(renames)
-  }
-
-  return {
-    reportFailure,
-    canvas: { view, picture, empty, dragged, creatable: deps.creatable },
-    menu: { request: menu, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem },
-    headings: {
-      maxHeadings: deps.notes.headings,
-      getType,
-      getHeadings,
-      readHeadings,
-      openHeading: nodeActions.openHeading,
-    },
-    nodes: {
-      activate: nodeActions.activate,
-      createNode: nodeActions.createNode,
-      joinNodes: nodeActions.joinNodes,
-      dropNodes: nodeActions.dropNodes,
-      openNode: nodeActions.openNode,
-      followMoves,
-      getName,
-    },
-    quickLink: quickLinkModel,
-    inspector: linkInspectorModel,
-  }
+  return { reportFailure, canvas, menu, headings, nodes, quickLink, inspector }
 }
