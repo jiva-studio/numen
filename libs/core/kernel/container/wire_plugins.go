@@ -970,7 +970,7 @@ func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
 }
 
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
-	settings := settingsusecase.WhenConfig{Codec: settingsadapter.JSONCodec{}, App: c.ListAppSettings}
+	settings := settingsadapter.WhenConfig{App: c.ListAppSettings}
 	if c.PluginHost != nil {
 		settings.Plugins = c.PluginHost.GetPluginInfos
 	}

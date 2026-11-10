@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 )
 
 func TestTheConfigOfAConditionIsTheResolvedValueOrTheDefaultOfEachSetting(t *testing.T) {
@@ -19,7 +19,7 @@ func TestTheConfigOfAConditionIsTheResolvedValueOrTheDefaultOfEachSetting(t *tes
 		{Key: "pages", DefaultJSON: "3"},
 	}}}
 
-	got := settings.BuildWhenConfig(jsonCodec{}, app, plugins)
+	got := settings.BuildWhenConfig(app, plugins)
 
 	want := map[string]any{
 		"app": map[string]any{"editor": map[string]any{"lineNumbers": true}, "theme": "dusk"},
