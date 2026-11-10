@@ -4,7 +4,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { answerCore } from '@/testing/coreAnswers'
 import { ref } from 'vue'
 import { createWindow } from './createWindow'
@@ -80,7 +80,7 @@ vi.mock('@/features/tab-move', async (importOriginal) => ({
     return h.f.openMovedTab
   },
 }))
-vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
+vi.mock('@/shared/model/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', async (importOriginal) => ({
   ...(await importOriginal<typeof TabModule>()),
   createWorkspace: vi.fn(),

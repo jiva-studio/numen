@@ -8,7 +8,7 @@ import type { useDeclaredCommands, CommandItemLists } from '@/features/plugin-co
 import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { TabReports, useTabLinks } from '@/features/tab-linking'
-import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
+import type { createMessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowFacts } from '../plugins/windowFacts'
 import type { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServicesStore } from '../plugins/pluginServices'

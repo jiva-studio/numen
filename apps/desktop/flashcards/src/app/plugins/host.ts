@@ -29,7 +29,7 @@ import {
 import { createNoticeQueue } from '@numen/workbench'
 import { openExternalUrl } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
-import { TARGET } from '@/shared/config/window'
+import { TARGET } from '@/shared/lib/window'
 
 import {
   createFrontView,

@@ -9,7 +9,7 @@ import { listDeclaredItemLists, PLUGIN_FAILURE_WORDS, runDeclaredHandler } from 
 import type { fileOpeners } from '@/entities/tab'
 import { getFileKinds } from '@/entities/file'
 import { readNote, resolveLinks, writeNote } from '@/entities/note'
-import type { createMessageLog } from '@/shared/notices/messages'
+import type { createMessageLog } from '@/shared/model/notices/messages'
 import {
   createBackendHandlers,
   createCommandItemLists,
