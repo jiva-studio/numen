@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
@@ -22,7 +21,7 @@ func writeAt(cfg Config, json string, path ...string) error {
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &pluginswiring.Host{SettingsPush: host}
+	cfg.PluginHost = &PluginHost{SettingsPush: host}
 
 	err := writeAt(cfg, `"bogus"`, "app", "performance", "profile")
 	if !errors.Is(err, settings.ErrNotASetting) {

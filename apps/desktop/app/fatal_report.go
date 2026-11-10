@@ -122,11 +122,11 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return getIndexFatalReport(cfg, coded.Code(), why)
 	}
 
-	if unknown, ok := errors.AsType[*container.UnknownVaultError](why); ok {
+	if name, ok := container.GetUnknownVaultName(why); ok {
 		return fatalReport{
 			Heading:  startingAtAll,
-			Sentence: "Vault not found: " + unknown.Name,
-			Facts:    []detail{{"vault", unknown.Name}, {factSettings, getSettingsPath(cfg)}},
+			Sentence: "Vault not found: " + name,
+			Facts:    []detail{{"vault", name}, {factSettings, getSettingsPath(cfg)}},
 			Remedy:   "Start Numen without -vault to choose a vault from the list.",
 		}
 	}

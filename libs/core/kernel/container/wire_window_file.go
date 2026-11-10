@@ -14,13 +14,13 @@ func mountFile(w *windowWiring) {
 		file.NewGetFolderEntries(readers, w.db.NoteTypes()),
 		file.NewGetFileKinds(readers, w.db.NoteTypes()),
 		w.cfg.OpenChooseTabKind(),
-		file.NewCreateFolder(w.cfg.vault().FolderWriters()),
+		file.NewCreateFolder(folderWriters(w.cfg.vault())),
 	)
 	changes := filewindow.NewChanges(state, state, state, state, &w.vaults.Move, &w.notes.Remove, &w.notes.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.files = handler
 	w.server = editor.NewFileServer(
-		state, &w.vaults.Find, file.NewOpenFile(readers), w.cfg.vault().OpenPluginFile(), w.cfg.vault().GetMediaType(),
+		state, &w.vaults.Find, file.NewOpenFile(readers), openPluginFile(w.cfg.vault()), getMediaType(w.cfg.vault()),
 	)
 	w.inst.Mount(editor.NewFileRoute(state, handler))
 }

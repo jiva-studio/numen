@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -280,25 +281,25 @@ func TestRecordVersionRejectsInvalidVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.folders.write(ocr+"/vtt.jsonl", []byte("WEBVTT\n"))
-	valid := textversion.VersionPut{Path: scanPath, Key: "k", Kind: kindRecognition, File: "k.jsonl"}
-	with := func(change func(*textversion.VersionPut)) textversion.VersionPut {
+	valid := plugin.TextPut{Path: scanPath, Key: "k", Kind: kindRecognition, File: "k.jsonl"}
+	with := func(change func(*plugin.TextPut)) plugin.TextPut {
 		params := valid
 		change(&params)
 		return params
 	}
 	cases := map[string]struct {
 		pluginID string
-		params   textversion.VersionPut
+		params   plugin.TextPut
 		want     error
 	}{
 		"a plugin that makes no text": {"org.numen.other", valid, textdomain.ErrNotTextPlugin},
-		"no key":                      {ocr, with(func(p *textversion.VersionPut) { p.Key = "" }), textdomain.ErrInvalidVersion},
-		"no kind":                     {ocr, with(func(p *textversion.VersionPut) { p.Kind = "" }), textdomain.ErrInvalidVersion},
-		"no file":                     {ocr, with(func(p *textversion.VersionPut) { p.File = "" }), textdomain.ErrInvalidVersion},
-		"a file that is not there":    {ocr, with(func(p *textversion.VersionPut) { p.File = "gone.jsonl" }), textdomain.ErrInvalidVersion},
-		"a file that is not segments": {ocr, with(func(p *textversion.VersionPut) { p.File = "vtt.jsonl" }), textdomain.ErrInvalidVersion},
-		"a source that is not there":  {ocr, with(func(p *textversion.VersionPut) { p.Source = "x/y" }), textdomain.ErrInvalidVersion},
-		"itself as its source":        {ocr, with(func(p *textversion.VersionPut) { p.Source = domain.NewTextVersionID(ocr, "k") }), textdomain.ErrInvalidVersion},
+		"no key":                      {ocr, with(func(p *plugin.TextPut) { p.Key = "" }), textdomain.ErrInvalidVersion},
+		"no kind":                     {ocr, with(func(p *plugin.TextPut) { p.Kind = "" }), textdomain.ErrInvalidVersion},
+		"no file":                     {ocr, with(func(p *plugin.TextPut) { p.File = "" }), textdomain.ErrInvalidVersion},
+		"a file that is not there":    {ocr, with(func(p *plugin.TextPut) { p.File = "gone.jsonl" }), textdomain.ErrInvalidVersion},
+		"a file that is not segments": {ocr, with(func(p *plugin.TextPut) { p.File = "vtt.jsonl" }), textdomain.ErrInvalidVersion},
+		"a source that is not there":  {ocr, with(func(p *plugin.TextPut) { p.Source = "x/y" }), textdomain.ErrInvalidVersion},
+		"itself as its source":        {ocr, with(func(p *plugin.TextPut) { p.Source = domain.NewTextVersionID(ocr, "k") }), textdomain.ErrInvalidVersion},
 	}
 	for name, c := range cases {
 		if _, err := s.versions.PutVersion(ctx, s.vault, c.pluginID, c.params); !errors.Is(err, c.want) {
@@ -319,7 +320,7 @@ func TestRecordVersionRejectsAPropertyWithAnotherRoot(t *testing.T) {
 	}
 	other := s.putTalkVersion(t, "other", "")
 	property := domain.TextSourceProperty{Key: "url", Value: talkURL}
-	cases := map[string]textversion.VersionPut{
+	cases := map[string]plugin.TextPut{
 		"a property and a source": {
 			Path: talkPath, Key: "k", Kind: kindRecognition, File: "k.jsonl",
 			SourceProperty: property, Source: other.GetID(), InputHash: other.TextHash,
@@ -348,7 +349,7 @@ func (s *scene) putTalkVersion(t *testing.T, key, text string) domain.TextVersio
 	if _, err := s.folders.WriteTextFile(ctx, ocr, key+".jsonl", []domain.TextSegment{{Text: text}}); err != nil {
 		t.Fatal(err)
 	}
-	version, err := s.versions.PutVersion(ctx, s.vault, ocr, textversion.VersionPut{
+	version, err := s.versions.PutVersion(ctx, s.vault, ocr, plugin.TextPut{
 		Path: talkPath, Key: key, Kind: kindRecognition, File: key + ".jsonl",
 		SourceProperty: domain.TextSourceProperty{Key: "url", Value: talkURL},
 	})
@@ -405,7 +406,7 @@ func TestAPropertyVersionIsNotLiveOnceThePropertyChanges(t *testing.T) {
 func TestRecordVersionStoresTheFileHashAndCreateTime(t *testing.T) {
 	s := newScene(t)
 	ctx := t.Context()
-	params := textversion.VersionPut{Path: scanPath, Key: "k", Kind: kindRecognition, InputHash: s.getContentHash(), File: "k.jsonl"}
+	params := plugin.TextPut{Path: scanPath, Key: "k", Kind: kindRecognition, InputHash: s.getContentHash(), File: "k.jsonl"}
 	firstHash, err := s.folders.WriteTextFile(ctx, ocr, params.File, []domain.TextSegment{{Text: "one"}})
 	if err != nil {
 		t.Fatal(err)

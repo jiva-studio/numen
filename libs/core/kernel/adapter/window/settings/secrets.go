@@ -196,7 +196,7 @@ func (h *SecretGroups) ListSecretStates(
 	return connect.NewResponse(&v1.ListSecretStatesResponse{States: wire}), nil
 }
 
-func newWireSecretSections(sections []secret.Section) []*v1.SecretSection {
+func newWireSecretSections(sections []plugin.SecretSection) []*v1.SecretSection {
 	wire := make([]*v1.SecretSection, 0, len(sections))
 	for _, one := range sections {
 		wire = append(wire, &v1.SecretSection{Group: one.Group, IsAsked: one.IsAsked, Secrets: newWireStoredSecrets(one.Secrets)})
@@ -204,7 +204,7 @@ func newWireSecretSections(sections []secret.Section) []*v1.SecretSection {
 	return wire
 }
 
-func newWireSecretMenus(menus []secret.Menu) []*v1.SecretMenu {
+func newWireSecretMenus(menus []plugin.SecretMenu) []*v1.SecretMenu {
 	wire := make([]*v1.SecretMenu, 0, len(menus))
 	for _, one := range menus {
 		ids := make([]string, 0, len(one.Secrets))

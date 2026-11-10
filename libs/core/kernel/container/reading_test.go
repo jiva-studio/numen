@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -51,7 +52,7 @@ func makeScannedVault(t *testing.T) (container.Config, domain.Vault) {
 	return cfg, vault
 }
 
-func read(t *testing.T, cfg container.Config) *container.Index {
+func read(t *testing.T, cfg container.Config) *vault.Index {
 	t.Helper()
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {

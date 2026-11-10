@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -113,7 +114,7 @@ func TestACallCancelledBeforeTheFirstWriteReturnsNotAttemptedAndWritesNothing(t 
 	if err != nil {
 		t.Fatalf("Execute returned %v, want the results and no error", err)
 	}
-	if len(added) != 1 || !errors.Is(added[0].Error, note.ErrNotAttempted) {
+	if len(added) != 1 || !errors.Is(added[0].Error, plugin.ErrNotAttempted) {
 		t.Fatalf("Execute returned %+v, want one result with ErrNotAttempted", added)
 	}
 	if body := c.read(t, "Heat.md"); body != "# Heat\n" {
@@ -154,7 +155,7 @@ func TestACallCancelledAfterTheFirstNoteReturnsItsResultAndNotAttemptedForTheRes
 		t.Errorf("the first note was not written:\n%s", heat)
 	}
 	for i, path := range map[int]string{1: "Work.md", 2: "Order.md"} {
-		if !errors.Is(added[i].Error, note.ErrNotAttempted) {
+		if !errors.Is(added[i].Error, plugin.ErrNotAttempted) {
 			t.Errorf("result %d error = %v, want ErrNotAttempted", i, added[i].Error)
 			continue
 		}

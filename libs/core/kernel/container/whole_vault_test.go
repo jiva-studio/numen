@@ -15,9 +15,10 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
-func makeIndex(t *testing.T) *container.Index {
+func makeIndex(t *testing.T) *vault.Index {
 	t.Helper()
 	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
 	if err != nil {
@@ -121,7 +122,7 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	}
 }
 
-func unembeddedTo(t *testing.T, db *container.Index, v domain.Vault, model embeddingport.Embedder) int {
+func unembeddedTo(t *testing.T, db *vault.Index, v domain.Vault, model embeddingport.Embedder) int {
 	t.Helper()
 	unembedded, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
 	if err != nil {
@@ -174,7 +175,7 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 	}
 }
 
-func makeSwitchedIndex(t *testing.T) (*container.Index, domain.Vault) {
+func makeSwitchedIndex(t *testing.T) (*vault.Index, domain.Vault) {
 	t.Helper()
 	db := makeIndex(t)
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n\nsome words to be cut into a chunk\n"})

@@ -13,7 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
 // listLimit is how long the plugins have to list their tools when a run starts.

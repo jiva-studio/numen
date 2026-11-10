@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 )
 
@@ -45,10 +44,10 @@ func (l *progressLog) getCounted() []vaultreading.Task {
 	return counted
 }
 
-func canceledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
+func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *readyLog) (*pass, *holdingModel, int64) {
 	t.Helper()
 	model := &holdingModel{fakeEmbedder: &fakeEmbedder{dims: 64}, started: make(chan struct{}, 1), isBlocking: true}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 	recipe := model.GetModel().Recipe()
 
@@ -86,11 +85,10 @@ func canceledPass(t *testing.T, events *progressLog, log *readyLog) (*pass, *hol
 	return p, model, heldChunks
 }
 
-// The pass after a cancel counts its progress against the chunks it embeds, and the passes after it
-// find nothing pending while only the canceled note lacks vectors.
-func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
+func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
-	p, _, _ := canceledPass(t, events, &readyLog{})
+	p, _, _ := canceledPass(t, openReading, events, &readyLog{})
 	earlier := len(events.getCounted())
 
 	p.embed(t.Context())
@@ -116,12 +114,11 @@ func TestProgressOfAPassAfterACancelReachesItsTotal(t *testing.T) {
 	}
 }
 
-// The vectors-ready listener is notified once the notes no person canceled carry vectors, and the
-// canceled note still has none: the event covers the vault without it.
-func TestVectorsReadyExcludesTheCanceledNote(t *testing.T) {
+func testVectorsReadyExcludesTheCanceledNote(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := &progressLog{recorder: newRecorder()}
 	log := &readyLog{}
-	p, model, heldChunks := canceledPass(t, events, log)
+	p, model, heldChunks := canceledPass(t, openReading, events, log)
 	if len(log.vaults) != 0 {
 		t.Fatalf("told %v after the canceled pass", log.vaults)
 	}

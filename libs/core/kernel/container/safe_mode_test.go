@@ -2,7 +2,7 @@ package container
 
 import (
 	"errors"
-	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"os"
 	"path/filepath"
 	"testing"
@@ -103,7 +103,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := pluginswiring.OpenPluginHost("desktop.editor", tmp)
+	host := pluginhost.Open("desktop.editor", tmp)
 	cfg := NewConfig(Config{PluginHost: LendPluginHost(host)})
 
 	cfg.SetPluginVaultPath("vault")

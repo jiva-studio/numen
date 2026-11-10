@@ -20,12 +20,9 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
 )
 
 const appName = "numen-flashcards"
@@ -65,10 +62,6 @@ func makeConfig(out io.Writer) container.Config {
 	return cfg
 }
 
-func makeNotes(cfg container.Config, db *container.Index, vaults *container.OpenVaults) container.Notes {
-	return cfg.Notes(db, vaults.UpdateIndex)
-}
-
 func run(cfg container.Config, debug debugOptions) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
@@ -93,14 +86,17 @@ func run(cfg container.Config, debug debugOptions) error {
 		return err
 	}
 
-	vaults := &container.OpenVaults{
-		Config: cfg, Index: db, Out: os.Stderr, Label: appName,
-	}
+	vaults := cfg.OpenVaults(db, os.Stderr, appName)
 
-	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
+	api := makeWindowAPI(cfg)
+	cfg.SetShellNotes(api, db, vaults.UpdateIndex)
 	api.ListVaults = cfg.GetVaultList(list).Execute
-	bindVaultIndexer(ctx, api, vaults)
-	if err := installPluginVault(cfg, db, api); err != nil {
+	cfg.BindVaultIndexer(ctx, api, vaults)
+	registry, err := cfg.Registry()
+	if err != nil {
+		return err
+	}
+	if err := cfg.InstallPluginVault(registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		return err
 	}
 
@@ -132,15 +128,9 @@ func run(cfg container.Config, debug debugOptions) error {
 	return runApplication(handler, target)
 }
 
-func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
-	agent := &windowagent.Handler{}
-	if taking := cfg.GetSettingsAgent(); taking != nil {
-		agent.Start, agent.End = agentuse.NewStartTask(taking), agentuse.NewEndConversation(taking)
-	}
+func makeWindowAPI(cfg container.Config) *shell.API {
 	return &shell.API{
-		Agent:                agent,
-		IsVaultIndexed:       notes.IsVaultIndexed,
-		ResolveLinks:         notes.ResolveLinks,
+		Agent:                cfg.GetSettingsAgentHandler(),
 		Window:               shell.NewWindow(platform.TargetFlashcards, nil),
 		GetFrontendPluginIDs: cfg.GetFrontendPluginIDs,
 		GetPluginDir:         cfg.GetPluginDir,
@@ -148,26 +138,10 @@ func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 	}
 }
 
-func installPluginVault(cfg container.Config, db *container.Index, api *shell.API) error {
-	vaults, err := cfg.Registry()
-	if err != nil {
-		return err
-	}
-	return cfg.InstallPluginVault(vaults, db, getNoCurrentVault, getPluginVaultHooks(api))
-}
-
 func getNoCurrentVault() (domain.Vault, bool) { return domain.Vault{}, false }
 
 func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
 	return container.PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
-}
-
-func bindVaultIndexer(ctx context.Context, api *shell.API, vaults *container.OpenVaults) {
-	vaults.RecordVault = func(v domain.Vault) {
-		api.ClearIndexFailure(v.ID)
-		api.ReportChange()
-	}
-	api.SetVaultIndexer(ctx, vaults.IndexVault)
 }
 
 func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {

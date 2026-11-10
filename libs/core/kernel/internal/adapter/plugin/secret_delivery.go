@@ -17,8 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 const configureCallTimeout = 3 * time.Second
@@ -202,12 +201,12 @@ func (d *secretDelivery) listAllowed(snapshot configSnapshot) ([]allowedList, er
 			listErr = fmt.Errorf("read the secrets of plugin %s: %w", snapshot.pluginID, listErr)
 		}
 	}
-	page := secret.ListInPageOrder(list, snapshot.requested)
+	page := plugindomain.ListSecretsInPageOrder(list, snapshot.requested)
 	lists := make([]allowedList, 0, len(snapshot.declared))
 	for _, declaration := range snapshot.declared {
 		lists = append(lists, allowedList{
 			declaration: declaration,
-			secrets: secret.ListAllowed(page, plugindomain.DeclarationKey{
+			secrets: plugindomain.ListAllowedSecrets(page, plugindomain.DeclarationKey{
 				Plugin: snapshot.pluginID, Name: declaration.Name, Group: declaration.Group,
 			}),
 		})
@@ -234,7 +233,7 @@ func readSecretValues(ctx context.Context, store pluginport.KeyStore, secrets []
 		if store == nil {
 			return values, plugindomain.ErrNoKeyStore
 		}
-		value, err := store.GetKey(ctx, secret.GetEntryName(one.ID))
+		value, err := store.GetKey(ctx, plugindomain.GetSecretEntryName(one.ID))
 		switch {
 		case err == nil:
 			values = append(values, &v1.SecretValue{Id: one.ID, Name: one.Name, Group: one.Group, Value: value})

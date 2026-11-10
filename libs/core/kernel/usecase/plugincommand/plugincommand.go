@@ -40,17 +40,17 @@ type Commands struct {
 	Run  Run
 }
 
-// NewCommands makes both scenarios over the commands, which may be nothing, the table that gives a
+// NewCommands makes both scenarios over the commands and the backends that run them, which may be nothing, the table that gives a
 // file its type, the reader of the type and properties of a note, and the settings a condition reads as
 // config; without settings a condition over config is undecided and holds.
 func NewCommands(
-	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, notes NoteReader,
-	config pluginport.WhenConfig,
+	commands pluginport.PluginCommands, runs pluginport.PluginCommandRuns, types contenttypeport.ContentTypeTable,
+	notes NoteReader, config pluginport.WhenConfig,
 ) Commands {
 	conditions := when.NewConditions()
 	return Commands{
 		List: List{commands: commands, types: types, conditions: conditions},
-		Run:  Run{commands: commands, types: types, notes: notes, config: config, conditions: conditions},
+		Run:  Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions},
 	}
 }
 
@@ -143,6 +143,7 @@ func (u List) Find(id string) (plugin.CommandEntry, bool) {
 // Run runs one command in the backend of the plugin that declares it.
 type Run struct {
 	commands   pluginport.PluginCommands
+	runs       pluginport.PluginCommandRuns
 	types      contenttypeport.ContentTypeTable
 	notes      NoteReader
 	config     pluginport.WhenConfig
@@ -153,7 +154,7 @@ type Run struct {
 // command runs the handler the plugin declares. A call that does not meet the declaration is
 // ErrBadArguments, saying what is wrong, and nothing is run.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
-	if u.commands == nil {
+	if u.commands == nil || u.runs == nil {
 		return plugin.CommandResult{}, ErrUnavailable
 	}
 	var entries []plugin.CommandEntry
@@ -177,7 +178,7 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCal
 	}
 	normalized := call
 	normalized.Arguments = normalizeArguments(declared, call.Arguments)
-	return u.commands.RunCommand(ctx, normalized)
+	return u.runs.RunCommand(ctx, normalized)
 }
 
 // IsAvailable reports whether the condition of the command of the entry holds over the path, as a

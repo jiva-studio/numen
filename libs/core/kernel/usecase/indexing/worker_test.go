@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -57,7 +56,7 @@ func findTask(t *testing.T, r *recorder, id string) *vaultreading.Task {
 }
 
 func newPass(
-	made readingfixture.Reading, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
+	made reading, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
 ) *pass {
 	worker := NewWorker(Config{
@@ -73,7 +72,7 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-func cut(t *testing.T, made readingfixture.Reading, db *vault.Index, v domain.Vault) {
+func cut(t *testing.T, made reading, db *vault.Index, v domain.Vault) {
 	t.Helper()
 
 	scan := vault.NewScan(
@@ -140,10 +139,10 @@ func (*sulking) Embed(context.Context, []string) ([][]float32, error) {
 
 func (*sulking) Concurrency() int { return 1 }
 
-// A model that is there and not answering leaves the pass in the list under the
-func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
+func testAPassThatCouldNotEmbedStaysInTheList(t *testing.T, openReading openFunc) {
+	t.Helper()
 	model := &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -161,10 +160,10 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	}
 }
 
-// A completed pass does not leave its entry in the task list.
-func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
+func testAPassThatEmbeddedPreservesTheList(t *testing.T, openReading openFunc) {
+	t.Helper()
 	model := &fakeEmbedder{dims: 64}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -210,12 +209,11 @@ func (p *peeking) opening(id string) (vaultreading.Task, bool) {
 	return vaultreading.Task{}, false
 }
 
-// Indexing is always of something, and a row carrying the word alone leaves a
-// person asking which of their notes it is on.
-func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
+func testIndexingNamesTheSourceItIsOn(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	watching := &peeking{fakeEmbedder: &fakeEmbedder{dims: 64}, tasks: events.tasks}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, watching)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -232,10 +230,9 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	}
 }
 
-// A library that would not be read is a vault searching less than it holds, and
-// the pass is left standing under what stopped it.
-func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
-	made, db := readingfixture.Open(t)
+func testBooksThatCouldNotBeReadStayInTheList(t *testing.T, openReading openFunc) {
+	t.Helper()
+	made, db := openReading(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
@@ -289,13 +286,11 @@ func (o *overheard) lists() [][]vaultreading.Task {
 	return o.visited
 }
 
-// The status row must name its current work. A pass that enters the task list
-// before opening a source must not show the bare word "Indexing" over an empty
-// line at zero progress while the first vectors are computed.
-func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
+func testIndexingIsNeverAWordWithNothingBelowIt(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	model := &fakeEmbedder{dims: 64}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -344,13 +339,11 @@ func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error
 
 func (*nudging) Concurrency() int { return 1 }
 
-// A recognition writes a batch of pages every few minutes, and those pages
-// are cut on the goroutine of the vector pass. A vault with a hundred thousand
-// pending vectors needs hours to embed them.
-func TestARecognitionStopsTheVectorPass(t *testing.T) {
+func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -396,13 +389,11 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	}
 }
 
-// A change of the embedding model wakes the sources while a pass embeds under
-// the previous model. The pass stops before sending batches that the new model
-// embeds at another width.
-func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
+func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -430,13 +421,11 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	}
 }
 
-// A note written while a pass embeds a backlog does not wait for the whole of
-// it: the pass stops at its position, and the pass that follows starts from the
-// newest source, which is the note.
-func TestANoteSaveStopsTheVectorPass(t *testing.T) {
+func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -495,11 +484,10 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 	}
 }
 
-// A change to a file's versions starts a pass that cuts the file again and
-// embeds the vault's pending vectors.
-func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
+func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFunc) {
+	t.Helper()
 	model := &fakeEmbedder{dims: 64}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -519,11 +507,10 @@ func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	}
 }
 
-// A note is cut from its own words, so a change to the versions of a note
-// keeps the chunks the note was cut into.
-func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
+func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) {
+	t.Helper()
 	model := &fakeEmbedder{dims: 64}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -571,16 +558,15 @@ func (b *blocking) Embed(ctx context.Context, _ []string) ([][]float32, error) {
 
 func (*blocking) Concurrency() int { return 1 }
 
-// Canceling the vector pass by its task id cancels the context of the embed
-// call in flight, the call returns, and the pass takes its task out of the list.
-func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
+func testCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openFunc) {
+	t.Helper()
 	events := newRecorder()
 	model := &blocking{
 		fakeEmbedder: &fakeEmbedder{dims: 64},
 		started:      make(chan struct{}, 1),
 		stopped:      make(chan error, 1),
 	}
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})

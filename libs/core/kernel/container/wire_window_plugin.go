@@ -8,19 +8,21 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowvaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
-	w.inst.SetTriggers(w.cfg.plugins().OpenTriggers, w.cfg.WatchPluginChanges)
+	w.inst.SetTriggers(func() *trigger.Triggers { return openTriggers(w.cfg.plugins()) }, w.cfg.WatchPluginChanges)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
 }
 
 // SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file
 // in it and returns the tabs it last reported. The window reads the vault of its state on each call,
 // so a vault opened later in the window is served without a new binding.
-func (c Config) SetEditorPluginWindow(db *Index, opened *editor.Installation) {
+func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installation) {
 	view := opened.State.GetWindow()
 	focusNote := c.FocusNote(db.NoteRefs(), view)
 	focusPassages := file.NewFocusPassages(c.VaultReaders(), view)

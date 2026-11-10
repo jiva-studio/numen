@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
@@ -32,7 +31,7 @@ func newOrchardVault(t *testing.T) domain.Vault {
 	})
 }
 
-func scanAt(db *container.Index, tokens int) vaults.Scan {
+func scanAt(db *vaults.Index, tokens int) vaults.Scan {
 	scan := scanner(vaultreader.Readers{}, db)
 	scan.Cut = query.NewCutNotes(tokens)
 	scan.ShouldRecut = tokens > 0
@@ -42,7 +41,7 @@ func scanAt(db *container.Index, tokens int) vaults.Scan {
 	return scan
 }
 
-func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault, tokens int) []string {
+func getNotesWithOtherChunking(t *testing.T, db *vaults.Index, v domain.Vault, tokens int) []string {
 	t.Helper()
 	paths, err := db.SourceBacklog().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{query.NewCutNotes(tokens).Recipe()}, 100)
 	if err != nil {

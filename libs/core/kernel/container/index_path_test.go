@@ -7,16 +7,15 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/container/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
 func TestOpenIndex_RejectsConfigWithoutIndexPath(t *testing.T) {
 	cfg := container.NewConfig(container.Config{RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
-	if _, err := cfg.OpenIndex(t.Context()); !errors.Is(err, vault.ErrNoIndexPath) {
+	if _, err := cfg.OpenIndex(t.Context()); !errors.Is(err, container.ErrNoIndexPath) {
 		t.Fatalf("OpenIndex without IndexPath: %v, want ErrNoIndexPath", err)
 	}
-	if _, err := cfg.OpenWindow(t.Context(), "", io.Discard); !errors.Is(err, vault.ErrNoIndexPath) {
+	if _, err := cfg.OpenWindow(t.Context(), "", io.Discard); !errors.Is(err, container.ErrNoIndexPath) {
 		t.Fatalf("OpenWindow without IndexPath: %v, want ErrNoIndexPath", err)
 	}
 }

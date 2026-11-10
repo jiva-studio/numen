@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
@@ -86,13 +85,6 @@ type ConnectionJoiner struct {
 type RelatedNoteCreator struct {
 	create CreateInRelation
 }
-
-var (
-	_ noteport.ConnectionReader   = ConnectionReader{}
-	_ noteport.ConnectionWriter   = ConnectionWriter{}
-	_ noteport.ConnectionJoiner   = ConnectionJoiner{}
-	_ noteport.RelatedNoteCreator = RelatedNoteCreator{}
-)
 
 // NewConnectionReader takes the use case of a set of scenarios that reads a connection.
 func NewConnectionReader(n Scenarios) ConnectionReader { return ConnectionReader{get: n.Connection} }

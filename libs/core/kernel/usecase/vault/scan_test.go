@@ -33,7 +33,7 @@ func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 		vaultreader.Readers{}
 }
 
-func openIndex(t *testing.T) *container.Index {
+func openIndex(t *testing.T) *vaults.Index {
 	t.Helper()
 	db, err := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)}).OpenIndex(t.Context())
 	if err != nil {
@@ -45,7 +45,7 @@ func openIndex(t *testing.T) *container.Index {
 
 func getNotesOnly() []domain.SourceKind { return []domain.SourceKind{domain.KindNote} }
 
-func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
+func searchNotes(t *testing.T, db *vaults.Index, v domain.Vault, query string) []string {
 	t.Helper()
 	found, err := db.Passages().FindLexical(t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20})
 	if err != nil {
@@ -60,7 +60,7 @@ func searchNotes(t *testing.T, db *container.Index, v domain.Vault, query string
 	return out
 }
 
-func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
+func scanner(readers vaultport.VaultReaders, db *vaults.Index) vaults.Scan {
 	scan := vaults.NewScan(
 		readers,
 		db.Vaults(),

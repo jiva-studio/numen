@@ -85,7 +85,7 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
 		LockVault:   writers.Lock,
 		Cache:       appstate.PluginCachesAt(t.TempDir()),
-		Watcher:     vaults.NewWatchChanges(d.watcher),
+		Watcher:     vaults.NewWatchChanges(d.watcher).Execute,
 		Vaults: func() ([]domain.Vault, error) {
 			d.mu.Lock()
 			defer d.mu.Unlock()

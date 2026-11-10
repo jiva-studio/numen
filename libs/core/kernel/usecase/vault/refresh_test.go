@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -23,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *container.Index, domain.Vault) {
+func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *vaults.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
@@ -39,7 +38,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	), db, v
 }
 
-func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
+func passages(t *testing.T, db *vaults.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().FindLexical(
 		t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
@@ -49,7 +48,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 	return found
 }
 
-func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
+func titles(t *testing.T, db *vaults.Index, v domain.Vault, query string) []string {
 	t.Helper()
 	paths := searchNotes(t, db, v, query)
 	named, err := db.NoteRefs().GetNotes(t.Context(), v.ID, paths)
@@ -385,7 +384,7 @@ func (c *savesCounted) Save(ctx context.Context, vaultID domain.VaultID, notes [
 
 const settledNote = "---\ntitle: Note\n---\n\n# Note\n\nentropy\n"
 
-func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *container.Index, domain.Vault) {
+func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCounted, *vaults.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	for name := range notes {

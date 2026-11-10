@@ -1,12 +1,8 @@
 package main
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {
@@ -27,14 +23,10 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 		cfg = configureLocations(cfg, where)
 
 		return cli.Deps{
-			Vaults: cfg.OpenCLIVaults,
-			Links:  cfg.OpenCLILinks,
-			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
-				return cfg.OpenCLIScan(ctx, v, rebuild)
-			},
-			Search: func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
-				return cfg.OpenCLISearch(ctx, v, errorHandler)
-			},
+			Vaults:         cfg.OpenCLIVaults,
+			Links:          cfg.OpenCLILinks,
+			Scan:           cfg.OpenCLIScan,
+			Search:         cfg.OpenCLISearch,
 			Problems:       cfg.OpenCLIProblems,
 			PluginCommands: cfg.GetCLIPluginCommands,
 		}

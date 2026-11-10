@@ -28,9 +28,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -98,7 +97,7 @@ type Host struct {
 	secrets                *secretDelivery
 	hostEndpoint           *hostendpoint.Endpoint
 	hostAddress            string
-	dependencies           Dependencies
+	dependencies           pluginport.DependencyRegistry
 	work                   hostendpoint.WorkQueue
 	builtIns               map[string]builtInPlugin
 	contentTypes           contentTypeTable
@@ -1397,7 +1396,7 @@ func (h *Host) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) 
 		configJSON: cfgJSON,
 		values:     values,
 		declared:   h.listActiveDeclarationsLocked(pluginID, rawSettings),
-		requested:  secret.ListAskedGroups(h.listDeclarationsLocked()),
+		requested:  plugindomain.ListAskedSecretGroups(h.listDeclarationsLocked()),
 	}, true, nil
 }
 

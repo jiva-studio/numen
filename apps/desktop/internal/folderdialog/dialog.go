@@ -1,3 +1,4 @@
+// Package folderdialog shows the dialog in which the user picks a folder.
 package folderdialog
 
 import (

@@ -362,7 +362,7 @@ func TestEditLoad(t *testing.T) {
 	api.state.setVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	made := wired.session(db, wired.vaults.VaultReaders(), wired.vaults.VaultWatcher())
+	made := wired.session(db, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher())
 	worker := newIndexWorker(wired.readVault(db), api.state, nil, time.Hour, io.Discard)
 	_, wait := startIndexing(t.Context(), made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(wait)

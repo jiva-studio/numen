@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,7 +27,7 @@ func getNotes() map[string]string {
 
 func makeWindow(
 	t *testing.T,
-) (container.Config, *container.Index, *container.OpenVaults, *shell.API, []domain.Vault) {
+) (container.Config, *vault.Index, *vault.OpenVaults[container.Config, *vault.Index], *shell.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -48,7 +49,7 @@ func makeWindow(
 		{ID: "one", Name: "One", Path: vaultOf(t, cfg)},
 		{ID: "two", Name: "Two", Path: vaultOf(t, cfg)},
 	}
-	vaults := &container.OpenVaults{
+	vaults := &vault.OpenVaults[container.Config, *vault.Index]{
 		Config: cfg, Index: db,
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
@@ -75,24 +76,13 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	return root
 }
 
-// The notes the page and the tools are served are built, not empty.
-func TestTheNotesAreBuilt(t *testing.T) {
-	cfg, db, vaults, _, _ := makeWindow(t)
-
-	notes := makeNotes(cfg, db, vaults)
-
-	if reflect.ValueOf(notes).IsZero() {
-		t.Error("no notes were built")
-	}
-}
-
 // The page is given the notes it answers about, the window it draws and the plugins' services it
 // forwards.
 func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	cfg, db, vaults, _, _ := makeWindow(t)
-	notes := makeNotes(cfg, db, vaults)
 
-	api := makeWindowAPI(cfg, notes)
+	api := makeWindowAPI(cfg)
+	cfg.SetShellNotes(api, db, vaults.UpdateIndex)
 
 	if api == nil {
 		t.Fatal("the page has no API")
@@ -115,8 +105,8 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 // vault is the one the window's own opening makes.
 func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 	cfg, db, vaults, _, target := makeWindow(t)
-	notes := makeNotes(cfg, db, vaults)
-	api := makeWindowAPI(cfg, notes)
+	api := makeWindowAPI(cfg)
+	cfg.SetShellNotes(api, db, vaults.UpdateIndex)
 
 	api.SetVaultIndexer(t.Context(), func(context.Context, domain.Vault) error {
 		return errors.New("boom")
@@ -132,7 +122,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 	}
 
-	bindVaultIndexer(t.Context(), api, vaults)
+	cfg.BindVaultIndexer(t.Context(), api, vaults)
 
 	if vaults.RecordVault == nil {
 		t.Fatal("a vault updated is recorded nowhere")
@@ -168,7 +158,7 @@ func TestTheVaultIndexerIsBoundToTheWindow(t *testing.T) {
 // identity, and a vault that is not in the index is read into it when a plugin
 // requests it.
 func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
-	cfg, db, vaults, _, target := makeWindow(t)
+	cfg, db, _, _, target := makeWindow(t)
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +168,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
+	api := makeWindowAPI(cfg)
 	api.SetVaultIndexer(t.Context(), nil)
 
 	cfg.PluginHost = container.NewPluginHost("md.numen.test", t.TempDir())
@@ -203,8 +193,8 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 // The page receives the plugins of the flashcards target and is served the
 // files of their frontends.
 func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
-	cfg, db, vaults, _, _ := makeWindow(t)
-	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
+	cfg, _, _, _, _ := makeWindow(t)
+	api := makeWindowAPI(cfg)
 
 	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")
