@@ -1,6 +1,6 @@
 {
   "name": "@numen/tools.updater",
-  "version": "2026.11.10",
+  "version": "2026.11.9",
   "private": true,
   "type": "module",
   "description": "Update notifier plugin frontend for Numen",
