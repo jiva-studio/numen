@@ -46,16 +46,14 @@ vi.mock('../model/useBookReader', () => ({
   }),
 }))
 
-vi.mock('./BookContent.vue', () => ({
-  default: () => h('div', { class: 'book-content-stub' }),
-}))
-
-vi.mock('./book-contents', () => ({
-  BookListing: () => h('nav'),
+vi.mock('../book', () => ({
+  Book: () => h('div', { class: 'book-stub' }),
+  BookContents: () => h('nav'),
 }))
 
 vi.mock('@numen/ui', () => ({
   LoadingIndicator: () => h('span'),
+  win: { addEventListener: () => undefined, removeEventListener: () => undefined },
 }))
 
 const RANGES: readonly TextRange[] = [

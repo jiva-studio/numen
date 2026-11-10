@@ -5,21 +5,14 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { cardsService } from './clients'
 import { cards } from './cards'
 import { ErrorCode } from '../lib/wire/notes'
 
-vi.mock('./clients', () => ({
-  cardsService: {
-    createDeck: vi.fn(),
-    readDeck: vi.fn(),
-    writeDeck: vi.fn(),
-    listCardModels: vi.fn(),
-    createCardModel: vi.fn(),
-    renameCardModelField: vi.fn(),
-    readCardModel: vi.fn(),
-    writeCardModel: vi.fn(),
-  },
+const wire = vi.hoisted(() => ({ call: vi.fn(), replies: new Map<string, unknown>() }))
+
+vi.mock('@numen/plugin-sdk', async (original) => ({
+  ...(await original<typeof import('@numen/plugin-sdk')>()),
+  createApi: () => ({ call: wire.call, stream: vi.fn() }),
 }))
 
 /** A file the service stamped, and the one string the window carries it as. */
@@ -49,34 +42,39 @@ const cardModelMessage = {
   problems: [],
 }
 
-const answer = <Name extends keyof typeof cardsService>(name: Name, reply: unknown) =>
-  vi.mocked(cardsService[name] as (request: unknown) => Promise<unknown>).mockResolvedValue(reply)
+/** Makes the service answer a method with the reply. */
+const answer = (method: string, reply: unknown) => wire.replies.set(method, reply)
+
+/** The request the window sent to a method. */
+const requestOf = (method: string) => wire.call.mock.calls.find((sent) => sent[0] === method)?.[1]
 
 beforeEach(() => {
-  vi.clearAllMocks()
+  wire.replies.clear()
+  wire.call.mockReset()
+  wire.call.mockImplementation(async (method: string) => asValue(wire.replies.get(method)))
 })
 
 describe('making a deck', () => {
   it('asks for the title in the folder', async () => {
-    answer('createDeck', { path: 'Decks/Words.md' })
+    answer('CreateDeck', { path: 'Decks/Words.md' })
 
     await cards.createDeck('Words', 'Decks')
 
-    expect(cardsService.createDeck).toHaveBeenCalledWith({ title: 'Words', path: 'Decks' })
+    expect(requestOf('CreateDeck')).toEqual({ title: 'Words', path: 'Decks' })
   })
 })
 
 describe('reading a deck', () => {
   it('asks for the path', async () => {
-    answer('readDeck', { deck: deckMessage, at: stampedAt })
+    answer('ReadDeck', { deck: deckMessage, at: stampedAt })
 
     await cards.readDeck('Deck.md')
 
-    expect(cardsService.readDeck).toHaveBeenCalledWith({ path: 'Deck.md' })
+    expect(requestOf('ReadDeck')).toEqual({ path: 'Deck.md' })
   })
 
   it('carries its sections as name and preamble only, and the stamp as one string', async () => {
-    answer('readDeck', { deck: deckMessage, at: stampedAt })
+    answer('ReadDeck', { deck: deckMessage, at: stampedAt })
 
     expect(await cards.readDeck('Deck.md')).toEqual(
       asValue({
@@ -95,7 +93,7 @@ describe('reading a deck', () => {
   })
 
   it('carries the empty string where the service stamped nothing', async () => {
-    answer('readDeck', { deck: deckMessage })
+    answer('ReadDeck', { deck: deckMessage })
 
     const readItem = await cards.readDeck('Deck.md')
 
@@ -103,25 +101,25 @@ describe('reading a deck', () => {
   })
 
   it('fails in the service words even where a deck came with them', async () => {
-    answer('readDeck', { error: ErrorCode.NOT_FOUND, deck: deckMessage, bound: 400 })
+    answer('ReadDeck', { error: ErrorCode.NOT_FOUND, deck: deckMessage, bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'notFound', bound: 400 }))
   })
 
   it('fails in the service words where no deck came', async () => {
-    answer('readDeck', { error: ErrorCode.TOO_LARGE, bound: 900 })
+    answer('ReadDeck', { error: ErrorCode.TOO_LARGE, bound: 900 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'tooLarge', bound: 900 }))
   })
 
   it('is no deck where no deck and no error came', async () => {
-    answer('readDeck', { bound: 400 })
+    answer('ReadDeck', { bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'notADeck', bound: 400 }))
   })
 
   it('is changed where the file moved past what was requested', async () => {
-    answer('readDeck', { error: ErrorCode.CONFLICT, bound: 400 })
+    answer('ReadDeck', { error: ErrorCode.CONFLICT, bound: 400 })
 
     expect(await cards.readDeck('Deck.md')).toEqual(asFailure({ code: 'changed', bound: 400 }))
   })
@@ -136,11 +134,11 @@ describe('writing a deck', () => {
   }
 
   it('sends the parts of the deck and the file it was read from', async () => {
-    answer('writeDeck', { at: stampedAt })
+    answer('WriteDeck', { at: stampedAt })
 
     await cards.writeDeck('Deck.md', deck, carried)
 
-    expect(cardsService.writeDeck).toHaveBeenCalledWith({
+    expect(requestOf('WriteDeck')).toEqual({
       path: 'Deck.md',
       preamble: 'about',
       cards: [],
@@ -151,19 +149,19 @@ describe('writing a deck', () => {
   })
 
   it('answers with the stamp of what it wrote', async () => {
-    answer('writeDeck', { at: stampedAt })
+    answer('WriteDeck', { at: stampedAt })
 
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(asValue({ at: carried }))
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
-    answer('writeDeck', {})
+    answer('WriteDeck', {})
 
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(asValue({ at: '' }))
   })
 
   it('fails in the service words, with the bound', async () => {
-    answer('writeDeck', { error: ErrorCode.DECK_TOO_LARGE, bound: 700 })
+    answer('WriteDeck', { error: ErrorCode.DECK_TOO_LARGE, bound: 700 })
 
     expect(await cards.writeDeck('Deck.md', deck, null)).toEqual(
       asFailure({ code: 'deckTooLarge', bound: 700 }),
@@ -173,29 +171,29 @@ describe('writing a deck', () => {
 
 describe('the card models of a vault', () => {
   it('are requested for up to the limit given', async () => {
-    answer('listCardModels', { cardModels: [], total: 0 })
+    answer('ListCardModels', { cardModels: [], total: 0 })
 
     await cards.cardModels(5)
 
-    expect(cardsService.listCardModels).toHaveBeenCalledWith({ limit: 5 })
+    expect(requestOf('ListCardModels')).toEqual({ limit: 5 })
   })
 
   it('are requested for up to no limit where none is given', async () => {
-    answer('listCardModels', { cardModels: [], total: 0 })
+    answer('ListCardModels', { cardModels: [], total: 0 })
 
     await cards.cardModels()
 
-    expect(cardsService.listCardModels).toHaveBeenCalledWith({ limit: 0 })
+    expect(requestOf('ListCardModels')).toEqual({ limit: 0 })
   })
 })
 
 describe('renaming a field', () => {
   it('sends the path, both names and the file it was read from', async () => {
-    answer('renameCardModelField', { decks: [], cards: 0, notWritten: [], at: stampedAt })
+    answer('RenameCardModelField', { decks: [], cards: 0, notWritten: [], at: stampedAt })
 
     await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, carried)
 
-    expect(cardsService.renameCardModelField).toHaveBeenCalledWith({
+    expect(requestOf('RenameCardModelField')).toEqual({
       path: 'Word.md',
       from: 'Front',
       to: 'Template',
@@ -204,17 +202,17 @@ describe('renaming a field', () => {
   })
 
   it('sends no file where none was read', async () => {
-    answer('renameCardModelField', { decks: [], cards: 0, notWritten: [] })
+    answer('RenameCardModelField', { decks: [], cards: 0, notWritten: [] })
 
     await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)
 
-    const dispatched = vi.mocked(cardsService.renameCardModelField).mock.calls[0]?.[0]
+    const dispatched = requestOf('RenameCardModelField')
     expect(dispatched).toEqual({ path: 'Word.md', from: 'Front', to: 'Template' })
     expect(dispatched).not.toHaveProperty('seen')
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
-    answer('renameCardModelField', { decks: [], cards: 0, notWritten: [] })
+    answer('RenameCardModelField', { decks: [], cards: 0, notWritten: [] })
 
     const renameResult = await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)
 
@@ -222,7 +220,7 @@ describe('renaming a field', () => {
   })
 
   it('fails in the service words', async () => {
-    answer('renameCardModelField', { error: ErrorCode.NOT_FOUND })
+    answer('RenameCardModelField', { error: ErrorCode.NOT_FOUND })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)).toEqual(
       asFailure('notFound'),
@@ -230,7 +228,7 @@ describe('renaming a field', () => {
   })
 
   it('is changed where the file moved past what was read', async () => {
-    answer('renameCardModelField', { error: ErrorCode.CONFLICT })
+    answer('RenameCardModelField', { error: ErrorCode.CONFLICT })
 
     expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, carried)).toEqual(
       asFailure('changed'),
@@ -240,11 +238,11 @@ describe('renaming a field', () => {
 
 describe('making a card model', () => {
   it('asks for the title in the folder with its fields', async () => {
-    answer('createCardModel', { path: 'Word.md' })
+    answer('CreateCardModel', { path: 'Word.md' })
 
     await cards.createCardModel('Word', 'Card models', ['Front', 'Back'])
 
-    expect(cardsService.createCardModel).toHaveBeenCalledWith({
+    expect(requestOf('CreateCardModel')).toEqual({
       title: 'Word',
       path: 'Card models',
       fields: ['Front', 'Back'],
@@ -254,15 +252,15 @@ describe('making a card model', () => {
 
 describe('reading a card model', () => {
   it('asks for the path', async () => {
-    answer('readCardModel', { cardModel: cardModelMessage, at: stampedAt })
+    answer('ReadCardModel', { cardModel: cardModelMessage, at: stampedAt })
 
     await cards.readCardModel('Word.md')
 
-    expect(cardsService.readCardModel).toHaveBeenCalledWith({ path: 'Word.md' })
+    expect(requestOf('ReadCardModel')).toEqual({ path: 'Word.md' })
   })
 
   it('carries the empty string where the service stamped nothing', async () => {
-    answer('readCardModel', { cardModel: cardModelMessage })
+    answer('ReadCardModel', { cardModel: cardModelMessage })
 
     const readItem = await cards.readCardModel('Word.md')
 
@@ -270,25 +268,25 @@ describe('reading a card model', () => {
   })
 
   it('fails in the service words even where a card model came with them', async () => {
-    answer('readCardModel', { error: ErrorCode.NOT_FOUND, cardModel: cardModelMessage })
+    answer('ReadCardModel', { error: ErrorCode.NOT_FOUND, cardModel: cardModelMessage })
 
     expect(await cards.readCardModel('Word.md')).toEqual(asFailure('notFound'))
   })
 
   it('fails in the service words where no card model came', async () => {
-    answer('readCardModel', { error: ErrorCode.UNREADABLE })
+    answer('ReadCardModel', { error: ErrorCode.UNREADABLE })
 
     expect(await cards.readCardModel('Word.md')).toEqual(asFailure('unreadable'))
   })
 
   it('is changed where the file moved past what was requested, though a card model came', async () => {
-    answer('readCardModel', { error: ErrorCode.CONFLICT, cardModel: cardModelMessage })
+    answer('ReadCardModel', { error: ErrorCode.CONFLICT, cardModel: cardModelMessage })
 
     expect(await cards.readCardModel('Word.md')).toEqual(asFailure('changed'))
   })
 
   it('is no card model where no card model and no error came', async () => {
-    answer('readCardModel', {})
+    answer('ReadCardModel', {})
 
     expect(await cards.readCardModel('Word.md')).toEqual(asFailure('notACardModel'))
   })
@@ -303,11 +301,11 @@ describe('writing a card model', () => {
   }
 
   it('sends the fields, the templates and the file it was read from', async () => {
-    answer('writeCardModel', { at: stampedAt })
+    answer('WriteCardModel', { at: stampedAt })
 
     await cards.writeCardModel('Word.md', cardModel, carried)
 
-    expect(cardsService.writeCardModel).toHaveBeenCalledWith({
+    expect(requestOf('WriteCardModel')).toEqual({
       path: 'Word.md',
       fields: ['Front', 'Back'],
       preamble: 'about',
@@ -318,15 +316,15 @@ describe('writing a card model', () => {
   })
 
   it('sends no file where none was read', async () => {
-    answer('writeCardModel', {})
+    answer('WriteCardModel', {})
 
     await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null)
 
-    expect(vi.mocked(cardsService.writeCardModel).mock.calls[0]?.[0]).not.toHaveProperty('seen')
+    expect(requestOf('WriteCardModel')).not.toHaveProperty('seen')
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
-    answer('writeCardModel', {})
+    answer('WriteCardModel', {})
 
     await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null)
 
@@ -336,7 +334,7 @@ describe('writing a card model', () => {
   })
 
   it('fails in the service words', async () => {
-    answer('writeCardModel', { error: ErrorCode.ALREADY_EXISTS })
+    answer('WriteCardModel', { error: ErrorCode.ALREADY_EXISTS })
 
     expect(
       await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null),
@@ -344,7 +342,7 @@ describe('writing a card model', () => {
   })
 
   it('is changed where the file moved past what was read', async () => {
-    answer('writeCardModel', { error: ErrorCode.CONFLICT })
+    answer('WriteCardModel', { error: ErrorCode.CONFLICT })
 
     expect(
       await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, carried),

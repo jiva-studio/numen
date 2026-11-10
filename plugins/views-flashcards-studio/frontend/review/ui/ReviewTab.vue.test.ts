@@ -64,9 +64,9 @@ const { counted, started, waits } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('../api/clients', async (original) => ({
-  ...(await original<typeof import('../api/clients')>()),
-  cards: {
+vi.mock('../../api/client', async (original) => ({
+  ...(await original<typeof import('../../api/client')>()),
+  reviewService: {
     watchCardsDue: async function* () {
       yield { day: counted.day, vaults: counted.vaults }
       for (const one of counted.vaults) {
