@@ -3,6 +3,8 @@ package plugin
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
@@ -22,7 +24,7 @@ type Host struct {
 	Listeners    *Listeners
 	Services     *Services
 	ContentTypes *ContentTypes
-	Storage      *Storage
+	Storage      *storage.Storage
 	Events       *Events
 	Mode         *Mode
 }
@@ -56,7 +58,11 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	errs := &errorSink{}
 	failures := newFailures(t, clock, errs)
 	services := newServices(t)
-	storage := newStorage(t, errs)
+	storage := storage.New(errs.report, func(pluginID string) string {
+		t.mu.RLock()
+		defer t.mu.RUnlock()
+		return t.plugins[pluginID].Manifest.Version
+	})
 	contentTypes := newContentTypes(t)
 	processes := newProcesses(t, clock, errs, services, storage)
 	listeners := newListeners(t, clock, errs, failures)

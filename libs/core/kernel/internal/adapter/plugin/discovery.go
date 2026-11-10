@@ -11,6 +11,8 @@ import (
 	"slices"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -32,7 +34,7 @@ type Discovery struct {
 
 	teardown     *Teardown
 	listeners    *Listeners
-	storage      *Storage
+	storage      *storage.Storage
 	config       *ConfigPush
 	dropEndpoint func(pluginID string)
 
@@ -89,7 +91,7 @@ func (d *Discovery) discoverPlugins() error {
 		isInstalled := d.t.onDisk[id]
 		d.t.mu.RUnlock()
 		if !isInstalled {
-			d.storage.removeCacheDir(id)
+			d.storage.RemoveCacheDir(id)
 		}
 	}
 	d.pruneSecretPermissions()

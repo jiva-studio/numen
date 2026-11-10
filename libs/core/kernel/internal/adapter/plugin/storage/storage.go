@@ -1,4 +1,4 @@
-package plugin
+package storage
 
 import (
 	"errors"
@@ -22,14 +22,16 @@ type storageRoots struct {
 // Storage grants the plugins folders to keep files in: one cache folder and one data folder each,
 // and a cache folder and a data folder every plugin shares.
 type Storage struct {
-	t     *table
-	errs  *errorSink
-	mu    sync.RWMutex
-	roots storageRoots
+	report    func(error)
+	versionOf func(pluginID string) string
+	mu        sync.RWMutex
+	roots     storageRoots
 }
 
-func newStorage(t *table, errs *errorSink) *Storage {
-	return &Storage{t: t, errs: errs}
+// New creates a storage that reports the errors it meets outside a call to report and reads the version
+// of a plugin from versionOf.
+func New(report func(error), versionOf func(pluginID string) string) *Storage {
+	return &Storage{report: report, versionOf: versionOf}
 }
 
 // SetStorageRoots sets the folders the plugin cache directories and plugin data directories are
@@ -41,13 +43,12 @@ func (s *Storage) SetStorageRoots(cacheRoot, dataRoot string) {
 	s.roots = storageRoots{cache: cacheRoot, data: dataRoot}
 }
 
-func (s *Storage) getStorageVars(pluginID string) ([]string, error) {
+// GetVars returns the variables that name the folders of the plugin, creating the folders.
+func (s *Storage) GetVars(pluginID string) ([]string, error) {
 	s.mu.RLock()
 	roots := s.roots
 	s.mu.RUnlock()
-	s.t.mu.RLock()
-	version := s.t.plugins[pluginID].Manifest.Version
-	s.t.mu.RUnlock()
+	version := s.versionOf(pluginID)
 	if err := checkStorageID(pluginID); err != nil {
 		return nil, err
 	}
@@ -84,7 +85,8 @@ func (s *Storage) getStorageVars(pluginID string) ([]string, error) {
 	return vars, nil
 }
 
-func (s *Storage) removeCacheDir(pluginID string) {
+// RemoveCacheDir removes the cache folder of the plugin.
+func (s *Storage) RemoveCacheDir(pluginID string) {
 	s.mu.RLock()
 	root := s.roots.cache
 	s.mu.RUnlock()
@@ -92,7 +94,7 @@ func (s *Storage) removeCacheDir(pluginID string) {
 		return
 	}
 	if err := os.RemoveAll(getPluginStorageDir(root, pluginID)); err != nil {
-		s.errs.report(fmt.Errorf("remove cache directory of plugin %s: %w", pluginID, err))
+		s.report(fmt.Errorf("remove cache directory of plugin %s: %w", pluginID, err))
 	}
 }
 
