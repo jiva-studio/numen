@@ -32,6 +32,9 @@ const wire = {
   themeSignals: [] as AbortSignal[],
 }
 
+/** What the window shows for a call the core rejects with a plain fault. */
+const CORE_FAULT = 'internal error'
+
 let restoreCore: () => void
 
 const answerCore = (): (() => void) =>
@@ -165,7 +168,7 @@ describe('App', () => {
     await flushPromises()
 
     expect(window.text()).toContain('No plugin views.')
-    expect(window.text()).toContain('the window is gone')
+    expect(window.text()).toContain(CORE_FAULT)
   })
 
   it('lists the vaults of the installation, as the window is served them', async () => {
@@ -342,7 +345,7 @@ describe('the window over a plugin that draws the review', () => {
     expect(shell?.vaults.list.value).toStrictEqual([])
     expect(shell?.notices.notices.value).toMatchObject([
       {
-        text: expect.stringContaining('the list is locked'),
+        text: CORE_FAULT,
         severity: 'error',
       },
     ])
@@ -590,7 +593,7 @@ describe('the appearance palette', () => {
     expect(
       shell?.notices.notices.value.some(
         (one) =>
-          one.severity === 'error' && one.text.includes('plugins offline'),
+          one.severity === 'error' && one.text === CORE_FAULT,
       ),
     ).toBe(true)
 
