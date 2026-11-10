@@ -1,4 +1,4 @@
-package app
+package folderdialog
 
 import (
 	"os"
@@ -79,7 +79,7 @@ func TestEnvironmentSettings_Retained(t *testing.T) {
 	t.Setenv("XDG_DATA_DIRS", filepath.Join(t.TempDir(), "empty"))
 	t.Setenv("GSETTINGS_SCHEMA_DIR", theirs)
 
-	if err := setSchemasDir(); err != nil {
+	if err := SetSchemasDir(); err != nil {
 		t.Fatal(err)
 	}
 

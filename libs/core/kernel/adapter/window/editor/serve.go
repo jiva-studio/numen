@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"

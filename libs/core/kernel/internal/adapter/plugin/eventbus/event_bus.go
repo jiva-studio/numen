@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 // Handler handles a dispatched event string.

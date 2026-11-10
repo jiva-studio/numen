@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
 func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
@@ -71,7 +71,7 @@ func splitRebuildFlag(args []string) (rebuild bool, rest []string) {
 	return rebuild, rest
 }
 
-func readClock(source machinecontract.Clock) time.Time {
+func readClock(source machineport.Clock) time.Time {
 	if source == nil {
 		return time.Time{}
 	}
