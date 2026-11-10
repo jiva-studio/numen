@@ -3,16 +3,20 @@ package hostendpoint
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"slices"
 	"testing"
 
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
@@ -79,14 +83,14 @@ func (c *cancellingVault) RemoveNote(ctx context.Context, target string) (string
 	return trashPath, broken, err
 }
 
-func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (*vaultEndpoint, *cancellingVault, context.Context) {
+func newCancellingEndpoint(t *testing.T, cancelIndex int, mode cancelMode) (numenv1connect.HostVaultServiceClient, *cancellingVault, context.Context) {
 	t.Helper()
 	ctx, cancel := context.WithCancel(t.Context())
 	t.Cleanup(cancel)
 	vault := &cancellingVault{fakeNoteVault: newFakeNoteVault(), cancel: cancel, cancelIndex: cancelIndex, mode: mode}
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vaultOf(vault)
-	endpoint := newVaultEndpoint(&Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)})
+	endpoint := serveVaultCalls(t, ctx, hostCallers.over(nil, manifest.PermissionVaultWrite))
 	return endpoint, vault, ctx
 }
 
@@ -132,7 +136,7 @@ func requireRemoved(t *testing.T, entry *v1.HostNoteRemoval, target string) {
 func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, changeThenCancel)
 
-	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
@@ -157,7 +161,7 @@ func TestMoveCancelledAfterTwoNotesReturnsRestAsNotAttempted(t *testing.T) {
 func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
 
-	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
@@ -181,7 +185,7 @@ func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
 func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
-	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
@@ -201,7 +205,7 @@ func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 0, changeThenCancel)
 	vault.cancel()
 
-	res, err := endpoint.MoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
+	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
 	})))
 	if err != nil {
@@ -223,7 +227,7 @@ func TestMoveCancelledBeforeFirstNoteReturnsAllNotAttempted(t *testing.T) {
 func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 1, changeThenCancel)
 
-	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: getCancelledBatch(),
 	})))
 	if err != nil {
@@ -245,7 +249,7 @@ func TestRemovalCancelledAfterOneNoteReturnsRestAsNotAttempted(t *testing.T) {
 func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
 	endpoint, vault, ctx := newCancellingEndpoint(t, 2, cancelAndFail)
 
-	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: getCancelledBatch(),
 	})))
 	if err != nil {
@@ -269,7 +273,7 @@ func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
 func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
 	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
-	res, err := endpoint.RemoveNotes(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
+	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: getCancelledBatch(),
 	})))
 	if err != nil {
@@ -327,14 +331,14 @@ func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.
 	vault := &cancellingLinkVault{linkingVault: newLinkingVault(), cancel: cancel}
 	hostCallers := newCallers(nil)
 	hostCallers.vault = vaultOf(vault)
-	endpoint := newVaultEndpoint(&Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)})
+	endpoint := serveVaultCalls(t, ctx, hostCallers.over(nil, manifest.PermissionVaultWrite))
 	batch := getCancelledBatch()
 	links := make([]*v1.HostLinkAddition, len(batch))
 	for i, from := range batch {
 		links[i] = &v1.HostLinkAddition{From: from, Baseline: vault.readBaseline(t, from), To: "Estuary", Role: v1.Role_ROLE_REF}
 	}
 
-	res, err := endpoint.AddLinks(ctx, authorizeAsA(connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links})))
+	res, err := endpoint.AddLinks(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: links})))
 	if err != nil {
 		t.Fatalf("the canceled link addition failed as a whole: %v", err)
 	}
@@ -352,4 +356,17 @@ func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.
 			t.Errorf("result %d is %v, want NOT_ATTEMPTED with the detail %q and no file stat", i+1, r, want)
 		}
 	}
+}
+
+// serveVaultCalls serves the vault calls of the callers, with ctx as the context every call is
+// served under, so that a test ends the call from inside the vault the way a stopped plugin does.
+func serveVaultCalls(t *testing.T, ctx context.Context, callers Callers) numenv1connect.HostVaultServiceClient {
+	t.Helper()
+	mux := http.NewServeMux()
+	mux.Handle(vaultapi.NewHandler(&Endpoint{callers: callers}, vaultSource{callers: callers}))
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux.ServeHTTP(w, r.WithContext(ctx))
+	}))
+	t.Cleanup(server.Close)
+	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL)
 }

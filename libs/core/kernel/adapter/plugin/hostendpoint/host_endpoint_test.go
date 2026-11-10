@@ -254,7 +254,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
-		if _, err := endpoint.authorize(header, manifest.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
+		if _, err := endpoint.Authorize(header, manifest.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
 		}
 	}

@@ -45,7 +45,7 @@ func (e *searchEndpoint) begin(header http.Header, permission string, needsVault
 	if err != nil || vault == nil {
 		return call, err
 	}
-	call.vault, call.hasVault = vault.GetVault()
+	call.vault, call.hasVault = vault.Switch.GetVault()
 	return call, nil
 }
 

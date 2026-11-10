@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"io/fs"
 	"net/http"
 

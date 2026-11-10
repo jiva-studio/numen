@@ -83,7 +83,7 @@ func (e *Endpoint) getVaultID(header http.Header) (domain.VaultID, error) {
 	if err != nil || vault == nil {
 		return "", err
 	}
-	v, showing := vault.GetVault()
+	v, showing := vault.Switch.GetVault()
 	if !showing {
 		return "", nil
 	}
