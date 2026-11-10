@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { CommandTarget } from '@/entities/command'
 import { WORDS } from '@/shared/words'
 import { createEmptyWindow } from '@/testing/appCommands'
-import { collectFeatureCommands } from './featureCommands'
+import { collectFeatureCommands } from './createCommands'
 
 const NO_WINDOW = createEmptyWindow()
 

@@ -14,13 +14,14 @@ import {
 } from '@numen/plugin-loader'
 import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
-import { createSlotCommandFinder } from '@/app/commands/pluginSlots'
+import { createSlotCommandFinder } from '@/app/plugins/commands/pluginSlots'
 import {
   collectFeatureCommands,
+  createCommands,
   createFeatureDeps,
   registerFeatureCommands,
-} from '@/app/commands/featureCommands'
-import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'
+  type CommandsDepsOptions,
+} from '@/app/window/createCommands'
 import { WORDS } from '@/shared/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
@@ -197,6 +198,6 @@ export function createRealWindow(parts: RealWindowParts) {
     WORDS,
   )
   registerFeatureCommands(features)
-  const used = useCommands(toDeps({ ...options, getAppCommands: () => features.commands }))
+  const used = createCommands(toDeps({ ...options, getAppCommands: () => features.commands }))
   return { pluginHost, messages, used }
 }

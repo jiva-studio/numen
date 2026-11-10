@@ -1,44 +1,60 @@
 /**
- * Command palette, keyboard shortcut dispatch, and command execution.
+ * The commands of the window: the commands the features declare and the entries the plugins
+ * declare, collected and passed to the palette, the shortcut dispatch, and the run of a command.
  */
 
-import { formatErrorMessage } from '@numen/core-client'
 import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
 import {
+  createCommands as createPaletteCommands,
+  registerCommand,
   runInvocation,
   createInvocation,
   useCommandPalette,
   useSearch,
+  type Words as PaletteWords,
   type CommandDeps,
   type ResultChoice,
   type SearchMenuDeps,
   type NoteLookup,
   type PaletteLists,
 } from '@/features/command-palette'
+import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
+import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
+import { createTabCommands, type TabCommandsDeps } from '@/features/tab-commands'
+import { createVersionCommands, type VersionCommandsDeps } from '@/features/version-commands'
+import {
+  createVaultCommands,
+  type TabsHold,
+  type VaultCommandsDeps,
+} from '@/features/vault-commands'
 import {
   COMMAND,
   type Command,
   type CommandInvocation,
   type CommandTarget,
+  type FeatureCommands,
   type Notes,
   type RunSupport,
+  type VaultRef,
 } from '@/entities/command'
-import { createCommandDeps } from './commandDeps'
-import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
-import { createItemLists } from './pluginItems'
-import { toRunTarget } from './runTarget'
-import { createCommandItems } from './commandItems'
-import { watchCommandLists } from './watchCommandLists'
+import type { NoteCreator } from '@/entities/note'
+import { formatError } from '@/shared/api/errors'
+import { createCommandDeps } from '../tabs/commandDeps'
+import { createCommandNoteReader, usePluginCommands } from '../plugins/commands/usePluginCommands'
+import { createItemLists } from '../plugins/commands/pluginItems'
+import { toRunTarget } from '../plugins/commands/runTarget'
+import { createCommandItems } from '../plugins/commands/commandItems'
+import { watchCommandLists } from '../plugins/commands/watchCommandLists'
 import { syncKeybindings } from '@/features/hotkeys'
-import type { DeclaredCommands } from './declaredCommands'
+import type { DeclaredCommands } from '../plugins/commands/declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
 import { getFileKinds } from '@/entities/file'
 import type { VaultCore } from '../vault'
-import { getVaultList } from '../window/vaultList'
+import { getVaultList } from './vaultList'
 
 type Words = typeof WORDS
 
@@ -215,7 +231,7 @@ export function createCommandRunner(parts: CommandRunnerParts) {
     runCommand: (id: string, target: CommandTarget, input?: string, values?: Values): void => {
       const run = startRun(id, target, { input, values, isAwaited: false })
       if (typeof run === 'string') parts.writeMessage(run, 'error')
-      else runInBackground(run, (error) => parts.writeMessage(formatErrorMessage(error), 'error'))
+      else runInBackground(run, (error) => parts.writeMessage(formatError(error), 'error'))
     },
     runCommandToEnd: async (
       id: string,
@@ -248,7 +264,7 @@ function useWindowCommandPalette(
   )
 }
 
-export function useCommands(options: CommandsDepsOptions) {
+export function createCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands } = options
   const plugins = usePluginCommands(
@@ -306,7 +322,7 @@ export function useCommands(options: CommandsDepsOptions) {
   const runKeyWithValues = (command: string, values: Values): void => {
     const invocation = withValues(createInvocation(command, getTarget()), values)
     runInBackground(runInvocation(invocation, commandDeps), (error) =>
-      writeMessage(formatErrorMessage(error), 'error'),
+      writeMessage(formatError(error), 'error'),
     )
   }
 
@@ -345,4 +361,101 @@ export function useCommands(options: CommandsDepsOptions) {
     onKeyDown,
     pluginWays,
   }
+}
+
+/** What the commands of the features use of the window. */
+export interface FeatureCommandsDeps {
+  readonly notes: NoteCommandsDeps
+  readonly files: FileCommandsDeps
+  readonly vaults: VaultCommandsDeps
+  readonly tabs: TabCommandsDeps
+  readonly versions: VersionCommandsDeps
+}
+
+/** The parts of the window the commands of the features are given. */
+export interface FeatureWindow {
+  readonly making: NoteCreator
+  readonly notes: Notes
+  readonly windowTabs: Pick<WindowTabs, 'navigateTab'>
+  readonly travel: (path: string) => Promise<void> | void
+  readonly leavePath: (from: string, to: string) => Promise<void> | void
+  readonly getOpeningNote: () => string
+  readonly tabsHold: TabsHold
+  readonly setVaultName: (vault: VaultRef) => void
+  readonly reload: () => void
+  readonly writeMessage: MessageWriter
+  readonly tabs: TabCommandsDeps
+  readonly listVersionItems: VersionCommandsDeps['listItems']
+}
+
+/** What each feature uses, taken from the parts of the window. */
+export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
+  const { notes, writeMessage } = parts
+  return {
+    notes: {
+      making: parts.making,
+      notes,
+      navigator: {
+        travel: async (path) => {
+          await parts.travel(path)
+        },
+        leave: async (from, to) => {
+          await parts.leavePath(from, to)
+        },
+        getOpeningNote: parts.getOpeningNote,
+        showTab: (kind, path) =>
+          runInBackground(parts.windowTabs.navigateTab(kind, path), (error) =>
+            writeMessage(formatError(error), 'error'),
+          ),
+      },
+      writeMessage,
+    },
+    files: { notes, writeMessage },
+    vaults: {
+      tabsHold: parts.tabsHold,
+      setVaultName: parts.setVaultName,
+      reload: parts.reload,
+      writeMessage,
+    },
+    tabs: parts.tabs,
+    versions: { listItems: parts.listVersionItems, writeMessage },
+  }
+}
+
+/**
+ * The rows of the note, file, palette, vault, tab and version commands, in that order, and the
+ * handler of each command that has one. A group draws its commands in the order of this list.
+ */
+export function collectFeatureCommands(
+  deps: FeatureCommandsDeps,
+  words: PaletteWords,
+  agent: string = navigator.userAgent,
+): FeatureCommands {
+  const notes = createNoteCommands(deps.notes, agent)
+  const files = createFileCommands(deps.files)
+  const vaults = createVaultCommands(deps.vaults, agent)
+  const tabs = createTabCommands(deps.tabs)
+  const versions = createVersionCommands(deps.versions)
+  return {
+    commands: [
+      ...notes.commands,
+      ...files.commands,
+      ...createPaletteCommands(words, agent),
+      ...vaults.commands,
+      ...tabs.commands,
+      ...versions.commands,
+    ],
+    handlers: {
+      ...notes.handlers,
+      ...files.handlers,
+      ...vaults.handlers,
+      ...tabs.handlers,
+      ...versions.handlers,
+    },
+  }
+}
+
+/** Puts the handlers of the commands in the registry the palette carries commands out through. */
+export function registerFeatureCommands(features: FeatureCommands): void {
+  for (const [id, run] of Object.entries(features.handlers)) registerCommand(id, run)
 }

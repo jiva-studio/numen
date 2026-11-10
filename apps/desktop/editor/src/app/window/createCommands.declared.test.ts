@@ -1,8 +1,8 @@
 /** The commands the plugins declare, read again as the palette opens. */
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, shallowRef, type Ref } from 'vue'
-import { useCommands, type CommandsDepsOptions } from './useCommands'
-import type { DeclaredCommands } from './declaredCommands'
+import { createCommands, type CommandsDepsOptions } from './createCommands'
+import type { DeclaredCommands } from '../plugins/commands/declaredCommands'
 
 const isOpen = ref(false)
 
@@ -11,15 +11,12 @@ vi.mock('@/features/command-palette', () => ({
   useSearch: () => ({ setOpen: vi.fn() }),
   useCommandPalette: () => ({ open: isOpen }),
 }))
-vi.mock('./commandDeps', () => ({ createCommandDeps: () => ({}), createCommandNotes: () => ({}) }))
-vi.mock('./featureCommands', () => ({
-  collectFeatureCommands: () => ({ commands: [], handlers: {} }),
-}))
+vi.mock('../tabs/commandDeps', () => ({ createCommandDeps: () => ({}), createCommandNotes: () => ({}) }))
 
 const setup = (load: () => Promise<void>, plugins?: Ref<{ id: string; isActive: boolean }[]>) => {
   const messages: [string, string][] = []
   const declaredCommands = { paletteCommands: shallowRef([]), load } as unknown as DeclaredCommands
-  useCommands({
+  createCommands({
     windowTabs: {},
     rest: { plugins },
     getTarget: () => ({ file: 'books/Scan.pdf' }),

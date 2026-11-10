@@ -22,7 +22,7 @@ import {
   writeTabLinks,
 } from '@/features/tab-linking'
 import { acceptTabMove, createMovedTabOpener, createTabMover } from '@/features/tab-move'
-import { createCommandNotes } from '../commands/commandDeps'
+import { createCommandNotes } from '../tabs/commandDeps'
 import type { WindowCore, WindowServices } from './createDisplayPart'
 import { isSecondaryWindow } from './createLifecyclePart'
 import type { useSettings } from './useSettings'

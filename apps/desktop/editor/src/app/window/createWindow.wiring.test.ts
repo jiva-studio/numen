@@ -34,7 +34,11 @@ vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
   registerCommand: () => () => undefined,
 }))
-vi.mock('../commands/featureCommands', () => ({
+vi.mock('./createCommands', () => ({
+  createCommands: (args: unknown) => {
+    h.args.commands = args
+    return h.f.commands
+  },
   createFeatureDeps: (args: unknown) => {
     h.args.featureWindow = args
     return {}
@@ -105,12 +109,6 @@ vi.mock('./useSettings', () => ({
   },
 }))
 vi.mock('./useVaults', () => ({ useVaults: () => h.f.vaults }))
-vi.mock('../commands/useCommands', () => ({
-  useCommands: (args: unknown) => {
-    h.args.commands = args
-    return h.f.commands
-  },
-}))
 vi.mock('./useWindowDisplay', () => ({
   useWindowDisplay: (args: unknown) => {
     h.args.display = args
