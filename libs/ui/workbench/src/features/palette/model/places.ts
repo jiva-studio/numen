@@ -21,7 +21,7 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
   const visibleGroups = computed(() => orderGroups(options.groups()))
 
   const places = computed(() => flatten(visibleGroups.value))
-  const placed = computed(() => placePalette(visibleGroups.value))
+  const groupsInOrder = computed(() => placePalette(visibleGroups.value))
 
   /**
    * What is announced from a search. A group with rows is announced by the row the
@@ -36,5 +36,5 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
       .join('. '),
   )
 
-  return { placed, places, announcement }
+  return { placed: groupsInOrder, places, announcement }
 }
