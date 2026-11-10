@@ -13,8 +13,15 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
-// UnknownVaultError is a vault named at start that the registry does not hold.
-type UnknownVaultError = registry.UnknownError
+// GetUnknownVaultName returns the name of the vault, named at start, that err says the registry does not
+// hold.
+func GetUnknownVaultName(err error) (string, bool) {
+	unknown, ok := errors.AsType[*registry.UnknownError](err)
+	if !ok {
+		return "", false
+	}
+	return unknown.Name, true
+}
 
 // windowWiring is what the wire_window_<service>.go files share while one editor window is built.
 // The state, the scenarios of notes and vaults and the installation are the window's own, and each
