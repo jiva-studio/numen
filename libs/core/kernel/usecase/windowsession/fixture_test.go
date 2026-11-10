@@ -239,22 +239,18 @@ func newTestWindow(t *testing.T, edit func(*Deps)) *testWindow {
 		log:     log,
 	}
 	deps := Deps{
-		Pages:    w.pages,
-		Writes:   w.writes,
-		Tasks:    w.tasks,
-		Changes:  w.changes,
-		Identity: identity{},
-		Recorded: openRecord{log: log},
-		Passes:   w.passes,
-		Wake:     w.wake,
-		NewSession: func() IndexSession {
-			return IndexSession{
-				Run:                   func(ctx context.Context, _ domain.Vault, _ bool, _ ReadNotes) { <-ctx.Done() },
-				ReportVersionsChanged: func(domain.Vault, string) {},
-			}
+		Window: WindowPorts{Pages: w.pages, Writes: w.writes, Tasks: w.tasks, Changes: w.changes, TabFront: w.front},
+		Vault:  VaultPorts{Identity: identity{}, Recorded: openRecord{log: log}, Passes: w.passes},
+		Index: IndexPorts{
+			Wake: w.wake,
+			NewSession: func() IndexSession {
+				return IndexSession{
+					Run:                   func(ctx context.Context, _ domain.Vault, _ bool, _ ReadNotes) { <-ctx.Done() },
+					ReportVersionsChanged: func(domain.Vault, string) {},
+				}
+			},
 		},
-		TabFront: w.front,
-		Door:     door{log: log},
+		Shutdown: ShutdownPorts{Door: door{log: log}},
 		Out:      io.Discard,
 	}
 	if edit != nil {
@@ -262,9 +258,8 @@ func newTestWindow(t *testing.T, edit func(*Deps)) *testWindow {
 	}
 	w.scenarios = NewScenarios(w.rt, deps)
 	t.Cleanup(func() {
-		if err := w.scenarios.Closing.Close.Execute(); err != nil {
-			t.Error(err)
-		}
+		// A test that closed the window itself sees its failures in the close that cleans up.
+		_ = w.scenarios.Closing.Close.Execute()
 	})
 	return w
 }

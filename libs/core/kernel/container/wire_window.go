@@ -127,24 +127,23 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		passes = w.wrap(passes)
 	}
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Pages:      state.Window,
-		Writes:     &state.Writing,
-		Tasks:      state.Window,
-		Changes:    &state.ChangeEvents,
-		Identity:   vault.NewCheckIdentity(w.cfg.VaultIdentity()),
-		Recorded:   moves.RecordOpen,
-		Passes:     passes,
-		Wake:       indexer,
-		NewSession: newIndexSession(indexer),
-		Texts:      w.cfg.getTextVersions(),
-		Triggers:   w.cfg.getTriggerSource(),
-		Model:      embedding,
-		TabFront:   &state.TabIDs,
-		Door:       state,
-		Closers: []windowsession.Closer{
-			windowsession.CloseFunc(state.ClosePlaying),
-			windowsession.CloseFunc(func(context.Context) error { return closeEmbedder() }),
-			windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
+		Window: windowsession.WindowPorts{
+			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
+		},
+		Vault: windowsession.VaultPorts{
+			Identity: vault.NewCheckIdentity(w.cfg.VaultIdentity()), Recorded: moves.RecordOpen, Passes: passes,
+			Texts: w.cfg.getTextVersions(),
+		},
+		Index: windowsession.IndexPorts{
+			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: w.cfg.getTriggerSource(), Model: embedding,
+		},
+		Shutdown: windowsession.ShutdownPorts{
+			Door: state,
+			Closers: []windowsession.Closer{
+				windowsession.CloseFunc(state.ClosePlaying),
+				windowsession.CloseFunc(func(context.Context) error { return closeEmbedder() }),
+				windowsession.CloseFunc(func(context.Context) error { return w.db.Close() }),
+			},
 		},
 		Out:           out,
 		EmbedderError: why,

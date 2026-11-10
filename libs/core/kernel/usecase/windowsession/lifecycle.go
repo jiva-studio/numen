@@ -20,7 +20,7 @@ type lifecycle struct {
 
 func (l *lifecycle) say(format string, a ...any) {
 	if _, err := fmt.Fprintf(l.deps.Out, format, a...); err != nil {
-		l.deps.Tasks.AddTask(work.Task{ID: writingDiagnostics, Title: "Writing diagnostics", Error: err.Error()})
+		l.deps.Window.Tasks.AddTask(work.Task{ID: writingDiagnostics, Title: "Writing diagnostics", Error: err.Error()})
 	}
 }
 
@@ -37,7 +37,7 @@ func (l *lifecycle) startVault(ctx context.Context, v domain.Vault, rebuild bool
 	}
 	// Recorded before the vault is built, so the next window opens on it. A failure
 	// to write the list is reported and does not stop the vault from opening.
-	if err := l.deps.Recorded.Execute(v.ID); err != nil {
+	if err := l.deps.Vault.Recorded.Execute(v.ID); err != nil {
 		l.say("not recording %s as the vault opened: %v\n", v.Name, err)
 	}
 	// Published last, so a request that reads a run reads the one belonging to the vault in front of it.
@@ -59,9 +59,9 @@ func (l *lifecycle) buildSession(ctx context.Context, v domain.Vault, rebuild bo
 	// What a plugin writes as a text version is cut where every other cut happens.
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
-	indexed := l.deps.NewSession()
-	if l.deps.Texts != nil {
-		l.deps.Texts.SetListener(versionChangeReporter{changes: l.deps.Changes, index: indexed})
+	indexed := l.deps.Index.NewSession()
+	if l.deps.Vault.Texts != nil {
+		l.deps.Vault.Texts.SetListener(versionChangeReporter{changes: l.deps.Window.Changes, index: indexed})
 	}
 
 	// Indexing every file again belongs to the vault this window was opened on,
@@ -78,12 +78,12 @@ func (l *lifecycle) startIndexing(
 ) (Started, func()) {
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
-	l.deps.Tasks.AddTask(work.Task{ID: work.WalkingNotes, Title: "Indexing the vault"})
+	l.deps.Window.Tasks.AddTask(work.Task{ID: work.WalkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
 
 	triggerPasses := newTriggerPasses()
-	started := l.deps.Passes.Start(ctx, v, rebuild, Reporters{
+	started := l.deps.Vault.Passes.Start(ctx, v, rebuild, Reporters{
 		Changed: l.newChangeReporter(triggerPasses, func(paths []string) { l.checkTexts(ctx, v, paths) }),
 		Failed:  l.reportFailure,
 	})
@@ -104,7 +104,7 @@ func (l *lifecycle) startIndexing(
 		indexed.Run(ctx, v, rebuild, started.Read)
 	})
 
-	if runTriggers := l.deps.Triggers.start(ctx, v, triggerPasses, func(err error) {
+	if runTriggers := l.deps.Index.Triggers.start(ctx, v, triggerPasses, func(err error) {
 		l.say("run the triggers of %s: %v\n", v.Name, err)
 	}); runTriggers != nil {
 		running.Go(runTriggers)
@@ -114,10 +114,10 @@ func (l *lifecycle) startIndexing(
 }
 
 func (l *lifecycle) checkTexts(ctx context.Context, v domain.Vault, paths []string) {
-	if l.deps.Texts == nil {
+	if l.deps.Vault.Texts == nil {
 		return
 	}
-	if err := l.deps.Texts.ReportFilesChanged(ctx, v, paths); err != nil {
+	if err := l.deps.Vault.Texts.ReportFilesChanged(ctx, v, paths); err != nil {
 		l.say("check the text versions of %s: %v\n", v.Name, err)
 	}
 }
@@ -141,20 +141,20 @@ func (l *lifecycle) newChangeReporter(
 		} else {
 			triggers.requestPaths(changePaths)
 		}
-		l.deps.Changes.Publish(window.Change{Paths: changePaths, ShouldReload: reload})
+		l.deps.Window.Changes.Publish(window.Change{Paths: changePaths, ShouldReload: reload})
 		checkTexts(changePaths)
-		if l.deps.Wake == nil {
+		if l.deps.Index.Wake == nil {
 			return
 		}
-		l.deps.Wake.ClearSkips(changePaths)
+		l.deps.Index.Wake.ClearSkips(changePaths)
 		if reload || len(assets) > 0 {
 			// A book added to an open vault is read without a request.
-			l.deps.Wake.WakeSources()
+			l.deps.Index.Wake.WakeSources()
 		}
 		if len(paths) > 0 {
 			// A written note is chunked again, and its chunks need new vectors. The index
 			// determines which.
-			l.deps.Wake.WakeNotes()
+			l.deps.Index.Wake.WakeNotes()
 		}
 	}
 }
@@ -177,10 +177,10 @@ func (l *lifecycle) resetStatus() {
 	l.rt.SetWatchError("")
 
 	for _, pass := range []string{work.WalkingNotes, work.IndexingTexts, work.MakingVectors, work.WordsAlone} {
-		l.deps.Tasks.RemoveTask(pass)
+		l.deps.Window.Tasks.RemoveTask(pass)
 	}
 	if l.deps.EmbedderError != nil {
-		l.deps.Tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: l.deps.EmbedderError.Error()})
+		l.deps.Window.Tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: l.deps.EmbedderError.Error()})
 	}
 }
 

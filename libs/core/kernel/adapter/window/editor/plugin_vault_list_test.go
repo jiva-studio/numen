@@ -30,10 +30,8 @@ const immediateBound = windowsession.FlushTimeout / 2
 func newPluginVaultList(o *editor.Installation) hostendpoint.VaultList {
 	scenarios := o.Vaults()
 	return windowsession.NewPluginVaults(&o.State.Runtime, windowsession.VaultOps{
-		Add:     scenarios.Change.Add,
+		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    scenarios.Registry.Find,
-		Rename:  scenarios.Change.Rename,
-		Remove:  scenarios.Change.Remove,
 		Missing: scenarios.Registry.FolderCheck,
 		Open:    o,
 	})

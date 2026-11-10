@@ -86,25 +86,25 @@ func (w wiring) startSession(
 	state.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Pages:    state.Window,
-		Writes:   &state.Writing,
-		Tasks:    state.Window,
-		Changes:  &state.ChangeEvents,
-		Identity: noIdentity{},
-		Recorded: noRecord{},
-		Passes:   windowsession.VaultPassesFunc(passes.StartVault),
-		Wake:     worker,
-		NewSession: func() windowsession.IndexSession {
-			indexed := worker.NewSession()
-			return windowsession.IndexSession{
-				Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
-					indexed.Run(ctx, v, rebuild, read)
-				},
-				ReportVersionsChanged: indexed.ReportVersionsChanged,
-			}
+		Window: windowsession.WindowPorts{
+			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
 		},
-		TabFront:     &state.TabIDs,
-		Door:         openDoor{},
+		Vault: windowsession.VaultPorts{
+			Identity: noIdentity{}, Recorded: noRecord{}, Passes: windowsession.VaultPassesFunc(passes.StartVault),
+		},
+		Index: windowsession.IndexPorts{
+			Wake: worker,
+			NewSession: func() windowsession.IndexSession {
+				indexed := worker.NewSession()
+				return windowsession.IndexSession{
+					Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
+						indexed.Run(ctx, v, rebuild, read)
+					},
+					ReportVersionsChanged: indexed.ReportVersionsChanged,
+				}
+			},
+		},
+		Shutdown:     windowsession.ShutdownPorts{Door: openDoor{}},
 		Out:          opts.out,
 		IsRebuilding: opts.rebuild,
 	})

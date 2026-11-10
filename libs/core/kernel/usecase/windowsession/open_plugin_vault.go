@@ -30,7 +30,7 @@ func (u OpenPluginVault) Execute(
 		return errNoVaultSwitch
 	}
 	deps := u.life.deps
-	if err := deps.Identity.Execute(v); err != nil {
+	if err := deps.Vault.Identity.Execute(v); err != nil {
 		return err
 	}
 	ctx, open, end, err := u.life.rt.guard.tryBeginPluginOpen(ctx)
@@ -38,7 +38,7 @@ func (u OpenPluginVault) Execute(
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, err)
 	}
 	defer end()
-	if deps.Pages.IsQuestionOpen() {
+	if deps.Window.Pages.IsQuestionOpen() {
 		return plugin.ErrUnsavedChanges
 	}
 	err = show(ctx, v, open)
@@ -46,8 +46,8 @@ func (u OpenPluginVault) Execute(
 	case err == nil:
 		return nil
 	case ctx.Err() != nil:
-		if !deps.Pages.IsQuestionOpen() {
-			deps.Pages.CancelFlush()
+		if !deps.Window.Pages.IsQuestionOpen() {
+			deps.Window.Pages.CancelFlush()
 		}
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, context.Cause(ctx))
 	case errors.Is(err, window.ErrAnswerPending):

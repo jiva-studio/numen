@@ -17,7 +17,7 @@ func (a *announcing) OnModelChange(fn func(isChunkSizeChanged bool)) { a.announc
 
 func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 	embedder := &announcing{name: "first", recipe: "mean-8"}
-	w := newTestWindow(t, func(deps *Deps) { deps.Model = embedder })
+	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
 	w.open(t, garden)
 
 	embedder.name, embedder.recipe = "second", "mean-16"
@@ -33,7 +33,7 @@ func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
 
 func TestAChangeOfTheChunkSizeBuildsThePassesOfTheVaultAgainOnce(t *testing.T) {
 	embedder := &announcing{}
-	w := newTestWindow(t, func(deps *Deps) { deps.Model = embedder })
+	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
 	w.open(t, garden)
 
 	embedder.announce(true)
@@ -45,7 +45,7 @@ func TestAChangeOfTheChunkSizeBuildsThePassesOfTheVaultAgainOnce(t *testing.T) {
 
 func TestAnAnnouncementWithTheSameChunkSizeBuildsNothingAgain(t *testing.T) {
 	embedder := &announcing{}
-	w := newTestWindow(t, func(deps *Deps) { deps.Model = embedder })
+	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
 	w.open(t, garden)
 
 	embedder.announce(false)
@@ -68,7 +68,7 @@ func TestAWindowWithoutAnEmbedderFollowsNothing(t *testing.T) {
 
 func TestAWindowThatShowsNoVaultBuildsNothingWhenTheChunkSizeChanges(t *testing.T) {
 	embedder := &announcing{}
-	w := newTestWindow(t, func(deps *Deps) { deps.Model = embedder })
+	w := newTestWindow(t, func(deps *Deps) { deps.Index.Model = embedder })
 	w.open(t, domainNoVault())
 
 	embedder.announce(true)

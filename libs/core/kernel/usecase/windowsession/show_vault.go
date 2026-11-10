@@ -26,7 +26,7 @@ func (u ShowVault) Execute(ctx context.Context, v domain.Vault, open *PluginOpen
 	if v.ID == rt.GetCurrentVault().ID {
 		return nil
 	}
-	if err := deps.Identity.Execute(v); err != nil {
+	if err := deps.Vault.Identity.Execute(v); err != nil {
 		return err
 	}
 	end, isInsidePluginOpen, err := rt.guard.tryBeginSwitch(open)
@@ -41,12 +41,12 @@ func (u ShowVault) Execute(ctx context.Context, v domain.Vault, open *PluginOpen
 	target, elapsed := context.WithTimeout(ctx, FlushTimeout)
 	defer elapsed()
 
-	if !flushPending(target, deps.Pages, deps.Writes) {
+	if !flushPending(target, deps.Window.Pages, deps.Window.Writes) {
 		return window.ErrAnswerPending
 	}
 	// A plugin's open canceled during the flush switches nothing.
 	if isInsidePluginOpen && ctx.Err() != nil {
-		deps.Writes.Open()
+		deps.Window.Writes.Open()
 		return context.Cause(ctx)
 	}
 
@@ -55,12 +55,12 @@ func (u ShowVault) Execute(ctx context.Context, v domain.Vault, open *PluginOpen
 	u.life.startVault(ctx, v, false)
 
 	// Writes are taken again: there is a vault to write in.
-	deps.Writes.Open()
+	deps.Window.Writes.Open()
 	// The round the settling was is over, and what a page holds from here is
 	// this vault's.
-	deps.Pages.CancelFlush()
+	deps.Window.Pages.CancelFlush()
 	// Every page's held content was read from the previous vault.
-	deps.Changes.Publish(window.Change{ShouldReload: true})
+	deps.Window.Changes.Publish(window.Change{ShouldReload: true})
 	return nil
 }
 

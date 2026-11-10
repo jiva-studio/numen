@@ -143,23 +143,44 @@ type TriggerSource struct {
 	Watch func() (<-chan struct{}, func())
 }
 
-// Deps is what the scenarios of one window reach the world through.
-type Deps struct {
-	Pages      Pages
-	Writes     Writes
-	Tasks      Tasks
-	Changes    Changes
-	Identity   IdentityCheck
-	Recorded   OpenRecord
-	Passes     VaultPasses
+// WindowPorts are the pages of the window, its writes and the lists and streams it shows.
+type WindowPorts struct {
+	Pages    Pages
+	Writes   Writes
+	Tasks    Tasks
+	Changes  Changes
+	TabFront TabFront
+}
+
+// VaultPorts are what starts and records the vault the window shows.
+type VaultPorts struct {
+	Identity IdentityCheck
+	Recorded OpenRecord
+	Passes   VaultPasses
+	// Texts is nil where the installation keeps no live text versions.
+	Texts TextVersions
+}
+
+// IndexPorts are what indexes the vault and follows the model it is read under.
+type IndexPorts struct {
 	Wake       IndexWake
 	NewSession func() IndexSession
-	Texts      TextVersions
 	Triggers   TriggerSource
 	Model      ModelSource
-	TabFront   TabFront
-	Door       Door
-	Closers    []Closer
+}
+
+// ShutdownPorts are what the window closes: the door first, then each resource in order.
+type ShutdownPorts struct {
+	Door    Door
+	Closers []Closer
+}
+
+// Deps is what the scenarios of one window reach the world through.
+type Deps struct {
+	Window   WindowPorts
+	Vault    VaultPorts
+	Index    IndexPorts
+	Shutdown ShutdownPorts
 
 	// Out receives the diagnostics of the window.
 	Out io.Writer

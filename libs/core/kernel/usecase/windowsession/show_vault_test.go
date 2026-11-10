@@ -72,7 +72,7 @@ func TestAPageAwaitingAnAnswerKeepsTheVaultInTheWindow(t *testing.T) {
 
 func TestAVaultThatIsNotTheOneItsFolderCarriesIsNotShown(t *testing.T) {
 	refused := errors.New("the folder holds another vault")
-	w := newTestWindow(t, func(deps *Deps) { deps.Identity = identity{refused: refused} })
+	w := newTestWindow(t, func(deps *Deps) { deps.Vault.Identity = identity{refused: refused} })
 	w.open(t, garden)
 
 	err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil)

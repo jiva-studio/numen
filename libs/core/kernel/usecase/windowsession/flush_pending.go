@@ -25,7 +25,7 @@ func (u FlushPending) Execute(ctx context.Context) bool {
 		return false
 	}
 
-	flushed := flushPending(ctx, deps.Pages, deps.Writes)
+	flushed := flushPending(ctx, deps.Window.Pages, deps.Window.Writes)
 	rt.guard.end(flushed)
 	return flushed
 }

@@ -21,13 +21,13 @@ func (u CloseWindow) Execute() error {
 	deps := u.life.deps
 	// Searches, note reads and link lookups read the index directly; the index
 	// closes after the last of them has finished.
-	deps.Door.Close()
+	deps.Shutdown.Door.Close()
 	u.life.stopVault()
 
 	bound, stop := context.WithTimeout(context.Background(), ShutdownBound)
 	defer stop()
 	var failures []error
-	for _, closer := range deps.Closers {
+	for _, closer := range deps.Shutdown.Closers {
 		failures = append(failures, closer.Close(bound))
 	}
 	return errors.Join(failures...)

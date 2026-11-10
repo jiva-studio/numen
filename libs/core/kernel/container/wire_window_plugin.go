@@ -37,10 +37,8 @@ func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installati
 func (c Config) SetEditorPluginVaultList(opened *editor.Installation) {
 	scenarios := opened.Vaults()
 	c.SetPluginVaultList(windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{
-		Add:     scenarios.Change.Add,
+		Edit:    windowsession.VaultEdits{Add: scenarios.Change.Add, Rename: scenarios.Change.Rename, Remove: scenarios.Change.Remove},
 		Find:    scenarios.Registry.Find,
-		Rename:  scenarios.Change.Rename,
-		Remove:  scenarios.Change.Remove,
 		Missing: scenarios.Registry.FolderCheck,
 		Open:    opened,
 	}))

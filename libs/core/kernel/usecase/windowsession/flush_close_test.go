@@ -48,8 +48,8 @@ func (c closing) Close(context.Context) error {
 func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t *testing.T) {
 	var log *eventLog
 	w := newTestWindow(t, func(deps *Deps) {
-		log = deps.Door.(door).log
-		deps.Closers = []Closer{closing{log: log, name: "socket"}, closing{log: log, name: "index"}}
+		log = deps.Shutdown.Door.(door).log
+		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket"}, closing{log: log, name: "index"}}
 	})
 	w.open(t, garden)
 
@@ -66,8 +66,8 @@ func TestClosingShutsTheDoorFirstThenStopsThePassesThenClosesResourcesInOrder(t 
 func TestClosingReportsEveryResourceThatFailedToClose(t *testing.T) {
 	socket, index := errors.New("the socket stays"), errors.New("the index is locked")
 	w := newTestWindow(t, func(deps *Deps) {
-		log := deps.Door.(door).log
-		deps.Closers = []Closer{closing{log: log, name: "socket", err: socket}, closing{log: log, name: "index", err: index}}
+		log := deps.Shutdown.Door.(door).log
+		deps.Shutdown.Closers = []Closer{closing{log: log, name: "socket", err: socket}, closing{log: log, name: "index", err: index}}
 	})
 	w.open(t, garden)
 

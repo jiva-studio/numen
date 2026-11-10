@@ -36,12 +36,17 @@ type VaultOpening interface {
 	OpenPluginVault(ctx context.Context, v domain.Vault) error
 }
 
+// VaultEdits are the operations that change the list of vaults.
+type VaultEdits struct {
+	Add    VaultAdd
+	Rename VaultRename
+	Remove VaultRemove
+}
+
 // VaultOps are the operations on the list of vaults that plugins reach.
 type VaultOps struct {
-	Add     VaultAdd
+	Edit    VaultEdits
 	Find    VaultFind
-	Rename  VaultRename
-	Remove  VaultRemove
 	Missing FolderCheck
 	Open    VaultOpening
 }
@@ -58,7 +63,7 @@ func NewPluginVaults(rt *Runtime, ops VaultOps) PluginVaults { return PluginVaul
 
 // AddVault adds the folder at the absolute root. An empty name means the folder's name.
 func (l PluginVaults) AddVault(_ context.Context, root, name string) (domain.Vault, error) {
-	return l.ops.Add.Execute(root, name)
+	return l.ops.Edit.Add.Execute(root, name)
 }
 
 // RenameVault renames the vault the id names.
@@ -67,12 +72,12 @@ func (l PluginVaults) RenameVault(ctx context.Context, id domain.VaultID, name s
 	if err != nil {
 		return domain.Vault{}, err
 	}
-	return l.ops.Rename.Execute(ctx, v, name)
+	return l.ops.Edit.Rename.Execute(ctx, v, name)
 }
 
 // RemoveVault removes the vault from the list and from the index, and does not delete its folder.
 func (l PluginVaults) RemoveVault(ctx context.Context, id domain.VaultID) error {
-	return l.ops.Remove.Execute(ctx, string(id), l.rt.GetCurrentVault().ID, false)
+	return l.ops.Edit.Remove.Execute(ctx, string(id), l.rt.GetCurrentVault().ID, false)
 }
 
 // OpenVault shows the vault the id names in the window.

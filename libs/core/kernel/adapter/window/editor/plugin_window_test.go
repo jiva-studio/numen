@@ -34,7 +34,8 @@ func newPluginWindow(
 	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, bound time.Duration,
 ) hostendpoint.WindowControl {
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
-		Tasks: state.Window, TabFront: &state.TabIDs, TabBound: bound,
+		Window:   windowsession.WindowPorts{Tasks: state.Window, TabFront: &state.TabIDs},
+		TabBound: bound,
 	})
 	return windowsession.NewPluginWindow(
 		&state.Runtime,

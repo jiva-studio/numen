@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"io/fs"
 	"slices"
 	"time"
 
@@ -28,9 +27,9 @@ func (u ShowTab) Execute(ctx context.Context, id string) (domain.OpenTabs, error
 	report := rt.openTabsReports.wait()
 	open := rt.GetOpenTabs()
 	if !slices.ContainsFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id }) {
-		return domain.OpenTabs{}, fmt.Errorf("editor: no open tab has id %q: %w", id, fs.ErrNotExist)
+		return domain.OpenTabs{}, fmt.Errorf("editor: %q: %w", id, plugin.ErrTabNotOpen)
 	}
-	deps.TabFront.Publish(id)
+	deps.Window.TabFront.Publish(id)
 	if open.ActiveID == id {
 		return open, nil
 	}

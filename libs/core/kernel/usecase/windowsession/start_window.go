@@ -18,7 +18,7 @@ type StartWindow struct {
 func (u StartWindow) Execute(ctx context.Context, first domain.Vault) {
 	if why := u.life.deps.EmbedderError; why != nil {
 		u.life.say("not embedding: %v\n", why)
-		u.life.deps.Tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: why.Error()})
+		u.life.deps.Window.Tasks.AddTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: why.Error()})
 	}
 	u.followModel()
 	u.life.startVault(ctx, first, u.life.deps.IsRebuilding)
@@ -28,13 +28,13 @@ func (u StartWindow) Execute(ctx context.Context, first domain.Vault) {
 // size changes, because the notes are then cut again.
 func (u StartWindow) followModel() {
 	deps := u.life.deps
-	if deps.Model == nil {
+	if deps.Index.Model == nil {
 		return
 	}
-	deps.Model.OnModelChange(func(isChunkSizeChanged bool) {
-		u.life.rt.RecordModel(deps.Model.Describe())
-		if deps.Wake != nil {
-			deps.Wake.WakeSources()
+	deps.Index.Model.OnModelChange(func(isChunkSizeChanged bool) {
+		u.life.rt.RecordModel(deps.Index.Model.Describe())
+		if deps.Index.Wake != nil {
+			deps.Index.Wake.WakeSources()
 		}
 		if isChunkSizeChanged {
 			u.rebuild.Execute()
