@@ -10,7 +10,7 @@ import type { Tab, Workspace } from '@numen/workbench'
 import { ref, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'
-import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
+import type { Model, PluginInfo } from '@/entities/settings'
 import { findTabKindIcon, SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/testing/installation'
 
@@ -138,9 +138,7 @@ const SHELL_SETTINGS: Installation['settings'] = {
     file: ref('/numen.json'),
 }
 
-const SHELL_PLUGIN: Installation['plugin'] = {
-    ...DEFAULTS.plugin,
-    app: ref<readonly PluginSettingInfo[]>([
+const APP_SETTINGS: Installation['plugin']['app'] = ref([
       {
         key: 'appearance.theme',
         type: 'enum',
@@ -170,7 +168,11 @@ const SHELL_PLUGIN: Installation['plugin'] = {
         isShown: true,
         value: 1.25,
       },
-    ]),
+])
+
+const SHELL_PLUGIN: Installation['plugin'] = {
+    ...DEFAULTS.plugin,
+    app: APP_SETTINGS,
     retryPlugin: () => {
       DONE.push('plugin retried')
     },
