@@ -1,5 +1,17 @@
 package vault
 
+import (
+	"context"
+	"time"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+
+	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
 func (e *watchCalls) WatchMoves(
 	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
 ) error {
@@ -82,4 +94,3 @@ func followVault(
 		}
 	}
 }
-

@@ -1,5 +1,16 @@
 package vault
 
+import (
+	"context"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+
+	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
 func writeLink(l domain.ResolvedLink) *v1.HostLink {
 	return &v1.HostLink{
 		From:         l.From,
@@ -168,4 +179,3 @@ func (e *lookupsCalls) ResolveLinks(
 	}
 	return connect.NewResponse(&v1.ResolveLinksResponse{Links: links}), nil
 }
-

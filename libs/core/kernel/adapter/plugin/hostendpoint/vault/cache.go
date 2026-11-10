@@ -1,5 +1,14 @@
 package vault
 
+import (
+	"context"
+
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+
+	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+)
+
 func (e *cacheCalls) ReadCache(
 	ctx context.Context, req *connect.Request[v1.ReadCacheRequest],
 ) (*connect.Response[v1.ReadCacheResponse], error) {
@@ -31,4 +40,3 @@ func (e *cacheCalls) WriteCache(
 	code, err := answer(ctx, vault.Cache.WriteCache(ctx, pluginID, req.Msg.GetName(), req.Msg.GetContent()))
 	return connect.NewResponse(&v1.WriteCacheResponse{Error: code}), err
 }
-
