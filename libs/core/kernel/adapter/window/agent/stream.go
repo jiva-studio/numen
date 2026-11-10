@@ -1,5 +1,4 @@
-// Package wire translates between internal core types and protocol wire types.
-package wire
+package agent
 
 import (
 	"context"
@@ -12,28 +11,24 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 )
 
-// StreamAgentTask passes one task to the agent and writes its output to the
-// stream while the client is connected. The work stops on return, so none
-// outlives the panel that requested it.
-// A model that thinks for a minute writes nothing and a silent stream never
-// detects a disconnect, so a content-free step is sent; a failed write ends the work.
-func StreamAgentTask(
+func streamTask(
 	ctx context.Context,
-	taking agentport.Agent,
-	task agent.Task,
+	start *agentuse.StartTask,
+	task agentdomain.Task,
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) (err error) {
-	work, err := taking.StartRun(ctx, task)
+	work, err := start.Execute(ctx, task)
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}
 	defer func() { err = errors.Join(err, work.Stop()) }()
 
-	repeat := time.NewTicker(Again)
+	repeat := time.NewTicker(wire.Again)
 	defer repeat.Stop()
 
 	for {
@@ -44,7 +39,7 @@ func StreamAgentTask(
 			if err := stream.Send(&v1.AskAgentResponse{}); err != nil {
 				return err
 			}
-		case step, working := <-work.GetSteps():
+		case step, working := <-work.Steps:
 			if !working {
 				return finishStream(stream, "done")
 			}
@@ -55,7 +50,7 @@ func StreamAgentTask(
 	}
 }
 
-func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agent.Step) (bool, error) {
+func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentdomain.Step) (bool, error) {
 	if step.Kind == domain.StepStop {
 		return true, finishStream(stream, step.Detail)
 	}
@@ -77,7 +72,7 @@ func finishStream(stream *connect.ServerStream[v1.AskAgentResponse], detail stri
 	return stream.Send(&v1.AskAgentResponse{})
 }
 
-func convertSteps(step agent.Step) []*v1.AskAgentResponse {
+func convertSteps(step agentdomain.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case domain.StepToolCall, domain.StepRead, domain.StepEdit,
 		domain.StepRemove, domain.StepMove, domain.StepSearch:

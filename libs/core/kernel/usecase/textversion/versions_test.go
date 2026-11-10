@@ -189,7 +189,7 @@ func TestCreateEditMakesANewLiveVersionInTheEditingPluginsFolder(t *testing.T) {
 	a := s.getReaderVersion()
 	s.listener.take()
 
-	edit, err := s.versions.CreateEdit(t.Context(), s.vault, textversion.TextEdit{
+	edit, err := s.versions.CreateEdit(t.Context(), s.vault, textdomain.Edit{
 		PluginID: player, Path: scanPath, Source: a,
 		Segments: []domain.TextSegment{{Text: "layer the ", Selector: `{"page":1}`}},
 	})
@@ -204,7 +204,7 @@ func TestCreateEditMakesANewLiveVersionInTheEditingPluginsFolder(t *testing.T) {
 		t.Fatalf("the edit reported %v, want one change of %s", got, scanPath)
 	}
 
-	again, err := s.versions.CreateEdit(t.Context(), s.vault, textversion.TextEdit{
+	again, err := s.versions.CreateEdit(t.Context(), s.vault, textdomain.Edit{
 		PluginID: player, Path: scanPath, Source: edit.GetID(), Segments: []domain.TextSegment{{Text: "the layer"}},
 	})
 	if err != nil {
@@ -218,7 +218,7 @@ func TestCreateEditMakesANewLiveVersionInTheEditingPluginsFolder(t *testing.T) {
 
 func TestCreateEditRejectsASourceTheFileDoesNotHave(t *testing.T) {
 	s := newScene(t)
-	_, err := s.versions.CreateEdit(t.Context(), s.vault, textversion.TextEdit{PluginID: player, Path: scanPath, Source: "x/y"})
+	_, err := s.versions.CreateEdit(t.Context(), s.vault, textdomain.Edit{PluginID: player, Path: scanPath, Source: "x/y"})
 	if !errors.Is(err, textdomain.ErrNoText) {
 		t.Fatalf("got %v, want ErrNoText", err)
 	}

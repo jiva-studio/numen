@@ -9,7 +9,7 @@ import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useVaults } from './useVaults'
-import { WORDS } from '@/shared/words'
+import { WINDOW_WORDS } from './words'
 
 const TWO = {
   vaults: [
@@ -31,7 +31,6 @@ const open = () => {
     windowService: { getCurrentVault: () => ({ vault: TWO.showing }) },
   })
   return useVaults({
-    words: WORDS,
     log: { getWriter: () => vi.fn() } as never,
     chunks: ref(0),
     embedded: ref(0),
@@ -103,7 +102,6 @@ describe('the vault list before and after it is requested for', () => {
       windowService: { getCurrentVault: () => ({ vault: 'roots' }) },
     })
     const target = useVaults({
-      words: WORDS,
       log: { getWriter } as never,
       chunks: ref(0),
       embedded: ref(0),
@@ -113,7 +111,7 @@ describe('the vault list before and after it is requested for', () => {
     await target.loadVaults()
 
     expect(getWriter).toHaveBeenCalledWith('listed')
-    expect(write).toHaveBeenCalledWith(WORDS.unlistedVaults, 'error')
+    expect(write).toHaveBeenCalledWith(WINDOW_WORDS.unlistedVaults, 'error')
     expect(target.vaultList.value).toEqual({ vaults: [], showing: '' })
   })
 })

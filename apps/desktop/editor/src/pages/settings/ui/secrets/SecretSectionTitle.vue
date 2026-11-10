@@ -134,18 +134,22 @@ function getNameProblemText(): string {
 
 <style scoped>
 .secret-title {
+  --gap: 0.25rem;
+  --pad-end: 0.375rem;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding-block-end: 0.375rem;
+  gap: var(--gap);
+  padding-block-end: var(--pad-end);
 }
 
 .secret-title__text {
-  margin-inline-end: 0.5rem;
+  --margin-end: 0.5rem;
+  --gap: 0.125rem;
+  margin-inline-end: var(--margin-end);
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--gap);
   min-inline-size: 0;
 }
 

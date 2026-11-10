@@ -17,6 +17,15 @@ type ContentHash struct {
 	HashTime time.Time
 }
 
+// Edit is a user's edit of a version of a file: the edited segments, derived from Source in the
+// view of PluginID.
+type Edit struct {
+	PluginID string
+	Path     string
+	Source   domain.TextVersionID
+	Segments []domain.TextSegment
+}
+
 // File is the segments of a version file and the hash of its bytes.
 type File struct {
 	Segments []domain.TextSegment

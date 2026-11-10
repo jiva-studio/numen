@@ -21,11 +21,12 @@ const props = defineProps<{
 <style scoped>
 /* A failure carries filesystem paths, and a long one breaks at its current position. */
 .failure {
+  --max-width: 40rem;
   margin: auto;
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   color: var(--numen-alarm);
-  max-width: 40rem;
+  max-width: var(--max-width);
   text-align: center;
   overflow-wrap: break-word;
 }

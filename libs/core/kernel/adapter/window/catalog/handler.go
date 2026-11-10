@@ -1,6 +1,6 @@
-// Package plugincatalog answers a window's CatalogService: the plugins the application has, the ones
+// Package catalog answers a window's CatalogService: the plugins the application has, the ones
 // it could have, and the plugin that provides a kind of tab.
-package plugincatalog
+package catalog
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 )
 
 // Catalog is the plugins the application lists and finds.
-type Catalog = interface {
+type Catalog interface {
 	List(ctx context.Context) (catalog.Listing, error)
 	Get(ctx context.Context, id string) (catalog.Entry, error)
 	FindByTabKind(ctx context.Context, kind string) (catalog.Entry, error)

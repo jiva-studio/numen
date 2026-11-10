@@ -95,11 +95,14 @@ function onKeepFocus(event: KeyboardEvent): void {
 }
 
 .confirm-dialog {
+  --gap: 0.75rem;
+  --max-width: 28rem;
+  --pad: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  max-inline-size: 28rem;
-  padding: 1rem;
+  gap: var(--gap);
+  max-inline-size: var(--max-width);
+  padding: var(--pad);
   border: 1px solid var(--numen-field-border);
   border-radius: var(--numen-radius);
   background: var(--numen-raised);
@@ -118,8 +121,9 @@ function onKeepFocus(event: KeyboardEvent): void {
 }
 
 .confirm-dialog__actions {
+  --gap: 0.375rem;
   display: flex;
   justify-content: flex-end;
-  gap: 0.375rem;
+  gap: var(--gap);
 }
 </style>

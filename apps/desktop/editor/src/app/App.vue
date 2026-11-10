@@ -22,6 +22,7 @@ import { createWindow } from './window/createWindow'
 import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
+import { WINDOW_WORDS } from './window/words'
 import { WORDS as note } from '@/entities/note'
 
 /* --------------------------------- State ---------------------------------- */
@@ -96,7 +97,7 @@ function onShowTab(id: string) {
 <template>
   <!-- The window is drawn once the plugins of the window slots have started or the wait for them has
        passed, so the layout does not move when the bar is drawn. -->
-  <LoadingIndicator v-if="!isStarted" class="starting" :label="words.appName" />
+  <LoadingIndicator v-if="!isStarted" class="starting" :label="WINDOW_WORDS.appName" />
 
   <main v-else :class="{ 'is-highlighted': isHighlighted }">
     <SlotViewHost :view="titleBarView" />
@@ -194,11 +195,12 @@ main {
 
 /* Another window offers to move a tab into this one. */
 main.is-highlighted::after {
+  --ring-width: 0.1875rem;
   content: '';
   position: fixed;
   inset: 0;
   z-index: var(--numen-lift-menu);
-  border: 3px solid var(--numen-accent);
+  border: var(--ring-width) solid var(--numen-accent);
   border-radius: var(--numen-window-radius);
   pointer-events: none;
 }
@@ -213,8 +215,9 @@ main.is-highlighted::after {
 }
 
 .tab-menu-icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --size: 0.875rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   stroke-width: 1.75;
 }
 

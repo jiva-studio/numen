@@ -27,7 +27,7 @@ func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
-	agentRoute, agent := numenv1connect.NewAgentServiceHandler(&wire.AgentHandler{GetAgent: a.GetAgent})
+	agentRoute, agentServed := numenv1connect.NewAgentServiceHandler(a.getAgent())
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.ListVaults})
 	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks, list: a.ListVaults})
 	routes := []route{{windowRoute, window}, {pluginsRoute, plugins}}
@@ -35,7 +35,7 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		themesRoute, themes := numenv1connect.NewThemeServiceHandler(a.Themes)
 		routes = append(routes, route{themesRoute, themes})
 	}
-	routes = append(routes, route{agentRoute, agent}, route{vaultsRoute, vaults}, route{notesRoute, notes})
+	routes = append(routes, route{agentRoute, agentServed}, route{vaultsRoute, vaults}, route{notesRoute, notes})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", getPolicy())
@@ -47,6 +47,13 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 		}
 		a.serveOther(w, r, files)
 	})
+}
+
+func (a *API) getAgent() numenv1connect.AgentServiceHandler {
+	if a.Agent == nil {
+		return numenv1connect.UnimplementedAgentServiceHandler{}
+	}
+	return a.Agent
 }
 
 // route is a prefix of the request path and the handler that answers it.
