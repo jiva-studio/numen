@@ -34,7 +34,7 @@ type textCall struct {
 }
 
 func (e *textEndpoint) begin(header http.Header, permission string) (textCall, error) {
-	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
+	pluginID, err := e.endpoint.Authorize(header.Get("Authorization"), permission)
 	if err != nil {
 		return textCall{}, err
 	}

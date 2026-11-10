@@ -1,4 +1,4 @@
-package hostendpoint
+package vault
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func readRole(role v1.Role) domain.LinkRole {
 	return domain.LinkRole(role.String())
 }
 
-func (e *vaultEndpoint) AddLinks(
+func (e *arrangeCalls) AddLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceAddLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceAddLinksResponse], error) {
 	if len(req.Msg.GetLinks()) > batchLimit {
@@ -45,7 +45,7 @@ func (e *vaultEndpoint) AddLinks(
 			Type: one.GetType(), Label: one.GetLabel(), Why: one.GetNote(),
 		}}
 	}
-	added, err := vault.AddLinks(ctx, additions)
+	added, err := vault.LinkEditor.AddLinks(ctx, additions)
 	if err != nil {
 		_, code, callErr := splitNoteError(ctx, err)
 		if callErr == nil && code == 0 {
@@ -70,7 +70,7 @@ func (e *vaultEndpoint) AddLinks(
 	return connect.NewResponse(out), nil
 }
 
-func (e *vaultEndpoint) UpdateLinks(
+func (e *arrangeCalls) UpdateLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceUpdateLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -82,7 +82,7 @@ func (e *vaultEndpoint) UpdateLinks(
 	}
 	m := req.Msg
 	change := domain.Link{Role: readRole(m.GetRole()), Type: m.GetType(), Label: m.GetLabel(), Why: m.GetNote()}
-	stat, err := vault.UpdateLinks(ctx, m.GetFrom(), domain.ParseAddress(m.GetTo()), change, readFileStat(m.GetBaseline()))
+	stat, err := vault.LinkEditor.UpdateLinks(ctx, m.GetFrom(), domain.ParseAddress(m.GetTo()), change, readFileStat(m.GetBaseline()))
 	entry, code, callErr := writeLinkEdit(ctx, stat, err)
 	if callErr != nil || code != 0 {
 		return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Error: code}), callErr
@@ -90,7 +90,7 @@ func (e *vaultEndpoint) UpdateLinks(
 	return connect.NewResponse(&v1.HostVaultServiceUpdateLinksResponse{Stat: entry.stat, Error: entry.code, Detail: entry.detail}), nil
 }
 
-func (e *vaultEndpoint) RemoveLinks(
+func (e *arrangeCalls) RemoveLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -101,7 +101,7 @@ func (e *vaultEndpoint) RemoveLinks(
 		return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Error: noVault}), nil
 	}
 	m := req.Msg
-	stat, err := vault.RemoveLinks(ctx, m.GetFrom(), domain.ParseAddress(m.GetTo()), readRole(m.GetRole()), readFileStat(m.GetBaseline()))
+	stat, err := vault.LinkEditor.RemoveLinks(ctx, m.GetFrom(), domain.ParseAddress(m.GetTo()), readRole(m.GetRole()), readFileStat(m.GetBaseline()))
 	entry, code, callErr := writeLinkEdit(ctx, stat, err)
 	if callErr != nil || code != 0 {
 		return connect.NewResponse(&v1.HostVaultServiceRemoveLinksResponse{Error: code}), callErr

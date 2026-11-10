@@ -1,4 +1,4 @@
-package hostendpoint
+package vault
 
 import (
 	"context"
@@ -50,7 +50,7 @@ func checkBatch(paths []string) error {
 	return nil
 }
 
-func (e *vaultEndpoint) GetVaultProblems(
+func (e *arrangeCalls) GetVaultProblems(
 	ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
 ) (*connect.Response[v1.GetVaultProblemsResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
@@ -64,7 +64,7 @@ func (e *vaultEndpoint) GetVaultProblems(
 	for _, one := range req.Msg.GetChecks() {
 		checks = append(checks, domain.Check(one))
 	}
-	checkNames, problems, err := vault.GetProblems(ctx, checks)
+	checkNames, problems, err := vault.Arranger.GetProblems(ctx, checks)
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetVaultProblemsResponse{Error: code}), err
@@ -85,7 +85,7 @@ func (e *vaultEndpoint) GetVaultProblems(
 	return connect.NewResponse(out), nil
 }
 
-func (e *vaultEndpoint) RenameNote(
+func (e *arrangeCalls) RenameNote(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -95,7 +95,7 @@ func (e *vaultEndpoint) RenameNote(
 	if vault == nil {
 		return connect.NewResponse(&v1.HostVaultServiceRenameNoteResponse{Error: noVault}), nil
 	}
-	newPath, isFilenamed, move, err := vault.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
+	newPath, isFilenamed, move, err := vault.Arranger.RenameNote(ctx, req.Msg.GetPath(), req.Msg.GetTitle())
 	// A note whose file was moved to the new name is renamed, even if a later step failed.
 	if err != nil && move == nil {
 		noteCode, code, callErr := splitNoteError(ctx, err)
@@ -118,7 +118,7 @@ func (e *vaultEndpoint) RenameNote(
 	return connect.NewResponse(out), nil
 }
 
-func (e *vaultEndpoint) MoveNotes(
+func (e *arrangeCalls) MoveNotes(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceMoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceMoveNotesResponse], error) {
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
@@ -133,7 +133,7 @@ func (e *vaultEndpoint) MoveNotes(
 	}
 	out := &v1.HostVaultServiceMoveNotesResponse{Moves: make([]*v1.HostNoteMove, 0, len(req.Msg.GetPaths()))}
 	for _, from := range req.Msg.GetPaths() {
-		entry, code, err := moveNote(ctx, vault, from, req.Msg.GetFolder())
+		entry, code, err := moveNote(ctx, vault.Arranger, from, req.Msg.GetFolder())
 		if err != nil || code != 0 {
 			return connect.NewResponse(&v1.HostVaultServiceMoveNotesResponse{Error: code}), err
 		}
@@ -164,7 +164,7 @@ func moveNote(ctx context.Context, vault Arranger, from, folder string) (*v1.Hos
 	return &v1.HostNoteMove{Move: &v1.MoveResult{From: from}, Error: noteCode, Detail: err.Error()}, 0, nil
 }
 
-func (e *vaultEndpoint) RemoveNotes(
+func (e *arrangeCalls) RemoveNotes(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveNotesResponse], error) {
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
@@ -179,7 +179,7 @@ func (e *vaultEndpoint) RemoveNotes(
 	}
 	out := &v1.HostVaultServiceRemoveNotesResponse{Removals: make([]*v1.HostNoteRemoval, 0, len(req.Msg.GetPaths()))}
 	for _, target := range req.Msg.GetPaths() {
-		entry, code, err := removeNote(ctx, vault, target)
+		entry, code, err := removeNote(ctx, vault.Arranger, target)
 		if err != nil || code != 0 {
 			return connect.NewResponse(&v1.HostVaultServiceRemoveNotesResponse{Error: code}), err
 		}
@@ -213,3 +213,25 @@ func removeNote(ctx context.Context, vault Arranger, target string) (*v1.HostNot
 func isCancelled(ctx context.Context) bool {
 	return ctx.Err() != nil
 }
+func (e *arrangeCalls) GetParseProblems(
+	ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest],
+) (*connect.Response[v1.GetParseProblemsResponse], error) {
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
+	if err != nil {
+		return nil, err
+	}
+	if vault == nil {
+		return connect.NewResponse(&v1.GetParseProblemsResponse{Error: noVault}), nil
+	}
+	target, err := vault.Arranger.GetParseProblems(ctx)
+	code, err := answer(ctx, err)
+	if err != nil || code != 0 {
+		return connect.NewResponse(&v1.GetParseProblemsResponse{Error: code}), err
+	}
+	problems := make([]*v1.HostParseProblem, 0, len(target))
+	for _, one := range target {
+		problems = append(problems, &v1.HostParseProblem{Path: one.Path, Detail: one.Detail})
+	}
+	return connect.NewResponse(&v1.GetParseProblemsResponse{Problems: problems}), nil
+}
+

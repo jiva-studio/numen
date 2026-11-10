@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -203,7 +204,7 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 }
 
 func newArrangeClient(
-	t *testing.T, list VaultList, granted ...string,
+	t *testing.T, list vaultapi.List, granted ...string,
 ) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
 	t.Helper()
 	vault := newFakeNoteVault()

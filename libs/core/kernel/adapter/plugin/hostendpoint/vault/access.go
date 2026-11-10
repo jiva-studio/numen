@@ -1,4 +1,4 @@
-package hostendpoint
+package vault
 
 import (
 	"context"
@@ -91,18 +91,18 @@ type RelatedNotes interface {
 	CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error)
 }
 
-// VaultWatch follows the changes of the vault.
-type VaultWatch interface {
+// Watch follows the changes of the vault.
+type Watch interface {
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
 	Watch(ctx context.Context) (changes <-chan []string, lost <-chan struct{}, err error)
 }
 
-// VaultSwitch names the vault a call works and the vaults the installation lists.
-type VaultSwitch interface {
+// Switch names the vault a call works and the vaults the installation lists.
+type Switch interface {
 	GetVault() (domain.Vault, bool)
 	GetVaults() ([]domain.Vault, error)
 	// With returns the capabilities over the vault with the identity.
-	With(id domain.VaultID) (*VaultAccess, error)
+	With(id domain.VaultID) (*Access, error)
 	EnsureIndexed(ctx context.Context) (plugin.IndexState, error)
 }
 
@@ -134,20 +134,35 @@ type CacheStore interface {
 	WriteCache(ctx context.Context, pluginID, name string, content []byte) error
 }
 
-// VaultAccess is the open vault as the host exposes it to a plugin: its files, the index data of its
+// Access is the open vault as the host exposes it to a plugin: its files, the index data of its
 // notes and links, the plugin's folder in its store, and the cache the installation keeps for a plugin.
 // Each handler uses the capabilities it needs.
-type VaultAccess struct {
-	NoteLookup
-	LinkLookup
-	FileReader
-	FileWriter
-	Arranger
-	LinkEditor
-	Connections
-	RelatedNotes
-	VaultWatch
-	VaultSwitch
-	StoreOpener
-	CacheStore
+type Access struct {
+	Notes       NoteLookup
+	Links       LinkLookup
+	Files       FileReader
+	Writer      FileWriter
+	Arranger    Arranger
+	LinkEditor  LinkEditor
+	Connections Connections
+	Related     RelatedNotes
+	Watch       Watch
+	Switch      Switch
+	Stores      StoreOpener
+	Cache       CacheStore
+}
+
+// List is the installation's list of vaults and the vault the window shows, changed by the
+// plugins that have vault:manage. The window provides it; a host with no window has none.
+type List interface {
+	// AddVault adds the folder at the absolute root. An empty name means the folder's name.
+	AddVault(ctx context.Context, root, name string) (domain.Vault, error)
+	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
+	// RemoveVault removes the vault from the list and from the index. The folder stays.
+	RemoveVault(ctx context.Context, id domain.VaultID) error
+	// OpenVault shows the vault in the window and returns once the window shows it. A rejected open
+	// returns plugin.ErrUnsavedChanges, ErrUnavailable, or an unknown-vault error.
+	OpenVault(ctx context.Context, id domain.VaultID) error
+	// IsMissing reports whether the vault's folder is missing.
+	IsMissing(v domain.Vault) bool
 }

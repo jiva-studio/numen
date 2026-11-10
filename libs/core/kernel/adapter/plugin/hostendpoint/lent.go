@@ -1,6 +1,10 @@
 package hostendpoint
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+)
 
 // Services holds what the host lends to the plugins that call it: the completer, the vault, the
 // texts, the window, the list of vaults, the search and the queue of work. What is not set is
@@ -8,10 +12,10 @@ import "sync"
 type Services struct {
 	mu        sync.RWMutex
 	completer Completer
-	vault     *VaultAccess
+	access    *vault.Access
 	texts     TextVersions
 	window    WindowControl
-	vaultList VaultList
+	vaultList vault.List
 	search    *SearchAccess
 	work      WorkQueue
 }
@@ -34,17 +38,17 @@ func (s *Services) GetCompleter() Completer {
 }
 
 // SetPluginVault sets the vault exposed to plugins. Nil means none.
-func (s *Services) SetPluginVault(vault *VaultAccess) {
+func (s *Services) SetPluginVault(access *vault.Access) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.vault = vault
+	s.access = access
 }
 
 // GetPluginVault returns the vault exposed to plugins, or nil.
-func (s *Services) GetPluginVault() *VaultAccess {
+func (s *Services) GetPluginVault() *vault.Access {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.vault
+	return s.access
 }
 
 // SetPluginTexts sets the text versions the plugins work through the host.
@@ -76,14 +80,14 @@ func (s *Services) GetPluginWindow() WindowControl {
 }
 
 // SetPluginVaultList sets the list of vaults exposed to plugins. Nil means none.
-func (s *Services) SetPluginVaultList(list VaultList) {
+func (s *Services) SetPluginVaultList(list vault.List) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.vaultList = list
 }
 
 // GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
-func (s *Services) GetPluginVaultList() VaultList {
+func (s *Services) GetPluginVaultList() vault.List {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.vaultList

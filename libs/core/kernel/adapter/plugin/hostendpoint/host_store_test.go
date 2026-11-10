@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"errors"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,11 +33,11 @@ func (m *memoryVault) openFolder(pluginID string) (derivedfile.PluginFolder, err
 	return derivedfile.PluginStores{}.OpenWriter(domain.Vault{ID: m.vault.ID, Path: m.storeRoot}, pluginID)
 }
 
-func (m *memoryVault) OpenStore(pluginID string) (StoreReader, error) {
+func (m *memoryVault) OpenStore(pluginID string) (vaultapi.StoreReader, error) {
 	return m.openFolder(pluginID)
 }
 
-func (m *memoryVault) OpenStoreWriter(pluginID string) (StoreWriter, error) {
+func (m *memoryVault) OpenStoreWriter(pluginID string) (vaultapi.StoreWriter, error) {
 	return m.openFolder(pluginID)
 }
 

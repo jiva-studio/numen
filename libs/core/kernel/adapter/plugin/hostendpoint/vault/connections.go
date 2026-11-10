@@ -1,4 +1,4 @@
-package hostendpoint
+package vault
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 
 const invalidConnection = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION
 
-func (e *vaultEndpoint) GetConnection(
+func (e *connectionsCalls) GetConnection(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceGetConnectionRequest],
 ) (*connect.Response[v1.HostVaultServiceGetConnectionResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
@@ -24,7 +24,7 @@ func (e *vaultEndpoint) GetConnection(
 	if vault == nil {
 		return connect.NewResponse(&v1.HostVaultServiceGetConnectionResponse{Error: noVault}), nil
 	}
-	found, err := vault.GetConnection(ctx, req.Msg.GetFirst(), req.Msg.GetSecond(), req.Msg.GetType())
+	found, err := vault.Connections.GetConnection(ctx, req.Msg.GetFirst(), req.Msg.GetSecond(), req.Msg.GetType())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.HostVaultServiceGetConnectionResponse{Error: code}), err
@@ -34,7 +34,7 @@ func (e *vaultEndpoint) GetConnection(
 	}), nil
 }
 
-func (e *vaultEndpoint) SaveConnection(
+func (e *connectionsCalls) SaveConnection(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceSaveConnectionRequest],
 ) (*connect.Response[v1.HostVaultServiceSaveConnectionResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -47,12 +47,12 @@ func (e *vaultEndpoint) SaveConnection(
 	saving, convertErr := wire.ConvertConnectionFromWire(req.Msg.GetConnection())
 	code := invalidConnection
 	if convertErr == nil {
-		code, err = answer(ctx, vault.SaveConnection(ctx, saving))
+		code, err = answer(ctx, vault.Connections.SaveConnection(ctx, saving))
 	}
 	return connect.NewResponse(&v1.HostVaultServiceSaveConnectionResponse{Error: code}), err
 }
 
-func (e *vaultEndpoint) RemoveSide(
+func (e *connectionsCalls) RemoveSide(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveSideRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveSideResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -62,11 +62,11 @@ func (e *vaultEndpoint) RemoveSide(
 	if vault == nil {
 		return connect.NewResponse(&v1.HostVaultServiceRemoveSideResponse{Error: noVault}), nil
 	}
-	code, err := answer(ctx, vault.RemoveSide(ctx, req.Msg.GetPath(), req.Msg.GetTo(), req.Msg.GetType()))
+	code, err := answer(ctx, vault.Connections.RemoveSide(ctx, req.Msg.GetPath(), req.Msg.GetTo(), req.Msg.GetType()))
 	return connect.NewResponse(&v1.HostVaultServiceRemoveSideResponse{Error: code}), err
 }
 
-func (e *vaultEndpoint) RemoveConnection(
+func (e *connectionsCalls) RemoveConnection(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveConnectionRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveConnectionResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -76,11 +76,11 @@ func (e *vaultEndpoint) RemoveConnection(
 	if vault == nil {
 		return connect.NewResponse(&v1.HostVaultServiceRemoveConnectionResponse{Error: noVault}), nil
 	}
-	code, err := answer(ctx, vault.RemoveConnection(ctx, req.Msg.GetFirst(), req.Msg.GetSecond(), req.Msg.GetType()))
+	code, err := answer(ctx, vault.Connections.RemoveConnection(ctx, req.Msg.GetFirst(), req.Msg.GetSecond(), req.Msg.GetType()))
 	return connect.NewResponse(&v1.HostVaultServiceRemoveConnectionResponse{Error: code}), err
 }
 
-func (e *vaultEndpoint) JoinNotes(
+func (e *connectionsCalls) JoinNotes(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceJoinNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceJoinNotesResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -93,12 +93,12 @@ func (e *vaultEndpoint) JoinNotes(
 	side, convertErr := wire.ConvertSideFromWire(req.Msg.GetSide())
 	code := invalidConnection
 	if convertErr == nil && side != nil {
-		code, err = answer(ctx, vault.Join(ctx, req.Msg.GetFrom(), req.Msg.GetTo(), *side))
+		code, err = answer(ctx, vault.Connections.Join(ctx, req.Msg.GetFrom(), req.Msg.GetTo(), *side))
 	}
 	return connect.NewResponse(&v1.HostVaultServiceJoinNotesResponse{Error: code}), err
 }
 
-func (e *vaultEndpoint) CreateRelatedNote(
+func (e *connectionsCalls) CreateRelatedNote(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error) {
 	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
@@ -120,7 +120,7 @@ func (e *vaultEndpoint) CreateRelatedNote(
 			Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CONNECTION,
 		}), nil
 	}
-	path, err := vault.CreateInRelation(ctx, domain.RelatedNote{
+	path, err := vault.Related.CreateInRelation(ctx, domain.RelatedNote{
 		From: req.Msg.GetFrom(), Role: role, Title: req.Msg.GetTitle(), Type: req.Msg.GetType(), Marker: marker,
 	})
 	code, err := answer(ctx, err)

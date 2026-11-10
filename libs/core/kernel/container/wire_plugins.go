@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
@@ -167,7 +168,7 @@ func (c Config) getPluginName(pluginID string) string {
 }
 
 // SetPluginVaultList sets the list of vaults exposed to plugins.
-func (c Config) SetPluginVaultList(list hostendpoint.VaultList) {
+func (c Config) SetPluginVaultList(list pluginvault.List) {
 	setPluginVaultList(c.plugins(), list)
 }
 
@@ -671,13 +672,13 @@ func pluginsGetPluginName(c pluginsWiring, pluginID string) string {
 	return pluginID
 }
 
-func setPluginVault(c pluginsWiring, v *hostendpoint.VaultAccess) {
+func setPluginVault(c pluginsWiring, v *pluginvault.Access) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVault(v)
 	}
 }
 
-func setPluginVaultList(c pluginsWiring, list hostendpoint.VaultList) {
+func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVaultList(list)
 	}
@@ -737,7 +738,7 @@ func installPluginVault(c pluginsWiring,
 
 func pluginsOpenPluginVault(c pluginsWiring,
 	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (*hostendpoint.VaultAccess, error) {
+) (*pluginvault.Access, error) {
 	cache, err := openPluginCache(c)
 	if err != nil {
 		return nil, err
@@ -755,50 +756,58 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		Creator: note.NewRelatedNoteCreator(scenarios),
 	}
 	arranger := hostvault.Arranger{
-		Notes:  getNoteChanges(scenarios),
-		Checks: getProblemChecks(vault.NewStandardGetProblems(db.Problems())),
+		Notes:    getNoteChanges(scenarios),
+		Checks:   getProblemChecks(vault.NewStandardGetProblems(db.Problems())),
+		Problems: db.Problems(),
 	}
 	if hasReaders(hooks.Notes) {
 		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
 	}
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
-		Current:     current,
-		Stat:        file.NewStatFile(c.VaultReaders),
-		ReadFile:    file.NewReadFile(c.VaultReaders),
-		RangeReader: file.Read{Readers: c.VaultReaders},
-		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
-		LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
-		Notes:       db.NoteRefs(),
-		Types:       db.NoteTypes(),
-		NamedPaths:  db.NamedPaths(),
-		TypedPaths:  db.TypedPaths(),
-		Links:       db.Links(),
+		Session: hostvault.Session{
+			Current:    current,
+			Vaults:     registry.Vaults.List,
+			Find:       findVault(registry),
+			IndexState: hooks.IndexState,
+			Moved:      hooks.Moved,
+			Written:    hooks.Written,
+		},
+		Files: hostvault.Files{
+			Stat:        file.NewStatFile(c.VaultReaders),
+			ReadFile:    file.NewReadFile(c.VaultReaders),
+			RangeReader: file.Read{Readers: c.VaultReaders},
+			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
+			LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
+			Index:       index,
+		},
+		Lookups: hostvault.Lookups{
+			Notes:      db.NoteRefs(),
+			Types:      db.NoteTypes(),
+			NamedPaths: db.NamedPaths(),
+			TypedPaths: db.TypedPaths(),
+			Links:      db.Links(),
+		},
 		Connections: connections,
-		Problems:    db.Problems(),
 		Arranger:    arranger,
-		StoreReaders: func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error) {
-			return stores.Open(v, pluginID)
+		Stores: hostvault.Stores{
+			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
+				return stores.Open(v, pluginID)
+			},
+			StoreWriters: func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
+				return stores.OpenWriter(v, pluginID)
+			},
+			Cache: cache,
 		},
-		StoreWriters: func(v domain.Vault, pluginID string) (hostendpoint.StoreWriter, error) {
-			return stores.OpenWriter(v, pluginID)
-		},
-		Cache:      cache,
-		Written:    hooks.Written,
-		Vaults:     registry.Vaults.List,
-		Find:       findVault(registry),
-		IndexState: hooks.IndexState,
-		Moved:      hooks.Moved,
-		Index:      index,
 	}
 	if c.VaultWatcher != nil {
-		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
+		vaults.Session.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
 	}
-	if vaults.IndexState == nil {
-		vaults.IndexState = getIndexState(db)
+	if vaults.Session.IndexState == nil {
+		vaults.Session.IndexState = getIndexState(db)
 	}
-	if vaults.Moved == nil {
-		vaults.Moved = c.Moves
+	if vaults.Session.Moved == nil {
+		vaults.Session.Moved = c.Moves
 	}
 	return vaults.Access(), nil
 }

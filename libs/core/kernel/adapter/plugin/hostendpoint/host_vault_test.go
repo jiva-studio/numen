@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -62,7 +63,7 @@ func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
 	return out, nil
 }
 
-func (m *memoryVault) With(id domain.VaultID) (*VaultAccess, error) {
+func (m *memoryVault) With(id domain.VaultID) (*vaultapi.Access, error) {
 	if m.vault != nil && m.vault.ID == id {
 		return vaultOf(m), nil
 	}

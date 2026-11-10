@@ -1,4 +1,4 @@
-package hostendpoint
+package vault
 
 import (
 	"context"
@@ -56,23 +56,23 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 	return 0, "", connect.NewError(connect.CodeInternal, err)
 }
 
-func (e *vaultEndpoint) beginList(header http.Header) (VaultList, error) {
-	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionVaultManage); err != nil {
+func (e *vaultsCalls) beginList(header http.Header) (List, error) {
+	if _, err := e.auth.Authorize(header.Get("Authorization"), manifest.PermissionVaultManage); err != nil {
 		return nil, err
 	}
-	list := e.endpoint.callers.Window.GetPluginVaultList()
+	list := e.source.GetPluginVaultList()
 	if list == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoVaultList)
 	}
 	return list, nil
 }
 
-func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
-	vault := e.endpoint.callers.Vault.GetPluginVault()
+func (e *vaultsCalls) findVault(id domain.VaultID) (domain.Vault, error) {
+	vault := e.source.GetPluginVault()
 	if vault == nil {
 		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), registry.ErrUnknown)
 	}
-	known, err := vault.GetVaults()
+	known, err := vault.Switch.GetVaults()
 	if err != nil {
 		return domain.Vault{}, err
 	}
@@ -88,7 +88,7 @@ func writeVault(v domain.Vault) *v1.Vault {
 	return &v1.Vault{Id: string(v.ID), Name: v.Name, Path: v.Path}
 }
 
-func (e *vaultEndpoint) AddVault(
+func (e *vaultsCalls) AddVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceAddVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceAddVaultResponse], error) {
 	list, err := e.beginList(req.Header())
@@ -106,7 +106,7 @@ func (e *vaultEndpoint) AddVault(
 	return connect.NewResponse(&v1.HostVaultServiceAddVaultResponse{Vault: writeVault(vault)}), nil
 }
 
-func (e *vaultEndpoint) RenameVault(
+func (e *vaultsCalls) RenameVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameVaultResponse], error) {
 	list, err := e.beginList(req.Header())
@@ -124,7 +124,7 @@ func (e *vaultEndpoint) RenameVault(
 	return connect.NewResponse(&v1.HostVaultServiceRenameVaultResponse{Vault: writeVault(vault)}), nil
 }
 
-func (e *vaultEndpoint) RemoveVault(
+func (e *vaultsCalls) RemoveVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveVaultResponse], error) {
 	list, err := e.beginList(req.Header())
@@ -149,7 +149,7 @@ func (e *vaultEndpoint) RemoveVault(
 
 // OpenVault returns once the window shows the vault or has rejected the open. A rejection for unsaved
 // changes returns UNSAVED with the window's message in detail.
-func (e *vaultEndpoint) OpenVault(
+func (e *vaultsCalls) OpenVault(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceOpenVaultRequest],
 ) (*connect.Response[v1.HostVaultServiceOpenVaultResponse], error) {
 	list, err := e.beginList(req.Header())

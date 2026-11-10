@@ -34,7 +34,7 @@ type searchCall struct {
 }
 
 func (e *searchEndpoint) begin(header http.Header, permission string, needsVault bool) (searchCall, error) {
-	if _, err := e.endpoint.authorize(header.Get("Authorization"), permission); err != nil {
+	if _, err := e.endpoint.Authorize(header.Get("Authorization"), permission); err != nil {
 		return searchCall{}, err
 	}
 	call := searchCall{search: e.endpoint.callers.Search.GetPluginSearch()}

@@ -3,6 +3,7 @@ package hostendpoint_test
 import (
 	"context"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"strings"
 	"testing"
@@ -39,11 +40,11 @@ func (noWindow) GetPluginWindow() hostendpoint.WindowControl { return nil }
 
 func (noWindow) GetPluginVaultList() hostendpoint.VaultList { return nil }
 
-type shownVault struct{ access *hostendpoint.VaultAccess }
+type shownVault struct{ access *vaultapi.Access }
 
-func (s shownVault) GetPluginVault() *hostendpoint.VaultAccess { return s.access }
+func (s shownVault) GetPluginVault() *vaultapi.Access { return s.access }
 
-func openReadEndpoint(t *testing.T, access *hostendpoint.VaultAccess) numenv1connect.HostVaultServiceClient {
+func openReadEndpoint(t *testing.T, access *vaultapi.Access) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
 		Identity: readerIdentity{}, Vault: shownVault{access: access}, Window: noWindow{},
