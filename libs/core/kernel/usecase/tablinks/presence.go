@@ -26,7 +26,6 @@ func newPresence() *presence {
 
 func (p *presence) hasWatch(windowID string) bool { return len(p.watches[windowID]) > 0 }
 
-// isLive is whether a window has a watch, or accepted a tab and waits for its watch.
 func (p *presence) isLive(windowID string) bool {
 	if p.hasWatch(windowID) {
 		return true
@@ -39,7 +38,6 @@ func (p *presence) addWatch(w *Watch) {
 	p.watches[w.windowID] = append(p.watches[w.windowID], w)
 }
 
-// removeWatch drops a watch and returns whether it was the last of its window.
 func (p *presence) removeWatch(w *Watch) bool {
 	rest := slices.DeleteFunc(p.watches[w.windowID], func(one *Watch) bool { return one == w })
 	if len(rest) > 0 {

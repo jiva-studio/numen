@@ -34,7 +34,6 @@ func (o *ownership) setOwner(windowID string, tab tablink.Tab) {
 	s.roster.removeFromWindow(previous.WindowID, tab.ID)
 }
 
-// acceptTab records a tab a window reported and returns false when another live window owns it.
 func (o *ownership) acceptTab(windowID string, tab tablink.Tab) bool {
 	s := o.state
 	previous, isKnown := s.roster.tabs[tab.ID]
@@ -75,8 +74,6 @@ func (o *ownership) moveClaimedTabs(ownerID string) {
 	}
 }
 
-// dropUnreportedGroupMates forgets the group mates a window left behind when it took a tab from another
-// window.
 func (o *ownership) dropUnreportedGroupMates(reported []string, takenFrom map[string]string) {
 	s := o.state
 	for tabID, oldWindowID := range takenFrom {

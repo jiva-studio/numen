@@ -36,7 +36,6 @@ func (r *roster) snapshotTabs() []tablink.Tab {
 	return out
 }
 
-// listWindows lists the windows with a watch, the main window first.
 func (r *roster) listWindows(isWatched func(windowID string) bool) []tablink.Window {
 	out := make([]tablink.Window, 0, len(r.windowOrder))
 	for _, id := range r.windowOrder {

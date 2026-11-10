@@ -42,7 +42,6 @@ func (e *expiries) expireWindow(windowID string, pending *expiry) {
 	s.removeWindow(windowID)
 }
 
-// keepAcceptingWindow keeps the tabs of a window that has no watch until its grace period ends.
 func (e *expiries) keepAcceptingWindow(windowID string) {
 	p := e.state.presence
 	if p.hasWatch(windowID) {

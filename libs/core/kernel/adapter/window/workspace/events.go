@@ -40,5 +40,4 @@ func getEventTopic(e tablink.Event) string {
 	}
 }
 
-// scheduleAfter runs f once after d and returns the function that stops the run.
 func scheduleAfter(d time.Duration, f func()) func() bool { return time.AfterFunc(d, f).Stop }

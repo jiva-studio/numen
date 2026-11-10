@@ -25,8 +25,6 @@ func (g *groupSet) find(tabID string) *tablink.Group {
 	return nil
 }
 
-// remove takes a tab out of its group and dissolves a group left with one tab. It returns whether the
-// tab was in a group.
 func (g *groupSet) remove(tabID string) bool {
 	group := g.find(tabID)
 	if group == nil {
@@ -39,7 +37,6 @@ func (g *groupSet) remove(tabID string) bool {
 	return true
 }
 
-// join puts two tabs in one group and returns whether a group changed.
 func (g *groupSet) join(sourceID, targetID string) bool {
 	source, target := g.find(sourceID), g.find(targetID)
 	switch {
