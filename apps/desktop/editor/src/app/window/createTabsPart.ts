@@ -157,9 +157,7 @@ export function createWindowTabMoves(
     windowId: base.windowId,
     isTabAsking: (id: string) => notes.asking(id),
     highlightWindow: (windowId: string, isOn: boolean) => {
-      lastHighlight = lastHighlight
-        .then(() => highlightWindow(windowId, isOn))
-        .catch(ignoreError)
+      lastHighlight = lastHighlight.then(() => highlightWindow(windowId, isOn)).catch(ignoreError)
     },
     detachTab: (id: string, point: Point) =>
       runInBackground(mover.detachTab(id, point), ignoreError),

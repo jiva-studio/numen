@@ -46,7 +46,6 @@ const isFailure = expect.objectContaining({
   message: expect.stringContaining('the core is gone'),
 })
 
-/** A stream message as the core sends it. */
 const toWire = (event: TabLinksEvent) => {
   if (event.links) {
     const { groups, tabs, windows } = event.links
@@ -82,7 +81,7 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       return createStream(events, signal)
     }),
     cancelTabLinksWatch: vi.fn((_windowId: string) => Promise.resolve()),
-    writeTabLinks: vi.fn((_sent: { windowId: string; tabs?: unknown; window?: unknown }) =>
+    writeTabLinks: vi.fn((_report: { windowId: string; tabs?: unknown; window?: unknown }) =>
       Promise.resolve(),
     ),
     acceptTabMove: vi.fn((_windowId: string, _tabId: string, _moveId: string) =>
@@ -97,15 +96,15 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
         return {}
       },
       writeTabLinks: async ({ windowId, change }) => {
-        const sent = change.case === 'tabs' ? change.value : undefined
+        const report = change.case === 'tabs' ? change.value : undefined
         await core.writeTabLinks({
           windowId,
-          tabs: sent?.tabs.map(({ id, kind, title }) => ({ id, kind, title })),
-          window: sent?.window && {
-            isMain: sent.window.isMain,
-            activeTitle: sent.window.activeTitle,
-            activeKind: sent.window.activeKind,
-            tabCount: sent.window.tabCount,
+          tabs: report?.tabs.map(({ id, kind, title }) => ({ id, kind, title })),
+          window: report?.window && {
+            isMain: report.window.isMain,
+            activeTitle: report.window.activeTitle,
+            activeKind: report.window.activeKind,
+            tabCount: report.window.tabCount,
           },
         })
         return {}
@@ -234,8 +233,12 @@ describe('reportTabs', () => {
     finishFirst()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
-    expect(core.writeTabLinks.mock.calls.map(([sent]) => sent)).toStrictEqual([
-      { windowId: 'window-a', tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }], window: WINDOW },
+    expect(core.writeTabLinks.mock.calls.map(([report]) => report)).toStrictEqual([
+      {
+        windowId: 'window-a',
+        tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }],
+        window: WINDOW,
+      },
       {
         windowId: 'window-a',
         tabs: [

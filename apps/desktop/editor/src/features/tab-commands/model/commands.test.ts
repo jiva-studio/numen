@@ -101,15 +101,15 @@ describe('the commands of a tab', () => {
     ])
   })
 
-  it('offer no tab of the group the tab is in, and none from a tab that cannot be linked', () => {
+  it('offer no tab of the group the tab is in, and none from a tab that cannot be linked', async () => {
     const { set } = setup({ groups: { reef: GROUP, plex: GROUP } })
     const link = set.commands.find((one) => one.id === LINK)!
 
-    expect(link.listItems?.(createTabTarget('reef')).map((one) => one.id)).toStrictEqual([
+    expect((await link.listItems?.(createTabTarget('reef')))?.map((one) => one.id)).toStrictEqual([
       'dock',
       'quay',
     ])
-    expect(link.listItems?.(createTabTarget('chat'))).toStrictEqual([])
+    expect(await link.listItems?.(createTabTarget('chat'))).toStrictEqual([])
   })
 
   it('are available over a tab only, unlink over a linked tab, and none while the tab asks', () => {

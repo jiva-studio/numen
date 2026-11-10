@@ -62,13 +62,12 @@ const createRows = (deps: TabCommandsDeps): readonly Command[] => {
 
   const getLinkItems = (target: CommandTarget): readonly CommandItem[] =>
     getEligibleTabs({
-        from: target.tab,
-        tabs: getAllTabs(deps.getTabs(), tabLinks.tabs),
-        getKind,
-        isLinkable,
-        getGroupOf: tabLinks.getGroupOf,
-      })
-      .map((tab) => ({ id: tab.id, title: tab.title || tab.kind }))
+      from: target.tab,
+      tabs: getAllTabs(deps.getTabs(), tabLinks.tabs),
+      getKind,
+      isLinkable,
+      getGroupOf: tabLinks.getGroupOf,
+    }).map((tab) => ({ id: tab.id, title: tab.title || tab.kind }))
 
   return [
     {
@@ -89,8 +88,7 @@ const createRows = (deps: TabCommandsDeps): readonly Command[] => {
       group: 'window',
       input: 'items',
       isAvailable: (target) => isMovable(target) && getWindows().length > 0,
-      listItems: () =>
-        getWindows().map((one) => ({ id: one.id, title: getWindowName(one) })),
+      listItems: () => getWindows().map((one) => ({ id: one.id, title: getWindowName(one) })),
     },
     {
       id: COMMAND.linkTab,

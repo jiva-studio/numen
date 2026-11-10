@@ -32,13 +32,21 @@ const setup = (asking: () => boolean = () => false) => {
       return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
     }),
     moveTab: vi.fn(
-      async (_sent: Sent & { windowId: string; targetWindowId: string }): Promise<{ error: TabMoveErrorCodeValue }> => {
+      async (
+        _sent: Sent & { windowId: string; targetWindowId: string },
+      ): Promise<{ error: TabMoveErrorCodeValue }> => {
         steps.push('move')
         return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
       },
     ),
   }
-  const toTab = ({ id, kind, path, title, state }: Pick<Tab, 'id' | 'kind' | 'path' | 'title' | 'state'>) => ({
+  const toTab = ({
+    id,
+    kind,
+    path,
+    title,
+    state,
+  }: Pick<Tab, 'id' | 'kind' | 'path' | 'title' | 'state'>) => ({
     id,
     kind,
     path,

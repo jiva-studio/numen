@@ -21,7 +21,6 @@ export const REPORT_RETRY_MS = 2000
 export interface TabLinkSessionDeps {
   readonly windowId: string
   readonly tabLinks: Pick<TabLinksState, 'applySnapshot'>
-  /** Tells the core that this window opened a moved tab. */
   readonly acceptTabMove: (
     windowId: string,
     tabId: string,
