@@ -17,11 +17,9 @@ type portInterface struct {
 
 // adapterRole is what the structure of one adapter package shows it to be.
 type adapterRole struct {
-	pkgPath string
-	// drivingBy is the first use-case object the package references, an alias seen through to its type; empty when it references none.
+	pkgPath   string
 	drivingBy finding
-	// drivenBy is the first of its types that implements a port; empty when none does.
-	drivenBy finding
+	drivenBy  finding
 }
 
 func (r adapterRole) isDriving() bool { return r.drivingBy.name != "" }
@@ -32,7 +30,6 @@ func isInLayer(path, root, layer string) bool {
 	return isWithin(path, root+"/"+layer)
 }
 
-// listPortInterfaces returns the interfaces with methods that the packages under root/port declare.
 func listPortInterfaces(pkgs []*packages.Package, root string) []portInterface {
 	var found []portInterface
 	for _, pkg := range pkgs {
@@ -55,7 +52,6 @@ func listPortInterfaces(pkgs []*packages.Package, root string) []portInterface {
 	return found
 }
 
-// getDeclaredObject returns the object a reference names, seen through any alias to the type it stands for.
 func getDeclaredObject(object types.Object) types.Object {
 	name, ok := object.(*types.TypeName)
 	if !ok || !name.IsAlias() {
@@ -67,8 +63,6 @@ func getDeclaredObject(object types.Object) types.Object {
 	return object
 }
 
-// listReferences returns the identifiers of the package's non-test files that name an object declared in
-// a package the predicate accepts.
 func listReferences(pkg *packages.Package, isDeclaredIn func(path string) bool, resolve func(types.Object) types.Object) []finding {
 	var found []finding
 	for ident, object := range pkg.TypesInfo.Uses {
@@ -84,8 +78,6 @@ func listReferences(pkg *packages.Package, isDeclaredIn func(path string) bool, 
 	return sortFindings(found)
 }
 
-// getImplementation returns the first type the package declares that implements a port, through its value
-// or its pointer.
 func getImplementation(pkg *packages.Package, ports []portInterface) finding {
 	scope := pkg.Types.Scope()
 	for _, name := range scope.Names() {
@@ -105,8 +97,6 @@ func getImplementation(pkg *packages.Package, ports []portInterface) finding {
 	return finding{position: "", name: ""}
 }
 
-// getAdapterRoles classifies each adapter package: driving when it references an object declared under
-// root/usecase, driven when one of its types implements an interface declared under root/port.
 func getAdapterRoles(adapters, core []*packages.Package, root string) []adapterRole {
 	ports := listPortInterfaces(core, root)
 	isUseCase := func(path string) bool { return isInLayer(path, root, "usecase") }
@@ -122,8 +112,6 @@ func getAdapterRoles(adapters, core []*packages.Package, root string) []adapterR
 	return roles
 }
 
-// getPortReferences returns, for each driving adapter, every reference to an object declared under
-// root/port, an alias seen through to the type it stands for.
 func getPortReferences(adapters []*packages.Package, roles []adapterRole, root string) []finding {
 	driving := map[string]bool{}
 	for _, role := range roles {
@@ -139,8 +127,6 @@ func getPortReferences(adapters []*packages.Package, roles []adapterRole, root s
 	return sortFindings(found)
 }
 
-// The adapters of the core and of the desktop application, loaded together so that a type of either
-// is compared with the ports of one type-checked core.
 func loadAdapterUniverse(t *testing.T) (adapters, core []*packages.Package) {
 	t.Helper()
 	config := newTypedConfig(repoRootDir, nil)
@@ -326,4 +312,3 @@ func describeRole(role adapterRole) []string {
 	}
 	return kinds
 }
-

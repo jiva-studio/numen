@@ -19,8 +19,6 @@ func isStandardLibrary(path string) bool {
 	return !strings.Contains(first, ".")
 }
 
-// getDomainImportRefusal returns why a package under domain/ may not import the package at an import
-// path. Imports of the core itself are judged by getRefusal.
 func getDomainImportRefusal(to string) string {
 	switch {
 	case isStandardLibrary(to), to == notesDomain, strings.HasPrefix(to, module+"domain/"):
@@ -95,8 +93,6 @@ func TestDomainImportRule_RejectsEverythingButTheStandardLibraryAndTheDomain(t *
 	}
 }
 
-// getCoreImportRefusal returns why the plugin SDK or the plugin catalog may not import the package at an
-// import path.
 func getCoreImportRefusal(to string) string {
 	if strings.HasPrefix(to, module) || to == strings.TrimSuffix(module, "/") {
 		return "the plugin SDK and the plugin catalog import no package of the core, a domain package included"
