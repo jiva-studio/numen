@@ -213,11 +213,11 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 }
 
 func TestLintCoverageRule_ReportsUncoveredAdapters(t *testing.T) {
-	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "!**/adapter/cli/deps.go"})
+	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
-	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/adapter/cli/**"}); len(got) != 0 {
+	if got := getUncovered([]string{"**/adapter/window/**", "**/adapter/plugin/**", "**/internal/adapterlib/wire/**", "**/adapter/cli/**"}); len(got) != 0 {
 		t.Errorf("the rule refuses %v, want none", got)
 	}
 }
