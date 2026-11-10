@@ -253,7 +253,12 @@ describe('a tab kind opened as the editor of a path', () => {
       }),
     })
     const sub = host
-      .createContext('sample.plugin')
+      .createContext('sample.plugin', {
+        id: 'sample.plugin',
+        name: 'Sample',
+        version: '1',
+        permissions: ['vault:read'],
+      } as never)
       .register.tabKind({ kind: 'sample', component: {} })
     return { open, sub }
   }
