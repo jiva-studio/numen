@@ -155,7 +155,12 @@ const maxComposableReturnProperties = {
           if (prop.type === 'Property') {
             count++
           } else if (prop.type === 'SpreadElement') {
-            context.report({ node: prop, messageId: 'spreadInReturn', data: { name: fnName } })
+            // A composable names every property it returns; a factory that spreads is counted by its type.
+            if (fnName.startsWith('use')) {
+              context.report({ node: prop, messageId: 'spreadInReturn', data: { name: fnName } })
+            } else {
+              count = Math.max(count, countTypeProperties(node))
+            }
           }
         }
         checkGroups(node, fnName)
@@ -304,7 +309,9 @@ export default {
           const callee = getCalleeName(declarator.init)
           if (MACROS.has(callee)) return { rank: 1, name }
           if (HOOKS.has(callee)) return { rank: 4, name }
-          if (isFunction(declarator.init)) return { rank: /^on[A-Z]/.test(name) ? 5 : 6, name }
+          // A function held in a constant cannot move before the statements that call it at once (it is not hoisted),
+          // so only a handler named on<Action> takes a place in the order.
+          if (isFunction(declarator.init)) return /^on[A-Z]/.test(name) ? { rank: 5, name } : null
           return { rank: 3, name }
         }
 

@@ -44,7 +44,7 @@ describe("the composable return size rule", () => {
     for (const file of ["src/entities/tab/model/a.ts", "src/app/a.ts", "src/lib/a.ts", "frontend/a.ts", "src/a.ts"]) {
       assert.deepEqual(findReports(source, file), ["1 tooManyReturnedProperties"]);
     }
-    assert.deepEqual(findReports("const createA = (s) => ({ ...s })", "src/a.ts"), ["1 spreadInReturn"]);
+    assert.deepEqual(findReports("const useA = (s) => ({ ...s })", "src/a.ts"), ["1 spreadInReturn"]);
     assert.deepEqual(findReports("function createA() { return { a: { b: 1, c: 2 }, d: 3 } }", "src/model/a.ts"), []);
   });
 
@@ -102,6 +102,11 @@ describe("the composable return size rule with type information", () => {
       "const useB = () => api",
     ].join("\n");
     assert.deepEqual(findTypedReports(source), ["3 tooManyReturnedProperties", "4 tooManyReturnedProperties"]);
+  });
+
+  it("counts a factory that spreads by the type of what it returns, and fails a composable that spreads", () => {
+    const source = ["declare const base: { a: 1; b: 2; c: 3 }", "const createA = () => ({ ...base, d: 4 })", "const useB = () => ({ ...base })"].join("\n");
+    assert.deepEqual(findTypedReports(source), ["2 tooManyReturnedProperties", "3 spreadInReturn"]);
   });
 
   it("passes a returned type from a library, an array and a function", () => {
