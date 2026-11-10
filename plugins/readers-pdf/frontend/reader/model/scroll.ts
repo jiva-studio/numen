@@ -11,7 +11,7 @@ import { Hand, getWheelOffset } from '../lib/hand'
 /** How near the row has to be to count as standing where it was sent, in CSS pixels. */
 const THERE = 1
 
-/** What the strip is doing, how to move it, and the event handlers that move it. */
+/** What the strip is doing, how to move it, and the pointer and wheel handlers that move it. */
 export interface PanScroll {
   readonly state: {
     readonly offset: Ref<number>
@@ -24,12 +24,12 @@ export interface PanScroll {
     readonly isMoved: () => boolean
     readonly isStill: () => boolean
   }
-  readonly handlers: {
+  readonly drag: {
     readonly onPointerDown: (event: PointerEvent) => void
     readonly onPointerMove: (event: PointerEvent) => void
     readonly letGo: (event: PointerEvent) => void
-    readonly onWheel: (event: WheelEvent) => void
   }
+  readonly onWheel: (event: WheelEvent) => void
 }
 
 function followPointer(element: HTMLElement | null, event: PointerEvent): void {
@@ -138,7 +138,7 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
     return true
   }
 
-  const { onPointerDown, onPointerMove, letGo } = createPointerDrag(area, isDragging, () => {
+  const drag = createPointerDrag(area, isDragging, () => {
     heading = undefined
   })
 
@@ -150,7 +150,8 @@ export function usePanScroll(area: Readonly<ShallowRef<HTMLElement | null>>): Pa
   const state: PanScroll = {
     state: { offset: axisOffset, isDragging },
     moves: { getScrollOffset, send, restore, isMoved, isStill },
-    handlers: { onPointerDown, onPointerMove, letGo, onWheel },
+    drag,
+    onWheel,
   }
   return state
 }

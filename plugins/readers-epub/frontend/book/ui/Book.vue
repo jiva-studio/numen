@@ -11,7 +11,9 @@ import { useTemplateRef, type Directive } from 'vue'
 
 import { getPageNavigationAction, measureRect } from '@numen/ui'
 import { createBookPointer } from '../model/hand'
+import { useBookColumns } from '../model/columns'
 import { useBookLayout } from '../model/layout'
+import { useBookTurns } from '../model/turns'
 import { createBookLinks } from '../model/links'
 import { BOOK_WORDS } from '../lib/words'
 import type { BookProps } from '../lib/props'
@@ -44,6 +46,16 @@ const emit = defineEmits<{
   (event: 'follow', path: string): void
 }>()
 
+defineExpose({
+  /**
+   * Lays out the text again. A reader rendered off screen has no reading area, and
+   * the caller signals when it is on screen.
+   */
+  measure: () => layout.settling.settle(turns.moves.getKeptOffset),
+  /** A key the tab caught: true where it turned the page. */
+  handleKey: (event: KeyboardEvent) => onKey(event),
+})
+
 /* --------------------------------- State ---------------------------------- */
 const area = useTemplateRef<HTMLElement>('area')
 const paper = useTemplateRef<HTMLElement>('paper')
@@ -56,6 +68,15 @@ const links = createBookLinks(props, {
   reportFollow: (path) => emit('follow', path),
 })
 
+const column = useBookColumns({ area, paper, props, getEdge })
+const turns = useBookTurns({
+  paper,
+  props,
+  flow: column.laid.flow,
+  spreadCount: column.laid.spreadCount,
+  marks: column.runMarks.marks,
+  onMove: (pos) => emit('move', pos),
+})
 const layout = useBookLayout({
   area,
   paper,
@@ -63,31 +84,20 @@ const layout = useBookLayout({
   props,
   onMove: (pos) => emit('move', pos),
   takeLed: links.takeLed,
-  getEdge,
+  column,
+  turns,
 })
-const { isMeasured, isStood, setting } = layout.state
+const { isStood } = column
+const { isMeasured, setting } = column.sizing
 const { spreadCount, front, leftInChapter } = layout.position
 
 const hand = createBookPointer({
   area,
   paper,
-  turn: layout.actions.turn,
+  turn: layout.turn,
   getEdge,
 })
 
-/* -------------------------------- Handlers -------------------------------- */
-const onArrival = () => layout.actions.settleKept()
-
-const onFollow = (press: MouseEvent) => links.follow(press, layout.actions.findFragmentOffset)
-
-const onKey = (event: KeyboardEvent): boolean => {
-  const way = getPageNavigationAction(event.key)
-  if (!way) return false
-  layout.actions.turn(way)
-  return true
-}
-
-/* -------------------------------- Helpers --------------------------------- */
 /** Writes markup that was checked before it reached this component. */
 const vMarkup: Directive<HTMLElement, string> = {
   created: (element, binding) => {
@@ -98,15 +108,19 @@ const vMarkup: Directive<HTMLElement, string> = {
   },
 }
 
-defineExpose({
-  /**
-   * Lays out the text again. A reader rendered off screen has no reading area, and
-   * the caller signals when it is on screen.
-   */
-  measure: () => layout.actions.settle(layout.actions.getKeptOffset),
-  /** A key the tab caught: true where it turned the page. */
-  handleKey: onKey,
-})
+/* -------------------------------- Handlers -------------------------------- */
+const onArrival = () => layout.settling.settleKept()
+
+const onFollow = (press: MouseEvent) =>
+  links.follow(press, column.runMarks.findFragmentOffset)
+
+const onKey = (event: KeyboardEvent): boolean => {
+  const way = getPageNavigationAction(event.key)
+  if (!way) return false
+  layout.turn(way)
+  return true
+}
+
 </script>
 
 <template>

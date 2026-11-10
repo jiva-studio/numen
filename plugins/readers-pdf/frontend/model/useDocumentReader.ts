@@ -91,29 +91,13 @@ export function useDocumentReader(documentsOrPath: Documents | string, maybePath
     error.value = formatErrorMessage(caughtError)
   }
 
-  const reader = {
+  return {
     path,
     reportFailure,
     close,
     state: { pages, pageNumber: navigation.pageNumber, error, isLoading },
-    view: {
-      picture: viewport.picture,
-      getPageImageUrl: viewport.getPageImageUrl,
-      widen: viewport.widen,
-    },
-    highlights: {
-      highlighted: highlights.highlighted,
-      getHighlightsOn: highlights.getHighlightsOn,
-      otherHighlighted: highlights.otherHighlighted,
-      getOtherHighlightsOn: highlights.getOtherHighlightsOn,
-      applyHighlights: highlights.applyHighlights,
-    },
-    actions: {
-      goToPage: nav.goToPage,
-      goToNextPage: nav.goToNextPage,
-      goToPreviousPage: nav.goToPreviousPage,
-      focusSpans: nav.focusSpans,
-    },
+    view: viewport,
+    highlights,
+    actions: nav,
   }
-  return reader
 }

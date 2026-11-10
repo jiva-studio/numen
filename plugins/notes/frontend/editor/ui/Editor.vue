@@ -36,13 +36,29 @@ const emit = defineEmits<{
   (event: 'save'): void
 }>()
 
+defineExpose({
+  /** Take the keyboard. False while there is no editor yet to take it. */
+  focus: () => editor.focus(),
+  /**
+   * Remeasure the editor. An editor rendered while hidden has no measurements;
+   * the caller signals when it is visible.
+   */
+  measure: () => editor.measure(),
+  /**
+   * Put the caret on one line of the prose and bring it into sight. Lines are
+   * counted from the first line of the prose, and one past the end lands on the
+   * last line there is.
+   */
+  reveal: (line: number) => editor.reveal(line),
+})
+
 /* ---------------------------------- State --------------------------------- */
 const host = useTemplateRef<HTMLElement>('host')
 
 /** What the words about the keyboard are addressed by, this editor's alone. */
 const keysId = `${useId()}-keys`
 
-const { focus, measure, reveal } = useEditor({
+const editor = useEditor({
   host,
   props,
   text,
@@ -51,23 +67,6 @@ const { focus, measure, reveal } = useEditor({
   softWrap: () => props.softWrap,
   lineNumbers: () => props.lineNumbers,
   tabSize: () => props.tabSize,
-})
-
-/* --------------------------------- Helpers -------------------------------- */
-defineExpose({
-  /** Take the keyboard. False while there is no editor yet to take it. */
-  focus,
-  /**
-   * Remeasure the editor. An editor rendered while hidden has no measurements;
-   * the caller signals when it is visible.
-   */
-  measure,
-  /**
-   * Put the caret on one line of the prose and bring it into sight. Lines are
-   * counted from the first line of the prose, and one past the end lands on the
-   * last line there is.
-   */
-  reveal,
 })
 </script>
 

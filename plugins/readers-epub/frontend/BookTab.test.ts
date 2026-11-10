@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, reactive, ref, shallowRef } from 'vue'
+import { nextTick, reactive, ref, shallowRef } from 'vue'
 import BookTab from './BookTab.vue'
 import type { TextRange } from './types'
 
@@ -14,46 +14,36 @@ const reader = vi.hoisted(() => ({
 vi.mock('./model/useBookReader', () => ({
   useBookReader: () => ({
     path: '',
-    reportFailure: () => undefined,
     close: () => undefined,
     state: {
       isLoading: ref(false),
       contents: shallowRef([]),
-      span: ref(null),
+      span: ref({ start: 0, end: 0 }),
     },
-    place: {
+    progress: { page: ref(0), chapter: ref('') },
+    navigation: {
       offset: ref(0),
-      documentSpan: ref(null),
       target: ref(null),
-      chapter: ref(null),
+      goToOffset: async () => undefined,
+      moveTo: async () => undefined,
+      followLink: async () => undefined,
     },
-    rendering: {
-      markup: ref(''),
+    bookDocument: {
+      documentSpan: ref({ start: 0, end: 0 }),
       renderedChapter: ref(''),
+      markup: ref(''),
+    },
+    marks: {
       highlights: shallowRef([]),
       otherHighlights: shallowRef([]),
     },
     actions: {
       getCfi: async () => null,
       goToCfi: async () => false,
-      goToOffset: async () => undefined,
-      moveTo: async () => undefined,
-      followLink: async () => undefined,
       focusSpans: reader.focusSpans,
+      reportFailure: () => undefined,
     },
   }),
-}))
-
-vi.mock('./BookContent.vue', () => ({
-  default: defineComponent({ setup: () => () => h('div', { class: 'book-content-stub' }) }),
-}))
-
-vi.mock('./book-contents', () => ({
-  BookListing: defineComponent({ setup: () => () => h('nav') }),
-}))
-
-vi.mock('@numen/ui', () => ({
-  LoadingIndicator: defineComponent({ setup: () => () => h('span') }),
 }))
 
 const RANGES: readonly TextRange[] = [

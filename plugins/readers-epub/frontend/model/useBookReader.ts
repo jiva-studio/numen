@@ -223,7 +223,7 @@ export function useBookReader(
   }
   const shape = loadBook()
 
-  const { page, chapter } = useBookProgress(state, nav.offset)
+  const progress = useBookProgress(state, nav.offset)
   const marks = useBookHighlights(nav.goToOffset, () => isOpen)
   const focusSpans = async (...spans: readonly TextRange[]) => {
     await shape
@@ -248,32 +248,14 @@ export function useBookReader(
 
   const reportFailure = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
 
-  const reader = {
+  return {
     path,
-    reportFailure,
     close,
     state,
-    place: {
-      page,
-      chapter,
-      offset: nav.offset,
-      target: nav.target,
-      documentSpan: bookDocument.documentSpan,
-    },
-    rendering: {
-      renderedChapter: bookDocument.renderedChapter,
-      markup: bookDocument.markup,
-      highlights: marks.highlights,
-      otherHighlights: marks.otherHighlights,
-    },
-    actions: {
-      goToOffset: nav.goToOffset,
-      moveTo: nav.moveTo,
-      goToCfi,
-      getCfi,
-      followLink: nav.followLink,
-      focusSpans,
-    },
+    progress,
+    navigation: nav,
+    bookDocument,
+    marks,
+    actions: { goToCfi, getCfi, focusSpans, reportFailure },
   }
-  return reader
 }

@@ -55,17 +55,17 @@ const setUp = (width: number, height: number, textSize = 1) =>
 
 describe('whether the reading area has been measured', () => {
   it('is so once it has a width and a height', () => {
-    expect(setUp(800, 600).state.isMeasured.value).toBe(true)
+    expect(setUp(800, 600).sizing.isMeasured.value).toBe(true)
   })
 
   it('is not, before it has either', () => {
     const columns = setUp(0, 0)
 
-    expect(columns.state.isMeasured.value).toBe(false)
-    columns.state.viewport.value = { width: 0, height: 600 }
-    expect(columns.state.isMeasured.value).toBe(false)
-    columns.state.viewport.value = { width: 800, height: 0 }
-    expect(columns.state.isMeasured.value).toBe(false)
+    expect(columns.sizing.isMeasured.value).toBe(false)
+    columns.sizing.viewport.value = { width: 0, height: 600 }
+    expect(columns.sizing.isMeasured.value).toBe(false)
+    columns.sizing.viewport.value = { width: 800, height: 0 }
+    expect(columns.sizing.isMeasured.value).toBe(false)
   })
 })
 
@@ -73,23 +73,23 @@ describe('what the columns are set with', () => {
   it('is one column twice the width of the area, in a narrow one', () => {
     const columns = setUp(420, 600)
 
-    expect(columns.state.setting.value['--book-run']).toBe('200%')
-    expect(columns.state.setting.value['--book-column']).toBe('348px')
+    expect(columns.sizing.setting.value['--book-run']).toBe('200%')
+    expect(columns.sizing.setting.value['--book-column']).toBe('348px')
   })
 
   it('is two columns the width of the area, in a wide one', () => {
     const columns = setUp(1200, 600)
 
-    expect(columns.state.setting.value['--book-run']).toBe('100%')
-    expect(columns.state.setting.value['--book-column']).toBe('528px')
+    expect(columns.sizing.setting.value['--book-run']).toBe('100%')
+    expect(columns.sizing.setting.value['--book-column']).toBe('528px')
   })
 
   it('is the gap, the height of the area and the size of the text', () => {
     const columns = setUp(420, 600, 1.5)
 
-    expect(columns.state.setting.value['--book-gap']).toBe(`${GAP}px`)
-    expect(columns.state.setting.value['--book-height']).toBe('600px')
-    expect(columns.state.setting.value['--book-size']).toBe('calc(var(--numen-prose-size) * 1.5)')
+    expect(columns.sizing.setting.value['--book-gap']).toBe(`${GAP}px`)
+    expect(columns.sizing.setting.value['--book-height']).toBe('600px')
+    expect(columns.sizing.setting.value['--book-size']).toBe('calc(var(--numen-prose-size) * 1.5)')
   })
 })
 
@@ -107,7 +107,7 @@ describe('how tall a column is once the text is drawn', () => {
   }
 
   const readItem = (box: HTMLElement, text: HTMLElement): string => {
-    setUp(800, 600).actions.readColumns(box, text)
+    setUp(800, 600).readColumns(box, text)
     return text.style.getPropertyValue('--book-paper')
   }
 
@@ -136,7 +136,7 @@ describe('how tall a column is once the text is drawn', () => {
     Object.defineProperty(text, 'clientWidth', { value: 840 })
     Object.defineProperty(text, 'scrollWidth', { value: 840 })
 
-    columns.actions.readColumns(box, text)
+    columns.readColumns(box, text)
 
     expect(columns.laid.flow.value.contentWidth).toBe(420)
     expect(columns.laid.spreadCount.value).toBe(1)
@@ -154,9 +154,9 @@ describe('the flow the marks were read in', () => {
 
   it('stays the one of the last reading while the area changes size', () => {
     const columns = setUp(1200, 600)
-    columns.actions.readColumns(createArea(1200, 600), createLaidText(4800))
+    columns.readColumns(createArea(1200, 600), createLaidText(4800))
 
-    columns.state.viewport.value = { width: 700, height: 600 }
+    columns.sizing.viewport.value = { width: 700, height: 600 }
 
     expect(columns.laid.flow.value).toEqual({
       contentWidth: 4800,
@@ -165,15 +165,15 @@ describe('the flow the marks were read in', () => {
       columns: 2,
     })
     expect(columns.laid.spreadCount.value).toBe(4)
-    expect(columns.state.setting.value['--book-run']).toBe('200%')
+    expect(columns.sizing.setting.value['--book-run']).toBe('200%')
   })
 
   it('becomes the one of the new size once the columns are read again', () => {
     const columns = setUp(1200, 600)
-    columns.actions.readColumns(createArea(1200, 600), createLaidText(4800))
-    columns.state.viewport.value = { width: 700, height: 600 }
+    columns.readColumns(createArea(1200, 600), createLaidText(4800))
+    columns.sizing.viewport.value = { width: 700, height: 600 }
 
-    columns.actions.readColumns(createArea(700, 600), createLaidText(5600))
+    columns.readColumns(createArea(700, 600), createLaidText(5600))
 
     expect(columns.laid.flow.value).toEqual({
       contentWidth: 5600,

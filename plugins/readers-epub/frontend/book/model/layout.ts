@@ -12,8 +12,8 @@ import type { Ref, ShallowRef } from 'vue'
 
 import { onNextFrame, doc } from '@numen/ui'
 import type { PageNavigationAction } from '@numen/ui'
-import { useBookColumns } from './columns'
-import { useBookTurns, getTurnTarget } from './turns'
+import type { useBookColumns } from './columns'
+import { getTurnTarget, type useBookTurns } from './turns'
 import { copyPaper, type LeavingSpread } from './leaving'
 import { findPending, whenArrived } from '../lib/pictures'
 import type { BookLink } from '../lib/link'
@@ -39,7 +39,8 @@ export interface BookLayoutOptions {
   readonly props: SettledBookProps
   readonly onMove: (pos: number) => void
   readonly takeLed: () => BookLink | undefined
-  readonly getEdge: (of: HTMLElement) => number
+  readonly column: ReturnType<typeof useBookColumns>
+  readonly turns: ReturnType<typeof useBookTurns>
 }
 
 interface BorderTurn {
@@ -276,23 +277,15 @@ export function createBookSettling(options: BookSettlingOptions) {
  * `takeLed` returns the position a followed link led to, once.
  */
 export function useBookLayout(options: BookLayoutOptions) {
-  const {
-    state: { textSize, viewport, isMeasured, isStood, setting },
-    laid: { flow, spreadCount, marks },
-    actions: column,
-  } = useBookColumns(options)
+  const { column } = options
+  const { sizing, runMarks, laid, isStood } = column
+  const { textSize, viewport, isMeasured } = sizing
+  const { spreadCount } = laid
 
   const {
     position: { front, leftInChapter, standing },
     moves: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, turn: turnPage },
-  } = useBookTurns({
-    paper: options.paper,
-    props: options.props,
-    flow,
-    spreadCount,
-    marks,
-    onMove: options.onMove,
-  })
+  } = options.turns
 
   let borderTurn: BorderTurn | undefined
   const turn = (way: PageNavigationAction) => {
@@ -324,7 +317,7 @@ export function useBookLayout(options: BookLayoutOptions) {
     for (const way of queuedTurns.splice(0)) turn(way)
   })
 
-  const { settle, settleKept } = createBookSettling({
+  const settling = createBookSettling({
     area: options.area,
     stoodFor,
     paper: options.paper,
@@ -334,33 +327,26 @@ export function useBookLayout(options: BookLayoutOptions) {
     takeLed: options.takeLed,
     takeBorderTurn,
     column: {
-      measure: column.measure,
+      measure: sizing.measure,
       isMeasured,
       readColumns: column.readColumns,
-      findFragmentOffset: column.findFragmentOffset,
-      markRuns: column.markRuns,
-      markCopy: column.markCopy,
-      unmarkCopy: column.unmarkCopy,
+      findFragmentOffset: runMarks.findFragmentOffset,
+      markRuns: runMarks.markRuns,
+      markCopy: runMarks.markCopy,
+      unmarkCopy: runMarks.unmarkCopy,
       isStood,
     },
     turns: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, standing },
     signals: { viewport, textSize },
   })
 
-  const state = {
-    state: { textSize, isMeasured, isStood, flow, setting },
+  return {
     position: {
       spreadCount: holdUntilStood(isStoodForMarkup, () => spreadCount.value),
       front: holdUntilStood(isStoodForMarkup, () => front.value),
       leftInChapter: holdUntilStood(isStoodForMarkup, () => leftInChapter.value),
     },
-    actions: {
-      getKeptOffset,
-      settle,
-      settleKept,
-      findFragmentOffset: column.findFragmentOffset,
-      turn: turnWhenStood,
-    },
+    settling,
+    turn: turnWhenStood,
   }
-  return state
 }

@@ -15,6 +15,12 @@ const emit = defineEmits<{
   'toggle-listing': []
 }>()
 
+defineExpose({
+  measure,
+  handleKey: forwardKey,
+  focusWay,
+})
+
 /* --------------------------------- State ---------------------------------- */
 const book = useTemplateRef<BookHandle>('book')
 const way = useTemplateRef<HTMLElement>('way')
@@ -44,12 +50,6 @@ function forwardKey(event: KeyboardEvent): boolean {
 function focusWay() {
   way.value?.focus()
 }
-
-defineExpose({
-  measure,
-  handleKey: forwardKey,
-  focusWay,
-})
 </script>
 
 <template>

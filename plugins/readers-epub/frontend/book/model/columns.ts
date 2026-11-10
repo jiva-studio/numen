@@ -89,11 +89,8 @@ export function useBookFlow(
 /** `getEdge` is handed on to the marks, which is what reads it. */
 export function useBookColumns(options: BookColumnsOptions) {
   const contentWidth = ref(0)
-  const { textSize, viewport, isMeasured, viewportFlow, setting, measure } = useBookFlow(
-    options.area,
-    options.props,
-    contentWidth,
-  )
+  const sizing = useBookFlow(options.area, options.props, contentWidth)
+  const { viewportFlow } = sizing
 
   /**
    * The flow the marks were read in. The area takes its new size before the columns are read
@@ -102,11 +99,7 @@ export function useBookColumns(options: BookColumnsOptions) {
   const laidFlow = shallowRef<Flow>(viewportFlow.value)
   const spreadCount = computed(() => countSpreads(laidFlow.value))
 
-  const { marks, gather, findFragmentOffset, markRuns, markCopy, unmarkCopy } = useBookMarks(
-    options.paper,
-    options.props,
-    options.getEdge,
-  )
+  const runMarks = useBookMarks(options.paper, options.props, options.getEdge)
 
   /** Whether the spread for the rendered document has been laid out. */
   const isStood = ref(false)
@@ -124,21 +117,22 @@ export function useBookColumns(options: BookColumnsOptions) {
    */
   const readColumns = (box: HTMLElement, text: HTMLElement): void => {
     text.style.setProperty('--book-paper', `${columnHeight(box.clientHeight, getLine(text))}px`)
-    gather()
+    runMarks.gather()
     const readFlow: Flow = { ...viewportFlow.value, width: box.clientWidth }
     const isSingleColumn =
       readFlow.columns === 1 &&
       text.clientWidth > 0 &&
       text.scrollWidth <= text.clientWidth &&
-      countFilledColumns(marks.value, readFlow) === 1
+      countFilledColumns(runMarks.marks.value, readFlow) === 1
     contentWidth.value = isSingleColumn ? box.clientWidth : text.scrollWidth
     laidFlow.value = { ...readFlow, contentWidth: contentWidth.value }
   }
 
-  const state = {
-    state: { textSize, viewport, isMeasured, isStood, setting },
-    laid: { flow: laidFlow, spreadCount, marks },
-    actions: { measure, readColumns, findFragmentOffset, markRuns, markCopy, unmarkCopy },
+  return {
+    sizing,
+    runMarks,
+    laid: { flow: laidFlow, spreadCount },
+    isStood,
+    readColumns,
   }
-  return state
 }

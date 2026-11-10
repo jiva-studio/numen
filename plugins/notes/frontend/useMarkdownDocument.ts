@@ -210,14 +210,19 @@ function checkFrontmatterError(content: string): string {
   return ''
 }
 
-export function getEditorLanguage(props: DocumentOptions): 'markdown' | 'json' | 'plaintext' {
-  const path =
+function getDocumentPath(props: DocumentOptions): string {
+  return (
     props.filePath ||
     props.path ||
     (props.state?.path as string) ||
     (props.state?.file as string) ||
     (props.state?.at as string) ||
     ''
+  )
+}
+
+export function getEditorLanguage(props: DocumentOptions): 'markdown' | 'json' | 'plaintext' {
+  const path = getDocumentPath(props)
   if (path.endsWith('.txt')) return 'plaintext'
   if (path.endsWith('.json')) return 'json'
   return 'markdown'
@@ -228,16 +233,7 @@ export function useMarkdownDocument(
   emit: DocumentEmit,
   editorRef: Ref<EditorHandle | null>,
 ) {
-  const activePath = computed(() => {
-    return (
-      props.filePath ||
-      props.path ||
-      (props.state?.path as string) ||
-      (props.state?.file as string) ||
-      (props.state?.at as string) ||
-      ''
-    )
-  })
+  const activePath = computed(() => getDocumentPath(props))
 
   function getInitialBody(): string {
     if (props.modelValue) return props.modelValue
