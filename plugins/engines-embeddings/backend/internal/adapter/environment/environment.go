@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Overrides is what the variables name; a field left empty or zero names nothing.
+// Overrides is what the variables set; a field that is empty or zero is not set.
 type Overrides struct {
 	Model      string
 	Repository string
@@ -69,7 +69,7 @@ const (
 	envMockOpenHold = "NUMEN_MOCK_OPEN_HOLD_MS"
 )
 
-// IsMockModel tells whether the variables ask for the mock model.
+// IsMockModel returns whether the variables ask for the mock model.
 func IsMockModel() bool {
 	return os.Getenv(envMockModel) == "true"
 }

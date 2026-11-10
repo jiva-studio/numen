@@ -143,12 +143,12 @@ func (l *Loader[S]) ResetLocked() {
 	}
 }
 
-// IsLoaded tells whether a model is loaded.
+// IsLoaded returns whether a model is loaded.
 func (l *Loader[S]) IsLoaded() bool {
 	return l.embedder != nil
 }
 
-// IsOpening tells whether a load is in progress.
+// IsOpening returns whether a load is in progress.
 func (l *Loader[S]) IsOpening() bool {
 	return l.opening != nil
 }

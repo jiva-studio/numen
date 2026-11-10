@@ -14,7 +14,7 @@ const (
 	modelOpenRouter = "openai/text-embedding-3-small"
 )
 
-// IsRemote tells whether provider names a service other than this machine. A provider that is not
+// IsRemote returns whether provider names a service other than this machine. A provider that is not
 // set is not remote.
 func IsRemote(provider string) bool {
 	return provider != "" && provider != Local

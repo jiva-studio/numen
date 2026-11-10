@@ -119,7 +119,7 @@ func TestACanceledCallDoesNotStopTheOpening(t *testing.T) {
 	}
 }
 
-func TestAFailedOpeningLeavesNoModelAndTheNextCallOpensAgain(t *testing.T) {
+func TestAFailedOpeningHoldsNoModelAndTheNextCallOpensAgain(t *testing.T) {
 	boom := errors.New("boom")
 	calls := 0
 	h := newHarness(t, func(context.Context, string) (Embedder, error) {
@@ -233,7 +233,7 @@ func TestCloseEndsTheContextOfAnOpeningInProgress(t *testing.T) {
 	<-canceled
 }
 
-func TestAFailedPriorityChangeIsReportedAndTheModelIsKept(t *testing.T) {
+func TestAFailedPriorityChangeIsReportedAndTheModelStaysLoaded(t *testing.T) {
 	h := newHarness(t, func(context.Context, string) (Embedder, error) { return &model{}, nil })
 	failure := errors.New("no permission")
 	h.loader.ports.LowerNice = func(int) error { return failure }
