@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { APP_MAX_LINES, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
+import { APP_MAX_LINES, findAppOverreach, findComponentsBelowUi, findCoreClientOutsideApi, findLateBindings, findSharedServingOneSlice, getSegment, getSliceOf } from "./frontendGraph.mjs";
 
 /** A module of the resolved graph with local imports `{ specifier: resolvedPath }`. */
 function moduleOf(source, imports = {}) {
@@ -72,7 +72,7 @@ describe("the shared layer rule of windows", () => {
     assert.equal(getSliceOf(`${WINDOW}/main.ts`, WINDOW), "main.ts");
   });
 
-  it("fails a shared file one slice uses, directly or through other shared files, and passes one two slices use", () => {
+  it("fails a shared file one slice uses with or without the app layer, directly or through other shared files, and passes one two slices use", () => {
     const modules = [
       moduleOf(`${WINDOW}/features/tree/ui/Tree.vue`, {
         "@/shared/lib/icons": `${WINDOW}/shared/lib/icons.ts`,
@@ -80,11 +80,16 @@ describe("the shared layer rule of windows", () => {
       }),
       moduleOf(`${WINDOW}/features/tree/model/tree.ts`, { "@/shared/lib/icons": `${WINDOW}/shared/lib/icons.ts` }),
       moduleOf(`${WINDOW}/pages/home/ui/Home.vue`, { "@/shared/lib/format": `${WINDOW}/shared/lib/format.ts` }),
+      moduleOf(`${WINDOW}/pages/about/ui/About.vue`, { "@/shared/lib/format": `${WINDOW}/shared/lib/format.ts` }),
+      moduleOf(`${WINDOW}/pages/home/model/home.ts`, { "@/shared/lib/paths": `${WINDOW}/shared/lib/paths.ts` }),
+      moduleOf(`${WINDOW}/app/routes.ts`, { "@/shared/lib/paths": `${WINDOW}/shared/lib/paths.ts`, "@/shared/lib/boot": `${WINDOW}/shared/lib/boot.ts` }),
       moduleOf(`${WINDOW}/app/App.vue`, { "@/shared/lib/format": `${WINDOW}/shared/lib/format.ts` }),
       moduleOf(`${WINDOW}/app/app.test.ts`, { "@/shared/lib/icons": `${WINDOW}/shared/lib/icons.ts` }),
       moduleOf(`${WINDOW}/shared/lib/index.ts`, { "./ids": `${WINDOW}/shared/lib/ids.ts` }),
       moduleOf(`${WINDOW}/shared/lib/icons.ts`),
       moduleOf(`${WINDOW}/shared/lib/format.ts`),
+      moduleOf(`${WINDOW}/shared/lib/paths.ts`),
+      moduleOf(`${WINDOW}/shared/lib/boot.ts`),
       moduleOf(`${WINDOW}/shared/lib/ids.ts`),
     ];
     const { findings, read } = findSharedServingOneSlice(modules, WINDOW);
@@ -93,10 +98,12 @@ describe("the shared layer rule of windows", () => {
       [
         `${WINDOW}/shared/lib/index.ts serves only features/tree; it belongs in that slice`,
         `${WINDOW}/shared/lib/icons.ts serves only features/tree; it belongs in that slice`,
+        `${WINDOW}/shared/lib/paths.ts serves only pages/home; it belongs in that slice`,
+        `${WINDOW}/shared/lib/boot.ts serves only app; it belongs in that layer`,
         `${WINDOW}/shared/lib/ids.ts serves only features/tree; it belongs in that slice`,
       ],
     );
-    assert.equal(read, 4);
+    assert.equal(read, 6);
   });
 });
 
@@ -134,5 +141,43 @@ describe("the app layer rule", () => {
   it("counts a file that ends without a newline by its last line", () => {
     const { findings } = findAppOverreach([{ file: `${WINDOW}/app/a.ts`, text: lines(3).trimEnd() }], 3);
     assert.deepEqual(findings, []);
+  });
+});
+
+describe("the late binding rule of the app layer", () => {
+  const file = `${WINDOW}/app/window/createWindow.ts`;
+
+  it("fails a holder, its assignment and an Object.assign onto an object made before", () => {
+    const text = [
+      "const hostHolder: { current?: PluginHost } = {}",
+      "hostHolder.current = pluginHost",
+      "Object.assign(services, { vaults })",
+    ].join("\n");
+    const { findings, read } = findLateBindings([{ file, text }]);
+    assert.deepEqual(
+      findings.map((one) => `${one.line} ${one.symbol}`),
+      ["1 a holder with an optional current", "2 a holder assigned after it was made", "3 Object.assign fills an object that was made before"],
+    );
+    assert.equal(read, 1);
+  });
+
+  it("passes a state with methods, a fresh object, a comparison and a comment", () => {
+    const text = [
+      "const services = createServices()",
+      "services.provide({ vaults })",
+      "const merged = Object.assign({}, a, b)",
+      "if (holder.current === undefined) return",
+      "// the old holder.current = host is gone",
+      " * a { current?: Host } is not made",
+    ].join("\n");
+    assert.deepEqual(findLateBindings([{ file, text }]).findings, []);
+  });
+
+  it("leaves a test, a story and a file outside the shipped sources alone", () => {
+    const text = "holder.current = host";
+    const files = [`${WINDOW}/app/a.test.ts`, `${WINDOW}/app/a.stories.ts`].map((one) => ({ file: one, text }));
+    const { findings, read } = findLateBindings(files);
+    assert.deepEqual(findings, []);
+    assert.equal(read, 0);
   });
 });

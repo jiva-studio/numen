@@ -9,5 +9,5 @@ import (
 
 // Lend lends the capabilities of host.
 func Lend(host *plugin.Host) *container.PluginHost {
-	return container.LendPluginHost(host)
+	return container.AdaptPluginHost(host)
 }

@@ -140,7 +140,7 @@ func readBody(raw []byte, out *Contents) error {
 		// gomutants:disable-next-line RETURN_ERROR_NIL,ERRORF_WRAP reason="markdown.Open wraps every error it returns in ErrUnreadable"
 		return fmt.Errorf("read %s: %w", out.Path, err)
 	}
-	out.Body = markdown.Normalise(doc.Body())
+	out.Body = markdown.Normalize(doc.Body())
 	out.Outcome = Ok
 	return nil
 }

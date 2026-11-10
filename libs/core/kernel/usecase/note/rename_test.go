@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -461,7 +462,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
-	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, note.ErrNoNote) {
+	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote for a note that is not there, got %v", err)
 	}
 
@@ -471,7 +472,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	if err == nil {
 		t.Fatal("want the vault's own error")
 	}
-	if errors.Is(err, note.ErrNoNote) {
+	if errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("a vault that is not there was named as a missing note: %v", err)
 	}
 }
@@ -483,7 +484,7 @@ func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries.Links, c.db.Source.SourcesUnder, c.index)
 
-	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {
+	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
 	}
 }

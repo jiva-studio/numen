@@ -10,7 +10,7 @@ option go_package = "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v
 // Every call needs window:focus. A host with no window returns HOST_WINDOW_ERROR_CODE_NO_WINDOW.
 // With several windows, the main window of the vault is used.
 service HostWindowService {
-  // FocusNote makes a note the current one, and the neighbourhood view is centred on it.
+  // FocusNote makes a note the current one, and the neighborhood view is centered on it.
   rpc FocusNote(FocusNoteRequest) returns (FocusNoteResponse);
   // FocusPassages opens a file, scrolls to the first passage and highlights all passages. No
   // passages opens the file at its beginning.

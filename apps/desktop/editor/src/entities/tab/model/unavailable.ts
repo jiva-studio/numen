@@ -2,7 +2,7 @@ import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { findTabKindPlugin } from '../api/tabKindPlugin'
 import type { AnyTabKind } from '../lib/kinds'
-import type { Writable } from '@/shared/lib/writable'
+import type { Writable } from '../lib/writable'
 import type { UnavailableLookup } from '../lib/unavailableView'
 
 /** What a placeholder asks of the window: the changes it makes. */

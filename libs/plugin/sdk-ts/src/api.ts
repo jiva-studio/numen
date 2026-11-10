@@ -51,7 +51,7 @@ const readFailure = async (response: Response): Promise<ApiError> => {
       return { code: body.code, message: body.message }
     }
   } catch {
-    // the body is not a failure of the method
+    return { code: UNAVAILABLE, message: `HTTP ${response.status}` }
   }
   return { code: UNAVAILABLE, message: `HTTP ${response.status}` }
 }

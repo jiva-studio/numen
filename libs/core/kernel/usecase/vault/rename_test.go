@@ -46,7 +46,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 	index := &indexRows{}
 
 	// The comparison is the one the list is searched by: without case, over
-	// normalised text.
+	// normalized text.
 	_, err := vaults.NewRename(registry, registry, index).Execute(t.Context(), renamed, "PERSONAL")
 	if !errors.Is(err, vaultdomain.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", acquired.Name, err)

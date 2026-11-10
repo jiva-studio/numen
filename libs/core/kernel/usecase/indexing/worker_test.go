@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -497,7 +497,7 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "books/scan.pdf")
 	<-p.worker.read
-	p.embedRecognised(t.Context())
+	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
@@ -527,7 +527,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "Note.md")
 	<-p.worker.read
-	p.embedRecognised(t.Context())
+	p.embedRecognized(t.Context())
 
 	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {

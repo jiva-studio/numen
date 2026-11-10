@@ -818,6 +818,24 @@ const numenPlugin = {
       },
     },
 
+    'no-comment-only-catch': {
+      meta: {
+        type: 'problem',
+        docs: { description: 'Forbid a catch block that holds no statement, a comment included' },
+        messages: {
+          emptyCatch:
+            'A catch block with no statement hides the failure. Handle it: log it, return it as a result, or leave out the try.',
+        },
+      },
+      create(context) {
+        return {
+          CatchClause(node) {
+            if (node.body.body.length === 0) context.report({ node, messageId: 'emptyCatch' })
+          },
+        }
+      },
+    },
+
     'no-double-type-assertion': {
       meta: {
         type: 'problem',
@@ -1033,6 +1051,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
+        'numen/no-comment-only-catch': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/consistent-type-assertions': [
           'error',
@@ -1240,6 +1259,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
         'numen/no-double-type-assertion': 'off',
+        'numen/no-comment-only-catch': 'off',
         '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
         complexity: 'off',

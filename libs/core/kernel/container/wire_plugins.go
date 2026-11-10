@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"time"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -31,6 +31,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
@@ -55,6 +56,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -144,7 +146,7 @@ func (c Config) openPluginWork(db *vault.Index, v domain.Vault) (Config, *run.Pl
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func (c Config) GetPluginServices() PluginServices {
+func (c Config) GetPluginServices() editor.PluginServices {
 	return getPluginServices(c.plugins())
 }
 
@@ -253,6 +255,7 @@ type PluginHost struct {
 	pluginport.PluginBinding
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
+	transport.ClientLookup
 	ApplySetting        settingsport.PluginSettingApplier
 	SetCompleter        func(completer hostendpoint.Completer)
 	SetPluginWork       func(work hostendpoint.WorkQueue)
@@ -266,13 +269,13 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-// LendPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
+// AdaptPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
 // tests of packages outside the container use it to run a window over a host they hold.
-func LendPluginHost(host *plugin.Host) *PluginHost {
-	return lendPluginHost(host)
+func AdaptPluginHost(host *plugin.Host) *PluginHost {
+	return adaptPluginHost(host)
 }
 
-func lendPluginHost(host *plugin.Host) *PluginHost {
+func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		PluginActivator:       host.Activation,
 		PluginRetrier:         host.Activation,
@@ -304,6 +307,7 @@ func lendPluginHost(host *plugin.Host) *PluginHost {
 		SetPluginVaultList:  host.Services.SetPluginVaultList,
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
 		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
+		ClientLookup:        host.Activation.ClientLookup(),
 	}
 }
 
@@ -499,7 +503,7 @@ type pluginsWiring struct {
 	GetSettingsOrDefaults func() settingsadapter.File
 	RefreshSettingEvents  func()
 	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes            func(*vault.Index, note.IndexUpdater) note.Scenarios
+	BuildNotes            func(*vault.Index, edit.IndexUpdater) note.Scenarios
 	Moves                 func(context.Context) (<-chan struct{}, error)
 	PluginChanges         *pluginchanges.Signals
 	TextVersions          *textversion.Versions
@@ -541,7 +545,7 @@ const pluginFailureTaskPrefix = "plugin-failed:"
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *PluginHost {
-	return lendPluginHost(openPluginHost(target, dirs...))
+	return adaptPluginHost(openPluginHost(target, dirs...))
 }
 
 func openPluginHost(target string, dirs ...string) *plugin.Host {
@@ -595,20 +599,7 @@ func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	return plugincommand.NewCommands(manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
-// PluginServices is where a window forwards the calls it receives for the services plugins serve.
-type PluginServices = interface {
-	http.Handler
-	// Serves reports whether an enabled plugin serves the service the path names.
-	Serves(urlPath string) bool
-	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
-	ServeRoute(w http.ResponseWriter, r *http.Request)
-	// ListFrameOrigins lists the origins the pages of every enabled plugin frame.
-	ListFrameOrigins() []string
-	// GetFrameOrigins lists the origins the pages of one enabled plugin frame.
-	GetFrameOrigins(pluginID string) []string
-}
-
-func getPluginServices(c pluginsWiring) PluginServices {
+func getPluginServices(c pluginsWiring) editor.PluginServices {
 	if c.PluginHost == nil {
 		return servicebridge.NoServices{}
 	}

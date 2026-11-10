@@ -1,7 +1,7 @@
 package vectors
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"slices"
 	"sync"
 )

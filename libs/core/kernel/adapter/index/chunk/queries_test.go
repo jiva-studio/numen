@@ -58,7 +58,7 @@ func seedVector(seed byte) []float32 {
 }
 
 func seedBytes(seed byte) []byte {
-	q := vector.Bytes(vector.Normalise(seedVector(seed)))
+	q := vector.Bytes(vector.Normalize(seedVector(seed)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)
@@ -1163,7 +1163,7 @@ func TestASourceTextFailsOnAClosedOrBrokenIndex(t *testing.T) {
 	}
 }
 
-func TestRecognisedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
+func TestRecognizedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
 	db := openIndex(t)
 	source{path: "lib/b.pdf", producer: "ocr", hash: "h-b"}.save(t, db)
 	source{path: "lib/a.pdf", producer: "asr", hash: "h-a"}.save(t, db)
@@ -1173,7 +1173,7 @@ func TestRecognisedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
 	source{vault: vaultB, path: "lib/theirs.pdf", producer: "ocr"}.save(t, db)
 	queries := db.ChunkQueries()
 
-	got, err := queries.GetRecognisedSources(t.Context(), vaultA, "book")
+	got, err := queries.GetRecognizedSources(t.Context(), vaultA, "book")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1185,18 +1185,18 @@ func TestRecognisedSourcesAreTheOnesAProducerMadeTheTextOf(t *testing.T) {
 	if !slices.Equal(got, want) {
 		t.Errorf("got %+v, want %+v", got, want)
 	}
-	none, err := queries.GetRecognisedSources(t.Context(), nobody, "book")
+	none, err := queries.GetRecognizedSources(t.Context(), nobody, "book")
 	if err != nil || none != nil {
 		t.Errorf("an unknown vault answered %v, %v", none, err)
 	}
 }
 
-func TestRecognisedSourcesFailOnAClosedOrBrokenIndex(t *testing.T) {
-	if _, err := closed(t).GetRecognisedSources(t.Context(), vaultA, "book"); err == nil {
+func TestRecognizedSourcesFailOnAClosedOrBrokenIndex(t *testing.T) {
+	if _, err := closed(t).GetRecognizedSources(t.Context(), vaultA, "book"); err == nil {
 		t.Error("a closed index answered")
 	}
 	removed := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
-	if _, err := removed.GetRecognisedSources(t.Context(), vaultA, "book"); err == nil {
+	if _, err := removed.GetRecognizedSources(t.Context(), vaultA, "book"); err == nil {
 		t.Error("an index with no sources answered")
 	}
 }
@@ -1228,8 +1228,8 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 		},
 		"GetUnembeddedChunks": func() error { _, err := q.GetUnembeddedChunks(ctx, vaultA, recipe, chunk.Cursor{}, 5); return err },
 		"GetProgress":         func() error { _, _, err := q.GetProgress(ctx, vaultA, recipe); return err },
-		"GetRecognisedSources": func() error {
-			_, err := q.GetRecognisedSources(ctx, vaultA, "book")
+		"GetRecognizedSources": func() error {
+			_, err := q.GetRecognizedSources(ctx, vaultA, "book")
 			return err
 		},
 	}

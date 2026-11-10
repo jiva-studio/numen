@@ -2,7 +2,6 @@
  * Loads plugin frontends: each module is fetched from the window, activated with a context
  * created by the host, and deactivated according to its `enabled` setting.
  */
-import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import type { LoaderHost } from './host'
@@ -15,11 +14,12 @@ import {
 import { startLoader } from './loading/startLoader'
 import { activateEntry, type ActivateContext, type ActivePluginEntry } from './loading/activation'
 import type { StartLimit } from './loading/startLimit'
-import { createPluginStarts } from './loading/pluginStarts'
+import { createPluginStatus, type PluginStatus } from './loading/pluginStatus'
 import { createSignal } from './loading/signal'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost
+  readonly status?: PluginStatus
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
@@ -156,11 +156,8 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   }
 }
 
-interface LoaderState {
-  readonly activePlugins: ShallowRef<ReadonlyMap<string, ActivePluginEntry>>
-  readonly failures: ShallowRef<ReadonlyMap<string, string>>
+type LoaderState = Pick<PluginStatus, 'activePlugins' | 'failures' | 'moduleLoaders'> & {
   readonly manifests: Map<string, Manifest>
-  readonly moduleLoaders: Map<string, () => Promise<unknown>>
 }
 
 interface Activation {
@@ -171,34 +168,22 @@ interface Activation {
   readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
-function createTracking(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
-  const tracked = shallowRef<ReadonlySet<string>>(new Set())
-  const isRunning = shallowRef(false)
-  const isEnabled = (id: string): boolean =>
-    isPluginEnabledValue(deps.host.getSetting?.(id, 'enabled'))
-  const listPlugins = (): string[] => [
-    ...new Set([...state.moduleLoaders.keys(), ...tracked.value]),
-  ]
-  const starts = createPluginStarts({
-    isRunning,
-    listPlugins,
-    isEnabled,
-    activePlugins: state.activePlugins,
-    failures: state.failures,
-    hasTabKinds: activation.hasTabKinds,
-  })
-  return { tracked, isRunning, isEnabled, listPlugins, starts }
+function createTabPluginsWait(status: PluginStatus, activation: Activation) {
+  const { isEnabled, listPlugins, settlePlugin } = status
+  return async (): Promise<void> => {
+    const withTabs = await Promise.all(
+      listPlugins()
+        .filter((id) => isEnabled(id))
+        .map(async (id) => ((await activation.hasTabKinds(id)) ? [id] : [])),
+    )
+    await Promise.all(withTabs.flat().map(settlePlugin))
+  }
 }
 
-function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
+function createRuntime(deps: PluginLoaderDeps, status: PluginStatus, activation: Activation) {
   const { host } = deps
   const { activatePlugin, deactivatePlugin, loadModule } = activation
-  const { activePlugins, moduleLoaders } = state
-  const { tracked, isRunning, isEnabled, listPlugins, starts } = createTracking(
-    deps,
-    state,
-    activation,
-  )
+  const { activePlugins, moduleLoaders, tracked, isRunning, isEnabled, listPlugins } = status
   const settingSubscriptions = new Map<string, Disposable>()
   const interfaceStarted = createSignal()
 
@@ -217,7 +202,9 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
   }
 
   return {
-    ...starts,
+    settlePlugin: status.settlePlugin,
+    isPluginStarting: status.isPluginStarting,
+    waitForTabPlugins: createTabPluginsWait(status, activation),
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
       if (isRunning.value) {
@@ -258,17 +245,22 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
 
 export function createPluginLoader(deps: PluginLoaderDeps) {
   const { host } = deps
+  const status =
+    deps.status ??
+    createPluginStatus({
+      isEnabled: (id) => isPluginEnabledValue(host.getSetting?.(id, 'enabled')),
+    })
   const state: LoaderState = {
-    activePlugins: shallowRef(new Map()),
-    failures: shallowRef(new Map()),
+    activePlugins: status.activePlugins,
+    failures: status.failures,
+    moduleLoaders: status.moduleLoaders,
     manifests: new Map(),
-    moduleLoaders: new Map(),
   }
   const { activePlugins, failures, manifests } = state
   const activation = createActivation(deps, state)
 
   return {
-    ...createRuntime(deps, state, activation),
+    ...createRuntime(deps, status, activation),
     ...activation,
     registerPluginManifest: (id: string, manifest: Manifest) => {
       manifests.set(id, manifest)
@@ -276,7 +268,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     },
     isPluginActive: (id: string) => activePlugins.value.has(id),
     getActivePluginIds: () => [...activePlugins.value.keys()],
-    getPluginFailure: (id: string): string | undefined => failures.value.get(id),
+    getPluginFailure: status.getPluginFailure,
     getFailedPlugins: (): { id: string; error: string }[] =>
       [...failures.value].map(([id, error]) => ({ id, error })),
   }

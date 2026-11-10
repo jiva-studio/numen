@@ -5,6 +5,7 @@ export {
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
+export { createPluginStatus, type PluginStatus } from './loading/pluginStatus'
 export { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 export type { LoaderHost } from './host'
 export type { Manifest } from '@numen/core-client'
@@ -34,7 +35,6 @@ export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,
   isWebAddress,
-  openExternalUrl,
   type ExternalOpener,
 } from './externalOpener'
 export { createAgentPort, type AgentClient } from './agentPort'
@@ -58,6 +58,8 @@ export type {
   CommandDeclaration,
   HandlerDeclaration,
   BackendHandlerRun,
+  HostCommandReads,
+  SlotCommandFinder,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
 export {

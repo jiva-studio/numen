@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // Writes is the writes to the vault that the window waits for before it closes, and what a write
@@ -36,7 +36,7 @@ func (w *Writes) IsIndexOutdated(err error) bool {
 		w.window.RemoveTask(updatingIndex)
 		return false
 	}
-	if !errors.Is(err, note.ErrIndexOutdated) {
+	if !errors.Is(err, edit.ErrIndexOutdated) {
 		return false
 	}
 	w.window.AddTask(work.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})

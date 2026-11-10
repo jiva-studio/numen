@@ -157,7 +157,7 @@ func ReadCardModel(n domain.Note) CardModel {
 			break
 		}
 	}
-	r.cardModel.Preamble = markdown.Normalise(string(body[:firstTemplate]))
+	r.cardModel.Preamble = markdown.Normalize(string(body[:firstTemplate]))
 
 	for i, sec := range secs {
 		if sec.level != 2 {
@@ -167,7 +167,7 @@ func ReadCardModel(n domain.Note) CardModel {
 	}
 
 	if len(r.cardModel.Templates) > 0 {
-		r.cardModel.Tail = markdown.Normalise(string(body[r.read:]))
+		r.cardModel.Tail = markdown.Normalize(string(body[r.read:]))
 	}
 	return r.cardModel
 }

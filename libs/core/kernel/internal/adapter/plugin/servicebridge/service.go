@@ -116,7 +116,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	out.Header.Set("Authorization", "Bearer "+endpoint.Token)
 	out.ContentLength = r.ContentLength
 
-	res, err := transport.EndpointClient(endpoint).Do(out)
+	res, err := transport.GetClient(p.host, endpoint).Do(out)
 	if err != nil {
 		p.reportError(writeConnectError(w, http.StatusBadGateway, connect.CodeUnavailable, err.Error()))
 		return

@@ -117,7 +117,7 @@ func TestApplyMinChunkLength(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			db := openDB(t)
-			recipe := getQuantising().Recipe()
+			recipe := getQuantizing().Recipe()
 			embedPieces(t, db, recipe)
 
 			removed, err := db.ApplyMinChunkLength(t.Context(), tc.minimum)
@@ -165,7 +165,7 @@ func TestMinChunkLengthDecidesWhichChunksAreChosenToEmbed(t *testing.T) {
 	}
 	for _, tc := range cases {
 		db := openDB(t)
-		recipe := getQuantising().Recipe()
+		recipe := getQuantizing().Recipe()
 		cutPieces(t, db)
 		if _, err := db.ApplyMinChunkLength(t.Context(), tc.minimum); err != nil {
 			t.Fatal(err)
@@ -180,7 +180,7 @@ func TestMinChunkLengthDecidesWhichChunksAreChosenToEmbed(t *testing.T) {
 // there; the chunks that lost theirs are chosen to embed again.
 func TestLoweringTheMinimumChoosesTheChunksThatLostTheirVectors(t *testing.T) {
 	db := openDB(t)
-	recipe := getQuantising().Recipe()
+	recipe := getQuantizing().Recipe()
 	embedPieces(t, db, recipe)
 
 	if _, err := db.ApplyMinChunkLength(t.Context(), 40); err != nil {

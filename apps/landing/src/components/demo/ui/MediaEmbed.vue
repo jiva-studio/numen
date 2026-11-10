@@ -9,7 +9,7 @@
  * runs in this window.
  */
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { getDraggedHeight, getFrameOrigin, getTallest, LEAST, seekFrame } from '../lib/frame'
+import { getDraggedHeight, getFrameOrigin, getTallest, LEAST, parseJson, seekFrame } from '../lib/frame'
 import { createHeightStore, type HeightStore } from '../model/heightStore'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -139,21 +139,17 @@ function onWindowMessage(event: MessageEvent): void {
   const expectedOrigin = getFrameOrigin(props.embed)
   if (!expectedOrigin || event.origin !== expectedOrigin) return
   if (typeof event.data !== 'string') return
-  try {
-    const payload = JSON.parse(event.data) as {
-      event?: string
-      info?: { currentTime?: number; playerState?: number }
+  const payload = parseJson(event.data) as {
+    event?: string
+    info?: { currentTime?: number; playerState?: number }
+  } | null | undefined
+  if (payload?.event === 'infoDelivery' && payload.info) {
+    if (typeof payload.info.currentTime === 'number') {
+      emit('time-update', Math.round(payload.info.currentTime * 1000))
     }
-    if (payload.event === 'infoDelivery' && payload.info) {
-      if (typeof payload.info.currentTime === 'number') {
-        emit('time-update', Math.round(payload.info.currentTime * 1000))
-      }
-      if (typeof payload.info.playerState === 'number') {
-        emit('play-state', payload.info.playerState === 1)
-      }
+    if (typeof payload.info.playerState === 'number') {
+      emit('play-state', payload.info.playerState === 1)
     }
-  } catch {
-    // Non-JSON messages from embedded frames are ignored.
   }
 }
 

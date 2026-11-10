@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -121,10 +122,10 @@ func (f failingWriter) Write(ctx context.Context, path string, content []byte, f
 // use the production implementation.
 type moveParts struct {
 	links    noteport.LinkQueries
-	names    note.NameQueries
+	names    edit.NameQueries
 	readers  vaultport.VaultReaders
 	writers  note.MoveWriting
-	index    note.IndexUpdater
+	index    edit.IndexUpdater
 	hasIndex bool
 }
 
@@ -205,7 +206,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 		"the note is not there": {
 			from:  "physics/Missing.md",
 			parts: func(changing) moveParts { return moveParts{} },
-			want:  note.ErrNoNote,
+			want:  edit.ErrNoNote,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -333,7 +334,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			parts: func(changing) moveParts {
 				return moveParts{hasIndex: true, index: func(context.Context, domain.Vault, []string) error { return boom }}
 			},
-			want:       note.ErrIndexOutdated,
+			want:       edit.ErrIndexOutdated,
 			isRepaired: true,
 		},
 	} {

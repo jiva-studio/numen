@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -261,7 +261,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 		case <-p.worker.sources:
 			p.indexSources(ctx)
 		case <-p.worker.read:
-			p.embedRecognised(ctx)
+			p.embedRecognized(ctx)
 		case <-p.worker.notes:
 			// Every write puts the pass off again.
 			debounceTimer = p.worker.after(p.worker.debounce)
@@ -299,7 +299,7 @@ func (p *pass) indexSources(ctx context.Context) {
 	p.indexTexts(ctx, request)
 }
 
-func (p *pass) embedRecognised(ctx context.Context) {
+func (p *pass) embedRecognized(ctx context.Context) {
 	target := p.session.drain()
 	if len(target) == 0 {
 		return

@@ -161,17 +161,19 @@ export function createEditorCommands(
   })
   services.renames.subscribe((renamed) => commands.commands.navigation.applyRenames(renamed))
 
-  base.plugins.appCommands.current = () => featureCommands.commands
-  base.plugins.slotWindowValues.current = () => {
-    const inFront = getTarget()
-    return {
-      'window.isVaultOpen': inFront.vault.id !== '',
-      'window.isVaultReady': inFront.isReady,
-      'window.isTabOpen': inFront.tab !== '',
-      'window.isFieldFocused': isFieldFocused(),
-      'window.isPaletteOpen': isPaletteOpen(commands),
-    }
-  }
+  base.plugins.facts.provide({
+    getAppCommands: () => featureCommands.commands,
+    getValues: () => {
+      const inFront = getTarget()
+      return {
+        'window.isVaultOpen': inFront.vault.id !== '',
+        'window.isVaultReady': inFront.isReady,
+        'window.isTabOpen': inFront.tab !== '',
+        'window.isFieldFocused': isFieldFocused(),
+        'window.isPaletteOpen': isPaletteOpen(commands),
+      }
+    },
+  })
   return { getTarget, featureCommands, commands }
 }
 
@@ -205,7 +207,8 @@ export function createWindowKinds(
     },
   })
 
-  Object.assign(base.plugins.pluginServices, kinds.services, {
+  base.plugins.pluginServices.provide({
+    ...kinds.services,
     taskList: window.tasks,
     backgroundTasks: createBackgroundTasks(base, window, settings),
   })

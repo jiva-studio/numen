@@ -84,7 +84,7 @@ func (h *Handler) WatchVaultChanges(
 		return err
 	}
 
-	repeat := time.NewTicker(wire.Again)
+	repeat := time.NewTicker(wire.ResendInterval)
 	defer repeat.Stop()
 
 	for {

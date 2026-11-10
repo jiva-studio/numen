@@ -337,10 +337,15 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   )
   const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
     createKeybindingApi(deps)
+  const commandApi = createCommandApi(deps, registry, keybindings)
+  const findSlotCommand = deps.createSlotCommandFinder?.({
+    getPluginCommands: commandApi.getPaletteCommands,
+    hasPluginItems: commandApi.hasCommandItems,
+  })
   const slots = createSlotRegistry({
     getKeyFor: keybindings.getKeyFor,
     getEntries: () => deps.getSlotEntries?.(),
-    findCommand: (command, target) => deps.findSlotCommand?.(command, target),
+    findCommand: (command, target) => findSlotCommand?.(command, target),
     findView: slotViews.findView,
     ...(deps.reportSlotIssue ? { reportIssue: deps.reportSlotIssue } : {}),
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
@@ -356,7 +361,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
 
   return {
     ...createContextApi(registry, contextHost, registerKeybindings),
-    ...createCommandApi(deps, registry, keybindings),
+    ...commandApi,
     registerKeybindings,
     unregisterKeybindings,
     /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */
