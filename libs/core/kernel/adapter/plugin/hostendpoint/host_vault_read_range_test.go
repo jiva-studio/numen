@@ -38,7 +38,7 @@ type noWindow struct{}
 
 func (noWindow) GetPluginWindow() hostendpoint.WindowControl { return nil }
 
-func (noWindow) GetPluginVaultList() hostendpoint.VaultList { return nil }
+func (noWindow) GetPluginVaultList() vaultapi.List { return nil }
 
 type shownVault struct{ access *vaultapi.Access }
 
@@ -73,12 +73,14 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	readers := vaultreader.Readers{}
 	return openReadEndpoint(t, hostvault.Vault{
-		Current:     func() (domain.Vault, bool) { return v, true },
-		Stat:        file.NewStatFile(readers),
-		ReadFile:    file.NewReadFile(readers),
-		RangeReader: file.Read{Readers: readers},
-		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
-		LockVault:   writers.Lock,
+		Session: hostvault.Session{Current: func() (domain.Vault, bool) { return v, true }},
+		Files: hostvault.Files{
+			Stat:        file.NewStatFile(readers),
+			ReadFile:    file.NewReadFile(readers),
+			RangeReader: file.Read{Readers: readers},
+			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
+			LockVault:   writers.Lock,
+		},
 	}.Access())
 }
 
