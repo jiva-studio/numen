@@ -66,12 +66,15 @@ function cleanupWindowListeners() {
 
 <style scoped>
 .book-tab__contents {
+  --panel-bottom: 2.5rem;
+  --panel-edge: 0.5rem;
+  --panel-width: 15rem;
   position: absolute;
-  inset-block-end: 2.5rem;
-  inset-inline-start: 0.5rem;
+  inset-block-end: var(--panel-bottom);
+  inset-inline-start: var(--panel-edge);
   z-index: 1;
-  inline-size: 15rem;
-  max-inline-size: calc(100% - 0.5rem);
+  inline-size: var(--panel-width);
+  max-inline-size: calc(100% - var(--panel-edge));
 }
 
 .book-tab__over-enter-active,
@@ -83,7 +86,8 @@ function cleanupWindowListeners() {
 
 .book-tab__over-enter-from,
 .book-tab__over-leave-to {
-  translate: 0 -0.5rem;
+  --over-shift: 0.5rem;
+  translate: 0 calc(-1 * var(--over-shift));
   opacity: 0;
 }
 </style>
