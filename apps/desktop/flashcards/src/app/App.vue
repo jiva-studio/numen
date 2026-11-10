@@ -10,17 +10,18 @@ import '@numen/workbench/styles.css'
 import { Palette } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
-import { WORDS } from '@/shared/words'
-import VaultChooser from './VaultChooser.vue'
-import { useShell, type ShellDeps } from './useShell'
+import { APPEARANCE_WORDS } from '@/features/appearance'
+import { VaultChooser } from '@/pages/vault-chooser'
+import { createWindow, type WindowDeps } from './window/createWindow'
+import { WORDS } from './words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
-  deps?: ShellDeps
+  deps?: WindowDeps
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell(props.deps)
+const { front, tab, openTab, vaults, plugins, mountView, appearance } = createWindow(props.deps)
 </script>
 
 <template>
@@ -59,8 +60,8 @@ const { front, tab, openTab, vaults, plugins, mountView, appearance } = useShell
     v-model="appearance.query.value"
     :groups="appearance.groups.value"
     :is-open="appearance.isOpen.value"
-    :placeholder="WORDS.palettePlaceholder"
-    :name="WORDS.paletteName"
+    :placeholder="APPEARANCE_WORDS.palettePlaceholder"
+    :name="APPEARANCE_WORDS.paletteName"
     @choose="appearance.onChoose"
     @dismiss="appearance.onDismiss"
   />

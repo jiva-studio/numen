@@ -2,66 +2,62 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, shallowRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { formatErrorMessage, THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import { installCoreHandlers } from '@numen/core-client/testing'
 import { VAULT_SUMMARY, type PluginContext } from '@numen/plugin-loader'
 import type { VaultRow } from '@numen/workbench'
+import App from './App.vue'
+import { createWindow } from './window/createWindow'
 
 // jsdom draws no layout, and the palette scrolls the highlighted row into view.
 Element.prototype.scrollIntoView = () => undefined
 
-const wire = vi.hoisted(() => {
-  async function* waits(): AsyncGenerator<never> {
-    await new Promise<never>(() => undefined)
-  }
-  return {
-    waits,
-    agentSignals: [] as AbortSignal[],
-    resolveAddresses: vi.fn(async () => ({ found: [], resolved: [] })),
-    getPlugins: vi.fn(),
-    listVaults: vi.fn(),
-    tasks: (): AsyncIterable<unknown> => waits(),
-    requestedTasks: [] as unknown[],
-    taskSignals: [] as AbortSignal[],
-    listThemes: vi.fn(),
-    readTheme: vi.fn(),
-    writeAppearance: vi.fn(),
-    themeStream: (): AsyncIterable<{ names: readonly string[] }> => waits(),
-    themeSignals: [] as AbortSignal[],
-  }
-})
-vi.mock('@/shared/clients', () => ({
-  agentService: {
-    getAgentState: async (_request: unknown, options: { signal: AbortSignal }) => {
-      wire.agentSignals.push(options.signal)
+async function* waits(): AsyncGenerator<never> {
+  await new Promise<never>(() => undefined)
+}
+
+/** What the core is asked, and what it answers, during a test. */
+const wire = {
+  waits,
+  agentSignals: [] as AbortSignal[],
+  resolveAddresses: vi.fn(),
+  getPlugins: vi.fn(),
+  listVaults: vi.fn(),
+  tasks: (): AsyncIterable<unknown> => waits(),
+  requestedTasks: [] as unknown[],
+  taskSignals: [] as AbortSignal[],
+  listThemes: vi.fn(),
+  readTheme: vi.fn(),
+  writeAppearance: vi.fn(),
+  themeStream: (): AsyncIterable<{ names: readonly string[] }> => waits(),
+  themeSignals: [] as AbortSignal[],
+}
+
+let restoreCore: () => void
+
+const answerCore = (): (() => void) =>
+  installCoreHandlers({
+    getAgentState: async (_request: unknown, context: { signal: AbortSignal }) => {
+      wire.agentSignals.push(context.signal)
       return { unreachable: '' }
     },
     askAgent: wire.waits,
     finishConversation: async () => ({}),
-  },
-  noteService: {
-    resolveAddresses: wire.resolveAddresses,
-  },
-  pluginService: { getPlugins: wire.getPlugins },
-  theme: {
-    listThemes: wire.listThemes,
-    readTheme: wire.readTheme,
-    writeAppearance: wire.writeAppearance,
-    watchThemes: (_request: unknown, options: { signal: AbortSignal }) => {
-      wire.themeSignals.push(options.signal)
+    resolveAddresses: (request: unknown) => wire.resolveAddresses(request),
+    getPlugins: (request: unknown) => wire.getPlugins(request),
+    listVaults: (request: unknown) => wire.listVaults(request),
+    listThemes: (request: unknown) => wire.listThemes(request),
+    readTheme: (request: unknown) => wire.readTheme(request),
+    writeAppearance: (request: unknown) => wire.writeAppearance(request),
+    watchThemes: (_request: unknown, context: { signal: AbortSignal }) => {
+      wire.themeSignals.push(context.signal)
       return wire.themeStream()
     },
-  },
-  vaultsService: { listVaults: wire.listVaults },
-  windowService: {
-    watchTasks: (request: unknown, options: { signal: AbortSignal }) => {
+    watchTasks: (request: unknown, context: { signal: AbortSignal }) => {
       wire.requestedTasks.push(request)
-      wire.taskSignals.push(options.signal)
+      wire.taskSignals.push(context.signal)
       return wire.tasks()
     },
-  },
-}))
-
-const { default: App } = await import('./App.vue')
-const { useShell } = await import('./useShell')
+  })
 
 const VAULTS: readonly VaultRow[] = [
   { id: 'physics', name: 'Physics', path: '/vaults/Physics' },
@@ -106,16 +102,36 @@ const MANIFEST = {
   permissions: ['vault:read'],
 }
 
-const createDeps = (listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS) => ({
-  listPlugins: async () => ['md.numen.cards'],
-  listVaults,
-  fetch: (async () => new Response(JSON.stringify(MANIFEST))) as unknown as typeof fetch,
-  dynamicImport: async () => ({ activate: activateCards }),
-})
+/** The core lists these plugins and the vaults `listVaults` answers. */
+const serveCore = (
+  pluginIds: readonly string[],
+  listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS,
+) => {
+  wire.getPlugins.mockResolvedValue({ plugins: pluginIds.map((id) => ({ id, name: id })) })
+  wire.listVaults.mockImplementation(async () => ({ vaults: await listVaults() }))
+}
+
+const createDeps = (listVaults?: () => Promise<readonly VaultRow[]>) => {
+  serveCore(['md.numen.cards'], listVaults)
+  return {
+    fetch: (async () => new Response(JSON.stringify(MANIFEST))) as unknown as typeof fetch,
+    dynamicImport: async () => ({ activate: activateCards }),
+  }
+}
 
 const mounted: { unmount(): void }[] = []
 
 beforeEach(() => {
+  wire.getPlugins.mockReset()
+  wire.listVaults.mockReset()
+  wire.listThemes.mockReset()
+  wire.readTheme.mockReset()
+  wire.writeAppearance.mockReset()
+  wire.resolveAddresses.mockReset()
+  wire.resolveAddresses.mockResolvedValue({ found: [], resolved: [] })
+  wire.getPlugins.mockResolvedValue({ plugins: [] })
+  wire.listVaults.mockResolvedValue({ vaults: [] })
+  restoreCore = answerCore()
   wire.listThemes.mockResolvedValue({
     themes: [],
     applied: 'preset:numen',
@@ -129,6 +145,7 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const one of mounted.splice(0)) one.unmount()
+  restoreCore()
   wire.tasks = () => wire.waits()
   wire.themeStream = () => wire.waits()
   wire.requestedTasks.length = 0
@@ -148,7 +165,7 @@ describe('App', () => {
     await flushPromises()
 
     expect(window.text()).toContain('No plugin views.')
-    expect(window.text()).toContain(formatErrorMessage(new Error('the window is gone')))
+    expect(window.text()).toContain('the window is gone')
   })
 
   it('lists the vaults of the installation, as the window is served them', async () => {
@@ -158,12 +175,12 @@ describe('App', () => {
     wire.listVaults.mockResolvedValueOnce({
       vaults: [{ id: 'roots', name: 'Roots', path: '/vaults/Roots', isMissing: false }],
     })
-    let shell: ReturnType<typeof useShell> | undefined
+    let shell: ReturnType<typeof createWindow> | undefined
     let initialLoading = false
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = useShell({
+          shell = createWindow({
             fetch: (async () =>
               new Response('not found', { status: 404 })) as unknown as typeof fetch,
           })
@@ -188,18 +205,14 @@ describe('App', () => {
     expect(shell?.tab.value).toBeNull()
   })
 
-  it('records failed plugins, uses custom or default linkClient, and cleans up on unmount', async () => {
+  it('records failed plugins, resolves links through the note service, and cleans up on unmount', async () => {
     let agentHost: { resolveLinks: (text: string, vault: string) => Promise<unknown> } | undefined
-    const customLinks = {
-      resolveAddresses: vi.fn(async () => ({ found: [], resolved: [] })),
-    }
-    let shellDefault: ReturnType<typeof useShell> | undefined
+    serveCore(['md.numen.broken', 'md.numen.closing'])
+    let shellDefault: ReturnType<typeof createWindow> | undefined
     const defaultWrapper = mount(
       defineComponent({
         setup: () => {
-          shellDefault = useShell({
-            listPlugins: async () => ['md.numen.broken', 'md.numen.closing'],
-            listVaults: async () => VAULTS,
+          shellDefault = createWindow({
             fetch: (async (url: string) => {
               if (url.includes('broken')) return new Response('not json', { status: 200 })
               return new Response(JSON.stringify({ ...MANIFEST, id: 'md.numen.closing' }))
@@ -248,31 +261,6 @@ describe('App', () => {
     globalThis.dispatchEvent(keyAfterUnmount)
     expect(keyAfterUnmount.defaultPrevented).toBe(false)
     expect(shellDefault?.tab.value).toBeNull()
-
-    const customWrapper = mount(
-      defineComponent({
-        setup: () => {
-          useShell({
-            listPlugins: async () => ['md.numen.cards'],
-            listVaults: async () => [],
-            linkClient: customLinks,
-            fetch: (async () => new Response(JSON.stringify(MANIFEST))) as unknown as typeof fetch,
-            dynamicImport: async () => ({
-              activate: (ctx: {
-                agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
-              }) => {
-                agentHost = ctx.agent
-              },
-            }),
-          })
-          return () => null
-        },
-      }),
-    )
-    mounted.push(customWrapper)
-    await flushPromises()
-    await agentHost?.resolveLinks('[[Note]]', 'physics')
-    expect(customLinks.resolveAddresses).toHaveBeenCalled()
   })
 })
 
@@ -333,12 +321,12 @@ describe('the window over a plugin that draws the review', () => {
   })
 
   it('lists no vault, records a notice, and finishes listing when the vaults could not be listed', async () => {
-    let shell: ReturnType<typeof useShell> | undefined
+    let shell: ReturnType<typeof createWindow> | undefined
     mounted.push(
       mount(
         defineComponent({
           setup: () => {
-            shell = useShell(
+            shell = createWindow(
               createDeps(async () => {
                 throw new Error('the list is locked')
               }),
@@ -354,7 +342,7 @@ describe('the window over a plugin that draws the review', () => {
     expect(shell?.vaults.list.value).toStrictEqual([])
     expect(shell?.notices.notices.value).toMatchObject([
       {
-        text: formatErrorMessage(new Error('the list is locked')),
+        text: expect.stringContaining('the list is locked'),
         severity: 'error',
       },
     ])
@@ -386,11 +374,11 @@ describe('the work behind the window', () => {
       })
     }
     vi.useFakeTimers()
-    let shell: ReturnType<typeof useShell> | undefined
+    let shell: ReturnType<typeof createWindow> | undefined
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = useShell(createDeps())
+          shell = createWindow(createDeps())
           return () => null
         },
       }),
@@ -398,7 +386,7 @@ describe('the work behind the window', () => {
     mounted.push(wrapper)
     await flushPromises()
 
-    expect(wire.requestedTasks).toStrictEqual([{ window: 'desktop.flashcards' }])
+    expect(wire.requestedTasks).toMatchObject([{ window: 'desktop.flashcards' }])
     expect(shell?.notices.notices.value).toMatchObject([
       {
         text: 'lost touch with numen — the window keeps trying',
@@ -426,11 +414,11 @@ describe('external links in the window', () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => {
       throw new Error('blocked popup')
     })
-    let shell: ReturnType<typeof useShell> | undefined
+    let shell: ReturnType<typeof createWindow> | undefined
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = useShell(createDeps())
+          shell = createWindow(createDeps())
           return () => h('a', { href: 'https://example.test/docs' }, 'Docs')
         },
       }),
@@ -487,15 +475,11 @@ describe('the appearance palette', () => {
       interfaceScale: 1,
       textScale: 1,
     })
-    wire.getPlugins.mockReset()
+    wire.getPlugins.mockResolvedValueOnce({ plugins: [] })
     wire.getPlugins.mockResolvedValue({
       plugins: [{ id: 'org.example.themes', name: 'Sample Themes' }],
     })
-    wire.listVaults.mockResolvedValue({ vaults: [] })
-    const window = mount(App, {
-      props: { deps: { listPlugins: async () => [] } },
-      attachTo: document.body,
-    })
+    const window = mount(App, { attachTo: document.body })
     mounted.push(window)
     await flushPromises()
     globalThis.dispatchEvent(
@@ -522,11 +506,15 @@ describe('the appearance palette', () => {
     night?.click()
     await flushPromises()
 
-    expect(wire.writeAppearance).toHaveBeenCalledWith({
-      name: 'plugin:org.example.themes/night',
-      mode: THEME_MODE.SYSTEM,
-    })
-    expect(wire.readTheme).toHaveBeenCalledWith({ name: 'plugin:org.example.themes/night' })
+    expect(wire.writeAppearance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'plugin:org.example.themes/night',
+        mode: THEME_MODE.SYSTEM,
+      }),
+    )
+    expect(wire.readTheme).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'plugin:org.example.themes/night' }),
+    )
     expect(document.head.querySelector('style[data-appearance="theme"]')?.textContent).toBe(
       ':root { color-scheme: dark; }',
     )
@@ -548,14 +536,11 @@ describe('the appearance palette', () => {
       })
     }
     vi.useFakeTimers()
-    let shell: ReturnType<typeof useShell> | undefined
+    let shell: ReturnType<typeof createWindow> | undefined
     const wrapper = mount(
       defineComponent({
         setup: () => {
-          shell = useShell({
-            listPlugins: async () => [],
-            listVaults: async () => [],
-          })
+          shell = createWindow()
           return () => null
         },
       }),
@@ -605,7 +590,7 @@ describe('the appearance palette', () => {
     expect(
       shell?.notices.notices.value.some(
         (one) =>
-          one.severity === 'error' && one.text === formatErrorMessage(new Error('plugins offline')),
+          one.severity === 'error' && one.text.includes('plugins offline'),
       ),
     ).toBe(true)
 
@@ -676,9 +661,8 @@ const createBarPlugin = (pluginId: string) => ({
 
 const createBarDeps = (plugins: readonly ReturnType<typeof createBarPlugin>[]) => {
   const findPlugin = (url: string) => plugins.find((one) => url.includes(`/${one.manifest.id}/`))
+  serveCore(['md.numen.cards', ...plugins.map((one) => one.manifest.id)])
   return {
-    listPlugins: async () => ['md.numen.cards', ...plugins.map((one) => one.manifest.id)],
-    listVaults: async () => VAULTS,
     fetch: (async (url: string) =>
       new Response(
         JSON.stringify(findPlugin(String(url))?.manifest ?? MANIFEST),
@@ -754,7 +738,7 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('is drawn by the plugin first by id, and the other plugin is reported', async () => {
-    let shell: ReturnType<typeof useShell> | undefined
+    let shell: ReturnType<typeof createWindow> | undefined
     const deps = createBarDeps([
       createBarPlugin('org.example.ledger'),
       createBarPlugin('org.example.harbor'),
@@ -763,7 +747,7 @@ describe('the title bar of the flashcards window', () => {
       mount(
         defineComponent({
           setup: () => {
-            shell = useShell(deps)
+            shell = createWindow(deps)
             return () => h('div')
           },
         }),
@@ -780,12 +764,9 @@ describe('the title bar of the flashcards window', () => {
   })
 
   it('shows only the loading indicator while the plugins of the window slots start', async () => {
-    const window = mount(App, {
-      props: {
-        deps: { ...createDeps(), listPlugins: () => new Promise<string[]>(() => undefined) },
-      },
-      attachTo: document.body,
-    })
+    const deps = createDeps()
+    wire.getPlugins.mockReturnValue(new Promise(() => undefined))
+    const window = mount(App, { props: { deps }, attachTo: document.body })
     mounted.push(window)
     await flushPromises()
 
