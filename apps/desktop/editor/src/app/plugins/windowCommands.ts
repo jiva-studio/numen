@@ -6,7 +6,7 @@
 import { computed, watch } from 'vue'
 import type { CommandItem, CommandsHost, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { CommandTarget } from '@/entities/command'
-import { getNamedTarget, toRunTarget } from '../plugins/commands/runTarget'
+import { getNamedTarget, toRunTarget } from './commands/runTarget'
 
 type Values = Readonly<Record<string, string>>
 

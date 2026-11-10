@@ -9,7 +9,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { WorkspaceLayout } from '@numen/workbench'
 import { SlotViewHost } from '@numen/plugin-loader'
 import { LoadingIndicator } from '@numen/ui'
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
@@ -17,8 +17,8 @@ import CoreFailureNotice from './CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'
 import { TabLinkIndicator } from '@/features/tab-linking'
 import { WelcomeScreen } from '@/pages/welcome'
-import BootstrapFailure from './BootstrapFailure.vue'
-import { createWindow } from '../window/createWindow'
+import BootstrapFailure from './bootstrap/BootstrapFailure.vue'
+import { createWindow } from './window/createWindow'
 import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
@@ -62,7 +62,7 @@ const tabMenu = useWindowTabMenu({
   slots,
   commands: windowCommands,
   readNoteKind,
-  reportError: (error: unknown) => commandDeps.writeMessage(formatErrorMessage(error), 'error'),
+  reportError: (error: unknown) => commandDeps.writeMessage(formatError(error), 'error'),
 })
 
 /* --------------------------------- Hooks ---------------------------------- */

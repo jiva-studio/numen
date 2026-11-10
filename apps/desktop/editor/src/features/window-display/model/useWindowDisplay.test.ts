@@ -207,7 +207,7 @@ describe('the stream of changes', () => {
     await window.follow()
 
     expect(streams).toBeGreaterThanOrEqual(2)
-    expect(window.lost.value).toContain('lost touch with numen')
+    expect(window.health.lost.value).toContain('lost touch with numen')
   })
 
   it('says what changed, and waits for whatever is drawn from it', async () => {
@@ -263,11 +263,11 @@ describe('the stream of changes', () => {
       },
     })
     const one = createDisplay(core)
-    await one.window.readInitialNote()
+    await one.window.opening.read()
 
     await one.window.follow()
 
-    expect(one.window.opening.value).toBe('Renamed.md')
+    expect(one.window.opening.path.value).toBe('Renamed.md')
   })
 
   it('leaves where the vault opens alone when another note moved', async () => {
@@ -282,11 +282,11 @@ describe('the stream of changes', () => {
       },
     })
     const one = createDisplay(core)
-    await one.window.readInitialNote()
+    await one.window.opening.read()
 
     await one.window.follow()
 
-    expect(one.window.opening.value).toBe('Opening.md')
+    expect(one.window.opening.path.value).toBe('Opening.md')
     expect(request).toBe(1)
   })
 })
@@ -388,7 +388,7 @@ describe('another vault under this window', () => {
 
     expect(one.renderEvents).not.toContain('reloaded')
     expect(one.renderEvents).toContain('changed ')
-    expect(one.window.lost.value).toBe('')
+    expect(one.window.health.lost.value).toBe('')
 
     one.window.close()
   })
@@ -542,9 +542,9 @@ describe('a vault that could not be read', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.isIndexing.value).toBe(false)
-    expect(window.error.value).toBe('permission denied')
-    expect(window.hasNote.value).toBe(false)
+    expect(window.health.isIndexing.value).toBe(false)
+    expect(window.vault.error.value).toBe('permission denied')
+    expect(window.opening.hasNote.value).toBe(false)
     await vi.waitFor(() => expect(travelled).toStrictEqual(['Focused.md']))
   })
 })
@@ -556,8 +556,8 @@ describe('a vault with a note in it', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.hasNote.value).toBe(true)
-    expect(window.error.value).toBe('')
+    expect(window.opening.hasNote.value).toBe(true)
+    expect(window.vault.error.value).toBe('')
   })
 })
 
@@ -574,7 +574,7 @@ describe('a vault that is not being followed', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.unwatched.value).toBe('too many watches')
+    expect(window.vault.unwatched.value).toBe('too many watches')
   })
 })
 
@@ -591,9 +591,9 @@ describe('chunks with nothing to embed them', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.chunks.value).toBe(4823)
-    expect(window.embedded.value).toBe(0)
-    expect(window.isEmbedding.value).toBe(false)
+    expect(window.vault.chunks.value).toBe(4823)
+    expect(window.vault.embedded.value).toBe(0)
+    expect(window.vault.isEmbedding.value).toBe(false)
   })
 })
 
@@ -674,7 +674,7 @@ describe('what the application is doing', () => {
     )
     expect(openedWindows).toBeGreaterThan(1)
     // A stream taken up again is not a stream that was lost.
-    expect(window.lost.value).toBe('')
+    expect(window.health.lost.value).toBe('')
 
     window.close()
   })
@@ -712,7 +712,7 @@ describe('what the application is doing', () => {
     await flushPromises()
 
     expect(asks).toBeGreaterThan(1)
-    expect(window.chunks.value).toBe(asks * 1000)
+    expect(window.vault.chunks.value).toBe(asks * 1000)
 
     window.close()
   })
@@ -722,16 +722,16 @@ describe('a window before it has requested the vault anything', () => {
   it('says nothing yet, and is waiting for the vault to be read', () => {
     const window = useDisplay(fake())
 
-    expect(window.name.value).toBe('')
-    expect(window.isIndexing.value).toBe(true)
-    expect(window.failure.value).toBe('')
-    expect(window.lost.value).toBe('')
-    expect(window.error.value).toBe('')
-    expect(window.unwatched.value).toBe('')
-    expect(window.unreachable.value).toBe('')
-    expect(window.hasNote.value).toBe(false)
-    expect(window.opening.value).toBe('')
-    expect(window.isEmbedding.value).toBe(false)
+    expect(window.vault.name.value).toBe('')
+    expect(window.health.isIndexing.value).toBe(true)
+    expect(window.health.failure.value).toBe('')
+    expect(window.health.lost.value).toBe('')
+    expect(window.vault.error.value).toBe('')
+    expect(window.vault.unwatched.value).toBe('')
+    expect(window.vault.unreachable.value).toBe('')
+    expect(window.opening.hasNote.value).toBe(false)
+    expect(window.opening.path.value).toBe('')
+    expect(window.vault.isEmbedding.value).toBe(false)
     expect(window.tasks.value).toStrictEqual([])
   })
 })
@@ -740,9 +740,9 @@ describe('the note the vault opens with', () => {
   it('is none for a vault that holds no note', async () => {
     const window = useDisplay(fake({ getInitialOpenPath: async () => null }))
 
-    expect(await window.readInitialNote()).toBe('')
-    expect(window.opening.value).toBe('')
-    expect(window.hasNote.value).toBe(false)
+    expect(await window.opening.read()).toBe('')
+    expect(window.opening.path.value).toBe('')
+    expect(window.opening.hasNote.value).toBe(false)
   })
 })
 
@@ -753,7 +753,7 @@ describe('the first note shown', () => {
     await one.window.start()
     await flushPromises()
 
-    expect(one.window.isIndexing.value).toBe(false)
+    expect(one.window.health.isIndexing.value).toBe(false)
     expect(one.changed).toStrictEqual([''])
   })
 
@@ -802,7 +802,7 @@ describe('the first note shown', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.isIndexing.value).toBe(true)
+    expect(window.health.isIndexing.value).toBe(true)
     expect(changed).toStrictEqual([])
   })
 
@@ -826,7 +826,7 @@ describe('the first note shown', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.isIndexing.value).toBe(true)
+    expect(window.health.isIndexing.value).toBe(true)
     expect(changed).toStrictEqual([])
     expect(waits).toStrictEqual([100])
   })
@@ -864,8 +864,8 @@ describe('a vault that cannot be reached at all', () => {
 
     await window.start()
 
-    expect(window.failure.value).not.toBe('')
-    expect(window.isIndexing.value).toBe(false)
+    expect(window.health.failure.value).not.toBe('')
+    expect(window.health.isIndexing.value).toBe(false)
   })
 })
 

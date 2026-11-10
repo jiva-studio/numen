@@ -22,9 +22,9 @@ import type { initWindowKindsAndCommands } from './createCommandsPart'
 import { getCommands, getVaults, type WindowContext, type WindowCore } from './createDisplayPart'
 import { getSettingsConfig } from '@/features/settings-commands'
 import type { useSettings } from './useSettings'
-import { createWindowCommands } from './windowCommands'
-import { createWindowSlots } from './windowSlots'
-import { createEditorVaults } from './windowVaults'
+import { createWindowCommands } from '../plugins/windowCommands'
+import { createWindowSlots } from '../plugins/windowSlots'
+import { createEditorVaults } from '../plugins/windowVaults'
 
 const getDeclaredCommandsDeps = (
   hostHolder: { current?: PluginHost },

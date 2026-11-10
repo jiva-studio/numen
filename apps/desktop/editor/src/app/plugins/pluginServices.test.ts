@@ -15,9 +15,8 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
   const failure = ref('')
   const deps = {
     window: {
-      failure,
-      opening: ref('Root.md'),
-      readInitialNote: vi.fn(() => Promise.resolve('Root.md')),
+      health: { failure },
+      opening: { path: ref('Root.md'), read: vi.fn(() => Promise.resolve('Root.md')) },
     },
     dragged: shallowRef<readonly string[]>([]),
     tabOpeners: {
@@ -163,7 +162,7 @@ describe('the agent a plugin is handed', () => {
       getModelsAt: vi.fn(() => []),
     }
     const unreachable = ref('')
-    const agent = createAgentHost({ port, window: { unreachable }, settings: { rest } })
+    const agent = createAgentHost({ port, window: { vault: { unreachable } }, settings: { rest } })
     return { agent, port, resolveAddresses, rest, unreachable }
   }
 

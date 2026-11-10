@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
-import { createDisplayOptions, type DisplayWiring } from './useWindowDisplayOptions'
+import { createDisplayOptions, type DisplayWiring } from './displayOptions'
 
 const createWiring = (leavePath: (from: string, to: string) => Promise<void>) => {
   const writeMessage = vi.fn()

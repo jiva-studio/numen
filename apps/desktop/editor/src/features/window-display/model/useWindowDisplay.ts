@@ -1,12 +1,14 @@
-import { ref, shallowRef } from 'vue'
-import { getInitialOpenPath, type NoteEdit } from '@/entities/note'
+import { shallowRef } from 'vue'
+import type { NoteEdit } from '@/entities/note'
 import type { Task } from '@/entities/window'
-import { getAgentUnreachable, getVaultState } from '@/entities/vault'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { createWindowStreams } from './useWindowStreams'
+import { useDisplayHealth, type DisplayHealth } from './useDisplayHealth'
+import { useDisplayOpening } from './useDisplayOpening'
+import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVault'
 
 /**
  * The vault as the whole window reads it, and the notifications when the vault
@@ -45,35 +47,8 @@ export interface DisplayOptions {
   reload?(this: void): void
 }
 
-function useDisplayState() {
-  const state = {
-    name: ref(''),
-    at: ref(''),
-    isIndexing: ref(true),
-    /** The core could not be reached: nothing else in the window is true. */
-    failure: ref(''),
-    /** What the window itself lost its connection to, reported until restored. */
-    lost: ref(''),
-    error: ref(''),
-    unwatched: ref(''),
-    /** Why an agent cannot be reached, as the vault last answered. */
-    unreachable: ref(''),
-    /** Whether the vault holds a note to show at all. */
-    hasNote: ref(false),
-    /** The note the vault opens with, for whatever has nowhere else to start. */
-    opening: ref(''),
-    chunks: ref(0),
-    embedded: ref(0),
-    isEmbedding: ref(false),
-    tasks: shallowRef<readonly Task[]>([]),
-  }
-  return state
-}
-
-type DisplayState = ReturnType<typeof useDisplayState>
-
 interface StartDisplayDeps {
-  state: DisplayState
+  health: DisplayHealth
   ask: () => Promise<unknown>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
@@ -82,9 +57,9 @@ interface StartDisplayDeps {
   isOpen: () => boolean
 }
 
-function startStreams(streams: ReturnType<typeof createWindowStreams>, state: DisplayState): void {
+function startStreams(streams: ReturnType<typeof createWindowStreams>, health: DisplayHealth): void {
   const onError = (error: unknown) => {
-    state.failure.value = formatError(error)
+    health.failure.value = formatError(error)
   }
   runInBackground(streams.follow(), onError)
   runInBackground(streams.watch(), onError)
@@ -93,61 +68,29 @@ function startStreams(streams: ReturnType<typeof createWindowStreams>, state: Di
 }
 
 async function startDisplay(deps: StartDisplayDeps): Promise<void> {
-  const { state, ask, readInitialNote, onVaultChanged, streams, wait, isOpen } = deps
+  const { health, ask, readInitialNote, onVaultChanged, streams, wait, isOpen } = deps
   try {
     while (isOpen()) {
       const vault = (await ask()) as { scan: { error?: string; isReady?: boolean } }
       const note = await readInitialNote()
       if (!isOpen()) return
       if (note) {
-        state.isIndexing.value = false
+        health.isIndexing.value = false
         await onVaultChanged([], [])
-        startStreams(streams, state)
+        startStreams(streams, health)
         return
       }
       if (vault.scan.error || vault.scan.isReady) {
-        state.isIndexing.value = false
-        startStreams(streams, state)
+        health.isIndexing.value = false
+        startStreams(streams, health)
         return
       }
       await wait(100)
     }
   } catch (error) {
-    state.failure.value = formatError(error)
-    state.isIndexing.value = false
+    health.failure.value = formatError(error)
+    health.isIndexing.value = false
   }
-}
-
-async function askDisplayState(display: DisplayState): Promise<unknown> {
-  const [state, agent] = await Promise.all([getVaultState(), getAgentUnreachable()])
-  display.unreachable.value = agent
-  display.name.value = state.name
-  if (display.at.value === '') display.at.value = state.path
-  display.error.value = state.scan.error
-  display.unwatched.value = state.scan.unwatchedPath
-  display.chunks.value = Number(state.coverage.chunkCount)
-  display.embedded.value = Number(state.coverage.embeddedCount)
-  display.isEmbedding.value = state.coverage.isEmbedding
-  return state
-}
-
-async function checkVaultSwapped(display: DisplayState): Promise<boolean> {
-  const was = display.at.value
-  /* Stryker disable BlockStatement: callers only test truthiness of checkVaultSwapped */
-  try {
-    const state = (await askDisplayState(display)) as { path: string }
-    return was !== '' && state.path !== was
-  } catch {
-    return false
-  }
-  /* Stryker restore BlockStatement */
-}
-
-async function readInitialNotePath(display: DisplayState): Promise<string> {
-  const note = await getInitialOpenPath()
-  display.hasNote.value = note !== null
-  display.opening.value = note?.path ?? ''
-  return display.opening.value
 }
 
 export function useWindowDisplay(how: DisplayOptions = {}) {
@@ -155,27 +98,28 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
   // No listener is attached by default; each callback does nothing.
   const onVaultChanged = how.onVaultChanged ?? (() => undefined)
   const reload = how.reload ?? (() => undefined)
-  const display = useDisplayState()
+  const vault = useDisplayVault()
+  const health = useDisplayHealth()
+  const opening = useDisplayOpening()
+  const tasks = shallowRef<readonly Task[]>([])
   let open = true
   const abortController = new AbortController()
 
-  const ask = () => askDisplayState(display)
-  const readInitialNote = () => readInitialNotePath(display)
-  const isVaultSwapped = () => checkVaultSwapped(display)
+  const ask = () => askVaultState(vault)
 
   const streams = createWindowStreams({
     listening: abortController,
     isOpen: () => open,
     setLost: (response) => {
-      display.lost.value = response
+      health.lost.value = response
     },
     wait,
-    opening: display.opening,
-    tasks: display.tasks,
-    isVaultSwapped,
+    opening: opening.path,
+    tasks,
+    isVaultSwapped: () => isVaultSwapped(vault),
     reload,
     onVaultChanged,
-    readInitialNote,
+    readInitialNote: opening.read,
     ask,
     reportChange: how.reportChange ?? (() => undefined),
     travelTo: how.travelTo ?? (() => undefined),
@@ -184,13 +128,15 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
   })
 
   return {
-    ...display,
-    readInitialNote,
+    vault,
+    health,
+    opening,
+    tasks,
     start: () =>
       startDisplay({
-        state: display,
+        health,
         ask,
-        readInitialNote,
+        readInitialNote: opening.read,
         onVaultChanged,
         streams,
         wait,
@@ -204,5 +150,7 @@ export function useWindowDisplay(how: DisplayOptions = {}) {
     },
   }
 }
+
+export type WindowDisplay = ReturnType<typeof useWindowDisplay>
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
