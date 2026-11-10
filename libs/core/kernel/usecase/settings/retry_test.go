@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
@@ -18,9 +19,9 @@ func TestARetryPluginMadeWithoutARetrierIsRefused(t *testing.T) {
 
 func TestARetryPluginPassesTheIdToTheRetrier(t *testing.T) {
 	var got string
-	retry, err := settings.NewRetryPlugin(func(_ context.Context, id string) (*settings.PluginFailure, error) {
+	retry, err := settings.NewRetryPlugin(func(_ context.Context, id string) (*plugin.Failure, error) {
 		got = id
-		return &settings.PluginFailure{PluginID: id}, nil
+		return &plugin.Failure{PluginID: id}, nil
 	})
 	if err != nil {
 		t.Fatal(err)

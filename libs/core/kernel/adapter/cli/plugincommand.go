@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -86,7 +87,7 @@ func runPluginCommand(
 	}
 	defer closeInto(&err, closeRun)
 
-	call := plugincommand.Call{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
+	call := plugin.CommandCall{PluginID: entry.PluginID, Command: declared.ID, Arguments: arguments}
 	if list.HasTargetVariable(declared) {
 		call.Path = positional[1]
 	}
@@ -115,7 +116,7 @@ func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string
 	return fs, arguments
 }
 
-func writeResult(out io.Writer, result plugincommand.Result) error {
+func writeResult(out io.Writer, result plugin.CommandResult) error {
 	r := newReporter(out)
 	if result.Message != "" {
 		r.Println(result.Message)

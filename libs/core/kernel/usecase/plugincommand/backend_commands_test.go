@@ -5,12 +5,13 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
 // mixedCommands declares commands of plugins with a backend and a frontend, with a frontend only,
 // with neither, and of one the host holds suspended.
-type mixedCommands struct{ calls []plugincommand.Call }
+type mixedCommands struct{ calls []plugin.CommandCall }
 
 func (m *mixedCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
 
@@ -27,17 +28,17 @@ func (m *mixedCommands) ListCommands() []plugincommand.Entry {
 	}
 }
 
-func (m *mixedCommands) GetParts(pluginID string) plugincommand.Parts {
-	return map[string]plugincommand.Parts{
+func (m *mixedCommands) GetParts(pluginID string) plugin.Parts {
+	return map[string]plugin.Parts{
 		"md.numen.cards": {HasBackend: true, HasFrontend: true},
 		"md.numen.tree":  {HasFrontend: true},
 		"md.numen.down":  {HasBackend: true, IsSuspended: true},
 	}[pluginID]
 }
 
-func (m *mixedCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
+func (m *mixedCommands) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
 	m.calls = append(m.calls, call)
-	return plugincommand.Result{Message: "ran " + call.Command}, nil
+	return plugin.CommandResult{Message: "ran " + call.Command}, nil
 }
 
 func TestTheCommandLineListsOnlyCommandsOfPluginsThatHaveABackend(t *testing.T) {
@@ -63,7 +64,7 @@ func TestTheWindowListsTheCommandsOfEveryRunningPluginWhateverPartRunsThem(t *te
 func TestACommandOfAPluginWithoutABackendIsNotRunInABackend(t *testing.T) {
 	declared := &mixedCommands{}
 
-	_, err := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugincommand.Call{
+	_, err := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.tree", Command: "tree.open",
 	})
 
@@ -75,7 +76,7 @@ func TestACommandOfAPluginWithoutABackendIsNotRunInABackend(t *testing.T) {
 func TestACommandOfAPluginWithABackendIsRunInItsBackend(t *testing.T) {
 	declared := &mixedCommands{}
 
-	result, err := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugincommand.Call{
+	result, err := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.cards", Command: "deck.create",
 	})
 

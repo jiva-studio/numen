@@ -14,6 +14,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
@@ -85,7 +86,7 @@ func TestTwoOpenVaultCallsAtOnceBothReturnAndBothOpen(t *testing.T) {
 
 func TestOpenVaultWhileTheWindowFlushesIsUnavailable(t *testing.T) {
 	list := newRecordingList()
-	list.err = fmt.Errorf("open vault v2: %w: %w", pluginport.ErrUnavailable, errors.New("the window is flushing pending writes"))
+	list.err = fmt.Errorf("open vault v2: %w: %w", domain.ErrUnavailable, errors.New("the window is flushing pending writes"))
 	endpoint, client := openListEndpoint(t, list)
 	defer func() {
 		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {

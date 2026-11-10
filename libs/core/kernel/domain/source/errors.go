@@ -1,4 +1,4 @@
-// Package source holds the sentinel errors of the documents a reader imports.
+// Package source holds the values of the sources a reader imports and searches, and their sentinel errors.
 package source
 
 import "errors"

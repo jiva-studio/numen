@@ -21,7 +21,7 @@ const reviewLogSuffix = ".jsonl"
 type Ports struct {
 	Readers   ports.VaultReaders
 	Writers   ports.VaultWriters
-	Notes     ports.NoteQueries
+	Notes     Notes
 	Links     ports.LinkQueries
 	Problems  ports.ProblemQueries
 	Logs      ports.LogStores

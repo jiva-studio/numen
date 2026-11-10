@@ -29,11 +29,19 @@ type Scenarios struct {
 	Day           review.Day
 }
 
+// Notes is what the scenarios built from a Config ask the index of a vault's notes.
+type Notes interface {
+	ports.IndexQueries
+	ports.TypePathQueries
+	ports.NoteRefQueries
+	ports.NameQueries
+}
+
 // Config is what the scenarios that run a vault's cards are built against.
 type Config struct {
 	Readers   ports.VaultReaders
 	Writers   ports.VaultWriters
-	Notes     ports.NoteQueries
+	Notes     Notes
 	Links     ports.LinkQueries
 	Problems  ports.ProblemQueries
 	Index     func(ctx context.Context, v domain.Vault, paths []string) error

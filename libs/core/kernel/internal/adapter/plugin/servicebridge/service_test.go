@@ -14,6 +14,7 @@ import (
 	"sync"
 	"testing"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -21,14 +22,14 @@ import (
 type servingHost struct {
 	infos     []pluginport.PluginInfo
 	services  map[string]string
-	endpoints map[string]pluginport.Endpoint
+	endpoints map[string]plugindomain.Endpoint
 	manifests map[string]pluginport.PluginManifest
 	mu        sync.Mutex
 	released  int
 }
 
 func (h *servingHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+	return pluginport.DiscoveredPlugin{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 }
 
 func (h *servingHost) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
@@ -41,10 +42,10 @@ func (h *servingHost) ResolveService(service string) (pluginport.DiscoveredPlugi
 	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, serves
 }
 
-func (h *servingHost) EnsureActive(_ context.Context, id string) (pluginport.Endpoint, error) {
+func (h *servingHost) EnsureActive(_ context.Context, id string) (plugindomain.Endpoint, error) {
 	endpoint, running := h.endpoints[id]
 	if !running {
-		return pluginport.Endpoint{}, errors.New("the plugin is down")
+		return plugindomain.Endpoint{}, errors.New("the plugin is down")
 	}
 	return endpoint, nil
 }
@@ -61,7 +62,7 @@ func (h *servingHost) getReleased() int {
 	return h.released
 }
 
-func endpointOf(t *testing.T, server *httptest.Server, token string) pluginport.Endpoint {
+func endpointOf(t *testing.T, server *httptest.Server, token string) plugindomain.Endpoint {
 	t.Helper()
 	host, rawPort, err := net.SplitHostPort(server.Listener.Addr().String())
 	if err != nil {
@@ -71,7 +72,7 @@ func endpointOf(t *testing.T, server *httptest.Server, token string) pluginport.
 	if err != nil {
 		t.Fatal(err)
 	}
-	return pluginport.Endpoint{Host: host, Port: number, Token: token}
+	return plugindomain.Endpoint{Host: host, Port: number, Token: token}
 }
 
 func TestACallReachesThePluginThatServesItsService(t *testing.T) {
@@ -91,7 +92,7 @@ func TestACallReachesThePluginThatServesItsService(t *testing.T) {
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
 		services:  map[string]string{"numen.v1.SampleService": "md.numen.a"},
-		endpoints: map[string]pluginport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
+		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(Open(host))
 	t.Cleanup(window.Close)
@@ -146,7 +147,7 @@ func TestAStreamReachesTheWindowMessageByMessage(t *testing.T) {
 	t.Cleanup(plugin.Close)
 	host := &servingHost{
 		services:  map[string]string{"numen.v1.EventsService": "md.numen.a"},
-		endpoints: map[string]pluginport.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
+		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": endpointOf(t, plugin, "secret")},
 	}
 	window := httptest.NewServer(Open(host))
 	t.Cleanup(window.Close)

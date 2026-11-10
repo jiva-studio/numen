@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -19,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -42,7 +42,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().FindLexical(
-		t.Context(), v.ID, sourceport.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
+		t.Context(), v.ID, source.LexicalQuery{Text: query, Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -19,12 +20,12 @@ type ONNXProvisioner struct {
 	inner *Provisioner
 
 	mu    sync.Mutex
-	ready map[string]pluginport.ResolvedDependency
+	ready map[string]plugin.ResolvedDependency
 }
 
 // NewONNXProvisioner returns an ONNXProvisioner for the configuration.
 func NewONNXProvisioner(cfg Config) *ONNXProvisioner {
-	return &ONNXProvisioner{inner: New(cfg), ready: make(map[string]pluginport.ResolvedDependency)}
+	return &ONNXProvisioner{inner: New(cfg), ready: make(map[string]plugin.ResolvedDependency)}
 }
 
 // CanProvision reports whether the requirement is the ONNX Runtime.
@@ -34,8 +35,8 @@ func (p *ONNXProvisioner) CanProvision(req pluginport.DependencyRequirement) boo
 
 // Provision finds or fetches the library for the plugin folder of the requirement.
 func (p *ONNXProvisioner) Provision(
-	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
-) (pluginport.ResolvedDependency, error) {
+	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus),
+) (plugin.ResolvedDependency, error) {
 	var last time.Time
 	report := func(done, total int64) {
 		if onProgress == nil || (done < total && p.inner.cfg.Clock.Now().Sub(last) < progressInterval) {
@@ -46,16 +47,16 @@ func (p *ONNXProvisioner) Provision(
 		if total > 0 {
 			percent = float64(done) * 100 / float64(total)
 		}
-		onProgress(pluginport.DependencyStatus{
-			ID: req.ID, State: pluginport.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
+		onProgress(plugin.DependencyStatus{
+			ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
 			ProgressPercent: percent, Message: "Downloading " + req.ID,
 		})
 	}
 	library, provider, err := p.inner.ProvisionWithProgress(ctx, req.PluginDir, report)
 	if err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
-	resolved := pluginport.ResolvedDependency{
+	resolved := plugin.ResolvedDependency{
 		ID: req.ID, PrimaryPath: library,
 		EnvVars:  map[string]string{EnvLibrary: library, EnvProvider: provider},
 		Metadata: map[string]string{"provider": provider},
@@ -68,12 +69,12 @@ func (p *ONNXProvisioner) Provision(
 
 // Status returns ready for a plugin folder the library was provisioned for, and
 // missing for any other folder.
-func (p *ONNXProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
+func (p *ONNXProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
 	p.mu.Lock()
 	resolved, ok := p.ready[req.PluginDir]
 	p.mu.Unlock()
 	if !ok {
-		return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateMissing}, nil
+		return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateMissing}, nil
 	}
-	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
+	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
 }

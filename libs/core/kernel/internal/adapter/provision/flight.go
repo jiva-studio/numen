@@ -5,6 +5,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -23,10 +24,10 @@ type flightGroup struct {
 type flight struct {
 	cancel      context.CancelFunc
 	completion  chan struct{}
-	subscribers map[int]func(pluginport.DependencyStatus)
+	subscribers map[int]func(plugin.DependencyStatus)
 	next        int
-	last        *pluginport.DependencyStatus
-	resolved    pluginport.ResolvedDependency
+	last        *plugin.DependencyStatus
+	resolved    plugin.ResolvedDependency
 	err         error
 }
 
@@ -40,9 +41,9 @@ func (g *flightGroup) isRunning(key string) bool {
 func (g *flightGroup) do(
 	ctx context.Context,
 	key string,
-	onProgress func(pluginport.DependencyStatus),
-	run func(ctx context.Context, report func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error),
-) (pluginport.ResolvedDependency, error) {
+	onProgress func(plugin.DependencyStatus),
+	run func(ctx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error),
+) (plugin.ResolvedDependency, error) {
 	g.mu.Lock()
 	if g.flights == nil {
 		g.flights = make(map[string]*flight)
@@ -50,7 +51,7 @@ func (g *flightGroup) do(
 	current, joined := g.flights[key]
 	if !joined {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-		current = &flight{cancel: cancel, completion: make(chan struct{}), subscribers: make(map[int]func(pluginport.DependencyStatus))}
+		current = &flight{cancel: cancel, completion: make(chan struct{}), subscribers: make(map[int]func(plugin.DependencyStatus))}
 		g.flights[key] = current
 		go g.execute(runCtx, key, current, run)
 	}
@@ -71,7 +72,7 @@ func (g *flightGroup) do(
 		g.mu.Lock()
 		delete(current.subscribers, id)
 		g.mu.Unlock()
-		return pluginport.ResolvedDependency{}, ctx.Err()
+		return plugin.ResolvedDependency{}, ctx.Err()
 	}
 }
 
@@ -79,12 +80,12 @@ func (g *flightGroup) execute(
 	ctx context.Context,
 	key string,
 	current *flight,
-	run func(ctx context.Context, report func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error),
+	run func(ctx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error),
 ) {
-	report := func(status pluginport.DependencyStatus) {
+	report := func(status plugin.DependencyStatus) {
 		g.mu.Lock()
 		current.last = &status
-		listeners := make([]func(pluginport.DependencyStatus), 0, len(current.subscribers))
+		listeners := make([]func(plugin.DependencyStatus), 0, len(current.subscribers))
 		for _, listener := range current.subscribers {
 			listeners = append(listeners, listener)
 		}

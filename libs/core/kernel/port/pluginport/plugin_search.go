@@ -8,8 +8,6 @@ import (
 
 // The limits of the search index calls.
 const (
-	MaxEmbeddedTexts = 256
-	MaxEmbeddedBytes = 8192
 	// MaxSampledQueries is how many queries one SampleSimilarities call takes, and MaxSampledPassages how
 	// many small chunks it compares each of them with.
 	MaxSampledQueries  = 256

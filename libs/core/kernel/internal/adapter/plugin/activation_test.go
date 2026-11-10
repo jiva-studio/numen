@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -87,7 +87,7 @@ func TestAPluginWhoseStartFailedIsStartedAgainOnItsNextUseAtOnce(t *testing.T) {
 func TestAFailedStartIsReportedEachTimeAndShownWithItsReason(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var notified []string
-	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { notified = append(notified, failure.PluginID) })
+	host.SetOnPluginFailed(func(failure plugindomain.Failure) { notified = append(notified, failure.PluginID) })
 	launches := 0
 	host.SetLauncher(failLaunching(&launches))
 

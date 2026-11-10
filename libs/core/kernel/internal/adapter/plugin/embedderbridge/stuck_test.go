@@ -19,12 +19,11 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
 // stuckModelServer answers the model once, and then holds every request until the test ends, as a
@@ -92,9 +91,9 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 	stuck.isStuck.Store(true)
 	bound, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
-	reply := make(chan embeddingport.EmbeddingModel, 1)
+	reply := make(chan embedding.Model, 1)
 	go func() { reply <- bridge.GetModel() }()
-	var model embeddingport.EmbeddingModel
+	var model embedding.Model
 	select {
 	case model = <-reply:
 	case <-bound.Done():

@@ -1,6 +1,8 @@
 package settings
 
-import "github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+)
 
 // SecretLedger is the list of secrets in the settings file.
 type SecretLedger struct {
@@ -17,7 +19,7 @@ func NewSecretLedger(files *Files, path func() (string, error), read func() (Fil
 }
 
 // GetSecrets returns the valid secrets of the file in list order.
-func (l *SecretLedger) GetSecrets() ([]pluginport.Secret, error) {
+func (l *SecretLedger) GetSecrets() ([]plugin.Secret, error) {
 	current, err := l.read()
 	if err != nil {
 		return nil, err
@@ -27,7 +29,7 @@ func (l *SecretLedger) GetSecrets() ([]pluginport.Secret, error) {
 
 // ChangeSecrets reads the secrets section, applies change and writes it back under the lock of the
 // settings file, and delivers the change to the readers of the setting-changed event.
-func (l *SecretLedger) ChangeSecrets(change func([]pluginport.Secret) ([]pluginport.Secret, error)) error {
+func (l *SecretLedger) ChangeSecrets(change func([]plugin.Secret) ([]plugin.Secret, error)) error {
 	path, err := l.path()
 	if err != nil {
 		return err

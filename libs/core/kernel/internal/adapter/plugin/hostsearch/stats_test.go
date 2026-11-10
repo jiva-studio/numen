@@ -3,20 +3,20 @@ package hostsearch
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // stubStats answers with the counts it holds and counts the reads.
 type stubStats struct {
-	counts      indexport.IndexCounts
-	sizes       indexport.IndexSizes
+	counts      index.Counts
+	sizes       index.Sizes
 	err         error
 	countsReads int
 	sizesReads  int
@@ -24,19 +24,19 @@ type stubStats struct {
 	lastRecipe  string
 }
 
-func (s *stubStats) GetIndexCounts(_ context.Context, vault domain.VaultID, recipe string) (indexport.IndexCounts, error) {
+func (s *stubStats) GetIndexCounts(_ context.Context, vault domain.VaultID, recipe string) (index.Counts, error) {
 	s.countsReads++
 	s.lastVault, s.lastRecipe = string(vault), recipe
 	return s.counts, s.err
 }
 
-func (s *stubStats) GetIndexSizes(context.Context) (indexport.IndexSizes, error) {
+func (s *stubStats) GetIndexSizes(context.Context) (index.Sizes, error) {
 	s.sizesReads++
 	return s.sizes, s.err
 }
 
 func TestCountsAreCachedForOneSecondAndSizesForHalfAMinute(t *testing.T) {
-	source := &stubStats{counts: indexport.IndexCounts{Chunks: 3}, sizes: indexport.IndexSizes{Database: 100}}
+	source := &stubStats{counts: index.Counts{Chunks: 3}, sizes: index.Sizes{Database: 100}}
 	now := clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC))
 	stats := NewStats(source, now)
 	ctx := t.Context()
@@ -50,14 +50,14 @@ func TestCountsAreCachedForOneSecondAndSizesForHalfAMinute(t *testing.T) {
 		t.Fatalf("three calls in one instant read the counts %d times and the sizes %d times, want once each", source.countsReads, source.sizesReads)
 	}
 
-	source.counts = indexport.IndexCounts{Chunks: 4}
+	source.counts = index.Counts{Chunks: 4}
 	now.Advance(1500 * time.Millisecond)
 	counts, _, err := stats.Get(ctx, "01VAULT", "r")
 	if err != nil || counts.Chunks != 4 || source.countsReads != 2 || source.sizesReads != 1 {
 		t.Errorf("after 1.5 s: counts %+v (%v), read %d and %d times", counts, err, source.countsReads, source.sizesReads)
 	}
 
-	source.sizes = indexport.IndexSizes{Database: 200}
+	source.sizes = index.Sizes{Database: 200}
 	now.Advance(30 * time.Second)
 	_, sizes, err := stats.Get(ctx, "01VAULT", "r")
 	if err != nil || sizes.Database != 200 || source.sizesReads != 2 {
@@ -100,18 +100,18 @@ func TestAFailedReadIsNotCached(t *testing.T) {
 
 type failingSizes struct{ *stubStats }
 
-func (f *failingSizes) GetIndexSizes(context.Context) (indexport.IndexSizes, error) {
-	return indexport.IndexSizes{}, errors.New("no dbstat")
+func (f *failingSizes) GetIndexSizes(context.Context) (index.Sizes, error) {
+	return index.Sizes{}, errors.New("no dbstat")
 }
 
 func TestTheIndexStatisticsCarryTheModelAndTheCounts(t *testing.T) {
 	f := newFixture()
 	f.search.Stats = NewStats(&stubStats{
-		counts: indexport.IndexCounts{
+		counts: index.Counts{
 			Chunks: 12, Vectors: 9, Sources: 3,
-			Extensions: []indexport.ExtensionCount{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
+			Extensions: []index.ExtensionCount{{Extension: "md", Sources: 2, Chunks: 7}, {Extension: "pdf", Sources: 1, Chunks: 5}},
 		},
-		sizes: indexport.IndexSizes{Database: 4096, Vectors: 2048},
+		sizes: index.Sizes{Database: 4096, Vectors: 2048},
 	}, clock.NewFake(time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)))
 
 	got, err := f.search.GetIndexStats(t.Context(), getVault())

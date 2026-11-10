@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -18,7 +19,7 @@ func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 
 	commands := Open(host)
 
-	want := map[string]pluginport.PluginParts{
+	want := map[string]plugin.Parts{
 		"md.numen.tree":    {HasFrontend: true},
 		"md.numen.job":     {HasBackend: true},
 		"md.numen.empty":   {},

@@ -36,6 +36,12 @@ type Neighbor struct {
 	Outcome     note.ReadOutcome
 }
 
+// neighbourNotes is what the neighbourhood asks the index of the notes it found.
+type neighbourNotes interface {
+	ports.NoteRefQueries
+	ports.NoteTypeQueries
+}
+
 // ShowNeighbourhood is what the deck being reviewed is joined to, with the text
 // of each.
 //
@@ -43,7 +49,7 @@ type Neighbor struct {
 // everything its cards name: this is the reading beside the review.
 type ShowNeighbourhood struct {
 	linked note.ShowLinks
-	notes  ports.NoteQueries
+	notes  neighbourNotes
 	reads  note.Read
 }
 
@@ -53,7 +59,7 @@ type ShowNeighbourhood struct {
 //
 // The prose is read only where a deck names something.
 func NewShowNeighbourhood(
-	linked note.ShowLinks, notes ports.NoteQueries, reads note.Read,
+	linked note.ShowLinks, notes neighbourNotes, reads note.Read,
 ) ShowNeighbourhood {
 	return ShowNeighbourhood{linked: linked, notes: notes, reads: reads}
 }
@@ -216,7 +222,7 @@ func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neigh
 type AssignCardIDs struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	notes   ports.NoteQueries
+	notes   ports.TypePathQueries
 	links   ports.LinkQueries
 	index   func(ctx context.Context, v domain.Vault, paths []string) error
 	now     ports.Clock
@@ -230,7 +236,7 @@ type AssignCardIDs struct {
 func NewAssignCardIDs(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
-	notes ports.NoteQueries,
+	notes ports.TypePathQueries,
 	links ports.LinkQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 	now ports.Clock,

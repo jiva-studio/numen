@@ -275,8 +275,7 @@ func TestADeckOverTheBoundIsNotRenamed(t *testing.T) {
 // byType is the index, watching for the question a rename must not ask and
 // counting the one it may.
 type byType struct {
-	ports.NoteQueries
-	t          *testing.T
+	ports.TypePathQueries
 	queryCount *int
 }
 
@@ -284,14 +283,7 @@ func (q byType) GetPathsOfType(
 	ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType,
 ) ([]string, error) {
 	*q.queryCount++
-	return q.NoteQueries.GetPathsOfType(ctx, vaultID, noteType)
-}
-
-func (q byType) GetTypes(
-	ctx context.Context, vaultID domain.VaultID, paths []string,
-) (map[string]domain.NoteType, error) {
-	q.t.Errorf("a rename asked what each of %d notes is", len(paths))
-	return q.NoteQueries.GetTypes(ctx, vaultID, paths)
+	return q.TypePathQueries.GetPathsOfType(ctx, vaultID, noteType)
 }
 
 // A rename queries the index for the decks of the vault and for nothing else.
@@ -301,7 +293,7 @@ func (q byType) GetTypes(
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
 	var request int
-	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, queryCount: &request})
+	u := newRenameField(t, vs).WithNotes(byType{TypePathQueries: vs.queries, queryCount: &request})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		CardModel: "Animal.md", From: "Height", To: "Shoulder height",

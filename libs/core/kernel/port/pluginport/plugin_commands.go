@@ -3,6 +3,7 @@ package pluginport
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -24,40 +25,6 @@ type PluginSlotEntry struct {
 type PluginKeybindingEntry struct {
 	PluginID   string
 	Keybinding manifest.Keybinding
-}
-
-// PluginParts is what one plugin has and whether the host runs it.
-type PluginParts struct {
-	HasBackend  bool
-	HasFrontend bool
-	IsSuspended bool
-	Name        string
-	TextKinds   map[string]string
-}
-
-// PluginCommandCall is one run of a command, checked against its declaration.
-type PluginCommandCall struct {
-	PluginID  string
-	Command   string
-	Path      string
-	Arguments map[string]string
-	ItemID    string
-}
-
-// PluginCommandResult is the result of a command that ran.
-type PluginCommandResult struct {
-	Message    string
-	OpenedPath string
-}
-
-// CommandFailedError is a command the plugin ran and that failed, with the plugin's message.
-type CommandFailedError struct {
-	Message string
-}
-
-// Error returns the plugin's message.
-func (e *CommandFailedError) Error() string {
-	return e.Message
 }
 
 // PluginDeclarations is what the manifests of the enabled plugins declare, whether or not a plugin is
@@ -83,8 +50,8 @@ type PluginCommands interface {
 	PluginDeclarations
 	// GetParts says what the plugin of the id has and whether it is suspended. A plugin that is not
 	// enabled has none.
-	GetParts(pluginID string) PluginParts
+	GetParts(pluginID string) plugin.Parts
 	// RunCommand runs the command in the backend of its plugin. A plugin that cannot be started or
 	// reached is an *UnavailableError, and a command that ran and failed a *CommandFailedError.
-	RunCommand(ctx context.Context, call PluginCommandCall) (PluginCommandResult, error)
+	RunCommand(ctx context.Context, call plugin.CommandCall) (plugin.CommandResult, error)
 }

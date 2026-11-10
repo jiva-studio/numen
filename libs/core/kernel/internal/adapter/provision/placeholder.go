@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -31,8 +32,8 @@ func (p *PlaceholderProvisioner) CanProvision(pluginport.DependencyRequirement) 
 
 // Provision returns the program the machine holds, or a placeholder.
 func (p *PlaceholderProvisioner) Provision(
-	_ context.Context, req pluginport.DependencyRequirement, _ func(pluginport.DependencyStatus),
-) (pluginport.ResolvedDependency, error) {
+	_ context.Context, req pluginport.DependencyRequirement, _ func(plugin.DependencyStatus),
+) (plugin.ResolvedDependency, error) {
 	if req.Kind == pluginport.DependencyKindBinary {
 		if found := p.discovery.find(req); found != "" {
 			return newResolved(req, filepath.Dir(found), found), nil
@@ -40,7 +41,7 @@ func (p *PlaceholderProvisioner) Provision(
 	}
 	root := getDependencyDir(p.dir, string(req.Kind), req.ID, req.Version)
 	if err := os.MkdirAll(root, 0o755); err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	name := req.Metadata["fileName"]
 	if !isPlainName(name) {
@@ -48,7 +49,7 @@ func (p *PlaceholderProvisioner) Provision(
 	}
 	primary := filepath.Join(root, name)
 	if err := os.WriteFile(primary, nil, 0o600); err != nil {
-		return pluginport.ResolvedDependency{}, fmt.Errorf("placeholder for %s: %w", req.ID, err)
+		return plugin.ResolvedDependency{}, fmt.Errorf("placeholder for %s: %w", req.ID, err)
 	}
 	resolved := newResolved(req, root, primary)
 	if vars, ok := p.runtimeVars[req.ID]; ok && req.Kind == pluginport.DependencyKindRuntime {
@@ -58,12 +59,12 @@ func (p *PlaceholderProvisioner) Provision(
 }
 
 // Status answers ready, with the placeholder made.
-func (p *PlaceholderProvisioner) Status(ctx context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
+func (p *PlaceholderProvisioner) Status(ctx context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
 	resolved, err := p.Provision(ctx, req, nil)
 	if err != nil {
-		return pluginport.DependencyStatus{}, err
+		return plugin.DependencyStatus{}, err
 	}
-	return pluginport.DependencyStatus{
-		ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved,
+	return plugin.DependencyStatus{
+		ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved,
 	}, nil
 }

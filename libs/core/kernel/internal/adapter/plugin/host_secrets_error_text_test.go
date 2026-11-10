@@ -14,7 +14,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 const pluginWords = "rejected the key"
@@ -96,17 +96,17 @@ type errorTextCase struct {
 func newErrorTextHost(t *testing.T, values []string) (*Host, *configured) {
 	t.Helper()
 	items := make(map[string]string, len(values))
-	secrets := make([]pluginport.Secret, 0, len(values))
+	secrets := make([]plugindomain.Secret, 0, len(values))
 	for i, value := range values {
 		id := fmt.Sprintf("s%d", i)
 		items["secret/"+id] = value
-		secrets = append(secrets, pluginport.Secret{
+		secrets = append(secrets, plugindomain.Secret{
 			ID: id, Name: fmt.Sprintf("Name %d", i), Group: "openrouter",
-			Allowed: []pluginport.DeclarationKey{{Plugin: secretPluginID, Name: declared}},
+			Allowed: []plugindomain.DeclarationKey{{Plugin: secretPluginID, Name: declared}},
 		})
 	}
 	host, probe := newSecretHost(t, newKeys(items))
-	host.SetSecretSource(pluginport.SecretSource{List: func() ([]pluginport.Secret, error) { return secrets, nil }})
+	host.SetSecretSource(plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) { return secrets, nil }})
 	return host, probe
 }
 

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 )
 
@@ -23,9 +23,9 @@ func (p *countingPlugins) Refresh(ctx context.Context, forced ...string) error {
 
 func newGroupFixture() fixture {
 	return newFixture(
-		pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"},
-		pluginport.Secret{ID: "s00000002", Name: "Other", Group: "h"},
-		pluginport.Secret{ID: "s00000003", Name: "Two", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey()}},
+		plugin.Secret{ID: "s00000001", Name: "One", Group: "g"},
+		plugin.Secret{ID: "s00000002", Name: "Other", Group: "h"},
+		plugin.Secret{ID: "s00000003", Name: "Two", Group: "g", Allowed: []plugin.DeclarationKey{getAlphaKey()}},
 	)
 }
 
@@ -67,12 +67,12 @@ func TestDeleteGroupWithFailingStoreRestoresEntries(t *testing.T) {
 	if !errors.Is(err, secret.ErrKeyStore) || !errors.Is(err, errLocked) {
 		t.Errorf("error = %v", err)
 	}
-	want := []pluginport.Secret{
+	want := []plugin.Secret{
 		{ID: "s00000001", Name: "One", Group: "g"},
 		{ID: "s00000002", Name: "Other", Group: "h"},
-		{ID: "s00000003", Name: "Two", Group: "g", Allowed: []pluginport.DeclarationKey{getAlphaKey()}},
+		{ID: "s00000003", Name: "Two", Group: "g", Allowed: []plugin.DeclarationKey{getAlphaKey()}},
 	}
-	if !slices.EqualFunc(f.ledger.list, want, func(a, b pluginport.Secret) bool {
+	if !slices.EqualFunc(f.ledger.list, want, func(a, b plugin.Secret) bool {
 		return a.ID == b.ID && slices.Equal(a.Allowed, b.Allowed)
 	}) {
 		t.Errorf("list = %v, want %v", f.ledger.list, want)

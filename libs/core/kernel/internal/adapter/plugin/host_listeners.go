@@ -10,9 +10,8 @@ import (
 	"slices"
 	"strconv"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -289,7 +288,7 @@ func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 	}
 }
 
-func (h *Host) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
+func (h *Host) releaseEndpoint(pluginID string, endpoint plugindomain.Endpoint) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	sup, ok := h.supervisors[pluginID]
@@ -299,7 +298,7 @@ func (h *Host) releaseEndpoint(pluginID string, endpoint transport.Endpoint) {
 	sup.Release(h.clock.Now())
 }
 
-func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport.PluginFailure {
+func (h *Host) recordActivationFailure(pluginID string, cause error) *plugindomain.Failure {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	sup, ok := h.supervisors[pluginID]

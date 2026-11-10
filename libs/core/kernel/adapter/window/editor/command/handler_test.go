@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -26,7 +26,7 @@ func (shownVault) GetCurrentVault() domain.Vault { return domain.Vault{ID: "v1",
 
 // pluginCommands declares one command and answers every run with the outcome it is given.
 type pluginCommands struct {
-	result plugincommand.Result
+	result plugin.CommandResult
 	err    error
 }
 
@@ -52,11 +52,11 @@ func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	}
 }
 
-func (p pluginCommands) GetParts(string) plugincommand.Parts {
-	return plugincommand.Parts{HasBackend: true}
+func (p pluginCommands) GetParts(string) plugin.Parts {
+	return plugin.Parts{HasBackend: true}
 }
 
-func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
+func (p pluginCommands) RunCommand(context.Context, plugin.CommandCall) (plugin.CommandResult, error) {
 	return p.result, p.err
 }
 
@@ -102,7 +102,7 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 		message  string
 	}{
 		"a command that ran": {
-			pluginCommands{result: plugincommand.Result{Message: "made a.md", OpenedPath: "a.md"}}, valid, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED, "made a.md",
+			pluginCommands{result: plugin.CommandResult{Message: "made a.md", OpenedPath: "a.md"}}, valid, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED, "made a.md",
 		},
 		"a command no plugin declares": {
 			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "org.example.sample", Command: "shred"},
@@ -113,11 +113,11 @@ func TestRunPluginCommand_ReturnsMessageAndErrorCode(t *testing.T) {
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS, "",
 		},
 		"a command that failed": {
-			pluginCommands{err: &pluginport.CommandFailedError{Message: "the disk is full"}}, valid,
+			pluginCommands{err: &plugin.CommandFailedError{Message: "the disk is full"}}, valid,
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED, "the disk is full",
 		},
 		"a plugin that cannot start": {
-			pluginCommands{err: &pluginport.UnavailableError{PluginID: "org.example.sample", Reason: pluginport.PluginFailed}}, valid,
+			pluginCommands{err: &plugin.UnavailableError{PluginID: "org.example.sample", Reason: plugin.Failed}}, valid,
 			v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE, "plugin org.example.sample failed to start",
 		},
 	}

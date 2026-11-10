@@ -19,7 +19,7 @@ import (
 type memoryVersions struct {
 	mu       sync.Mutex
 	versions map[domain.VaultID][]domain.TextVersion
-	sources  map[domain.VaultID]map[string]textport.ContentHash
+	sources  map[domain.VaultID]map[string]textdomain.ContentHash
 }
 
 func (m *memoryVersions) Open(v domain.Vault) (textport.VersionRepository, error) {
@@ -92,18 +92,18 @@ type memoryFiles struct {
 
 func (m *memoryFiles) Open(domain.Vault) (textport.TextFiles, error) { return m, nil }
 
-func (m *memoryFiles) ReadTextFile(_ context.Context, pluginID, name string) (textport.TextFile, error) {
+func (m *memoryFiles) ReadTextFile(_ context.Context, pluginID, name string) (textdomain.File, error) {
 	m.mu.Lock()
 	raw, ok := m.files[pluginID+"/"+name]
 	m.mu.Unlock()
 	if !ok {
-		return textport.TextFile{}, textdomain.ErrNoText
+		return textdomain.File{}, textdomain.ErrNoText
 	}
 	segments, err := textfile.Decode(raw)
 	if err != nil {
-		return textport.TextFile{}, err
+		return textdomain.File{}, err
 	}
-	return textport.TextFile{Segments: segments, TextHash: domain.HashContent(raw)}, nil
+	return textdomain.File{Segments: segments, TextHash: domain.HashContent(raw)}, nil
 }
 
 func (m *memoryFiles) WriteTextFile(_ context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {
@@ -245,7 +245,7 @@ func (c *minuteClock) Now() time.Time {
 }
 
 // FindContentHash is the source row of the path, as the sources table has it.
-func (r memoryRepo) FindContentHash(_ context.Context, path string) (textport.ContentHash, bool, error) {
+func (r memoryRepo) FindContentHash(_ context.Context, path string) (textdomain.ContentHash, bool, error) {
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
 	row, ok := r.store.sources[r.vault][path]
@@ -255,7 +255,7 @@ func (r memoryRepo) FindContentHash(_ context.Context, path string) (textport.Co
 // SaveContentHash writes the record over the row of its path where the row has
 // the record's size and modification time or already has its hash. A path
 // with no row is not saved.
-func (r memoryRepo) SaveContentHash(_ context.Context, record textport.ContentHash) error {
+func (r memoryRepo) SaveContentHash(_ context.Context, record textdomain.ContentHash) error {
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
 	row, ok := r.store.sources[r.vault][record.Path]
@@ -270,22 +270,22 @@ func (r memoryRepo) SaveContentHash(_ context.Context, record textport.ContentHa
 }
 
 func (m *memoryVersions) addScannedSource(vault domain.VaultID, path string, size int64, modTime time.Time) {
-	m.addSource(vault, textport.ContentHash{Path: path, Size: size, ModTime: modTime})
+	m.addSource(vault, textdomain.ContentHash{Path: path, Size: size, ModTime: modTime})
 }
 
-func (m *memoryVersions) addSource(vault domain.VaultID, row textport.ContentHash) {
+func (m *memoryVersions) addSource(vault domain.VaultID, row textdomain.ContentHash) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.sources == nil {
-		m.sources = map[domain.VaultID]map[string]textport.ContentHash{}
+		m.sources = map[domain.VaultID]map[string]textdomain.ContentHash{}
 	}
 	if m.sources[vault] == nil {
-		m.sources[vault] = map[string]textport.ContentHash{}
+		m.sources[vault] = map[string]textdomain.ContentHash{}
 	}
 	m.sources[vault][row.Path] = row
 }
 
-func (m *memoryVersions) getSource(vault domain.VaultID, path string) (textport.ContentHash, bool) {
+func (m *memoryVersions) getSource(vault domain.VaultID, path string) (textdomain.ContentHash, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	row, ok := m.sources[vault][path]

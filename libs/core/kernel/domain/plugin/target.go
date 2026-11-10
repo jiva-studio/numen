@@ -1,4 +1,4 @@
-package pluginport
+package plugin
 
 import (
 	"maps"

@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -101,10 +102,10 @@ func getSources(chunks []domain.Passage) []string {
 
 // preparedBatch is one batch of chunks whose text was read and whose cached vectors were resolved.
 type preparedBatch struct {
-	model       embeddingport.EmbeddingModel
+	model       embedding.Model
 	pending     []domain.Passage
 	hashes      [][]byte
-	reused      map[int]embeddingport.Vector
+	reused      map[int]embedding.Vector
 	reusedCount int
 	asking      []string
 	askingMap   []int
@@ -114,7 +115,7 @@ type preparedBatch struct {
 
 // completedBatch is one batch whose vectors are ready to be stored.
 type completedBatch struct {
-	vectors []embeddingport.Vector
+	vectors []embedding.Vector
 	reused  int
 	id      uint64
 }
@@ -198,13 +199,13 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 func (u Embed) produceBatches(
 	ctx context.Context,
 	v domain.Vault,
-	model embeddingport.EmbeddingModel,
+	model embedding.Model,
 	source *extracted,
 	track *tracker,
 	out chan<- preparedBatch,
 ) error {
 	res, mu := track.res, track.mu
-	var after embeddingport.ChunkCursor
+	var after embedding.ChunkCursor
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -237,7 +238,7 @@ func (u Embed) produceBatches(
 
 func (u Embed) sendBatches(
 	ctx context.Context,
-	model embeddingport.EmbeddingModel,
+	model embedding.Model,
 	chunks []domain.Passage,
 	texts []string,
 	track *tracker,
@@ -411,7 +412,7 @@ func (u Embed) read(
 
 func (u Embed) prepareBatch(
 	ctx context.Context,
-	model embeddingport.EmbeddingModel,
+	model embedding.Model,
 	pending []domain.Passage,
 	texts []string,
 ) (preparedBatch, error) {
@@ -437,7 +438,7 @@ func (u Embed) prepareBatch(
 		model:     model,
 		pending:   pending,
 		hashes:    hashes,
-		reused:    make(map[int]embeddingport.Vector),
+		reused:    make(map[int]embedding.Vector),
 		asking:    make([]string, 0, len(texts)),
 		askingMap: make([]int, len(texts)),
 		sources:   getSources(pending),
@@ -457,11 +458,11 @@ func (u Embed) prepareBatch(
 			continue
 		}
 		prep.askingMap[i] = -1
-		prep.reused[i] = embeddingport.Vector{
+		prep.reused[i] = embedding.Vector{
 			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
-			Kind:    embeddingport.QuantisedInt8,
+			Kind:    embedding.QuantisedInt8,
 			Value:   value,
 			Coarse:  vector.Coarse(vector.Dimensions(value)),
 		}
@@ -496,14 +497,14 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 		return completedBatch{}, err
 	}
 
-	out := make([]embeddingport.Vector, len(prep.pending))
+	out := make([]embedding.Vector, len(prep.pending))
 	for i := range prep.pending {
 		if pos := prep.askingMap[i]; pos >= 0 {
-			out[i] = embeddingport.Vector{
+			out[i] = embedding.Vector{
 				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
-				Kind:    embeddingport.QuantisedInt8,
+				Kind:    embedding.QuantisedInt8,
 				Value:   unique[pos].value,
 				Coarse:  unique[pos].coarse,
 			}

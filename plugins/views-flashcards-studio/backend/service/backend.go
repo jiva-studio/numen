@@ -45,7 +45,7 @@ type Config struct {
 type Backend struct {
 	vaults func(domain.VaultID) hostports.Vault
 	ports  hostports.Ports
-	titles ports.NoteQueries
+	titles ports.NoteRefQueries
 	now    ports.Clock
 	cfg    Config
 	runs   sessions

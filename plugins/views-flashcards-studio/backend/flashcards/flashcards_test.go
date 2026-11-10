@@ -44,7 +44,7 @@ type vaulted struct {
 	schedules flashcards.Schedules
 	counted   flashcards.CountReviews
 	logs      ports.LogStores
-	notes     ports.NoteQueries
+	notes     vaulttest.Queries
 	links     ports.LinkQueries
 	scan      func(ctx context.Context, v domain.Vault, paths []string) error
 }

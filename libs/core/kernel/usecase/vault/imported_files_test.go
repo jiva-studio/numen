@@ -6,11 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // handedOver is a machine whose handles are not paths and which has no
@@ -24,8 +23,8 @@ type handedOver struct {
 
 func (h handedOver) GetName(handle string) string { return h.names[handle] }
 
-func (h handedOver) GetImportedFile(_ context.Context, handle string) (sourceport.ImportedFile, error) {
-	one := sourceport.ImportedFile{Name: h.names[handle], Handle: handle}
+func (h handedOver) GetImportedFile(_ context.Context, handle string) (source.ImportedFile, error) {
+	one := source.ImportedFile{Name: h.names[handle], Handle: handle}
 	if _, target := h.holding[handle]; target {
 		one.IsFolder = true
 		return one, nil
@@ -34,13 +33,13 @@ func (h handedOver) GetImportedFile(_ context.Context, handle string) (sourcepor
 		one.IsFile = true
 		return one, nil
 	}
-	return sourceport.ImportedFile{}, io.ErrUnexpectedEOF
+	return source.ImportedFile{}, io.ErrUnexpectedEOF
 }
 
-func (h handedOver) List(_ context.Context, handle string) ([]sourceport.ImportedFile, error) {
-	var out []sourceport.ImportedFile
+func (h handedOver) List(_ context.Context, handle string) ([]source.ImportedFile, error) {
+	var out []source.ImportedFile
 	for _, underVal := range h.holding[handle] {
-		out = append(out, sourceport.ImportedFile{Name: h.names[underVal], Handle: underVal})
+		out = append(out, source.ImportedFile{Name: h.names[underVal], Handle: underVal})
 	}
 	return out, nil
 }

@@ -17,6 +17,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
@@ -118,7 +119,7 @@ func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[s
 	}
 }
 
-func getAgentPrompt(t *testing.T, endpoint transport.Endpoint) string {
+func getAgentPrompt(t *testing.T, endpoint plugindomain.Endpoint) string {
 	t.Helper()
 	client := numenv1connect.NewAgentServiceClient(transport.EndpointClient(endpoint), transport.GetBaseURL(endpoint))
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
@@ -302,7 +303,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 
 func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 	catalog := newONNXCatalog()
-	catalog.resolved[pluginport.RuntimeONNX] = pluginport.ResolvedDependency{ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider}}
+	catalog.resolved[pluginport.RuntimeONNX] = plugindomain.ResolvedDependency{ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider}}
 	catalog.err = err
 	return catalog
 }
@@ -378,7 +379,7 @@ func (newerProtocolLifecycle) Ping(
 	_ context.Context,
 	_ *connect.Request[v1.PingRequest],
 ) (*connect.Response[v1.PingResponse], error) {
-	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: pluginport.PluginProtocolVersion + 1}), nil
+	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: manifest.ProtocolVersion + 1}), nil
 }
 
 func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
@@ -486,12 +487,12 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
-	manifest, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
+	manifestJSON, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	builtIn := strings.Replace(string(manifest), `"permissions": ["vault:read"]`, `"permissions": ["vault:write"]`, 1)
-	if builtIn == string(manifest) {
+	builtIn := strings.Replace(string(manifestJSON), `"permissions": ["vault:read"]`, `"permissions": ["vault:write"]`, 1)
+	if builtIn == string(manifestJSON) {
 		t.Fatal("the fixture's permissions are not the ones replaced")
 	}
 	registerBuiltIn(t, host, []byte(builtIn), newBuiltInBackend().serve("built-in sample"))
@@ -503,7 +504,7 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	if err := host.CheckPluginPermission("org.example.sample", pluginport.PermissionVaultWrite); err != nil {
+	if err := host.CheckPluginPermission("org.example.sample", manifest.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
 	if err := host.CheckPluginPermission("org.example.sample", pluginport.PermissionVaultRead); err == nil {

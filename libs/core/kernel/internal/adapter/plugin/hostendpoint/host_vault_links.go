@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -31,7 +32,7 @@ func (e *vaultEndpoint) AddLinks(
 	if len(req.Msg.GetLinks()) > batchLimit {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyLinks)
 	}
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func (e *vaultEndpoint) AddLinks(
 func (e *vaultEndpoint) UpdateLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceUpdateLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceUpdateLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func (e *vaultEndpoint) UpdateLinks(
 func (e *vaultEndpoint) RemoveLinks(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveLinksRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}

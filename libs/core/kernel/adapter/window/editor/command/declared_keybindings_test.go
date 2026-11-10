@@ -8,6 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -26,14 +27,14 @@ func (keyBindingPlugins) ListKeybindings() []plugincommand.KeybindingEntry {
 	}
 }
 
-func (keyBindingPlugins) GetParts(pluginID string) plugincommand.Parts {
+func (keyBindingPlugins) GetParts(pluginID string) plugin.Parts {
 	switch pluginID {
 	case "md.numen.cards":
-		return plugincommand.Parts{HasBackend: true, HasFrontend: true}
+		return plugin.Parts{HasBackend: true, HasFrontend: true}
 	case "md.numen.down":
-		return plugincommand.Parts{HasBackend: true, IsSuspended: true}
+		return plugin.Parts{HasBackend: true, IsSuspended: true}
 	}
-	return plugincommand.Parts{HasFrontend: true}
+	return plugin.Parts{HasFrontend: true}
 }
 
 func TestListCommands_ListsTheKeybindingsOfEnabledPlugins(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 )
 
 // folderDialog is the system folder dialog, opened by the toolkit that owns the
@@ -28,10 +28,10 @@ func (d *folderDialog) ChooseFolder(_ context.Context, title, startingAt string)
 	// The dialog library terminates the process when the machine has no settings
 	// schemas to read, which closes the window and discards unsaved state.
 	if !hasSchemas() {
-		return "", false, machineport.ErrNoFolderDialog
+		return "", false, machine.ErrNoFolderDialog
 	}
 	if !d.tryAcquire() {
-		return "", false, machineport.ErrChoosing
+		return "", false, machine.ErrChoosing
 	}
 	defer d.release()
 
@@ -76,10 +76,10 @@ func (d *folderDialog) release() {
 // every file when accept is empty.
 func (d *folderDialog) ChooseFile(_ context.Context, title, startingAt string, accept []string) (string, bool, error) {
 	if !hasSchemas() {
-		return "", false, machineport.ErrNoFolderDialog
+		return "", false, machine.ErrNoFolderDialog
 	}
 	if !d.tryAcquire() {
-		return "", false, machineport.ErrChoosing
+		return "", false, machine.ErrChoosing
 	}
 	defer d.release()
 

@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -20,7 +21,7 @@ import (
 // over one of them; it lists every version of a file and deletes one for Delete text.
 type VersionItems interface {
 	ListVersionItems(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry) ([]textversion.VersionItem, error)
-	RunVersionItem(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry, version domain.TextVersionID) (plugincommand.Result, error)
+	RunVersionItem(ctx context.Context, v domain.Vault, path string, entry plugincommand.Entry, version domain.TextVersionID) (plugin.CommandResult, error)
 	ListEveryVersion(ctx context.Context, v domain.Vault, path string) ([]textversion.VersionItem, error)
 	DeleteVersion(ctx context.Context, v domain.Vault, path string, version domain.TextVersionID) error
 }
@@ -108,19 +109,19 @@ func (h *Handler) deleteVersion(ctx context.Context, msg *v1.RunPluginCommandReq
 	return err
 }
 
-func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugincommand.Result, bool, error) {
+func (h *Handler) runWithArgument(ctx context.Context, msg *v1.RunPluginCommandRequest) (plugin.CommandResult, bool, error) {
 	if isDeleteText(msg.GetPluginId(), msg.GetCommand()) {
-		return plugincommand.Result{}, true, h.deleteVersion(ctx, msg)
+		return plugin.CommandResult{}, true, h.deleteVersion(ctx, msg)
 	}
 	entry, found := h.findEntry(msg.GetPluginId(), msg.GetCommand())
 	hasItems := found && h.list.HasItems(entry.Command)
 	switch {
 	case !hasItems:
-		return plugincommand.Result{}, false, nil
+		return plugin.CommandResult{}, false, nil
 	case msg.GetItemId() == "":
-		return plugincommand.Result{}, true, fmt.Errorf("%w: %s runs over an item it offers", plugincommand.ErrBadArguments, msg.GetCommand())
+		return plugin.CommandResult{}, true, fmt.Errorf("%w: %s runs over an item it offers", plugincommand.ErrBadArguments, msg.GetCommand())
 	case h.versions == nil:
-		return plugincommand.Result{}, true, errNoVersions
+		return plugin.CommandResult{}, true, errNoVersions
 	}
 	result, err := h.versions.RunVersionItem(ctx, h.vaults.GetCurrentVault(), msg.GetPath(), entry, domain.TextVersionID(msg.GetItemId()))
 	if errors.Is(err, textversion.ErrInvalidVersion) {
@@ -144,7 +145,7 @@ func (h *Handler) findEntry(pluginID, command string) (plugincommand.Entry, bool
 	return plugincommand.Entry{}, false
 }
 
-func getVersionTitle(item textversion.VersionItem, parts plugincommand.Parts) string {
+func getVersionTitle(item textversion.VersionItem, parts plugin.Parts) string {
 	title := item.Kind
 	if declared, ok := parts.TextKinds[item.Kind]; ok {
 		title = declared
@@ -158,7 +159,7 @@ func getVersionTitle(item textversion.VersionItem, parts plugincommand.Parts) st
 	return title
 }
 
-func getVersionDetail(item textversion.VersionItem, parts plugincommand.Parts) string {
+func getVersionDetail(item textversion.VersionItem, parts plugin.Parts) string {
 	maker := parts.Name
 	if maker == "" {
 		maker = item.PluginID

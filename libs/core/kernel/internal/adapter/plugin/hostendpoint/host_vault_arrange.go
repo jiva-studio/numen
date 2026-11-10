@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -88,7 +89,7 @@ func (e *vaultEndpoint) GetVaultProblems(
 func (e *vaultEndpoint) RenameNote(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRenameNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceRenameNoteResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +125,7 @@ func (e *vaultEndpoint) MoveNotes(
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +171,7 @@ func (e *vaultEndpoint) RemoveNotes(
 	if err := checkBatch(req.Msg.GetPaths()); err != nil {
 		return nil, err
 	}
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}

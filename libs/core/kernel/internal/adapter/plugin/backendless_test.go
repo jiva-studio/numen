@@ -9,9 +9,9 @@ import (
 	"reflect"
 	"testing"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -52,13 +52,13 @@ func newFrontendOnlyHost(t *testing.T) (*Host, *int) {
 
 func TestAPluginWithoutABackendIsNeverLaunched(t *testing.T) {
 	host, launches := newFrontendOnlyHost(t)
-	var failures []pluginport.PluginFailure
-	host.SetOnPluginFailed(func(failure pluginport.PluginFailure) { failures = append(failures, failure) })
+	var failures []plugindomain.Failure
+	host.SetOnPluginFailed(func(failure plugindomain.Failure) { failures = append(failures, failure) })
 
 	_, err := host.EnsureActive(t.Context(), "md.numen.views.sketch")
 
-	var unavailable *pluginport.UnavailableError
-	if !errors.As(err, &unavailable) || unavailable.Reason != pluginport.PluginWithoutBackend {
+	var unavailable *plugindomain.UnavailableError
+	if !errors.As(err, &unavailable) || unavailable.Reason != plugindomain.WithoutBackend {
 		t.Fatalf("EnsureActive = %v, want a plugin without a backend", err)
 	}
 	if *launches != 0 {
@@ -93,7 +93,7 @@ func TestPluginInfosMarkThePartsOfThePlugins(t *testing.T) {
 	if len(infos) != 1 || !infos[0].HasFrontend || infos[0].HasBackend {
 		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend and no backend", infos)
 	}
-	want := []pluginport.PluginReaderInfo{{ID: "sketch", Extensions: []string{"pdf"}}}
+	want := []plugindomain.ReaderInfo{{ID: "sketch", Extensions: []string{"pdf"}}}
 	if !reflect.DeepEqual(infos[0].Readers, want) {
 		t.Fatalf("Readers = %+v, want %+v", infos[0].Readers, want)
 	}

@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -25,15 +25,15 @@ type fakeSearchIndex struct {
 	err      error
 }
 
-func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindLexical(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.Passage, error) {
 	return a.passages, a.err
 }
 
-func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (a fakeSearchIndex) GetNamedPassages(context.Context, domain.VaultID, source.LexicalQuery) ([]domain.Passage, error) {
 	return nil, a.err
 }
 
-func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, sourceport.NearestQuery) ([]domain.Passage, error) {
+func (a fakeSearchIndex) FindNearest(context.Context, domain.VaultID, source.NearestQuery) ([]domain.Passage, error) {
 	return nil, a.err
 }
 

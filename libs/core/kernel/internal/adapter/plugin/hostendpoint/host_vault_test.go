@@ -16,6 +16,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -586,7 +587,7 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	if got := readCode(t, anonymous); got != connect.CodeUnauthenticated {
 		t.Errorf("a call with no token is %v", got)
 	}
-	if !slices.Contains(hosted.checked, "md.numen.b "+pluginport.PermissionVaultRead) || !slices.Contains(hosted.checked, "md.numen.b "+pluginport.PermissionVaultWrite) {
+	if !slices.Contains(hosted.checked, "md.numen.b "+pluginport.PermissionVaultRead) || !slices.Contains(hosted.checked, "md.numen.b "+manifest.PermissionVaultWrite) {
 		t.Errorf("the permissions asked were %v", hosted.checked)
 	}
 }

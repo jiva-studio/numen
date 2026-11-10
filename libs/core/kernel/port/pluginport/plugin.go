@@ -2,105 +2,11 @@ package pluginport
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-var (
-	// ErrUnavailable means whatever answers cannot be reached right now.
-	ErrUnavailable = domain.ErrUnavailable
-)
-
-// UnavailableReason is why no plugin answers.
-type UnavailableReason int
-
-const (
-	// PluginNotInstalled is no installed plugin to answer.
-	PluginNotInstalled UnavailableReason = iota + 1
-	// PluginDisabled is every plugin that would answer switched off, by its setting or by safe mode.
-	PluginDisabled
-	// PluginFailed is a plugin that could not be started or reached.
-	PluginFailed
-	// PluginWithoutBackend is a plugin that declares no backend, so there is nothing to start.
-	PluginWithoutBackend
-)
-
-// UnavailableError is a plugin, or a capability, that no plugin answers for, and why. It is
-// ErrUnavailable.
-type UnavailableError struct {
-	Capability string
-	PluginID   string
-	Reason     UnavailableReason
-	Err        error
-}
-
-// Error reports what is unavailable and why.
-func (e *UnavailableError) Error() string {
-	subject := "plugin " + e.PluginID
-	if e.PluginID == "" {
-		subject = "the plugin for " + e.Capability
-	}
-	var response string
-	switch e.Reason {
-	case PluginNotInstalled:
-		response = subject + " is not installed"
-	case PluginDisabled:
-		response = subject + " is disabled"
-	case PluginWithoutBackend:
-		response = subject + " has no backend"
-	default:
-		response = subject + " failed to start"
-	}
-	if e.Err != nil {
-		return response + ": " + e.Err.Error()
-	}
-	return response
-}
-
-// Is reports that the error is ErrUnavailable.
-func (e *UnavailableError) Is(target error) bool {
-	return target == ErrUnavailable
-}
-
-// Unwrap returns the cause the host gave.
-func (e *UnavailableError) Unwrap() error {
-	return e.Err
-}
-
-// PluginFailure is a plugin the host suspends after it failed to start, and why.
-type PluginFailure struct {
-	PluginID string
-	Name     string
-	Reason   string
-	Detail   string
-	At       time.Time
-}
-
-// PluginPersistHandler is called when a plugin modifies its own settings.
-type PluginPersistHandler func(pluginID string, key string, value any) error
-
-// PluginTransport represents an underlying communication channel for a plugin endpoint.
-type PluginTransport interface {
-	RoundTripTransport()
-}
-
-// Endpoint holds connection parameters and credentials for an active plugin.
-type Endpoint struct {
-	Host      string
-	Port      int
-	Token     string
-	Transport PluginTransport
-}
-
-// Address returns host and port joined with a colon.
-func (e Endpoint) Address() string {
-	if e.Port == 0 {
-		return e.Host
-	}
-	return fmt.Sprintf("%s:%d", e.Host, e.Port)
-}
 
 // PluginResolver locates plugins by capability or identifier. Of several enabled plugins that
 // declare a capability, the one with the lowest id is found.
@@ -119,7 +25,7 @@ type PluginResolver interface {
 
 // PluginActivator activates plugins and manages active references.
 type PluginActivator interface {
-	EnsureActive(ctx context.Context, pluginID string) (Endpoint, error)
+	EnsureActive(ctx context.Context, pluginID string) (plugin.Endpoint, error)
 	Release(pluginID string)
 }
 
@@ -142,11 +48,11 @@ type PluginSettingDeclarer interface {
 
 type pluginSecretConfigurator interface {
 	SetKeyStore(store KeyStore)
-	SetSecretSource(source SecretSource)
+	SetSecretSource(source plugin.SecretSource)
 	// Refresh configures the running plugins whose list of secrets differs from the one they were
 	// last given, and the plugins named in forced.
 	Refresh(ctx context.Context, forced ...string) error
-	ListDeclarations() []DeclarationKey
+	ListDeclarations() []plugin.DeclarationKey
 }
 
 type pluginSettingsPush interface {
@@ -159,7 +65,7 @@ type pluginSettingsPush interface {
 type PluginConfigurator interface {
 	pluginSecretConfigurator
 	pluginSettingsPush
-	SetPersistHandler(handler PluginPersistHandler)
+	SetPersistHandler(handler plugin.PersistHandler)
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	CheckPluginSetting(pluginID, key string, value any) error
 }
@@ -170,9 +76,9 @@ type PluginEventEmitter interface {
 }
 
 type pluginFailureCallbacks interface {
-	SetOnPluginFailed(fn func(PluginFailure))
+	SetOnPluginFailed(fn func(plugin.Failure))
 	SetOnFailureCleared(fn func(pluginID string))
-	RetryPlugin(ctx context.Context, pluginID string) (*PluginFailure, error)
+	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }
 

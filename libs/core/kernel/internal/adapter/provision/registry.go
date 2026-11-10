@@ -21,9 +21,9 @@ type Registry struct {
 	provisioners []pluginport.DependencyProvisioner
 	requirements map[string]pluginport.DependencyRequirement
 	order        []string
-	last         map[string]pluginport.DependencyStatus
+	last         map[string]plugin.DependencyStatus
 	flights      flightGroup
-	observer     func(pluginport.DependencyRequirement, pluginport.DependencyStatus)
+	observer     func(pluginport.DependencyRequirement, plugin.DependencyStatus)
 }
 
 // NewRegistry returns a Registry that routes to the provisioners in order.
@@ -31,7 +31,7 @@ func NewRegistry(provisioners ...pluginport.DependencyProvisioner) *Registry {
 	return &Registry{
 		provisioners: provisioners,
 		requirements: make(map[string]pluginport.DependencyRequirement),
-		last:         make(map[string]pluginport.DependencyStatus),
+		last:         make(map[string]plugin.DependencyStatus),
 	}
 }
 
@@ -43,7 +43,7 @@ func (r *Registry) Add(provisioner pluginport.DependencyProvisioner) {
 }
 
 // Observe reports a status to the observer, as a provisioning does.
-func (r *Registry) Observe(req pluginport.DependencyRequirement, status pluginport.DependencyStatus) {
+func (r *Registry) Observe(req pluginport.DependencyRequirement, status plugin.DependencyStatus) {
 	r.mu.Lock()
 	observer := r.observer
 	r.mu.Unlock()
@@ -54,7 +54,7 @@ func (r *Registry) Observe(req pluginport.DependencyRequirement, status pluginpo
 
 // SetObserver sets the observer that receives every status reached by any
 // provisioning. The observer is called from the goroutine that runs the provisioning.
-func (r *Registry) SetObserver(observer func(pluginport.DependencyRequirement, pluginport.DependencyStatus)) {
+func (r *Registry) SetObserver(observer func(pluginport.DependencyRequirement, plugin.DependencyStatus)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.observer = observer
@@ -99,22 +99,22 @@ func (r *Registry) Lookup(id string) (pluginport.DependencyRequirement, bool) {
 // Provision makes the dependency ready. Callers that request the same
 // requirement while a run is in progress share it and each receives its progress.
 func (r *Registry) Provision(
-	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
-) (pluginport.ResolvedDependency, error) {
+	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus),
+) (plugin.ResolvedDependency, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
-		return pluginport.ResolvedDependency{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
+		return plugin.ResolvedDependency{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
 	}
 	r.Register(req)
-	return r.flights.do(ctx, getFlightKey(req), onProgress, func(runCtx context.Context, report func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error) {
+	return r.flights.do(ctx, getFlightKey(req), onProgress, func(runCtx context.Context, report func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
 		return r.run(runCtx, provisioner, req, report)
 	})
 }
 
 func (r *Registry) run(
-	ctx context.Context, provisioner pluginport.DependencyProvisioner, req pluginport.DependencyRequirement, report func(pluginport.DependencyStatus),
-) (pluginport.ResolvedDependency, error) {
-	note := func(status pluginport.DependencyStatus) {
+	ctx context.Context, provisioner pluginport.DependencyProvisioner, req pluginport.DependencyRequirement, report func(plugin.DependencyStatus),
+) (plugin.ResolvedDependency, error) {
+	note := func(status plugin.DependencyStatus) {
 		status.ID = req.ID
 		r.mu.Lock()
 		r.last[req.ID] = status
@@ -125,45 +125,45 @@ func (r *Registry) run(
 		}
 		report(status)
 	}
-	note(pluginport.DependencyStatus{State: pluginport.DependencyStateProvisioning, Message: "starting"})
-	resolved, err := provisioner.Provision(ctx, req, func(status pluginport.DependencyStatus) {
+	note(plugin.DependencyStatus{State: plugin.DependencyStateProvisioning, Message: "starting"})
+	resolved, err := provisioner.Provision(ctx, req, func(status plugin.DependencyStatus) {
 		if status.State == "" {
-			status.State = pluginport.DependencyStateProvisioning
+			status.State = plugin.DependencyStateProvisioning
 		}
 		note(status)
 	})
 	if err != nil {
-		note(pluginport.DependencyStatus{State: pluginport.DependencyStateFailed, Error: err.Error()})
-		return pluginport.ResolvedDependency{}, err
+		note(plugin.DependencyStatus{State: plugin.DependencyStateFailed, Error: err.Error()})
+		return plugin.ResolvedDependency{}, err
 	}
-	note(pluginport.DependencyStatus{State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved})
+	note(plugin.DependencyStatus{State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved})
 	return resolved, nil
 }
 
 // Status returns the status of the dependency without installing it.
-func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
+func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
-		return pluginport.DependencyStatus{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
+		return plugin.DependencyStatus{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)
 	}
 	if r.flights.isRunning(getFlightKey(req)) {
 		r.mu.Lock()
 		last := r.last[req.ID]
 		r.mu.Unlock()
 		last.ID = req.ID
-		last.State = pluginport.DependencyStateProvisioning
+		last.State = plugin.DependencyStateProvisioning
 		return last, nil
 	}
 	status, err := provisioner.Status(ctx, req)
 	if err != nil {
-		return pluginport.DependencyStatus{}, err
+		return plugin.DependencyStatus{}, err
 	}
 	status.ID = req.ID
-	if status.State == pluginport.DependencyStateMissing {
+	if status.State == plugin.DependencyStateMissing {
 		r.mu.Lock()
 		last, hasLast := r.last[req.ID]
 		r.mu.Unlock()
-		if hasLast && last.State == pluginport.DependencyStateFailed {
+		if hasLast && last.State == plugin.DependencyStateFailed {
 			return last, nil
 		}
 	}
@@ -172,24 +172,24 @@ func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirem
 
 // GetStatus returns the status of the registered dependency with the id. An
 // unregistered id has the missing state.
-func (r *Registry) GetStatus(ctx context.Context, id string) (pluginport.DependencyStatus, error) {
+func (r *Registry) GetStatus(ctx context.Context, id string) (plugin.DependencyStatus, error) {
 	req, ok := r.Lookup(id)
 	if !ok {
-		return pluginport.DependencyStatus{ID: id, State: pluginport.DependencyStateMissing}, nil
+		return plugin.DependencyStatus{ID: id, State: plugin.DependencyStateMissing}, nil
 	}
 	return r.Status(ctx, req)
 }
 
 // List returns the status of every registered dependency, in registration order.
-func (r *Registry) List(ctx context.Context) ([]pluginport.DependencyStatus, error) {
+func (r *Registry) List(ctx context.Context) ([]plugin.DependencyStatus, error) {
 	r.mu.Lock()
 	ids := slices.Clone(r.order)
 	r.mu.Unlock()
-	out := make([]pluginport.DependencyStatus, 0, len(ids))
+	out := make([]plugin.DependencyStatus, 0, len(ids))
 	for _, id := range ids {
 		status, err := r.GetStatus(ctx, id)
 		if err != nil {
-			status = pluginport.DependencyStatus{ID: id, State: pluginport.DependencyStateFailed, Error: err.Error()}
+			status = plugin.DependencyStatus{ID: id, State: plugin.DependencyStateFailed, Error: err.Error()}
 		}
 		out = append(out, status)
 	}

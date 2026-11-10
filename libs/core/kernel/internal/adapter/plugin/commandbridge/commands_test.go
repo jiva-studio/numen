@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -36,7 +37,7 @@ func (p *commandPlugin) RunCommand(
 type commandHost struct {
 	plugins   []pluginport.DiscoveredPlugin
 	disabled  map[string]bool
-	endpoints map[string]pluginport.Endpoint
+	endpoints map[string]plugindomain.Endpoint
 	acquired  int
 	released  int
 	infoReads int
@@ -67,7 +68,7 @@ func (h *commandHost) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 }
 
 func (h *commandHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+	return pluginport.DiscoveredPlugin{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 }
 
 func (h *commandHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
@@ -78,10 +79,10 @@ func (h *commandHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, b
 	return domain.NoteProfile{}, false
 }
 
-func (h *commandHost) EnsureActive(_ context.Context, id string) (pluginport.Endpoint, error) {
+func (h *commandHost) EnsureActive(_ context.Context, id string) (plugindomain.Endpoint, error) {
 	endpoint, isRunning := h.endpoints[id]
 	if !isRunning {
-		return pluginport.Endpoint{}, errors.New("the plugin is down")
+		return plugindomain.Endpoint{}, errors.New("the plugin is down")
 	}
 	h.acquired++
 	return endpoint, nil
@@ -89,7 +90,7 @@ func (h *commandHost) EnsureActive(_ context.Context, id string) (pluginport.End
 
 func (h *commandHost) Release(string) { h.released++ }
 
-func serveCommandPlugin(t *testing.T, plugin *commandPlugin) pluginport.Endpoint {
+func serveCommandPlugin(t *testing.T, plugin *commandPlugin) plugindomain.Endpoint {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewPluginCommandServiceHandler(plugin))
@@ -103,7 +104,7 @@ func serveCommandPlugin(t *testing.T, plugin *commandPlugin) pluginport.Endpoint
 	if err != nil {
 		t.Fatal(err)
 	}
-	return pluginport.Endpoint{Host: address, Port: port}
+	return plugindomain.Endpoint{Host: address, Port: port}
 }
 
 func declaring(id string, commands ...string) pluginport.DiscoveredPlugin {
@@ -118,10 +119,10 @@ func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it", OpenedPath: "Made.md"}}
 	host := &commandHost{
 		plugins:   []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")},
-		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
+		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
 	}
 
-	result, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{
+	result, err := Open(host).RunCommand(t.Context(), plugindomain.CommandCall{
 		PluginID: "md.numen.a", Command: "make", Path: "a.pdf", Arguments: map[string]string{"title": "T"}, ItemID: "audio",
 	})
 	if err != nil || result.Message != "made it" || result.OpenedPath != "Made.md" {
@@ -143,12 +144,12 @@ func TestRunCommand_FailureCarriesPluginMessage(t *testing.T) {
 	}}
 	host := &commandHost{
 		plugins:   []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")},
-		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
+		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
 	}
 
-	_, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
+	_, err := Open(host).RunCommand(t.Context(), plugindomain.CommandCall{PluginID: "md.numen.a", Command: "make"})
 
-	var failed *pluginport.CommandFailedError
+	var failed *plugindomain.CommandFailedError
 	if !errors.As(err, &failed) || failed.Message != "the disk is full" {
 		t.Errorf("a failed command is %v, want the plugin's words as the failure", err)
 	}
@@ -157,9 +158,9 @@ func TestRunCommand_FailureCarriesPluginMessage(t *testing.T) {
 func TestACommandOfAPluginThatCannotStartIsUnavailable(t *testing.T) {
 	host := &commandHost{plugins: []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")}}
 
-	_, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
+	_, err := Open(host).RunCommand(t.Context(), plugindomain.CommandCall{PluginID: "md.numen.a", Command: "make"})
 
-	var unavailable *pluginport.UnavailableError
+	var unavailable *plugindomain.UnavailableError
 	if !errors.As(err, &unavailable) || !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a plugin that cannot start is %v, want it unavailable", err)
 	}
@@ -178,10 +179,10 @@ func TestACommandOfAPluginThatServesNoCommandsIsUnavailable(t *testing.T) {
 	}
 	host := &commandHost{
 		plugins:   []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")},
-		endpoints: map[string]pluginport.Endpoint{"md.numen.a": {Host: address, Port: port}},
+		endpoints: map[string]plugindomain.Endpoint{"md.numen.a": {Host: address, Port: port}},
 	}
 
-	_, err = Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{PluginID: "md.numen.a", Command: "make"})
+	_, err = Open(host).RunCommand(t.Context(), plugindomain.CommandCall{PluginID: "md.numen.a", Command: "make"})
 
 	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a plugin that serves no commands is %v, want it unavailable", err)

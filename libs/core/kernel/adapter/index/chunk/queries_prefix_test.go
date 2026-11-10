@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -15,7 +15,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
-		got, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
+		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -24,7 +24,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 		}
 	}
 
-	books, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: "lib/zebra"})
+	books, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: "lib/zebra"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -32,7 +32,7 @@ func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 		t.Errorf("a prefix that ends inside a file name found %v, want the two chunks of the book", getSources(books))
 	}
 
-	none, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: "elsewhere/"})
+	none, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: "elsewhere/"})
 	if err != nil || len(none) != 0 {
 		t.Errorf("a prefix nothing starts with found %v, %v", getSources(none), err)
 	}
@@ -47,7 +47,7 @@ func TestAPathPrefixIsNotAPattern(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for prefix, want := range map[string]string{"a_b/": "a_b/one.md", "100%": "100%/three.md"} {
-		got, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: prefix})
+		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: prefix})
 		if err != nil || !slices.Equal(getSources(got), []string{want}) {
 			t.Errorf("prefix %q found %v, %v, want only %s", prefix, getSources(got), err, want)
 		}
@@ -63,7 +63,7 @@ func TestGetNamedPassagesLimitsWithinPathPrefix(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "gardening", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
+		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
 		if err != nil || !slices.Equal(getSources(got), []string{"notes/Gardening.md"}) {
 			t.Errorf("kinds %v: the section under notes/ is %v, %v", kinds, getSources(got), err)
 		}
@@ -80,7 +80,7 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 	source{path: "notes/far.md", kind: "note", hash: "h-far", large: "large far", smalls: []string{"first far"}}.save(t, db)
 	embed(t, db, vaultA, "notes/far.md", 0x0F)
 
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil {
@@ -90,14 +90,14 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 		t.Errorf("one passage under notes/ is %v, want the note although 24 nearer chunks lie elsewhere", getSources(got))
 	}
 
-	kinded, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+	kinded, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil || len(kinded) != 1 {
 		t.Errorf("a prefix with a kind found %d, %v", len(kinded), err)
 	}
 
-	none, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+	none, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Limit: 3, Floor: -1, PathPrefix: "elsewhere/",
 	})
 	if err != nil || len(none) != 0 {
@@ -115,7 +115,7 @@ func TestFindNearestWithinPathPrefixFindsAPathThatIsNotUTF8(t *testing.T) {
 	}
 
 	for prefix, want := range map[string]string{"notes/": "notes/\xff.md", "\xff": "\xff\xff.md"} {
-		got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+		got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 			Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,
 		})
 		if err != nil {
@@ -150,15 +150,15 @@ func TestAPathPrefixMatchesTheFolderInEitherNormalForm(t *testing.T) {
 		db, book := openShelfIndex(t, stored)
 		queries := db.ChunkQueries()
 		for _, prefix := range []string{shelfComposed + "/", shelfDecomposed + "/"} {
-			lexical, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
+			lexical, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
 			if err != nil || !slices.Equal(slices.Compact(getSources(lexical)), []string{book}) {
 				t.Errorf("stored %+q, prefix %+q: FindLexical found %+q, %v, want only %+q", stored, prefix, getSources(lexical), err, book)
 			}
-			named, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
+			named, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
 			if err != nil || !slices.Equal(slices.Compact(getSources(named)), []string{book}) {
 				t.Errorf("stored %+q, prefix %+q: GetNamedPassages found %+q, %v, want only %+q", stored, prefix, getSources(named), err, book)
 			}
-			nearest, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{
+			nearest, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 				Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,
 			})
 			if err != nil || !slices.Equal(slices.Compact(getSources(nearest)), []string{book}) {

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
@@ -148,10 +149,10 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
 		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
-	getReason := func(capability string) pluginport.UnavailableReason {
+	getReason := func(capability string) plugindomain.UnavailableReason {
 		t.Helper()
 		_, err := host.ResolveCapability(capability)
-		var missing *pluginport.UnavailableError
+		var missing *plugindomain.UnavailableError
 		if !errors.As(err, &missing) || !errors.Is(err, domain.ErrUnavailable) || missing.Capability != capability {
 			t.Fatalf("ResolveCapability(%q) = %v, want an UnavailableError for it", capability, err)
 		}
@@ -161,7 +162,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	if found, err := host.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.a" {
 		t.Fatalf("ResolveCapability = %q, %v, want the lowest id", found.Manifest.ID, err)
 	}
-	if got := getReason("org.example.gadget"); got != pluginport.PluginNotInstalled {
+	if got := getReason("org.example.gadget"); got != plugindomain.NotInstalled {
 		t.Errorf("a capability nothing declares is %v, want not installed", got)
 	}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
@@ -173,7 +174,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.b", false); err != nil {
 		t.Fatal(err)
 	}
-	if got := getReason("org.example.widget"); got != pluginport.PluginDisabled {
+	if got := getReason("org.example.widget"); got != plugindomain.Disabled {
 		t.Errorf("a capability every declaring plugin of is disabled is %v, want disabled", got)
 	}
 	for _, id := range []string{"md.numen.a", "md.numen.b"} {
@@ -182,7 +183,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		}
 	}
 	host.SetSafeMode(true)
-	if got := getReason("org.example.widget"); got != pluginport.PluginDisabled {
+	if got := getReason("org.example.widget"); got != plugindomain.Disabled {
 		t.Errorf("a capability in safe mode is %v, want disabled", got)
 	}
 	if _, ok := host.FindPluginByCapability("org.example.widget"); ok {
@@ -198,12 +199,12 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
-	for id, want := range map[string]pluginport.UnavailableReason{
-		"md.numen.absent": pluginport.PluginNotInstalled,
-		"md.numen.a":      pluginport.PluginDisabled,
+	for id, want := range map[string]plugindomain.UnavailableReason{
+		"md.numen.absent": plugindomain.NotInstalled,
+		"md.numen.a":      plugindomain.Disabled,
 	} {
 		_, err := host.EnsureActive(t.Context(), id)
-		var missing *pluginport.UnavailableError
+		var missing *plugindomain.UnavailableError
 		if !errors.As(err, &missing) || missing.Reason != want || missing.PluginID != id {
 			t.Errorf("EnsureActive(%q) = %v, want reason %v", id, err, want)
 		}

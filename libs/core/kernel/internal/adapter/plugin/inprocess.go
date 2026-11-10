@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
@@ -73,7 +74,7 @@ type InProcessTransport struct {
 	handler http.Handler
 }
 
-// RoundTripTransport marks InProcessTransport as satisfying port.PluginTransport.
+// RoundTripTransport marks InProcessTransport as satisfying plugin.Transport.
 func (t *InProcessTransport) RoundTripTransport() {}
 
 // NewInProcessTransport wraps an HTTP handler in an in-memory round tripper.
@@ -150,7 +151,7 @@ func (h *Host) RegisterBuiltIn(manifestJSON []byte, serve func(vars map[string]s
 	return nil
 }
 
-func (h *Host) activatePlugin(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func (h *Host) activatePlugin(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
 	h.mu.RLock()
 	launcher := h.launcher
 	builtIn, isBuiltIn := h.getBuiltInLocked(p.Manifest.ID)
@@ -162,7 +163,7 @@ func (h *Host) activatePlugin(ctx context.Context, p manifest.Discovered, sup *l
 	return h.startBuiltIn(ctx, p, builtIn, sup)
 }
 
-func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn builtInPlugin, sup *lifecycle.Supervisor) (transport.Endpoint, error) {
+func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn builtInPlugin, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
 	token, err := transport.GenerateAuthToken()
 	if err != nil {
 		return emptyEndpoint(), fmt.Errorf("generate token: %w", err)
@@ -182,7 +183,7 @@ func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn 
 		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}
 
-	endpoint := transport.Endpoint{
+	endpoint := plugindomain.Endpoint{
 		Host:      "inprocess",
 		Port:      0,
 		Token:     token,
@@ -206,7 +207,7 @@ func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn 
 	return endpoint, nil
 }
 
-func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint transport.Endpoint) {
+func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint plugindomain.Endpoint) {
 	if shutdown := h.createRPCShutdown(endpoint, time.Second); shutdown != nil {
 		if err := shutdown(context.WithoutCancel(ctx)); err != nil {
 			h.reportError(fmt.Errorf("shut down the handler of built-in plugin that was not activated: %w", err))

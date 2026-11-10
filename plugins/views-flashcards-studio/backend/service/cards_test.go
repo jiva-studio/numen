@@ -20,7 +20,8 @@ import (
 // cutting is a vault with the notes given in it, and a client asking about its
 // decks and its card models the way the window does.
 type cutting struct {
-	client service.CardsAPI
+	models service.CardModelsAPI
+	decks  service.DecksAPI
 	root   string
 }
 
@@ -31,7 +32,8 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	backend := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	return &cutting{
-		client: backend.Cards(),
+		models: backend.CardModels(),
+		decks:  backend.Decks(),
 		root:   env.Vault.Path,
 	}
 }
@@ -76,7 +78,7 @@ func getFieldValue(card *api.Card, field string) string {
 
 func deck(t *testing.T, f *cutting, path string) *api.ReadDeckResponse {
 	t.Helper()
-	answer, err := f.client.ReadDeck(t.Context(), &api.ReadDeckRequest{Path: path})
+	answer, err := f.decks.ReadDeck(t.Context(), &api.ReadDeckRequest{Path: path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,7 +210,7 @@ func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.WriteDeck(t.Context(), &api.WriteDeckRequest{
+	answer, err := f.decks.WriteDeck(t.Context(), &api.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.Deck.Preamble,
 		Cards:    read.Deck.Cards[:1],
@@ -236,7 +238,7 @@ func TestWriteDeck_RoundTripPreservesCards(t *testing.T) {
 	})
 
 	read := deck(t, f, "Animals.md")
-	answer, err := f.client.WriteDeck(t.Context(), &api.WriteDeckRequest{
+	answer, err := f.decks.WriteDeck(t.Context(), &api.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.Deck.Preamble,
 		Sections: read.Deck.Sections,
@@ -268,7 +270,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	sections := read.Deck.Sections
 	sections[1].Name = "Others\n\n## Also injected"
 
-	answer, err := f.client.WriteDeck(t.Context(), &api.WriteDeckRequest{
+	answer, err := f.decks.WriteDeck(t.Context(), &api.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.Deck.Preamble,
 		Sections: sections,
@@ -303,7 +305,7 @@ func TestACardBelowASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	nowhere := int32(99)
 	cards[0].SectionIndex = &nowhere
 
-	_, err := f.client.WriteDeck(t.Context(), &api.WriteDeckRequest{
+	_, err := f.decks.WriteDeck(t.Context(), &api.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.Deck.Preamble,
 		Sections: read.Deck.Sections,
@@ -332,7 +334,7 @@ func TestACardWithNoCardModelKeepsTheHeadingItExistsBelow(t *testing.T) {
 	if target := read.Deck.Cards[1].Heading; target != "Alpaca" {
 		t.Fatalf("the card under no wikilink came back under the heading %q", target)
 	}
-	answer, err := f.client.WriteDeck(t.Context(), &api.WriteDeckRequest{
+	answer, err := f.decks.WriteDeck(t.Context(), &api.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.Deck.Preamble,
 		Sections: read.Deck.Sections,
@@ -361,7 +363,7 @@ func TestListCardModels_LimitedListReturnsTotal(t *testing.T) {
 		"Loose.md":  "# An ordinary note\n",
 	})
 
-	answer, err := f.client.ListCardModels(t.Context(),
+	answer, err := f.models.ListCardModels(t.Context(),
 		&api.ListCardModelsRequest{Limit: 2})
 	if err != nil {
 		t.Fatal(err)
@@ -383,7 +385,7 @@ func TestListCardModels_LimitedListReturnsTotal(t *testing.T) {
 func TestADeckMadeIsADeckToRead(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal})
 
-	answer, err := f.client.CreateDeck(t.Context(), &api.CreateDeckRequest{
+	answer, err := f.decks.CreateDeck(t.Context(), &api.CreateDeckRequest{
 		Title: "Camelids", Path: "decks",
 	})
 	if err != nil {
@@ -414,7 +416,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 func TestACardModelMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := newCutting(t, nil)
 
-	answer, err := f.client.CreateCardModel(t.Context(), &api.CreateCardModelRequest{
+	answer, err := f.models.CreateCardModel(t.Context(), &api.CreateCardModelRequest{
 		Title: "Bird", Path: "cards", Fields: []string{"Species", "Wingspan"},
 	})
 	if err != nil {
@@ -427,7 +429,7 @@ func TestACardModelMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 		t.Fatalf("the card model was filed at %q", path)
 	}
 
-	read, err := f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
+	read, err := f.models.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
 		Path: "cards/Bird.md",
 	})
 	if err != nil {
@@ -452,7 +454,7 @@ func TestRenamingAFieldReachesTheDecksThatCardModelSplits(t *testing.T) {
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	answer, err := f.client.RenameCardModelField(t.Context(), &api.RenameCardModelFieldRequest{
+	answer, err := f.models.RenameCardModelField(t.Context(), &api.RenameCardModelFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err != nil {
@@ -483,13 +485,13 @@ func TestRenamingAFieldReachesTheDecksThatCardModelSplits(t *testing.T) {
 func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	read, err := f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
+	read, err := f.models.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
 		Path: "cards/Animal.md",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	answer, err := f.client.RenameCardModelField(t.Context(), &api.RenameCardModelFieldRequest{
+	answer, err := f.models.RenameCardModelField(t.Context(), &api.RenameCardModelFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.At,
 	})
 	if err != nil {
@@ -499,7 +501,7 @@ func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 		t.Fatalf("the rename answered %+v", answer)
 	}
 
-	after, err := f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
+	after, err := f.models.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
 		Path: "cards/Animal.md",
 	})
 	if err != nil {
@@ -529,7 +531,7 @@ func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	read, err := f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
+	read, err := f.models.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
 		Path: "cards/Animal.md",
 	})
 	if err != nil {
@@ -544,7 +546,7 @@ func TestRenameCardModelField_StaleModelErrorsWithoutDeckWrite(t *testing.T) {
 	}
 	deckBefore := onDisk(t, f.root, "Animals.md")
 
-	answer, err := f.client.RenameCardModelField(t.Context(), &api.RenameCardModelFieldRequest{
+	answer, err := f.models.RenameCardModelField(t.Context(), &api.RenameCardModelFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.At,
 	})
 	if err != nil {
@@ -608,7 +610,7 @@ func TestACardNamesItsCardModelTheWayALinkNamesANote(t *testing.T) {
 
 func cardModel(t *testing.T, f *cutting, path string) *api.ReadCardModelResponse {
 	t.Helper()
-	answer, err := f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
+	answer, err := f.models.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
 		Path: path,
 	})
 	if err != nil {
@@ -627,7 +629,7 @@ func TestACardModelIsSavedWithItsTemplatesAndItsFields(t *testing.T) {
 	templates := read.CardModel.Templates
 	templates[0].Back = "{{Height}} at the shoulder"
 
-	answer, err := f.client.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
+	answer, err := f.models.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
 		Path:      "cards/Animal.md",
 		Fields:    read.CardModel.Fields,
 		Templates: templates,
@@ -662,7 +664,7 @@ func TestACardModelIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := cardModel(t, f, "cards/Animal.md")
-	answer, err := f.client.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
+	answer, err := f.models.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
 		Path:      "cards/Animal.md",
 		Fields:    []string{"Name", "Height", "Life span"},
 		Templates: read.CardModel.Templates,
@@ -703,7 +705,7 @@ func TestWritingACardModelThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 
 	templates := read.CardModel.Templates
 	templates[0].Front = "{{Species}}"
-	answer, err := f.client.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
+	answer, err := f.models.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
 		Path:      "cards/Animal.md",
 		Fields:    []string{"Species", "Height"},
 		Templates: templates,
@@ -727,7 +729,7 @@ func TestWritingACardModelThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 func TestWritingACardModelWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
+	answer, err := f.models.WriteCardModel(t.Context(), &api.WriteCardModelRequest{
 		Path:   "cards/Nowhere.md",
 		Fields: []string{"Name"},
 	})
@@ -746,7 +748,7 @@ func TestWritingACardModelWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 func TestACardModelMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.CreateCardModel(t.Context(), &api.CreateCardModelRequest{
+	answer, err := f.models.CreateCardModel(t.Context(), &api.CreateCardModelRequest{
 		Title: "Animal", Path: "cards", Fields: []string{"Species"},
 	})
 	if err != nil {
@@ -765,7 +767,7 @@ func TestACardModelMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.CreateDeck(t.Context(), &api.CreateDeckRequest{
+	answer, err := f.decks.CreateDeck(t.Context(), &api.CreateDeckRequest{
 		Title: "Animal", Path: "cards",
 	})
 	if err != nil {
@@ -785,21 +787,21 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	_, err := f.client.ReadDeck(t.Context(), &api.ReadDeckRequest{
+	_, err := f.decks.ReadDeck(t.Context(), &api.ReadDeckRequest{
 		Path: "../../etc/passwd",
 	})
 	if got := codeOf(err); got != server.CodeInvalidArgument {
 		t.Errorf("reading a deck outside the vault answered %v (%v)", got, err)
 	}
 
-	_, err = f.client.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
+	_, err = f.models.ReadCardModel(t.Context(), &api.ReadCardModelRequest{
 		Path: "../../etc/passwd",
 	})
 	if got := codeOf(err); got != server.CodeInvalidArgument {
 		t.Errorf("reading a card model outside the vault answered %v (%v)", got, err)
 	}
 
-	_, err = f.client.CreateDeck(t.Context(), &api.CreateDeckRequest{
+	_, err = f.decks.CreateDeck(t.Context(), &api.CreateDeckRequest{
 		Title: "Elsewhere", Path: "../elsewhere",
 	})
 	if got := codeOf(err); got != server.CodeInvalidArgument {
@@ -813,7 +815,7 @@ func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 func TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	_, err := f.client.RenameCardModelField(t.Context(),
+	_, err := f.models.RenameCardModelField(t.Context(),
 		&api.RenameCardModelFieldRequest{
 			Path: "cards/Animal.md", From: "Height", To: "Name",
 		})
@@ -829,7 +831,7 @@ func TestRenameCardModelField_DeclaredTargetNameIsInvalidArgument(t *testing.T) 
 func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	f := newCutting(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	answer, err := f.client.CreateDeck(t.Context(), &api.CreateDeckRequest{
+	answer, err := f.decks.CreateDeck(t.Context(), &api.CreateDeckRequest{
 		Title: "Camelids", Path: "Entropy.md",
 	})
 	if err != nil {

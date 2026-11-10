@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -34,7 +35,7 @@ func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTyp
 // Empty where no condition holds.
 func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[string]any) string {
 	contentType := u.types.GetContentType(path)
-	values := pluginport.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
+	values := plugin.NewTargetValues(path, false, contentType).WithNote(noteType, properties).Get()
 	var matching []domain.ContentHandler
 	for _, one := range u.kinds.ListTabKinds() {
 		if one.TabKind.When == "" {

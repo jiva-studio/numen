@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -172,8 +172,8 @@ const width = 1024
 // pointing answers every text with one direction.
 type pointing struct{}
 
-func (pointing) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (pointing) GetModel() embedding.Model {
+	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (pointing) Embed(_ context.Context, texts []string) ([][]float32, error) {
@@ -191,8 +191,8 @@ func (pointing) Close() error { return nil }
 // not there looks like from here.
 type unwilling struct{}
 
-func (unwilling) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
+func (unwilling) GetModel() embedding.Model {
+	return embedding.Model{Name: "test", Dimensions: width, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (unwilling) Embed(context.Context, []string) ([][]float32, error) {

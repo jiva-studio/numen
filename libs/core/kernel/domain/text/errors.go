@@ -1,4 +1,4 @@
-// Package text holds the sentinel errors of the text versions.
+// Package text holds the records of the text versions and their sentinel errors.
 package text
 
 import "errors"

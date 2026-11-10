@@ -8,8 +8,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
-	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
 func newSecretError(err error) error {
@@ -117,7 +117,7 @@ func (h *Handler) AllowPluginSecret(
 	if err := h.checkSecrets(); err != nil {
 		return nil, err
 	}
-	permission := setting.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
+	permission := plugin.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
 	if err := h.Secrets.Allow.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
 		return nil, newSecretError(err)
 	}
@@ -131,7 +131,7 @@ func (h *Handler) DenyPluginSecret(
 	if err := h.checkSecrets(); err != nil {
 		return nil, err
 	}
-	permission := setting.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
+	permission := plugin.DeclarationKey{Plugin: r.Msg.GetPluginId(), Name: r.Msg.GetName(), Group: r.Msg.GetGroup()}
 	if err := h.Secrets.Deny.Execute(ctx, r.Msg.GetSecretId(), permission); err != nil {
 		return nil, newSecretError(err)
 	}
@@ -191,7 +191,7 @@ func newWireSecretMenus(menus []secret.Menu) []*v1.SecretMenu {
 	return wire
 }
 
-func newWireStoredSecrets(list []setting.Secret) []*v1.Secret {
+func newWireStoredSecrets(list []plugin.Secret) []*v1.Secret {
 	secrets := make([]*v1.Secret, 0, len(list))
 	for _, one := range list {
 		allowed := make([]*v1.DeclarationKey, 0, len(one.Allowed))

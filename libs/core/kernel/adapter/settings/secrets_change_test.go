@@ -11,11 +11,11 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func getAlphaPermission() pluginport.DeclarationKey {
-	return pluginport.DeclarationKey{Plugin: "md.numen.alpha", Name: "apiKey", Group: "openrouter"}
+func getAlphaPermission() plugin.DeclarationKey {
+	return plugin.DeclarationKey{Plugin: "md.numen.alpha", Name: "apiKey", Group: "openrouter"}
 }
 
 func readFile(t *testing.T, path string) string {
@@ -31,8 +31,8 @@ func TestChangeSecretsPreservesOtherSections(t *testing.T) {
 	const before = "{\n  \"app\":   {\"appearance\": {\"mode\": \"dark\"}},\n  \"md.numen.alpha\": {\"model\": \"small\"}\n}\n"
 	path := write(t, before)
 
-	err := settings.NewFiles().ChangeSecrets(path, func(list []pluginport.Secret) ([]pluginport.Secret, error) {
-		return append(list, pluginport.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "openrouter", Allowed: []pluginport.DeclarationKey{getAlphaPermission()}}), nil
+	err := settings.NewFiles().ChangeSecrets(path, func(list []plugin.Secret) ([]plugin.Secret, error) {
+		return append(list, plugin.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "openrouter", Allowed: []plugin.DeclarationKey{getAlphaPermission()}}), nil
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -58,12 +58,12 @@ func TestChangeSecretsSkipsWriteOnFailureOrUnchangedList(t *testing.T) {
 	before := readFile(t, path)
 	errRefused := errors.New("refused")
 
-	if err := settings.NewFiles().ChangeSecrets(path, func([]pluginport.Secret) ([]pluginport.Secret, error) {
+	if err := settings.NewFiles().ChangeSecrets(path, func([]plugin.Secret) ([]plugin.Secret, error) {
 		return nil, errRefused
 	}); !errors.Is(err, errRefused) {
 		t.Errorf("error = %v", err)
 	}
-	if err := settings.NewFiles().ChangeSecrets(path, func(list []pluginport.Secret) ([]pluginport.Secret, error) {
+	if err := settings.NewFiles().ChangeSecrets(path, func(list []plugin.Secret) ([]plugin.Secret, error) {
 		return list, nil
 	}); err != nil {
 		t.Fatal(err)
@@ -75,8 +75,8 @@ func TestChangeSecretsSkipsWriteOnFailureOrUnchangedList(t *testing.T) {
 
 func TestChangeSecretsCreatesFileAndRejectsInvalidJSON(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "numen.json")
-	add := func(list []pluginport.Secret) ([]pluginport.Secret, error) {
-		return append(list, pluginport.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "g"}), nil
+	add := func(list []plugin.Secret) ([]plugin.Secret, error) {
+		return append(list, plugin.Secret{ID: "s0a1b2c3d", Name: "Work", Group: "g"}), nil
 	}
 	if err := settings.NewFiles().ChangeSecrets(missing, add); err != nil {
 		t.Fatal(err)
@@ -102,8 +102,8 @@ func TestChangeSecretsFromManyCallersLosesNoChange(t *testing.T) {
 	for i := range count {
 		group.Go(func() {
 			id := fmt.Sprintf("s%08x", i)
-			err := files.ChangeSecrets(path, func(list []pluginport.Secret) ([]pluginport.Secret, error) {
-				return append(list, pluginport.Secret{ID: id, Name: id, Group: "g"}), nil
+			err := files.ChangeSecrets(path, func(list []plugin.Secret) ([]plugin.Secret, error) {
+				return append(list, plugin.Secret{ID: id, Name: id, Group: "g"}), nil
 			})
 			if err != nil {
 				t.Error(err)
@@ -137,7 +137,7 @@ func TestDropInvalidSecretsFiltersEntriesAndRecordsNotices(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg.DropInvalidSecrets(func(one pluginport.DeclarationKey) bool { return one == getAlphaPermission() })
+	cfg.DropInvalidSecrets(func(one plugin.DeclarationKey) bool { return one == getAlphaPermission() })
 
 	var ids []string
 	for _, one := range cfg.Secrets {

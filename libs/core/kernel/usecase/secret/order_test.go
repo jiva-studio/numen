@@ -4,11 +4,11 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 )
 
-func idsOf(list []pluginport.Secret) []string {
+func idsOf(list []plugin.Secret) []string {
 	var ids []string
 	for _, one := range list {
 		ids = append(ids, one.ID)
@@ -17,7 +17,7 @@ func idsOf(list []pluginport.Secret) []string {
 }
 
 func TestListDeclaredGroupsSortsUniqueGroups(t *testing.T) {
-	got := secret.ListAskedGroups([]pluginport.DeclarationKey{
+	got := secret.ListAskedGroups([]plugin.DeclarationKey{
 		{Plugin: "a.b", Name: "key", Group: "openrouter"},
 		{Plugin: "a.b", Name: "other"},
 		{Plugin: "c.d", Name: "key", Group: "Zeta"},
@@ -29,7 +29,7 @@ func TestListDeclaredGroupsSortsUniqueGroups(t *testing.T) {
 }
 
 func TestListInPageOrderOrdersDeclaredGroupsFirst(t *testing.T) {
-	list := []pluginport.Secret{
+	list := []plugin.Secret{
 		{ID: "mine-b", Group: "work"},
 		{ID: "openrouter-1", Group: "openrouter"},
 		{ID: "mine-a", Group: "home"},
@@ -44,20 +44,20 @@ func TestListInPageOrderOrdersDeclaredGroupsFirst(t *testing.T) {
 }
 
 func TestThePageCompareNamesByByteNotByCase(t *testing.T) {
-	list := []pluginport.Secret{{ID: "lower", Group: "apple"}, {ID: "upper", Group: "Zebra"}}
+	list := []plugin.Secret{{ID: "lower", Group: "apple"}, {ID: "upper", Group: "Zebra"}}
 	if got := idsOf(secret.ListInPageOrder(list, nil)); !slices.Equal(got, []string{"upper", "lower"}) {
 		t.Errorf("page = %v, want the uppercase group first", got)
 	}
 }
 
 func TestListAllowedOrdersDeclaredGroupFirst(t *testing.T) {
-	declaration := pluginport.DeclarationKey{Plugin: "a.b", Name: "key", Group: "openrouter"}
-	other := pluginport.DeclarationKey{Plugin: "a.b", Name: "key", Group: ""}
-	page := []pluginport.Secret{
-		{ID: "z", Group: "openai", Allowed: []pluginport.DeclarationKey{declaration}},
-		{ID: "x", Group: "openrouter", Allowed: []pluginport.DeclarationKey{declaration}},
-		{ID: "hidden", Group: "openrouter", Allowed: []pluginport.DeclarationKey{other}},
-		{ID: "y", Group: "openrouter", Allowed: []pluginport.DeclarationKey{declaration}},
+	declaration := plugin.DeclarationKey{Plugin: "a.b", Name: "key", Group: "openrouter"}
+	other := plugin.DeclarationKey{Plugin: "a.b", Name: "key", Group: ""}
+	page := []plugin.Secret{
+		{ID: "z", Group: "openai", Allowed: []plugin.DeclarationKey{declaration}},
+		{ID: "x", Group: "openrouter", Allowed: []plugin.DeclarationKey{declaration}},
+		{ID: "hidden", Group: "openrouter", Allowed: []plugin.DeclarationKey{other}},
+		{ID: "y", Group: "openrouter", Allowed: []plugin.DeclarationKey{declaration}},
 	}
 	if got := idsOf(secret.ListAllowed(page, declaration)); !slices.Equal(got, []string{"x", "y", "z"}) {
 		t.Errorf("list = %v, want x y z", got)
@@ -68,10 +68,10 @@ func TestListAllowedOrdersDeclaredGroupFirst(t *testing.T) {
 }
 
 func TestListAllowedWithNoGroupKeepsPageOrder(t *testing.T) {
-	declaration := pluginport.DeclarationKey{Plugin: "a.b", Name: "key"}
-	page := []pluginport.Secret{
-		{ID: "first", Group: "openai", Allowed: []pluginport.DeclarationKey{declaration}},
-		{ID: "second", Group: "openrouter", Allowed: []pluginport.DeclarationKey{declaration}},
+	declaration := plugin.DeclarationKey{Plugin: "a.b", Name: "key"}
+	page := []plugin.Secret{
+		{ID: "first", Group: "openai", Allowed: []plugin.DeclarationKey{declaration}},
+		{ID: "second", Group: "openrouter", Allowed: []plugin.DeclarationKey{declaration}},
 	}
 	if got := idsOf(secret.ListAllowed(page, declaration)); !slices.Equal(got, []string{"first", "second"}) {
 		t.Errorf("list = %v, want the order of the page", got)
@@ -79,7 +79,7 @@ func TestListAllowedWithNoGroupKeepsPageOrder(t *testing.T) {
 }
 
 func TestThePageComparesNamesByTheirUTF8BytesNotByUTF16Units(t *testing.T) {
-	list := []pluginport.Secret{
+	list := []plugin.Secret{
 		{ID: "s1", Group: "\U0001D49C"}, {ID: "s2", Group: "ｱ"}, {ID: "s3", Group: "Z"}, {ID: "s4", Group: "a"},
 	}
 	if got := idsOf(secret.ListInPageOrder(list, nil)); !slices.Equal(got, []string{"s3", "s4", "s2", "s1"}) {
@@ -88,14 +88,14 @@ func TestThePageComparesNamesByTheirUTF8BytesNotByUTF16Units(t *testing.T) {
 }
 
 func TestThePageKeepsTheOrderOfTheListInsideAGroup(t *testing.T) {
-	list := []pluginport.Secret{{ID: "s1", Group: "openai"}, {ID: "s2", Group: "other"}, {ID: "s3", Group: "openai"}}
+	list := []plugin.Secret{{ID: "s1", Group: "openai"}, {ID: "s2", Group: "other"}, {ID: "s3", Group: "openai"}}
 	if got := idsOf(secret.ListInPageOrder(list, []string{"openai"})); !slices.Equal(got, []string{"s1", "s3", "s2"}) {
 		t.Errorf("page = %v, want s1 s3 s2", got)
 	}
 }
 
 func TestListSectionsIncludesEmptyDeclaredGroups(t *testing.T) {
-	list := []pluginport.Secret{{ID: "s1", Group: "mine"}, {ID: "s2", Group: "openai"}}
+	list := []plugin.Secret{{ID: "s1", Group: "mine"}, {ID: "s2", Group: "openai"}}
 	got := secret.ListSections(list, []string{"anthropic", "openai"})
 	if len(got) != 3 {
 		t.Fatalf("sections = %+v", got)
@@ -109,15 +109,15 @@ func TestListSectionsIncludesEmptyDeclaredGroups(t *testing.T) {
 }
 
 func TestListMenuOrdersDeclaredGroupFirst(t *testing.T) {
-	list := []pluginport.Secret{
+	list := []plugin.Secret{
 		{ID: "mine", Group: "home"}, {ID: "a1", Group: "openai"}, {ID: "r1", Group: "openrouter"}, {ID: "r2", Group: "openrouter"},
 	}
 	page := secret.ListSections(list, []string{"openai", "openrouter"})
-	declaration := pluginport.DeclarationKey{Plugin: "a.b", Name: "key", Group: "openrouter"}
+	declaration := plugin.DeclarationKey{Plugin: "a.b", Name: "key", Group: "openrouter"}
 	if got := idsOf(secret.ListMenu(page, declaration)); !slices.Equal(got, []string{"r1", "r2", "a1", "mine"}) {
 		t.Errorf("menu = %v", got)
 	}
-	none := pluginport.DeclarationKey{Plugin: "a.b", Name: "key"}
+	none := plugin.DeclarationKey{Plugin: "a.b", Name: "key"}
 	if got := idsOf(secret.ListMenu(page, none)); !slices.Equal(got, []string{"a1", "r1", "r2", "mine"}) {
 		t.Errorf("menu with no group = %v", got)
 	}

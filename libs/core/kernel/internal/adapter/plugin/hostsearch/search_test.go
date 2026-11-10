@@ -13,31 +13,32 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	searchpolicyport "github.com/jiva-studio/numen/libs/core/kernel/usecase/search/searchpolicycontract"
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
 func getVault() domain.Vault { return domain.Vault{ID: "01VAULT"} }
 
-func getModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "test-model", Dimensions: 4, From: "test"}
+func getModel() embedding.Model {
+	return embedding.Model{Name: "test-model", Dimensions: 4, From: "test"}
 }
 
 // stubEmbedder embeds every text as the vector of its length and reports a floor hint.
 type stubEmbedder struct {
 	mu       sync.Mutex
-	model    embeddingport.EmbeddingModel
+	model    embedding.Model
 	err      error
 	short    bool
 	hint     float64
-	switchTo *embeddingport.EmbeddingModel
+	switchTo *embedding.Model
 	calls    int
 	queried  []string
 }
 
-func (e *stubEmbedder) GetModel() embeddingport.EmbeddingModel {
+func (e *stubEmbedder) GetModel() embedding.Model {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.model
@@ -84,11 +85,11 @@ type stubSamples struct {
 	vectorRecipe string
 }
 
-func (s *stubSamples) ListSmallChunkVectors(_ context.Context, _ domain.Vault, recipe string, limit int) ([]searchpolicyport.Passage, error) {
+func (s *stubSamples) ListSmallChunkVectors(_ context.Context, _ domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error) {
 	s.vectorLimit, s.vectorRecipe = limit, recipe
-	out := make([]searchpolicyport.Passage, 0, min(limit, s.vectors))
+	out := make([]searchpolicy.Passage, 0, min(limit, s.vectors))
 	for i := range min(limit, s.vectors) {
-		out = append(out, searchpolicyport.Passage{
+		out = append(out, searchpolicy.Passage{
 			Source: int64(i + 1), Path: fmt.Sprintf("note-%d.md", i+1), Vector: []byte{byte(i), 1, 2, 3},
 		})
 	}
@@ -397,16 +398,16 @@ func TestTextsAreEmbeddedWithinTheLimits(t *testing.T) {
 		t.Errorf("no texts gave %+v (%v)", empty, err)
 	}
 
-	many := make([]string, pluginport.MaxEmbeddedTexts+1)
+	many := make([]string, plugin.MaxEmbeddedTexts+1)
 	if _, err := f.search.EmbedTexts(ctx, many); !errors.Is(err, pluginport.ErrLimitExceeded) {
 		t.Errorf("%d texts gave %v", len(many), err)
 	}
-	if _, err := f.search.EmbedTexts(ctx, []string{strings.Repeat("x", pluginport.MaxEmbeddedBytes+1)}); !errors.Is(err, pluginport.ErrLimitExceeded) {
+	if _, err := f.search.EmbedTexts(ctx, []string{strings.Repeat("x", plugin.MaxEmbeddedBytes+1)}); !errors.Is(err, pluginport.ErrLimitExceeded) {
 		t.Errorf("a long text gave %v", err)
 	}
-	atLimit := make([]string, pluginport.MaxEmbeddedTexts)
+	atLimit := make([]string, plugin.MaxEmbeddedTexts)
 	for i := range atLimit {
-		atLimit[i] = strings.Repeat("x", pluginport.MaxEmbeddedBytes)
+		atLimit[i] = strings.Repeat("x", plugin.MaxEmbeddedBytes)
 	}
 	if _, err := f.search.EmbedTexts(ctx, atLimit); err != nil {
 		t.Errorf("texts at the limit gave %v", err)
@@ -429,7 +430,7 @@ func TestAnEmbeddingThatFailsOrChangesTheModelIsRefused(t *testing.T) {
 	}
 
 	f = newFixture()
-	changed := embeddingport.EmbeddingModel{Name: "other-model", Dimensions: 4, From: "test"}
+	changed := embedding.Model{Name: "other-model", Dimensions: 4, From: "test"}
 	f.embedder.switchTo = &changed
 	if _, err := f.search.EmbedTexts(ctx, []string{"a"}); !errors.Is(err, pluginport.ErrRecipeMismatch) {
 		t.Errorf("a model that changed during the call gave %v", err)

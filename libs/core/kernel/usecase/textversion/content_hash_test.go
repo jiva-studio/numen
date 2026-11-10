@@ -15,7 +15,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -217,7 +217,7 @@ func TestALookupReadsAFileReplacedAtTheSamePath(t *testing.T) {
 
 func TestARecordWithoutAHashTimeIsCheckedByContent(t *testing.T) {
 	l := newLookup(t)
-	l.repo.addSource(l.vault.ID, textport.ContentHash{
+	l.repo.addSource(l.vault.ID, text.ContentHash{
 		Path: atlasPath, Hash: domain.HashContent(getAtlasContent()), Size: int64(len(getAtlasContent())),
 		ModTime: getAtlasTime(), FileID: 4242,
 	})

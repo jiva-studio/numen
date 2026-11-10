@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 )
 
@@ -26,8 +26,8 @@ func (b blockingStore) SetKey(ctx context.Context, name, value string) error {
 
 func TestTwoOperationsNeverInterleaveTheirChanges(t *testing.T) {
 	f := newFixture(
-		pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"},
-		pluginport.Secret{ID: "s00000002", Name: "Two", Group: "g"},
+		plugin.Secret{ID: "s00000001", Name: "One", Group: "g"},
+		plugin.Secret{ID: "s00000002", Name: "Two", Group: "g"},
 	)
 	store := blockingStore{keys: f.keys, entered: make(chan string, 2), release: make(chan struct{})}
 	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, nil)
@@ -64,7 +64,7 @@ func (r *refreshBlocker) Refresh(context.Context, ...string) error {
 }
 
 func TestGateBlocksUntilPluginsAreConfigured(t *testing.T) {
-	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"})
+	f := newFixture(plugin.Secret{ID: "s00000001", Name: "One", Group: "g"})
 	gate := secret.NewGate()
 	blocker := &refreshBlocker{entered: make(chan struct{}, 2), release: make(chan struct{})}
 	f.secrets = secret.NewSecrets(f.ledger, f.keys, blocker, nil, nil, gate)
@@ -98,7 +98,7 @@ func TestGateBlocksUntilPluginsAreConfigured(t *testing.T) {
 }
 
 func TestCanceledWaitOnGateChangesNothing(t *testing.T) {
-	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "One", Group: "g"})
+	f := newFixture(plugin.Secret{ID: "s00000001", Name: "One", Group: "g"})
 	gate := secret.NewGate()
 	store := blockingStore{keys: f.keys, entered: make(chan string, 1), release: make(chan struct{})}
 	f.secrets = secret.NewSecrets(f.ledger, store, f.plugins, nil, nil, gate)
@@ -125,7 +125,7 @@ type failingLedger struct{ ledger }
 
 var errDisk = errors.New("the disk is full")
 
-func (*failingLedger) ChangeSecrets(func([]pluginport.Secret) ([]pluginport.Secret, error)) error {
+func (*failingLedger) ChangeSecrets(func([]plugin.Secret) ([]plugin.Secret, error)) error {
 	return errDisk
 }
 

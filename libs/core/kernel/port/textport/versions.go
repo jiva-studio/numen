@@ -2,8 +2,8 @@ package textport
 
 import (
 	"context"
-	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -25,21 +25,10 @@ type VersionRepository interface {
 // the live version of a file.
 type ContentHashes interface {
 	// FindContentHash returns the hash recorded for the file at the path, and false when none is.
-	FindContentHash(ctx context.Context, path string) (ContentHash, bool, error)
+	FindContentHash(ctx context.Context, path string) (text.ContentHash, bool, error)
 	// SaveContentHash records the hash of a file on the index row of its path, where
 	// the row has the record's stat or its hash. A file with no row is not recorded.
-	SaveContentHash(ctx context.Context, record ContentHash) error
-}
-
-// ContentHash is the hash of a vault file's bytes, recorded with the file's stat at
-// the time it was hashed. HashTime is when the record was written.
-type ContentHash struct {
-	Path     string
-	Hash     string
-	Size     int64
-	ModTime  time.Time
-	FileID   domain.FileID
-	HashTime time.Time
+	SaveContentHash(ctx context.Context, record text.ContentHash) error
 }
 
 // VersionRepositories opens the versions of one vault.
@@ -47,16 +36,10 @@ type VersionRepositories interface {
 	Open(v domain.Vault) (VersionRepository, error)
 }
 
-// TextFile is the segments of a version file and the hash of its bytes.
-type TextFile struct {
-	Segments []domain.TextSegment
-	TextHash string
-}
-
 // TextFiles is the version files in the plugin folders of one vault's store.
 type TextFiles interface {
 	// ReadTextFile reads a file of a plugin's folder, or returns text.ErrNoText where it is not there.
-	ReadTextFile(ctx context.Context, pluginID, name string) (TextFile, error)
+	ReadTextFile(ctx context.Context, pluginID, name string) (text.File, error)
 	// WriteTextFile writes the segments as a file of a plugin's folder and
 	// returns the hash of its bytes. The file is replaced atomically.
 	WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error)

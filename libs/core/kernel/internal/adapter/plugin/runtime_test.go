@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -15,7 +16,7 @@ import (
 // fakeCatalog provisions the requirements whose id it holds and records the requests.
 type fakeCatalog struct {
 	pluginport.DependencyCatalog
-	resolved map[string]pluginport.ResolvedDependency
+	resolved map[string]plugindomain.ResolvedDependency
 	err      error
 	calls    []pluginport.DependencyRequirement
 }
@@ -27,13 +28,13 @@ func (f *fakeCatalog) CanProvision(req pluginport.DependencyRequirement) bool {
 
 func (f *fakeCatalog) Register(pluginport.DependencyRequirement) {}
 
-func (f *fakeCatalog) Provision(_ context.Context, req pluginport.DependencyRequirement, _ func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error) {
+func (f *fakeCatalog) Provision(_ context.Context, req pluginport.DependencyRequirement, _ func(plugindomain.DependencyStatus)) (plugindomain.ResolvedDependency, error) {
 	f.calls = append(f.calls, req)
 	return f.resolved[req.ID], f.err
 }
 
 func newONNXCatalog() *fakeCatalog {
-	return &fakeCatalog{resolved: map[string]pluginport.ResolvedDependency{
+	return &fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		pluginport.RuntimeONNX: {ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: "/models/libonnxruntime.so", process.EnvONNXProvider: "coreml"}},
 	}}
 }
@@ -91,7 +92,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.SetDependencies(&fakeCatalog{resolved: map[string]pluginport.ResolvedDependency{
+	host.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		"whisper": {ID: "whisper", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/deps/whisper.bin"}},
 	}})
 	manifest := pluginport.PluginManifest{Dependencies: []pluginport.DependencyRequirement{{ID: "whisper", Kind: pluginport.DependencyKindModel}}}

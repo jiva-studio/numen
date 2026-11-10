@@ -8,6 +8,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -23,11 +24,11 @@ func (handlingPlugins) ListHandlers() []plugincommand.Entry {
 	}
 }
 
-func (handlingPlugins) GetParts(pluginID string) plugincommand.Parts {
+func (handlingPlugins) GetParts(pluginID string) plugin.Parts {
 	if pluginID == "org.example.crash" {
-		return plugincommand.Parts{HasBackend: true, IsSuspended: true}
+		return plugin.Parts{HasBackend: true, IsSuspended: true}
 	}
-	return plugincommand.Parts{HasBackend: true}
+	return plugin.Parts{HasBackend: true}
 }
 
 func TestListCommands_ListsTheHandlersOfThePluginsTheHostRuns(t *testing.T) {

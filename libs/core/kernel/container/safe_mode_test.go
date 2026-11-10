@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 
@@ -85,8 +86,8 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := NewConfig(Config{})
 	_, err := cfg.resolvePlugin(bridge.CapabilityEmbedding)
-	var missing *pluginport.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityEmbedding {
+	var missing *plugindomain.UnavailableError
+	if !errors.As(err, &missing) || missing.Reason != plugindomain.NotInstalled || missing.Capability != bridge.CapabilityEmbedding {
 		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
 	cfg.SetPluginVaultPath("vault")

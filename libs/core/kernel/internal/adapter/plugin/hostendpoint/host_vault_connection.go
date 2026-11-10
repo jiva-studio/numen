@@ -6,6 +6,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -37,7 +38,7 @@ func (e *vaultEndpoint) GetConnection(
 func (e *vaultEndpoint) SaveConnection(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceSaveConnectionRequest],
 ) (*connect.Response[v1.HostVaultServiceSaveConnectionResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +56,7 @@ func (e *vaultEndpoint) SaveConnection(
 func (e *vaultEndpoint) RemoveSide(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveSideRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveSideResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (e *vaultEndpoint) RemoveSide(
 func (e *vaultEndpoint) RemoveConnection(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceRemoveConnectionRequest],
 ) (*connect.Response[v1.HostVaultServiceRemoveConnectionResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,7 @@ func (e *vaultEndpoint) RemoveConnection(
 func (e *vaultEndpoint) JoinNotes(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceJoinNotesRequest],
 ) (*connect.Response[v1.HostVaultServiceJoinNotesResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (e *vaultEndpoint) JoinNotes(
 func (e *vaultEndpoint) CreateRelatedNote(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceCreateRelatedNoteRequest],
 ) (*connect.Response[v1.HostVaultServiceCreateRelatedNoteResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}

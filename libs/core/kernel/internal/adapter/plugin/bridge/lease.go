@@ -8,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -53,11 +54,11 @@ func Open[C any](
 // context and a *port.UnavailableError are returned unchanged, and anything else
 // is a plugin that failed.
 func ConvertActivationError(pluginID string, err error) error {
-	var unavailable *pluginport.UnavailableError
+	var unavailable *plugin.UnavailableError
 	if errors.As(err, &unavailable) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	return &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginFailed, Err: err}
+	return &plugin.UnavailableError{PluginID: pluginID, Reason: plugin.Failed, Err: err}
 }
 
 // Service is one service of a plugin, with a client made for the endpoint
