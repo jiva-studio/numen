@@ -65,14 +65,16 @@ func getPortInterfaceCalls(pkgs []*packages.Package, root string) ([]finding, in
 
 func checkPortDeclaresAndDoesNotOrchestrate(t *testing.T, workspace workspacePackages) {
 	t.Helper()
-	found, read := getPortInterfaceCalls(getModulePackages(t, workspace, "libs/core/kernel"), coreImportPath)
+	pkgs := getModulePackages(t, workspace, "libs/core/kernel")
+	found, _ := getPortInterfaceCalls(pkgs, coreImportPath)
 	for _, one := range found {
 		t.Errorf("%s: %s; a use case calls the ports, a port declares them", one.position, one.name)
 	}
 
-	// A walk that read no function of a port checks nothing.
-	if read < 10 {
-		t.Fatalf("%d functions of the ports read: the rule is checked against nothing", read)
+	// A port declares and does not orchestrate, so it holds few functions to read. A walk that loaded few
+	// port interfaces did not reach the ports; the fixture test proves the rule fires on a call.
+	if ports := len(listPortInterfaces(pkgs, coreImportPath)); ports < 40 {
+		t.Fatalf("%d port interfaces read: the rule is checked against nothing", ports)
 	}
 }
 

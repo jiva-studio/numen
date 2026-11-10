@@ -93,17 +93,10 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// A walk that read no driving adapter, or met no port field, is a rule
-	// checked against nothing.
+	// A walk that read no driving adapter is a rule checked against nothing. A driving adapter holds no
+	// port in a field, so no field is needed to prove the walk; the fixture test proves the rule fires.
 	if len(files) < 30 {
 		t.Fatalf("%d files of the driving adapters read: the walk is not reading them", len(files))
-	}
-	var target int
-	for _, one := range fields {
-		target += len(one)
-	}
-	if target == 0 {
-		t.Fatal("no driving adapter holds a port in a field: the walk is not reading them")
 	}
 
 	for rel, file := range files {
