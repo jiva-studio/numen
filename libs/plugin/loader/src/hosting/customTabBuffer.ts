@@ -13,6 +13,8 @@ import type { NoteBuffer, PluginHostDeps } from './types'
 /** The tab kind whose tabs hold a note of the vault. */
 export const NOTE_KIND = 'note'
 
+const getDefaultName = (path: string): string => stripMarkdownExtension(extractFilename(path))
+
 /** Why the saving of a note stopped: its file changed on disk, or is no longer there. */
 export type FileConflict = 'stale' | 'gone' | null
 

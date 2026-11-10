@@ -106,12 +106,12 @@ function createHost(fakes: Record<string, Record<string, unknown>>): PluginConte
 
 function withServices(
   host: PluginContextHost,
-  services: { vault?: ContextVaultHost; window?: ContextWindowHost },
+  services: { vault?: ContextVaultHost; window?: Partial<ContextWindowHost> },
 ): PluginContextHost {
   return {
     ...host,
     vault: { ...host.vault, ...services.vault },
-    window: { ...host.window, ...services.window },
+    window: { ...host.window, ...services.window } as ContextWindowHost,
   }
 }
 
