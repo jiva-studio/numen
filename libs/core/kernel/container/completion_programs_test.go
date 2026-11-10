@@ -22,13 +22,13 @@ func serveCompletions(t *testing.T, host *plugin.Host, output string) (hostendpo
 		t.Fatal(err)
 	}
 	lent := container.AdaptPluginHost(host)
-	cfg := container.NewConfig(container.Config{PluginHost: lent, SettingsPath: path})
+	cfg := container.NewConfig(container.Config{PluginHost: lent, Paths: container.Paths{SettingsPath: path}})
 	target, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.SetSettings(target)
-	completer := lent.GetCompleter()
+	completer := lent.Endpoint.GetCompleter()
 	if completer == nil {
 		t.Fatal("the host has no completer")
 	}

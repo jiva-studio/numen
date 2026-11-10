@@ -44,9 +44,8 @@ func openThemesConfig(t *testing.T, target string, pluginRoot string) Config {
 	t.Helper()
 	dir := t.TempDir()
 	return NewConfig(Config{
-		PluginHost:   NewPluginHost(target, pluginRoot),
-		ThemesPath:   filepath.Join(dir, "themes"),
-		SettingsPath: filepath.Join(dir, "settings.json"),
+		PluginHost: NewPluginHost(target, pluginRoot),
+		Paths:      Paths{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")},
 	})
 }
 
@@ -81,7 +80,7 @@ func TestListThemesListsPluginThemesBeforeAnyPluginIsActive(t *testing.T) {
 			t.Errorf("themes = %v, want %s among them", names, want)
 		}
 	}
-	for _, info := range cfg.PluginHost.GetPluginInfos() {
+	for _, info := range cfg.PluginHost.Runtime.GetPluginInfos() {
 		if info.IsActive {
 			t.Errorf("plugin %s is active after listing themes", info.ID)
 		}
@@ -127,7 +126,7 @@ func TestListThemesListsNoThemeOfADisabledPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg.PluginHost.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	if names := listThemeNames(t, cfg); slices.Contains(names, name) {
 		t.Errorf("themes = %v, want no %s", names, name)
@@ -157,7 +156,7 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	if err != nil || written.Msg.GetError() != "" {
 		t.Fatalf("written: %v %v", written, err)
 	}
-	cfg.PluginHost.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 
@@ -200,7 +199,9 @@ func TestAPluginThemeLinkedOutOfThePluginFolderIsNotRead(t *testing.T) {
 // A config with no plugin host offers the default theme alone.
 func TestListThemesOfAConfigWithoutAPluginHostListsTheDefaultAlone(t *testing.T) {
 	dir := t.TempDir()
-	cfg := NewConfig(Config{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")})
+	cfg := NewConfig(Config{
+		Paths: Paths{ThemesPath: filepath.Join(dir, "themes"), SettingsPath: filepath.Join(dir, "settings.json")},
+	})
 
 	names := listThemeNames(t, cfg)
 

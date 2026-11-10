@@ -56,8 +56,7 @@ func vaultConfig(t *testing.T) container.Config {
 		t.Fatal(err)
 	}
 	cfg := container.NewConfig(container.Config{
-		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
+		Paths: container.Paths{IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")},
 	})
 	registry, err := cfg.Registry()
 	if err != nil {

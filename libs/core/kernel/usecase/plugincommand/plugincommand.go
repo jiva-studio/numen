@@ -29,9 +29,6 @@ var (
 	ErrUnknownCommand = errors.New("no enabled plugin declares that command")
 	// ErrBadArguments is arguments or a file that do not meet the declaration.
 	ErrBadArguments = errors.New("the arguments do not meet the command")
-	// ErrUnavailable is a plugin that cannot be started or reached, or an installation with no plugin
-	// host.
-	ErrUnavailable = domain.ErrUnavailable
 )
 
 // Commands is the scenarios over the commands the plugins declare.
@@ -156,7 +153,7 @@ type Run struct {
 // ErrBadArguments, saying what is wrong, and nothing is run.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	if u.commands == nil || u.runs == nil {
-		return plugin.CommandResult{}, ErrUnavailable
+		return plugin.CommandResult{}, domain.ErrUnavailable
 	}
 	var entries []plugin.CommandEntry
 	if manifest.IsSharedCommand(call.Command) {
@@ -300,9 +297,6 @@ func (u List) HasTargetVariable(command manifest.Command) bool {
 	condition, err := u.conditions.Parse(command.When)
 	return err == nil && (condition.HasTargetVariable() || condition.HasItems())
 }
-
-// IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.
-func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }
 
 // ContentTypes lists the content type of each file extension the table registers.
 type ContentTypes struct {

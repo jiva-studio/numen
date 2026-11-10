@@ -340,7 +340,10 @@ func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	models := (container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SettingsPath: settings})).Models()()
+	models := (container.NewConfig(container.Config{
+		PluginHost: container.AdaptPluginHost(host),
+		Paths:      container.Paths{SettingsPath: settings},
+	})).Models()()
 
 	byPath := map[string][]settingsdomain.Model{}
 	for _, one := range models {
@@ -396,8 +399,9 @@ func TestModels_ReportsProviderListFailureToErrorHandler(t *testing.T) {
 	}
 	var notified []error
 	cfg := container.NewConfig(container.Config{
-		PluginHost: container.AdaptPluginHost(host), SettingsPath: settingsFile,
+		PluginHost:   container.AdaptPluginHost(host),
 		ErrorHandler: func(err error) { notified = append(notified, err) },
+		Paths:        container.Paths{SettingsPath: settingsFile},
 	})
 	models := cfg.Models()()
 

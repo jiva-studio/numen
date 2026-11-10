@@ -18,7 +18,10 @@ func openSettingsAgent(t *testing.T, host *plugin.Host, content string) agentpor
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	agent := (container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SettingsPath: path})).GetSettingsAgent()
+	agent := (container.NewConfig(container.Config{
+		PluginHost: container.AdaptPluginHost(host),
+		Paths:      container.Paths{SettingsPath: path},
+	})).GetSettingsAgent()
 	if agent == nil {
 		t.Fatal("a host with providers has no agent")
 	}

@@ -103,7 +103,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	dbPath := filepath.Join(b.TempDir(), "search_bench.db")
 	cfg := container.NewConfig(container.Config{
-		IndexPath: dbPath,
+		Paths: container.Paths{IndexPath: dbPath},
 	})
 	cfg.Chunks.Set(maxTokens)
 	db, err := container.OpenIndex(cfg, ctx)

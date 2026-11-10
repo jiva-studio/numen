@@ -114,7 +114,9 @@ func TestAnIndexPathBelowAFileCannotBeOpened(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: filepath.Join(file, "index.db")}), t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(file, "index.db")},
+	}), t.Context())
 	if err == nil {
 		testsupport.Close(t, db)
 		t.Fatal("an index was opened below a file")
@@ -127,7 +129,9 @@ func TestAnIndexPathBelowAFileCannotBeOpened(t *testing.T) {
 // A folder is not an index, and opening one returns an error.
 func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 	isolate(t)
-	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: t.TempDir()}), t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: t.TempDir()},
+	}), t.Context())
 	if err == nil {
 		testsupport.Close(t, db)
 		t.Fatal("a folder was opened as an index")
@@ -181,7 +185,9 @@ func TestWatchingAnIndexWithNoFolderReturnsSo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	moves, err := container.Moves(container.NewConfig(container.Config{IndexPath: filepath.Join(file, "index.db")}), t.Context())
+	moves, err := container.Moves(container.NewConfig(container.Config{
+		Paths: container.Paths{IndexPath: filepath.Join(file, "index.db")},
+	}), t.Context())
 	if err == nil {
 		t.Error("an index below a file was watched")
 	}

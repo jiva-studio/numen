@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -59,12 +58,6 @@ func (d *DebugOptions) serveHTTP(
 	pages http.Handler,
 ) error {
 	opened.State.NotifyOpenTabs = func(domain.OpenTabs) {}
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
-		if err := opened.Show(ctx, v, open); err != nil {
-			return err
-		}
-		cfg.SetPluginVaultPath(v.Path)
-		return nil
-	}
+	container.FollowVaultSwitch(cfg, opened, func(domain.Vault, error) {})
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }

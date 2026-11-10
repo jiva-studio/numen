@@ -49,7 +49,9 @@ func TestAFileWithTheOldIndexingKeyLoadsAndSetsNoChunkSize(t *testing.T) {
 		t.Fatalf("a file with the old key was refused: %v", err)
 	}
 
-	chunker := container.NewConfig(container.Config{SettingsPath: path}).SetSettings(cfg).CutNotes()
+	chunker := container.NewConfig(container.Config{
+		Paths: container.Paths{SettingsPath: path},
+	}).SetSettings(cfg).CutNotes()
 	if chunker.Sizes.Limit != chunking.DefaultLimit {
 		t.Errorf("notes are cut at %d characters, want the default %d: the old key must name no cut", chunker.Sizes.Limit, chunking.DefaultLimit)
 	}

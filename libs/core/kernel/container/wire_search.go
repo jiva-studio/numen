@@ -83,7 +83,7 @@ type searchWiring struct {
 func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
-		cutter.Profiles = c.PluginHost.ResolveNoteProfile
+		cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
 	}
 	return cutter
 }
@@ -202,7 +202,7 @@ func setPluginSearch(c searchWiring, db *vault.Index, embedder embeddingport.Emb
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.SetPluginSearch(hostsearch.Search{
+	c.PluginHost.Endpoint.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  newEmbedQueries(embedder),
 		Samples:  db.Search.SearchSamples,
@@ -273,7 +273,7 @@ func searchOpenEmbedder(c searchWiring, ctx context.Context, onReadError func(er
 	if err != nil {
 		return nil, nil, err
 	}
-	opened, err := embedderbridge.Open(ctx, host)
+	opened, err := embedderbridge.Open(ctx, host.Runtime)
 	if err != nil {
 		return nil, nil, err
 	}

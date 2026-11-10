@@ -281,12 +281,9 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, file, fileBody)
 	keys := &secretKeys{items: map[string]string{}}
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      container.AdaptPluginHost(host),
-		KeyStore:        keys,
-		SettingsPath:    file,
-		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
-		RegistryPath:    filepath.Join(configDir, "vaults.json"),
-		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
+		PluginHost: container.AdaptPluginHost(host),
+		KeyStore:   keys,
+		Paths:      container.Paths{SettingsPath: file, IndexPath: filepath.Join(t.TempDir(), "index.db"), RegistryPath: filepath.Join(configDir, "vaults.json"), PluginCachePath: filepath.Join(t.TempDir(), "plugins")},
 	})
 	cfg = applySettings(t, cfg)
 

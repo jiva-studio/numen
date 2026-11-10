@@ -27,7 +27,7 @@ import (
 func openIndexFor(b *testing.B) *vaults.Index {
 	b.Helper()
 	db, err := container.OpenIndex(container.NewConfig(container.Config{
-		IndexPath: filepath.Join(b.TempDir(), "index.db"),
+		Paths: container.Paths{IndexPath: filepath.Join(b.TempDir(), "index.db")},
 	}), b.Context())
 	if err != nil {
 		b.Fatal(err)

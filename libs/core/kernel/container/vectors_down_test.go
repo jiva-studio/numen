@@ -57,7 +57,7 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{PluginResolver: h, PluginActivator: h}
+	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, PluginActivator: h}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a
@@ -66,9 +66,9 @@ func TestAnEmbeddingPluginThatIsDownPreservesTheVectorsOfTheIndex(t *testing.T) 
 	db, v := makeSwitchedIndex(t)
 	host := newDownEmbeddingHost(t)
 	target := container.NewConfig(container.Config{
-		ServiceDir:         ".numen",
 		PluginHost:         host.lend(),
 		ShouldRebuildIndex: true,
+		Paths:              container.Paths{ServiceDir: ".numen"},
 	})
 
 	indexing, asking, _, err := target.Embedders(t.Context(), nil)

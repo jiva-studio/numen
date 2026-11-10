@@ -114,7 +114,9 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		{"nothing written under the walk", false, 0},
 		{"a note written under the walk", true, 1},
 	} {
-		cfg := NewConfig(Config{IndexPath: indexfile.Path(t)})
+		cfg := NewConfig(Config{
+			Paths: Paths{IndexPath: indexfile.Path(t)},
+		})
 		db, err := openIndex(vaultOf(cfg), t.Context())
 		if err != nil {
 			t.Fatal(err)
@@ -161,7 +163,9 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 // The notes indexed while their modification time is recent are remembered in
 // one ledger by every refresh of the index.
 func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
-	cfg := NewConfig(Config{IndexPath: indexfile.Path(t)})
+	cfg := NewConfig(Config{
+		Paths: Paths{IndexPath: indexfile.Path(t)},
+	})
 	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)

@@ -52,5 +52,5 @@ func (w windowVaults) OpenPluginVault(
 	if err := container.InstallPluginVault(w.cfg, w.registry, w.db, current, hooks); err != nil {
 		return nil, err
 	}
-	return w.cfg.PluginHost.GetPluginVault(), nil
+	return w.cfg.PluginHost.Endpoint.GetPluginVault(), nil
 }

@@ -86,7 +86,10 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
-	return container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), ServiceDir: ".numen"}), host, reporter
+	return container.NewConfig(container.Config{
+		PluginHost: container.AdaptPluginHost(host),
+		Paths:      container.Paths{ServiceDir: ".numen"},
+	}), host, reporter
 }
 
 func openEmbedder(t *testing.T, cfg container.Config) {
@@ -188,7 +191,9 @@ func TestNoChunkSizeFromThePluginKeepsTheCellAtZero(t *testing.T) {
 // The file texts follow the number through the recipe they keep, which names the sizes.
 func TestFileTextsAreChunkedAtTheLimitOfTheCell(t *testing.T) {
 	db := makeIndex(t)
-	cfg := container.NewConfig(container.Config{ServiceDir: ".numen"})
+	cfg := container.NewConfig(container.Config{
+		Paths: container.Paths{ServiceDir: ".numen"},
+	})
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
 	cfg.Chunks.Set(256)
