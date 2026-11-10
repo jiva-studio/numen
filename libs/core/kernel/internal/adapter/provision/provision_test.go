@@ -368,12 +368,15 @@ func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
 	}
 
 	close(provisioner.gate)
-	resolved, err := registry.Provision(t.Context(), req, nil)
-
-	if err != nil || resolved.ID != "m" {
-		t.Errorf("a later caller got %+v, %v, want the finished run", resolved, err)
+	for registry.flights.isRunning(getFlightKey(req)) {
+		time.Sleep(time.Millisecond)
 	}
 	if got := provisioner.calls.Load(); got != 1 {
-		t.Errorf("the provisioner ran %d times, want 1", got)
+		t.Errorf("the provisioner ran %d times before the run ended, want 1", got)
+	}
+
+	resolved, err := registry.Provision(t.Context(), req, nil)
+	if err != nil || resolved.ID != "m" {
+		t.Errorf("a caller after the run got %+v, %v, want the dependency", resolved, err)
 	}
 }
