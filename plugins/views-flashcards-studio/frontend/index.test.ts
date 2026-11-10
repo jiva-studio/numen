@@ -13,11 +13,13 @@ import plugin, { activate, DECK, PRESET, REVIEW, CARD_MODEL } from './index'
 const createContext = () => {
   const writers: string[] = []
   const workspace = {
-    getMessageWriter: (name: string) => {
-      writers.push(name)
-      return () => undefined
+    messages: {
+      getWriter: (name: string) => {
+        writers.push(name)
+        return () => undefined
+      },
     },
-    getToday: () => '2026-09-04',
+    window: { getToday: () => '2026-09-04' },
   } as unknown as WorkspaceHost
   const buffers = createMockBufferHost()
   const window = createMockTabWindow()

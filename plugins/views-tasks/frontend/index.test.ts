@@ -369,7 +369,7 @@ describe('the actions of a task', () => {
 describe('a window without background tasks', () => {
   it('draws nothing', () => {
     const context = createMockPluginContext({ pluginId: manifest.id })
-    const { backgroundTasks: _backgroundTasks, ...bare } = context
+    const { work.backgroundTasks: _backgroundTasks, ...bare } = context
     activate(bare)
     const [registration] = context.getRegisteredSlotViews()
 

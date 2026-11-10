@@ -24,12 +24,11 @@ describe('the keys of the notes plugin settings', () => {
   it('follows a change of the camelCase keys and listens to no snake_case key', () => {
     const watchedKeys: string[] = []
     const context = {
-      getSetting: () => undefined,
-      onSettingChange: (key: string) => {
+      settings: { get: () => undefined, onChange: (key: string) => {
         watchedKeys.push(key)
         return { dispose: vi.fn() }
-      },
-    } as unknown as Pick<PluginContext, 'getSetting' | 'onSettingChange'>
+      } },
+    } as unknown as Pick<PluginContext, 'settings'>
 
     bindMarkdownEditorPreferences(context)
 

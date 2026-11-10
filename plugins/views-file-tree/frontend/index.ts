@@ -12,7 +12,7 @@ export type { FilesTabDeps, FilesTabState } from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, files, drops, slots, commands } = context
+  const { ui.workspace, vault.files, ui.drops, ui.slots, ui.commands } = context
   if (!workspace || !files) {
     throw new Error('a files tab needs the window it is drawn in and the files of the vault')
   }

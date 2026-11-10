@@ -35,26 +35,26 @@ export const editorPreferences = reactive<Required<MarkdownEditorPreferences>>({
 })
 
 export function bindMarkdownEditorPreferences(
-  context: Pick<Partial<PluginContext>, 'getSetting' | 'onSettingChange'>,
+  context: Pick<Partial<PluginContext>, 'settings'>,
 ): Required<MarkdownEditorPreferences> {
   const applyAll = () => {
-    const next = readMarkdownEditorPreferences(context.settings.get)
+    const next = readMarkdownEditorPreferences(context.settings?.get)
     editorPreferences.softWrap = next.softWrap
     editorPreferences.lineNumbers = next.lineNumbers
   }
   applyAll()
 
-  context.settings.onChange?.('softWrap', (value) => {
+  context.settings?.onChange.('softWrap', (value) => {
     editorPreferences.softWrap =
       typeof value === 'boolean'
         ? value
-        : readMarkdownEditorPreferences(context.settings.get).softWrap
+        : readMarkdownEditorPreferences(context.settings?.get).softWrap
   })
-  context.settings.onChange?.('lineNumbers', (value) => {
+  context.settings?.onChange.('lineNumbers', (value) => {
     editorPreferences.lineNumbers =
       typeof value === 'boolean'
         ? value
-        : readMarkdownEditorPreferences(context.settings.get).lineNumbers
+        : readMarkdownEditorPreferences(context.settings?.get).lineNumbers
   })
   return editorPreferences
 }
