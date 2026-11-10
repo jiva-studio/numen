@@ -53,7 +53,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 		}},
 	}}
 	var vaults []domain.Vault
-	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -189,7 +189,7 @@ func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 		PluginID: "md.numen.engines.transcription",
 		Command:  manifest.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
-	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -240,7 +240,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 		PluginID: "md.numen.links",
 		Command:  manifest.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
-	commands := plugincommand.NewCommands(declared, fileTypes{}, nil, nil)
+	commands := plugincommand.NewCommands(declared, declared, fileTypes{}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {
@@ -259,7 +259,7 @@ func TestVersionCommandRequiresFile(t *testing.T) {
 		PluginID: "md.numen.tools.proofreading",
 		Command:  manifest.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}
-	commands := plugincommand.NewCommands(declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
+	commands := plugincommand.NewCommands(declared, declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {

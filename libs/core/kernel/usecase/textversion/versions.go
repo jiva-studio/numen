@@ -89,22 +89,10 @@ type noListener struct{}
 
 func (noListener) ReportVersionsChanged(domain.Vault, string) {}
 
-// VersionPut is what a plugin reports of one of its versions. File is the name
-// of the version's file in the plugin's folder, written before the put.
-type VersionPut struct {
-	Path           string
-	Key            string
-	Source         domain.TextVersionID
-	SourceProperty domain.TextSourceProperty
-	Kind           domain.TextKind
-	InputHash      string
-	File           string
-}
-
 // PutVersion records a version of the plugin, or replaces the record of the
 // one it has under the key. The core reads the version's file and records the
 // hash of its bytes. A replaced version keeps the time it was first made.
-func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params VersionPut) (domain.TextVersion, error) {
+func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params plugin.TextPut) (domain.TextVersion, error) {
 	if !u.plugins.IsEnabled(pluginID) {
 		return domain.TextVersion{}, fmt.Errorf("%w: %s", text.ErrNotTextPlugin, pluginID)
 	}
@@ -216,24 +204,17 @@ func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path strin
 	return nil
 }
 
-// Listing is the versions of a file and the one that is live. Live is empty
-// where none is.
-type Listing struct {
-	Versions []domain.TextVersion
-	Live     domain.TextVersionID
-}
-
 // ListVersions returns the versions of a file and the live one, evaluated for
 // the file content identified by contentHash.
-func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, contentHash string) (Listing, error) {
+func (u *Versions) ListVersions(ctx context.Context, v domain.Vault, path, contentHash string) (plugin.TextListing, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
-		return Listing{}, err
+		return plugin.TextListing{}, err
 	}
-	listing := Listing{Versions: versions}
+	listing := plugin.TextListing{Versions: versions}
 	live, ok, err := u.findLive(ctx, v, path, versions, contentHash)
 	if err != nil {
-		return Listing{}, err
+		return plugin.TextListing{}, err
 	}
 	if ok {
 		listing.Live = live.GetID()

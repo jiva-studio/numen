@@ -54,11 +54,10 @@ const pluginFailureTaskPrefix = "plugin-failed:"
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *Host {
-	return NewHost(OpenPluginHost(target, dirs...))
+	return NewHost(openPluginHost(target, dirs...))
 }
 
-// OpenPluginHost is the plugin host NewPluginHost lends, before it is lent.
-func OpenPluginHost(target string, dirs ...string) *plugin.Host {
+func openPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	host.SetDependencies(NewDependenciesIn(""))
@@ -116,9 +115,9 @@ func (c Config) StopPlugins(ctx context.Context) error {
 // host they list none.
 func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
-		return plugincommand.NewCommands(nil, nil, nil, nil)
+		return plugincommand.NewCommands(nil, nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.newNoteReader(), c.GetWhenConfig())
+	return plugincommand.NewCommands(manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, c.newNoteReader(), c.GetWhenConfig())
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -293,7 +292,7 @@ func (c Config) openPluginVault(
 	}
 	arranger := hostvault.Arranger{
 		Notes:  getNoteChanges(scenarios),
-		Checks: vault.NewStandardGetProblems(db.Problems()),
+		Checks: getProblemChecks(vault.NewStandardGetProblems(db.Problems())),
 	}
 	if hasReaders(hooks.Notes) {
 		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
@@ -329,7 +328,7 @@ func (c Config) openPluginVault(
 		Index:      index,
 	}
 	if c.VaultWatcher != nil {
-		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher)
+		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
 	}
 	if vaults.IndexState == nil {
 		vaults.IndexState = getIndexState(db)
@@ -492,46 +491,19 @@ func (c Config) OpenChooseTabKind() *tabkind.Choose {
 	return choose
 }
 
-// commandManifests lists what the manifests of the enabled plugins declare.
-type commandManifests interface {
-	ListCommands() []plugindomain.CommandEntry
-	ListSlots() []plugindomain.SlotEntry
-	ListKeybindings() []plugindomain.KeybindingEntry
-	ListHandlers() []plugindomain.CommandEntry
-	GetParts(pluginID string) plugindomain.Parts
-}
-
-// commandRuns runs a command in the backend of its plugin.
-type commandRuns interface {
-	RunCommand(ctx context.Context, call plugindomain.CommandCall) (plugindomain.CommandResult, error)
-}
-
-// pluginCommands is the commands the manifests declare, listed from the manifests, and run in the
-// backends of their plugins.
-type pluginCommands struct {
-	commandManifests
-	commandRuns
-}
-
-func (c Config) openPluginCommands() pluginCommands {
-	if c.PluginHost == nil {
-		return pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
-	}
-	return pluginCommands{manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost)}
-}
-
 // OpenVersionItems is the versions of a file a command offers as its items, over the text versions
 // and the commands of the plugins. Without text versions there is none.
 func (c Config) OpenVersionItems() *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
-	commands := pluginCommands{manifestlist.NoManifests{}, commandbridge.NoCommands{}}
+	var commands pluginport.PluginCommands = manifestlist.NoManifests{}
+	var runs pluginport.PluginCommandRuns = commandbridge.NoCommands{}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, types = c.openPluginCommands(), c.PluginHost
+		commands, runs, types = manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost
 	}
-	run := plugincommand.NewCommands(commands, types, c.newNoteReader(), c.GetWhenConfig()).Run
+	run := plugincommand.NewCommands(commands, runs, types, c.newNoteReader(), c.GetWhenConfig()).Run
 	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
 	if err != nil {
 		c.handleError(err)
@@ -566,4 +538,11 @@ func (c Config) GetWhenConfig() pluginport.WhenConfig {
 		settings.Plugins = c.PluginHost.GetPluginInfos
 	}
 	return settings
+}
+
+func getProblemChecks(u *vault.GetProblems) func(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
+	return func(ctx context.Context, v domain.Vault, named ...domain.Check) ([]domain.Check, []domain.VaultProblem, error) {
+		report, err := u.Execute(ctx, v, named...)
+		return report.Ran, report.Found, err
+	}
 }

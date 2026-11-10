@@ -8,8 +8,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
-	pluginhost "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -21,7 +21,7 @@ const EnvMockML = "NUMEN_MOCK_ML"
 
 // NewDependenciesIn returns the provisioners as the environment names them now, keeping the
 // dependencies in defaultDir where NUMEN_MODELS_DIR names no folder.
-func NewDependenciesIn(defaultDir string) pluginhost.Dependencies {
+func NewDependenciesIn(defaultDir string) pluginport.DependencyRegistry {
 	if os.Getenv(EnvMockML) == "true" {
 		return provision.NewRegistry(newPlaceholders())
 	}

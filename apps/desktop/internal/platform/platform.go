@@ -8,6 +8,7 @@ package platform
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/keychain"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -39,8 +40,11 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // that target.
 func GetConfigFor(target string) container.Config {
 	dirs := getPluginsDirs()
+	host := container.NewPluginHost(target, dirs...)
+	cacheRoot, dataRoot := getStorageRoots(runtime.GOOS, os.Getenv, os.UserCacheDir, os.UserHomeDir)
+	host.SetStorage(cacheRoot, dataRoot)
 	cfg := container.NewConfig(container.Config{
-		PluginHost:    newPluginHost(target, dirs...),
+		PluginHost:    host,
 		PluginDirs:    dirs,
 		PluginCatalog: getCatalogConfig(target, dirs),
 		KeyStore:      getKeyStore(),

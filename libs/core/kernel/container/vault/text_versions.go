@@ -45,7 +45,7 @@ func (c Config) SetPluginTexts() {
 		c.PluginHost.SetPluginTexts(nil)
 		return
 	}
-	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
+	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.TextVersions))
 }
 
 // OpenPluginData builds the plugin data cleaner for the active text versions.

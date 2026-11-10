@@ -10,8 +10,8 @@ import (
 // every declaration, and where the values are kept when it is a file. No value and no flag about
 // a value is part of it, and the key store is not read.
 type Listing struct {
-	Sections        []Section
-	Menus           []Menu
+	Sections        []plugin.SecretSection
+	Menus           []plugin.SecretMenu
 	CredentialsPath string
 }
 
@@ -28,14 +28,14 @@ func (u *List) Execute() (Listing, error) {
 		return Listing{}, err
 	}
 	declarations := u.plugins.ListDeclarations()
-	listing := Listing{Sections: ListSections(list, ListAskedGroups(declarations))}
+	listing := Listing{Sections: plugin.ListSecretSections(list, plugin.ListAskedSecretGroups(declarations))}
 	var seen []plugin.DeclarationKey
 	for _, one := range declarations {
 		if slices.Contains(seen, one) {
 			continue
 		}
 		seen = append(seen, one)
-		listing.Menus = append(listing.Menus, Menu{Declaration: one, Secrets: ListMenu(listing.Sections, one)})
+		listing.Menus = append(listing.Menus, plugin.SecretMenu{Declaration: one, Secrets: plugin.ListSecretMenu(listing.Sections, one)})
 	}
 	if u.credentialsPath != nil {
 		listing.CredentialsPath = u.credentialsPath()

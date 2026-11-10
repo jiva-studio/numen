@@ -44,7 +44,7 @@ func (menuPlugins) RunCommand(context.Context, plugin.CommandCall) (plugin.Comma
 }
 
 func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
-	commands := plugincommand.NewCommands(menuPlugins{}, getTypes(), nil, nil)
+	commands := plugincommand.NewCommands(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
 
 	entries := commands.List.ExecuteSlots()
 
@@ -63,7 +63,7 @@ func TestTheWindowListsTheMenuEntriesOfPluginsThatRunAndNoOthers(t *testing.T) {
 }
 
 func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
-	commands := plugincommand.NewCommands(menuPlugins{}, getTypes(), nil, nil)
+	commands := plugincommand.NewCommands(menuPlugins{}, menuPlugins{}, getTypes(), nil, nil)
 
 	entries := commands.List.ExecuteSlots()
 
@@ -77,7 +77,7 @@ func TestAMenuEntryKeepsItsGroupAndOrder(t *testing.T) {
 }
 
 func TestTheWindowListsNoMenuEntriesWhereThereIsNoPluginHost(t *testing.T) {
-	commands := plugincommand.NewCommands(nil, getTypes(), nil, nil)
+	commands := plugincommand.NewCommands(nil, nil, getTypes(), nil, nil)
 
 	if entries := commands.List.ExecuteSlots(); len(entries) != 0 {
 		t.Errorf("the window lists %+v", entries)

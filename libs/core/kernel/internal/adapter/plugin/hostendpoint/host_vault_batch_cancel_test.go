@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
 // cancelMode is what the canceling vault does on the call that cancels the batch.
@@ -287,7 +286,7 @@ func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
 }
 
 // cancellingLinkVault is the linking vault that writes the links of the first note of a call,
-// cancels the call, and returns note.ErrNotAttempted for the links of every later note, as the
+// cancels the call, and returns plugin.ErrNotAttempted for the links of every later note, as the
 // core vault does.
 type cancellingLinkVault struct {
 	*linkingVault
@@ -316,7 +315,7 @@ func (c *cancellingLinkVault) AddLinks(ctx context.Context, additions []plugin.L
 			continue
 		}
 		out[i] = plugin.LinkAdded{
-			Err: fmt.Errorf("the call was canceled before the links were added to %s: %w", one.From, note.ErrNotAttempted),
+			Err: fmt.Errorf("the call was canceled before the links were added to %s: %w", one.From, plugin.ErrNotAttempted),
 		}
 	}
 	return out, nil
@@ -348,7 +347,7 @@ func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.
 		t.Errorf("result 0 is %v, want the file stat of Danube.md after the write and no error", r)
 	}
 	for i, from := range batch[1:] {
-		want := "the call was canceled before the links were added to " + from + ": " + note.ErrNotAttempted.Error()
+		want := "the call was canceled before the links were added to " + from + ": " + plugin.ErrNotAttempted.Error()
 		if r := results[i+1]; r.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED || r.GetStat() != nil || r.GetDetail() != want {
 			t.Errorf("result %d is %v, want NOT_ATTEMPTED with the detail %q and no file stat", i+1, r, want)
 		}

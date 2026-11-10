@@ -89,7 +89,7 @@ func createServices(state *State) *Services {
 			filewindow.NewFolders(state, state, state, nil, nil, nil, nil),
 			filewindow.NewChanges(state, state, state, state, nil, nil, nil),
 		),
-		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
+		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil), nil),
 		Media:   mediawindow.NewHandler(state, state, nil, nil),
 		Plugin:  numenv1connect.UnimplementedPluginServiceHandler{},
 		server:  NewFileServer(state, nil, nil, nil, nil),

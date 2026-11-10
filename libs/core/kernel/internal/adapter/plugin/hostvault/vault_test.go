@@ -227,7 +227,7 @@ func TestAddLinksCancelledAfterTheFirstNoteSendsOneFileWriteNotification(t *test
 	if err != nil {
 		t.Fatalf("AddLinks returned %v, want the results and no error", err)
 	}
-	if len(added) != 3 || added[0].Err != nil || !errors.Is(added[1].Err, note.ErrNotAttempted) || !errors.Is(added[2].Err, note.ErrNotAttempted) {
+	if len(added) != 3 || added[0].Err != nil || !errors.Is(added[1].Err, plugin.ErrNotAttempted) || !errors.Is(added[2].Err, plugin.ErrNotAttempted) {
 		t.Fatalf("AddLinks returned %+v, want Danube.md written and the rest not attempted", added)
 	}
 	if writeCount != 1 {
@@ -249,7 +249,7 @@ func TestAddLinksCancelledBeforeAnyWriteDoesNotNotify(t *testing.T) {
 	if err != nil {
 		t.Fatalf("AddLinks returned %v, want the results and no error", err)
 	}
-	if len(added) != 1 || !errors.Is(added[0].Err, note.ErrNotAttempted) {
+	if len(added) != 1 || !errors.Is(added[0].Err, plugin.ErrNotAttempted) {
 		t.Fatalf("AddLinks returned %+v, want Danube.md not attempted", added)
 	}
 	if writeCount != 0 {

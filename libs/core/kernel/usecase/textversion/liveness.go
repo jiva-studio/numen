@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 )
 
 // liveKey names one file of one vault.
@@ -60,7 +62,7 @@ func (u *Versions) findCurrentLive(
 	ctx context.Context, v domain.Vault, path string, versions []domain.TextVersion,
 ) (domain.TextVersionID, error) {
 	contentHash, err := u.GetContentHash(ctx, v, path)
-	if errors.Is(err, ErrFileUnreadable) {
+	if errors.Is(err, textdomain.ErrFileUnreadable) {
 		return "", nil
 	}
 	if err != nil {

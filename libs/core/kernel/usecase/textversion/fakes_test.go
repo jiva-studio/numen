@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/textfile"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -204,7 +205,7 @@ type fakeProvider struct {
 }
 
 func (f *fakeProvider) create(ctx context.Context, path string, source domain.TextVersionID) error {
-	params := textversion.VersionPut{Path: path, Source: source, Kind: f.kind}
+	params := plugin.TextPut{Path: path, Source: source, Kind: f.kind}
 	var segments []domain.TextSegment
 	if source == "" {
 		params.InputHash = domain.HashContent(f.files[path])

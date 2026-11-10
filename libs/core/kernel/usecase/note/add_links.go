@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // LinkAddition is one relationship to write, and the note it is written in.
@@ -38,14 +40,10 @@ func NewAddLinks(linking EditLinks) AddLinks {
 	return AddLinks{linking: linking}
 }
 
-// ErrNotAttempted is the error of the links of a note that were not written because the call was
-// canceled first.
-var ErrNotAttempted = errors.New("not attempted")
-
 // Execute writes the additions and answers for each one, in the order given. An
 // addition that cannot be written is rejected on its own and costs the others
 // nothing. When ctx is canceled, the links of every note not yet written get
-// ErrNotAttempted, and the results are returned with a nil error.
+// plugin.ErrNotAttempted, and the results are returned with a nil error.
 func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkAddition) ([]LinkAdded, error) {
 	results := make([]LinkAdded, len(additions))
 	groups := newLinkGroups()
@@ -60,7 +58,7 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 			content, err = u.linking.Add(ctx, v, from, groups.stats[from], group[0], group[1:]...)
 		}
 		if err != nil && ctx.Err() != nil && !errors.Is(err, ErrIndexOutdated) {
-			err = fmt.Errorf("the call was canceled before the links were added to %s: %w", from, ErrNotAttempted)
+			err = fmt.Errorf("the call was canceled before the links were added to %s: %w", from, plugin.ErrNotAttempted)
 		}
 		for _, i := range groups.positions[from] {
 			results[i].Error = err

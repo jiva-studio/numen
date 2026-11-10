@@ -28,7 +28,7 @@ func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 			Arguments: []manifest.CommandArgument{{Name: "address", Title: "Web address", Type: "string", IsRequired: true}},
 		}},
 	}}
-	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
+	commands := plugincommand.NewCommands(declared, declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		PluginCommands: func() cli.PluginCommands {

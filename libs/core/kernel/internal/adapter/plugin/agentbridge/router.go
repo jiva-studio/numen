@@ -10,7 +10,7 @@ import (
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 

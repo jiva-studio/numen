@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/textfake"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -46,7 +47,7 @@ func newScene(t *testing.T, files textfake.Readers) *scene {
 	return s
 }
 
-func (s *scene) record(t *testing.T, pluginID, path string, report textversion.VersionPut, segments []domain.TextSegment) {
+func (s *scene) record(t *testing.T, pluginID, path string, report plugin.TextPut, segments []domain.TextSegment) {
 	t.Helper()
 	report.Path = path
 	report.File = report.Key + ".jsonl"
@@ -61,7 +62,7 @@ func (s *scene) record(t *testing.T, pluginID, path string, report textversion.V
 func TestReadLiveTextReturnsTheVersionAndItsSegments(t *testing.T) {
 	s := newScene(t, textfake.Readers{"a.mp3": []byte("audio")})
 	s.record(t, "p.t", "a.mp3",
-		textversion.VersionPut{Key: "k", Kind: "transcript", InputHash: domain.HashContent([]byte("audio"))},
+		plugin.TextPut{Key: "k", Kind: "transcript", InputHash: domain.HashContent([]byte("audio"))},
 		[]domain.TextSegment{{Text: "Hello.\n", Selector: `{"t":[0,1]}`}})
 
 	res, err := s.handler.ReadLiveText(t.Context(), connect.NewRequest(&v1.ReadLiveTextRequest{Path: "a.mp3"}))
@@ -77,7 +78,7 @@ func TestReadLiveTextReturnsTheVersionAndItsSegments(t *testing.T) {
 func TestReadLiveTextReturnsTheNotePropertyOfTheVersion(t *testing.T) {
 	s := newScene(t, textfake.Readers{"talk.md": []byte("---\nurl: https://example.org/talk\n---\n# Talk\n")})
 	s.record(t, "p.link", "talk.md",
-		textversion.VersionPut{
+		plugin.TextPut{
 			Key: "link", Kind: "link",
 			SourceProperty: domain.TextSourceProperty{Key: "url", Value: "https://example.org/talk"},
 		},
@@ -107,7 +108,7 @@ func TestReadLiveTextOfAFileWithoutOneIsEmpty(t *testing.T) {
 func TestCreateTextEditRecordsTheEditForThePlugin(t *testing.T) {
 	s := newScene(t, textfake.Readers{"a.mp3": []byte("audio")})
 	s.record(t, "p.t", "a.mp3",
-		textversion.VersionPut{Key: "k", Kind: "transcript", InputHash: domain.HashContent([]byte("audio"))},
+		plugin.TextPut{Key: "k", Kind: "transcript", InputHash: domain.HashContent([]byte("audio"))},
 		[]domain.TextSegment{{Text: "Hello.\n"}})
 
 	res, err := s.handler.CreateTextEdit(t.Context(), connect.NewRequest(&v1.CreateTextEditRequest{

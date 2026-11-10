@@ -20,10 +20,8 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 )
@@ -133,12 +131,8 @@ func run(cfg container.Config, debug debugOptions) error {
 }
 
 func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
-	agent := &windowagent.Handler{}
-	if taking := cfg.GetSettingsAgent(); taking != nil {
-		agent.Start, agent.End = agentuse.NewStartTask(taking), agentuse.NewEndConversation(taking)
-	}
 	return &shell.API{
-		Agent:                agent,
+		Agent:                cfg.GetSettingsAgentHandler(),
 		IsVaultIndexed:       notes.IsVaultIndexed,
 		ResolveLinks:         notes.ResolveLinks,
 		Window:               shell.NewWindow(platform.TargetFlashcards, nil),

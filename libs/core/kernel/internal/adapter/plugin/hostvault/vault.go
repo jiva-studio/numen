@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
@@ -58,7 +57,7 @@ type Vault struct {
 	StoreReaders func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error)
 	StoreWriters func(v domain.Vault, pluginID string) (hostendpoint.StoreWriter, error)
 	Cache        pluginCache
-	Watcher      *vaults.WatchChanges
+	Watcher      func(ctx context.Context, v domain.Vault) (changes <-chan []string, lost <-chan struct{}, err error)
 	Vaults       func() ([]domain.Vault, error)
 	Find         func(id domain.VaultID) (domain.Vault, error)
 	IndexState   func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
@@ -356,7 +355,7 @@ func (a Vault) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, err
 	if a.Watcher == nil {
 		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, domain.ErrUnavailable)
 	}
-	return a.Watcher.Execute(ctx, v)
+	return a.Watcher(ctx, v)
 }
 
 func (a Vault) openConnections(isMissing bool) (domain.Vault, error) {
