@@ -159,7 +159,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 }
 
 // The program list names Claude Code as the default program, installed where it is found, with the
-// models the program accepts, shown with no key and no network.
+// models the program accepts, listing with no key and no network.
 func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
 	client := startAgent(t, newTestAgent(t))
@@ -635,7 +635,7 @@ func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
 	}
 }
 
-// A Claude Code installation needs no key of the plugin: the models are shown with none, and a key
+// A Claude Code installation needs no key of the plugin: the models are listing with none, and a key
 // handed to the plugin is not the program's key.
 func TestTheProgramListNeedsNoKey(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
@@ -648,8 +648,8 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if shown := got[0].Models; len(shown) != len(models.GetFallback()) {
-		t.Errorf("the models are %v", shown)
+	if listing := got[0].Models; len(listing) != len(models.GetFallback()) {
+		t.Errorf("the models are %v", listing)
 	}
 }
 

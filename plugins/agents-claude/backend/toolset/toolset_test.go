@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
-func TestTheToolsAreKeptInTheOrderTheyWereRegistered(t *testing.T) {
+func TestRegister_KeepsOrder(t *testing.T) {
 	var set Toolset
 	set.Register(&agentrun.ToolDefinition{Name: "search_tool", Description: "Search notes"})
 	set.Register(&agentrun.ToolDefinition{Name: "new_tool", Description: "New tool"})

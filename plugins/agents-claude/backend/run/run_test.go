@@ -48,10 +48,10 @@ func (f *failingLauncher) Launch(_ context.Context, launch ports.Launch) (ports.
 	return nil, errors.New("start claude: no such file")
 }
 
-type recordingToolConfig struct{ written int }
+type recordingToolConfig struct{ writes int }
 
 func (r *recordingToolConfig) Write(string, string) (string, error) {
-	r.written++
+	r.writes++
 	return "/tmp/config.json", nil
 }
 
@@ -101,8 +101,8 @@ func TestTheDefaultModelIsNotNamedToTheProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if configFile != "/tmp/config.json" || toolConfig.written != 1 {
-		t.Errorf("config file %q written %d times", configFile, toolConfig.written)
+	if configFile != "/tmp/config.json" || toolConfig.writes != 1 {
+		t.Errorf("config file %q written %d times", configFile, toolConfig.writes)
 	}
 	if slices.Contains(args, "--model") {
 		t.Errorf("expected --model omitted for the default model, got %v", args)
@@ -116,8 +116,8 @@ func TestATaskWithoutToolsWritesNoConfiguration(t *testing.T) {
 	_, configFile, err := r.prepareArguments(&agentrun.Request{
 		ToolsURL: "http://127.0.0.1:1/mcp", ToolsToken: "tok",
 	}, "", settings.Values{})
-	if err != nil || configFile != "" || toolConfig.written != 0 {
-		t.Fatalf("prepareArguments without tools = (%q, %v), written %d times", configFile, err, toolConfig.written)
+	if err != nil || configFile != "" || toolConfig.writes != 0 {
+		t.Fatalf("prepareArguments without tools = (%q, %v), %d writes", configFile, err, toolConfig.writes)
 	}
 }
 
@@ -167,7 +167,7 @@ func TestAProgramThatDoesNotStartIsAnInternalError(t *testing.T) {
 	}
 }
 
-func TestAClosedRunTakesNoTask(t *testing.T) {
+func TestAsk_ClosedRunIsUnavailable(t *testing.T) {
 	r := newRun(t, "claude", new(failingLauncher), new(recordingToolConfig), "")
 	if err := r.Close(); err != nil {
 		t.Fatal(err)

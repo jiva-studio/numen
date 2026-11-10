@@ -38,7 +38,7 @@ func TestHooksAndSkillsAreNotReadFromTheSnakeCaseKey(t *testing.T) {
 	}
 }
 
-func TestAnEmptyModelLeavesTheModelInForce(t *testing.T) {
+func TestApply_EmptyModelKeepsModel(t *testing.T) {
 	var s Settings
 	s.Apply(map[string]string{"model": "m1"})
 	s.Apply(map[string]string{"model": ""})

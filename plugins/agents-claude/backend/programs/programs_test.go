@@ -50,7 +50,7 @@ func TestTheStateIsUnreachableWhereTheProgramIsNotFound(t *testing.T) {
 	}
 }
 
-func TestACommandOfTheTaskComesBeforeTheProgramFound(t *testing.T) {
+func TestResolveCommand_PrefersTheTaskCommand(t *testing.T) {
 	p := newPrograms(t, "/usr/bin/claude")
 	if command, extra := p.ResolveCommand([]string{"/opt/claude", "--first"}); command != "/opt/claude" || len(extra) != 1 || extra[0] != "--first" {
 		t.Errorf("resolved %q %v", command, extra)
