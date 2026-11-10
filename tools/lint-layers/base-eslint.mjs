@@ -1310,8 +1310,6 @@ export function createBaseConfig(dirname, options = {}) {
   ]
 }
 
-}
-
 /**
  * The flat configuration of a TypeScript library without Vue (`libs/core/client`,
  * `libs/plugin/loader`): the strict rules, the size limits, the package boundary and the
