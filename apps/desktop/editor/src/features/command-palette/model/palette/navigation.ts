@@ -263,23 +263,26 @@ export function createPaletteSteps(options: PaletteStepsOptions) {
   return {
     steps,
     here,
-    getStepTitle,
-    getStepLabel,
-    ...computedFields,
-    pushStep,
-    popStep,
-    reset: () => {
-      steps.value = []
+    naming: { getStepTitle, getStepLabel },
+    shown: computedFields,
+    stack: {
+      pushStep,
+      popStep,
+      reset: () => {
+        steps.value = []
+      },
     },
-    applyRenames,
-    leaveStep: () => (here.value ? popStep() : onClose()),
-    goBack: (): boolean => {
-      if (here.value) {
-        popStep()
-        return false
-      }
-      onClose()
-      return true
+    moves: {
+      applyRenames,
+      leaveStep: () => (here.value ? popStep() : onClose()),
+      goBack: (): boolean => {
+        if (here.value) {
+          popStep()
+          return false
+        }
+        onClose()
+        return true
+      },
     },
     chooseInStep,
   }

@@ -77,8 +77,8 @@ describe('the palette at its list of commands', () => {
 
     expect(steps.steps.value).toStrictEqual([])
     expect(steps.here.value).toBeNull()
-    expect(steps.placeholder.value).toBe(words.typeCommand)
-    expect(steps.step.value).toBe('0::commands')
+    expect(steps.shown.placeholder.value).toBe(words.typeCommand)
+    expect(steps.shown.step.value).toBe('0::commands')
   })
 })
 
@@ -86,16 +86,16 @@ describe('a step taken', () => {
   it('releases what was found, and is named by its depth, command and step', () => {
     const { steps, happened } = createSteps()
 
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
 
     expect(happened).toStrictEqual(['drop'])
-    expect(steps.step.value).toBe('1:rename:name')
+    expect(steps.shown.step.value).toBe('1:rename:name')
   })
 
   it('asks for the list of vaults only on the step that picks one', () => {
     const { steps, happened } = createSteps()
 
-    steps.pushStep(pending('vault'))
+    steps.stack.pushStep(pending('vault'))
 
     expect(happened).toStrictEqual(['drop', 'lists'])
   })
@@ -103,16 +103,16 @@ describe('a step taken', () => {
   it('asks for the name back in plain words where the command gives none', () => {
     const { steps } = createSteps()
 
-    steps.pushStep(pending('retypedName'))
-    expect(steps.placeholder.value).toBe(words.typeBack)
+    steps.stack.pushStep(pending('retypedName'))
+    expect(steps.shown.placeholder.value).toBe(words.typeBack)
   })
 
   it('is taken back with what was found and lit release', () => {
     const { steps, happened, text } = createSteps()
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
     text.value = 'Alpaca'
 
-    steps.popStep()
+    steps.stack.popStep()
 
     expect(happened).toStrictEqual(['drop', 'lights ', 'drop'])
     expect(text.value).toBe('')
@@ -125,34 +125,34 @@ describe('what a step is over', () => {
     const { steps } = createSteps()
 
     expect(
-      steps.getStepLabel(pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } })),
+      steps.naming.getStepLabel(pending('confirmation', { on: { ...on, others: ['a.md', 'b.md'] } })),
     ).toBe(words.several(3))
   })
 
   it('is returned by its title where it is over one', () => {
     const { steps } = createSteps()
 
-    expect(steps.getStepLabel(pending('confirmation'))).toBe('“Llama”')
+    expect(steps.naming.getStepLabel(pending('confirmation'))).toBe('“Llama”')
   })
 })
 
 describe('the steps when files move', () => {
   it('are left as they are where nothing moved', () => {
     const { steps } = createSteps()
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
     const before = steps.steps.value
 
-    steps.applyRenames([])
-    steps.applyRenames()
+    steps.moves.applyRenames([])
+    steps.moves.applyRenames()
 
     expect(steps.steps.value).toBe(before)
   })
 
   it('are all release on a reset', () => {
     const { steps } = createSteps()
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
 
-    steps.reset()
+    steps.stack.reset()
 
     expect(steps.steps.value).toStrictEqual([])
   })
@@ -202,24 +202,24 @@ describe('the row a list opens on', () => {
   it('is the one standing now, on the step that chooses from a list', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('items'))
+    steps.stack.pushStep(pending('items'))
 
-    expect(steps.opensOn.value).toBe('dark')
+    expect(steps.shown.opensOn.value).toBe('dark')
   })
 
   it('is none where no row remains now', () => {
     const { steps } = createSteps([{ id: 'g', title: 'Themes', items: [row('light')] }])
 
-    steps.pushStep(pending('items'))
+    steps.stack.pushStep(pending('items'))
 
-    expect(steps.opensOn.value).toBe('')
+    expect(steps.shown.opensOn.value).toBe('')
   })
 
   it('is none on any other step', () => {
     const { steps } = createSteps(groups)
 
-    steps.pushStep(pending('name'))
+    steps.stack.pushStep(pending('name'))
 
-    expect(steps.opensOn.value).toBe('')
+    expect(steps.shown.opensOn.value).toBe('')
   })
 })

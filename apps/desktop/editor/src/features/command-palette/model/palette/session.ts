@@ -127,11 +127,7 @@ function createPaletteState(wait?: Wait) {
   return {
     open,
     typed: inputValue,
-    found,
-    known: recognized,
-    showing,
-    isWorking,
-    failureMessage,
+    results: { found, known: recognized, showing, isWorking, failureMessage },
     requests: request,
     debounced,
     drop,
@@ -174,10 +170,10 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     core: deps.core,
     words: deps.words,
     requests: state.requests,
-    known: state.known,
-    showing: state.showing,
-    isWorking: state.isWorking,
-    failureMessage: state.failureMessage,
+    known: state.results.known,
+    showing: state.results.showing,
+    isWorking: state.results.isWorking,
+    failureMessage: state.results.failureMessage,
   })
 
   const previewItem = (item: string) => {
@@ -192,7 +188,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     state.drop()
     state.typed.value = ''
     // Stryker disable next-line OptionalChaining: stepsRef.current is initialized synchronously below.
-    stepsRef.current?.reset()
+    stepsRef.current?.stack.reset()
   }
 
   const stepsRef: { current?: ReturnType<typeof createPaletteSteps> } = {}
@@ -205,7 +201,7 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     onLights: previewItem,
     onLists: () => {
       loadVaults().catch((error: unknown) => {
-        state.failureMessage.value = formatError(error)
+        state.results.failureMessage.value = formatError(error)
       })
     },
     onClose: () => setOpen(false),
@@ -217,12 +213,20 @@ export function createPaletteSession(deps: CommandPaletteDeps) {
     core: deps.core,
     words: deps.words,
     debounced: state.debounced,
-    found: state.found,
-    isWorking: state.isWorking,
-    failureMessage: state.failureMessage,
+    found: state.results.found,
+    isWorking: state.results.isWorking,
+    failureMessage: state.results.failureMessage,
   })
 
-  return { deps, state, on, rows, invocation, steps, previewItem, setOpen, searchNames }
+  return {
+    deps,
+    state,
+    on,
+    rows,
+    invocation,
+    steps,
+    handlers: { previewItem, setOpen, searchNames },
+  }
 }
 
 export type PaletteSession = ReturnType<typeof createPaletteSession>
