@@ -20,8 +20,6 @@ func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	return name, true
 }
 
-// getSharedPackagesOfUseCases returns the packages under internal/ that a use case may import; both hold pure
-// functions on bytes and numbers, import no port, adapter or use case, and serve more than one use case.
 func getSharedPackagesOfUseCases() map[string]string {
 	return map[string]string{
 		"internal/text":   "cuts a byte range on character boundaries and imports only the standard library",

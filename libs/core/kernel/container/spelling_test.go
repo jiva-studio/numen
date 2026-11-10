@@ -10,8 +10,6 @@ import (
 	"testing"
 )
 
-// getBritishStems returns the stems of words that American English spells another way, in lower case. They
-// are derived from the American spelling: -ize for -ise, -or for -our and -er for -re.
 func getBritishStems() []string {
 	var stems []string
 	for _, american := range []string{
@@ -47,7 +45,6 @@ func isGeneratedFile(file *ast.File) bool {
 	return false
 }
 
-// listBritishIdentifiers returns each identifier of the file that contains a stem of British spelling.
 func listBritishIdentifiers(path string, src any) ([]finding, error) {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, path, src, parser.ParseComments|parser.SkipObjectResolution)
@@ -96,7 +93,7 @@ func TestNoIdentifierIsSpeltInBritishEnglish(t *testing.T) {
 	}
 }
 
-func TestSpellingRule_ReportsBritishIdentifiersAndLeavesGeneratedFilesAlone(t *testing.T) {
+func TestSpellingRule_RejectsBritishIdentifiersAndSkipsGeneratedFiles(t *testing.T) {
 	british := strings.ReplaceAll("Normaliz", "z", "s") + "e"
 	variable := strings.ReplaceAll("neighbor", "or", "our") + "Set"
 	found, err := listBritishIdentifiers("a.go", "package a\n\nfunc "+british+"() {}\n\nvar "+variable+" int\n\nfunc Normalize() {}\n")

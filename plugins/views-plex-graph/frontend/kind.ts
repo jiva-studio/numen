@@ -51,7 +51,6 @@ function createPlexTabs() {
   }
 }
 
-/** Reads the opening path and says whether it was read; the next change reads it again. */
 async function readOpeningPath(host: PlexHost): Promise<boolean> {
   try {
     await host.workspace.window.readOpeningPath()

@@ -67,7 +67,6 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 	}
 }
 
-// sendPluginChanges sends the plugin themes added or removed since previous, and keeps the current set in previous.
 func (u *WatchThemes) sendPluginChanges(previous *[]string, send func(names []string) error) error {
 	current := u.catalog.listPluginThemeNames()
 	names := listDifference(*previous, current)

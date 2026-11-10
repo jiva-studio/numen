@@ -47,7 +47,6 @@ async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): 
   await attempt(deps.ask)
 }
 
-/** Runs one step of a refresh and says whether it finished; the next change runs the step again. */
 async function attempt(step: () => Promise<unknown>): Promise<boolean> {
   try {
     await step()

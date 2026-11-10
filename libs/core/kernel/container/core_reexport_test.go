@@ -8,8 +8,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getReexports lists the aliases that the packages declare for a type of another package of pkgs or of
-// owned, the packages of a library that the core builds on.
 func getReexports(pkgs, owned []*packages.Package) ([]finding, int) {
 	members := map[string]bool{}
 	for _, pkg := range slices.Concat(pkgs, owned) {

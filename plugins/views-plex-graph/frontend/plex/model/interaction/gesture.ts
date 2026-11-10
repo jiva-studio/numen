@@ -58,7 +58,6 @@ interface GestureListenerHandlers {
   readonly onCancel: () => void
 }
 
-/** Whether the element let go of the pointer; one that never held it has nothing to release. */
 function releasePointer(element: SVGSVGElement | null, pointerId: number | null): boolean {
   if (!element || pointerId === null) return false
   try {
@@ -70,7 +69,6 @@ function releasePointer(element: SVGSVGElement | null, pointerId: number | null)
   }
 }
 
-/** Whether the element holds the pointer; the listeners follow it either way. */
 function capturePointer(element: SVGSVGElement, pointerId: number): boolean {
   try {
     // Stryker disable next-line OptionalChaining: a missing method throws a TypeError, which the catch below absorbs
