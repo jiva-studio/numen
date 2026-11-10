@@ -89,7 +89,7 @@ vi.mock('../commands/useCommands', () => ({
   },
 }))
 vi.mock('./useWindowDisplay', () => ({
-  useWindowDisplay: (_core: unknown, args: unknown) => {
+  useWindowDisplay: (args: unknown) => {
     h.args.display = args
     return h.f.display
   },
