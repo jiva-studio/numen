@@ -4,9 +4,10 @@
  * written at their current position, one batch at a time.
  */
 import { ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import { createRemoteValues } from './remoteValues'
 import type {
+  Configuration,
   Model,
   PluginInfo,
   PluginSettingInfo,
@@ -16,27 +17,12 @@ import type {
 } from '../lib/configuration'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { write } from '../lib/write'
+import { getSettings, updateSettings } from '../api/settings'
 
 /** Every label shown in the window. */
 export interface Words {
   readonly unturned: string
   readonly unreadSettings: string
-}
-
-/** What this requests from the vault. */
-export interface SettingsStoreDeps {
-  /** Every setting currently, and the models the settings offer. */
-  getSettings(): Promise<{
-    readonly written: string
-    readonly path: string
-    readonly models: readonly Model[]
-    readonly plugins?: readonly PluginInfo[] | undefined
-    readonly app?: readonly PluginSettingInfo[] | undefined
-    readonly secretSections?: readonly SecretSection[] | undefined
-    readonly secretMenus?: readonly SecretMenu[] | undefined
-    readonly credentialsPath?: string | undefined
-  }>
-  updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
 
 export const getSettingAt = (settings: unknown, at: readonly string[]): unknown => {
@@ -85,11 +71,9 @@ const getDeclaredDefault = (
     ?.default
 }
 
-const askVault = async (
-  core: SettingsStoreDeps,
-): Promise<Awaited<ReturnType<SettingsStoreDeps['getSettings']>> | undefined> => {
+const askVault = async (): Promise<Configuration | undefined> => {
   try {
-    return await core.getSettings()
+    return await getSettings()
   } catch {
     return undefined
   }
@@ -103,8 +87,8 @@ const parseSettingsText = (text: string): unknown => {
   }
 }
 
-const readVault = async (core: SettingsStoreDeps, words: Words, say: MessageWriter) => {
-  const answer = await askVault(core)
+const readVault = async (words: Words, say: MessageWriter) => {
+  const answer = await askVault()
   if (answer === undefined) return undefined
   const file = parseSettingsText(answer.written)
   if (file === undefined) {
@@ -114,7 +98,7 @@ const readVault = async (core: SettingsStoreDeps, words: Words, say: MessageWrit
   return { answer, file }
 }
 
-export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: MessageWriter) {
+export function createSettingsStore(words: Words, say: MessageWriter) {
   /** Every setting currently. It holds nothing until the vault has answered. */
   const target = shallowRef<unknown>({})
 
@@ -128,13 +112,13 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const credentialsPath = ref('')
 
   const requested = createRemoteValues<SettingEdit>((values) =>
-    core.updateSettings([...values.values()]),
+    updateSettings([...values.values()]),
   )
 
   /** The settings values, requested once the window is up and after every write. */
   const start = async (): Promise<void> => {
     const pendingRead = requested.beginRead()
-    const read = await readVault(core, words, say)
+    const read = await readVault(words, say)
     if (read === undefined) return
     const { answer } = read
     requested.takeRead(pendingRead, () => {
@@ -186,7 +170,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
         if (value !== undefined) target.value = withSettingAt(target.value, one.at, value)
       }
     } catch (caughtError) {
-      say(`${words.unturned} ${formatErrorMessage(caughtError)}`, 'error')
+      say(`${words.unturned} ${formatError(caughtError)}`, 'error')
     }
     await start()
   }

@@ -4,9 +4,16 @@
  */
 import type { WhenSettings } from '@numen/plugin-loader'
 import type { PluginSettingInfo } from '@/entities/settings'
-import type { SettingOwner } from './settingCommands'
 
-const APP_OWNER = 'app'
+/** The owner whose settings the core declares. */
+export const APP_OWNER = 'app'
+
+/** An owner of settings and the settings it declares, with the values in force the core resolved. */
+export interface SettingOwner {
+  readonly id: string
+  readonly name: string
+  readonly settings: readonly PluginSettingInfo[]
+}
 
 const getConfigPath = (owner: string, key: string): readonly string[] =>
   owner === APP_OWNER ? [APP_OWNER, ...key.split('.')] : [...owner.split('.'), ...key.split('.')]

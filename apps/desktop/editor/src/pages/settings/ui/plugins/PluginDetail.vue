@@ -7,9 +7,9 @@
  * dropped.
  */
 import { computed, ref, watch } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
-import { createManagedFromEntries } from '@/shared/pluginListing'
+import { createManagedFromEntries } from '../../lib/pluginListing'
 import { createRequestGuard, runInBackground } from '@numen/ui'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
@@ -105,7 +105,7 @@ watch(
     readmeText.value = ''
     fileCount.value = 0
     runInBackground(Promise.all([readFileCount(pluginId), readReadme(pluginId)]), (error) => {
-      if (props.plugin.id === pluginId) deleteProblem.value = formatErrorMessage(error)
+      if (props.plugin.id === pluginId) deleteProblem.value = formatError(error)
     })
   },
   { immediate: true },

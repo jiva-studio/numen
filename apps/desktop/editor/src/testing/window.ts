@@ -6,7 +6,9 @@
  */
 import './vaultMock'
 import { readWindowTasks } from './mocks/window'
-import { afterEach } from 'vitest'
+import { settingsAnswers } from './mocks/settings'
+import { afterEach, beforeEach } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { mount, type VueWrapper } from '@vue/test-utils'
 import { getPanes, WorkspaceLayout, type Workspace } from '@numen/workbench'
 import { requests, forgetRequests } from './requests'
@@ -36,7 +38,17 @@ const DEBOUNCE = 200
  */
 const windows: { unmount(): void }[] = []
 
+/** Puts back the transport that was installed before the answers of the test. */
+let restoreCore: (() => void) | undefined
+
+/** The core answers every call the window makes over the router transport; each entity adds its answers here. */
+beforeEach(() => {
+  restoreCore = installCoreAnswers({ ...settingsAnswers })
+})
+
 afterEach(() => {
+  restoreCore?.()
+  restoreCore = undefined
   for (const window of windows.splice(0)) window.unmount()
   forgetAnswers()
   forgetRequests()

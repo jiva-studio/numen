@@ -24,8 +24,6 @@ const request = {
   moveFile: vi.fn(),
   createFolder: vi.fn(),
   listFileKinds: vi.fn(),
-  getSettings: vi.fn(),
-  writeSettings: vi.fn(),
   getVaultState: vi.fn(),
   getAgentState: vi.fn(),
   writeOpenTabs: vi.fn(),
@@ -130,27 +128,6 @@ describe('files domain', () => {
       type: 'link',
       properties: { media: 'plugin://x/a.mp4' },
     })
-  })
-})
-
-describe('settings domain', () => {
-  it('reads and writes the settings', async () => {
-    const writtenSettings = JSON.stringify({ app: { naming: { syncTitleAndFilename: true } } })
-    request.getSettings.mockResolvedValue({
-      written: writtenSettings,
-      models: [],
-      plugins: [],
-      app: [],
-      secretSections: [],
-      secretMenus: [],
-      credentialsPath: '',
-      path: 'settings.json',
-    })
-    request.writeSettings.mockResolvedValue({})
-
-    const config = await core.getSettings()
-    expect(config.path).toBe('settings.json')
-    await core.updateSettings([])
   })
 })
 

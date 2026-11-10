@@ -8,7 +8,7 @@ import type { SettingsTabState } from '../types'
 import type { PluginInfo } from '@/entities/settings'
 import SystemDetail from './SystemDetail.vue'
 import SecretsPage from './secrets/SecretsPage.vue'
-import { createManagedFromEntries } from '@/shared/pluginListing'
+import { createManagedFromEntries } from '../../lib/pluginListing'
 import { AvailablePluginDetail, PluginsList, PluginDetail } from './plugins'
 
 /* --------------------------------- Props ---------------------------------- */

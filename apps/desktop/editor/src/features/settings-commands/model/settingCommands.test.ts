@@ -8,8 +8,8 @@ import {
   createSettingPalette,
   getSettingCommandId,
   parseSettingCommandId,
-  type SettingOwner,
 } from './settingCommands'
+import type { SettingOwner } from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/icons'
 import type { PluginSettingInfo } from '@/entities/settings'
 

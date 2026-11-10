@@ -4,7 +4,6 @@
  */
 import { formatError } from '@/shared/api/errors'
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
-import { pluginCatalog } from '@/shared/api/clients'
 import { core } from '../vault'
 import type { runSupport } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
@@ -119,12 +118,10 @@ export function initWindowServices(
   )
 
   const settings = useSettings({
-    core,
     words,
     log: base.log,
     windowTabs: base.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
-    catalog: pluginCatalog,
     getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })

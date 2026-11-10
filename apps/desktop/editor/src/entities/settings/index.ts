@@ -24,10 +24,8 @@ export type { SettingFields, SettingSource } from './lib/fields'
 export { write } from './lib/write'
 export {
   MAX_NAME_LENGTH,
-  getFirstSecretName,
   getMoveTarget,
   getNewGroupName,
-  getNextSecretName,
   isAllowed,
   isGroupNameTaken,
   isNameTooLong,
@@ -36,5 +34,8 @@ export {
 export type { MoveTarget, PermissionKey } from './lib/secretNames'
 export { createSecretStore } from './model/secrets'
 export { createPluginRetry } from './model/retry'
-export type { RetryDeps, RetryOptions, RetryWords } from './model/retry'
-export type { SecretDeps, SecretOptions, SecretWords } from './model/secrets'
+export type { RetryOptions, RetryWords } from './model/retry'
+export type { SecretOptions, SecretWords } from './model/secrets'
+export { getFirstSecretName, getNextSecretName } from './model/serviceNames'
+export { getServiceInfo } from './api/services'
+export { watchSettings, choosePluginPath, getPluginData, deletePluginData } from './api/settings'

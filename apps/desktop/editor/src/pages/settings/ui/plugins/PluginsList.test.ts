@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { CATALOG_STATE, type CatalogEntry } from '@numen/core-client'
-import { createMockCatalogEntry } from '@numen/core-client/testing'
 import PluginsList from './PluginsList.vue'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
+import { createCatalogEntry, createInstallation, createPluginInfo } from '@/testing/installation'
+import type { CatalogEntry } from '@/entities/plugin'
 import type { Installation, SettingsTabState } from '../../types'
 import { getSettingAt as at, type PluginInfo, type SettingEdit } from '@/entities/settings'
 import { pick } from '@/testing/pick'
@@ -40,8 +39,8 @@ describe('PluginsList', () => {
       createPluginInfo('sample.whisper', 'Whisper', { description: 'ASR engine' }),
     ]
     const { wrapper } = createList({}, plugins, [
-      createMockCatalogEntry('sample.tree', { category: 'views' }),
-      createMockCatalogEntry('sample.whisper', { category: 'engines' }),
+      createCatalogEntry('sample.tree', { category: 'views' }),
+      createCatalogEntry('sample.whisper', { category: 'engines' }),
     ])
 
     expect(findRows(wrapper)).toHaveLength(2)
@@ -63,9 +62,9 @@ describe('PluginsList', () => {
       {},
       [],
       [
-        createMockCatalogEntry('sample.offer', {
+        createCatalogEntry('sample.offer', {
           name: 'Offered Reader',
-          state: CATALOG_STATE.AVAILABLE,
+          isAvailable: true,
         }),
       ],
     )
@@ -89,8 +88,8 @@ describe('PluginsList', () => {
       createPluginInfo('md.numen.views.file.tree', 'File Tree Explorer'),
     ]
     const { wrapper } = createList({ 'md.numen.notes': { enabled: false } }, plugins, [
-      createMockCatalogEntry('md.numen.notes', { category: 'editors', feature: 'Markdown notes' }),
-      createMockCatalogEntry('md.numen.views.file.tree', {
+      createCatalogEntry('md.numen.notes', { category: 'editors', feature: 'Markdown notes' }),
+      createCatalogEntry('md.numen.views.file.tree', {
         category: 'views',
         feature: 'file browser',
       }),

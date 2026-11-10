@@ -5,19 +5,16 @@ import type { TallyUnit } from '@numen/workbench'
 import {
   FLUSH_RESULT,
   getNames,
-  MODEL_PRESENCE,
   SEARCH_MODE,
   TASK_UNIT,
   VAULTS_ERROR_CODE,
   type FlushResultCode,
-  type ModelPresenceCode,
   type SearchModeCode,
   type VaultsErrorCodeValue,
   asFailure,
   asValue,
 } from '@numen/core-client'
 import type { SearchMode } from '@/features/command-palette'
-import type { Presence } from '@/entities/settings'
 import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 
 interface VaultWire {
@@ -51,14 +48,6 @@ const query: Record<SearchModeCode, SearchMode | null> = {
 
 /** Search modes, as the schema names them. */
 export const modes = getNames<SearchMode, SearchModeCode>(query)
-
-/** What a model's files are on this machine, in the words the window uses. */
-export const fetched: Record<ModelPresenceCode, Presence> = {
-  [MODEL_PRESENCE.UNSPECIFIED]: 'nothing to fetch',
-  [MODEL_PRESENCE.PRESENT]: 'present',
-  [MODEL_PRESENCE.NOT_FETCHED]: 'not fetched',
-  [MODEL_PRESENCE.NOTHING_TO_FETCH]: 'nothing to fetch',
-}
 
 const unvaulted: Record<VaultsErrorCodeValue, VaultErrorCode> = {
   [VAULTS_ERROR_CODE.UNSPECIFIED]: 'unreadable',

@@ -2,17 +2,32 @@
  * Settings configuration, theme application, and palette lists for the window.
  */
 import { watch } from 'vue'
-import { themes } from '@/entities/settings'
-import { INTERFACE_SCALE, TEXT_SCALE, createWindowAppearance } from '@/features/settings-commands'
-import { APP_OWNER, createSettingPalette, type SettingPreview } from './settingCommands'
-import { MODES, type Mode, type SettingEdit } from '@/entities/settings'
-import { formatErrorMessage, type PluginCatalog } from '@numen/core-client'
+import {
+  APP_OWNER,
+  INTERFACE_SCALE,
+  TEXT_SCALE,
+  createSettingPalette,
+  createWindowAppearance,
+  type SettingPreview,
+} from '@/features/settings-commands'
+import {
+  MODES,
+  choosePluginPath,
+  createPluginRetry,
+  createSecretStore,
+  createSettingsStore,
+  deletePluginData,
+  getPluginData,
+  themes,
+  watchSettings,
+  type Mode,
+  type SettingEdit,
+} from '@/entities/settings'
 import { useCatalogEntries } from '@/entities/plugin'
 import { createFollower, runInBackground } from '@numen/ui'
-import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
+import { formatError } from '@/shared/api/errors'
 import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
-import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { WORDS } from '@/shared/words'
 import type { useWindowTabs } from '@/entities/tab'
@@ -20,14 +35,12 @@ import type { useWindowTabs } from '@/entities/tab'
 type Words = typeof WORDS
 
 export interface SettingsDeps {
-  core: SettingsPort
   words: Words
   log: MessageLog
   windowTabs: ReturnType<typeof useWindowTabs>
   onSizeChanged: () => void
   getSettingsViews?: Installation['getSettingsViews']
   getPlatform?: Installation['getPlatform']
-  catalog?: PluginCatalog
 }
 
 interface SettingsTabConfigDeps {
@@ -35,10 +48,9 @@ interface SettingsTabConfigDeps {
   rest: ReturnType<typeof createSettingsStore>
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
-  core: SettingsPort
   getSettingsViews?: Installation['getSettingsViews']
   getPlatform?: Installation['getPlatform']
-  catalogEntries?: Installation['catalog']
+  catalogEntries: Installation['catalog']
   reportError: (error: unknown) => void
 }
 
@@ -48,7 +60,6 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     rest,
     secrets,
     retry,
-    core,
     getSettingsViews,
     getPlatform,
     catalogEntries,
@@ -62,7 +73,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
   return {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(getPlatform ? { getPlatform } : {}),
-    ...(catalogEntries ? { catalog: catalogEntries } : {}),
+    catalog: catalogEntries,
     getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
     isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
@@ -96,22 +107,22 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {
-        const answer = await core.choosePluginPath(pluginId, key)
+        const answer = await choosePluginPath(pluginId, key)
         if (answer.isChosen) {
           await rest.start()
         }
         return answer.problem
       } catch (caughtError) {
-        return formatErrorMessage(caughtError)
+        return formatError(caughtError)
       }
     },
-    getPluginData: (pluginId: string) => core.getPluginData(pluginId),
+    getPluginData: (pluginId: string) => getPluginData(pluginId),
     deletePluginData: async (pluginId: string): Promise<string> => {
       try {
-        await core.deletePluginData(pluginId)
+        await deletePluginData(pluginId)
         return ''
       } catch (caughtError) {
-        return formatErrorMessage(caughtError)
+        return formatError(caughtError)
       }
     },
     plugins: rest.plugins,
@@ -121,11 +132,10 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
 }
 
 function createChangeFollower(deps: {
-  core: SettingsPort
   refresh: () => Promise<unknown>
   wait?: (ms: number) => Promise<unknown>
 }) {
-  const { core, refresh, wait = sleep } = deps
+  const { refresh, wait = sleep } = deps
   const abortController = new AbortController()
   let isOpen = true
   // The stream opens with an empty batch. After the stream was lost, what changed meanwhile is read
@@ -143,7 +153,7 @@ function createChangeFollower(deps: {
   return {
     start: () =>
       follows(
-        () => core.watchSettings(abortController.signal),
+        () => watchSettings(abortController.signal),
         async (batch) => {
           if (batch.length === 0 && !isResumed) return
           isResumed = false
@@ -207,18 +217,16 @@ function createWindowSettingPalette(deps: {
 }
 
 export function useSettings({
-  core,
   words,
   log,
   windowTabs,
   onSizeChanged,
   getSettingsViews,
   getPlatform,
-  catalog,
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
-  const rest = createSettingsStore(core, words, writeSettingsMessage)
+  const rest = createSettingsStore(words, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
     rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
@@ -226,20 +234,20 @@ export function useSettings({
     words,
     write: writeAppearanceMessage,
   })
-  const reportError = (error: unknown) => writeSettingsMessage(formatErrorMessage(error), 'error')
-  const secrets = createSecretStore(core, {
+  const reportError = (error: unknown) => writeSettingsMessage(formatError(error), 'error')
+  const secrets = createSecretStore({
     words,
     notify: log.getWriter('keys'),
     refresh: () => rest.start(),
   })
-  const retry = createPluginRetry(core, {
+  const retry = createPluginRetry({
     words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
     refresh: () => rest.start(),
     getName: getPluginName,
   })
 
-  const catalogEntries = catalog ? useCatalogEntries(catalog, rest.plugins, reportError) : undefined
+  const catalogEntries = useCatalogEntries(rest.plugins, reportError)
 
   const configured = useSettingsTab(
     windowTabs.handle,
@@ -248,10 +256,9 @@ export function useSettings({
       rest,
       secrets,
       retry,
-      core,
       ...(getSettingsViews ? { getSettingsViews } : {}),
       ...(getPlatform ? { getPlatform } : {}),
-      ...(catalogEntries ? { catalogEntries } : {}),
+      catalogEntries,
       reportError,
     }),
     reportError,
@@ -262,7 +269,6 @@ export function useSettings({
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 
   const changes = createChangeFollower({
-    core,
     refresh: () => Promise.all([rest.start(), appearance.reload()]),
   })
 

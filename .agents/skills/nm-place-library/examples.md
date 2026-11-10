@@ -35,7 +35,7 @@ The list of plugins names a domain, so it is not in `@numen/ui`. It is its own l
 
 - The library defines the shapes it draws: `PluginListing` (`src/plugins.ts:7`) and `ManagedPlugin` (`src/plugins.ts:22`), and takes them by props (`src/index.ts` exports `PluginsList`, `PluginDetail`, `PluginSettingsCard`).
 - The query parser and filter are pure functions in `src/filter.ts` (`filter.ts:1-50`) with `src/filter.test.ts`.
-- The window maps the catalog to those shapes: `apps/desktop/editor/src/shared/pluginListing.ts:14` turns a `CatalogEntry` into a `PluginListing`, with the entry type and `CATALOG_STATE` from `@numen/core-client`.
+- The window maps the catalog to those shapes: `apps/desktop/editor/src/pages/settings/lib/pluginListing.ts:14` turns a `CatalogEntry` of the window's `entities/plugin` into a `PluginListing`; the entity maps the entry and its state from `@numen/core-client` in `api/catalog.ts`.
 - `@numen/core-client` owns the catalog client and its entry types (`libs/core/client/src/catalog.ts:18-40`), over the generated messages.
 
 Pattern for a domain view: the library defines its own view-model and takes it by props; the window owns the mapping from the wire; the client library owns the call.

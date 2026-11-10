@@ -5,10 +5,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowTabs } from '@/entities/tab'
 import type { SettingEdit } from '@/entities/settings'
-import type { SettingsPort } from '@/app/ports/settings'
+import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { createPluginSupport } from '@/app/plugins/useWindowPlugins'
@@ -44,11 +43,14 @@ const createFeed = () => {
 }
 
 const settle = async () => {
-  for (let step = 0; step < 10; step++) await Promise.resolve()
+  for (let step = 0; step < 50; step++) await Promise.resolve()
   await nextTick()
 }
 
 const PLUGIN = 'md.numen.eventful'
+
+/** Puts back the transport that was installed before the core of the test. */
+let restoreCore: (() => void) | undefined
 
 const create = () => {
   file.current = { app: { appearance: { mode: 'light' }, naming: { syncTitleAndFilename: true } } }
@@ -63,7 +65,8 @@ const create = () => {
     })),
     updateSettings: vi.fn(async () => undefined),
     watchSettings: vi.fn((signal: AbortSignal) => feed.open(signal)),
-  } as unknown as SettingsPort
+  } as unknown as SettingsCore
+  restoreCore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = useWindowTabs()
   const settings = useSettings({
@@ -92,36 +95,35 @@ const MODES: Record<string, ThemeModeCode> = {
   dark: THEME_MODE.DARK,
 }
 
-describe('a setting that changes', () => {
-  let restore: () => void
+/** What the core answers about the themes: the mode the file holds. */
+const THEME = {
+  listThemes: () => {
+    const app = (file.current['app'] ?? {}) as Record<string, Record<string, unknown>>
+    const mode = app['appearance']?.['mode'] as string | undefined
+    return {
+      themes: [],
+      applied: 'preset:numen',
+      mode: MODES[mode ?? 'system'] ?? THEME_MODE.SYSTEM,
+      interfaceScale: 1,
+      textScale: 1,
+      interfaceScaleBounds: { min: 0.8, max: 1.4 },
+      textScaleBounds: { min: 0.8, max: 1.4 },
+    }
+  },
+  readTheme: () => ({ css: '' }),
+  async *watchThemes() {
+    yield* []
+  },
+}
 
+describe('a setting that changes', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    restore = installCoreAnswers({
-      theme: {
-        listThemes: () => {
-          const app = (file.current['app'] ?? {}) as Record<string, Record<string, unknown>>
-          const mode = app['appearance']?.['mode'] as string | undefined
-          return {
-            themes: [],
-            applied: 'preset:numen',
-            mode: MODES[mode ?? 'system'] ?? THEME_MODE.SYSTEM,
-            interfaceScale: 1,
-            textScale: 1,
-            interfaceScaleBounds: { min: 0.8, max: 1.4 },
-            textScaleBounds: { min: 0.8, max: 1.4 },
-          }
-        },
-        readTheme: () => ({ css: '' }),
-        async *watchThemes() {
-          yield* []
-        },
-      },
-    })
   })
 
   afterEach(() => {
-    restore()
+    restoreCore?.()
+    restoreCore = undefined
     vi.useRealTimers()
   })
 
