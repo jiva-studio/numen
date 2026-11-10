@@ -617,6 +617,25 @@ describe('createCustomTabKind (notes)', () => {
   })
 })
 
+describe('the pane of a custom note tab', () => {
+  it('hands a component the refs of the tab state through state only, never as props', async () => {
+    const seen: string[] = []
+    const Probe = defineComponent({
+      props: { errorMessage: { type: String, default: '' }, state: { type: Object, default: null } },
+      setup: (props) => () => {
+        seen.push(props.errorMessage.trim())
+        return h('span', 'note')
+      },
+    })
+    const kind = createCustomTabKind('p', { kind: 'custom', component: Probe })
+    const state = kind.open('notes/a.md', 't1')
+    const view = mount(kind.pane, { props: { state } })
+    await view.vm.$nextTick()
+    expect(view.element.shadowRoot?.textContent).toContain('note')
+    expect(seen).toEqual([''])
+  })
+})
+
 describe('createBufferedNoteState', () => {
   function createMockBuffer() {
     const noteRef = ref({ path: 'notes/buf.md', body: 'initial', state: 'loading' })

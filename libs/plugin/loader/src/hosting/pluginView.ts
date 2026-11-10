@@ -2,7 +2,7 @@
  * How a plugin view is rendered inside its pane: its component, its stylesheet
  * and the shadow root that contains it.
  */
-import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
+import { defineAsyncComponent, h, isRef, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
 import { createSheet, getPluginStyle } from '../styles'
 
@@ -181,7 +181,7 @@ export interface PaneContentDeps {
 export function renderPaneContent(deps: PaneContentDeps) {
   if (!deps.component) return null
   const restState = Object.fromEntries(
-    Object.entries(deps.state).filter(([key]) => key !== 'title'),
+    Object.entries(deps.state).filter(([key, value]) => key !== 'title' && !isRef(value)),
   )
   const path = parseStatePath(deps.state)
   const child = h(deps.component, {
