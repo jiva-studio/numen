@@ -55,9 +55,9 @@ export const getTabPath = (tab: WindowTab): string => {
 /** Runs what opens a tab in an effect scope, and stops the scope where it throws. */
 export const openInScope = <T extends object>(scope: EffectScope, open: () => T): T => {
   try {
-    const opened = scope.run(open)
-    if (opened === undefined) throw new Error('the scope of the tab is not active')
-    return opened
+    const state = scope.run(open)
+    if (state === undefined) throw new Error('the scope of the tab is not active')
+    return state
   } catch (error) {
     scope.stop()
     throw error

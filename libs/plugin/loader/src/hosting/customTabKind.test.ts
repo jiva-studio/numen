@@ -618,12 +618,12 @@ describe('createCustomTabKind (notes)', () => {
 })
 
 describe('the pane of a custom note tab', () => {
-  it('hands a component the refs of the tab state through state only, never as props', async () => {
-    const seen: string[] = []
+  it('keeps the refs of a tab state out of the props of its component', async () => {
+    const messages: string[] = []
     const Probe = defineComponent({
       props: { errorMessage: { type: String, default: '' }, state: { type: Object, default: null } },
       setup: (props) => () => {
-        seen.push(props.errorMessage.trim())
+        messages.push(props.errorMessage.trim())
         return h('span', 'note')
       },
     })
@@ -632,7 +632,7 @@ describe('the pane of a custom note tab', () => {
     const view = mount(kind.pane, { props: { state } })
     await view.vm.$nextTick()
     expect(view.element.shadowRoot?.textContent).toContain('note')
-    expect(seen).toEqual([''])
+    expect(messages).toEqual([''])
   })
 })
 

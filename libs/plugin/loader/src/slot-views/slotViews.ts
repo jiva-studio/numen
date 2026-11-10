@@ -19,11 +19,13 @@ export interface SlotViewRegistryDeps {
   readonly reportIssue?: (pluginId: string, message: string) => void
 }
 
+/**
+ * The views plugins registered for slots. `findView` answers the component the plugin registered for
+ * the view, in any slot, drawn with the stylesheet of the plugin, and undefined while it has
+ * registered none; `getSlotView` answers the view a window slot draws, or null while no plugin
+ * registered one, and is reactive.
+ */
 export interface SlotViewRegistry {
-  /**
-   * The component the plugin registered for the view, in any slot, drawn with the stylesheet of the
-   * plugin; undefined while it has registered none.
-   */
   readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly views: Readonly<ShallowRef<readonly DeclaredSlotView[]>>
   readonly registerSlotView: (
@@ -31,7 +33,6 @@ export interface SlotViewRegistry {
     slot: string,
     registration: SlotViewRegistration,
   ) => Disposable
-  /** The view a window slot draws, or null while no plugin registered one; reactive. */
   readonly getSlotView: (slot: string) => ComputedRef<DeclaredSlotView | null>
   /** Removes every view the plugin registered. */
   disposePlugin(pluginId: string): void
