@@ -141,11 +141,16 @@ func (noPlugins) OpenTriggers() *trigger.Triggers { return nil }
 func (noPlugins) WatchPluginChanges() (<-chan struct{}, func()) { return nil, func() {} }
 
 // themeConfig is where the themes and the settings of an installation are kept.
-type themeConfig struct{ RegistryPath string }
+type themeConfig struct {
+	RegistryPath              string
+	InterfaceScale, TextScale float64
+}
 
 func (c themeConfig) themes(say func(string)) (*theme.Service, error) {
 	return settingswiring.Config{
 		RegistryPath:    c.RegistryPath,
+		InterfaceScale:  c.InterfaceScale,
+		TextScale:       c.TextScale,
 		Watches:         vaultwatch.NewHub(),
 		SettingsFiles:   settingsadapter.NewFiles(),
 		SettingEvents:   settingevents.New(),
