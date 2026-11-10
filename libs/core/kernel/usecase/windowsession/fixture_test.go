@@ -232,7 +232,6 @@ func newTestWindow(t *testing.T, edit func(*Deps)) *testWindow {
 	return newLoggedWindow(t, &eventLog{}, edit)
 }
 
-// newLoggedWindow is a window whose fakes write their events to log.
 func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow {
 	t.Helper()
 	w := &testWindow{
@@ -266,7 +265,7 @@ func newLoggedWindow(t *testing.T, log *eventLog, edit func(*Deps)) *testWindow 
 	}
 	w.scenarios = NewScenarios(w.rt, deps)
 	t.Cleanup(func() {
-		if err := w.scenarios.Closing.Close.Execute(context.Background()); err != nil {
+		if err := w.scenarios.Closing.Close.Execute(t.Context()); err != nil {
 			t.Log(err)
 		}
 	})
