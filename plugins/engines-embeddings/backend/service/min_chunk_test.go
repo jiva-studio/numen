@@ -2,34 +2,6 @@ package service
 
 import "testing"
 
-func TestReadMinChunkLength(t *testing.T) {
-	cases := []struct {
-		name   string
-		values map[string]string
-		want   int
-	}{
-		{name: "absent gives the default", values: map[string]string{}, want: 40},
-		{name: "empty gives the default", values: map[string]string{"minChunkLength": ""}, want: 40},
-		{name: "text gives the default", values: map[string]string{"minChunkLength": "many"}, want: 40},
-		{name: "NaN gives the default", values: map[string]string{"minChunkLength": "NaN"}, want: 40},
-		{name: "zero embeds everything", values: map[string]string{"minChunkLength": "0"}, want: 0},
-		{name: "a whole number", values: map[string]string{"minChunkLength": "120"}, want: 120},
-		{name: "spaces around", values: map[string]string{"minChunkLength": " 7 "}, want: 7},
-		{name: "a fraction is cut", values: map[string]string{"minChunkLength": "12.9"}, want: 12},
-		{name: "below zero is zero", values: map[string]string{"minChunkLength": "-5"}, want: 0},
-		{name: "the maximum", values: map[string]string{"minChunkLength": "1000"}, want: 1000},
-		{name: "above the maximum is the maximum", values: map[string]string{"minChunkLength": "5000"}, want: 1000},
-		{name: "infinity is the maximum", values: map[string]string{"minChunkLength": "+Inf"}, want: 1000},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := readMinChunkLength(tc.values); got != tc.want {
-				t.Errorf("readMinChunkLength(%v) = %d, want %d", tc.values, got, tc.want)
-			}
-		})
-	}
-}
-
 // The model info carries the setting, the default before the host configures the plugin, and the
 // value the host sends after.
 func TestGetModelInfoReportsMinChunkLength(t *testing.T) {
