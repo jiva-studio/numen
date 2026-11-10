@@ -1,4 +1,4 @@
-package service
+package acp
 
 import (
 	"encoding/json"
@@ -8,17 +8,17 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
-// acpCall is one tool call of a session as the agent reported it so far.
-type acpCall struct {
+// trackedCall is one tool call of a session as the agent reported it so far.
+type trackedCall struct {
 	name       string
 	title      string
 	arguments  string
 	isFinished bool
 }
 
-// acpToolCall is the part of a tool_call or tool_call_update a step is made of. Every field but
+// toolUpdate is the part of a tool_call or tool_call_update a step is made of. Every field but
 // the id is optional in an update, and one left out keeps what the call had.
-type acpToolCall struct {
+type toolUpdate struct {
 	SessionUpdate string          `json:"sessionUpdate"`
 	ToolCallID    string          `json:"toolCallId"`
 	Name          *string         `json:"name"`
@@ -27,10 +27,10 @@ type acpToolCall struct {
 	RawInput      json.RawMessage `json:"rawInput"`
 }
 
-func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.Response {
+func (s *Session) readToolStep(params json.RawMessage) *agentrun.Response {
 	var update struct {
-		SessionID string      `json:"sessionId"`
-		Update    acpToolCall `json:"update"`
+		SessionID string     `json:"sessionId"`
+		Update    toolUpdate `json:"update"`
 	}
 	if json.Unmarshal(params, &update) != nil || update.SessionID != s.id || update.Update.ToolCallID == "" {
 		return nil
@@ -41,7 +41,7 @@ func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.Response {
 	}
 	call := s.calls[reported.ToolCallID]
 	if call == nil {
-		call = &acpCall{name: "", title: "", arguments: "", isFinished: false}
+		call = &trackedCall{name: "", title: "", arguments: "", isFinished: false}
 		s.calls[reported.ToolCallID] = call
 	}
 	call.update(reported)
@@ -57,7 +57,7 @@ func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.Response {
 	}}
 }
 
-func (c *acpCall) update(reported acpToolCall) {
+func (c *trackedCall) update(reported toolUpdate) {
 	if reported.Name != nil && *reported.Name != "" {
 		c.name = readToolName(*reported.Name)
 	}
@@ -69,7 +69,7 @@ func (c *acpCall) update(reported acpToolCall) {
 	}
 }
 
-func (c *acpCall) getShownName() string {
+func (c *trackedCall) getShownName() string {
 	if c.name != "" {
 		return c.name
 	}

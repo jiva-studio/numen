@@ -4,7 +4,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/agents-acp/backend/testsupport/fakeacp"
 )
+
+func TestMain(m *testing.M) { fakeacp.Main(m) }
 
 func TestLifecycleServer(t *testing.T) {
 	ch := make(chan struct{})

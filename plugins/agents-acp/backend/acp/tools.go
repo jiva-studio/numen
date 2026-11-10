@@ -1,26 +1,24 @@
-package service
+package acp
 
 import (
 	"encoding/json"
 	"fmt"
 	"slices"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
 // serverName is what the run's tools are served to the agent under.
 const serverName = "numen"
 
-// toolEndpoint is where the run's tools are served, the token presented there, and the tools the
-// agent may call.
-type toolEndpoint struct {
-	url   string
-	token string
-	tools []string
+// Tools is where the run's tools are served, the token presented there, and the names of the tools
+// the agent may call.
+type Tools struct {
+	URL   string
+	Token string
+	Names []string
 }
 
-func (s *acpSession) listServers() ([]any, error) {
-	if s.tools.url == "" {
+func (s *Session) listServers() ([]any, error) {
+	if s.tools.URL == "" {
 		return []any{}, nil
 	}
 	if !s.hasHTTPServers {
@@ -29,12 +27,12 @@ func (s *acpSession) listServers() ([]any, error) {
 	return []any{map[string]any{
 		"type":    "http",
 		keyName:   serverName,
-		"url":     s.tools.url,
-		"headers": []map[string]string{{keyName: "Authorization", keyValue: "Bearer " + s.tools.token}},
+		"url":     s.tools.URL,
+		"headers": []map[string]string{{keyName: "Authorization", keyValue: "Bearer " + s.tools.Token}},
 	}}, nil
 }
 
-func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
+func (s *Session) answerPermission(params json.RawMessage) map[string]any {
 	denial := map[string]any{keyOutcome: map[string]any{keyOutcome: "canceled"}}
 	var request struct {
 		SessionID string `json:"sessionId"`
@@ -58,19 +56,12 @@ func (s *acpSession) answerPermission(params json.RawMessage) map[string]any {
 	return denial
 }
 
-func (s *acpSession) isRunTool(callID, name string) bool {
+func (s *Session) isRunTool(callID, name string) bool {
 	if name == "" {
 		if call := s.calls[callID]; call != nil {
 			name = call.name
 		}
 	}
 	name = readToolName(name)
-	return name != "" && slices.Contains(s.tools.tools, name)
-}
-
-func readToolEndpoint(task *agentrun.Request) toolEndpoint {
-	if !agentrun.HasTools(task) || task.ToolsURL == "" {
-		return toolEndpoint{url: "", token: "", tools: nil}
-	}
-	return toolEndpoint{url: task.ToolsURL, token: task.ToolsToken, tools: task.Tools}
+	return name != "" && slices.Contains(s.tools.Names, name)
 }
