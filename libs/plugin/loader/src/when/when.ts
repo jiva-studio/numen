@@ -166,10 +166,10 @@ export function parseWhen(text: string): Result<WhenCondition, string> {
     },
     evaluatePartial: (values) => {
       const bindings = Object.fromEntries(
-        WHEN_VARIABLES.map((one) => [
-          one.name,
-          values[one.name] === undefined ? UNKNOWN : toCelMap(values[one.name]),
-        ]),
+        WHEN_VARIABLES.map((one) => {
+          const value = values[one.name]
+          return [one.name, value === undefined ? UNKNOWN : toCelMap(value)]
+        }),
       )
       const result = run(bindings as Parameters<typeof run>[0])
       if (isCelError(result)) return 'unknown'

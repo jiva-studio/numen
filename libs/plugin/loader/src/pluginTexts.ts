@@ -8,6 +8,7 @@ import {
   type TextVersionMessage,
 } from '@numen/core-client'
 import type {
+  JsonObject,
   JsonValue,
   LiveText,
   Selector,
@@ -20,7 +21,7 @@ const readSelector = (raw: string): Selector | undefined => {
   try {
     const parsed: JsonValue = JSON.parse(raw)
     return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
-      ? parsed
+      ? (parsed as JsonObject)
       : undefined
   } catch {
     return undefined

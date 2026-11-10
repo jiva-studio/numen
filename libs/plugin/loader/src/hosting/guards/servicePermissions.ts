@@ -270,7 +270,7 @@ function guardMember(
 export function guardService<S extends object>(service: S, rules: RulesOf<S>, guard: Guard): S {
   const source = service as Members
   const guarded: Members = {}
-  for (const [key, rule] of Object.entries(rules)) {
+  for (const [key, rule] of Object.entries<Rule | object>(rules)) {
     const member = source[key]
     if (member === undefined) continue
     const operation = guard.path === undefined ? key : `${guard.path}.${key}`

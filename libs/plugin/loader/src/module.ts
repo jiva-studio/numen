@@ -2,7 +2,7 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import { parseManifest, type Manifest } from '@numen/core-client'
-import type { PluginLifecycle, SlotName } from '@numen/plugin-sdk'
+import type { PluginLifecycle, SlotName, Unvalidated } from '@numen/plugin-sdk'
 import { WINDOW_SLOTS } from './slots/windowSlots'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
@@ -35,11 +35,12 @@ function readHook<K extends HookName>(
   return undefined
 }
 
-export function getLifecycleHooks(resolved: PluginModule): {
+/** The lifecycle hooks a loaded bundle exports, at the top or under `default`; a bundle that exports none yields none. */
+export function parseLifecycleHooks(resolved: Unvalidated): {
   activate?: PluginLifecycle['activate'] | undefined
   deactivate?: PluginLifecycle['deactivate'] | undefined
 } {
-  if (typeof resolved !== 'object') return {}
+  if (typeof resolved !== 'object' || resolved === null) return {}
   const inner = (resolved as { default?: PluginModule | null }).default
   const sources = typeof inner === 'object' && inner !== null ? [inner, resolved] : [resolved]
   return { activate: readHook(sources, 'activate'), deactivate: readHook(sources, 'deactivate') }

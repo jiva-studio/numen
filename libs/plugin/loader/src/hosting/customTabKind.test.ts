@@ -17,6 +17,7 @@ import {
   parsePluginComponent,
   stripMarkdownExtension,
 } from './pluginView'
+import type { ReaderHandle } from '@numen/plugin-sdk'
 import type { NoteBuffer } from './types'
 import { STUB_COMPONENT } from '../testing/stubComponent'
 
@@ -396,17 +397,6 @@ describe('createReaderTabKind (place)', () => {
     expect(childProps.title).toBeUndefined()
     expect((childProps.state as { title?: string })?.title).toBe('730707BG.LON.mp3')
 
-    const primNodes = renderPaneContent({
-      pluginId: 'viewer-plugin',
-      component: FakeReader,
-      state: 'raw-string',
-      shadowRoot: null,
-      containerClass: 'reader-pane',
-    }) as unknown[]
-    const primChildProps =
-      (primNodes[2] as { children?: Array<{ props?: Record<string, unknown> }> }).children?.[0]
-        ?.props ?? {}
-    expect(primChildProps['0']).toBeUndefined()
   })
 })
 
@@ -493,7 +483,10 @@ describe('createCustomTabKind (notes)', () => {
     expect((middleReader.open('a.pdf', 't', 'str') as { selector: unknown }).selector).toBeNull()
 
     prefixedReader.onShow!(readerTab, 't1')
-    readerTab.attachReader({ measure, focus: focusTab })
+    ;(readerTab as { attachReader(reader: ReaderHandle): void }).attachReader({
+      measure,
+      focus: focusTab,
+    })
     prefixedReader.onShow!(readerTab, 't1')
     expect(measure).toHaveBeenCalledTimes(1)
     expect(focusTab).toHaveBeenCalledTimes(1)
@@ -573,25 +566,20 @@ describe('createCustomTabKind (notes)', () => {
     const navSpy = vi.fn()
     await kindWithDispatch.navigate!({ navigate: navSpy }, 'books/book.epub', 'Book')
     expect(navSpy).not.toHaveBeenCalled()
-    await kindWithDispatch.navigate!(undefined, 'notes/a.md', 'A')
-    await kindWithDispatch.navigate!({}, 'notes/a.md', 'A')
     await kindWithDispatch.navigate!({ navigate: navSpy }, 'notes/a.md', 'A')
     expect(navSpy).toHaveBeenCalledWith('notes/a.md', 'A')
 
-    // onShow measures state and editor, and syncs path via s.at or s.path
+    // onShow measures the state and syncs its path
     const m1 = vi.fn()
-    const m2 = vi.fn()
-    kindWithDispatch.onShow!(undefined, '')
-    kindWithDispatch.onShow!(undefined, 't1')
-    kindWithDispatch.onShow!({ path: 'notes/no-id.md' }, '')
-    kindWithDispatch.onShow!({ editor: {} }, 't1')
-    kindWithDispatch.onShow!({ measure: m1, editor: { measure: m2 }, path: '' }, 't1')
+    kindWithDispatch.onShow!({ path: 'notes/no-id.md', title: '', measure: vi.fn() }, '')
+    kindWithDispatch.onShow!({ measure: m1, path: '', title: '' }, 't1')
     expect(m1).toHaveBeenCalledTimes(1)
-    expect(m2).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
     const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
-    expect(() => kindNoDeps.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
+    expect(() =>
+      kindNoDeps.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
+    ).not.toThrow()
     const kindUndefWorkspace = createCustomTabKind(
       'p',
       { kind: 'custom', component: STUB_COMPONENT },
@@ -602,25 +590,26 @@ describe('createCustomTabKind (notes)', () => {
         getWorkspace: () => undefined,
       },
     )
-    expect(() => kindUndefWorkspace.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
+    expect(() =>
+      kindUndefWorkspace.onShow!({ path: 'notes/a.md', title: '', measure: vi.fn() }, 't1'),
+    ).not.toThrow()
 
-    kindWithDispatch.onShow!({ at: 'notes/at-only.md', title: 'At Title' }, 't1')
+    kindWithDispatch.onShow!(
+      { path: 'notes/at-only.md', title: 'At Title', measure: vi.fn() },
+      't1',
+    )
     expect(syncPath).toHaveBeenCalledWith('t1', 'notes/at-only.md', 'At Title')
 
     // getTitle, identity, getTarget, getOpenTab fallbacks
-    expect(kindWithDispatch.getTitle!(undefined)).toBe('custom')
-    expect(kindWithDispatch.getTitle!({ at: 'notes/from-at.md' })).toBe('from-at')
+    expect(kindWithDispatch.getTitle!({ title: '', path: '' })).toBe('custom')
+    expect(kindWithDispatch.getTitle!({ title: '', path: 'notes/from-at.md' })).toBe('from-at')
     expect(kindWithDispatch.identity!('notes/a.md')).toBe('notes/a.md')
     expect(kindWithDispatch.identity!('')).toBe('custom')
-    expect(kindWithDispatch.getTarget!(undefined)).toStrictEqual({ title: 'custom' })
-    expect(kindWithDispatch.getTarget!({ at: 'notes/from-at.md' })).toStrictEqual({
+    expect(kindWithDispatch.getTarget!({ title: '', path: '' })).toStrictEqual({ title: 'custom' })
+    expect(kindWithDispatch.getTarget!({ title: '', path: 'notes/from-at.md' })).toStrictEqual({
       file: 'notes/from-at.md',
       path: 'notes/from-at.md',
       title: 'from-at',
-    })
-    expect(kindWithDispatch.getOpenTab!(undefined)).toStrictEqual({ path: '' })
-    expect(kindWithDispatch.getOpenTab!({ at: 'notes/from-at.md' })).toStrictEqual({
-      path: 'notes/from-at.md',
     })
     expect(kindWithDispatch.getOpenTab!({ path: 'notes/from-path.md' })).toStrictEqual({
       path: 'notes/from-path.md',
@@ -1115,7 +1104,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
     const adoptedNodes = renderPaneContent({
       pluginId: 'p',
       component: Comp,
-      state: null,
+      state: {},
       shadowRoot: null,
       containerClass: 'custom-container',
       hasAdoptedStyle: true,

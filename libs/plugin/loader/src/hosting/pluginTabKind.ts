@@ -18,6 +18,26 @@ export const isDeclaredTabKind = (
   registration: TabKindRegistration,
 ): registration is DeclaredTabKindRegistration => typeof registration.open === 'function'
 
+/** The hooks of a registration that the window takes unchanged. */
+type DeclaredHook =
+  | 'identity'
+  | 'onShow'
+  | 'receiveText'
+  | 'onKeyPress'
+  | 'getTarget'
+  | 'getOpenTab'
+  | 'onClose'
+  | 'onDestroy'
+  | 'navigate'
+  | 'isAsking'
+  | 'flushPending'
+  | 'createFile'
+  | 'getMark'
+  | 'isTool'
+  | 'icon'
+  | 'placement'
+  | 'getState'
+
 /** The fields of an object that are set. */
 type DefinedParts<T> = { [K in keyof T]?: Exclude<T[K], undefined> }
 
@@ -32,7 +52,7 @@ function pickDefined<T extends object>(parts: T): DefinedParts<T> {
 /** The hooks of the registration the window takes unchanged, each only where the registration declares one. */
 export function pickDeclaredHooks<State extends object>(
   registration: TabKindRegistration<State>,
-): Partial<TabKind<State>> {
+): Partial<Pick<TabKind<State>, DeclaredHook>> {
   return pickDefined({
     identity: registration.identity,
     onShow: registration.onShow,

@@ -88,8 +88,8 @@ function createHost(
       getWorkspace: () => ui.workspace,
       getWindow: () => ui.window,
       getCommands: () => ui.commands,
-      getSlots: () => ui.slots,
-      getNotices: () => ui.notices,
+      getSlots: () => ui.slots as never,
+      getNotices: () => ui.notices as never,
       ...overrides.ui,
     },
     work: {
@@ -185,7 +185,7 @@ describe('the services of a plugin context', () => {
     const notes = { read: vi.fn(), purge: vi.fn() }
     const host = createHost(createFakes(), {
       work: { getAgent: () => agent },
-      vault: { getNotes: () => notes },
+      vault: { getNotes: () => notes as unknown as VaultNotes },
     })
     const context = createPluginContext(
       'md.numen.sample',
@@ -199,7 +199,7 @@ describe('the services of a plugin context', () => {
 
   it('leave out a member a host service answers to any name, such as a proxy', () => {
     const everything = new Proxy({}, { get: () => vi.fn() })
-    const host = createHost(createFakes(), { vault: { getNotes: () => everything } })
+    const host = createHost(createFakes(), { vault: { getNotes: () => everything as VaultNotes } })
     const context = createPluginContext(
       'md.numen.sample',
       host,

@@ -5,7 +5,7 @@
 import type { Caught } from '@numen/plugin-sdk'
 import type { LoaderHost } from '../host'
 import {
-  getLifecycleHooks,
+  parseLifecycleHooks,
   removePluginStyles,
   resolveModule,
   type PluginModule,
@@ -62,7 +62,7 @@ async function activateModule(
 ): Promise<StartOutcome> {
   const { host, activePlugins } = ctx
   const isLatest = (): boolean => ctx.starts.get(pluginId) === start.number
-  const { activate, deactivate } = getLifecycleHooks(start.resolved)
+  const { activate, deactivate } = parseLifecycleHooks(start.resolved)
   if (activate) {
     if (isLatest()) host.markPluginStarting?.(pluginId)
     await activate(
