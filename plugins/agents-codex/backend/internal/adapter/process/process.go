@@ -39,3 +39,12 @@ func WaitForExit(cmd *exec.Cmd, stop func()) error {
 		return <-exited
 	}
 }
+
+// Group starts commands in a process group of their own.
+type Group struct{}
+
+// Supervise puts cmd in a process group of its own, and ends the whole group when the command's
+// context is canceled.
+func (Group) Supervise(cmd *exec.Cmd) {
+	Supervise(cmd)
+}
