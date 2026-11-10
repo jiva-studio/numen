@@ -17,3 +17,12 @@ func Supervise(cmd *exec.Cmd) {
 	cmd.Cancel = func() error { return kill(cmd) }
 	cmd.WaitDelay = waitDelay
 }
+
+// Supervisor supervises commands with Supervise.
+type Supervisor struct{}
+
+// Supervise puts the command in a process group of its own, and ends the whole group when the
+// command's context is canceled.
+func (Supervisor) Supervise(cmd *exec.Cmd) {
+	Supervise(cmd)
+}
