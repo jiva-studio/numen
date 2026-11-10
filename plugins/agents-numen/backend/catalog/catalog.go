@@ -58,12 +58,12 @@ func (c *Catalog) ListModels(ctx context.Context) ([]conversation.Model, error) 
 		defer c.mu.Unlock()
 		return c.models, nil
 	}
-	asked := c.store.Get()
+	current := c.store.Get()
 	c.mu.Unlock()
 
 	listing, stop := context.WithTimeout(ctx, listingLimit)
 	defer stop()
-	models, err := c.lister.ListModels(listing, asked)
+	models, err := c.lister.ListModels(listing, current)
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -72,7 +72,7 @@ func (c *Catalog) ListModels(ctx context.Context) ([]conversation.Model, error) 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	now := c.store.Get()
-	if err == nil && now.BaseURL == asked.BaseURL && now.Key == asked.Key {
+	if err == nil && now.BaseURL == current.BaseURL && now.Key == current.Key {
 		c.models, c.isListed = models, true
 	}
 	return models, err

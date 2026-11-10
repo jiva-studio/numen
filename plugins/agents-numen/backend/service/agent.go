@@ -14,7 +14,9 @@ import (
 
 // agent is numen's own agent: it works a task by calling an OpenAI-compatible chat API and calling
 // the vault's tools over MCP on the model's behalf. It answers the calls of the agent service, in a
-// plugin's process or linked into the process that hosts the vault.
+// plugin's process or linked into the process that hosts the vault. The key sent to the chat API is the first
+// secret of the list the host passes for the declaration apiKey; an empty list means no key, and a call
+// that does not carry the declaration keeps the key.
 type agent struct {
 	agentrun.Unimplemented
 
@@ -37,16 +39,11 @@ func newAgent(opts ...chatapi.Option) (*agent, error) {
 	return &agent{Unimplemented: agentrun.Unimplemented{}, settings: store, catalog: models, answerer: answerer}, nil
 }
 
-// configure applies the settings: the base URL of the chat API and the model used when a task names
-// none.
 func (a *agent) configure(values map[string]string) {
 	a.settings.Configure(values)
 	a.catalog.Reset()
 }
 
-// applySecrets applies the key sent to the chat API: the first secret of the list the host passes for
-// the declaration apiKey. An empty list means no key, and a call that does not carry the declaration
-// keeps the current key.
 func (a *agent) applySecrets(secrets server.Secrets) {
 	list, carried := server.ReadSecrets(secrets, settings.KeyAPIKey)
 	if !carried {
