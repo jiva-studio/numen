@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { createEmitter } from './createEmitter'
-import type { PathRename } from '@/shared/paths'
+import type { PathRename } from '@/shared/lib/paths'
 import { createDisplayOptions, type DisplayWiring } from './displayOptions'
 
 const createWiring = (leavePath: (from: string, to: string) => Promise<void>) => {

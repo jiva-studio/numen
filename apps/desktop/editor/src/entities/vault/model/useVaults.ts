@@ -3,8 +3,8 @@
  */
 import { computed, ref, type Ref } from 'vue'
 import type { VaultList } from '../lib/vault'
-import type { IndexCoverage } from '@/shared/notices/coverage'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import { VAULT_WORDS } from '../words'
 
 /** A vault as the commands and the target of the window name it. */

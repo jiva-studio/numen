@@ -22,7 +22,7 @@ import {
   createFeatureDeps,
   registerFeatureCommands,
 } from '@/app/window/createFeatureCommands'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
 

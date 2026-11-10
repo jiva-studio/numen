@@ -38,10 +38,10 @@ import {
   watchCommandLists,
   type DeclaredCommands,
 } from '@/features/plugin-commands'
-import type { IndexCoverage } from '@/shared/notices/coverage'
-import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import type { MessageLog, MessageWriter } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
-import type { WORDS } from '@/shared/words'
+import type { WORDS } from '@/shared/ui/words'
 import { getFileKinds } from '@/entities/file'
 import { getVaultList } from './vaultList'
 

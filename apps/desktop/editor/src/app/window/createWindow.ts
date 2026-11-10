@@ -7,7 +7,7 @@ import { ref, type Ref } from 'vue'
 import { useWindowFrame } from '@numen/workbench'
 import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
-import { createMessageLog } from '@/shared/notices/messages'
+import { createMessageLog } from '@/shared/model/notices/messages'
 import { useAppHotkeys } from '@/features/hotkeys'
 import { watchPluginSettings } from '../plugins/pluginSupport'
 import {

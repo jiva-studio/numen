@@ -20,7 +20,7 @@ import {
 import { COMMAND, type CommandDeps, type CommandTarget } from '@/entities/command'
 import type { WindowTabs } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { withValues, type Values } from './createCommandRunner'
 
 interface KeyHandlerParts {

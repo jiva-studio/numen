@@ -9,7 +9,7 @@ import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
 import type { CommandDeps } from '@/entities/command'
-import { commands as registry, registerCommand } from '../model/handlers/handlers'
+import { commands as registry } from '@/entities/command'
 import type { CommandTarget } from '@/entities/command'
 import CommandPalette from './CommandPalette.vue'
 
@@ -20,7 +20,7 @@ const copyPath = vi.fn()
 
 beforeEach(() => {
   copyPath.mockClear()
-  registerCommand(COPY_PATH, copyPath)
+  registry.set(COPY_PATH, copyPath)
 })
 
 afterEach(() => {

@@ -13,10 +13,10 @@ import {
 import type { WindowTabs } from '@/entities/tab'
 import { searchCore, type NoteLookup, type runSupport } from '@/features/command-palette'
 import type { Command, CommandTarget } from '@/entities/command'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { isFieldFocused } from './isFieldFocused'
-import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
-import { WORDS as words } from '@/shared/words'
+import type { createMessageLog, MessageWriter } from '@/shared/model/notices/messages'
+import { WORDS as words } from '@/shared/ui/words'
 import {
   type CommandItemLists,
   getPaletteId,

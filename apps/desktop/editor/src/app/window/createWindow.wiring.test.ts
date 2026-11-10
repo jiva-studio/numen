@@ -770,7 +770,7 @@ describe('the services a plugin is given', () => {
     // Returned window methods
     window.palette.runCommand('cmd-2', target)
     expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-2', target)
-    window.settings.openSettings('p1', 'ocr')
+    window.openSettings('p1', 'ocr')
     expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1', 'ocr')
 
     h.f.windowTabs.restored.openPlacedTabs.mockImplementationOnce(

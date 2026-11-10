@@ -5,7 +5,7 @@
 import { watch, type Ref } from 'vue'
 import { formatError } from '@/shared/api/errors'
 import type { DeclaredCommands } from './declaredCommands'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 
 interface CommandListSources {
   readonly declaredCommands: DeclaredCommands

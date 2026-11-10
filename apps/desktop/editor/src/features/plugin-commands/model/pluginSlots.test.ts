@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { FileText } from '@lucide/vue'
 import { createWhenReader, getTargetValues, type CommandTarget } from '@numen/plugin-loader'
 import type { DeclaredCommand } from '@/entities/plugin'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { APP_SLOT_ENTRIES } from '../lib/appPlacements'
 import { createSlotCommandFinder, readSlotEntries } from './pluginSlots'
 

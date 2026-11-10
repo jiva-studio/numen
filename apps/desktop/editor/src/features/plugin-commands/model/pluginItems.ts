@@ -8,8 +8,8 @@ import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-loader'
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import type { StepGroup } from '@/shared/steps'
-import { WORDS } from '@/shared/words'
+import type { StepGroup } from '@/shared/lib/steps'
+import { WORDS } from '@/shared/ui/words'
 import { toRunTarget } from '../lib/runTarget'
 
 /** The lists of the steps of the commands the window offers besides the plugin commands. */

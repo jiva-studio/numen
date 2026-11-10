@@ -5,7 +5,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettings } from './useSettings'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 import {
   createSettingsStore,
   SETTINGS_WORDS,
@@ -14,7 +14,7 @@ import {
   type PluginSettingInfo,
 } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 import { createLostConnection, type CoreAnswers } from '@numen/core-client/testing'
 

@@ -25,7 +25,7 @@ import { createFollower, runInBackground } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
 import { useSettingsTab } from '../kind'
 import type { Installation, InstallationPlugin, InstallationSettings } from '../types'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
 export interface SettingsDeps {
@@ -220,7 +220,7 @@ export function useSettings({
     reportError,
   )
 
-  watch(appearance.preview.sized, () => onSizeChanged())
+  watch(appearance.preview.display.sized, () => onSizeChanged())
 
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 

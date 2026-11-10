@@ -22,8 +22,8 @@ import {
 import type { NoteCreator } from '@/entities/note'
 import type { WindowTabs } from '@/entities/tab'
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/notices/messages'
-import type { WORDS } from '@/shared/words'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import type { WORDS } from '@/shared/ui/words'
 
 type Words = typeof WORDS
 

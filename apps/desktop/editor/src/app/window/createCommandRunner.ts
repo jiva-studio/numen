@@ -9,7 +9,7 @@ import type { createCommandNoteReader } from '@/features/plugin-commands'
 import type { ResultChoice } from '@/features/command-palette'
 import type { CommandDeps, CommandInvocation, CommandTarget } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 
 export type Values = Readonly<Record<string, string>>
 
