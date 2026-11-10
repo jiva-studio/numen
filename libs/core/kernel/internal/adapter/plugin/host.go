@@ -28,9 +28,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	completionport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/completioncontract"
-	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
@@ -90,17 +89,17 @@ type Host struct {
 	problems               []manifestjson.DiscoveryProblem
 	installed              []manifest.Discovered
 	hasScanned             bool
-	completer              completionport.Completer
-	vault                  pluginport.PluginVault
-	texts                  pluginport.PluginTexts
-	window                 pluginport.PluginWindow
-	vaultList              pluginport.PluginVaultList
-	search                 pluginport.PluginSearch
+	completer              hostendpoint.Completer
+	vault                  *hostendpoint.VaultAccess
+	texts                  hostendpoint.TextVersions
+	window                 hostendpoint.WindowControl
+	vaultList              hostendpoint.VaultList
+	search                 *hostendpoint.SearchAccess
 	secrets                *secretDelivery
 	hostEndpoint           *hostendpoint.Endpoint
 	hostAddress            string
 	dependencies           Dependencies
-	work                   pluginport.PluginWork
+	work                   hostendpoint.WorkQueue
 	builtIns               map[string]builtInPlugin
 	contentTypes           contentTypeTable
 	typeCache              contentTypeCache

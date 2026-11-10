@@ -20,6 +20,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
@@ -28,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -200,7 +202,7 @@ func (c Config) GetPluginName(pluginID string) string {
 
 // SetPluginVault is the vault the plugins use through the host. Without one, a plugin that requires
 // the vault receives an error stating that the host provides none.
-func (c Config) SetPluginVault(v pluginport.PluginVault) {
+func (c Config) SetPluginVault(v *hostendpoint.VaultAccess) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVault(v)
 	}
@@ -208,7 +210,7 @@ func (c Config) SetPluginVault(v pluginport.PluginVault) {
 
 // SetPluginVaultList sets the list of vaults exposed to plugins. Without one, calls that change
 // the list fail with ErrUnavailable.
-func (c Config) SetPluginVaultList(list pluginport.PluginVaultList) {
+func (c Config) SetPluginVaultList(list hostendpoint.VaultList) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVaultList(list)
 	}
@@ -257,11 +259,22 @@ func (c Config) lockVault(ctx context.Context, v domain.Vault) (func(), error) {
 	return c.VaultLocks.Lock(ctx, v)
 }
 
-// OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
-// index that holds them: the one current names, else the one a call names by identity.
-func (c Config) OpenPluginVault(
+// InstallPluginVault lets the plugins work through the host the vault of a list and the index that
+// holds them: the one current names, else the one a call names by identity.
+func (c Config) InstallPluginVault(
 	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (pluginport.PluginVault, error) {
+) error {
+	opened, err := c.openPluginVault(registry, db, current, hooks)
+	if err != nil {
+		return err
+	}
+	c.SetPluginVault(opened)
+	return nil
+}
+
+func (c Config) openPluginVault(
+	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
+) (*hostendpoint.VaultAccess, error) {
 	cache, err := c.OpenPluginCache()
 	if err != nil {
 		return nil, err
@@ -285,9 +298,12 @@ func (c Config) OpenPluginVault(
 	if hasReaders(hooks.Notes) {
 		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
 	}
+	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
 		Current:     current,
-		Readers:     c.VaultReaders,
+		Stat:        file.NewStatFile(c.VaultReaders),
+		ReadFile:    file.NewReadFile(c.VaultReaders),
+		RangeReader: file.Read{Readers: c.VaultReaders},
 		OpenWriter:  c.openNoteWriter,
 		LockVault:   c.lockVault,
 		Notes:       db.NoteRefs(),
@@ -298,41 +314,56 @@ func (c Config) OpenPluginVault(
 		Connections: connections,
 		Problems:    db.Problems(),
 		Arranger:    arranger,
-		Stores:      derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}},
-		Cache:       cache,
-		Watcher:     c.VaultWatcher,
-		Written:     hooks.Written,
-		Vaults:      registry.Vaults.List,
-		Find: func(id domain.VaultID) (domain.Vault, error) {
-			found, isFound, err := registry.Lookup.FindVault(string(id))
-			if err != nil {
-				return domain.Vault{}, err
-			}
-			if !isFound {
-				return domain.Vault{}, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
-			}
-			return found, nil
+		StoreReaders: func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error) {
+			return stores.Open(v, pluginID)
 		},
+		StoreWriters: func(v domain.Vault, pluginID string) (hostendpoint.StoreWriter, error) {
+			return stores.OpenWriter(v, pluginID)
+		},
+		Cache:      cache,
+		Written:    hooks.Written,
+		Vaults:     registry.Vaults.List,
+		Find:       findVault(registry),
 		IndexState: hooks.IndexState,
 		Moved:      hooks.Moved,
 		Index:      index,
 	}
+	if c.VaultWatcher != nil {
+		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher)
+	}
 	if vaults.IndexState == nil {
-		vaults.IndexState = func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
-			has, err := db.VaultHolds().Has(ctx, v.ID)
-			if err != nil {
-				return plugindomain.IndexState{}, err
-			}
-			if has {
-				return plugindomain.IndexState{Status: plugindomain.Indexed}, nil
-			}
-			return plugindomain.IndexState{Status: plugindomain.Indexing}, nil
-		}
+		vaults.IndexState = getIndexState(db)
 	}
 	if vaults.Moved == nil {
 		vaults.Moved = c.Moves
 	}
-	return vaults, nil
+	return vaults.Access(), nil
+}
+
+func findVault(registry vaultregistry.Ports) func(id domain.VaultID) (domain.Vault, error) {
+	return func(id domain.VaultID) (domain.Vault, error) {
+		found, isFound, err := registry.Lookup.FindVault(string(id))
+		if err != nil {
+			return domain.Vault{}, err
+		}
+		if !isFound {
+			return domain.Vault{}, fmt.Errorf("vault %q: %w", id, fs.ErrNotExist)
+		}
+		return found, nil
+	}
+}
+
+func getIndexState(db *vault.Index) func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
+	return func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
+		has, err := db.VaultHolds().Has(ctx, v.ID)
+		if err != nil {
+			return plugindomain.IndexState{}, err
+		}
+		if has {
+			return plugindomain.IndexState{Status: plugindomain.Indexed}, nil
+		}
+		return plugindomain.IndexState{Status: plugindomain.Indexing}, nil
+	}
 }
 
 // GetPluginDir is the folder of an installed plugin, and false for one not installed.
@@ -366,10 +397,9 @@ func (c Config) GetFrontendPluginIDs() []string {
 
 // SetPluginWindow sets the window exposed to plugins. A host with no window sets none, and calls
 // fail with ErrNoWindow.
-func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
+func (c Config) SetPluginWindow(window hostendpoint.WindowControl) {
 	if c.PluginHost != nil {
-		var host pluginport.PluginWindowHost = c.PluginHost
-		host.SetPluginWindow(window)
+		c.PluginHost.SetPluginWindow(window)
 	}
 }
 

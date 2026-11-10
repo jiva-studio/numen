@@ -15,22 +15,29 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
-func (m *memoryVault) OpenStore(pluginID string) (pluginport.PluginStore, error) {
+func (m *memoryVault) openFolder(pluginID string) (derivedfile.PluginFolder, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.vault == nil {
-		return nil, hostvault.ErrNoVault
+		return derivedfile.PluginFolder{}, plugin.ErrNoVault
 	}
 	if m.storeRoot == "" {
-		return nil, errors.New("the vault keeps no store")
+		return derivedfile.PluginFolder{}, errors.New("the vault keeps no store")
 	}
-	return derivedfile.PluginStores{}.Open(domain.Vault{ID: m.vault.ID, Path: m.storeRoot}, pluginID)
+	return derivedfile.PluginStores{}.OpenWriter(domain.Vault{ID: m.vault.ID, Path: m.storeRoot}, pluginID)
+}
+
+func (m *memoryVault) OpenStore(pluginID string) (StoreReader, error) {
+	return m.openFolder(pluginID)
+}
+
+func (m *memoryVault) OpenStoreWriter(pluginID string) (StoreWriter, error) {
+	return m.openFolder(pluginID)
 }
 
 // storeHost is the store endpoint served over one vault whose store is a folder of the test's own.
@@ -45,9 +52,9 @@ func newStoreHost(t *testing.T) storeHost {
 	vault := newMemoryVault(nil)
 	vault.storeRoot = t.TempDir()
 	hosted := newCallers(nil)
-	hosted.vault = vault
+	hosted.vault = vaultOf(vault)
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: &Endpoint{callers: hosted}}))
+	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: &Endpoint{callers: hosted.asCallers()}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return storeHost{vault: vault, url: server.URL, client: server.Client()}

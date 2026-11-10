@@ -55,7 +55,7 @@ func newRangingTexts(t *testing.T) (*rangingTexts, *callers) {
 	t.Helper()
 	texts := &rangingTexts{memoryTexts: newMemoryTexts()}
 	fakeCallers := newCallers(nil)
-	fakeCallers.vault = newMemoryVault(nil)
+	fakeCallers.vault = vaultOf(newMemoryVault(nil))
 	fakeCallers.texts = texts
 	return texts, fakeCallers
 }

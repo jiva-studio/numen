@@ -18,14 +18,14 @@ import (
 // clipStores is the store of each plugin, holding the files it is given by name.
 type clipStores map[string]map[string]string
 
-func (s clipStores) Open(_ domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+func (s clipStores) Open(_ domain.Vault, pluginID string) (pluginport.PluginStoreReader, error) {
 	return clipStore{files: s[pluginID]}, nil
 }
 
 func (clipStores) DeleteFolder(context.Context, domain.Vault, string) error { return nil }
 
 type clipStore struct {
-	pluginport.PluginStore
+	pluginport.PluginStoreReader
 	files map[string]string
 }
 

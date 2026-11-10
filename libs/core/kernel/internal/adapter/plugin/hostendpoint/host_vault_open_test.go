@@ -20,14 +20,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
-func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint, numenv1connect.HostVaultServiceClient) {
+func openListEndpoint(t *testing.T, list VaultList) (*Endpoint, numenv1connect.HostVaultServiceClient) {
 	t.Helper()
 	hostCallers := newCallers(nil)
-	hostCallers.vault = newFakeNoteVault()
-	endpoint, err := Open(t.Context(), Address, vaultListCallers{callers: hostCallers, list: list, granted: []string{manifest.PermissionVaultManage}})
+	hostCallers.vault = vaultOf(newFakeNoteVault())
+	endpoint, err := Open(t.Context(), Address, hostCallers.over(list, manifest.PermissionVaultManage))
 	if err != nil {
 		t.Fatal(err)
 	}

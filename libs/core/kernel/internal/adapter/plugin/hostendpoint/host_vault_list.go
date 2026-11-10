@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
@@ -57,11 +56,11 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 	return 0, "", connect.NewError(connect.CodeInternal, err)
 }
 
-func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultList, error) {
+func (e *vaultEndpoint) beginList(header http.Header) (VaultList, error) {
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionVaultManage); err != nil {
 		return nil, err
 	}
-	list := e.endpoint.callers.GetPluginVaultList()
+	list := e.endpoint.callers.Window.GetPluginVaultList()
 	if list == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoVaultList)
 	}
@@ -69,7 +68,7 @@ func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultLis
 }
 
 func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
-	vault := e.endpoint.callers.GetPluginVault()
+	vault := e.endpoint.callers.Vault.GetPluginVault()
 	if vault == nil {
 		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), registry.ErrUnknown)
 	}

@@ -31,7 +31,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -485,7 +484,7 @@ func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 
 // shownVault is a host that exposes one vault and nothing else.
 type shownVault struct {
-	pluginport.PluginVault
+	hostendpoint.VaultSwitch
 	vault domain.Vault
 }
 
@@ -512,8 +511,8 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.SetPluginVault(shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host)
+	host.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.GetEndpointCallers())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -8,6 +8,7 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -110,12 +111,10 @@ func (c Config) openPluginWork(db *Index, v domain.Vault) (Config, *run.PluginWo
 		return c, nil, err
 	}
 	current := func() (domain.Vault, bool) { return v, true }
-	pluginVault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
-	if err != nil {
+	if err := c.InstallPluginVault(registry, db, current, PluginVaultHooks{}); err != nil {
 		return c, nil, err
 	}
 	work := c.plugins().OpenPluginWork(run.NewTasks(), &run.Lock{})
-	c.SetPluginVault(pluginVault)
 	c.SetPluginTexts()
 	return c, work, nil
 }
@@ -144,27 +143,14 @@ func (c Config) getPluginName(pluginID string) string {
 	return c.plugins().GetPluginName(pluginID)
 }
 
-// SetPluginVault is the vault the plugins use through the host.
-func (c Config) SetPluginVault(v pluginport.PluginVault) {
-	c.plugins().SetPluginVault(v)
-}
-
 // SetPluginVaultList sets the list of vaults exposed to plugins.
-func (c Config) SetPluginVaultList(list pluginport.PluginVaultList) {
+func (c Config) SetPluginVaultList(list hostendpoint.VaultList) {
 	c.plugins().SetPluginVaultList(list)
 }
 
 // OpenPluginCache is where a plugin keeps what it worked out for a vault.
 func (c Config) OpenPluginCache() (pluginport.PluginCache, error) {
 	return c.plugins().OpenPluginCache()
-}
-
-// OpenPluginVault is the vault the plugins work through the host over the vaults of a list and the
-// index that holds them.
-func (c Config) OpenPluginVault(
-	vaults vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (pluginport.PluginVault, error) {
-	return c.plugins().OpenPluginVault(vaults, db, current, hooks)
 }
 
 // GetPluginDir is the folder of an installed plugin, and false for one not installed.
@@ -179,7 +165,7 @@ func (c Config) GetFrontendPluginIDs() []string {
 }
 
 // SetPluginWindow sets the window exposed to plugins.
-func (c Config) SetPluginWindow(window pluginport.PluginWindow) {
+func (c Config) SetPluginWindow(window hostendpoint.WindowControl) {
 	c.plugins().SetPluginWindow(window)
 }
 
@@ -212,16 +198,12 @@ func (c Config) WatchPluginChanges() (<-chan struct{}, func()) {
 	return c.plugins().WatchPluginChanges()
 }
 
-// InstallPluginVault lets the plugins work through the host the vault OpenPluginVault opens.
+// InstallPluginVault lets the plugins work through the host the vault of a list and the index that
+// holds them: the one current names, else the one a call names by identity.
 func (c Config) InstallPluginVault(
 	vaults vaultregistry.Ports, db *Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) error {
-	opened, err := c.OpenPluginVault(vaults, db, current, hooks)
-	if err != nil {
-		return err
-	}
-	c.SetPluginVault(opened)
-	return nil
+	return c.plugins().InstallPluginVault(vaults, db, current, hooks)
 }
 
 // LendPluginHost is the capabilities of host, as the configuration holds them.

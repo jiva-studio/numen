@@ -11,7 +11,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func TestHostWindowActivateTabReturnsTabPlaceAndActiveID(t *testing.T) {
@@ -77,7 +76,7 @@ func TestHostWindowActivateTabNeedsWindowFocus(t *testing.T) {
 }
 
 func TestHostWindowActivateTabWithoutAWindowReturnsNoWindow(t *testing.T) {
-	for name, window := range map[string]pluginport.PluginWindow{
+	for name, window := range map[string]WindowControl{
 		"no window bound":                 nil,
 		"a window that reports no window": &recordingWindow{err: fmt.Errorf("activate: %w", plugin.ErrNoWindow)},
 	} {

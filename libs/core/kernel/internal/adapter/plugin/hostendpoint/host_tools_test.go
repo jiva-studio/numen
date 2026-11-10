@@ -44,7 +44,7 @@ func (r *recordedTools) CallTool(
 func newToolClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.PluginToolServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: &Endpoint{callers: fakeCallers}}))
+	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: &Endpoint{callers: fakeCallers.asCallers()}}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewPluginToolServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
@@ -55,7 +55,7 @@ func newToolClient(t *testing.T, fakeCallers *callers, token string) numenv1conn
 func TestAPluginCallsTheToolsInTheVaultTheHostShows(t *testing.T) {
 	tools := &recordedTools{}
 	fakeCallers := newCallers(nil)
-	fakeCallers.tools, fakeCallers.vault = tools, newMemoryVault(nil)
+	fakeCallers.tools, fakeCallers.vault = tools, vaultOf(newMemoryVault(nil))
 	client := newToolClient(t, fakeCallers, "token-a")
 
 	listed, err := client.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
@@ -88,7 +88,7 @@ func TestAPluginCallsTheToolsInTheVaultItNames(t *testing.T) {
 	vault := newMemoryVault(nil)
 	vault.others = map[domain.VaultID]*memoryVault{"v2": {vault: &domain.Vault{ID: "v2", Name: "Biology"}}}
 	fakeCallers := newCallers(nil)
-	fakeCallers.tools, fakeCallers.vault = tools, vault
+	fakeCallers.tools, fakeCallers.vault = tools, vaultOf(vault)
 
 	req := connect.NewRequest(&v1.CallToolRequest{Name: "note_read"})
 	req.Header().Set(vaultHeader, "v2")

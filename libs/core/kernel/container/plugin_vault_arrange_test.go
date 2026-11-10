@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -24,7 +24,7 @@ func getRivers() map[string]string {
 	}
 }
 
-func openScannedPluginVault(t *testing.T, notes map[string]string, hooks container.PluginVaultHooks) (domain.Vault, pluginport.PluginVault) {
+func openScannedPluginVault(t *testing.T, notes map[string]string, hooks container.PluginVaultHooks) (domain.Vault, *hostendpoint.VaultAccess) {
 	t.Helper()
 	v, current, assembly := openPluginVault(t, notes)
 	shared, err := assembly.OpenPluginVault(current, hooks)
@@ -54,7 +54,7 @@ func readVaultFile(t *testing.T, v domain.Vault, path string) (string, bool) {
 	return string(content), true
 }
 
-func getLinkTargets(t *testing.T, shared pluginport.PluginVault, from string) []string {
+func getLinkTargets(t *testing.T, shared *hostendpoint.VaultAccess, from string) []string {
 	t.Helper()
 	links, err := shared.GetLinks(t.Context(), from)
 	if err != nil {

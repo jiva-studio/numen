@@ -14,7 +14,7 @@ import (
 
 func openPluginVault(t *testing.T, notes map[string]string) (domain.Vault, func() (domain.Vault, bool), windowVaults) {
 	t.Helper()
-	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
+	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), PluginHost: container.NewPluginHost("md.numen.test", t.TempDir()), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 	registry, err := cfg.Registry()
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +38,7 @@ func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := shared.Create(t.Context(), "Made.md", []byte("---\ntitle: Made\n---\n\n# Made\n")); err != nil {
+	if err := shared.CreateFile(t.Context(), "Made.md", []byte("---\ntitle: Made\n---\n\n# Made\n")); err != nil {
 		t.Fatal(err)
 	}
 	if err := shared.Scan(t.Context(), []string{"Made.md"}); err != nil {
@@ -61,8 +61,12 @@ func TestAPluginKeepsItsFolderAndItsCacheApart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	writer, err := shared.OpenStoreWriter("org.example.sample")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if err := data.Append(t.Context(), "log", []byte("a")); err != nil {
+	if err := writer.Append(t.Context(), "log", []byte("a")); err != nil {
 		t.Fatal(err)
 	}
 	if err := shared.WriteCache(t.Context(), "org.example.sample", "due", []byte("3")); err != nil {
@@ -111,7 +115,7 @@ func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := shared.Create(t.Context(), "Made.md", []byte("# Made\n")); err != nil {
+	if err := shared.CreateFile(t.Context(), "Made.md", []byte("# Made\n")); err != nil {
 		t.Fatal(err)
 	}
 

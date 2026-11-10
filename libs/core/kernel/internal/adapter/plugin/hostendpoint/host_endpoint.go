@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	completionport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/completioncontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -34,43 +32,6 @@ var (
 	errNotTCP        = errors.New("the host endpoint has no TCP address")
 	errNotLoopback   = errors.New("the host endpoint is not bound to the loopback interface")
 )
-
-// Callers is what the host endpoint queries the host for about a call: who made
-// it, what that plugin may do, and who serves a completion.
-type callerLease interface {
-	Acquire(pluginID string)
-	Release(pluginID string)
-}
-
-type Callers interface {
-	Services
-	GetPluginIDByToken(token string) (string, bool)
-	CheckPluginPermission(pluginID, permission string) error
-	callerLease
-}
-
-type workServices interface {
-	windowServices
-	GetPluginWork() pluginport.PluginWork
-	GetPluginSearch() pluginport.PluginSearch
-	GetPluginTools() PluginTools
-}
-
-// Services is what the host lends the plugins that call it.
-type Services interface {
-	GetCompleter() completionport.Completer
-	GetPluginVault() pluginport.PluginVault
-	GetPluginTexts() pluginport.PluginTexts
-	GetDependencies() Dependencies
-	workServices
-}
-
-type windowServices interface {
-	// GetPluginWindow returns the main window of the vault, or nil when the host has no window.
-	GetPluginWindow() pluginport.PluginWindow
-	// GetPluginVaultList returns the list of vaults plugins change, or nil when the host has no window.
-	GetPluginVaultList() pluginport.PluginVaultList
-}
 
 // Endpoint serves the calls plugins make to the host. It binds the loopback
 // interface and serves a call only for a token the host issued to a running
@@ -161,7 +122,7 @@ func (e *Endpoint) Complete(
 	if err != nil {
 		return nil, err
 	}
-	completer := e.callers.GetCompleter()
+	completer := e.callers.Completion.GetCompleter()
 	if completer == nil {
 		return refuseCompletion(v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE, ""), nil
 	}
@@ -176,7 +137,7 @@ func (e *Endpoint) Complete(
 
 func (e *Endpoint) authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
-	pluginID, recognized := e.callers.GetPluginIDByToken(token)
+	pluginID, recognized := e.callers.Identity.GetPluginIDByToken(token)
 	if !found || !recognized {
 		return "", connect.NewError(connect.CodeUnauthenticated, errUnknownCaller)
 	}
@@ -188,7 +149,7 @@ func (e *Endpoint) authorize(header, permission string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := e.callers.CheckPluginPermission(pluginID, permission); err != nil {
+	if err := e.callers.Identity.CheckPluginPermission(pluginID, permission); err != nil {
 		return "", connect.NewError(connect.CodePermissionDenied, fmt.Errorf("plugin %s: %w", pluginID, err))
 	}
 	return pluginID, nil

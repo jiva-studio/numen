@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -28,11 +27,11 @@ type windowEndpoint struct {
 
 var _ numenv1connect.HostWindowServiceHandler = (*windowEndpoint)(nil)
 
-func (e *windowEndpoint) begin(header http.Header) (pluginport.PluginWindow, error) {
+func (e *windowEndpoint) begin(header http.Header) (WindowControl, error) {
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionWindowFocus); err != nil {
 		return nil, err
 	}
-	return e.endpoint.callers.GetPluginWindow(), nil
+	return e.endpoint.callers.Window.GetPluginWindow(), nil
 }
 
 func mapWindowError(ctx context.Context, err error) (v1.HostWindowErrorCode, error) {

@@ -181,10 +181,11 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	api.SetVaultIndexer(t.Context(), nil)
 
-	lent, err := cfg.OpenPluginVault(registry, db, getNoCurrentVault, getPluginVaultHooks(api))
-	if err != nil {
+	cfg.PluginHost = container.NewPluginHost("md.numen.test", t.TempDir())
+	if err := cfg.InstallPluginVault(registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		t.Fatal(err)
 	}
+	lent := cfg.PluginHost.GetPluginVault()
 
 	recognized, listErr := lent.GetVaults()
 	linked, withErr := lent.With(target[1].ID)

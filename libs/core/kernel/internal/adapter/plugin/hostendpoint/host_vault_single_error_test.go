@@ -30,18 +30,18 @@ type failingFileVault struct {
 	err error
 }
 
-func (f failingFileVault) Write(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
+func (f failingFileVault) WriteFile(context.Context, string, []byte, domain.FileStat) (domain.FileStat, error) {
 	return domain.FileStat{}, f.err
 }
 
-func (f failingFileVault) Create(context.Context, string, []byte) error {
+func (f failingFileVault) CreateFile(context.Context, string, []byte) error {
 	return f.err
 }
 
 func newFailingFileClient(t *testing.T, err error) numenv1connect.HostVaultServiceClient {
 	t.Helper()
 	hosted := newCallers(nil)
-	hosted.vault = failingFileVault{memoryVault: newMemoryVault(map[string]string{"Ganges.md": "# Ganges\n"}), err: err}
+	hosted.vault = vaultOf(failingFileVault{memoryVault: newMemoryVault(map[string]string{"Ganges.md": "# Ganges\n"}), err: err})
 	return newVaultClient(t, hosted, "token-a")
 }
 
@@ -119,8 +119,8 @@ func (v tooLargeMoveVault) MoveNote(ctx context.Context, from, to string) (domai
 
 func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	hostCallers := newCallers(nil)
-	hostCallers.vault = tooLargeMoveVault{newFakeNoteVault()}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
+	hostCallers.vault = vaultOf(tooLargeMoveVault{newFakeNoteVault()})
+	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

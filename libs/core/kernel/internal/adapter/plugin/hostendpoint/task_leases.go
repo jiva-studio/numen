@@ -9,7 +9,7 @@ type taskLeases struct {
 	open map[string]map[string]bool
 }
 
-func (l *taskLeases) hold(callers callerLease, pluginID, taskID string) {
+func (l *taskLeases) hold(callers Leases, pluginID, taskID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.open == nil {
@@ -27,7 +27,7 @@ func (l *taskLeases) hold(callers callerLease, pluginID, taskID string) {
 	callers.Acquire(pluginID)
 }
 
-func (l *taskLeases) release(callers callerLease, pluginID, taskID string) {
+func (l *taskLeases) release(callers Leases, pluginID, taskID string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	tasks := l.open[pluginID]

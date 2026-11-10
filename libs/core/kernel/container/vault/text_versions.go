@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -42,12 +41,11 @@ func (c Config) SetPluginTexts() {
 	if c.PluginHost == nil {
 		return
 	}
-	var host pluginport.PluginTextHost = c.PluginHost
 	if c.TextVersions == nil {
-		host.SetPluginTexts(nil)
+		c.PluginHost.SetPluginTexts(nil)
 		return
 	}
-	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
+	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
 }
 
 // OpenPluginData builds the plugin data cleaner for the active text versions.

@@ -24,7 +24,6 @@ import (
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -64,11 +63,11 @@ func newMemoryVault(files map[string]string) *memoryVault {
 }
 
 var (
-	_ pluginport.PluginVault          = (*memoryVault)(nil)
-	_ pluginport.PluginVaultReader    = (*memoryVault)(nil)
-	_ pluginport.PluginVaultWriter    = (*memoryVault)(nil)
-	_ pluginport.PluginVaultStore     = (*memoryVault)(nil)
-	_ pluginport.PluginVaultLifecycle = (*memoryVault)(nil)
+	_ NoteLookup  = (*memoryVault)(nil)
+	_ FileReader  = (*memoryVault)(nil)
+	_ FileWriter  = (*memoryVault)(nil)
+	_ StoreOpener = (*memoryVault)(nil)
+	_ VaultSwitch = (*memoryVault)(nil)
 )
 
 func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
@@ -83,12 +82,12 @@ func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
 	return out, nil
 }
 
-func (m *memoryVault) With(id domain.VaultID) (pluginport.PluginVault, error) {
+func (m *memoryVault) With(id domain.VaultID) (*VaultAccess, error) {
 	if m.vault != nil && m.vault.ID == id {
-		return m, nil
+		return vaultOf(m), nil
 	}
 	if other, there := m.others[id]; there {
-		return other, nil
+		return vaultOf(other), nil
 	}
 	return nil, fs.ErrNotExist
 }
@@ -150,7 +149,7 @@ func (m *memoryVault) RemoveLinks(context.Context, string, domain.Address, domai
 	return domain.FileStat{}, errors.New("not implemented")
 }
 
-func (m *memoryVault) Write(_ context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
+func (m *memoryVault) WriteFile(_ context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	now, err := m.stat(path)
@@ -165,7 +164,7 @@ func (m *memoryVault) Write(_ context.Context, path string, content []byte, base
 	return m.stat(path)
 }
 
-func (m *memoryVault) Create(_ context.Context, path string, content []byte) error {
+func (m *memoryVault) CreateFile(_ context.Context, path string, content []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if _, there := m.files[path]; there {
@@ -332,7 +331,7 @@ func (m *memoryVault) Watch(context.Context) (<-chan []string, <-chan struct{}, 
 
 func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostVaultServiceClient {
 	t.Helper()
-	endpoint := &Endpoint{callers: fakeCallers}
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
@@ -344,7 +343,7 @@ func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memo
 	t.Helper()
 	vault := newMemoryVault(map[string]string{"samples/A.md": "body", "Animal.md": "form"})
 	hosted := newCallers(nil)
-	hosted.vault = vault
+	hosted.vault = vaultOf(vault)
 	return newVaultClient(t, hosted, "token-a"), vault
 }
 
@@ -572,7 +571,7 @@ func TestAWatchReturnsWhenTheWindowShowsAnotherVault(t *testing.T) {
 func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	vault := newMemoryVault(map[string]string{"a.md": "a"})
 	hosted := newCallers(nil)
-	hosted.vault = vault
+	hosted.vault = vaultOf(vault)
 	client := newVaultClient(t, hosted, "token-b")
 
 	_, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "a.md"}))

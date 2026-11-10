@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 var errNoQueue = errors.New("the host keeps no queue for plugins")
@@ -23,12 +22,12 @@ type queueEndpoint struct {
 
 var _ numenv1connect.HostQueueServiceHandler = (*queueEndpoint)(nil)
 
-func (e *queueEndpoint) begin(header http.Header) (string, pluginport.PluginWork, error) {
+func (e *queueEndpoint) begin(header http.Header) (string, WorkQueue, error) {
 	pluginID, err := e.endpoint.authenticate(header.Get("Authorization"))
 	if err != nil {
 		return "", nil, err
 	}
-	work := e.endpoint.callers.GetPluginWork()
+	work := e.endpoint.callers.Work.GetPluginWork()
 	if work == nil {
 		return "", nil, connect.NewError(connect.CodeUnavailable, errNoQueue)
 	}
@@ -46,8 +45,8 @@ func (e *queueEndpoint) EnqueueWork(
 	if err != nil {
 		return err
 	}
-	e.endpoint.callers.Acquire(pluginID)
-	defer e.endpoint.callers.Release(pluginID)
+	e.endpoint.callers.Leases.Acquire(pluginID)
+	defer e.endpoint.callers.Leases.Release(pluginID)
 	var waitErr error
 	turn, err := work.EnqueueWork(ctx, pluginID, req.Msg.GetIsUserStarted(), func() {
 		waitErr = stream.Send(&v1.EnqueueWorkResponse{State: v1.WorkState_WORK_STATE_WAITING})
@@ -101,9 +100,9 @@ func (e *queueEndpoint) ReportTask(
 	})
 	if task.GetId() != "" {
 		if isTaskFinished(task) {
-			e.endpoint.tasks.release(e.endpoint.callers, pluginID, task.GetId())
+			e.endpoint.tasks.release(e.endpoint.callers.Leases, pluginID, task.GetId())
 		} else {
-			e.endpoint.tasks.hold(e.endpoint.callers, pluginID, task.GetId())
+			e.endpoint.tasks.hold(e.endpoint.callers.Leases, pluginID, task.GetId())
 		}
 	}
 	return connect.NewResponse(&v1.ReportTaskResponse{}), nil
@@ -117,7 +116,7 @@ func (e *queueEndpoint) FinishTask(
 		return nil, err
 	}
 	work.FinishTask(pluginID, req.Msg.GetId())
-	e.endpoint.tasks.release(e.endpoint.callers, pluginID, req.Msg.GetId())
+	e.endpoint.tasks.release(e.endpoint.callers.Leases, pluginID, req.Msg.GetId())
 	return connect.NewResponse(&v1.FinishTaskResponse{}), nil
 }
 

@@ -56,7 +56,7 @@ func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segment
 	if err != nil {
 		return "", err
 	}
-	store, err := f.stores.Open(f.vault, pluginID)
+	store, err := f.stores.OpenWriter(f.vault, pluginID)
 	if err != nil {
 		return "", err
 	}
@@ -67,7 +67,7 @@ func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segment
 }
 
 func (f files) DeleteTextFile(ctx context.Context, pluginID, name string) error {
-	store, err := f.stores.Open(f.vault, pluginID)
+	store, err := f.stores.OpenWriter(f.vault, pluginID)
 	if err != nil {
 		return err
 	}

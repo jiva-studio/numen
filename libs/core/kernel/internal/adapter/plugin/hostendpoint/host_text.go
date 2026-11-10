@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -30,7 +29,7 @@ var _ numenv1connect.HostTextServiceHandler = (*textEndpoint)(nil)
 // it works. Texts is nil where the host has no text versions or no vault to offer.
 type textCall struct {
 	pluginID string
-	texts    pluginport.PluginTexts
+	texts    TextVersions
 	vault    domain.Vault
 }
 
@@ -40,7 +39,7 @@ func (e *textEndpoint) begin(header http.Header, permission string) (textCall, e
 		return textCall{}, err
 	}
 	call := textCall{pluginID: pluginID}
-	texts := e.endpoint.callers.GetPluginTexts()
+	texts := e.endpoint.callers.Texts.GetPluginTexts()
 	if texts == nil {
 		return call, nil
 	}

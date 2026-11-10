@@ -14,8 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 // batchLimit is the maximum number of notes one call moves or removes.
@@ -27,7 +26,7 @@ func splitNoteError(ctx context.Context, err error) (noteCode, callCode v1.HostV
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return 0, 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	if errors.Is(err, hostvault.ErrNoVault) {
+	if errors.Is(err, plugin.ErrNoVault) {
 		return 0, noVault, nil
 	}
 	code, ok := getNoteErrorCode(err)
@@ -143,7 +142,7 @@ func (e *vaultEndpoint) MoveNotes(
 	return connect.NewResponse(out), nil
 }
 
-func moveNote(ctx context.Context, vault pluginport.PluginVault, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
+func moveNote(ctx context.Context, vault Arranger, from, folder string) (*v1.HostNoteMove, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteMove{
 		Move: &v1.MoveResult{From: from}, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
 		Detail: fmt.Sprintf("the call was canceled before %s was moved", from),
@@ -189,7 +188,7 @@ func (e *vaultEndpoint) RemoveNotes(
 	return connect.NewResponse(out), nil
 }
 
-func removeNote(ctx context.Context, vault pluginport.PluginVault, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
+func removeNote(ctx context.Context, vault Arranger, target string) (*v1.HostNoteRemoval, v1.HostVaultErrorCode, error) {
 	notAttempted := &v1.HostNoteRemoval{
 		Path: target, Error: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_ATTEMPTED,
 		Detail: fmt.Sprintf("the call was canceled before %s was removed", target),

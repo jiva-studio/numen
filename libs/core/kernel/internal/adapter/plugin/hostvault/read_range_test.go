@@ -104,7 +104,7 @@ func TestReadRangeOfAFolderOrAMissingPathIsNotExist(t *testing.T) {
 func TestReadRangeWithoutAVaultReturnsErrNoVault(t *testing.T) {
 	access := Vault{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }}
 
-	if _, err := access.ReadRange(t.Context(), "Rivers.txt", 0, 10); !errors.Is(err, ErrNoVault) {
-		t.Errorf("a ranged read with no vault was %v, want ErrNoVault", err)
+	if _, err := access.ReadRange(t.Context(), "Rivers.txt", 0, 10); !errors.Is(err, plugin.ErrNoVault) {
+		t.Errorf("a ranged read with no vault was %v, want plugin.ErrNoVault", err)
 	}
 }

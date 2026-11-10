@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -20,8 +21,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -31,12 +30,16 @@ type callers struct {
 	mu        sync.Mutex
 	plugins   map[string]string
 	allowed   map[string]bool
-	completer completionport.Completer
+	completer Completer
 	checked   []string
-	vault     pluginport.PluginVault
-	texts     pluginport.PluginTexts
-	search    pluginport.PluginSearch
-	work      pluginport.PluginWork
+	vault     *VaultAccess
+	texts     TextVersions
+	search    *SearchAccess
+	work      WorkQueue
+	window    WindowControl
+	list      VaultList
+	granted   []string
+	confined  bool
 	tools     PluginTools
 	acquired  map[string]int
 	releases  chan string
@@ -54,18 +57,64 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 	if !c.allowed[pluginID] {
 		return plugin.ErrPermissionDenied
 	}
+	if c.confined && !slices.Contains(c.granted, permission) {
+		return plugin.ErrPermissionDenied
+	}
 	return nil
 }
 
-func (c *callers) GetCompleter() completionport.Completer { return c.completer }
+func (c *callers) GetCompleter() Completer { return c.completer }
 
-func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
+func (c *callers) GetPluginVault() *VaultAccess { return c.vault }
 
-func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
-func (c *callers) GetPluginSearch() pluginport.PluginSearch      { return c.search }
-func (c *callers) GetDependencies() Dependencies { return nil }
-func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work }
-func (c *callers) GetPluginTools() PluginTools                   { return c.tools }
+func (c *callers) GetPluginTexts() TextVersions   { return c.texts }
+func (c *callers) GetPluginSearch() *SearchAccess { return c.search }
+func (c *callers) GetDependencies() Dependencies  { return nil }
+func (c *callers) GetPluginWork() WorkQueue       { return c.work }
+func (c *callers) GetPluginTools() PluginTools    { return c.tools }
+func (c *callers) GetPluginWindow() WindowControl { return c.window }
+func (c *callers) GetPluginVaultList() VaultList  { return c.list }
+
+func (c *callers) over(list VaultList, granted ...string) Callers {
+	c.list, c.granted, c.confined = list, granted, true
+	return c.asCallers()
+}
+
+func (c *callers) asCallers() Callers {
+	return Callers{
+		Identity: c, Leases: c, Completion: c, Vault: c, Texts: c, Search: c, Window: c, Work: c, Dependencies: c, Tools: c,
+	}
+}
+
+func capability[T any](fake any) T {
+	found, isFound := fake.(T)
+	if !isFound {
+		var none T
+		return none
+	}
+	return found
+}
+
+func vaultOf(fake any) *VaultAccess {
+	return &VaultAccess{
+		NoteLookup: capability[NoteLookup](fake), LinkLookup: capability[LinkLookup](fake),
+		FileReader: capability[FileReader](fake), FileWriter: capability[FileWriter](fake),
+		Arranger: capability[Arranger](fake), LinkEditor: capability[LinkEditor](fake),
+		Connections: capability[Connections](fake), RelatedNotes: capability[RelatedNotes](fake),
+		VaultWatch: capability[VaultWatch](fake), VaultSwitch: capability[VaultSwitch](fake),
+		StoreOpener: capability[StoreOpener](fake), CacheStore: capability[CacheStore](fake),
+	}
+}
+
+func searchOf(fake any) *SearchAccess {
+	if fake == nil {
+		return nil
+	}
+	return &SearchAccess{
+		SearchIndex: capability[SearchIndex](fake), PassageSearch: capability[PassageSearch](fake),
+		SearchFloors: capability[SearchFloors](fake),
+	}
+}
 
 func (c *callers) Acquire(pluginID string) {
 	c.mu.Lock()
@@ -98,7 +147,7 @@ func (callerCompleter) Complete(_ context.Context, pluginID string, _ completion
 	return pluginID, nil
 }
 
-func newCallers(completer completionport.Completer) *callers {
+func newCallers(completer Completer) *callers {
 	return &callers{
 		plugins:   map[string]string{"token-a": "md.numen.a", "token-b": "md.numen.b", "token-c": "md.numen.c"},
 		allowed:   map[string]bool{"md.numen.a": true, "md.numen.c": true},
@@ -108,7 +157,7 @@ func newCallers(completer completionport.Completer) *callers {
 
 func newHostClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostServiceClient {
 	t.Helper()
-	endpoint := &Endpoint{callers: fakeCallers}
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
 	server := httptest.NewServer(mux)
@@ -202,7 +251,7 @@ func TestACallerWithoutAKnownTokenIsRefused(t *testing.T) {
 // A header that is no bearer token is not read as one.
 func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers(nil)
-	endpoint := &Endpoint{callers: fakeCallers}
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
 		if _, err := endpoint.authorize(header, manifest.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
@@ -295,7 +344,7 @@ func TestAPluginCancellingEndsTheQuestion(t *testing.T) {
 // The endpoint binds the loopback interface and responds for a token.
 func TestHostEndpoint_BindsLoopbackAndServes(t *testing.T) {
 	fakeCallers := newCallers(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "ok", nil }))
-	endpoint, err := Open(t.Context(), Address, fakeCallers)
+	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
 	if err != nil {
 		t.Fatal(err)
 	}

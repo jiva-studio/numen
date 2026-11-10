@@ -7,7 +7,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // pluginTaskPrefix starts the id a plugin's task is listed under. The plugin's
@@ -34,11 +33,10 @@ type PluginWork struct {
 // it runs and false once it failed, its leases and the cancellations of its waits.
 type pluginState struct {
 	tasks  map[string]bool
-	leases map[*lease]bool
+	leases map[*Lease]bool
 	waits  map[uint64]context.CancelFunc
 }
 
-var _ pluginport.PluginWork = (*PluginWork)(nil)
 
 // NewPluginWork opens the lock and the list of tasks to the plugins. getName
 // returns the name a plugin's tasks are listed under; nil lists them unnamed.
@@ -49,7 +47,7 @@ func NewPluginWork(lock *Lock, tasks *Tasks, getName func(pluginID string) strin
 // EnqueueWork waits at the lock for a lease for the plugin and returns it.
 func (w *PluginWork) EnqueueWork(
 	ctx context.Context, pluginID string, isUserStarted bool, onWaiting func(),
-) (pluginport.Lease, error) {
+) (*Lease, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -81,7 +79,7 @@ func (w *PluginWork) EnqueueWork(
 		release()
 		return nil, errPluginCleared
 	}
-	one := &lease{lock: w.lock, release: release, end: make(chan struct{})}
+	one := &Lease{lock: w.lock, release: release, end: make(chan struct{})}
 	one.forget = func() {
 		w.mu.Lock()
 		defer w.mu.Unlock()
@@ -200,7 +198,7 @@ func (w *PluginWork) getStateLocked(pluginID string) *pluginState {
 	if !isKnown {
 		state = &pluginState{
 			tasks:  map[string]bool{},
-			leases: map[*lease]bool{},
+			leases: map[*Lease]bool{},
 			waits:  map[uint64]context.CancelFunc{},
 		}
 		w.plugins[pluginID] = state
@@ -228,8 +226,8 @@ func readUnit(unit plugin.TaskUnit) vaultreading.Unit {
 	return vaultreading.Things
 }
 
-// lease is a plugin's hold on the lock.
-type lease struct {
+// Lease is a plugin's hold on the lock.
+type Lease struct {
 	lock    *Lock
 	release func()
 	forget  func()
@@ -237,7 +235,9 @@ type lease struct {
 	end     chan struct{}
 }
 
-func (t *lease) Release() {
+// Release ends the lease and lets the next work in the queue run. A lease released twice is
+// released once.
+func (t *Lease) Release() {
 	t.once.Do(func() {
 		t.forget()
 		t.release()
@@ -245,6 +245,8 @@ func (t *lease) Release() {
 	})
 }
 
-func (t *lease) WatchWaiting() <-chan struct{} { return t.lock.WatchWaiting() }
+// WatchWaiting returns a channel closed once other work waits for the queue.
+func (t *Lease) WatchWaiting() <-chan struct{} { return t.lock.WatchWaiting() }
 
-func (t *lease) WatchEnd() <-chan struct{} { return t.end }
+// WatchEnd returns a channel closed once the lease is over.
+func (t *Lease) WatchEnd() <-chan struct{} { return t.end }

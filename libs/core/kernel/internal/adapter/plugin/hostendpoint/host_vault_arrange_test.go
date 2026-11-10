@@ -27,32 +27,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
-
-// GetPluginVaultList is no list of vaults: the fake host of the other tests provides none.
-func (c *callers) GetPluginVaultList() pluginport.PluginVaultList { return nil }
-
-// vaultListCallers is the fake host that provides its plugins a list of vaults and grants md.numen.a only
-// the permissions named.
-type vaultListCallers struct {
-	*callers
-	list    pluginport.PluginVaultList
-	granted []string
-}
-
-func (c vaultListCallers) GetPluginVaultList() pluginport.PluginVaultList { return c.list }
-
-func (c vaultListCallers) CheckPluginPermission(pluginID, permission string) error {
-	if err := c.callers.CheckPluginPermission(pluginID, permission); err != nil {
-		return err
-	}
-	if !slices.Contains(c.granted, permission) {
-		return plugin.ErrPermissionDenied
-	}
-	return nil
-}
 
 // fakeNoteVault is the vault of rivers that renames, moves and removes its notes and runs its
 // checks as the host does, and records the requests.
@@ -228,13 +204,13 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 }
 
 func newArrangeClient(
-	t *testing.T, list pluginport.PluginVaultList, granted ...string,
+	t *testing.T, list VaultList, granted ...string,
 ) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers(nil)
-	hostCallers.vault = vault
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, list: list, granted: granted}}
+	hostCallers.vault = vaultOf(vault)
+	endpoint := &Endpoint{callers: hostCallers.over(list, granted...)}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)
@@ -607,8 +583,8 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			hostCallers := newCallers(nil)
-			hostCallers.vault = failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)}
-			endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
+			hostCallers.vault = vaultOf(failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)})
+			endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 			mux := http.NewServeMux()
 			mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 			server := httptest.NewServer(mux)
@@ -749,8 +725,8 @@ func newEscapingPathClient(t *testing.T) (numenv1connect.HostVaultServiceClient,
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers(nil)
-	hostCallers.vault = escapingPathVault{vault}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
+	hostCallers.vault = vaultOf(escapingPathVault{vault})
+	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

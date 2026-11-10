@@ -23,19 +23,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
-
-// GetPluginWindow is no window: the fake host of the other tests provides none.
-func (c *callers) GetPluginWindow() pluginport.PluginWindow { return nil }
-
-// windowCallers is the fake host that provides its plugins the window.
-type windowCallers struct {
-	*callers
-	window pluginport.PluginWindow
-}
-
-func (c windowCallers) GetPluginWindow() pluginport.PluginWindow { return c.window }
 
 // recordingWindow is a window that records the places it receives and returns fixed values.
 type recordingWindow struct {
@@ -117,10 +105,11 @@ func (w *recordingWindow) getRequests() ([]string, []domain.Place, int) {
 	return slices.Clone(w.notes), slices.Clone(w.passages), w.reads
 }
 
-func newWindowClient(t *testing.T, window pluginport.PluginWindow, token string) (numenv1connect.HostWindowServiceClient, *callers) {
+func newWindowClient(t *testing.T, window WindowControl, token string) (numenv1connect.HostWindowServiceClient, *callers) {
 	t.Helper()
 	fakeCallers := newCallers(nil)
-	endpoint, err := Open(t.Context(), Address, windowCallers{callers: fakeCallers, window: window})
+	fakeCallers.window = window
+	endpoint, err := Open(t.Context(), Address, fakeCallers.asCallers())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,7 +228,7 @@ func TestHostWindowRejectsEveryCallWithoutThePermission(t *testing.T) {
 }
 
 func TestHostWindowWithoutAWindowReturnsNoWindow(t *testing.T) {
-	for name, window := range map[string]pluginport.PluginWindow{
+	for name, window := range map[string]WindowControl{
 		"no window bound":                 nil,
 		"a window that reports no window": &recordingWindow{err: fmt.Errorf("focus: %w", plugin.ErrNoWindow)},
 	} {

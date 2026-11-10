@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/index"
-	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 )
 
 // The ages a stored answer of Stats is used for. The counts change with every change of the index
@@ -17,6 +16,14 @@ const (
 	countsMaxAge = time.Second
 	sizesMaxAge  = 30 * time.Second
 )
+
+// IndexStats reads what the index holds. It only reads, so it never waits for a writer.
+type IndexStats interface {
+	// GetIndexCounts returns the counts of the vault. A vault the index does not know has none.
+	GetIndexCounts(ctx context.Context, vaultID domain.VaultID, recipe string) (index.Counts, error)
+	// GetIndexSizes returns the sizes of the index.
+	GetIndexSizes(ctx context.Context) (index.Sizes, error)
+}
 
 // Clock tells the time.
 type Clock interface {
@@ -36,7 +43,7 @@ type storedCounts struct {
 // Stats reads what the index holds and keeps each answer for a while, so a view that asks every
 // second or two reads the index once for all the windows that ask.
 type Stats struct {
-	source indexport.IndexStats
+	source IndexStats
 	clock  Clock
 
 	mu       sync.Mutex
@@ -47,7 +54,7 @@ type Stats struct {
 }
 
 // NewStats reads from source and takes the time from clock.
-func NewStats(source indexport.IndexStats, clock Clock) *Stats {
+func NewStats(source IndexStats, clock Clock) *Stats {
 	return &Stats{
 		source: source, clock: clock, mu: sync.Mutex{}, counts: map[countsKey]storedCounts{},
 		sizes: index.Sizes{}, sizesAt: time.Time{}, hasSizes: false,

@@ -13,7 +13,7 @@ import (
 // PluginFolders is the folders of Folders, each opened as the store of a plugin.
 type PluginFolders struct{ Files *Folders }
 
-func (s PluginFolders) Open(_ domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+func (s PluginFolders) Open(_ domain.Vault, pluginID string) (pluginport.PluginStoreReader, error) {
 	return folderStore{files: s.Files, pluginID: pluginID}, nil
 }
 
@@ -29,7 +29,7 @@ func (s PluginFolders) DeleteFolder(_ context.Context, _ domain.Vault, pluginID 
 }
 
 type folderStore struct {
-	pluginport.PluginStore
+	pluginport.PluginStoreReader
 	files    *Folders
 	pluginID string
 }
