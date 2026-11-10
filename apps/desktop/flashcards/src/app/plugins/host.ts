@@ -35,8 +35,17 @@ import { createNoticeQueue } from '@numen/workbench'
 import type { WindowPlatform } from '@numen/workbench'
 import { TARGET } from '@/shared/config/window'
 
+import {
+  createFrontView,
+  createWindowSlots,
+  createWindowTab,
+  UNUSED_EVENTS,
+  UNUSED_REGISTRATIONS,
+  UNUSED_SETTINGS,
+  type PluginView,
+} from './hostParts'
+
 export type { PluginView, WindowTab } from './hostParts'
-import { createFrontView, createWindowSlots, createWindowTab, NOTHING, UNUSED_EVENTS, UNUSED_REGISTRATIONS, UNUSED_SETTINGS, type PluginView } from './hostParts'
 
 const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginView): Disposable => {
   views.value = [...views.value, view]
