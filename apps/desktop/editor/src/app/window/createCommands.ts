@@ -139,14 +139,12 @@ function createWindowCommandPalette(
 export function createCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
   const { pluginHost, declaredCommands, settings } = options
-  const plugins = usePluginCommands(
+  const { getPaletteEntries, getCommandNote, pluginWays } = usePluginCommands(
     options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
     pluginHost,
     declaredCommands?.whenContext,
     () => declaredCommands?.contributions.handlers.value,
   )
-  const { getPaletteEntries, getCommandNote, pluginWays } = plugins
-
   const palette = useSearch(
     core,
     { ...words, ...PALETTE_WORDS },
