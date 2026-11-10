@@ -159,6 +159,8 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
 ])
 
 
+const INSTALLED: Installation['plugin']['plugins'] = ref(PLUGINS)
+
 const INSTALLATION: Installation = createInstallation({
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
   write: (edits) => {
@@ -173,7 +175,7 @@ const INSTALLATION: Installation = createInstallation({
     DONE.push('path chosen')
     return ''
   },
-  plugins: ref<readonly PluginInfo[]>(PLUGINS),
+  plugins: INSTALLED,
   createSecret: async () => {
     DONE.push('secret created')
     return 's00000001'
