@@ -3,7 +3,7 @@
  */
 import { reactive } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import type { Fit } from '../reader/lib/strip'
+import type { Fit } from '../types'
 
 export interface PDFReaderPreferences {
   defaultZoom: Fit

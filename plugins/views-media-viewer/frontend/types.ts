@@ -1,5 +1,11 @@
 /** The requests a recording tab makes to the application, and their results. */
-import type { Cue } from './lib/cues'
+
+/** One cue: its text and the milliseconds it covers. */
+export interface Cue {
+  readonly text: string
+  readonly from: number
+  readonly to: number
+}
 
 /** Where a recording is played from and what it is played as, or the page that frames its player. */
 export interface RecordingSource {

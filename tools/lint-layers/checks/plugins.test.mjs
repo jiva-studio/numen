@@ -2,7 +2,12 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   findPluginEntryViolations,
+  findPluginSliceShapeViolations,
+  lintPlantedFrontend,
+  listPluginSlices,
   parseEnabledGoLinters,
+  PLANTED_SLICE_FRONTEND,
+  PLANTED_SLICE_REFUSALS,
   readPluginPackageExports,
 } from './plugins.mjs'
 
@@ -80,4 +85,75 @@ test('the exports of the plugin packages of this repository are read', () => {
 test('enabled Go linters are read from the YAML structure', () => {
   const yaml = 'version: "2"\nlinters:\n  default: none\n  enable:\n    - govet\n    # comment\n    - errcheck\n'
   assert.deepEqual(parseEnabledGoLinters(yaml), ['errcheck', 'govet'])
+})
+
+const SLICED = [
+  'plugins/a/frontend/index.ts',
+  'plugins/a/frontend/words.ts',
+  'plugins/a/frontend/types.ts',
+  'plugins/a/frontend/styles.css',
+  'plugins/a/frontend/api/wire.ts',
+  'plugins/a/frontend/ui/Tab.vue',
+  'plugins/a/frontend/deck/index.ts',
+  'plugins/a/frontend/deck/ui/Deck.vue',
+  'plugins/a/frontend/deck/model/useDeck.ts',
+  'plugins/a/frontend/preset/index.ts',
+  'plugins/a/frontend/preset/lib/curve.ts',
+  'plugins/b/frontend/index.ts',
+  'plugins/b/frontend/ui/Tab.vue',
+]
+
+test('a frontend of the entry, the shared files, root segments and slices of segments keeps its shape', () => {
+  assert.deepEqual(findPluginSliceShapeViolations(SLICED), [])
+  assert.deepEqual(listPluginSlices(SLICED), ['a/deck', 'a/preset'])
+})
+
+test('tests, stories and test support are not part of the shape', () => {
+  const files = [
+    ...SLICED,
+    'plugins/a/frontend/kind.test.ts',
+    'plugins/a/frontend/Tab.stories.ts',
+    'plugins/a/frontend/fixtures/host.ts',
+    'plugins/a/frontend/deck/fixtures/deck.ts',
+    'plugins/a/frontend/deck/testdata/deck.json',
+    'plugins/a/frontend/testing/noLayout.ts',
+  ]
+  assert.deepEqual(findPluginSliceShapeViolations(files), [])
+  assert.deepEqual(listPluginSlices(files), ['a/deck', 'a/preset'])
+})
+
+test('a file at the frontend root besides the entry, the words, the types and the stylesheet is reported', () => {
+  const found = findPluginSliceShapeViolations([...SLICED, 'plugins/a/frontend/kind.ts', 'plugins/a/frontend/Tab.vue'])
+  assert.deepEqual(
+    found.map((one) => one.file),
+    ['plugins/a/frontend/kind.ts', 'plugins/a/frontend/Tab.vue'],
+  )
+})
+
+test('a slice file outside the segments, a folder that is no segment and a slice with no index are reported', () => {
+  const found = findPluginSliceShapeViolations([
+    ...SLICED,
+    'plugins/a/frontend/deck/kind.ts',
+    'plugins/a/frontend/deck/wire/errors.ts',
+    'plugins/a/frontend/review/ui/Review.vue',
+  ])
+  assert.deepEqual(
+    found.map((one) => one.file),
+    ['plugins/a/frontend/deck/kind.ts', 'plugins/a/frontend/deck/wire/errors.ts', 'plugins/a/frontend/review'],
+  )
+  assert.match(found[2].symbol, /the slice review has no index.ts/)
+})
+
+test('the slice rule of the golden configuration refuses a deep import and a sibling slice in a planted frontend', () => {
+  assert.deepEqual(lintPlantedFrontend(PLANTED_SLICE_FRONTEND), PLANTED_SLICE_REFUSALS)
+})
+
+test('the slice rule of the golden configuration passes a frontend that reaches a slice through its index', () => {
+  const files = {
+    ...PLANTED_SLICE_FRONTEND,
+    'frontend/index.ts': "import { alpha } from './alpha'\nexport const both = [alpha]\n",
+    'frontend/beta/ui/count.ts': "import { shared } from '../../lib/shared'\nexport const count = shared\n",
+    'frontend/lib/shared.ts': 'export const shared = 2\n',
+  }
+  assert.deepEqual(lintPlantedFrontend(files), {})
 })

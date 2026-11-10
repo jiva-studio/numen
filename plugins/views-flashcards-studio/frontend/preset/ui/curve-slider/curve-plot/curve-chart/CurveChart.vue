@@ -13,7 +13,7 @@ import {
   PLOT_WIDTH,
   yOfGridline,
 } from '../../../../lib/plot'
-import { WORDS as words } from '../../../../words'
+import { WORDS as words } from '../../../../lib/words'
 import type { CurveSliderState } from '../../useCurveSlider'
 import '../../curve-slider.css'
 

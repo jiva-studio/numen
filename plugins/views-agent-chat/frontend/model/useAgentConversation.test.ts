@@ -6,7 +6,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import { nextTick, ref, shallowRef } from 'vue'
-import type { Conversation, Turn } from '../thread'
+import type { Conversation } from '../thread'
+import type { Turn } from '../types'
 import type { AgentModel, TextRange } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 import { createLinkResolver } from '../fixtures/links'

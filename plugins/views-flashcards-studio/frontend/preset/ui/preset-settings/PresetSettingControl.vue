@@ -4,20 +4,12 @@
  */
 import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Slider, Switch } from '@numen/ui'
-import { WeekdayChips, WEEK, type Day } from '../../../ui/weekday-chips'
-import {
-  type PresetTabState,
-  type SettingValue,
-  BUDGET_UNITS,
-  LOADS,
-  RULES,
-  WHOLE_LOAD,
-  getLoadOn,
-  setLoadOn,
-  type BudgetUnit,
-} from '../../types'
+import { WeekdayChips, WEEK, type Day } from '../weekday-chips'
+import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, getLoadOn, setLoadOn, type BudgetUnit } from '../../../lib/presets'
 import { getFieldCount, getFieldLimits, getFieldValue, type Field } from '../../lib/fields'
-import { WORDS as words } from '../../words'
+import { WORDS as words } from '../../lib/words'
+import type { PresetTabState } from '../../model/types'
+import type { SettingValue } from '../../lib/settings'
 
 // --- Props & Emits ---
 const props = defineProps<{
