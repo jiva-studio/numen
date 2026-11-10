@@ -151,6 +151,18 @@ Behavior that depends on layout, paint order, focus-visible or pointer geometry 
 
 [`libraries.md`](libraries.md) gives, for each, what it may import, who may import it, and the test for "does this belong here".
 
+## Size and role
+
+A structure is judged by what one object does, not by the interfaces it is cut into.
+
+- A library exposes one role: `@numen/ui` draws, `@numen/core-client` calls the core, `@numen/workbench` holds window chrome. An object that does two of these is split.
+- A source file has at most 500 lines. A package of a Go library is bounded by the same sizes as the core: structs by methods and fields, files by lines.
+- Shared code is a domain, a port, a use case or a named helper with a reason. A library is created for a role that two applications use, never for a helper.
+- A slice of a library is imported through its `index.ts` only.
+- A value of unknown type is parsed at one declared boundary (`@numen/core-client` for the wire) into a named type.
+- A `catch` handles the failure; a fallible operation returns `Result`.
+- Time, randomness, the viewport and storage each enter through one parameter; production code adds no seam for a test double.
+
 ## What the checks enforce
 
 [`checks.md`](checks.md) lists each structural check and lint rule by what it forbids. In short: imports follow the package matrix and the layer order; `@numen/ui` and `@numen/workbench` import no domain or wire package; time, randomness and measuring enter as parameters; styles use tokens; no suppression comment exists; functions and Vue blocks stay under the shared limits.
