@@ -295,15 +295,17 @@ describe('a command that needs nothing', () => {
 
     expect(commands.palette.chooseItem('app:file.open', 'app:file.open')).toStrictEqual({
       id: 'app:file.open',
-      path: 'physics/Ontology.md',
-      vault: { id: 'physics', name: 'Physics' },
+      target: {
+        path: 'physics/Ontology.md',
+        vault: { id: 'physics', name: 'Physics' },
+        title: 'Ontology',
+        file: '',
+        others: [],
+        kind: 'note',
+        tab: 'tab',
+      },
       note: null,
-      title: 'Ontology',
-      file: '',
-      others: [],
       name: '',
-      kind: 'note',
-      tab: 'tab',
     })
   })
 
@@ -344,9 +346,11 @@ describe('the command that makes a note, run over a folder', () => {
 
     expect(started).toMatchObject({
       id: 'app:note.create',
-      path: 'physics',
+      target: {
+        path: 'physics',
+        isFolder: true,
+      },
       name: '',
-      isFolder: true,
     })
   })
 
@@ -375,9 +379,11 @@ describe('the command that makes a note, run over a folder', () => {
 
     expect(started).toMatchObject({
       id: 'app:folder.create',
-      path: 'physics',
+      target: {
+        path: 'physics',
+        isFolder: true,
+      },
       name: '',
-      isFolder: true,
     })
   })
 
@@ -424,15 +430,17 @@ describe('a command that asks for a name', () => {
 
     expect(chooseRow(commands)).toStrictEqual({
       id: 'app:note.createChild',
-      path: 'physics/Ontology.md',
-      vault: { id: 'physics', name: 'Physics' },
+      target: {
+        path: 'physics/Ontology.md',
+        vault: { id: 'physics', name: 'Physics' },
+        title: 'Ontology',
+        file: '',
+        others: [],
+        kind: 'note',
+        tab: 'tab',
+      },
       note: null,
-      title: 'Ontology',
-      file: '',
-      others: [],
       name: 'Entropy',
-      kind: 'note',
-      tab: 'tab',
     })
   })
 
@@ -460,7 +468,7 @@ describe('removing a note', () => {
     const invocation = commands.palette.startCommand('app:file.remove', front())
 
     expect(invocation?.id).toBe('app:file.remove')
-    expect(invocation?.path).toBe('physics/Ontology.md')
+    expect(invocation?.target.path).toBe('physics/Ontology.md')
   })
 
   it('carries every file it was over into the invocation', () => {
@@ -507,7 +515,7 @@ describe('a note that moves under an open step', () => {
 
     commands.palette.setTyped('Substance').catch(rethrow)
 
-    expect(chooseRow(commands)?.path).toBe('physics/Being.md')
+    expect(chooseRow(commands)?.target.path).toBe('physics/Being.md')
   })
 
   it('carries the tab holding it, so the invocation reaches it wherever it went', () => {
@@ -528,7 +536,7 @@ describe('a note that moves under an open step', () => {
 
     commands.palette.setTyped('Substance').catch(rethrow)
 
-    expect(chooseRow(commands)?.path).toBe('physics/Ontology.md')
+    expect(chooseRow(commands)?.target.path).toBe('physics/Ontology.md')
   })
 })
 
@@ -585,15 +593,17 @@ describe('a command that asks for a note', () => {
 
     expect(chooseRow(commands, 'physics/Entropy.md')).toStrictEqual({
       id: 'app:file.open',
-      path: 'physics/Entropy.md',
-      vault: { id: 'physics', name: 'Physics' },
+      target: {
+        path: 'physics/Entropy.md',
+        vault: { id: 'physics', name: 'Physics' },
+        title: 'Entropy',
+        file: '',
+        others: [],
+        kind: 'note',
+        tab: 'tab',
+      },
       note: null,
-      title: 'Entropy',
-      file: '',
-      others: [],
       name: '',
-      kind: 'note',
-      tab: 'tab',
     })
   })
 
@@ -708,15 +718,17 @@ describe('a command that offers a list the window holds', () => {
 
     expect(chooseRow(commands, 'preset:dracula')).toStrictEqual({
       id: THEME_ID,
-      path: 'physics/Ontology.md',
+      target: {
+        path: 'physics/Ontology.md',
+        title: 'Ontology',
+        file: '',
+        others: [],
+        kind: 'note',
+        tab: 'tab',
+        vault: { id: 'physics', name: 'Physics' },
+      },
       note: null,
-      title: 'Ontology',
-      file: '',
-      others: [],
       name: 'preset:dracula',
-      kind: 'note',
-      tab: 'tab',
-      vault: { id: 'physics', name: 'Physics' },
     })
   })
 
@@ -945,7 +957,7 @@ describe('a command that asks for a vault', () => {
 
     expect(chooseRow(commands, 'heat')).toMatchObject({
       id: 'app:vault.open',
-      vault: { id: 'heat', name: 'Heat' },
+      target: { vault: { id: 'heat', name: 'Heat' } },
     })
   })
 
@@ -1002,7 +1014,7 @@ describe('renaming the vault in front', () => {
     expect(chooseRow(commands)).toMatchObject({
       id: 'app:vault.rename',
       name: 'Heat',
-      vault: { id: 'physics', name: 'Physics' },
+      target: { vault: { id: 'physics', name: 'Physics' } },
     })
   })
 })
@@ -1044,7 +1056,7 @@ describe('a vault taken off the list', () => {
 
     expect(chooseRow(commands, 1)).toMatchObject({
       id: 'app:vault.remove',
-      vault: { id: 'heat', name: 'Heat' },
+      target: { vault: { id: 'heat', name: 'Heat' } },
     })
   })
 
@@ -1086,7 +1098,7 @@ describe('a vault taken off the list', () => {
     expect(commands.view.groups.value[0]?.items[0]?.isDisabled).toBe(false)
     expect(chooseRow(commands)).toMatchObject({
       id: 'app:vault.erase',
-      vault: { id: 'heat', name: 'Heat' },
+      target: { vault: { id: 'heat', name: 'Heat' } },
     })
   })
 
@@ -1777,7 +1789,7 @@ describe('a command started with the text typed for it', () => {
 
     const invocation = commands.palette.startCommand(id, front(), '  Entropy  ')
 
-    expect(invocation).toMatchObject({ id, name: 'Entropy', kind: 'note', tab: 'tab' })
+    expect(invocation).toMatchObject({ id, name: 'Entropy', target: { kind: 'note', tab: 'tab' } })
     expect(commands.navigation.step.value).toBe(stepBefore)
     expect(commands.navigation.crumb.value).toBe(crumbBefore)
   })
@@ -1872,10 +1884,12 @@ describe('the command that opens a document chosen as a result', () => {
       ),
     ).toMatchObject({
       id: 'app:file.open',
-      path: '',
-      file: 'library/a.bin',
-      title: 'Atlas',
-      selector: { page: 3 },
+      target: {
+        path: '',
+        file: 'library/a.bin',
+        title: 'Atlas',
+        selector: { page: 3 },
+      },
     })
   })
 

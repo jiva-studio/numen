@@ -35,7 +35,7 @@ const deleteText = async (
   if (invocation.name === '') return
   const outcome = await runDeclaredHandler(
     { pluginId: CORE_PLUGIN, command: COMMAND.deleteText },
-    { path: getFile(invocation), values: {}, itemId: invocation.name },
+    { path: getFile(invocation.target), values: {}, itemId: invocation.name },
   )
   if (!outcome.ok) deps.writeMessage(outcome.error, 'error')
 }

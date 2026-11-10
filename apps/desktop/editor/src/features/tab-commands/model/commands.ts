@@ -104,20 +104,20 @@ const createRows = (deps: TabCommandsDeps): readonly Command[] => {
 const requireTab =
   (run: (invocation: CommandInvocation) => void) =>
   (invocation: CommandInvocation): void => {
-    if (invocation.tab !== '') run(invocation)
+    if (invocation.target.tab !== '') run(invocation)
   }
 
 const withItem = (run: (tab: TabId, itemId: string) => void) =>
   requireTab((invocation) => {
-    if (invocation.name !== '') run(invocation.tab, invocation.name)
+    if (invocation.name !== '') run(invocation.target.tab, invocation.name)
   })
 
 /** The commands over a tab. */
 export const createTabCommands = (deps: TabCommandsDeps): FeatureCommands => ({
   commands: createRows(deps),
   handlers: {
-    [COMMAND.detachTab]: requireTab((invocation) => deps.detach(invocation.tab)),
-    [COMMAND.unlinkTab]: requireTab((invocation) => deps.tabLinks.unlinkTab(invocation.tab)),
+    [COMMAND.detachTab]: requireTab((invocation) => deps.detach(invocation.target.tab)),
+    [COMMAND.unlinkTab]: requireTab((invocation) => deps.tabLinks.unlinkTab(invocation.target.tab)),
     [COMMAND.moveTabToWindow]: withItem((tab, itemId) => deps.move(tab, itemId)),
     [COMMAND.linkTab]: withItem((tab, itemId) => deps.tabLinks.linkTabs(tab, itemId)),
   },

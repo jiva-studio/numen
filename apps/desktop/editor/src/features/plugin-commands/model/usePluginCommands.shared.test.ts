@@ -103,11 +103,13 @@ describe('a shared command that asks for a value', () => {
     await run?.(
       {
         id: 'app:link.import',
-        path: '',
+        target: {
+          path: '',
+          title: '',
+          others: [],
+          tab: '',
+        },
         name: '',
-        title: '',
-        others: [],
-        tab: '',
         values: { address: 'https://example.com/tides' },
       } as unknown as CommandInvocation,
       {} as CommandDeps,

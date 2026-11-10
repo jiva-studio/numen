@@ -102,7 +102,7 @@ describe('a command that asks for its arguments', () => {
     const invocation = chooseRow(commands)
 
     expect(invocation?.id).toBe('create-sample')
-    expect(invocation?.file).toBe('physics/Ontology.md')
+    expect(invocation?.target.file).toBe('physics/Ontology.md')
     expect(invocation?.values).toStrictEqual({ title: 'Verbs', form: 'Spanish' })
   })
 

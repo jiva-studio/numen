@@ -107,7 +107,7 @@ export function usePluginCommands(
         for (const unregister of unregisterAll) unregister()
         unregisterAll = list.map((cmd) =>
           registerCommand(cmd.id, async (invocation) => {
-            const note = await getCommandNote(invocation)
+            const note = await getCommandNote(invocation.target)
             if (invocation.values) {
               await pluginHost.commands.executeCommand(cmd.id, note, { values: invocation.values })
             } else if (pluginHost.commands.hasCommandItems(cmd.id) && invocation.name !== '') {

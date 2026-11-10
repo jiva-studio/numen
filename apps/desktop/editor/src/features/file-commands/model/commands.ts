@@ -25,10 +25,10 @@ const moveFileCommand = async (
   invocation: CommandInvocation,
   deps: FileCommandsDeps,
 ): Promise<void> => {
-  if (!invocation.name || invocation.name === invocation.path) return
-  const tab = await flushTab(invocation.path, deps.notes)
+  if (!invocation.name || invocation.name === invocation.target.path) return
+  const tab = await flushTab(invocation.target.path, deps.notes)
   if (tab.isWaiting) return deps.writeMessage(FILE_WORDS.unanswered, 'warning')
-  const answer = await moveFile(invocation.path, invocation.name)
+  const answer = await moveFile(invocation.target.path, invocation.name)
   if (answer.ok) return
   if (answer.error === 'alreadyExists') {
     return deps.writeMessage(FILE_WORDS.alreadyExists, 'error')
@@ -37,10 +37,10 @@ const moveFileCommand = async (
 }
 
 const getUntitledFolderPath = async (invocation: CommandInvocation): Promise<string> => {
-  if (!invocation.isFolder) return ''
-  const existing = (await listFiles(invocation.path)).map((one) => one.name)
+  if (!invocation.target.isFolder) return ''
+  const existing = (await listFiles(invocation.target.path)).map((one) => one.name)
   const name = generateUniqueName(existing, FILE_WORDS.untitledFolder)
-  return invocation.path ? `${invocation.path}/${name}` : name
+  return invocation.target.path ? `${invocation.target.path}/${name}` : name
 }
 
 const createFolderCommand = async (

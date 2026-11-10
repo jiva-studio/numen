@@ -84,7 +84,6 @@ export function createShellHost(
 
   const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
-  const pluginTabs = { close: (id?: string) => closeTab(id) }
 
   const addView = (view: PluginView): Disposable => addPluginView(views, view)
 

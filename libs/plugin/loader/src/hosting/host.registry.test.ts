@@ -230,7 +230,7 @@ describe('the views the plugins place in a slot of a bar', () => {
   const manifest = (view: string) =>
     ({
       contributes: { slots: [{ slot: 'statusBar.right', placed: { case: 'view', value: view } }] },
-    }) as unknown as Parameters<ReturnType<typeof createPluginHost>['createContext']>[1]
+    }) as unknown as Parameters<ReturnType<typeof createPluginHost>['lifecycle']['createContext']>[1]
   const entries = [
     { pluginId: 'second.plugin', slot: 'statusBar.right', view: 'update' },
     { pluginId: 'first.plugin', slot: 'statusBar.right', view: 'update' },

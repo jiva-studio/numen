@@ -20,7 +20,7 @@ import { SETTINGS } from '@/entities/tab'
 /** What each command of the palette evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
-  [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
+  [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.target.tab),
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
 }
 
@@ -33,7 +33,9 @@ async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promi
 }
 
 const withCurrentNotePath = (invocation: CommandInvocation, on: CommandDeps): CommandInvocation =>
-  invocation.note ? { ...invocation, path: on.notes.getPath(invocation.note) } : invocation
+  invocation.note
+    ? { ...invocation, target: { ...invocation.target, path: on.notes.getPath(invocation.note) } }
+    : invocation
 
 export async function runInvocation(
   invocation: CommandInvocation | null,

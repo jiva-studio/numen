@@ -55,8 +55,8 @@ const renameVault = async (
   invocation: CommandInvocation,
   deps: VaultCommandsDeps,
 ): Promise<void> => {
-  if (!invocation.name || invocation.name === invocation.vault.name) return
-  const answer = await vaults.rename(invocation.vault.id, invocation.name)
+  if (!invocation.name || invocation.name === invocation.target.vault.name) return
+  const answer = await vaults.rename(invocation.target.vault.id, invocation.name)
   if (!answer.ok) return deps.writeMessage(VAULT_WORDS.vaultErrors[answer.error], 'error')
   if (answer.value) deps.setVaultName({ id: answer.value.id, name: answer.value.name })
 }
@@ -66,7 +66,7 @@ const removeVault = async (
   deps: VaultCommandsDeps,
   shouldErase: boolean,
 ): Promise<void> => {
-  const error = await vaults.remove(invocation.vault.id, shouldErase)
+  const error = await vaults.remove(invocation.target.vault.id, shouldErase)
   if (error) deps.writeMessage(VAULT_WORDS.vaultErrors[error], 'error')
 }
 
@@ -156,7 +156,7 @@ export const createVaultCommands = (
 ): FeatureCommands => ({
   commands: createRows(agent),
   handlers: {
-    [COMMAND.openVault]: (invocation) => showVault(invocation.vault.id, deps),
+    [COMMAND.openVault]: (invocation) => showVault(invocation.target.vault.id, deps),
     [COMMAND.createVault]: () => addVault(deps),
     [COMMAND.renameVault]: (invocation) => renameVault(invocation, deps),
     [COMMAND.removeVault]: (invocation) => removeVault(invocation, deps, false),
