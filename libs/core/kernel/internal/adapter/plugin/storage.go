@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 // versionMarker is the file inside a plugin cache directory that records the version of the plugin
@@ -18,20 +19,35 @@ type storageRoots struct {
 	data  string
 }
 
+// Storage grants the plugins folders to keep files in: one cache folder and one data folder each,
+// and a cache folder and a data folder every plugin shares.
+type Storage struct {
+	t     *table
+	errs  *errorSink
+	mu    sync.RWMutex
+	roots storageRoots
+}
+
+func newStorage(t *table, errs *errorSink) *Storage {
+	return &Storage{t: t, errs: errs}
+}
+
 // SetStorageRoots sets the folders the plugin cache directories and plugin data directories are
 // created under, as <cacheRoot>/plugins/<plugin id> and <dataRoot>/plugins/<plugin id>. The
 // application chooses them from the platform's own folders.
-func (h *Host) SetStorageRoots(cacheRoot, dataRoot string) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.storage = storageRoots{cache: cacheRoot, data: dataRoot}
+func (s *Storage) SetStorageRoots(cacheRoot, dataRoot string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.roots = storageRoots{cache: cacheRoot, data: dataRoot}
 }
 
-func (h *Host) getStorageVars(pluginID string) ([]string, error) {
-	h.mu.RLock()
-	roots := h.storage
-	version := h.plugins[pluginID].Manifest.Version
-	h.mu.RUnlock()
+func (s *Storage) getStorageVars(pluginID string) ([]string, error) {
+	s.mu.RLock()
+	roots := s.roots
+	s.mu.RUnlock()
+	s.t.mu.RLock()
+	version := s.t.plugins[pluginID].Manifest.Version
+	s.t.mu.RUnlock()
 	if err := checkStorageID(pluginID); err != nil {
 		return nil, err
 	}
@@ -49,7 +65,7 @@ func (h *Host) getStorageVars(pluginID string) ([]string, error) {
 	}
 	if sharedData != "" {
 		vars = append(vars, "NUMEN_SHARED_DATA_DIR="+sharedData)
-		vars = append(vars, "NUMEN_MODELS_DIR="+h.GetModelsDir())
+		vars = append(vars, "NUMEN_MODELS_DIR="+s.GetModelsDir())
 	}
 	if roots.cache != "" {
 		dir := getPluginStorageDir(roots.cache, pluginID)
@@ -68,15 +84,15 @@ func (h *Host) getStorageVars(pluginID string) ([]string, error) {
 	return vars, nil
 }
 
-func (h *Host) removeCacheDir(pluginID string) {
-	h.mu.RLock()
-	root := h.storage.cache
-	h.mu.RUnlock()
+func (s *Storage) removeCacheDir(pluginID string) {
+	s.mu.RLock()
+	root := s.roots.cache
+	s.mu.RUnlock()
 	if root == "" || checkStorageID(pluginID) != nil {
 		return
 	}
 	if err := os.RemoveAll(getPluginStorageDir(root, pluginID)); err != nil {
-		h.reportError(fmt.Errorf("remove cache directory of plugin %s: %w", pluginID, err))
+		s.errs.report(fmt.Errorf("remove cache directory of plugin %s: %w", pluginID, err))
 	}
 }
 
@@ -134,33 +150,33 @@ const envModelsDir = "NUMEN_MODELS_DIR"
 
 // GetSharedDir returns the directory all plugins share for what can be computed again, or empty where
 // the host has no cache root. The host never deletes it: a plugin's version change leaves it alone.
-func (h *Host) GetSharedDir() string {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	if h.storage.cache == "" {
+func (s *Storage) GetSharedDir() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.roots.cache == "" {
 		return ""
 	}
-	return filepath.Join(h.storage.cache, sharedFolder)
+	return filepath.Join(s.roots.cache, sharedFolder)
 }
 
 // GetSharedDataDir returns the directory all plugins share for what is downloaded or made and cannot be
 // computed again, or empty where the host has no data root. The host never deletes it.
-func (h *Host) GetSharedDataDir() string {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	if h.storage.data == "" {
+func (s *Storage) GetSharedDataDir() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.roots.data == "" {
 		return ""
 	}
-	return filepath.Join(h.storage.data, sharedFolder)
+	return filepath.Join(s.roots.data, sharedFolder)
 }
 
 // GetModelsDir returns the folder where models are kept once for every plugin: NUMEN_MODELS_DIR when the
 // user sets it, else models inside the shared data directory. It is empty where the host has no data root.
-func (h *Host) GetModelsDir() string {
+func (s *Storage) GetModelsDir() string {
 	if dir := os.Getenv(envModelsDir); dir != "" {
 		return dir
 	}
-	shared := h.GetSharedDataDir()
+	shared := s.GetSharedDataDir()
 	if shared == "" {
 		return ""
 	}

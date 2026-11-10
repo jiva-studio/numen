@@ -14,16 +14,16 @@ func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			host := NewHost(testsupport.GetMachine(), "desktop.editor")
 			t.Cleanup(func() {
-				if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+				if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 					t.Error(err)
 				}
 			})
-			host.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+			host.Services.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 				"model": {ID: "model", EnvVars: map[string]string{name: "/evil"}},
 			}})
 			requirements := []manifest.DependencyRequirement{{ID: "model", Kind: manifest.DependencyKindModel}}
 
-			vars, err := host.getRuntimeVars(t.Context(), requirements)
+			vars, err := host.Processes.getRuntimeVars(t.Context(), requirements)
 
 			if err == nil {
 				t.Errorf("getRuntimeVars accepted the variable name %q: %v", name, vars)

@@ -33,37 +33,52 @@ type contentTypeLookup struct {
 	table   contentTypeTable
 }
 
+// ContentTypes gives a file the type of its name, as the table of types says, over the enabled
+// plugins, and keeps what it worked out until the set of enabled plugins changes.
+type ContentTypes struct {
+	t     *table
+	mu    sync.RWMutex
+	table contentTypeTable
+	cache contentTypeCache
+}
+
+func newContentTypes(t *table) *ContentTypes {
+	return &ContentTypes{t: t}
+}
+
 // SetContentTypeTable sets the table of the types of files. Until it is set, a file is of an
 // unknown type.
-func (h *Host) SetContentTypeTable(table contentTypeTable) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.contentTypes = table
-	h.typeCache.mu.Lock()
-	h.typeCache.key = ""
-	h.typeCache.mu.Unlock()
+func (c *ContentTypes) SetContentTypeTable(table contentTypeTable) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.table = table
+	c.cache.mu.Lock()
+	c.cache.key = ""
+	c.cache.mu.Unlock()
 }
 
 // GetContentType is the type of a file by its name, as the table gives it.
-func (h *Host) GetContentType(name string) domain.ContentType {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return h.getLookupLocked().getContentType(name)
+func (c *ContentTypes) GetContentType(name string) domain.ContentType {
+	c.t.mu.RLock()
+	defer c.t.mu.RUnlock()
+	return c.getLookupLocked().getContentType(name)
 }
 
 // ListExtensions lists, lowercase, sorted and without the dot, the extensions that give a file a
 // type the mask covers.
-func (h *Host) ListExtensions(mask domain.ContentType) []string {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return slices.Clone(h.listExtensionsLocked(h.getLookupLocked(), mask))
+func (c *ContentTypes) ListExtensions(mask domain.ContentType) []string {
+	c.t.mu.RLock()
+	defer c.t.mu.RUnlock()
+	return slices.Clone(c.listExtensionsLocked(c.getLookupLocked(), mask))
 }
 
-func (h *Host) getLookupLocked() contentTypeLookup {
-	lookup := contentTypeLookup{table: h.contentTypes}
-	if !h.safeMode {
-		lookup.plugins = slices.DeleteFunc(h.getPluginsInOrderLocked(), func(p manifest.Discovered) bool {
-			return !h.isPluginEnabledLocked(p.Manifest.ID)
+func (c *ContentTypes) getLookupLocked() contentTypeLookup {
+	c.mu.RLock()
+	lookup := contentTypeLookup{table: c.table}
+	c.mu.RUnlock()
+	if !c.t.safeMode {
+		lookup.plugins = slices.DeleteFunc(c.t.getPluginsInOrderLocked(), func(p manifest.Discovered) bool {
+			return !c.t.isPluginEnabledLocked(p.Manifest.ID)
 		})
 	}
 	return lookup
@@ -84,18 +99,18 @@ func (l contentTypeLookup) getContentType(name string) domain.ContentType {
 	return l.table.GetContentType(name)
 }
 
-func (h *Host) openCacheLocked(lookup contentTypeLookup) *contentTypeCache {
-	h.typeCache.mu.Lock()
-	if key := lookup.getKey(); h.typeCache.key != key || h.typeCache.extensions == nil {
-		h.typeCache.key = key
-		h.typeCache.extensions = map[domain.ContentType][]string{}
-		h.typeCache.opened = map[string]map[string][]string{}
+func (c *ContentTypes) openCacheLocked(lookup contentTypeLookup) *contentTypeCache {
+	c.cache.mu.Lock()
+	if key := lookup.getKey(); c.cache.key != key || c.cache.extensions == nil {
+		c.cache.key = key
+		c.cache.extensions = map[domain.ContentType][]string{}
+		c.cache.opened = map[string]map[string][]string{}
 	}
-	return &h.typeCache
+	return &c.cache
 }
 
-func (h *Host) listExtensionsLocked(lookup contentTypeLookup, mask domain.ContentType) []string {
-	cache := h.openCacheLocked(lookup)
+func (c *ContentTypes) listExtensionsLocked(lookup contentTypeLookup, mask domain.ContentType) []string {
+	cache := c.openCacheLocked(lookup)
 	defer cache.mu.Unlock()
 	return lookup.listExtensionsCached(cache, mask)
 }
@@ -116,9 +131,9 @@ func (l contentTypeLookup) listExtensionsCached(cache *contentTypeCache, mask do
 	return candidates
 }
 
-func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
-	lookup := h.getLookupLocked()
-	cache := h.openCacheLocked(lookup)
+func (c *ContentTypes) listOpenedExtensionsLocked(pluginID string) map[string][]string {
+	lookup := c.getLookupLocked()
+	cache := c.openCacheLocked(lookup)
 	defer cache.mu.Unlock()
 	if found, ok := cache.opened[pluginID]; ok {
 		return found
@@ -145,11 +160,11 @@ func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 	return out
 }
 
-func (h *Host) listReaderInfosLocked(manifest manifest.Manifest) []plugindomain.ReaderInfo {
+func (c *ContentTypes) listReaderInfosLocked(manifest manifest.Manifest) []plugindomain.ReaderInfo {
 	if len(manifest.Contributes.Readers) == 0 {
 		return nil
 	}
-	byReader := h.listOpenedExtensionsLocked(manifest.ID)
+	byReader := c.listOpenedExtensionsLocked(manifest.ID)
 	out := make([]plugindomain.ReaderInfo, 0, len(manifest.Contributes.Readers))
 	for _, reader := range manifest.Contributes.Readers {
 		out = append(out, plugindomain.ReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})

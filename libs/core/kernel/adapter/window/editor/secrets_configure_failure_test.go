@@ -21,7 +21,7 @@ const (
 )
 
 func (w *window) getFailure(pluginID string) *plugin.Failure {
-	for _, info := range w.host.GetPluginInfos() {
+	for _, info := range w.host.Registry.GetPluginInfos() {
 		if info.ID == pluginID {
 			return info.Failure
 		}
@@ -79,7 +79,7 @@ func TestAPluginWhoseConfigureFailedReceivesTheListWithTheNextOperationThatChang
 
 	alpha.setFailure(nil)
 	attempts := alpha.attemptCount()
-	if err := w.host.Refresh(t.Context()); err != nil {
+	if err := w.host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if alpha.attemptCount() != attempts {

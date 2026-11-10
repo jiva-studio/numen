@@ -26,20 +26,20 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
 	var reported []error
-	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.GetPlugin("org.example.sample"); !ok {
+	if _, ok := host.Registry.GetPlugin("org.example.sample"); !ok {
 		t.Fatal("the valid plugin was not registered")
 	}
 	if len(reported) != 1 {
 		t.Fatalf("expected one reported problem, got %v", reported)
 	}
 	var failed []PluginStatus
-	for _, status := range host.GetPluginStatuses() {
+	for _, status := range host.Registry.GetPluginStatuses() {
 		if status.Failed {
 			failed = append(failed, status)
 		}
@@ -53,28 +53,28 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
-	host.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
+	host.Processes.SetLauncher(startSleepLauncher(t, &atomic.Int32{}, nil))
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("org.example.sample")
-	exited := host.supervisors["org.example.sample"].GetExitSignal()
+	host.Activation.Release("org.example.sample")
+	exited := host.Registry.t.supervisors["org.example.sample"].GetExitSignal()
 
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.GetPlugin("org.example.sample"); ok {
+	if _, ok := host.Registry.GetPlugin("org.example.sample"); ok {
 		t.Fatal("a plugin removed from disk is still registered")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errPluginNotFound) {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errPluginNotFound) {
 		t.Fatalf("expected errPluginNotFound, got %v", err)
 	}
 }
@@ -83,16 +83,16 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	var started atomic.Int32
-	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
+	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("org.example.sample")
-	exited := host.supervisors["org.example.sample"].GetExitSignal()
+	host.Activation.Release("org.example.sample")
+	exited := host.Registry.t.supervisors["org.example.sample"].GetExitSignal()
 
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
 	data, err := os.ReadFile(manifestPath)
@@ -103,23 +103,23 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 	if err := os.WriteFile(manifestPath, updated, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	p, ok := host.GetPlugin("org.example.sample")
+	p, ok := host.Registry.GetPlugin("org.example.sample")
 	if !ok || p.Manifest.Description != "changed" {
 		t.Fatalf("expected the changed manifest to be registered, got %+v", p.Manifest)
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive after the manifest change failed: %v", err)
 	}
-	host.Release("org.example.sample")
+	host.Activation.Release("org.example.sample")
 	if started.Load() != 2 {
 		t.Fatalf("expected the plugin to be launched again, got %d launches", started.Load())
 	}
-	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -128,7 +128,7 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
@@ -136,15 +136,15 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if _, ok := host.GetPlugin("org.example.sample"); !ok {
+	if _, ok := host.Registry.GetPlugin("org.example.sample"); !ok {
 		t.Fatal("a plugin with a failed scan was unregistered")
 	}
 	failed := 0
-	for _, status := range host.GetPluginStatuses() {
+	for _, status := range host.Registry.GetPluginStatuses() {
 		if status.Failed {
 			failed++
 		}
@@ -162,14 +162,14 @@ func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	var wg sync.WaitGroup
 	for range 8 {
 		wg.Go(func() {
-			if err := host.Discover(); err != nil {
+			if err := host.Discovery.Discover(); err != nil {
 				t.Errorf("Discover failed: %v", err)
 			}
 		})
 	}
 	wg.Wait()
 
-	if plugins := host.GetPlugins(); len(plugins) != 1 {
+	if plugins := host.Registry.GetPlugins(); len(plugins) != 1 {
 		t.Fatalf("expected one plugin, got %d", len(plugins))
 	}
 }
@@ -177,20 +177,20 @@ func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
-	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.discoverMu.Lock()
+	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.Registry.t.discovering.Lock()
 
 	reply := make(chan error, 1)
 	calling := make(chan struct{})
 	go func() {
 		close(calling)
-		_, err := host.EnsureActive(t.Context(), "org.example.sample")
+		_, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
 		reply <- err
 	}()
 	<-calling
 	runtime.Gosched()
 
-	if host.discoverMu.TryRLock() {
+	if host.Registry.t.discovering.TryRLock() {
 		t.Fatal("the discovery lock is not held")
 	}
 	select {
@@ -198,11 +198,11 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
-	host.discoverMu.Unlock()
+	host.Registry.t.discovering.Unlock()
 	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }

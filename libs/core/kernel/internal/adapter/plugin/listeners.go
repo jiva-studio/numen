@@ -9,9 +9,11 @@ import (
 	"net"
 	"slices"
 	"strconv"
+	"sync"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -34,19 +36,36 @@ var (
 	errListenerBind = errors.New("listener port not bound")
 )
 
+// Listeners binds the ports the plugins declare as listeners and forwards each connection to the
+// plugin, which it starts when a connection arrives.
+type Listeners struct {
+	t          *table
+	clock      machineport.Clock
+	errs       *errorSink
+	failures   *Failures
+	activation *Activation
+
+	mu       sync.Mutex
+	bindings map[string]map[string]listenerBinding
+}
+
+func newListeners(t *table, clock machineport.Clock, errs *errorSink, failures *Failures) *Listeners {
+	return &Listeners{t: t, clock: clock, errs: errs, failures: failures, bindings: make(map[string]map[string]listenerBinding)}
+}
+
 // listenerBinding is a bound listener port and the proxy that forwards its connections.
 type listenerBinding struct {
 	port  int
 	proxy *portproxy.Proxy
 }
 
-func (h *Host) getWantedPortsLocked(pluginID string) (map[string]int, error) {
-	p, ok := h.plugins[pluginID]
-	if !ok || h.isClosed || h.safeMode || !h.isPluginEnabledLocked(pluginID) {
+func (l *Listeners) getWantedPortsLocked(pluginID string) (map[string]int, error) {
+	p, ok := l.t.plugins[pluginID]
+	if !ok || l.t.isClosed || l.t.safeMode || !l.t.isPluginEnabledLocked(pluginID) {
 		return nil, nil
 	}
 	ports := make(map[string]int, len(p.Manifest.Contributes.Listeners))
-	settings := h.getPluginSettingsLocked(pluginID)
+	settings := l.t.getPluginSettingsLocked(pluginID)
 	for _, declared := range p.Manifest.Contributes.Listeners {
 		if declared.PortSetting == "" {
 			ports[declared.Name] = declared.Port
@@ -80,13 +99,13 @@ func readPort(value any) (int, bool) {
 	return int(number), true
 }
 
-func (h *Host) checkListenerPort(ctx context.Context, pluginID, key string, value any) error {
-	h.listenersMu.Lock()
-	defer h.listenersMu.Unlock()
-	h.mu.RLock()
-	p, ok := h.plugins[pluginID]
-	isBinding := ok && !h.isClosed && !h.safeMode && h.isPluginEnabledLocked(pluginID)
-	h.mu.RUnlock()
+func (l *Listeners) checkPort(ctx context.Context, pluginID, key string, value any) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.t.mu.RLock()
+	p, ok := l.t.plugins[pluginID]
+	isBinding := ok && !l.t.isClosed && !l.t.safeMode && l.t.isPluginEnabledLocked(pluginID)
+	l.t.mu.RUnlock()
 	if !ok {
 		return nil
 	}
@@ -99,7 +118,7 @@ func (h *Host) checkListenerPort(ctx context.Context, pluginID, key string, valu
 			return fmt.Errorf("listener %s of plugin %s: setting %s = %v: %w",
 				declared.Name, pluginID, key, value, errListenerPortValue)
 		}
-		if !isBinding || h.listeners[pluginID][declared.Name].port == port {
+		if !isBinding || l.bindings[pluginID][declared.Name].port == port {
 			continue
 		}
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
@@ -114,65 +133,69 @@ func (h *Host) checkListenerPort(ctx context.Context, pluginID, key string, valu
 	return nil
 }
 
-func (h *Host) syncAllListeners(ctx context.Context) {
-	h.listenersMu.Lock()
-	ids := slices.Collect(maps.Keys(h.listeners))
-	h.listenersMu.Unlock()
-	h.mu.RLock()
-	for id := range h.plugins {
+func (l *Listeners) syncAll(ctx context.Context) {
+	l.mu.Lock()
+	ids := slices.Collect(maps.Keys(l.bindings))
+	l.mu.Unlock()
+	l.t.mu.RLock()
+	for id := range l.t.plugins {
 		if !slices.Contains(ids, id) {
 			ids = append(ids, id)
 		}
 	}
-	h.mu.RUnlock()
+	l.t.mu.RUnlock()
 	slices.Sort(ids)
 	for _, id := range ids {
-		h.syncListenersAndReport(ctx, id)
+		l.RefreshListeners(ctx, id)
 	}
 }
 
-func (h *Host) syncListenersAndReport(ctx context.Context, pluginID string) {
-	if err := h.syncListeners(ctx, pluginID); err != nil && !errors.Is(err, errListenerBind) {
-		h.reportError(err)
+// RefreshListeners syncs the listeners of the plugin with its settings and reports a failure that is not
+// already recorded as the failure of the plugin.
+func (l *Listeners) RefreshListeners(ctx context.Context, pluginID string) {
+	if err := l.SyncListeners(ctx, pluginID); err != nil && !errors.Is(err, errListenerBind) {
+		l.errs.report(err)
 	}
 }
 
-func (h *Host) syncListeners(ctx context.Context, pluginID string) error {
-	h.listenersMu.Lock()
-	defer h.listenersMu.Unlock()
+// SyncListeners binds the ports the settings of the plugin ask for and closes the ones they no longer ask
+// for. A port that cannot be bound fails the plugin, and the error is returned.
+func (l *Listeners) SyncListeners(ctx context.Context, pluginID string) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
-	h.mu.RLock()
-	wantedPorts, err := h.getWantedPortsLocked(pluginID)
-	h.mu.RUnlock()
+	l.t.mu.RLock()
+	wantedPorts, err := l.getWantedPortsLocked(pluginID)
+	l.t.mu.RUnlock()
 
-	current := h.listeners[pluginID]
+	current := l.bindings[pluginID]
 	if err == nil && isSamePorts(current, wantedPorts) {
 		return nil
 	}
 	var next map[string]listenerBinding
 	if err == nil {
-		next, err = h.openChangedListeners(context.WithoutCancel(ctx), pluginID, current, wantedPorts)
+		next, err = l.openChangedListeners(context.WithoutCancel(ctx), pluginID, current, wantedPorts)
 	}
 	if err != nil {
 		if len(current) > 0 {
 			return err
 		}
 		err = fmt.Errorf("%w: %w", errListenerBind, err)
-		h.closeListenersLocked(pluginID)
-		h.failListenerBind(pluginID, err)
+		l.closeListenersLocked(pluginID)
+		l.failListenerBind(pluginID, err)
 		return err
 	}
 	for name, binding := range current {
 		if next[name] != binding {
-			h.closeListener(pluginID, binding.proxy)
+			l.closeListener(pluginID, binding.proxy)
 		}
 	}
-	h.clearListenerFailure(pluginID)
+	l.clearListenerFailure(pluginID)
 	if len(next) == 0 {
-		delete(h.listeners, pluginID)
+		delete(l.bindings, pluginID)
 		return nil
 	}
-	h.listeners[pluginID] = next
+	l.bindings[pluginID] = next
 	return nil
 }
 
@@ -188,7 +211,7 @@ func isSamePorts(current map[string]listenerBinding, wantedPorts map[string]int)
 	return true
 }
 
-func (h *Host) openChangedListeners(
+func (l *Listeners) openChangedListeners(
 	ctx context.Context, pluginID string, current map[string]listenerBinding, wantedPorts map[string]int,
 ) (map[string]listenerBinding, error) {
 	next := make(map[string]listenerBinding, len(wantedPorts))
@@ -200,10 +223,10 @@ func (h *Host) openChangedListeners(
 			continue
 		}
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
-		proxy, err := portproxy.Open(ctx, addr, h.createListenerTarget(pluginID, name), h.reportError)
+		proxy, err := portproxy.Open(ctx, addr, l.createTarget(pluginID, name), l.errs.report)
 		if err != nil {
 			for _, proxy := range openedProxies {
-				h.closeListener(pluginID, proxy)
+				l.closeListener(pluginID, proxy)
 			}
 			return nil, fmt.Errorf("bind listener %s of plugin %s: %w", name, pluginID, err)
 		}
@@ -213,62 +236,55 @@ func (h *Host) openChangedListeners(
 	return next, nil
 }
 
-func (h *Host) failListenerBind(pluginID string, err error) {
-	h.mu.RLock()
-	sup, ok := h.supervisors[pluginID]
+func (l *Listeners) failListenerBind(pluginID string, err error) {
+	l.t.mu.RLock()
+	sup, ok := l.t.supervisors[pluginID]
 	isFailed := ok && sup.IsActivationFailed()
-	h.mu.RUnlock()
+	l.t.mu.RUnlock()
 	if isFailed {
 		return
 	}
-	h.recordActivationFailure(pluginID, err)
-	h.deliverPluginFailures()
+	l.failures.recordActivationFailure(pluginID, err)
+	l.failures.deliver()
 }
 
-func (h *Host) clearListenerFailure(pluginID string) {
-	h.mu.RLock()
-	sup, ok := h.supervisors[pluginID]
-	h.mu.RUnlock()
+func (l *Listeners) clearListenerFailure(pluginID string) {
+	l.t.mu.RLock()
+	sup, ok := l.t.supervisors[pluginID]
+	l.t.mu.RUnlock()
 	if !ok {
 		return
 	}
 	if cause := sup.GetActivationFailure(); cause != nil && errors.Is(cause, errListenerBind) {
-		h.clearFailure(pluginID, sup)
+		l.failures.clear(pluginID, sup)
 	}
 }
 
-func (h *Host) closeListenersLocked(pluginID string) {
-	for _, binding := range h.listeners[pluginID] {
-		h.closeListener(pluginID, binding.proxy)
+func (l *Listeners) closeListenersLocked(pluginID string) {
+	for _, binding := range l.bindings[pluginID] {
+		l.closeListener(pluginID, binding.proxy)
 	}
-	delete(h.listeners, pluginID)
+	delete(l.bindings, pluginID)
 }
 
-func (h *Host) closeListener(pluginID string, proxy *portproxy.Proxy) {
+func (l *Listeners) closeListener(pluginID string, proxy *portproxy.Proxy) {
 	if err := proxy.Close(); err != nil {
-		h.reportError(fmt.Errorf("close a listener of plugin %s: %w", pluginID, err))
+		l.errs.report(fmt.Errorf("close a listener of plugin %s: %w", pluginID, err))
 	}
 }
 
-func (h *Host) closeAllListeners() {
-	h.listenersMu.Lock()
-	defer h.listenersMu.Unlock()
-	for id := range h.listeners {
-		h.closeListenersLocked(id)
+func (l *Listeners) closeAll() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for id := range l.bindings {
+		l.closeListenersLocked(id)
 	}
 }
 
-func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
+func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
-		endpoint, err := h.EnsureActive(ctx, pluginID)
-		h.mu.Lock()
-		_, isReported := h.reportedTargetFailures[pluginID]
-		if err == nil {
-			delete(h.reportedTargetFailures, pluginID)
-		} else {
-			h.reportedTargetFailures[pluginID] = struct{}{}
-		}
-		h.mu.Unlock()
+		endpoint, err := l.activation.EnsureActive(ctx, pluginID)
+		isReported := l.failures.markTargetResult(pluginID, err)
 		if err != nil {
 			err = fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)
 			if isReported {
@@ -276,10 +292,10 @@ func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 			}
 			return "", nil, err
 		}
-		release := func() { h.releaseEndpoint(pluginID, endpoint) }
-		h.mu.RLock()
-		port, ok := h.listenerPorts[pluginID][name]
-		h.mu.RUnlock()
+		release := func() { l.releaseEndpoint(pluginID, endpoint) }
+		l.t.mu.RLock()
+		port, ok := l.t.listenerPorts[pluginID][name]
+		l.t.mu.RUnlock()
 		if !ok {
 			release()
 			return "", nil, fmt.Errorf("plugin %s listener %s: %w", pluginID, name, errListenerNotReported)
@@ -288,24 +304,12 @@ func (h *Host) createListenerTarget(pluginID, name string) portproxy.Target {
 	}
 }
 
-func (h *Host) releaseEndpoint(pluginID string, endpoint plugindomain.Endpoint) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	sup, ok := h.supervisors[pluginID]
-	if !ok || h.endpoints[pluginID].Token != endpoint.Token {
+func (l *Listeners) releaseEndpoint(pluginID string, endpoint plugindomain.Endpoint) {
+	l.t.mu.RLock()
+	defer l.t.mu.RUnlock()
+	sup, ok := l.t.supervisors[pluginID]
+	if !ok || l.t.endpoints[pluginID].Token != endpoint.Token {
 		return
 	}
-	sup.Release(h.clock.Now())
-}
-
-func (h *Host) recordActivationFailure(pluginID string, cause error) *plugindomain.Failure {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	sup, ok := h.supervisors[pluginID]
-	if !ok || !sup.RecordActivationFailure(h.clock.Now(), cause) {
-		return nil
-	}
-	failure := h.newPluginFailureLocked(pluginID, sup, cause)
-	h.failedPlugins = append(h.failedPlugins, failure)
-	return &failure
+	sup.Release(l.clock.Now())
 }
