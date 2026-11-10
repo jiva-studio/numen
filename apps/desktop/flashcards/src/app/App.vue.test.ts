@@ -786,7 +786,7 @@ describe('the title bar of the flashcards window', () => {
           ...deps,
           dynamicImport: (url: string) =>
             url.includes('/md.numen.cards/')
-              ? new Promise<unknown>(() => undefined)
+              ? new Promise<object>(() => undefined)
               : deps.dynamicImport(url),
         },
       },
@@ -809,7 +809,7 @@ describe('the title bar of the flashcards window', () => {
           ...deps,
           dynamicImport: (url: string) =>
             url.includes('/org.example.ledger/')
-              ? new Promise<unknown>(() => undefined)
+              ? new Promise<object>(() => undefined)
               : deps.dynamicImport(url),
         },
       },

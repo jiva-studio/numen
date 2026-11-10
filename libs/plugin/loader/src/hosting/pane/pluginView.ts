@@ -15,7 +15,6 @@ type AsyncComponentRegistration = {
 /** A component as a plugin registers it, or the ES module that exports it as `default`. */
 export type PluginComponentSource = Component | { readonly default: Component }
 
-/** A function that is no component: it has no component field and takes no props, so it loads one. */
 function isLoaderFunction(comp: { readonly length: number }): boolean {
   return (
     !('setup' in comp || 'render' in comp || 'props' in comp || '__name' in comp) &&

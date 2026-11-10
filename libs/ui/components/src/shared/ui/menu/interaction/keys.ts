@@ -21,7 +21,7 @@ export interface MenuRowHandle extends RowHandle {
   readonly getElement: () => HTMLElement | null
 }
 
-/** Whether a function ref received a menu row component rather than an element or nothing. */
+/** Whether the value is a menu row component, not an element or null. */
 export const isMenuRowHandle = (value: Unvalidated): value is MenuRowHandle =>
   typeof value === 'object' &&
   value !== null &&
