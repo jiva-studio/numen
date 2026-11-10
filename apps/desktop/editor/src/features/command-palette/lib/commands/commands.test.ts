@@ -50,12 +50,14 @@ describe('the commands over the vaults an installation holds', () => {
 })
 
 describe('the commands that ask for a choice among a few', () => {
-  it('are none of the editor, since the settings offer theirs', () => {
+  it('are the commands over a tab and a text version only, since the settings offer theirs', () => {
     const choosing = createAppCommands()
       .filter((one) => one.input === 'items')
       .map((one) => one.id)
 
-    expect(choosing).toStrictEqual([])
+    expect(choosing.sort()).toStrictEqual(
+      ['app:tab.moveToWindow', 'app:tab.link', 'app:version.delete'].sort(),
+    )
   })
 })
 

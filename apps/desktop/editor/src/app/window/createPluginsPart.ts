@@ -18,13 +18,8 @@ import { useDeclaredCommands } from '../commands/declaredCommands'
 import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'
-import { getAppCommandList, type initWindowKindsAndCommands } from './createCommandsPart'
-import {
-  getCommands,
-  getVaults,
-  type WindowContext,
-  type WindowCore,
-} from './createDisplayPart'
+import type { initWindowKindsAndCommands } from './createCommandsPart'
+import { getCommands, getVaults, type WindowContext, type WindowCore } from './createDisplayPart'
 import { getSettingsConfig } from '@/features/settings-commands'
 import type { useSettings } from './useSettings'
 import { createWindowCommands } from './windowCommands'
@@ -177,15 +172,12 @@ export function createWindowFrameServices(
 ) {
   const { frame } = base
   let tableIds: readonly string[] | undefined
-  const getAppCommands = () => getAppCommandList(ctx)
   const { items, runCommandToEnd } = getCommands(ctx).pluginRuns
   const windowCommands = createWindowCommands({
-    getAppIds: () => [
-      ...(tableIds ??= [
+    getAppIds: () =>
+      (tableIds ??= [
         ...new Set((ctx.featureCommands?.commands ?? []).map((one) => one.command ?? one.id)),
       ]),
-      ...getAppCommands().map((one) => one.id),
-    ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),
     runCommandToEnd,
     listItems: items.listCommandItems,

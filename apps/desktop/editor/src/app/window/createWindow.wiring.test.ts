@@ -117,7 +117,7 @@ vi.mock('@/features/background-tasks', async (original) => ({
     return { name: 'backgroundTasks' }
   },
 }))
-vi.mock('../commands/useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
+vi.mock('@/features/hotkeys', () => ({ useAppHotkeys: vi.fn() }))
 vi.mock('../tabs/tabLinkSession', () => ({
   createTabLinkSession: (args: unknown) => {
     h.args.tabLinkSession = args
@@ -415,6 +415,18 @@ describe('the parts of the window', () => {
     expect(h.f.kinds.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
     expect(h.args.featureWindow.getOpeningNote()).toBe('opening')
   })
+
+  it('hand the tab commands the moves and the links of the window', () => {
+    const window = createWindow()
+    const { tabs } = h.args.featureWindow
+
+    tabs.detach('t1')
+    tabs.move('t1', 'window-b')
+    expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
+    expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
+    expect(tabs.windowId).toBe(window.tabs.moves.windowId)
+    expect(tabs.tabLinks).toBe(h.f.tabLinks)
+  })
 })
 
 describe('what the window knows of a note', () => {
@@ -625,15 +637,7 @@ describe('the services a plugin is given', () => {
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
     expect(vaults?.getState()).toBeDefined()
-    expect(commands?.getIds()).toStrictEqual([
-      'app:vault.create',
-      'app:tab.detach',
-      'app:tab.unlink',
-      'app:tab.moveToWindow',
-      'app:tab.link',
-      'app:version.delete',
-      'org.example.sample:share.run',
-    ])
+    expect(commands?.getIds()).toStrictEqual(['app:vault.create', 'org.example.sample:share.run'])
     expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })
     expect(backgroundTasks).toStrictEqual({ name: 'backgroundTasks' })
   })

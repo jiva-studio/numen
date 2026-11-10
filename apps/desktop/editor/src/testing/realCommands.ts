@@ -50,7 +50,9 @@ const PLUGINS_DIRECTORY = resolve(import.meta.dirname, '../../../../../plugins')
 
 /** The manifest of the plugin in the folder, read from its JSON file. */
 export const readManifest = (folder: string): PluginManifest =>
-  JSON.parse(readFileSync(resolve(PLUGINS_DIRECTORY, folder, 'manifest.json'), 'utf8')) as PluginManifest
+  JSON.parse(
+    readFileSync(resolve(PLUGINS_DIRECTORY, folder, 'manifest.json'), 'utf8'),
+  ) as PluginManifest
 
 /** The manifests of every plugin of the repository. */
 export const readAllManifests = (): readonly PluginManifest[] =>
@@ -175,6 +177,22 @@ export function createRealWindow(parts: RealWindowParts) {
       setVaultName: () => undefined,
       reload: () => undefined,
       writeMessage: options.writeMessage,
+      tabs: {
+        tabLinks: {
+          tabs: [],
+          windows: [],
+          linkTabs: () => undefined,
+          unlinkTab: () => undefined,
+          getGroupOf: () => null,
+        },
+        getTabs: () => [],
+        getKind: () => undefined,
+        isLinkable: () => false,
+        isAsking: () => false,
+        detach: () => undefined,
+        move: () => undefined,
+      },
+      listVersionItems: () => Promise.resolve([]),
     }),
     WORDS,
   )

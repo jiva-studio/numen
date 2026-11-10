@@ -29,8 +29,6 @@ const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
 const UI = new URL('shared/', EDITOR)
 // The slice the commands and their keystrokes stand in.
 const PALETTE = new URL('features/command-palette/', EDITOR)
-// Where the window adds the plugins' commands to its own.
-const APP = new URL('app/', EDITOR)
 // The window the palette is drawn in, as a plugin manifest names it.
 const TARGET = 'desktop.editor'
 const GO = new URL('../../../libs/core/kernel/', import.meta.url)
@@ -97,16 +95,16 @@ const declaring = (source, name, what) => {
 
 /**
  * The full id of every command of the window, by the name the table gives it. The
- * names are the keys of COMMAND in commandIds.ts, each filed under the owner app.
+ * names are the keys of COMMAND in ids.ts, each filed under the owner app.
  */
 const readCommandIds = async () => {
-  const source = await read(EDITOR, 'shared/commandIds.ts')
+  const source = await read(EDITOR, 'entities/command/lib/ids.ts')
   const ids = new Map(
     [...source.matchAll(/^\s*([A-Za-z]+):\s*formatAppCommandId\('([^']+)'\)/gm)].map(
       ([, name, id]) => [name, `app:${id}`],
     ),
   )
-  if (ids.size === 0) die('commandIds.ts no longer names its commands')
+  if (ids.size === 0) die('ids.ts no longer names its commands')
   const rows = source.matchAll(/^\s*([A-Za-z]+):\s*`\$\{COMMAND\.([A-Za-z]+)\}(#[a-z]+)`/gm)
   for (const [, name, command, argument] of rows) {
     const id = ids.get(command)
@@ -256,18 +254,19 @@ const rowsWithin = (whole, part, ids, path, seen = new Set()) => {
 }
 
 /**
- * The window's commands over the text versions of a file, read from versionCommands.ts: each row's
- * group, and its text from the words that file declares.
+ * The window's commands over the text versions of a file: each row's group is read from the
+ * version-commands slice, and its text from the words that slice declares.
  */
 const readVersionCommands = async () => {
-  const source = await read(APP, 'commands/versionCommands.ts')
-  const words = source.match(/const VERSION_WORDS = \{([^}]*)\}/)?.[1]
-  if (words === undefined) die('versionCommands.ts no longer declares its words')
+  const source = await read(EDITOR, 'features/version-commands/model/commands.ts')
+  const wordsSource = await read(EDITOR, 'features/version-commands/words.ts')
+  const words = wordsSource.match(/const VERSION_WORDS = \{([^}]*)\}/)?.[1]
+  if (words === undefined) die('version-commands/words.ts no longer declares its words')
   const rows = [...source.matchAll(/text:\s*VERSION_WORDS\.([A-Za-z]+),\s*group:\s*'([a-z]+)'/g)]
-  if (rows.length === 0) die('versionCommands.ts declares no command')
+  if (rows.length === 0) die('commands.ts declares no command')
   return rows.map(([, word, group]) => {
     const text = words.match(new RegExp(`\\b${word}:\\s*'([^']+)'`))?.[1]
-    if (!text) die(`versionCommands.ts has no words for '${word}'`)
+    if (!text) die(`version-commands/words.ts has no words for '${word}'`)
     return { text, group }
   })
 }
@@ -282,7 +281,7 @@ const spoken = (declared, command) => {
 
 /** That the window still draws a plugin's palette setting as its name and the setting's title. */
 const checkSettingCommands = async () => {
-  const source = await read(APP, 'window/settingCommands.ts')
+  const source = await read(EDITOR, 'features/settings-commands/model/settingCommands.ts')
   if (!source.includes('`${owner.name}: ${setting.title}`')) {
     die(
       'settingCommands.ts no longer names a plugin setting in the palette as its plugin and title',

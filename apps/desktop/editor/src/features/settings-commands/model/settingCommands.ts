@@ -8,7 +8,7 @@
  * and restored when the step is left without a choice.
  */
 import { parseWhen } from '@numen/plugin-loader'
-import type { Command } from '@/entities/command'
+import { SETTING_COMMAND_PREFIX, type Command } from '@/entities/command'
 import { getPaletteValues } from '@/shared/paletteValues'
 import type { StepGroup, StepRow } from '@/shared/steps'
 import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
@@ -54,7 +54,8 @@ export interface SettingPalette {
 }
 
 /** The id of the command of a setting: `setting:<owner>:<key>`, the key a path joined by dots. */
-export const getSettingCommandId = (owner: string, key: string): string => `setting:${owner}:${key}`
+export const getSettingCommandId = (owner: string, key: string): string =>
+  `${SETTING_COMMAND_PREFIX}${owner}:${key}`
 
 /** The owner and the key a command id names, and nothing for an id of another command. */
 export const parseSettingCommandId = (

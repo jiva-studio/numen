@@ -6,8 +6,7 @@
  * what each tab does itself.
  */
 import { getCommandOwner } from '@numen/plugin-loader'
-import { COMMAND as TAB_COMMAND, SETTING_COMMAND_PREFIX } from '@/shared/commandIds'
-import { COMMAND, COMMANDS_ROW, ROW } from './ids'
+import { COMMAND, COMMANDS_ROW, ROW, SETTING_COMMAND_PREFIX } from './ids'
 import {
   AppWindow,
   ArrowRightLeft,
@@ -65,13 +64,13 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   [COMMAND.renameNote, Type],
   [COMMAND.copyFilePath, Copy],
   [COMMAND.removeFile, Trash2],
-  [TAB_COMMAND.deleteText, FileX],
+  [COMMAND.deleteText, FileX],
   // tab
-  [TAB_COMMAND.closeTab, SquareX],
-  [TAB_COMMAND.detachTab, ExternalLink],
-  [TAB_COMMAND.unlinkTab, Link2Off],
-  [TAB_COMMAND.linkTab, Link2],
-  [TAB_COMMAND.moveTabToWindow, AppWindow],
+  [COMMAND.closeTab, SquareX],
+  [COMMAND.detachTab, ExternalLink],
+  [COMMAND.unlinkTab, Link2Off],
+  [COMMAND.linkTab, Link2],
+  [COMMAND.moveTabToWindow, AppWindow],
   // vault
   [COMMAND.openVault, FolderRoot],
   [COMMAND.createVault, Plus],

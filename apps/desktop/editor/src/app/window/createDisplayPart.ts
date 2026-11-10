@@ -15,8 +15,6 @@ import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
 import type { TabsHold } from '@/features/vault-commands'
 import type { useCommands } from '../commands/useCommands'
-import type { TabCommands } from '../tabs/tabCommands'
-import type { createVersionCommands } from '../commands/versionCommands'
 import type { useDeclaredCommands } from '../commands/declaredCommands'
 import type { CommandItemLists } from '../commands/commandItemLists'
 import { useWindowDisplay } from './useWindowDisplay'
@@ -54,8 +52,6 @@ export interface WindowContext {
   kinds?: ReturnType<typeof useTabKinds>
   vaults?: ReturnType<typeof useVaults>
   tabsHold?: TabsHold
-  tabCommands?: TabCommands
-  versionCommands?: ReturnType<typeof createVersionCommands>
   featureCommands?: FeatureCommands
 }
 

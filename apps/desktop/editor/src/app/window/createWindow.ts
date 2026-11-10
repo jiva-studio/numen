@@ -7,13 +7,9 @@ import { ref, type Ref } from 'vue'
 import { useWindowFrame } from '@numen/workbench'
 import { runSupport } from '@/features/command-palette'
 import { createMessageLog } from '@/shared/notices/messages'
-import { useAppHotkeys } from '../commands/useAppHotkeys'
+import { useAppHotkeys } from '@/features/hotkeys'
 import { watchPluginSettings } from '../plugins/useWindowPlugins'
-import {
-  createNoteKindReader,
-  createWindowVersionCommands,
-  initWindowKindsAndCommands,
-} from './createCommandsPart'
+import { createNoteKindReader, initWindowKindsAndCommands } from './createCommandsPart'
 import {
   getCommands,
   getKinds,
@@ -27,7 +23,6 @@ import { createPluginsCore, createWindowFrameServices, getPluginViews } from './
 import {
   createTabCloser,
   createTabsCore,
-  createWindowTabCommands,
   createWindowTabLinks,
   createWindowTabMoves,
   openPlacedTabs,
@@ -98,8 +93,10 @@ export const createWindow = () => {
   const base = createWindowCore(settingsHolder)
   const ctx: WindowContext = {}
   const services = initWindowServices(base, ctx, settingsHolder)
-  const kindsAndCommands = initWindowKindsAndCommands(base, ctx, services)
   const { editing, window, settings } = services
+  const closeTab = createTabCloser(base)
+  const moves = createWindowTabMoves(base, editing, closeTab)
+  const kindsAndCommands = initWindowKindsAndCommands(base, ctx, services, moves)
   watchPluginSettings(settings, base.pluginLoader, (error) =>
     base.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
   )
@@ -108,10 +105,6 @@ export const createWindow = () => {
   const openTabs = useWindowOpenTabs(base, isWritingTabs)
   ctx.tabsHold = openTabs
 
-  const closeTab = createTabCloser(base)
-  const moves = createWindowTabMoves(base, editing, closeTab)
-  ctx.tabCommands = createWindowTabCommands(base, moves)
-  ctx.versionCommands = createWindowVersionCommands(base)
   const isHighlighted = ref(false)
   useAppHotkeys(getCommands(ctx).onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {

@@ -28,7 +28,16 @@ export const COMMAND = {
   removeVault: formatAppCommandId('vault.remove'),
   eraseVault: formatAppCommandId('vault.erase'),
   emptyTrash: formatAppCommandId('trash.empty'),
+  deleteText: formatAppCommandId('version.delete'),
+  closeTab: formatAppCommandId('tab.close'),
+  detachTab: formatAppCommandId('tab.detach'),
+  unlinkTab: formatAppCommandId('tab.unlink'),
+  moveTabToWindow: formatAppCommandId('tab.moveToWindow'),
+  linkTab: formatAppCommandId('tab.link'),
 } as const
+
+/** What the id of the command of a setting starts with: `setting:<owner>:<key>`. */
+export const SETTING_COMMAND_PREFIX = 'setting:'
 
 /**
  * The rows of the palette that run a command with an argument. A row is filed under its own key;

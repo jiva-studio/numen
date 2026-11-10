@@ -1,8 +1,7 @@
 /**
  * The commands the palette itself owns: close the tab in front, search the vault, open the settings.
  */
-import { COMMAND as ID, createRowKeys, withWhen, type Command } from '@/entities/command'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND, createRowKeys, withWhen, type Command } from '@/entities/command'
 import type { Words } from '../../words'
 
 export const createWindowCommands = (words: Words, agent: string): readonly Command[] => [
@@ -14,14 +13,14 @@ export const createWindowCommands = (words: Words, agent: string): readonly Comm
     ...withWhen('window.isTabOpen'),
   },
   {
-    id: ID.searchVault,
+    id: COMMAND.searchVault,
     text: words.searchVault,
     keys: words.findKeys,
     group: 'window',
     ...withWhen(''),
   },
   {
-    id: ID.openSettings,
+    id: COMMAND.openSettings,
     text: words.openSettings,
     group: 'settings',
     iconName: 'settings',

@@ -164,6 +164,7 @@ describe('the commands as they open', () => {
     const { commands } = createPalette()
 
     expect(getItemIds(commands.groups)).toStrictEqual({
+      file: ['app:version.delete'],
       note: [
         'app:file.open',
         'app:file.reveal#plex',
@@ -175,7 +176,13 @@ describe('the commands as they open', () => {
         'app:file.remove',
         'app:file.copyPath',
       ],
-      window: ['app:note.create', 'app:folder.create', 'app:tab.close', 'app:vault.search'],
+      window: [
+        'app:note.create',
+        'app:folder.create',
+        'app:tab.close',
+        'app:vault.search',
+        'app:tab.detach',
+      ],
       settings: ['app:settings.open'],
       vault: [
         'app:file.open#note',
@@ -203,7 +210,7 @@ describe('the commands as they open', () => {
 
   it('says which key reaches a command away from the palette', () => {
     const { commands } = createPalette()
-    const window = commands.groups.value[1]?.items ?? []
+    const window = commands.groups.value.find((group) => group.id === 'window')?.items ?? []
 
     expect(window.find((item) => item.id === 'app:vault.search')?.keys).toBe(words.findKeys)
   })
@@ -248,7 +255,8 @@ describe('what is in front', () => {
     const { commands } = createPalette({ isReady: false })
 
     expect(getItemIds(commands.groups)).toStrictEqual({
-      window: ['app:tab.close', 'app:vault.search'],
+      file: ['app:version.delete'],
+      window: ['app:tab.close', 'app:vault.search', 'app:tab.detach'],
       settings: ['app:settings.open'],
       vault: [
         'app:vault.open',
@@ -463,6 +471,7 @@ describe('removing a note', () => {
 
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
       'note',
+      'file',
       'window',
       'settings',
       'vault',
@@ -727,6 +736,7 @@ describe('leaving a step', () => {
     expect(commands.open.value).toBe(true)
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual([
       'note',
+      'file',
       'window',
       'settings',
       'vault',

@@ -4,7 +4,6 @@
 import { formatError } from '@/shared/api/errors'
 import { computed } from 'vue'
 import type { PluginHost, SlotHost } from '@numen/plugin-loader'
-import { runDeclaredHandler } from '@/entities/plugin'
 import { cancelTask } from '@/entities/window'
 import {
   createBackgroundTaskHost,
@@ -29,7 +28,6 @@ import {
 } from '../commands/featureCommands'
 import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useCommands } from '../commands/useCommands'
-import { createVersionCommands } from '../commands/versionCommands'
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import {
@@ -43,6 +41,7 @@ import {
 } from './createDisplayPart'
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
+import type { createWindowTabMoves } from './createTabsPart'
 import { createTargetResolver } from './useWindowDisplayOptions'
 import { useTabKinds } from './useTabKinds'
 
@@ -100,8 +99,14 @@ function isPaletteOpen(ctx: WindowContext): boolean {
   return commands ? commands.palette.open.value || commands.commands.open.value : false
 }
 
-function initFeatureCommands(base: WindowCore, ctx: WindowContext, services: WindowServices) {
+function initFeatureCommands(
+  base: WindowCore,
+  ctx: WindowContext,
+  services: WindowServices,
+  moves: ReturnType<typeof createWindowTabMoves>,
+) {
   const { editing, window } = services
+  const { windowTabs, tabLinks } = base
   ctx.featureCommands = collectFeatureCommands(
     createFeatureDeps({
       making: editing.making,
@@ -117,6 +122,17 @@ function initFeatureCommands(base: WindowCore, ctx: WindowContext, services: Win
       setVaultName: getVaults(ctx).setVaultName,
       reload: getVaults(ctx).reload,
       writeMessage: base.writeMessage,
+      tabs: {
+        tabLinks,
+        getTabs: () => windowTabs.tabs.value,
+        getKind: (id) => windowTabs.getTab(id)?.kind.kind,
+        isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
+        windowId: moves.windowId,
+        isAsking: moves.isTabAsking,
+        detach: moves.detachTabInPlace,
+        move: moves.moveTab,
+      },
+      listVersionItems: base.itemLists.listItems,
     }),
     words,
   )
@@ -127,6 +143,7 @@ export function initWindowKindsAndCommands(
   base: WindowCore,
   ctx: WindowContext,
   services: WindowServices,
+  moves: ReturnType<typeof createWindowTabMoves>,
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
@@ -172,7 +189,7 @@ export function initWindowKindsAndCommands(
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
-  initFeatureCommands(base, ctx, services)
+  initFeatureCommands(base, ctx, services, moves)
 
   ctx.commands = initWindowCommands({
     windowTabs: base.windowTabs,
@@ -221,23 +238,6 @@ function createBackgroundTasks(
   })
 }
 
-export function createWindowVersionCommands(base: WindowCore) {
-  const versionCommands = createVersionCommands({
-    listItems: base.itemLists.listItems,
-    run: (command, path, itemId) =>
-      runDeclaredHandler({ pluginId: '', command }, { path, values: {}, itemId }),
-  })
-  versionCommands.register()
-  return versionCommands
-}
-
-export const getAppCommandList = (ctx: WindowContext): readonly Command[] => [
-  ...(ctx.tabCommands?.commands ?? []),
-  ...(ctx.versionCommands?.commands ?? []),
-]
-
-/** Every command of the editor: those of the features, then the rest of the application's. */
-export const getEditorCommandList = (ctx: WindowContext): readonly Command[] => [
-  ...(ctx.featureCommands?.commands ?? []),
-  ...getAppCommandList(ctx),
-]
+/** Every command of the editor, as the features declare them. */
+export const getEditorCommandList = (ctx: WindowContext): readonly Command[] =>
+  ctx.featureCommands?.commands ?? []

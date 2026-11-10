@@ -8,16 +8,15 @@
  */
 import { formatErrorMessage } from '@numen/core-client'
 import type { CommandDeps, CommandHandler } from './deps'
-import { COMMAND as ID, type CommandInvocation } from '@/entities/command'
+import { COMMAND, SETTING_COMMAND_PREFIX, type CommandInvocation } from '@/entities/command'
 import { SETTINGS } from '@/entities/tab'
-import { COMMAND, SETTING_COMMAND_PREFIX } from '@/shared/commandIds'
 export type { CommandDeps }
 
 /** What each command of the palette evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
-  [ID.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
+  [COMMAND.openSettings]: (_, on) => on.navigator.openTab(SETTINGS),
   [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
-  [ID.searchVault]: (_, on) => on.navigator.search(),
+  [COMMAND.searchVault]: (_, on) => on.navigator.search(),
 }
 
 const commandRegistry = new Map<string, CommandHandler>()
