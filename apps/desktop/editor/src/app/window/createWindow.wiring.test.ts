@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { Puzzle } from '@lucide/vue'
 import { getNamedIcon } from '@/shared/ui/icons'
-import { COMMAND, commands as commandRegistry } from '@/entities/command'
+import { COMMAND } from '@/entities/command'
 import { createInvocation } from '@/features/command-palette'
 import { answerCore } from '@/testing/coreAnswers'
 import { ref } from 'vue'
@@ -399,7 +399,7 @@ describe('the parts of the window', () => {
     const window = createWindow()
     const target = { ...window.palette.getTarget(), tab: 't1' }
 
-    const run = commandRegistry.get(COMMAND.detachTab)
+    const run = window.palette.commandDeps.registry.get(COMMAND.detachTab)
     await run?.(createInvocation(COMMAND.detachTab, target), window.palette.commandDeps)
 
     expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
@@ -409,7 +409,7 @@ describe('the parts of the window', () => {
     const window = createWindow()
     const target = { ...window.palette.getTarget(), tab: 't1' }
 
-    const run = commandRegistry.get(COMMAND.moveTabToWindow)
+    const run = window.palette.commandDeps.registry.get(COMMAND.moveTabToWindow)
     await run?.(
       createInvocation(COMMAND.moveTabToWindow, target, 'window-b'),
       window.palette.commandDeps,

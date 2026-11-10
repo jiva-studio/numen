@@ -4,7 +4,7 @@
  * provided run their commands with the dependencies of the window.
  */
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginServices } from '../plugins/pluginServices'
+import type { PluginServices } from '@/features/plugin-commands'
 import type * as PluginSupportModule from '../plugins/pluginSupport'
 import { COMMAND } from '@/entities/command'
 import { PALETTE_WORDS } from '@/features/command-palette'
@@ -61,7 +61,7 @@ describe('the files a plugin is provided', () => {
   it('run their commands with the dependencies of the window', async () => {
     await mountWindow()
 
-    await provided.read?.().files?.createFolder('Zoology')
+    await provided.read?.().files.createFolder('Zoology')
 
     expect(requests.folders).toStrictEqual(['Zoology'])
   })

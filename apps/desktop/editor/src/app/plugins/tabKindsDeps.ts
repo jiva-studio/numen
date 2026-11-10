@@ -7,7 +7,7 @@ import type { MessageLog } from '@/shared/model/notices/messages'
 import type { TabLinksState } from '@/features/tab-linking'
 import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { WindowDisplay } from '@/features/window-display'
-import type { PluginNotes } from './pluginNotes'
+import type { PluginNotes } from '@/features/plugin-commands'
 import type { Component } from 'vue'
 
 export interface WindowKindsDeps {

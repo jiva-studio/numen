@@ -133,7 +133,7 @@ export const createWindow = () => {
 
   if (isSecondaryWindow()) closeWhenEmpty(base, isLayoutReady)
 
-  const frameServices = createWindowFrameServices(base, services, commands)
+  const frameServices = createWindowFrameServices(base, services, commands, kinds)
   return {
     frame: base.frame,
     tabs: getTabsApi(base, { closeTab, openTabs, isHighlighted, moves }),

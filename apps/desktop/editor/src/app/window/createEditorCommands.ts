@@ -19,6 +19,7 @@ import type { createMessageLog, MessageWriter } from '@/shared/model/notices/mes
 import { WORDS as words } from '@/shared/ui/words'
 import {
   type CommandItemLists,
+  type WindowFactsSource,
   getPaletteId,
   type useDeclaredCommands,
   createCommandNoteReader,
@@ -73,6 +74,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     knows: deps.knows,
     paletteLists: settings.paletteLists,
     runs: deps.runs,
+    registry: deps.registry,
     coverage: vaultsModule.coverage,
     reached: editing.reached,
     settingPalette: settings.settingPalette,
@@ -162,7 +164,7 @@ export function createEditorCommands(
   })
   services.renames.subscribe((renamed) => commands.commands.navigation.applyRenames(renamed))
 
-  base.plugins.facts.provide({
+  const facts: WindowFactsSource = {
     getAppCommands: () => featureCommands.commands,
     getValues: () => {
       const inFront = getTarget()
@@ -174,8 +176,8 @@ export function createEditorCommands(
         'window.isPaletteOpen': isPaletteOpen(commands),
       }
     },
-  })
-  return { getTarget, featureCommands, commands }
+  }
+  return { getTarget, featureCommands, commands, facts }
 }
 
 /** The kinds of tab the window declares, and the services the plugins are given from them. */
@@ -209,12 +211,14 @@ export function createWindowKinds(
     },
   })
 
-  base.plugins.pluginServices.provide({
-    ...kinds.services,
-    taskList: window.tasks,
-    backgroundTasks: createBackgroundTasks(base, window, settings),
-  })
-  return kinds
+  return {
+    ...kinds,
+    services: {
+      ...kinds.services,
+      taskList: window.tasks,
+      backgroundTasks: createBackgroundTasks(base, window, settings),
+    },
+  }
 }
 
 

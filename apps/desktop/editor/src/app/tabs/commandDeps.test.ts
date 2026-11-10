@@ -25,6 +25,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     } as never,
     reached: {} as never,
     runs: {} as never,
+    registry: { get: () => undefined },
     writeMessage: vi.fn(),
     ...override,
   }
