@@ -99,7 +99,8 @@ const createRows = (deps: TabCommandsDeps): readonly Command[] => {
       group: 'window',
       input: 'items',
       isAvailable: (target) => isMovable(target) && getWindows().length > 0,
-      listItems: () => getWindows().map((one) => ({ id: one.id, title: listing.getWindowName(one) })),
+      listItems: () =>
+        getWindows().map((one) => ({ id: one.id, title: listing.getWindowName(one) })),
     },
     {
       id: COMMAND.linkTab,

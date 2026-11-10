@@ -9,10 +9,7 @@ import { runSupport } from '@/features/command-palette'
 import { createMessageLog } from '@/shared/notices/messages'
 import { useAppHotkeys } from '@/features/hotkeys'
 import { watchPluginSettings } from '../plugins/useWindowPlugins'
-import {
-  createNoteKindReader,
-  initWindowKindsAndCommands,
-} from './createCommandsPart'
+import { createNoteKindReader, initWindowKindsAndCommands } from './createCommandsPart'
 import {
   getCommands,
   getKinds,

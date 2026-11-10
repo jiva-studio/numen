@@ -58,7 +58,8 @@ const setup = (
       { id: 'plex', title: 'Plex' },
       { id: 'chat', title: 'Chat' },
     ],
-    getKind: (tab) => (tab === 'chat' ? 'agent' : ['dock', 'lost'].includes(tab) ? undefined : 'note'),
+    getKind: (tab) =>
+      tab === 'chat' ? 'agent' : ['dock', 'lost'].includes(tab) ? undefined : 'note',
     isLinkable: (tab) => tab !== 'chat',
     windowId: 'here',
     isAsking: () => options.isAsking ?? false,
@@ -128,15 +129,15 @@ describe('the commands of a tab', () => {
 
   it('are available over a tab only, unlink over a linked tab, and none while the tab asks', () => {
     const linked = setup({ groups: { reef: GROUP } }).set.commands
-    const asking = setup({ isAsking: true }).set.commands
+    const blocked = setup({ isAsking: true }).set.commands
     const isCommandAvailable = (list: typeof linked, id: string, tab: string) =>
       list.find((one) => one.id === id)!.isAvailable(createTabTarget(tab), {} as never)
 
     expect(isCommandAvailable(linked, UNLINK, 'reef')).toBe(true)
     expect(isCommandAvailable(linked, UNLINK, 'chat')).toBe(false)
     expect(isCommandAvailable(linked, DETACH, '')).toBe(false)
-    expect(isCommandAvailable(asking, DETACH, 'reef')).toBe(false)
-    expect(isCommandAvailable(asking, MOVE, 'reef')).toBe(false)
+    expect(isCommandAvailable(blocked, DETACH, 'reef')).toBe(false)
+    expect(isCommandAvailable(blocked, MOVE, 'reef')).toBe(false)
     expect(isCommandAvailable(linked, LINK, 'chat')).toBe(false)
   })
 

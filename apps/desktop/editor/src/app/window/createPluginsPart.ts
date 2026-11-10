@@ -19,12 +19,7 @@ import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'
 import type { initWindowKindsAndCommands } from './createCommandsPart'
-import {
-  getCommands,
-  getVaults,
-  type WindowContext,
-  type WindowCore,
-} from './createDisplayPart'
+import { getCommands, getVaults, type WindowContext, type WindowCore } from './createDisplayPart'
 import { getSettingsConfig } from '@/features/settings-commands'
 import type { useSettings } from './useSettings'
 import { createWindowCommands } from './windowCommands'

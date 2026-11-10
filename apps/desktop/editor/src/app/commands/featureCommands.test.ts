@@ -132,8 +132,6 @@ describe('the commands over a tab', () => {
   it('offer moving to the other windows, each named by its tab in front', () => {
     const move = collectWithTabs().find((one) => one.id === 'app:tab.moveToWindow')
 
-    expect(move?.listItems?.(target('reef'))).toStrictEqual([
-      { id: 'main', title: 'Atlas (+2)' },
-    ])
+    expect(move?.listItems?.(target('reef'))).toStrictEqual([{ id: 'main', title: 'Atlas (+2)' }])
   })
 })

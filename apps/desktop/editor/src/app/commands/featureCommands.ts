@@ -2,7 +2,10 @@
  * The commands the features declare, collected in the order the palette draws them, and the
  * handlers that carry them out.
  */
-import { createCommands as createPaletteCommands, registerCommand } from '@/features/command-palette'
+import {
+  createCommands as createPaletteCommands,
+  registerCommand,
+} from '@/features/command-palette'
 import type { Words } from '@/features/command-palette'
 import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
 import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'

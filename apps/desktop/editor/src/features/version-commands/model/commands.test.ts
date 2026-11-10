@@ -28,10 +28,12 @@ afterEach(() => {
   for (const restore of restores.splice(0)) restore()
 })
 
-const createWindow = (answer: { error: number; message: string } = {
+const createWindow = (
+  answer: { error: number; message: string } = {
     error: COMMAND_ERROR_CODE.UNSPECIFIED,
     message: '',
-  }) => {
+  },
+) => {
   const requests: { pluginId: string; command: string; path: string; itemId?: string }[] = []
   restores.push(
     installCoreHandlers({
@@ -82,7 +84,9 @@ describe('Delete text', () => {
 
     await set.handlers[DELETE_TEXT]?.(invoke(DELETE_TEXT, createTarget('talks/a.mp3'), 'v1'))
 
-    expect(requests).toMatchObject([{ pluginId: '', command: DELETE_TEXT, path: 'talks/a.mp3', itemId: 'v1' }])
+    expect(requests).toMatchObject([
+      { pluginId: '', command: DELETE_TEXT, path: 'talks/a.mp3', itemId: 'v1' },
+    ])
     expect(messages).toStrictEqual([])
   })
 

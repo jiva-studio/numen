@@ -20,7 +20,6 @@ import { WORDS } from '@/shared/words'
 
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
-  /** The id of the command that moves a tab to another window; the item picked names the window. */
   readonly moveCommand: string
   /** Runs a command of an entry over the tab; with `itemId`, the one picked, and with `values`, those the entry holds. */
   runCommand?(

@@ -12,7 +12,8 @@ const groupByPlugin = (
   keybindings: readonly DeclaredKeybinding[],
 ): ReadonlyMap<string, readonly DeclaredKeybinding[]> => {
   const groups = new Map<string, DeclaredKeybinding[]>()
-  for (const one of keybindings) groups.set(one.pluginId, [...(groups.get(one.pluginId) ?? []), one])
+  for (const one of keybindings)
+    groups.set(one.pluginId, [...(groups.get(one.pluginId) ?? []), one])
   return groups
 }
 
