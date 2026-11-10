@@ -23,12 +23,14 @@ defineEmits<{
   (event: 'hover', key: string): void
 }>()
 
+defineExpose({ scrollToActive })
+
 const list = useTemplateRef<HTMLElement>('list')
 
 /** The group name drawn over each row, where there is one. */
 const headings = computed(() => getHeadings(props.rows))
 
-const scrollToActive = (): void => {
+function scrollToActive(): void {
   const view = list.value
   const row = view?.querySelector('[aria-selected="true"]')
   if (!view || !row || view.scrollHeight <= view.clientHeight) return
@@ -37,8 +39,6 @@ const scrollToActive = (): void => {
   if (rowBox.top < viewBox.top) view.scrollTop -= viewBox.top - rowBox.top
   else if (rowBox.bottom > viewBox.bottom) view.scrollTop += rowBox.bottom - viewBox.bottom
 }
-
-defineExpose({ scrollToActive })
 </script>
 
 <template>

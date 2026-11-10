@@ -25,6 +25,8 @@ defineSlots<{
   mark(props: { mark: string }): unknown
 }>()
 
+defineExpose({ focus: () => root.value?.focus() })
+
 /* ---------------------------------- State --------------------------------- */
 const root = useTemplateRef<HTMLElement>('root')
 
@@ -40,8 +42,6 @@ function onContextMenu(event: MouseEvent): void {
   emit('menu', { x: event.clientX, y: event.clientY })
 }
 
-/* --------------------------------- Helpers -------------------------------- */
-defineExpose({ focus: () => root.value?.focus() })
 </script>
 
 <template>

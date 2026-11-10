@@ -77,6 +77,23 @@ const { hasMoved, overlay, label, position, dropTarget, press } = useTabDrag({
   onTearOff: (tab, pos) => emit('tear-off', tab, pos),
 })
 
+provide(
+  WORKSPACE_CONTEXT,
+  computed<WorkspaceContext>(() => ({
+    findTab,
+    getStripEdge: (pane: NodeId) => getStripEdge(topPanes.value, props.windowEdge, pane),
+    focus: workspace.value.focus,
+    minimum: props.minimum,
+    choose: onChooseTab,
+    close: onCloseTab,
+    startTabPress: press,
+    menu: onMenuTab,
+    claim: onClaimPane,
+    resize: onResizeBranch,
+    show: (tab: TabId) => emit('show', tab),
+  })),
+)
+
 /* -------------------------------- Handlers -------------------------------- */
 function onChooseTab(tab: TabId): void {
   if (hasMoved.value) return
@@ -105,23 +122,6 @@ function onClaimPane(pane: NodeId): void {
 function onResizeBranch(branch: NodeId, sizes: readonly number[]): void {
   workspace.value = resizeBranch(workspace.value, branch, sizes)
 }
-
-provide(
-  WORKSPACE_CONTEXT,
-  computed<WorkspaceContext>(() => ({
-    findTab,
-    getStripEdge: (pane: NodeId) => getStripEdge(topPanes.value, props.windowEdge, pane),
-    focus: workspace.value.focus,
-    minimum: props.minimum,
-    choose: onChooseTab,
-    close: onCloseTab,
-    startTabPress: press,
-    menu: onMenuTab,
-    claim: onClaimPane,
-    resize: onResizeBranch,
-    show: (tab: TabId) => emit('show', tab),
-  })),
-)
 </script>
 
 <template>

@@ -11,6 +11,8 @@ import type { PluginOption, UserConfig } from 'vite'
  */
 export const LIGHTNING_CSS = { exclude: Features.LightDark } as const
 
+const CSS_OPTIONS = { lightningcss: LIGHTNING_CSS }
+
 /** The packages every window imports, by their path from the window's folder. */
 const WINDOW_PACKAGES = {
   '@numen/core-client': '../../../libs/core/client/src/index.ts',
@@ -60,10 +62,11 @@ export function createWindowAliases(
  */
 export function createWindowConfig(root: string, options: WindowOptions): UserConfig {
   const { hostModules } = options
+  const resolve = { alias: createWindowAliases(root, options.own) }
   return {
     plugins: [...options.plugins, hostModules.createHostModuleEntries()],
-    css: { lightningcss: LIGHTNING_CSS },
-    resolve: { alias: createWindowAliases(root, options.own) },
+    css: CSS_OPTIONS,
+    resolve,
     build: {
       outDir: options.outDir,
       emptyOutDir: true,

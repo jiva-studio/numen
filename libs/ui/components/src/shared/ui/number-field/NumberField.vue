@@ -31,6 +31,14 @@ const emit = defineEmits<{
   commit: [value: number | null]
 }>()
 
+defineExpose({
+  /** The element itself, for a caller that has to reach past these props. */
+  get element() {
+    return element.value
+  },
+  focus: (how?: FocusOptions) => element.value?.focus(how),
+})
+
 /* ---------------------------------- State --------------------------------- */
 const bounds = computed(() => ({ min: props.min, max: props.max, step: props.step }))
 
@@ -43,12 +51,6 @@ const { typed, isInvalid, speechText, setText, commit, applyKey } = useNumberEnt
 const ownId = useId()
 
 const element = useTemplateRef<HTMLInputElement>('element')
-
-defineExpose({
-  /** The element itself, for a caller that has to reach past these props. */
-  element,
-  focus: (how?: FocusOptions) => element.value?.focus(how),
-})
 
 /* -------------------------------- Handlers -------------------------------- */
 const onInput = (event: Event) => setText((event.target as HTMLInputElement).value)

@@ -30,6 +30,8 @@ const emit = defineEmits<{
   (event: 'blur'): void
 }>()
 
+defineExpose({ focus })
+
 /* --------------------------------- State ---------------------------------- */
 const field = useTemplateRef<HTMLInputElement>('field')
 
@@ -67,8 +69,6 @@ function focus(): void {
 
   input.setSelectionRange(0, lastDot)
 }
-
-defineExpose({ focus })
 </script>
 
 <template>

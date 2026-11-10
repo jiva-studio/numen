@@ -123,13 +123,17 @@ interface TemplateNode {
 const ATTRIBUTE = 6
 const DIRECTIVE = 7
 
-function getPropClasses(prop: NonNullable<TemplateNode['props']>[number]): string[] {
-  if (prop.type === ATTRIBUTE && prop.name === 'class') {
-    return (prop.value?.content ?? '').split(/\s+/)
-  }
-  if (prop.type === DIRECTIVE && prop.name === 'bind' && prop.arg?.content === 'class') {
-    return getBoundClasses(prop.exp?.ast || null)
-  }
+type TemplateProp = NonNullable<TemplateNode['props']>[number]
+
+const isClassAttribute = (prop: TemplateProp): boolean =>
+  prop.type === ATTRIBUTE && prop.name === 'class'
+
+const isClassBinding = (prop: TemplateProp): boolean =>
+  prop.type === DIRECTIVE && prop.name === 'bind' && prop.arg?.content === 'class'
+
+function getPropClasses(prop: TemplateProp): string[] {
+  if (isClassAttribute(prop)) return (prop.value?.content ?? '').split(/\s+/)
+  if (isClassBinding(prop)) return getBoundClasses(prop.exp?.ast || null)
   return []
 }
 

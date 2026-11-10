@@ -33,6 +33,8 @@ const emit = defineEmits<MenuEvents>()
 
 defineSlots<MenuSlots>()
 
+defineExpose({ getElement: () => menu.value })
+
 /* --------------------------------- State ---------------------------------- */
 const menu = useTemplateRef<HTMLElement>('menu')
 const submenuRef = useTemplateRef<{ getElement?: () => HTMLElement | null }>('submenuRef')
@@ -123,8 +125,6 @@ function measure(): void {
   const box = menu.value ? measureElementRect(menu.value) : undefined
   if (box) setSize({ width: box.width, height: box.height })
 }
-
-defineExpose({ getElement: () => menu.value })
 </script>
 
 <template>

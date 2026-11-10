@@ -31,6 +31,9 @@ defineSlots<{
 /* ---------------------------------- State --------------------------------- */
 const hosts = inject(TAB_HOSTS, null)
 
+/** One function per tab, so a render does not detach and attach the same host. */
+const hostRefs = new Map<TabId, (element: unknown) => void>()
+
 /* -------------------------------- Handlers -------------------------------- */
 function onPanelEscape(event: KeyboardEvent): void {
   if (event.defaultPrevented) return
@@ -43,9 +46,6 @@ function onPanelEscape(event: KeyboardEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** One function per tab, so a render does not detach and attach the same host. */
-const hostRefs = new Map<TabId, (element: unknown) => void>()
-
 function createHostRef(tab: TabId): (element: unknown) => void {
   let ref = hostRefs.get(tab)
   if (!ref) {

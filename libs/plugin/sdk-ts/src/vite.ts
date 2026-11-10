@@ -30,6 +30,8 @@ export interface PluginBuildOptions {
   readonly plugins: readonly PluginOption[]
 }
 
+const CSS_OPTIONS = { lightningcss: LIGHTNING_CSS }
+
 /**
  * The build of one plugin frontend into `dist/index.js` and `dist/styles.css`. The modules the
  * window serves are left out of the bundle and imported from their paths in `HOST_MODULES`.
@@ -41,7 +43,7 @@ export function createPluginBuildConfig(options: PluginBuildOptions): UserConfig
       createUtilitiesPlugin(options.root),
       createStylesPlugin(options.root),
     ],
-    css: { lightningcss: LIGHTNING_CSS },
+    css: CSS_OPTIONS,
     build: {
       outDir: 'dist',
       emptyOutDir: true,

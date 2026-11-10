@@ -29,6 +29,8 @@ defineSlots<{
   icon(props: { id: string }): unknown
 }>()
 
+defineExpose({ reveal })
+
 /** The rows as rendered, each paired with its item. */
 const itemElements = new Map<string, HTMLElement>()
 
@@ -38,16 +40,14 @@ const hold = (item: string, row: Element | ComponentPublicInstance | null): void
   else itemElements.delete(item)
 }
 
-const reveal = (item: string): void => {
-  itemElements.get(item)?.scrollIntoView({ block: 'nearest' })
-}
-
-defineExpose({ reveal })
-
 /** What this group's name is addressed by, which the list points at. */
 const titleId = computed(() => `${props.uid}-group-${props.placed.group.id}`)
 
 const rowId = (pos: number): string => optionId(props.uid, pos)
+
+function reveal(item: string): void {
+  itemElements.get(item)?.scrollIntoView({ block: 'nearest' })
+}
 </script>
 
 <template>
