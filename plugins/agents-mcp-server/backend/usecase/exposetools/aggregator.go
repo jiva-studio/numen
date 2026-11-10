@@ -4,7 +4,6 @@ package exposetools
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"slices"
@@ -139,7 +138,7 @@ func (a *Aggregator) updateTools(declared map[string]*sdk.Tool) {
 			continue
 		}
 		a.registry.AddTool(tool, func(callCtx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
-			var args json.RawMessage
+			var args []byte
 			if req.Params != nil {
 				args = req.Params.Arguments
 			}
@@ -161,7 +160,7 @@ func (a *Aggregator) updateTools(declared map[string]*sdk.Tool) {
 
 // ExecuteTool forwards a tool call to the host and translates the response. The host runs it in the
 // vault it has open, without request context: the call does not originate from a Numen request.
-func (a *Aggregator) ExecuteTool(ctx context.Context, name string, args json.RawMessage) (*sdk.CallToolResult, error) {
+func (a *Aggregator) ExecuteTool(ctx context.Context, name string, args []byte) (*sdk.CallToolResult, error) {
 	client := a.getClient()
 	if client == nil {
 		return mcptool.NewErrorResult("no host client configured"), nil
@@ -169,7 +168,7 @@ func (a *Aggregator) ExecuteTool(ctx context.Context, name string, args json.Raw
 
 	res, err := client.InvokeTool(ctx, tools.Call{
 		Name:      name,
-		Arguments: []byte(args),
+		Arguments: args,
 		Context:   nil,
 		VaultID:   "",
 	})
