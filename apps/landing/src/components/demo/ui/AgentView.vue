@@ -5,7 +5,7 @@
  */
 import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { ArrowUp, ChevronDown } from '@lucide/vue'
-import { Menu, Prose, type MenuItem } from '@numen/ui'
+import { measureRect, Menu, Prose, type MenuItem } from '@numen/ui'
 import { MODEL_OPTIONS, type Agent, type Turn } from '../model/agent'
 
 /* ----------------------------- Props & Emits ------------------------------ */
@@ -46,7 +46,7 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 function onOpenSelector() {
-  const box = selector.value?.getBoundingClientRect()
+  const box = measureRect(selector.value)
   if (box) menuAt.value = { x: box.left, y: box.bottom }
 }
 

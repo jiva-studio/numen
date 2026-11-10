@@ -3,7 +3,7 @@
  * The landing page's simulation of the Numen window: the workspace of panes and tabs, the tab menu and
  * the palette, over a vault held in memory.
  */
-import { ref, type Component } from 'vue'
+import { useTemplateRef, type Component } from 'vue'
 import { FileText, Link2, Link2Off } from '@lucide/vue'
 import { Menu } from '@numen/ui'
 import { Palette, WorkspaceLayout, commandKeyChord, type ActionWords } from '@numen/workbench'
@@ -11,6 +11,7 @@ import '@numen/ui/styles.css'
 import '@numen/workbench/styles.css'
 import { NAMING_COMMAND, KEYBOARD } from '../lib/palette'
 import { getPdfPathOfTab, getKindOfTab } from '../lib/tabs'
+import { createDemoTools } from '../model/tools'
 import { createDemoWindow } from '../model/window'
 import { UNLINK_ITEM } from '../model/tabMenu'
 import AgentView from './AgentView.vue'
@@ -24,10 +25,11 @@ import RecordingView from './RecordingView.vue'
 import { getCommandIcon, getFileIcon, getTabIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
-const demo = createDemoWindow()
-const { parts, pdf, actions } = demo
-const { vault, layout, files, plex, tabMenu, palette, agent, deck, player, links, commands } = parts
-const root = ref<HTMLElement | null>(null)
+const tools = createDemoTools(() => demo.actions.getFocusTitle())
+const { agent, deck, player, pdf } = tools
+const demo = createDemoWindow(agent)
+const { vault, layout, files, plex, tabMenu, palette, commands, actions } = demo
+const rootElement = useTemplateRef<HTMLElement>('rootElement')
 const ACTION_KEY = commandKeyChord(KEYBOARD)
 const ACTION_WORDS: ActionWords = { name: 'Actions', placeholder: 'Search actions', silence: 'No actions found' }
 
@@ -54,7 +56,7 @@ function getPaletteIcon(id: string): Component | null {
 </script>
 
 <template>
-  <div ref="root" class="demo-window numen" tabindex="-1" @keydown="onKeydown" @contextmenu.prevent>
+  <div ref="rootElement" class="demo-window numen" tabindex="-1" @keydown="onKeydown" @contextmenu.prevent>
     <WorkspaceLayout
       v-model="layout.state.held.value"
       :tabs="layout.state.tabs.value"
@@ -66,7 +68,7 @@ function getPaletteIcon(id: string): Component | null {
     >
       <template #icon="{ id }">
         <component :is="getTabIcon(id)" class="tab-icon" />
-        <Link2 v-if="links.getGroupOf(id)" class="tab-link" :data-color="links.getGroupOf(id)?.colorIndex" aria-label="Linked tab" />
+        <Link2 v-if="actions.getLinkGroup(id)" class="tab-link" :data-color="actions.getLinkGroup(id)?.colorIndex" aria-label="Linked tab" />
       </template>
 
       <template #tab="{ id }">
@@ -116,8 +118,8 @@ function getPaletteIcon(id: string): Component | null {
       v-if="palette.state.panel.value"
       v-model="palette.state.typed.value"
       :groups="palette.view.groups.value"
-      :from="root"
-      :to="root ?? 'body'"
+      :from="rootElement"
+      :to="rootElement ?? 'body'"
       :crumb="palette.view.crumb.value"
       :step="palette.view.step.value"
       is-open

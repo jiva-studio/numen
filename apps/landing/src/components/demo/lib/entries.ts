@@ -13,6 +13,10 @@ export interface Entry {
   readonly type: 'note' | 'link' | 'deck'
 }
 
+/** Whether a row is a note file, whose selection the linked tabs follow. */
+export const isNoteRow = (entry: Entry | undefined): boolean =>
+  entry !== undefined && !entry.isFolder && entry.type === 'note' && entry.isNote
+
 export const getFileName = (path: string): string => path.split('/').pop() ?? path
 
 export function getFolderOf(path: string): string {

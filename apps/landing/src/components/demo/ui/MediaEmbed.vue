@@ -8,12 +8,12 @@
  * messages a player takes from the page holding it, so nothing that host serves
  * runs in this window.
  */
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
-import type { Caught } from '@numen/ui'
-import { getDraggedHeight, getFrameOrigin, getTallest, LEAST, parseJson, seekFrame } from '../lib/frame'
+import { computed, onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { reportFailure, win } from '@numen/ui'
+import { getFrameOrigin, LEAST, readPlayerInfo, seekFrame } from '../lib/frame'
 import { createHeightStore, type HeightStore } from '../model/heightStore'
+import { useFrameHeight } from './useFrameHeight'
 
-/* ----------------------------- Props & Emits ------------------------------ */
 const props = withDefaults(
   defineProps<{
     embed: string
@@ -29,97 +29,17 @@ const emit = defineEmits<{
   'play-state': [isPlaying: boolean]
 }>()
 
-/* --------------------------------- State ---------------------------------- */
+defineExpose({ seek })
+
 const root = useTemplateRef<HTMLElement>('root')
 const frame = useTemplateRef<HTMLIFrameElement>('frame')
 const player = useTemplateRef<HTMLVideoElement>('player')
+const media = computed(() => player.value ?? frame.value)
+const { tall, isHeld, tallest, handleValue, frameStyle, onPointerDown, onHandleKeydown } =
+  useFrameHeight(props.store, root, media)
 
-/** How tall the player is drawn, remembered on this machine. */
-const tall = ref(props.store.read())
-const drawn = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
-const frameStyle = computed(() =>
-  tall.value === null ? undefined : { blockSize: `${tall.value}px` },
-)
-/** The rendered height of the player and the tallest it can be drawn, for the resize handle. */
-const renderedHeight = ref<number | null>(null)
-const tallest = ref(LEAST)
-const handleValue = computed(() =>
-  Math.min(tallest.value, Math.max(LEAST, renderedHeight.value ?? tall.value ?? LEAST)),
-)
-
-watch(
-  () => player.value ?? frame.value,
-  (element, _, onCleanup) => {
-    if (!element) return
-    const sizes = new ResizeObserver(() => {
-      renderedHeight.value = Math.round(element.clientHeight)
-      tallest.value = getTallest(getPaneHeight())
-      if (tall.value !== null) tall.value = Math.min(tallest.value, tall.value)
-    })
-    sizes.observe(element)
-    const pane = findPane()
-    if (pane) sizes.observe(pane)
-    onCleanup(() => sizes.disconnect())
-  },
-  { flush: 'post' },
-)
-
-/* --------------------------------- Hooks ---------------------------------- */
-onMounted(() => {
-  if (tall.value !== null) {
-    tall.value = Math.min(getTallest(getPaneHeight()), Math.max(LEAST, tall.value))
-  }
-  window.addEventListener('message', onWindowMessage)
-})
-
-// A drag the page is taken out from under lets go of the bar it was holding.
-onBeforeUnmount(() => {
-  window.removeEventListener('message', onWindowMessage)
-  onPointerUp()
-})
-
-/* -------------------------------- Handlers -------------------------------- */
-function onPointerDown(at: PointerEvent): void {
-  const bar = at.currentTarget as HTMLElement
-  const held = bar.previousElementSibling
-  bar.setPointerCapture(at.pointerId)
-  drawn.value = {
-    bar,
-    pointer: at.pointerId,
-    from: at.clientY,
-    was: held?.clientHeight ?? LEAST,
-  }
-  bar.addEventListener('pointermove', onPointerMove)
-  bar.addEventListener('pointerup', onPointerUp)
-  bar.addEventListener('pointercancel', onPointerUp)
-}
-
-function onPointerMove(at: PointerEvent): void {
-  const held = drawn.value
-  if (!held) return
-  tall.value = getDraggedHeight(held.was, at.clientY - held.from, getPaneHeight())
-}
-
-function onPointerUp(): void {
-  const held = drawn.value
-  if (!held) return
-  drawn.value = null
-  held.bar.removeEventListener('pointermove', onPointerMove)
-  held.bar.removeEventListener('pointerup', onPointerUp)
-  held.bar.removeEventListener('pointercancel', onPointerUp)
-  if (held.bar.hasPointerCapture(held.pointer)) held.bar.releasePointerCapture(held.pointer)
-  if (tall.value !== null) props.store.write(tall.value)
-}
-
-function onHandleKeydown(event: KeyboardEvent): void {
-  if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
-  event.preventDefault()
-  const bar = event.currentTarget as HTMLElement
-  const current = tall.value ?? bar.previousElementSibling?.clientHeight ?? LEAST
-  const delta = event.key === 'ArrowDown' ? 16 : -16
-  tall.value = getDraggedHeight(current, delta, getPaneHeight())
-  props.store.write(tall.value)
-}
+onMounted(() => win.addEventListener('message', onWindowMessage))
+onBeforeUnmount(() => win.removeEventListener('message', onWindowMessage))
 
 function onVideoTimeUpdate(event: Event): void {
   const video = event.target as HTMLVideoElement
@@ -140,43 +60,19 @@ function onWindowMessage(event: MessageEvent): void {
   const expectedOrigin = getFrameOrigin(props.embed)
   if (!expectedOrigin || event.origin !== expectedOrigin) return
   if (typeof event.data !== 'string') return
-  const payload = parseJson(event.data) as {
-    event?: string
-    info?: { currentTime?: number; playerState?: number }
-  } | null | undefined
-  if (payload?.event === 'infoDelivery' && payload.info) {
-    if (typeof payload.info.currentTime === 'number') {
-      emit('time-update', Math.round(payload.info.currentTime * 1000))
-    }
-    if (typeof payload.info.playerState === 'number') {
-      emit('play-state', payload.info.playerState === 1)
-    }
-  }
+  const info = readPlayerInfo(event.data)
+  if (info?.currentTime !== undefined) emit('time-update', Math.round(info.currentTime * 1000))
+  if (info?.playerState !== undefined) emit('play-state', info.playerState === 1)
 }
 
-/* -------------------------------- Helpers --------------------------------- */
-function findPane(): HTMLElement | null {
-  for (let at = root.value?.parentElement ?? null; at; at = at.parentElement) {
-    if (getComputedStyle(at).containerType.split(' ').includes('size')) return at
-  }
-  return null
-}
-
-function getPaneHeight(): number {
-  return findPane()?.clientHeight || window.innerHeight
-}
 function seek(ms: number): void {
   if (player.value) {
     player.value.currentTime = ms / 1000
-    player.value.play().catch((error: Caught) => {
-      console.error(error)
-    })
+    player.value.play().catch(reportFailure)
     return
   }
   seekFrame(frame.value?.contentWindow, props.embed, ms)
 }
-
-defineExpose({ seek })
 </script>
 
 <template>
@@ -185,7 +81,7 @@ defineExpose({ seek })
       v-if="props.copy"
       ref="player"
       class="embed__frame"
-      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': drawn !== null }"
+      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': isHeld }"
       :style="frameStyle"
       :src="props.copy"
       :title="props.words.playing"
@@ -200,7 +96,7 @@ defineExpose({ seek })
       v-else-if="props.embed"
       ref="frame"
       class="embed__frame"
-      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': drawn !== null }"
+      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--held': isHeld }"
       :style="frameStyle"
       :src="props.embed"
       :title="props.words.playing"
@@ -220,7 +116,7 @@ defineExpose({ seek })
       :aria-valuemin="LEAST"
       :aria-valuemax="tallest"
       :aria-valuenow="handleValue"
-      :data-state="drawn ? 'drag' : undefined"
+      :data-state="isHeld ? 'drag' : undefined"
       :title="props.words.taller"
       @pointerdown="onPointerDown"
       @keydown="onHandleKeydown"

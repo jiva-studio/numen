@@ -1,0 +1,19 @@
+---
+import { DOCS, DOWNLOAD, FORUM, GITHUB, STUDIO } from './site'
+---
+
+<footer>
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/favicon.svg" width="28" height="28" alt="" />
+    <span>numen</span>
+  </a>
+  <p>
+    © 2026 <a href={STUDIO} target="_blank" rel="noopener">Jiva Studio</a>. All rights reserved.
+  </p>
+  <div>
+    <a href={DOCS} data-i18n="nav_docs">Docs</a>
+    <a href={FORUM} data-i18n="nav_forum">Forum</a>
+    <a href={GITHUB} target="_blank" rel="noopener">GitHub</a>
+    <a href={DOWNLOAD} data-i18n="nav_download">Download</a>
+  </div>
+</footer>

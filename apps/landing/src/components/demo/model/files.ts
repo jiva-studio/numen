@@ -1,8 +1,9 @@
-import { computed, ref, shallowRef, watch } from 'vue'
-import type { Position, Row } from '@numen/ui'
-import { ROOT, getFileName, getParentFolders } from '../lib/entries'
-import { getFileMenu } from '../lib/menus'
-import { getDropFolder, getRenamedPath } from '../lib/rename'
+import { ref, watch } from 'vue'
+import type { Position } from '@numen/ui'
+import { ROOT, getParentFolders, isNoteRow } from '../lib/entries'
+import { getFileMenu, getRowsOver } from '../lib/menus'
+import { getDropFolder, getDropMoves, getRenamedPath } from '../lib/rename'
+import { createFilesTree } from './filesTree'
 import type { Vault } from './vault'
 
 export type DropTarget = { readonly into: string | null } | { readonly before: string }
@@ -21,35 +22,13 @@ export interface FilesDeps {
 /** What the file tree shows and what a user did to it: open folders, the selection, the name being typed, the menu. */
 export function createFiles(deps: FilesDeps) {
   const { vault } = deps
-  const open = shallowRef<ReadonlySet<string>>(new Set([ROOT]))
+  const branches = createFilesTree(vault, ['physics', 'computation', 'reading', 'lectures', 'decks'])
   const selected = ref<readonly string[]>([])
   const renaming = ref<string | null>(null)
   const menu = ref<{ readonly path: string | null; readonly at: Position } | null>(null)
 
-  const getRows = (folder: string): Row[] =>
-    vault.read.list(folder).map((one) => ({
-      id: one.path,
-      name: one.name,
-      hasChildren: one.isFolder,
-      rows: one.isFolder && open.value.has(one.path) ? getRows(one.path) : [],
-    }))
-
-  const rows = computed(() => getRows(ROOT))
-  const openRows = computed(() => [...open.value])
-
-  const openFolder = (folder: string) => {
-    open.value = new Set(open.value).add(folder)
-  }
-
-  const closeFolder = (folder: string) => {
-    if (folder === ROOT) return
-    const rest = new Set(open.value)
-    rest.delete(folder)
-    open.value = rest
-  }
-
   function reveal(path: string) {
-    getParentFolders(path).forEach(openFolder)
+    getParentFolders(path).forEach(branches.openFolder)
     selected.value = [path]
   }
 
@@ -70,49 +49,36 @@ export function createFiles(deps: FilesDeps) {
   function moveRows(paths: readonly string[], target: DropTarget) {
     const into = getDropFolder(target)
     const taken = new Set(vault.read.list(into).map((one) => one.name))
-    for (const path of paths) {
-      const name = getFileName(path)
-      const to = into === ROOT ? name : `${into}/${name}`
-      if (to === path || taken.has(name)) continue
-      taken.add(name)
-      vault.edit.move(path, to)
-    }
+    for (const { from, to } of getDropMoves(paths, into, taken)) vault.edit.move(from, to)
   }
 
   const getMenuItems = (path: string | null) => {
-    const over = path !== null && selected.value.includes(path) ? selected.value : path === null ? [] : [path]
-    const target = {
+    const over = path === null ? [] : getRowsOver(path, selected.value)
+    return getFileMenu({
       path: path ?? ROOT,
       others: over.filter((one) => one !== path),
       entry: path === null ? undefined : vault.read.getEntryAt(path),
       isDemoNote: (one: string) => Boolean(vault.read.getNote(one)),
-    }
-    return getFileMenu(target)
+    })
   }
 
   /** The rows a command from the menu is run over: the row it was opened on, and the rows selected with it. */
   const getMenuTarget = (): { path: string; others: readonly string[] } => {
     const path = menu.value?.path ?? ROOT
-    const over = selected.value.includes(path) ? selected.value : [path]
-    return { path, others: over.filter((one) => one !== path) }
+    return { path, others: getRowsOver(path, selected.value).filter((one) => one !== path) }
   }
 
-  watch(selected, (paths) => {
-    const first = paths[0]
-    const entry = first === undefined ? undefined : vault.read.getEntryAt(first)
-    if (first !== undefined && entry && !entry.isFolder && entry.type === 'note' && entry.isNote) {
-      deps.onSelectNote(first)
-    }
+  watch(selected, ([first]) => {
+    if (first !== undefined && isNoteRow(vault.read.getEntryAt(first))) deps.onSelectNote(first)
   })
 
-  for (const folder of ['physics', 'computation', 'reading', 'lectures', 'decks']) openFolder(folder)
   selected.value = ['physics/Entropy.md']
 
   return {
-    state: { rows, openRows, selected, renaming, menu },
+    state: { rows: branches.rows, openRows: branches.openRows, selected, renaming, menu },
     tree: {
-      openFolder,
-      closeFolder,
+      openFolder: branches.openFolder,
+      closeFolder: branches.closeFolder,
       reveal,
       activate,
       select: (paths: readonly string[]) => {

@@ -36,6 +36,10 @@ function toItems(sections: readonly (readonly Row[])[]): readonly MenuItem[] {
   return sections.flatMap((rows, index) => rows.map((one) => ({ ...one, group: String(index) })))
 }
 
+/** The rows a command from a menu is run over: the row it was opened on, and the rows selected with it. */
+export const getRowsOver = (path: string, selected: readonly string[]): readonly string[] =>
+  selected.includes(path) ? selected : [path]
+
 /** The menu on a node of the plex. */
 export const PLEX_MENU: readonly MenuItem[] = toItems([
   [OPEN],

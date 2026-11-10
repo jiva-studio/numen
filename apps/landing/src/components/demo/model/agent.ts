@@ -71,7 +71,7 @@ export function createAgent(getFocusTitle: () => string) {
     draft.value = ''
     turns.value = [...turns.value, createAsked(`${id}-q`, text), createDid(`${id}-tool`, 'note search', title, '3 passages')]
     isWorking.value = true
-    window.setTimeout(() => {
+    setTimeout(() => {
       turns.value = [
         ...turns.value,
         createAnswered(

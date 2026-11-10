@@ -25,3 +25,21 @@ export function getRenamedPath(path: string, name: string, isFolder: boolean): s
 export function getDropFolder(target: { into: string | null } | { before: string }): string {
   return 'into' in target ? (target.into ?? ROOT) : getFolderOf(target.before)
 }
+
+/** The moves a drop makes: each dragged path to its place in the folder, except where the name is taken there. */
+export function getDropMoves(
+  paths: readonly string[],
+  into: string,
+  taken: ReadonlySet<string>,
+): { from: string; to: string }[] {
+  const moves: { from: string; to: string }[] = []
+  const names = new Set(taken)
+  for (const from of paths) {
+    const name = getFileName(from)
+    const to = into === ROOT ? name : `${into}/${name}`
+    if (to === from || names.has(name)) continue
+    names.add(name)
+    moves.push({ from, to })
+  }
+  return moves
+}
