@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
@@ -72,7 +73,7 @@ type Runtime[H, V any] struct {
 	OpenNotesFn              func(index note.IndexUpdater) note.Scenarios
 	OpenVaultsFn             func(moves note.Move) vaults.Scenarios
 	GetRefreshFn             func() vaults.Refresh
-	ReadWholeVaultFn         func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error)
+	ReadWholeVaultFn         func(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaultreading.ReadWholeVault, error)
 	StartVaultFn             StartVaultFunc
 	PluginServicesFn         func() PluginServices
 	PluginCatalogFn          func() PluginCatalog
@@ -138,7 +139,7 @@ func (e Runtime[H, V]) SetPluginSearch(embedder embeddingport.Embedder, handleEr
 func (e Runtime[H, V]) OpenNotes(index note.IndexUpdater) note.Scenarios { return e.OpenNotesFn(index) }
 func (e Runtime[H, V]) OpenVaults(moves note.Move) vaults.Scenarios      { return e.OpenVaultsFn(moves) }
 func (e Runtime[H, V]) GetRefresh() vaults.Refresh                       { return e.GetRefreshFn() }
-func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaults.ReadWholeVault, error) {
+func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool) (vaultreading.ReadWholeVault, error) {
 	return e.ReadWholeVaultFn(ctx, embedder, v, rebuild)
 }
 func (e Runtime[H, V]) StartVault(

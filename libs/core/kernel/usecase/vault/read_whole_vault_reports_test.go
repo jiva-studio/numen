@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -82,9 +83,9 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 		embed,
 	)
 	var notes, books, made atomic.Int32
-	making.OnNotesProgress = func(vaults.ScanResult) { notes.Add(1) }
-	making.OnTextsProgress = func(filetext.IndexResult) { books.Add(1) }
-	making.OnVectorsProgress = func(vectors.EmbedResult) { made.Add(1) }
+	making.OnNotesProgress = func(vaultreading.ScanResult) { notes.Add(1) }
+	making.OnTextsProgress = func(vaultreading.IndexResult) { books.Add(1) }
+	making.OnVectorsProgress = func(vaultreading.EmbedResult) { made.Add(1) }
 
 	result, err := making.Execute(t.Context(), v)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -55,12 +56,12 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 
 	var order []string
 	notes := scanner(readers, db)
-	notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
+	notes.OnProgress = func(vaultreading.ScanResult) { order = append(order, "notes") }
 	books := filetext.NewIndex(readers, db.Sources(), db.SourcesKnown(), testsupport.Texts{Readers: readers})
-	books.OnProgress = func(filetext.IndexResult) { order = append(order, "books") }
+	books.OnProgress = func(vaultreading.IndexResult) { order = append(order, "books") }
 	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	embed.Embedder = pointing{}
-	embed.OnProgress = func(vectors.EmbedResult) { order = append(order, "vectors") }
+	embed.OnProgress = func(vaultreading.EmbedResult) { order = append(order, "vectors") }
 	making := vaults.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v); err != nil {
@@ -263,7 +264,7 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return c.VaultReaders.Open(v)
 }
 
-func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) vaults.ReadWholeVault {
+func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) vaultreading.ReadWholeVault {
 	return vaults.NewReadWholeVault(
 		scanner(readers, db),
 		filetext.NewIndex(readers, db.Sources(), db.SourcesKnown(), testsupport.Texts{Readers: readers}),

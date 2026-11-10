@@ -4,10 +4,11 @@ import (
 	"context"
 
 	searchwiring "github.com/jiva-studio/numen/libs/core/kernel/container/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -32,7 +33,7 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
-func (c Config) CutNotes() query.CutNotes {
+func (c Config) CutNotes() chunking.CutNotes {
 	return c.search().CutNotes()
 }
 
@@ -46,7 +47,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 // notes read, the file texts cut, and the vectors made.
 func (c Config) ReadWholeVault(
 	ctx context.Context, db *Index, embedder embeddingport.Embedder, v domain.Vault,
-) (vault.ReadWholeVault, error) {
+) (vaultreading.ReadWholeVault, error) {
 	return c.search().ReadWholeVault(ctx, db, embedder, v, makeRefresh(c, db, db.Notes()))
 }
 

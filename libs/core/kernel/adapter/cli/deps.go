@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
@@ -74,7 +74,7 @@ type VaultRows struct {
 
 // Scan is one vault made searchable.
 type Scan struct {
-	Read       vault.ReadWholeVault
+	Read       vaultreading.ReadWholeVault
 	Summary    func(ctx context.Context) (domain.VaultSummary, error)
 	Unembedded error
 	Close      func() error

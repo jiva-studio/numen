@@ -12,6 +12,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -91,7 +92,7 @@ func (w *Window) WatchTasks(
 	repeat := time.NewTicker(Again)
 	defer repeat.Stop()
 
-	var last []run.Task
+	var last []vaultreading.Task
 	for {
 		select {
 		case list, ok := <-watch:
@@ -204,7 +205,7 @@ func (w *Window) checkWindowName(named string) error {
 }
 
 // AddTask puts one piece of work in the list.
-func (w *Window) AddTask(pos run.Task) {
+func (w *Window) AddTask(pos vaultreading.Task) {
 	if w != nil && w.Tasking != nil {
 		w.Tasking.Set(pos)
 	}
@@ -257,7 +258,7 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 // CancelFlush ends the running request and releases its waiters.
 func (w *Window) CancelFlush() { w.clients.endRequest() }
 
-func describeTasks(list []run.Task) []*v1.Task {
+func describeTasks(list []vaultreading.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
 	for _, item := range list {
 		out = append(out, &v1.Task{
@@ -278,13 +279,13 @@ func describeTasks(list []run.Task) []*v1.Task {
 	return out
 }
 
-func convertUnit(in run.Unit) v1.Unit {
+func convertUnit(in vaultreading.Unit) v1.Unit {
 	switch in {
-	case run.Bytes:
+	case vaultreading.Bytes:
 		return v1.Unit_UNIT_BYTES
-	case run.Seconds:
+	case vaultreading.Seconds:
 		return v1.Unit_UNIT_SECONDS
-	case run.Things:
+	case vaultreading.Things:
 		return v1.Unit_UNIT_THINGS
 	}
 	return v1.Unit_UNIT_THINGS
@@ -495,8 +496,8 @@ func (l *flushCoordinator) updateProgress() {
 	close(r.allWritten)
 }
 
-func convertKind(in run.Kind) v1.TaskKind {
-	if in == run.KindNotice {
+func convertKind(in vaultreading.Kind) v1.TaskKind {
+	if in == vaultreading.KindNotice {
 		return v1.TaskKind_TASK_KIND_NOTICE
 	}
 	return v1.TaskKind_TASK_KIND_UNSPECIFIED

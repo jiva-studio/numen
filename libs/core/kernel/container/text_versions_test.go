@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -273,7 +273,7 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 type cutOnChange struct {
 	t       *testing.T
 	extract interface {
-		IndexOne(ctx context.Context, v domain.Vault, path string) (filetext.IndexResult, error)
+		IndexOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error)
 	}
 }
 

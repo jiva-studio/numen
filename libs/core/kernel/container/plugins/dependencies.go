@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
@@ -72,8 +73,8 @@ func (c Config) ReportDependencies(tasks *run.Tasks) {
 		case plugin.DependencyStateReady:
 			tasks.Remove(id)
 		case plugin.DependencyStateMissing, plugin.DependencyStateProvisioning, plugin.DependencyStateFailed:
-			tasks.Set(run.Task{
-				ID: id, Title: "Downloading " + req.ID, Unit: run.Bytes,
+			tasks.Set(vaultreading.Task{
+				ID: id, Title: "Downloading " + req.ID, Unit: vaultreading.Bytes,
 				Count: status.BytesDownloaded, Total: status.BytesTotal, Error: status.Error, IsUserStarted: false,
 			})
 		}

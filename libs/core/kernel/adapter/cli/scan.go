@@ -7,10 +7,8 @@ import (
 	"io"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 )
 
 func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) (err error) {
@@ -80,7 +78,7 @@ func readClock(source machinecontract.Clock) time.Time {
 	return source.Now()
 }
 
-func describeSources(r filetext.IndexResult) string {
+func describeSources(r vaultreading.IndexResult) string {
 	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)
 	if r.Unreadable > 0 {
@@ -92,21 +90,21 @@ func describeSources(r filetext.IndexResult) string {
 	return s
 }
 
-func showProgress(making *vaults.ReadWholeVault, r *reporter) {
-	making.OnNotesProgress = func(res vaults.ScanResult) {
+func showProgress(making *vaultreading.ReadWholeVault, r *reporter) {
+	making.OnNotesProgress = func(res vaultreading.ScanResult) {
 		r.Printf("  %d indexed\r", res.Indexed)
 	}
-	making.OnTextsProgress = func(res filetext.IndexResult) {
+	making.OnTextsProgress = func(res vaultreading.IndexResult) {
 		if res.CurrentSource != "" {
 			r.Printf("  cutting %s\r", res.CurrentSource)
 		}
 	}
-	making.OnVectorsProgress = func(res vectors.EmbedResult) {
+	making.OnVectorsProgress = func(res vaultreading.EmbedResult) {
 		r.Printf("  %d embedded\r", res.Embedded)
 	}
 }
 
-func reportMade(r *reporter, vaultName string, made vaults.ReadWholeVaultResult) {
+func reportMade(r *reporter, vaultName string, made vaultreading.ReadWholeVaultResult) {
 	if made.Texts.Seen > 0 {
 		r.Println(describeSources(made.Texts))
 	}

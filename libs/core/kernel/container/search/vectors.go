@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -47,7 +48,7 @@ func NewModelReadReporter(tasks *run.Tasks) func(error) {
 		return nil
 	}
 	return func(err error) {
-		tasks.Set(run.Task{ID: readingTheModel, Title: "Read embedding model", Error: err.Error()})
+		tasks.Set(vaultreading.Task{ID: readingTheModel, Title: "Read embedding model", Error: err.Error()})
 	}
 }
 

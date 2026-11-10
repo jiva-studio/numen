@@ -9,8 +9,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -30,7 +30,7 @@ func getProfiles() map[domain.NoteType]domain.NoteProfile {
 }
 
 func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain.Note) error {
-	cutNotes := query.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
+	cutNotes := chunking.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
 		profile, declared := getProfiles()[t]
 		return profile, declared
 	}}

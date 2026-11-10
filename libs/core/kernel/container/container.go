@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -81,7 +82,7 @@ type Config struct {
 // NewResources and names it in its Config.
 type Resources struct {
 	vaultLocks      *vaultwriter.Locks
-	watches         *vaultwatch.Hub
+	watches         *watchhub.Hub
 	settingsFiles   *settingsadapter.Files
 	settingEvents   *settingevents.Events
 	secretGate      *secret.Gate

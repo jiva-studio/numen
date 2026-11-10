@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -90,7 +91,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	if why != nil {
 		writeDiagnostic(tasks.Set, out, "not embedding: %v\n", why)
 		// Record indexing task failure when embedding provider initialization fails.
-		tasks.Set(run.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
+		tasks.Set(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -108,7 +109,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// only. The degraded state is reported as a task because a window opened
 	// from a desktop entry has no terminal.
 	finds := made.NewSearch(asking, func(err error) {
-		state.reportTask(run.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
+		state.reportTask(vaultreading.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
 	})
 	services.Search.Finds = &finds
 	made.SetPluginSearch(embedder, newFloorErrorReporter(state))
@@ -240,17 +241,17 @@ func (o *Installation) SayTheme(message string) {
 		o.State.finishTask(applyingTheme)
 		return
 	}
-	o.State.reportTask(run.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.State.reportTask(vaultreading.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.State.reportTask(run.Task{
+		o.State.reportTask(vaultreading.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
-			Kind:  run.KindNotice,
+			Kind:  vaultreading.KindNotice,
 		})
 	}
 }
@@ -546,7 +547,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	pos := run.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
+	pos := vaultreading.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.reportTask(pos)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)

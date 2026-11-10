@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -152,7 +153,7 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 		return
 	}
 	c.PluginHost.SetOnPluginFailed(func(failure plugindomain.Failure) {
-		tasks.Set(run.Task{
+		tasks.Set(vaultreading.Task{
 			ID:         pluginFailureTaskPrefix + failure.PluginID,
 			Title:      "Plugin stopped",
 			About:      failure.Name,

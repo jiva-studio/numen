@@ -7,7 +7,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -23,7 +22,7 @@ func TestASmallChunkIsSplitBelowTheLimitGiven(t *testing.T) {
 	}
 
 	for _, limit := range []int{64, 512} {
-		cutResult := query.CutNotes{Sizes: chunking.Sizes{Limit: limit}}.Execute([]domain.Note{n})
+		cutResult := chunking.CutNotes{Sizes: chunking.Sizes{Limit: limit}}.Execute([]domain.Note{n})
 		chunks := cutResult[0].Chunks
 		if len(chunks) != 1 {
 			t.Fatalf("a note is one large chunk, and it was cut into %d", len(chunks))
@@ -49,7 +48,7 @@ func TestANoteOfADeclaredTypeIsCachedAsItsProfileReturns(t *testing.T) {
 		"sheet": {HasChunks: true, HeadingLevels: []int{1, 2}, IDHeadingLevels: []int{2}},
 		"bare":  {HeadingLevels: []int{}},
 	}
-	cuts := query.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
+	cuts := chunking.CutNotes{Profiles: func(t domain.NoteType) (domain.NoteProfile, bool) {
 		profile, declared := profiles[t]
 		return profile, declared
 	}}
@@ -77,7 +76,7 @@ func TestANoteOfADeclaredTypeIsCachedAsItsProfileReturns(t *testing.T) {
 }
 
 func TestANoteOfATypeWithNoChunksIsNotSplit(t *testing.T) {
-	cuts := query.CutNotes{Profiles: func(domain.NoteType) (domain.NoteProfile, bool) {
+	cuts := chunking.CutNotes{Profiles: func(domain.NoteType) (domain.NoteProfile, bool) {
 		return domain.NoteProfile{HasChunks: false}, true
 	}}
 	sample := domain.Note{Type: "sample", Title: "Sample", Body: "# Part\n"}

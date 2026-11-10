@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -50,7 +51,7 @@ func getNotesWithOtherChunking(t *testing.T, db *container.Index, v domain.Vault
 	return paths
 }
 
-func runScan(t *testing.T, scan vaults.Scan, v domain.Vault) vaults.ScanResult {
+func runScan(t *testing.T, scan vaults.Scan, v domain.Vault) vaultreading.ScanResult {
 	t.Helper()
 	res, err := scan.Execute(t.Context(), v)
 	if err != nil {
