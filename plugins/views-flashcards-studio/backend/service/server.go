@@ -78,10 +78,10 @@ const ServiceName = "md.numen.views.flashcards.studio"
 // Mount registers the API, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
 	// gomutants:disable-next-line BRANCH_IF reason="Static service and method names are always valid."
-	if err := mountAPI(
-		s.NewAPI(ServiceName), b.CardModels(), b.Decks(), b.PresetReads(), b.PresetWrites(),
-		b.ReviewSessions(), b.ReviewWatches(), b.ReviewStats(),
-	); err != nil {
+	if err := mountAPI(s.NewAPI(ServiceName), apiHandlers{
+		Models: b.CardModels(), Decks: b.Decks(), PresetReads: b.PresetReads(), PresetWrites: b.PresetWrites(),
+		Sessions: b.ReviewSessions(), Watches: b.ReviewWatches(), Stats: b.ReviewStats(),
+	}); err != nil {
 		return err
 	}
 	registry, err := b.Tools()
@@ -150,35 +150,42 @@ type ReviewStatsAPI interface {
 	GetVaultDeckPreset(ctx context.Context, req *api.GetVaultDeckPresetRequest) (*api.GetVaultDeckPresetResponse, error)
 }
 
-func mountAPI(
-	a *server.API, models CardModelsAPI, decks DecksAPI, presetReads PresetReadAPI, presetWrites PresetWriteAPI,
-	sessions ReviewSessionAPI, watches ReviewWatchAPI, stats ReviewStatsAPI,
-) error {
-	handle(a, "ListCardModels", models.ListCardModels)
-	handle(a, "CreateCardModel", models.CreateCardModel)
-	handle(a, "ReadCardModel", models.ReadCardModel)
-	handle(a, "WriteCardModel", models.WriteCardModel)
-	handle(a, "RenameCardModelField", models.RenameCardModelField)
-	handle(a, "CreateDeck", decks.CreateDeck)
-	handle(a, "ReadDeck", decks.ReadDeck)
-	handle(a, "WriteDeck", decks.WriteDeck)
+type apiHandlers struct {
+	Models       CardModelsAPI
+	Decks        DecksAPI
+	PresetReads  PresetReadAPI
+	PresetWrites PresetWriteAPI
+	Sessions     ReviewSessionAPI
+	Watches      ReviewWatchAPI
+	Stats        ReviewStatsAPI
+}
 
-	handle(a, "GetDeckPreset", presetReads.GetDeckPreset)
-	handle(a, "ListPresets", presetReads.ListPresets)
-	handle(a, "CreatePreset", presetWrites.CreatePreset)
-	handle(a, "ScheduleDeck", presetWrites.ScheduleDeck)
-	handle(a, "ReadPreset", presetReads.ReadPreset)
-	handle(a, "WritePreset", presetWrites.WritePreset)
-	handle(a, "ComputeCurve", presetReads.ComputeCurve)
+func mountAPI(a *server.API, h apiHandlers) error {
+	handle(a, "ListCardModels", h.Models.ListCardModels)
+	handle(a, "CreateCardModel", h.Models.CreateCardModel)
+	handle(a, "ReadCardModel", h.Models.ReadCardModel)
+	handle(a, "WriteCardModel", h.Models.WriteCardModel)
+	handle(a, "RenameCardModelField", h.Models.RenameCardModelField)
+	handle(a, "CreateDeck", h.Decks.CreateDeck)
+	handle(a, "ReadDeck", h.Decks.ReadDeck)
+	handle(a, "WriteDeck", h.Decks.WriteDeck)
 
-	stream(a, "WatchCardsDue", watches.WatchCardsDue)
-	handle(a, "StartSession", sessions.StartSession)
-	handle(a, "RecordReview", sessions.RecordReview)
-	handle(a, "UndoReview", sessions.UndoReview)
-	stream(a, "WatchReloads", watches.WatchReloads)
-	handle(a, "ListReviewDays", stats.ListReviewDays)
-	handle(a, "GetDeckNeighbourhood", stats.GetDeckNeighbourhood)
-	handle(a, "GetVaultDeckPreset", stats.GetVaultDeckPreset)
+	handle(a, "GetDeckPreset", h.PresetReads.GetDeckPreset)
+	handle(a, "ListPresets", h.PresetReads.ListPresets)
+	handle(a, "CreatePreset", h.PresetWrites.CreatePreset)
+	handle(a, "ScheduleDeck", h.PresetWrites.ScheduleDeck)
+	handle(a, "ReadPreset", h.PresetReads.ReadPreset)
+	handle(a, "WritePreset", h.PresetWrites.WritePreset)
+	handle(a, "ComputeCurve", h.PresetReads.ComputeCurve)
+
+	stream(a, "WatchCardsDue", h.Watches.WatchCardsDue)
+	handle(a, "StartSession", h.Sessions.StartSession)
+	handle(a, "RecordReview", h.Sessions.RecordReview)
+	handle(a, "UndoReview", h.Sessions.UndoReview)
+	stream(a, "WatchReloads", h.Watches.WatchReloads)
+	handle(a, "ListReviewDays", h.Stats.ListReviewDays)
+	handle(a, "GetDeckNeighbourhood", h.Stats.GetDeckNeighbourhood)
+	handle(a, "GetVaultDeckPreset", h.Stats.GetVaultDeckPreset)
 	return a.Err()
 }
 
@@ -231,8 +238,6 @@ func (b *Backend) ReviewWatches() ReviewWatchAPI { return &reviewHandler{Backend
 // ReviewStats returns the API of the counts and the presets of the review window.
 func (b *Backend) ReviewStats() ReviewStatsAPI { return &reviewHandler{Backend: b} }
 
-// vaultsOf gives the ports' calls on the vault of the client with an identity; the empty identity is the
-// vault the host shows.
 func vaultsOf(client *host.Client) func(domain.VaultID) hostports.Vault {
 	return func(id domain.VaultID) hostports.Vault {
 		on := client.With(id)

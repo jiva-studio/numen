@@ -146,7 +146,6 @@ func newLibrary(t *testing.T) library {
 	return library{vault: vault, texts: texts, search: search, registry: registry}
 }
 
-// libraryOf gives the library calls of the vault with an identity, over the texts and the search given.
 func libraryOf(texts *hosttest.Texts, search *hosttest.Search) func(domain.VaultID) service.Library {
 	return func(id domain.VaultID) service.Library {
 		on := texts.With(id)

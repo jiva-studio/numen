@@ -31,7 +31,6 @@ func Mount(s *server.Server) error {
 	return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), newTextServer(files, texts, store, queue))
 }
 
-// newTextServer is the text server over the clients of the host.
 func newTextServer(files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) *TextServer {
 	return NewTextServer(
 		func(id domain.VaultID) vaultFiles { return files.With(id) },
