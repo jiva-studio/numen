@@ -4,13 +4,16 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import * as stepModule from '../lib/step/step'
 import { runSupport } from './palette/runSupport'
 import { createCommandPalette } from './palette/palette'
 import type { StepGroup } from '../types'
 import type { CommandTarget } from '@/entities/command'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const NAMED_ANSWERS = ['NAME', 'PICK', 'OPEN', 'CHOSEN', 'YES', 'NO', 'EXACT']
 const NAMED_IDS = ['name', 'pick', 'open', 'chosen', 'yes', 'no', 'exactly']

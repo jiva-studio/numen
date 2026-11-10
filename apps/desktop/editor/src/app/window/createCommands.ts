@@ -12,7 +12,7 @@ import {
   createInvocation,
   createCommandPalette,
   useSearch,
-  type Words as PaletteWords,
+  PALETTE_WORDS,
   type CommandDeps,
   type ResultChoice,
   type SearchMenuDeps,
@@ -254,7 +254,7 @@ function createWindowCommandPalette(
   const { core, words, getTarget, knows, runs } = options
   return createCommandPalette(
     { ...core, vaults: getVaultList },
-    words,
+    { ...words, ...PALETTE_WORDS },
     getTarget,
     knows,
     lists,
@@ -275,7 +275,7 @@ export function createCommands(options: CommandsDepsOptions) {
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
-  const palette = useSearch(core, words, {
+  const palette = useSearch(core, { ...words, ...PALETTE_WORDS }, {
     coverage,
     menu: createSearchMenu(options.slots),
     getTarget,
@@ -428,7 +428,7 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
  */
 export function collectFeatureCommands(
   deps: FeatureCommandsDeps,
-  words: PaletteWords,
+  words: Words,
   agent: string = navigator.userAgent,
 ): FeatureCommands {
   const notes = createNoteCommands(deps.notes, agent)
@@ -440,7 +440,7 @@ export function collectFeatureCommands(
     commands: [
       ...notes.commands,
       ...files.commands,
-      ...createPaletteCommands(words, agent),
+      ...createPaletteCommands({ ...words, ...PALETTE_WORDS }, agent),
       ...vaults.commands,
       ...tabs.commands,
       ...versions.commands,

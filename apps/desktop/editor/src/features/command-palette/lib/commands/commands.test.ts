@@ -5,9 +5,12 @@
 import { describe, expect, it } from 'vitest'
 import { getGroupCommands, isCommandPrefixTyped } from './commands'
 import { createAppCommands } from '@/testing/appCommands'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../../words'
 import { getPrompt } from '../step/step'
 import type { CommandTarget } from '@/entities/command'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 describe('the character that means the commands', () => {
   it('is one typed into a field holding nothing', () => {

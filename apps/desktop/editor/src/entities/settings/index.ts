@@ -16,6 +16,7 @@ export type {
   DeclarationKey,
   SecretSection,
 } from './lib/configuration'
+export { SETTINGS_WORDS } from './words'
 export { getSettingAt, createSettingsStore } from './model/store'
 export { themes } from './api/theme'
 export type { Appearance, Bounds, Mode, Ranges, Scales, Sizes, Theme, Themes } from './api/theme'

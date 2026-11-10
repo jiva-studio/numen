@@ -9,8 +9,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { requests, cards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
-import type { PluginSettingInfo } from '@/entities/settings'
-import { WORDS } from '@/shared/words'
+import { SETTINGS_WORDS, type PluginSettingInfo } from '@/entities/settings'
 
 /** What the core declares for the settings of the shell that the palette offers. */
 const SHELL: readonly PluginSettingInfo[] = [
@@ -348,7 +347,7 @@ describe('the commands of the settings over how the window is drawn and works', 
       await press('Enter')
       await wait()
 
-      expect(cards().join(' ')).toContain(WORDS.unturned)
+      expect(cards().join(' ')).toContain(SETTINGS_WORDS.unturned)
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
   })

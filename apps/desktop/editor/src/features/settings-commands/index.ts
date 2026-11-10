@@ -2,4 +2,6 @@
 export { createWindowAppearance } from './model/appearance'
 export { IS_MODE, IS_SIZES, IS_THEME, MARKER } from './lib/head'
 export { createWindowSettingPalette } from './model/windowPalette'
+export { APPEARANCE_WORDS } from './words'
+export type { SettingWords } from './model/settingCommands'
 export { getSettingsConfig } from './lib/settingsConfig'

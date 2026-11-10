@@ -12,9 +12,12 @@ import type { Command, CommandTarget, RunSupport } from '@/entities/command'
 import { createCommandPalette, type Commands } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from '../search/search'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../../words'
 import { createAppCommands } from '@/testing/appCommands'
 import { createDeferred, type Deferred } from '@/testing/deferred'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 function rethrow(error: unknown): never {
   throw error

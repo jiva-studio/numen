@@ -7,7 +7,10 @@ import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
 import { createCommandPalette, type Commands } from './palette'
 import type { Command, CommandTarget } from '@/entities/command'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../../words'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 function rethrow(error: unknown): never {
   throw error

@@ -8,7 +8,8 @@ import { defineComponent, ref } from 'vue'
 import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { findIcon, COMMAND, type Command, type CommandTarget } from '@/entities/command'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../../words'
 import { createAppCommands } from '@/testing/appCommands'
 import type { PendingStep } from '../../lib/step/step'
 import type { PaletteLists } from '../../types'
@@ -19,6 +20,8 @@ import type { SearchState } from '../search/search'
 import { createStepGroups } from './stepGroups'
 import type { ViewState } from './viewState'
 import { getPaletteView } from './view'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',

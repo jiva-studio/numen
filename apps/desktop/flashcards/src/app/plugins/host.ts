@@ -21,6 +21,7 @@ import {
   SLOT,
   openExternalUrl,
   type LoaderHost,
+  type Manifest,
   type AgentHost,
   type Disposable,
   type PluginContext,
@@ -35,9 +36,6 @@ import { createNoticeQueue } from '@numen/workbench'
 import { createNamedIcon } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
 import { TARGET } from '@/shared/config/window'
-
-/** The manifest the loader hands a host, as `LoaderHost` declares it. */
-type Manifest = NonNullable<Parameters<LoaderHost['createContext']>[1]>
 
 /** A tab kind, with the plugin that registered it. */
 export interface PluginView {

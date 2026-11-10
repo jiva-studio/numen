@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
-import { getRow, readComputedFontSize, showInFiles } from '../../support/layout.js'
+import { getFirstLine, getRow, readHeight, showInFiles } from '../../support/layout.js'
 import { readOwner, writeSetting } from '../../support/vault.js'
 
 const openSystemSettings = async (page: Page) => {
@@ -26,7 +26,7 @@ test.describe('Theming and Display Scaling', () => {
     await getRow(page, 'notes/Entropy.md').press('Enter')
     const editor = page.getByRole('tabpanel', { name: /Entropy/ }).locator('.cm-editor')
     await expect(editor).toBeVisible()
-    const editorBefore = await readComputedFontSize(editor)
+    const editorBefore = await readHeight(getFirstLine(editor))
 
     const settings = await openSystemSettings(page)
     const interfaceSize = settings.getByRole('slider', { name: 'Interface size' })
@@ -47,7 +47,7 @@ test.describe('Theming and Display Scaling', () => {
     await page.getByRole('tab', { name: /^Entropy/ }).click()
     await expect(reloaded).toBeVisible()
     await expect
-      .poll(async () => readComputedFontSize(reloaded))
+      .poll(async () => readHeight(getFirstLine(reloaded)))
       .toBeCloseTo(editorBefore * 1.2 * 1.5, 0)
   })
 

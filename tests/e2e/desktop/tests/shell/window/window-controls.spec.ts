@@ -4,7 +4,8 @@ import { getGraph, openWorkspace, runPaletteCommand } from '../../support/worksp
 import {
   getRow,
   getTab,
-  readComputedFontSize,
+  getFirstLine,
+  readHeight,
   readOpenTabs,
   showInFiles,
 } from '../../support/layout.js'
@@ -52,12 +53,12 @@ test.describe('Window Controls and Display Preferences', () => {
     await getRow(page, 'notes/Entropy.md').press('Enter')
     const editor = getEditor(page, 'Entropy')
     await expect(editor).toBeVisible()
-    const before = await readComputedFontSize(editor)
+    const before = await readHeight(getFirstLine(editor))
 
     await runPaletteCommand(page, 'Reading size', 'Reading size')
     await chooseValue(page, '1.5')
 
-    await expect.poll(async () => readComputedFontSize(editor)).toBeCloseTo(before * 1.5, 0)
+    await expect.poll(async () => readHeight(getFirstLine(editor))).toBeCloseTo(before * 1.5, 0)
     await expect
       .poll(async () => (await readOwner(request, 'app'))['appearance'])
       .toMatchObject({ textScale: 1.5 })
@@ -66,7 +67,7 @@ test.describe('Window Controls and Display Preferences', () => {
 
     const reloaded = getEditor(page, 'Entropy')
     await expect(reloaded).toBeVisible()
-    await expect.poll(async () => readComputedFontSize(reloaded)).toBeCloseTo(before * 1.5, 0)
+    await expect.poll(async () => readHeight(getFirstLine(reloaded))).toBeCloseTo(before * 1.5, 0)
   })
 
   test('shows or hides the headings under the notes of the plex with the Nest headings setting', async ({

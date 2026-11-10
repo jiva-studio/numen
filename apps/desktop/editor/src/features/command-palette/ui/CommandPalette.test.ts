@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
@@ -11,6 +12,8 @@ import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '@/entities/command'
 import CommandPalette from './CommandPalette.vue'
 import type * as HandlersModule from '../model/handlers/handlers'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const h = vi.hoisted(() => ({ runInvocation: vi.fn(() => Promise.resolve()) }))
 

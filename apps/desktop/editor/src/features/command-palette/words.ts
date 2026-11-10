@@ -79,3 +79,35 @@ export interface Words extends EmptyWords {
   readonly asParent: string
   readonly asJump: string
 }
+
+/** The words only the palette says; the window's own words are joined to them where it is built. */
+export const PALETTE_WORDS = {
+  meaning: 'Meaning',
+  readAt: 'Open at this heading',
+  noneFound: 'No results found',
+  noQuery: 'Search failed',
+  nothingFound: (query: string) => `No results for “${query}”`,
+  notEmbedded: 'Semantic index not built yet',
+  wordsOnly: 'Text search only: no embedding model set',
+  noteGroupTitle: 'Note',
+  overFile: 'File',
+  overWindow: 'General',
+  overSettings: 'Settings',
+  overVault: 'Vault',
+  noVault: 'No vault open',
+  noNote: 'No active note',
+  typeCommand: 'Type a command',
+  callIt: 'Name it',
+  givesIt: 'Set',
+  leavesOut: 'Clear',
+  typeNote: 'Search notes',
+  typeItems: 'Search',
+  typeVault: 'Search vaults',
+  typeBack: 'Type the note name to confirm',
+  chooses: 'Select',
+  asChild: 'Create as child',
+  asParent: 'Create as parent',
+  asJump: 'Create as jump',
+  findAction: 'Search actions',
+  noAction: 'No actions found',
+}
