@@ -154,7 +154,7 @@ func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
 // The watch ends where the caller does, and the channel is closed behind it.
 func TestAWatchStopsWithTheCallerItWasStartedFor(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
-	changed, err := createThemeFolder(t).Watch(ctx, 20*time.Millisecond)
+	changed, err := createThemeFolder(t).WatchOwnThemes(ctx, 20*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}

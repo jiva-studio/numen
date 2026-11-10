@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
