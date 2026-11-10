@@ -64,8 +64,10 @@ export function createKeyHandler(parts: KeyHandlerParts): (event: KeyboardEvent)
     else runCommand(command, getTarget())
   }
 
-  const keybindings = parts.declaredCommands?.contributions.keybindings
-  if (pluginHost && keybindings) syncKeybindings(pluginHost, keybindings, parts.plugins)
+  if (pluginHost) {
+    const keybindings = parts.declaredCommands?.contributions.keybindings
+    if (keybindings) syncKeybindings(pluginHost, keybindings, parts.plugins)
+  }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
   return (event: KeyboardEvent) => {
