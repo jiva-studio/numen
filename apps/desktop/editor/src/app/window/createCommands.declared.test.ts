@@ -7,6 +7,7 @@ import type { DeclaredCommands } from '../plugins/commands/declaredCommands'
 const isOpen = ref(false)
 
 vi.mock('@/features/command-palette', () => ({
+  PALETTE_WORDS: {},
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
   createCommandPalette: () => ({ open: isOpen }),

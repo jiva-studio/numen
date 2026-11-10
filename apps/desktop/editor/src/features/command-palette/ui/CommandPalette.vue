@@ -16,7 +16,8 @@ import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -27,6 +28,8 @@ const props = defineProps<{
   places: FileIcons
   runChoice: (choice: ResultChoice) => void
 }>()
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 /* --------------------------------- State ---------------------------------- */
 const actionWords: ActionWords = {

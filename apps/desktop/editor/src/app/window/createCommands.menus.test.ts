@@ -32,6 +32,7 @@ vi.mock('@/entities/command', async (importOriginal) => ({
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
 }))
 vi.mock('@/features/command-palette', () => ({
+  PALETTE_WORDS: {},
   runInvocation: h.runInvocation,
   registerCommand: vi.fn(),
   useSearch: (_core: unknown, _words: unknown, options: typeof h.searchOptions) => {

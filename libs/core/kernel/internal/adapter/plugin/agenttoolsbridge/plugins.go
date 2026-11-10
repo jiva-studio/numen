@@ -16,13 +16,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // Host is the plugin host used by the tools: it lists the known plugins and
 // starts each on demand.
 type Host interface {
-	pluginport.PluginActivator
+	bridge.Activator
 	GetPluginInfos() []plugin.Info
 }
 

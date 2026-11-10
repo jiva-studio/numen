@@ -23,6 +23,7 @@ import {
 } from '@/testing/window'
 import { Palette, type PaletteGroup } from '@numen/workbench'
 import { WORDS } from '@/shared/words'
+import { PALETTE_WORDS } from '@/features/command-palette'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */
@@ -131,9 +132,9 @@ describe('the palette', () => {
 
     await runSearch(window)
 
-    expect(groupTitles()).toStrictEqual([WORDS.meaning])
+    expect(groupTitles()).toStrictEqual([PALETTE_WORDS.meaning])
     expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
-      WORDS.notEmbedded,
+      PALETTE_WORDS.notEmbedded,
     )
   })
 })

@@ -5,12 +5,15 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../../words'
 import type { PendingStep } from '../../lib/step/step'
 import type { StepGroup } from '../../types'
 import type { Command, CommandTarget, PromptStep } from '@/entities/command'
 import type { NameMatch } from '../search/search'
 import { createPaletteSteps } from './navigation'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const on: CommandTarget = {
   tab: 'tab-1',

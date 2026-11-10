@@ -108,7 +108,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
-	notes := w.cfg.Notes(w.db, inst.UpdateIndex).FollowMoves(inst.State.GetWindow())
+	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(inst.Refresh).Execute).FollowMoves(inst.State.GetWindow())
 	w.notes = &notes
 	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Move)
 	w.vaults = &moves

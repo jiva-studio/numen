@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // ErrUnknownCommand is a call the plugin answered as for a command it does not run.
@@ -23,11 +22,9 @@ var ErrUnknownCommand = errors.New("the plugin runs no command of that id")
 // ErrBadArguments is a call the plugin answered as not meeting the command.
 var ErrBadArguments = errors.New("the plugin does not take those arguments")
 
-// Host provides the plugins, their manifests and their activation.
+// Host activates the plugin a command runs in.
 type Host interface {
-	pluginport.PluginDiscoverer
-	pluginport.PluginResolver
-	pluginport.PluginActivator
+	bridge.Activator
 }
 
 // Commands runs the commands of the plugins the host runs.

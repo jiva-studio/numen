@@ -7,6 +7,7 @@ export {
 } from './loader'
 export { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
 export type { LoaderHost } from './host'
+export type { Manifest } from '@numen/core-client'
 export {
   adoptPluginStyle,
   adoptSheet,

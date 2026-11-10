@@ -27,9 +27,6 @@ import (
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
 const immediateBound = editor.FlushTimeout / 2
 
-// newPluginVaultList is the list of vaults the plugins are given, put together over the window as the
-// composition root puts it together, because that root imports this package and cannot be imported
-// by its tests.
 func newPluginVaultList(o *editor.Installation) pluginport.PluginVaultList {
 	scenarios := o.Vaults()
 	return windowvaults.List{

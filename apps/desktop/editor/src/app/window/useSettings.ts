@@ -2,12 +2,18 @@
  * Settings configuration, theme application, and palette lists for the window.
  */
 import { watch } from 'vue'
-import { createWindowAppearance, createWindowSettingPalette } from '@/features/settings-commands'
+import {
+  APPEARANCE_WORDS,
+  createWindowAppearance,
+  createWindowSettingPalette,
+  type SettingWords,
+} from '@/features/settings-commands'
 import {
   choosePluginPath,
   createPluginRetry,
   createSecretStore,
   createSettingsStore,
+  SETTINGS_WORDS,
   deletePluginData,
   getPluginData,
   themes,
@@ -20,14 +26,11 @@ import { formatError } from '@/shared/api/errors'
 import { useSettingsTab } from '@/pages/settings'
 import type { Installation } from '@/pages/settings'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { WORDS } from '@/shared/words'
 import { WINDOW_WORDS } from './words'
 import type { WindowTabs } from '@/entities/tab'
 
-type Words = typeof WORDS
-
 export interface SettingsDeps {
-  words: Words
+  words: SettingWords
   log: MessageLog
   windowTabs: WindowTabs
   onSizeChanged: () => void
@@ -171,17 +174,17 @@ export function useSettings({
 }: SettingsDeps) {
   const writeAppearanceMessage = log.getWriter('appearance')
   const writeSettingsMessage = log.getWriter('configured')
-  const rest = createSettingsStore(words, writeSettingsMessage)
+  const rest = createSettingsStore(SETTINGS_WORDS, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
     rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
     core: themes,
-    words,
+    words: APPEARANCE_WORDS,
     write: writeAppearanceMessage,
   })
   const reportError = (error: unknown) => writeSettingsMessage(formatError(error), 'error')
   const secrets = createSecretStore({
-    words,
+    words: SETTINGS_WORDS,
     notify: log.getWriter('keys'),
     refresh: () => rest.start(),
   })

@@ -6,13 +6,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // Host provides the plugins, their manifests and whether the host holds one suspended.
 type Host interface {
-	pluginport.PluginDiscoverer
-	pluginport.PluginResolver
+	GetPluginInfos() []plugindomain.Info
+	GetPlugin(id string) (manifest.Discovered, bool)
+	IsPluginSuspended(pluginID string) bool
 }
 
 // Manifests is the manifests of the plugins the host holds.

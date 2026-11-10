@@ -6,10 +6,10 @@
 import { VAULT_SUMMARY, type MountedView as Mounted } from '@numen/plugin-loader'
 import { Spinner } from '@numen/ui'
 import { WelcomePage } from '@numen/workbench'
-import { MountedView } from '@/entities/tab'
 import type { Vault } from '@/entities/vault'
 import { VERSION } from '../lib/version'
 import { WORDS } from '../words'
+import MountedView from './MountedView.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{

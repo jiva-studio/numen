@@ -26,6 +26,7 @@ vi.mock('@/entities/command', async (importOriginal) => ({
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
 }))
 vi.mock('@/features/command-palette', () => ({
+  PALETTE_WORDS: {},
   runInvocation: h.runInvocation,
   createInvocation: (id: string, on: { path: string }) => ({ id, path: on.path }),
   registerCommand: h.registerCommand,

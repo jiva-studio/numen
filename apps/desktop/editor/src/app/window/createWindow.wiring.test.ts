@@ -30,6 +30,7 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('@/features/command-palette', () => ({
+  PALETTE_WORDS: {},
   runSupport: () => ({ name: 'runs' }),
   searchCore: { name: 'search' },
   registerCommand: () => () => undefined,

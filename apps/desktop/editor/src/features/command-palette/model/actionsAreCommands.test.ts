@@ -7,12 +7,15 @@ import { join, relative, resolve, sep } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { PaletteGroup } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/words'
+import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from './palette/runSupport'
 import { createCommandPalette } from './palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
 import type { CommandTarget } from '@/entities/command'
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 const ATLAS = 'org.example.atlas'
 const SHOW: SlotCommand = {
