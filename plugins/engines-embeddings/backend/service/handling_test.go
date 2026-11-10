@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
 
 // recording is a model that keeps the texts it was given.
@@ -37,7 +38,7 @@ func newRecordingServer(t *testing.T) (*embeddingServer, *[]string) {
 	srv.profilesDir = t.TempDir()
 	var mu sync.Mutex
 	var received []string
-	srv.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
 		return recording{mu: &mu, texts: &received}, nil
 	}
 	t.Cleanup(func() { closeServer(t, srv) })
@@ -170,7 +171,7 @@ func TestAChangeOfTheProfileDropsTheLoadedModel(t *testing.T) {
 	dir := t.TempDir()
 	srv.profilesDir = dir
 	openCount := 0
-	srv.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
 		openCount++
 		return engine.MockEmbedder{}, nil
 	}
@@ -239,8 +240,8 @@ func TestTheEnvironmentOverridesTheChosenProfile(t *testing.T) {
 
 func TestTheMockModelRecordsWhatItIsGiven(t *testing.T) {
 	log := filepath.Join(t.TempDir(), "embed.log")
-	t.Setenv(envMockML, "true")
-	t.Setenv(envMockLog, log)
+	t.Setenv("NUMEN_MOCK_ML", "true")
+	t.Setenv("NUMEN_MOCK_EMBED_LOG", log)
 	srv := newEmbeddingServer()
 	t.Cleanup(func() { closeServer(t, srv) })
 

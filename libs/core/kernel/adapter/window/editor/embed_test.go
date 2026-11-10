@@ -253,7 +253,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 	}, unwatchable{}, newWalking(), model, 20*time.Millisecond)
 
 	waitFor(t, "the model was never asked at all", func() bool { return model.getTurnedDown() > 0 })
-	if why := f.api.state.WatchError.Why(); why == "" {
+	if why := f.api.state.GetWatchError(); why == "" {
 		t.Fatal("a vault whose watch never started is shown as followed")
 	}
 	target, embedded := getVectorProgress(t, f, model)
@@ -282,7 +282,7 @@ func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	}, watcher, unwalkable{VaultReaders: vaultreader.Readers{}}, model, 20*time.Millisecond)
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
-		return f.api.state.Error.Why() != ""
+		return f.api.state.GetError() != ""
 	})
 
 	write(t, f.vault, "Note.md", noteWith(getAfter(), 200))

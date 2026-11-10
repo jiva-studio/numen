@@ -47,8 +47,6 @@ export const ROW = {
   openNoteBeside: `${COMMAND.openFile}#beside`,
   openDocument: `${COMMAND.openFile}#document`,
   goToNote: `${COMMAND.openFile}#note`,
-  revealInPlex: `${COMMAND.revealFile}#plex`,
-  revealInFiles: `${COMMAND.revealFile}#files`,
 } as const
 
 /** The names of the arguments of the commands that open and show a file. */

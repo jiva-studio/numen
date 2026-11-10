@@ -11,7 +11,8 @@ import { PathField } from '../path-field'
 import PluginSecretField from './PluginSecret.vue'
 import SettingsViews from './SettingsViews.vue'
 import type { SettingsTabState } from '../../types'
-import { createSettingFields, type PluginInfo, type PluginSettingInfo } from '@/entities/settings'
+import type { PluginInfo, PluginSettingInfo } from '@/entities/settings'
+import { createPluginSettings } from '../../model/createPluginSettings'
 import { createEnumFields, getValueInForce } from '../../lib/enums'
 import { appendPathEntry, createTextDrafts, removePathEntry } from '../../model/drafts'
 import { WORDS as words } from '../../words'
@@ -24,7 +25,10 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation.settings)
+const settings = createPluginSettings(
+  () => props.state.installation.settings,
+  () => props.plugin.id,
+)
 const {
   getEnumOptions,
   getEnumChoices,
@@ -35,13 +39,9 @@ const {
 } = createEnumFields(
   () => props.plugin,
   readSetting,
-  isKeyRequested,
-  () => props.state.installation.settings.getPlatform?.() ?? '',
+  settings.isRequested,
+  () => props.state.installation.settings.getPlatform(),
 )
-
-function isKeyRequested(key: string): boolean {
-  return installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
-}
 
 /** Why a path setting did not accept the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
@@ -49,7 +49,7 @@ const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, ...key.split('.')], value)
+  settings.set(key, value)
 }
 
 async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
@@ -75,13 +75,13 @@ function hasManyPaths(setting: PluginSettingInfo): boolean {
 }
 
 function readSetting(key: string): unknown {
-  return installation.value.settings.getSetting([props.plugin.id, ...key.split('.')])
+  return settings.get(key)
 }
 
 function getValue(key: string): unknown {
   const setting = props.plugin.settings.find((one) => one.key === key)
   if (!setting) return readSetting(key)
-  return getValueInForce(setting, readSetting, isKeyRequested)
+  return getValueInForce(setting, readSetting, settings.isRequested)
 }
 
 function getBooleanSetting(key: string, fallback: unknown): boolean {

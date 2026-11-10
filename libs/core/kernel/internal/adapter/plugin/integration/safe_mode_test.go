@@ -33,34 +33,34 @@ func TestHostSafeMode(t *testing.T) {
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	host.SetSafeMode(true)
+	host.Mode.SetSafeMode(true)
 
-	if !host.IsSafeMode() {
+	if !host.Mode.IsSafeMode() {
 		t.Fatal("expected IsSafeMode to report true")
 	}
 
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	if plugins := host.GetPlugins(); len(plugins) != 0 {
+	if plugins := host.Registry.GetPlugins(); len(plugins) != 0 {
 		t.Fatalf("expected 0 plugins in safe mode, got %d", len(plugins))
 	}
 
-	if _, ok := host.GetPlugin("org.example.sample"); ok {
+	if _, ok := host.Registry.GetPlugin("org.example.sample"); ok {
 		t.Fatal("expected GetPlugin to report false in safe mode")
 	}
 
-	if _, ok := host.FindPluginByCapability("embedding"); ok {
+	if _, ok := host.Registry.FindPluginByCapability("embedding"); ok {
 		t.Fatal("expected FindPluginByCapability to report false in safe mode")
 	}
 
 	ctx := t.Context()
-	if _, err := host.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, plugin.ErrSafeModeActive) {
+	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); !errors.Is(err, plugin.ErrSafeModeActive) {
 		t.Fatalf("expected errSafeModeActive, got %v", err)
 	}
 
-	activated, err := host.TriggerEvent(ctx, "onFile:test.pdf")
+	activated, err := host.Events.TriggerEvent(ctx, "onFile:test.pdf")
 	if err != nil {
 		t.Fatalf("TriggerEvent error: %v", err)
 	}

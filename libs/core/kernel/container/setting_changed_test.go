@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 const (
@@ -29,18 +30,18 @@ const (
 // recordingHost is a plugin host that records what the container tells it, and passes the rest to
 // the real host.
 type recordingHost struct {
-	pluginport.SettingUpdater
 	pluginport.SettingsPush
+	apply    settingsport.PluginSettingApplier
 	mu       sync.Mutex
 	updates  []string
 	profiles []string
 }
 
-func (r *recordingHost) UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error {
+func (r *recordingHost) applySetting(ctx context.Context, pluginID, key string, value any) error {
 	r.mu.Lock()
 	r.updates = append(r.updates, pluginID+"."+key)
 	r.mu.Unlock()
-	return r.SettingUpdater.UpdatePluginSetting(ctx, pluginID, key, value)
+	return r.apply(ctx, pluginID, key, value)
 }
 
 func (r *recordingHost) SetPerformanceProfile(ctx context.Context, profile string) {
@@ -91,8 +92,8 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 		t.Fatal(err)
 	}
 	lent := container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))
-	host := &recordingHost{SettingUpdater: lent.SettingUpdater, SettingsPush: lent.SettingsPush}
-	lent.SettingUpdater, lent.SettingsPush = host, host
+	host := &recordingHost{apply: lent.ApplySetting, SettingsPush: lent.SettingsPush}
+	lent.ApplySetting, lent.SettingsPush = host.applySetting, host
 	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
 	cfg = cfg.SetSettings(container.DefaultSettings())
 	t.Cleanup(cfg.UnsubscribeHost)

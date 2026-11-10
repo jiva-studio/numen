@@ -5,7 +5,8 @@
  */
 import { computed } from 'vue'
 import type { SettingsTabState } from '../../types'
-import { createSettingFields, type PluginInfo } from '@/entities/settings'
+import type { PluginInfo } from '@/entities/settings'
+import { createPluginSettings } from '../../model/createPluginSettings'
 import { getRegisteredViews, getSettingValues } from '../../lib/settingsViews'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -16,25 +17,21 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation.settings)
+const settings = createPluginSettings(
+  () => props.state.installation.settings,
+  () => props.plugin.id,
+)
 const views = computed(() =>
   getRegisteredViews(
     props.plugin.settingsViews ?? [],
-    installation.value.plugin.getSettingsViews?.(props.plugin.id) ?? new Map(),
+    installation.value.plugin.getSettingsViews(props.plugin.id),
   ),
 )
-const values = computed(() =>
-  getSettingValues(
-    props.plugin,
-    (key) => installation.value.settings.getSetting([props.plugin.id, ...key.split('.')]),
-    (key) =>
-      installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
-  ),
-)
+const values = computed(() => getSettingValues(props.plugin, settings.get, settings.isRequested))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingUpdate(key: string, value: unknown): void {
-  fields.setValue([props.plugin.id, ...key.split('.')], value)
+  settings.set(key, value)
 }
 </script>
 

@@ -6,23 +6,19 @@ import (
 	"testing"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
-// applyingHost records each setting the host applies.
-type applyingHost struct {
-	pluginport.SettingUpdater
-	applied *[]string
-}
-
-func (h applyingHost) UpdatePluginSetting(_ context.Context, pluginID, key string, _ any) error {
-	*h.applied = append(*h.applied, pluginID+"."+key)
-	return nil
+func applyingHost(applied *[]string) settingsport.PluginSettingApplier {
+	return func(_ context.Context, pluginID, key string, _ any) error {
+		*applied = append(*applied, pluginID+"."+key)
+		return nil
+	}
 }
 
 func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	var applied []string
-	c := NewConfig(Config{PluginHost: &PluginHost{SettingUpdater: applyingHost{applied: &applied}}})
+	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(&applied)}})
 	changes, stop := c.WatchPluginChanges()
 	defer stop()
 
@@ -39,7 +35,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 }
 
 func TestAPluginChangeIsNotReportedAfterTheWatchStops(t *testing.T) {
-	c := NewConfig(Config{PluginHost: &PluginHost{SettingUpdater: applyingHost{applied: new([]string)}}})
+	c := NewConfig(Config{PluginHost: &PluginHost{ApplySetting: applyingHost(new([]string))}})
 	changes, stop := c.WatchPluginChanges()
 	stop()
 

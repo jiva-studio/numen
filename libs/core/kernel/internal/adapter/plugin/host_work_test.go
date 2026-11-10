@@ -27,14 +27,14 @@ func newWorkingHost(t *testing.T) workingHost {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	var procs []*os.Process
-	host.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 	tasks := run.NewTasks()
 	work := run.NewPluginWork(&run.Lock{}, tasks, nil)
-	host.SetPluginWork(work)
-	if _, err := host.EnsureActive(t.Context(), workingPlugin); err != nil {
+	host.Services.SetPluginWork(work)
+	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatal(err)
 	}
-	host.Release(workingPlugin)
+	host.Activation.Release(workingPlugin)
 
 	work.ReportTask(workingPlugin, plugindomain.Task{ID: "scan.sample", Title: "Scanning"})
 	turn, err := work.EnqueueWork(t.Context(), workingPlugin, true, nil)
@@ -60,7 +60,7 @@ func (w workingHost) checkCleared(t *testing.T) {
 func TestDisabledPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
-	if err := w.host.SetPluginEnabled(t.Context(), workingPlugin, false); err != nil {
+	if err := setEnabled(t.Context(), w.host, workingPlugin, false); err != nil {
 		t.Fatal(err)
 	}
 	w.checkCleared(t)
@@ -70,6 +70,6 @@ func TestCrashedPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
 	plugintest.KillProcess(t, w.process)
-	waitForProcessExit(t, w.host.supervisors[workingPlugin].GetExitSignal())
+	waitForProcessExit(t, w.host.Registry.t.supervisors[workingPlugin].GetExitSignal())
 	w.checkCleared(t)
 }

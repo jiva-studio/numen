@@ -16,7 +16,10 @@ func setting(json string, path ...string) settingsdomain.Setting {
 }
 
 func newNotifier(host *pluginHost, refreshSecrets func(context.Context) error, signal func(), report func(error)) *settings.NotifyPlugins {
-	return settings.NewNotifyPlugins(jsonCodec{}, host, refreshSecrets, func(profile string) string { return "resolved-" + profile }, signal, report)
+	return settings.NewNotifyPlugins(settings.NotifyPluginsDeps{
+		Codec: jsonCodec{}, Apply: host.UpdatePluginSetting, Config: host, RefreshSecrets: refreshSecrets,
+		ResolveProfile: func(profile string) string { return "resolved-" + profile }, Signal: signal, Report: report,
+	})
 }
 
 // A plugin that is enabled in the same batch as its settings receives the settings first, and

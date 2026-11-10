@@ -19,7 +19,7 @@ func TestAFailedReadOfTheModelAfterASettingIsReported(t *testing.T) {
 	reads := mock.getModelCalls.Load()
 
 	mock.failRead.Store(true)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 128); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -45,7 +45,7 @@ func TestNoModelChangeIsAnnouncedWhenTheReadOfTheModelFails(t *testing.T) {
 
 	mock.modelName.Store("another-model")
 	mock.failRead.Store(true)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -63,7 +63,7 @@ func TestTheModelIsTheSameAfterAFailedRead(t *testing.T) {
 
 	mock.modelName.Store("another-model")
 	mock.failRead.Store(true)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -81,14 +81,14 @@ func TestTheNextChangeIsAnnouncedOnceAfterAFailedRead(t *testing.T) {
 
 	mock.modelName.Store("another-model")
 	mock.failRead.Store(true)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
 
 	mock.failRead.Store(false)
 	reads = mock.getModelCalls.Load()
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "provider", "local"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -107,7 +107,7 @@ func TestASuccessfulReadOfTheModelReportsNoError(t *testing.T) {
 	reports := failureReports(bridge)
 	reads := mock.getModelCalls.Load()
 
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "provider", "local"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)

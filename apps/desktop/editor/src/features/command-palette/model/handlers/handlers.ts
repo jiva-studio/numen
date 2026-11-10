@@ -7,10 +7,15 @@
  * the table below. What the window offers to do it with is `deps.ts`. Nothing here draws anything.
  */
 import { formatError } from '@/shared/api/errors'
-import type { CommandDeps, CommandHandler } from './deps'
-import { COMMAND, SETTING_COMMAND_PREFIX, type CommandInvocation } from '@/entities/command'
+import {
+  COMMAND,
+  commands,
+  SETTING_COMMAND_PREFIX,
+  type CommandDeps,
+  type CommandHandler,
+  type CommandInvocation,
+} from '@/entities/command'
 import { SETTINGS } from '@/entities/tab'
-export type { CommandDeps }
 
 /** What each command of the palette evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
@@ -18,27 +23,6 @@ const HANDLERS: Record<string, CommandHandler> = {
   [COMMAND.closeTab]: (invocation, on) => on.navigator.closeTab(invocation.tab),
   [COMMAND.searchVault]: (_, on) => on.navigator.search(),
 }
-
-const commandRegistry = new Map<string, CommandHandler>()
-
-export const commands = {
-  registerCommand: (id: string, handler: CommandHandler): (() => void) => {
-    commandRegistry.set(id, handler)
-    return () => {
-      if (commandRegistry.get(id) === handler) {
-        commandRegistry.delete(id)
-      }
-    }
-  },
-  get(id: string): CommandHandler | undefined {
-    return commandRegistry.get(id)
-  },
-  clear(): void {
-    commandRegistry.clear()
-  },
-}
-
-export const registerCommand = commands.registerCommand
 
 async function runSetting(invocation: CommandInvocation, on: CommandDeps): Promise<void> {
   try {
@@ -57,7 +41,7 @@ export async function runInvocation(
 ): Promise<string> {
   if (!invocation) return ''
   const isSetting = invocation.id.startsWith(SETTING_COMMAND_PREFIX)
-  const handler = commandRegistry.get(invocation.id) ?? HANDLERS[invocation.id]
+  const handler = commands.get(invocation.id) ?? HANDLERS[invocation.id]
   if (!isSetting && !handler) return ''
   on.writeMessage('')
   on.emitEvent?.(`onCommand:${invocation.id}`)

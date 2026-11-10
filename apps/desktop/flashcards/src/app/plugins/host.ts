@@ -5,16 +5,14 @@
  * notices; the views declared for the list of vaults; and the view of the slot titleBar. Every other
  * registration has no slot in this window.
  */
-import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } from 'vue'
+import { shallowRef, type ShallowRef } from 'vue'
 import {
   createAppInfo,
   createIdleContextHost,
   createPluginContext,
-  createPluginNotices,
-  createSlotRegistry,
-  createSlotViewRegistry,
   disposeSubscriptions,
-  readManifestSlotEntries,
+  createPluginNotices,
+  createSlotViewRegistry,
   createViewRegistry,
   requireMountAccess,
   type ViewRegistry,
@@ -26,95 +24,22 @@ import {
   type Disposable,
   type PluginContext,
   type SlotViewRegistry,
-  type TabKindRegistration,
   type CommandsHost,
   type VaultsHost,
   type WindowHost,
 } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
-import { createNamedIcon } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
 import { TARGET } from '@/shared/config/window'
 
-/** A tab kind, with the plugin that registered it. */
-export interface PluginView {
-  readonly pluginId: string
-  readonly registration: TabKindRegistration
-}
+import {
+  createFrontView,
+  createWindowSlots,
+  createWindowTab,
+  type PluginView,
+} from './hostParts'
 
-/** The one tab the window draws: a kind opened on a vault, and what the kind made of it. */
-export interface WindowTab {
-  readonly id: string
-  readonly vault: string
-  readonly view: PluginView
-  readonly state: unknown
-  readonly scope: EffectScope
-}
-
-function createWindowTab(front: () => PluginView | null) {
-  const tab = shallowRef<WindowTab | null>(null)
-  let tabCount = 0
-
-  /** The tab closed, by its identity, or whichever is open where none is named. */
-  const closeTab = (id?: string) => {
-    const one = tab.value
-    if (!one || (id !== undefined && one.id !== id)) return
-    tab.value = null
-    one.view.registration.onDestroy?.(one.state, one.id)
-    one.scope.stop()
-  }
-
-  /** The front kind opened on a vault, in a scope of its own the kind's state lives in. */
-  const openTab = (vault: string) => {
-    const view = front()
-    if (!view) return
-    closeTab()
-    tabCount += 1
-    const id = `${view.registration.kind}#${tabCount}`
-    const scope = effectScope(true)
-    try {
-      const state = scope.run(() => view.registration.open?.(vault, id))
-      tab.value = { id, vault, view, state, scope }
-    } catch (error) {
-      scope.stop()
-      throw error
-    }
-  }
-
-  return { tab, openTab, closeTab }
-}
-
-function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]>>) {
-  return computed<PluginView | null>(() => {
-    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
-    mainViews.sort(
-      // Stryker disable next-line OptionalChaining: mainViews only holds registrations with defined placement
-      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
-    )
-    return mainViews[0] ?? null
-  })
-}
-
-function createWindowSlots(slotViews: SlotViewRegistry) {
-  const manifests = shallowRef<ReadonlyMap<string, Manifest>>(new Map())
-  const slots = createSlotRegistry({
-    getEntries: () =>
-      [...manifests.value].flatMap(([pluginId, manifest]) =>
-        readManifestSlotEntries(pluginId, manifest, createNamedIcon),
-      ),
-    findCommand: () => undefined,
-    findView: slotViews.findView,
-  })
-  const track = (pluginId: string, manifest: Manifest | undefined): void => {
-    if (manifest) manifests.value = new Map(manifests.value).set(pluginId, manifest)
-  }
-  const forget = (pluginId: string): void => {
-    const next = new Map(manifests.value)
-    next.delete(pluginId)
-    manifests.value = next
-  }
-  return { slots, track, forget }
-}
+export type { PluginView, WindowTab } from './hostParts'
 
 const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginView): Disposable => {
   views.value = [...views.value, view]

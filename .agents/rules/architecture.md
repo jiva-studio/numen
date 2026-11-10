@@ -129,7 +129,24 @@ Cyclomatic complexity, nesting depth and function length are rules. Go, TypeScri
 
 A configuration may set a lower value than the table and never a higher one. The TypeScript configuration sets parameters 4, below the table; the Go configuration also runs `gocognit` (15), `nestif` (3) and `maintidx`. A Vue file also has limits for its blocks: the script block 100 lines, the template 140 lines, template depth 4, 6 inline props, 3 statements in a `computed`, and 8 properties a composable returns, counted through a returned variable, with no spread in the returned object (`numen/max-composable-return-properties`, tested in `tools/lint-layers/composable.test.mjs`). Test files (`_test.go`, `*.test.ts`, `*.stories.ts`) are outside these limits. A function over a limit is split by responsibility.
 
-File length and import counts have no limit. A file is split when it holds a second responsibility: a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. A folder that collects a kind rather than a thing is a finding: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
+A structure is judged by what one object does, not by the interfaces it is cut into.
+
+- **A struct is bounded.** An adapter or container struct has at most 20 methods and 15 fields, a use case at most 12 methods and 12 fields. A struct that grows past it is cut by responsibility into several objects, each with its own state.
+- **A file and a package are bounded.** A source file has at most 500 lines. A package in the Go core has at most 3000 lines. An import count has no limit. A file is split when it holds a second responsibility: a section with its own state, a part rendered on its own elsewhere, a concern that can be exercised separately. A folder that collects a kind rather than a thing is a finding: every entity in one file, every use case in one package, readable at five and unreadable at fifty.
+
+### What each object does
+
+- **An adapter owns one technology and holds no business rule.** It stores, reads, translates and routes; a decision about a note, a vault or a card is a use case or the domain.
+- **Scenario logic lives in a use case.** A handler, a command or a window service decodes, calls one use case and encodes.
+- **Shared code is a domain, a port, a use case or a named helper with a reason.** It is never a folder collected for reuse that no check walks.
+- **Driving adapters live under `adapter/`:** `adapter/cli`, `adapter/window/<service>` (one folder per wire service) and `adapter/plugin/<host endpoint>`.
+- **The plugin backend's `service` package is the composition root and the wire.** It builds the adapters and use cases and holds one handler per method; the rules of the plugin are in its domain and use case packages.
+- **A plugin frontend is a set of slices.** Another part of the plugin imports a slice through its `index.ts` only.
+- **A permission guard is a table that denies by default.** Each method or call has a row naming the permission it needs; a method with no row is refused.
+- **An unknown type appears only at a declared parse boundary.** Past it, the value has a named type.
+- **One host concern has one runtime port.** The clock, the filesystem, the environment and the process each reach the code through a single interface.
+- **A `catch` handles the failure.** It recovers, reports it to the person or returns a typed error; it does not discard it.
+- **Production code is written for its callers.** A test uses the real object or a fake at the outer edge; a seam, a field or a method that exists only so a test can substitute it is removed.
 
 ## 9. Zero exceptions
 
@@ -179,6 +196,7 @@ A check decides by structure. Where an off-the-shelf tool exists, the check is t
 - `story-files-lint-storybook-recommended`: a story file of `@numen/ui` and `@numen/workbench` resolves every rule of the recommended config of `eslint-plugin-storybook` at the severity the plugin gives it, and `storybook/csf-component` is off.
 - `core-client-only-in-api`: a window imports `@numen/core-client` only from an `api` segment and from its entry `src/main.ts`.
 - `shared-serves-several-slices`: a shipped file of a window's `shared` layer is imported, directly or through other shared files, from more than one slice; a file one slice uses belongs in that slice.
+- `app-is-composition`: a shipped file of a window's `app` layer is at most 300 lines, is not named `use<Name>` and exports no `use<Name>` composable; state and behavior belong to a slice, `app` creates, connects and orders.
 - `desktop-editor-fsd`: the FSD layer hierarchy of the editor (§4).
 - `desktop-flashcards-fsd`: the FSD layer hierarchy of the flashcards window (§4).
 
