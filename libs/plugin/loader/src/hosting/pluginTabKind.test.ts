@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import type { PluginContext, PluginUi, PluginVault, TabKindRegistration } from '@numen/plugin-sdk'
+import type { PluginUi, PluginVault, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import {

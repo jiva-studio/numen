@@ -28,7 +28,7 @@ const createHost = () => {
 type Plugin = ReturnType<ReturnType<typeof createHost>['createPlugin']>
 
 const registerNoteViewer = (owner: Plugin, capability = VIEW) =>
-  owner.registerView({
+  owner.register.view({
     capability,
     component: defineComponent({
       props: { context: { type: Object as PropType<{ path: string }>, required: true } },
@@ -86,7 +86,7 @@ describe('a view kind a plugin registers itself', () => {
   it('mounts it for any plugin when its plugin holds no vault permission', () => {
     const { createPlugin } = createHost()
     const owner = createPlugin('md.numen.owner', ['network'])
-    owner.registerView({
+    owner.register.view({
       capability: VIEW,
       component: defineComponent({ setup: () => () => h('p', 'plain') }),
     })
@@ -117,7 +117,7 @@ describe('a view capability named like a property of every object', () => {
     const element = document.createElement('div')
 
     expect(() => caller.ui.mountView(name, element, {})).not.toThrow()
-    createPlugin('md.numen.owner', []).registerView({
+    createPlugin('md.numen.owner', []).register.view({
       capability: name,
       component: defineComponent({ setup: () => () => h('p', 'late') }),
     })

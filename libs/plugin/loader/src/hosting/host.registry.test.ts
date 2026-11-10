@@ -321,7 +321,7 @@ describe('the settings of a window that keeps none', () => {
     const host = createPluginHost(createDeps())
     const ctx = host.createContext('sample.plugin')
 
-    expect(ctx.getSetting('fontSize')).toBeUndefined()
+    expect(ctx.settings.get('fontSize')).toBeUndefined()
     expect(() => ctx.settings.onChange('fontSize', vi.fn()).dispose()).not.toThrow()
   })
 })

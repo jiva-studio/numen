@@ -406,7 +406,7 @@ describe('createPluginHost', () => {
     })
     host
       .createContext('md.numen.chat')
-      .registerView({ capability: CONVERSATION, component: conversation })
+      .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
 
     const mounted = host
@@ -424,7 +424,7 @@ describe('createPluginHost', () => {
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
     host
       .createContext('md.numen.chat')
-      .registerView({ capability: CONVERSATION, component: conversation })
+      .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
     host.createContext('org.example.sample').ui.mountView(CONVERSATION, panel, {})
 
@@ -469,7 +469,7 @@ describe('a view mounted by a plugin', () => {
       }),
     )
     const registerViews = () => {
-      notesPlugin.registerView({
+      notesPlugin.register.view({
         capability: NOTE_EDITOR,
         component: defineComponent({
           props: { context: { type: Object as PropType<NoteEditorContext>, required: true } },
@@ -483,7 +483,7 @@ describe('a view mounted by a plugin', () => {
           },
         }),
       })
-      notesPlugin.registerView({
+      notesPlugin.register.view({
         capability: CONVERSATION,
         component: defineComponent({ setup: () => () => h('p', 'conversation') }),
       })
