@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -20,7 +19,7 @@ func TestAPluginOpenAfterACallThatEndedSucceeds(t *testing.T) {
 	flushRequest := make(chan struct{}, 1)
 	release := make(chan struct{})
 	f.respondToFlushes(t, stream, flushRequest, release)
-	list := editor.NewPluginVaultList(f.installation)
+	list := newPluginVaultList(f.installation)
 
 	ctx, hangUp := context.WithCancel(t.Context())
 	openResult := callOpenVault(ctx, list, f.second.ID)

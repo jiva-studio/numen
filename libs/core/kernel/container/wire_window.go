@@ -29,7 +29,7 @@ type windowWiring struct {
 	inst   *editor.Installation
 	files  *filewindow.Handler
 	server *editor.FileServer
-	wrap   func(editor.Sources) editor.Sources
+	wrap   func(editor.StartVaultFunc) editor.StartVaultFunc
 }
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
@@ -54,11 +54,11 @@ func (c Config) OpenWindowOver(
 	return c.OpenWindowWith(ctx, ports, db, named, out, nil)
 }
 
-// OpenWindowWith is OpenWindowOver with the passes behind the vault put through wrap, for a caller
-// that holds one back or drives it. A nil wrap leaves them as they are.
+// OpenWindowWith is OpenWindowOver with the walk of the vault put through wrap, for a caller
+// that holds one back or drives it. A nil wrap leaves it as it is.
 func (c Config) OpenWindowWith(
 	ctx context.Context, ports registry.Ports, db *Index, named string, out io.Writer,
-	wrap func(editor.Sources) editor.Sources,
+	wrap func(editor.StartVaultFunc) editor.StartVaultFunc,
 ) (*editor.Installation, error) {
 	w := &windowWiring{cfg: c, ports: ports, db: db, wrap: wrap}
 	return openWindow(ctx, w, named, out)
@@ -85,9 +85,9 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
-	sources := getWindowSources(w.cfg, w.db)
+	session := getWindowSession(w.cfg, w.db)
 	if w.wrap != nil {
-		sources = w.wrap(sources)
+		session.StartVault = w.wrap(session.StartVault)
 	}
 	inst := editor.NewInstallation(editor.Setup{
 		Tasks:         tasks,
@@ -97,11 +97,13 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		Asking:        asking,
 		EmbedderError: why,
 		StopEmbedder:  closeEmbedder,
+		ReadVault:     getReadVault(w.cfg, w.db),
+		CloseIndex:    w.db.Close,
 		Progress:      w.db.Progress(),
 		EmitEvent:     w.cfg.plugins().EmitPluginEvent,
 		IsRebuilding:  w.cfg.ShouldRebuildIndex,
 		Closing:       ctx.Done(),
-	}, sources)
+	}, session)
 	w.inst = inst
 
 	// A note saved by the user is refreshed in the index before the save returns,

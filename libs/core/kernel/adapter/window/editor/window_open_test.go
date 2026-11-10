@@ -195,9 +195,8 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(sources editor.Sources) editor.Sources {
-		sources.StartVault = gateWalk(sources.StartVault, release)
-		return sources
+	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(start editor.StartVaultFunc) editor.StartVaultFunc {
+		return gateWalk(start, release)
 	})
 	if err != nil {
 		t.Fatal(err)

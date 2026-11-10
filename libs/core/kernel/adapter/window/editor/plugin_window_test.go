@@ -19,13 +19,30 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
+
+// newPluginWindow is the window the plugins are given, put together over the state as the
+// composition root puts it together, because that root imports this package and cannot be imported
+// by its tests.
+func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages) pluginport.PluginWindow {
+	return windowfocus.Window{
+		GetVault: state.GetCurrentVault,
+		Note:     focusNote.Execute,
+		Passages: func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
+			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
+		},
+		GetOpenTabs: state.GetOpenTabs,
+		ShowTab:     state.ShowTab,
+	}
+}
 
 // memoryTabs keeps the open tabs of each vault in memory.
 type memoryTabs map[domain.VaultID]domain.OpenTabs
@@ -58,7 +75,7 @@ func newBoundWindow(t *testing.T) (*State, pluginport.PluginWindow, <-chan domai
 	}))
 	line, unsubscribe := state.Places.subscribe()
 	t.Cleanup(unsubscribe)
-	return state, NewPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.GetWindow())), line
+	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.GetWindow())), line
 }
 
 func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {

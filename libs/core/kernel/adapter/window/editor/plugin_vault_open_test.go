@@ -32,7 +32,7 @@ func TestPluginOpenVaultAfterSwitchPromptClosesShowsVault(t *testing.T) {
 		t.Fatal("closing the prompt never completed the flush request")
 	}
 
-	list := editor.NewPluginVaultList(f.installation)
+	list := newPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {
@@ -81,7 +81,7 @@ func TestVaultSwitchAfterPluginOpenFailsDuringUserClose(t *testing.T) {
 			}
 		}
 	}()
-	list := editor.NewPluginVaultList(f.installation)
+	list := newPluginVaultList(f.installation)
 	select {
 	case err := <-callOpenVault(t.Context(), list, f.second.ID):
 		if err != nil {

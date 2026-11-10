@@ -711,7 +711,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 	}
 }
 
-func openInstallation(t *testing.T) *editor.Installation {
+func openInstallation(t *testing.T) (*editor.Installation, *vaults.Index) {
 	t.Helper()
 
 	cfg := container.NewConfig(container.Config{
@@ -731,17 +731,21 @@ func openInstallation(t *testing.T) *editor.Installation {
 		t.Fatal(err)
 	}
 
-	installation, err := cfg.OpenWindow(t.Context(), "one", io.Discard)
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	installation, err := cfg.OpenWindowOver(t.Context(), registry, db, "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, installation)
-	return installation
+	return installation, db
 }
 
 // A note saved through the window is in the index when the save is answered.
 func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
-	installation := openInstallation(t)
+	installation, db := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
 	content, err := editor.ServicesOf(installation).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
@@ -755,7 +759,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 
-	found, err := installation.Passages().FindLexical(
+	found, err := db.Passages().FindLexical(
 		t.Context(), installation.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)

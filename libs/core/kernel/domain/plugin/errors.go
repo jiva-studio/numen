@@ -50,3 +50,14 @@ var (
 	// ErrInvalidQuery is a query vector whose dimension count is not the one of the vectors in the index.
 	ErrInvalidQuery = errors.New("a query vector does not match the vectors of the index")
 )
+
+// invalidFocusError says what the error of a use case says and is ErrInvalidFocus as well.
+type invalidFocusError struct{ err error }
+
+func (e invalidFocusError) Error() string { return e.err.Error() }
+
+func (e invalidFocusError) Unwrap() []error { return []error{e.err, ErrInvalidFocus} }
+
+// InvalidFocus is err as the rejection of a focus call: it keeps the message and the identity of err
+// and is also ErrInvalidFocus.
+func InvalidFocus(err error) error { return invalidFocusError{err: err} }

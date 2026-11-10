@@ -3,7 +3,7 @@ package editor
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
@@ -71,7 +71,7 @@ type NoteUseCases struct {
 	OpeningNote    *query.GetOpeningNote
 	Types          *query.GetTypes
 	Headings       *query.GetHeadings
-	Neighbourhood  *query.ShowNeighbourhood
+	Neighborhood  *query.ShowNeighbourhood
 	ResolveLinks   *query.ResolveLinks
 }
 
@@ -82,7 +82,7 @@ func (s *Services) UseNotes() {
 	s.Note = notewindow.NewHandler(
 		s.state,
 		notewindow.NewProse(s.state, s.state, addresses, use.Read, use.Write, use.Create, use.Rename),
-		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighbourhood),
+		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
 		notewindow.NewLinks(s.state, s.state, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
 		notewindow.NewConnections(s.state, s.state, nil, nil, nil, nil, nil),
 	)
