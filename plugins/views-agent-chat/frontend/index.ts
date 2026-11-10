@@ -15,7 +15,8 @@ export { WORDS } from './words'
 
 export function activate(context: PluginContext): void {
   context.register.view({ capability: CONVERSATION, component: ConversationView })
-  const { workspace, agent } = context
+  const { workspace } = context.ui
+  const { agent } = context.work
   if (!workspace) return
   if (!agent) {
     throw new Error('an agent chat requires a window and an agent')

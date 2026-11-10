@@ -12,7 +12,8 @@ export * from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, notes, relations } = context
+  const { workspace } = context.ui
+  const { notes, relations } = context.vault
   if (!workspace || !notes || !relations) {
     throw new Error(
       'a plex needs the window it is drawn in, the notes of the vault and their relationships',

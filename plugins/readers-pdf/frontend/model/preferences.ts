@@ -31,7 +31,7 @@ export function bindPDFReaderPreferences(
 ): PDFReaderPreferences {
   const getSetting = context.settings?.get.bind(context.settings)
   readerPreferences.defaultZoom = readPDFReaderPreferences(getSetting).defaultZoom
-  context.settings?.onChange.(DEFAULT_ZOOM, (value) => {
+  context.settings?.onChange(DEFAULT_ZOOM, (value) => {
     readerPreferences.defaultZoom = isFit(value) ? value : 'page'
   })
   return readerPreferences

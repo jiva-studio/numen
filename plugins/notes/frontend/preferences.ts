@@ -44,13 +44,13 @@ export function bindMarkdownEditorPreferences(
   }
   applyAll()
 
-  context.settings?.onChange.('softWrap', (value) => {
+  context.settings?.onChange('softWrap', (value) => {
     editorPreferences.softWrap =
       typeof value === 'boolean'
         ? value
         : readMarkdownEditorPreferences(context.settings?.get).softWrap
   })
-  context.settings?.onChange.('lineNumbers', (value) => {
+  context.settings?.onChange('lineNumbers', (value) => {
     editorPreferences.lineNumbers =
       typeof value === 'boolean'
         ? value
