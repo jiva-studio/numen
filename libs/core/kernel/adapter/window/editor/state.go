@@ -8,9 +8,7 @@ package editor
 import (
 	"context"
 	"errors"
-	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -18,24 +16,24 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// State is the vault the window is looking at and what every handler of it
-// reads: the vault shown, the door on every question, the writes and tasks in
-// the air, and who is drawing what changes.
+// State is what every handler of the window reads: the vault shown and how far it is read (the
+// embedded runtime of the window session), the door on every question, the writes and tasks in the
+// air, and who is drawing what changes.
 type State struct {
-	vault atomic.Pointer[domain.Vault]
+	windowsession.Runtime
 
 	closed atomic.Bool
 
 	questions inflight
 
-	session atomic.Pointer[vaultSession]
-
 	ChangeEvents broadcaster[window.Change]
 
-	OpenVault func(context.Context, domain.Vault, *PluginOpen) error
+	OpenVault func(context.Context, domain.Vault, *windowsession.PluginOpen) error
 
 	NotifyNoteWritten func()
 
@@ -45,21 +43,12 @@ type State struct {
 
 	TabIDs broadcaster[string]
 
-	openTabs atomic.Pointer[domain.OpenTabs]
-
-	openTabsReports reportSignal
-
-	TabActivationBound time.Duration
-
 	NotifyOpenTabs func(domain.OpenTabs)
 
 	DetachTab func(context.Context, window.DetachedTab) error
 
 	Writing inflight
 
-	Ready       atomic.Bool
-	Error       wire.Reason
-	WatchError  wire.Reason
 	Unreachable wire.Reason
 
 	Window *wire.Window
@@ -74,41 +63,59 @@ type State struct {
 // IndexState is how far the vault has been read for meaning.
 type IndexState struct {
 	Embedding *indexing.Embedding
-	Model     atomic.Value
-	Recipe    atomic.Value
 }
 
-func (s *State) storeModel(embedding *indexing.Embedding) {
-	name, recipe := embedding.Describe()
-	s.Indexing.Model.Store(name)
-	s.Indexing.Recipe.Store(recipe)
-}
-
-// GetCurrentVault is the vault the window has open. A window standing on nothing
-// answers with no vault at all.
-func (s *State) GetCurrentVault() domain.Vault {
-	if v := s.vault.Load(); v != nil {
-		return *v
+// NewState makes the state of a window that shows no vault.
+func NewState(tasks *run.Tasks) *State {
+	state := &State{
+		ChangeEvents: newChangeBroadcaster(),
+		Places:       newPlaceBroadcaster(),
+		TabIDs:       newTabIDBroadcaster(),
+		Edits:        newEditBroadcaster(),
+		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
-	return domain.Vault{}
+	// The editor is open on one vault, and answers which as itself.
+	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
+	return state
+}
+
+// SetIndexing sets how far the vault has been read for meaning, and the model it is read under.
+// It is set before any chunk is read: the model name and recipe determine whether
+// a chunk already carries a vector, and tell the window that chunks will be
+// embedded.
+func (s *State) SetIndexing(embedding *indexing.Embedding) {
+	s.Indexing.Embedding = embedding
+	s.RecordModel(embedding.Describe())
+}
+
+// ReportWordsAlone records that the search runs on words only, with the reason. It is a task because
+// a window opened from a desktop entry has no terminal.
+func (s *State) ReportWordsAlone(err error) {
+	s.reportTask(work.Task{ID: work.WordsAlone, Title: "Search by words only", Error: err.Error()})
+}
+
+// ReportFloorError records a similarity floor that is stored and cannot be read.
+func (s *State) ReportFloorError(err error) {
+	s.reportTask(work.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 }
 
 // GetVaultState is what the window knows about the vault it shows: whether the first scan is done,
 // what stopped it, and how far the vault has been read for meaning.
 func (s *State) GetVaultState(ctx context.Context) window.VaultState {
 	showing := s.GetCurrentVault()
+	name, recipe := s.GetModel()
 	out := window.VaultState{
 		Vault:       showing,
-		IsReady:     s.Ready.Load(),
-		Error:       s.Error.Why(),
-		WatchError:  s.WatchError.Why(),
-		IsEmbedding: text(&s.Indexing.Model) != "",
+		IsReady:     s.IsReady(),
+		Error:       s.GetError(),
+		WatchError:  s.GetWatchError(),
+		IsEmbedding: name != "",
 	}
 	// A count that cannot be taken leaves the pair at nothing, and the rest of
 	// the state is answered currently. A window standing on nothing holds no
 	// chunks and counts none.
 	if s.Indexing.Embedding.HasProgress() && showing.ID != "" {
-		if target, embedded, err := s.Indexing.Embedding.CountProgress(ctx, showing.ID, text(&s.Indexing.Recipe)); err == nil {
+		if target, embedded, err := s.Indexing.Embedding.CountProgress(ctx, showing.ID, recipe); err == nil {
 			out.ChunkCount, out.EmbeddedCount = target, embedded
 		}
 	}
@@ -128,20 +135,10 @@ func (s *State) SubscribeTabIDs() (<-chan string, func()) { return s.TabIDs.subs
 // ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells
 // the application.
 func (s *State) ReportOpenTabs(open domain.OpenTabs) {
-	s.openTabs.Store(&open)
-	s.openTabsReports.notify()
+	s.Runtime.ReportOpenTabs(open)
 	if s.NotifyOpenTabs != nil {
 		s.NotifyOpenTabs(open)
 	}
-}
-
-// GetOpenTabs returns the open tabs as last reported by the window, or the
-// empty set when the window has not reported any.
-func (s *State) GetOpenTabs() domain.OpenTabs {
-	if open := s.openTabs.Load(); open != nil {
-		return *open
-	}
-	return domain.OpenTabs{}
 }
 
 // ShowVault shows another vault in the window, as a user switch.
@@ -157,9 +154,8 @@ func (s *State) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error
 	return s.DetachTab(ctx, tab)
 }
 
-func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
-
-func (s *State) setSession(on *vaultSession) { s.session.Store(on) }
+// ClosePlaying stops the socket recordings are played over.
+func (s *State) ClosePlaying(ctx context.Context) error { return s.Playing.Load().Close(ctx) }
 
 func (s *State) reportTask(pos work.Task) { s.Window.AddTask(pos) }
 
@@ -186,14 +182,6 @@ func (s *State) Close() {
 }
 
 func (s *State) isClosed() bool { return s.closed.Load() }
-
-func text(v *atomic.Value) string {
-	s, isString := v.Load().(string)
-	if !isString {
-		return ""
-	}
-	return s
-}
 
 // PublishPlace asks the subscribed clients to show the place.
 func (s *State) PublishPlace(pos domain.Place) { s.Places.publish(pos) }
@@ -256,27 +244,3 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 
 // PublishTab asks the subscribed clients to bring the tab to the front.
 func (s *State) PublishTab(id string) { s.TabIDs.publish(id) }
-
-// reportSignal closes a channel when a report arrives. The zero value is ready to use.
-type reportSignal struct {
-	mu   sync.Mutex
-	next chan struct{}
-}
-
-func (r *reportSignal) wait() <-chan struct{} {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.next == nil {
-		r.next = make(chan struct{})
-	}
-	return r.next
-}
-
-func (r *reportSignal) notify() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if r.next != nil {
-		close(r.next)
-		r.next = nil
-	}
-}

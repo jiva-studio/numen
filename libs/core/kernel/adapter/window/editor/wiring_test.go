@@ -2,17 +2,18 @@ package editor
 
 import (
 	"context"
+	"io"
 	"testing"
+	"time"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -39,13 +40,79 @@ func (w wiring) readVault(db *vaults.Index) indexing.OpenReading {
 	return testPasses{wiring: w, db: db}.ReadWholeVault
 }
 
-func (w wiring) session(db *vaults.Index, readers vaultport.VaultReaders, watcher vaultport.VaultWatcher) SessionSource {
+// sessionOptions is what a test changes about the session it starts.
+type sessionOptions struct {
+	embedding *indexing.Embedding
+	idle      time.Duration
+	rebuild   bool
+	out       io.Writer
+}
+
+type noIdentity struct{}
+
+func (noIdentity) Execute(domain.Vault) error { return nil }
+
+type noRecord struct{}
+
+func (noRecord) Execute(domain.VaultID) error { return nil }
+
+type openDoor struct{}
+
+func (openDoor) Close() {}
+
+// startSession starts the passes behind v over state the way a window does, and returns the function
+// that ends them.
+func (w wiring) startSession(
+	ctx context.Context, db *vaults.Index, state *State, v domain.Vault,
+	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher, opts sessionOptions,
+) (end func()) {
+	embedding := opts.embedding
+	worker := indexing.NewWorker(indexing.Config{
+		Reading:  w.readVault(db),
+		Embedder: embedding.GetEmbedder(),
+		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
+			if !embedding.HasProgress() {
+				return 0, 0, indexing.ErrNoProgress
+			}
+			name, recipe := embedding.Describe()
+			state.RecordModel(name, recipe)
+			return embedding.CountProgress(ctx, v.ID, recipe)
+		},
+		VectorsReady: state.EmitVectorsReady,
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, opts.out),
+		Quiet:        opts.idle,
+		After:        time.After,
+	})
+	state.NotifyNoteWritten = worker.WakeNotes
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
-	return SessionSource{
-		StartVault:             passes.StartVault,
-		SetTextVersionListener: func(textdomain.VersionListener) {},
-		ReportTextFilesChanged: func(context.Context, domain.Vault, []string) error { return nil },
-		GetRefresh:             passes.GetRefresh,
+	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
+		Pages:    state.Window,
+		Writes:   &state.Writing,
+		Tasks:    state.Window,
+		Changes:  &state.ChangeEvents,
+		Identity: noIdentity{},
+		Recorded: noRecord{},
+		Passes:   windowsession.VaultPassesFunc(passes.StartVault),
+		Wake:     worker,
+		NewSession: func() windowsession.IndexSession {
+			indexed := worker.NewSession()
+			return windowsession.IndexSession{
+				Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
+					indexed.Run(ctx, v, rebuild, read)
+				},
+				ReportVersionsChanged: indexed.ReportVersionsChanged,
+			}
+		},
+		TabFront:     &state.TabIDs,
+		Door:         openDoor{},
+		Out:          opts.out,
+		IsRebuilding: opts.rebuild,
+	})
+	session.Start.Execute(ctx, v)
+	return func() {
+		if err := session.Closing.Close.Execute(); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -63,27 +130,18 @@ func (p testPasses) ReadWholeVault(
 }
 
 func (p testPasses) StartVault(
-	ctx context.Context, v domain.Vault, rebuild bool,
-	notified func(paths, assets []string, reload bool),
-	handleError window.ErrorHandler,
-) (
-	read func(ctx context.Context, during func()) (notes int, err error),
-	run func(ctx context.Context),
-	refresh vaults.Refresh,
-	unwatched error,
-) {
+	ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
+) windowsession.Started {
 	opening := p.reading.OpenVaultWith(p.db, p.readers, p.watcher)
 	opening.ShouldRebuild = rebuild
-	opening.ErrorHandler = handleError
-	if notified != nil {
-		opening.Told = func(m vaults.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+	opening.ErrorHandler = report.Failed
+	if report.Changed != nil {
+		opening.Told = func(m vaults.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
 	}
 
 	open := opening.Begin(ctx, v)
-	return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
+	return windowsession.Started{Read: open.Read, Run: open.Run, Unwatched: open.GetUnwatchedReason()}
 }
-
-func (p testPasses) GetRefresh() vaults.Refresh { return p.reading.GetRefresh(p.db) }
 
 // themeConfig is where the themes and the settings of an installation are kept.
 type themeConfig struct {

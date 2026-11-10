@@ -16,8 +16,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowvaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -25,27 +25,22 @@ import (
 )
 
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
-const immediateBound = editor.FlushTimeout / 2
+const immediateBound = windowsession.FlushTimeout / 2
 
 func newPluginVaultList(o *editor.Installation) hostendpoint.VaultList {
 	scenarios := o.Vaults()
-	return windowvaults.List{
-		Add:  func(root, name string) (domain.Vault, error) { return scenarios.Change.Add.Execute(root, name) },
-		Find: func(id string) (domain.Vault, error) { return scenarios.Registry.Find.Execute(id) },
-		Rename: func(ctx context.Context, v domain.Vault, name string) (domain.Vault, error) {
-			return scenarios.Change.Rename.Execute(ctx, v, name)
-		},
-		Remove: func(ctx context.Context, id string, current domain.VaultID, isErasing bool) error {
-			return scenarios.Change.Remove.Execute(ctx, id, current, isErasing)
-		},
-		GetShown:    o.State.GetCurrentVault,
-		Open:        o.OpenPluginVault,
-		CheckFolder: func(v domain.Vault) bool { return scenarios.Registry.FolderCheck.Execute(v) },
-	}
+	return windowsession.NewPluginVaults(&o.State.Runtime, windowsession.VaultOps{
+		Add:     scenarios.Change.Add,
+		Find:    scenarios.Registry.Find,
+		Rename:  scenarios.Change.Rename,
+		Remove:  scenarios.Change.Remove,
+		Missing: scenarios.Registry.FolderCheck,
+		Open:    o,
+	})
 }
 
 func (f *showing) bindVaultSwitch() {
-	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
+	f.installation.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 		return f.installation.Show(ctx, v, open)
 	}
 }

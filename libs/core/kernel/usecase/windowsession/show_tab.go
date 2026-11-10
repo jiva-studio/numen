@@ -1,4 +1,4 @@
-package editor
+package windowsession
 
 import (
 	"cmp"
@@ -8,35 +8,40 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// defaultTabActivationBound is the wait of ShowTab when State.TabActivationBound is zero.
-const defaultTabActivationBound = 2 * time.Second
+// defaultTabBound is how long ShowTab waits when Deps.TabBound is zero.
+const defaultTabBound = 2 * time.Second
 
-// ShowTab asks the window to make the open tab with the id the active one and returns the open tabs
+// ShowTab asks the window to make an open tab the active one.
+type ShowTab struct {
+	life *lifecycle
+}
+
+// Execute asks the window to make the open tab with the id the active one and returns the open tabs
 // as the window reports them once it is. An id with no open tab returns fs.ErrNotExist, and a tab the
 // window does not report active in time returns plugin.ErrTabNotShown.
-func (s *State) ShowTab(ctx context.Context, id string) (domain.OpenTabs, error) {
-	report := s.openTabsReports.wait()
-	open := s.GetOpenTabs()
+func (u ShowTab) Execute(ctx context.Context, id string) (domain.OpenTabs, error) {
+	rt, deps := u.life.rt, u.life.deps
+	report := rt.openTabsReports.wait()
+	open := rt.GetOpenTabs()
 	if !slices.ContainsFunc(open.Tabs, func(tab domain.Tab) bool { return tab.ID == id }) {
 		return domain.OpenTabs{}, fmt.Errorf("editor: no open tab has id %q: %w", id, fs.ErrNotExist)
 	}
-	s.TabIDs.publish(id)
+	deps.TabFront.Publish(id)
 	if open.ActiveID == id {
 		return open, nil
 	}
-	wait := cmp.Or(s.TabActivationBound, defaultTabActivationBound)
+	wait := cmp.Or(deps.TabBound, defaultTabBound)
 	bound, stop := context.WithTimeout(ctx, wait)
 	defer stop()
 	for {
 		select {
 		case <-report:
-			report = s.openTabsReports.wait()
-			if open := s.GetOpenTabs(); open.ActiveID == id {
+			report = rt.openTabsReports.wait()
+			if open := rt.GetOpenTabs(); open.ActiveID == id {
 				return open, nil
 			}
 		case <-bound.Done():

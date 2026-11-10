@@ -22,7 +22,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -165,7 +164,7 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 	api := newBareServices()
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.setVault(testsupport.NewVault(t, notes))
+	api.state.SetVault(testsupport.NewVault(t, notes))
 	return api
 }
 
@@ -361,17 +360,17 @@ func TestEditLoad(t *testing.T) {
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
 	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
-	api.state.setVault(v)
+	api.state.SetVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	made := wired.session(db, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher())
-	worker := newIndexWorker(wired.readVault(db), api.state, nil, time.Hour, io.Discard)
-	_, wait := startIndexing(t.Context(), made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
-	t.Cleanup(wait)
-	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
+	end := wired.startSession(t.Context(), db, api.state, v, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher(), sessionOptions{
+		idle: time.Hour, out: io.Discard,
+	})
+	t.Cleanup(end)
+	for !api.state.IsReady() && api.state.GetError() == "" {
 		time.Sleep(50 * time.Millisecond)
 	}
-	if why := api.state.Error.Why(); why != "" {
+	if why := api.state.GetError(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
 	t.Logf("read %d notes in %s", notes, testsupport.GetMachine().Now().Sub(startTime).Round(time.Millisecond))

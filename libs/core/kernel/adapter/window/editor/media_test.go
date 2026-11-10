@@ -102,7 +102,7 @@ func newStoreClient(t *testing.T, files storedFiles) numenv1connect.MediaService
 	api := newBareServices()
 	readers := vaultreader.Readers{}
 	api.readFiles(readers, file.NewOpenPluginFile(files), file.NewGetMediaType(sharedmimeinfo.Open()))
-	api.state.setVault(vault)
+	api.state.SetVault(vault)
 	back, err := Listen(t.Context(), api.server, nil)
 	if err != nil {
 		t.Fatal(err)
