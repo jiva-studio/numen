@@ -177,7 +177,13 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
+<<<<<<< HEAD
 	themes.Report(container.SetThemes(cfg, installation, installation.SayTheme), os.Stdout)
+||||||| ea91f5d8d
+	themes.Report(cfg.SetThemes(installation, installation.SayTheme), os.Stdout)
+=======
+	themes.Report(cfg.SetThemes(installation, installation.RecordThemeWarning), os.Stdout)
+>>>>>>> origin/refactor/architecture
 
 	installation.Report(notices)
 

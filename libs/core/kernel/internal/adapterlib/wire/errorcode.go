@@ -8,7 +8,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -48,7 +48,7 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, edit.ErrTooLarge):
 		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
-	case errors.Is(err, domain.ErrInvalidName):
+	case errors.Is(err, query.ErrInvalidName):
 		return v1.ErrorCode_ERROR_CODE_INVALID_NAME, true
 	case errors.Is(err, edit.ErrUnreadable),
 		errors.Is(err, edit.ErrInline),

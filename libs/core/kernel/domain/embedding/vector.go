@@ -2,10 +2,10 @@ package embedding
 
 import "github.com/jiva-studio/numen/libs/note/domain"
 
-// QuantisedInt8 names the quantisation of a stored vector's bytes: one signed
+// QuantizedInt8 names the quantization of a stored vector's bytes: one signed
 // byte per dimension, at the scale the model is written down with. It is
 // recorded because a blob does not say its contents.
-const QuantisedInt8 = "int8"
+const QuantizedInt8 = "int8"
 
 // Int8Scale is the value that a stored byte of 127 represents. Bytes on two
 // scales lie on different grids, so the recipe records the scale.

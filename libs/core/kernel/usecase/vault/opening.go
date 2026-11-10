@@ -3,7 +3,7 @@ package vault
 import (
 	"context"
 
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -97,7 +97,7 @@ func (o *OpenVault) Read(ctx context.Context, during func()) (notes int, err err
 
 	walk := o.scan
 	if during != nil {
-		walk.OnProgress = func(indexdomain.ScanResult) { during() }
+		walk.OnProgress = func(vaultreading.ScanResult) { during() }
 	}
 	res, err := walk.Execute(ctx, o.vault)
 

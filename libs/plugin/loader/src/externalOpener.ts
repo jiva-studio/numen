@@ -1,52 +1,13 @@
 /**
- * Opening an address in the system browser.
+ * Opening an address from a plugin.
  *
- * The window has no address bar. The Wails runtime served beside the page opens an address in the
- * system browser; a page served without it opens a new browsing context. A plugin's `openExternal`
- * passes an http or https address to this and fails any other address before the window sees it.
+ * A plugin's `openExternal` passes an http or https address to this and fails any other address
+ * before the window sees it. The window opens the address in the system browser.
  */
 import { asFailure, asValue, formatErrorMessage, type Result } from '@numen/plugin-sdk'
 
-/** The path the window serves its Wails runtime module at. */
-const RUNTIME_PATH = '/wails/runtime.js'
-
-/** The part of the Wails runtime module that opens an address. */
-export interface BrowserRuntime {
-  readonly Browser?: { readonly OpenURL?: (href: string) => unknown }
-}
-
-/** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
-export type RuntimeLoader = () => Promise<BrowserRuntime | undefined>
-
 /** Opens an address in the system browser. */
 export type ExternalOpener = (url: string) => Promise<void>
-
-let runtime: Promise<BrowserRuntime | undefined> | undefined
-
-// Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
-const loadRuntime: RuntimeLoader = () => {
-  runtime ??= import(/* @vite-ignore */ RUNTIME_PATH).then(
-    (loaded: BrowserRuntime) => loaded,
-    () => undefined,
-  )
-  return runtime
-}
-
-/**
- * Opens an address in the system browser. The caller decides which schemes it opens. A failure of the
- * runtime to open the address rejects the returned promise.
- */
-export async function openExternalUrl(
-  href: string,
-  load: RuntimeLoader = loadRuntime,
-): Promise<void> {
-  const open = (await load())?.Browser?.OpenURL
-  if (open) {
-    await open(href)
-    return
-  }
-  window.open(href, '_blank')
-}
 
 /** Whether an address is an absolute http or https address. */
 export function isWebAddress(url: string): boolean {

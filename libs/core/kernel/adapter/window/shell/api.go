@@ -48,7 +48,7 @@ func NewWindow(name string, tasks *run.Tasks) *wire.Window {
 	if tasks == nil {
 		tasks = run.NewTasks()
 	}
-	return &wire.Window{Named: name, Tasking: tasks}
+	return &wire.Window{Name: name, Tasks: tasks}
 }
 
 func (a *API) reportTask(task work.Task) { a.Window.AddTask(task) }

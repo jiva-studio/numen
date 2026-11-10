@@ -95,7 +95,7 @@ func (u Replace) Execute(
 	e.FileStat = stat
 	e.Bound = edit.MaxBytes
 	pos, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
-		body := markdown.Normalise(doc.Body())
+		body := markdown.Normalize(doc.Body())
 
 		where, plainly := markdown.FindRanges(body, current)
 		if len(where) > 1 {

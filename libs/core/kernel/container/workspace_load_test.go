@@ -45,6 +45,10 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkNoCoreTypeIsReexported(t, workspace)
 	})
+	t.Run("EveryExhaustructIncludeMatchesAType", func(t *testing.T) {
+		t.Parallel()
+		checkExhaustructIncludesMatchTypes(t, workspace)
+	})
 	t.Run("InterfaceSizeCountsTheWholeMethodSet", func(t *testing.T) {
 		t.Parallel()
 		checkInterfaceSizeCountsTheWholeMethodSet(t, workspace)

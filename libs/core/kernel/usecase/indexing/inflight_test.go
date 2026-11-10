@@ -2,13 +2,12 @@ package indexing
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"slices"
 	"sync"
 	"testing"
 	"time"
 
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -28,9 +27,9 @@ type scriptedVectors struct {
 }
 
 func (s *scriptedVectors) EmbedWithProgress(
-	ctx context.Context, _ domain.Vault, onProgress func(indexdomain.EmbedResult), isSkipped func(path, hash string) bool,
-) (indexdomain.EmbedResult, error) {
-	var res indexdomain.EmbedResult
+	ctx context.Context, _ domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+) (vaultreading.EmbedResult, error) {
+	var res vaultreading.EmbedResult
 	for _, path := range s.order {
 		if slices.Contains(s.getEmbedded(), path) {
 			continue
@@ -126,7 +125,7 @@ func TestCancelMarksTheSourcesInFlight(t *testing.T) {
 			case <-time.After(10 * time.Second):
 				t.Fatal("the pass never reached the second source")
 			}
-			if !events.tasks.Cancel(work.MakingVectors) {
+			if !events.tasks.Cancel(MakingVectors) {
 				t.Fatalf("the vector pass is not cancellable: %+v", events.tasks.List())
 			}
 			select {

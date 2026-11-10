@@ -1,10 +1,9 @@
 package vectors
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"slices"
 	"sync"
-
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 )
 
 // tracker reports the progress of one run in the order the changes happened,
@@ -15,9 +14,9 @@ import (
 // The sources being worked on are those of the oldest batches that left the
 // producer and are not yet stored, as many batches as there are infer workers.
 type tracker struct {
-	onProgress func(indexdomain.EmbedResult)
+	onProgress func(vaultreading.EmbedResult)
 	workers    int
-	res        *indexdomain.EmbedResult
+	res        *vaultreading.EmbedResult
 	mu         *sync.Mutex
 	order      sync.Mutex
 
@@ -32,7 +31,7 @@ type flightBatch struct {
 	sources []string
 }
 
-func newTracker(onProgress func(indexdomain.EmbedResult), workers int, res *indexdomain.EmbedResult, mu *sync.Mutex) *tracker {
+func newTracker(onProgress func(vaultreading.EmbedResult), workers int, res *vaultreading.EmbedResult, mu *sync.Mutex) *tracker {
 	return &tracker{onProgress: onProgress, workers: workers, res: res, mu: mu}
 }
 
@@ -74,7 +73,7 @@ func (t *tracker) getActive() (active []string) {
 	return active
 }
 
-func (t *tracker) publish(change func(res *indexdomain.EmbedResult)) {
+func (t *tracker) publish(change func(res *vaultreading.EmbedResult)) {
 	t.order.Lock()
 	defer t.order.Unlock()
 
@@ -92,7 +91,7 @@ func (t *tracker) publish(change func(res *indexdomain.EmbedResult)) {
 }
 
 func (t *tracker) publishNext(source string) {
-	t.publish(func(res *indexdomain.EmbedResult) {
+	t.publish(func(res *vaultreading.EmbedResult) {
 		if t.isIdle() {
 			res.CurrentSource = source
 		}
@@ -101,5 +100,5 @@ func (t *tracker) publishNext(source string) {
 
 func (t *tracker) withdraw(id uint64) {
 	t.leave(id)
-	t.publish(func(res *indexdomain.EmbedResult) { res.CurrentSource = "" })
+	t.publish(func(res *vaultreading.EmbedResult) { res.CurrentSource = "" })
 }

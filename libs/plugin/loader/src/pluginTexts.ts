@@ -14,7 +14,7 @@ const readSelector = (raw: string): Selector | undefined => {
     const parsed: unknown = JSON.parse(raw)
     return typeof parsed === 'object' && parsed !== null ? (parsed as Selector) : undefined
   } catch {
-    // Empty or invalid JSON selectors resolve to undefined.
+    return undefined
   }
 }
 

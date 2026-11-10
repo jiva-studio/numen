@@ -105,7 +105,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := pluginhost.Open("desktop.editor", tmp)
-	cfg := NewConfig(Config{PluginHost: LendPluginHost(host)})
+	cfg := NewConfig(Config{PluginHost: AdaptPluginHost(host)})
 
 	setPluginVaultPath(plugins(cfg), "vault")
 	if got := host.Mode.GetVaultPath(); got != "vault" {

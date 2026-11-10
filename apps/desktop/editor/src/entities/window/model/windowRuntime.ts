@@ -2,39 +2,21 @@
  * Focus and close requests for the desktop window, sent through the Wails runtime.
  */
 import { watch, type Ref } from 'vue'
-
-/** The path the window serves its Wails runtime module at. */
-const RUNTIME_PATH = '/wails/runtime.js'
+import { loadWailsRuntime, type WailsRuntime, type WailsRuntimeLoader } from '@numen/ui'
 
 /** The Wails runtime API for the current window. */
-export interface WindowRuntime {
-  readonly Window?: {
-    readonly Focus?: () => Promise<void>
-    readonly Close?: () => Promise<void>
-  }
-}
+export type WindowRuntime = WailsRuntime
 
 /** Loads the runtime module; resolves to undefined where the page is not served by Wails. */
-export type WindowRuntimeLoader = () => Promise<WindowRuntime | undefined>
-
-let runtime: Promise<WindowRuntime | undefined> | undefined
-
-// Stryker disable next-line all: dynamic import of /wails/runtime.js is only resolvable in the Wails webview
-const loadRuntime: WindowRuntimeLoader = () => {
-  runtime ??= import(/* @vite-ignore */ RUNTIME_PATH).then(
-    (loaded: WindowRuntime) => loaded,
-    () => undefined,
-  )
-  return runtime
-}
+export type WindowRuntimeLoader = WailsRuntimeLoader
 
 /** Focuses the window. */
-export async function focusWindow(load: WindowRuntimeLoader = loadRuntime): Promise<void> {
+export async function focusWindow(load: WindowRuntimeLoader = loadWailsRuntime): Promise<void> {
   await (await load())?.Window?.Focus?.()
 }
 
 /** Closes the window through the same path as its close button. */
-export async function closeWindow(load: WindowRuntimeLoader = loadRuntime): Promise<void> {
+export async function closeWindow(load: WindowRuntimeLoader = loadWailsRuntime): Promise<void> {
   await (await load())?.Window?.Close?.()
 }
 

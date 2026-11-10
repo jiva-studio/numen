@@ -12,11 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// ErrInline, ErrUnterminated and ErrAnchored are frontmatter one key cannot be
-// changed in: a block written on one line, a block that is never closed, and a
-// block carrying a YAML anchor. Such a note is left alone.
-var ()
-
 // Write replaces the prose of a note and leaves its frontmatter unchanged.
 //
 // The body belongs to the user and is replaced entirely. The frontmatter is
@@ -81,8 +76,8 @@ func (u Write) Execute(
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// A note rewritten whole is rendered as the changed range, so an
 		// observer sees the change and not the whole note.
-		was := markdown.Normalise(doc.Body())
-		pos, insert := markdown.Diff(was, markdown.Normalise(body))
+		was := markdown.Normalize(doc.Body())
+		pos, insert := markdown.Diff(was, markdown.Normalize(body))
 		// watching should see change.
 		if err := doc.SetBody(body); err != nil {
 			return err

@@ -256,7 +256,7 @@ func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	t.Helper()
 	agent := &toolAgent{}
 	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
-	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)}))
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host)}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Instructions: instructions})
 

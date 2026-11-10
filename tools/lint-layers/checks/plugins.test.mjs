@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
+  MAX_SERVICE_LINES,
+  findOversizedServices,
   findPluginEntryViolations,
   findPluginSliceShapeViolations,
   lintPlantedFrontend,
@@ -156,4 +158,24 @@ test('the slice rule of the golden configuration passes a frontend that reaches 
     'frontend/lib/shared.ts': 'export const shared = 2\n',
   }
   assert.deepEqual(lintPlantedFrontend(files), {})
+})
+
+test('a service within the limit is clean', () => {
+  const backends = [{ plugin: 'a', serviceLines: MAX_SERVICE_LINES, innerPackages: [] }]
+  assert.deepEqual(findOversizedServices(backends), [])
+})
+
+test('a service over the limit is reported with the inner packages it lacks', () => {
+  const backends = [
+    { plugin: 'big', serviceLines: MAX_SERVICE_LINES + 1, innerPackages: ['api', 'domain'] },
+    {
+      plugin: 'split',
+      serviceLines: MAX_SERVICE_LINES + 1,
+      innerPackages: ['domain', 'usecase/read', 'ports'],
+    },
+  ]
+  const found = findOversizedServices(backends)
+  assert.equal(found.length, 2)
+  assert.match(found[0].symbol, /no usecase, ports package/)
+  assert.doesNotMatch(found[1].symbol, /; the backend has no/)
 })

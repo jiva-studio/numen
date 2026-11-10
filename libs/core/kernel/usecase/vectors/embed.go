@@ -11,10 +11,9 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -45,7 +44,7 @@ type Embed struct {
 
 	Concurrency int
 
-	OnProgress func(indexdomain.EmbedResult)
+	OnProgress func(vaultreading.EmbedResult)
 
 	IsSkipped func(path, hash string) bool
 }
@@ -73,8 +72,8 @@ func NewEmbed(
 // non-nil, and leaves without vectors the chunks of every source isSkipped
 // names when non-nil.
 func (u Embed) EmbedWithProgress(
-	ctx context.Context, v domain.Vault, onProgress func(indexdomain.EmbedResult), isSkipped func(path, hash string) bool,
-) (indexdomain.EmbedResult, error) {
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+) (vaultreading.EmbedResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -140,7 +139,7 @@ type storer struct {
 }
 
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (res indexdomain.EmbedResult, err error) {
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.EmbedResult, err error) {
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -172,7 +171,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res indexdomain.Emb
 	track := newTracker(u.OnProgress, workers, &res, &mu)
 	updateProgress := func(comp completedBatch) {
 		track.leave(comp.id)
-		track.publish(func(r *indexdomain.EmbedResult) {
+		track.publish(func(r *vaultreading.EmbedResult) {
 			r.Embedded += len(comp.vectors)
 			r.Reused += comp.reused
 		})
@@ -272,7 +271,7 @@ func (u producer) sendBatches(
 		pos += len(batch)
 		prep.id = track.enter(prep.sources)
 		// The batch is reported before it is sent, so no worker embeds it before a report names it.
-		track.publish(func(*indexdomain.EmbedResult) {})
+		track.publish(func(*vaultreading.EmbedResult) {})
 		select {
 		case <-ctx.Done():
 			track.withdraw(prep.id)
@@ -388,7 +387,7 @@ func (u producer) read(
 	ctx context.Context,
 	source *extracted,
 	pending []domain.Passage,
-	res *indexdomain.EmbedResult,
+	res *vaultreading.EmbedResult,
 	mu *sync.Mutex,
 	track *tracker,
 ) ([]domain.Passage, []string, error) {
@@ -481,7 +480,7 @@ func (u producer) prepareBatch(
 			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
-			Kind:    embedding.QuantisedInt8,
+			Kind:    embedding.QuantizedInt8,
 			Value:   value,
 			Coarse:  vector.Coarse(vector.Dimensions(value)),
 		}
@@ -523,7 +522,7 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
-				Kind:    embedding.QuantisedInt8,
+				Kind:    embedding.QuantizedInt8,
 				Value:   unique[pos].value,
 				Coarse:  unique[pos].coarse,
 			}
@@ -565,7 +564,7 @@ func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool
 
 	read, err := e.read(ctx, path, from)
 	switch {
-	case edit.IsNoNote(err), errors.Is(err, edit.ErrNotExist), errors.Is(err, textdomain.ErrNoText):
+	case vaultport.IsNoNote(err), errors.Is(err, vaultport.ErrNotExist), errors.Is(err, textdomain.ErrNoText):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)
@@ -603,10 +602,10 @@ func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]unique
 		if len(v) != prep.model.Dimensions {
 			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 		}
-		quantised := vector.Bytes(vector.Normalise(v))
+		quantized := vector.Bytes(vector.Normalize(v))
 		unique[i] = uniqueVector{
-			value:  packVector(quantised),
-			coarse: vector.Coarse(quantised),
+			value:  packVector(quantized),
+			coarse: vector.Coarse(quantized),
 		}
 	}
 	return unique, nil

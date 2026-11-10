@@ -130,7 +130,7 @@ func setupTestDB(ctx context.Context, tb testing.TB, count int, dims int) (*Quer
 				vec[d] = -1.0
 			}
 		}
-		norm := vector.Normalise(vec)
+		norm := vector.Normalize(vec)
 		qBytes := vector.Bytes(norm)
 		stored := make([]byte, len(qBytes))
 		for d, v := range qBytes {

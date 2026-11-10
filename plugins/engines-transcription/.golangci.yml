@@ -232,6 +232,7 @@ linters:
             - "**/adapter/plugin/hosttext/**"
             - "**/adapter/plugin/hostvault/**"
             - "**/adapter/window/theme/**"
+            - "**/internal/adapterlib/wire/**"
             - "**/apps/desktop/**"
             - "!$test"
           deny:

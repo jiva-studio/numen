@@ -1,6 +1,6 @@
 import { reactive, ref } from 'vue'
 import { listEntries, getFolderOf, type Entry } from '../lib/entries'
-import { getNeighbourhood, type Neighbourhood, type Relation } from '../lib/neighbourhood'
+import { getNeighborhood, type Neighborhood, type Relation } from '../lib/neighborhood'
 import {
   ENTROPY_PATH,
   INITIAL_EDGE_LABELS,
@@ -37,7 +37,7 @@ export function createVault() {
   const getEntryAt = (path: string): Entry | undefined =>
     list(getFolderOf(path)).find((one) => one.path === path)
 
-  const getNeighbours = (path: string): Neighbourhood => getNeighbourhood(notes, labels, path)
+  const getNeighbors = (path: string): Neighborhood => getNeighborhood(notes, labels, path)
 
   function getUntitledTitle(folder: string): string {
     for (let count = 1; count < 1000; count += 1) {
@@ -133,7 +133,7 @@ export function createVault() {
   return {
     notes,
     labels,
-    read: { getNote, getNoteOrEntropy, list, getEntryAt, getNeighbours },
+    read: { getNote, getNoteOrEntropy, list, getEntryAt, getNeighbors },
     edit: { createUntitled, createFolder, createRelated, move, removeNote },
     onRename: (listener: (from: string, to: string) => void) => renameListeners.push(listener),
   }

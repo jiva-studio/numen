@@ -1,4 +1,4 @@
-import type { Neighbour, Neighbourhood, Relation } from './neighbourhood'
+import type { Neighbor, Neighborhood, Relation } from './neighborhood'
 
 export const PLEX_WIDTH = 630
 export const PLEX_HEIGHT = 338
@@ -67,7 +67,7 @@ function createNode(path: string, title: string, relation: PlexNode['relation'],
 const spread = (count: number, spacing: number, middle: number): number[] =>
   Array.from({ length: count }, (_, index) => middle + (index - (count - 1) / 2) * spacing)
 
-function placeNeighbours(related: readonly Neighbour[]): PlexNode[] {
+function placeNeighbors(related: readonly Neighbor[]): PlexNode[] {
   const nodes: PlexNode[] = []
   for (const relation of ['parent', 'child'] as const) {
     const group = related.filter((one) => one.relation === relation)
@@ -93,7 +93,7 @@ const getCurve = (from: { x: number; y: number }, to: { x: number; y: number }, 
   return `M ${from.x} ${from.y} C ${mid.x} ${mid.y}, ${mirror.x} ${mirror.y}, ${to.x} ${to.y}`
 }
 
-function createEdge(one: Neighbour, node: PlexNode, source: PlexNode): PlexEdge {
+function createEdge(one: Neighbor, node: PlexNode, source: PlexNode): PlexEdge {
   const isVertical = one.relation !== 'jump'
   const down = node.y > source.y
   const from = isVertical
@@ -107,10 +107,10 @@ function createEdge(one: Neighbour, node: PlexNode, source: PlexNode): PlexEdge 
   return { id: `${source.path}->${node.path}`, path, labelPath, label: one.label, relation: one.relation }
 }
 
-/** Where every note of the neighbourhood is drawn, and the curve to each from the note it hangs from. */
-export function getPlexLayout(hood: Neighbourhood): PlexLayout {
+/** Where every note of the neighborhood is drawn, and the curve to each from the note it hangs from. */
+export function getPlexLayout(hood: Neighborhood): PlexLayout {
   const focus = createNode(hood.focus.path, hood.focus.title, 'focus', FOCUS)
-  const placed = placeNeighbours(hood.related)
+  const placed = placeNeighbors(hood.related)
   const byPath = new Map(placed.map((node) => [node.path, node]))
   const edges = hood.related.flatMap((one) => {
     const node = byPath.get(one.path)

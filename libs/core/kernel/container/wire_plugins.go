@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
@@ -119,6 +120,7 @@ type PluginHost struct {
 	pluginport.PluginBinding
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
+	transport.ClientLookup
 	ApplySetting        settingsport.PluginSettingApplier
 	SetCompleter        func(completer hostendpoint.Completer)
 	SetPluginWork       func(work hostendpoint.WorkQueue)
@@ -132,13 +134,13 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-// LendPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
+// AdaptPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
 // tests of packages outside the container use it to run a window over a host they hold.
-func LendPluginHost(host *plugin.Host) *PluginHost {
-	return lendPluginHost(host)
+func AdaptPluginHost(host *plugin.Host) *PluginHost {
+	return adaptPluginHost(host)
 }
 
-func lendPluginHost(host *plugin.Host) *PluginHost {
+func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		PluginActivator:       host.Activation,
 		PluginRetrier:         host.Activation,
@@ -170,6 +172,7 @@ func lendPluginHost(host *plugin.Host) *PluginHost {
 		SetPluginVaultList:  host.Services.SetPluginVaultList,
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
 		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
+		ClientLookup:        host.Activation.ClientLookup(),
 	}
 }
 

@@ -127,7 +127,7 @@ func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (
 			return target, nil
 		}
 		if !errors.Is(err, vault.ErrAlreadyExists) {
-			return "", mapMissingNote(err)
+			return "", edit.MapMissingNote(err)
 		}
 		if attempt > 100 {
 			return "", fmt.Errorf("%s cannot be moved to the trash; the trash already has 100 files of that name", path)
@@ -149,7 +149,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 		return res, err
 	}
 	if err := writer.Remove(ctx, path); err != nil {
-		return res, mapMissingNote(err)
+		return res, edit.MapMissingNote(err)
 	}
 	// The file is off the disk from here on, so the index update result is reported
 	// alongside the links that now resolve to nothing.

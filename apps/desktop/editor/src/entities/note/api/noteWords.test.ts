@@ -5,11 +5,11 @@ import {
   NOTE_MARKER,
   NOTE_RELATION,
   NOTE_ROLE,
-  GetNeighbourhoodResponseSchema,
+  GetNeighborhoodResponseSchema,
   asFailure,
   asValue,
 } from '@numen/core-client'
-import { mapNeighbourhood, mapNoteResult, mapWriteResult } from './noteWords'
+import { mapNeighborhood, mapNoteResult, mapWriteResult } from './noteWords'
 
 const file = { path: 'Note.md', size: 12n, mtime: 34n }
 
@@ -42,9 +42,9 @@ describe('mapWriteResult', () => {
   })
 })
 
-describe('mapNeighbourhood', () => {
+describe('mapNeighborhood', () => {
   it('names an absent focus with empty strings', () => {
-    expect(mapNeighbourhood(create(GetNeighbourhoodResponseSchema, {}))).toEqual({
+    expect(mapNeighborhood(create(GetNeighborhoodResponseSchema, {}))).toEqual({
       focus: { path: '', title: '' },
       focusType: 'note',
       related: [],
@@ -52,8 +52,8 @@ describe('mapNeighbourhood', () => {
     })
   })
 
-  it('carries the focus, and every neighbour that has a relation and a note, with their tab kinds', () => {
-    const answer = create(GetNeighbourhoodResponseSchema, {
+  it('carries the focus, and every neighbor that has a relation and a note, with their tab kinds', () => {
+    const answer = create(GetNeighborhoodResponseSchema, {
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',
@@ -81,7 +81,7 @@ describe('mapNeighbourhood', () => {
       ],
     })
 
-    expect(mapNeighbourhood(answer)).toEqual({
+    expect(mapNeighborhood(answer)).toEqual({
       focus: { path: 'Here.md', title: 'Here' },
       focusType: 'sample',
       focusTabKind: 'samples',

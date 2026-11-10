@@ -9,12 +9,12 @@ import (
 // A window built over no list of work keeps one of its own, and one built over
 // a list keeps that list.
 func TestAWindowKeepsTheListOfWorkItWasBuiltOver(t *testing.T) {
-	if NewWindow(testWindow, nil).Tasking == nil {
+	if NewWindow(testWindow, nil).Tasks == nil {
 		t.Error("a window built over no list keeps none")
 	}
 
 	tasks := run.NewTasks()
-	if NewWindow(testWindow, tasks).Tasking != tasks {
+	if NewWindow(testWindow, tasks).Tasks != tasks {
 		t.Error("a window built over a list keeps another")
 	}
 }

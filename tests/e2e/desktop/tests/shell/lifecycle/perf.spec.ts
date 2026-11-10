@@ -73,7 +73,7 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
       .toMatchObject({ mode: 'dark' })
 
     await page.reload()
-    await expect(page.getByRole('group', { name: 'Neighbourhood' })).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Neighborhood' })).toBeVisible()
 
     expect((await readOwner(request, 'app'))['appearance']).toMatchObject({ mode: 'dark' })
   })

@@ -1,4 +1,6 @@
-package index
+// Package vaultreading holds what the three passes that make a vault searchable report: the scan of its notes,
+// the indexing of its file texts and the embedding of its chunks.
+package vaultreading
 
 // ScanResult reports what a scan did, in the terms the user cares about.
 type ScanResult struct {

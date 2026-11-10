@@ -231,7 +231,7 @@ func TestNoteSearch(t *testing.T) {
 	testSearchQuery(t, registry, "note_search")
 }
 
-func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
+func testNeighborhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
 	callReq := tools.Call{
 		VaultID:   testVault,
@@ -259,14 +259,14 @@ func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName str
 	}
 }
 
-func TestNoteNeighbourhood(t *testing.T) {
+func TestNoteNeighborhood(t *testing.T) {
 	_, svc := setupTestVault()
 	registry, err := svc.Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
 
-	testNeighbourhoodQuery(t, registry, "link_list")
+	testNeighborhoodQuery(t, registry, "link_list")
 }
 
 func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string) {

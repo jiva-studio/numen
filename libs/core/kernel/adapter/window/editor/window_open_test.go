@@ -123,7 +123,7 @@ func TestEmbedder_ConfiguredEmbedderServesSearch(t *testing.T) {
 	})
 
 	cfg := vaultConfig(t)
-	cfg.PluginHost = container.LendPluginHost(host)
+	cfg.PluginHost = container.AdaptPluginHost(host)
 
 	installation, err := container.OpenWindow(cfg, t.Context(), "", os.Stderr)
 	if err != nil {
@@ -202,7 +202,7 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 
 	// Reported before the reading goroutine starts, so a window opening on a new
 	// vault shows the walk from its start.
-	list := installation.State.Window.Tasking.List()
+	list := installation.State.Window.Tasks.List()
 	if len(list) != 1 {
 		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
 	}
@@ -216,5 +216,5 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 	// Each pass removes its entry when it ends, so a fully read vault reports no
 	// operations.
 	releaseWalk()
-	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasking.List()) == 0 })
+	testsupport.WaitFor(t, func() bool { return len(installation.State.Window.Tasks.List()) == 0 })
 }

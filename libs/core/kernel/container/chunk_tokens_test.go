@@ -86,7 +86,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
-	return container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), ServiceDir: ".numen"}), host, reporter
+	return container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), ServiceDir: ".numen"}), host, reporter
 }
 
 func openEmbedder(t *testing.T, cfg container.Config) {

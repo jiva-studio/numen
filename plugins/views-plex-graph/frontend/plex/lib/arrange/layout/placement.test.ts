@@ -91,7 +91,7 @@ describe('a row', () => {
     expect(leftCoord).toBeCloseTo(-right)
   })
 
-  it('remains one gap between neighbours', () => {
+  it('remains one gap between neighbors', () => {
     const row = of(place({ child: createNodes('child', 3) }), 'child')
 
     expect(row[1]!.x - row[0]!.x).toBeCloseTo(nodeSize.width + gap)
@@ -146,7 +146,7 @@ describe('a column', () => {
     expect(of(placedLayout, 'sibling').every((node) => node.x > 0)).toBe(true)
   })
 
-  it('is centred on the focus, one gap between neighbours', () => {
+  it('is centred on the focus, one gap between neighbors', () => {
     const column = of(place({ sibling: createNodes('sibling', 3) }), 'sibling')
 
     expect(column[1]!.y).toBeCloseTo(0)

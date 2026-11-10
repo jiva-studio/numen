@@ -165,7 +165,7 @@ func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 			break
 		}
 	}
-	b.deck.Preamble = markdown.Normalise(string(body[:first]))
+	b.deck.Preamble = markdown.Normalize(string(body[:first]))
 
 	for i, s := range secs {
 		if !isDeckHeadingLevel(s.level) {
@@ -181,7 +181,7 @@ func readDeck(ref domain.FileStat, body []byte) (Deck, []cardSpan) {
 
 	b.deck.Problems = append(b.deck.Problems, findDuplicateCardIDs(b.deck.Cards)...)
 	if len(b.deck.Cards) > 0 || len(b.deck.Sections) > 0 {
-		b.deck.Tail = markdown.Normalise(string(body[b.read:]))
+		b.deck.Tail = markdown.Normalize(string(body[b.read:]))
 	}
 	return b.deck, b.spans
 }

@@ -277,7 +277,7 @@ func TestVectorsSavedThroughThePortSettleWhatWasUnembedded(t *testing.T) {
 
 // The sources a producer made the text of are listed with the producer and the
 // hash their recognition is kept under.
-func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
+func TestRecognizedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	if err := db.Sources().SaveSource(ctx, getFirst().ID, domain.Source{
@@ -288,7 +288,7 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := db.Sources().GetRecognisedSources(ctx, getFirst().ID, domain.KindFile)
+	found, err := db.Sources().GetRecognizedSources(ctx, getFirst().ID, domain.KindFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -299,7 +299,7 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Sources().GetRecognisedSources(ctx, getFirst().ID, domain.KindFile); err == nil {
+	if _, err := db.Sources().GetRecognizedSources(ctx, getFirst().ID, domain.KindFile); err == nil {
 		t.Error("listing over a closed index reported nothing recognized")
 	}
 }

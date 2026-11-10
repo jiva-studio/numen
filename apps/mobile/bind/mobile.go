@@ -85,7 +85,13 @@ func (c *Core) Start(dir string) (int, error) {
 	// folder cannot be created, only the default theme is loaded. A theme
 	// named in the settings that is missing from the catalog is reported on
 	// the platform log.
+<<<<<<< HEAD
 	if wrong := container.SetThemes(cfg, opened, opened.SayTheme); wrong != nil {
+||||||| ea91f5d8d
+	if wrong := cfg.SetThemes(opened, opened.SayTheme); wrong != nil {
+=======
+	if wrong := cfg.SetThemes(opened, opened.RecordThemeWarning); wrong != nil {
+>>>>>>> origin/refactor/architecture
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
 	listener, err := listenLocal(ctx)

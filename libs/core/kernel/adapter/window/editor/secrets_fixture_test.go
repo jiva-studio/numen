@@ -281,7 +281,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, file, fileBody)
 	keys := &secretKeys{items: map[string]string{}}
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      container.LendPluginHost(host),
+		PluginHost:      container.AdaptPluginHost(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),

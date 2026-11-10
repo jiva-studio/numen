@@ -7,9 +7,8 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
-	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -56,7 +55,7 @@ type cutter struct {
 	isSkipped    func(path string) bool
 	errorHandler window.ErrorHandler
 	readNote     func(ctx context.Context, v domain.Vault, path string) error
-	onProgress   func(indexdomain.IndexResult)
+	onProgress   func(vaultreading.IndexResult)
 }
 
 func newCutter(u Index) cutter {
@@ -91,7 +90,7 @@ type Index struct {
 
 	ShouldRebuildIndex bool
 
-	OnProgress func(indexdomain.IndexResult)
+	OnProgress func(vaultreading.IndexResult)
 
 	IsSkipped func(path string) bool
 
@@ -121,8 +120,8 @@ func NewIndex(
 // IndexWithProgress runs Execute with onProgress reporting each step when
 // non-nil, and leaves uncut every source isSkipped names when non-nil.
 func (u Index) IndexWithProgress(
-	ctx context.Context, v domain.Vault, onProgress func(indexdomain.IndexResult), isSkipped func(path string) bool,
-) (indexdomain.IndexResult, error) {
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool,
+) (vaultreading.IndexResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -134,8 +133,8 @@ func (u Index) IndexWithProgress(
 
 // Execute brings the chunks of one vault's file texts up to date with what is
 // on disk.
-func (u Index) Execute(ctx context.Context, v domain.Vault) (indexdomain.IndexResult, error) {
-	var res indexdomain.IndexResult
+func (u Index) Execute(ctx context.Context, v domain.Vault) (vaultreading.IndexResult, error) {
+	var res vaultreading.IndexResult
 
 	on, err := u.open(v)
 	if err != nil {
@@ -156,7 +155,7 @@ func (u discoverer) discover(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) (map[string]domain.FileStat, []string, error) {
 	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
@@ -182,7 +181,7 @@ func (u discoverer) readKnown(ctx context.Context, v domain.Vault) (map[string]d
 }
 
 func (u discoverer) readNoteStats(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
-	sources, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	sources, err := u.records.GetRecognizedSources(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -208,7 +207,7 @@ func (u discoverer) walkAndRecord(
 	on openVault,
 	stats map[string]domain.FileStat,
 	noteStats map[string]domain.FileStat,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) (map[string]bool, []string, error) {
 	found := make(map[string]bool)
 	var notePaths []string
@@ -239,7 +238,7 @@ func (u discoverer) recordFile(
 	on openVault,
 	stats map[string]domain.FileStat,
 	ref domain.FileStat,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	previous, isKnown := stats[ref.Path]
 	if !isKnown {
@@ -268,7 +267,7 @@ func (u discoverer) checkNote(
 	on openVault,
 	noteStats map[string]domain.FileStat,
 	ref domain.FileStat,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) (bool, error) {
 	previous, isKnown := noteStats[ref.Path]
 	if !isKnown {
@@ -295,7 +294,7 @@ func (u discoverer) removeGone(
 	on openVault,
 	stats map[string]domain.FileStat,
 	found map[string]bool,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	var removed []string
 	for path := range stats {
@@ -327,15 +326,28 @@ func (u discoverer) moveRenamed(ctx context.Context, v domain.Vault, on openVaul
 		return nil, nil
 	}
 	slices.Sort(added)
-	sources, err := findRemovedSources(ctx, u.lookup, v.ID, removed)
+	sources, err := sourcedomain.FindRemoved(removed,
+		func(path string) ([]domain.FileStat, error) { return u.lookup.GetSourcesUnder(ctx, v.ID, path) },
+		func(path string) (sourcedomain.Text, bool, error) { return u.lookup.GetSourceText(ctx, v.ID, path) })
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	moved, err := moveRenamedSources(ctx, u.sources, on.files, v.ID, sources, added)
+	moved, err := sourcedomain.MoveRenamed(sources, added,
+		func(path string) (domain.FileStat, error) { return on.files.StatFile(ctx, path) },
+		func(path string) (string, error) { return getContentHash(ctx, on.files, path) },
+		func(from, to string) error { return u.sources.MoveSources(ctx, v.ID, from, to) })
 	if err != nil {
 		return nil, fmt.Errorf("move: %w", err)
 	}
 	return moved, nil
+}
+
+func getContentHash(ctx context.Context, reader vaultport.VaultReader, path string) (string, error) {
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	return domain.HashContent(raw), nil
 }
 
 func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string {
@@ -353,9 +365,9 @@ func (u outdated) dropOutdatedText(
 	v domain.Vault,
 	on openVault,
 	notePaths []string,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) ([]string, error) {
-	cut, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindFile)
+	cut, err := u.records.GetRecognizedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
 		return notePaths, fmt.Errorf("read index: %w", err)
 	}
@@ -367,7 +379,7 @@ func (u outdated) dropOutdatedText(
 			return notePaths, err
 		}
 	}
-	notes, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	notes, err := u.records.GetRecognizedSources(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return notePaths, fmt.Errorf("read index: %w", err)
 	}
@@ -392,7 +404,7 @@ func (u outdated) recordIfOutdated(
 	v domain.Vault,
 	on openVault,
 	source sourcedomain.Text,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	ref, outdated, err := u.statIfOutdated(ctx, on, source)
 	if err != nil || !outdated {
@@ -423,7 +435,7 @@ func (u outdated) statIfOutdated(
 		return domain.FileStat{}, false, fmt.Errorf("find the live version of %s: %w", source.Path, err)
 	}
 	ref, err := on.files.StatFile(ctx, source.Path)
-	if edit.IsNoNote(err) {
+	if vaultport.IsNoNote(err) {
 		return domain.FileStat{}, false, nil
 	}
 	if err != nil {
@@ -438,7 +450,7 @@ func (u cutter) cut(
 	on openVault,
 	noteStats map[string]domain.FileStat,
 	notePaths []string,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	sizes := u.sizes
 	recognized := []string{recipe(versionReader, sizes)}
@@ -503,7 +515,7 @@ func (u cutter) getNotePathsToCut(
 type cutRun struct {
 	tried map[string]bool
 	sizes chunking.Sizes
-	res   *indexdomain.IndexResult
+	res   *vaultreading.IndexResult
 }
 
 func (u cutter) chunkNewPaths(
@@ -535,8 +547,8 @@ func (u cutter) chunkNewPaths(
 
 // IndexOne brings a single file's chunks up to date with its live text
 // version. It is what the index does when the versions of a file change.
-func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (indexdomain.IndexResult, error) {
-	var res indexdomain.IndexResult
+func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error) {
+	var res vaultreading.IndexResult
 	on, err := u.open(v)
 	if err != nil {
 		return res, err
@@ -550,13 +562,13 @@ func (u cutter) source(
 	on openVault,
 	path string,
 	sizes chunking.Sizes,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	res.CurrentSource = path
 	u.progress(*res)
 
 	ref, err := on.files.StatFile(ctx, path)
-	if edit.IsNoNote(err) {
+	if vaultport.IsNoNote(err) {
 		res.Vanished++
 		return nil
 	}
@@ -564,7 +576,7 @@ func (u cutter) source(
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
 	hash, err := on.texts.GetContentHash(ctx, path)
-	if errors.Is(err, edit.ErrNotExist) {
+	if errors.Is(err, vaultport.ErrNotExist) {
 		res.Vanished++
 		return nil
 	}
@@ -613,7 +625,7 @@ func (u cutter) saveWithoutText(
 	v domain.Vault,
 	source domain.Source,
 	readErr error,
-	res *indexdomain.IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	res.Unreadable++
 	if !errors.Is(readErr, text.ErrNoText) {
@@ -735,7 +747,7 @@ func (u Index) Recipe() string { return recipe(versionReader, u.sizes()) }
 
 func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }
 
-func (u cutter) progress(res indexdomain.IndexResult) {
+func (u cutter) progress(res vaultreading.IndexResult) {
 	if u.onProgress != nil {
 		u.onProgress(res)
 	}

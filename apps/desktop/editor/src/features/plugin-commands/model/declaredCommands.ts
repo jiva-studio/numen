@@ -16,7 +16,7 @@ import {
 } from '@numen/plugin-loader'
 import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
-import type { Writable } from '@/shared/lib/writable'
+import type { Writable } from '@/entities/tab'
 import {
   listDeclaredItemLists,
   listDeclaredCommands,

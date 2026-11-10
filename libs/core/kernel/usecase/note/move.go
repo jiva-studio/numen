@@ -84,7 +84,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (dom
 		if errors.Is(err, vault.ErrAlreadyExists) {
 			return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is not moved", to, from), err)
 		}
-		return res, mapMissingNote(err)
+		return res, edit.MapMissingNote(err)
 	}
 	res.IsMoved = true
 	if err := u.moveInIndex(ctx, v, from, to); err != nil {

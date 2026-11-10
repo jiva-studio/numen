@@ -185,9 +185,6 @@ func depguardFiles(t *testing.T) []string {
 func getUncovered(patterns []string) []string {
 	var found []string
 	for one := range getDriving() {
-		if !strings.HasPrefix(one, "adapter/") {
-			continue
-		}
 		if !slices.ContainsFunc(patterns, func(pattern string) bool {
 			target := strings.TrimSuffix(strings.TrimPrefix(pattern, "**/"), "/**")
 			return !strings.HasPrefix(pattern, "!") && (one == target || strings.HasPrefix(one, target+"/"))

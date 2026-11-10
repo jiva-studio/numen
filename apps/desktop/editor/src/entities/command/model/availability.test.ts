@@ -1,6 +1,6 @@
 /** When a command is available over the target the window hands the palette: its when condition. */
 import { describe, expect, it } from 'vitest'
-import { getPaletteValues } from '@/shared/paletteValues'
+import { getPaletteValues } from './paletteValues'
 import { createAvailabilityCheck } from './availability'
 import type { CommandTarget } from './command'
 

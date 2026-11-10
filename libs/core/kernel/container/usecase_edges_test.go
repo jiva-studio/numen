@@ -20,16 +20,33 @@ func getUseCaseName(pkg string) (name string, isUseCase bool) {
 	return name, true
 }
 
+func getSharedPackagesOfUseCases() map[string]string {
+	return map[string]string{
+		"internal/text":   "cuts a byte range on character boundaries and imports only the standard library",
+		"internal/vector": "quantizes embedding vectors and imports only the embedding domain",
+	}
+}
+
 func getUseCaseEdgeRefusal(from, to string) string {
 	source, isSource := getUseCaseName(from)
+	if !isSource {
+		return ""
+	}
+	if isUnder(to, "internal") {
+		if _, isAllowed := getSharedPackagesOfUseCases()[to]; !isAllowed {
+			return "a use case imports from internal/ only the listed shared packages; the rule of a use case lives in the domain and what it depends on in a port"
+		}
+		return ""
+	}
 	target, isTarget := getUseCaseName(to)
-	if !isSource || !isTarget || source == target {
+	if !isTarget || source == target {
 		return ""
 	}
 	return "a use case imports no other use case"
 }
 
-// No use case imports another use case; a package below a use case is that use case.
+// No use case imports another use case; a package below a use case is that use case. A use case imports
+// from internal/ only the packages of getSharedPackagesOfUseCases.
 //
 // Test files are not walked.
 func TestNoUseCaseImportsAnotherUseCase(t *testing.T) {
@@ -114,6 +131,13 @@ func TestUseCaseEdgeRule_RejectsImportsBetweenUseCases(t *testing.T) {
 		{"usecase/note/sub", "usecase/vault", true},
 		{"usecase/vault/sub", "usecase/note", true},
 		{"usecase/note/sub", "usecase/note", false},
+
+		// Shared packages: the listed ones are allowed, every other package under internal/ is refused.
+		{"usecase/vectors", "internal/vector", false},
+		{"usecase/file", "internal/text", false},
+		{"usecase/vault", "internal/vaultreading", true},
+		{"usecase/vault", "internal/operation", true},
+		{"usecase/vault", "internal/adapter/filesystem/vaultreader", true},
 
 		// Pairs with a side that is not a use case are not this rule's.
 		{"usecase/note", "port", false},

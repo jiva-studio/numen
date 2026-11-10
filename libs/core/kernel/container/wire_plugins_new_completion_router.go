@@ -218,7 +218,7 @@ const pluginFailureTaskPrefix = "plugin-failed:"
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *PluginHost {
-	return lendPluginHost(openPluginHost(target, dirs...))
+	return adaptPluginHost(openPluginHost(target, dirs...))
 }
 
 func openPluginHost(target string, dirs ...string) *plugin.Host {
