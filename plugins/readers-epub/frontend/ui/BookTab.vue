@@ -2,8 +2,8 @@
 /**
  * Book tab view rendering reflowable book text and contents navigation.
  */
-import { ref, useTemplateRef, watchEffect } from 'vue'
-import type { ReaderTabState } from '@numen/plugin-sdk'
+import { ref, useTemplateRef, watchEffect, type ComponentPublicInstance } from 'vue'
+import type { ReaderTabState, Unvalidated } from '@numen/plugin-sdk'
 import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
@@ -16,24 +16,19 @@ import { useBookRanges } from '../model/useBookRanges'
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
   path?: string
-  state?: BookTabState | { path?: string; [key: string]: unknown }
+  state?: Partial<ReaderTabState>
 }
 
 const props = defineProps<Props>()
 
-function isBookTabState(s: unknown): s is BookTabState {
+function isBookTabState(s: Unvalidated): s is BookTabState {
   return typeof s === 'object' && s !== null && 'book' in s && 'setBookHandle' in s
 }
 
-const targetPath =
-  props.path ??
-  (props.state && 'path' in props.state && typeof props.state.path === 'string'
-    ? props.state.path
-    : '')
+const targetPath = props.path ?? props.state?.path ?? ''
 
-const isExistingState = isBookTabState(props.state)
-const internalState = isExistingState ? null : useBookTab(useBookReader(targetPath, { words }))
-const tabState = isExistingState ? props.state! : internalState!
+const existingState = isBookTabState(props.state) ? props.state : null
+const tabState = existingState ?? useBookTab(useBookReader(targetPath, { words }))
 
 /* --------------------------------- State ---------------------------------- */
 const isListingOpen = ref(false)
@@ -42,7 +37,7 @@ watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 
 /* ---------------------------------- Hooks --------------------------------- */
 /** The tab state from the window, when it is a reader tab. */
-const readerTab = props.state as Partial<ReaderTabState> | undefined
+const readerTab = props.state
 
 useBookPlace(
   {
@@ -64,6 +59,10 @@ useBookRanges(
 )
 
 /* -------------------------------- Handlers -------------------------------- */
+function onSetTabElement(element: Element | ComponentPublicInstance | null) {
+  tabState.setTabElement(element instanceof HTMLElement ? element : null)
+}
+
 function onDismissListing() {
   isListingOpen.value = false
 }
@@ -97,7 +96,7 @@ function onFollow(destPath: string) {
 
 <template>
   <div
-    :ref="(element: unknown) => tabState.setTabElement(element as HTMLElement | null)"
+    :ref="onSetTabElement"
     class="book-tab"
     tabindex="-1"
     @keydown="onPageTurnKey"
