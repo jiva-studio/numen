@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createAppInfo, DEV_VERSION, parseBuildNumber } from './appInfo'
+import { createAppInfo, DEV_VERSION } from './appInfo'
 import type { AppInfo } from '@numen/plugin-sdk'
 
 describe('the build number', () => {
@@ -12,7 +12,7 @@ describe('the build number', () => {
     ['', 0],
     [undefined, 0],
   ])('%j is %i', (text, expected) => {
-    expect(parseBuildNumber(text)).toBe(expected)
+    expect(createAppInfo({ build: text, getPlatform: () => 'linux' }).build).toBe(expected)
   })
 })
 

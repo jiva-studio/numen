@@ -6,17 +6,19 @@
 import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
 import { installCoreAnswers, type CoreAnswers } from '@numen/core-client/testing'
 import type {
-  Configuration,
   Model,
   PluginInfo,
-  PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
-  Presence,
   SecretMenu,
   SecretSection,
   SettingEdit,
 } from '@/entities/settings'
+import type {
+  Configuration,
+  PluginSettingCondition,
+  Presence,
+} from '@/entities/settings/lib/configuration'
 
 const toWireOption = (option: PluginSettingOption) => ({
   value: option.value,
@@ -189,9 +191,7 @@ interface Declaration {
 const answerSettings = (core: Partial<SettingsCore>): Answers => {
   const { getSettings, updateSettings, watchSettings } = core
   return {
-    ...(getSettings
-      ? { getSettings: async () => toWireConfiguration(await getSettings()) }
-      : {}),
+    ...(getSettings ? { getSettings: async () => toWireConfiguration(await getSettings()) } : {}),
     ...(updateSettings
       ? {
           writeSettings: async (request: { settings: readonly SettingEdit[] }) => {

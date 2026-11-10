@@ -23,7 +23,7 @@ export type UnavailableLookup =
   | { readonly status: 'missing' }
 
 /** What the person can do about the plugin: switch it on, install it, or look at it. */
-export type UnavailableAction = 'enable' | 'install' | 'inspect'
+type UnavailableAction = 'enable' | 'install' | 'inspect'
 
 /** The words and the action of the placeholder of one tab. */
 export interface UnavailableView {

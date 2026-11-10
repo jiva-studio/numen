@@ -9,14 +9,14 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import * as secretsApi from '../api/secrets'
 
 /** The messages this module shows in the window. */
-export interface SecretWords {
+interface SecretWords {
   readonly secretFailed: string
 }
 
 /**
  * The messages this module shows, and how the settings are read again afterwards.
  */
-export interface SecretOptions {
+interface SecretOptions {
   readonly words: SecretWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>

@@ -17,12 +17,6 @@ import { getEntryIcon } from '../tabs/entryIcon'
 /** A handler that creates a file in a vault folder under the given title. */
 export type FileCreatorFn = (title: string, folder: string) => Promise<CreateResult | null>
 
-/** Dynamic registry for domain-specific file creators. */
-export interface FileCreatorRegistry {
-  registerCreator(kind: string, creator: FileCreatorFn): () => void
-  getCreator(kind: string): FileCreatorFn | undefined
-}
-
 /** The window operations needed to create a file. */
 export interface FileMakersDeps {
   readonly tabOpeners: FileOpeners

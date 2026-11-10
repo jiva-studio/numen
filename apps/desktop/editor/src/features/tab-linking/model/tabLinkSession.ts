@@ -16,7 +16,7 @@ import { cancelTabLinksWatch, watchTabLinks, writeTabLinks } from '../api/tab-li
 import type { TabLinksState } from '../types'
 
 /** How long a failed tab report waits before it is sent again. */
-export const REPORT_RETRY_MS = 2000
+const REPORT_RETRY_MS = 2000
 
 export interface TabLinkSessionDeps {
   readonly windowId: string
@@ -147,7 +147,7 @@ export function createTabLinkSession(deps: TabLinkSessionDeps) {
 type ReportedTabs = Pick<WindowTabs, 'tabs' | 'groups'>
 
 /** Returns the tabs whose kind supports navigate, in tab order. */
-export function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsReport['tabs'] {
+function getLinkableTabs(windowTabs: Pick<ReportedTabs, 'tabs'>): WindowTabsReport['tabs'] {
   return windowTabs.tabs.tabs.value.flatMap((tab) => {
     const kind = windowTabs.tabs.getTab(tab.id)?.kind
     return kind?.navigate ? [{ id: tab.id, kind: kind.kind, title: tab.title }] : []

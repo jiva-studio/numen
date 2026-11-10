@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 import { formatErrorCodeMessage } from './error'
-import { getErrorWords, getRelationErrorWords } from './codes'
+import { getRelationErrorWords } from './codes'
+
+const getErrorWords = (code: Parameters<typeof getRelationErrorWords>[0]): string =>
+  getRelationErrorWords(code)
 
 describe('the words of an error code', () => {
   it('are the words the wire gives the code of the schema', () => {

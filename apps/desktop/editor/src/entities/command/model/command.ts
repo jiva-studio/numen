@@ -93,7 +93,7 @@ export interface CommandTarget {
  * What carries a command out. A command that made a note or a folder answers with its path; one
  * that made none answers nothing.
  */
-export type CommandRun = (invocation: CommandInvocation) => Promise<string | void> | string | void
+type CommandRun = (invocation: CommandInvocation) => Promise<string | void> | string | void
 
 /**
  * What a feature declares: the rows it offers, and what carries out each command by its id. A row

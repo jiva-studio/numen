@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   adoptPluginStyle,
   adoptSheet,
-  canConstructSheets,
   clearPluginStyles,
   createSheet,
   getPluginSheet,
@@ -44,10 +43,9 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
   })
 
   it('checks whether the engine can construct and adopt stylesheets', () => {
-    expect(canConstructSheets()).toBe(true)
+    expect(createSheet('.a {}')).toBeDefined()
 
     Reflect.deleteProperty(document, 'adoptedStyleSheets')
-    expect(canConstructSheets()).toBe(false)
     expect(createSheet('.a {}')).toBeUndefined()
 
     Object.defineProperty(document, 'adoptedStyleSheets', {
@@ -56,10 +54,10 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
       configurable: true,
     })
     vi.stubGlobal('CSSStyleSheet', class {})
-    expect(canConstructSheets()).toBe(false)
+    expect(createSheet('.a {}')).toBeUndefined()
 
     vi.stubGlobal('CSSStyleSheet', undefined)
-    expect(canConstructSheets()).toBe(false)
+    expect(createSheet('.a {}')).toBeUndefined()
   })
 
   it('constructs a sheet with optional baseURL and returns undefined on parse error', () => {

@@ -18,20 +18,12 @@ import type {
 import type { MessageWriter } from '@/shared/model/notices/messages'
 import { write } from '../lib/write'
 import { getSettings, updateSettings } from '../api/settings'
+import { getSettingAt } from '../lib/settingAt'
 
 /** Every label shown in the window. */
 export interface Words {
   readonly unturned: string
   readonly unreadSettings: string
-}
-
-export const getSettingAt = (settings: unknown, at: readonly string[]): unknown => {
-  let value = settings
-  for (const step of at) {
-    if (typeof value !== 'object' || value === null) return undefined
-    value = (value as Record<string, unknown>)[step]
-  }
-  return value
 }
 
 const withSettingAt = (settings: unknown, at: readonly string[], value: unknown): unknown => {

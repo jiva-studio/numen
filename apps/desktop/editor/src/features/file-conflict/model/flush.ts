@@ -9,7 +9,7 @@ import { shallowRef, type Ref } from 'vue'
 import { createFollower } from '@numen/ui'
 
 /** Outcome of a flush: everything written, or a user decision pending. */
-export type FlushResult = 'written' | 'unsaved'
+type FlushResult = 'written' | 'unsaved'
 
 /** What the flush needs of the core. */
 export interface FlushDeps {

@@ -79,7 +79,6 @@ vi.mock('@/features/tab-move', async (importOriginal) => ({
 vi.mock('@/shared/model/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', async (importOriginal) => ({
   ...(await importOriginal<typeof TabModule>()),
-  createWorkspace: vi.fn(),
   fileOpeners: (args: unknown) => {
     h.args.openers = args
     return h.f.tabOpeners

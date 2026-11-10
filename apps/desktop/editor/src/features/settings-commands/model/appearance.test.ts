@@ -9,9 +9,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DESIGNED } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
-import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
+import { IS_SIZES } from '../lib/head'
 import { createWindowAppearance } from './appearance'
 import { APPEARANCE_WORDS as words } from '../words'
+
+const MARKER = 'data-appearance'
+const IS_MODE = 'mode'
+const IS_THEME = 'theme'
 
 /** The theme the page was served with. */
 const SERVED = ':root { --numen-surface: #101014 }'
@@ -376,7 +380,10 @@ describe('the settings read again while a row is previewed', () => {
     await one.appearance.reload()
 
     expect(getThemeCss(one.sheet)).toBe(':root { --numen-surface: preset:dracula }')
-    expect(one.appearance.preview.display.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
+    expect(one.appearance.preview.display.sized.value).toStrictEqual({
+      interfaceScale: 1,
+      textScale: 1,
+    })
   })
 })
 
@@ -576,7 +583,10 @@ describe('a window that is closed', () => {
     one.appearance.close()
     await wait()
 
-    expect(one.appearance.preview.display.sized.value).toStrictEqual({ interfaceScale: 1, textScale: 1 })
+    expect(one.appearance.preview.display.sized.value).toStrictEqual({
+      interfaceScale: 1,
+      textScale: 1,
+    })
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isConfigurableError, resolveTaskAction } from './taskActions'
+import { resolveTaskAction } from './taskActions'
 import type { Task } from '@/entities/window'
 
 const failed: Task = {
@@ -12,6 +12,9 @@ const failed: Task = {
   isCancellable: false,
   kind: 'work',
 }
+
+const isConfigurableError = (error: string): boolean =>
+  resolveTaskAction({ ...failed, error }) !== undefined
 
 describe('isConfigurableError', () => {
   it('rejects empty, file missing, and filesystem errors even when configurable words appear', () => {

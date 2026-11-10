@@ -29,7 +29,7 @@ const CONFIGURABLE_KEYWORDS: readonly string[] = [
   'rate limit',
 ]
 
-export function isConfigurableError(error: string): boolean {
+function isConfigurableError(error: string): boolean {
   const err = error.toLowerCase()
   if (NON_CONFIGURABLE_KEYWORDS.some((kw) => err.includes(kw))) {
     return false

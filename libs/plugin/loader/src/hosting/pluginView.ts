@@ -4,7 +4,8 @@
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { createSheet, getPluginStyle } from '../styles'
+import { getPluginStyle } from '../styles'
+import { adoptHostStyles, extractStatePath, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './paneHost'
 
 type AsyncComponentRegistration = {
   type: 'async'
@@ -58,75 +59,6 @@ export function extractFilename(path: string | undefined): string {
 
 export function stripMarkdownExtension(filename: string): string {
   return filename.replace(/\.md$/, '')
-}
-
-export function extractStatePath(state: unknown): string {
-  if (typeof state !== 'object' || state === null) return ''
-  const s = state as Record<string, unknown>
-  const val = s.path ?? s.file ?? s.at
-  return typeof val === 'string' ? val : ''
-}
-
-export const PANE_LAYOUT_STYLE =
-  ':host, .plugin-view-container { display: flex !important; flex-direction: column !important; width: 100% !important; height: 100% !important; min-width: 0 !important; min-height: 0 !important; flex: 1 1 0% !important; }'
-
-const PANE_HOST_STYLE: Record<string, string> = {
-  display: 'flex',
-  flexDirection: 'column',
-  width: '100%',
-  height: '100%',
-  minWidth: '0',
-  minHeight: '0',
-  flex: '1 1 0%',
-}
-
-/** Constructed copies of the window's own sheets, by the sheet they copy. */
-const hostSheetCopies = new WeakMap<CSSStyleSheet, CSSStyleSheet>()
-
-function copyHostSheet(sheet: CSSStyleSheet): CSSStyleSheet | undefined {
-  const cached = hostSheetCopies.get(sheet)
-  if (cached) return cached
-  let text: string
-  try {
-    text = [...sheet.cssRules].map((rule) => rule.cssText).join('\n')
-    if (sheet.media.length > 0) text = `@media ${sheet.media.mediaText} {\n${text}\n}`
-  } catch {
-    return undefined
-  }
-  const copy = createSheet(text, sheet.href ?? undefined)
-  // Stryker disable next-line ConditionalExpression: WeakMap lookup checks truthiness of cached sheet
-  if (copy) hostSheetCopies.set(sheet, copy)
-  return copy
-}
-
-function copyHostSheets(): CSSStyleSheet[] | undefined {
-  const copies: CSSStyleSheet[] = []
-  for (const sheet of [...document.styleSheets]) {
-    if (sheet.disabled) continue
-    const owner = sheet.ownerNode
-    if (owner instanceof Element && owner.hasAttribute('data-plugin-id')) continue
-    if (owner instanceof Element && !owner.closest('head')) continue
-    const copy = copyHostSheet(sheet)
-    if (!copy) return undefined
-    copies.push(copy)
-  }
-  return copies
-}
-
-export function adoptHostStyles(shadowRoot: ShadowRoot): void {
-  // Stryker disable next-line ConditionalExpression,EqualityOperator,StringLiteral: JSDOM always defines document
-  if (typeof document === 'undefined') return
-  const copies = 'adoptedStyleSheets' in shadowRoot ? copyHostSheets() : undefined
-  if (copies) {
-    shadowRoot.adoptedStyleSheets = [...copies, ...shadowRoot.adoptedStyleSheets]
-    return
-  }
-  const hostStyles = document.querySelectorAll<HTMLStyleElement | HTMLLinkElement>(
-    'head style:not([data-plugin-id]), head link[rel="stylesheet"]:not([data-plugin-id])',
-  )
-  for (const node of hostStyles) {
-    shadowRoot.appendChild(node.cloneNode(true))
-  }
 }
 
 export function attachPluginRoot(el: HTMLElement | null): ShadowRoot | null {

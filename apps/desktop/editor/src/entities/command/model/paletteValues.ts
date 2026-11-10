@@ -5,7 +5,7 @@
 import { getWhenValues, type WhenSettings, type WhenValues } from '@numen/plugin-loader'
 
 /** What the palette knows of what is in front, as its command target holds it. */
-export interface PaletteInFront {
+interface PaletteInFront {
   readonly tab: string
   readonly path: string
   readonly file: string

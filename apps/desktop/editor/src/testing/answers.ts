@@ -5,7 +5,8 @@
  * the vaults this installation holds, and `folders` what each folder holds.
  */
 import type { Entry } from '@/entities/file'
-import type { OpenTabs, Tab } from '@/entities/tab'
+import type { Tab } from '@/entities/tab'
+import type { OpenTabs } from '@/entities/tab/lib/tab'
 import type { PluginSettingInfo } from '@/entities/settings'
 
 interface MockVaultState {
@@ -14,10 +15,7 @@ interface MockVaultState {
   detachError: string
   opening: string | null
   names: ReturnType<typeof nameAnswer>[]
-  passages: (
-    | ReturnType<typeof passageAnswer>
-    | ReturnType<typeof sourceAnswer>
-  )[]
+  passages: (ReturnType<typeof passageAnswer> | ReturnType<typeof sourceAnswer>)[]
   savedTabs: OpenTabs
   detachedTab: Tab | null
   types: Record<string, string>

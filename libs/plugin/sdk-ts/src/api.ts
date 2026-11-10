@@ -7,6 +7,7 @@
 import { getOrigin } from './transport'
 import { asFailure, asValue } from './result'
 import type { Result } from './result'
+import { parseEvents } from './events'
 
 /** Why a method failed: a code such as `not_found` and the text the backend gave. */
 export interface ApiError {
@@ -17,12 +18,12 @@ export interface ApiError {
 /** The code of a failure that never reached the method: the network or the host answered. */
 export const UNAVAILABLE = 'unavailable'
 
-export interface ApiOptions {
+interface ApiOptions {
   readonly origin?: string
   readonly fetch?: typeof fetch
 }
 
-export interface ApiCallOptions {
+interface ApiCallOptions {
   readonly signal?: AbortSignal
 }
 
@@ -66,25 +67,6 @@ const createRequest = (
   body: JSON.stringify(request ?? {}),
   signal: signal ?? null,
 })
-
-/** Splits the text of an event stream into its events as they complete. */
-export const parseEvents = (
-  text: string,
-): { events: { name: string; data: string }[]; rest: string } => {
-  const events: { name: string; data: string }[] = []
-  const blocks = text.split('\n\n')
-  const rest = blocks.pop() ?? ''
-  for (const block of blocks) {
-    let name = 'message'
-    const data: string[] = []
-    for (const line of block.split('\n')) {
-      if (line.startsWith('event: ')) name = line.slice(7)
-      else if (line.startsWith('data: ')) data.push(line.slice(6))
-    }
-    events.push({ name, data: data.join('\n') })
-  }
-  return { events, rest }
-}
 
 async function* readEvents(
   body: NonNullable<Response['body']>,

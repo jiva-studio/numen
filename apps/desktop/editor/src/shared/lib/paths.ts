@@ -8,16 +8,6 @@
 /** What a file is filed as, which is the last segment of the path. */
 export const getFileName = (path: string): string => path.split('/').pop() ?? path
 
-/**
- * The file's name without its extension, which is what a link writes and what a
- * name resolves by. A link therefore remains valid when the file is moved.
- */
-export const getFileStem = (path: string): string => {
-  const file = getFileName(path)
-  const dot = file.lastIndexOf('.')
-  return dot > 0 ? file.slice(0, dot) : file
-}
-
 /** A note or file that moved, with its previous and new path. */
 export interface PathRename {
   readonly from: string

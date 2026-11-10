@@ -26,7 +26,7 @@ export interface BootstrapDeps {
 }
 
 /** How long one of the steps the workspace depends on may take before the window says it could not load. */
-export const STEP_LIMIT_MS = 10_000
+const STEP_LIMIT_MS = 10_000
 
 async function startPluginsWithinLimit(deps: BootstrapDeps): Promise<void> {
   const starting = deps.startPlugins?.()

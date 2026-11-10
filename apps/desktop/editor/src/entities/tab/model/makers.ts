@@ -19,7 +19,7 @@ export interface VaultCreator {
 }
 
 /** What creating a file reports to the window. */
-export interface CreateWords {
+interface CreateWords {
   readonly errors: Record<ErrorCode, string>
 }
 

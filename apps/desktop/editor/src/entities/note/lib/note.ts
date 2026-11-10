@@ -5,7 +5,6 @@ import type { TextRange } from '@/shared/lib/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 
 export type { NoteRelation } from '@numen/plugin-loader'
-export type { RemovedNote, RemoveResult } from '@/shared/model/fileTypes'
 
 /** The prose returned by a read, with the file identity returned alongside it. */
 export interface NoteContents {
@@ -42,7 +41,7 @@ export interface NoteHeading {
  * Why a note was not read or not written. `changed` means the file contains
  * prose that has not been loaded, which stops a write.
  */
-export type NoteFailure = ErrorCode | 'changed'
+type NoteFailure = ErrorCode | 'changed'
 
 /**
  * What a read returned. The words for a failure belong to whatever shows
@@ -60,7 +59,7 @@ export interface NewNote {
 }
 
 /** A note renamed, and what its file did. */
-export interface RenamedNote {
+interface RenamedNote {
   readonly path: string
   readonly title: string
   readonly hasFrontmatter: boolean

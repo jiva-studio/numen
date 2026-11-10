@@ -18,24 +18,12 @@ import {
   type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
-import type { TextRange } from '@/shared/lib/textRange'
-import type { SearchDeps, SearchMode } from '../../lib/search/types'
+import type { SearchDeps } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '@/entities/command'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
 
-export type {
-  TextRange,
-  NameMatch,
-  Passage,
-  SearchHit,
-  SearchRow,
-  SearchGroup,
-  ResultChoice,
-  SearchMenuDeps,
-  SearchDeps,
-  SearchMode,
-}
+export type { NameMatch, Passage, SearchHit, SearchGroup, ResultChoice, SearchDeps }
 
 /** The text a palette group shows when it is empty. */
 export interface EmptyWords {

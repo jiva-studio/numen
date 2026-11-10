@@ -69,5 +69,3 @@ export function createTabMenu(tabs: Ref<readonly Tab[]>, links: TabLinks) {
     },
   }
 }
-
-export type TabMenu = ReturnType<typeof createTabMenu>

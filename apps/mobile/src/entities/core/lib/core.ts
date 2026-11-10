@@ -1,5 +1,6 @@
 /** The answer to a call that can fail: what was returned, or the sentence that says why not. */
-export type Result<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string }
+export type Result<T> =
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly error: string }
 
 /** The file a note was read from or written to, as the core last saw it. */
 export interface NoteStamp {
@@ -15,13 +16,13 @@ export interface NoteBaseline {
 }
 
 /** A note as the core returned it; the stamp is absent when the core named no file. */
-export interface NoteRead {
+interface NoteRead {
   readonly prose: string
   readonly stamp: NoteStamp | null
 }
 
 /** The vault the core opened. */
-export interface VaultState {
+interface VaultState {
   readonly id: string
   readonly name: string
   readonly path: string

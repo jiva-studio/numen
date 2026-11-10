@@ -12,7 +12,7 @@ import { reportError } from './events'
 import type { CommandRun, HostDeps } from './types'
 
 /** Runs a command of the application a key is bound to, with the values of the keybinding. */
-export type RunAppKey = (command: string, values: Readonly<Record<string, string>>) => void
+type RunAppKey = (command: string, values: Readonly<Record<string, string>>) => void
 
 /** What a key is judged and run over: the target of the note in front, and the runner of the application keys. */
 export interface KeyContext {
@@ -58,7 +58,9 @@ export function createShortcutHandler(parts: ShortcutParts) {
     const canRun = (binding: Keybinding): boolean => {
       if (getCommandOwner(binding.command) === APP_COMMAND_OWNER) return true
       if (isSharedCommand(binding.command)) {
-        return (deps.getHandlerDeclarations?.() ?? []).some((one) => one.command === binding.command)
+        return (deps.getHandlerDeclarations?.() ?? []).some(
+          (one) => one.command === binding.command,
+        )
       }
       const command = available.get(binding.command)
       if (!command?.entry) return false

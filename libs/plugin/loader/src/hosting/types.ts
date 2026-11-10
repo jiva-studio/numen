@@ -16,8 +16,6 @@ import type {
   FileSelectEvent,
   MountedView,
   NoticeHost,
-  PluginContext,
-  PluginLifecycle,
   ReaderRegistration,
   SettingsViewRegistration,
   SlotViewRegistration,
@@ -41,20 +39,6 @@ import type { WhenValues } from '../when/when'
 import type { WhenReader } from '../when/whenReader'
 import type { Component } from 'vue'
 import type { MountAccess } from '../views'
-
-export type {
-  AgentProviderRegistration,
-  CommandRegistration,
-  Disposable,
-  FileSelectEvent,
-  PluginContext,
-  PluginLifecycle,
-  ReaderRegistration,
-  SettingsViewRegistration,
-  TabKindRegistration,
-  TaskHost,
-  VaultChangeEvent,
-}
 
 /** One command as a plugin manifest declares it under `contributes.commands`, with the parts its plugin has. */
 export interface CommandDeclaration {

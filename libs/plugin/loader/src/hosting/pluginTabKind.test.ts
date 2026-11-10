@@ -11,7 +11,6 @@ import {
   unregisterPluginStyle,
 } from '../styles'
 import {
-  createDeclaredPane,
   getDeclaredTabKind,
   isDeclaredTabKind,
   pickDeclaredHooks,
@@ -41,6 +40,9 @@ const declare = (overrides: Partial<TabKindRegistration<Held>> = {}): DeclaredTa
     open: (folderPath: string, id: string): Held => ({ at: folderPath, id, title: '' }),
     ...overrides,
   }) as DeclaredTabKindRegistration
+
+const createDeclaredPane = (pluginId: string, component: unknown) =>
+  getDeclaredTabKind(pluginId, declare({ component: component as never })).pane
 
 describe('a registration that says what its tabs hold', () => {
   it('is distinguished from one that holds a note', () => {

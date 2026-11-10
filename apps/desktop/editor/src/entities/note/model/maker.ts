@@ -12,7 +12,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { ERRORS } from '@/shared/ui/words'
 
 /** A note that now exists: where it is filed, and what it is called. */
-export interface NoteRef {
+interface NoteRef {
   readonly path: string
   readonly title: string
 }

@@ -1,5 +1,6 @@
 import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
+import { getFileName } from '@/shared/lib/paths'
 import { findTabKindPlugin } from '../api/tabKindPlugin'
 import type { AnyTabKind } from '../lib/kinds'
 import type { Writable } from '../lib/writable'
@@ -38,8 +39,6 @@ const placeholders = new WeakSet<AnyTabKind>()
 
 /** Whether a kind is the placeholder of a kind that is not registered. */
 export const isUnavailableKind = (kind: AnyTabKind): boolean => placeholders.has(kind)
-
-const getFileName = (path: string): string => path.split('/').pop() ?? path
 
 const getDeclaredTitle = (lookup: UnavailableLookup): string =>
   lookup.status === 'found' ? lookup.plugin.kindTitle : ''

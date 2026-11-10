@@ -22,7 +22,7 @@ import {
 import { TAB_WORDS } from '../words'
 
 /** The tabs of every window and the links between them, as the commands read and change them. */
-export interface TabLinks {
+interface TabLinks {
   readonly tabs: readonly LinkableTab[]
   readonly windows: readonly TabWindow[]
   linkTabs(sourceTabId: TabId, targetTabId: TabId): void

@@ -6,13 +6,13 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { retryPlugin as askPluginRetry } from '../api/settings'
 
 /** Notice copy of a retry. */
-export interface RetryWords {
+interface RetryWords {
   readonly stopped: (name: string, reason: string) => string
   readonly retryFailed: (name: string, message: string) => string
 }
 
 /** Notice output, settings refresh and the plugin name lookup of a retry. */
-export interface RetryOptions {
+interface RetryOptions {
   readonly words: RetryWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>

@@ -2,7 +2,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
-import { STEP_LIMIT_MS, createAppBootstrap, type BootstrapDeps } from './createAppBootstrap'
+import { createAppBootstrap, type BootstrapDeps } from './createAppBootstrap'
+
+const STEP_LIMIT_MS = 10_000
 
 const setup = (overrides: Partial<BootstrapDeps> = {}) => {
   const calls: string[] = []

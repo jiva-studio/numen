@@ -9,7 +9,7 @@ import { COMMAND, type CommandTarget } from '@/entities/command'
 import type { Words } from '../../words'
 
 /** The words of the actions that create a note. */
-export type CreateNoteWords = Pick<Words, 'creates' | 'asChild' | 'asParent' | 'asJump'>
+type CreateNoteWords = Pick<Words, 'creates' | 'asChild' | 'asParent' | 'asJump'>
 
 /** What the actions that create a note are made from. */
 export interface CreateNoteOptions {

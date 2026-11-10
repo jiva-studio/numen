@@ -5,17 +5,15 @@ import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styl
 import { createBufferedNoteState } from './customTabBuffer'
 import { getCustomTabKind, createPluginPaneWrapper, getReaderTabKind } from './customTabKind'
 import {
-  adoptHostStyles,
   attachPluginRoot,
   extractFilename,
-  extractStatePath,
   extractTitleValue,
-  PANE_LAYOUT_STYLE,
   renderFallback,
   renderPaneContent,
   resolvePluginComponent,
   stripMarkdownExtension,
 } from './pluginView'
+import { adoptHostStyles, extractStatePath, PANE_LAYOUT_STYLE } from './paneHost'
 import type { NoteBuffer } from './types'
 
 describe('createPluginPaneWrapper', () => {

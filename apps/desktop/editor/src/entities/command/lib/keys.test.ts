@@ -4,7 +4,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { APP_KEYBINDINGS } from '@numen/plugin-loader'
-import { createRowKeys, findChordKeys, findShortcutKeys } from './keys'
+import { createRowKeys, findShortcutKeys } from './keys'
+
+const findChordKeys = (command: string, agent: string, values?: Record<string, string>) =>
+  createRowKeys(command, agent, values).keys
 
 describe('how a key is drawn on the row that names it', () => {
   it('is the key the keyboard in hand holds, and the letter in capitals', () => {

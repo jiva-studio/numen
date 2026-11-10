@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { CommandItem } from '@numen/plugin-loader'
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import { createItemLists, type WindowLists } from './pluginItems'
+import { createItemLists } from './pluginItems'
 
 const TARGET = {
   tab: '',
@@ -17,6 +17,8 @@ const TARGET = {
   vault: { id: 'v', name: 'Harbor' },
   isReady: true,
 } as CommandTarget
+
+type WindowLists = Parameters<typeof createItemLists>[1]['paletteLists']
 
 const WINDOW_LISTS: WindowLists = { getStepGroups: () => [], previewItem: () => undefined }
 const RUNS: RunSupport = { canRun: () => true, cannotRun: () => undefined }

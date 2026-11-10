@@ -4,7 +4,9 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { WHEN_VARIABLES } from '@numen/plugin-sdk'
 import { getTargetValues, type TargetNote } from './targetValues'
-import { parseWhen, type WhenResult, type WhenValues } from './when'
+import { parseWhen, type WhenCondition, type WhenValues } from './when'
+
+type WhenResult = ReturnType<WhenCondition['evaluatePartial']>
 
 interface Vectors {
   readonly variables: readonly { readonly name: string; readonly type: string }[]

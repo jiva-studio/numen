@@ -8,7 +8,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MODEL_PRESENCE } from '@numen/core-client'
 import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
-import { createSettingsStore, getSettingAt } from './store'
+import { getSettingAt } from '../lib/settingAt'
+import { createSettingsStore } from './store'
 
 const words = {
   unturned: 'Setting not saved:',

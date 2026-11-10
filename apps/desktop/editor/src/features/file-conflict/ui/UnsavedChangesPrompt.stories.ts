@@ -9,10 +9,9 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import UnsavedChangesPrompt from './UnsavedChangesPrompt.vue'
 import type { ConflictPrompt } from '../model/flush'
-import type { UnsavedChangesWords } from './UnsavedChangesPrompt.vue'
 
 /** The strings the window passes to the prompt. The component defines none of its own. */
-const WORDS: UnsavedChangesWords = {
+const WORDS: InstanceType<typeof UnsavedChangesPrompt>['$props']['words'] = {
   going: 'Saving paused: the files of these notes changed on disk.',
   keep: 'Keep my version',
   take: 'Use disk version',

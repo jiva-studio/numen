@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import type { Core, NoteStamp } from '@/entities/core'
+import type { Core, NoteBaseline } from '@/entities/core'
 import NoteSheet from './NoteSheet.vue'
 
 const createCore = (calls: Partial<Pick<Core, 'readNote' | 'writeNote'>>) => calls as Core
@@ -47,7 +47,7 @@ describe('a note the core rejected', () => {
 
 describe('a note typed in on the phone', () => {
   it('writes the typed text against the version it read', async () => {
-    const stamp: NoteStamp = { path: 'Kept.md', size: 10n, mtime: 1n }
+    const stamp: NoteBaseline['stamp'] = { path: 'Kept.md', size: 10n, mtime: 1n }
     const writeNote = vi.fn().mockResolvedValue({ ok: true, value: null })
     const core = createCore({
       readNote: vi.fn().mockResolvedValue({ ok: true, value: { prose: 'One line.\n', stamp } }),

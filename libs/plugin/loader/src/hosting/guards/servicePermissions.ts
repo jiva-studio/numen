@@ -20,7 +20,7 @@ const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
 
 /** What a member needs: every permission listed, and whether a refusal throws or rejects. */
-export class Rule {
+class Rule {
   constructor(
     readonly permissions: readonly string[],
     readonly isAsync: boolean,

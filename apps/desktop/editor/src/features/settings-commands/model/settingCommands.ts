@@ -8,7 +8,7 @@
  * and restored when the step is left without a choice.
  */
 import { parseWhen } from '@numen/plugin-loader'
-import { getPaletteValues, SETTING_COMMAND_PREFIX, type Command, type StepGroup, type StepRow } from '@/entities/command'
+import { getPaletteValues, type Command, type StepGroup, type StepRow } from '@/entities/command'
 import type { PluginSettingInfo, PluginSettingOption, SettingEdit } from '@/entities/settings'
 import {
   APP_OWNER,
@@ -17,6 +17,7 @@ import {
   type SettingOwner,
 } from '../lib/settingsConfig'
 import { getNamedIcon } from '@/shared/ui/icons'
+import { getSettingCommandId, parseSettingCommandId } from '../lib/settingCommandId'
 
 /** The words a row is drawn with. */
 export interface SettingWords {
@@ -49,18 +50,6 @@ export interface SettingPalette {
   }
   /** Writes the row chosen in the step of a command. */
   choose(command: string, item: string): Promise<void>
-}
-
-/** The id of the command of a setting: `setting:<owner>:<key>`, the key a path joined by dots. */
-export const getSettingCommandId = (owner: string, key: string): string =>
-  `${SETTING_COMMAND_PREFIX}${owner}:${key}`
-
-/** The owner and the key a command id names, and nothing for an id of another command. */
-export const parseSettingCommandId = (
-  id: string,
-): { readonly owner: string; readonly key: string } | null => {
-  const match = /^setting:([^:]+):(.+)$/.exec(id)
-  return match?.[1] && match[2] ? { owner: match[1], key: match[2] } : null
 }
 
 const isChoiceKind = (setting: PluginSettingInfo): boolean =>

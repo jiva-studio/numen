@@ -1,7 +1,9 @@
 /** The slot entries the window passes on, read from the answers of the core. */
 import { describe, expect, it } from 'vitest'
-import type { DeclaredList, DeclaredSlot } from '@/entities/plugin'
+import type { DeclaredSlot, listDeclaredCommands } from '@/entities/plugin'
 import { useDeclaredCommands } from './declaredCommands'
+
+type DeclaredList = Awaited<ReturnType<typeof listDeclaredCommands>>
 
 const menu = (command: string, overrides: Partial<DeclaredSlot> = {}): DeclaredSlot => ({
   pluginId: 'org.example.atlas',

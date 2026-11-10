@@ -5,7 +5,7 @@
 import type { DeclaredSlotEntry } from '@numen/plugin-loader'
 
 /** The owner of the entries of the application, as the owner of its commands. */
-export const APP_PLACEMENT_OWNER = 'app'
+const APP_PLACEMENT_OWNER = 'app'
 
 /** One row that is not the root folder. */
 const OVER_ONE_ROW = '!target.isRoot && !target.isMultiple'

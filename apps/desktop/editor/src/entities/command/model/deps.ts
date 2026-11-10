@@ -7,7 +7,7 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { CommandInvocation, Notes, RunSupport } from '@/entities/command'
 
 /** Where a command of the palette takes the window. */
-export interface WindowNavigator {
+interface WindowNavigator {
   /** A tab of a kind, opened and put in front. */
   openTab(kind: string): void
   /** A tab release. */
@@ -17,7 +17,7 @@ export interface WindowNavigator {
 }
 
 /** The settings a command writes. */
-export interface SettingsWriter {
+interface SettingsWriter {
   /**
    * The row chosen in the step of the command of a setting, `setting:<owner>:<key>`; the adapter
    * of the settings writes it.
@@ -26,18 +26,18 @@ export interface SettingsWriter {
 }
 
 /** Reports a command's result as one line of text. */
-export interface Voice {
+interface Voice {
   readonly writeMessage: MessageWriter
 }
 
 /** The tabs a command operates on: their files, and where the window navigates. */
-export interface TabContext {
+interface TabContext {
   readonly notes: Notes
   readonly navigator: WindowNavigator
 }
 
 /** The runs this build does not support. */
-export interface RunContext {
+interface RunContext {
   readonly runSupport: RunSupport
 }
 

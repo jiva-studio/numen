@@ -1,34 +1,36 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import { createCatalogEntry } from '@/testing/installation'
-import { createManagedFromEntries, createPluginListing } from './pluginListing'
+import { createManagedFromEntries } from './pluginListing'
 
-describe('createPluginListing', () => {
+describe('the listing of a catalog entry', () => {
   it('reads the lowercase category, the feature and the tab kinds of an entry', () => {
-    const listing = createPluginListing(
-      createCatalogEntry('notes', {
-        category: 'Editors',
-        feature: 'Markdown notes',
-        tabKinds: ['note', 'reader:markdown'],
-      }),
+    const [listed] = createManagedFromEntries(
+      [createMockPluginInfo('notes', 'notes')],
+      [
+        createCatalogEntry('notes', {
+          category: 'Editors',
+          feature: 'Markdown notes',
+          tabKinds: ['note', 'reader:markdown'],
+        }),
+      ],
     )
 
-    expect(listing).toStrictEqual({
+    expect(listed).toMatchObject({
       id: 'notes',
-      name: 'notes',
-      version: '1.0.0',
-      description: '',
       category: 'editors',
       feature: 'Markdown notes',
       tabKinds: ['note', 'reader:markdown'],
-      isAvailable: false,
     })
   })
 
   it('marks only an available entry as offered', () => {
-    const entry = createCatalogEntry('a', { isAvailable: true })
-    expect(createPluginListing(entry).isAvailable).toBe(true)
-    expect(createPluginListing(createCatalogEntry('b')).isAvailable).toBe(false)
+    const offered = createManagedFromEntries(
+      [],
+      [createCatalogEntry('a', { isAvailable: true }), createCatalogEntry('b')],
+    )
+
+    expect(offered.map((one) => one.id)).toStrictEqual(['a'])
   })
 })
 

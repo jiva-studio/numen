@@ -18,9 +18,9 @@ export interface StyleElements {
  * The attribute each of the three carries, and which element it identifies.
  * The application writes these when it styles the page.
  */
-export const MARKER = 'data-appearance'
-export const IS_MODE = 'mode'
-export const IS_THEME = 'theme'
+const MARKER = 'data-appearance'
+const IS_MODE = 'mode'
+const IS_THEME = 'theme'
 export const IS_SIZES = 'sizes'
 
 const findStyle = (sheet: Document, is: string): HTMLStyleElement | null =>
