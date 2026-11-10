@@ -280,7 +280,7 @@ export function guardService<S extends object>(
       const descriptor = guardMember(source, { key, rule }, { check: guard.check, operation })
       Object.defineProperty(guarded, key, descriptor)
     } else if (typeof member === 'object' && member !== null) {
-      guarded[key] = guardService(member, rule as RulesOf<object>, {
+      guarded[key] = guardService(member, rule, {
         check: guard.check,
         path: operation,
       })
