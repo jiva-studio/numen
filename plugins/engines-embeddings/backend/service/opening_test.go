@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
 
 func slowModel(t *testing.T) (srv *embeddingServer, started chan struct{}, release chan struct{}) {
@@ -16,7 +17,7 @@ func slowModel(t *testing.T) (srv *embeddingServer, started chan struct{}, relea
 	srv = newEmbeddingServer()
 	started, release = make(chan struct{}), make(chan struct{})
 	var once sync.Once
-	srv.open = func(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		once.Do(func() { close(started) })
 		select {
 		case <-release:
@@ -78,7 +79,7 @@ func TestAChangeOfTheModelEndsTheOpeningOfTheOldOne(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.isMock = false
 	names := make(chan string, 2)
-	srv.open = func(ctx context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(ctx context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		names <- info.Name
 		if info.Name == "Xenova/bge-m3" {
 			<-ctx.Done()
@@ -140,7 +141,7 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 	srv.modelInfo = engine.ModelInfo{Name: "remote-override"}
 	srv.localInfo = engine.ModelInfo{Name: "local-actual"}
 	var gotInfo engine.ModelInfo
-	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		gotInfo = info
 		return stubEmbedder{concurrency: 6}, nil
 	}
@@ -159,7 +160,7 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 	mockSrv.isMock = true
 	mockSrv.modelInfo = engine.ModelInfo{Name: "mock-model-info"}
 	mockSrv.localInfo = engine.ModelInfo{Name: "unused-local"}
-	mockSrv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	mockSrv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		gotInfo = info
 		return stubEmbedder{concurrency: 4}, nil
 	}
@@ -174,15 +175,15 @@ func TestStartOpeningUsesLocalInfoForNonMockAndModelInfoForMock(t *testing.T) {
 func TestFinishOpeningFailure(t *testing.T) {
 	srv := newEmbeddingServer()
 	wantErr := errors.New("boom")
-	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		return stubEmbedder{}, wantErr
 	}
 	emb, err := srv.getEmbedder(t.Context())
 	if !errors.Is(err, wantErr) || emb != nil {
 		t.Fatalf("getEmbedder = %v, %v, want nil and %v", emb, err, wantErr)
 	}
-	if srv.embedder != nil {
-		t.Fatal("srv.embedder should remain nil on open error")
+	if srv.loader.IsLoaded() {
+		t.Fatal("the loader holds a model after the open failed")
 	}
 }
 
@@ -192,7 +193,7 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	firstEntered := make(chan struct{})
 	releaseFirst := make(chan struct{})
 	calls := 0
-	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		calls++
 		if calls == 1 {
 			close(firstEntered)
@@ -213,7 +214,7 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	<-firstEntered
 
 	srv.mu.Lock()
-	srv.retireOpeningLocked()
+	srv.loader.ResetLocked()
 	srv.mu.Unlock()
 	close(releaseFirst)
 
@@ -223,30 +224,5 @@ func TestFinishOpeningSupersededClosesRetiredModelAndRetries(t *testing.T) {
 	<-closedRetired
 	if srv.modelInfo.Concurrency != 5 {
 		t.Fatalf("Concurrency = %d, want 5 from second opening", srv.modelInfo.Concurrency)
-	}
-}
-
-func TestCloseRetiresOpeningAndClosesLoadedEmbedder(t *testing.T) {
-	srv := newEmbeddingServer()
-	canceled := false
-	closed := false
-	wantErr := errors.New("close failed")
-	srv.opening = &modelOpening{
-		ready:  make(chan struct{}),
-		cancel: func() { canceled = true },
-	}
-	srv.embedder = stubEmbedder{
-		closeErr: wantErr,
-		onClose:  func() { closed = true },
-	}
-	err := srv.Close()
-	if !errors.Is(err, wantErr) {
-		t.Fatalf("Close error = %v, want %v", err, wantErr)
-	}
-	if !canceled || srv.opening != nil {
-		t.Fatal("Close did not retire active opening")
-	}
-	if !closed || srv.embedder != nil {
-		t.Fatal("Close did not close and clear embedder")
 	}
 }

@@ -55,13 +55,13 @@ func TestTheLinkedHandlerAnswersTheAgentService(t *testing.T) {
 	}
 
 	// Direct server config, customPath GetPrograms, and Ask first-send error.
-	s := &agentServer{}
-	s.applyConfig(map[string]string{"executablePath": " " + shPath + " "})
+	agy := agenttest.WriteScript(t, "agy", `if [ "$1" = models ]; then printf 'm-custom\tCustom\n'; fi`+"\n")
+	s := newAgentServer(false)
+	s.applyConfig(map[string]string{"executablePath": " " + agy + " "})
 	s.applyConfig(map[string]string{"other": "ignored"})
-	if got := s.getExecutablePath(); got != shPath {
-		t.Fatalf("getExecutablePath = %q, want %q", got, shPath)
+	if got := s.getExecutablePath(); got != agy {
+		t.Fatalf("getExecutablePath = %q, want %q", got, agy)
 	}
-	s.getModelCache().Put(shPath, []antigravityModel{{Name: "m-custom", Title: "Custom"}})
 	progsCustom, err := s.GetPrograms(t.Context(), nil)
 	if err != nil || len(progsCustom) != 1 || !progsCustom[0].IsInstalled || len(progsCustom[0].Models) != 1 {
 		t.Fatalf("GetPrograms with customPath = (%+v, %v)", progsCustom, err)
