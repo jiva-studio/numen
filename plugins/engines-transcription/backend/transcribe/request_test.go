@@ -1,8 +1,7 @@
-package service
+package transcribe
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
@@ -13,13 +12,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
-	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-transcription/backend/transcript"
 )
 
 const (
-	// callDeadline is how long a tool call may take before the test fails it as waiting for the work.
+	// callDeadline is how long a request may take before the test fails it as waiting for the work.
 	callDeadline = 30 * time.Second
 	// workDeadline is how long a transcription may run before the test fails.
 	workDeadline = time.Minute
@@ -38,7 +35,7 @@ type blockingModel struct {
 	onTranscribe func()
 }
 
-func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording, error) {
+func (m *blockingModel) Open(ctx context.Context, raw []byte) (Recording, error) {
 	m.startOnce.Do(func() { close(m.startCh) })
 	select {
 	case <-m.release:
@@ -48,7 +45,7 @@ func (m *blockingModel) Open(ctx context.Context, raw []byte) (engine.Recording,
 	return m.heardModel.Open(ctx, raw)
 }
 
-func (m *blockingModel) Transcribe(ctx context.Context, audio engine.Audio) (string, error) {
+func (m *blockingModel) Transcribe(ctx context.Context, audio Audio) (string, error) {
 	if m.onTranscribe != nil {
 		m.onTranscribe()
 	}
@@ -137,25 +134,25 @@ func (failingFiles) ReadFile(context.Context, domain.VaultID, string) ([]byte, e
 	return nil, errUnreadable
 }
 
-// toolFixture is the transcription tool over the open vault Lectures of the scene, and the vault
+// requestFixture is the requests for transcriptions over the open vault Lectures of the scene, and the vault
 // Chemistry with a recording of its own.
-type toolFixture struct {
+type requestFixture struct {
 	*scene
 	chemistry *hosttest.Vault
 	chemTexts *hosttest.Texts
 	finishing recordingQueue
 	blocking  *blockingModel
-	registry  *tools.Registry
+	requests  *Requests
 }
 
-func newToolFixture(t *testing.T) *toolFixture {
+func newRequestFixture(t *testing.T) *requestFixture {
 	t.Helper()
-	return newToolFixtureWithFiles(t, func(files Files) Files { return files })
+	return newRequestFixtureWithFiles(t, func(files Files) Files { return files })
 }
 
-func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture {
+func newRequestFixtureWithFiles(t *testing.T, wrap func(Files) Files) *requestFixture {
 	t.Helper()
-	s := &toolFixture{scene: newScene(t)}
+	s := &requestFixture{scene: newScene(t)}
 	chemistry := hosttest.New("Chemistry")
 	s.vault.Beside(chemistry)
 	chemistry.File(chemistryLecture, chemistrySound)
@@ -169,56 +166,65 @@ func newToolFixtureWithFiles(t *testing.T, wrap func(Files) Files) *toolFixture 
 		Queue: s.queue, doneCh: make(chan string, 64), failCh: make(chan host.Task, 64), calls: &queueCalls{},
 	}
 	s.blocking = &blockingModel{heardModel: s.model, startCh: make(chan struct{}), release: make(chan struct{})}
-	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}), storesOf(s.store), textsOf(s.texts), s.finishing,
-		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
+	s.transcriber = NewTranscriber(wrap(vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}), storesOf(s.store), textsOf(s.texts), s.finishing,
+		func(context.Context) (Recognizer, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
-	registry, err := NewTools(s.transcriber, func(id domain.VaultID) VaultReader { return s.vault.With(id) }).Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	s.registry = registry
+	s.requests = NewRequests(s.transcriber, func(id domain.VaultID) Vault { return s.vault.With(id) })
 	return s
 }
 
-func invokeAtOnce(t *testing.T, registry *tools.Registry, call tools.Call) *tools.CallResponse {
+// requestWithin makes the request and fails the test when the call waits for the transcription.
+func (s *requestFixture) requestWithin(t *testing.T, vault domain.VaultID, path string) (Outcome, error) {
 	t.Helper()
 	type answer struct {
-		res *tools.CallResponse
+		out Outcome
 		err error
 	}
-	responses := make(chan answer, 1)
+	answers := make(chan answer, 1)
 	go func() {
-		res, err := registry.InvokeTool(t.Context(), call)
-		responses <- answer{res: res, err: err}
+		out, err := s.requests.Create(t.Context(), vault, path)
+		answers <- answer{out: out, err: err}
 	}()
 	select {
-	case got := <-responses:
-		if got.err != nil {
-			t.Fatalf("call %s: %v", call.Name, got.err)
-		}
-		return got.res
+	case got := <-answers:
+		return got.out, got.err
 	case <-time.After(callDeadline):
-		t.Fatalf("%s did not return within %v: the call waits for the transcription", call.Name, callDeadline)
-		return nil
+		t.Fatalf("the request for %s did not return within %v: the call waits for the transcription", path, callDeadline)
+		return Outcome{}, nil
 	}
 }
 
-func (s *toolFixture) createTranscript(t *testing.T, vault, path string) TranscriptCreateOutput {
+func (s *requestFixture) createTranscript(t *testing.T, vault, path string) Outcome {
 	t.Helper()
-	res := invokeAtOnce(t, s.registry, tools.Call{
-		VaultID: vault, Name: "transcript_create", Arguments: []byte(`{"path":"` + path + `"}`),
-	})
-	if res.GetResult().GetIsError() {
-		t.Fatalf("transcript_create of %s in %s was rejected: %s", path, vault, res.GetResult().GetText())
-	}
-	var out TranscriptCreateOutput
-	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
-		t.Fatalf("decode the result %q: %v", res.GetResult().GetStructured(), err)
+	out, err := s.requestWithin(t, domain.VaultID(vault), path)
+	if err != nil {
+		t.Fatalf("the request for %s in %s was rejected: %v", path, vault, err)
 	}
 	return out
 }
 
-func (s *toolFixture) waitStarted(t *testing.T) {
+// startWithin starts the transcription as the command of the palette does, in the vault the host shows.
+func (s *requestFixture) startWithin(t *testing.T, path string) (bool, error) {
+	t.Helper()
+	type answer struct {
+		isStarted bool
+		err       error
+	}
+	answers := make(chan answer, 1)
+	go func() {
+		isStarted, err := s.transcriber.Start(t.Context(), "", path)
+		answers <- answer{isStarted: isStarted, err: err}
+	}()
+	select {
+	case got := <-answers:
+		return got.isStarted, got.err
+	case <-time.After(workDeadline):
+		t.Fatalf("starting %s did not answer within %v while the recording was transcribed", path, workDeadline)
+		return false, nil
+	}
+}
+
+func (s *requestFixture) waitStarted(t *testing.T) {
 	t.Helper()
 	select {
 	case <-s.blocking.startCh:
@@ -227,7 +233,7 @@ func (s *toolFixture) waitStarted(t *testing.T) {
 	}
 }
 
-func (s *toolFixture) waitFinished(t *testing.T, id string) {
+func (s *requestFixture) waitFinished(t *testing.T, id string) {
 	t.Helper()
 	deadline := time.After(workDeadline)
 	for {
@@ -246,31 +252,12 @@ func isListed(tasks []host.Task, id string) bool {
 	return slices.ContainsFunc(tasks, func(task host.Task) bool { return task.ID == id })
 }
 
-func TestRegistryListsTranscriptCreateOnTheFullServerOnly(t *testing.T) {
-	s := newToolFixture(t)
-
-	listing, err := s.registry.ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	infos := listing.Tools
-	if len(infos) != 1 || infos[0].GetName() != "transcript_create" {
-		t.Fatalf("the registry lists %+v, want transcript_create alone", infos)
-	}
-	if infos[0].GetEffect() != tools.ReadWrite {
-		t.Errorf("transcript_create has effect %v, want ReadWrite", infos[0].GetEffect())
-	}
-	if !slices.Equal(infos[0].GetServers(), []tools.Server{tools.Full}) {
-		t.Errorf("transcript_create is listed on %v, want the full server alone", infos[0].GetServers())
-	}
-}
-
 func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
+	want := Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -289,13 +276,13 @@ func TestTranscriptCreateReturnsBeforeTheTranscriptionEnds(t *testing.T) {
 }
 
 func TestTranscriptCreateDuringTranscriptionReportsItRunning(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	first := s.createTranscript(t, "Lectures", lecture)
 	s.waitStarted(t)
 
 	second := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: first.TaskID, Path: lecture, State: "running"}
+	want := Outcome{TaskID: first.TaskID, Path: lecture, State: "running"}
 	if second != want {
 		t.Errorf("the second call returned %+v, want %+v", second, want)
 	}
@@ -304,40 +291,33 @@ func TestTranscriptCreateDuringTranscriptionReportsItRunning(t *testing.T) {
 }
 
 func TestTranscriptCreateRejectsARecordingNotInTheVault(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 
-	res := invokeAtOnce(t, s.registry, tools.Call{
-		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"assets/missing.wav"}`),
-	})
+	_, err := s.requestWithin(t, "Lectures", "assets/missing.wav")
 
-	if !res.GetResult().GetIsError() {
-		t.Errorf("a recording that is not there returned %q %s, want an error", res.GetResult().GetText(), res.GetResult().GetStructured())
-	}
-	if text := res.GetResult().GetText(); !strings.Contains(text, "not found") || !strings.Contains(text, "assets/missing.wav") {
-		t.Errorf("the error reads %q, want it to state that assets/missing.wav is not found", text)
+	if !errors.Is(err, errNotFound) || !strings.Contains(err.Error(), "assets/missing.wav") {
+		t.Errorf("a recording that is not there returned %v, want an error that states that assets/missing.wav is not found", err)
 	}
 }
 
 func TestTranscriptCreateRejectsAMissingNoteAsNotFound(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 
-	res := invokeAtOnce(t, s.registry, tools.Call{
-		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"notes.md"}`),
-	})
+	_, err := s.requestWithin(t, "Lectures", "notes.md")
 
-	if !res.GetResult().GetIsError() {
-		t.Fatalf("a note that is not there returned %q %s, want an error", res.GetResult().GetText(), res.GetResult().GetStructured())
+	if err == nil {
+		t.Fatal("a note that is not there was accepted")
 	}
-	text := res.GetResult().GetText()
-	if !strings.Contains(text, "not found") || !strings.Contains(text, "notes.md") {
+	text := err.Error()
+	if !errors.Is(err, errNotFound) || !strings.Contains(text, "notes.md") {
 		t.Errorf("the error reads %q, want it to state that notes.md is not found", text)
 	}
-	if strings.Contains(text, "not an audio or video recording") {
+	if errors.Is(err, errNoRecording) {
 		t.Errorf("the error reads %q, want no word on the kind of a file that is not there", text)
 	}
 }
 
-func (s *toolFixture) putTranscript(t *testing.T, isWhole bool) domain.TextVersion {
+func (s *requestFixture) putTranscript(t *testing.T, isWhole bool) domain.TextVersion {
 	t.Helper()
 	fileHash := domain.HashContent([]byte(lectureSound))
 	key := getTranscriptionKey(fileHash)
@@ -371,7 +351,7 @@ func (s *toolFixture) putTranscript(t *testing.T, isWhole bool) domain.TextVersi
 	return listing.Versions[i]
 }
 
-func (s *toolFixture) checkNoRun(t *testing.T) {
+func (s *requestFixture) checkNoRun(t *testing.T) {
 	t.Helper()
 	close(s.blocking.release)
 	s.transcriber.Close()
@@ -389,12 +369,12 @@ func (s *toolFixture) checkNoRun(t *testing.T) {
 }
 
 func TestTranscriptCreateOfTranscribedRecordingReturnsVersion(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	version := s.putTranscript(t, true)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{
+	want := Outcome{
 		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
@@ -404,13 +384,13 @@ func TestTranscriptCreateOfTranscribedRecordingReturnsVersion(t *testing.T) {
 }
 
 func TestTranscriptCreateOfPartlyTranscribedRecordingStartsRun(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	s.putTranscript(t, false)
 	close(s.blocking.release)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
+	want := Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -422,7 +402,7 @@ func TestTranscriptCreateOfPartlyTranscribedRecordingStartsRun(t *testing.T) {
 }
 
 func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	close(s.blocking.release)
 	if err := s.transcriber.Transcribe(t.Context(), "Lectures", lecture); err != nil {
 		t.Fatal(err)
@@ -431,7 +411,7 @@ func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{
+	want := Outcome{
 		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
@@ -445,7 +425,7 @@ func TestTranscriptCreateAfterFinishedRunReturnsItsVersion(t *testing.T) {
 // proofreaderPluginID is the plugin that makes versions from other versions in the chain tests.
 const proofreaderPluginID = "md.numen.tools.proofreading"
 
-func (s *toolFixture) putProofread(t *testing.T, source domain.TextVersion) domain.TextVersion {
+func (s *requestFixture) putProofread(t *testing.T, source domain.TextVersion) domain.TextVersion {
 	t.Helper()
 	const file = "proofread-1.jsonl"
 	segments := []domain.TextSegment{{Text: "Heard before, with the commas put back.\n"}}
@@ -476,13 +456,13 @@ func (s *toolFixture) putProofread(t *testing.T, source domain.TextVersion) doma
 }
 
 func TestTranscriptCreateOfTranscriptProofreadReturnsItWithoutRun(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	whole := s.putTranscript(t, true)
 	proofread := s.putProofread(t, whole)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{
+	want := Outcome{
 		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(proofread.GetID()),
 	}
 	if out != want {
@@ -492,13 +472,13 @@ func TestTranscriptCreateOfTranscriptProofreadReturnsItWithoutRun(t *testing.T) 
 }
 
 func TestTranscriptCreateOfRecordingProofreadStartsTheRun(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	s.putTranscript(t, true)
 	s.putProofread(t, domain.TextVersion{})
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
+	want := Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -507,13 +487,13 @@ func TestTranscriptCreateOfRecordingProofreadStartsTheRun(t *testing.T) {
 }
 
 func TestTranscriptCreateOfPartialTranscriptProofreadStartsTheRun(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	partial := s.putTranscript(t, false)
 	s.putProofread(t, partial)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
+	want := Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Errorf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -521,26 +501,11 @@ func TestTranscriptCreateOfPartialTranscriptProofreadStartsTheRun(t *testing.T) 
 	s.transcriber.Close()
 }
 
-func TestTranscriptCreateRejectsACallWithoutAVault(t *testing.T) {
-	s := newToolFixture(t)
-
-	res := invokeAtOnce(t, s.registry, tools.Call{
-		VaultID: "", Name: "transcript_create", Arguments: []byte(`{"path":"` + lecture + `"}`),
-	})
-
-	if !res.GetResult().GetIsError() {
-		t.Errorf("a call with no vault returned %q %s, want an error", res.GetResult().GetText(), res.GetResult().GetStructured())
-	}
-}
-
 func TestTranscriptCreateTranscribesInTheNamedVault(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 
-	inShown := invokeAtOnce(t, s.registry, tools.Call{
-		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"` + chemistryLecture + `"}`),
-	})
-	if !inShown.GetResult().GetIsError() {
-		t.Errorf("a recording only Chemistry has was accepted in Lectures: %s", inShown.GetResult().GetStructured())
+	if _, err := s.requestWithin(t, "Lectures", chemistryLecture); !errors.Is(err, errNotFound) {
+		t.Errorf("a recording only Chemistry has was accepted in Lectures: %v", err)
 	}
 
 	out := s.createTranscript(t, "Chemistry", chemistryLecture)
@@ -565,7 +530,7 @@ func TestTranscriptCreateTranscribesInTheNamedVault(t *testing.T) {
 }
 
 func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	s.chemistry.File(lecture, lectureSound)
 	s.chemTexts.File(lecture, []byte(lectureSound))
 	s.putTranscript(t, false)
@@ -582,7 +547,7 @@ func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	}
 
 	first := s.createTranscript(t, "Lectures", lecture)
-	if want := (TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}); first != want {
+	if want := (Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}); first != want {
 		t.Fatalf("first call returned %+v, want %+v", first, want)
 	}
 	select {
@@ -592,12 +557,12 @@ func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 	}
 
 	again := s.createTranscript(t, "Lectures", lecture)
-	if want := (TranscriptCreateOutput{TaskID: first.TaskID, Path: lecture, State: "running"}); again != want {
+	if want := (Outcome{TaskID: first.TaskID, Path: lecture, State: "running"}); again != want {
 		t.Errorf("second call in Lectures returned %+v, want %+v", again, want)
 	}
 
 	second := s.createTranscript(t, "Chemistry", lecture)
-	if want := (TranscriptCreateOutput{TaskID: "transcription:Chemistry:" + lecture, Path: lecture, State: "started"}); second != want {
+	if want := (Outcome{TaskID: "transcription:Chemistry:" + lecture, Path: lecture, State: "started"}); second != want {
 		t.Fatalf("call in Chemistry returned %+v, want %+v", second, want)
 	}
 
@@ -639,7 +604,7 @@ func TestTranscriptCreateStartsRunsInTwoVaultsOnTheSamePath(t *testing.T) {
 
 func TestTranscriptCreateReturnsBeforeTheRecordingIsRead(t *testing.T) {
 	reader := blockingFiles{startCh: make(chan struct{}), startOnce: &sync.Once{}, release: make(chan struct{})}
-	s := newToolFixtureWithFiles(t, func(files Files) Files {
+	s := newRequestFixtureWithFiles(t, func(files Files) Files {
 		reader.files = files
 		return reader
 	})
@@ -647,7 +612,7 @@ func TestTranscriptCreateReturnsBeforeTheRecordingIsRead(t *testing.T) {
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
+	want := Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -666,12 +631,12 @@ func TestTranscriptCreateReturnsBeforeTheRecordingIsRead(t *testing.T) {
 }
 
 func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
-	s := newToolFixtureWithFiles(t, func(Files) Files { return failingFiles{} })
+	s := newRequestFixtureWithFiles(t, func(Files) Files { return failingFiles{} })
 	close(s.blocking.release)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
+	want := Outcome{TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "started"}
 	if out != want {
 		t.Fatalf("transcript_create returned %+v, want %+v", out, want)
 	}
@@ -695,43 +660,16 @@ func TestTranscriptCreateReportsAFailedReadInTheTask(t *testing.T) {
 }
 
 func TestTranscriptCreateRejectsNonRecording(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	s.vault.File("notes/plan.md", "# Plan\nRecord the lecture on tides.\n")
 
-	res := invokeAtOnce(t, s.registry, tools.Call{
-		VaultID: "Lectures", Name: "transcript_create", Arguments: []byte(`{"path":"notes/plan.md"}`),
-	})
+	_, err := s.requestWithin(t, "Lectures", "notes/plan.md")
 
-	if !res.GetResult().GetIsError() {
-		t.Errorf("a note returned %q %s, want an error", res.GetResult().GetText(), res.GetResult().GetStructured())
-	}
-	if text := res.GetResult().GetText(); !strings.Contains(text, "not an audio or video recording") {
-		t.Errorf("the error reads %q, want it to state that the note is not an audio or video recording", text)
+	if !errors.Is(err, errNoRecording) || !strings.Contains(err.Error(), "notes/plan.md") {
+		t.Errorf("a note returned %v, want an error that states that it is not an audio or video recording", err)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a rejected call shows the tasks %+v", tasks)
-	}
-}
-
-func TestTheTranscriptionToolHasItsInstructions(t *testing.T) {
-	s := newToolFixture(t)
-
-	listing, err := s.registry.ListTools(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	sentences := getToolSentences(listing, "transcript_create")
-	if len(sentences) == 0 {
-		t.Fatal("transcript_create lists no instructions")
-	}
-	if !strings.Contains(strings.Join(sentences, " "), "transcript_create") {
-		t.Errorf("no instruction of transcript_create names it: %q", sentences)
-	}
-	for _, sentence := range sentences {
-		if !isOneSentence(sentence) {
-			t.Errorf("an instruction of transcript_create is not one sentence: %q", sentence)
-		}
 	}
 }
 
@@ -798,30 +736,26 @@ func (s countingStore) Read(ctx context.Context, name string) ([]byte, error) {
 	return s.Folder.Read(ctx, name)
 }
 
-func (s *toolFixture) countReads(t *testing.T) *readCounts {
+func (s *requestFixture) countReads(t *testing.T) *readCounts {
 	t.Helper()
 	counts := &readCounts{}
-	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vaults: func(id domain.VaultID) VaultReader { return s.vault.With(id) }}, counts: counts},
+	s.transcriber = NewTranscriber(countingFiles{files: vaultFiles{vaults: func(id domain.VaultID) vaultReader { return s.vault.With(id) }}, counts: counts},
 		func(id domain.VaultID) Folder { return countingStore{Folder: s.store.With(id), counts: counts} }, textsOf(s.texts), s.finishing,
-		func(context.Context) (engine.TranscriberPort, error) { return s.blocking, nil })
+		func(context.Context) (Recognizer, error) { return s.blocking, nil })
 	t.Cleanup(s.transcriber.Close)
 	counted := countingVault{Vault: s.vault, counts: counts}
-	registry, err := NewTools(s.transcriber, func(id domain.VaultID) VaultReader { return counted.With(id) }).Registry()
-	if err != nil {
-		t.Fatal(err)
-	}
-	s.registry = registry
+	s.requests = NewRequests(s.transcriber, func(id domain.VaultID) Vault { return counted.With(id) })
 	return counts
 }
 
 func TestTranscriptCreateOfATranscribedRecordingReadsNoFile(t *testing.T) {
-	s := newToolFixture(t)
+	s := newRequestFixture(t)
 	version := s.putTranscript(t, true)
 	counts := s.countReads(t)
 
 	out := s.createTranscript(t, "Lectures", lecture)
 
-	want := TranscriptCreateOutput{
+	want := Outcome{
 		TaskID: "transcription:Lectures:" + lecture, Path: lecture, State: "done", Version: string(version.GetID()),
 	}
 	if out != want {
@@ -832,4 +766,56 @@ func TestTranscriptCreateOfATranscribedRecordingReadsNoFile(t *testing.T) {
 		t.Errorf("transcript_create read the recording %d times and version files %d times, want no read",
 			recording, versions)
 	}
+}
+
+func TestStartAnswersWhileTheTaskTranscribes(t *testing.T) {
+	s := newRequestFixture(t)
+
+	isStarted, err := s.startWithin(t, lecture)
+
+	if err != nil || !isStarted {
+		t.Fatalf("answered %v (%v)", isStarted, err)
+	}
+	s.waitStarted(t)
+	close(s.blocking.release)
+	s.waitFinished(t, getTaskID("Lectures", lecture))
+	if _, text := s.readLive(t); text != "first words\nsecond words\n" {
+		t.Errorf("the version reads %q once the task ended", text)
+	}
+}
+
+func TestStartFailsTheTaskOfAnUnopenableRecording(t *testing.T) {
+	s := newRequestFixture(t)
+	s.model.isBroken = true
+	close(s.blocking.release)
+
+	_, err := s.startWithin(t, lecture)
+
+	if err != nil {
+		t.Errorf("a recording that cannot be opened was answered %v, want the failure on its task alone", err)
+	}
+	select {
+	case failed := <-s.finishing.failCh:
+		if failed.ID != getTaskID("Lectures", lecture) || !strings.Contains(failed.FailureReason, "cannot be opened") {
+			t.Errorf("the failed task is %+v", failed)
+		}
+	case <-time.After(workDeadline):
+		t.Fatalf("no task failed within %v; tasks %+v", workDeadline, s.queue.ListTasks())
+	}
+}
+
+func TestStartOfARecordingBeingTranscribedStartsNothing(t *testing.T) {
+	s := newRequestFixture(t)
+	if _, err := s.startWithin(t, lecture); err != nil {
+		t.Fatal(err)
+	}
+	s.waitStarted(t)
+
+	isStarted, err := s.startWithin(t, lecture)
+
+	if err != nil || isStarted {
+		t.Errorf("a second start while the first transcribes answered %v (%v), want nothing started", isStarted, err)
+	}
+	close(s.blocking.release)
+	s.waitFinished(t, getTaskID("Lectures", lecture))
 }
