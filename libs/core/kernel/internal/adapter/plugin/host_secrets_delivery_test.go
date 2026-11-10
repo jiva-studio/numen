@@ -49,9 +49,9 @@ func TestDeclarationWithFailedReadSendsReadValues(t *testing.T) {
 				broken: map[string]bool{tc.broken: true},
 			}
 			host, probe := newSecretHost(t, store)
-			host.SetSecretSource(getTwoSecrets())
+			host.Config.SetSecretSource(getTwoSecrets())
 
-			err := host.NotifyPluginConfig(t.Context(), secretPluginID)
+			err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID)
 			if !errors.Is(err, errLockedKeychain) {
 				t.Errorf("error = %v, want the error of the store", err)
 			}
@@ -72,13 +72,13 @@ func TestAListSentWithAFailedReadIsSentAgainByTheNextRefresh(t *testing.T) {
 	store := newKeys(map[string]string{"secret/" + secretID: fromKeychain})
 	store.failed = errLockedKeychain
 	host, probe := newSecretHost(t, store)
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err == nil {
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err == nil {
 		t.Fatal("the read failure was not returned")
 	}
 	store.failed = nil
 
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if got := listed(t, probe, declared); len(got) != 1 || got[0].GetValue() != fromKeychain {
@@ -100,9 +100,9 @@ func TestOneConfigureReadsTheListOfSecretsOnce(t *testing.T) {
 		counted.reads.Add(1)
 		return read()
 	}
-	host.SetSecretSource(counted.SecretSource)
+	host.Config.SetSecretSource(counted.SecretSource)
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if got := counted.reads.Load(); got != 1 {
@@ -114,14 +114,14 @@ func TestOneConfigureReadsTheListOfSecretsOnce(t *testing.T) {
 // secrets, and is not recorded as held.
 func TestAListThatCannotBeReadIsSentEmptyAndReturnedAsAnError(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	errDisk := errors.New("the disk failed")
-	host.SetSecretSource(plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) { return nil, errDisk }})
+	host.Config.SetSecretSource(plugindomain.SecretSource{List: func() ([]plugindomain.Secret, error) { return nil, errDisk }})
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); !errors.Is(err, errDisk) {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); !errors.Is(err, errDisk) {
 		t.Errorf("error = %v, want the error of the list", err)
 	}
 	if got := listed(t, probe, declared); len(got) != 0 {

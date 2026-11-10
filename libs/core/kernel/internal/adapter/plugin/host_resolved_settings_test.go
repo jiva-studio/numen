@@ -35,7 +35,7 @@ func newResolvedHost(t *testing.T) *Host {
 		t.Fatal(err)
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
@@ -43,7 +43,7 @@ func newResolvedHost(t *testing.T) *Host {
 
 func findInfoSetting(t *testing.T, host *Host, key string) plugindomain.Setting {
 	t.Helper()
-	for _, info := range host.GetPluginInfos() {
+	for _, info := range host.Registry.GetPluginInfos() {
 		for _, one := range info.Settings {
 			if one.Key == key {
 				return one
@@ -68,7 +68,7 @@ func TestThePluginInfoCarriesTheOptionsInForceForTheStoredValues(t *testing.T) {
 		t.Errorf("the options under the remote provider are %v", got)
 	}
 
-	if err := host.UpdatePluginSetting(t.Context(), "md.numen.sample", "provider", "local"); err != nil {
+	if err := updateSetting(t.Context(), host, "md.numen.sample", "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
 	if got := listValues(findInfoSetting(t, host, "model").ActiveOptions); !slices.Equal(got, []string{"small"}) {
@@ -84,7 +84,7 @@ func TestThePluginInfoCarriesTheValueInForceOfASettingThatFollowsAnother(t *test
 	if got := findInfoSetting(t, host, "url").ValueJSON; got != `"https://example.org"` {
 		t.Errorf("the url in force is %s, want its default", got)
 	}
-	if err := host.UpdatePluginSetting(t.Context(), "md.numen.sample", "model", "huge"); err != nil {
+	if err := updateSetting(t.Context(), host, "md.numen.sample", "model", "huge"); err != nil {
 		t.Fatal(err)
 	}
 	if got := findInfoSetting(t, host, "model").ValueJSON; got != `"huge"` {
@@ -100,7 +100,7 @@ func TestThePluginInfoMarksTheSettingsTheirConditionsShow(t *testing.T) {
 	if !findInfoSetting(t, host, "provider").IsShown {
 		t.Error("a setting with no condition is hidden")
 	}
-	if err := host.UpdatePluginSetting(t.Context(), "md.numen.sample", "provider", "local"); err != nil {
+	if err := updateSetting(t.Context(), host, "md.numen.sample", "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
 	if findInfoSetting(t, host, "url").IsShown {

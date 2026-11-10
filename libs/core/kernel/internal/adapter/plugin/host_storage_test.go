@@ -39,17 +39,17 @@ func newStorageHost(t *testing.T) (*Host, string, string) {
 	t.Helper()
 	host := newDiscoveredHost(t)
 	cacheRoot, dataRoot := t.TempDir(), t.TempDir()
-	host.SetStorageRoots(cacheRoot, dataRoot)
-	host.mu.Lock()
-	host.plugins["org.example.other"] = manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}}
-	host.mu.Unlock()
+	host.Storage.SetStorageRoots(cacheRoot, dataRoot)
+	host.Registry.t.mu.Lock()
+	host.Registry.t.plugins["org.example.other"] = manifest.Discovered{Manifest: manifest.Manifest{ID: "org.example.other", Version: "2.0.0"}}
+	host.Registry.t.mu.Unlock()
 	return host, cacheRoot, dataRoot
 }
 
 func TestThePluginEnvironmentNamesItsCacheAndDataDirectories(t *testing.T) {
 	host, cacheRoot, dataRoot := newStorageHost(t)
 
-	vars, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,11 +70,11 @@ func TestThePluginEnvironmentNamesItsCacheAndDataDirectories(t *testing.T) {
 func TestTwoPluginsGetDifferentDirectories(t *testing.T) {
 	host, _, _ := newStorageHost(t)
 
-	first, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+	first, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := host.getLaunchVars(t.Context(), "org.example.other", nil, 6, "t")
+	second, err := host.Processes.getLaunchVars(t.Context(), "org.example.other", nil, 6, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestTwoPluginsGetDifferentDirectories(t *testing.T) {
 func TestAHostWithoutStorageRootsGrantsNoDirectory(t *testing.T) {
 	host := newDiscoveredHost(t)
 
-	vars, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func TestAHostWithoutStorageRootsGrantsNoDirectory(t *testing.T) {
 func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 	host, _, _ := newStorageHost(t)
 	launch := func() (cacheDir, dataDir string) {
-		vars, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+		vars, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -124,11 +124,11 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 		t.Errorf("the cache of the same version was removed: %v", err)
 	}
 
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
+	host.Registry.t.mu.Lock()
+	p := host.Registry.t.plugins["org.example.sample"]
 	p.Manifest.Version = "1.1.0"
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
+	host.Registry.t.plugins["org.example.sample"] = p
+	host.Registry.t.mu.Unlock()
 	launch()
 
 	if _, err := os.Stat(cached); !os.IsNotExist(err) {
@@ -142,20 +142,20 @@ func TestTheCacheDirectoryIsEmptiedWhenThePluginVersionChanges(t *testing.T) {
 
 func TestTheCacheDirectoryIsRemovedWhenThePluginIsRemovedFromTheDisk(t *testing.T) {
 	host, _, _ := newStorageHost(t)
-	vars, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
 	cacheDir := getVar(t, vars, "NUMEN_PLUGIN_CACHE_DIR")
 	dataDir := getVar(t, vars, "NUMEN_PLUGIN_DATA_DIR")
-	host.mu.RLock()
-	pluginDir := host.plugins["org.example.sample"].Dir
-	host.mu.RUnlock()
+	host.Registry.t.mu.RLock()
+	pluginDir := host.Registry.t.plugins["org.example.sample"].Dir
+	host.Registry.t.mu.RUnlock()
 	if err := os.RemoveAll(pluginDir); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -170,7 +170,7 @@ func TestTheCacheDirectoryIsRemovedWhenThePluginIsRemovedFromTheDisk(t *testing.
 func TestAPluginIdThatIsNotAFolderNameGetsNoDirectory(t *testing.T) {
 	host, cacheRoot, _ := newStorageHost(t)
 
-	vars, err := host.getStorageVars("../escape")
+	vars, err := host.Storage.getStorageVars("../escape")
 	if err == nil || len(vars) != 0 {
 		t.Errorf("getStorageVars() = %v, %v, want an error", vars, err)
 	}
@@ -183,11 +183,11 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 	t.Setenv("NUMEN_MODELS_DIR", "")
 	host, cacheRoot, dataRoot := newStorageHost(t)
 
-	first, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+	first, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := host.getLaunchVars(t.Context(), "org.example.other", nil, 6, "t")
+	second, err := host.Processes.getLaunchVars(t.Context(), "org.example.other", nil, 6, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,15 +197,15 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 	if sharedCache != getVar(t, second, "NUMEN_SHARED_CACHE_DIR") || sharedData != getVar(t, second, "NUMEN_SHARED_DATA_DIR") {
 		t.Errorf("the plugins got different shared directories")
 	}
-	if want := filepath.Join(cacheRoot, "shared"); sharedCache != want || host.GetSharedDir() != want {
-		t.Errorf("shared cache directory %s and %s, want %s", sharedCache, host.GetSharedDir(), want)
+	if want := filepath.Join(cacheRoot, "shared"); sharedCache != want || host.Storage.GetSharedDir() != want {
+		t.Errorf("shared cache directory %s and %s, want %s", sharedCache, host.Storage.GetSharedDir(), want)
 	}
-	if want := filepath.Join(dataRoot, "shared"); sharedData != want || host.GetSharedDataDir() != want {
-		t.Errorf("shared data directory %s and %s, want %s", sharedData, host.GetSharedDataDir(), want)
+	if want := filepath.Join(dataRoot, "shared"); sharedData != want || host.Storage.GetSharedDataDir() != want {
+		t.Errorf("shared data directory %s and %s, want %s", sharedData, host.Storage.GetSharedDataDir(), want)
 	}
 	models := filepath.Join(sharedData, "models")
-	if host.GetModelsDir() != models || getVar(t, first, "NUMEN_MODELS_DIR") != models {
-		t.Errorf("models directory %s and %s, want %s", host.GetModelsDir(), getVar(t, first, "NUMEN_MODELS_DIR"), models)
+	if host.Storage.GetModelsDir() != models || getVar(t, first, "NUMEN_MODELS_DIR") != models {
+		t.Errorf("models directory %s and %s, want %s", host.Storage.GetModelsDir(), getVar(t, first, "NUMEN_MODELS_DIR"), models)
 	}
 	checkPrivateDir(t, sharedCache)
 	checkPrivateDir(t, sharedData)
@@ -221,12 +221,12 @@ func TestAllPluginsAreGivenTheSameSharedDirectoriesThatSurviveAVersionChange(t *
 			t.Fatal(err)
 		}
 	}
-	host.mu.Lock()
-	p := host.plugins["org.example.sample"]
+	host.Registry.t.mu.Lock()
+	p := host.Registry.t.plugins["org.example.sample"]
 	p.Manifest.Version = "9.0.0"
-	host.plugins["org.example.sample"] = p
-	host.mu.Unlock()
-	if _, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t"); err != nil {
+	host.Registry.t.plugins["org.example.sample"] = p
+	host.Registry.t.mu.Unlock()
+	if _, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t"); err != nil {
 		t.Fatal(err)
 	}
 	for _, blob := range blobs {
@@ -241,12 +241,12 @@ func TestTheUserCanMoveTheModelsFolder(t *testing.T) {
 	t.Setenv("NUMEN_MODELS_DIR", moved)
 	host, _, _ := newStorageHost(t)
 
-	vars, err := host.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "org.example.sample", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if host.GetModelsDir() != moved || getVar(t, vars, "NUMEN_MODELS_DIR") != moved {
-		t.Errorf("models directory %s and %s, want %s", host.GetModelsDir(), getVar(t, vars, "NUMEN_MODELS_DIR"), moved)
+	if host.Storage.GetModelsDir() != moved || getVar(t, vars, "NUMEN_MODELS_DIR") != moved {
+		t.Errorf("models directory %s and %s, want %s", host.Storage.GetModelsDir(), getVar(t, vars, "NUMEN_MODELS_DIR"), moved)
 	}
 }

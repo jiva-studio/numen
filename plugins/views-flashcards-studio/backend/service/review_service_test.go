@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
@@ -225,7 +226,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	handler, target, installation := newAPIOn(t, getDeck())
 	v := target[0]
-	reviewCards := handler.scenarios().flash.CardsDue.ReviewCards()
+	reviewCards := handler.scenarios().Flash.CardsDue.ReviewCards()
 
 	before, err := reviewCards.Execute(t.Context(), v)
 	if err != nil || len(before) != 1 {
@@ -284,7 +285,7 @@ func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 // handed no run to answer on.
 func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.scenarios().flash.Log = flashcards.Log{Stores: unopenable{}}
+	handler.scenarios().Flash.Log = flashcards.Log{Stores: unopenable{}}
 
 	out, err := handler.StartSession(t.Context(),
 		&api.StartSessionRequest{Vault: string(target[0].ID)})
@@ -300,8 +301,8 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 // days.
 func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.scenarios().flash.GetReviewDays = flashcards.NewGetReviewDays(
-		flashcards.NewCountReviews(unopenable{}, handler.scenarios().flash.Schedules, getReviewDay(), vaulttest.NewClock()))
+	handler.scenarios().Flash.GetReviewDays = flashcards.NewGetReviewDays(
+		flashcards.NewCountReviews(unopenable{}, handler.scenarios().Flash.Schedules, getReviewDay(), vaulttest.NewClock()))
 
 	out, err := handler.ListReviewDays(t.Context(),
 		&api.ListReviewDaysRequest{Vault: string(target[0].ID)})
@@ -321,14 +322,14 @@ func TestAnAnswerAndATakingBackNameTheVaultThatNoVaultContains(t *testing.T) {
 	_, err := handler.RecordReview(t.Context(), &api.RecordReviewRequest{
 		Vault: "nothing", Run: "nothing", Rating: api.RatingGood,
 	})
-	if codeOf(err) != server.CodeNotFound || hasCause(err, ErrNoRun) {
+	if codeOf(err) != server.CodeNotFound || hasCause(err, sessions.ErrNoRun) {
 		t.Errorf("answering failed with %v, want a vault nobody holds", err)
 	}
 
 	_, err = handler.UndoReview(t.Context(), &api.UndoReviewRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	})
-	if codeOf(err) != server.CodeNotFound || hasCause(err, ErrNoRun) {
+	if codeOf(err) != server.CodeNotFound || hasCause(err, sessions.ErrNoRun) {
 		t.Errorf("taking back failed with %v, want a vault nobody holds", err)
 	}
 }
@@ -348,21 +349,6 @@ func TestUndoReview_ReturnsEmptyResponse(t *testing.T) {
 	}
 	if out == nil {
 		t.Errorf("taking an answer back came back with %+v", out)
-	}
-}
-
-// A card with no projection of what each answer would do carries none.
-func TestACardWithNoProjectionCarriesNone(t *testing.T) {
-	if got := newWireIntervals(nil); got != nil {
-		t.Errorf("a card with nothing ahead of it carries %+v", got)
-	}
-
-	got := newWireIntervals(map[review.Rating]time.Duration{
-		review.Again: time.Minute, review.Hard: 2 * time.Minute,
-		review.Good: 3 * time.Minute, review.Easy: 4 * time.Minute,
-	})
-	if got.Again != 60 || got.Hard != 120 || got.Good != 180 || got.Easy != 240 {
-		t.Errorf("the four came to %+v, want a minute to four, in seconds", got)
 	}
 }
 
@@ -422,7 +408,7 @@ func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return append
 // taking back of one.
 func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	handler, target := newAPI(t, getDeck())
-	handler.scenarios().flash.Log = flashcards.Log{Stores: refusingStores{}}
+	handler.scenarios().Flash.Log = flashcards.Log{Stores: refusingStores{}}
 	v := target[0]
 	session := startSession(t, handler, v)
 	card := session.Cards[0]

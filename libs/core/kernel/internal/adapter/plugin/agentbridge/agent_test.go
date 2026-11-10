@@ -3,6 +3,7 @@ package agentbridge
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"math"
 	"net/http"
@@ -198,17 +199,17 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 	tmp := t.TempDir()
 	createTestAgentPluginTree(t, tmp)
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
 	cmd := plugintest.StartSleepProcess(t)
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		r := strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", serverPort))
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	bridge, err := OpenForPlugin(t.Context(), host, "md.numen.agents.numen")
+	bridge, err := OpenForPlugin(t.Context(), pluginhost.Join(host), "md.numen.agents.numen")
 	if err != nil {
 		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
 	}

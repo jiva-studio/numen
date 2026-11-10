@@ -15,10 +15,10 @@ import (
 
 func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	host.SetContentTypeTable(sharedmimeinfo.Open())
+	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
 	for _, manifest := range manifests {
 		manifest.Frontend = &catalogmanifest.Frontend{}
-		host.plugins[manifest.ID] = catalogmanifest.Discovered{Manifest: manifest}
+		host.Registry.t.plugins[manifest.ID] = catalogmanifest.Discovered{Manifest: manifest}
 	}
 	return host
 }
@@ -31,7 +31,7 @@ func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...doma
 
 func getReaders(host *Host) map[string][]plugindomain.ReaderInfo {
 	out := map[string][]plugindomain.ReaderInfo{}
-	for _, info := range host.GetPluginInfos() {
+	for _, info := range host.Registry.GetPluginInfos() {
 		out[info.ID] = info.Readers
 	}
 	return out
@@ -52,7 +52,7 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 		t.Fatalf("readers = %+v; want %+v", got, want)
 	}
 
-	host.SetSettings(map[string]map[string]any{"org.example.a": {settingEnabled: false}})
+	host.Settings.SetSettings(map[string]map[string]any{"org.example.a": {settingEnabled: false}})
 	if got := getReaders(host)["org.example.b"]; !reflect.DeepEqual(got, []plugindomain.ReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
 		t.Fatalf("with the lower id disabled, readers = %+v", got)
 	}

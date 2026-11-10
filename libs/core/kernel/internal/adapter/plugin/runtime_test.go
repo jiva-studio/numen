@@ -70,14 +70,14 @@ func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
 func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	catalog := newONNXCatalog()
-	host.SetDependencies(catalog)
+	host.Services.SetDependencies(catalog)
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,16 +94,16 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
-	host.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
+	host.Services.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		"whisper": {ID: "whisper", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/deps/whisper.bin"}},
 	}})
 	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,14 +115,14 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	catalog := newONNXCatalog()
-	host.SetDependencies(catalog)
+	host.Services.SetDependencies(catalog)
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,16 +139,16 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 	failure := errors.New("the archive is not the pinned one")
 	catalog := newONNXCatalog()
 	catalog.err = failure
-	host.SetDependencies(catalog)
+	host.Services.SetDependencies(catalog)
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t")
+	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t")
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.a") {
 		t.Fatalf("getLaunchVars() = %v, %v, want the failure with the plugin named", vars, err)
 	}
@@ -160,12 +160,12 @@ func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
 func TestAPluginIsNotLaunchedWhenNothingProvisionsItsRuntime(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
 
-	if _, err := host.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
+	if _, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
 		t.Fatalf("getLaunchVars() = %v, want ErrRuntimeUnavailable", err)
 	}
 }
@@ -173,14 +173,14 @@ func TestAPluginIsNotLaunchedWhenNothingProvisionsItsRuntime(t *testing.T) {
 func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 0); err != nil {
 			t.Error(err)
 		}
 	})
-	host.SetDependencies(newONNXCatalog())
+	host.Services.SetDependencies(newONNXCatalog())
 	unknown := []manifest.DependencyRequirement{{ID: "tensorrt", Kind: manifest.DependencyKindRuntime}}
 
-	if _, err := host.getLaunchVars(t.Context(), "md.numen.a", unknown, 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
+	if _, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", unknown, 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
 		t.Fatalf("getLaunchVars() = %v, want ErrRuntimeUnavailable", err)
 	}
 }

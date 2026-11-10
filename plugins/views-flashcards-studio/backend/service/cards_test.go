@@ -20,8 +20,8 @@ import (
 // cutting is a vault with the notes given in it, and a client asking about its
 // decks and its card models the way the window does.
 type cutting struct {
-	models service.CardModelsAPI
-	decks  service.DecksAPI
+	models api.CardModelsAPI
+	decks  api.DecksAPI
 	root   string
 }
 
@@ -32,8 +32,8 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	backend := service.New(service.Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 
 	return &cutting{
-		models: backend.CardModels(),
-		decks:  backend.Decks(),
+		models: backend.Handlers().Models,
+		decks:  backend.Handlers().Decks,
 		root:   env.Vault.Path,
 	}
 }
