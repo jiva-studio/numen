@@ -10,6 +10,7 @@ import {
   NOTE_TYPE,
   useSlotMenu,
   type CommandTarget,
+  type Caught,
 } from '@numen/plugin-sdk'
 import { convertNeighborhood, getNoteTypes, getTabKinds } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
@@ -100,7 +101,7 @@ function createPlexNodeActions(options: {
   const activate = (node: string) => {
     const path = map.getNodePath(node)
     if (path) {
-      view.go(path).catch((error: unknown) => deps.window.showMessage(formatErrorMessage(error)))
+      view.go(path).catch((error: Caught) => deps.window.showMessage(formatErrorMessage(error)))
       deps.window.onSelectPath?.(path, getName(path))
     }
   }
@@ -181,7 +182,7 @@ function usePlexMenu(options: {
   showCreated: (path: string) => Promise<void>
 }) {
   const { map, tabDeps: deps, getName, getType, showCreated } = options
-  const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
+  const reportFailure = (error: Caught): void => deps.window.showMessage(formatErrorMessage(error))
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
     listItems: (command, { target }) => deps.menu.listItems(command, target),
     words: MENU_WORDS,
@@ -279,7 +280,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     showCreated: (path) => view.go(path),
   })
 
-  const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
+  const reportFailure = (error: Caught): void => deps.window.showMessage(formatErrorMessage(error))
 
   const getNodeIcon = (node: string): Component | null => {
     const tabKind = getTabKind(node)

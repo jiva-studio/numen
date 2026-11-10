@@ -3,7 +3,7 @@
  * as the plugin's own settings hold them.
  */
 import { ref, type Ref } from 'vue'
-import type { PluginContext } from '@numen/plugin-sdk'
+import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
 
 /** The keys the manifest declares the two settings under. */
 export const NEST_HEADINGS = 'nestHeadings'
@@ -21,10 +21,10 @@ export interface Nesting {
 }
 
 /** An unset value nests the headings. */
-export const parseIsNesting = (value: unknown): boolean => value !== false
+export const parseIsNesting = (value: Unvalidated): boolean => value !== false
 
 /** A value that is no whole number is the default; a number outside the range is clamped to it. */
-export const parseHeadingLimit = (value: unknown): number =>
+export const parseHeadingLimit = (value: Unvalidated): number =>
   typeof value === 'number' && Number.isInteger(value)
     ? Math.min(Math.max(value, HEADING_LIMIT_MIN), HEADING_LIMIT_MAX)
     : DEFAULT_HEADING_LIMIT
