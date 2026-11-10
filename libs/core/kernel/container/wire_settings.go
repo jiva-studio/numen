@@ -49,11 +49,7 @@ func models(c Config) func() []settingsdomain.Model {
 }
 
 func modelsForProvider(c Config, provider agentport.AgentProvider) func() []settingsdomain.Model {
-	c.agentProvider = provider
-	if getPrograms(c) == nil {
-		c.programs = &settingsadapter.ProgramList{}
-	}
-	return settingsModelsForProvider(settingsOf(c), c.agentProvider)
+	return settingsModelsForProvider(settingsOf(c), provider)
 }
 
 // SyncSetting returns whether note title and filename synchronization is enabled.

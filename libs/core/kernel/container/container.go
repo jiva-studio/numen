@@ -73,9 +73,6 @@ type Config struct {
 	Now machineport.Clock
 
 	Resources *Resources
-
-	agentProvider agentport.AgentProvider
-	programs      *settingsadapter.ProgramList
 }
 
 // Resources is what every part a container assembles shares: the write lock of each vault, the
@@ -121,15 +118,10 @@ func getResources(c Config) *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}, programs: &settingsadapter.ProgramList{}}
 }
 
-func getPrograms(c Config) *settingsadapter.ProgramList {
-	if c.programs != nil {
-		return c.programs
-	}
-	return getResources(c).programs
-}
+func getPrograms(c Config) *settingsadapter.ProgramList { return getResources(c).programs }
 
 // Clock is the clock every scenario assembled here is handed.
 func (c Config) Clock() machineport.Clock {
