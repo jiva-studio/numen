@@ -17,7 +17,7 @@ export interface DisplayWiring {
   getCommands: () => ReturnType<typeof createCommands>
   getKinds: () => ReturnType<typeof useTabKinds>
   tabOpeners: ReturnType<typeof fileOpeners>
-  windowTabs: Pick<WindowTabs, 'handle'>
+  windowTabs: Pick<WindowTabs, 'groups'>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
   writeMessage: MessageWriter
@@ -54,7 +54,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
       runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
         writeMessage(formatError(error), 'error'),
       ),
-    activateTab: (id: string) => windowTabs.handle.show(id),
+    activateTab: (id: string) => windowTabs.groups.handle.show(id),
     reload: () => getVaults().reload(),
   }
 }
@@ -65,9 +65,9 @@ export function createTargetResolver(
   window: WindowDisplay,
 ) {
   const getFront = () => {
-    const front = windowTabs.handle.front()
+    const front = windowTabs.groups.handle.front()
     const tab = front?.id ?? ''
-    const on = front && windowTabs.getTab(tab)?.kind.getTarget?.(front.state)
+    const on = front && windowTabs.tabs.getTab(tab)?.kind.getTarget?.(front.state)
     return { tab, kind: front?.kind ?? null, on }
   }
   return (): CommandTarget => {

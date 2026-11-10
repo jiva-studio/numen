@@ -114,7 +114,7 @@ function setup(
   const used = createCommands({
     core: {},
     words: {},
-    windowTabs: { onKeyPress: () => false },
+    windowTabs: { panes: { onKeyPress: () => false } },
     getTarget: () => options.target ?? front,
     knows: {},
     paletteLists: {},

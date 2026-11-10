@@ -129,13 +129,13 @@ describe('a setting that changes', () => {
   it('shows its new value in the settings of the window when the event arrives', async () => {
     const { settings, feed } = create()
     await settings.start()
-    expect(settings.rest.getSetting(['app', 'appearance', 'mode'])).toBe('light')
+    expect(settings.rest.read.getSetting(['app', 'appearance', 'mode'])).toBe('light')
 
     change(feed, ['app', 'appearance', 'mode'], 'dark')
     await vi.advanceTimersByTimeAsync(0)
     await settle()
 
-    expect(settings.rest.getSetting(['app', 'appearance', 'mode'])).toBe('dark')
+    expect(settings.rest.read.getSetting(['app', 'appearance', 'mode'])).toBe('dark')
     settings.close()
   })
 
@@ -147,7 +147,7 @@ describe('a setting that changes', () => {
     await vi.advanceTimersByTimeAsync(0)
     await settle()
 
-    expect(settings.rest.getSetting([PLUGIN, 'mode'])).toBe('b')
+    expect(settings.rest.read.getSetting([PLUGIN, 'mode'])).toBe('b')
     settings.close()
   })
 
@@ -166,13 +166,13 @@ describe('a setting that changes', () => {
     const { settings, feed } = create()
     await settings.start()
     await settle()
-    expect(settings.rest.getSetting(['app', 'naming', 'syncTitleAndFilename'])).toBe(true)
+    expect(settings.rest.read.getSetting(['app', 'naming', 'syncTitleAndFilename'])).toBe(true)
 
     change(feed, ['app', 'naming', 'syncTitleAndFilename'], false)
     await vi.advanceTimersByTimeAsync(0)
     await settle()
 
-    expect(settings.rest.getSetting(['app', 'naming', 'syncTitleAndFilename'])).toBe(false)
+    expect(settings.rest.read.getSetting(['app', 'naming', 'syncTitleAndFilename'])).toBe(false)
     settings.close()
   })
 
@@ -266,7 +266,7 @@ describe('a setting that changes', () => {
     await settle()
 
     expect(feed.isAborted()).toBe(true)
-    expect(settings.rest.getSetting(['app', 'appearance', 'mode'])).toBe('light')
+    expect(settings.rest.read.getSetting(['app', 'appearance', 'mode'])).toBe('light')
   })
 
   it('does not change anything when the event that opens the stream holds no change', async () => {
@@ -277,7 +277,7 @@ describe('a setting that changes', () => {
     await vi.advanceTimersByTimeAsync(0)
     await settle()
 
-    expect(settings.rest.getSetting(['app', 'appearance', 'mode'])).toBe('light')
+    expect(settings.rest.read.getSetting(['app', 'appearance', 'mode'])).toBe('light')
     settings.close()
   })
 })

@@ -10,7 +10,8 @@ const createWindowTabs = (
   tabs: Record<string, { state?: unknown; navigate?: Navigate; path?: string }>,
 ) =>
   ({
-    getTab: (id: string) => {
+    tabs: {
+      getTab: (id: string) => {
       const one = tabs[id]
       if (!one) return null
       return {
@@ -21,6 +22,7 @@ const createWindowTabs = (
           ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
         },
       }
+      },
     },
   }) as unknown as TabSyncDeps['windowTabs']
 

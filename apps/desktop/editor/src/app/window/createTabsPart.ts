@@ -23,7 +23,7 @@ import {
 } from '@/features/tab-linking'
 import { acceptTabMove, createMovedTabOpener, createTabMover } from '@/features/tab-move'
 import { createCommandNotes } from '../tabs/commandDeps'
-import type { WindowCore, WindowServices } from './createDisplayPart'
+import type { TabsCore, WindowCore, WindowServices } from './createDisplayPart'
 import { isSecondaryWindow } from './createLifecyclePart'
 import type { useSettings } from './useSettings'
 import { focusWindow } from '@/entities/window'
@@ -34,7 +34,7 @@ interface TabsCoreDeps {
   readonly pluginStarts: { current?: (pluginId: string) => boolean }
 }
 
-export function createTabsCore(deps: TabsCoreDeps) {
+export function createTabsCore(deps: TabsCoreDeps): TabsCore {
   const { writeMessage, settingsHolder, pluginStarts } = deps
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const windowTabs = createWindowTabs(
@@ -42,7 +42,7 @@ export function createTabsCore(deps: TabsCoreDeps) {
     {
       isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
       enablePlugin: async (pluginId) => {
-        await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
+        await settingsHolder.current?.rest.write.writeSetting([pluginId, 'enabled'], true)
       },
       openPlugin: (pluginId) =>
         globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
@@ -56,25 +56,25 @@ export function createTabsCore(deps: TabsCoreDeps) {
     write: (change) => tabReports.wait().then(() => writeTabLinks(windowId, change)),
     onError: (error) => writeMessage(`The tabs were not linked: ${formatError(error)}`, 'error'),
   })
-  const tabOpeners = fileOpeners({ fileKinds: getFileKinds, reconcileTab: windowTabs.reconcileTab })
+  const tabOpeners = fileOpeners({ fileKinds: getFileKinds, reconcileTab: windowTabs.panes.reconcileTab })
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return { windowTabs, windowId, tabReports, tabLinks, tabOpeners }
 }
 
 export function createTabCloser(base: WindowCore) {
   return (id: string, hold?: () => void): boolean => {
-    if (!base.windowTabs.releaseTab(id)) {
+    if (!base.tabs.windowTabs.panes.releaseTab(id)) {
       hold?.()
       return false
     }
-    if (!hold) base.windowTabs.finishClose(id)
+    if (!hold) base.tabs.windowTabs.panes.finishClose(id)
     return true
   }
 }
 
 export function openPlacedTabs(base: WindowCore) {
   return runInBackground(
-    base.windowTabs.openPlacedTabs((kind, error) =>
+    base.tabs.windowTabs.restored.openPlacedTabs((kind, error) =>
       base.writeMessage(`The ${kind} tab did not open: ${formatError(error)}`, 'error'),
     ),
     (error) => base.writeMessage(`The tabs did not open: ${formatError(error)}`, 'error'),
@@ -90,13 +90,13 @@ interface WindowTabLinksDeps {
 export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   const isMain = !isSecondaryWindow()
   const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-  const getReport = () => getWindowReport(base.windowTabs, isMain)
+  const getReport = () => getWindowReport(base.tabs.windowTabs, isMain)
   const onError = (error: unknown) =>
     base.writeMessage(`The tab links were not written: ${formatError(error)}`, 'error')
   const session = createTabLinkSession({
     acceptTabMove,
-    windowId: base.windowId,
-    tabLinks: base.tabLinks,
+    windowId: base.tabs.windowId,
+    tabLinks: base.tabs.tabLinks,
     applySync: deps.tabSync.applySync,
     applyGroupPaths: deps.tabSync.applyGroupPaths,
     openMovedTab: (moved) => runInBackground(openMovedTab(moved), onError),
@@ -108,7 +108,7 @@ export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps)
     onError,
   })
   const openMovedTab = createMovedTabOpener({
-    windowTabs: base.windowTabs,
+    windowTabs: base.tabs.windowTabs,
     closeTab: deps.closeTab,
     acceptMove: session.acceptMove,
     focusWindow: () => focusWindow(),
@@ -116,7 +116,7 @@ export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps)
     onError: (error) =>
       base.writeMessage(`The moved tab did not open: ${formatError(error)}`, 'error'),
   })
-  base.tabReports.wait = session.waitForReports
+  base.tabs.tabReports.wait = session.waitForReports
   watch(() => JSON.stringify(getReport()), session.reportTabs)
   // Hiding the page cancels the watch in the core; a page restored from the
   // back-forward cache watches again.
@@ -128,7 +128,8 @@ export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps)
     )
   })
   return {
-    ...session,
+    start: session.start,
+    close: session.close,
     openMovedTab: (moved: MovedTab) => runInBackground(openMovedTab(moved), onError),
   }
 }
@@ -138,14 +139,14 @@ export function createWindowTabMoves(
   editing: WindowServices['editing'],
   closeTab: (id: string) => boolean,
 ) {
-  const notes = createCommandNotes(editing.reached, base.windowTabs)
+  const notes = createCommandNotes(editing.reached, base.tabs.windowTabs)
   const mover = createTabMover({
-    windowId: base.windowId,
-    windowTabs: base.windowTabs,
+    windowId: base.tabs.windowId,
+    windowTabs: base.tabs.windowTabs,
     notes,
     closeTab,
     writeMessage: base.writeMessage,
-    getPaneRect: (id) => getTabPaneRect(base.windowTabs.layout.value, id),
+    getPaneRect: (id) => getTabPaneRect(base.tabs.windowTabs.panes.layout.value, id),
   })
   /** The mover writes its own errors; a failed highlight request is ignored. */
   const ignoreError = () => undefined
@@ -154,7 +155,7 @@ export function createWindowTabMoves(
   // request then cannot arrive before the on request it ends.
   let lastHighlight: Promise<void> = Promise.resolve()
   return {
-    windowId: base.windowId,
+    windowId: base.tabs.windowId,
     isTabAsking: (id: string) => notes.asking(id),
     highlightWindow: (windowId: string, isOn: boolean) => {
       lastHighlight = lastHighlight.then(() => highlightWindow(windowId, isOn)).catch(ignoreError)
@@ -169,7 +170,7 @@ export function createWindowTabMoves(
 
 export const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
   useOpenTabs({
-    windowTabs: base.windowTabs,
+    windowTabs: base.tabs.windowTabs,
     isWriting,
     reportError: (error) =>
       base.writeMessage(`The open tabs were not saved: ${formatError(error)}`, 'error'),

@@ -149,7 +149,7 @@ export function useTabMenu(deps: TabMenuDeps) {
 /** The tabs of a window, and how the commands of the menu of a tab are read and run. */
 export interface WindowTabMenuDeps {
   readonly moveCommand: string
-  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'getTab'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
   onHighlight?(this: void, windowId: string, isOn: boolean): void
@@ -164,7 +164,7 @@ export const getTabFileTarget = (
   windowTabs: WindowTabMenuDeps['windowTabs'],
   id: string,
 ): RunTarget => {
-  const tab = windowTabs.getTab(id)
+  const tab = windowTabs.tabs.getTab(id)
   const on = tab ? tab.kind.getTarget?.(tab.state) : undefined
   return {
     path: on?.file || on?.path || '',

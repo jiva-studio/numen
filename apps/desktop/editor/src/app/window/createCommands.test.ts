@@ -69,7 +69,7 @@ const setup = (isPrevented = false, pluginHost?: object) => {
   const options = {
     core: {},
     words: {},
-    windowTabs: { onKeyPress: press },
+    windowTabs: { panes: { onKeyPress: press } },
     getTarget: () => target,
     knows: {},
     paletteLists: {},
@@ -311,7 +311,7 @@ describe('a plugin command over a note', () => {
     const options = {
       core: {},
       words: {},
-      windowTabs: { onKeyPress: () => false },
+      windowTabs: { panes: { onKeyPress: () => false } },
       getTarget: () => ({ path: 'Animals.md', title: 'Animals' }),
       knows: {},
       paletteLists: {},
@@ -512,7 +512,7 @@ describe('a plugin command with items in the palette', () => {
     const options = {
       core: {},
       words: {},
-      windowTabs: { onKeyPress: () => false },
+      windowTabs: { panes: { onKeyPress: () => false } },
       getTarget: () => ({ tab: 'plex:1', path: 'Tide.md', title: 'Tide' }),
       knows: {},
       paletteLists: windowLists,

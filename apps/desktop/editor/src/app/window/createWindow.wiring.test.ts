@@ -196,20 +196,26 @@ beforeEach(() => {
     openMovedTab: vi.fn(async () => undefined),
     tabOpeners: { openFileAt: vi.fn(() => Promise.resolve()) },
     windowTabs: {
-      layout: ref(null),
-      tabs: ref<{ id: string; title: string }[]>([]),
-      handle: { front: () => front.value },
-      getTab: vi.fn((id: string) =>
-        front.value?.id === id ? { kind: front.value.kind } : undefined,
-      ),
-      releaseTab: vi.fn(() => true),
-      finishClose: vi.fn(),
-      reconcileTab: vi.fn(),
-      openTabOfKind: vi.fn(),
-      openSavedTab: vi.fn(),
-      restoreTabs: vi.fn(),
-      openPlacedTabs: vi.fn(async () => undefined),
-      close: vi.fn(),
+      panes: {
+        layout: ref(null),
+        releaseTab: vi.fn(() => true),
+        finishClose: vi.fn(),
+        reconcileTab: vi.fn(),
+      },
+      tabs: {
+        tabs: ref<{ id: string; title: string }[]>([]),
+        getTab: vi.fn((id: string) =>
+          front.value?.id === id ? { kind: front.value.kind } : undefined,
+        ),
+        openTabOfKind: vi.fn(),
+      },
+      groups: { handle: { front: () => front.value } },
+      restored: {
+        openSavedTab: vi.fn(),
+        restoreTabs: vi.fn(),
+        openPlacedTabs: vi.fn(async () => undefined),
+        close: vi.fn(),
+      },
     },
     editing: {
       notes: { applyPathChanges: vi.fn() },
@@ -239,8 +245,8 @@ beforeEach(() => {
       kept: {},
       nesting: {},
       rest: {
-        plugins: ref([{ id: 'p1', name: 'Plugin One' }]),
-        writeSetting: vi.fn(async () => undefined),
+        state: { plugins: ref([{ id: 'p1', name: 'Plugin One' }]) },
+        write: { writeSetting: vi.fn(async () => undefined) },
       },
       configured: { openSettings: vi.fn() },
       start: vi.fn(),
@@ -335,7 +341,7 @@ describe('what the window answers about the tab in front', () => {
 
   it('remains over nothing where the tab in front is not retained', () => {
     front.value = { id: 'gone', kind: createKind({ file: 'a.md' }), state: {} }
-    h.f.windowTabs.getTab.mockReturnValue(undefined)
+    h.f.windowTabs.tabs.getTab.mockReturnValue(undefined)
     const window = createWindow()
 
     expect(window.palette.getTarget()).toMatchObject({ tab: 'gone', path: '', title: '', file: '' })
@@ -457,8 +463,8 @@ describe('what the window knows of a note', () => {
 
   describe('in a tab of a kind that edits files', () => {
     const stand = () => {
-      h.f.windowTabs.tabs.value = [{ id: 'sample:a', title: 'Animals' }]
-      h.f.windowTabs.getTab.mockReturnValue({
+      h.f.windowTabs.tabs.tabs.value = [{ id: 'sample:a', title: 'Animals' }]
+      h.f.windowTabs.tabs.getTab.mockReturnValue({
         state: { path: 'a.md' },
         kind: { flushPending: () => Promise.resolve(), getOpenTab: () => ({ path: 'a.md' }) },
       })
@@ -487,26 +493,26 @@ describe('a tab closed', () => {
 
     expect(window.tabs.closeTab('t1')).toBe(true)
 
-    expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
-    expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.panes.releaseTab).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.panes.finishClose).toHaveBeenCalledWith('t1')
   })
 
   it('returns false where the tab was not released', () => {
-    h.f.windowTabs.releaseTab.mockReturnValue(false)
+    h.f.windowTabs.panes.releaseTab.mockReturnValue(false)
     const window = createWindow()
 
     expect(window.tabs.closeTab('t1')).toBe(false)
   })
 
   it('calls the hold where the tab was not released', () => {
-    h.f.windowTabs.releaseTab.mockReturnValue(false)
+    h.f.windowTabs.panes.releaseTab.mockReturnValue(false)
     const window = createWindow()
     const hold = vi.fn()
 
     window.tabs.closeTab('t1', hold)
 
     expect(hold).toHaveBeenCalledOnce()
-    expect(h.f.windowTabs.finishClose).not.toHaveBeenCalled()
+    expect(h.f.windowTabs.panes.finishClose).not.toHaveBeenCalled()
   })
 
   it('does not call the hold or finishClose where a hold is passed and the tab was released', () => {
@@ -516,15 +522,15 @@ describe('a tab closed', () => {
     window.tabs.closeTab('t1', hold)
 
     expect(hold).not.toHaveBeenCalled()
-    expect(h.f.windowTabs.finishClose).not.toHaveBeenCalled()
+    expect(h.f.windowTabs.panes.finishClose).not.toHaveBeenCalled()
   })
 
   it('needs no hold where the tab was not released', () => {
-    h.f.windowTabs.releaseTab.mockReturnValue(false)
+    h.f.windowTabs.panes.releaseTab.mockReturnValue(false)
     const window = createWindow()
 
     expect(() => window.tabs.closeTab('t1')).not.toThrow()
-    expect(h.f.windowTabs.finishClose).not.toHaveBeenCalled()
+    expect(h.f.windowTabs.panes.finishClose).not.toHaveBeenCalled()
   })
 })
 
@@ -547,13 +553,13 @@ describe('tab detach and move wiring', () => {
 
     h.args.tabMover.closeTab('t1')
 
-    expect(h.f.windowTabs.releaseTab).toHaveBeenCalledWith('t1')
-    expect(h.f.windowTabs.finishClose).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.panes.releaseTab).toHaveBeenCalledWith('t1')
+    expect(h.f.windowTabs.panes.finishClose).toHaveBeenCalledWith('t1')
   })
 
   it('reports a tab as asking when its kind is asking', () => {
     h.f.editing.reached.asking = vi.fn(() => false)
-    h.f.windowTabs.getTab.mockReturnValue({ kind: { isAsking: () => true }, state: {} })
+    h.f.windowTabs.tabs.getTab.mockReturnValue({ kind: { isAsking: () => true }, state: {} })
     const window = createWindow()
 
     expect(window.tabs.moves.isTabAsking('t1')).toBe(true)
@@ -624,7 +630,7 @@ describe('the window started and closed', () => {
 
     expect(h.f.display.close).toHaveBeenCalledOnce()
     expect(h.f.editing.close).toHaveBeenCalledOnce()
-    expect(h.f.windowTabs.close).toHaveBeenCalledOnce()
+    expect(h.f.windowTabs.restored.close).toHaveBeenCalledOnce()
     expect(h.f.settings.close).toHaveBeenCalledOnce()
   })
 })
@@ -655,7 +661,7 @@ describe('the services a plugin is given', () => {
 
     // createWindowTabs options
     await h.args.windowTabs.enablePlugin('p1')
-    expect(h.f.settings.rest.writeSetting).toHaveBeenCalledWith(['p1', 'enabled'], true)
+    expect(h.f.settings.rest.write.writeSetting).toHaveBeenCalledWith(['p1', 'enabled'], true)
 
     const dispatched: CustomEvent[] = []
     const listener = (e: Event) => dispatched.push(e as CustomEvent)
@@ -758,7 +764,7 @@ describe('the services a plugin is given', () => {
     window.settings.openSettings('p1', 'ocr')
     expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1', 'ocr')
 
-    h.f.windowTabs.openPlacedTabs.mockImplementationOnce(
+    h.f.windowTabs.restored.openPlacedTabs.mockImplementationOnce(
       async (onErr: (kind: string, err: unknown) => void) => {
         onErr('graph', createLostConnection('graph failed'))
       },
@@ -770,7 +776,7 @@ describe('the services a plugin is given', () => {
       'error',
     )
 
-    h.f.windowTabs.openPlacedTabs.mockRejectedValueOnce(createLostConnection('all tabs failed'))
+    h.f.windowTabs.restored.openPlacedTabs.mockRejectedValueOnce(createLostConnection('all tabs failed'))
     window.lifecycle.openCurrentVault()
     await new Promise((r) => setTimeout(r, 10))
     expect(h.f.writer).toHaveBeenCalledWith(
@@ -825,7 +831,7 @@ describe('the services a plugin is given', () => {
         activeId: 'note:a',
       })
       await h.args.bootstrap.startLayout()
-      expect(h.f.windowTabs.restoreTabs).toHaveBeenCalledWith(
+      expect(h.f.windowTabs.restored.restoreTabs).toHaveBeenCalledWith(
         [{ id: 'note:a', kind: 'note', title: 'A', path: 'a.md', saved: undefined }],
         'note:a',
       )
@@ -842,7 +848,7 @@ describe('the services a plugin is given', () => {
       expect(h.core.readDetachedTab).toHaveBeenCalledWith(h.args.tabLinkSession.windowId, 'files:1')
       expect(h.f.openMovedTab).not.toHaveBeenCalled()
       expect(h.core.readOpenTabs).not.toHaveBeenCalled()
-      expect(h.f.windowTabs.openPlacedTabs).not.toHaveBeenCalled()
+      expect(h.f.windowTabs.restored.openPlacedTabs).not.toHaveBeenCalled()
       expect(secondaryWin.lifecycle.isLayoutReady.value).toBe(true)
       expect(h.args.openTabs.isWriting.value).toBe(false)
     } finally {
@@ -933,16 +939,16 @@ describe('tab links wiring', () => {
       })
       h.f.pluginLoader.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
       h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
-      h.f.windowTabs.openPlacedTabs.mockClear()
+      h.f.windowTabs.restored.openPlacedTabs.mockClear()
       h.args.bootstrap.startPlugins().catch(() => undefined)
 
       const layout = h.args.bootstrap.startLayout()
       await new Promise((resolve) => setTimeout(resolve, 0))
-      expect(h.f.windowTabs.openPlacedTabs).not.toHaveBeenCalled()
+      expect(h.f.windowTabs.restored.openPlacedTabs).not.toHaveBeenCalled()
       settleTabPlugins()
       await layout
 
-      expect(h.f.windowTabs.openPlacedTabs).toHaveBeenCalledOnce()
+      expect(h.f.windowTabs.restored.openPlacedTabs).toHaveBeenCalledOnce()
     } finally {
       vi.unstubAllGlobals()
     }

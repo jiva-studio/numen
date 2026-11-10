@@ -66,14 +66,14 @@ describe('what remains at a setting', () => {
   it('is what the file holds, once the vault has answered', async () => {
     const { kept } = createStore('{"agent": {"claude": {"model": "opus"}}}')
     await kept.start()
-    expect(kept.getSetting(['agent', 'claude', 'model'])).toBe('opus')
-    expect(kept.path.value).toBe('/numen.json')
+    expect(kept.read.getSetting(['agent', 'claude', 'model'])).toBe('opus')
+    expect(kept.state.path.value).toBe('/numen.json')
   })
 
   it('is nothing where the file names it nowhere', async () => {
     const { kept } = createStore('{}')
     await kept.start()
-    expect(kept.getSetting(['agent', 'claude', 'model'])).toBeUndefined()
+    expect(kept.read.getSetting(['agent', 'claude', 'model'])).toBeUndefined()
   })
 
   it('is nothing where the vault cannot be requested', async () => {
@@ -86,27 +86,27 @@ describe('what remains at a setting', () => {
     })
     const retainedState = createSettingsStore(words, vi.fn())
 
-    expect(retainedState.models.value).toStrictEqual([])
-    expect(retainedState.plugins.value).toStrictEqual([])
+    expect(retainedState.state.models.value).toStrictEqual([])
+    expect(retainedState.state.plugins.value).toStrictEqual([])
     await retainedState.start()
 
-    expect(retainedState.getSetting(['agent'])).toBeUndefined()
-    expect(retainedState.path.value).toBe('')
-    expect(retainedState.models.value).toStrictEqual([])
-    expect(retainedState.plugins.value).toStrictEqual([])
+    expect(retainedState.read.getSetting(['agent'])).toBeUndefined()
+    expect(retainedState.state.path.value).toBe('')
+    expect(retainedState.state.models.value).toStrictEqual([])
+    expect(retainedState.state.plugins.value).toStrictEqual([])
   })
 
   it('returns empty when response is not valid JSON', async () => {
     const { kept, notify } = createStore('not JSON at all')
     await kept.start()
-    expect(kept.getSetting(['agent'])).toBeUndefined()
+    expect(kept.read.getSetting(['agent'])).toBeUndefined()
     expect(notify).toHaveBeenLastCalledWith('The settings could not be read.', 'error')
   })
 
   it('keeps an empty plugin list when the vault omits plugins', async () => {
     const { kept } = createStore('{}')
     await kept.start()
-    expect(kept.plugins.value).toStrictEqual([])
+    expect(kept.state.plugins.value).toStrictEqual([])
   })
 
   /** A store over a vault with one plugin whose `autoRun` setting defaults to true. */
@@ -143,21 +143,21 @@ describe('what remains at a setting', () => {
     const store = createPluginStore('{}')
     await store.start()
 
-    expect(store.getSetting(['my.plugin', 'autoRun'])).toBe(true)
-    expect(store.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(true)
-    expect(store.getSetting(['my.plugin', 'nonexistent'])).toBeUndefined()
-    expect(store.getSetting(['other.plugin', 'autoRun'])).toBeUndefined()
-    expect(store.getSetting(['app', 'autoRun'])).toBeUndefined()
-    expect(store.getSetting(['my.plugin'])).toBeUndefined()
-    expect(store.getSetting(['my.plugin', 'autoRun', 'extra'])).toBeUndefined()
+    expect(store.read.getSetting(['my.plugin', 'autoRun'])).toBe(true)
+    expect(store.read.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(true)
+    expect(store.read.getSetting(['my.plugin', 'nonexistent'])).toBeUndefined()
+    expect(store.read.getSetting(['other.plugin', 'autoRun'])).toBeUndefined()
+    expect(store.read.getSetting(['app', 'autoRun'])).toBeUndefined()
+    expect(store.read.getSetting(['my.plugin'])).toBeUndefined()
+    expect(store.read.getSetting(['my.plugin', 'autoRun', 'extra'])).toBeUndefined()
   })
 
   it('prefers explicit configuration over declarative plugin default', async () => {
     const store = createPluginStore(JSON.stringify({ 'my.plugin': { autoRun: false } }))
     await store.start()
 
-    expect(store.getSetting(['my.plugin', 'autoRun'])).toBe(false)
-    expect(store.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(false)
+    expect(store.read.getSetting(['my.plugin', 'autoRun'])).toBe(false)
+    expect(store.read.getCommittedSetting(['my.plugin', 'autoRun'])).toBe(false)
   })
 })
 
@@ -165,36 +165,36 @@ describe('the models a setting offers', () => {
   it('are the ones read from that setting, and no others', async () => {
     const { kept } = createStore('{}')
     await kept.start()
-    expect(kept.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name)).toStrictEqual([
+    expect(kept.read.getModelsAt(['agent', 'claude', 'model']).map((one) => one.name)).toStrictEqual([
       'opus',
     ])
-    expect(kept.getModelsAt(['agent', 'use'])).toStrictEqual([])
+    expect(kept.read.getModelsAt(['agent', 'use'])).toStrictEqual([])
   })
 })
 
 describe('a setting written', () => {
   it('is requested of the vault as it was given', async () => {
     const { kept, requests } = createStore('{}')
-    await kept.writeSetting(['agent', 'use'], 'claude')
+    await kept.write.writeSetting(['agent', 'use'], 'claude')
     expect(requests).toStrictEqual([[{ at: ['agent', 'use'], value: '"claude"' }]])
   })
 
   it('clears what was last returned before it is written', async () => {
     const { kept, notify } = createStore('{}')
-    await kept.writeSetting(['agent', 'claude', 'model'], 'opus')
+    await kept.write.writeSetting(['agent', 'claude', 'model'], 'opus')
     expect(notify).toHaveBeenCalledTimes(1)
     expect(notify).toHaveBeenCalledWith('')
   })
 
   it('asks nothing of the vault where there is nothing to write', async () => {
     const { kept, requests } = createStore('{}')
-    await kept.writeSettings([])
+    await kept.write.writeSettings([])
     expect(requests).toStrictEqual([])
   })
 
   it('is returned where it failed', async () => {
     const { kept, notify } = createStore('{}', 'the file could not be written')
-    await kept.writeSetting(['agent', 'use'], 'claude')
+    await kept.write.writeSetting(['agent', 'use'], 'claude')
     expect(notify).toHaveBeenLastCalledWith(
       'Setting not saved: Numen is not responding; retrying',
       'error',
@@ -216,17 +216,17 @@ describe('a setting written', () => {
     await store.start()
 
     shouldFailRead = true
-    await store.writeSettings([
+    await store.write.writeSettings([
       { at: ['agent', 'use'], value: '"claude"' },
       { at: ['nullBranch', 'nested'], value: '"ok"' },
       { at: ['primBranch', 'nested'], value: '"ok2"' },
       { at: ['agent', 'keep'], value: 'not-json' },
     ])
 
-    expect(store.getCommittedSetting(['agent', 'keep'])).toBe(1)
-    expect(store.getCommittedSetting(['agent', 'use'])).toBe('claude')
-    expect(store.getCommittedSetting(['nullBranch', 'nested'])).toBe('ok')
-    expect(store.getCommittedSetting(['primBranch', 'nested'])).toBe('ok2')
+    expect(store.read.getCommittedSetting(['agent', 'keep'])).toBe(1)
+    expect(store.read.getCommittedSetting(['agent', 'use'])).toBe('claude')
+    expect(store.read.getCommittedSetting(['nullBranch', 'nested'])).toBe('ok')
+    expect(store.read.getCommittedSetting(['primBranch', 'nested'])).toBe('ok2')
   })
 })
 
@@ -273,26 +273,26 @@ describe('a setting written twice in quick succession', () => {
     const vault = createBlockedVault()
     const retainedState = createSettingsStore(words, vi.fn())
 
-    const first = retainedState.writeSetting(settingPath, false)
-    const second = retainedState.writeSetting(settingPath, true)
-    expect(retainedState.getSetting(settingPath)).toBe(true)
-    expect(retainedState.getCommittedSetting(settingPath)).toBeUndefined()
+    const first = retainedState.write.writeSetting(settingPath, false)
+    const second = retainedState.write.writeSetting(settingPath, true)
+    expect(retainedState.read.getSetting(settingPath)).toBe(true)
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBeUndefined()
 
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve('{"app":{"naming":{"syncTitleAndFilename":false}}}')
     await first
-    expect(retainedState.getSetting(settingPath)).toBe(true)
-    expect(retainedState.getCommittedSetting(settingPath)).toBe(false)
+    expect(retainedState.read.getSetting(settingPath)).toBe(true)
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBe(false)
 
     await vi.waitFor(() => expect(vault.writes).toHaveLength(2))
     vault.writes[1]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(2))
     vault.reads[1]?.resolve(vault.getFile())
     await second
-    expect(retainedState.getSetting(settingPath)).toBe(true)
-    expect(retainedState.getCommittedSetting(settingPath)).toBe(true)
+    expect(retainedState.read.getSetting(settingPath)).toBe(true)
+    expect(retainedState.read.getCommittedSetting(settingPath)).toBe(true)
   })
 
   it('does not accept a read that answers after a newer one', async () => {
@@ -306,21 +306,21 @@ describe('a setting written twice in quick succession', () => {
     await newer
     vault.reads[0]?.resolve('{"a":1}')
     await older
-    expect(retainedState.getSetting(['a'])).toBe(2)
+    expect(retainedState.read.getSetting(['a'])).toBe(2)
   })
 
   it('goes back to the file where the write failed', async () => {
     const vault = createBlockedVault(true)
     const retainedState = createSettingsStore(words, vi.fn())
 
-    const content = retainedState.writeSetting(settingPath, false)
-    expect(retainedState.getSetting(settingPath)).toBe(false)
+    const content = retainedState.write.writeSetting(settingPath, false)
+    expect(retainedState.read.getSetting(settingPath)).toBe(false)
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.resolve()
     await vi.waitFor(() => expect(vault.reads).toHaveLength(1))
     vault.reads[0]?.resolve(vault.getFile())
     await content
-    expect(retainedState.getSetting(settingPath)).toBe(true)
+    expect(retainedState.read.getSetting(settingPath)).toBe(true)
   })
 })
 
@@ -362,21 +362,21 @@ describe('the settings of the shell', () => {
     const store = createShellStore('{}')
     await store.start()
 
-    expect(store.getSetting(['app', 'appearance', 'textScale'])).toBe(1)
-    expect(store.getCommittedSetting(['app', 'appearance', 'textScale'])).toBe(1)
+    expect(store.read.getSetting(['app', 'appearance', 'textScale'])).toBe(1)
+    expect(store.read.getCommittedSetting(['app', 'appearance', 'textScale'])).toBe(1)
   })
 
   it('are what the file holds where it names them', async () => {
     const store = createShellStore('{"app":{"appearance":{"textScale":1.5}}}')
     await store.start()
 
-    expect(store.getSetting(['app', 'appearance', 'textScale'])).toBe(1.5)
+    expect(store.read.getSetting(['app', 'appearance', 'textScale'])).toBe(1.5)
   })
 
   it('have no default for a key the core does not declare', async () => {
     const store = createShellStore('{}')
     await store.start()
 
-    expect(store.getSetting(['app', 'appearance', 'unknown'])).toBeUndefined()
+    expect(store.read.getSetting(['app', 'appearance', 'unknown'])).toBeUndefined()
   })
 })

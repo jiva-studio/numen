@@ -16,6 +16,7 @@ import {
 import { registerCommand } from '@/features/command-palette'
 import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
+import type { Writable } from '@/shared/lib/writable'
 import {
   listDeclaredItemLists,
   listDeclaredCommands,
@@ -110,13 +111,16 @@ export interface DeclaredCommandsDeps {
   readonly listItems?: ListItems
 }
 
-const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => ({
-  pluginId: command.pluginId,
-  id: command.id,
-  title: command.title,
-  ...(command.icon ? { icon: command.icon } : {}),
-  ...(command.when ? { when: command.when } : {}),
-})
+const createCommandDeclaration = (command: DeclaredCommand): CommandDeclaration => {
+  const declaration: Writable<CommandDeclaration> = {
+    pluginId: command.pluginId,
+    id: command.id,
+    title: command.title,
+  }
+  if (command.icon) declaration.icon = command.icon
+  if (command.when) declaration.when = command.when
+  return declaration
+}
 
 const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => ({
   path: invocation.file,

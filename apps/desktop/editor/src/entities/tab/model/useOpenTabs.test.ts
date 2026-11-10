@@ -37,9 +37,14 @@ const create = (
   const { writeOpenTabs } = coreCalls
   const tabs = ref(entries.map(({ id, title }) => ({ id, title })))
   const windowTabs = {
-    handle: { front: () => front },
-    tabs,
-    getTab: (id: string) => {
+    groups: {
+      handle: { front: () => front },
+      findKind: (isWanted: (kind: { kind: string; icon?: unknown }) => boolean) =>
+      entries.map((one) => ({ kind: one.kind ?? 'note', icon: one.icon })).find(isWanted),
+    },
+    tabs: {
+      tabs,
+      getTab: (id: string) => {
       const one = entries.find((e) => e.id === id)
       if (!one || one.unresolved) return undefined
       return {
@@ -53,8 +58,7 @@ const create = (
         },
       }
     },
-    findKind: (isWanted: (kind: { kind: string; icon?: unknown }) => boolean) =>
-      entries.map((one) => ({ kind: one.kind ?? 'note', icon: one.icon })).find(isWanted),
+    },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
   return {
     ...useOpenTabs({ windowTabs, isWriting, reportError: vi.fn() }),
@@ -206,12 +210,14 @@ describe('the open tabs', () => {
     })
     const tabs = ref([{ id: 'a', title: 'A' }])
     const windowTabs = {
-      handle: { front: () => null },
-      tabs,
-      getTab: (id: string) => ({
+      groups: { handle: { front: () => null } },
+      tabs: {
+        tabs,
+        getTab: (id: string) => ({
         state: {},
         kind: { kind: 'note', getOpenTab: () => ({ path: `${id}.md` }) },
-      }),
+        }),
+      },
     } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
 
     useOpenTabs({ windowTabs, reportError: vi.fn() })
@@ -247,7 +253,10 @@ describe('the open tabs', () => {
   it('carries on when the core cannot take the list', () => {
     coreCalls.writeOpenTabs.mockRejectedValue(new Error('down'))
     const rejecting = {
-      windowTabs: { handle: { front: () => null }, tabs: ref([]), getTab: () => undefined },
+      windowTabs: {
+        groups: { handle: { front: () => null } },
+        tabs: { tabs: ref([]), getTab: () => undefined },
+      },
       reportError: vi.fn(),
     } as unknown as Parameters<typeof useOpenTabs>[0]
 

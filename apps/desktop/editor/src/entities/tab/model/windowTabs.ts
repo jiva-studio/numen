@@ -13,16 +13,18 @@ import { useTabs } from './useTabs'
 import type { PlaceholderPanes, UnavailableServices } from './unavailable'
 
 /**
- * The tabs of a window, made of the parts that share one store. `panes` draw the placeholders and
- * `unavailable` is what the placeholder of a missing kind reads and does.
+ * The tabs of a window, made of the parts that share one store: `tabs` open and navigate them,
+ * `groups` register the kinds, `panes` lay them out and close them, `restored` open the saved ones.
+ * `panes` draw the placeholders and `unavailable` is what the placeholder of a missing kind reads
+ * and does.
  */
 export function createWindowTabs(panes: PlaceholderPanes, unavailable: UnavailableServices = {}) {
   const store = createTabStore(panes, unavailable)
   return {
-    ...useTabs(store),
-    ...useTabGroups(store),
-    ...useTabPanes(store),
-    ...useRestoredTabs(store),
+    tabs: useTabs(store),
+    groups: useTabGroups(store),
+    panes: useTabPanes(store),
+    restored: useRestoredTabs(store),
   }
 }
 

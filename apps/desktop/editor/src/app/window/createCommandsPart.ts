@@ -105,12 +105,12 @@ function initFeatureCommands(
   moves: ReturnType<typeof createWindowTabMoves>,
 ) {
   const { editing, window } = services
-  const { windowTabs, tabLinks } = base
+  const { windowTabs, tabLinks } = base.tabs
   ctx.featureCommands = collectFeatureCommands(
     createFeatureDeps({
       making: editing.making,
-      notes: createCommandNotes(editing.reached, base.windowTabs),
-      windowTabs: base.windowTabs,
+      notes: createCommandNotes(editing.reached, base.tabs.windowTabs),
+      windowTabs: base.tabs.windowTabs,
       travel: (path) => getKinds(ctx).travel(path),
       leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
       getOpeningNote: () => window.opening.path.value,
@@ -123,15 +123,15 @@ function initFeatureCommands(
       writeMessage: base.writeMessage,
       tabs: {
         tabLinks,
-        getTabs: () => windowTabs.tabs.value,
-        getKind: (id) => windowTabs.getTab(id)?.kind.kind,
-        isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
+        getTabs: () => windowTabs.tabs.tabs.value,
+        getKind: (id) => windowTabs.tabs.getTab(id)?.kind.kind,
+        isLinkable: (id) => windowTabs.tabs.getTab(id)?.kind.navigate !== undefined,
         windowId: moves.windowId,
         isAsking: moves.isTabAsking,
         detach: moves.detachTabInPlace,
         move: moves.moveTab,
       },
-      listVersionItems: base.itemLists.listItems,
+      listVersionItems: base.plugins.itemLists.listItems,
     }),
     words,
   )
@@ -145,9 +145,9 @@ export function initWindowKindsAndCommands(
   moves: ReturnType<typeof createWindowTabMoves>,
 ) {
   const { editing, settings, window, tabSync } = services
-  const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
-  base.appCommands.current = () => getEditorCommandList(ctx)
-  base.slotWindowValues.current = () => {
+  const getTarget = createTargetResolver(base.tabs.windowTabs, () => getVaults(ctx), window)
+  base.plugins.appCommands.current = () => getEditorCommandList(ctx)
+  base.plugins.slotWindowValues.current = () => {
     const inFront = getTarget()
     return {
       'window.isVaultOpen': inFront.vault.id !== '',
@@ -162,36 +162,36 @@ export function initWindowKindsAndCommands(
   ctx.kinds = useTabKinds({
     core: searchCore,
     log: base.log,
-    tabOpeners: base.tabOpeners,
-    windowTabs: base.windowTabs,
+    tabOpeners: base.tabs.tabOpeners,
+    windowTabs: base.tabs.windowTabs,
     editing,
-    pluginNotes: base.pluginNotes,
+    pluginNotes: base.plugins.pluginNotes,
     settings,
     window,
     getTarget,
     runCommand,
     commandDeps: () => getCommands(ctx).commandDeps,
-    tabLinks: base.tabLinks,
+    tabLinks: base.tabs.tabLinks,
     tabSync,
     getPluginCommandIcon: (id) => {
       const name =
-        base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
-        base.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
+        base.plugins.host.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
+        base.plugins.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
       return name ? getNamedIcon(name) : undefined
     },
   })
 
-  Object.assign(base.pluginServices, getKinds(ctx).services, {
+  Object.assign(base.plugins.pluginServices, getKinds(ctx).services, {
     taskList: window.tasks,
     backgroundTasks: createBackgroundTasks(base, window, settings),
   })
 
-  const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
+  const knows: NoteLookup = createNoteLookup(editing, base.tabs.windowTabs)
 
   initFeatureCommands(base, ctx, services, moves)
 
   ctx.commands = initWindowCommands({
-    windowTabs: base.windowTabs,
+    windowTabs: base.tabs.windowTabs,
     getTarget,
     knows,
     settings,
@@ -200,11 +200,11 @@ export function initWindowKindsAndCommands(
     editing,
     writeMessage: base.writeMessage,
     log: base.log,
-    pluginHost: base.pluginHost,
-    declaredCommands: base.declaredCommands,
-    slots: base.pluginHost.slots,
+    pluginHost: base.plugins.host.pluginHost,
+    declaredCommands: base.plugins.declaredCommands,
+    slots: base.plugins.host.pluginHost.slots,
     getAppCommands: () => getEditorCommandList(ctx),
-    readCommandNote: createCommandNoteReader(base.itemLists),
+    readCommandNote: createCommandNoteReader(base.plugins.itemLists),
   })
 
   return {
@@ -223,7 +223,7 @@ function createBackgroundTasks(
 ) {
   const noticeTasks = useNoticeTasks({
     log: base.log,
-    plugins: base.pluginNotices,
+    plugins: base.plugins.pluginNotices,
     window: { lost: window.health.lost, unwatched: window.vault.unwatched, error: window.vault.error },
     settings,
   })

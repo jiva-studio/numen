@@ -100,7 +100,7 @@ describe('the window kinds', () => {
   it('registers the kinds of the settings', () => {
     const { deps } = create()
 
-    expect(deps.windowTabs.registerKinds).toHaveBeenCalledWith(['settings'])
+    expect(deps.windowTabs.groups.registerKinds).toHaveBeenCalledWith(['settings'])
   })
 
   it('makes files through the makers it passes the commands', () => {
@@ -133,7 +133,7 @@ describe('the note the window relies on', () => {
       isTool: true,
       navigate: vi.fn(),
     }
-    ;(deps.windowTabs.tabs as { value: unknown }).value = [
+    ;(deps.windowTabs.tabs.tabs as { value: unknown }).value = [
       { id: 'graph:0' },
       { id: 'graph:1' },
       { id: 'note:1' },
@@ -141,8 +141,8 @@ describe('the note the window relies on', () => {
       { id: 'missing:1' },
       { id: 'chat:1' },
     ]
-    const origImpl = vi.mocked(deps.windowTabs.getTab).getMockImplementation()!
-    vi.mocked(deps.windowTabs.getTab).mockImplementation((id: string) => {
+    const origImpl = vi.mocked(deps.windowTabs.tabs.getTab).getMockImplementation()!
+    vi.mocked(deps.windowTabs.tabs.getTab).mockImplementation((id: string) => {
       if (id === 'graph:0') return { kind: earlierGraph, state: 's0' } as never
       if (id === 'note:1') return { kind: nonToolWithNav, state: 's1' } as never
       if (id === 'tool:no-target') return { kind: toolWithoutGetTarget, state: 's2' } as never
@@ -179,7 +179,7 @@ describe('a note travelled to', () => {
 
     await window.leavePath('Gone.md', 'Root.md')
 
-    expect(deps.windowTabs.navigateTabsAt).toHaveBeenCalledWith(
+    expect(deps.windowTabs.tabs.navigateTabsAt).toHaveBeenCalledWith(
       'Gone.md',
       'Root.md',
       expect.any(Function),
@@ -190,7 +190,7 @@ describe('a note travelled to', () => {
     const { deps, window } = create()
     const setShownPath = vi.fn()
     Object.assign(deps, { tabSync: { setShownPath } })
-    vi.mocked(deps.windowTabs.navigateTabsAt).mockImplementationOnce((_from, _to, onMove) => {
+    vi.mocked(deps.windowTabs.tabs.navigateTabsAt).mockImplementationOnce((_from, _to, onMove) => {
       onMove?.('graph:1')
       return Promise.resolve()
     })
@@ -226,7 +226,7 @@ describe('the services the window gives a plugin', () => {
     workspace?.showError('the link was not written')
     workspace?.getMessageWriter('form')('named a form')
 
-    expect(deps.windowTabs.sendText).toHaveBeenCalledWith('chat', 'what is this?')
+    expect(deps.windowTabs.groups.sendText).toHaveBeenCalledWith('chat', 'what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
     expect(deps.log.getWriter).toHaveBeenCalledWith('form')
@@ -237,7 +237,7 @@ describe('the services the window gives a plugin', () => {
 
   it('tell the person why a question could not be put to the agent', async () => {
     const { deps, window, writer } = create()
-    vi.mocked(deps.windowTabs.sendText).mockRejectedValueOnce(new Error('no agent tab'))
+    vi.mocked(deps.windowTabs.groups.sendText).mockRejectedValueOnce(new Error('no agent tab'))
 
     window.services.workspace?.ask('what is this?')
     await Promise.resolve()
@@ -252,7 +252,7 @@ describe('the services the window gives a plugin', () => {
     window.services.workspace?.ask('what is this?')
     await Promise.resolve()
 
-    expect(deps.windowTabs.sendText).not.toHaveBeenCalled()
+    expect(deps.windowTabs.groups.sendText).not.toHaveBeenCalled()
     expect(writer).toHaveBeenCalledWith(expect.stringContaining('not available'), 'error')
   })
 

@@ -29,7 +29,7 @@ import {
 
 export interface TabMoverDeps {
   readonly windowId: string
-  readonly windowTabs: Pick<WindowTabs, 'getTab' | 'tabs'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
   readonly closeTab: (id: string) => boolean
   readonly writeMessage: MessageWriter
@@ -42,15 +42,15 @@ export function createTabMover(deps: TabMoverDeps) {
    * tab id that is not open or a tab that is asking.
    */
   const readTab = async (id: string): Promise<Tab | null> => {
-    if (!deps.windowTabs.getTab(id) || deps.notes.asking(id)) return null
+    if (!deps.windowTabs.tabs.getTab(id) || deps.notes.asking(id)) return null
     await deps.notes.flushPending(id)
-    const one = deps.windowTabs.getTab(id)
+    const one = deps.windowTabs.tabs.getTab(id)
     if (!one || deps.notes.asking(id)) return null
     return {
       id,
       kind: one.kind.kind,
       path: one.kind.getOpenTab?.(one.state).path ?? '',
-      title: deps.windowTabs.tabs.value.find((tab) => tab.id === id)?.title ?? '',
+      title: deps.windowTabs.tabs.tabs.value.find((tab) => tab.id === id)?.title ?? '',
       state: formatSavedState(one.kind.getState?.(one.state)),
     }
   }
@@ -64,7 +64,7 @@ export function createTabMover(deps: TabMoverDeps) {
     try {
       const tab = await readTab(id)
       if (!tab) {
-        if (deps.windowTabs.getTab(id)) deps.writeMessage(ASKING_MESSAGE, 'error')
+        if (deps.windowTabs.tabs.getTab(id)) deps.writeMessage(ASKING_MESSAGE, 'error')
         return
       }
       const result = await send(tab)
@@ -101,7 +101,7 @@ export function createTabMover(deps: TabMoverDeps) {
 }
 
 export interface MovedTabOpenerDeps {
-  readonly windowTabs: Pick<WindowTabs, 'getTab' | 'openSavedTab'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs' | 'restored'>
   readonly closeTab: (id: string) => void
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
   readonly focusWindow: () => Promise<void>
@@ -128,8 +128,8 @@ export function createMovedTabOpener(deps: MovedTabOpenerDeps) {
 
   return async (moved: MovedTab): Promise<void> => {
     try {
-      const wasOpen = deps.windowTabs.getTab(moved.tab.id) !== null
-      deps.windowTabs.openSavedTab(parseSavedTab(moved.tab))
+      const wasOpen = deps.windowTabs.tabs.getTab(moved.tab.id) !== null
+      deps.windowTabs.restored.openSavedTab(parseSavedTab(moved.tab))
       const result = await accept(moved)
       if (!result.ok) {
         if (!wasOpen) deps.closeTab(moved.tab.id)

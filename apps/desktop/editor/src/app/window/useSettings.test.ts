@@ -60,7 +60,7 @@ const createSettings = (
     },
   } as unknown as MessageLog
   const handle = { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') }
-  const windowTabs = { handle } as unknown as WindowTabs
+  const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = useSettings({
     words: WORDS,
@@ -227,15 +227,15 @@ describe('the settings as they are put together', () => {
 describe('the lists the palette offers for a setting', () => {
   it('offers nothing for a command that is over no setting', () => {
     const { settings } = createSettings()
-    vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
-    vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
+    vi.spyOn(settings.rest.read, 'getSetting').mockReturnValue('people/own-model')
+    vi.spyOn(settings.rest.read, 'getModelsAt').mockReturnValue([model()])
 
     expect(settings.paletteLists.getStepGroups('app:note.createChild', '')).toStrictEqual([])
   })
 
   it('offers the six settings of the shell from the declaration the core sends, and no command made by hand', () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
+    settings.rest.state.app.value = SHELL_DECLARATION
 
     const ids = settings.settingPalette.getCommands().map((one) => one.id)
 
@@ -261,8 +261,8 @@ describe('the lists the palette offers for a setting', () => {
 
   it('offers the settings of the installed plugins together with those of the shell', () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.app.value = SHELL_DECLARATION
+    settings.rest.state.plugins.value = [SCANNER]
 
     const ids = settings.settingPalette.getCommands().map((one) => one.id)
 
@@ -272,8 +272,8 @@ describe('the lists the palette offers for a setting', () => {
 
   it('draws the rows of every command from the adapter, whichever owner declares the setting', () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.app.value = SHELL_DECLARATION
+    settings.rest.state.plugins.value = [SCANNER]
 
     for (const command of [
       'setting:app:performance.profile',
@@ -288,8 +288,8 @@ describe('the lists the palette offers for a setting', () => {
 
   it('writes the row chosen under the path of the setting through the settings the window holds', async () => {
     const { settings } = createSettings()
-    settings.rest.app.value = SHELL_DECLARATION
-    const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+    settings.rest.state.app.value = SHELL_DECLARATION
+    const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
 
     await settings.settingPalette.choose('setting:app:performance.profile', 'eco')
 
@@ -303,10 +303,10 @@ describe('the settings tab', () => {
     try {
       const { settings } = createSettings()
       const { installation } = settings.configured.state
-      vi.spyOn(settings.rest, 'getSetting').mockReturnValue('eco')
-      vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
+      vi.spyOn(settings.rest.read, 'getSetting').mockReturnValue('eco')
+      vi.spyOn(settings.rest.read, 'getModelsAt').mockReturnValue([model()])
       const startRest = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-      const write = vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+      const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
       await (installation.write(edits) as unknown as Promise<void>)
@@ -330,12 +330,12 @@ describe('the settings tab', () => {
     expect(installation.getSettingsViews).toBe(getSettingsViews)
     expect(installation.catalog).toBeDefined()
 
-    vi.spyOn(settings.rest, 'getCommittedSetting').mockReturnValue('committed-val')
-    vi.spyOn(settings.rest, 'isPending').mockReturnValue(true)
+    vi.spyOn(settings.rest.read, 'getCommittedSetting').mockReturnValue('committed-val')
+    vi.spyOn(settings.rest.read, 'isPending').mockReturnValue(true)
     expect(installation.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
-    expect(settings.rest.getCommittedSetting).toHaveBeenCalledWith(['a', 'b'])
+    expect(settings.rest.read.getCommittedSetting).toHaveBeenCalledWith(['a', 'b'])
     expect(installation.isPending?.(['a', 'b'])).toBe(true)
-    expect(settings.rest.isPending).toHaveBeenCalledWith(['a', 'b'])
+    expect(settings.rest.read.isPending).toHaveBeenCalledWith(['a', 'b'])
 
     const startSpy = vi.spyOn(settings.rest, 'start').mockResolvedValue()
     await (installation.writeSecret('s0a1b2c3d', 'secret-val') as unknown as Promise<void>)
@@ -372,7 +372,7 @@ describe('the settings tab', () => {
     )
     expect(startSpy).toHaveBeenCalledTimes(4)
 
-    settings.rest.plugins.value = [
+    settings.rest.state.plugins.value = [
       {
         id: 'plugin.other',
         name: 'Other Plugin',
@@ -456,7 +456,7 @@ describe('the settings tab', () => {
       'Numen is not responding; retrying',
     )
 
-    vi.spyOn(settings.rest, 'writeSettings').mockRejectedValueOnce(
+    vi.spyOn(settings.rest.write, 'writeSettings').mockRejectedValueOnce(
       createLostConnection('write failed'),
     )
     const failed = installation.write([
@@ -492,7 +492,7 @@ describe('the plugin catalog', () => {
       },
     )
 
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.plugins.value = [SCANNER]
 
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
@@ -515,7 +515,7 @@ describe('the plugin catalog', () => {
       },
     )
 
-    settings.rest.plugins.value = [SCANNER]
+    settings.rest.state.plugins.value = [SCANNER]
 
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(

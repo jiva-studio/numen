@@ -526,13 +526,13 @@ const numenPlugin = {
         type: 'problem',
         docs: {
           description:
-            'Enforce maximum number of properties returned from a composable to avoid God-composables',
+            'Enforce maximum number of properties returned from a composable (use*) or a model/app factory (create*) to avoid God-composables',
         },
         messages: {
           tooManyReturnedProperties:
-            'Composable "{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables.',
+            '"{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables or factories, or group the result into named parts.',
           spreadInReturn:
-            'Composable "{{name}}" spreads an object into what it returns, which hides how many properties it returns. Name each property.',
+            '"{{name}}" spreads an object into what it returns, which hides how many properties it returns. Name each property.',
         },
         schema: [
           {
@@ -547,7 +547,12 @@ const numenPlugin = {
       create(context) {
         const max = context.options[0]?.max ?? 8
 
-        // Check if file is a composable file (e.g. use*.ts) or function is use*
+        // A use* function is checked everywhere; a create* factory only in model/ and app/ folders.
+        const isFactoryFolder = /(^|[\\/])(model|app)[\\/]/.test(context.filename ?? '')
+        function isChecked(name) {
+          return /^use[A-Z]/.test(name) || (isFactoryFolder && /^create[A-Z]/.test(name))
+        }
+
         // The object literal a returned expression is: the literal itself, or the literal a returned
         // identifier is declared with.
         function getReturnedObject(argument) {
@@ -565,7 +570,7 @@ const numenPlugin = {
         }
 
         function checkReturnObject(argument, fnName) {
-          if (!fnName || !/^use[A-Z]/.test(fnName)) return
+          if (!fnName || !isChecked(fnName)) return
           const node = getReturnedObject(argument)
           if (!node) return
           let count = 0
@@ -588,7 +593,7 @@ const numenPlugin = {
         return {
           'FunctionDeclaration:exit'(node) {
             const fnName = node.id?.name
-            if (!fnName || !/^use[A-Z]/.test(fnName)) return
+            if (!fnName || !isChecked(fnName)) return
             const body = node.body
             if (!body || body.type !== 'BlockStatement') return
             for (const stmt of body.body) {
@@ -603,7 +608,7 @@ const numenPlugin = {
 
           'VariableDeclarator:exit'(node) {
             const fnName = node.id?.name
-            if (!fnName || !/^use[A-Z]/.test(fnName)) return
+            if (!fnName || !isChecked(fnName)) return
             const init = node.init
             if (!init) return
             if (

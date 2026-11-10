@@ -77,10 +77,12 @@ export interface CommandsDepsOptions {
     choose: (command: string, item: string) => Promise<void>
   }
   rest: {
-    writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
-    getModelsAt?: (at: readonly string[]) => readonly Model[]
-    plugins?: Ref<readonly PluginInfo[]>
-    getCommittedSetting?: (path: readonly string[]) => unknown
+    write: { writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void }
+    read?: {
+      getModelsAt?: (at: readonly string[]) => readonly Model[]
+      getCommittedSetting?: (path: readonly string[]) => unknown
+    }
+    state?: { plugins?: Ref<readonly PluginInfo[]> }
   }
   writeMessage: MessageWriter
   pluginHost?: PluginHost | undefined
@@ -285,7 +287,7 @@ export function createCommands(options: CommandsDepsOptions) {
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = createWindowCommandPalette(options, lists, listExtras)
 
-  watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
+  watchCommandLists({ ...options, plugins: options.rest.state?.plugins }, commands.open)
   resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
@@ -339,13 +341,13 @@ export function createCommands(options: CommandsDepsOptions) {
   }
 
   if (pluginHost && declaredCommands?.contributions.keybindings) {
-    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, options.rest.plugins)
+    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, options.rest.state?.plugins)
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
-    if (windowTabs.onKeyPress(event)) return event.preventDefault()
+    if (windowTabs.panes.onKeyPress(event)) return event.preventDefault()
     const getNote = () => getCommandNote(getTarget())
     const keyContext = { target: toRunTarget(getTarget()), runApp: runAppKey }
     if (pluginHost?.handleShortcut(event, getNote, keyContext)) event.preventDefault()
@@ -376,7 +378,7 @@ export interface FeatureCommandsDeps {
 export interface FeatureWindow {
   readonly making: NoteCreator
   readonly notes: Notes
-  readonly windowTabs: Pick<WindowTabs, 'navigateTab'>
+  readonly windowTabs: Pick<WindowTabs, 'tabs'>
   readonly travel: (path: string) => Promise<void> | void
   readonly leavePath: (from: string, to: string) => Promise<void> | void
   readonly getOpeningNote: () => string
@@ -404,7 +406,7 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
         },
         getOpeningNote: parts.getOpeningNote,
         showTab: (kind, path) =>
-          runInBackground(parts.windowTabs.navigateTab(kind, path), (error) =>
+          runInBackground(parts.windowTabs.tabs.navigateTab(kind, path), (error) =>
             writeMessage(formatError(error), 'error'),
           ),
       },

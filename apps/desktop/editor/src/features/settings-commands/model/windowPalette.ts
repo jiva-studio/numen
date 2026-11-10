@@ -41,13 +41,13 @@ export function createWindowSettingPalette(deps: {
   const { rest, appearance, words } = deps
   return createSettingPalette({
     getOwners: () => [
-      { id: APP_OWNER, name: '', settings: rest.app.value },
-      ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
+      { id: APP_OWNER, name: '', settings: rest.state.app.value },
+      ...rest.state.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
     ],
     words,
     preview: createWindowPreview(appearance),
     write: async (edits) => {
-      await rest.writeSettings(edits)
+      await rest.write.writeSettings(edits)
       // The window shows what the settings now hold, also where the write was not accepted.
       if (edits.some((one) => one.at[0] === APP_OWNER && one.at[1] === 'appearance')) {
         await appearance.reload()

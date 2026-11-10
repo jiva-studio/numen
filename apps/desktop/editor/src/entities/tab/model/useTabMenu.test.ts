@@ -96,9 +96,7 @@ const setup = (entries: readonly SlotItem[] = ENTRIES) => {
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('the target the entries of the menu of a tab run over', () => {
-  const windowTabs = {
-    tabs: { value: [] },
-    getTab: (id: string) =>
+  const getTab = (id: string) =>
       id === 'none'
         ? undefined
         : {
@@ -109,8 +107,8 @@ describe('the target the entries of the menu of a tab run over', () => {
                   ? { path: '', file: 'books/Atlas.pdf', title: 'Atlas' }
                   : { path: 'Reef.md', file: '', title: 'Reef' },
             },
-          },
-  } as never
+          }
+  const windowTabs = { tabs: { tabs: { value: [] }, getTab } } as never
 
   it('is the tab and the file it shows, or the note where it shows no file', () => {
     expect(getTabFileTarget(windowTabs, 'book')).toStrictEqual({
@@ -428,7 +426,7 @@ describe('a command of the menu of a tab of the window that fails', () => {
     const failure = new Error('the window is gone')
     const menu = useWindowTabMenu({
       moveCommand: 'app:tab.moveToWindow',
-      windowTabs: { tabs: { value: [] }, getTab: () => undefined } as never,
+      windowTabs: { tabs: { tabs: { value: [] }, getTab: () => undefined } } as never,
       slots: createSlots(ENTRIES),
       commands: {
         getIds: () => [],

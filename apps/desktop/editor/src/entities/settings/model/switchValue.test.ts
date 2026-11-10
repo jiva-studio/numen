@@ -44,7 +44,7 @@ describe('settings store', () => {
     await store.start()
     const values: unknown[] = []
     watch(
-      () => store.getSetting(AT),
+      () => store.read.getSetting(AT),
       (v) => values.push(v),
       { flush: 'sync' },
     )
@@ -53,7 +53,7 @@ describe('settings store', () => {
       () => runInBackground(store.start(), (error) => failures.push(error)),
       20,
     )
-    await store.writeSetting(AT, false)
+    await store.write.writeSetting(AT, false)
     await sleep(300)
     clearInterval(poll)
     expect(values).toEqual([false])
@@ -116,9 +116,9 @@ describe('the enabled switch of a plugin', () => {
     const first = await startRead(store, vault)
     first.call?.resolve()
     await first.read
-    const history: unknown[] = [store.getSetting(AT)]
+    const history: unknown[] = [store.read.getSetting(AT)]
     watch(
-      () => store.getSetting(AT),
+      () => store.read.getSetting(AT),
       (v) => history.push(v),
       { flush: 'sync' },
     )
@@ -127,7 +127,7 @@ describe('the enabled switch of a plugin', () => {
       // A refresh that began before the click answers after the write's own read-back.
       const refresh = await startRead(store, vault)
       const before = refresh.call
-      const write = store.writeSetting(AT, isEnabled)
+      const write = store.write.writeSetting(AT, isEnabled)
       await vi.waitFor(() => expect(vault.writes).toHaveLength(index + 1))
       // The vault answers the write once the plugin has started or stopped.
       vault.writes.at(-1)?.resolve()
@@ -156,24 +156,24 @@ describe('the enabled switch waits for the answer of the vault', () => {
     const first = await startRead(store, vault)
     first.call?.resolve()
     await first.read
-    const history: unknown[] = [store.getCommittedSetting(AT)]
+    const history: unknown[] = [store.read.getCommittedSetting(AT)]
     watch(
-      () => store.getCommittedSetting(AT),
+      () => store.read.getCommittedSetting(AT),
       (v) => history.push(v),
       { flush: 'sync' },
     )
 
     // A read begins before the click and one while the write is in flight; both answer last.
     const early = await startRead(store, vault)
-    const write = store.writeSetting(AT, false)
+    const write = store.write.writeSetting(AT, false)
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     const during = await startRead(store, vault)
-    expect(store.isPending(AT)).toBe(true)
-    expect(store.getCommittedSetting(AT)).toBe(true)
+    expect(store.read.isPending(AT)).toBe(true)
+    expect(store.read.getCommittedSetting(AT)).toBe(true)
 
     vault.writes[0]?.resolve()
-    await vi.waitFor(() => expect(store.isPending(AT)).toBe(false))
-    expect(store.getCommittedSetting(AT)).toBe(false)
+    await vi.waitFor(() => expect(store.read.isPending(AT)).toBe(false))
+    expect(store.read.getCommittedSetting(AT)).toBe(false)
     await vi.waitFor(() => expect(vault.reads.length).toBeGreaterThan(3))
     vault.reads.at(-1)?.resolve()
     during.call?.resolve()
@@ -189,21 +189,21 @@ describe('the enabled switch waits for the answer of the vault', () => {
     const first = await startRead(store, vault)
     first.call?.resolve()
     await first.read
-    const history: unknown[] = [store.getCommittedSetting(AT)]
+    const history: unknown[] = [store.read.getCommittedSetting(AT)]
     watch(
-      () => store.getCommittedSetting(AT),
+      () => store.read.getCommittedSetting(AT),
       (v) => history.push(v),
       { flush: 'sync' },
     )
 
-    const write = store.writeSetting(AT, false)
+    const write = store.write.writeSetting(AT, false)
     await vi.waitFor(() => expect(vault.writes).toHaveLength(1))
     vault.writes[0]?.reject(new Error('refused'))
     await vi.waitFor(() => expect(vault.reads.length).toBeGreaterThan(1))
     // The file holds the old value again, as the vault failed before it wrote.
     vault.reads.at(-1)?.resolve()
     await write
-    expect(store.isPending(AT)).toBe(false)
+    expect(store.read.isPending(AT)).toBe(false)
     expect(say).toHaveBeenCalledWith(expect.stringMatching(/^u /), 'error')
     expect(history).toEqual([true])
   })

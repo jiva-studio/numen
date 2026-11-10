@@ -49,8 +49,8 @@ function createWindowCore(settingsHolder: {
     tabOpeners: tabs.tabOpeners,
     settingsHolder,
   })
-  pluginStarts.current = plugins.pluginLoader.isPluginStarting
-  return { frame, log, writeMessage, runs, ...tabs, ...plugins }
+  pluginStarts.current = plugins.host.pluginLoader.isPluginStarting
+  return { frame, log, writeMessage, runs, tabs, plugins }
 }
 
 function createPaletteApi(
@@ -78,11 +78,11 @@ interface TabsApiParts {
 }
 
 const getTabsApi = (base: WindowCore, parts: TabsApiParts) => ({
-  windowTabs: base.windowTabs,
-  layout: base.windowTabs.layout,
+  windowTabs: base.tabs.windowTabs,
+  layout: base.tabs.windowTabs.panes.layout,
   closeTab: parts.closeTab,
   getTabIcon: parts.openTabs.getTabIcon,
-  tabLinks: base.tabLinks,
+  tabLinks: base.tabs.tabLinks,
   isHighlighted: parts.isHighlighted,
   moves: parts.moves,
 })
@@ -97,7 +97,7 @@ export const createWindow = () => {
   const closeTab = createTabCloser(base)
   const moves = createWindowTabMoves(base, editing, closeTab)
   const kindsAndCommands = initWindowKindsAndCommands(base, ctx, services, moves)
-  watchPluginSettings(settings, base.pluginLoader, (error) =>
+  watchPluginSettings(settings, base.plugins.host.pluginLoader, (error) =>
     base.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
   )
   const isWritingTabs = ref(false)
@@ -114,15 +114,15 @@ export const createWindow = () => {
   })
   const bootstrap = initAppLifecycle({
     vaultsModule: getVaults(ctx),
-    windowTabs: base.windowTabs,
+    windowTabs: base.tabs.windowTabs,
     settings,
     window,
     editing,
-    pluginLoader: base.pluginLoader,
-    waitForDeclaredCommands: () => base.declaredCommands.waitForFirstList(),
+    pluginLoader: base.plugins.host.pluginLoader,
+    waitForDeclaredCommands: () => base.plugins.declaredCommands.waitForFirstList(),
     writeMessage: base.writeMessage,
     tabLinkSession,
-    windowId: base.windowId,
+    windowId: base.tabs.windowId,
     openDetachedTab: tabLinkSession.openMovedTab,
     onLayoutStarted: () => {
       isLayoutReady.value = true
@@ -140,7 +140,7 @@ export const createWindow = () => {
     plugins: {
       slots: frameServices.slots,
       windowCommands: frameServices.windowCommands,
-      views: getPluginViews(base.pluginHost),
+      views: getPluginViews(base.plugins.host.pluginHost),
     },
     notices: {
       failure: window.health.failure,
@@ -149,7 +149,7 @@ export const createWindow = () => {
     },
     display: {
       vaultList: getVaults(ctx).vaultList,
-      readNoteKind: createNoteKindReader(base.itemLists),
+      readNoteKind: createNoteKindReader(base.plugins.itemLists),
     },
     settings: {
       openSettings: (pluginId?: string, filter?: string) =>

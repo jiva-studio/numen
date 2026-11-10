@@ -14,7 +14,7 @@ import type { WindowTabs } from '@/entities/tab'
 export interface NoteEditorsDeps {
   log: MessageLog
   tabOpeners: FileOpeners
-  windowTabs: WindowTabs
+  windowTabs: Pick<WindowTabs, 'tabs'>
 }
 
 function createNullChanges() {
@@ -26,11 +26,11 @@ function createNullChanges() {
   }
 }
 
-function createNoted(windowTabs: WindowTabs) {
+function createNoted(windowTabs: Pick<WindowTabs, 'tabs'>) {
   return {
     measureAll: () => {
-      for (const tab of windowTabs.tabs.value) {
-        const windowTab = windowTabs.getTab(tab.id)
+      for (const tab of windowTabs.tabs.tabs.value) {
+        const windowTab = windowTabs.tabs.getTab(tab.id)
         const state = windowTab?.state as
           { measure?: () => void; editor?: { measure?: () => void } } | undefined
         if (state?.measure) {
@@ -52,7 +52,7 @@ function createNotedStore(
     has: (id) => notes.has(id),
     getPath: (id) => notes.getPath(id),
     getTitle: (id) =>
-      windowTabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
+      windowTabs.tabs.tabs.value.find((one) => one.id === id)?.title || notes.getPath(id),
     asking: (id) => notes.stale(id) !== null,
     flushPending: (id) => notes.flushPending(id),
     close: (id) => runInBackground(notes.close(id), reportError),
@@ -89,7 +89,6 @@ export function createNoteEditors({ log, tabOpeners, windowTabs }: NoteEditorsDe
     making,
     noted,
     fileFlush,
-    stores,
     reached,
     getTitle,
     close,

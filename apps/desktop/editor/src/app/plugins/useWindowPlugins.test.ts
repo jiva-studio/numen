@@ -53,12 +53,12 @@ describe('closing the tabs of a plugin', () => {
     support.pluginHost
       .createContext('md.numen.a')
       .registerTabKind({ kind: 'a-kind', component: null, title: 'A' })
-    const id = await windowTabs.createTab('a-kind', 'x')
-    windowTabs.show(id)
+    const id = await windowTabs.tabs.createTab('a-kind', 'x')
+    windowTabs.panes.show(id)
 
     support.pluginHost.disposePlugin('md.numen.a')
 
-    expect(windowTabs.getTab(id)?.state).toMatchObject({
+    expect(windowTabs.tabs.getTab(id)?.state).toMatchObject({
       kind: 'a-kind',
       targetPath: 'x',
       saved: undefined,
@@ -68,12 +68,12 @@ describe('closing the tabs of a plugin', () => {
 
   it('keeps a tab of a core kind whose state names the plugin', async () => {
     const { windowTabs, support } = createSupport()
-    windowTabs.registerKind(coreKind({ pluginId: 'md.numen.a' }))
-    const id = await windowTabs.createTab('core', 'x')
+    windowTabs.groups.registerKind(coreKind({ pluginId: 'md.numen.a' }))
+    const id = await windowTabs.tabs.createTab('core', 'x')
 
     support.pluginHost.disposePlugin('md.numen.a')
 
-    expect(windowTabs.getTab(id)).not.toBeNull()
+    expect(windowTabs.tabs.getTab(id)).not.toBeNull()
   })
 
   it('keeps the tabs of another plugin', async () => {
@@ -81,11 +81,11 @@ describe('closing the tabs of a plugin', () => {
     support.pluginHost
       .createContext('md.numen.b')
       .registerTabKind({ kind: 'b-kind', component: null, title: 'B' })
-    const id = await windowTabs.createTab('b-kind', 'x')
+    const id = await windowTabs.tabs.createTab('b-kind', 'x')
 
     support.pluginHost.disposePlugin('md.numen.a')
 
-    expect(windowTabs.getTab(id)).not.toBeNull()
+    expect(windowTabs.tabs.getTab(id)).not.toBeNull()
   })
 })
 
@@ -106,18 +106,18 @@ describe('the tab kind a plugin adds', () => {
   it('is a kind of the window while the plugin is active', async () => {
     const { windowTabs } = await activateChat()
 
-    expect(windowTabs.hasKind('chat')).toBe(true)
-    expect(windowTabs.getTab(await windowTabs.createTab('chat', ''))).not.toBeNull()
+    expect(windowTabs.groups.hasKind('chat')).toBe(true)
+    expect(windowTabs.tabs.getTab(await windowTabs.tabs.createTab('chat', ''))).not.toBeNull()
   })
 
   it('goes, with its open tabs turned into placeholders, when the plugin is disabled', async () => {
     const { windowTabs, support } = await activateChat()
-    const id = await windowTabs.createTab('chat', '')
+    const id = await windowTabs.tabs.createTab('chat', '')
 
     support.pluginHost.disposePlugin(manifest.id)
 
-    expect(windowTabs.hasKind('chat')).toBe(false)
-    expect(windowTabs.getTab(id)?.state).toMatchObject({
+    expect(windowTabs.groups.hasKind('chat')).toBe(false)
+    expect(windowTabs.tabs.getTab(id)?.state).toMatchObject({
       kind: 'chat',
       targetPath: '',
       saved: undefined,
@@ -440,8 +440,8 @@ describe('the plugins the window loads', () => {
       icon,
     })
     expect(getNoteIcon('sample')).toBe(icon)
-    const tabId = await windowTabs.openTabOfKind('sample', 'a.md')
-    expect(windowTabs.getTab(tabId!)).toBeDefined()
+    const tabId = await windowTabs.tabs.openTabOfKind('sample', 'a.md')
+    expect(windowTabs.tabs.getTab(tabId!)).toBeDefined()
 
     // Failing onSettingChange handler reports to reportError
     ctx.onSettingChange('fontSize', (() => Promise.reject(new Error('bad handler'))) as never)
@@ -451,7 +451,7 @@ describe('the plugins the window loads', () => {
     expect(reportError).toHaveBeenCalledWith('md.numen.a', expect.any(Error))
 
     // Empty pluginId in disposePlugin does not close tabs
-    const closeSpy = vi.spyOn(windowTabs, 'closeTabsOfPlugin')
+    const closeSpy = vi.spyOn(windowTabs.groups, 'closeTabsOfPlugin')
     pluginHost.disposePlugin('')
     expect(closeSpy).not.toHaveBeenCalled()
 

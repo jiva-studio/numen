@@ -13,8 +13,9 @@ const createWindowTabs = (
   >,
 ): WindowTabs =>
   ({
-    tabs: { value: Object.keys(tabs).map((id) => ({ id, title: id })) },
-    getTab: (id: string) => {
+    tabs: {
+      tabs: { value: Object.keys(tabs).map((id) => ({ id, title: id })) },
+      getTab: (id: string) => {
       const tab = tabs[id]
       if (!tab) return null
       return {
@@ -28,6 +29,7 @@ const createWindowTabs = (
           ...(tab.editsFiles ? { flushPending: () => Promise.resolve() } : {}),
         },
       }
+      },
     },
   }) as unknown as WindowTabs
 

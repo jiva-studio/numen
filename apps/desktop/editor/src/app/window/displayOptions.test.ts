@@ -97,7 +97,7 @@ describe('a tab requested from outside the window', () => {
     const show = vi.fn()
     const options = createDisplayOptions({
       ...wiring,
-      windowTabs: { handle: { show } },
+      windowTabs: { groups: { handle: { show } } },
     } as unknown as DisplayWiring)
 
     options.activateTab('tab-2')

@@ -202,12 +202,14 @@ describe('getLinkableTabs', () => {
       'agent:1': { kind: 'agent' },
     }
     const windowTabs = {
-      tabs: computed(() => [
+      tabs: {
+        tabs: computed(() => [
         { id: 'agent:1', title: 'Agent' },
         { id: 'plex:1', title: 'Orbits' },
         { id: 'gone:1', title: 'Gone' },
       ]),
-      getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
+        getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
+      },
     } as unknown as Parameters<typeof getLinkableTabs>[0]
 
     expect(getLinkableTabs(windowTabs)).toStrictEqual([
@@ -442,12 +444,14 @@ describe('getWindowReport', () => {
       'agent:1': { kind: 'agent' },
     }
     const windowTabs = {
-      tabs: computed(() => [
+      tabs: {
+        tabs: computed(() => [
         { id: 'agent:1', title: 'Agent' },
         { id: 'plex:1', title: 'Orbits' },
       ]),
-      getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
-      handle: { front: () => ({ id: 'agent:1', kind: 'agent', state: null }) },
+        getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
+      },
+      groups: { handle: { front: () => ({ id: 'agent:1', kind: 'agent', state: null }) } },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, false)).toStrictEqual({
@@ -458,9 +462,8 @@ describe('getWindowReport', () => {
 
   it('returns an empty active tab when no tab is active', () => {
     const windowTabs = {
-      tabs: computed(() => []),
-      getTab: () => null,
-      handle: { front: () => null },
+      tabs: { tabs: computed(() => []), getTab: () => null },
+      groups: { handle: { front: () => null } },
     } as unknown as Parameters<typeof getWindowReport>[0]
 
     expect(getWindowReport(windowTabs, true).window).toStrictEqual({

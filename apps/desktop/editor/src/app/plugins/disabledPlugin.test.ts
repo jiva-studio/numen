@@ -70,14 +70,14 @@ const createWindow = () => {
 describe('a disabled plugin', () => {
   it('leaves a placeholder that names the plugin from the catalog, and enabling returns the tab', async () => {
     const { catalog, enabled, windowTabs, support } = createWindow()
-    windowTabs.restoreTabs(
+    windowTabs.restored.restoreTabs(
       [{ id: 'deck:a', kind: 'deck', path: 'a.deck', saved: { page: 7 } }],
       'deck:a',
     )
     catalog.setEntries([entryOf(CATALOG_STATE.DISABLED)])
     support.pluginHost.disposePlugin(PLUGIN_ID)
-    const placeholder = windowTabs.getTab('deck:a')
-    expect(windowTabs.hasKind('deck')).toBe(false)
+    const placeholder = windowTabs.tabs.getTab('deck:a')
+    expect(windowTabs.groups.hasKind('deck')).toBe(false)
     expect(placeholder?.kind.pane).not.toBe(DeckPane)
 
     const pane = mount(placeholder?.kind.pane ?? DeckPane, { props: { state: placeholder?.state } })
@@ -91,20 +91,20 @@ describe('a disabled plugin', () => {
     await flushPromises()
 
     expect(enabled).toStrictEqual([PLUGIN_ID])
-    const returned = windowTabs.getTab('deck:a')
-    expect(windowTabs.hasKind('deck')).toBe(true)
+    const returned = windowTabs.tabs.getTab('deck:a')
+    expect(windowTabs.groups.hasKind('deck')).toBe(true)
     expect(returned?.kind).not.toBe(placeholder?.kind)
     expect(returned?.state).toStrictEqual({ targetPath: 'a.deck', saved: { page: 7 } })
   })
 
   it('keeps the tab title while the plugin is off', async () => {
     const { catalog, windowTabs, support } = createWindow()
-    const id = await windowTabs.createTab('deck', 'a.deck')
+    const id = await windowTabs.tabs.createTab('deck', 'a.deck')
 
     catalog.setEntries([entryOf(CATALOG_STATE.DISABLED)])
     support.pluginHost.disposePlugin(PLUGIN_ID)
     await flushPromises()
 
-    expect(windowTabs.tabs.value).toEqual([{ id, title: 'Deck' }])
+    expect(windowTabs.tabs.tabs.value).toEqual([{ id, title: 'Deck' }])
   })
 })

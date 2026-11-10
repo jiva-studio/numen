@@ -30,16 +30,28 @@ export interface WindowCore {
   readonly frame: ReturnType<typeof useWindowFrame>
   readonly log: ReturnType<typeof createMessageLog>
   readonly writeMessage: MessageWriter
+  readonly runs: ReturnType<typeof runSupport>
+  readonly tabs: TabsCore
+  readonly plugins: PluginsCore
+}
+
+/** The tabs of the window, the links between them and the files they open. */
+export interface TabsCore {
   readonly windowId: string
   readonly windowTabs: WindowTabs
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabReports: { wait: () => Promise<void> }
   readonly tabOpeners: ReturnType<typeof fileOpeners>
-  readonly runs: ReturnType<typeof runSupport>
+}
+
+/** What the plugins of the window are loaded with and what they are given. */
+export interface PluginsCore {
   readonly declaredCommands: ReturnType<typeof useDeclaredCommands>
   readonly itemLists: CommandItemLists
-  readonly pluginHost: ReturnType<typeof createPluginSupport>['pluginHost']
-  readonly pluginLoader: ReturnType<typeof createPluginSupport>['pluginLoader']
+  readonly host: {
+    readonly pluginHost: ReturnType<typeof createPluginSupport>['pluginHost']
+    readonly pluginLoader: ReturnType<typeof createPluginSupport>['pluginLoader']
+  }
   readonly pluginServices: PluginServices
   readonly pluginNotices: ReturnType<typeof createNoticeQueue>
   readonly pluginNotes: ReturnType<typeof createPluginNotes>
@@ -86,13 +98,13 @@ export function initWindowServices(
 ) {
   const editing = createNoteEditors({
     log: base.log,
-    tabOpeners: base.tabOpeners,
-    windowTabs: base.windowTabs,
+    tabOpeners: base.tabs.tabOpeners,
+    windowTabs: base.tabs.windowTabs,
   })
 
   const tabSync = createTabSync({
-    windowTabs: base.windowTabs,
-    tabLinks: base.tabLinks,
+    windowTabs: base.tabs.windowTabs,
+    tabLinks: base.tabs.tabLinks,
     sendSync: syncTabPath,
     onError: (error) => base.writeMessage(formatError(error), 'error'),
   })
@@ -102,10 +114,10 @@ export function initWindowServices(
       editing,
       getCommands: () => getCommands(ctx),
       getKinds: () => getKinds(ctx),
-      tabOpeners: base.tabOpeners,
-      windowTabs: base.windowTabs,
+      tabOpeners: base.tabs.tabOpeners,
+      windowTabs: base.tabs.windowTabs,
       getVaults: () => getVaults(ctx),
-      notifyPlugins: (event) => base.pluginHost.notifyVaultChange(event),
+      notifyPlugins: (event) => base.plugins.host.pluginHost.notifyVaultChange(event),
       writeMessage: base.writeMessage,
     }),
   )
@@ -113,9 +125,9 @@ export function initWindowServices(
   const settings = useSettings({
     words,
     log: base.log,
-    windowTabs: base.windowTabs,
+    windowTabs: base.tabs.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
-    getSettingsViews: (pluginId) => base.pluginHost.getRegisteredSettingsViews(pluginId),
+    getSettingsViews: (pluginId) => base.plugins.host.pluginHost.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })
   settingsHolder.current = settings

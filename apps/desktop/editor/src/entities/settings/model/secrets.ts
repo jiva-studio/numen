@@ -96,16 +96,17 @@ export function createSecretStore({ words, notify, refresh }: SecretOptions) {
   ): Promise<void> => runVoid(() => secretsApi.denyPluginSecret(secretId, pluginId, name, group))
 
   return {
-    createSecret,
-    renameSecret,
-    writeSecret,
     states,
     loadStates,
-    deleteSecret,
-    deleteSecretGroup,
-    moveSecret,
-    renameSecretGroup,
-    allowPluginSecret,
-    denyPluginSecret,
+    edit: {
+      createSecret,
+      renameSecret,
+      writeSecret,
+      deleteSecret,
+      deleteSecretGroup,
+      moveSecret,
+      renameSecretGroup,
+    },
+    access: { allowPluginSecret, denyPluginSecret },
   }
 }

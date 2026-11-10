@@ -90,7 +90,7 @@ function onCloseTab(id: string, hold?: () => void) {
 }
 
 function onShowTab(id: string) {
-  windowTabs.onTabShown(id)
+  windowTabs.panes.onTabShown(id)
 }
 </script>
 
@@ -107,7 +107,7 @@ function onShowTab(id: string) {
     <WorkspaceLayout
       v-model="layout"
       class="below"
-      :tabs="windowTabs.tabs.value"
+      :tabs="windowTabs.tabs.tabs.value"
       :window-edge="titleBarView ? undefined : frame.windowEdge.value"
       :tab-menu="tabMenu.menu.value"
       @close="onCloseTab"
@@ -137,9 +137,9 @@ function onShowTab(id: string) {
 
       <template #tab="{ id }">
         <component
-          :is="windowTabs.getTab(id)!.kind.pane"
-          v-if="windowTabs.getTab(id)"
-          :state="windowTabs.getTab(id)!.state"
+          :is="windowTabs.tabs.getTab(id)!.kind.pane"
+          v-if="windowTabs.tabs.getTab(id)"
+          :state="windowTabs.tabs.getTab(id)!.state"
         />
 
         <div v-else />
@@ -154,7 +154,7 @@ function onShowTab(id: string) {
         <WelcomeScreen
           v-else-if="isLayoutReady || !vaultList.showing"
           :vault-list="vaultList"
-          :tabs="windowTabs.tabs.value"
+          :tabs="windowTabs.tabs.tabs.value"
           :commands="commands"
           :search="search"
           :doing="commandDeps"

@@ -65,11 +65,11 @@ const createWindow = () => {
   })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
   const windowTabs = {
-    handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') },
+    groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
   } as unknown as WindowTabs
   const settings = useSettings({ words: WORDS, log, windowTabs, onSizeChanged: vi.fn() })
   vi.spyOn(settings.rest, 'start').mockResolvedValue()
-  vi.spyOn(settings.rest, 'writeSettings').mockResolvedValue()
+  vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
   return { settings, listThemes }
 }
 

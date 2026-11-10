@@ -12,7 +12,7 @@ import type { WindowKindsDeps } from '../plugins/tabKindsDeps'
 import {
   createAgentHost,
   createVaultNotes,
-  createWorkspaceHost,
+  getWorkspaceHost,
   type PluginServices,
 } from '../plugins/pluginServices'
 import { createFileMakers, createVaultFiles } from '../plugins/fileServices'
@@ -29,7 +29,7 @@ function formatLocalDate(date: Date): string {
 function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessage: MessageWriter) {
   return {
     askQuestion: (text: string): void => {
-      const textKind = windowTabs.findKind((kind) => kind.receiveText !== undefined)
+      const textKind = windowTabs.groups.findKind((kind) => kind.receiveText !== undefined)
       if (!textKind) {
         writeMessage(
           'The agent chat is not available: its plugin is off or did not start.',
@@ -37,7 +37,7 @@ function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessag
         )
         return
       }
-      windowTabs
+      windowTabs.groups
         .sendText(textKind.kind, text)
         .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
@@ -62,9 +62,9 @@ export function useTabKinds(deps: WindowKindsDeps) {
    * follow a note: those that navigate to a path and report the path they show.
    */
   const getNoteInFocus = () => {
-    const last = [...windowTabs.tabs.value]
+    const last = [...windowTabs.tabs.tabs.value]
       .reverse()
-      .map((one) => windowTabs.getTab(one.id))
+      .map((one) => windowTabs.tabs.getTab(one.id))
       .find((one) => one?.kind.isTool && one.kind.navigate && one.kind.getTarget)
     const target = last?.kind.getTarget?.(last.state)
     return { path: target?.path ?? '', title: target?.title ?? '' }
@@ -82,10 +82,10 @@ export function useTabKinds(deps: WindowKindsDeps) {
     writeMessage,
   })
 
-  windowTabs.registerKinds(settings.kinds)
+  windowTabs.groups.registerKinds(settings.kinds)
 
   const services: PluginServices = {
-    workspace: createWorkspaceHost({
+    workspace: getWorkspaceHost({
       ...deps,
       dragged,
       getNoteInFocus,
@@ -112,7 +112,7 @@ export function useTabKinds(deps: WindowKindsDeps) {
     dragged,
     travel,
     leavePath: (from: string, to: string) =>
-      windowTabs.navigateTabsAt(from, to, (tabId) => deps.tabSync?.setShownPath(tabId, to)),
+      windowTabs.tabs.navigateTabsAt(from, to, (tabId) => deps.tabSync?.setShownPath(tabId, to)),
     services,
   }
 }

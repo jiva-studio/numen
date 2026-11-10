@@ -70,11 +70,11 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
     }
     const saved = await readSavedTabs()
     if (saved.tabs.length > 0) {
-      windowTabs.restoreTabs(parseSavedTabs(saved), saved.activeId)
+      windowTabs.restored.restoreTabs(parseSavedTabs(saved), saved.activeId)
     } else {
       // A new vault places its tabs once the plugins of its tabs have started or failed.
       await deps.pluginLoader.waitForTabPlugins()
-      await windowTabs.openPlacedTabs((kind, error) =>
+      await windowTabs.restored.openPlacedTabs((kind, error) =>
         deps.writeMessage(`The ${kind} tab did not open: ${formatError(error)}`, 'error'),
       )
     }
@@ -87,7 +87,7 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
     startLayout,
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
     startPlugins: async () => {
-      const plugins = settings.rest.plugins.value
+      const plugins = settings.rest.state.plugins.value
       await deps.pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
       await deps.pluginLoader.start()
     },
@@ -111,7 +111,7 @@ export function initAppLifecycle(deps: AppLifecycleDeps) {
       window.close()
     },
     closeEditing: () => editing.close(),
-    closeTabs: () => windowTabs.close(),
+    closeTabs: () => windowTabs.restored.close(),
     closeSettings: () => settings.close(),
     closePlugins: async () => {
       await deps.pluginLoader.close()
@@ -131,7 +131,7 @@ export function isSecondaryWindow(): boolean {
 export function closeWhenEmpty(base: WindowCore, isLayoutReady: Ref<boolean>) {
   closeWindowWhenEmpty({
     isLayoutReady,
-    tabCount: () => base.windowTabs.tabs.value.length,
+    tabCount: () => base.tabs.windowTabs.tabs.tabs.value.length,
     closeWindow: () => closeWindow(),
     onError: (error) =>
       base.writeMessage(`The window did not close: ${formatError(error)}`, 'error'),

@@ -30,7 +30,7 @@ export interface FileCreatorRegistry {
 /** The window operations needed to create a file. */
 export interface FileMakersDeps {
   readonly tabOpeners: FileOpeners
-  readonly windowTabs: Pick<WindowTabs, 'createFileOfKind'>
+  readonly windowTabs: { readonly groups: Pick<WindowTabs['groups'], 'createFileOfKind'> }
   readonly writeMessage: MessageWriter
   readonly creators?: Record<string, FileCreatorFn>
 }
@@ -66,7 +66,7 @@ export function createFileMakers({
   ): Promise<CreateResult | null> => {
     const registered = registeredCreators.get(kind)
     if (registered) return registered(title, folder)
-    const createdItem = await windowTabs.createFileOfKind(kind, folder, title)
+    const createdItem = await windowTabs.groups.createFileOfKind(kind, folder, title)
     if (createdItem === undefined) {
       writeMessage(words.unavailable, 'error')
       return null
@@ -85,7 +85,8 @@ export function createFileMakers({
   )
 
   return {
-    ...makers,
+    createFile: makers.createFile,
+    createAndOpenFile: makers.createAndOpenFile,
     registerCreator,
     createFileOfKind: createGenericOfKind,
   }

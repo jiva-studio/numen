@@ -62,7 +62,7 @@ function createPluginSettingsAccessor(
     const rest = settingsHolder.current?.rest
     if (!rest) return undefined
     // Stryker disable next-line StringLiteral: rest reads under the plugin id.
-    const value = rest.getCommittedSetting([pluginId, key])
+    const value = rest.read.getCommittedSetting([pluginId, key])
     if (value !== undefined) return value
     return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
   }
@@ -82,7 +82,7 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
-function createServiceAccess(services: PluginServices | undefined) {
+function createVaultServiceAccess(services: PluginServices | undefined) {
   /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
   return {
     getWorkspace: () => services?.workspace,
@@ -93,6 +93,13 @@ function createServiceAccess(services: PluginServices | undefined) {
     getCommands: () => services?.commands,
     getVaults: () => services?.vaults,
     getWindow: () => services?.window,
+  }
+  /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
+}
+
+function createWindowServiceAccess(services: PluginServices | undefined) {
+  /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
+  return {
     getBuffers: () => services?.buffers,
     getNoteBuffer: () => services?.noteBuffer,
     getTasks: (pluginId: string) => {
@@ -135,7 +142,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
 
   /** The tabs of a plugin that stops, kept as placeholders that hold their saved state. */
   const closeTabsForPlugin = (pluginId: string) => {
-    if (pluginId) windowTabs.closeTabsOfPlugin(pluginId)
+    if (pluginId) windowTabs.groups.closeTabsOfPlugin(pluginId)
   }
 
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
@@ -143,10 +150,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginHost = createPluginHost({
     ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
-      settingsHolder.current?.rest.plugins.value.find((plugin) => plugin.id === pluginId)
+      settingsHolder.current?.rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
         ?.hasFrontend ?? true,
     hasPluginBackend: (pluginId) =>
-      settingsHolder.current?.rest.plugins.value.find((plugin) => plugin.id === pluginId)
+      settingsHolder.current?.rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
         ?.hasBackend ?? true,
     isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
     waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
@@ -158,7 +165,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     openExternal: (url) => openExternalUrl(url),
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: (kind) => {
-      const unregisterKind = windowTabs.registerKind(kind)
+      const unregisterKind = windowTabs.groups.registerKind(kind)
       const unregisterIcon = kind.icon ? registerTabKindIcon(kind.kind, kind.icon) : () => undefined
       return () => {
         unregisterKind()
@@ -167,21 +174,22 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     },
     registerExtensionReader: tabOpeners.registerExtensionReader,
     getReaderExtensions: (pluginId, readerId) =>
-      settingsHolder.current?.rest.plugins.value
+      settingsHolder.current?.rest.state.plugins.value
         .find((plugin) => plugin.id === pluginId)
         ?.readers?.find((reader) => reader.id === readerId)?.extensions ?? [],
     registerEditor: tabOpeners.registerEditor,
-    openTab: windowTabs.openTabOfKind,
-    openTabAdjacent: windowTabs.openTabAdjacentOfKind,
-    navigateTab: windowTabs.navigateTab,
-    closeTab: windowTabs.finishClose,
-    getTabState: (id: string) => windowTabs.getTab(id)?.state,
+    openTab: windowTabs.tabs.openTabOfKind,
+    openTabAdjacent: windowTabs.tabs.openTabAdjacentOfKind,
+    navigateTab: windowTabs.tabs.navigateTab,
+    closeTab: windowTabs.panes.finishClose,
+    getTabState: (id: string) => windowTabs.tabs.getTab(id)?.state,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
-    ...createServiceAccess(deps.services),
+    ...createVaultServiceAccess(deps.services),
+    ...createWindowServiceAccess(deps.services),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
     getTexts: (pluginId: string) => getPluginTexts(pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
@@ -208,7 +216,7 @@ export function watchPluginSettings(
   reportError: (error: unknown) => void,
 ) {
   watch(
-    () => settings.rest.plugins.value,
+    () => settings.rest.state.plugins.value,
     (plugins) => {
       runInBackground(pluginLoader.trackPlugins(getFrontendPluginIds(plugins)), reportError)
     },

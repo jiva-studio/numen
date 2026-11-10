@@ -69,36 +69,36 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     ...(getSettingsViews ? { getSettingsViews } : {}),
     ...(getPlatform ? { getPlatform } : {}),
     catalog: catalogEntries,
-    getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
-    getConfirmedSetting: (targetPath: readonly string[]) => rest.getCommittedSetting(targetPath),
-    isPending: (targetPath: readonly string[]) => rest.isPending(targetPath),
-    isRequested: (targetPath: readonly string[]) => rest.isRequested(targetPath),
-    getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
+    getSetting: (targetPath: readonly string[]) => rest.read.getSetting(targetPath),
+    getConfirmedSetting: (targetPath: readonly string[]) => rest.read.getCommittedSetting(targetPath),
+    isPending: (targetPath: readonly string[]) => rest.read.isPending(targetPath),
+    isRequested: (targetPath: readonly string[]) => rest.read.isRequested(targetPath),
+    getModels: (targetPath: readonly string[]) => rest.read.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => {
-      const promise = rest.writeSettings(content)
+      const promise = rest.write.writeSettings(content)
       runInBackground(
         promise.then(() => followShell(content)),
         reportError,
       )
       return promise
     },
-    secretSections: rest.secretSections,
-    secretMenus: rest.secretMenus,
+    secretSections: rest.state.secretSections,
+    secretMenus: rest.state.secretMenus,
     secretStates: secrets.states,
     loadSecretStates: () => secrets.loadStates(),
-    credentialsPath: rest.credentialsPath,
+    credentialsPath: rest.state.credentialsPath,
     createSecret: (group: string, name: string, value: string) =>
-      secrets.createSecret(group, name, value),
-    renameSecret: (id: string, name: string) => secrets.renameSecret(id, name),
-    writeSecret: (id: string, value: string) => secrets.writeSecret(id, value),
-    deleteSecret: (id: string) => secrets.deleteSecret(id),
-    deleteSecretGroup: (group: string) => secrets.deleteSecretGroup(group),
-    moveSecret: (id: string, beforeId: string) => secrets.moveSecret(id, beforeId),
-    renameSecretGroup: (group: string, name: string) => secrets.renameSecretGroup(group, name),
+      secrets.edit.createSecret(group, name, value),
+    renameSecret: (id: string, name: string) => secrets.edit.renameSecret(id, name),
+    writeSecret: (id: string, value: string) => secrets.edit.writeSecret(id, value),
+    deleteSecret: (id: string) => secrets.edit.deleteSecret(id),
+    deleteSecretGroup: (group: string) => secrets.edit.deleteSecretGroup(group),
+    moveSecret: (id: string, beforeId: string) => secrets.edit.moveSecret(id, beforeId),
+    renameSecretGroup: (group: string, name: string) => secrets.edit.renameSecretGroup(group, name),
     allowPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>
-      secrets.allowPluginSecret(secretId, pluginId, name, group),
+      secrets.access.allowPluginSecret(secretId, pluginId, name, group),
     denyPluginSecret: (secretId: string, pluginId: string, name: string, group: string) =>
-      secrets.denyPluginSecret(secretId, pluginId, name, group),
+      secrets.access.denyPluginSecret(secretId, pluginId, name, group),
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
       try {
@@ -120,9 +120,9 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
         return formatError(caughtError)
       }
     },
-    plugins: rest.plugins,
-    app: rest.app,
-    file: rest.path,
+    plugins: rest.state.plugins,
+    app: rest.state.app,
+    file: rest.state.path,
   }
 }
 
@@ -176,7 +176,7 @@ export function useSettings({
   const writeSettingsMessage = log.getWriter('configured')
   const rest = createSettingsStore(SETTINGS_WORDS, writeSettingsMessage)
   const getPluginName = (pluginId: string): string =>
-    rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
+    rest.state.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const appearance = createWindowAppearance({
     core: themes,
     words: APPEARANCE_WORDS,
@@ -195,10 +195,10 @@ export function useSettings({
     getName: getPluginName,
   })
 
-  const catalogEntries = useCatalogEntries(rest.plugins, reportError)
+  const catalogEntries = useCatalogEntries(rest.state.plugins, reportError)
 
   const configured = useSettingsTab(
-    windowTabs.handle,
+    windowTabs.groups.handle,
     createSettingsTabConfig({
       appearance,
       rest,
