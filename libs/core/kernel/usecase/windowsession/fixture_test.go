@@ -128,9 +128,9 @@ func (l *eventLog) all() []string {
 	return append([]string(nil), l.events...)
 }
 
-type identity struct{ refused error }
+type identity struct{ mismatched error }
 
-func (i identity) Execute(domain.Vault) error { return i.refused }
+func (i identity) Execute(domain.Vault) error { return i.mismatched }
 
 type openRecord struct{ log *eventLog }
 

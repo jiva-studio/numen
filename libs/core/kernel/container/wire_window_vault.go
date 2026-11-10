@@ -32,7 +32,6 @@ func getReadVault(cfg Config, db *vault.Index) indexing.OpenReading {
 	}
 }
 
-// newIndexWorker makes the worker that indexes the vaults of the window and shows what it does in it.
 func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:  getReadVault(w.cfg, w.db),
@@ -64,7 +63,6 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 	}
 }
 
-// getTextVersions returns the live text versions of the window, and nil where the installation keeps none.
 func (c Config) getTextVersions() windowsession.TextVersions {
 	if versions := c.vault().TextVersions; versions != nil {
 		return versions

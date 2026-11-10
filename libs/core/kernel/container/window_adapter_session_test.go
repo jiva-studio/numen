@@ -23,7 +23,6 @@ var waitCalls = map[string]map[string]bool{
 	"time":    {"After": true, "Sleep": true, "NewTimer": true, "Tick": true},
 }
 
-// getWaitFindings lists the calls in src that bound or schedule a wait.
 func getWaitFindings(t *testing.T, name, src string) []string {
 	t.Helper()
 	file, err := parser.ParseFile(token.NewFileSet(), name, src, 0)
@@ -48,7 +47,6 @@ func getWaitFindings(t *testing.T, name, src string) []string {
 	return found
 }
 
-// getLockImports lists the imports in src of the package that holds locks.
 func getLockImports(t *testing.T, name, src string) []string {
 	t.Helper()
 	file, err := parser.ParseFile(token.NewFileSet(), name, src, parser.ImportsOnly)
@@ -64,11 +62,9 @@ func getLockImports(t *testing.T, name, src string) []string {
 	return found
 }
 
-// walkWindowAdapters calls visit with the package and the source of each non-test file below
-// adapter/window, and returns how many files and packages it read.
 func walkWindowAdapters(t *testing.T, visit func(pkg, path string, src []byte)) (files, packages int) {
 	t.Helper()
-	seen := map[string]bool{}
+	packageSet := map[string]bool{}
 	err := filepath.WalkDir("../adapter/window", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return err
@@ -78,7 +74,7 @@ func walkWindowAdapters(t *testing.T, visit func(pkg, path string, src []byte)) 
 			return err
 		}
 		pkg := getPackage("..", path)
-		seen[pkg] = true
+		packageSet[pkg] = true
 		files++
 		visit(pkg, path, src)
 		return nil
@@ -86,7 +82,7 @@ func walkWindowAdapters(t *testing.T, visit func(pkg, path string, src []byte)) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	return files, len(seen)
+	return files, len(packageSet)
 }
 
 func TestNoWindowAdapterBoundsAWait(t *testing.T) {
@@ -107,7 +103,7 @@ func TestNoWindowAdapterBoundsAWait(t *testing.T) {
 	}
 }
 
-func TestTheEditorWindowHoldsNoLock(t *testing.T) {
+func TestEditorWindowImportsNoSync(t *testing.T) {
 	var wrong []string
 	files, _ := walkWindowAdapters(t, func(pkg, path string, src []byte) {
 		if !isUnder(pkg, "adapter/window/editor") {

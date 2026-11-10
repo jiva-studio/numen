@@ -19,7 +19,7 @@ func TestFlushingTwiceAnswersTrueTheSecondTime(t *testing.T) {
 	}
 }
 
-func TestAFlushWithAPageAwaitingAnAnswerLeavesTheWindowOpen(t *testing.T) {
+func TestFlushPendingReturnsFalseWhileAPageAsks(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden)
 	w.pages.isAsking = true

@@ -60,8 +60,6 @@ type openDoor struct{}
 
 func (openDoor) Close() {}
 
-// startSession starts the passes behind v over state the way a window does, and returns the function
-// that ends them.
 func (w wiring) startSession(
 	ctx context.Context, db *vaults.Index, state *State, v domain.Vault,
 	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher, opts sessionOptions,

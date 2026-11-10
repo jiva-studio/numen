@@ -157,8 +157,7 @@ type VaultPorts struct {
 	Identity IdentityCheck
 	Recorded OpenRecord
 	Passes   VaultPasses
-	// Texts is nil where the installation keeps no live text versions.
-	Texts TextVersions
+	Texts    TextVersions
 }
 
 // IndexPorts are what indexes the vault and follows the model it is read under.
@@ -182,15 +181,9 @@ type Deps struct {
 	Index    IndexPorts
 	Shutdown ShutdownPorts
 
-	// Out receives the diagnostics of the window.
-	Out io.Writer
-	// EmbedderError is why the embedder could not start, or nil.
+	Out           io.Writer
 	EmbedderError error
-	// Closing ends when the application quits.
-	Closing <-chan struct{}
-	// IsRebuilding is whether the first vault is indexed again from the start.
-	IsRebuilding bool
-	// TabBound is how long ShowTab waits for the window to report a tab active; zero is
-	// defaultTabBound.
-	TabBound time.Duration
+	Closing       <-chan struct{}
+	IsRebuilding  bool
+	TabBound      time.Duration
 }

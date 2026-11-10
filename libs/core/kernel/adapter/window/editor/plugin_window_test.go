@@ -31,11 +31,11 @@ import (
 )
 
 func newPluginWindow(
-	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, bound time.Duration,
+	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, limit time.Duration,
 ) hostendpoint.WindowControl {
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
 		Window:   windowsession.WindowPorts{Tasks: state.Window, TabFront: &state.TabIDs},
-		TabBound: bound,
+		TabBound: limit,
 	})
 	return windowsession.NewPluginWindow(
 		&state.Runtime,
@@ -73,7 +73,7 @@ func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan do
 	return newBoundWindowWith(t, 0)
 }
 
-func newBoundWindowWith(t *testing.T, bound time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
+func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	state := &State{Places: newPlaceBroadcaster()}
 	state.SetVault(testsupport.NewVault(t, map[string]string{
@@ -82,7 +82,7 @@ func newBoundWindowWith(t *testing.T, bound time.Duration) (*State, hostendpoint
 	}))
 	line, unsubscribe := state.Places.subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, windowview.View{Notices: state}), bound), line
+	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, windowview.View{Notices: state}), limit), line
 }
 
 func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
@@ -173,9 +173,9 @@ func newActivateFixture(t *testing.T) activateFixture {
 	return newActivateFixtureWith(t, 0)
 }
 
-func newActivateFixtureWith(t *testing.T, bound time.Duration) activateFixture {
+func newActivateFixtureWith(t *testing.T, limit time.Duration) activateFixture {
 	t.Helper()
-	state, window, _ := newBoundWindowWith(t, bound)
+	state, window, _ := newBoundWindowWith(t, limit)
 	api := newWorkspace(t, state)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(api))

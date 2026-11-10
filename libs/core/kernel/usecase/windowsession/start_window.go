@@ -24,8 +24,6 @@ func (u StartWindow) Execute(ctx context.Context, first domain.Vault) {
 	u.life.startVault(ctx, first, u.life.deps.IsRebuilding)
 }
 
-// followModel records the model the embedder announces, and builds the passes again when its chunk
-// size changes, because the notes are then cut again.
 func (u StartWindow) followModel() {
 	deps := u.life.deps
 	if deps.Index.Model == nil {

@@ -41,7 +41,6 @@ func (q *triggerPasses) requestPaths(paths []string) {
 	signal(q.wake)
 }
 
-// take returns what was asked for since the last take and clears it.
 func (q *triggerPasses) take() (isAll bool, paths []string) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -50,8 +49,6 @@ func (q *triggerPasses) take() (isAll bool, paths []string) {
 	return isAll, paths
 }
 
-// runTriggers runs the passes asked for, and waits for the next request or for the plugins to change,
-// until ctx ends. A failed pass is reported unless ctx ended.
 func runTriggers(
 	ctx context.Context, triggers TriggerRunner, v domain.Vault, passes *triggerPasses,
 	changes <-chan struct{}, report func(error),
@@ -85,8 +82,6 @@ func signal(wake chan<- struct{}) {
 	}
 }
 
-// start returns the function that runs the passes over the vault until ctx ends, or nil where the
-// window runs no triggers.
 func (s TriggerSource) start(ctx context.Context, v domain.Vault, passes *triggerPasses, report func(error)) func() {
 	if s.Open == nil {
 		return nil

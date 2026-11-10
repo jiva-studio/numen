@@ -25,7 +25,6 @@ type Runtime struct {
 	openTabs        atomic.Pointer[domain.OpenTabs]
 	openTabsReports reportSignal
 
-	// lock keeps two rebuilds of the passes behind a vault from running at once.
 	lock  sync.Mutex
 	guard guard
 }

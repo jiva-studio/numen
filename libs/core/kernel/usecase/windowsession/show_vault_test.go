@@ -26,7 +26,7 @@ func TestShowingAnotherVaultStopsTheFirstAndStartsTheSecond(t *testing.T) {
 	}
 }
 
-func TestShowingAnotherVaultTellsEveryViewToReloadAndTakesWritesAgain(t *testing.T) {
+func TestShowVaultPublishesAReloadAndOpensWrites(t *testing.T) {
 	w := newTestWindow(t, nil)
 	w.open(t, garden)
 
@@ -71,17 +71,17 @@ func TestAPageAwaitingAnAnswerKeepsTheVaultInTheWindow(t *testing.T) {
 }
 
 func TestAVaultThatIsNotTheOneItsFolderCarriesIsNotShown(t *testing.T) {
-	refused := errors.New("the folder holds another vault")
-	w := newTestWindow(t, func(deps *Deps) { deps.Vault.Identity = identity{refused: refused} })
+	mismatched := errors.New("the folder holds another vault")
+	w := newTestWindow(t, func(deps *Deps) { deps.Vault.Identity = identity{mismatched: mismatched} })
 	w.open(t, garden)
 
 	err := w.scenarios.Switching.Show.Execute(t.Context(), studio, nil)
 
-	if !errors.Is(err, refused) {
-		t.Fatalf("the switch returned %v, want %v", err, refused)
+	if !errors.Is(err, mismatched) {
+		t.Fatalf("the switch returned %v, want %v", err, mismatched)
 	}
 	if w.pages.flushes != 0 {
-		t.Errorf("the pages were flushed %d times for a vault that was refused", w.pages.flushes)
+		t.Errorf("the pages were flushed %d times for a vault that was mismatched", w.pages.flushes)
 	}
 }
 
