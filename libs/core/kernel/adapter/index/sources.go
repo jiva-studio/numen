@@ -9,10 +9,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // sources answers the source and vector ports out of the chunk tables.
@@ -81,7 +80,7 @@ func (s queries) GetSourcesWithOtherRecipe(ctx context.Context, vaultID domain.V
 
 // SaveVectors writes a group: the coarse row of each, and the vector itself
 // where the text it was made from addresses it.
-func (s sources) SaveVectors(ctx context.Context, vectors []embeddingport.Vector) error {
+func (s sources) SaveVectors(ctx context.Context, vectors []embedding.Vector) error {
 	out := make([]chunk.Vector, 0, len(vectors))
 	for _, v := range vectors {
 		row, err := chunk.Row(v.ChunkID)
@@ -99,7 +98,7 @@ func (s sources) SaveVectors(ctx context.Context, vectors []embeddingport.Vector
 	return s.write.SaveVectors(ctx, out)
 }
 
-func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model embeddingport.EmbeddingModel, after embeddingport.ChunkCursor, limit int) ([]domain.Passage, embeddingport.ChunkCursor, error) {
+func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID, model embedding.Model, after embedding.ChunkCursor, limit int) ([]domain.Passage, embedding.ChunkCursor, error) {
 	from, err := parseCursor(after)
 	if err != nil {
 		return nil, "", err
@@ -124,7 +123,7 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	next := after
 	if len(found) > 0 {
 		last := found[len(found)-1]
-		next = embeddingport.ChunkCursor(strconv.FormatInt(last.MTime, 10) + ":" + strconv.FormatInt(last.Source, 10) + ":" + strconv.FormatInt(last.Chunk, 10))
+		next = embedding.ChunkCursor(strconv.FormatInt(last.MTime, 10) + ":" + strconv.FormatInt(last.Source, 10) + ":" + strconv.FormatInt(last.Chunk, 10))
 	}
 	return out, next, nil
 }
@@ -132,7 +131,7 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 // Cursor is the point in the ordering a walk carries on after.
 type Cursor = chunk.Cursor
 
-func parseCursor(after embeddingport.ChunkCursor) (Cursor, error) {
+func parseCursor(after embedding.ChunkCursor) (Cursor, error) {
 	if after == "" {
 		return Cursor{MTime: math.MaxInt64, Source: math.MaxInt64}, nil
 	}
@@ -157,7 +156,7 @@ func parseCursor(after embeddingport.ChunkCursor) (Cursor, error) {
 	return Cursor{}, fmt.Errorf("%q is no cursor of this index", after)
 }
 
-func parseCursorNumbers(after embeddingport.ChunkCursor, parts []string) ([]int64, error) {
+func parseCursorNumbers(after embedding.ChunkCursor, parts []string) ([]int64, error) {
 	if len(parts) != 2 && len(parts) != 3 {
 		return nil, fmt.Errorf("%q is no cursor of this index", after)
 	}
@@ -191,12 +190,12 @@ func (s sources) GetKeptVectors(ctx context.Context, recipe string, of [][]byte)
 
 // GetSourceText is what one source's text came from, and false where the index holds
 // no source at that path.
-func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (sourceport.SourceText, bool, error) {
+func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path string) (sourcedomain.Text, bool, error) {
 	found, target, err := s.read.GetSourceText(ctx, vaultID, path)
 	if err != nil || !target {
-		return sourceport.SourceText{}, false, err
+		return sourcedomain.Text{}, false, err
 	}
-	return sourceport.SourceText{
+	return sourcedomain.Text{
 		FileStat:    domain.FileStat{Path: found.Path, Size: found.Size, ModTime: chunk.ConvertNanosToTime(found.MTime)},
 		Producer:    found.Producer,
 		ContentHash: found.ContentHash,
@@ -204,14 +203,14 @@ func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path
 }
 
 // GetRecognisedSources is the sources of one kind whose text a producer made.
-func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourceport.SourceText, error) {
+func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourcedomain.Text, error) {
 	found, err := s.read.GetRecognisedSources(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
 	}
-	out := make([]sourceport.SourceText, 0, len(found))
+	out := make([]sourcedomain.Text, 0, len(found))
 	for _, r := range found {
-		out = append(out, sourceport.SourceText{
+		out = append(out, sourcedomain.Text{
 			FileStat:    domain.FileStat{Path: r.Path},
 			Producer:    r.Producer,
 			ContentHash: r.ContentHash,

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -30,8 +31,8 @@ func makeIndex(t *testing.T) *container.Index {
 // for each text.
 type unit struct{ name string }
 
-func (u unit) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
+func (u unit) GetModel() embedding.Model {
+	return embedding.Model{Name: u.name, Dimensions: 8, MaxTokens: 256, Pooling: "mean"}
 }
 
 func (unit) Embed(_ context.Context, texts []string) ([][]float32, error) {

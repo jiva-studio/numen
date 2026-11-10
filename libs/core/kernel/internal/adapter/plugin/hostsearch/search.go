@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -162,7 +163,7 @@ func (s Search) SampleSimilarities(ctx context.Context, v domain.Vault, recipe s
 	return pluginport.PluginSimilaritySample{PassageCount: len(passages), SourceCount: len(sources), Rows: rows}, nil
 }
 
-func compare(query pluginport.PluginSimilarityQuery, passages []searchpolicyport.Passage) ([]float64, error) {
+func compare(query pluginport.PluginSimilarityQuery, passages []searchpolicy.Passage) ([]float64, error) {
 	if len(query.Vector) == 0 {
 		return nil, nil
 	}

@@ -14,9 +14,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -381,7 +381,7 @@ func searchFixture(t *testing.T) *index.DB {
 func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 	db := searchFixture(t)
 
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "stripes", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
+	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "stripes", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,7 +407,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 
-	all, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
+	all, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +416,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 		t.Errorf("a search of every kind answered %v, want the 2 chunks of the book and the note, none of the other vault", sources)
 	}
 
-	notes, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
+	notes, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +424,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
 
-	both, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: []domain.SourceKind{domain.KindNote, domain.KindFile}, Limit: 10})
+	both, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: []domain.SourceKind{domain.KindNote, domain.KindFile}, Limit: 10})
 	if err != nil || len(both) != 3 {
 		t.Errorf("a search of two kinds answered %d, %v", len(both), err)
 	}
@@ -434,7 +434,7 @@ func TestFindLexical_HonorsLimit(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindFile}} {
-		got, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 2})
+		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 2})
 		if err != nil || len(got) != 2 {
 			t.Errorf("kinds %v: asked for 2, got %d, %v", kinds, len(got), err)
 		}
@@ -443,7 +443,7 @@ func TestFindLexical_HonorsLimit(t *testing.T) {
 
 func TestASearchByWordsAnswersBestFirst(t *testing.T) {
 	db := searchFixture(t)
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
+	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -456,11 +456,11 @@ func TestAWordStillBeingTypedMatchesByItsPrefix(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
 
-	growing, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "strip", Kinds: nil, Limit: 10, IsGrowing: true})
+	growing, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "strip", Kinds: nil, Limit: 10, IsGrowing: true})
 	if err != nil || len(growing) == 0 {
 		t.Errorf("a prefix still being typed found %d, %v", len(growing), err)
 	}
-	finished, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "strip", Kinds: nil, Limit: 10})
+	finished, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "strip", Kinds: nil, Limit: 10})
 	if err != nil || len(finished) != 0 {
 		t.Errorf("a finished prefix found %d, %v", len(finished), err)
 	}
@@ -471,12 +471,12 @@ func TestASearchByWordsHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, input := range []string{"", "   "} {
-		got, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
+		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
 		if err != nil || got != nil {
 			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
-	got, err := queries.FindLexical(t.Context(), nobody, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
+	got, err := queries.FindLexical(t.Context(), nobody, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10})
 	if err != nil || got != nil {
 		t.Errorf("an unknown vault answered %v, %v", got, err)
 	}
@@ -485,12 +485,12 @@ func TestASearchByWordsHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 func TestASearchByWordsNeedsAPositiveLimit(t *testing.T) {
 	db := searchFixture(t)
 	for _, limit := range []int{0, -1} {
-		got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: limit})
+		got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: limit})
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
 	}
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 1})
+	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 1})
 	if err != nil || len(got) != 1 {
 		t.Errorf("a limit of 1 answered %d, %v", len(got), err)
 	}
@@ -505,10 +505,10 @@ func TestASearchByWordsFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		"no search":   broken(t, seed, `DROP TABLE chunks_fts`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
-		if _, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 5}); err == nil {
+		if _, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 5}); err == nil {
 			t.Errorf("%s: a search of every kind answered", name)
 		}
-		if _, err := queries.FindLexical(t.Context(), vaultA, sourceport.LexicalQuery{Text: "zebra", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 5}); err == nil {
+		if _, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 5}); err == nil {
 			t.Errorf("%s: a search of one kind answered", name)
 		}
 	}
@@ -527,7 +527,7 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 	source{vault: vaultB, path: "lib/other.epub", kind: "file", large: "t", opens: []string{"Gardening"}, smalls: []string{"x"}}.save(t, db)
 	queries := db.ChunkQueries()
 
-	got, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 10})
+	got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,25 +545,25 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 		t.Errorf("the section is %+v, want the chunk it opens in chapter 9", book)
 	}
 
-	notes, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
+	notes, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil || !slices.Equal(getSources(notes), []string{"notes/Gardening.md"}) {
 		t.Errorf("sections of notes: %v, %v", getSources(notes), err)
 	}
 
-	one, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 1})
+	one, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: nil, Limit: 1})
 	if err != nil || len(one) != 1 {
 		t.Errorf("asked for 1, got %d, %v", len(one), err)
 	}
-	oneOfKind, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindFile, domain.KindNote}, Limit: 1})
+	oneOfKind, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: []domain.SourceKind{domain.KindFile, domain.KindNote}, Limit: 1})
 	if err != nil || len(oneOfKind) != 1 {
 		t.Errorf("asked for 1 of two kinds, got %d, %v", len(oneOfKind), err)
 	}
 
-	typing, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10, IsGrowing: true})
+	typing, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10, IsGrowing: true})
 	if err != nil || len(typing) != 2 {
 		t.Errorf("a name still being typed found %d, %v", len(typing), err)
 	}
-	typed, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10})
+	typed, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "garden", Kinds: nil, Limit: 10})
 	if err != nil || len(typed) != 0 {
 		t.Errorf("a finished prefix found %d, %v", len(typed), err)
 	}
@@ -572,17 +572,17 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 func TestASearchByNameHasNothingToSayWithoutWordsOrVault(t *testing.T) {
 	queries := openIndex(t).ChunkQueries()
 	for _, input := range []string{"", "  "} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
+		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: input, Kinds: nil, Limit: 10})
 		if err != nil || got != nil {
 			t.Errorf("%q answered %v, %v", input, got, err)
 		}
 	}
-	got, err := queries.GetNamedPassages(t.Context(), nobody, sourceport.LexicalQuery{Text: "word", Kinds: nil, Limit: 10})
+	got, err := queries.GetNamedPassages(t.Context(), nobody, sourcedomain.LexicalQuery{Text: "word", Kinds: nil, Limit: 10})
 	if err != nil || got != nil {
 		t.Errorf("an unknown vault answered %v, %v", got, err)
 	}
 	for _, limit := range []int{0, -3} {
-		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "word", Kinds: nil, Limit: limit})
+		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "word", Kinds: nil, Limit: limit})
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
@@ -598,10 +598,10 @@ func TestASearchByNameFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		"no sections": broken(t, seed, `DROP TABLE sections_fts`),
 		"garbled row": broken(t, seed, `UPDATE chunks SET start = 'abc'`),
 	} {
-		if _, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "name", Kinds: nil, Limit: 5}); err == nil {
+		if _, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "name", Kinds: nil, Limit: 5}); err == nil {
 			t.Errorf("%s: a search of every kind answered", name)
 		}
-		if _, err := queries.GetNamedPassages(t.Context(), vaultA, sourceport.LexicalQuery{Text: "name", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 5}); err == nil {
+		if _, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "name", Kinds: []domain.SourceKind{domain.KindFile}, Limit: 5}); err == nil {
 			t.Errorf("%s: a search of one kind answered", name)
 		}
 	}
@@ -634,7 +634,7 @@ func meaningFixture(t *testing.T) *index.DB {
 func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 	db := meaningFixture(t)
 
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
+	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -665,12 +665,12 @@ func TestFindNearest_HonorsLimit(t *testing.T) {
 	queries := db.ChunkQueries()
 
 	for _, limit := range []int{1, 3} {
-		got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
+		got, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
 		if err != nil || len(got) != limit {
 			t.Errorf("asked for %d, got %d, %v", limit, len(got), err)
 		}
 	}
-	both, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 8, Floor: -1})
+	both, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 8, Floor: -1})
 	if err != nil || len(both) != 8 {
 		t.Errorf("asked for exactly what there is, got %d, %v", len(both), err)
 	}
@@ -678,7 +678,7 @@ func TestFindNearest_HonorsLimit(t *testing.T) {
 
 func TestASearchByMeaningAnswersNothingBelowTheFloor(t *testing.T) {
 	db := meaningFixture(t)
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
+	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -696,18 +696,18 @@ func TestASearchByMeaningStaysInItsKindsRecipeAndVault(t *testing.T) {
 	db := meaningFixture(t)
 	queries := db.ChunkQueries()
 
-	notes, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0x0F), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10, Floor: -1})
+	notes, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0x0F), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(notes) != 2 || slices.ContainsFunc(notes, func(p domain.Passage) bool { return p.Kind != domain.KindNote }) {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
-	other, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: "another model", Vector: seedVector(0xF0), Limit: 10, Floor: -1})
+	other, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: "another model", Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil || len(other) != 0 {
 		t.Errorf("a recipe nothing was made under answered %d, %v", len(other), err)
 	}
-	b, err := queries.FindNearest(t.Context(), vaultB, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
+	b, err := queries.FindNearest(t.Context(), vaultB, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil || !slices.Equal(getSources(b), []string{"lib/elsewhere.epub", "lib/elsewhere.epub"}) {
 		t.Errorf("the other vault answered %v, %v", getSources(b), err)
 	}
@@ -717,17 +717,17 @@ func TestASearchByMeaningHasNothingToSayWithoutAQueryOrAVault(t *testing.T) {
 	queries := meaningFixture(t).ChunkQueries()
 
 	for _, empty := range [][]float32{nil, {}} {
-		got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: empty, Limit: 10, Floor: -1})
+		got, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: empty, Limit: 10, Floor: -1})
 		if err != nil || got != nil {
 			t.Errorf("an empty query answered %v, %v", got, err)
 		}
 	}
-	got, err := queries.FindNearest(t.Context(), nobody, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
+	got, err := queries.FindNearest(t.Context(), nobody, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1})
 	if err != nil || got != nil {
 		t.Errorf("an unknown vault answered %v, %v", got, err)
 	}
 	for _, limit := range []int{0, -2} {
-		got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
+		got, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: limit, Floor: -1})
 		if err == nil || got != nil || !strings.Contains(err.Error(), strconv.Itoa(limit)) {
 			t.Errorf("limit %d answered %v, %v", limit, got, err)
 		}
@@ -744,7 +744,7 @@ func TestASearchByMeaningFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		"no coarse": broken(t, seed, `DROP TABLE chunks_vec`),
 		"no vector": broken(t, seed, `ALTER TABLE vectors RENAME TO gone`),
 	} {
-		if _, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1}); err == nil {
+		if _, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1}); err == nil {
 			t.Errorf("%s: a search answered", name)
 		}
 	}
@@ -755,7 +755,7 @@ func TestAChunkWhoseVectorIsOfAnotherWidthIsACorruptRow(t *testing.T) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 		embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	})
-	if _, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0)[:512], Limit: 5, Floor: -1}); err == nil {
+	if _, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0)[:512], Limit: 5, Floor: -1}); err == nil {
 		t.Error("a query of 512 dimensions was compared to vectors of 1024")
 	}
 }
@@ -1210,15 +1210,15 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 		"GetFingerprints": func() error { _, err := q.GetFileStats(ctx, vaultA, "book"); return err },
 		"GetSourcesUnder": func() error { _, err := q.GetSourcesUnder(ctx, vaultA, "p"); return err },
 		"FindLexical": func() error {
-			_, err := q.FindLexical(ctx, vaultA, sourceport.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
+			_, err := q.FindLexical(ctx, vaultA, sourcedomain.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
 			return err
 		},
 		"GetNamedPassages": func() error {
-			_, err := q.GetNamedPassages(ctx, vaultA, sourceport.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
+			_, err := q.GetNamedPassages(ctx, vaultA, sourcedomain.LexicalQuery{Text: "w", Kinds: kinds, Limit: 5})
 			return err
 		},
 		"FindNearest": func() error {
-			_, err := q.FindNearest(ctx, vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1})
+			_, err := q.FindNearest(ctx, vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1})
 			return err
 		},
 		"GetUnchunkedSources": func() error { _, err := q.GetUnchunkedSources(ctx, vaultA, "book", 5); return err },
@@ -1274,7 +1274,7 @@ func TestASourceModifiedAtTheLatestInstantIsStillWalked(t *testing.T) {
 }
 
 func TestASearchByMeaningThatNothingReachesAnswersWithNoPassages(t *testing.T) {
-	got, err := meaningFixture(t).ChunkQueries().FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
+	got, err := meaningFixture(t).ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: 2})
 	if err != nil || got != nil {
 		t.Errorf("a floor nothing reaches answered %v, %v", got, err)
 	}
@@ -1285,7 +1285,7 @@ func TestAPassageWhoseOffsetIsNoNumberIsACorruptRow(t *testing.T) {
 		source{path: "lib/a.epub", large: "t", smalls: []string{"t"}}.save(t, db)
 		embed(t, db, vaultA, "lib/a.epub", 0xF0)
 	}, `UPDATE chunks SET start = 'abc'`)
-	got, err := queries.FindNearest(t.Context(), vaultA, sourceport.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1})
+	got, err := queries.FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{Recipe: recipe, Vector: seedVector(0xF0), Limit: 5, Floor: -1})
 	if err == nil || got != nil {
 		t.Errorf("answered %v, %v", got, err)
 	}

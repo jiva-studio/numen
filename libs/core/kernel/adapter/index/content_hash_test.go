@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 )
 
 const hashVault domain.VaultID = "01HASHVAULT"
@@ -45,21 +45,21 @@ func scan(t *testing.T, db *DB, path string, size int64, modTime time.Time) {
 	}
 }
 
-func getRiversRecord() textport.ContentHash {
-	return textport.ContentHash{
+func getRiversRecord() text.ContentHash {
+	return text.ContentHash{
 		Path: riversPath, Hash: riversHash, Size: 2048, ModTime: getRiversTime(), FileID: 4242,
 		HashTime: getRiversTime().Add(90*time.Second + 7),
 	}
 }
 
-func saveContentHash(t *testing.T, db *DB, record textport.ContentHash) {
+func saveContentHash(t *testing.T, db *DB, record text.ContentHash) {
 	t.Helper()
 	if err := db.TextVersions().SaveContentHash(t.Context(), hashVault, record); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func findContentHash(t *testing.T, db *DB, path string) (textport.ContentHash, bool) {
+func findContentHash(t *testing.T, db *DB, path string) (text.ContentHash, bool) {
 	t.Helper()
 	got, ok, err := db.TextVersions().FindContentHash(t.Context(), hashVault, path)
 	if err != nil {
@@ -68,7 +68,7 @@ func findContentHash(t *testing.T, db *DB, path string) (textport.ContentHash, b
 	return got, ok
 }
 
-func isSameContentHash(a, b textport.ContentHash) bool {
+func isSameContentHash(a, b text.ContentHash) bool {
 	return a.Path == b.Path && a.Hash == b.Hash && a.Size == b.Size && a.ModTime.Equal(b.ModTime) &&
 		a.FileID == b.FileID && a.HashTime.Equal(b.HashTime)
 }
@@ -89,7 +89,7 @@ func TestAScannedRowHasNoHashNoFileIDAndNoHashTime(t *testing.T) {
 	scan(t, db, riversPath, 2048, getRiversTime())
 
 	got, ok := findContentHash(t, db, riversPath)
-	want := textport.ContentHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
+	want := text.ContentHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
 	if !ok || !isSameContentHash(got, want) {
 		t.Fatalf("found %+v (%v), want %+v", got, ok, want)
 	}
@@ -195,7 +195,7 @@ func TestASaveOfTheNoteClearsItsFileIDAndHashTime(t *testing.T) {
 		}
 	}
 	saveNote()
-	saveContentHash(t, db, textport.ContentHash{
+	saveContentHash(t, db, text.ContentHash{
 		Path: path, Hash: riversHash, Size: note.FileStat.Size, ModTime: note.FileStat.ModTime, FileID: 51,
 		HashTime: note.FileStat.ModTime.Add(time.Hour),
 	})
@@ -226,7 +226,7 @@ func TestSaveContentHashWritesOnlyTheRowOfItsVault(t *testing.T) {
 	saveContentHash(t, db, getRiversRecord())
 
 	got, ok, err := db.TextVersions().FindContentHash(t.Context(), otherVault, riversPath)
-	want := textport.ContentHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
+	want := text.ContentHash{Path: riversPath, Size: 2048, ModTime: getRiversTime()}
 	if err != nil || !ok || !isSameContentHash(got, want) {
 		t.Fatalf("the other vault's row is %+v (%v, %v), want it kept as %+v", got, ok, err, want)
 	}

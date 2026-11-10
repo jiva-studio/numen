@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -123,7 +123,7 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 			deadline := testsupport.GetMachine().Now().Add(duration)
 			for testsupport.GetMachine().Now().Before(deadline) && ctx.Err() == nil {
 				started := testsupport.GetMachine().Now()
-				if _, err := queries.FindLexical(ctx, v.ID, sourceport.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20}); err != nil {
+				if _, err := queries.FindLexical(ctx, v.ID, source.LexicalQuery{Text: query, Kinds: getNotesOnly(), Limit: 20}); err != nil {
 					return
 				}
 				latencies[i] = append(latencies[i], testsupport.GetMachine().Now().Sub(started))

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 )
 
@@ -55,14 +56,14 @@ type Bus struct {
 	isClosed         bool
 	inFlight         sync.WaitGroup
 	clock            machineport.Clock
-	delay            machineport.Delay
+	delay            machine.Delay
 	keyExtractor     KeyExtractor
 	debounceRules    []DebounceRule
 	errorHandler     ErrorHandler
 }
 
 // WithDelay sets the delay port used for scheduling timers.
-func WithDelay(delay machineport.Delay) Option {
+func WithDelay(delay machine.Delay) Option {
 	return func(b *Bus) {
 		b.delay = delay
 	}
@@ -120,7 +121,7 @@ func New(host Trigger, clock machineport.Clock, debounceDelay, throttleInterval 
 }
 
 // SetDelay sets the delay port used for scheduling timers.
-func (b *Bus) SetDelay(delay machineport.Delay) {
+func (b *Bus) SetDelay(delay machine.Delay) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.delay = delay

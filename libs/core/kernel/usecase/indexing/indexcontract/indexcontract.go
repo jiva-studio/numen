@@ -4,10 +4,7 @@ package indexcontract
 import "github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 
 type (
-	ExtensionCount   = indexport.ExtensionCount
-	IndexCounts      = indexport.IndexCounts
 	IndexMaintenance = indexport.IndexMaintenance
 	IndexProgress    = indexport.IndexProgress
-	IndexSizes       = indexport.IndexSizes
 	IndexStats       = indexport.IndexStats
 )

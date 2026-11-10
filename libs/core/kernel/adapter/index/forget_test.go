@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -240,7 +240,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 	}
 
 	queries := db.ChunkQueries()
-	lexical, err := queries.FindLexical(ctx, getSecond().ID, sourceport.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
+	lexical, err := queries.FindLexical(ctx, getSecond().ID, sourcedomain.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -253,7 +253,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		}
 	}
 
-	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, sourceport.LexicalQuery{Text: "second section", Kinds: nil, Limit: 10})
+	sections, err := queries.GetNamedPassages(ctx, getSecond().ID, sourcedomain.LexicalQuery{Text: "second section", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -7,21 +7,20 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 )
 
-func getQuantising() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{
+func getQuantising() embedding.Model {
+	return embedding.Model{
 		Name: "test", Dimensions: 1024, MaxTokens: 256, Pooling: "mean",
 		From: "local:library/model.onnx",
 	}
 }
 
-func atScale(t *testing.T, m embeddingport.EmbeddingModel, scale float64) string {
+func atScale(t *testing.T, m embedding.Model, scale float64) string {
 	t.Helper()
 
-	recipe, target := m.Recipe(), fmt.Sprintf("@%g", embeddingport.Int8Scale)
+	recipe, target := m.Recipe(), fmt.Sprintf("@%g", embedding.Int8Scale)
 	if !strings.HasSuffix(recipe, target) {
 		t.Fatalf("the recipe says nothing about the scale its bytes sit on: %s", recipe)
 	}

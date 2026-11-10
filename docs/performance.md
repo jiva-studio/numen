@@ -1077,7 +1077,7 @@ The two copies of `@vue/runtime-core` were also reduced to one, and the editor's
 
 The quantisation scale now is in the recipe a vector is kept under, so every vector made before it is made again. Read 2026-09-06, from the code rather than the clock.
 
-**It is stable.** `port.EmbeddingModel.Recipe` is a `Sprintf` over the model's five fields, the name of the quantisation and `port.Int8Scale`. The five fields come from the settings file; the other two are constants. Nothing in it is read from the clock, from a random source, or from a path that differs between launches, so two runs of one installation compute the same recipe and the second finds every vector the first computed. The cost is incurred once, and `TestAScaleThatMovedBuysTheVectorsAgain` is the test that enforces this.
+**It is stable.** `embedding.Model.Recipe` is a `Sprintf` over the model's five fields, the name of the quantisation and `embedding.Int8Scale`. The five fields come from the settings file; the other two are constants. Nothing in it is read from the clock, from a random source, or from a path that differs between launches, so two runs of one installation compute the same recipe and the second finds every vector the first computed. The cost is incurred once, and `TestAScaleThatMovedBuysTheVectorsAgain` is the test that enforces this.
 
 **What it does not fix is the disk space.** `vectors` is keyed by the text's hash and the recipe together, and `forget_vector` removes a row only where no chunk has that text at all. A chunk whose text did not change keeps its old-recipe row beside its new one, so a scale that changes doubles the disk space used by the vectors. At the corpus measured under "Dimensions cost more than bits" that is 149 MB becoming 298 MB.
 

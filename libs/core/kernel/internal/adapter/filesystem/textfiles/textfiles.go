@@ -32,23 +32,23 @@ type files struct {
 	stores derivedfile.PluginStores
 }
 
-func (f files) ReadTextFile(ctx context.Context, pluginID, name string) (textport.TextFile, error) {
+func (f files) ReadTextFile(ctx context.Context, pluginID, name string) (text.File, error) {
 	store, err := f.stores.Open(f.vault, pluginID)
 	if err != nil {
-		return textport.TextFile{}, err
+		return text.File{}, err
 	}
 	raw, err := store.Read(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
-		return textport.TextFile{}, fmt.Errorf("%w: %s/%s", text.ErrNoText, pluginID, name)
+		return text.File{}, fmt.Errorf("%w: %s/%s", text.ErrNoText, pluginID, name)
 	}
 	if err != nil {
-		return textport.TextFile{}, err
+		return text.File{}, err
 	}
 	segments, err := textfile.Decode(raw)
 	if err != nil {
-		return textport.TextFile{}, fmt.Errorf("%s/%s: %w", pluginID, name, err)
+		return text.File{}, fmt.Errorf("%s/%s: %w", pluginID, name, err)
 	}
-	return textport.TextFile{Segments: segments, TextHash: domain.HashContent(raw)}, nil
+	return text.File{Segments: segments, TextHash: domain.HashContent(raw)}, nil
 }
 
 func (f files) WriteTextFile(ctx context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {

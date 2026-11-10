@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -15,17 +15,17 @@ type prefixSpy struct {
 	lexical, named, nearest []string
 }
 
-func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, q sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (s *prefixSpy) FindLexical(_ context.Context, _ domain.VaultID, q source.LexicalQuery) ([]domain.Passage, error) {
 	s.lexical = append(s.lexical, q.PathPrefix)
 	return nil, nil
 }
 
-func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, q sourceport.LexicalQuery) ([]domain.Passage, error) {
+func (s *prefixSpy) GetNamedPassages(_ context.Context, _ domain.VaultID, q source.LexicalQuery) ([]domain.Passage, error) {
 	s.named = append(s.named, q.PathPrefix)
 	return nil, nil
 }
 
-func (s *prefixSpy) FindNearest(_ context.Context, _ domain.VaultID, q sourceport.NearestQuery) ([]domain.Passage, error) {
+func (s *prefixSpy) FindNearest(_ context.Context, _ domain.VaultID, q source.NearestQuery) ([]domain.Passage, error) {
 	s.nearest = append(s.nearest, q.PathPrefix)
 	return nil, nil
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -187,7 +188,7 @@ func (u Search) searchLexical(ctx context.Context, v domain.Vault, query string,
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	found, err := u.passages.FindLexical(ctx, v.ID, sourceport.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Lexical, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
+	found, err := u.passages.FindLexical(ctx, v.ID, sourcedomain.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Lexical, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
 	if err != nil {
 		return err
 	}
@@ -199,7 +200,7 @@ func (u Search) searchNamed(ctx context.Context, v domain.Vault, query string, p
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	found, err := u.passages.GetNamedPassages(ctx, v.ID, sourceport.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Named, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
+	found, err := u.passages.GetNamedPassages(ctx, v.ID, sourcedomain.LexicalQuery{Text: query, Kinds: p.Kinds, Limit: p.Named, IsGrowing: p.IsGrowing, PathPrefix: p.PathPrefix})
 	if err != nil {
 		return err
 	}
@@ -246,7 +247,7 @@ func (u Search) findNearest(ctx context.Context, v domain.Vault, query string, p
 	// A vector is stored under the recipe that produced it, which covers every
 	// property of the model that determines what a vector is. A lookup under any
 	// other recipe finds no vector and this mode returns nothing.
-	return u.passages.FindNearest(ctx, v.ID, sourceport.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
+	return u.passages.FindNearest(ctx, v.ID, sourcedomain.NearestQuery{Recipe: recipe, Vector: vector, Kinds: p.Kinds, PathPrefix: p.PathPrefix, Limit: p.Dense, Floor: u.getFloor(ctx, v, recipe, p)})
 }
 
 func (u Search) getQueryVector(ctx context.Context, recipe, query string) ([]float32, error) {

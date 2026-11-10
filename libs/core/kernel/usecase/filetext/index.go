@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -339,7 +340,7 @@ func (u Index) recordIfOutdated(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	source sourceport.SourceText,
+	source sourcedomain.Text,
 	res *IndexResult,
 ) error {
 	ref, outdated, err := u.statIfOutdated(ctx, on, source)
@@ -353,7 +354,7 @@ func (u Index) recordIfOutdated(
 	return nil
 }
 
-func (u Index) isOutdated(ctx context.Context, on openVault, source sourceport.SourceText) (bool, error) {
+func (u Index) isOutdated(ctx context.Context, on openVault, source sourcedomain.Text) (bool, error) {
 	_, outdated, err := u.statIfOutdated(ctx, on, source)
 	return outdated, err
 }
@@ -361,7 +362,7 @@ func (u Index) isOutdated(ctx context.Context, on openVault, source sourceport.S
 func (u Index) statIfOutdated(
 	ctx context.Context,
 	on openVault,
-	source sourceport.SourceText,
+	source sourcedomain.Text,
 ) (domain.FileStat, bool, error) {
 	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.ContentHash)
 	switch {

@@ -10,11 +10,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -138,8 +139,8 @@ func (c corpus) search(embedder embeddingport.Embedder) search.Search {
 	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, nil)
 }
 
-func getModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "test", Dimensions: dimensions}
+func getModel() embedding.Model {
+	return embedding.Model{Name: "test", Dimensions: dimensions}
 }
 
 func newVector(sign float32) []float32 {
@@ -161,7 +162,7 @@ func newNearVector() []float32 {
 // oneWay is an embedder whose vectors all point the same way.
 type oneWay struct{ direction []float32 }
 
-func (o oneWay) GetModel() embeddingport.EmbeddingModel { return getModel() }
+func (o oneWay) GetModel() embedding.Model { return getModel() }
 
 func (o oneWay) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, 0, len(texts))
@@ -176,7 +177,7 @@ func (oneWay) Close() error { return nil }
 // outOfReach is an embedder on the other side of a network that is not there.
 type outOfReach struct{ why error }
 
-func (outOfReach) GetModel() embeddingport.EmbeddingModel { return getModel() }
+func (outOfReach) GetModel() embedding.Model { return getModel() }
 
 func (o outOfReach) Embed(context.Context, []string) ([][]float32, error) { return nil, o.why }
 
@@ -207,7 +208,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 	// A search by meaning answers with the whole table's best k, so this is where a
 	// lost filter shows.
 	dense := c.db.ChunkQueries()
-	item, err := dense.FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 20, Floor: search.DefaultFloor})
+	item, err := dense.FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 20, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +224,7 @@ func TestASearchAnswersFromItsOwnVaultAlone(t *testing.T) {
 
 	// A full-text match runs across the whole table, and "shared" is in both
 	// vaults, so this is where a lost filter shows for a search by words.
-	words, err := dense.FindLexical(ctx, c.second.ID, sourceport.LexicalQuery{Text: "shared", Kinds: nil, Limit: 20})
+	words, err := dense.FindLexical(ctx, c.second.ID, source.LexicalQuery{Text: "shared", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -334,7 +335,7 @@ func TestFiveMatchingChunksOfOneNoteAreOneResult(t *testing.T) {
 		"disorder once more", "disorder at last")
 
 	// Every small chunk of the note matches.
-	hits, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: "disorder", Kinds: nil, Limit: 20})
+	hits, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "disorder", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -394,7 +395,7 @@ func TestSearch_ReturnsRequestedSection(t *testing.T) {
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")
 
-	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 20})
+	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,7 +487,7 @@ func TestASearchByMeaningAnswersWhereWordsCannot(t *testing.T) {
 
 	// A word that appears in no note in the vault, so no lexical match is possible.
 	const unsaid = "zzqqxx"
-	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: unsaid, Kinds: nil, Limit: 20})
+	words, err := c.db.ChunkQueries().FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: unsaid, Kinds: nil, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -511,7 +512,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 	c := newCorpus(t)
 	c.vectorise(t, c.first, newVector(+1))
 
-	limit, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
+	limit, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,7 +520,7 @@ func TestASearchByMeaningAsksBelowTheRecipeAVectorIsCachedBy(t *testing.T) {
 		t.Fatal("nothing came back under the recipe the vectors were written with")
 	}
 
-	astray, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
+	astray, err := c.db.ChunkQueries().FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().String(), Vector: newVector(+1), Limit: 10, Floor: search.DefaultFloor})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -578,7 +579,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	queries := c.db.ChunkQueries()
 	books := []domain.SourceKind{domain.KindFile}
 
-	words, err := queries.FindLexical(ctx, c.first.ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
+	words, err := queries.FindLexical(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -586,7 +587,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by words answered %d passages about books in a vault of notes", len(words))
 	}
 
-	named, err := queries.GetNamedPassages(ctx, c.first.ID, sourceport.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
+	named, err := queries.GetNamedPassages(ctx, c.first.ID, source.LexicalQuery{Text: "Madhavendra Puri", Kinds: books, Limit: 20})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -594,7 +595,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 		t.Errorf("a search by name answered %d sections of books in a vault of notes", len(named))
 	}
 
-	dense, err := queries.FindNearest(ctx, c.first.ID, sourceport.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Kinds: books, Limit: 20, Floor: -1})
+	dense, err := queries.FindNearest(ctx, c.first.ID, source.NearestQuery{Recipe: getModel().Recipe(), Vector: newVector(+1), Kinds: books, Limit: 20, Floor: -1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -608,7 +609,7 @@ type countingEmbedder struct {
 	count int
 }
 
-func (e *countingEmbedder) GetModel() embeddingport.EmbeddingModel {
+func (e *countingEmbedder) GetModel() embedding.Model {
 	return e.inner.GetModel()
 }
 

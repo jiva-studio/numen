@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -15,13 +15,13 @@ func TestGetIndexCounts(t *testing.T) {
 		name  string
 		setup func(t *testing.T, db *index.DB)
 		vault domain.VaultID
-		want  indexport.IndexCounts
+		want  indexdomain.Counts
 	}{
 		{
 			name:  "an empty index holds nothing",
 			setup: func(*testing.T, *index.DB) {},
 			vault: vaultA,
-			want:  indexport.IndexCounts{},
+			want:  indexdomain.Counts{},
 		},
 		{
 			name: "a vault the index does not know holds nothing",
@@ -30,7 +30,7 @@ func TestGetIndexCounts(t *testing.T) {
 				source{path: "a.md", kind: "note", large: "l", smalls: []string{"a"}}.save(t, db)
 			},
 			vault: nobody,
-			want:  indexport.IndexCounts{},
+			want:  indexdomain.Counts{},
 		},
 		{
 			name: "notes only, none embedded",
@@ -40,9 +40,9 @@ func TestGetIndexCounts(t *testing.T) {
 				source{path: "notes/b.md", kind: "note", large: "l", smalls: []string{"b1"}}.save(t, db)
 			},
 			vault: vaultA,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 3, Vectors: 0, Sources: 2,
-				Extensions: []indexport.ExtensionCount{{Extension: "md", Sources: 2, Chunks: 3}},
+				Extensions: []indexdomain.ExtensionCount{{Extension: "md", Sources: 2, Chunks: 3}},
 			},
 		},
 		{
@@ -54,9 +54,9 @@ func TestGetIndexCounts(t *testing.T) {
 				source{path: "lib/two.pdf", large: "l", smalls: []string{"q1"}}.save(t, db)
 			},
 			vault: vaultA,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 5, Vectors: 0, Sources: 3,
-				Extensions: []indexport.ExtensionCount{
+				Extensions: []indexdomain.ExtensionCount{
 					{Extension: "pdf", Sources: 2, Chunks: 4},
 					{Extension: "md", Sources: 1, Chunks: 1},
 				},
@@ -71,9 +71,9 @@ func TestGetIndexCounts(t *testing.T) {
 				embed(t, db, vaultA, "lib/a.epub", 0xF0)
 			},
 			vault: vaultA,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 4, Vectors: 3, Sources: 2,
-				Extensions: []indexport.ExtensionCount{
+				Extensions: []indexdomain.ExtensionCount{
 					{Extension: "epub", Sources: 1, Chunks: 3},
 					{Extension: "pdf", Sources: 1, Chunks: 1},
 				},
@@ -92,9 +92,9 @@ func TestGetIndexCounts(t *testing.T) {
 				}
 			},
 			vault: vaultA,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 1, Vectors: 1, Sources: 1,
-				Extensions: []indexport.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 1}},
+				Extensions: []indexdomain.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 1}},
 			},
 		},
 		{
@@ -106,9 +106,9 @@ func TestGetIndexCounts(t *testing.T) {
 				source{path: "archive.tar.gz", large: "l", smalls: []string{"z"}}.save(t, db)
 			},
 			vault: vaultA,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 3, Vectors: 0, Sources: 3,
-				Extensions: []indexport.ExtensionCount{
+				Extensions: []indexdomain.ExtensionCount{
 					{Extension: "", Sources: 2, Chunks: 2},
 					{Extension: "gz", Sources: 1, Chunks: 1},
 				},
@@ -122,9 +122,9 @@ func TestGetIndexCounts(t *testing.T) {
 				source{vault: vaultB, path: "b.md", kind: "note", large: "l", smalls: []string{"b1", "b2"}}.save(t, db)
 			},
 			vault: vaultA,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 1, Vectors: 0, Sources: 1,
-				Extensions: []indexport.ExtensionCount{{Extension: "md", Sources: 1, Chunks: 1}},
+				Extensions: []indexdomain.ExtensionCount{{Extension: "md", Sources: 1, Chunks: 1}},
 			},
 		},
 	}
@@ -195,20 +195,20 @@ func TestGetIndexCountsBelowTheMinimum(t *testing.T) {
 	tests := []struct {
 		name    string
 		minimum int
-		want    indexport.IndexCounts
+		want    indexdomain.Counts
 	}{
 		{
 			name: "at the length of the chunks all are counted", minimum: 50,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 3, Vectors: 3, Sources: 1,
-				Extensions: []indexport.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 3}},
+				Extensions: []indexdomain.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 3}},
 			},
 		},
 		{
 			name: "above the length of the chunks none is counted", minimum: 51,
-			want: indexport.IndexCounts{
+			want: indexdomain.Counts{
 				Chunks: 0, Vectors: 0, Sources: 1,
-				Extensions: []indexport.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 0}},
+				Extensions: []indexdomain.ExtensionCount{{Extension: "epub", Sources: 1, Chunks: 0}},
 			},
 		},
 	}

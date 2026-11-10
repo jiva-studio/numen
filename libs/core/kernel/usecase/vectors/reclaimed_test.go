@@ -8,8 +8,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 // A vector is computed once and reclaimed by every vault that holds the same
@@ -29,7 +29,7 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	}
 
 	// What the index now holds, as a second vault finds it.
-	bought := map[string]embeddingport.Vector{}
+	bought := map[string]embedding.Vector{}
 	index.Kept = map[string][]byte{}
 	for _, target := range index.Vectors {
 		for _, v := range target {
@@ -76,8 +76,8 @@ func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 // leans is what the two coarse forms have to agree about.
 type faint struct{ dims int }
 
-func (f *faint) GetModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{Name: "faint", Dimensions: f.dims}
+func (f *faint) GetModel() embedding.Model {
+	return embedding.Model{Name: "faint", Dimensions: f.dims}
 }
 
 func (*faint) Close() error { return nil }

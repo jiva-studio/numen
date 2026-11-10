@@ -87,7 +87,7 @@ func (memoryFile) Close() error { return nil }
 
 // mapsVersions is the one version of the maps and the row a scan wrote for them.
 type mapsVersions struct {
-	source      textport.ContentHash
+	source      text.ContentHash
 	hasRow      bool
 	findFailure error
 	saveFailure error
@@ -113,17 +113,17 @@ func (m *mapsVersions) RemovePluginVersions(context.Context, string) ([]domain.T
 	return nil, nil
 }
 
-func (m *mapsVersions) FindContentHash(_ context.Context, path string) (textport.ContentHash, bool, error) {
+func (m *mapsVersions) FindContentHash(_ context.Context, path string) (text.ContentHash, bool, error) {
 	if m.findFailure != nil {
-		return textport.ContentHash{}, false, m.findFailure
+		return text.ContentHash{}, false, m.findFailure
 	}
 	if path != mapsPath || !m.hasRow {
-		return textport.ContentHash{}, false, nil
+		return text.ContentHash{}, false, nil
 	}
 	return m.source, true, nil
 }
 
-func (m *mapsVersions) SaveContentHash(_ context.Context, record textport.ContentHash) error {
+func (m *mapsVersions) SaveContentHash(_ context.Context, record text.ContentHash) error {
 	if m.saveFailure != nil {
 		return m.saveFailure
 	}
@@ -144,8 +144,8 @@ func (textFiles) Open(domain.Vault) (textport.TextFiles, error) { return textFil
 
 func (textFiles) DeleteTextFile(context.Context, string, string) error { return nil }
 
-func (textFiles) ReadTextFile(context.Context, string, string) (textport.TextFile, error) {
-	return textport.TextFile{TextHash: textOfMaps}, nil
+func (textFiles) ReadTextFile(context.Context, string, string) (text.File, error) {
+	return text.File{TextHash: textOfMaps}, nil
 }
 
 func (textFiles) WriteTextFile(context.Context, string, string, []domain.TextSegment) (string, error) {
@@ -192,7 +192,7 @@ func TestListVersionsReadsTheVaultItIsGiven(t *testing.T) {
 // opened for its hash once.
 func TestListingTheVersionsOfAnUnchangedPDFTwiceOpensItOnce(t *testing.T) {
 	files := &mapsVault{}
-	repo := &mapsVersions{hasRow: true, source: textport.ContentHash{
+	repo := &mapsVersions{hasRow: true, source: text.ContentHash{
 		Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime(),
 	}}
 	texts := newTexts(t, files, repo)
@@ -209,8 +209,8 @@ func TestListingTheVersionsOfAnUnchangedPDFTwiceOpensItOnce(t *testing.T) {
 	}
 }
 
-func getScannedMaps() textport.ContentHash {
-	return textport.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
+func getScannedMaps() text.ContentHash {
+	return text.ContentHash{Path: mapsPath, Size: int64(len(getMapsContent())), ModTime: getMapsTime()}
 }
 
 func checkLive(t *testing.T, listing pluginport.PluginTextListing, err error) {

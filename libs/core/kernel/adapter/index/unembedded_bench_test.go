@@ -6,10 +6,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 // The embedding walk requests a page of chunks, reads the text of each and
@@ -23,8 +22,8 @@ const chunksPerPage = 200
 
 func getBenchVault() domain.Vault { return domain.Vault{ID: "01BENCH", Name: "bench", Path: "/bench"} }
 
-func getBenchModel() embeddingport.EmbeddingModel {
-	return embeddingport.EmbeddingModel{
+func getBenchModel() embedding.Model {
+	return embedding.Model{
 		Name: "bench-model", Dimensions: 1024, MaxTokens: 512, Pooling: "mean", From: "bench",
 	}
 }
@@ -116,15 +115,15 @@ func BenchmarkSaveVectors(b *testing.B) {
 	value := make([]byte, getBenchModel().Dimensions)
 	coarse := make([]byte, getBenchModel().Dimensions/8)
 	numbered := make([]chunk.Vector, 0, len(found))
-	named := make([]embeddingport.Vector, 0, len(found))
+	named := make([]embedding.Vector, 0, len(found))
 	for i, p := range found {
 		hash := []byte(fmt.Sprintf("%032d", i))
 		numbered = append(numbered, chunk.Vector{
 			Chunk: p.Chunk, Hash: hash, Recipe: getBenchModel().Recipe(), Value: value, Coarse: coarse,
 		})
-		named = append(named, embeddingport.Vector{
+		named = append(named, embedding.Vector{
 			ChunkID: chunk.ID(p.Chunk), Hash: hash, Model: getBenchModel(),
-			Kind: embeddingport.QuantisedInt8, Value: value, Coarse: coarse,
+			Kind: embedding.QuantisedInt8, Value: value, Coarse: coarse,
 		})
 	}
 

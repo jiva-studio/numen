@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 )
 
 // announcing is an embedder whose model changes when its plugin says so.
 type announcing struct {
-	model     embeddingport.EmbeddingModel
+	model     embedding.Model
 	listeners []func()
 }
 
-func (a *announcing) GetModel() embeddingport.EmbeddingModel { return a.model }
+func (a *announcing) GetModel() embedding.Model { return a.model }
 
 func (*announcing) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
@@ -23,7 +23,7 @@ func (*announcing) Concurrency() int { return 1 }
 
 func (a *announcing) OnModelChange(fn func()) { a.listeners = append(a.listeners, fn) }
 
-func (a *announcing) change(model embeddingport.EmbeddingModel) {
+func (a *announcing) change(model embedding.Model) {
 	a.model = model
 	for _, fn := range a.listeners {
 		fn()
@@ -32,13 +32,13 @@ func (a *announcing) change(model embeddingport.EmbeddingModel) {
 
 // The model the window shows follows the model the embedder announces.
 func TestTheRecordedModelFollowsTheModelTheEmbedderAnnounces(t *testing.T) {
-	embedder := &announcing{model: embeddingport.EmbeddingModel{Name: "first", Dimensions: 8, Pooling: "mean"}}
+	embedder := &announcing{model: embedding.Model{Name: "first", Dimensions: 8, Pooling: "mean"}}
 	state := &State{}
 	state.Indexing.Model.Store(embedder.model.String())
 	state.Indexing.Recipe.Store(embedder.model.Recipe())
 
 	followModel(embedder, state, nil, nil)
-	second := embeddingport.EmbeddingModel{Name: "second", Dimensions: 16, Pooling: "mean"}
+	second := embedding.Model{Name: "second", Dimensions: 16, Pooling: "mean"}
 	embedder.change(second)
 
 	if got := text(&state.Indexing.Model); got != second.String() {
@@ -58,7 +58,7 @@ func TestAnEmbedderThatAnnouncesNothingIsNotFollowed(t *testing.T) {
 // silent is an embedder that cannot announce a change.
 type silent struct{}
 
-func (silent) GetModel() embeddingport.EmbeddingModel { return embeddingport.EmbeddingModel{} }
+func (silent) GetModel() embedding.Model { return embedding.Model{} }
 
 func (silent) Embed(context.Context, []string) ([][]float32, error) { return nil, nil }
 
@@ -67,7 +67,7 @@ func (silent) Close() error { return nil }
 func (silent) Concurrency() int { return 1 }
 
 func newChunking(tokens int) *announcing {
-	return &announcing{model: embeddingport.EmbeddingModel{Name: "first", Dimensions: 8, Pooling: "mean", ChunkTokens: tokens}}
+	return &announcing{model: embedding.Model{Name: "first", Dimensions: 8, Pooling: "mean", ChunkTokens: tokens}}
 }
 
 // A new chunk size cuts the notes again, so the session of the vault is built again once for it.
