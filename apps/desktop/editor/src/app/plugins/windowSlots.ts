@@ -9,9 +9,9 @@ import {
   type PluginHostDeps,
   type WhenValues,
 } from '@numen/plugin-loader'
-import type { WindowFacts } from './windowFacts'
 import {
   type DeclaredCommands,
+  type HostPort,
   createSlotCommandFinder,
   readSlotEntries,
   getPaletteId,
@@ -22,7 +22,7 @@ export interface WindowSlotsDeps {
     DeclaredCommands,
     'slots' | 'commands' | 'contributions' | 'whenContext'
   >
-  readonly facts: Pick<WindowFacts, 'getAppCommands' | 'getValues'>
+  readonly facts: Pick<HostPort, 'getAppCommands' | 'getValues'>
   readonly writeIssue: (pluginId: string, message: string, severity: 'warning' | 'error') => void
 }
 

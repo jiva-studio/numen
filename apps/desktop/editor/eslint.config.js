@@ -33,7 +33,16 @@ const layerPolicies = createLayerPolicies({
   indexOnly: true,
   extra: [
     { allow: { to: { element: { type: 'testing' } } } },
-    { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
+    // Test support reaches a slice through its index, as the code it supports does.
+    ...layerOrder.map((type) => ({
+      from: { element: { type: 'testing' } },
+      allow: {
+        to: {
+          element: { type },
+          ...(sliceLayers.includes(type) ? { file: { categories: 'public' } } : {}),
+        },
+      },
+    })),
   ],
 })
 

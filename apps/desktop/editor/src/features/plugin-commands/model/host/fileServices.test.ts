@@ -5,15 +5,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { Folder, FolderOpen } from '@lucide/vue'
-import { createInvocation, runInvocation } from '@/features/command-palette'
 import { COMMAND, findIcon } from '@/entities/command'
 import { createFileMakers, createIconHost, createVaultFiles } from './fileServices'
-import type * as CommandPaletteModule from '@/features/command-palette'
-
-vi.mock('@/features/command-palette', async (importOriginal) => ({
-  ...(await importOriginal<typeof CommandPaletteModule>()),
-  runInvocation: vi.fn(() => Promise.resolve()),
-}))
 
 const target = {
   tab: 't',
@@ -28,13 +21,13 @@ const target = {
 
 const setup = () => {
   const createUntitled = vi.fn()
-  const commandDeps = vi.fn(() => ({ marker: 'deps' }))
+  const runCommand = vi.fn(() => Promise.resolve())
   const files = createVaultFiles({
     making: { createUntitled } as never,
     getTarget: () => target as never,
-    commandDeps: commandDeps as never,
+    runCommand,
   })
-  return { files, createUntitled, commandDeps }
+  return { files, createUntitled, runCommand }
 }
 
 let restore: () => void
@@ -66,25 +59,23 @@ describe('the files of the vault a plugin is handed', () => {
   })
 
   it('move a path through the move command, answered in the command words', async () => {
-    const { files, commandDeps } = setup()
+    const { files, runCommand } = setup()
 
     await files.move('a.md', 'dir/a.md')
 
-    expect(runInvocation).toHaveBeenCalledWith(
-      createInvocation('app:file.move', { ...target, path: 'a.md' } as never, 'dir/a.md'),
-      commandDeps(),
+    expect(runCommand).toHaveBeenCalledWith(
+      'app:file.move',
+      { ...target, path: 'a.md' },
+      'dir/a.md',
     )
   })
 
   it('make a folder through the createFolder command, answered in the command words', async () => {
-    const { files, commandDeps } = setup()
+    const { files, runCommand } = setup()
 
     await files.createFolder('dir')
 
-    expect(runInvocation).toHaveBeenCalledWith(
-      createInvocation('app:folder.create', target as never, 'dir'),
-      commandDeps(),
-    )
+    expect(runCommand).toHaveBeenCalledWith('app:folder.create', target, 'dir')
   })
 
   it('make a note in a folder and answer at its current position, or no path where none was made', async () => {

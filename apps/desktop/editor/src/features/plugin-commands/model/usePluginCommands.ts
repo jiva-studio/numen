@@ -13,8 +13,8 @@ import type { WelcomeAction } from '@numen/workbench'
 import {
   findShortcutKeys,
   type Command,
+  type CommandRegistry,
   type CommandTarget,
-  registerCommand,
 } from '@/entities/command'
 import type { FileKind } from '@/entities/file'
 import { getNamedIcon } from '@/shared/ui/icons'
@@ -48,12 +48,20 @@ export const createCommandNoteReader =
     }
   }
 
+/** What `usePluginCommands` reads beyond the host: the context of the conditions and the shared handlers. */
+export interface PluginCommandsExtras {
+  readonly context?: WindowWhenContext
+  readonly getHandlers?: () => readonly HandlerDeclaration[] | undefined
+}
+
 export function usePluginCommands(
+  registry: Pick<CommandRegistry, 'register'>,
   getCommandNote: ReturnType<typeof createCommandNoteReader>,
   pluginHost: PluginHost | undefined,
-  context: WindowWhenContext = createEmptyWhenContext(),
-  getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
+  extras: PluginCommandsExtras = {},
 ) {
+  const context = extras.context ?? createEmptyWhenContext()
+  const getHandlers = extras.getHandlers ?? (() => [])
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.commands.getPaletteCommands() ?? []
   const { getSharedCommands, getSharedEntries } = createSharedCommands(getHandlers, isWhenAvailable)
@@ -106,7 +114,7 @@ export function usePluginCommands(
       (list) => {
         for (const unregister of unregisterAll) unregister()
         unregisterAll = list.map((cmd) =>
-          registerCommand(cmd.id, async (invocation) => {
+          registry.register(cmd.id, async (invocation) => {
             const note = await getCommandNote(invocation.target)
             if (invocation.values) {
               await pluginHost.commands.executeCommand(cmd.id, note, { values: invocation.values })

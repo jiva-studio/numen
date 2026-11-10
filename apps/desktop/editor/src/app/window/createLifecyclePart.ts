@@ -2,6 +2,7 @@
  * How the window starts and stops: the order its parts start in, the tabs it opens with, and when a
  * window made for a detach closes.
  */
+import type { WindowSettings } from './createWindowServices'
 import { formatError } from '@/shared/api/errors'
 import type { Ref } from 'vue'
 import type { PluginLoader } from '@numen/plugin-loader'
@@ -12,7 +13,6 @@ import type { MessageWriter } from '@/shared/model/notices/messages'
 import { getFrontendPluginIds } from '../plugins/pluginSupport'
 import type { createNoteEditors } from '../tabs/createNoteEditors'
 import type { WindowCore } from './windowCore'
-import type { useSettings } from '@/pages/settings'
 import { createAppBootstrap } from '../bootstrap/createAppBootstrap'
 import type { useVaults } from '@/entities/vault'
 import type { WindowDisplay } from '@/features/window-display'
@@ -21,7 +21,7 @@ import { closeWindow, closeWindowWhenEmpty } from '@/entities/window'
 interface AppLifecycleDeps {
   vaultsModule: ReturnType<typeof useVaults>
   windowTabs: WindowTabs
-  settings: ReturnType<typeof useSettings>
+  settings: WindowSettings
   window: WindowDisplay
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader: PluginLoader

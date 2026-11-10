@@ -30,7 +30,6 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/entities/command', async (importOriginal) => ({
   ...(await importOriginal<typeof CommandModule>()),
-  registerCommand: vi.fn(),
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
 }))
 vi.mock('@/features/command-palette', () => ({
@@ -124,6 +123,7 @@ function setup(
     knows: {},
     paletteLists: {},
     runs: {},
+    registry: { register: vi.fn(), get: () => undefined },
     coverage: () => ({}),
     settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage,
