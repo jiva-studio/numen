@@ -102,7 +102,7 @@ import {
   type CardModel,
   type DeckCard,
   type DeckSection,
-} from '@plugins/views-flashcards-studio/frontend/ui/cards'
+} from '@plugins/views-flashcards-studio/frontend/lib/cards'
 import { Agent } from '@plugins/views-agent-chat/frontend/agent'
 import type { AgentModelOption } from '@plugins/views-agent-chat/frontend/message-composer'
 import type { Turn } from '@plugins/views-agent-chat/frontend/thread'
@@ -382,7 +382,6 @@ const notesByPath = reactive<Record<string, VaultNoteRecord>>(
 
 const ENTROPY_PATH = 'physics/Entropy.md'
 
-/** The note at a path, or the entropy note where there is none. */
 function getNoteOrEntropy(path: string): VaultNoteRecord {
   const note = notesByPath[path] ?? notesByPath[ENTROPY_PATH]
   if (!note) throw new Error(`the demo vault has no note at ${ENTROPY_PATH}`)
@@ -503,10 +502,8 @@ const PDF_DOCS: Readonly<Record<typeof BOLTZMANN_PATH | typeof SHANNON_PATH, Pdf
 
 const PDF_BY_PATH: ReadonlyMap<string, PdfDoc> = new Map(Object.entries(PDF_DOCS))
 
-/** The document at a path; a path of no document reads as the first one. */
 const getPdfDoc = (path: string): PdfDoc => PDF_BY_PATH.get(path) ?? PDF_DOCS[BOLTZMANN_PATH]
 
-/** Writes the failure of a call that nothing waits for: the demo window has no other place to show it. */
 const logFailure = (error: unknown): void => {
   console.error(error)
 }
@@ -928,7 +925,6 @@ const noteTabPaths = reactive<Record<string, string>>({
   [PRIMARY_NOTE_TAB]: 'physics/Entropy.md',
 })
 
-/** The note a note tab shows, and nothing for a tab of another kind. */
 function findTabNote(tabId: string): VaultNoteRecord | undefined {
   const path = noteTabPaths[tabId]
   return path === undefined ? undefined : notesByPath[path]
@@ -1466,7 +1462,8 @@ async function runMenuCommand(command: string, target: RowTarget): Promise<strin
     return createUntitledInVault(target.path)
   if (command === DEMO_COMMAND.createFolder && target.isFolder)
     return createFolderInVault(target.path)
-  const paths = command === DEMO_COMMAND.removeFile ? [target.path, ...target.others] : [target.path]
+  const paths =
+    command === DEMO_COMMAND.removeFile ? [target.path, ...target.others] : [target.path]
   for (const p of paths) runVaultCommand(command, p, 'files')
   return ''
 }
@@ -1781,9 +1778,11 @@ const plexState = createPlexTab(plexView, {
     join: (fromPath, toPath, side) => {
       const relation: PlexRelation =
         side.role === 'parent' || side.role === 'jump' ? side.role : 'child'
-      return Promise.resolve(joinNotesInVault(fromPath, toPath, relation, side.label)
-        ? asValue(undefined)
-        : asFailure('notFound'))
+      return Promise.resolve(
+        joinNotesInVault(fromPath, toPath, relation, side.label)
+          ? asValue(undefined)
+          : asFailure('notFound'),
+      )
     },
     getConnection: (first, second, type = '') => {
       const firstLabel = EDGE_LABELS[`${first}->${second}`]
@@ -1794,17 +1793,21 @@ const plexState = createPlexTab(plexView, {
         (notesByPath[first]?.jumps ?? []).includes(second) ||
         (notesByPath[second]?.jumps ?? []).includes(first)
       const role = isFirstParent ? 'child' : isSecondParent ? 'parent' : isJump ? 'jump' : null
-      return Promise.resolve(asValue({
-        first,
-        second,
-        role,
-        type,
-        firstSide:
-          isFirstParent || isJump ? { label: firstLabel ?? '', marker: 'arrow', reason: '' } : null,
-        secondSide: isSecondParent
-          ? { label: secondLabel ?? '', marker: 'arrow', reason: '' }
-          : null,
-      }))
+      return Promise.resolve(
+        asValue({
+          first,
+          second,
+          role,
+          type,
+          firstSide:
+            isFirstParent || isJump
+              ? { label: firstLabel ?? '', marker: 'arrow', reason: '' }
+              : null,
+          secondSide: isSecondParent
+            ? { label: secondLabel ?? '', marker: 'arrow', reason: '' }
+            : null,
+        }),
+      )
     },
     saveConnection: (connection) => {
       const { first, second } = connection
@@ -1885,9 +1888,11 @@ const plexState = createPlexTab(plexView, {
   creatable: ['parent', 'child', 'jump'],
   searchNames: (query) => {
     const q = query.trim().toLowerCase()
-    return Promise.resolve(Object.values(notesByPath)
-      .filter((n) => !q || n.title.toLowerCase().includes(q))
-      .map((n) => ({ path: n.path, title: n.title })))
+    return Promise.resolve(
+      Object.values(notesByPath)
+        .filter((n) => !q || n.title.toLowerCase().includes(q))
+        .map((n) => ({ path: n.path, title: n.title })),
+    )
   },
 })
 
@@ -2561,10 +2566,12 @@ function runVaultCommand(command: string, targetPath: string, source: 'files' | 
       openNamingStep(role, targetPath)
     }
   } else if (command === DEMO_COMMAND.createNote) {
-    createUntitledInVault('physics').then(async (path) => {
-      await fileTree.openFolder('physics')
-      filesState.setRenamingPath(path)
-    }).catch(logFailure)
+    createUntitledInVault('physics')
+      .then(async (path) => {
+        await fileTree.openFolder('physics')
+        filesState.setRenamingPath(path)
+      })
+      .catch(logFailure)
   } else if (command === DEMO_COMMAND.renameNote) {
     if (source === 'files') {
       if (notesByPath[targetPath]) {
