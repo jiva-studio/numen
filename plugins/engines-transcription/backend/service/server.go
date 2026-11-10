@@ -24,40 +24,43 @@ const PluginID = "md.numen.engines.transcription"
 // EnvMockML names the variable that has the plugin hear every recording with the mock model.
 const EnvMockML = "NUMEN_MOCK_ML"
 
+// VaultReader is what the plugin reads of a vault: its files and its name.
+type VaultReader interface {
+	host.FileReader
+	GetVault(ctx context.Context) (domain.Vault, error)
+}
+
 // Host is what the plugin works through the host.
 type Host struct {
-	Vault host.Vault
-	Store host.Store
-	Texts host.Texts
-	Queue host.Queue
+	Vaults func(domain.VaultID) VaultReader
+	Store  host.Store
+	Texts  host.Texts
+	Queue  host.Queue
 }
 
 func openHostAt(endpoint hostcall.Endpoint) Host {
+	client := host.NewClient(endpoint)
 	return Host{
-		Vault: host.NewClient(endpoint),
-		Store: host.NewStoreClient(endpoint),
-		Texts: host.NewTextClient(endpoint),
-		Queue: host.NewQueueClient(endpoint),
+		Vaults: func(id domain.VaultID) VaultReader { return client.With(id) },
+		Store:  host.NewStoreClient(endpoint),
+		Texts:  host.NewTextClient(endpoint),
+		Queue:  host.NewQueueClient(endpoint),
 	}
 }
 
 // vaultFiles reads files through the host.
 type vaultFiles struct {
-	vault host.Vault
+	vaults func(domain.VaultID) VaultReader
 }
 
 func (f vaultFiles) ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error) {
-	reader := f.vault
-	if vault != "" {
-		reader = reader.With(vault)
-	}
-	raw, _, err := reader.Read(ctx, path)
+	raw, _, err := f.vaults(vault).Read(ctx, path)
 	return raw, err
 }
 
 // GetActiveVaultID returns the id of the vault the host shows.
 func (f vaultFiles) GetActiveVaultID(ctx context.Context) (domain.VaultID, error) {
-	shown, err := f.vault.GetVault(ctx)
+	shown, err := f.vaults("").GetVault(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -141,13 +144,13 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) error {
 	model := &models{mu: sync.Mutex{}, cfg: cfg, isMock: isMock, open: newParakeetOpener(engine.NewRuntime()), current: nil}
-	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
+	transcriber := NewTranscriber(vaultFiles{vaults: hosted.Vaults}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { model.updateConfig(values) })
 	commands, err := newCommands(transcriber)
 	if err != nil {
 		return err
 	}
-	registry, err := NewTools(transcriber, hosted.Vault).Registry()
+	registry, err := NewTools(transcriber, hosted.Vaults).Registry()
 	if err != nil {
 		return err
 	}

@@ -116,7 +116,7 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 		return NoteListOutput{}, errors.New("offset must not be negative")
 	}
 
-	paths, err := t.vault.GetPathsOfType(ctx, domain.TypeNote)
+	paths, err := t.vault.Notes.GetPathsOfType(ctx, domain.TypeNote)
 	if err != nil {
 		return NoteListOutput{}, err
 	}
@@ -130,7 +130,7 @@ func (t *Tools) listNotes(ctx context.Context, in NoteListInput) (NoteListOutput
 	start := min(in.Offset, total)
 	end := min(start+limit, total)
 	page := paths[start:end]
-	refs, err := t.vault.GetNotes(ctx, page)
+	refs, err := t.vault.Notes.GetNotes(ctx, page)
 	if err != nil {
 		return NoteListOutput{}, err
 	}
@@ -149,7 +149,7 @@ func (t *Tools) listNoteTitles(ctx context.Context, in NoteTitleListInput) (Note
 	if len(in.Paths) > maxBatch {
 		return NoteTitleListOutput{}, fmt.Errorf("%d paths given, at most %d are allowed", len(in.Paths), maxBatch)
 	}
-	refs, err := t.vault.GetNotes(ctx, in.Paths)
+	refs, err := t.vault.Notes.GetNotes(ctx, in.Paths)
 	if err != nil {
 		return NoteTitleListOutput{}, err
 	}
@@ -169,7 +169,7 @@ func (t *Tools) resolveNoteName(ctx context.Context, in NoteResolveInput) (NoteR
 	if strings.TrimSpace(in.Name) == "" {
 		return NoteResolveOutput{}, errors.New("name is required")
 	}
-	paths, err := t.vault.GetNamedPaths(ctx, in.Name)
+	paths, err := t.vault.Notes.GetNamedPaths(ctx, in.Name)
 	if err != nil {
 		return NoteResolveOutput{}, fmt.Errorf("%s cannot be resolved: %w", in.Name, err)
 	}

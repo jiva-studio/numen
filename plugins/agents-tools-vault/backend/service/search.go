@@ -57,7 +57,7 @@ func (t *Tools) searchNotes(ctx context.Context, in NoteSearchInput) (NoteSearch
 		return NoteSearchOutput{}, err
 	}
 
-	noteRefs, err := t.vault.GetNotes(ctx, candidatePaths)
+	noteRefs, err := t.vault.Notes.GetNotes(ctx, candidatePaths)
 	if err != nil {
 		return NoteSearchOutput{}, err
 	}
@@ -172,7 +172,7 @@ func (t *Tools) scoreNoteContent(
 	queryLower string,
 	words []string,
 ) (int, string, int) {
-	data, fp, err := t.vault.Read(ctx, path)
+	data, fp, err := t.vault.Files.Read(ctx, path)
 	if err != nil {
 		return 0, "", 0
 	}
@@ -227,9 +227,9 @@ func sortMatches(matches []SearchMatch) {
 }
 
 func (t *Tools) collectNotePaths(ctx context.Context) ([]string, error) {
-	paths, err := t.vault.GetPathsOfType(ctx, domain.TypeNote)
+	paths, err := t.vault.Notes.GetPathsOfType(ctx, domain.TypeNote)
 	if err == nil && len(paths) > 0 {
 		return paths, nil
 	}
-	return t.vault.GetPathsOfType(ctx, "")
+	return t.vault.Notes.GetPathsOfType(ctx, "")
 }

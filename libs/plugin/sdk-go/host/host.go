@@ -80,25 +80,14 @@ type Move struct {
 	Err error
 }
 
-// Vault is the vault the host is showing. A plugin works it through Client; tests work it through
-// hosttest.Vault.
-type Vault interface {
-	VaultSelector
-	VaultIndex
-	FileAccess
-	VaultNotes
-	CacheStore
-}
-
-// VaultSelector chooses which vault the other calls work on.
+// VaultSelector names the vault the other calls work on and the vaults of the installation. A plugin
+// that works another vault than the shown one calls With on Client and keeps the narrow interface of
+// the calls it needs on the result.
 type VaultSelector interface {
 	// GetVault names the vault, or returns ErrNoVault.
 	GetVault(ctx context.Context) (domain.Vault, error)
 	// GetVaults lists every vault in the installation.
 	GetVaults(ctx context.Context) ([]domain.Vault, error)
-	// With returns the vault with the given identity, used as the shown vault is. A call on it returns
-	// ErrUnknownVault when the installation has no such vault.
-	With(id domain.VaultID) Vault
 }
 
 // VaultIndex controls the index of a vault and reports changes to it.
@@ -136,9 +125,8 @@ type FileReader interface {
 	ReadRange(ctx context.Context, path string, start, length int) (FileRange, error)
 }
 
-// FileAccess reads and writes the files of a vault.
-type FileAccess interface {
-	FileReader
+// FileWriter writes the files of a vault.
+type FileWriter interface {
 	// Write replaces the file if it matches the baseline, and returns ErrStale if it does not.
 	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrAlreadyExists.
@@ -146,15 +134,6 @@ type FileAccess interface {
 	// Lock holds the vault's writers to this plugin until the release is called. The release returns
 	// the failure to release; the host frees a lock whose release failed after its timeout.
 	Lock(ctx context.Context) (release func() error, err error)
-}
-
-// VaultNotes reads the notes of a vault and the links between them, renames, moves and removes the
-// notes, and edits their frontmatter links.
-type VaultNotes interface {
-	NoteLookup
-	LinkLookup
-	noteArranger
-	LinkEditor
 }
 
 // NoteLookup finds notes by path, name and type.

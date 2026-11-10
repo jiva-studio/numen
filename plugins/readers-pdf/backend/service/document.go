@@ -21,7 +21,7 @@ import (
 // DocumentServer answers the document methods of the plugin API. Each call works the vault its Numen-Vault
 // header names.
 type DocumentServer struct {
-	files   host.Vault
+	vaults  func(domain.VaultID) host.FileReader
 	texts   host.Texts
 	workers *pdf.Workers
 }
@@ -50,10 +50,10 @@ func newWorkers() *pdf.Workers {
 	return workers
 }
 
-// NewDocumentServer returns a DocumentServer that reads files from files on the workers, and text
+// NewDocumentServer returns a DocumentServer that reads files from vaults on the workers, and text
 // versions from texts.
-func NewDocumentServer(files host.Vault, texts host.Texts, workers *pdf.Workers) *DocumentServer {
-	return &DocumentServer{files: files, texts: texts, workers: workers}
+func NewDocumentServer(vaults func(domain.VaultID) host.FileReader, texts host.Texts, workers *pdf.Workers) *DocumentServer {
+	return &DocumentServer{vaults: vaults, texts: texts, workers: workers}
 }
 
 // Mount registers the document methods on api and returns the first failure to mount one.
@@ -69,7 +69,7 @@ func (s *DocumentServer) GetDocument(ctx context.Context, req GetDocumentRequest
 	if req.Path == "" {
 		return GetDocumentResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
-	raw, _, err := getVault(s.files, server.GetHeader(ctx)).Read(ctx, req.Path)
+	raw, _, err := s.vaults(host.GetRequestVault(server.GetHeader(ctx))).Read(ctx, req.Path)
 	if err != nil {
 		return GetDocumentResponse{}, readVaultError(err)
 	}
@@ -105,7 +105,7 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 	if req.Path == "" {
 		return GetHighlightsResponse{}, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
-	if _, err := getVault(s.files, server.GetHeader(ctx)).StatFile(ctx, req.Path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
+	if _, err := s.vaults(host.GetRequestVault(server.GetHeader(ctx))).StatFile(ctx, req.Path); errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {
 		return GetHighlightsResponse{}, readVaultError(err)
 	}
 	if len(req.Ranges) == 0 || len(req.Ranges) > mostSpans {

@@ -13,7 +13,7 @@ import (
 // Host provides the vault and its window to the window tools. A nil field means the host offers
 // none.
 type Host struct {
-	Vault  host.Vault
+	Vault  host.FileReader
 	Window host.Window
 }
 
@@ -113,7 +113,7 @@ func newPlace(place *host.TabPlace) *Place {
 	}
 }
 
-func addNoteEditPreview(registry *tools.Registry, manager *WindowManager, vault host.Vault) error {
+func addNoteEditPreview(registry *tools.Registry, manager *WindowManager, vault host.FileReader) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "note_edit_preview",
 		Title: "Preview note edit",
@@ -155,7 +155,7 @@ func addNoteEditPreview(registry *tools.Registry, manager *WindowManager, vault 
 	})
 }
 
-func prepareDiff(ctx context.Context, in NoteEditPreviewInput, vault host.Vault) (string, int, int) {
+func prepareDiff(ctx context.Context, in NoteEditPreviewInput, vault host.FileReader) (string, int, int) {
 	if in.Diff != "" {
 		additions, deletions := CountDiffChanges(in.Diff)
 		return in.Diff, additions, deletions

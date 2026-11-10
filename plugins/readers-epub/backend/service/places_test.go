@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
@@ -34,7 +36,7 @@ func newGuidedBookServer(t *testing.T) (*BookServer, *hosttest.Vault) {
 	t.Helper()
 	files := hosttest.New("vault")
 	files.File("guided.epub", string(createGuidedEpub(t)))
-	books := NewBookServer(files)
+	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	return books, files
 }
@@ -131,7 +133,7 @@ func TestGetCfiFindsNothingInABookWithNoText(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("blank.epub", string(raw))
 	files.File("corrupt.epub", "not an epub")
-	books := NewBookServer(files)
+	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 
 	_, err := books.GetCfi(t.Context(), api.GetCfiRequest{Path: "blank.epub"})

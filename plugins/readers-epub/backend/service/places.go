@@ -24,7 +24,7 @@ func (s *BookServer) readPlacedBook(ctx context.Context, path string) (*epub.Boo
 		return nil, server.NewAPIError(server.CodeInvalidArgument, "path required")
 	}
 	vaultID := getRequestVault(ctx)
-	files := getVault(ctx, s.files)
+	files := s.vaults(getRequestVault(ctx))
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)

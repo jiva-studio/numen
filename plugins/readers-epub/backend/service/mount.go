@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
 
@@ -27,7 +28,7 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
-	return mount(s, NewBookServer(files), NewTextServer(files, texts, store, queue))
+	return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue))
 }
 
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
@@ -80,6 +81,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		return mount(s, NewBookServer(files), NewTextServer(files, texts, store, queue))
+		return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue))
 	})
 }

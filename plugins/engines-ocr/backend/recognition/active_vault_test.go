@@ -15,7 +15,7 @@ import (
 
 // switchableVault is the vault the host shows, which a test sets to another vault of the host.
 type switchableVault struct {
-	host.Vault
+	*hosttest.Vault
 
 	mu     sync.Mutex
 	active domain.VaultID
@@ -27,7 +27,7 @@ func (v *switchableVault) setActive(id domain.VaultID) {
 	v.active = id
 }
 
-func (v *switchableVault) getActive() host.Vault {
+func (v *switchableVault) getActive() *hosttest.Vault {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	return v.Vault.With(v.active)
@@ -51,7 +51,12 @@ func TestStartKeepsTheVaultActiveOnEntry(t *testing.T) {
 	s.vault.Beside(chemistry)
 	files := &switchableVault{Vault: s.vault, active: "Physics"}
 	run, err := recognition.New(
-		recognition.Host{Vault: files, Store: s.store, Texts: s.texts, Queue: s.queue},
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files {
+			if id == "" {
+				return files
+			}
+			return s.vault.With(id)
+		}, Store: s.store, Texts: s.texts, Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
 	)
 	if err != nil {

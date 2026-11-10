@@ -15,7 +15,7 @@ func setupTestVault() (*hosttest.Vault, *service.Tools) {
 	v.File("Entropy.md", "---\nid: 01H7X1234567890ABCDEFGHJK\ntitle: Entropy Concept\n---\n# Entropy\nEntropy is thermodynamic disorder.\n## Second Law\nEntropy increases.\nSee also [[Heat]].")
 	v.File("Heat.md", "# Heat\nHeat flows from hot to cold.\nReferences [[Entropy]].")
 	v.File("data.txt", "line 1\nline 2\nline 3\n")
-	return v, service.New(v)
+	return v, service.New(vaultsOf(v))
 }
 
 func TestNoteRead(t *testing.T) {

@@ -59,7 +59,7 @@ func newRecordedSearch(t *testing.T, vault *hosttest.Vault, passages []host.Pass
 	search := hosttest.NewSearch(testVault)
 	search.SetIndexedPassages(passages)
 	calls := &searchCalls{}
-	registry, err := service.New(vault).
+	registry, err := service.New(vaultsOf(vault)).
 		WithLibrary(hosttest.NewTexts(testVault, readerID), recordingSearch{Search: search, calls: calls}).
 		Registry()
 	if err != nil {

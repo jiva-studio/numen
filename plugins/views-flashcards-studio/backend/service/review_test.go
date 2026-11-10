@@ -59,7 +59,7 @@ func newAPIOn(tb testing.TB, notes ...map[string]string) (*API, []domain.Vault, 
 	for _, one := range notes {
 		target = append(target, installation.Add(tb, one))
 	}
-	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store(), Now: vaulttest.NewClock()})
+	backend := New(Config{Vaults: vaulttest.Vaults(installation.Host), Store: installation.Host.Store(), Now: vaulttest.NewClock()})
 	return &reviewHandler{Backend: backend}, target, installation
 }
 

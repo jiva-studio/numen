@@ -26,7 +26,7 @@ var errReadFile = errors.New("read file")
 // A bookCache keeps open the most recently read books, each opened once while its
 // file is unchanged.
 type bookCache struct {
-	readFile func(ctx context.Context, files host.Vault, path string) ([]byte, domain.FileStat, error)
+	readFile func(ctx context.Context, files host.FileReader, path string) ([]byte, domain.FileStat, error)
 
 	mu       sync.Mutex
 	books    []*cachedBook
@@ -35,7 +35,7 @@ type bookCache struct {
 
 func newBookCache() *bookCache {
 	return &bookCache{
-		readFile: func(ctx context.Context, files host.Vault, path string) ([]byte, domain.FileStat, error) {
+		readFile: func(ctx context.Context, files host.FileReader, path string) ([]byte, domain.FileStat, error) {
 			return files.Read(ctx, path)
 		},
 		mu:       sync.Mutex{},
@@ -55,7 +55,7 @@ type cachedBook struct {
 	evicted bool
 }
 
-func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domain.VaultID, path string) (*cachedBook, error) {
+func (c *bookCache) acquire(ctx context.Context, files host.FileReader, vaultID domain.VaultID, path string) (*cachedBook, error) {
 	info, err := files.StatFile(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errReadFile, err)
@@ -95,7 +95,7 @@ func (c *bookCache) acquire(ctx context.Context, files host.Vault, vaultID domai
 	return book, nil
 }
 
-func (c *bookCache) openBook(ctx context.Context, files host.Vault, key, path string) (*cachedBook, error) {
+func (c *bookCache) openBook(ctx context.Context, files host.FileReader, key, path string) (*cachedBook, error) {
 	raw, info, err := c.readFile(ctx, files, path)
 	if err != nil {
 		// gomutants:disable-next-line ERRORF_WRAP reason="errReadFile is the primary wrapped sentinel error"

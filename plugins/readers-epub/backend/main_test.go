@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 
@@ -118,7 +120,7 @@ func TestBookServerGetBookAndMarkup(t *testing.T) {
 	files := hosttest.New("vault")
 	files.File("test.epub", string(epubBytes))
 
-	books := service.NewBookServer(files)
+	books := service.NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	ctx := t.Context()
 
 	// Test GetBook
@@ -171,7 +173,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 
 	files := hosttest.New("vault")
 	files.File("inside.epub", string(epubBytes))
-	books := service.NewBookServer(files)
+	books := service.NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	ctx := t.Context()
 
 	// 1. Path outside vault should fail with permission denied

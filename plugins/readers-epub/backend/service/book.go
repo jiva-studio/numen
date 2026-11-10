@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/api"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
@@ -21,7 +22,7 @@ var errChanged = errors.New("the file changed")
 const mostListed = 1000
 
 func (s *BookServer) readBookFile(ctx context.Context, path string) ([]byte, error) {
-	raw, _, err := getVault(ctx, s.files).Read(ctx, path)
+	raw, _, err := s.vaults(getRequestVault(ctx)).Read(ctx, path)
 	if err != nil {
 		return nil, readVaultError(path, err)
 	}
@@ -31,7 +32,7 @@ func (s *BookServer) readBookFile(ctx context.Context, path string) ([]byte, err
 // BookServer implements the methods of the md.numen.readers.epub service. Each call works the vault its context
 // names with withRequestVault.
 type BookServer struct {
-	files host.Vault
+	vaults func(domain.VaultID) host.FileReader
 
 	books *bookCache
 
@@ -39,12 +40,12 @@ type BookServer struct {
 	placed placedBook
 }
 
-// NewBookServer returns a BookServer that reads the vault of a request through files.
-func NewBookServer(files host.Vault) *BookServer {
+// NewBookServer returns a BookServer that reads the vault of a request through vaults.
+func NewBookServer(vaults func(domain.VaultID) host.FileReader) *BookServer {
 	return &BookServer{
-		files: files,
-		books: newBookCache(),
-		mu:    sync.Mutex{},
+		vaults: vaults,
+		books:  newBookCache(),
+		mu:     sync.Mutex{},
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="placedBook starts with nil book so size and mtime are ignored until populated"
 		placed: placedBook{key: "", size: 0, mtime: 0, book: nil},
 	}
@@ -126,7 +127,7 @@ func (s *BookServer) ReadBookEntry(ctx context.Context, req api.ReadBookEntryReq
 	if req.Entry == "" {
 		return api.ReadBookEntryResponse{}, server.NewAPIError(server.CodeInvalidArgument, "entry required")
 	}
-	files := getVault(ctx, s.files)
+	files := s.vaults(getRequestVault(ctx))
 	book, err := s.books.acquire(ctx, files, getRequestVault(ctx), req.Path)
 	if err != nil {
 		if errors.Is(err, errCacheClosed) {

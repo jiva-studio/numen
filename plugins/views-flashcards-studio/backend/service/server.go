@@ -10,8 +10,10 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -46,8 +48,8 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	})
 }
 
-func mount(s *server.Server, vault host.Vault, store host.Store) error {
-	backend := New(Config{Vault: vault, Store: store, DayStart: nil, Now: clock.System{}, Cores: 0, Scheduler: nil})
+func mount(s *server.Server, client *host.Client, store host.Store) error {
+	backend := New(Config{Vaults: vaultsOf(client), Store: store, DayStart: nil, Now: clock.System{}, Cores: 0, Scheduler: nil})
 	s.SetConfigure(func(_ context.Context, values map[string]string, _ server.Secrets) error {
 		backend.Configure(values)
 		return nil
@@ -228,3 +230,12 @@ func (b *Backend) Presets() PresetsAPI { return &presetsHandler{Backend: b} }
 
 // Review returns the API of the review window.
 func (b *Backend) Review() ReviewAPI { return &reviewHandler{Backend: b} }
+
+// vaultsOf gives the ports' calls on the vault of the client with an identity; the empty identity is the
+// vault the host shows.
+func vaultsOf(client *host.Client) func(domain.VaultID) hostports.Vault {
+	return func(id domain.VaultID) hostports.Vault {
+		on := client.With(id)
+		return hostports.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Cache: on, Selector: on}
+	}
+}

@@ -36,9 +36,9 @@ func TestImportOfAnAddressWhoseLinkNoteMovedOpensTheMovedNote(t *testing.T) {
 		t.Fatal(err)
 	}
 	first := runImport(t, commands, videoAddress)
-	vault, isFake := hosted.Vault.(*hosttest.Vault)
+	vault, isFake := hosted.Vaults("").Files.(*hosttest.Vault)
 	if !isFake {
-		t.Fatalf("the vault is %T", hosted.Vault)
+		t.Fatalf("the vault is %T", hosted.Vaults("").Files)
 	}
 	content, _ := vault.Content(first.OpenedPath)
 	vault.Remove(first.OpenedPath)

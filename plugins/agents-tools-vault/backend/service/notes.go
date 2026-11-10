@@ -47,11 +47,11 @@ func (t *Tools) resolveNotePath(ctx context.Context, p string) string {
 	if strings.HasSuffix(p, ".md") {
 		return p
 	}
-	named, err := t.vault.GetNamedPaths(ctx, p)
+	named, err := t.vault.Notes.GetNamedPaths(ctx, p)
 	if err == nil && len(named) > 0 {
 		return named[0]
 	}
-	if _, err := t.vault.StatFile(ctx, p+".md"); err == nil {
+	if _, err := t.vault.Files.StatFile(ctx, p+".md"); err == nil {
 		return p + ".md"
 	}
 	return p
@@ -62,7 +62,7 @@ func (t *Tools) readNote(ctx context.Context, in NoteReadInput) (NoteReadOutput,
 		return NoteReadOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
-	data, fp, err := t.vault.Read(ctx, path)
+	data, fp, err := t.vault.Files.Read(ctx, path)
 	if err != nil {
 		return NoteReadOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
@@ -122,7 +122,7 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 		return NoteWriteOutput{}, err
 	}
 
-	if err := t.vault.Scan(ctx, []string{path}); err != nil {
+	if err := t.vault.Index.Scan(ctx, []string{path}); err != nil {
 		return NoteWriteOutput{}, fmt.Errorf("%s cannot be indexed: %w", path, err)
 	}
 
@@ -145,7 +145,7 @@ func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr stri
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	newFp, err := t.vault.Write(ctx, path, []byte(content), baseline)
+	newFp, err := t.vault.Writer.Write(ctx, path, []byte(content), baseline)
 	if errors.Is(err, host.ErrStale) {
 		return domain.FileStat{}, describeWriteError(path, err)
 	}
@@ -156,17 +156,17 @@ func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr stri
 }
 
 func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain.FileStat, error) {
-	writtenFp, err := t.vault.Write(ctx, path, []byte(content), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}})
+	writtenFp, err := t.vault.Writer.Write(ctx, path, []byte(content), domain.FileStat{Path: "", Kind: "", Size: 0, ModTime: time.Time{}})
 	if err == nil {
 		return writtenFp, nil
 	}
 	if !errors.Is(err, host.ErrNotExist) {
 		return domain.FileStat{}, fmt.Errorf("%s cannot be written: %w", path, err)
 	}
-	if err := t.vault.Create(ctx, path, []byte(content)); err != nil {
+	if err := t.vault.Writer.Create(ctx, path, []byte(content)); err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s cannot be created: %w", path, err)
 	}
-	newFp, err := t.vault.StatFile(ctx, path)
+	newFp, err := t.vault.Files.StatFile(ctx, path)
 	if err != nil {
 		return domain.FileStat{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}
@@ -208,7 +208,7 @@ func (t *Tools) listNoteHeadings(ctx context.Context, in NoteHeadingListInput) (
 		return NoteHeadingListOutput{}, errors.New("path is required")
 	}
 	path := t.resolveNotePath(ctx, in.Path)
-	data, fp, err := t.vault.Read(ctx, path)
+	data, fp, err := t.vault.Files.Read(ctx, path)
 	if err != nil {
 		return NoteHeadingListOutput{}, fmt.Errorf("%s cannot be read: %w", path, err)
 	}

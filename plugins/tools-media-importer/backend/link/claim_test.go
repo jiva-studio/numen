@@ -130,7 +130,7 @@ func (x *hookTexts) PutVersion(ctx context.Context, req host.TextPut) (domain.Te
 }
 
 type hookVault struct {
-	host.Vault
+	*hosttest.Vault
 	getVaultErr error
 }
 
@@ -365,7 +365,13 @@ func createTestLinks() (l *Links, v *hosttest.Vault, hv *hookVault, hs *hookStor
 		copyBytes: []byte("data"),
 	}
 	copyMaxSize = new(int64)
-	l = New(Host{Vault: hv, Store: hs, Texts: ht, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
+	l = New(Host{Vaults: func(id domain.VaultID) Vault {
+		if id == "" {
+			return Vault{Files: hv, Writer: hv}
+		}
+		other := v.With(id)
+		return Vault{Files: other, Writer: other}
+	}, Store: hs, Texts: ht, Queue: hq, Clock: clock.NewFake(time.Unix(1_700_000_000, 0))},
 		func() Fetcher { return sf },
 		func() Settings { return Settings{CopyMaxSize: *copyMaxSize} })
 	return l, v, hv, hs, ht, hq, sf, copyMaxSize

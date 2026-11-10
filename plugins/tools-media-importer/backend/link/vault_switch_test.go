@@ -84,7 +84,14 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 	texts := hosttest.NewTexts(mills.Vault().ID, pluginID)
 	fetched := &sites{clip: bytes.Repeat([]byte("frame "), 100), started: make(chan struct{}), gate: make(chan struct{})}
 	links := link.New(link.Host{
-		PluginID: pluginID, Vault: currentVault{Vault: mills, current: current}, Store: currentStore{Store: mills.Store(), current: current},
+		PluginID: pluginID, Vaults: func(id domain.VaultID) link.Vault {
+			if id == "" {
+				current := currentVault{Vault: mills, current: current}
+				return link.Vault{Files: current, Writer: current}
+			}
+			other := mills.With(id)
+			return link.Vault{Files: other, Writer: other}
+		}, Store: currentStore{Store: mills.Store(), current: current},
 		Texts: texts, Queue: hosttest.NewQueue(), Clock: clock.NewFake(time.Unix(1_700_000_000, 0)),
 	}, func() link.Fetcher { return fetched }, func() link.Settings { return link.Settings{} })
 	t.Cleanup(links.Close)

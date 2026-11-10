@@ -110,11 +110,10 @@ func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (doma
 
 func (t textsOfVault) With(id domain.VaultID) host.Texts {
 	texts, isTexts := t.Texts.With(id).(*hosttest.Texts)
-	vault, isVault := t.vault.With(id).(*hosttest.Vault)
-	if !isTexts || !isVault {
+	if !isTexts {
 		return t.Texts.With(id)
 	}
-	return textsOfVault{Texts: texts, vault: vault}
+	return textsOfVault{Texts: texts, vault: t.vault.With(id)}
 }
 
 // scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
@@ -152,7 +151,7 @@ func newScene(t *testing.T) *scene {
 		s.texts.File(path, []byte(raw))
 	}
 	run, err := recognition.New(
-		recognition.Host{Vault: s.vault, Store: s.store, Texts: textsOfVault{Texts: s.texts, vault: s.vault}, Queue: s.queue},
+		recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return s.vault.With(id) }, Store: s.store, Texts: textsOfVault{Texts: s.texts, vault: s.vault}, Queue: s.queue},
 		func(context.Context) (recognition.Recogniser, error) { return s.recogniser, nil },
 	)
 	if err != nil {
@@ -382,12 +381,12 @@ func TestRecogniseFileDeletedDuringRecognitionReportsNoTask(t *testing.T) {
 func TestNewRequiresHostAndRecogniser(t *testing.T) {
 	v := hosttest.New("Physics")
 	open := func(context.Context) (recognition.Recogniser, error) { return &pages{}, nil }
-	full := recognition.Host{Vault: v, Store: v.Store(), Texts: hosttest.NewTexts("Physics", pluginID), Queue: hosttest.NewQueue()}
+	full := recognition.Host{Vaults: func(id domain.VaultID) recognition.Files { return v.With(id) }, Store: v.Store(), Texts: hosttest.NewTexts("Physics", pluginID), Queue: hosttest.NewQueue()}
 	for name, h := range map[string]recognition.Host{
 		"no vault": {Store: full.Store, Texts: full.Texts, Queue: full.Queue},
-		"no store": {Vault: full.Vault, Texts: full.Texts, Queue: full.Queue},
-		"no texts": {Vault: full.Vault, Store: full.Store, Queue: full.Queue},
-		"no queue": {Vault: full.Vault, Store: full.Store, Texts: full.Texts},
+		"no store": {Vaults: full.Vaults, Texts: full.Texts, Queue: full.Queue},
+		"no texts": {Vaults: full.Vaults, Store: full.Store, Queue: full.Queue},
+		"no queue": {Vaults: full.Vaults, Store: full.Store, Texts: full.Texts},
 	} {
 		if _, err := recognition.New(h, open); err == nil {
 			t.Errorf("%s: a recognition was made", name)

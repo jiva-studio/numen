@@ -187,7 +187,7 @@ func (t *Tools) getTitles(ctx context.Context, found []host.Passage) (map[string
 			notes = append(notes, passage.Path)
 		}
 	}
-	refs, err := t.vault.GetNotes(ctx, notes)
+	refs, err := t.vault.Notes.GetNotes(ctx, notes)
 	if err != nil {
 		return nil, fmt.Errorf("read the titles of the notes: %w", err)
 	}
@@ -261,7 +261,7 @@ func getReadLength(in LibraryReadInput) int {
 }
 
 func (t *Tools) readPlainText(ctx context.Context, in LibraryReadInput) (LibraryReadOutput, error) {
-	read, err := t.vault.ReadRange(ctx, in.Path, in.Start, getReadLength(in))
+	read, err := t.vault.Files.ReadRange(ctx, in.Path, in.Start, getReadLength(in))
 	if errors.Is(err, host.ErrNotText) {
 		return LibraryReadOutput{}, fmt.Errorf("%s has no text version; a recognition or a transcription creates one", in.Path)
 	}

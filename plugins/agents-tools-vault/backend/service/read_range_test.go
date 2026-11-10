@@ -48,7 +48,7 @@ func newRangeVault(v *hosttest.Vault) rangeVault {
 	}
 }
 
-func (r rangeVault) With(domain.VaultID) host.Vault { return r }
+func (r rangeVault) With(domain.VaultID) rangeVault { return r }
 
 func (r rangeVault) ReadRange(ctx context.Context, filePath string, start, length int) (host.FileRange, error) {
 	r.calls.mu.Lock()
@@ -134,7 +134,7 @@ func newRangeLibrary(t *testing.T) (library, rangeVault, *textCalls, *tools.Regi
 	l := newLibrary(t)
 	vault := newRangeVault(l.vault)
 	counted := &textCalls{}
-	registry, err := service.New(vault).WithLibrary(countingTexts{Texts: l.texts, calls: counted}, l.search).Registry()
+	registry, err := service.New(vault.vaults()).WithLibrary(countingTexts{Texts: l.texts, calls: counted}, l.search).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -323,7 +323,7 @@ func (r repeatingTexts) ReadText(ctx context.Context, path string, id domain.Tex
 func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing.T) {
 	l := newLibrary(t)
 	l.texts.SetPageSize(2)
-	registry, err := service.New(l.vault).WithLibrary(l.texts, l.search).Registry()
+	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(l.texts, l.search).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,7 +342,7 @@ func TestLibraryReadOfAPageStartingOnTheSecondHostPageReturnsThatPage(t *testing
 
 func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.T) {
 	l := newLibrary(t)
-	registry, err := service.New(l.vault).WithLibrary(repeatingTexts{Texts: l.texts}, l.search).Registry()
+	registry, err := service.New(vaultsOf(l.vault)).WithLibrary(repeatingTexts{Texts: l.texts}, l.search).Registry()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,5 +350,13 @@ func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.
 	failure := callFailure(t, registry, testVault, "library_read", `{"path":"`+guidePath+`","page":3}`, nil)
 	if want := `returned the page at "1" twice`; !strings.Contains(failure, want) {
 		t.Errorf("library_read over a host that repeats the cursor 1 gave %q, want it to contain %q", failure, want)
+	}
+}
+
+// vaults gives the calls on the vault with an identity, all through r.
+func (r rangeVault) vaults() func(domain.VaultID) service.Vault {
+	return func(id domain.VaultID) service.Vault {
+		on := r.With(id)
+		return service.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
 	}
 }

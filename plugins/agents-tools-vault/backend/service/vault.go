@@ -38,16 +38,16 @@ func (t *Tools) getVaultInfo(ctx context.Context, in VaultInfoInput) (VaultInfoO
 		if err != nil {
 			return VaultInfoOutput{}, err
 		}
-		v = t.host.With(target.ID)
+		v = t.vaults(target.ID)
 	}
 
-	info, err := v.GetVault(ctx)
+	info, err := v.Selector.GetVault(ctx)
 	if err != nil {
 		return VaultInfoOutput{}, err
 	}
 
 	noteCount := 0
-	paths, err := v.GetPathsOfType(ctx, domain.TypeNote)
+	paths, err := v.Notes.GetPathsOfType(ctx, domain.TypeNote)
 	if err == nil {
 		noteCount = len(paths)
 	}

@@ -16,10 +16,10 @@ import (
 
 func newCountingServer(t *testing.T, files *hosttest.Vault) (*BookServer, *atomic.Int64) {
 	t.Helper()
-	books := NewBookServer(files)
+	books := NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) })
 	t.Cleanup(books.Close)
 	var opens atomic.Int64
-	books.books.readFile = func(ctx context.Context, v host.Vault, path string) ([]byte, domain.FileStat, error) {
+	books.books.readFile = func(ctx context.Context, v host.FileReader, path string) ([]byte, domain.FileStat, error) {
 		opens.Add(1)
 		return v.Read(ctx, path)
 	}

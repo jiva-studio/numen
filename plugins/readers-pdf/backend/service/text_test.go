@@ -74,7 +74,7 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
 	texts.SetStore(pluginID, files.Store())
-	server := NewTextServer(files, texts, files.Store(), hosttest.NewQueue(), newTestWorkers(t))
+	server := NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, files.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	return texts, server, raw
 }
@@ -298,7 +298,7 @@ func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 }
 
 func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
-	return NewDocumentServer(server.files, texts, server.workers)
+	return NewDocumentServer(func(id domain.VaultID) host.FileReader { return server.vaults(id) }, texts, server.workers)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
@@ -317,7 +317,7 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	}
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue(), newTestWorkers(t))
+	server := NewTextServer(func(id domain.VaultID) vaultFiles { return physics.With(id) }, texts, physics.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 
 	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
@@ -358,7 +358,7 @@ func TestTextServerLifecycleAndVaultStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts.SetStore(pluginID, files.Store())
-	srv := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
+	srv := NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, files.Store(), queue, newTestWorkers(t))
 
 	if err := srv.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)

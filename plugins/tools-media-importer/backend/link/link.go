@@ -68,10 +68,24 @@ type Clock interface {
 	Now() time.Time
 }
 
+// Files is what the links read of a vault: its link notes, its name and its index.
+type Files interface {
+	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
+	GetVault(ctx context.Context) (domain.Vault, error)
+	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
+	Scan(ctx context.Context, paths []string) error
+}
+
+// Vault is the calls the links make on one vault, each through the narrow interface it needs.
+type Vault struct {
+	Files  Files
+	Writer host.FileWriter
+}
+
 // Host is what the plugin works through the host.
 type Host struct {
 	PluginID string
-	Vault    host.Vault
+	Vaults   func(domain.VaultID) Vault
 	Store    host.Store
 	Texts    host.Texts
 	Queue    host.Queue
@@ -134,7 +148,7 @@ func (l *Links) Wait() { l.wg.Wait() }
 
 // Link is one link note. Key names the text stored for its address, and URL is the url property as
 // the note writes it, the root of its text version. Vault is the identity of the vault the note is
-// in, read from the host when the note is read or made, so the work on a link of the shown vault is
+// in, read from the host when the note is read or made, so the work on a link of the current vault is
 // keyed as that vault's and not as no vault.
 type Link struct {
 	Vault   domain.VaultID
@@ -146,10 +160,10 @@ type Link struct {
 
 // Read is the link at a path of the vault the host shows.
 func (l *Links) Read(ctx context.Context, path string) (Link, error) {
-	return readLink(ctx, l.host.Vault, path)
+	return readLink(ctx, l.host.Vaults("").Files, path)
 }
 
-func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) {
+func readLink(ctx context.Context, vault Files, path string) (Link, error) {
 	if !strings.EqualFold(pathpkg.Ext(path), domain.NoteExtension) {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)
 	}
@@ -226,14 +240,14 @@ func (l *Links) Create(ctx context.Context, vault domain.VaultID, folder, raw st
 		}
 	}
 	content := doc.Bytes()
-	if err := target.Create(ctx, path, content); err != nil {
+	if err := target.Writer.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
 	// The index takes the note in at once, so a lookup by type finds it before the watch reports it.
-	if err := target.Scan(ctx, []string{path}); err != nil {
+	if err := target.Files.Scan(ctx, []string{path}); err != nil {
 		return Link{}, err
 	}
-	return newLinkIn(ctx, target, path, parsed, content)
+	return newLinkIn(ctx, target.Files, path, parsed, content)
 }
 
 // FindOrCreate returns the link note of the address in a vault, wherever it is, and true; it calls
@@ -244,7 +258,7 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	if err != nil {
 		return Link{}, false, err
 	}
-	if found, isFound, err := l.findByAddress(ctx, l.getVaultByID(vault), parsed); err != nil || isFound {
+	if found, isFound, err := l.findByAddress(ctx, l.getVaultByID(vault).Files, parsed); err != nil || isFound {
 		return found, isFound, err
 	}
 	made, err := l.Create(ctx, vault, folder, raw)
@@ -257,7 +271,7 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 		return Link{}, false, err
 	}
 	path := pathpkg.Join(folder, name+domain.NoteExtension)
-	found, err := readLink(ctx, l.getVaultByID(vault), path)
+	found, err := readLink(ctx, l.getVaultByID(vault).Files, path)
 	if err != nil && !errors.Is(err, ErrNotALink) {
 		return Link{}, false, err
 	}
@@ -267,7 +281,7 @@ func (l *Links) FindOrCreate(ctx context.Context, vault domain.VaultID, folder, 
 	return found, true, nil
 }
 
-func (l *Links) findByAddress(ctx context.Context, vault host.Vault, parsed address.URL) (Link, bool, error) {
+func (l *Links) findByAddress(ctx context.Context, vault Files, parsed address.URL) (Link, bool, error) {
 	paths, err := vault.GetPathsOfType(ctx, NoteType)
 	if err != nil {
 		return Link{}, false, err
@@ -287,12 +301,7 @@ func (l *Links) findByAddress(ctx context.Context, vault host.Vault, parsed addr
 	return Link{}, false, nil
 }
 
-func (l *Links) getVaultByID(vault domain.VaultID) host.Vault {
-	if vault == "" {
-		return l.host.Vault
-	}
-	return l.host.Vault.With(vault)
-}
+func (l *Links) getVaultByID(vault domain.VaultID) Vault { return l.host.Vaults(vault) }
 
 func (l *Links) getStoreByID(vault domain.VaultID) host.Store {
 	if vault == "" {
@@ -308,7 +317,7 @@ func (l *Links) getAddress(name string) string {
 
 func (l *Links) setAddress(ctx context.Context, link Link, key, value string) error {
 	vault := l.getVault(link)
-	raw, stat, err := vault.Read(ctx, link.Path)
+	raw, stat, err := vault.Files.Read(ctx, link.Path)
 	if err != nil {
 		return err
 	}
@@ -323,11 +332,11 @@ func (l *Links) setAddress(ctx context.Context, link Link, key, value string) er
 	if bytes.Equal(content, raw) {
 		return nil
 	}
-	_, err = vault.Write(ctx, link.Path, content, stat)
+	_, err = vault.Writer.Write(ctx, link.Path, content, stat)
 	return err
 }
 
-func (l *Links) getVault(link Link) host.Vault { return l.getVaultByID(link.Vault) }
+func (l *Links) getVault(link Link) Vault { return l.getVaultByID(link.Vault) }
 
 func (l *Links) getStore(link Link) host.Store { return l.getStoreByID(link.Vault) }
 
@@ -386,7 +395,7 @@ func getWorkName(work string, link Link, key string) string {
 func (l *Links) IsCopyable(parsed address.URL) bool { return l.fetcher().CanCopy(string(parsed)) }
 
 // StartFetch fetches the text of a link in the background, and a copy of the video where one is
-// published. A failure is shown as the task of the work that failed.
+// published. A failure is current as the task of the work that failed.
 func (l *Links) StartFetch(ctx context.Context, link Link) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
@@ -399,7 +408,7 @@ func (l *Links) StartFetch(ctx context.Context, link Link) {
 	})
 }
 
-// StartCopy copies the media of a link in the background. A failure is shown as its task.
+// StartCopy copies the media of a link in the background. A failure is current as its task.
 func (l *Links) StartCopy(ctx context.Context, link Link, media download.Media) {
 	l.wg.Go(func() {
 		runCtx, cancel := l.withClosing(context.WithoutCancel(ctx))
@@ -441,7 +450,7 @@ func (l *Links) FetchText(ctx context.Context, link Link) error {
 
 // StartTextFetch shows the task of the text of a link and fetches the text in the background. It
 // returns ErrBeingFetched, and starts nothing, when another run fetches the text. A failure of the
-// fetch is shown as the error of the task.
+// fetch is current as the error of the task.
 func (l *Links) StartTextFetch(ctx context.Context, link Link) error {
 	task, err := l.beginTextFetch(ctx, link)
 	if err != nil {
@@ -530,7 +539,7 @@ func (l *Links) Copy(ctx context.Context, link Link, media download.Media) (int6
 // StartMediaCopy shows the task of the copy of the media of a link and copies them in the
 // background. Where the requested media are already stored it starts nothing and returns their size
 // and false. It returns ErrBeingFetched where another run copies the media, and ErrNotCopyable where
-// nothing copies what the address publishes. A failure of the copy is shown as the error of the task.
+// nothing copies what the address publishes. A failure of the copy is current as the error of the task.
 func (l *Links) StartMediaCopy(ctx context.Context, link Link, media download.Media) (int64, bool, error) {
 	task, size, err := l.beginCopy(ctx, link, media)
 	if err != nil || task == nil {
@@ -674,13 +683,13 @@ func (l *Links) deleteUnreferencedCopies(ctx context.Context, link Link) error {
 
 func (l *Links) listMediaAddresses(ctx context.Context, link Link) (map[string]bool, error) {
 	vault := l.getVault(link)
-	paths, err := vault.GetPathsOfType(ctx, NoteType)
+	paths, err := vault.Files.GetPathsOfType(ctx, NoteType)
 	if err != nil {
 		return nil, err
 	}
 	referred := map[string]bool{}
 	for _, path := range append(paths, link.Path) {
-		raw, _, err := vault.Read(ctx, path)
+		raw, _, err := vault.Files.Read(ctx, path)
 		if errors.Is(err, host.ErrNotExist) {
 			continue
 		}
@@ -795,7 +804,7 @@ func (w *storeWriter) send(chunk []byte) error {
 	return nil
 }
 
-func newLinkIn(ctx context.Context, vault host.Vault, path string, parsed address.URL, raw []byte) (Link, error) {
+func newLinkIn(ctx context.Context, vault Files, path string, parsed address.URL, raw []byte) (Link, error) {
 	v, err := vault.GetVault(ctx)
 	if err != nil {
 		return Link{}, err

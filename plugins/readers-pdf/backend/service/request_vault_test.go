@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
@@ -39,7 +40,7 @@ func newTwoVaults(t *testing.T) twoVaults {
 	}
 	chemistry.File("tiny.pdf", raw)
 	chemistry.SetStore(pluginID, other.Store())
-	server := NewTextServer(current, texts, current.Store(), hosttest.NewQueue(), newTestWorkers(t))
+	server := NewTextServer(func(id domain.VaultID) vaultFiles { return current.With(id) }, texts, current.Store(), hosttest.NewQueue(), newTestWorkers(t))
 	t.Cleanup(server.Close)
 	createText(t, server, TextRequest{Vault: "Chemistry", Path: "tiny.pdf"})
 	return twoVaults{current: current, other: other, texts: texts, server: server}
@@ -70,7 +71,7 @@ func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string
 
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.texts, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, v.texts, newTestWorkers(t))
 	var res GetHighlightsResponse
 
 	code := postAPI(t, documents, "GetHighlights", "Chemistry", `{"path":"tiny.pdf","ranges":[{"start":0,"end":4}]}`, &res)
@@ -85,7 +86,7 @@ func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(v.current, v.texts, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, v.texts, newTestWorkers(t))
 	var res GetDocumentResponse
 
 	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)
@@ -100,7 +101,7 @@ func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestPageServerDrawsThePageOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	pages := NewPageServer(v.current, newTestWorkers(t))
+	pages := NewPageServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, newTestWorkers(t))
 	mux := http.NewServeMux()
 	mux.Handle("GET /"+pagesPattern, pages)
 
@@ -133,7 +134,7 @@ func TestCreateTextWritesTheLayerInATurnOfTheQueue(t *testing.T) {
 		t.Fatal(err)
 	}
 	texts.SetStore(pluginID, files.Store())
-	server := NewTextServer(files, texts, files.Store(), queue, newTestWorkers(t))
+	server := NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, files.Store(), queue, newTestWorkers(t))
 	t.Cleanup(server.Close)
 
 	if err := server.CreateText(t.Context(), TextRequest{Path: "tiny.pdf"}); err != nil {

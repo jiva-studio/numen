@@ -62,7 +62,7 @@ func newGeologyVault(t *testing.T) (*hosttest.Vault, *tools.Registry) {
 	v.File("Rocks/Granite.md", "---\ntitle: Granite\n---\nA plutonic rock.\n")
 	v.File("Minerals.md", "---\ntitle: Minerals\n---\nQuartz and feldspar, found in [[Basalt]].\n")
 	v.File("Fossils.md", "Shells kept in limestone.\n")
-	registry, err := service.New(v).WithVaultList(v).Registry()
+	registry, err := service.New(vaultsOf(v)).WithVaultList(v).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -317,7 +317,7 @@ type limitedBatchVault struct {
 // errHostBatchLimit is the error of the host for a batch of more than 50 notes.
 var errHostBatchLimit = errors.New("too many notes: at most 50 per call")
 
-func (l limitedBatchVault) With(domain.VaultID) host.Vault { return l }
+func (l limitedBatchVault) With(domain.VaultID) limitedBatchVault { return l }
 
 func (l limitedBatchVault) MoveNotes(ctx context.Context, paths []string, folder string) ([]host.NoteMove, error) {
 	*l.pathCounts = append(*l.pathCounts, len(paths))
@@ -339,7 +339,7 @@ func newLimitedBatchRegistry(t *testing.T) (*tools.Registry, *[]int) {
 	t.Helper()
 	v, _ := newGeologyVault(t)
 	counts := &[]int{}
-	registry, err := service.New(limitedBatchVault{Vault: v, pathCounts: counts}).Registry()
+	registry, err := service.New(limitedBatchVault{Vault: v, pathCounts: counts}.vaults()).Registry()
 	if err != nil {
 		t.Fatalf("registry: %v", err)
 	}
@@ -486,4 +486,12 @@ func TestNoteRenameToAnEmptyTitleReturnsTheHostError(t *testing.T) {
 		t.Errorf("note_rename to an empty title gave %q, want the host's error %q", text, want)
 	}
 	requireContent(t, v, "Rocks/Basalt.md", before)
+}
+
+// vaults gives the calls on the vault with an identity, all through l.
+func (l limitedBatchVault) vaults() func(domain.VaultID) service.Vault {
+	return func(id domain.VaultID) service.Vault {
+		on := l.With(id)
+		return service.Vault{Files: on, Writer: on, Index: on, Notes: on, Links: on, Arranger: on, Editor: on, Selector: on}
+	}
 }

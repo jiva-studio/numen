@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
@@ -29,10 +30,10 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	workers := newWorkers()
-	return mount(s, files, texts, NewTextServer(files, texts, store, queue, workers), workers)
+	return mount(s, func(id domain.VaultID) host.FileReader { return files.With(id) }, texts, NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue, workers), workers)
 }
 
-func mount(s *server.Server, files host.Vault, texts host.Texts, provider *TextServer, workers *pdf.Workers) error {
+func mount(s *server.Server, files func(domain.VaultID) host.FileReader, texts host.Texts, provider *TextServer, workers *pdf.Workers) error {
 	if err := NewDocumentServer(files, texts, workers).Mount(s.NewAPI(APIService)); err != nil {
 		return err
 	}
@@ -70,6 +71,6 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 			return err
 		}
 		workers := newWorkers()
-		return mount(s, files, texts, NewTextServer(files, texts, store, queue, workers), workers)
+		return mount(s, func(id domain.VaultID) host.FileReader { return files.With(id) }, texts, NewTextServer(func(id domain.VaultID) vaultFiles { return files.With(id) }, texts, store, queue, workers), workers)
 	})
 }
