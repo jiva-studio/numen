@@ -80,8 +80,8 @@ linters:
 
     exhaustruct:
       include:
-        - .*/core/port/\w+port\.(\w+Model|Vector)$
-        - .*/notes/domain\.Address$
+        - .*/kernel/domain/embedding\.(Model|Vector)$
+        - .*/libs/note/domain\.Address$
         - github\.com/jiva-studio/numen/plugins/.*
       allow-empty-returns: true
       allow-empty-declarations: true

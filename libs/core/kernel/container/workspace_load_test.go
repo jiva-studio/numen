@@ -65,6 +65,22 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkNoWiringPackageExistsOutsideTheContainer(t, workspace)
 	})
+	t.Run("NoTypeExceedsItsLayersSize", func(t *testing.T) {
+		t.Parallel()
+		checkNoTypeExceedsItsLayersSize(t, workspace)
+	})
+	t.Run("DrivenAdaptersImportATechnology", func(t *testing.T) {
+		t.Parallel()
+		checkDrivenAdaptersImportATechnology(t, workspace)
+	})
+	t.Run("UseCasesImportOnlyDomainAndPorts", func(t *testing.T) {
+		t.Parallel()
+		checkUseCasesImportOnlyDomainAndPorts(t, workspace)
+	})
+	t.Run("EveryExhaustructPatternMatchesAType", func(t *testing.T) {
+		t.Parallel()
+		checkEveryExhaustructPatternMatchesAType(t, workspace)
+	})
 }
 
 func loadWorkspace(t *testing.T) workspacePackages {
