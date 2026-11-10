@@ -1,11 +1,21 @@
 /**
  * Everything an agent is likely to write, typeset the way the panel shows it.
  */
-import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import Prose from './Prose.vue'
 
-const onFollow = fn()
+/** Whether the browser was still free to follow each pressed link when it was reported. */
+const wasPrevented: boolean[] = []
+const onFollow = fn((_href: string, press: MouseEvent) => {
+  wasPrevented.push(press.defaultPrevented)
+})
+
+/** Keeps a pressed link from leaving the story, after the prose has reported it. */
+const keepLinksInPlace: Decorator = (story) => ({
+  components: { story },
+  template: '<div @click.prevent><story /></div>',
+})
 
 const meta = {
   title: 'Chat/Prose',
@@ -108,31 +118,33 @@ export const ReportsAPressedLink: Story = {
     links: [{ raw: '[[Tool storage]]', href: 'garden://tool-storage', text: 'Tool storage' }],
     onFollow,
   },
+  decorators: [keepLinksInPlace],
   beforeEach: () => {
     onFollow.mockClear()
+    wasPrevented.length = 0
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
 
     await userEvent.click(canvas.getByRole('link', { name: 'Tool storage' }))
     await expect(onFollow).toHaveBeenCalledTimes(1)
-    const [named, namedPress] = onFollow.mock.calls[0] as [string, MouseEvent]
-    await expect(named).toBe('garden://tool-storage')
-    await expect(namedPress.defaultPrevented).toBe(true)
+    await expect(onFollow.mock.calls[0]?.[0]).toBe('garden://tool-storage')
+    await expect(wasPrevented[0]).toBe(true)
 
     await userEvent.click(canvas.getByRole('link', { name: 'a guide' }))
     await expect(onFollow).toHaveBeenCalledTimes(2)
-    const [other, otherPress] = onFollow.mock.calls[1] as [string, MouseEvent]
-    await expect(other).toBe('#guide')
-    await expect(otherPress.defaultPrevented).toBe(false)
+    await expect(onFollow.mock.calls[1]?.[0]).toBe('#guide')
+    await expect(wasPrevented[1]).toBe(false)
   },
 }
 
 /** A press on text that is not a link reports nothing. */
 export const IgnoresAPressOnText: Story = {
   args: { text: 'Tools are kept in the shed.\n\nSee [a guide](#guide).', onFollow },
+  decorators: [keepLinksInPlace],
   beforeEach: () => {
     onFollow.mockClear()
+    wasPrevented.length = 0
   },
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByText('Tools are kept in the shed.'))
