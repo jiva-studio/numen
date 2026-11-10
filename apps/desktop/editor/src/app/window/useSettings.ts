@@ -220,7 +220,7 @@ export function useSettings({
     reportError,
   )
 
-  watch(appearance.sized, () => onSizeChanged())
+  watch(appearance.preview.sized, () => onSizeChanged())
 
   const settingPalette = createWindowSettingPalette({ rest, appearance, words })
 

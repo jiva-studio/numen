@@ -154,11 +154,11 @@ describe('a setting that changes', () => {
   it('draws the mode in the window when the event arrives', async () => {
     const { settings, feed } = create()
     await settings.start()
-    await vi.waitFor(() => expect(settings.appearance.mode.value).toBe('light'))
+    await vi.waitFor(() => expect(settings.appearance.state.mode.value).toBe('light'))
 
     change(feed, ['app', 'appearance', 'mode'], 'dark')
 
-    await vi.waitFor(() => expect(settings.appearance.mode.value).toBe('dark'))
+    await vi.waitFor(() => expect(settings.appearance.state.mode.value).toBe('dark'))
     settings.close()
   })
 

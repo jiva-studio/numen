@@ -20,16 +20,16 @@ function createWindowPreview(
     apply: (path, value) => {
       if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
       const key = path[2]
-      if (key === 'theme' && typeof value === 'string') appearance.previewTheme(value)
-      if (key === 'mode' && isMode(value)) appearance.previewMode(value)
+      if (key === 'theme' && typeof value === 'string') appearance.preview.previewTheme(value)
+      if (key === 'mode' && isMode(value)) appearance.preview.previewMode(value)
       if (key === INTERFACE_SCALE && typeof value === 'number') {
-        appearance.previewSize(INTERFACE_SCALE, value)
+        appearance.preview.previewSize(INTERFACE_SCALE, value)
       }
       if (key === TEXT_SCALE && typeof value === 'number') {
-        appearance.previewSize(TEXT_SCALE, value)
+        appearance.preview.previewSize(TEXT_SCALE, value)
       }
     },
-    restore: () => appearance.restore(),
+    restore: () => appearance.preview.restore(),
   }
 }
 

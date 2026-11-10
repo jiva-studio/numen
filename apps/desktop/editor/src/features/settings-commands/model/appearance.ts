@@ -134,7 +134,7 @@ function createThemeWatcher(deps: {
         if (!names.length) return
         for (const name of names) deps.files.delete(name)
         await deps.loadAppearance()
-        if (names.includes(deps.preview.current.value)) await deps.applyAppearance()
+        if (names.includes(deps.preview.shown.current.value)) await deps.applyAppearance()
       },
     )
 
@@ -175,9 +175,9 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
     settings: state.settings,
   })
 
-  const applyAppearance = () => applyTheme(preview.current.value, preview.half.value)
+  const applyAppearance = () => applyTheme(preview.shown.current.value, preview.shown.half.value)
   const writeSizes = createSizesWriter(styleElements, sheet)
-  const targetDrawing = watch(preview.sized, writeSizes)
+  const targetDrawing = watch(preview.shown.sized, writeSizes)
 
   const loadAppearance = createAppearanceLoader({
     core,
@@ -201,16 +201,18 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   })
 
   return {
-    ...state,
-    sized: preview.sized,
-    /** Applies the theme of a row while the keyboard is on it. */
-    previewTheme: preview.previewTheme,
-    /** Reads the tokens as the half of a row while the keyboard is on it. */
-    previewMode: preview.previewMode,
-    /** Draws the window at the size of a row once the keyboard has rested on it. */
-    previewSize: preview.previewSize,
-    /** Shows what the settings name again. */
-    restore: preview.restore,
+    state,
+    preview: {
+      sized: preview.shown.sized,
+      /** Applies the theme of a row while the keyboard is on it. */
+      previewTheme: preview.keyboard.previewTheme,
+      /** Reads the tokens as the half of a row while the keyboard is on it. */
+      previewMode: preview.keyboard.previewMode,
+      /** Draws the window at the size of a row once the keyboard has rested on it. */
+      previewSize: preview.keyboard.previewSize,
+      /** Shows what the settings name again. */
+      restore: preview.restore,
+    },
     /** Reads the theme, the mode and the sizes the settings now name, and applies them. */
     reload: async () => {
       await loadAppearance()

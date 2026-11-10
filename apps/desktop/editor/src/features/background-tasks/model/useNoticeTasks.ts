@@ -18,7 +18,7 @@ export interface NoticeTasksDeps {
     readonly unwatched: Readonly<Ref<string>>
     readonly error: Readonly<Ref<string>>
   }
-  settings: { readonly appearance: { readonly lost: Readonly<Ref<string>> } }
+  settings: { readonly appearance: { readonly state: { readonly lost: Readonly<Ref<string>> } } }
 }
 
 const getFailedTask = (id: string, text: string, about = ''): Task => ({
@@ -47,7 +47,7 @@ export function useNoticeTasks({
   settings,
 }: NoticeTasksDeps): ComputedRef<readonly Task[]> {
   return computed<readonly Task[]>(() => {
-    const reason = window.lost.value || settings.appearance.lost.value
+    const reason = window.lost.value || settings.appearance.state.lost.value
     const state: Task[] = [
       ...(window.unwatched.value
         ? [getFailedTask('unwatched', words.unwatched, window.unwatched.value)]

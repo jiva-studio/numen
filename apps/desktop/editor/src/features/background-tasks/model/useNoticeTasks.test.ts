@@ -25,7 +25,7 @@ describe('useNoticeTasks', () => {
         },
       } as never,
       window: { unwatched, error, lost: windowLost } as never,
-      settings: { appearance: { lost: appearanceLost } } as never,
+      settings: { appearance: { state: { lost: appearanceLost } } } as never,
     })
 
     expect(tasks.value).toStrictEqual([])
