@@ -4,58 +4,41 @@ import (
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/books"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/internal/adapter/hostclient"
+	"github.com/jiva-studio/numen/plugins/readers-epub/backend/texts"
 )
 
 // Mount registers the plugin's services on s, reporting text versions to the host the environment
 // names.
 func Mount(s *server.Server) error {
-	texts, err := host.NewTextClientFromEnv()
+	connected, err := hostclient.OpenFromEnv()
 	if err != nil {
 		return err
 	}
-	store, err := host.NewStoreClientFromEnv()
-	if err != nil {
-		return err
-	}
-	files, err := host.NewClientFromEnv()
-	if err != nil {
-		return err
-	}
-	queue, err := host.NewQueueClientFromEnv()
-	if err != nil {
-		return err
-	}
-	return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), newTextServer(files, texts, store, queue))
+	return mount(s, connected)
 }
 
-func newTextServer(files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) *TextServer {
-	return NewTextServer(
-		func(id domain.VaultID) vaultFiles { return files.With(id) },
-		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
-		func(id domain.VaultID) host.StoreWriter { return store.With(id) },
-		queue)
-}
-
-func mount(s *server.Server, books *BookServer, texts *TextServer) error {
+func mount(s *server.Server, connected *hostclient.Host) error {
+	reader := books.NewReader(connected.OpenFiles)
+	writer := texts.NewWriter(connected.OpenVault, connected.OpenTexts, connected.OpenStore, connected.GetQueue())
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook releases cached books"
 	s.OnClose(func() error {
-		books.Close()
+		reader.Close()
 		return nil
 	})
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="server close hook stops running text extraction jobs"
 	s.OnClose(func() error {
-		texts.Close()
+		writer.Close()
 		return nil
 	})
 	// gomutants:disable-next-line CONDITIONALS_NEGATION,BRANCH_IF reason="mount propagates any API registration failure"
-	if err := mountMethods(s, books); err != nil {
+	if err := mountMethods(s, reader); err != nil {
 		return err
 	}
-	s.RegisterRoute(entriesPattern, NewEntryServer(books))
-	commands, err := newCommands(texts)
+	s.RegisterRoute(entriesPattern, NewEntryServer(reader))
+	commands, err := newCommands(writer)
 	// gomutants:disable-next-line BRANCH_IF reason="registering one static command id on a new registry cannot fail"
 	if err != nil {
 		return err
@@ -69,26 +52,11 @@ func mount(s *server.Server, books *BookServer, texts *TextServer) error {
 // vault those name, and text versions are reported to the host they name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		texts, err := host.NewTextClientFromVars(vars)
+		connected, err := hostclient.OpenFromVars(vars)
 		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
 		if err != nil {
 			return err
 		}
-		store, err := host.NewStoreClientFromVars(vars)
-		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
-		if err != nil {
-			return err
-		}
-		files, err := host.NewClientFromVars(vars)
-		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
-		if err != nil {
-			return err
-		}
-		queue, err := host.NewQueueClientFromVars(vars)
-		// gomutants:disable-next-line BRANCH_IF reason="NewLinkedHandler already validates vars before invoking mount callback"
-		if err != nil {
-			return err
-		}
-		return mount(s, NewBookServer(func(id domain.VaultID) host.FileReader { return files.With(id) }), newTextServer(files, texts, store, queue))
+		return mount(s, connected)
 	})
 }
