@@ -26,7 +26,7 @@ export const Label: Story = {
   },
 }
 
-/** A label wider than the preview is truncated to one line. */
+/** A long label stays on one line and ends in an ellipsis. */
 export const LongLabel: Story = {
   args: {
     label:
