@@ -4,9 +4,9 @@
  * is mounted.
  */
 import type { InjectionKey } from 'vue'
-import type { PluginContext } from '@numen/plugin-sdk'
+import type { PluginUi } from '@numen/plugin-sdk'
 
-export type MountView = PluginContext['mountView']
+export type MountView = PluginUi['mountView']
 
 export const MOUNT_VIEW: InjectionKey<MountView> = Symbol('mountView')
 

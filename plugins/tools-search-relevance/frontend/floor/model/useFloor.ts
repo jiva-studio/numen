@@ -148,24 +148,10 @@ export function useFloor(options: UseFloorOptions) {
   }
 
   return {
-    state,
-    status,
-    loadError,
-    actionError,
-    isCalibrating,
-    isBusy,
-    isTooFew,
-    isManual,
-    manualValue,
-    probeResult,
-    probeError,
-    isProbing,
-    load,
-    calibrate,
-    setMode,
-    setManualFloor,
-    probe,
-    reportFailure,
+    threshold: { state, isManual, manualValue, isTooFew },
+    progress: { status, loadError, actionError, isCalibrating, isBusy },
+    probing: { probeResult, probeError, isProbing },
+    actions: { load, calibrate, setMode, setManualFloor, probe, reportFailure },
   }
 }
 

@@ -43,7 +43,7 @@ describe('the platform plugins read', () => {
   it('is Windows where the window gives none, as the frame reports without the runtime', () => {
     const { support } = createSupport()
 
-    expect(support.pluginHost.createContext('md.numen.a').app.platform).toBe('windows')
+    expect(support.pluginHost.createContext('md.numen.a').plugin.app.platform).toBe('windows')
   })
 })
 
@@ -52,7 +52,7 @@ describe('closing the tabs of a plugin', () => {
     const { windowTabs, support } = createSupport()
     support.pluginHost
       .createContext('md.numen.a')
-      .registerTabKind({ kind: 'a-kind', component: null, title: 'A' })
+      .register.tabKind({ kind: 'a-kind', component: null, title: 'A' })
     const id = await windowTabs.tabs.createTab('a-kind', 'x')
     windowTabs.panes.show(id)
 
@@ -80,7 +80,7 @@ describe('closing the tabs of a plugin', () => {
     const { windowTabs, support } = createSupport()
     support.pluginHost
       .createContext('md.numen.b')
-      .registerTabKind({ kind: 'b-kind', component: null, title: 'B' })
+      .register.tabKind({ kind: 'b-kind', component: null, title: 'B' })
     const id = await windowTabs.tabs.createTab('b-kind', 'x')
 
     support.pluginHost.disposePlugin('md.numen.a')
@@ -93,7 +93,7 @@ describe('closing the tabs of a plugin', () => {
 const manifest: Manifest = createMockManifest('md.numen.sample.chat', { name: 'Chat' })
 
 const activate = (context: PluginContext) => {
-  context.registerTabKind({ kind: 'chat', component: null, title: 'Chat' })
+  context.register.tabKind({ kind: 'chat', component: null, title: 'Chat' })
 }
 
 describe('the tab kind a plugin adds', () => {
@@ -147,9 +147,9 @@ describe('the settings and notices a plugin is given', () => {
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const ctx = pluginHost.createContext('md.numen.a')
 
-    expect(ctx.getSetting('fontSize')).toBe(14)
-    expect(ctx.getSetting('enabled')).toBe(DEFAULT_PLUGIN_ENABLED)
-    expect(ctx.getSetting('missing')).toBeUndefined()
+    expect(ctx.settings.get('fontSize')).toBe(14)
+    expect(ctx.settings.get('enabled')).toBe(DEFAULT_PLUGIN_ENABLED)
+    expect(ctx.settings.get('missing')).toBeUndefined()
   })
 
   it('prefers the committed setting over an unconfirmed pending write', () => {
@@ -163,7 +163,7 @@ describe('the settings and notices a plugin is given', () => {
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const ctx = pluginHost.createContext('md.numen.a')
 
-    expect(ctx.getSetting('enabled')).toBe(false)
+    expect(ctx.settings.get('enabled')).toBe(false)
   })
 
   it('registers the extensions declared for a reader in the plugin settings', () => {
@@ -195,7 +195,7 @@ describe('the settings and notices a plugin is given', () => {
 
     pluginHost
       .createContext('md.numen.pdf')
-      .registerReader({ id: 'document', title: 'Document', component: null })
+      .register.reader({ id: 'document', title: 'Document', component: null })
 
     expect(registerExtensionReader).toHaveBeenCalledTimes(1)
     expect(registerExtensionReader).toHaveBeenCalledWith('.pdf', expect.any(Function), undefined)
@@ -355,7 +355,7 @@ describe('the settings and notices a plugin is given', () => {
   it('reads no setting before the window has its settings', () => {
     const { pluginHost } = createWith({})
 
-    expect(pluginHost.createContext('md.numen.a').getSetting('enabled')).toBeUndefined()
+    expect(pluginHost.createContext('md.numen.a').settings.get('enabled')).toBeUndefined()
   })
 
   it('calls the handler of a followed setting once per changed value', async () => {
@@ -365,7 +365,7 @@ describe('the settings and notices a plugin is given', () => {
     }
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const handler = vi.fn()
-    pluginHost.createContext('md.numen.a').onSettingChange('fontSize', handler)
+    pluginHost.createContext('md.numen.a').settings.onChange('fontSize', handler)
 
     settings.value = { fontSize: 14 }
     await nextTick()
@@ -379,7 +379,7 @@ describe('the settings and notices a plugin is given', () => {
     const notices = createNoticeQueue()
     const { pluginHost } = createWith({ notices })
 
-    pluginHost.createContext('md.numen.a').notices?.show('Saved.', 'warning')
+    pluginHost.createContext('md.numen.a').ui.notices?.show('Saved.', 'warning')
     expect(notices.notices.value.map((one) => one.text)).toStrictEqual(['Saved.'])
 
     pluginHost.disposePlugin('md.numen.a')
@@ -389,7 +389,7 @@ describe('the settings and notices a plugin is given', () => {
   it('gives a plugin no notices where the window keeps no list', () => {
     const { pluginHost } = createWith({})
 
-    expect(pluginHost.createContext('md.numen.a').notices).toBeUndefined()
+    expect(pluginHost.createContext('md.numen.a').ui.notices).toBeUndefined()
   })
 })
 
@@ -454,7 +454,7 @@ describe('the plugins the window loads', () => {
 
     const ctx = pluginHost.createContext('md.numen.a')
     const icon = { name: 'CustomIcon' }
-    ctx.registerTabKind({
+    ctx.register.tabKind({
       kind: 'sample' as never,
       component: null,
       title: 'Sample',
@@ -465,7 +465,7 @@ describe('the plugins the window loads', () => {
     expect(windowTabs.tabs.getTab(tabId!)).toBeDefined()
 
     // Failing onSettingChange handler reports to reportError
-    ctx.onSettingChange('fontSize', (() => Promise.reject(new Error('bad handler'))) as never)
+    ctx.settings.onChange('fontSize', (() => Promise.reject(new Error('bad handler'))) as never)
     settings.value = { fontSize: 18 }
     await nextTick()
     await new Promise((r) => setTimeout(r, 0))
@@ -477,14 +477,14 @@ describe('the plugins the window loads', () => {
     expect(closeSpy).not.toHaveBeenCalled()
 
     // Services and tasks accessors
-    expect(ctx.workspace).toBeDefined()
-    expect(ctx.notes).toBeDefined()
-    expect(ctx.relations).toBeDefined()
-    expect(ctx.files).toBeDefined()
-    expect(ctx.agent).toBeDefined()
-    expect(ctx.buffers).toBeDefined()
-    expect(ctx.tasks).toBeDefined()
-    expect(ctx.texts).toBeDefined()
+    expect(ctx.ui.workspace).toBeDefined()
+    expect(ctx.vault.notes).toBeDefined()
+    expect(ctx.vault.relations).toBeDefined()
+    expect(ctx.vault.files).toBeDefined()
+    expect(ctx.work.agent).toBeDefined()
+    expect(ctx.vault.buffers).toBeDefined()
+    expect(ctx.work.tasks).toBeDefined()
+    expect(ctx.vault.texts).toBeDefined()
 
     pluginHost.disposePlugin('md.numen.a')
     expect(getNoteIcon('sample')).not.toBe(icon)

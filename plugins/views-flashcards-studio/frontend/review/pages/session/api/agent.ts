@@ -32,9 +32,9 @@ export const createCardAgentPort = (
       vault,
       context: {
         ...query.context,
-        [CARD_CONTEXT.deck]: card.deck,
-        [CARD_CONTEXT.card]: card.cardId,
-        [CARD_CONTEXT.template]: card.template,
+        [CARD_CONTEXT.deck]: card.address.deck,
+        [CARD_CONTEXT.card]: card.address.cardId,
+        [CARD_CONTEXT.template]: card.address.template,
       },
     }),
   finish: (conversation) => agent.finish(conversation),

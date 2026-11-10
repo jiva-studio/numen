@@ -37,21 +37,27 @@ const VAULT: Record<string, readonly Entry[]> = {
 const createFilesTab = (open: readonly string[]): FilesTabState => {
   const list = createFileTree({ list: async (folderPath: string) => VAULT[folderPath] ?? [] })
   const state: FilesTabState = useFilesTab(list, {
-    ...renderDeps,
-    openEntry: () => undefined,
-    listItems: async () => [],
-    getMenuEntries: () => ROW_MENU,
-    runCommand: async () => '',
-    movePath: async () => undefined,
-    setDraggedPaths: () => undefined,
-    canDropData: () => false,
-    dropData: async () => [],
-    showError: () => undefined,
+    window: {
+      ...renderDeps,
+      openEntry: () => undefined,
+      setDraggedPaths: () => undefined,
+      showError: () => undefined,
+    },
+    menu: {
+      listItems: async () => [],
+      getMenuEntries: () => ROW_MENU,
+      runCommand: async () => '',
+    },
+    transfer: {
+      movePath: async () => undefined,
+      canDropData: () => false,
+      dropData: async () => [],
+    },
   })
 
   const openFolders = async () => {
-    await list.openFolder(ROOT)
-    for (const folderPath of open) await list.openFolder(folderPath)
+    await list.navigation.openFolder(ROOT)
+    for (const folderPath of open) await list.navigation.openFolder(folderPath)
   }
   openFolders().catch(state.reportFailure)
 

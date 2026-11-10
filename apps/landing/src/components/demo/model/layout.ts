@@ -69,7 +69,7 @@ function getTitle(deps: LayoutDeps, notePaths: Record<string, string>, id: strin
   if (kind === 'deck') return 'Thermodynamics'
   if (kind === 'reader:pdf') return getPdfDoc(getPdfPathOfTab(id)).title
   const path = notePaths[id] ?? ENTROPY_PATH
-  return deps.vault.getNote(path)?.title ?? path
+  return deps.vault.read.getNote(path)?.title ?? path
 }
 
 /** The open tabs and where the panes of the window hold them. */
@@ -150,7 +150,7 @@ export function createLayout(deps: LayoutDeps) {
       showTab(tabId, placement)
       return tabId
     }
-    return deps.vault.getNote(path) ? openNote(path, placement) : null
+    return deps.vault.read.getNote(path) ? openNote(path, placement) : null
   }
 
   function openToolTab(tabId: string, preferredPane: string): void {
@@ -167,17 +167,17 @@ export function createLayout(deps: LayoutDeps) {
   }
 
   return {
-    held,
-    tabs,
-    notePaths,
-    createPaneId,
-    openVaultFile,
-    openToolTab,
-    navigateNoteTab,
-    close,
-    getNoteOfTab: (tabId: string) => {
-      const path = notePaths[tabId]
-      return path === undefined ? undefined : deps.vault.getNote(path)
+    state: { held, tabs, notePaths },
+    actions: {
+      createPaneId,
+      openVaultFile,
+      openToolTab,
+      navigateNoteTab,
+      close,
+      getNoteOfTab: (tabId: string) => {
+        const path = notePaths[tabId]
+        return path === undefined ? undefined : deps.vault.read.getNote(path)
+      },
     },
   }
 }

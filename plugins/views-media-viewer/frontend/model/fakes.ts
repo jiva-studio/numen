@@ -74,11 +74,7 @@ export function createPlayer() {
   const surfaces: HTMLElement[] = []
   const released: HTMLElement[] = []
   const player: Player = {
-    url,
-    position,
-    duration: ref(0),
-    isPlaying: ref(false),
-    error: ref(''),
+    state: { url, position, duration: ref(0), isPlaying: ref(false), error: ref('') },
     load: (next) => {
       url.value = next
     },
@@ -92,11 +88,13 @@ export function createPlayer() {
       seeks.push([next, ms])
     },
     getDuration: async () => 0,
-    attach: (container) => {
-      surfaces.push(container)
-    },
-    release: (container) => {
-      released.push(container)
+    surface: {
+      attach: (container) => {
+        surfaces.push(container)
+      },
+      release: (container) => {
+        released.push(container)
+      },
     },
   }
   return { player, seeks, surfaces, released }

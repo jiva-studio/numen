@@ -6,11 +6,17 @@ import { useAgentPanel } from './panel'
 import { WORDS as words } from '../lib/agentWords'
 import type { ReviewCard } from '../../../entities/card'
 
-const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
-  deck: 'decks/Words.md',
-  section: '',
-  cardId: '3f4g5h6j7k',
-  template: 'Say it',
+const card = (
+  more: Partial<ReviewCard> = {},
+  address: Partial<ReviewCard['address']> = {},
+): ReviewCard => ({
+  address: {
+    deck: 'decks/Words.md',
+    section: '',
+    cardId: '3f4g5h6j7k',
+    template: 'Say it',
+    ...address,
+  },
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
@@ -70,7 +76,7 @@ describe('the panel coming in', () => {
     const { wrapper } = panel()
     wrapper.openPanel()
     expect(wrapper.open.value).toBe(true)
-    expect(wrapper.about.value?.cardId).toBe('3f4g5h6j7k')
+    expect(wrapper.about.value?.address.cardId).toBe('3f4g5h6j7k')
   })
 
   // A control that does nothing is pressed repeatedly.
@@ -159,11 +165,11 @@ describe('the context of the conversation about a card', () => {
     const first = wrapper.context.value
 
     wrapper.endConversation()
-    on.value = card({ cardId: 'zpqrstvwxy' })
+    on.value = card({}, { cardId: 'zpqrstvwxy' })
     wrapper.openPanel()
 
     expect(wrapper.context.value).not.toBe(first)
-    expect(about.map((one) => one.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
+    expect(about.map((one) => one.address.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
   })
 })
 
@@ -187,20 +193,20 @@ describe('the panel requested for again', () => {
     wrapper.openPanel()
     const first = wrapper.context.value
 
-    on.value = card({ cardId: 'zpqrstvwxy' })
+    on.value = card({}, { cardId: 'zpqrstvwxy' })
     wrapper.openPanel()
 
     expect(wrapper.context.value).not.toBe(first)
-    expect(about.map((one) => one.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
+    expect(about.map((one) => one.address.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
   })
 
   it('makes a conversation of its own for the other review card of the same card', () => {
     const { wrapper, about, on } = panel()
     wrapper.openPanel()
 
-    on.value = card({ template: 'Name it' })
+    on.value = card({}, { template: 'Name it' })
     wrapper.openPanel()
 
-    expect(about.map((one) => one.template)).toEqual(['Say it', 'Name it'])
+    expect(about.map((one) => one.address.template)).toEqual(['Say it', 'Name it'])
   })
 })

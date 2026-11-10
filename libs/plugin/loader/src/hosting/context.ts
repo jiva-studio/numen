@@ -6,19 +6,29 @@ import type {
   Disposable,
   FileSelectEvent,
   PluginContext,
+  PluginEvents,
+  PluginSettings,
+  PluginTabs,
+  PluginUi,
+  PluginVault,
+  PluginWork,
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
   VaultRelations,
   VaultTexts,
-  WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { guardAgent } from './guards/agentGuard'
 import { checkPermission, type PermissionTarget } from './guards/permission'
-import { createRegistrations, type RequirePermission, type Track } from './guards/registrations'
-import { createSlotContext } from './slotContext'
+import {
+  createMountView,
+  createRegistrations,
+  type RequirePermission,
+  type Track,
+} from './guards/registrations'
+import { createSlotViewRegistration } from './slotContext'
 import type { PluginContextHost } from './types'
 
 function trackSubscription(subscriptions: Disposable[], disposable: Disposable): Disposable {
@@ -170,38 +180,6 @@ function guardBuffers(
   }
 }
 
-type Services = Pick<
-  PluginContext,
-  'workspace' | 'notes' | 'relations' | 'files' | 'agent' | 'buffers'
->
-
-function guardService<K extends keyof Services, S>(
-  key: K,
-  service: S | undefined,
-  guard: (service: S) => NonNullable<Services[K]>,
-): Pick<Services, K> | Record<never, never> {
-  if (service === undefined) return {}
-  const out: Partial<Record<K, NonNullable<Services[K]>>> = {}
-  out[key] = guard(service)
-  return out
-}
-
-function guardServices(
-  host: PluginContextHost,
-  requirePerm: (permission: string, operation: string) => void,
-  add: (disposable: Disposable) => Disposable,
-): Services {
-  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
-  return {
-    ...guardService('workspace', host.getWorkspace?.(), (one: WorkspaceHost) => one),
-    ...guardService('notes', host.getNotes?.(), (one) => guardNotes(one, requirePerm)),
-    ...guardService('relations', host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
-    ...guardService('files', host.getFiles?.(), (one) => guardFiles(one, requirePerm)),
-    ...guardService('agent', host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
-    ...guardService('buffers', host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),
-  }
-}
-
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
@@ -211,12 +189,17 @@ interface EventGuard {
   readonly add: Track
 }
 
-function createEvents(pluginId: string, host: PluginContextHost, guard: EventGuard) {
+function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
+  return {
+    get: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
+    onChange: <T = unknown>(key: string, h: (v: T) => void) =>
+      add(host.onSettingChange<T>(pluginId, key, h)),
+  }
+}
+
+function createEvents(pluginId: string, host: PluginContextHost, guard: EventGuard): PluginEvents {
   const { requirePerm, add } = guard
   return {
-    getSetting: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
-    onSettingChange: <T = unknown>(key: string, h: (v: T) => void) =>
-      add(host.onSettingChange<T>(pluginId, key, h)),
     onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) => {
       requirePerm('vault:read', 'onVaultChange')
       return add(host.onVaultChange(pluginId, h))
@@ -236,22 +219,74 @@ function createEvents(pluginId: string, host: PluginContextHost, guard: EventGua
   }
 }
 
-function createWindowServices(
+function createTabs(host: PluginContextHost): PluginTabs {
+  return {
+    open: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
+    navigate: (kind: string, targetPath: string) => host.navigateTab?.(kind, targetPath),
+    close: (id: string) => {
+      host.closeTab?.(id)
+    },
+  }
+}
+
+function guarded<S, G>(service: S | undefined, guard: (service: S) => G): G | undefined {
+  return service === undefined ? undefined : guard(service)
+}
+
+function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
+  const picked: Partial<T> = {}
+  for (const key of Object.keys(parts) as (keyof T)[]) {
+    const value = parts[key]
+    if (value !== undefined) picked[key] = value
+  }
+  return picked as T
+}
+
+function createVault(
+  pluginId: string,
+  host: PluginContextHost,
+  guard: { readonly requirePerm: RequirePermission; readonly add: Track },
+): PluginVault {
+  const { requirePerm, add } = guard
+  const requireWrite = (operation: string) => requirePerm('vault:write', operation)
+  return pickDefined<PluginVault>({
+    notes: guarded(host.getNotes?.(), (one) => guardNotes(one, requirePerm)),
+    relations: guarded(host.getRelations?.(), (one) => guardRelations(one, requirePerm)),
+    files: guarded(host.getFiles?.(), (one) => guardFiles(one, requirePerm)),
+    texts: guarded(host.getTexts?.(pluginId), (one) => guardTexts(one, requirePerm)),
+    buffers: guarded(host.getBuffers?.(), (one) => guardBuffers(one, requireWrite, add)),
+    vaults: host.getVaults?.(),
+  })
+}
+
+function createUi(
+  pluginId: string,
+  host: PluginContextHost,
+  mountView: PluginUi['mountView'],
+): PluginUi {
+  return {
+    ...pickDefined<Omit<PluginUi, 'mountView'>>({
+      workspace: host.getWorkspace?.(),
+      window: host.getWindow?.(),
+      commands: host.getCommands?.(),
+      slots: host.getSlots?.(),
+      notices: host.getNotices?.(pluginId),
+      drops: host.drops,
+    }),
+    mountView,
+  }
+}
+
+function createWork(
   pluginId: string,
   host: PluginContextHost,
   requirePerm: RequirePermission,
-) {
-  const notices = host.getNotices?.(pluginId)
-  const tasks = host.getTasks?.(pluginId)
-  const backgroundTasks = host.getBackgroundTasks?.()
-  const texts = host.getTexts?.(pluginId)
-  return {
-    ...(notices ? { notices } : {}),
-    ...(tasks ? { tasks } : {}),
-    ...(backgroundTasks ? { backgroundTasks } : {}),
-    ...(texts ? { texts: guardTexts(texts, requirePerm) } : {}),
-    ...createFrameServices(host),
-  }
+): PluginWork {
+  return pickDefined<PluginWork>({
+    agent: guarded(host.getAgent?.(), (one) => guardAgent(one, requirePerm)),
+    tasks: host.getTasks?.(pluginId),
+    backgroundTasks: host.getBackgroundTasks?.(),
+  })
 }
 
 export function createPluginContext(
@@ -263,39 +298,28 @@ export function createPluginContext(
   const add = (d: Disposable) => trackSubscription(subscriptions, d)
   const target: PermissionTarget = { pluginId, manifest }
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
+  const guard = { target, add }
+  const slotView = createSlotViewRegistration(
+    { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
+    host,
+    add,
+  )
 
   return {
-    pluginId,
-    target: EDITOR_TARGET,
-    app: host.app,
-    openExternal: createExternalOpener(host.openExternal),
-    subscriptions,
-    ...guardServices(host, requirePerm, add),
-    ...createWindowServices(pluginId, host, requirePerm),
-    hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
-    ...createRegistrations(pluginId, host, { target, add }),
-    ...createSlotContext(
-      { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
-      host,
-      add,
-    ),
-    drops: host.drops,
-    ...createEvents(pluginId, host, { requirePerm, add }),
-    openTab: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
-    navigateTab: (kind: string, targetPath: string) => host.navigateTab?.(kind, targetPath),
-    closeTab: (id: string) => {
-      host.closeTab?.(id)
+    plugin: {
+      id: pluginId,
+      target: EDITOR_TARGET,
+      app: host.app,
+      openExternal: createExternalOpener(host.openExternal),
+      subscriptions,
+      hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
-  }
-}
-
-function createFrameServices(host: PluginContextHost) {
-  const commands = host.getCommands?.()
-  const vaults = host.getVaults?.()
-  const window = host.getWindow?.()
-  return {
-    ...(commands ? { commands } : {}),
-    ...(vaults ? { vaults } : {}),
-    ...(window ? { window } : {}),
+    register: createRegistrations(pluginId, host, { ...guard, slotView }),
+    settings: createSettings(pluginId, host, add),
+    events: createEvents(pluginId, host, { requirePerm, add }),
+    tabs: createTabs(host),
+    vault: createVault(pluginId, host, { requirePerm, add }),
+    ui: createUi(pluginId, host, createMountView(host, guard)),
+    work: createWork(pluginId, host, requirePerm),
   }
 }

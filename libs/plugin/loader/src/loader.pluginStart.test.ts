@@ -35,7 +35,7 @@ const createLoader = (
   options: { broken?: readonly string[]; disabled?: readonly string[] } = {},
 ) => {
   const host = {
-    createContext: (pluginId: string) => ({ pluginId }) as unknown as PluginContext,
+    createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
     disposePlugin: vi.fn<(pluginId: string) => void>(),
     disposeAll: vi.fn(),
     getSetting: <T>(pluginId: string, key: string) =>

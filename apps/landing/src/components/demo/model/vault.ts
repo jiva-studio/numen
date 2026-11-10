@@ -133,16 +133,8 @@ export function createVault() {
   return {
     notes,
     labels,
-    getNote,
-    getNoteOrEntropy,
-    list,
-    getEntryAt,
-    getNeighbours,
-    createUntitled,
-    createFolder,
-    createRelated,
-    move,
-    removeNote,
+    read: { getNote, getNoteOrEntropy, list, getEntryAt, getNeighbours },
+    edit: { createUntitled, createFolder, createRelated, move, removeNote },
     onRename: (listener: (from: string, to: string) => void) => renameListeners.push(listener),
   }
 }

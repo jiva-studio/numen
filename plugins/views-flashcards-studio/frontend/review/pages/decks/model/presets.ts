@@ -58,16 +58,16 @@ export function useVaultPresets(deps: VaultPresetsDeps) {
     }
     // A vault read again keeps what is known of it while the reading runs, so
     // the screen it is read behind does not empty and fill.
-    if (of.value !== due.vault) recognized.value = false
-    of.value = due.vault
+    if (of.value !== due.identity.vault) recognized.value = false
+    of.value = due.identity.vault
 
     const target = await Promise.all(
       due.decks.map(async (deck) => ({
         deck,
-        result: await readDeckPreset(deps.presets, due.vault, deck.deck),
+        result: await readDeckPreset(deps.presets, due.identity.vault, deck.deck),
       })),
     )
-    if (of.value !== due.vault) return
+    if (of.value !== due.identity.vault) return
 
     presets.value = groupDecksIntoPresets(due, target, today)
     recognized.value = true

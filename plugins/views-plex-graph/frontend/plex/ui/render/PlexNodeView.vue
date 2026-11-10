@@ -41,7 +41,8 @@ const press = useNodePress(props, getMiddle, {
   menu: (pos, trigger) => emit('menu', pos, trigger),
 })
 
-const { isGhost, canStop, isAnnounced, listening } = press
+const { isGhost, canStop, isAnnounced } = press.role
+const { listening } = press
 
 /**
  * Whether the handle is shown: while the pointer is over the node, or while
@@ -119,10 +120,10 @@ defineExpose({ focus: () => group.value?.focus() })
     :role="role"
     :class="[`plex__node--${node.relation}`, `plex__node--${gestureRole}`]"
     :aria-label="isGhost ? undefined : createAriaLabel(node)"
-    @click="press.onClick"
-    @dblclick="press.onDoubleClick"
-    @contextmenu="press.onContextMenu"
-    @keydown="press.onKeyDown"
+    @click="press.handlers.onClick"
+    @dblclick="press.handlers.onDoubleClick"
+    @contextmenu="press.handlers.onContextMenu"
+    @keydown="press.handlers.onKeyDown"
     v-on="listening"
     @pointerenter="hoverFocus.onPointerEnter"
     @pointerleave="hoverFocus.onPointerLeave"

@@ -22,7 +22,7 @@ const props = withDefaults(
 /* --------------------------------- State ---------------------------------- */
 const { following } = props.state.content
 const { timed } = props.state.lines
-const { isPlaying: playbackIsPlaying } = props.state.playback
+const { isPlaying: playbackIsPlaying } = props.state.playback.progress
 
 const isFollowing = computed(() => following.value)
 const isPlaying = computed(() => props.isPlaying ?? playbackIsPlaying.value)

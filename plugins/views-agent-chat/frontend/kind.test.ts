@@ -108,6 +108,6 @@ describe('text put to an agent tab by the window', () => {
 
     one.kind.receiveText!(state, 'Note.md — ')
 
-    expect(state.userQuestion.value).toBe('Note.md — ')
+    expect(state.draft.userQuestion.value).toBe('Note.md — ')
   })
 })

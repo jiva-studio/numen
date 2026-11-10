@@ -17,7 +17,9 @@ const props = defineProps<{ state: PresetTabState }>()
 // --- State ---
 // The tab's state outlives this component, so its value is bound once here
 // and the template unwraps it.
-const { curve, material, place, settings, stopped: stoppedAt, isWaiting } = props.state
+const { settings } = props.state
+const { curve, material, place, isWaiting } = props.state.curves
+const { stopped: stoppedAt } = props.state.status
 
 /** Why the goal has nothing to work on, and empty where it has. */
 const nothing = computed(() => getIdleReason(curve.value))
@@ -45,15 +47,15 @@ const targetValueText = computed(() =>
 const stoppedMessage = computed(() => words.stopped(stoppedAt.value))
 
 function onSelectGoal(one: string) {
-  props.state.chooseGoal(one as Goal)
+  props.state.actions.chooseGoal(one as Goal)
 }
 
 function onMoveSlider(pos: number) {
-  props.state.moveSlider(pos)
+  props.state.actions.moveSlider(pos)
 }
 
 function onSliderCommit() {
-  props.state.flushPending()
+  props.state.actions.flushPending()
 }
 
 // --- Helpers ---

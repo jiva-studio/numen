@@ -52,8 +52,8 @@ describe('the commands of a view plugin that starts in a window with a backend p
     const { loader, reportCommandIssue } = await createWindow()
     loader.registerPluginModule(VIEW, async () => ({
       activate: (context: ReturnType<PluginHost['createContext']>) => {
-        context.registerCommand({ id: 'tree.open', handler: () => undefined })
-        context.registerCommand({ id: 'tree.revealNote', handler: () => undefined })
+        context.register.command({ id: 'tree.open', handler: () => undefined })
+        context.register.command({ id: 'tree.revealNote', handler: () => undefined })
       },
     }))
 

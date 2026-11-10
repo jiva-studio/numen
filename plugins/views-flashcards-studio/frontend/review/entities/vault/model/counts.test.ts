@@ -135,12 +135,12 @@ describe('counting what is due in every vault', () => {
     await flushPromises()
 
     expect(one.day.value).toBe('2026-09-05')
-    expect(one.vaults.value.map((target) => target.vault)).toStrictEqual(['01A', '01B'])
+    expect(one.vaults.value.map((target) => target.identity.vault)).toStrictEqual(['01A', '01B'])
     // Nothing is known about what any of them holds, and none of them reads as
     // a vault with no cards due.
     for (const target of one.vaults.value) {
       expect(target.isCounted).toBe(false)
-      expect(target.due + target.new).toBe(0)
+      expect(target.totals.due + target.totals.new).toBe(0)
     }
   })
 
@@ -154,12 +154,24 @@ describe('counting what is due in every vault', () => {
     front.sendCount(count(vault('01B', { due: 4, new: 1 })))
     await flushPromises()
 
-    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', isCounted: false, due: 0, new: 0 })
-    expect(one.vaults.value[1]).toMatchObject({ vault: '01B', isCounted: true, due: 4, new: 1 })
+    expect(one.vaults.value[0]).toMatchObject({
+      identity: { vault: '01A' },
+      isCounted: false,
+      totals: { due: 0, new: 0 },
+    })
+    expect(one.vaults.value[1]).toMatchObject({
+      identity: { vault: '01B' },
+      isCounted: true,
+      totals: { due: 4, new: 1 },
+    })
 
     front.sendCount(count(vault('01A')))
     await flushPromises()
-    expect(one.vaults.value[0]).toMatchObject({ vault: '01A', isCounted: true, due: 1, new: 2 })
+    expect(one.vaults.value[0]).toMatchObject({
+      identity: { vault: '01A' },
+      isCounted: true,
+      totals: { due: 1, new: 2 },
+    })
     // What a day took arrives in milliseconds and is held in minutes.
     expect(one.vaults.value[0]?.presets[0]).toEqual({
       preset: 'Sanskrit.md',
@@ -192,7 +204,7 @@ describe('counting what is due in every vault', () => {
     await flushPromises()
 
     expect(one.vaults.value[0]?.unread).toBe('this folder cannot be read as a vault')
-    expect(one.vaults.value[1]).toMatchObject({ isCounted: true, due: 6 })
+    expect(one.vaults.value[1]).toMatchObject({ isCounted: true, totals: { due: 6 } })
     expect(one.isCounting.value).toBe(false)
   })
 
@@ -222,7 +234,11 @@ describe('counting what is due in every vault', () => {
     front.endCounts()
     await flushPromises()
 
-    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, isIndexing: false, due: 5 })
+    expect(one.vaults.value[0]).toMatchObject({
+      isCounted: true,
+      isIndexing: false,
+      totals: { due: 5 },
+    })
   })
 
   it('is still counting until the last of them has arrived', async () => {
@@ -313,7 +329,7 @@ describe('counting what is due in every vault', () => {
     front.sendCount(createVaultList(vault('01A')))
     await flushPromises()
 
-    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, due: 9 })
+    expect(one.vaults.value[0]).toMatchObject({ isCounted: true, totals: { due: 9 } })
   })
 
   it('says what went wrong and stops counting', async () => {

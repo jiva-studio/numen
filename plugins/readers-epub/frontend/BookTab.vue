@@ -22,7 +22,7 @@ interface Props {
 const props = defineProps<Props>()
 
 function isBookTabState(s: unknown): s is BookTabState {
-  return typeof s === 'object' && s !== null && 'isLoading' in s && 'setBookHandle' in s
+  return typeof s === 'object' && s !== null && 'book' in s && 'setBookHandle' in s
 }
 
 const targetPath =
@@ -44,8 +44,24 @@ watchEffect(() => tabState.setBookHandle(bookContent.value ?? null))
 /** The tab state from the window, when it is a reader tab. */
 const readerTab = props.state as Partial<ReaderTabState> | undefined
 
-useBookPlace(tabState, () => readerTab)
-useBookRanges(tabState, () => readerTab)
+useBookPlace(
+  {
+    offset: tabState.book.place.offset,
+    isLoading: tabState.book.state.isLoading,
+    chapter: tabState.book.place.chapter,
+    getCfi: tabState.book.actions.getCfi,
+    goToCfi: tabState.book.actions.goToCfi,
+  },
+  () => readerTab,
+)
+useBookRanges(
+  {
+    isLoading: tabState.book.state.isLoading,
+    focusSpans: tabState.book.actions.focusSpans,
+    reportFailure: tabState.book.reportFailure,
+  },
+  () => readerTab,
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDismissListing() {
@@ -63,7 +79,7 @@ function onPageTurnKey(event: KeyboardEvent) {
 
 function onSelectEntry(offset: number) {
   isListingOpen.value = false
-  tabState.goToOffset(offset).catch(tabState.reportFailure)
+  tabState.book.actions.goToOffset(offset).catch(tabState.book.reportFailure)
 }
 
 function onToggleListing() {
@@ -71,11 +87,11 @@ function onToggleListing() {
 }
 
 function onMove(offset: number) {
-  tabState.moveTo(offset).catch(tabState.reportFailure)
+  tabState.book.actions.moveTo(offset).catch(tabState.book.reportFailure)
 }
 
 function onFollow(destPath: string) {
-  tabState.followLink(destPath).catch(tabState.reportFailure)
+  tabState.book.actions.followLink(destPath).catch(tabState.book.reportFailure)
 }
 </script>
 
@@ -88,13 +104,13 @@ function onFollow(destPath: string) {
   >
     <!-- Until the book has been read, a blank page and a book with no text in
          it are drawn the same way. -->
-    <LoadingIndicator v-if="tabState.isLoading.value" :label="words.loading" />
+    <LoadingIndicator v-if="tabState.book.state.isLoading.value" :label="words.loading" />
 
     <div v-else class="book-tab__reading">
       <BookListing
         :is-open="isListingOpen"
-        :entries="tabState.contents.value"
-        :offset="tabState.offset.value"
+        :entries="tabState.book.state.contents.value"
+        :offset="tabState.book.place.offset.value"
         @go="onSelectEntry"
         @dismiss="onDismissListing"
         @escape="onEscapeListing"
@@ -102,15 +118,15 @@ function onFollow(destPath: string) {
 
       <BookContent
         ref="bookContent"
-        :markup="tabState.markup.value"
-        :path="tabState.renderedChapter.value"
-        :document-span="tabState.documentSpan.value"
-        :book-span="tabState.span.value"
-        :offset="tabState.offset.value"
-        :target="tabState.target.value"
-        :highlights="tabState.highlights.value"
-        :other-highlights="tabState.otherHighlights.value"
-        :chapter="tabState.chapter.value"
+        :markup="tabState.book.rendering.markup.value"
+        :path="tabState.book.rendering.renderedChapter.value"
+        :document-span="tabState.book.place.documentSpan.value"
+        :book-span="tabState.book.state.span.value"
+        :offset="tabState.book.place.offset.value"
+        :target="tabState.book.place.target.value"
+        :highlights="tabState.book.rendering.highlights.value"
+        :other-highlights="tabState.book.rendering.otherHighlights.value"
+        :chapter="tabState.book.place.chapter.value"
         :is-listing-open="isListingOpen"
         @move="onMove"
         @follow="onFollow"

@@ -82,13 +82,9 @@ const vault = (
   decks: readonly { deck: string; due: number; new: number }[],
   presets: readonly PresetCardsDue[] = [],
 ): VaultCardsDue => ({
-  vault: '01A',
-  name: 'Vault',
-  path: '/vaults/01A',
+  identity: { vault: '01A', name: 'Vault', path: '/vaults/01A' },
   isCounted: true,
-  reviewCards: 0,
-  due: 0,
-  new: 0,
+  totals: { reviewCards: 0, due: 0, new: 0 },
   decks: decks.map((one) => ({
     deck: one.deck,
     reviewCards: 0,
@@ -980,7 +976,7 @@ describe('what is known of the presets of a vault', () => {
 
   const other = (): VaultCardsDue => ({
     ...vault([{ deck: 'decks/Roots.md', due: 1, new: 0 }]),
-    vault: '01B',
+    identity: { vault: '01B', name: 'Vault', path: '/vaults/01B' },
   })
 
   it('is known once a reading has run', async () => {

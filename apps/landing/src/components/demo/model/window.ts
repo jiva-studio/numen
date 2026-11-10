@@ -26,7 +26,7 @@ export function createDemoWindow() {
   const player = createPlayer()
   const deck = createDeck()
   const holder = { sync: (_tab: string, _path: string): boolean => false }
-  const getFocusNote = () => vault.getNoteOrEntropy(plex.here.value || ENTROPY_PATH)
+  const getFocusNote = () => vault.read.getNoteOrEntropy(plex.here.value || ENTROPY_PATH)
 
   const layout = createLayout({
     vault,
@@ -39,13 +39,13 @@ export function createDemoWindow() {
   const commandsHolder: { run?: ReturnType<typeof createCommands> } = {}
   const files = createFiles({
     vault,
-    openFile: (path) => layout.openVaultFile(path, 'current'),
+    openFile: (path) => layout.actions.openVaultFile(path, 'current'),
     onSelectNote: (path) => holder.sync(FILES_TAB, path),
     remove: (path, others) => commandsHolder.run?.runInTree(DEMO_COMMAND.removeFile, { path, others }),
   })
   const commands = createCommands({ vault, layout, files, plex, palette, agent })
   commandsHolder.run = commands
-  const tabMenu = createTabMenu(layout.tabs, links)
+  const tabMenu = createTabMenu(layout.state.tabs, links)
 
   const pdfPages = reactive<Record<string, number>>({
     [BOLTZMANN_PATH]: PDF_DOCS[BOLTZMANN_PATH].firstPage,
@@ -61,10 +61,10 @@ export function createDemoWindow() {
     isSyncing = true
     try {
       for (const target of targets) {
-        const isNote = isNotePath(path) && Boolean(vault.getNote(path))
+        const isNote = isNotePath(path) && Boolean(vault.read.getNote(path))
         if (target === PLEX_TAB && isNote) plex.go(path)
-        else if (target === FILES_TAB) files.reveal(path)
-        else if (getKindOfTab(target) === 'note' && isNote) layout.navigateNoteTab(target, path)
+        else if (target === FILES_TAB) files.tree.reveal(path)
+        else if (getKindOfTab(target) === 'note' && isNote) layout.actions.navigateNoteTab(target, path)
       }
     } finally {
       isSyncing = false
@@ -78,29 +78,29 @@ export function createDemoWindow() {
   onBeforeUnmount(() => player.pause())
 
   function activateTab(tabId: string) {
-    const path = layout.notePaths[tabId]
-    if (getKindOfTab(tabId) === 'note' && path && vault.getNote(path)) holder.sync(tabId, path)
+    const path = layout.state.notePaths[tabId]
+    if (getKindOfTab(tabId) === 'note' && path && vault.read.getNote(path)) holder.sync(tabId, path)
   }
 
   function chooseName(role: 'child' | 'parent' | 'jump' | 'title', path: string) {
-    const name = palette.typed.value.trim()
-    palette.dismiss()
+    const name = palette.state.typed.value.trim()
+    palette.actions.dismiss()
     if (!name) return
-    if (role === 'title') files.rename(path, name)
-    else plex.go(vault.createRelated(name, path, role))
+    if (role === 'title') files.edits.rename(path, name)
+    else plex.go(vault.edit.createRelated(name, path, role))
   }
 
   function choosePalette(itemId: string, actionId?: string) {
-    const naming = palette.naming.value
-    if (palette.panel.value === 'naming' && naming) {
+    const naming = palette.state.naming.value
+    if (palette.state.panel.value === 'naming' && naming) {
       chooseName(naming.role, naming.path)
       return
     }
-    palette.panel.value = null
+    palette.state.panel.value = null
     const active = plex.here.value || ENTROPY_PATH
     if (isDemoCommand(itemId)) commands.run(itemId, active, 'plex')
-    else if (actionId === 'travel' && vault.getNote(itemId)) commands.run(DEMO_COMMAND.showNoteInPlex, itemId)
-    else layout.openVaultFile(itemId, 'current')
+    else if (actionId === 'travel' && vault.read.getNote(itemId)) commands.run(DEMO_COMMAND.showNoteInPlex, itemId)
+    else layout.actions.openVaultFile(itemId, 'current')
   }
 
   function followLink(address: string, fromTab: string) {
@@ -110,44 +110,29 @@ export function createDemoWindow() {
     )
     if (!match) return
     if (getKindOfTab(fromTab) === 'note') {
-      layout.navigateNoteTab(fromTab, match.path)
+      layout.actions.navigateNoteTab(fromTab, match.path)
       holder.sync(fromTab, match.path)
     } else {
-      layout.openVaultFile(match.path, 'current')
+      layout.actions.openVaultFile(match.path, 'current')
     }
   }
 
   const writeBody = (tabId: string, body: string) => {
-    const note = layout.getNoteOfTab(tabId)
+    const note = layout.actions.getNoteOfTab(tabId)
     if (note) note.body = body
   }
 
   const openTurnSource = (turn: Turn) =>
-    layout.openVaultFile(turn.subject === "Landauer's principle" ? "computation/Landauer's principle.md" : ENTROPY_PATH)
+    layout.actions.openVaultFile(turn.subject === "Landauer's principle" ? "computation/Landauer's principle.md" : ENTROPY_PATH)
 
   const goToPdfPage = (path: string, page: number) => {
     pdfPages[path] = Math.min(Math.max(page, 0), getPdfDoc(path).leaves - 1)
   }
 
   return {
-    pdfPages,
-    writeBody,
-    openTurnSource,
-    goToPdfPage,
-    vault,
-    links,
-    plex,
-    player,
-    deck,
-    layout,
-    agent,
-    palette,
-    files,
-    commands,
-    tabMenu,
-    activateTab,
-    choosePalette,
-    followLink,
+    parts: { vault, links, plex, player, deck, layout, agent, palette, files, commands, tabMenu },
+    pdf: { pages: pdfPages, goToPage: goToPdfPage },
+    actions: { writeBody, openTurnSource, activateTab, choosePalette, followLink },
   }
 }
 

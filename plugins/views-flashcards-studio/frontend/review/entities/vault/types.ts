@@ -42,15 +42,25 @@ export interface BudgetKeys {
   readonly minutes: string
 }
 
-/** One vault, and what its cards come to today. */
-export interface VaultCardsDue {
+/** Which vault it is: its id, its name and where it lies. */
+export interface VaultIdentity {
   readonly vault: string
   readonly name: string
   readonly path: string
-  readonly isCounted: boolean
+}
+
+/** What the cards of a vault come to today. */
+export interface VaultTotals {
   readonly reviewCards: number
   readonly due: number
   readonly new: number
+}
+
+/** One vault, and what its cards come to today. */
+export interface VaultCardsDue {
+  readonly identity: VaultIdentity
+  readonly isCounted: boolean
+  readonly totals: VaultTotals
   readonly decks: readonly DeckCardsDue[]
   readonly presets: readonly PresetCardsDue[]
   readonly unread: string

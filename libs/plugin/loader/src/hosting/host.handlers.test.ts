@@ -170,7 +170,7 @@ describe('a shared command', () => {
       createMockManifest(SCANS, { name: 'Scans', version: '1' }),
     )
     const handler = vi.fn()
-    context.registerCommand({
+    context.register.command({
       id: CREATE,
       handler,
       listItems: () => [{ id: 'fast', title: 'Fast' }],
@@ -193,7 +193,7 @@ describe('a shared command', () => {
       SCANS,
       createMockManifest(SCANS, { name: 'Scans', version: '1' }),
     )
-    context.registerCommand({
+    context.register.command({
       id: CREATE,
       handler: vi.fn(),
       listItems: () => [

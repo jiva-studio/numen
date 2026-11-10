@@ -53,13 +53,13 @@ describe('a plex tab as it opens', () => {
   it('relies on the note the vault opens with', async () => {
     const { state } = await window({ opening: 'Opening.md' }).openTab()
 
-    expect(state.view.here.value).toBe('Opening.md')
+    expect(state.canvas.view.here.value).toBe('Opening.md')
   })
 
   it('keeps the position it is configured with, whatever the vault opens with', async () => {
     const { state } = await window({ opening: 'Opening.md' }).openTab('Told.md')
 
-    expect(state.view.here.value).toBe('Told.md')
+    expect(state.canvas.view.here.value).toBe('Told.md')
   })
 
   it('remains where the plex the person was last in remains, when another one is open', async () => {
@@ -70,8 +70,8 @@ describe('a plex tab as it opens', () => {
 
     const third = await one.openTab()
 
-    expect(third.state.view.here.value).toBe('One.md')
-    expect(second.state.view.here.value).toBe('Two.md')
+    expect(third.state.canvas.view.here.value).toBe('One.md')
+    expect(second.state.canvas.view.here.value).toBe('Two.md')
   })
 
   it('remains where the one before remains when the tab the person was in has closed', async () => {
@@ -82,7 +82,7 @@ describe('a plex tab as it opens', () => {
 
     const third = await one.openTab()
 
-    expect(third.state.view.here.value).toBe('One.md')
+    expect(third.state.canvas.view.here.value).toBe('One.md')
   })
 
   it('remains nowhere, and is sent nowhere, while the vault opens with nothing', async () => {
@@ -90,7 +90,7 @@ describe('a plex tab as it opens', () => {
 
     const { state } = await one.openTab()
 
-    expect(state.view.here.value).toBe('')
+    expect(state.canvas.view.here.value).toBe('')
     expect(one.views[0]?.went).toStrictEqual([])
   })
 })
@@ -99,7 +99,7 @@ describe('a change to the vault', () => {
   it('navigates a plex to its missing path on refresh', async () => {
     const one = window()
     const plex = await one.openTab('One.md')
-    plex.state.view.nextPath.value = 'Quantum.md'
+    plex.state.canvas.view.nextPath.value = 'Quantum.md'
 
     await one.refresh({})
 
@@ -121,13 +121,13 @@ describe('a change to the vault', () => {
     answers.shift()?.()
     await settle()
 
-    const going = state.view.go('Quantum.md')
+    const going = state.canvas.view.go('Quantum.md')
     const refreshing = plexes.refresh({})
     await settle()
     answers.splice(0).forEach((release) => release())
     await Promise.all([going, refreshing])
 
-    expect(state.view.here.value).toBe('Quantum.md')
+    expect(state.canvas.view.here.value).toBe('Quantum.md')
   })
 
   it('asks every plex for the note it is standing on, each of its own', async () => {
@@ -139,19 +139,19 @@ describe('a change to the vault', () => {
 
     expect(one.views[0]?.went).toContain('One.md')
     expect(one.views[1]?.went).toContain('Two.md')
-    expect(second.state.view.here.value).toBe('Two.md')
+    expect(second.state.canvas.view.here.value).toBe('Two.md')
   })
 
   it('remains a plex on where the note under it went, under the same node', async () => {
     const one = window()
     const plex = await one.openTab('One.md')
-    const before = plex.state.picture.value?.nodes.map((node) => node.id)
+    const before = plex.state.canvas.picture.value?.nodes.map((node) => node.id)
 
     await one.refresh({ renamed: [{ from: 'One.md', to: 'Renamed.md' }] })
 
-    expect(plex.state.view.here.value).toBe('Renamed.md')
+    expect(plex.state.canvas.view.here.value).toBe('Renamed.md')
     expect(one.views[0]?.went.at(-1)).toBe('Renamed.md')
-    expect(plex.state.picture.value?.nodes.map((node) => node.id)).toStrictEqual(before)
+    expect(plex.state.canvas.picture.value?.nodes.map((node) => node.id)).toStrictEqual(before)
   })
 
   it('leaves a plex standing on a note nothing moved', async () => {
@@ -160,7 +160,7 @@ describe('a change to the vault', () => {
 
     await one.refresh({ renamed: [{ from: 'Other.md', to: 'Renamed.md' }] })
 
-    expect(plex.state.view.here.value).toBe('One.md')
+    expect(plex.state.canvas.view.here.value).toBe('One.md')
   })
 
   it('gives one standing nowhere the note an empty vault has just gained', async () => {
@@ -170,7 +170,7 @@ describe('a change to the vault', () => {
 
     await one.refresh({})
 
-    expect(state.view.here.value).toBe('First.md')
+    expect(state.canvas.view.here.value).toBe('First.md')
   })
 
   it('asks the vault where it opens once, however many stand nowhere', async () => {
@@ -203,7 +203,7 @@ describe('a change to the vault', () => {
     await one.refresh({})
 
     expect(one.views[1]?.went.filter((where) => where === 'Two.md')).toHaveLength(1)
-    expect(first.state.view.here.value).toBe('One.md')
+    expect(first.state.canvas.view.here.value).toBe('One.md')
   })
 
   it('sends no plex anywhere while the vault opens with nothing', async () => {
@@ -273,7 +273,7 @@ describe('plex tab notifications', () => {
   it('calls it a plex while its view holds no neighbourhood', async () => {
     const one = window({ opening: '' })
     const { state } = await one.openTab()
-    ;(state.view.neighbourhood as { value: unknown }).value = null
+    ;(state.canvas.view.neighbourhood as { value: unknown }).value = null
 
     expect(one.kind.getTitle!(state)).toBe('Plex')
   })
@@ -293,7 +293,7 @@ describe('a plex tab as it moves', () => {
     const one = window({ opening: '' })
     const { id, state } = await one.openTab()
 
-    await state.view.go('physics/Ontology.md')
+    await state.canvas.view.go('physics/Ontology.md')
     await settle()
 
     expect(one.recorded.synced).toStrictEqual([[id, 'physics/Ontology.md', 'physics/Ontology']])
@@ -304,7 +304,7 @@ describe('a plex tab as it moves', () => {
     const { state } = await one.openTab('One.md')
     one.recorded.synced.length = 0
 
-    await state.view.go('')
+    await state.canvas.view.go('')
     await settle()
 
     expect(one.recorded.synced).toStrictEqual([])
@@ -315,7 +315,7 @@ describe('a plex tab as it moves', () => {
     const { id, state } = await one.openTab('One.md')
     one.recorded.synced.length = 0
 
-    state.activate(state.picture.value!.nodes[0]!.id)
+    state.nodes.activate(state.canvas.picture.value!.nodes[0]!.id)
 
     expect(one.recorded.synced[0]).toStrictEqual([id, 'One.md', 'One'])
   })
@@ -328,7 +328,7 @@ describe('a plex tab a linked tab moves', () => {
 
     await one.kind.navigate!(state, 'Next.md', 'Next')
 
-    expect(state.view.here.value).toBe('Next.md')
+    expect(state.canvas.view.here.value).toBe('Next.md')
   })
 
   it('stays at its current position when moved to a file that is not a note, or to where it is', async () => {
@@ -340,6 +340,6 @@ describe('a plex tab a linked tab moves', () => {
     await one.kind.navigate!(state, 'Start.md', '')
 
     expect(one.views[0]!.went).toHaveLength(went)
-    expect(state.view.here.value).toBe('Start.md')
+    expect(state.canvas.view.here.value).toBe('Start.md')
   })
 })

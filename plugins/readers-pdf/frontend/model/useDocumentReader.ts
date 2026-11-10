@@ -94,23 +94,22 @@ export function useDocumentReader(documentsOrPath: Documents | string, maybePath
   const reader = {
     path,
     reportFailure,
-    pages,
-    pageNumber: navigation.pageNumber,
-    picture: viewport.picture,
-    getPageImageUrl: viewport.getPageImageUrl,
-    highlighted: highlights.highlighted,
-    getHighlightsOn: highlights.getHighlightsOn,
-    otherHighlighted: highlights.otherHighlighted,
-    getOtherHighlightsOn: highlights.getOtherHighlightsOn,
-    error,
-    isLoading,
-    goToPage: nav.goToPage,
-    goToNextPage: nav.goToNextPage,
-    goToPreviousPage: nav.goToPreviousPage,
-    widen: viewport.widen,
-    applyHighlights: highlights.applyHighlights,
-    focusSpans: nav.focusSpans,
     close,
+    state: { pages, pageNumber: navigation.pageNumber, error, isLoading },
+    view: { picture: viewport.picture, getPageImageUrl: viewport.getPageImageUrl, widen: viewport.widen },
+    highlights: {
+      highlighted: highlights.highlighted,
+      getHighlightsOn: highlights.getHighlightsOn,
+      otherHighlighted: highlights.otherHighlighted,
+      getOtherHighlightsOn: highlights.getOtherHighlightsOn,
+      applyHighlights: highlights.applyHighlights,
+    },
+    actions: {
+      goToPage: nav.goToPage,
+      goToNextPage: nav.goToNextPage,
+      goToPreviousPage: nav.goToPreviousPage,
+      focusSpans: nav.focusSpans,
+    },
   }
   return reader
 }

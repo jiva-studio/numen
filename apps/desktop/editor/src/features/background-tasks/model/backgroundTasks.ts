@@ -28,26 +28,26 @@ function getState(task: Task, isCancelling: boolean): BackgroundTask['state'] {
   return isCancelling ? 'cancelling' : 'running'
 }
 
-function getBackgroundTask(
+function createBackgroundTask(
   task: Task,
   isCancelling: boolean,
   action: TaskAction | undefined,
 ): BackgroundTask {
-  const hasTotal = task.total > 0
+  const hasTotal = task.progress.total > 0
   const isFailed = Boolean(task.error)
   return {
     id: task.id,
     label: task.label,
     about: task.about,
     state: getState(task, isCancelling),
-    done: hasTotal ? task.completedCount : 0,
-    total: hasTotal ? task.total : 0,
-    counting: task.counting === 'items' ? '' : task.counting,
+    progress: {
+      completedCount: hasTotal ? task.progress.completedCount : 0,
+      total: hasTotal ? task.progress.total : 0,
+      counting: task.progress.counting === 'items' ? '' : task.progress.counting,
+    },
     error: task.error,
-    canCancel: !isFailed && task.isCancellable,
-    canRetry: false,
-    actionLabel: action?.label ?? '',
-    actionPluginId: action?.pluginId ?? '',
+    allowed: { cancel: !isFailed && task.isCancellable, retry: false },
+    action: { label: action?.label ?? '', pluginId: action?.pluginId ?? '' },
   }
 }
 
@@ -60,7 +60,7 @@ export function createBackgroundTaskHost(deps: BackgroundTaskHostDeps): Backgrou
     deps.tasks.value
       .filter((task) => !dismissedIds.value.has(task.id))
       .map((task) =>
-        getBackgroundTask(
+        createBackgroundTask(
           task,
           cancellingIds.value.has(task.id),
           task.error ? deps.resolveAction(task) : undefined,

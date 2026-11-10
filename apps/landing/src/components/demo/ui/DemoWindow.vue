@@ -25,7 +25,8 @@ import { getCommandIcon, getFileIcon, getTabIcon } from './icons'
 
 /* --------------------------------- State ---------------------------------- */
 const demo = createDemoWindow()
-const { vault, layout, files, plex, tabMenu, palette, agent, deck, player, links, commands } = demo
+const { parts, pdf, actions } = demo
+const { vault, layout, files, plex, tabMenu, palette, agent, deck, player, links, commands } = parts
 const root = ref<HTMLElement | null>(null)
 const ACTION_KEY = commandKeyChord(KEYBOARD)
 const ACTION_WORDS: ActionWords = { name: 'Actions', placeholder: 'Search actions', silence: 'No actions found' }
@@ -35,7 +36,7 @@ function onKeydown(event: KeyboardEvent) {
   const key = event.key.toLowerCase()
   if (!(event.metaKey || event.ctrlKey) || (key !== 'k' && key !== 'p')) return
   event.preventDefault()
-  palette.toggle(key === 'k' ? 'commands' : 'search')
+  palette.actions.toggle(key === 'k' ? 'commands' : 'search')
 }
 
 /* -------------------------------- Helpers --------------------------------- */
@@ -45,22 +46,22 @@ function getMenuIcon(id: string): Component | null {
 }
 
 function getPaletteIcon(id: string): Component | null {
-  const naming = palette.naming.value
-  if (palette.panel.value === 'naming') return getCommandIcon(naming ? NAMING_COMMAND[naming.role] : '') ?? FileText
-  if (palette.panel.value === 'commands') return getCommandIcon(id)
-  return getFileIcon(id, Boolean(vault.getNote(id)))
+  const naming = palette.state.naming.value
+  if (palette.state.panel.value === 'naming') return getCommandIcon(naming ? NAMING_COMMAND[naming.role] : '') ?? FileText
+  if (palette.state.panel.value === 'commands') return getCommandIcon(id)
+  return getFileIcon(id, Boolean(vault.read.getNote(id)))
 }
 </script>
 
 <template>
   <div ref="root" class="demo-window numen" tabindex="-1" @keydown="onKeydown" @contextmenu.prevent>
     <WorkspaceLayout
-      v-model="layout.held.value"
-      :tabs="layout.tabs.value"
+      v-model="layout.state.held.value"
+      :tabs="layout.state.tabs.value"
       :minimum="140"
-      :create-id="layout.createPaneId"
-      @activate="demo.activateTab"
-      @close="layout.close"
+      :create-id="layout.actions.createPaneId"
+      @activate="actions.activateTab"
+      @close="layout.actions.close"
       @tab-context-menu="tabMenu.open"
     >
       <template #icon="{ id }">
@@ -74,25 +75,25 @@ function getPaletteIcon(id: string): Component | null {
           v-else-if="getKindOfTab(id) === 'plex'"
           :layout="plex.layout.value"
           @go="plex.go"
-          @open="layout.openVaultFile($event)"
+          @open="layout.actions.openVaultFile($event)"
           @run="commands.run"
         />
         <NoteView
-          v-else-if="getKindOfTab(id) === 'note' && layout.getNoteOfTab(id)"
-          :body="layout.getNoteOfTab(id)?.body ?? ''"
-          @update:body="demo.writeBody(id, $event)"
-          @open="demo.followLink($event, id)"
+          v-else-if="getKindOfTab(id) === 'note' && layout.actions.getNoteOfTab(id)"
+          :body="layout.actions.getNoteOfTab(id)?.body ?? ''"
+          @update:body="actions.writeBody(id, $event)"
+          @open="actions.followLink($event, id)"
         />
         <PdfView
           v-else-if="getKindOfTab(id) === 'reader:pdf'"
           :path="getPdfPathOfTab(id)"
-          :page="demo.pdfPages[getPdfPathOfTab(id)] ?? 0"
-          @go="demo.goToPdfPage(getPdfPathOfTab(id), $event)"
+          :page="pdf.pages[getPdfPathOfTab(id)] ?? 0"
+          @go="pdf.goToPage(getPdfPathOfTab(id), $event)"
         />
         <RecordingView v-else-if="getKindOfTab(id) === 'recording'" :player="player" />
         <LinkView v-else-if="getKindOfTab(id) === 'link'" />
         <DeckView v-else-if="getKindOfTab(id) === 'deck'" :deck="deck" />
-        <AgentView v-else-if="getKindOfTab(id) === 'agent'" :agent="agent" @open="demo.openTurnSource" />
+        <AgentView v-else-if="getKindOfTab(id) === 'agent'" :agent="agent" @open="actions.openTurnSource" />
       </template>
     </WorkspaceLayout>
 
@@ -112,21 +113,21 @@ function getPaletteIcon(id: string): Component | null {
     </Menu>
 
     <Palette
-      v-if="palette.panel.value"
-      v-model="palette.typed.value"
-      :groups="palette.groups.value"
+      v-if="palette.state.panel.value"
+      v-model="palette.state.typed.value"
+      :groups="palette.view.groups.value"
       :from="root"
       :to="root ?? 'body'"
-      :crumb="palette.crumb.value"
-      :step="palette.step.value"
+      :crumb="palette.view.crumb.value"
+      :step="palette.view.step.value"
       is-open
-      :placeholder="palette.placeholder.value"
+      :placeholder="palette.view.placeholder.value"
       name="Search the vault"
       :action-words="ACTION_WORDS"
       :action-key="ACTION_KEY"
-      @choose="demo.choosePalette"
-      @back="palette.dismiss"
-      @dismiss="palette.dismiss"
+      @choose="actions.choosePalette"
+      @back="palette.actions.dismiss"
+      @dismiss="palette.actions.dismiss"
     >
       <template #icon="{ id }">
         <component :is="getPaletteIcon(id)" v-if="getPaletteIcon(id)" class="command-icon" />

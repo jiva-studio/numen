@@ -19,13 +19,9 @@ const createSettings = (day: string) =>
   formatSettings({ ...DEFAULT_SETTINGS, goal: 'date', byDate: day, reviewsADay: 200 })
 
 const vault: VaultCardsDue = {
-  vault: '01A',
-  name: 'Vault',
-  path: '/vaults/01A',
+  identity: { vault: '01A', name: 'Vault', path: '/vaults/01A' },
   isCounted: true,
-  reviewCards: 4,
-  due: 3,
-  new: 1,
+  totals: { reviewCards: 4, due: 3, new: 1 },
   decks: [{ deck: 'decks/Words.md', reviewCards: 4, due: 3, new: 1, learned: 2, unbegun: 1 }],
   presets: [],
   unread: '',

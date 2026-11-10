@@ -13,10 +13,10 @@ const props = defineProps<{ state: PresetTabState }>()
 // --- State ---
 // The tab's state outlives this component, so its value is bound once here
 // and the template unwraps it.
-const { hasExternalChange, problems, errorMessage } = props.state
+const { hasExternalChange, problems, errorMessage } = props.state.status
 
 function onRefresh() {
-  props.state.reload()
+  props.state.actions.reload()
 }
 
 // --- Helpers ---

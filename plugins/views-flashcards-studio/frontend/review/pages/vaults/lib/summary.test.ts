@@ -8,13 +8,9 @@ import { getVaultSummary } from './summary'
 import { VAULTS_WORDS } from '../words'
 
 const vault = (overrides: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
-  vault: '01A',
-  name: 'Roots',
-  path: '/vaults/Roots',
+  identity: { vault: '01A', name: 'Roots', path: '/vaults/Roots' },
   isCounted: true,
-  reviewCards: 0,
-  due: 2,
-  new: 3,
+  totals: { reviewCards: 0, due: 2, new: 3 },
   decks: [],
   presets: [],
   unread: '',
@@ -28,7 +24,9 @@ describe('how many cards a vault has waiting', () => {
   })
 
   it('is nought for a vault counted at nothing', () => {
-    expect(getVaultSummary(vault({ due: 0, new: 0 }), VAULTS_WORDS)).toStrictEqual({
+    expect(
+      getVaultSummary(vault({ totals: { reviewCards: 0, due: 0, new: 0 } }), VAULTS_WORDS),
+    ).toStrictEqual({
       kind: 'due',
       due: 0,
     })

@@ -43,13 +43,9 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
 })
 
 const vault: VaultCardsDue = {
-  vault: '01A',
-  name: 'Studies',
-  path: '/vaults/01A',
+  identity: { vault: '01A', name: 'Studies', path: '/vaults/01A' },
   isCounted: true,
-  reviewCards: 40,
-  due: 12,
-  new: 4,
+  totals: { reviewCards: 40, due: 12, new: 4 },
   decks: [
     { deck: 'decks/Words.md', reviewCards: 20, due: 8, new: 2, learned: 5, unbegun: 2 },
     { deck: 'decks/Roots.md', reviewCards: 20, due: 4, new: 2, learned: 10, unbegun: 2 },
@@ -125,8 +121,7 @@ describe('a deck with nothing waiting', () => {
     unbegun = 0,
   ): VaultCardsDue => ({
     ...vault,
-    due,
-    new: freshCount,
+    totals: { ...vault.totals, due, new: freshCount },
     decks: [{ deck: 'decks/Words.md', reviewCards, due, new: freshCount, learned: 0, unbegun }],
   })
 
@@ -234,8 +229,7 @@ describe('the tile and the decks under it', () => {
   it('agree: at nothing done, no deck of that preset claims to be done', () => {
     const overVal: VaultCardsDue = {
       ...vault,
-      due: 10,
-      new: 0,
+      totals: { ...vault.totals, due: 10, new: 0 },
       decks: [
         { deck: 'decks/Words.md', reviewCards: 20, due: 10, new: 0, learned: 0, unbegun: 0 },
         { deck: 'decks/Roots.md', reviewCards: 20, due: 0, new: 0, learned: 0, unbegun: 0 },

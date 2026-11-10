@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
-import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
+import type { PluginUi, PluginVault, TabKindRegistration } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import {
@@ -209,7 +209,7 @@ describe('a declared kind registered through a plugin context', () => {
     }
     const context = createPluginHost(deps).createContext('md.numen.sample')
 
-    const sub = context.registerTabKind<Held>({
+    const sub = context.register.tabKind<Held>({
       kind: 'member',
       component: Pane,
       open: (folderPath, id) => ({ at: folderPath, id, title: 'T' }),
@@ -233,9 +233,9 @@ describe('the services a plugin context is given', () => {
   })
 
   it('are the window and the notes the host has made by the time the plugin activates', async () => {
-    const workspace = { name: 'workspace' } as unknown as NonNullable<PluginContext['workspace']>
+    const workspace = { name: 'workspace' } as unknown as NonNullable<PluginUi['workspace']>
     const read = vi.fn(async () => ({ body: 'Pruning notes.' }))
-    const notes = { read } as unknown as NonNullable<PluginContext['notes']>
+    const notes = { read } as unknown as NonNullable<PluginVault['notes']>
     const host = createPluginHost(
       createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
     )
@@ -245,8 +245,8 @@ describe('the services a plugin context is given', () => {
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
 
-    expect(context.workspace).toMatchObject(workspace)
-    await expect(context.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
+    expect(context.ui.workspace).toMatchObject(workspace)
+    await expect(context.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
       body: 'Pruning notes.',
     })
     expect(read).toHaveBeenCalledWith('Orchard/Pruning.md')
@@ -267,10 +267,10 @@ describe('the services a plugin context is given', () => {
       name: 'One',
       permissions: ['vault:read'],
     })
-    host.createContext('md.numen.one', readText).onVaultChange((event) => {
+    host.createContext('md.numen.one', readText).events.onVaultChange((event) => {
       received.push(event)
     })
-    host.createContext('md.numen.two', readText).onVaultChange(() => {
+    host.createContext('md.numen.two', readText).events.onVaultChange(() => {
       throw new Error('no')
     })
 

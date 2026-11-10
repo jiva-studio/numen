@@ -46,22 +46,19 @@ export function createPalette(vault: Vault) {
   }
 
   return {
-    panel,
-    typed,
-    naming,
-    groups,
-    placeholder,
-    crumb,
-    step,
-    toggle,
-    openNaming(role: NamingRole, path: string) {
-      naming.value = { role, path }
-      typed.value = role === 'title' ? (vault.getNote(path)?.title ?? '') : ''
-      panel.value = 'naming'
-    },
-    dismiss() {
-      panel.value = null
-      naming.value = null
+    state: { panel, typed, naming },
+    view: { groups, placeholder, crumb, step },
+    actions: {
+      toggle,
+      openNaming(role: NamingRole, path: string) {
+        naming.value = { role, path }
+        typed.value = role === 'title' ? (vault.read.getNote(path)?.title ?? '') : ''
+        panel.value = 'naming'
+      },
+      dismiss() {
+        panel.value = null
+        naming.value = null
+      },
     },
   }
 }

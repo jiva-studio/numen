@@ -114,23 +114,23 @@ describe('a goal of a date', () => {
   it('counts the days to it from the review day', async () => {
     const { state } = await openPresetTab({ goal: 'date', byDate: BY })
 
-    expect(state.curve.value.now.value).toBe(8)
+    expect(state.curves.curve.value.now.value).toBe(8)
   })
 
   it('leaves the knob at its current position when the day it already aims at is typed', async () => {
     const reply = createHonestCurve()
     const { state } = await openPresetTab({ goal: 'date', byDate: BY }, reply)
-    expect(state.place.value).toBe(reply.now.index)
+    expect(state.curves.place.value).toBe(reply.now.index)
 
-    state.updateSetting('byDate', BY)
+    state.actions.updateSetting('byDate', BY)
 
-    expect(state.place.value).toBe(reply.now.index)
+    expect(state.curves.place.value).toBe(reply.now.index)
   })
 
   it('opens on a day counted from the review day where the file names none', async () => {
     const { state, written } = await openPresetTab({ goal: 'minutes', byDate: '' })
 
-    state.chooseGoal('date')
+    state.actions.chooseGoal('date')
     for (let i = 0; i < 10; i += 1) await Promise.resolve()
 
     expect(state.settings.value.byDate).toBe('2026-10-04')

@@ -41,14 +41,17 @@ export function useAgentPanel(deps: AgentPanelDeps) {
    */
   const startConversation = (targetCard: ReviewCard) => {
     const currentCard = current.value?.card
-    if (currentCard?.cardId === targetCard.cardId && currentCard.template === targetCard.template)
+    if (
+      currentCard?.address.cardId === targetCard.address.cardId &&
+      currentCard.address.template === targetCard.address.template
+    )
       return
     endConversation()
     current.value = {
       card: targetCard,
       context: {
         agent: deps.agent(targetCard),
-        focus: targetCard.deck,
+        focus: targetCard.address.deck,
         placeholder: words.ask,
         getUnreachable: deps.unreachable,
       },

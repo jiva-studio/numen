@@ -12,7 +12,7 @@ import type { WindowKindsDeps } from '../plugins/tabKindsDeps'
 import {
   createAgentHost,
   createVaultNotes,
-  getWorkspaceHost,
+  createWorkspaceHost,
   type PluginServices,
 } from '../plugins/pluginServices'
 import { createFileMakers, createVaultFiles } from '../plugins/fileServices'
@@ -85,7 +85,7 @@ export function useTabKinds(deps: WindowKindsDeps) {
   windowTabs.groups.registerKinds(settings.kinds)
 
   const services: PluginServices = {
-    workspace: getWorkspaceHost({
+    workspace: createWorkspaceHost({
       ...deps,
       dragged,
       getNoteInFocus,

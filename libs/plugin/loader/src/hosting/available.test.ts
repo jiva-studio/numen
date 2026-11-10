@@ -71,7 +71,7 @@ describe('a handler registered for a command no manifest declares', () => {
   it('is reported once the first list of declarations has loaded, even for a plugin that declares nothing', () => {
     const reportCommandIssue = vi.fn()
     const host = createHost({ getCommandDeclarations: () => [], reportCommandIssue })
-    host.createContext('md.silent').registerCommand({ id: 'tree.open', handler: vi.fn() })
+    host.createContext('md.silent').register.command({ id: 'tree.open', handler: vi.fn() })
 
     host.getPaletteCommands()
 
@@ -84,7 +84,7 @@ describe('a handler registered for a command no manifest declares', () => {
   it('is not reported before any list of declarations has loaded', () => {
     const reportCommandIssue = vi.fn()
     const host = createHost({ getCommandDeclarations: () => undefined, reportCommandIssue })
-    host.createContext('md.silent').registerCommand({ id: 'tree.open', handler: vi.fn() })
+    host.createContext('md.silent').register.command({ id: 'tree.open', handler: vi.fn() })
 
     expect(host.getPaletteCommands()).toStrictEqual([])
     expect(reportCommandIssue).not.toHaveBeenCalled()
@@ -104,14 +104,14 @@ describe('a command declared by a plugin with no frontend to load', () => {
 describe('a plugin that was disposed', () => {
   it('lists none of its declared commands until it has a context again', () => {
     const host = createHost()
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler: vi.fn() })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler: vi.fn() })
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
 
     host.disposePlugin('md.tree')
 
     expect(host.getPaletteCommands()).toStrictEqual([])
 
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler: vi.fn() })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler: vi.fn() })
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
   })

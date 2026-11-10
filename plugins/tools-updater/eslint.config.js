@@ -235,6 +235,12 @@ export default [
     },
   },
   {
+    files: ['**/*.{ts,vue}'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**', '**/testing/**'],
+    plugins: { numen },
+    rules: { 'numen/max-composable-return-properties': ['error', { max: 8 }] },
+  },
+  {
     files: ['**/*.vue'],
     plugins: { numen },
     rules: {

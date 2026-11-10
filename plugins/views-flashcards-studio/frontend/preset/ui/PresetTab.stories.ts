@@ -81,23 +81,29 @@ const createPresetTab = (args: Knobs): PresetTabState => {
   return {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, goal: args.goal }),
-    curve: shallowRef(picture),
-    material: shallowRef(args.isHonest ? MATERIAL : null),
-    place,
-    isWaiting: ref(args.isWaiting),
     bounds: shallowRef(BOUNDS),
-    problems: shallowRef([]),
-    stopped: ref(StopReason.NOTHING),
-    errorMessage: ref(''),
-    hasExternalChange: ref(false),
-    reload: fn(),
-    chooseGoal: fn(),
-    moveSlider: (pos: number) => {
-      place.value = pos
+    curves: {
+      curve: shallowRef(picture),
+      material: shallowRef(args.isHonest ? MATERIAL : null),
+      place,
+      isWaiting: ref(args.isWaiting),
     },
-    flushPending: fn(),
-    updateSetting: fn(),
-    close: fn(),
+    status: {
+      problems: shallowRef([]),
+      stopped: ref(StopReason.NOTHING),
+      errorMessage: ref(''),
+      hasExternalChange: ref(false),
+    },
+    actions: {
+      reload: fn(),
+      chooseGoal: fn(),
+      moveSlider: (pos: number) => {
+        place.value = pos
+      },
+      flushPending: fn(),
+      updateSetting: fn(),
+      close: fn(),
+    },
   }
 }
 

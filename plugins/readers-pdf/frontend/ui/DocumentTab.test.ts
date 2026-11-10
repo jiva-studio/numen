@@ -15,19 +15,21 @@ const reader = vi.hoisted(() => ({
 vi.mock('../model/useDocumentReader', () => ({
   useDocumentReader: (path: string) => ({
     path,
-    pages: shallowRef([{ width: 600, height: 800 }]),
-    pageNumber: ref(0),
-    isLoading: ref(false),
-    error: ref(''),
-    getPageImageUrl: () => '',
-    getHighlightsOn: () => [],
-    getOtherHighlightsOn: () => [],
-    goToPage: async () => undefined,
-    applyHighlights: async () => undefined,
-    widen: () => undefined,
     reportFailure: () => undefined,
     close: () => undefined,
-    focusSpans: reader.focusSpans,
+    state: {
+      pages: shallowRef([{ width: 600, height: 800 }]),
+      pageNumber: ref(0),
+      isLoading: ref(false),
+      error: ref(''),
+    },
+    view: { getPageImageUrl: () => '', widen: () => undefined },
+    highlights: {
+      getHighlightsOn: () => [],
+      getOtherHighlightsOn: () => [],
+      applyHighlights: async () => undefined,
+    },
+    actions: { goToPage: async () => undefined, focusSpans: reader.focusSpans },
   }),
 }))
 

@@ -35,10 +35,15 @@ describe('summarizeTasks', () => {
 
   it('averages the progress of the active tasks that have a total', () => {
     const summary = summarizeTasks([
-      createTask({ id: 'a', state: 'running', done: 1, total: 4 }),
-      createTask({ id: 'b', state: 'running', done: 3, total: 4 }),
+      createTask({ id: 'a', state: 'running', progress: { completedCount: 1, total: 4 } }),
+      createTask({ id: 'b', state: 'running', progress: { completedCount: 3, total: 4 } }),
       createTask({ id: 'c', state: 'running' }),
-      createTask({ id: 'd', state: 'failed', done: 0, total: 10, error: 'stopped' }),
+      createTask({
+        id: 'd',
+        state: 'failed',
+        progress: { completedCount: 0, total: 10 },
+        error: 'stopped',
+      }),
     ])
 
     expect(summary.progress).toBe(50)
@@ -53,11 +58,13 @@ describe('summarizeTasks', () => {
 
 describe('getProgress', () => {
   it('is the rounded percent of the total that is done', () => {
-    expect(getProgress(createTask({ id: 'a', done: 1, total: 3 }))).toBe(33)
+    expect(getProgress(createTask({ id: 'a', progress: { completedCount: 1, total: 3 } }))).toBe(33)
   })
 
   it('is undefined for a task without a total', () => {
-    expect(getProgress(createTask({ id: 'a', done: 0, total: 0 }))).toBeUndefined()
+    expect(
+      getProgress(createTask({ id: 'a', progress: { completedCount: 0, total: 0 } })),
+    ).toBeUndefined()
   })
 })
 
@@ -76,7 +83,7 @@ describe('summarizeBatch', () => {
 
   it('counts the tasks that left the list as done and adds the progress of the active ones', () => {
     const tasks = [
-      createTask({ id: 'c', state: 'running', done: 1, total: 2 }),
+      createTask({ id: 'c', state: 'running', progress: { completedCount: 1, total: 2 } }),
       createTask({ id: 'd', state: 'running' }),
     ]
 

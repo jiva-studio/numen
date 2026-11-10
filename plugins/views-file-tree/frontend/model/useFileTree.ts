@@ -247,20 +247,32 @@ export function createFileTree(core: Folders): FileTree {
   }
 
   return {
-    ...queries,
-    selectedPaths: state.selectedPaths,
-    errorMessage: state.errorMessage,
-    isLoaded: state.isLoaded,
-    loadFolder: refreshControl.loadFolder,
-    openFolder: folderOps.openFolder,
-    closeFolder: folderOps.closeFolder,
-    toggleFolder: folderOps.toggleFolder,
-    selectPaths: (paths: readonly string[]) => {
-      state.selectedPaths.value = paths
+    state: {
+      rows: queries.rows,
+      openRows: queries.openRows,
+      selectedPaths: state.selectedPaths,
+      errorMessage: state.errorMessage,
+      isLoaded: state.isLoaded,
     },
-    revealPath,
-    refresh: refreshControl.refresh,
-    refreshChanged: refreshControl.refreshChanged,
-    close,
+    queries: {
+      getEntriesInFolder: queries.getEntriesInFolder,
+      isFolderOpen: queries.isFolderOpen,
+      getEntryAt: queries.getEntryAt,
+    },
+    navigation: {
+      loadFolder: refreshControl.loadFolder,
+      openFolder: folderOps.openFolder,
+      closeFolder: folderOps.closeFolder,
+      toggleFolder: folderOps.toggleFolder,
+      selectPaths: (paths: readonly string[]) => {
+        state.selectedPaths.value = paths
+      },
+      revealPath,
+    },
+    sync: {
+      refresh: refreshControl.refresh,
+      refreshChanged: refreshControl.refreshChanged,
+      close,
+    },
   }
 }

@@ -28,7 +28,9 @@ const props = defineProps<{
 const targetPath = props.path || props.file || props.state?.path || props.state?.file || ''
 
 const tab = useTranscript(props.recordings, targetPath, props.how)
-const { now, runs, isPlaying, isUnplayable, isVideo, isLoaded, url } = tab.playback
+const { source, progress } = tab.playback
+const { isUnplayable, isVideo, isLoaded, url } = source
+const { now, runs, isPlaying } = progress
 const { pageUrl } = tab.content
 /** Whether there is media to play: a note that names neither media nor a page draws no player. */
 const hasMedia = computed(() => url.value !== '' || !isNotePath(targetPath))
@@ -73,13 +75,13 @@ watch(
 watch(
   () => props.state?.ranges,
   (ranges) => {
-    if (ranges && ranges.length > 0) seekToSpans(...ranges).catch(tab.reportFailure)
+    if (ranges && ranges.length > 0) seekToSpans(...ranges).catch(tab.lifecycle.reportFailure)
   },
   { immediate: true },
 )
 
 const savePlace = () => {
-  if (tab.playback.isLoaded.value) saveTime(now.value)
+  if (isLoaded.value) saveTime(now.value)
 }
 
 // Saved when playback stops and every ten seconds of it, so a restart loses at most that much.
@@ -95,7 +97,7 @@ watch(
 
 onUnmounted(() => {
   savePlace()
-  tab.close()
+  tab.lifecycle.close()
 })
 
 /* -------------------------------- Handlers -------------------------------- */

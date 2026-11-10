@@ -61,22 +61,22 @@ function onNotesPage(page: unknown) {
     </template>
 
     <SessionSummary
-      v-else-if="session.state.over.value"
-      :done="session.state.done.value"
+      v-else-if="session.state.progress.isOver.value"
+      :done="session.state.progress.completedCount.value"
       @leave="session.leave"
     />
 
     <Session
-      v-else-if="session.state.card.value"
-      :card="session.state.card.value"
-      :is-shown="session.state.shown.value"
-      :left="session.state.left.value"
-      :can-take-back="session.state.answers.value.length > 0"
+      v-else-if="session.state.queue.card.value"
+      :card="session.state.queue.card.value"
+      :is-shown="session.state.queue.isAnswerShown.value"
+      :left="session.state.progress.left.value"
+      :can-take-back="session.state.queue.answers.value.length > 0"
       :at="session.at.value"
       @update:at="session.moveTo"
-      @show="session.state.show"
+      @show="session.state.actions.show"
       @answer="session.recordReview"
-      @take-back="session.state.takeBack"
+      @take-back="session.state.actions.takeBack"
       @leave="session.leave"
       @ask="session.toggleAgent"
       @read="session.toggleNotes"

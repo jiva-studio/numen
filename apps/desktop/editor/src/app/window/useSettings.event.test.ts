@@ -190,7 +190,7 @@ describe('a setting that changes', () => {
     })
     await settings.start()
     const handler = vi.fn()
-    support.pluginHost.createContext(PLUGIN).onSettingChange('mode', handler)
+    support.pluginHost.createContext(PLUGIN).settings.onChange('mode', handler)
 
     change(feed, [PLUGIN, 'mode'], 'b')
     await vi.advanceTimersByTimeAsync(0)
@@ -214,7 +214,7 @@ describe('a setting that changes', () => {
     })
     await settings.start()
     const handler = vi.fn()
-    support.pluginHost.createContext(PLUGIN).onSettingChange('mode', handler)
+    support.pluginHost.createContext(PLUGIN).settings.onChange('mode', handler)
 
     change(feed, ['md.numen.other', 'mode'], 'b')
     await vi.advanceTimersByTimeAsync(0)

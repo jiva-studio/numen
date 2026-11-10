@@ -78,7 +78,7 @@ const openAt =
         { get: () => windowRanges.value, enumerable: true },
       )
       watch(
-        reader.isLoading,
+        reader.document.state.isLoading,
         (isLoading) => {
           if (!isLoading) windowRanges.value = [...ranges]
         },

@@ -20,7 +20,7 @@ const props = withDefaults(
 )
 
 /* --------------------------------- State ---------------------------------- */
-const { failure, isPlaying: playbackIsPlaying } = props.state.playback
+const { failure, isPlaying: playbackIsPlaying } = props.state.playback.progress
 const { current, following, note, isLoading, error, isEditable } = props.state.content
 const { prose, typing } = props.state.draft
 const { timed, times: cueTimes, hasText } = props.state.lines
@@ -55,7 +55,7 @@ watch(
 
 /* -------------------------------- Handlers -------------------------------- */
 function onTranscribe() {
-  props.state.options.start().catch(props.state.reportFailure)
+  props.state.options.start().catch(props.state.lifecycle.reportFailure)
 }
 
 function onUpdateModelValue(text: string) {
@@ -63,7 +63,7 @@ function onUpdateModelValue(text: string) {
 }
 
 function onSave() {
-  props.state.draft.keep().catch(props.state.reportFailure)
+  props.state.draft.keep().catch(props.state.lifecycle.reportFailure)
 }
 </script>
 

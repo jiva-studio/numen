@@ -19,15 +19,17 @@ defineOptions({ name: 'PlexTab' })
 const props = defineProps<{ state: PlexTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { dragged, menu, quickLink, linkInspector, maxHeadings, picture: neighbourhood } = props.state
+const { dragged, picture: neighbourhood } = props.state.canvas
+const { request: menu, menuItems: items, getMenuIcon, getNodeIcon } = props.state.menu
+const { quickLink } = props.state.quickLink
+const { linkInspector } = props.state.inspector
+const { maxHeadings } = props.state.headings
 
 const type = useTypeSize()
 const options = computed(() => ({
   ...optionsForType(type.value),
   maxHeadings: maxHeadings.value,
 }))
-
-const { menuItems: items, getMenuIcon, getNodeIcon } = props.state
 
 const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
   usePlexCanvas({ state: props.state })
@@ -38,35 +40,37 @@ const pending = computed(() =>
 
 /* -------------------------------- Handlers -------------------------------- */
 function onActivateNode(node: string) {
-  props.state.activate(node)
+  props.state.nodes.activate(node)
 }
 
 function onCreateNode(from: string, relation: PlexRelation, at?: { x: number; y: number }) {
-  props.state.createNode(from, relation, at ?? lastPointer.value).catch(props.state.reportFailure)
+  props.state.nodes
+    .createNode(from, relation, at ?? lastPointer.value)
+    .catch(props.state.reportFailure)
 }
 
 function onLinkNodes(from: string, to: string, relation: PlexRelation) {
-  props.state.joinNodes(from, to, relation).catch(props.state.reportFailure)
+  props.state.nodes.joinNodes(from, to, relation).catch(props.state.reportFailure)
 }
 
 function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
-  props.state.dropNodes(nodes, relation).catch(props.state.reportFailure)
+  props.state.nodes.dropNodes(nodes, relation).catch(props.state.reportFailure)
 }
 
 function onOpenMenu(node: string, position: { x: number; y: number }, opening: MenuTrigger) {
-  props.state.openMenu({ node, at: position, opening })
+  props.state.menu.openMenu({ node, at: position, opening })
 }
 
 function onShowNode(node: string, how: PlexDestination) {
-  props.state.openNode(node, how)
+  props.state.nodes.openNode(node, how)
 }
 
 function onEnterHeading(node: string, heading: string) {
-  props.state.openHeading(node, heading)
+  props.state.headings.openHeading(node, heading)
 }
 
 function onDismissImage() {
-  props.state.dismiss()
+  props.state.menu.dismiss()
 }
 
 function onChooseMenuItem(id: string) {
@@ -78,39 +82,39 @@ function onDismissMenu() {
 }
 
 function onSelectQuickLinkNote(path: string) {
-  props.state.confirmQuickLink(path, true).catch(props.state.reportFailure)
+  props.state.quickLink.confirmQuickLink(path, true).catch(props.state.reportFailure)
 }
 
 function onCreateQuickLinkNote(title: string) {
-  props.state.confirmQuickLink(title, false).catch(props.state.reportFailure)
+  props.state.quickLink.confirmQuickLink(title, false).catch(props.state.reportFailure)
 }
 
 function onDismissQuickLink() {
-  props.state.dismissQuickLink()
+  props.state.quickLink.dismissQuickLink()
 }
 
 function onSaveLinkInspector(connection: Connection) {
-  props.state.saveLinkInspector(connection).catch(props.state.reportFailure)
+  props.state.inspector.saveLinkInspector(connection).catch(props.state.reportFailure)
 }
 
 function onRemoveLinkInspector() {
-  props.state.removeLinkInspector().catch(props.state.reportFailure)
+  props.state.inspector.removeLinkInspector().catch(props.state.reportFailure)
 }
 
 function onDismissLinkInspector() {
-  props.state.dismissLinkInspector()
+  props.state.inspector.dismissLinkInspector()
 }
 </script>
 
 <template>
   <div ref="rootElement" class="plex" @contextmenu="onContextMenu" @pointerup.capture="onPointerUp">
-    <p v-if="props.state.view.error.value" class="caution">
-      {{ props.state.view.error.value }}
+    <p v-if="props.state.canvas.view.error.value" class="caution">
+      {{ props.state.canvas.view.error.value }}
     </p>
 
     <!-- Until the first neighbourhood lands, an empty plex and one no one has
          answered for yet are drawn the same way. -->
-    <LoadingIndicator v-if="props.state.view.isLoading.value" :label="words.loading" />
+    <LoadingIndicator v-if="props.state.canvas.view.isLoading.value" :label="words.loading" />
 
     <Plex
       v-else-if="neighbourhood"
@@ -118,11 +122,11 @@ function onDismissLinkInspector() {
       class="plex__image"
       :neighbourhood="neighbourhood!"
       :options="options"
-      :creatable="props.state.creatable"
+      :creatable="props.state.canvas.creatable"
       :pending="pending"
       :dragged="dragged"
       :drop-name="words.dropName"
-      :headings="props.state.getHeadings"
+      :headings="props.state.headings.getHeadings"
       @activate="onActivateNode"
       @create="onCreateNode"
       @link="onLinkNodes"
@@ -168,7 +172,7 @@ function onDismissLinkInspector() {
       v-if="quickLink"
       :at="quickLink.at"
       :relation="quickLink.relation"
-      :search="props.state.searchNotes"
+      :search="props.state.quickLink.searchNotes"
       @select-note="onSelectQuickLinkNote"
       @create-note="onCreateQuickLinkNote"
       @dismiss="onDismissQuickLink"

@@ -23,7 +23,7 @@ export function useDocumentTab(readItem: DocumentReaderState) {
   const focusTab = () => page.value?.focusPages()
 
   return {
-    ...readItem,
+    document: readItem,
     setPageHandle,
     measure,
     handleKeyPress,

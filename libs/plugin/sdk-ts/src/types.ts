@@ -202,55 +202,95 @@ export interface FileSelectEvent {
   readonly title?: string
 }
 
-// PluginContext provides registration and host services to an activated plugin.
-export interface PluginContext {
-  readonly pluginId: string
+// PluginIdentity is who the plugin is and where it runs.
+export interface PluginIdentity {
+  readonly id: string
   readonly target: string
   readonly subscriptions: Disposable[]
   readonly app: AppInfo
   // Opens an http or https address in the system browser. Any other address fails.
   openExternal(url: string): Promise<Result<null>>
-  registerReader(registration: ReaderRegistration): Disposable
+  hasPermission?(permission: string): boolean
+}
+
+// PluginRegistrations is what a plugin adds to the window.
+export interface PluginRegistrations {
+  reader(registration: ReaderRegistration): Disposable
   // Registers the component of the settings view the manifest declares under the same id.
-  registerSettingsView(registration: SettingsViewRegistration): Disposable
+  settingsView(registration: SettingsViewRegistration): Disposable
   // Registers the component of the view the manifest places under the same id in
   // `contributes.slots`, drawn in every slot the manifest places it in. An id the manifest places
   // nowhere throws.
-  registerSlotView(registration: SlotViewRegistration): Disposable
-  registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
-  registerCommand(registration: CommandRegistration): Disposable
-  registerAgentProvider(registration: AgentProviderRegistration): Disposable
+  slotView(registration: SlotViewRegistration): Disposable
+  tabKind<State>(registration: TabKindRegistration<State>): Disposable
+  command(registration: CommandRegistration): Disposable
+  agentProvider(registration: AgentProviderRegistration): Disposable
   // Declares a view other plugins mount by its capability.
-  registerView(registration: ViewRegistration): Disposable
-  // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
-  // plugin declares one the element stays empty, and the view is drawn once one does.
-  mountView(capability: string, element: HTMLElement, context: unknown): MountedView
-  getSetting<T = unknown>(key: string): T | undefined
-  onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable
+  view(registration: ViewRegistration): Disposable
+  // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
+  dropHandler?(registration: DropRegistration): Disposable
+}
+
+// PluginSettings is the settings of the plugin.
+export interface PluginSettings {
+  get<T = unknown>(key: string): T | undefined
+  onChange<T = unknown>(key: string, handler: (value: T) => void): Disposable
+}
+
+// PluginEvents is what a plugin receives of the vault and says to the other plugins.
+export interface PluginEvents {
   onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable
   onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable
   emitVaultChange(event: VaultChangeEvent): void
   emitFileSelect(event: FileSelectEvent): void
-  openTab?(kind: string, at?: string): Promise<string> | void
+}
+
+// PluginTabs is how a plugin opens, moves and closes tabs.
+export interface PluginTabs {
+  open?(kind: string, at?: string): Promise<string> | void
   // Brings the most recently active tab of the kind to the front and navigates it to `path`; opens a tab of that kind at `path` when none is open.
-  navigateTab?(kind: string, path: string): Promise<string> | void
-  closeTab?(id: string): void
-  hasPermission?(permission: string): boolean
-  readonly workspace?: WorkspaceHost
+  navigate?(kind: string, path: string): Promise<string> | void
+  close?(id: string): void
+}
+
+// PluginVault is what a plugin reads and writes of the vault.
+export interface PluginVault {
   readonly notes?: VaultNotes
   readonly relations?: VaultRelations
   readonly files?: VaultFiles
-  readonly agent?: AgentHost
-  readonly buffers?: BufferHost
   readonly texts?: VaultTexts
-  readonly notices?: NoticeHost
-  readonly tasks?: TaskHost
+  readonly buffers?: BufferHost
+  readonly vaults?: VaultsHost
+}
+
+// PluginUi is the window a plugin draws in.
+export interface PluginUi {
+  readonly workspace?: WorkspaceHost
+  readonly window?: WindowHost
   readonly commands?: CommandsHost
   readonly slots?: SlotHost
-  readonly vaults?: VaultsHost
-  readonly window?: WindowHost
-  readonly backgroundTasks?: BackgroundTaskHost
-  // Declares the data dragged in from outside the window the plugin takes, where the host offers drops.
-  registerDropHandler?(registration: DropRegistration): Disposable
+  readonly notices?: NoticeHost
   readonly drops?: DropHost
+  // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
+  // plugin declares one the element stays empty, and the view is drawn once one does.
+  mountView(capability: string, element: HTMLElement, context: unknown): MountedView
+}
+
+// PluginWork is the agent and the background work of the core.
+export interface PluginWork {
+  readonly agent?: AgentHost
+  readonly tasks?: TaskHost
+  readonly backgroundTasks?: BackgroundTaskHost
+}
+
+// PluginContext provides registration and host services to an activated plugin, in parts.
+export interface PluginContext {
+  readonly plugin: PluginIdentity
+  readonly register: PluginRegistrations
+  readonly settings: PluginSettings
+  readonly events: PluginEvents
+  readonly tabs: PluginTabs
+  readonly vault: PluginVault
+  readonly ui: PluginUi
+  readonly work: PluginWork
 }

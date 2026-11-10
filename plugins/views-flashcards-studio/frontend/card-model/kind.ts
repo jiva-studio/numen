@@ -60,18 +60,24 @@ function createCardModelTabItem(
       .catch(reportFailure)
   }
 
+  const actions = fields.createActions(id)
   return {
     id,
-    note: computed(() => store.getOpenNote(id)),
-    cardModel: computed(() => fields.getCardModel(id)),
-    marks: computed(() => fields.getMarks(id)),
-    errorMessage: computed(() =>
-      wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
-    ),
-    ...fields.createActions(id),
-    keepMine: () => store.keep(id),
-    takeFile: () => store.take(id),
-    close,
+    data: {
+      note: computed(() => store.getOpenNote(id)),
+      cardModel: computed(() => fields.getCardModel(id)),
+      marks: computed(() => fields.getMarks(id)),
+      errorMessage: computed(() =>
+        wire.getErrorMessage(store.getPath(id), store.getOpenNote(id).error),
+      ),
+    },
+    fields: actions.fields,
+    templates: actions.templates,
+    file: {
+      keepMine: () => store.keep(id),
+      takeFile: () => store.take(id),
+      close,
+    },
   }
 }
 
@@ -97,14 +103,14 @@ function createCardModelKindDefinition(deps: {
       return open === undefined ? path : open.slice(CARD_MODEL.length + 1)
     },
     getTitle: (one) => getTitle(store.getPath(one.id)),
-    getMark: (one) => getMarkOf(one.note.value.state),
+    getMark: (one) => getMarkOf(one.data.note.value.state),
     getTarget: (one) => ({
       path: store.getPath(one.id),
       title: getTitle(store.getPath(one.id)),
     }),
     getOpenTab: (one) => ({ path: store.getPath(one.id) }),
     onClose: (one, id) => {
-      one.close(id)
+      one.file.close(id)
       return false
     },
     // The tab state holds no resource beyond the buffer store.

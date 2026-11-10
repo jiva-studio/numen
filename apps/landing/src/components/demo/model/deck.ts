@@ -22,12 +22,14 @@ export function createDeck() {
   return {
     cards,
     sections,
-    presets: PRESET_CHOICES,
-    preset,
     models: CARD_MODELS,
-    setPreset(path: string) {
-      const found = PRESET_CHOICES.find((one) => one.path === path)
-      if (found) preset.value = found
+    review: {
+      presets: PRESET_CHOICES,
+      preset,
+      setPreset(path: string) {
+        const found = PRESET_CHOICES.find((one) => one.path === path)
+        if (found) preset.value = found
+      },
     },
     addCard(modelName: string, section: string) {
       const model = CARD_MODELS.find((one) => one.name === modelName)

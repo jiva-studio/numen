@@ -18,5 +18,5 @@ export function getVaultSummary(vault: VaultCardsDue | null, words: VaultsWords)
   if (vault?.isIndexing) return { kind: 'detail', text: words.indexing }
   if (vault?.unread) return { kind: 'detail', text: vault.unread }
   if (!vault?.isCounted) return { kind: 'due', due: null }
-  return { kind: 'due', due: vault.due + vault.new }
+  return { kind: 'due', due: vault.totals.due + vault.totals.new }
 }

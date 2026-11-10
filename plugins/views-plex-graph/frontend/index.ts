@@ -12,7 +12,8 @@ export * from './types'
 export * from './words'
 
 export function activate(context: PluginContext): void {
-  const { workspace, notes, relations } = context
+  const { workspace } = context.ui
+  const { notes, relations } = context.vault
   if (!workspace || !notes || !relations) {
     throw new Error(
       'a plex needs the window it is drawn in, the notes of the vault and their relationships',
@@ -21,21 +22,21 @@ export function activate(context: PluginContext): void {
   const plexes = createPlexKind(
     {
       workspace,
-      ...(context.commands ? { commands: context.commands } : {}),
-      ...(context.slots ? { slots: context.slots } : {}),
+      ...(context.ui.commands ? { commands: context.ui.commands } : {}),
+      ...(context.ui.slots ? { slots: context.ui.slots } : {}),
       notes,
       relations,
       nesting: readNesting(context),
     },
     () => usePlexView({ neighbourhood: (path) => notes.getNeighbourhood(path) }),
   )
-  context.registerTabKind(plexes.kind)
-  context.onVaultChange((event) => plexes.refresh(event))
+  context.register.tabKind(plexes.kind)
+  context.events.onVaultChange((event) => plexes.refresh(event))
 
-  context.registerCommand({
+  context.register.command({
     id: 'graph.open',
     handler: async (note) => {
-      await context.navigateTab?.(PLEX, note.path)
+      await context.tabs.navigate?.(PLEX, note.path)
     },
   })
 }

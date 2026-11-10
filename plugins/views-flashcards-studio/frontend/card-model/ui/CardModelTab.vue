@@ -14,52 +14,52 @@ import { WORDS as words } from '../../cards'
 const props = defineProps<{ state: CardModelTabState }>()
 
 // --- State ---
-const cardModel = computed(() => props.state.cardModel.value)
-const marks = computed(() => props.state.marks.value)
-const isRead = computed(() => props.state.note.value.isRead)
+const cardModel = computed(() => props.state.data.cardModel.value)
+const marks = computed(() => props.state.data.marks.value)
+const isRead = computed(() => props.state.data.note.value.isRead)
 
 function onKeep() {
-  props.state.keepMine()
+  props.state.file.keepMine()
 }
 
 function onTake() {
-  props.state.takeFile()
+  props.state.file.takeFile()
 }
 
 function onAddField(name: string) {
-  props.state.addField(name)
+  props.state.fields.addField(name)
 }
 
 function onRenameField(field: string, name: string) {
-  props.state.renameField(field, name)
+  props.state.fields.renameField(field, name)
 }
 
 function onRemoveField(field: string) {
-  props.state.removeField(field)
+  props.state.fields.removeField(field)
 }
 
 function onMoveField(field: string, target: InsertionPoint) {
-  props.state.moveField(field, target)
+  props.state.fields.moveField(field, target)
 }
 
 function onAddTemplate(name: string) {
-  props.state.addTemplate(name)
+  props.state.templates.addTemplate(name)
 }
 
 function onRenameTemplate(id: string, name: string) {
-  props.state.renameTemplate(id, name)
+  props.state.templates.renameTemplate(id, name)
 }
 
 function onRemoveTemplate(id: string) {
-  props.state.removeTemplate(id)
+  props.state.templates.removeTemplate(id)
 }
 
 function onMoveTemplate(id: string, target: InsertionPoint) {
-  props.state.moveTemplate(id, target)
+  props.state.templates.moveTemplate(id, target)
 }
 
 function onWriteTemplate(id: string, half: Half, text: string) {
-  props.state.writeTemplateHalf(id, half, text)
+  props.state.templates.writeTemplateHalf(id, half, text)
 }
 
 // --- Helpers ---
@@ -68,8 +68,8 @@ function onWriteTemplate(id: string, half: Half, text: string) {
 <template>
   <div class="card-model-tab">
     <FileConflictPrompt
-      :error-message="props.state.errorMessage.value"
-      :conflict="parseFileConflict(props.state.note.value.state)"
+      :error-message="props.state.data.errorMessage.value"
+      :conflict="parseFileConflict(props.state.data.note.value.state)"
       :words="words"
       @keep="onKeep"
       @take="onTake"

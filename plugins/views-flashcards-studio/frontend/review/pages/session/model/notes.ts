@@ -134,19 +134,11 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     deps.showPanel(false)
   }
 
-  const api = {
-    notes,
-    links,
-    unread,
-    isWorking,
-    col: activePath,
-    open,
-    openPanel,
-    closePanel,
-    read: readItem,
-    endSession,
+  return {
+    content: { notes, links, unread, isWorking },
+    view: { col: activePath, open },
+    actions: { openPanel, closePanel, read: readItem, endSession },
   }
-  return api
 }
 
 /** What one panel holds. */

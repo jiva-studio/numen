@@ -74,13 +74,7 @@ export function useNodePress(
     }),
   )
 
-  const state = {
-    isGhost,
-    canReach,
-    canStop,
-    isAnnounced,
-    listening: combinedListeners,
-
+  const handlers = {
     onClick: (): void => {
       activateNode()
     },
@@ -105,7 +99,11 @@ export function useNodePress(
       })
     },
   }
-  return state
+  return {
+    role: { isGhost, canReach, canStop, isAnnounced },
+    listening: combinedListeners,
+    handlers,
+  }
 }
 
 interface KeyPressContext {

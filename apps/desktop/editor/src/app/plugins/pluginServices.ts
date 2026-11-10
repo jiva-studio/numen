@@ -14,6 +14,7 @@ import type {
   VaultRelations,
   VaultsHost,
   WindowHost,
+  WorkspaceFiles,
   WorkspaceHost,
 } from '@numen/plugin-loader'
 import type { SearchDeps } from '@/features/command-palette'
@@ -63,17 +64,10 @@ export interface WorkspaceHostDeps extends IconHostDeps {
   readonly today: () => string
 }
 
-export function getWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
-  const { window, dragged, tabOpeners, writeMessage } = deps
+function createWorkspaceFiles(deps: WorkspaceHostDeps): WorkspaceFiles {
+  const { tabOpeners, writeMessage } = deps
   return {
-    isReady: computed(() => !window.health.failure.value),
-    openingPath: window.opening.path,
-    readOpeningPath: () => window.opening.read(),
-    draggedPaths: dragged,
-    setDraggedPaths: (paths) => {
-      dragged.value = paths
-    },
-    openFile: (path, options) => {
+    open: (path, options) => {
       tabOpeners
         .openFile(path, options?.title ?? '', {
           ...(options?.placement ? { where: options.placement } : {}),
@@ -82,21 +76,41 @@ export function getWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
         })
         .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
-    openFileAt: (path, spans) => {
+    openAt: (path, spans) => {
       tabOpeners
         .openFileAt(path, spans)
         .catch((error: unknown) => writeMessage(formatError(error), 'error'))
     },
-    getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
-    ask: (text) => deps.ask(text),
-    showError: (text) => writeMessage(text, 'error'),
-    getMessageWriter: (name) => deps.getMessageWriter(name),
-    getToday: () => deps.today(),
-    ...createIconHost({
+  }
+}
+
+export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
+  const { window, dragged, tabOpeners, writeMessage } = deps
+  return {
+    window: {
+      isReady: computed(() => !window.health.failure.value),
+      openingPath: window.opening.path,
+      readOpeningPath: () => window.opening.read(),
+      getToday: () => deps.today(),
+    },
+    dragged: {
+      paths: dragged,
+      setPaths: (paths) => {
+        dragged.value = paths
+      },
+    },
+    files: createWorkspaceFiles(deps),
+    messages: {
+      showError: (text) => writeMessage(text, 'error'),
+      getWriter: (name) => deps.getMessageWriter(name),
+    },
+    icons: createIconHost({
       ...(deps.getPluginCommandIcon ? { getPluginCommandIcon: deps.getPluginCommandIcon } : {}),
       findFileIcon: tabOpeners.findFileIcon,
     }),
+    getNoteInFocus: () => deps.getNoteInFocus(),
+    ask: (text) => deps.ask(text),
   }
 }
 

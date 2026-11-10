@@ -82,18 +82,11 @@ function useSessionCards() {
     answers.value = []
   }
 
-  const api = {
-    cardList: request,
-    cardIndex,
-    isAnswerShown,
-    answers,
-    card,
-    left: remaining,
-    isOver,
-    completedCount: isDone,
+  return {
+    queue: { cardList: request, cardIndex, answers, card, isAnswerShown },
+    progress: { left: remaining, isOver, completedCount: isDone },
     reset,
   }
-  return api
 }
 
 async function openSession(deps: {
@@ -133,8 +126,8 @@ async function submitAnswer(deps: {
     const response = await deps.cards.recordReview({
       vault: deps.vault,
       run: deps.run,
-      cardId: deps.card.cardId,
-      template: deps.card.template,
+      cardId: deps.card.address.cardId,
+      template: deps.card.address.template,
       rating: RATING_BY_GRADE[deps.how],
       durationMs: deps.elapsedMs,
     })
@@ -173,8 +166,8 @@ function createAnswerActions(deps: {
   setPut: (time: number) => void
 }) {
   const answer = async (how: Grade) => {
-    const one = deps.cards.card.value
-    if (!one || !deps.cards.isAnswerShown.value || deps.writing.value) return
+    const one = deps.cards.queue.card.value
+    if (!one || !deps.cards.queue.isAnswerShown.value || deps.writing.value) return
     const elapsedMs = deps.now() - deps.getPut()
     deps.writing.value = true
     try {
@@ -188,17 +181,17 @@ function createAnswerActions(deps: {
         elapsedMs,
       })
       if (!ans) return
-      deps.cards.answers.value.push(ans)
+      deps.cards.queue.answers.value.push(ans)
     } finally {
       deps.writing.value = false
     }
-    deps.cards.cardIndex.value += 1
-    deps.cards.isAnswerShown.value = false
+    deps.cards.queue.cardIndex.value += 1
+    deps.cards.queue.isAnswerShown.value = false
     deps.setPut(deps.now())
   }
 
   const takeBack = async () => {
-    const last = deps.cards.answers.value[deps.cards.answers.value.length - 1]
+    const last = deps.cards.queue.answers.value[deps.cards.queue.answers.value.length - 1]
     if (last === undefined || deps.writing.value) return
     deps.writing.value = true
     try {
@@ -213,9 +206,9 @@ function createAnswerActions(deps: {
     } finally {
       deps.writing.value = false
     }
-    deps.cards.answers.value.pop()
-    deps.cards.cardIndex.value = Math.max(0, deps.cards.cardIndex.value - 1)
-    deps.cards.isAnswerShown.value = true
+    deps.cards.queue.answers.value.pop()
+    deps.cards.queue.cardIndex.value = Math.max(0, deps.cards.queue.cardIndex.value - 1)
+    deps.cards.queue.isAnswerShown.value = true
     deps.setPut(deps.now())
   }
 
@@ -246,10 +239,10 @@ function createSessionOpener(deps: {
     if (!startedSession) return null
     deps.vault.value = id
     deps.run.value = startedSession.run
-    deps.cards.cardList.value = startedSession.cards
-    deps.cards.cardIndex.value = 0
-    deps.cards.isAnswerShown.value = false
-    deps.cards.answers.value = []
+    deps.cards.queue.cardList.value = startedSession.cards
+    deps.cards.queue.cardIndex.value = 0
+    deps.cards.queue.isAnswerShown.value = false
+    deps.cards.queue.answers.value = []
     deps.setPut(deps.now())
     return startedSession.report
   }
@@ -297,37 +290,31 @@ export function useReviewSession(deps: SessionDeps) {
     },
   })
 
-  const api = {
-    vault: vault as Ref<string>,
-    run,
-    cardList: cards.cardList,
-    cardIndex: cards.cardIndex,
-    isAnswerShown: cards.isAnswerShown,
-    shown: cards.isAnswerShown,
-    answers: cards.answers,
-    writing,
-    card: cards.card,
-    left: cards.left,
-    isOver: cards.isOver,
-    over: cards.isOver,
-    completedCount: cards.completedCount,
-    done: cards.completedCount,
-    start,
-    show: () => {
-      cards.isAnswerShown.value = true
+  return {
+    ids: { vault: vault as Ref<string>, run },
+    queue: {
+      cardList: cards.queue.cardList,
+      cardIndex: cards.queue.cardIndex,
+      isAnswerShown: cards.queue.isAnswerShown,
+      answers: cards.queue.answers,
+      card: cards.queue.card,
+      writing,
     },
-    answer,
-    takeBack,
-    forget,
+    progress: cards.progress,
+    actions: {
+      start,
+      show: () => {
+        cards.queue.isAnswerShown.value = true
+      },
+      answer,
+      takeBack,
+      forget,
+    },
   }
-  return api
 }
 
 const createReviewCard = (one: SessionStart['cards'][number]): ReviewCard => ({
-  deck: one.deck,
-  section: one.section,
-  cardId: one.cardId,
-  template: one.template,
+  address: { deck: one.deck, section: one.section, cardId: one.cardId, template: one.template },
   heading: one.heading,
   front: one.front,
   back: one.back,

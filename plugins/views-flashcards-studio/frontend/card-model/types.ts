@@ -8,7 +8,6 @@ import type { Marks } from '../cards'
 import type { BufferCardModel } from './lib/card-model'
 
 export interface CardModelDataState {
-  readonly id: string
   readonly note: ComputedRef<OpenNote>
   readonly cardModel: ComputedRef<BufferCardModel>
   readonly marks: ComputedRef<Marks>
@@ -36,8 +35,11 @@ export interface CardModelTabLifecycle {
   close(id: string): void
 }
 
-/** What one card model tab holds. */
-export type CardModelTabState = CardModelDataState &
-  CardModelFieldActions &
-  CardModelTemplateActions &
-  CardModelTabLifecycle
+/** What one card model tab holds, in named parts. */
+export interface CardModelTabState {
+  readonly id: string
+  readonly data: CardModelDataState
+  readonly fields: CardModelFieldActions
+  readonly templates: CardModelTemplateActions
+  readonly file: CardModelTabLifecycle
+}

@@ -118,14 +118,14 @@ describe('a card model opened', () => {
   it('draws the fields in the order a person is requested for them', async () => {
     const { tab } = await open()
 
-    expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
   it('gives every template an identity, which the file carries none of', async () => {
     const { tab } = await open()
 
-    expect(tab.cardModel.value.templates[0]?.id).toBeTruthy()
-    expect(tab.cardModel.value.templates[0]?.name).toBe('Recognise')
+    expect(tab.data.cardModel.value.templates[0]?.id).toBeTruthy()
+    expect(tab.data.cardModel.value.templates[0]?.name).toBe('Recognise')
   })
 
   it('is called what the file is called', async () => {
@@ -139,7 +139,7 @@ describe('a field renamed in a card model', () => {
   it('is the vault that renames it, presenting the file the tab read', async () => {
     const { tab, renamed } = await open()
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
 
     expect(renamed).toStrictEqual(['Animal.md Height Shoulder read'])
@@ -148,8 +148,8 @@ describe('a field renamed in a card model', () => {
   it('writes a field added and not yet saved before the vault renames it', async () => {
     const { tab, renamed, writtenFiles } = await open()
 
-    tab.addField('Depth')
-    tab.renameField('Depth', 'Width')
+    tab.fields.addField('Depth')
+    tab.fields.renameField('Depth', 'Width')
     await settle()
     await settle()
 
@@ -157,13 +157,13 @@ describe('a field renamed in a card model', () => {
       'Animal.md Height, Life span, Depth | **Height:** {{Height}}',
     ])
     expect(renamed).toStrictEqual(['Animal.md Depth Width written'])
-    expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span', 'Width'])
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Height', 'Life span', 'Width'])
   })
 
   it('writes the card model from the tab nowhere, so nothing goes over the vault', async () => {
     const { cardModels, tab, writtenFiles } = await open()
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
     await cardModels.store.flush()
 
@@ -173,19 +173,19 @@ describe('a field renamed in a card model', () => {
   it('shows the fields and the braces as the vault left them', async () => {
     const { tab } = await open()
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
     await settle()
 
-    expect(tab.cardModel.value.fields).toStrictEqual(['Shoulder', 'Life span'])
-    expect(tab.cardModel.value.templates[0]?.back).toBe('**Height:** {{Shoulder}}')
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Shoulder', 'Life span'])
+    expect(tab.data.cardModel.value.templates[0]?.back).toBe('**Height:** {{Shoulder}}')
   })
 
   it('asks for nothing where the name is the one the field carries', async () => {
     const { tab, renamed } = await open()
 
-    tab.renameField('Height', 'Height')
-    tab.renameField('Height', '')
+    tab.fields.renameField('Height', 'Height')
+    tab.fields.renameField('Height', '')
     await settle()
 
     expect(renamed).toStrictEqual([])
@@ -201,7 +201,7 @@ describe('a field renamed in a card model', () => {
       }),
     })
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
 
     expect(messages).toContain(words.renamed(3, 2))
@@ -217,7 +217,7 @@ describe('a field renamed in a card model', () => {
       }),
     })
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
 
     expect(messages).toContain(words.notWritten(['Broken.md']))
@@ -228,7 +228,7 @@ describe('a field renamed in a card model', () => {
       renaming: asFailure('notACardModel' as const),
     })
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
 
     expect(messages).toStrictEqual([ERRORS.notACardModel])
@@ -239,7 +239,7 @@ describe('a field renamed in a card model', () => {
       renaming: asFailure('changed' as const),
     })
 
-    tab.renameField('Height', 'Shoulder')
+    tab.fields.renameField('Height', 'Shoulder')
     await settle()
 
     expect(messages).toStrictEqual([words.notRenamed])
@@ -258,26 +258,26 @@ describe('a field carried in a card model', () => {
   it('lands where it was dropped', async () => {
     const { tab } = await open()
 
-    tab.moveField('Life span', null)
+    tab.fields.moveField('Life span', null)
 
-    expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
   it('leaves the first field first, wherever it was dropped', async () => {
     const { tab } = await open()
 
-    tab.moveField('Height', null)
+    tab.fields.moveField('Height', null)
 
-    expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 
   it('lands nothing above the first field', async () => {
     const { tab } = await open()
 
-    tab.addField('Weight')
-    tab.moveField('Weight', 'Height')
+    tab.fields.addField('Weight')
+    tab.fields.moveField('Weight', 'Height')
 
-    expect(tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span', 'Weight'])
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Height', 'Life span', 'Weight'])
   })
 })
 
@@ -285,18 +285,18 @@ describe('a card model whose file moved past what was read', () => {
   it('is stale once the write arrives back saying the file changed', async () => {
     const { cardModels, tab } = await open({ isChanged: true })
 
-    tab.addField('Weight')
+    tab.fields.addField('Weight')
     await cardModels.store.flush()
 
-    expect(tab.note.value.state).toBe('stale')
+    expect(tab.data.note.value.state).toBe('stale')
   })
 
   it('keeps what the person wrote when they say so', async () => {
     const { cardModels, tab, writtenFiles } = await open({ isChanged: true })
 
-    tab.addField('Weight')
+    tab.fields.addField('Weight')
     await cardModels.store.flush()
-    tab.keepMine()
+    tab.file.keepMine()
     await settle()
 
     expect(writtenFiles).toHaveLength(2)
@@ -307,29 +307,29 @@ describe('a card model the vault rejected', () => {
   it('says the note is not a card model where that is what it is', async () => {
     const { tab } = await open({ error: 'notACardModel' })
 
-    expect(tab.errorMessage.value).toBe(words.notACardModel)
-    expect(tab.cardModel.value.fields).toStrictEqual([])
+    expect(tab.data.errorMessage.value).toBe(words.notACardModel)
+    expect(tab.data.cardModel.value.fields).toStrictEqual([])
   })
 
   it('says nothing where the card model was read', async () => {
     const { tab } = await open()
 
-    expect(tab.errorMessage.value).toBe('')
+    expect(tab.data.errorMessage.value).toBe('')
   })
 
   it('says the vault could not be reached, where the read reached nothing', async () => {
     const { tab } = await open({ isUnreachable: true })
 
-    expect(tab.errorMessage.value).toBe(words.unreachable)
+    expect(tab.data.errorMessage.value).toBe(words.unreachable)
   })
 
   it('says the file could not be written, where that is what failed', async () => {
     const { cardModels, tab } = await open({ wrote: 'unreadable' })
 
-    tab.addField('Weight')
+    tab.fields.addField('Weight')
     await cardModels.store.flushPending(cardModels.store.getOpenIds()[0] ?? '')
 
-    expect(tab.errorMessage.value).toBe(words.notSaved)
+    expect(tab.data.errorMessage.value).toBe(words.notSaved)
   })
 
   it('writes an edit made after a write that did not reach the vault', async () => {
@@ -337,15 +337,15 @@ describe('a card model the vault rejected', () => {
     const { cardModels, tab, writtenFiles } = await open(answers)
     const id = cardModels.store.getOpenIds()[0] ?? ''
 
-    tab.addField('Weight')
+    tab.fields.addField('Weight')
     await cardModels.store.flushPending(id)
     delete answers.wrote
-    tab.addField('Depth')
+    tab.fields.addField('Depth')
     await cardModels.store.flushPending(id)
 
     expect(writtenFiles.at(-1)).toMatch(/^Animal\.md Height, Life span, Weight, Depth \|/)
-    expect(tab.note.value.state).toBe('clean')
-    expect(tab.errorMessage.value).toBe('')
+    expect(tab.data.note.value.state).toBe('clean')
+    expect(tab.data.errorMessage.value).toBe('')
   })
 })
 
@@ -357,8 +357,8 @@ describe('what is wrong with a card model', () => {
       ],
     })
 
-    const template = tab.cardModel.value.templates[0]?.id ?? ''
-    expect(tab.marks.value.at.get(template)).toStrictEqual(['no back'])
+    const template = tab.data.cardModel.value.templates[0]?.id ?? ''
+    expect(tab.data.marks.value.at.get(template)).toStrictEqual(['no back'])
   })
 
   it('remains against the field it names at its current position against no template', async () => {
@@ -374,16 +374,16 @@ describe('what is wrong with a card model', () => {
       ],
     })
 
-    expect(tab.marks.value.fields.get('Height')).toStrictEqual(['declared twice'])
-    expect(tab.marks.value.at.size).toBe(0)
+    expect(tab.data.marks.value.fields.get('Height')).toStrictEqual(['declared twice'])
+    expect(tab.data.marks.value.at.size).toBe(0)
   })
 
   it('is nothing at all where the vault reported none', async () => {
     const { tab } = await open()
 
-    expect(tab.marks.value.at.size).toBe(0)
-    expect(tab.marks.value.fields.size).toBe(0)
-    expect(tab.marks.value.whole).toStrictEqual([])
+    expect(tab.data.marks.value.at.size).toBe(0)
+    expect(tab.data.marks.value.fields.size).toBe(0)
+    expect(tab.data.marks.value.whole).toStrictEqual([])
   })
 })
 
@@ -400,40 +400,40 @@ describe('a card model read again under the window', () => {
 
   it('leaves what the editor is drawing standing, where the file reads the same', async () => {
     const one = await open({ problems: [sideless] })
-    const was = { cardModel: one.tab.cardModel.value, marks: one.tab.marks.value }
+    const was = { cardModel: one.tab.data.cardModel.value, marks: one.tab.data.marks.value }
 
     one.cardModels.applyPathChanges(['Animal.md'])
     await settle()
 
     // Each of them the same thing, and not merely a thing that reads the same:
     // a field under the keyboard is redrawn by anything else.
-    expect(one.tab.cardModel.value).toBe(was.cardModel)
-    expect(one.tab.marks.value).toBe(was.marks)
+    expect(one.tab.data.cardModel.value).toBe(was.cardModel)
+    expect(one.tab.data.marks.value).toBe(was.marks)
   })
 
   it('leaves each mark standing on the template the editor is drawing', async () => {
     const one = await open({ problems: [sideless] })
     // The template the editor is drawing, under the identity it was drawn with.
-    const template = one.tab.cardModel.value.templates[0]?.id ?? ''
+    const template = one.tab.data.cardModel.value.templates[0]?.id ?? ''
 
     one.cardModels.applyPathChanges(['Animal.md'])
     await settle()
 
-    expect(one.tab.marks.value.at.get(template)).toStrictEqual(['no back'])
+    expect(one.tab.data.marks.value.at.get(template)).toStrictEqual(['no back'])
   })
 
   it('draws the file again where it was written from somewhere else', async () => {
     const one = await open()
-    const was = one.tab.cardModel.value
+    const was = one.tab.data.cardModel.value
 
     one.setTemplates([{ name: 'Recall', preamble: '', front: '{{Height}}', back: '{{Life span}}' }])
     one.cardModels.applyPathChanges(['Animal.md'])
     await settle()
 
-    expect(one.tab.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
+    expect(one.tab.data.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
       'Recall',
     ])
-    expect(one.tab.cardModel.value).not.toBe(was)
+    expect(one.tab.data.cardModel.value).not.toBe(was)
   })
 })
 
@@ -461,30 +461,30 @@ describe('a card model edited before its file is read', () => {
   it('takes no template while the file is read', async () => {
     const { tab } = await openUnread()
 
-    tab.addTemplate('Name it')
+    tab.templates.addTemplate('Name it')
 
-    expect(tab.cardModel.value.templates).toStrictEqual([])
+    expect(tab.data.cardModel.value.templates).toStrictEqual([])
   })
 
   it('takes no template where the read failed', async () => {
     const { cardModels, tab, writtenFiles } = await open({ error: 'notACardModel' })
 
-    tab.addTemplate('Name it')
+    tab.templates.addTemplate('Name it')
     await cardModels.store.flush()
 
-    expect(tab.cardModel.value.templates).toStrictEqual([])
+    expect(tab.data.cardModel.value.templates).toStrictEqual([])
     expect(writtenFiles).toStrictEqual([])
   })
 
   it('shows the file once it is read, and writes nothing', async () => {
     const { cardModels, tab, answerRead, writtenFiles } = await openUnread()
 
-    tab.addTemplate('Name it')
+    tab.templates.addTemplate('Name it')
     answerRead()
     await settle()
     await cardModels.store.flush()
 
-    expect(tab.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
+    expect(tab.data.cardModel.value.templates.map((template) => template.name)).toStrictEqual([
       'Recognise',
     ])
     expect(writtenFiles).toStrictEqual([])
@@ -527,7 +527,7 @@ describe('a card model whose tab has gone', () => {
 
 const openStale = async () => {
   const one = await open({ isChanged: true })
-  one.tab.addField('Weight')
+  one.tab.fields.addField('Weight')
   await one.cardModels.store.flush()
   return one
 }
@@ -577,7 +577,7 @@ describe('what the window asks of a card model tab', () => {
 
   it('is to write what is unwritten out, and answer once it is', async () => {
     const one = await open()
-    one.tab.addField('Weight')
+    one.tab.fields.addField('Weight')
 
     await one.cardModels.kind.flushPending?.(one.tab)
 
@@ -588,7 +588,7 @@ describe('what the window asks of a card model tab', () => {
 
   it('is to be written out with the other open files when the window quits', async () => {
     const one = await open()
-    one.tab.addField('Weight')
+    one.tab.fields.addField('Weight')
 
     await one.buffers.flush()
 
@@ -611,7 +611,7 @@ describe('a card model tab closed', () => {
   it('stays open, still called what it was, where the file moved past its contents', async () => {
     const one = await openStale()
 
-    one.tab.close(one.id)
+    one.tab.file.close(one.id)
     await settle()
 
     expect(one.windowTabs.each(CARD_MODEL)).toHaveLength(1)
@@ -621,15 +621,15 @@ describe('a card model tab closed', () => {
 
   it('is read afresh where the file is opened again', async () => {
     const one = await open()
-    const was = one.tab.cardModel.value.templates[0]?.id
+    const was = one.tab.data.cardModel.value.templates[0]?.id
 
-    one.tab.close(one.id)
+    one.tab.file.close(one.id)
     await settle()
     const id = await one.windowTabs.openTab(CARD_MODEL, 'Animal.md')
     await settle()
     const tab = one.windowTabs.getTabState<CardModelTabState>(id) as CardModelTabState
 
-    expect(tab.cardModel.value.templates[0]?.id).not.toBe(was)
+    expect(tab.data.cardModel.value.templates[0]?.id).not.toBe(was)
   })
 
   it('releases its title while a tab relies on another file', async () => {
@@ -650,7 +650,7 @@ describe('a card model tab closed', () => {
     one.cardModels.applyPathChanges(['Animal.md'], [{ from: 'Beast.md', to: 'Animal.md' }])
     await settle()
 
-    one.tab.close(one.id)
+    one.tab.file.close(one.id)
     await settle()
 
     expect(one.cardModels.getTitle('Animal.md')).toBe('Animal')
@@ -661,11 +661,11 @@ describe('a card model taken from its file', () => {
   it('shows the file as it now reads, and is no longer stale', async () => {
     const one = await openStale()
 
-    one.tab.takeFile()
+    one.tab.file.takeFile()
     await settle()
 
-    expect(one.tab.note.value.state).not.toBe('stale')
-    expect(one.tab.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
+    expect(one.tab.data.note.value.state).not.toBe('stale')
+    expect(one.tab.data.cardModel.value.fields).toStrictEqual(['Height', 'Life span'])
   })
 })
 

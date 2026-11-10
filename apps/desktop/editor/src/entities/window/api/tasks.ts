@@ -31,13 +31,17 @@ export async function* watchTasks(signal: AbortSignal): AsyncGenerator<readonly 
       id: task.id,
       label: task.title,
       about: task.about,
-      completedCount: Number(task.done),
-      total: Number(task.total),
-      counting: getCounting(task.unit),
+      progress: {
+        completedCount: Number(task.done),
+        total: Number(task.total),
+        counting: getCounting(task.unit),
+      },
       error: task.error,
-      isUserStarted: task.isUserStarted,
-      pluginId: task.pluginId,
-      pluginName: task.pluginName,
+      source: {
+        isUserStarted: task.isUserStarted,
+        pluginId: task.pluginId,
+        pluginName: task.pluginName,
+      },
       isCancellable: task.isCancellable,
       kind: task.kind === TASK_KIND.NOTICE ? 'notice' : 'work',
     }))

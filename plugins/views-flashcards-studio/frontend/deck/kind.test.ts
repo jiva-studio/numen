@@ -10,7 +10,7 @@ import type { DeckTabState } from './types'
 const createInside = (open: readonly string[] = []) => {
   const state = {
     id: 'deck:Animals.md',
-    note: { value: { state: 'unsaved' } },
+    data: { note: { value: { state: 'unsaved' } } },
   } as unknown as DeckTabState
   const inside = {
     store: {
@@ -127,7 +127,7 @@ describe('a deck tab closed', () => {
   it('closes the tab and leaves the pane to the caller', () => {
     const { kind } = createInside()
     const close = vi.fn()
-    const state = { close } as unknown as DeckTabState
+    const state = { file: { close } } as unknown as DeckTabState
 
     expect(kind.onClose?.(state, 'tab-1')).toBe(false)
     expect(close).toHaveBeenCalledWith('tab-1')

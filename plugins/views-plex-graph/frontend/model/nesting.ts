@@ -30,15 +30,13 @@ export const parseHeadingLimit = (value: unknown): number =>
     : DEFAULT_HEADING_LIMIT
 
 /** The two settings read from the context, and followed while the plugin is active. */
-export function readNesting(
-  context: Pick<PluginContext, 'getSetting' | 'onSettingChange'>,
-): Nesting {
-  const isNesting = ref(parseIsNesting(context.getSetting(NEST_HEADINGS)))
-  const headings = ref(parseHeadingLimit(context.getSetting(HEADING_LIMIT)))
-  context.onSettingChange(NEST_HEADINGS, (value) => {
+export function readNesting(context: Pick<PluginContext, 'settings'>): Nesting {
+  const isNesting = ref(parseIsNesting(context.settings.get(NEST_HEADINGS)))
+  const headings = ref(parseHeadingLimit(context.settings.get(HEADING_LIMIT)))
+  context.settings.onChange(NEST_HEADINGS, (value) => {
     isNesting.value = parseIsNesting(value)
   })
-  context.onSettingChange(HEADING_LIMIT, (value) => {
+  context.settings.onChange(HEADING_LIMIT, (value) => {
     headings.value = parseHeadingLimit(value)
   })
   return { isNesting, headings }

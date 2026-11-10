@@ -39,8 +39,8 @@ export function isConfigurableError(error: string): boolean {
 
 /** The settings action of a task whose plugin failed for want of configuration. */
 export function resolveTaskAction(task: Task): { label: string; pluginId: string } | undefined {
-  if (!task.pluginId || !isConfigurableError(task.error)) {
+  if (!task.source.pluginId || !isConfigurableError(task.error)) {
     return undefined
   }
-  return { label: words.configure, pluginId: task.pluginId }
+  return { label: words.configure, pluginId: task.source.pluginId }
 }

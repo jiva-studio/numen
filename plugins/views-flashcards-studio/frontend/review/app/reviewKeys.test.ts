@@ -21,13 +21,9 @@ const createPress = (key: string, more: Partial<KeyboardEvent> = {}) =>
   }) as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> }
 
 const createVault = (more: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
-  vault: 'garden',
-  name: 'Garden',
-  path: '/vaults/Garden',
+  identity: { vault: 'garden', name: 'Garden', path: '/vaults/Garden' },
   isCounted: true,
-  reviewCards: 4,
-  due: 2,
-  new: 2,
+  totals: { reviewCards: 4, due: 2, new: 2 },
   decks: [{ deck: 'decks/Leaves.md', reviewCards: 4, due: 2, new: 2, learned: 0, unbegun: 0 }],
   presets: [],
   unread: '',
@@ -64,7 +60,10 @@ const createKeys = (
 
 describe('the keys of the decks screen', () => {
   it('opens vault with only new cards and consumes key event', () => {
-    const { onKeyDown, deps } = createKeys('decks', createVault({ due: 0, new: 3 }))
+    const { onKeyDown, deps } = createKeys(
+      'decks',
+      createVault({ totals: { reviewCards: 4, due: 0, new: 3 } }),
+    )
     const press = createPress('Enter')
 
     onKeyDown(press)
@@ -74,7 +73,10 @@ describe('the keys of the decks screen', () => {
   })
 
   it('does not sit down to a vault with no cards due', () => {
-    const { onKeyDown, deps } = createKeys('decks', createVault({ due: 0, new: 0 }))
+    const { onKeyDown, deps } = createKeys(
+      'decks',
+      createVault({ totals: { reviewCards: 4, due: 0, new: 0 } }),
+    )
 
     onKeyDown(createPress('Enter'))
 

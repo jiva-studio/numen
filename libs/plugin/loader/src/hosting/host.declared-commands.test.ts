@@ -45,7 +45,7 @@ describe('the commands a plugin declares in its manifest', () => {
     ])
 
     host.registerKeybindings('md.tree', [{ key: 'mod+shift+e', command: 'tree.revealNote' }])
-    host.createContext('md.tree').registerCommand({ id: 'tree.revealNote', handler: vi.fn() })
+    host.createContext('md.tree').register.command({ id: 'tree.revealNote', handler: vi.fn() })
 
     expect(host.getPaletteCommands()).toStrictEqual([
       {
@@ -61,8 +61,8 @@ describe('the commands a plugin declares in its manifest', () => {
     const { host, deps } = createHost([declare()])
     const ctx = host.createContext('md.tree')
 
-    ctx.registerCommand({ id: 'tree.open', handler: vi.fn() })
-    ctx.registerCommand({ id: 'tree.close', handler: vi.fn() })
+    ctx.register.command({ id: 'tree.open', handler: vi.fn() })
+    ctx.register.command({ id: 'tree.close', handler: vi.fn() })
     host.getPaletteCommands()
     host.getPaletteCommands()
 
@@ -96,7 +96,7 @@ describe('the commands a plugin declares in its manifest', () => {
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
     const running = host.executeCommand('md.tree:tree.open', note)
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
     expect(handler).not.toHaveBeenCalled()
     settle()
 
@@ -125,7 +125,7 @@ describe('the commands a plugin declares in its manifest', () => {
     const handler = vi.fn()
     const keys = [{ key: 'mod+shift+e', command: 'tree.open' }]
     host.registerKeybindings('md.tree', keys)
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
     const event = new KeyboardEvent('keydown', { code: 'KeyE', shiftKey: true, ctrlKey: true })
 
     host.disposePlugin('md.tree')
@@ -134,7 +134,7 @@ describe('the commands a plugin declares in its manifest', () => {
     expect(host.handleShortcut(event, async () => note)).toBe(false)
 
     host.registerKeybindings('md.tree', keys)
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual(['md.tree:tree.open'])
     expect(host.handleShortcut(event, async () => note)).toBe(true)
@@ -143,7 +143,7 @@ describe('the commands a plugin declares in its manifest', () => {
   it('are run through the full id the palette lists', async () => {
     const { host } = createHost([declare()])
     const handler = vi.fn()
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler })
 
     expect(await host.executeCommand('md.tree:tree.open', note)).toBe(true)
 
@@ -158,8 +158,8 @@ describe('the commands a plugin declares in its manifest', () => {
     const first = vi.fn()
     const second = vi.fn()
 
-    host.createContext('md.tree').registerCommand({ id: 'tree.open', handler: first })
-    host.createContext('md.other').registerCommand({ id: 'tree.open', handler: second })
+    host.createContext('md.tree').register.command({ id: 'tree.open', handler: first })
+    host.createContext('md.other').register.command({ id: 'tree.open', handler: second })
     await host.executeCommand('md.other:tree.open', note)
 
     expect(host.getPaletteCommands().map((one) => one.id)).toStrictEqual([

@@ -13,24 +13,34 @@ const reader = vi.hoisted(() => ({
 
 vi.mock('./model/useBookReader', () => ({
   useBookReader: () => ({
-    isLoading: ref(false),
-    offset: ref(0),
-    contents: shallowRef([]),
-    markup: ref(''),
-    renderedChapter: ref(''),
-    documentSpan: ref(null),
-    span: ref(null),
-    target: ref(null),
-    highlights: shallowRef([]),
-    otherHighlights: shallowRef([]),
-    chapter: ref(null),
-    getCfi: async () => null,
-    goToCfi: async () => false,
-    goToOffset: async () => undefined,
-    moveTo: async () => undefined,
-    followLink: async () => undefined,
+    path: '',
     reportFailure: () => undefined,
-    focusSpans: reader.focusSpans,
+    close: () => undefined,
+    state: {
+      isLoading: ref(false),
+      contents: shallowRef([]),
+      span: ref(null),
+    },
+    place: {
+      offset: ref(0),
+      documentSpan: ref(null),
+      target: ref(null),
+      chapter: ref(null),
+    },
+    rendering: {
+      markup: ref(''),
+      renderedChapter: ref(''),
+      highlights: shallowRef([]),
+      otherHighlights: shallowRef([]),
+    },
+    actions: {
+      getCfi: async () => null,
+      goToCfi: async () => false,
+      goToOffset: async () => undefined,
+      moveTo: async () => undefined,
+      followLink: async () => undefined,
+      focusSpans: reader.focusSpans,
+    },
   }),
 }))
 

@@ -5,7 +5,7 @@ import { ref, shallowRef } from 'vue'
 import {
   createAgentHost,
   createVaultNotes,
-  getWorkspaceHost,
+  createWorkspaceHost,
   type WorkspaceHostDeps,
 } from './pluginServices'
 import type { CommandTarget } from '@/entities/command'
@@ -34,23 +34,23 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
     today: () => '2026-09-04',
     ...overrides,
   } satisfies WorkspaceHostDeps
-  return { deps, failure, workspace: getWorkspaceHost(deps) }
+  return { deps, failure, workspace: createWorkspaceHost(deps) }
 }
 
 describe('the window a plugin is handed', () => {
   it('is ready while it says nothing failed', () => {
     const { workspace, failure } = createWorkspace()
 
-    expect(workspace.isReady.value).toBe(true)
+    expect(workspace.window.isReady.value).toBe(true)
     failure.value = 'the vault is gone'
-    expect(workspace.isReady.value).toBe(false)
+    expect(workspace.window.isReady.value).toBe(false)
   })
 
   it('opens a file where and at the line requested, and only what is requested', () => {
     const { workspace, deps } = createWorkspace()
 
-    workspace.openFile('One.md', { title: 'One', placement: 'split', line: 3 })
-    workspace.openFile('Two.md')
+    workspace.files.open('One.md', { title: 'One', placement: 'split', line: 3 })
+    workspace.files.open('Two.md')
 
     expect(deps.tabOpeners.openFile).toHaveBeenNthCalledWith(1, 'One.md', 'One', {
       where: 'split',
@@ -62,7 +62,7 @@ describe('the window a plugin is handed', () => {
   it('opens a file at the selector requested', () => {
     const { workspace, deps } = createWorkspace()
 
-    workspace.openFile('Talk.bin', { selector: { t: [12, 14] } })
+    workspace.files.open('Talk.bin', { selector: { t: [12, 14] } })
 
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('Talk.bin', '', {
       selector: { t: [12, 14] },
@@ -72,11 +72,11 @@ describe('the window a plugin is handed', () => {
   it('moves the linked tabs, and says no tab moved where the window links none', () => {
     const { workspace, deps } = createWorkspace()
 
-    expect(workspace.syncPath('plex:1', 'One.md', 'One')).toBe(true)
+    expect(workspace.files.syncPath('plex:1', 'One.md', 'One')).toBe(true)
     expect(deps.tabSync.syncPathFromTab).toHaveBeenCalledWith('plex:1', 'One.md', 'One')
 
     const { tabSync: _tabSync, ...unlinked } = deps
-    expect(getWorkspaceHost(unlinked).syncPath('plex:1', 'One.md')).toBe(false)
+    expect(createWorkspaceHost(unlinked).files.syncPath('plex:1', 'One.md')).toBe(false)
   })
 
   it('runs no command itself: a plugin runs one through the commands of its context', () => {
@@ -88,13 +88,13 @@ describe('the window a plugin is handed', () => {
   it('shares what is dragged, asks the agent and says what failed', () => {
     const { workspace, deps } = createWorkspace()
 
-    workspace.setDraggedPaths(['One.md'])
+    workspace.dragged.setPaths(['One.md'])
     workspace.ask('what is One?')
-    workspace.showError('the link was not written')
-    expect(workspace.getToday()).toBe('2026-09-04')
+    workspace.messages.showError('the link was not written')
+    expect(workspace.window.getToday()).toBe('2026-09-04')
 
     expect(deps.dragged.value).toStrictEqual(['One.md'])
-    expect(workspace.draggedPaths.value).toStrictEqual(['One.md'])
+    expect(workspace.dragged.paths.value).toStrictEqual(['One.md'])
     expect(deps.ask).toHaveBeenCalledWith('what is One?')
     expect(deps.writeMessage).toHaveBeenCalledWith('the link was not written', 'error')
   })
@@ -102,8 +102,8 @@ describe('the window a plugin is handed', () => {
   it('reads the note the vault opens with', async () => {
     const { workspace } = createWorkspace()
 
-    expect(workspace.openingPath.value).toBe('Root.md')
-    expect(await workspace.readOpeningPath()).toBe('Root.md')
+    expect(workspace.window.openingPath.value).toBe('Root.md')
+    expect(await workspace.window.readOpeningPath()).toBe('Root.md')
   })
 })
 
@@ -111,7 +111,7 @@ describe('the window a plugin opens files and reads the note in focus through', 
   it('opens a file with the runs of its text marked', () => {
     const { workspace, deps } = createWorkspace()
 
-    workspace.openFileAt('Source.pdf', [{ start: 3, end: 9 }])
+    workspace.files.openAt('Source.pdf', [{ start: 3, end: 9 }])
 
     expect(deps.tabOpeners.openFileAt).toHaveBeenCalledWith('Source.pdf', [{ start: 3, end: 9 }])
   })
@@ -125,8 +125,8 @@ describe('the window a plugin opens files and reads the note in focus through', 
       },
     })
 
-    workspace.openFile('Gone.pdf')
-    workspace.openFileAt('Gone.pdf', [])
+    workspace.files.open('Gone.pdf')
+    workspace.files.openAt('Gone.pdf', [])
     await new Promise((isDone) => setTimeout(isDone, 0))
 
     expect(deps.writeMessage).toHaveBeenCalledTimes(2)

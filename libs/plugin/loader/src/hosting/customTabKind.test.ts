@@ -492,7 +492,7 @@ describe('createCustomTabKind (actions)', () => {
         writeNote: async (path: string, body: string) => {
           writeCalls.push({ path, body })
         },
-        getWorkspace: () => ({ syncPath }) as never,
+        getWorkspace: () => ({ files: { syncPath } }) as never,
       },
     )
 
@@ -586,7 +586,7 @@ describe('createCustomTabKind (actions)', () => {
         openTab: async () => '',
         tabActionHandlers: { doWork: hostDoWork },
         onTabAction,
-        getWorkspace: () => ({ syncPath }) as never,
+        getWorkspace: () => ({ files: { syncPath } }) as never,
         readNote: (path: string) =>
           path === 'notes/slow.md'
             ? new Promise<string>((r) => {
@@ -760,7 +760,7 @@ describe('createBufferedNoteState', () => {
         openTab: async () => '',
         getNoteBuffer: () => buffer,
         getNotes: () => ({ findNotes, getHeadings }) as never,
-        getWorkspace: () => ({ openFile }) as never,
+        getWorkspace: () => ({ files: { open: openFile } }) as never,
         resolveLink,
       },
     )
@@ -957,7 +957,7 @@ describe('createBufferedNoteState', () => {
               findNotes: async () => [],
               getHeadings: async () => new Map(),
             }) as never,
-          getWorkspace: () => ({ openFile }) as never,
+          getWorkspace: () => ({ files: { open: openFile } }) as never,
           resolveLink: () => Promise.reject(new Error('resolve fail')),
         },
       },

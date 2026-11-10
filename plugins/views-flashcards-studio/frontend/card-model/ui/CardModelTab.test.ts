@@ -149,7 +149,7 @@ describe('a card model drawn', () => {
 describe('a mark on a template', () => {
   it('is drawn inside the template it was read against', async () => {
     const { window, tab } = await mountCardModel([missing])
-    const second = tab.cardModel.value.templates[1]?.id ?? ''
+    const second = tab.data.cardModel.value.templates[1]?.id ?? ''
 
     expect(window.find(`[data-template="${second}"]`).find('[data-wrong]').text()).toBe(
       'this template has no back',
@@ -158,7 +158,7 @@ describe('a mark on a template', () => {
 
   it('is drawn under the name of that template, where the editor draws it', async () => {
     const { window, tab } = await mountCardModel([missing])
-    const second = tab.cardModel.value.templates[1]?.id ?? ''
+    const second = tab.data.cardModel.value.templates[1]?.id ?? ''
 
     expect(window.find(`[data-template="${second}"] header [data-wrong]`).text()).toBe(
       'this template has no back',
@@ -167,17 +167,17 @@ describe('a mark on a template', () => {
 
   it('is drawn on no other template', async () => {
     const { window, tab } = await mountCardModel([missing])
-    const first = tab.cardModel.value.templates[0]?.id ?? ''
+    const first = tab.data.cardModel.value.templates[0]?.id ?? ''
 
     expect(window.find(`[data-template="${first}"]`).find('[data-wrong]').exists()).toBe(false)
   })
 
   it('follows the template when another is taken out alongside it', async () => {
     const { window, tab } = await mountCardModel([missing])
-    const first = tab.cardModel.value.templates[0]?.id ?? ''
-    const second = tab.cardModel.value.templates[1]?.id ?? ''
+    const first = tab.data.cardModel.value.templates[0]?.id ?? ''
+    const second = tab.data.cardModel.value.templates[1]?.id ?? ''
 
-    tab.removeTemplate(first)
+    tab.templates.removeTemplate(first)
     await settle()
 
     expect(window.find(`[data-template="${second}"]`).find('[data-wrong]').text()).toBe(
@@ -233,8 +233,8 @@ describe('a gesture in the editor', () => {
     await settle()
     await settle()
 
-    expect(tab.cardModel.value.fields).toStrictEqual(['Shoulder', 'Life span'])
-    expect(tab.cardModel.value.templates[0]?.back).toBe('{{Shoulder}}')
+    expect(tab.data.cardModel.value.fields).toStrictEqual(['Shoulder', 'Life span'])
+    expect(tab.data.cardModel.value.templates[0]?.back).toBe('{{Shoulder}}')
   })
 
   it('leaves the braces of every other field where they are', async () => {
@@ -246,6 +246,6 @@ describe('a gesture in the editor', () => {
     await settle()
     await settle()
 
-    expect(tab.cardModel.value.templates[1]?.front).toBe('{{Life span}}')
+    expect(tab.data.cardModel.value.templates[1]?.front).toBe('{{Life span}}')
   })
 })

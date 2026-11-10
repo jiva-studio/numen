@@ -37,58 +37,58 @@ export function createCommands(deps: CommandDeps) {
   const { vault, layout, files, plex, palette, agent } = deps
 
   function removeNote(path: string) {
-    if (!vault.removeNote(path)) return
-    for (const [tabId, tabPath] of Object.entries(layout.notePaths)) {
-      if (tabPath === path) layout.close(tabId)
+    if (!vault.edit.removeNote(path)) return
+    for (const [tabId, tabPath] of Object.entries(layout.state.notePaths)) {
+      if (tabPath === path) layout.actions.close(tabId)
     }
     if (plex.here.value === path) plex.go(Object.keys(vault.notes)[0] ?? ENTROPY_PATH)
   }
 
   function createRelated(path: string, role: Exclude<NamingRole, 'title'>, source: Source) {
-    if (source === 'files') vault.createRelated('', path, role)
-    else palette.openNaming(role, path)
+    if (source === 'files') vault.edit.createRelated('', path, role)
+    else palette.actions.openNaming(role, path)
   }
 
   function createNote() {
-    const path = vault.createUntitled('physics')
-    files.openFolder('physics')
-    files.renaming.value = path
+    const path = vault.edit.createUntitled('physics')
+    files.tree.openFolder('physics')
+    files.state.renaming.value = path
   }
 
   function renameNote(path: string, source: Source) {
-    if (source === 'plex') palette.openNaming('title', path)
-    else if (vault.getNote(path)) files.renaming.value = path
+    if (source === 'plex') palette.actions.openNaming('title', path)
+    else if (vault.read.getNote(path)) files.state.renaming.value = path
   }
 
   function askAgent(path: string) {
-    layout.openToolTab(AGENT_TAB, 'aside')
+    layout.actions.openToolTab(AGENT_TAB, 'aside')
     agent.draft.value = `${path} — `
     agent.focusCount.value += 1
   }
 
   const tools: Readonly<Record<string, () => void>> = {
-    [DEMO_COMMAND.openPlex]: () => layout.openToolTab(PLEX_TAB, 'map'),
-    [DEMO_COMMAND.openFiles]: () => layout.openToolTab(FILES_TAB, 'main'),
-    [DEMO_COMMAND.openAgent]: () => layout.openToolTab(AGENT_TAB, 'aside'),
+    [DEMO_COMMAND.openPlex]: () => layout.actions.openToolTab(PLEX_TAB, 'map'),
+    [DEMO_COMMAND.openFiles]: () => layout.actions.openToolTab(FILES_TAB, 'main'),
+    [DEMO_COMMAND.openAgent]: () => layout.actions.openToolTab(AGENT_TAB, 'aside'),
   }
 
   function reveal(path: string) {
-    layout.openToolTab(FILES_TAB, 'main')
-    files.reveal(path)
+    layout.actions.openToolTab(FILES_TAB, 'main')
+    files.tree.reveal(path)
   }
 
   function showInPlex(path: string) {
-    if (!vault.getNote(path)) return
+    if (!vault.read.getNote(path)) return
     plex.go(path)
-    layout.openToolTab(PLEX_TAB, 'map')
+    layout.actions.openToolTab(PLEX_TAB, 'map')
   }
 
   /** Runs a command over the note or file at a path. */
   function run(command: string, path: string, source: Source = 'plex') {
     const role = getNamingRole(command)
-    if (command === DEMO_COMMAND.renameTreeEntry) files.renaming.value = path === ROOT ? null : path
-    else if (command === DEMO_COMMAND.openNote) layout.openVaultFile(path, 'current')
-    else if (command === DEMO_COMMAND.openNoteBeside) layout.openVaultFile(path, 'split')
+    if (command === DEMO_COMMAND.renameTreeEntry) files.state.renaming.value = path === ROOT ? null : path
+    else if (command === DEMO_COMMAND.openNote) layout.actions.openVaultFile(path, 'current')
+    else if (command === DEMO_COMMAND.openNoteBeside) layout.actions.openVaultFile(path, 'split')
     else if (command === DEMO_COMMAND.revealNote) reveal(path)
     else if (command === DEMO_COMMAND.showNoteInPlex) showInPlex(path)
     else if (role !== null && role !== 'title') createRelated(path, role, source)
@@ -102,17 +102,17 @@ export function createCommands(deps: CommandDeps) {
 
   /** Runs a command chosen in the menu of the file tree over the row the menu was opened on. */
   function runInTree(command: string, target: { path: string; others: readonly string[] }) {
-    const isFolder = target.path === ROOT || vault.getEntryAt(target.path)?.isFolder === true
+    const isFolder = target.path === ROOT || vault.read.getEntryAt(target.path)?.isFolder === true
     if (command === DEMO_COMMAND.createNote && isFolder) {
-      const path = vault.createUntitled(target.path)
-      files.openFolder(target.path)
-      files.renaming.value = path
+      const path = vault.edit.createUntitled(target.path)
+      files.tree.openFolder(target.path)
+      files.state.renaming.value = path
       return
     }
     if (command === DEMO_COMMAND.createFolder && isFolder) {
-      const path = vault.createFolder(target.path)
-      files.openFolder(target.path)
-      files.renaming.value = path
+      const path = vault.edit.createFolder(target.path)
+      files.tree.openFolder(target.path)
+      files.state.renaming.value = path
       return
     }
     const paths = command === DEMO_COMMAND.removeFile ? [target.path, ...target.others] : [target.path]

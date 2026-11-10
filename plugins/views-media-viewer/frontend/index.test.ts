@@ -7,8 +7,8 @@ import { recordings } from './api/wire'
 describe('media-viewer plugin', () => {
   it('registers audio reader and recording tab kind upon activation', () => {
     const context = createMockPluginContext({ pluginId: 'md.numen.views.media.viewer' })
-    const registerReaderSpy = vi.spyOn(context, 'registerReader')
-    const registerTabKindSpy = vi.spyOn(context, 'registerTabKind')
+    const registerReaderSpy = vi.spyOn(context.register, 'reader')
+    const registerTabKindSpy = vi.spyOn(context.register, 'tabKind')
 
     activate(context)
 
@@ -75,7 +75,8 @@ describe('media-viewer plugin', () => {
         return { dispose: () => undefined }
       }),
     }
-    activate(Object.assign(context, { tasks }))
+    Object.assign(context.work, { tasks })
+    activate(context)
     const changes: boolean[] = []
 
     const stop = recordings.watchWork('talks/a.mp3', (isWorking) => changes.push(isWorking))

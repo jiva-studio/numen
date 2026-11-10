@@ -55,8 +55,8 @@ export function createStatusView(model: IndexStats) {
 
 export const activate = (context: PluginContext, parts: StatsParts = browserParts): void => {
   const model = createIndexStats(parts)
-  context.registerSlotView({ id: STATS_VIEW, component: createStatusView(model) })
-  context.subscriptions.push({ dispose: () => model.stop() })
+  context.register.slotView({ id: STATS_VIEW, component: createStatusView(model) })
+  context.plugin.subscriptions.push({ dispose: () => model.stop() })
   model.start()
 }
 

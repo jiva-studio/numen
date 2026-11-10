@@ -52,7 +52,7 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
         mountView: deps.mountView,
         goToVaults: () => deps.closeTab(id),
       }),
-    getTitle: (state) => state.vaultCount.value?.name ?? 'Flashcards',
+    getTitle: (state) => state.vaultCount.value?.identity.name ?? 'Flashcards',
     onKeyPress: (state, event) => state.onKeyDown(event),
   }
 }
@@ -67,7 +67,8 @@ export function createVaultSummaryView(counts: VaultCounts): ViewRegistration {
       setup(props) {
         counts.start()
         const vault = computed(
-          () => counts.vaults.value.find((one) => one.vault === props.context.vault) ?? null,
+          () =>
+            counts.vaults.value.find((one) => one.identity.vault === props.context.vault) ?? null,
         )
         return () => h(VaultSummary, { vault: vault.value })
       },

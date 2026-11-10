@@ -32,8 +32,7 @@ function isDocumentTabState(val: unknown): val is DocumentTabState {
   return (
     typeof val === 'object' &&
     val !== null &&
-    'pages' in val &&
-    'goToPage' in val &&
+    'document' in val &&
     'setPageHandle' in val
   )
 }
@@ -59,7 +58,7 @@ onMounted(() => {
   if (props.state && typeof props.state === 'object' && !isDocumentTabState(props.state)) {
     const s = props.state as Record<string, unknown>
     s.focusTab = () => rootElement.value?.focus()
-    s.focusSpans = (...spans: readonly TextRange[]) => activeState.value?.focusSpans(...spans)
+    s.focusSpans = (...spans: readonly TextRange[]) => activeState.value?.document.actions.focusSpans(...spans)
   }
 })
 
@@ -72,16 +71,16 @@ useReaderTabSync(
 )
 
 onUnmounted(() => {
-  if (internalState) internalState.close()
+  if (internalState) internalState.document.close()
 })
 
 /* -------------------------------- Handlers -------------------------------- */
 function onGoToPage(page: number) {
-  if (activeState.value) activeState.value.goToPage(page).catch(activeState.value.reportFailure)
+  if (activeState.value) activeState.value.document.actions.goToPage(page).catch(activeState.value.document.reportFailure)
 }
 
 function onWiden(width: number) {
-  activeState.value?.widen(width)
+  activeState.value?.document.view.widen(width)
 }
 
 function onPageTurnKey(event: KeyboardEvent) {
@@ -98,20 +97,20 @@ function onSetPageHandle(reader: unknown) {
     <Reader
       v-if="activeState"
       :ref="onSetPageHandle"
-      :pages="activeState.pages.value"
-      :at="activeState.pageNumber.value"
-      :picture="activeState.getPageImageUrl"
-      :highlights="activeState.getHighlightsOn"
-      :other-highlights="activeState.getOtherHighlightsOn"
+      :pages="activeState.document.state.pages.value"
+      :at="activeState.document.state.pageNumber.value"
+      :picture="activeState.document.view.getPageImageUrl"
+      :highlights="activeState.document.highlights.getHighlightsOn"
+      :other-highlights="activeState.document.highlights.getOtherHighlightsOn"
       :words="words"
       :fit="readerPreferences.defaultZoom"
       @go="onGoToPage"
       @measure="onWiden"
     >
       <template #silence>
-        <LoadingIndicator v-if="activeState.isLoading.value" :label="words.loading" />
-        <p v-else-if="activeState.error.value" class="fallback-panel fallback-message">
-          {{ activeState.error.value }}
+        <LoadingIndicator v-if="activeState.document.state.isLoading.value" :label="words.loading" />
+        <p v-else-if="activeState.document.state.error.value" class="fallback-panel fallback-message">
+          {{ activeState.document.state.error.value }}
         </p>
         <p v-else class="fallback-panel fallback-message">PDF reader unavailable or no pages</p>
       </template>

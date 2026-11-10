@@ -50,8 +50,9 @@ const { viewport, measure: measureViewport } = useViewport(area)
 
 /** Row scroll state, and pointer and wheel handling. */
 const scroll = usePanScroll(area)
-const scrollOffset = scroll.along
-const { isDragging, onPointerDown, onPointerMove, letGo, onWheel } = scroll
+const scrollOffset = scroll.state.offset
+const { isDragging } = scroll.state
+const { onPointerDown, onPointerMove, letGo, onWheel } = scroll.handlers
 
 /** How close a page is drawn. What that may be is `strip.ts`. */
 const zoom = computed({
@@ -81,7 +82,7 @@ const { measure, isPutting } = useRowRestore({
   pageLayout,
   getAt: () => props.at,
   getPaint: () => props.paint,
-  scroll,
+  scroll: scroll.moves,
 })
 
 defineExpose({
@@ -93,7 +94,7 @@ defineExpose({
 
 /* -------------------------------- Handlers -------------------------------- */
 const onScroll = () => {
-  if (isPutting() || !scroll.isStill()) return
+  if (isPutting() || !scroll.moves.isStill()) return
   if (middle.value !== props.at) emit('go', middle.value)
 }
 

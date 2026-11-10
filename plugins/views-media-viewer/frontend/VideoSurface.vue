@@ -20,14 +20,14 @@ watch(
   [() => props.isShown, surface],
   ([isShown, container]) => {
     if (!container) return
-    if (isShown) props.player.attach(container)
-    else props.player.release(container)
+    if (isShown) props.player.surface.attach(container)
+    else props.player.surface.release(container)
   },
   { immediate: true, flush: 'post' },
 )
 
 onBeforeUnmount(() => {
-  if (surface.value) props.player.release(surface.value)
+  if (surface.value) props.player.surface.release(surface.value)
 })
 </script>
 

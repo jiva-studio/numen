@@ -37,7 +37,7 @@ describe('a start cancelled at 30 s', () => {
     vi.useFakeTimers()
     const { host, loader } = createWindow(async (context) => {
       await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
-      context.registerSlotView({ id: 'bar', component: {} })
+      context.register.slotView({ id: 'bar', component: {} })
     })
     const bar = host.getSlotView('titleBar')
 
@@ -58,7 +58,7 @@ describe('a start cancelled at 30 s', () => {
       if (starts === 1) {
         await new Promise((resolve) => setTimeout(resolve, 30_000 + 2_000))
       }
-      context.registerSlotView({ id: 'bar', component: {} })
+      context.register.slotView({ id: 'bar', component: {} })
     })
     const bar = host.getSlotView('titleBar')
     const started = loader.start()
@@ -99,9 +99,9 @@ describe('a start cancelled at 30 s that ends while a newer start runs', () => {
           await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
           return
         }
-        context.registerCommand({ id: 'ledger.open', handler: () => undefined })
+        context.register.command({ id: 'ledger.open', handler: () => undefined })
         await new Promise((resolve) => setTimeout(resolve, 5_000))
-        context.registerCommand({ id: 'ledger.close', handler: () => undefined })
+        context.register.command({ id: 'ledger.close', handler: () => undefined })
       },
     }))
     const started = loader.start()
