@@ -13,7 +13,7 @@ import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'
 
 import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
-import { getSettingAt as at } from '@/testing/settingAt'
+import { getSettingAt as at } from '@/testing/slices'
 import { createInstallation, createSettingsState } from '@/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
