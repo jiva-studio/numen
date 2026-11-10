@@ -131,7 +131,8 @@ export const startOwnServer = async (
       child.kill('SIGTERM')
       await ended
     }
-    fs.rmSync(root, { recursive: true, force: true })
+    // The plugin processes of the server may still write to its folders for a moment after it exits.
+    fs.rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 })
   }
   const startedAt = Date.now()
   while (!fs.existsSync(certificate)) {
