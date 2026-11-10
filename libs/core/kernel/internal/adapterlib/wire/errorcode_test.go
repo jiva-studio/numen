@@ -87,7 +87,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true,
 		},
 		"a file the vault leaves alone": {
-			fmt.Errorf("Old.png: %w", vaultport.ErrNotANote),
+			fmt.Errorf("Old.png: %w", edit.ErrNotANote),
 			v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true,
 		},
 		"a file where the note would go": {
