@@ -65,7 +65,7 @@ func (p *Programs) GetProgram(ctx context.Context, name string) (agent.Program, 
 
 func findProgram(programs []agent.Program, name string) (agent.Program, bool) {
 	if name == "" {
-		return agentport.GetDefaultProgram(programs)
+		return agent.GetDefaultProgram(programs)
 	}
 	for _, one := range programs {
 		if one.Name == name {
