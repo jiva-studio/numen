@@ -10,6 +10,11 @@ import (
 	"testing"
 )
 
+const (
+	packagePath       = "EPUB/package.opf"
+	firstDocumentPath = "EPUB/c1.xhtml"
+)
+
 const pngText = "\x89PNG\r\n\x1a\nnot really a picture"
 
 // GetPNGBytes is the bytes of the picture CreateImageEpub holds at EPUB/cover.png.
@@ -49,7 +54,7 @@ func CreateZipEpub(t *testing.T, entries map[string][]byte) []byte {
 func CreateImageEpub(t *testing.T) []byte {
 	t.Helper()
 	return CreateZipEpub(t, map[string][]byte{
-		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
+		packagePath: []byte(`<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Pictured</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
   <manifest>
@@ -58,7 +63,7 @@ func CreateImageEpub(t *testing.T) []byte {
   </manifest>
   <spine><itemref idref="c1"/><itemref idref="c2"/></spine>
 </package>`),
-		"EPUB/c1.xhtml": []byte(`<?xml version="1.0"?>
+		firstDocumentPath: []byte(`<?xml version="1.0"?>
 <html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
 <body><h1>First part</h1><p>Hello reader epub</p><span epub:type="pagebreak" title="1"></span><span epub:type="pagebreak" title="2"></span></body></html>`),
 		"EPUB/c2.xhtml": []byte(`<?xml version="1.0"?>
@@ -78,13 +83,13 @@ func CreateEncryptedEpub(t *testing.T) []byte {
     <CipherData><CipherReference URI="EPUB/c1.xhtml"/></CipherData>
   </EncryptedData>
 </encryption>`),
-		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
+		packagePath: []byte(`<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Encrypted</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
   <manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/></manifest>
   <spine><itemref idref="c1"/></spine>
 </package>`),
-		"EPUB/c1.xhtml": []byte(`<html><body><p>Encrypted</p></body></html>`),
+		firstDocumentPath: []byte(`<html><body><p>Encrypted</p></body></html>`),
 	})
 }
 
@@ -92,7 +97,7 @@ func CreateEncryptedEpub(t *testing.T) []byte {
 func CreateGuidedEpub(t *testing.T) []byte {
 	t.Helper()
 	return CreateZipEpub(t, map[string][]byte{
-		"EPUB/package.opf": []byte(`<?xml version="1.0"?>
+		packagePath: []byte(`<?xml version="1.0"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="3.0">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Guided</dc:title><dc:identifier id="id">x</dc:identifier></metadata>
   <manifest>
@@ -102,7 +107,7 @@ func CreateGuidedEpub(t *testing.T) []byte {
   <guide><reference type="text" href="c1.xhtml"/></guide>
   <spine><itemref idref="c1"/><itemref idref="c2"/></spine>
 </package>`),
-		"EPUB/c1.xhtml": []byte(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
+		firstDocumentPath: []byte(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>One</title></head>
 <body><h1>Prologue</h1><p>   ` + strings.Repeat("word ", 20_000) + `</p></body></html>`),
 		"EPUB/c2.xhtml": []byte(`<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Two</title></head>
 <body><p>Epilogue of the  guided book</p></body></html>`),
