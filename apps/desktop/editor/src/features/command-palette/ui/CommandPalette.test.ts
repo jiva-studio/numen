@@ -20,7 +20,7 @@ const copyPath = vi.fn()
 
 beforeEach(() => {
   copyPath.mockClear()
-  registry.set(COPY_PATH, copyPath)
+  registry.registerCommand(COPY_PATH, copyPath)
 })
 
 afterEach(() => {
