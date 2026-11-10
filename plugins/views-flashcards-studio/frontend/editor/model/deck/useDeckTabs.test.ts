@@ -9,10 +9,11 @@ import type { Preset } from '../../../lib/presets'
 import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../../lib/presets'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import { DECK } from './kind'
-import { useDeckTabs as useDeckTabsOriginal, type DeckTabState } from './useDeckTabs'
+import { useDeckTabs as useDeckTabsOriginal } from './useDeckTabs'
 import { WORDS as words } from '../../../words'
 import DeckTab from '../../ui/deck/DeckTab.vue'
 import type { ErrorCode, Cards, VaultCard, DeckProblem } from '../../../types'
+import type { DeckTabState } from './tabState'
 
 const useDeckTabs = (cards: Cards, presets: Presets) => {
   const windowTabs = createMockTabWindow()

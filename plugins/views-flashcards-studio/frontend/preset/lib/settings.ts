@@ -2,10 +2,10 @@
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
 import { dayAfter, daysBetween, isDay } from '../../lib/day'
-import type { SettingValue } from './types'
 import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../lib/presets'
 import { clamp, findNearest } from './curve'
 import type { Field } from './fields'
+import type { SettingValue } from '../model/types'
 
 /** How far off the day a goal of a date opens on, where the file names none. */
 export const DATE_GOAL_OFFSET_DAYS = 30

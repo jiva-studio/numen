@@ -12,7 +12,6 @@ import {
   type PathRename,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
-import { type PresetTabState, type SettingValue } from '../lib/types'
 import { NO_BOUNDS, type Presets, type SettingsBounds } from '../../lib/presets'
 import { WORDS as words } from '../lib/words'
 import {
@@ -24,6 +23,7 @@ import {
   type PresetStateContext,
 } from './open'
 import { flushWrites } from './writeQueue'
+import type { PresetTabState, SettingValue } from './types'
 
 export type { PresetTabState, SettingValue }
 

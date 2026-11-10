@@ -4,8 +4,8 @@
  */
 import PresetSettings from './preset-settings/PresetSettings.vue'
 import { PresetGoal } from './preset-goal'
-import type { PresetTabState } from '../lib/types'
 import { WORDS as words } from '../lib/words'
+import type { PresetTabState } from '../model/types'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: PresetTabState }>()

@@ -3,9 +3,9 @@
  */
 import type { ComputedRef } from 'vue'
 import type { Half } from '../../../lib/cards'
-import type { OpenNote } from '../buffer/types'
+import type { OpenNote } from '../../lib/buffer/types'
 import type { Marks } from '../../../lib/marks'
-import type { BufferCardModel } from './card-model'
+import type { BufferCardModel } from '../../lib/card-model/card-model'
 
 export interface CardModelDataState {
   readonly note: ComputedRef<OpenNote>

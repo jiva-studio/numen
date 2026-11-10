@@ -6,8 +6,8 @@ import type { Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import { getMarkOf } from '../../lib/buffer/words'
 import DeckTab from '../../ui/deck/DeckTab.vue'
-import type { DeckTabState } from '../../lib/deck/types'
 import type { Cards } from '../../../types'
+import type { DeckTabState } from './tabState'
 
 /** The word deck tabs are filed under. */
 export const DECK = 'deck'

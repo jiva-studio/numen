@@ -11,10 +11,11 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import CardModelTab from './CardModelTab.vue'
-import { CARD_MODEL, createCardModelTabs, type CardModelTabState } from '../../model/card-model/kind'
+import { CARD_MODEL, createCardModelTabs } from '../../model/card-model/kind'
 import { WORDS as words } from '../../../words'
 import CardModelTab from './CardModelTab.vue'
 import type { Cards, VaultTemplate, DeckProblem } from '../../../types'
+import type { CardModelTabState } from '../../model/card-model/types'
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 

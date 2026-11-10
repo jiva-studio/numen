@@ -9,7 +9,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
-import type { PresetTabState, SettingValue } from '../lib/types'
 import { StopReason } from '../api/types.js'
 import { getGoalValue, findNearest } from '../lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
@@ -21,6 +20,7 @@ import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 import { WORDS as words } from '../lib/words'
 import PresetTab from '../ui/PresetTab.vue'
 import type { ErrorCode, CardsFailure } from '../../types'
+import type { PresetTabState, SettingValue } from './types'
 
 const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,

@@ -7,8 +7,8 @@ import { type InsertionPoint, type Half } from '../../../lib/cards'
 import { CardModelEditor } from '../cards/card-model-editor'
 import { parseFileConflict } from '../../lib/buffer/words'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
-import type { CardModelTabState } from '../../lib/card-model/types'
 import { WORDS as words } from '../../../words'
+import type { CardModelTabState } from '../../model/card-model/types'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: CardModelTabState }>()

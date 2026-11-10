@@ -15,9 +15,10 @@ import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } 
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import { DECK } from '../../model/deck/kind'
 import DeckTab from './DeckTab.vue'
-import { useDeckTabs, type DeckTabState } from '../../model/deck/useDeckTabs'
+import { useDeckTabs } from '../../model/deck/useDeckTabs'
 import { WORDS as words } from '../../../words'
 import type { ErrorCode, Cards, VaultCard, DeckProblem } from '../../../types'
+import type { DeckTabState } from '../../model/deck/tabState'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<

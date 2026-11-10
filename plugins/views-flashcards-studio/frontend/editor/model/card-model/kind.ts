@@ -14,10 +14,10 @@ import {
 import { getMarkOf } from '../../lib/buffer/words'
 import { openNotes } from '../buffer/notes'
 import { WORDS as words } from '../../../words'
-import type { CardModelTabState } from '../../lib/card-model/types'
 import { createCardModelWire, type VaultAnswer } from '../../api/card-model/wire'
 import { createCardModelFields } from './fields'
 import type { Cards } from '../../../types'
+import type { CardModelTabState } from './types'
 
 export type { CardModelTabState, VaultAnswer }
 

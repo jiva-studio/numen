@@ -5,8 +5,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { fn } from 'storybook/test'
 import { computed } from 'vue'
 import { createMarks, type Marks } from '../../../lib/marks'
-import type { CardModelTabState } from '../../lib/card-model/types'
 import CardModelTab from './CardModelTab.vue'
+import type { CardModelTabState } from '../../model/card-model/types'
 
 const meta: Meta = {
   title: 'Flashcards/Card model',

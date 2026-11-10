@@ -4,7 +4,6 @@
 import { StopReason } from '../../api/types.js'
 import { ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
-import { type Field, type PresetTabState, type SettingValue } from '../lib/types'
 import { DEFAULTS, type Goal, type Presets, type Settings, type SettingsBounds } from '../../lib/presets'
 import { produceSchedule } from '../lib/curve'
 import { getShapeKey, getGoalField } from '../lib/fields'
@@ -12,6 +11,8 @@ import { WORDS as words } from '../lib/words'
 import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { createCurveState, updateCurves, type CurveState } from './curves'
 import { canCloseTab, createWriteQueue, requestWrite, type WriteQueue } from './writeQueue'
+import type { PresetTabState, SettingValue } from './types'
+import type { Field } from '../lib/fields'
 
 /** State held by one open preset tab. */
 export interface OpenPreset {

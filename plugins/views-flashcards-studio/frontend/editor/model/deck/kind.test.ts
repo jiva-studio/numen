@@ -6,7 +6,7 @@ import DeckTab from '../../ui/deck/DeckTab.vue'
 import { describe, expect, it, vi } from 'vitest'
 import { asValue } from '@numen/plugin-sdk'
 import { createDeckKind, type DeckTabsInside } from './kind'
-import type { DeckTabState } from '../../lib/deck/types'
+import type { DeckTabState } from './tabState'
 
 const createInside = (open: readonly string[] = []) => {
   const state = {

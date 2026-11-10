@@ -12,8 +12,8 @@ import type { Cards } from '../types'
 export { DECK } from './model/deck/kind'
 export { CARD_MODEL } from './model/card-model/kind'
 export { DeckTab, CardModelTab }
-export type { DeckTabState } from './lib/deck/types'
-export type { CardModelTabState } from './lib/card-model/types'
+export type { DeckTabState } from './model/deck/tabState'
+export type { CardModelTabState } from './model/card-model/types'
 
 /** The deck tabs of a window, drawn by `DeckTab`. */
 export const useDeckTabs = (

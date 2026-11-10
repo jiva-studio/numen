@@ -11,9 +11,9 @@ import {
 import { DeckEditor } from '../cards/deck-editor'
 import { parseFileConflict } from '../../lib/buffer/words'
 import FileConflictPrompt from '../FileConflictPrompt.vue'
-import type { DeckTabState } from '../../lib/deck/types'
 import DeckScheduleBar from './DeckScheduleBar.vue'
 import { WORDS as words } from '../../../words'
+import type { DeckTabState } from '../../model/deck/tabState'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: DeckTabState }>()

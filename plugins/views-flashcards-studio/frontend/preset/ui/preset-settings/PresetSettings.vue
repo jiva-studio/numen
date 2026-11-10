@@ -7,10 +7,10 @@
  * the parts of one: `name`, `detail`, `day`, `choice` and `percent`.
  */
 import { computed } from 'vue'
-import type { PresetTabState } from '../../lib/types'
 import { getGoalFields } from '../../lib/fields'
 import { WORDS as words } from '../../lib/words'
 import PresetSettingControl from './PresetSettingControl.vue'
+import type { PresetTabState } from '../../model/types'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: PresetTabState }>()

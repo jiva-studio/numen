@@ -28,8 +28,8 @@ import {
   serializeBufferSectionsToVaultSections,
   type BufferDeck,
 } from '../../lib/deck/deck'
-import type { DeckTabState } from '../../lib/deck/types'
 import type { Cards } from '../../../types'
+import type { DeckTabState } from './tabState'
 
 export type { DeckTabState }
 
