@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 )
 
@@ -26,7 +27,7 @@ func TestAChangeOfTheVersionsOfAFileReachesTheWindow(t *testing.T) {
 func TestAChangedFileIsCheckedForAChangeOfItsLiveVersion(t *testing.T) {
 	state := &State{ChangeEvents: newChangeBroadcaster()}
 	var checked []string
-	report := newChangeReporter(state, indexing.NewWorker(indexing.Config{}), newTriggerPasses(), func(paths []string) { checked = append(checked, paths...) })
+	report := newChangeReporter(state, indexing.NewWorker(indexing.Config{}), triggerpasses.NewPasses(), func(paths []string) { checked = append(checked, paths...) })
 
 	report([]string{"links/talk.md"}, []string{"scans/page.png"}, false)
 

@@ -266,7 +266,7 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
-	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened))
+	cfg.SetEditorPluginVaultList(opened)
 	cfg.SetPluginTexts()
 	cfg.SetEditorPluginWindow(db, opened)
 	return shownInstallation{pages: pages, opened: opened}, nil

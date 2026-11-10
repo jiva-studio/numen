@@ -12,24 +12,22 @@ import (
 
 func mountVault(w *windowWiring) { w.inst.Mount(editor.NewVaultRoute(w.inst.State)) }
 
-func getWindowSources(cfg Config, db *Index) editor.Sources {
-	return editor.Sources{
-		ReadVault: func(
-			ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-		) (vault.ReadWholeVault, error) {
-			request := cfg
-			request.ShouldRebuildIndex = rebuild
-			return request.ReadWholeVault(ctx, db, embedder, v)
-		},
+func getReadVault(cfg Config, db *Index) editor.ReadVaultFunc {
+	return func(
+		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+	) (vault.ReadWholeVault, error) {
+		request := cfg
+		request.ShouldRebuildIndex = rebuild
+		return request.ReadWholeVault(ctx, db, embedder, v)
+	}
+}
+
+func getWindowSession(cfg Config, db *Index) editor.SessionSource {
+	return editor.SessionSource{
 		StartVault:             cfg.startVault(db),
 		SetTextVersionListener: cfg.vault().SetTextVersionListener,
 		ReportTextFilesChanged: cfg.vault().ReportTextFilesChanged,
-		OpenTriggers:           cfg.plugins().OpenTriggers,
-		WatchPluginChanges:     cfg.WatchPluginChanges,
 		GetRefresh:             func() vault.Refresh { return cfg.GetRefresh(db) },
-		CloseIndex:             db.Close,
-		GetProblemQueries:      db.Problems,
-		GetPassageQueries:      db.Passages,
 	}
 }
 

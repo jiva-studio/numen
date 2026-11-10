@@ -11,15 +11,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
-	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
 	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
@@ -91,7 +89,9 @@ type indexJob struct {
 	out     io.Writer
 }
 
-func startIndexing(ctx context.Context, sources Sources, state *State, job indexJob) (vaults.Refresh, func()) {
+func startIndexing(
+	ctx context.Context, source SessionSource, triggers triggerpasses.Source, state *State, job indexJob,
+) (vaults.Refresh, func()) {
 	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
@@ -99,13 +99,13 @@ func startIndexing(ctx context.Context, sources Sources, state *State, job index
 
 	var running sync.WaitGroup
 
-	triggerPasses := newTriggerPasses()
+	triggerPasses := triggerpasses.NewPasses()
 	checkTexts := func(paths []string) {
-		if err := sources.ReportTextFilesChanged(ctx, v, paths); err != nil {
+		if err := source.ReportTextFilesChanged(ctx, v, paths); err != nil {
 			writeDiagnostic(state.reportTask, out, "check the text versions of %s: %v\n", v.Name, err)
 		}
 	}
-	read, run, refresh, unwatched := sources.StartVault(
+	read, run, refresh, unwatched := source.StartVault(
 		ctx, v, rebuild, newChangeReporter(state, worker, triggerPasses, checkTexts), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
@@ -119,14 +119,10 @@ func startIndexing(ctx context.Context, sources Sources, state *State, job index
 		session.Run(ctx, v, rebuild, read)
 	})
 
-	if triggers := sources.OpenTriggers(); triggers != nil {
-		running.Go(func() {
-			changes, stop := sources.WatchPluginChanges()
-			defer stop()
-			runTriggers(ctx, triggers, v, triggerPasses, changes, func(err error) {
-				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
-			})
-		})
+	if runTriggers := triggers.Start(ctx, v, triggerPasses, func(err error) {
+		writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
+	}); runTriggers != nil {
+		running.Go(runTriggers)
 	}
 
 	return refresh, running.Wait
@@ -143,15 +139,15 @@ func newErrorReporter(state *State) window.ErrorHandler {
 }
 
 func newChangeReporter(
-	state *State, worker *indexing.Worker, triggers *triggerPasses, checkTexts func(paths []string),
+	state *State, worker *indexing.Worker, triggers *triggerpasses.Passes, checkTexts func(paths []string),
 ) func(paths, assets []string, reload bool) {
 	return func(paths, assets []string, reload bool) {
 		// A client shows every file in the vault, so an asset is reported as a note is.
 		changePaths := slices.Concat(paths, assets)
 		if reload {
-			triggers.requestAll()
+			triggers.RequestAll()
 		} else {
-			triggers.requestPaths(changePaths)
+			triggers.RequestPaths(changePaths)
 		}
 		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
 		checkTexts(changePaths)
@@ -221,23 +217,12 @@ type StartVaultFunc func(
 	unwatched error,
 )
 
-// Sources are what the passes behind a vault run over, made by the composition root from the
-// installation's adapters. OpenTriggers returns nil where the installation runs no plugins.
-// WatchPluginChanges reports each time the plugin host applied settings or forgot the failure of a
-// plugin, and the function it returns stops the reports. ReportTextFilesChanged reports to the text
-// version listener each changed file of the vault whose live text version changed.
-type Sources struct {
-	ReadVault  ReadVaultFunc
-	StartVault StartVaultFunc
-
+// SessionSource is what the passes behind one vault run over, made by the composition root from the
+// installation's adapters. ReportTextFilesChanged reports to the text version listener each changed
+// file of the vault whose live text version changed. GetRefresh brings named notes up to date.
+type SessionSource struct {
+	StartVault             StartVaultFunc
 	SetTextVersionListener func(listener textport.VersionListener)
 	ReportTextFilesChanged func(ctx context.Context, v domain.Vault, paths []string) error
-
-	OpenTriggers       func() *trigger.Triggers
-	WatchPluginChanges func() (<-chan struct{}, func())
-
-	GetRefresh        func() vaults.Refresh
-	CloseIndex        func() error
-	GetProblemQueries func() problemport.ProblemQueries
-	GetPassageQueries func() sourceport.PassageQueries
+	GetRefresh             func() vaults.Refresh
 }

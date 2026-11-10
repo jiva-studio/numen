@@ -3,7 +3,7 @@ package editor
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
