@@ -28,10 +28,6 @@ const props = defineProps<Props>()
 /* --------------------------------- State ---------------------------------- */
 const rootElement = useTemplateRef<HTMLElement>('rootElement')
 
-function isDocumentTabState(val: unknown): val is DocumentTabState {
-  return typeof val === 'object' && val !== null && 'document' in val && 'setPageHandle' in val
-}
-
 const targetPath = computed(() => {
   const s = props.state as { path?: string; file?: string } | undefined
   return props.path || props.file || s?.path || s?.file || ''
@@ -47,6 +43,14 @@ const activeState = computed<DocumentTabState | null>(() => {
   return internalState
 })
 
+/** The tab state from the window, when it is a reader tab. */
+const readerTab = computed(() => props.state as Partial<ReaderTabState> | undefined)
+
+useReaderTabSync(
+  () => readerTab.value,
+  () => activeState.value,
+)
+
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(() => {
   rootElement.value?.focus()
@@ -57,14 +61,6 @@ onMounted(() => {
       activeState.value?.document.actions.focusSpans(...spans)
   }
 })
-
-/** The tab state from the window, when it is a reader tab. */
-const readerTab = computed(() => props.state as Partial<ReaderTabState> | undefined)
-
-useReaderTabSync(
-  () => readerTab.value,
-  () => activeState.value,
-)
 
 onUnmounted(() => {
   if (internalState) internalState.document.close()
@@ -88,6 +84,11 @@ function onPageTurnKey(event: KeyboardEvent) {
 
 function onSetPageHandle(reader: unknown) {
   activeState.value?.setPageHandle(reader)
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function isDocumentTabState(val: unknown): val is DocumentTabState {
+  return typeof val === 'object' && val !== null && 'document' in val && 'setPageHandle' in val
 }
 </script>
 

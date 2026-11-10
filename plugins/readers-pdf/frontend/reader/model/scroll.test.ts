@@ -185,8 +185,8 @@ describe('a hand dragging the row', () => {
     const { scroll, element, capture } = createPressed()
     scroll.moves.send(900, 'smooth')
 
-    scroll.handlers.onPointerDown(createPointer(200, 100))
-    scroll.handlers.onPointerMove(createPointer(150, 60))
+    scroll.drag.onPointerDown(createPointer(200, 100))
+    scroll.drag.onPointerMove(createPointer(150, 60))
 
     expect(element.scrollLeft).toBe(550)
     expect(element.scrollTop).toBe(340)
@@ -198,8 +198,8 @@ describe('a hand dragging the row', () => {
   it('does not drag before the hand has travelled', () => {
     const { scroll, element, capture } = createPressed()
 
-    scroll.handlers.onPointerDown(createPointer(200, 100))
-    scroll.handlers.onPointerMove(createPointer(201, 100))
+    scroll.drag.onPointerDown(createPointer(200, 100))
+    scroll.drag.onPointerMove(createPointer(201, 100))
 
     expect(element.scrollLeft).toBe(500)
     expect(scroll.state.isDragging.value).toBe(false)
@@ -209,7 +209,7 @@ describe('a hand dragging the row', () => {
   it('ignores a move when nothing has been pressed', () => {
     const { scroll, element } = createPressed()
 
-    scroll.handlers.onPointerMove(createPointer(100, 100))
+    scroll.drag.onPointerMove(createPointer(100, 100))
 
     expect(element.scrollLeft).toBe(500)
     expect(scroll.state.isDragging.value).toBe(false)
@@ -218,8 +218,8 @@ describe('a hand dragging the row', () => {
   it('ignores a press with another button', () => {
     const { scroll, element } = createPressed()
 
-    scroll.handlers.onPointerDown(createPointer(200, 100, 2))
-    scroll.handlers.onPointerMove(createPointer(100, 100))
+    scroll.drag.onPointerDown(createPointer(200, 100, 2))
+    scroll.drag.onPointerMove(createPointer(100, 100))
 
     expect(element.scrollLeft).toBe(500)
   })
@@ -229,18 +229,18 @@ describe('a hand dragging the row', () => {
     area.value = null
 
     expect(() => {
-      scroll.handlers.onPointerDown(createPointer(200, 100))
-      scroll.handlers.onPointerMove(createPointer(100, 100))
+      scroll.drag.onPointerDown(createPointer(200, 100))
+      scroll.drag.onPointerMove(createPointer(100, 100))
     }).not.toThrow()
     expect(scroll.state.isDragging.value).toBe(false)
   })
 
   it('ignores a move after the element is removed', () => {
     const { scroll, area } = createPressed()
-    scroll.handlers.onPointerDown(createPointer(200, 100))
+    scroll.drag.onPointerDown(createPointer(200, 100))
     area.value = null
 
-    expect(() => scroll.handlers.onPointerMove(createPointer(100, 100))).not.toThrow()
+    expect(() => scroll.drag.onPointerMove(createPointer(100, 100))).not.toThrow()
     expect(scroll.state.isDragging.value).toBe(false)
   })
 
@@ -248,8 +248,8 @@ describe('a hand dragging the row', () => {
     const { scroll, element } = createPressed()
     const capture = createCapture(element, true)
 
-    scroll.handlers.onPointerDown(createPointer(200, 100))
-    scroll.handlers.onPointerMove(createPointer(100, 100))
+    scroll.drag.onPointerDown(createPointer(200, 100))
+    scroll.drag.onPointerMove(createPointer(100, 100))
 
     expect(capture.set).not.toHaveBeenCalled()
     expect(element.scrollLeft).toBe(600)
@@ -261,9 +261,9 @@ describe('a hand dragging the row', () => {
       throw new Error('no such pointer')
     })
 
-    scroll.handlers.onPointerDown(createPointer(200, 100))
+    scroll.drag.onPointerDown(createPointer(200, 100))
 
-    expect(() => scroll.handlers.onPointerMove(createPointer(100, 100))).not.toThrow()
+    expect(() => scroll.drag.onPointerMove(createPointer(100, 100))).not.toThrow()
     expect(element.scrollLeft).toBe(600)
     expect(scroll.state.isDragging.value).toBe(true)
   })
@@ -271,11 +271,11 @@ describe('a hand dragging the row', () => {
   it('releases the row and the pointer', () => {
     const { scroll, element, capture } = createPressed()
     capture.has.mockReturnValue(true)
-    scroll.handlers.onPointerDown(createPointer(200, 100))
-    scroll.handlers.onPointerMove(createPointer(100, 100))
+    scroll.drag.onPointerDown(createPointer(200, 100))
+    scroll.drag.onPointerMove(createPointer(100, 100))
 
-    scroll.handlers.letGo(createPointer(100, 100))
-    scroll.handlers.onPointerMove(createPointer(0, 100))
+    scroll.drag.letGo(createPointer(100, 100))
+    scroll.drag.onPointerMove(createPointer(0, 100))
 
     expect(scroll.state.isDragging.value).toBe(false)
     expect(capture.release).toHaveBeenCalledWith(7)
@@ -285,7 +285,7 @@ describe('a hand dragging the row', () => {
   it('does not release a pointer it does not hold', () => {
     const { scroll, capture } = createPressed()
 
-    scroll.handlers.letGo(createPointer(100, 100))
+    scroll.drag.letGo(createPointer(100, 100))
 
     expect(capture.release).not.toHaveBeenCalled()
   })
@@ -294,7 +294,7 @@ describe('a hand dragging the row', () => {
     const { scroll, area } = createPressed()
     area.value = null
 
-    expect(() => scroll.handlers.letGo(createPointer(100, 100))).not.toThrow()
+    expect(() => scroll.drag.letGo(createPointer(100, 100))).not.toThrow()
   })
 })
 
@@ -309,7 +309,7 @@ describe('a wheel turned over the row', () => {
     setTall(element, 100, 100)
     const { event, preventDefault } = createWheel(0, 120)
 
-    scroll.handlers.onWheel(event)
+    scroll.onWheel(event)
 
     expect(element.scrollLeft).toBe(620)
     expect(element.scrollTop).toBe(0)
@@ -321,7 +321,7 @@ describe('a wheel turned over the row', () => {
     setTall(element, 200, 100)
     const { event } = createWheel(0, 120)
 
-    scroll.handlers.onWheel(event)
+    scroll.onWheel(event)
 
     expect(element.scrollLeft).toBe(500)
     expect(element.scrollTop).toBe(120)
@@ -331,10 +331,10 @@ describe('a wheel turned over the row', () => {
     const { scroll, element } = createScroll(500)
     setTall(element, 200, 100)
 
-    scroll.handlers.onWheel(createWheel(40, 0).event)
+    scroll.onWheel(createWheel(40, 0).event)
     expect(element.scrollLeft).toBe(540)
 
-    scroll.handlers.onWheel(createWheel(0, 30).event)
+    scroll.onWheel(createWheel(0, 30).event)
     expect(element.scrollTop).toBe(30)
   })
 
@@ -343,7 +343,7 @@ describe('a wheel turned over the row', () => {
     setTall(element, 200, 100)
     const { event, preventDefault } = createWheel(0, 0)
 
-    scroll.handlers.onWheel(event)
+    scroll.onWheel(event)
 
     expect(preventDefault).not.toHaveBeenCalled()
     expect(element.scrollLeft).toBe(500)
@@ -354,7 +354,7 @@ describe('a wheel turned over the row', () => {
     setTall(element, 100, 100)
     scroll.moves.send(900, 'smooth')
 
-    scroll.handlers.onWheel(createWheel(10, 0).event)
+    scroll.onWheel(createWheel(10, 0).event)
 
     expect(scroll.moves.getScrollOffset()).toBe(510)
   })
@@ -364,7 +364,7 @@ describe('a wheel turned over the row', () => {
     area.value = null
     const { event, preventDefault } = createWheel(0, 120)
 
-    expect(() => scroll.handlers.onWheel(event)).not.toThrow()
+    expect(() => scroll.onWheel(event)).not.toThrow()
     expect(preventDefault).not.toHaveBeenCalled()
   })
 })

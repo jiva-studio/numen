@@ -39,6 +39,13 @@ const emit = defineEmits<{
   (event: 'measure', pixels: number): void
 }>()
 
+defineExpose({
+  measure: () => measure(),
+  handleKey: (event: KeyboardEvent) => onKey(event),
+  /** Focuses the pages so key events reach them. */
+  focusPages: () => area.value?.focus(),
+})
+
 /* ---------------------------------- State --------------------------------- */
 /** The zoom the person chose with the toolbar. Until one is chosen the document is drawn at its fit. */
 const chosenZoom = ref<number | null>(null)
@@ -52,7 +59,8 @@ const { viewport, measure: measureViewport } = useViewport(area)
 const scroll = usePanScroll(area)
 const scrollOffset = scroll.state.offset
 const { isDragging } = scroll.state
-const { onPointerDown, onPointerMove, letGo, onWheel } = scroll.handlers
+const { onPointerDown, onPointerMove, letGo } = scroll.drag
+const { onWheel } = scroll
 
 /** How close a page is drawn. What that may be is `strip.ts`. */
 const zoom = computed({
@@ -83,13 +91,6 @@ const { measure, isPutting } = useRowRestore({
   getAt: () => props.at,
   getPaint: () => props.paint,
   scroll: scroll.moves,
-})
-
-defineExpose({
-  measure,
-  handleKey: (event: KeyboardEvent) => onKey(event),
-  /** Focuses the pages so key events reach them. */
-  focusPages: () => area.value?.focus(),
 })
 
 /* -------------------------------- Handlers -------------------------------- */
