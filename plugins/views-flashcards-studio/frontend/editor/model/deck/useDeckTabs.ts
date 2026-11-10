@@ -31,7 +31,6 @@ import {
 import type { Cards } from '../../../types'
 import type { DeckTabState } from './tabState'
 
-export type { DeckTabState }
 
 /** What the deck tabs of a window are made from. */
 export interface DeckTabsOptions {
