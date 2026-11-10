@@ -28,18 +28,45 @@ collapsed=021d56652dad4f580e80d92a7396ea55b069b228
 kept=0001_index.sql
 produced=176233302a0286e9d26ead0b8b0bf02f25009a87
 
+# carried_folder names the folder the base carries the migrations in: this one, or, where the base
+# has none there, the folder the files of this one were renamed from.
+carried_folder() {
+	local at=$1 old
+	if [[ -n "$(git ls-tree -r --name-only "$at" -- "$folder")" ]]; then
+		echo "$folder"
+		return 0
+	fi
+	old=$(git diff -M --name-status "$at" HEAD -- . | awk -v to="$folder/" '
+		$1 ~ /^R/ && index($3, to) == 1 { n = split($2, parts, "/"); out = parts[1]; for (i = 2; i < n; i++) out = out "/" parts[i]; print out; exit }')
+	echo "${old:-$folder}"
+}
+
+# find_changed prints each file of the base folder that is not in this folder under the same name with
+# the same contents.
+find_changed() {
+	local at=$1 then=$2 name relative
+	while IFS= read -r name; do
+		relative=${name#"$then"/}
+		if [[ ! -f "$folder/$relative" ]] ||
+			[[ "$(git rev-parse "$at:$name")" != "$(git hash-object --path "$folder/$relative" "$folder/$relative")" ]]; then
+			echo "M	$folder/$relative"
+		fi
+	done < <(git ls-tree -r --name-only "$at" -- "$then")
+}
+
 # rule reads the folder as the base carries it against the folder as it stands.
 # The comparison is with the commit the branch would merge into, so what another
 # branch put on main in the meantime is not read as this branch's work.
 rule() {
-	local base=$1 at carried here touched
+	local base=$1 at carried here touched then_folder
 
 	if ! at=$(git merge-base "$base" HEAD 2>/dev/null); then
 		echo "no commit is shared with $base: nothing was compared" >&2
 		return 2
 	fi
 
-	carried=$(git ls-tree -r --name-only "$at" -- "$folder")
+	then_folder=$(carried_folder "$at")
+	carried=$(git ls-tree -r --name-only "$at" -- "$then_folder")
 	if [[ -z "$carried" ]]; then
 		echo "$at carries no migration under $folder/: nothing was compared" >&2
 		return 2
@@ -52,7 +79,7 @@ rule() {
 	fi
 
 	# The file the rewrite left is compared against what it produced.
-	if [[ "$(git rev-parse "$at:$folder")" = "$collapsed" ]]; then
+	if [[ "$(git rev-parse "$at:$then_folder")" = "$collapsed" ]]; then
 		if [[ ! -f "$folder/$kept" ]] ||
 			[[ "$(git hash-object --path "$folder/$kept" "$folder/$kept")" != "$produced" ]]; then
 			echo "M	$folder/$kept" >&2
@@ -63,9 +90,9 @@ rule() {
 		return 0
 	fi
 
-	# Renames are off, so a migration moved to another name is the removal it
-	# is. Only A is left through.
-	touched=$(git diff --no-renames --name-status "$at" -- "$folder" | grep -v '^A' || true)
+	# A migration the base carries stays in the folder with the contents it had, under the same name,
+	# so one moved to another name is the removal it is. The folder itself may have moved as a whole.
+	touched=$(find_changed "$at" "$then_folder")
 	if [[ -n "$touched" ]]; then
 		echo "$touched" >&2
 		echo "a migration $at already carries was changed or removed: add a new numbered file instead" >&2
@@ -87,18 +114,18 @@ self_test() {
 	# expect runs one fabricated branch: a name, the exit status wanted, a word
 	# the report has to carry, and the commands that build the branch.
 	expect() {
-		local name=$1 want=$2 word=$3 build=$4
+		local name=$1 want=$2 word=$3 build=$4 basedir=${5:-$folder}
 		local where="$room/$name" got=0 said
 
-		mkdir -p "$where/$folder"
+		mkdir -p "$where/$basedir"
 		(
 			cd "$where"
 			git init -q -b main .
 			git config user.email check@numen.invalid
 			git config user.name check
-			printf 'CREATE TABLE a (id INTEGER);\n' >"$folder/0001_a.sql"
-			printf 'CREATE TABLE b (id INTEGER);\n' >"$folder/0002_b.sql"
-			git add -- "$folder"
+			printf 'CREATE TABLE a (id INTEGER);\n' >"$basedir/0001_a.sql"
+			printf 'CREATE TABLE b (id INTEGER);\n' >"$basedir/0002_b.sql"
+			git add -- "$basedir"
 			git commit -qm base
 			git switch -qc branch
 			eval "$build"
@@ -126,6 +153,20 @@ self_test() {
 	expect removed 1 0002_b.sql '
 		git rm -q -- "$folder/0002_b.sql"
 		git commit -qm remove'
+	expect renamed 0 '' '
+		mkdir -p "$(dirname "$folder")"
+		git mv -- old/migration "$folder"
+		git commit -qm move' old/migration
+	expect renamededited 1 0001_a.sql '
+		mkdir -p "$(dirname "$folder")"
+		git mv -- old/migration "$folder"
+		printf "ALTER TABLE a ADD COLUMN n TEXT;\n" >> "$folder/0001_a.sql"
+		git commit -qam move' old/migration
+	expect renamedremoved 1 0002_b.sql '
+		mkdir -p "$(dirname "$folder")"
+		git mv -- old/migration "$folder"
+		git rm -qf -- "$folder/0002_b.sql"
+		git commit -qm move' old/migration
 	expect emptied 2 "nothing was compared" '
 		git rm -q -- "$folder"/*.sql
 		git commit -qm empty'
@@ -135,7 +176,7 @@ self_test() {
 		echo "the rule does not refuse what it is meant to refuse" >&2
 		return 1
 	fi
-	echo "the rule refuses a changed migration, a removed one, and a folder it read nothing from"
+	echo "the rule refuses a changed migration, a removed one, and a folder it read nothing from, and follows a moved folder"
 }
 
 case ${1:-} in
