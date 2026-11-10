@@ -1,9 +1,9 @@
-package service
+package stream
 
 import (
 	"context"
+	"io"
 	"os"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -29,6 +29,17 @@ type steppingClock struct {
 func (c *steppingClock) Now() time.Time {
 	c.tick = c.tick.Add(c.step)
 	return c.tick
+}
+
+func parseStreamWithClock(
+	ctx context.Context,
+	r io.Reader,
+	send func(*agentrun.Response) error,
+	words map[string]toolcall.Declaration,
+	record func(string),
+	clk Clock,
+) string {
+	return Parse(ctx, r, send, Options{Words: words, Record: record, Clock: clk, ExpectsVault: true})
 }
 
 func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...string) ([]*agentrun.Response, string) {
@@ -184,7 +195,7 @@ func TestParseLines_VaultMcpFailure(t *testing.T) {
 
 func TestParseLines_NoVaultExpected(t *testing.T) {
 	line := `{"type":"system","subtype":"init","mcp_servers":[]}`
-	reason := parseStream(t.Context(), strings.NewReader(line+"\n"), func(*agentrun.Response) error { return nil }, streamOptions{clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}})
+	reason := Parse(t.Context(), strings.NewReader(line+"\n"), func(*agentrun.Response) error { return nil }, Options{Clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}})
 	if reason != "" {
 		t.Fatalf("expected empty reason when no vault is expected, got %q", reason)
 	}
@@ -213,58 +224,6 @@ func TestParseLines_FirstErrorPriority(t *testing.T) {
 		`{"type":"result","is_error":true,"subtype":"error_overloaded"}`)
 	if reason != "the rate limit was reached" {
 		t.Fatalf("got %q", reason)
-	}
-}
-
-func TestBuildClaudeArguments_SettingSources(t *testing.T) {
-	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}})
-	assertPair(t, args, "--setting-sources", "")
-	args = buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read"}, mayReadHooks: true})
-	assertPair(t, args, "--setting-sources", "user")
-}
-
-func TestTheAllowanceNamesTheSearchAndTheTasksTools(t *testing.T) {
-	args := buildClaudeArguments(claudeArguments{configuration: "cfg.json", tools: []string{"note_read", "note_edit"}})
-	assertPair(t, args, "--allowedTools", "WebSearch,mcp__numen__note_edit,mcp__numen__note_read")
-	assertPair(t, args, "--tools", "WebSearch")
-}
-
-func TestTheDefaultNumberOfTurnsIsOneHundred(t *testing.T) {
-	assertPair(t, buildClaudeArguments(claudeArguments{tools: []string{"note_read"}}), "--max-turns", "100")
-	assertPair(t, buildClaudeArguments(claudeArguments{turns: 1, tools: []string{"note_read"}}), "--max-turns", "1")
-	assertPair(t, buildClaudeArguments(claudeArguments{turns: 7, tools: []string{"note_read"}}), "--max-turns", "7")
-
-	withFlags := buildClaudeArguments(claudeArguments{
-		tools:        []string{"note_read"},
-		instructions: "inst",
-		session:      "sess-1",
-	})
-	assertPair(t, withFlags, "--append-system-prompt", "inst")
-	assertPair(t, withFlags, "--resume", "sess-1")
-
-	withoutFlags := buildClaudeArguments(claudeArguments{tools: []string{"note_read"}})
-	if slices.Contains(withoutFlags, "--append-system-prompt") || slices.Contains(withoutFlags, "--resume") {
-		t.Errorf("unexpected flags in %v", withoutFlags)
-	}
-}
-
-func assertPair(t *testing.T, args []string, flag, want string) {
-	t.Helper()
-	for i, a := range args {
-		if a == flag && i+1 < len(args) {
-			if args[i+1] != want {
-				t.Errorf("%s = %q, want %q", flag, args[i+1], want)
-			}
-			return
-		}
-	}
-	t.Errorf("%s absent from %v", flag, args)
-}
-
-func TestBuildEnvironment_SessionSanitization(t *testing.T) {
-	got := buildEnvironment([]string{"PATH=/bin", "CLAUDECODE=1", "CLAUDE_CODE_SESSION_ID=x", "HOME=/h"})
-	if strings.Join(got, ",") != "PATH=/bin,HOME=/h" {
-		t.Fatalf("got %v", got)
 	}
 }
 
@@ -434,43 +393,33 @@ func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
 	}
 }
 
-func TestTheLevelOfReasoningIsHandedToTheProgramAsItsEffort(t *testing.T) {
-	for _, tools := range [][]string{{"note_read"}, nil} {
-		args := buildClaudeArguments(claudeArguments{reasoning: "high", tools: tools})
-		assertPair(t, args, "--effort", "high")
-		if slices.Contains(buildClaudeArguments(claudeArguments{tools: tools}), "--effort") {
-			t.Error("a run that names no level is given an effort")
-		}
-	}
-}
-
 func TestStreamParserEdgeCasesAndBoundaries(t *testing.T) {
 	// Canceled context returns "canceled" immediately.
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
-	if got := parseStream(ctx, strings.NewReader(""), func(*agentrun.Response) error { return nil }, streamOptions{}); got != "canceled" {
+	if got := Parse(ctx, strings.NewReader(""), func(*agentrun.Response) error { return nil }, Options{}); got != "canceled" {
 		t.Errorf("parseStream canceled = %q, want \"canceled\"", got)
 	}
 
 	// Send error stops subsequent sends and becomes the reason unless result error was set.
 	sendCalls := 0
-	reason := parseStream(t.Context(), strings.NewReader(strings.Join([]string{
+	reason := Parse(t.Context(), strings.NewReader(strings.Join([]string{
 		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"one"}}}`,
 		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"two"}}}`,
 	}, "\n")+"\n"), func(*agentrun.Response) error {
 		sendCalls++
 		return os.ErrClosed
-	}, streamOptions{})
+	}, Options{})
 	if sendCalls != 1 || reason != os.ErrClosed.Error() {
 		t.Errorf("send error: calls=%d reason=%q", sendCalls, reason)
 	}
 
-	reasonWithResult := parseStream(t.Context(), strings.NewReader(strings.Join([]string{
+	reasonWithResult := Parse(t.Context(), strings.NewReader(strings.Join([]string{
 		`{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"one"}}}`,
 		`{"type":"result","is_error":true,"subtype":"error_rate_limit"}`,
 	}, "\n")+"\n"), func(*agentrun.Response) error {
 		return os.ErrClosed
-	}, streamOptions{})
+	}, Options{})
 	if reasonWithResult != "the rate limit was reached" {
 		t.Errorf("reasonWithResult = %q, want rate limit reason", reasonWithResult)
 	}

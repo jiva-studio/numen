@@ -16,13 +16,39 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/executable"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/internal/adapter/hostenv"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/models"
+	"github.com/jiva-studio/numen/plugins/agents-claude/backend/ports"
 )
 
-func startAgent(t *testing.T, agentSvc *agentServer) *agentrun.Client {
+// steppingClock advances by step on every reading.
+type steppingClock struct {
+	tick time.Time
+	step time.Duration
+}
+
+func (c *steppingClock) Now() time.Time {
+	c.tick = c.tick.Add(c.step)
+	return c.tick
+}
+
+func newTestAgentWith(t *testing.T, env ports.Environment) *agent {
 	t.Helper()
-	if agentSvc.clock == nil {
-		agentSvc.clock = &steppingClock{tick: time.Unix(0, 0), step: time.Second}
+	built, err := newAgent(parts{environment: env, clock: &steppingClock{tick: time.Unix(0, 0), step: time.Second}, isAsync: false})
+	if err != nil {
+		t.Fatal(err)
 	}
+	return built
+}
+
+func newTestAgent(t *testing.T) *agent {
+	t.Helper()
+	return newTestAgentWith(t, hostenv.Process{})
+}
+
+func startAgent(t *testing.T, agentSvc *agent) *agentrun.Client {
+	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(agentrun.NewHandler(agentSvc, agentSvc))
 	testServer := httptest.NewServer(mux)
@@ -43,10 +69,10 @@ func writeScript(t *testing.T, name, body string) string {
 }
 
 func TestLifecycleServer(t *testing.T) {
-	agentSvc := &agentServer{}
+	agentSvc := newTestAgent(t)
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token"}, func(s *server.Server) error {
 		s.SetConfigure(func(_ context.Context, values map[string]string, _ server.Secrets) error {
-			agentSvc.applyConfig(values)
+			agentSvc.settings.Apply(values)
 			return nil
 		})
 		return nil
@@ -72,18 +98,16 @@ func TestLifecycleServer(t *testing.T) {
 	if _, err = client.Configure(ctx, map[string]string{"model": "m1"}, nil); err != nil {
 		t.Fatalf("Configure failed: %v", err)
 	}
-	if agentSvc.defaultModel != "m1" {
-		t.Errorf("the model that answers a task naming none is %q", agentSvc.defaultModel)
+	if agentSvc.settings.Get().DefaultModel != "m1" {
+		t.Errorf("the model that answers a task naming none is %q", agentSvc.settings.Get().DefaultModel)
 	}
 }
 
 func TestAgentServiceRPC(t *testing.T) {
-	client := startAgent(t, &agentServer{
-		systemPrompt: "Base prompt.",
-		tools: []*agentrun.ToolDefinition{
-			{Name: "search_tool", Description: "Search notes"},
-		},
-	})
+	built := newTestAgent(t)
+	built.toolset.ExtendPrompt("Base prompt.")
+	built.toolset.Register(&agentrun.ToolDefinition{Name: "search_tool", Description: "Search notes"})
+	client := startAgent(t, built)
 	ctx := t.Context()
 
 	if err := client.RegisterTool(ctx, &agentrun.ToolDefinition{Name: "new_tool", Description: "New tool"}); err != nil {
@@ -115,7 +139,7 @@ func TestAgentServiceRPC(t *testing.T) {
 // reports it as not installed.
 func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	state, err := client.GetState(t.Context())
 	if err != nil {
@@ -129,7 +153,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(programs) != 1 || programs[0].IsInstalled || len(programs[0].Models) != len(getFallbackModels()) {
+	if len(programs) != 1 || programs[0].IsInstalled || len(programs[0].Models) != len(models.GetFallback()) {
 		t.Errorf("the programs are %v", programs)
 	}
 }
@@ -138,7 +162,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 // models the program accepts, listed with no key and no network.
 func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	programs, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
@@ -215,7 +239,7 @@ func TestAskAgentWithMockScript(t *testing.T) {
 		"{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Algebra notes found.\"}}}\n"+
 		"{\"type\":\"result\",\"is_error\":false}\n"+
 		"JSONEOF\n")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt:  "Find algebra notes",
@@ -265,9 +289,9 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
 			"while [ $# -gt 0 ]; do if [ \"$1\" = --mcp-config ]; then cp \"$2\" "+out+".config; fi; shift; done\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	agent := &agentServer{}
-	agent.applyConfig(map[string]string{"readsHooksAndSkills": "true"})
-	client := startAgent(t, agent)
+	built := newTestAgent(t)
+	built.settings.Apply(map[string]string{"readsHooksAndSkills": "true"})
+	client := startAgent(t, built)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt:     "the question",
@@ -324,7 +348,7 @@ func TestAConversationResumesItsSession(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh",
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+
 			"echo '{\"type\":\"system\",\"subtype\":\"init\",\"session_id\":\"s-1\"}'\n")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	ask := func() []string {
 		stream, err := client.Ask(t.Context(), &agentrun.Request{
@@ -358,7 +382,7 @@ func TestAConversationResumesItsSession(t *testing.T) {
 // reason.
 func TestFinishingAConversationStopsItsRun(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh", announce+"sleep 120\n")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt: "q", Command: []string{script}, Conversation: "c-1",
@@ -383,7 +407,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 // A program that cannot be found is reported to the user, and the run ends.
 func TestAskAgent_NotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{Prompt: "q"})
 	if err != nil {
@@ -397,8 +421,8 @@ func TestAskAgent_NotInstalled(t *testing.T) {
 
 // A closed agent takes no task.
 func TestAskAgent_ClosedAgent(t *testing.T) {
-	agentSvc := &agentServer{}
-	if err := agentSvc.registry.Close(); err != nil {
+	agentSvc := newTestAgent(t)
+	if err := agentSvc.run.Close(); err != nil {
 		t.Fatal(err)
 	}
 	client := startAgent(t, agentSvc)
@@ -421,7 +445,7 @@ func TestAskAgent_ClosedAgent(t *testing.T) {
 func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	t.Setenv("ANTHROPIC_API_KEY", "")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	programs, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{
 		{Program: "codex", Command: []string{"/bin/codex"}},
@@ -441,7 +465,7 @@ func withoutClaudeAnywhere(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("NUMEN_CLAUDE_COMMAND", "")
 	t.Setenv("CLAUDE_COMMAND", "")
-	if found := findClaude(); found != "" {
+	if found := (executable.Finder{}).Find(""); found != "" {
 		t.Skipf("Claude Code is installed at %s", found)
 	}
 }
@@ -449,7 +473,7 @@ func withoutClaudeAnywhere(t *testing.T) {
 func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	t.Setenv("ANTHROPIC_API_KEY", "")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	programs, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{
 		{Program: "other", Command: []string{"/bin/other"}},
@@ -469,12 +493,9 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh",
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	agentSvc := &agentServer{
-		tools: []*agentrun.ToolDefinition{
-			{Name: "note_read"},
-			{Name: "note_write"},
-		},
-	}
+	agentSvc := newTestAgent(t)
+	agentSvc.toolset.Register(&agentrun.ToolDefinition{Name: "note_read"})
+	agentSvc.toolset.Register(&agentrun.ToolDefinition{Name: "note_write"})
 	client := startAgent(t, agentSvc)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
@@ -516,8 +537,8 @@ func TestAskAgentRunsWithTheEnvironmentAndTheConfiguredModel(t *testing.T) {
 		"echo \"key=$ANTHROPIC_API_KEY\" > "+out+"\n"+
 			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done >> "+out+"\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	agentSvc := &agentServer{}
-	agentSvc.applyConfig(map[string]string{"apiKey": "host-key", "model": "m1"})
+	agentSvc := newTestAgent(t)
+	agentSvc.settings.Apply(map[string]string{"apiKey": "host-key", "model": "m1"})
 	client := startAgent(t, agentSvc)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
@@ -544,7 +565,8 @@ func TestAskAgentAppendsSystemPrompt(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh",
 		"for a in \"$@\"; do printf '%s\\0' \"$a\"; done > "+out+".argv\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	agentSvc := &agentServer{systemPrompt: "vault prompt"}
+	agentSvc := newTestAgent(t)
+	agentSvc.toolset.ExtendPrompt("vault prompt")
 	client := startAgent(t, agentSvc)
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
@@ -568,7 +590,7 @@ func TestAskAgentAppendsSystemPrompt(t *testing.T) {
 func TestAskAgent_McpConfigWriteFailure(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh", "echo '{\"type\":\"result\",\"is_error\":false}'\n")
 	t.Setenv("TMPDIR", "/dev/null/nowhere")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt:     "q",
@@ -593,7 +615,7 @@ func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh",
 		"env > "+out+"\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 
 	stream, err := client.Ask(t.Context(), &agentrun.Request{
 		Prompt:  "q",
@@ -618,43 +640,21 @@ func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
 func TestTheProgramListNeedsNoKey(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
 	t.Setenv("ANTHROPIC_API_KEY", "")
-	agentSvc := &agentServer{}
-	agentSvc.applyConfig(map[string]string{})
+	agentSvc := newTestAgent(t)
+	agentSvc.settings.Apply(map[string]string{})
 	client := startAgent(t, agentSvc)
 
 	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if models := got[0].Models; len(models) != len(getFallbackModels()) {
-		t.Errorf("the models are %v", models)
+	if listed := got[0].Models; len(listed) != len(models.GetFallback()) {
+		t.Errorf("the models are %v", listed)
 	}
 }
 
 func TestServerEdgeCasesAndDirectCalls(t *testing.T) {
-	s := &agentServer{}
-	s.applyConfig(map[string]string{"model": "m1"})
-	s.applyConfig(map[string]string{"model": ""})
-	if s.defaultModel != "m1" {
-		t.Errorf("defaultModel = %q, want m1 preserved when empty model configured", s.defaultModel)
-	}
-
-	if got := combineInstructions("inst", ""); got != "inst" {
-		t.Errorf("combineInstructions(\"inst\", \"\") = %q, want \"inst\"", got)
-	}
-
-	// prepareClaudeArgs with empty tools creates no configFile, and defaultModelName omits --model.
-	args, cfg, err := s.prepareClaudeArgs(&agentrun.Request{
-		Model:      defaultModelName,
-		ToolsURL:   "http://127.0.0.1:1/mcp",
-		ToolsToken: "tok",
-	}, "", "")
-	if err != nil || cfg != "" {
-		t.Fatalf("prepareClaudeArgs empty tools = (%q, %v), want empty cfg", cfg, err)
-	}
-	if slices.Contains(args, "--model") {
-		t.Errorf("expected --model omitted for defaultModelName, got %v", args)
-	}
+	s := newTestAgent(t)
 
 	// Ask when claude is not installed and send fails on the first step returns that error.
 	withoutClaudeAnywhere(t)
@@ -681,7 +681,7 @@ func TestServerEdgeCasesAndDirectCalls(t *testing.T) {
 
 	// Ask when script writes to stderr and exits non-zero reports stderr failure message.
 	failCmd := []string{"/bin/sh", "-c", "echo 'fatal stderr crash' >&2\nexit 1\n", "sh"}
-	client := startAgent(t, &agentServer{})
+	client := startAgent(t, newTestAgent(t))
 	stream, err := client.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: failCmd})
 	if err != nil {
 		t.Fatal(err)
@@ -735,9 +735,9 @@ func TestAskReadsHooksAndSkillsOnlyWhereTheSettingIsOn(t *testing.T) {
 			script := writeScript(t, "mock-claude.sh",
 				"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+"\n"+
 					"echo '{\"type\":\"result\",\"is_error\":false}'\n")
-			agent := &agentServer{}
-			agent.applyConfig(c.values)
-			client := startAgent(t, agent)
+			built := newTestAgent(t)
+			built.settings.Apply(c.values)
+			client := startAgent(t, built)
 
 			stream, err := client.Ask(t.Context(), &agentrun.Request{
 				Prompt: "q", Command: []string{script}, Tools: []string{"note_read"},

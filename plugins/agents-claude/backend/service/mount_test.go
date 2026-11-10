@@ -31,8 +31,8 @@ func TestTheLinkedHandlerListsClaudeCode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPrograms: %v", err)
 	}
-	if len(programs) != 1 || programs[0].Name != programName {
-		t.Fatalf("programs = %v, want %s alone", programs, programName)
+	if len(programs) != 1 || programs[0].Name != "claude" {
+		t.Fatalf("programs = %v, want claude alone", programs)
 	}
 
 	lifecycle := server.NewLifecycleClient(http.DefaultClient, web.URL, hostcall.WithBearer("linked-token"))
