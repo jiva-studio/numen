@@ -162,12 +162,15 @@ defineExpose({
 }
 
 .caution {
+  --caution-gap: 0.5rem;
+  --caution-pad-block: 0.4rem;
+  --caution-pad-inline: 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--caution-gap);
   margin: 0;
-  padding: 0.4rem 1rem;
+  padding: var(--caution-pad-block) var(--caution-pad-inline);
   font-family: var(--numen-font-sans);
   font-size: var(--numen-text-2);
   background-color: var(--numen-caution-bg);
@@ -180,14 +183,17 @@ defineExpose({
 }
 
 .caution__dismiss {
+  --dismiss-pad-block: 0.125rem;
+  --dismiss-pad-inline: 0.375rem;
+  --dismiss-text: 1.125rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.125rem 0.375rem;
+  padding: var(--dismiss-pad-block) var(--dismiss-pad-inline);
   background: transparent;
   border: none;
   color: inherit;
-  font-size: 1.125rem;
+  font-size: var(--dismiss-text);
   line-height: 1;
   cursor: pointer;
   border-radius: var(--numen-radius-pill);
