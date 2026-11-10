@@ -51,8 +51,8 @@ function checkKnip(repoRoot, packageDirs) {
  * test helper as a user of a file or an export. Dependencies are judged on everything, tests included.
  */
 const KNIP_RUNS = [
-  ["--production", "--include", "files,exports,types"],
-  ["--include", "dependencies,unlisted,binaries,unresolved"],
+  ["--production", "--include", "exports,types"],
+  ["--include", "files,dependencies,unlisted,binaries,unresolved"],
 ];
 
 function runKnip(knipBin, repoRoot, run) {

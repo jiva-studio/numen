@@ -272,7 +272,7 @@ const NOT_SHIPPED = /^tools\/|(\.(test|spec|stories)\.[a-z]+|_test\.go)$|(^|\/)(
 export const STRYKER_DISABLE_CAP = 230;
 
 /**
- * Every way a stylelint run is told to skip something: an `ignoreFiles` or `ignore` entry of a configuration,
+ * Every way a stylelint run skips something: an `ignoreFiles` or `ignore` entry of a configuration,
  * a `.stylelintignore` file, and a `stylelint-disable` comment in a stylesheet or a component.
  */
 export function findStylelintSuppressions(sources) {
