@@ -4,7 +4,7 @@
  */
 import { computed, ref, watch, type Ref } from 'vue'
 import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-loader'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 
 /** The settings action of a failed task: the words of its link and the plugin it opens. */
 interface TaskAction {

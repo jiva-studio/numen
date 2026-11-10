@@ -4,11 +4,12 @@
  * Every one of these has a failure that looks like nothing at all: a window
  * showing something stale, with no error and no way back.
  */
-import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/core-client'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { asFailure, asValue, TASK_KIND, TASK_UNIT } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 import type { TextRange } from '@/shared/textRange'
 import type { Neighbourhood } from '@/entities/note'
 
@@ -34,7 +35,87 @@ const resolved = {
   agentUnreachable: '',
 }
 
-function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
+/** What the core says about the open vault and the window, in the values the window reads them as. */
+interface Streams {
+  state(): Promise<typeof resolved>
+  agentUnreachable(): Promise<string>
+  watchVaultChanges(signal: AbortSignal): AsyncIterable<{
+    paths: string[]
+    shouldReload: boolean
+    renamed: { from: string; to: string }[]
+    versionPaths?: string[]
+  }>
+  watchFocus(signal: AbortSignal): AsyncIterable<{
+    path: string
+    ranges: { start: number; end: number }[]
+    tabId: string
+  }>
+  watchTasks(signal: AbortSignal): AsyncIterable<readonly Task[]>
+}
+
+type Fake = Core & Streams
+
+let restore: () => void = () => undefined
+
+afterEach(() => {
+  restore()
+})
+
+/** Answers the calls of the vault and the window from the fake, as the core would. */
+const answerFrom = (core: Fake) => {
+  restore()
+  restore = installCoreAnswers({
+    vault: {
+      getVaultState: async () => {
+        const state = await core.state()
+        return {
+          id: state.id,
+          name: state.name,
+          path: state.path,
+          scan: {
+            isReady: state.scan.isReady,
+            error: state.scan.error,
+            watchError: state.scan.unwatchedPath,
+          },
+          coverage: state.coverage,
+        }
+      },
+      watchVaultChanges: async function* (_request, context) {
+        for await (const change of core.watchVaultChanges(context.signal)) {
+          yield {
+            paths: change.paths,
+            reload: change.shouldReload,
+            renamed: change.renamed,
+            versionPaths: change.versionPaths ?? [],
+          }
+        }
+      },
+    },
+    agentService: { getAgentState: async () => ({ unreachable: await core.agentUnreachable() }) },
+    workspace: { watchFocus: (_request, context) => core.watchFocus(context.signal) },
+    windowService: {
+      watchTasks: async function* (_request, context) {
+        for await (const list of core.watchTasks(context.signal)) {
+          yield {
+            tasks: list.map((one) => ({
+              id: one.id,
+              title: one.label,
+              unit: TASK_UNIT.THINGS,
+              kind: one.kind === 'notice' ? TASK_KIND.NOTICE : TASK_KIND.UNSPECIFIED,
+            })),
+          }
+        }
+      },
+    },
+  })
+}
+
+const useDisplay = (core: Fake, how?: Parameters<typeof useWindowDisplay>[1]) => {
+  answerFrom(core)
+  return useWindowDisplay(core, how)
+}
+
+function fake(overrides: Partial<Fake> = {}): Fake & { requestLog: string[] } {
   const request: string[] = []
   return {
     requestLog: request,
@@ -57,7 +138,6 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     watchTasks: async function* () {
       await waitForever()
     },
-    cancelTask: vi.fn(() => Promise.resolve()),
     read: async () => asValue({ body: '' }),
     write: async () => asValue({ body: '' }),
     create: async () => ({ ok: true, value: { path: '' } }),
@@ -93,8 +173,6 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
     choosePluginPath: vi.fn(() => Promise.resolve({ path: '', isChosen: false, problem: '' })),
     getPluginData: vi.fn(() => Promise.resolve(0)),
     deletePluginData: vi.fn(() => Promise.resolve()),
-    watchQuit: emptyStream,
-    reportFlush: vi.fn(() => Promise.resolve()),
     detachTab: vi.fn(() => Promise.resolve({ ok: true as const, value: undefined })),
     watchTabLinks: emptyStream,
     cancelTabLinksWatch: vi.fn(() => Promise.resolve()),
@@ -111,12 +189,12 @@ function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const createDisplay = (
-  core: Core,
+  core: Fake,
   openFileAt?: (path: string, spans: readonly TextRange[]) => void,
 ) => {
   const changed: string[] = []
   const travelled: string[] = []
-  const showed = useWindowDisplay(core, {
+  const showed = useDisplay(core, {
     wait: async () => showed.close(),
     onVaultChanged: async (paths, renamed) => {
       changed.push([...paths, ...(renamed ?? []).map((one) => `${one.from} → ${one.to}`)].join(' '))
@@ -139,7 +217,7 @@ describe('the stream of changes', () => {
       },
     })
     const waits: number[] = []
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: async (ms) => {
         waits.push(ms)
         if (streams >= 3) window.close()
@@ -158,9 +236,9 @@ describe('the stream of changes', () => {
       watchVaultChanges: function* () {
         streams++
         throw new Error('connection lost')
-      } as unknown as Core['watchVaultChanges'],
+      } as unknown as Streams['watchVaultChanges'],
     })
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: async () => {
         if (streams >= 2) window.close()
       },
@@ -259,9 +337,9 @@ describe('the stream of changes', () => {
  */
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
-  const createWindow = (core: Core) => {
+  const createWindow = (core: Fake) => {
     const renderedElement: string[] = []
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: vi.fn(() => Promise.resolve()),
       onVaultChanged: (paths) => {
         renderedElement.push(`changed ${paths.join(' ')}`)
@@ -278,7 +356,7 @@ describe('another vault under this window', () => {
    * A vault that reloads, with every other stream of the window left open. The
    * notes named are changes the stream carries ahead of the reload.
    */
-  const createReloadingCore = (state: Core['state'], ahead: readonly string[] = []) =>
+  const createReloadingCore = (state: Streams['state'], ahead: readonly string[] = []) =>
     fake({
       state,
       watchVaultChanges: async function* () {
@@ -393,7 +471,7 @@ describe('a tab requested from outside the window', () => {
     })
     const activated: string[] = []
     const travelled: string[] = []
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: async () => window.close(),
       travelTo: (path) => {
         travelled.push(path)
@@ -412,7 +490,7 @@ describe('a tab requested from outside the window', () => {
 
 describe('a place inside a source requested for from outside the window', () => {
   /** A window that records the documents it opens, and where. */
-  const createRecordingWindow = (core: Core) => {
+  const createRecordingWindow = (core: Fake) => {
     const openedWindows: string[] = []
     const one = createDisplay(core, (path, spans) =>
       openedWindows.push(`${path} ${spans.map((one) => `${one.start} ${one.end}`).join(' ')}`),
@@ -488,7 +566,7 @@ describe('a vault that could not be read', () => {
         scan: { isReady: false, error: 'permission denied', unwatchedPath: '' },
       }),
     })
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: async () => window.close(),
       travelTo: (path) => {
         travelled.push(path)
@@ -507,7 +585,7 @@ describe('a vault that could not be read', () => {
 
 describe('a vault with a note in it', () => {
   it('says it holds one, which is not what an unreadable vault says', async () => {
-    const window = useWindowDisplay(fake(), { wait: async () => window.close() })
+    const window = useDisplay(fake(), { wait: async () => window.close() })
 
     await window.start()
     await flushPromises()
@@ -525,7 +603,7 @@ describe('a vault that is not being followed', () => {
         scan: { ...resolved.scan, unwatchedPath: 'too many watches' },
       }),
     })
-    const window = useWindowDisplay(core, { wait: async () => window.close() })
+    const window = useDisplay(core, { wait: async () => window.close() })
 
     await window.start()
     await flushPromises()
@@ -542,7 +620,7 @@ describe('chunks with nothing to embed them', () => {
         coverage: { chunkCount: 4823n, embeddedCount: 0n, isEmbedding: false },
       }),
     })
-    const window = useWindowDisplay(core, { wait: async () => window.close() })
+    const window = useDisplay(core, { wait: async () => window.close() })
 
     await window.start()
     await flushPromises()
@@ -586,7 +664,7 @@ describe('what the application is doing', () => {
         await waitForever()
       },
     })
-    const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
+    const window = useDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await flushPromises()
@@ -617,7 +695,7 @@ describe('what the application is doing', () => {
     })
     // The clock is the test's, so the wait between one stream and the next is
     // not a second of it.
-    const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
+    const window = useDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await flushPromises()
@@ -658,7 +736,7 @@ describe('what the application is doing', () => {
         await waitForever()
       },
     })
-    const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
+    const window = useDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
     await flushPromises()
@@ -672,7 +750,7 @@ describe('what the application is doing', () => {
 
 describe('a window before it has requested the vault anything', () => {
   it('says nothing yet, and is waiting for the vault to be read', () => {
-    const window = useWindowDisplay(fake())
+    const window = useDisplay(fake())
 
     expect(window.name.value).toBe('')
     expect(window.isIndexing.value).toBe(true)
@@ -690,7 +768,7 @@ describe('a window before it has requested the vault anything', () => {
 
 describe('the note the vault opens with', () => {
   it('is none for a vault that holds no note', async () => {
-    const window = useWindowDisplay(fake({ getInitialOpenPath: async () => null }))
+    const window = useDisplay(fake({ getInitialOpenPath: async () => null }))
 
     expect(await window.readInitialNote()).toBe('')
     expect(window.opening.value).toBe('')
@@ -723,7 +801,7 @@ describe('the first note shown', () => {
         yield edit
       },
     })
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: waitForever,
       reportChange: (one) => {
         response.push(one)
@@ -745,7 +823,7 @@ describe('the first note shown', () => {
         return { path: 'Opening.md' }
       },
     })
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       onVaultChanged: (paths) => {
         changed.push(paths)
       },
@@ -765,7 +843,7 @@ describe('the first note shown', () => {
       state: async () => ({ ...resolved, scan: { ...resolved.scan, isReady: false } }),
     })
     const waits: number[] = []
-    const window = useWindowDisplay(core, {
+    const window = useDisplay(core, {
       wait: async (ms) => {
         waits.push(ms)
         window.close()
@@ -793,7 +871,7 @@ describe('a closed window', () => {
         await waitForever()
       },
     })
-    const window = useWindowDisplay(core, { wait: waitForever })
+    const window = useDisplay(core, { wait: waitForever })
 
     await window.start()
     await flushPromises()
@@ -806,7 +884,7 @@ describe('a closed window', () => {
 
 describe('a vault that cannot be reached at all', () => {
   it('says so, and stops the waiting', async () => {
-    const window = useWindowDisplay(
+    const window = useDisplay(
       fake({
         state: async () => {
           throw new Error('connection failed')
@@ -825,7 +903,7 @@ describe('a vault still being read', () => {
   it('is requested again a tenth of a second later', async () => {
     vi.useFakeTimers()
     let reads = 0
-    const window = useWindowDisplay(
+    const window = useDisplay(
       fake({
         getInitialOpenPath: async () => null,
         state: async () => {

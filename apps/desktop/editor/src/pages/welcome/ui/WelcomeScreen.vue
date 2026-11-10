@@ -7,7 +7,6 @@
  * standing at it, which is the letter drawn on that row.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
 import { getVaultForKey, WelcomePage } from '@numen/workbench'
 import { runInBackground } from '@numen/ui'
 import {
@@ -17,6 +16,7 @@ import {
   ANSWER_WORDS,
 } from '@/features/command-palette'
 import type { VaultRef } from '@/entities/command'
+import { formatError } from '@/shared/api/errors'
 import { COMMAND } from '@/shared/commandIds'
 import { findIcon } from '@/shared/icons'
 import { getUserAgent } from '@/shared/lib/dom'
@@ -84,7 +84,7 @@ function onOpen(id: string) {
       props.doing,
       ANSWER_WORDS,
     ),
-    (error) => props.doing.writeMessage(formatErrorMessage(error), 'error'),
+    (error) => props.doing.writeMessage(formatError(error), 'error'),
   )
 }
 

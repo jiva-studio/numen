@@ -1,13 +1,14 @@
 /**
- * The vault state response mapped to window values: a field omitted from the
+ * The vault state response mapped to values of the vault entity: a field omitted from the
  * response maps to an empty or zero value.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreHandlers } from '@numen/core-client/testing'
-import { vaultSessionCore } from './vaultSession'
+import { getAgentUnreachable, getVaultState, watchVaultChanges } from './state'
 
 const request = {
   getVaultState: vi.fn(),
+  getAgentState: vi.fn(),
   watchVaultChanges: vi.fn(),
 }
 
@@ -26,7 +27,7 @@ describe('the state of the vault', () => {
   it('is a scan not begun and nothing indexed where the answer carries neither', async () => {
     request.getVaultState.mockResolvedValue({ id: 'v1', name: 'Zoo', path: '/zoo' })
 
-    expect(await vaultSessionCore.state()).toStrictEqual({
+    expect(await getVaultState()).toStrictEqual({
       id: 'v1',
       name: 'Zoo',
       path: '/zoo',
@@ -44,7 +45,7 @@ describe('the state of the vault', () => {
       coverage: { chunkCount: 12n, embeddedCount: 5n, isEmbedding: true },
     })
 
-    const state = await vaultSessionCore.state()
+    const state = await getVaultState()
 
     expect(state.scan).toStrictEqual({
       isReady: true,
@@ -52,6 +53,14 @@ describe('the state of the vault', () => {
       unwatchedPath: '/zoo/deep',
     })
     expect(state.coverage).toStrictEqual({ chunkCount: 12n, embeddedCount: 5n, isEmbedding: true })
+  })
+})
+
+describe('the agent', () => {
+  it('is unreachable for the reason the core gives', async () => {
+    request.getAgentState.mockResolvedValue({ unreachable: 'offline' })
+
+    expect(await getAgentUnreachable()).toBe('offline')
   })
 })
 
@@ -74,7 +83,7 @@ describe('the changes to the vault a window follows', () => {
       }
     })
 
-    expect(await readAll(vaultSessionCore.watchVaultChanges(signal))).toStrictEqual([
+    expect(await readAll(watchVaultChanges(signal))).toStrictEqual([
       {
         paths: ['Llama.md'],
         shouldReload: true,

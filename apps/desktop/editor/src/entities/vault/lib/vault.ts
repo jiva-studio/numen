@@ -1,6 +1,7 @@
 /**
  * The vaults an installation holds, and the operations on the list.
  */
+import type { PathRename } from '@/shared/paths'
 import type { Result } from '@/shared/lib/result'
 
 /** One vault the installation holds, as the list has it. */
@@ -11,6 +12,7 @@ export interface Vault {
   readonly isMissing: boolean
 }
 
+/** Every vault of the installation, and the id of the one a window shows. */
 export interface VaultList {
   readonly vaults: readonly Vault[]
   readonly showing: string
@@ -35,7 +37,7 @@ export type VaultErrorCode =
 
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {
-  list(): Promise<VaultList>
+  list(): Promise<readonly Vault[]>
   /**
    * Opens the native folder picker. It resolves to the chosen folder, or to an
    * empty string when the picker is dismissed.
@@ -55,4 +57,29 @@ export interface Vaults {
   remove(id: string, trash: boolean): Promise<VaultErrorCode | null>
   /** Shows another vault in this window, replacing the current one. */
   open(this: void, id: string): Promise<VaultErrorCode | null>
+}
+
+/** What the open vault reports about itself. */
+export interface VaultState {
+  readonly id: string
+  readonly name: string
+  readonly path: string
+  readonly scan: {
+    readonly isReady: boolean
+    readonly error: string
+    readonly unwatchedPath: string
+  }
+  readonly coverage: {
+    readonly chunkCount: bigint
+    readonly embeddedCount: bigint
+    readonly isEmbedding: boolean
+  }
+}
+
+/** A change made to the files of the open vault. */
+export interface VaultChange {
+  readonly paths: readonly string[]
+  readonly shouldReload: boolean
+  readonly renamed: readonly PathRename[]
+  readonly versionPaths: readonly string[]
 }

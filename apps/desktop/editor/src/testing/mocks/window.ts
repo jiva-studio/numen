@@ -1,24 +1,31 @@
 /**
- * The window entity's part of the mocks: its streams from the core, and the background tasks it
- * lists for its plugins.
+ * What the core answers about the window itself: the vault it shows, its tasks, the focus
+ * requests and the quit request. The answers go through the router transport.
+ *
+ * The background tasks the window lists for its plugins are read from the host the window makes;
+ * the module behind the door is wrapped only to hold on to what it made.
  */
 import { vi } from 'vitest'
 import type { BackgroundTask, BackgroundTaskHost } from '@numen/plugin-loader'
-import { outside, pendingStream } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
-import type * as BackgroundTasksModule from '@/app/shell/backgroundTasks'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import { mockVaultList, outside, pendingStream } from '../answers'
+import type * as BackgroundTasksModule from '@/features/background-tasks'
 
-export const windowCoreMock = {
-  watchTasks: pendingStream,
-  watchFocus: outside.stream,
-  watchQuit: pendingStream,
-  reportFlush: () => Promise.resolve(),
-} satisfies Partial<VaultCore>
+export const windowAnswers = {
+  windowService: {
+    getCurrentVault: () => ({ vault: mockVaultList.showing }),
+    watchTasks: pendingStream,
+    watchQuit: pendingStream,
+    reportFlush: () => ({}),
+    cancelTask: () => ({}),
+  },
+  workspace: { watchFocus: outside.stream },
+} satisfies CoreAnswers
 
 /** The background tasks the window last made, as its plugins read them. */
 const windowTasks = vi.hoisted(() => ({ current: undefined as BackgroundTaskHost | undefined }))
 
-vi.mock('@/app/shell/backgroundTasks', async (original) => {
+vi.mock('@/features/background-tasks', async (original) => {
   const module = await original<typeof BackgroundTasksModule>()
   return {
     ...module,

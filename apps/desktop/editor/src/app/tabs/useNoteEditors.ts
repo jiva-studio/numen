@@ -4,16 +4,16 @@
 import { formatErrorMessage } from '@numen/core-client'
 import { runInBackground } from '@numen/ui'
 import { openNotes, createNoteWriter } from '@/entities/note'
+import { reportFlush, watchQuit } from '@/entities/window'
 import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
 import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
 import type { NotePort } from '@/app/ports/notes'
-import type { VaultPort } from '@/app/ports/vault'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { FileOpeners } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
-  core: NotePort & SearchDeps & Pick<VaultPort, 'watchQuit' | 'reportFlush'>
+  core: NotePort & SearchDeps
   log: MessageLog
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
@@ -68,7 +68,7 @@ export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEdi
   const making = createNoteWriter(core, log.getWriter('made'))
   const noted = createNoted(windowTabs)
 
-  const fileFlush = createFileFlush(core)
+  const fileFlush = createFileFlush({ watchQuit, reportFlush })
   fileFlush.addHandler(notes.flush)
 
   raiseConflicts(notes, fileFlush)
