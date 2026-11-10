@@ -135,7 +135,9 @@ func TestAnEditReachesAListener(t *testing.T) {
 
 	select {
 	case paths := <-reported:
-		if !slices.Equal(paths, []string{"Note.md"}) {
+		// The operating system may replay the creation of Other.md, written just before the watch began,
+		// in the same batch.
+		if !slices.Contains(paths, "Note.md") {
 			t.Errorf("reported %v", paths)
 		}
 	case <-time.After(5 * time.Second):
