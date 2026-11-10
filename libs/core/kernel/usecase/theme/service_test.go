@@ -44,7 +44,7 @@ func TestReadThemeResolvesKnownNamesAndEmptyForOthers(t *testing.T) {
 	for name, want := range map[string]string{
 		"mine:kept": "#123456",
 		themedomain.PluginName(pluginID, "night"): "--numen-surface",
-		themedomain.Default:                       "--numen",
+		themedomain.Default:                       "own palette",
 		"preset:dracula":                          "",
 		"mine:../../../.ssh/id_rsa":               "",
 		"mine:gone":                               "",
