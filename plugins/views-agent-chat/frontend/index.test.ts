@@ -84,12 +84,12 @@ describe('view-agent-chat plugin', () => {
     activate(ctx)
     const kind = ctx.getRegisteredTabKinds()[0]!
 
-    const first = kind.open!('', 'agent:1') as { userQuestion: { value: string } }
-    const second = kind.open!('', 'agent:2') as { userQuestion: { value: string } }
+    const first = kind.open!('', 'agent:1') as { draft: { userQuestion: { value: string } } }
+    const second = kind.open!('', 'agent:2') as { draft: { userQuestion: { value: string } } }
     kind.receiveText!(first, 'what is this?')
 
-    expect(first.userQuestion.value).toBe('what is this?')
-    expect(second.userQuestion.value).toBe('')
+    expect(first.draft.userQuestion.value).toBe('what is this?')
+    expect(second.draft.userQuestion.value).toBe('')
   })
 
   it('opens one conversation however many times the command runs', async () => {

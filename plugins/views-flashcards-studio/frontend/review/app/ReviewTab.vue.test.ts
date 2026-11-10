@@ -132,7 +132,7 @@ describe('the review of a counted vault', () => {
     const { tab } = await mountReview('words')
 
     const decks = tab.findComponent(Decks)
-    expect((decks.props('vault') as { vault: string }).vault).toBe('words')
+    expect((decks.props('vault') as { identity: { vault: string } }).identity.vault).toBe('words')
   })
 })
 

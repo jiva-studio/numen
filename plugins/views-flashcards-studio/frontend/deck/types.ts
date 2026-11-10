@@ -41,7 +41,6 @@ export const NO_DECK: BufferDeck = { preamble: '', cards: [], sections: [], tail
 
 /** Reactive data state of an open deck tab. */
 export interface DeckDataState {
-  readonly id: string
   readonly note: ComputedRef<OpenNote>
   readonly deck: ComputedRef<BufferDeck>
   readonly deckCards: ComputedRef<readonly DeckCard[]>
@@ -58,7 +57,7 @@ export interface DeckScheduleState {
   setSchedule(preset: string): void
 }
 
-/** Actions and mutations available on a deck tab. */
+/** Edits to the cards and sections of a deck tab. */
 export interface DeckActions {
   addCard(
     cardModel: string,
@@ -71,10 +70,20 @@ export interface DeckActions {
   addSection(name: string): void
   renameSection(section: string, name: string): void
   removeSection(section: string): void
+}
+
+/** What the tab does with the file it shows. */
+export interface DeckFileActions {
   keepMine(): void
   takeFile(): void
   close(id: string): void
 }
 
-/** Composite state of a deck tab. */
-export type DeckTabState = DeckDataState & DeckScheduleState & DeckActions
+/** The state of a deck tab, in named parts. */
+export interface DeckTabState {
+  readonly id: string
+  readonly data: DeckDataState
+  readonly schedule: DeckScheduleState
+  readonly actions: DeckActions
+  readonly file: DeckFileActions
+}

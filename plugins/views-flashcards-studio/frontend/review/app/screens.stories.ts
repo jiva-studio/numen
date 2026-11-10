@@ -173,13 +173,9 @@ const DECKS: readonly DeckCardsDue[] = [
 ]
 
 const VAULT: VaultCardsDue = {
-  vault: 'v1',
-  name: 'Studies',
-  path: '/home/you/Studies',
+  identity: { vault: 'v1', name: 'Studies', path: '/home/you/Studies' },
   isCounted: true,
-  reviewCards: 3_478,
-  due: 161,
-  new: 29,
+  totals: { reviewCards: 3_478, due: 161, new: 29 },
   decks: DECKS,
   presets: [],
   isIndexing: false,
@@ -193,10 +189,12 @@ const BY_DECK = new Map<string, Preset>(
 
 /** One review card, as the session puts it. */
 const CARD: ReviewCard = {
-  deck: 'Sanskrit/Roots.md',
-  section: 'Verbs of going',
-  cardId: 'k7m2xq9fzp',
-  template: 'Recognise',
+  address: {
+    deck: 'Sanskrit/Roots.md',
+    section: 'Verbs of going',
+    cardId: 'k7m2xq9fzp',
+    template: 'Recognise',
+  },
   heading: 'gam',
   front:
     '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',

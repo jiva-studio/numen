@@ -119,32 +119,38 @@ const createTab = (
   const state: PresetTabState = {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
-    curve: shallowRef(curve(overrides)),
-    material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
-    place,
-    isWaiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
-    problems: shallowRef([]),
-    stopped: ref(StopReason.NOTHING),
-    errorMessage: ref(''),
-    hasExternalChange: ref(false),
-    reload: () => {
-      isDone.push('reload')
+    curves: {
+      curve: shallowRef(curve(overrides)),
+      material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
+      place,
+      isWaiting: ref(isWaiting),
     },
-    chooseGoal: (goal) => {
-      isDone.push(`choose ${goal}`)
+    status: {
+      problems: shallowRef([]),
+      stopped: ref(StopReason.NOTHING),
+      errorMessage: ref(''),
+      hasExternalChange: ref(false),
     },
-    moveSlider: (pos) => {
-      place.value = pos
-      isDone.push(`move ${pos}`)
+    actions: {
+      reload: () => {
+        isDone.push('reload')
+      },
+      chooseGoal: (goal) => {
+        isDone.push(`choose ${goal}`)
+      },
+      moveSlider: (pos) => {
+        place.value = pos
+        isDone.push(`move ${pos}`)
+      },
+      flushPending: () => {
+        isDone.push('flushPending')
+      },
+      updateSetting: (field, value) => {
+        isDone.push(`type ${field} ${value}`)
+      },
+      close: () => undefined,
     },
-    flushPending: () => {
-      isDone.push('flushPending')
-    },
-    updateSetting: (field, value) => {
-      isDone.push(`type ${field} ${value}`)
-    },
-    close: () => undefined,
   }
   return { state, recorded: isDone }
 }

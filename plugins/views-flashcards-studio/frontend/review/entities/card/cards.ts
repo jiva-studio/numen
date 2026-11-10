@@ -1,12 +1,17 @@
 /** One review card as presented for review, and where each of the four ratings would schedule it. */
 import type { Grade } from './grades'
 
-/** One review card as presented for review. */
-export interface ReviewCard {
+/** Where a review card lives: its deck and section, and the card and template it is drawn from. */
+export interface CardAddress {
   readonly deck: string
   readonly section: string
   readonly cardId: string
   readonly template: string
+}
+
+/** One review card as presented for review. */
+export interface ReviewCard {
+  readonly address: CardAddress
   readonly heading: string
   readonly front: string
   readonly back: string

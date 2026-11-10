@@ -23,10 +23,10 @@ export function useReaderTabSync(
           maxX,
           maxY,
         }))
-        tab.applyHighlights([[{ page, rects }]]).catch(tab.reportFailure)
+        tab.document.highlights.applyHighlights([[{ page, rects }]]).catch(tab.document.reportFailure)
         return
       }
-      tab.goToPage(page).catch(tab.reportFailure)
+      tab.document.actions.goToPage(page).catch(tab.document.reportFailure)
     },
     { immediate: true },
   )
@@ -37,16 +37,16 @@ export function useReaderTabSync(
     (ranges) => {
       const tab = getDocument()
       if (!tab || !ranges || ranges.length === 0) return
-      tab.focusSpans(...ranges).catch(tab.reportFailure)
+      tab.document.actions.focusSpans(...ranges).catch(tab.document.reportFailure)
     },
     { immediate: true },
   )
 
   watch(
-    () => getDocument()?.pageNumber.value,
+    () => getDocument()?.document.state.pageNumber.value,
     (page) => {
-      const pageCount = getDocument()?.pages.value.length ?? 0
-      if (typeof page === 'number' && pageCount > 0 && !getDocument()?.isLoading.value) {
+      const pageCount = getDocument()?.document.state.pages.value.length ?? 0
+      if (typeof page === 'number' && pageCount > 0 && !getDocument()?.document.state.isLoading.value) {
         getReaderTab()?.savePlace?.({ page: page + 1, pageCount })
       }
     },
@@ -57,9 +57,9 @@ export function useReaderTabSync(
   watch(
     () =>
       [
-        getDocument()?.pageNumber.value,
-        getDocument()?.pages.value.length ?? 0,
-        getDocument()?.isLoading.value,
+        getDocument()?.document.state.pageNumber.value,
+        getDocument()?.document.state.pages.value.length ?? 0,
+        getDocument()?.document.state.isLoading.value,
       ] as const,
     ([page, pageCount, isLoading]) => {
       if (typeof page === 'number' && pageCount > 0 && !isLoading) {

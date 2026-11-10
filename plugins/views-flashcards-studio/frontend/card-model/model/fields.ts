@@ -35,22 +35,26 @@ function createCardModelActions(
 ) {
   const { getCardModel, applyCardModel, renameFieldOnWire } = deps
   return {
-    addField: (name: string) => applyCardModel(id, addField(getCardModel(id), name)),
-    renameField: (field: string, name: string) => {
-      renameFieldOnWire(id, field, name)
+    fields: {
+      addField: (name: string) => applyCardModel(id, addField(getCardModel(id), name)),
+      renameField: (field: string, name: string) => {
+        renameFieldOnWire(id, field, name)
+      },
+      removeField: (field: string) => applyCardModel(id, removeField(getCardModel(id), field)),
+      moveField: (field: string, target: string | null) =>
+        applyCardModel(id, moveField(getCardModel(id), field, target)),
     },
-    removeField: (field: string) => applyCardModel(id, removeField(getCardModel(id), field)),
-    moveField: (field: string, target: string | null) =>
-      applyCardModel(id, moveField(getCardModel(id), field, target)),
-    addTemplate: (name: string) => applyCardModel(id, addTemplate(getCardModel(id), name)),
-    renameTemplate: (template: string, name: string) =>
-      applyCardModel(id, renameTemplate(getCardModel(id), template, name)),
-    removeTemplate: (template: string) =>
-      applyCardModel(id, removeTemplate(getCardModel(id), template)),
-    moveTemplate: (template: string, target: string | null) =>
-      applyCardModel(id, moveTemplate(getCardModel(id), template, target)),
-    writeTemplateHalf: (template: string, half: Half, text: string) =>
-      applyCardModel(id, writeTemplate(getCardModel(id), template, half, text)),
+    templates: {
+      addTemplate: (name: string) => applyCardModel(id, addTemplate(getCardModel(id), name)),
+      renameTemplate: (template: string, name: string) =>
+        applyCardModel(id, renameTemplate(getCardModel(id), template, name)),
+      removeTemplate: (template: string) =>
+        applyCardModel(id, removeTemplate(getCardModel(id), template)),
+      moveTemplate: (template: string, target: string | null) =>
+        applyCardModel(id, moveTemplate(getCardModel(id), template, target)),
+      writeTemplateHalf: (template: string, half: Half, text: string) =>
+        applyCardModel(id, writeTemplate(getCardModel(id), template, half, text)),
+    },
   }
 }
 

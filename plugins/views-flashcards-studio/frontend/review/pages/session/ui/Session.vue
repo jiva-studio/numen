@@ -45,9 +45,9 @@ const chord = (letter: string) => keyChord(letter, nav.userAgent)
 <template>
   <section class="session">
     <header class="session__where">
-      <span class="session__deck">{{ getDeckName(card.deck) }}</span>
-      <span v-if="card.section">{{ card.section }}</span>
-      <span>{{ card.template }}</span>
+      <span class="session__deck">{{ getDeckName(card.address.deck) }}</span>
+      <span v-if="card.address.section">{{ card.address.section }}</span>
+      <span>{{ card.address.template }}</span>
       <span v-if="card.isNew" class="session__new">new</span>
       <span class="session__left">{{ left }} left</span>
 

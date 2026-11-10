@@ -51,13 +51,9 @@ const deck = (fields: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
 })
 
 const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
-  vault: '01A',
-  name: 'Studies',
-  path: '/vaults/01A',
+  identity: { vault: '01A', name: 'Studies', path: '/vaults/01A' },
   isCounted: true,
-  reviewCards: 20,
-  due: 8,
-  new: 2,
+  totals: { reviewCards: 20, due: 8, new: 2 },
   decks: [deck()],
   presets: [],
   unread: '',
@@ -98,9 +94,7 @@ describe('how much of a deck remains learned', () => {
   it('says nothing of a deck holding no review card', () => {
     const one = mountDecks(
       vault({
-        reviewCards: 0,
-        due: 0,
-        new: 0,
+        totals: { reviewCards: 0, due: 0, new: 0 },
         decks: [deck({ reviewCards: 0, due: 0, new: 0, learned: 0 })],
       }),
       [preset({ reviewCards: 0, cards: 0 })],

@@ -17,22 +17,22 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   const ownDuration = ref(0)
   let pendingSeek = -1
 
-  const isLoaded = computed(() => url.value !== '' && audioPlayer.url.value === url.value)
+  const isLoaded = computed(() => url.value !== '' && audioPlayer.state.url.value === url.value)
   const runs = computed(() =>
-    isLoaded.value && audioPlayer.duration.value > 0
-      ? audioPlayer.duration.value
+    isLoaded.value && audioPlayer.state.duration.value > 0
+      ? audioPlayer.state.duration.value
       : ownDuration.value,
   )
   // A length the player read stays this recording's once another recording takes the player.
   watch(
-    () => (isLoaded.value ? audioPlayer.duration.value : 0),
+    () => (isLoaded.value ? audioPlayer.state.duration.value : 0),
     (ms) => {
       if (ms > 0) ownDuration.value = ms
     },
   )
-  const now = computed(() => (isLoaded.value ? audioPlayer.position.value : 0))
-  const isPlaying = computed(() => isLoaded.value && audioPlayer.isPlaying.value)
-  const failure = computed(() => (isLoaded.value ? audioPlayer.error.value : ''))
+  const now = computed(() => (isLoaded.value ? audioPlayer.state.position.value : 0))
+  const isPlaying = computed(() => isLoaded.value && audioPlayer.state.isPlaying.value)
+  const failure = computed(() => (isLoaded.value ? audioPlayer.state.error.value : ''))
   const isPlayable = computed(() => url.value !== '' && plays(type.value))
   /** True once the source is known and its address or media type cannot play in this window. */
   const isUnplayable = computed(() => isSourceRead.value && !isPlayable.value)
@@ -50,7 +50,7 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   }
 
   const readOwnDuration = (source: string) => {
-    if (audioPlayer.url.value === '' || audioPlayer.url.value === source) return
+    if (audioPlayer.state.url.value === '' || audioPlayer.state.url.value === source) return
     audioPlayer.getDuration(source).then(
       (ms) => {
         if (url.value === source) ownDuration.value = ms
@@ -69,7 +69,7 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
     if (pendingSeek >= 0) {
       audioPlayer.seek(url.value, pendingSeek)
       pendingSeek = -1
-    } else if (audioPlayer.url.value === '') {
+    } else if (audioPlayer.state.url.value === '') {
       audioPlayer.load(url.value)
     }
   }
@@ -85,15 +85,8 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
 
   return {
     player: audioPlayer,
-    url,
-    isLoaded,
-    isVideo,
-    runs,
-    now,
-    isPlaying,
-    failure,
-    isUnplayable,
-    setSource,
+    source: { url, isLoaded, isVideo, isUnplayable, setSource },
+    progress: { runs, now, isPlaying, failure },
     controls: { go, play, pause },
   }
 }

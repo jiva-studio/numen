@@ -9,6 +9,11 @@ export interface AgentTabDeps {
   openFileAdjacent(path: string): void
   resolveLinks(text: string): Promise<readonly TextLink[]>
   unreachable(): string
+  settings?: AgentSettingsDeps
+}
+
+/** The settings of the window an agent tab reads and writes; a tab without them offers no models. */
+export interface AgentSettingsDeps {
   writeSetting?(path: readonly string[], value: unknown): Promise<void>
   getSetting?(path: readonly string[]): unknown
   /** The depth of reasoning the plugin setting `reasoning` keeps; empty where it keeps none. */

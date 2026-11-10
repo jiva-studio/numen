@@ -55,7 +55,7 @@ describe('what a session is opened over', () => {
   it('names no preset where it is opened over decks', async () => {
     const { one, asks } = createSession()
 
-    await one.start('01VAULT', 'decks/Words.md')
+    await one.actions.start('01VAULT', 'decks/Words.md')
 
     expect(asks[0]?.request).toStrictEqual({ vault: '01VAULT', deck: 'decks/Words.md' })
   })
@@ -63,7 +63,7 @@ describe('what a session is opened over', () => {
   it('names the preset where it is opened over one', async () => {
     const { one, asks } = createSession()
 
-    await one.start('01VAULT', '', 'Sanskrit.md')
+    await one.actions.start('01VAULT', '', 'Sanskrit.md')
 
     expect(asks[0]?.request).toStrictEqual({ vault: '01VAULT', deck: '', preset: 'Sanskrit.md' })
   })
@@ -71,7 +71,7 @@ describe('what a session is opened over', () => {
   it('names the defaults by the empty path, and not by naming nothing', async () => {
     const { one, asks } = createSession()
 
-    await one.start('01VAULT', '', '')
+    await one.actions.start('01VAULT', '', '')
 
     expect(asks[0]?.request).toStrictEqual({ vault: '01VAULT', deck: '', preset: '' })
   })
@@ -89,36 +89,36 @@ describe('what a session is opened over', () => {
     const errors: unknown[] = []
     const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
 
-    expect(await one.start('01VAULT', '', 'Sanskrit.md')).toBeNull()
+    expect(await one.actions.start('01VAULT', '', 'Sanskrit.md')).toBeNull()
     expect(String(errors[0])).toContain('this preset schedules nothing today')
-    expect(one.run.value).toBe('')
-    expect(one.card.value).toBeNull()
+    expect(one.ids.run.value).toBe('')
+    expect(one.queue.card.value).toBeNull()
   })
 })
 
 describe('a session', () => {
   it('opens on the cards it was handed, at the first of them', async () => {
     const { one } = createSession()
-    const report = await one.start('01VAULT', '')
+    const report = await one.actions.start('01VAULT', '')
 
     expect(report).toEqual({ unwritten: [], skipped: 0 })
-    expect(one.cardList.value).toHaveLength(3)
-    expect(one.card.value?.cardId).toBe('one')
-    expect(one.isAnswerShown.value).toBe(false)
-    expect(one.left.value).toBe(3)
-    expect(one.over.value).toBe(false)
+    expect(one.queue.cardList.value).toHaveLength(3)
+    expect(one.queue.card.value?.address.cardId).toBe('one')
+    expect(one.queue.isAnswerShown.value).toBe(false)
+    expect(one.progress.left.value).toBe(3)
+    expect(one.progress.isOver.value).toBe(false)
   })
 
   it('is release whole, so no card of it can be drawn again', async () => {
     const { one } = createSession()
-    await one.start('01VAULT', '')
-    one.show()
-    one.forget()
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    one.actions.forget()
 
-    expect(one.card.value).toBeNull()
-    expect(one.cardList.value).toHaveLength(0)
-    expect(one.run.value).toBe('')
-    expect(one.isAnswerShown.value).toBe(false)
+    expect(one.queue.card.value).toBeNull()
+    expect(one.queue.cardList.value).toHaveLength(0)
+    expect(one.ids.run.value).toBe('')
+    expect(one.queue.isAnswerShown.value).toBe(false)
   })
 
   it('answers a card once, whatever a second press says', async () => {
@@ -129,64 +129,64 @@ describe('a session', () => {
     })
     const { one, asks } = createSession({ answering })
 
-    await one.start('01VAULT', '')
-    one.show()
-    const first = one.answer('good')
-    await one.answer('again')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    const first = one.actions.answer('good')
+    await one.actions.answer('again')
 
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(1)
     settle({ answer: '011' })
     await first
 
-    expect(one.cardIndex.value).toBe(1)
-    expect(one.answers.value).toEqual(['011'])
+    expect(one.queue.cardIndex.value).toBe(1)
+    expect(one.queue.answers.value).toEqual(['011'])
   })
 
   it('leaves the card where it was when the answer could not be written', async () => {
     const { one, asks, errors } = createSession({ failure: new Error('the disk is full') })
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
 
     expect(errors).toHaveLength(1)
-    expect(one.cardIndex.value).toBe(0)
-    expect(one.card.value?.cardId).toBe('one')
-    expect(one.isAnswerShown.value).toBe(true)
-    expect(one.answers.value).toEqual([])
+    expect(one.queue.cardIndex.value).toBe(0)
+    expect(one.queue.card.value?.address.cardId).toBe('one')
+    expect(one.queue.isAnswerShown.value).toBe(true)
+    expect(one.queue.answers.value).toEqual([])
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(1)
   })
 
   it('is not answered before the card is turned over', async () => {
     const { one, asks } = createSession()
-    await one.start('01VAULT', '')
-    await one.answer('good')
+    await one.actions.start('01VAULT', '')
+    await one.actions.answer('good')
 
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(0)
-    expect(one.cardIndex.value).toBe(0)
+    expect(one.queue.cardIndex.value).toBe(0)
   })
 
   it('brings the card back with its answer showing when one is taken back', async () => {
     const { one } = createSession()
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
-    expect(one.card.value?.cardId).toBe('two')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
+    expect(one.queue.card.value?.address.cardId).toBe('two')
 
-    await one.takeBack()
+    await one.actions.takeBack()
 
-    expect(one.card.value?.cardId).toBe('one')
-    expect(one.isAnswerShown.value).toBe(true)
-    expect(one.answers.value).toEqual([])
-    expect(one.completedCount.value).toBe(0)
+    expect(one.queue.card.value?.address.cardId).toBe('one')
+    expect(one.queue.isAnswerShown.value).toBe(true)
+    expect(one.queue.answers.value).toEqual([])
+    expect(one.progress.completedCount.value).toBe(0)
   })
 
   it('takes nothing back before anything was answered', async () => {
     const { one, asks } = createSession()
-    await one.start('01VAULT', '')
-    await one.takeBack()
+    await one.actions.start('01VAULT', '')
+    await one.actions.takeBack()
 
     expect(asks.filter((ask) => ask.what === 'takeBack')).toHaveLength(0)
-    expect(one.cardIndex.value).toBe(0)
+    expect(one.queue.cardIndex.value).toBe(0)
   })
 
   it('keeps the answer it wrote when taking it back failed', async () => {
@@ -205,33 +205,33 @@ describe('a session', () => {
     }
     const errors: unknown[] = []
     const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
-    expect(one.answers.value).toHaveLength(1)
-    expect(one.cardIndex.value).toBe(1)
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
+    expect(one.queue.answers.value).toHaveLength(1)
+    expect(one.queue.cardIndex.value).toBe(1)
 
     failure = true
-    await one.takeBack()
+    await one.actions.takeBack()
 
     // The vault holds the answer, so the window keeps it as recorded.
     expect(errors).toHaveLength(1)
-    expect(one.answers.value).toHaveLength(1)
-    expect(one.cardIndex.value).toBe(1)
-    expect(one.isAnswerShown.value).toBe(false)
+    expect(one.queue.answers.value).toHaveLength(1)
+    expect(one.queue.cardIndex.value).toBe(1)
+    expect(one.queue.isAnswerShown.value).toBe(false)
   })
 
   it('is over when the last card has been answered', async () => {
     const { one } = createSession()
-    await one.start('01VAULT', '')
+    await one.actions.start('01VAULT', '')
     for (const _ of [0, 1, 2]) {
-      one.show()
-      await one.answer('good')
+      one.actions.show()
+      await one.actions.answer('good')
     }
 
-    expect(one.over.value).toBe(true)
-    expect(one.left.value).toBe(0)
-    expect(one.completedCount.value).toBe(3)
+    expect(one.progress.isOver.value).toBe(true)
+    expect(one.progress.left.value).toBe(0)
+    expect(one.progress.completedCount.value).toBe(3)
   })
 
   it('says nothing was opened when the vault could not be sat down to', async () => {
@@ -243,9 +243,9 @@ describe('a session', () => {
     const errors: unknown[] = []
     const one = useReviewSession({ cards, reportError: (why) => errors.push(why) })
 
-    expect(await one.start('01VAULT', '')).toBeNull()
+    expect(await one.actions.start('01VAULT', '')).toBeNull()
     expect(errors).toHaveLength(1)
-    expect(one.card.value).toBeNull()
+    expect(one.queue.card.value).toBeNull()
   })
 
   it('measures how long the card stood in front of the person', async () => {
@@ -266,22 +266,22 @@ describe('a session', () => {
     const one = useReviewSession({ cards, reportError: () => undefined, now: () => clock })
 
     clock += 1000
-    await one.start('01VAULT', '')
+    await one.actions.start('01VAULT', '')
     clock += 4200
-    one.show()
-    await one.answer('good')
+    one.actions.show()
+    await one.actions.answer('good')
 
     expect(asks[0]?.request).toMatchObject({ durationMs: 4200 })
 
     clock += 3000
-    one.show()
-    await one.answer('good')
+    one.actions.show()
+    await one.actions.answer('good')
 
     expect(asks[1]?.request).toMatchObject({ durationMs: 3000 })
 
-    await one.takeBack()
+    await one.actions.takeBack()
     clock += 1500
-    await one.answer('good')
+    await one.actions.answer('good')
 
     expect(asks[2]?.request).toMatchObject({ durationMs: 1500 })
   })
@@ -290,23 +290,23 @@ describe('a session', () => {
 describe('the next card', () => {
   it('arrives up with its answer hidden', async () => {
     const { one } = createSession()
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
 
-    expect(one.card.value?.cardId).toBe('two')
-    expect(one.isAnswerShown.value).toBe(false)
+    expect(one.queue.card.value?.address.cardId).toBe('two')
+    expect(one.queue.isAnswerShown.value).toBe(false)
   })
 })
 
 describe('an answer taken back', () => {
   it('notifies the vault which answer of which run it was', async () => {
     const { one, asks } = createSession()
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
 
-    await one.takeBack()
+    await one.actions.takeBack()
 
     expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.request)).toEqual([
       { vault: '01VAULT', run: 'flashcards/01A.jsonl', answer: '011' },
@@ -315,16 +315,16 @@ describe('an answer taken back', () => {
 
   it('brings back the card before the one in front of the person', async () => {
     const { one } = createSession()
-    await one.start('01VAULT', '')
+    await one.actions.start('01VAULT', '')
     for (const _ of [0, 1]) {
-      one.show()
-      await one.answer('good')
+      one.actions.show()
+      await one.actions.answer('good')
     }
 
-    await one.takeBack()
+    await one.actions.takeBack()
 
-    expect(one.card.value?.cardId).toBe('two')
-    expect(one.answers.value).toEqual(['011'])
+    expect(one.queue.card.value?.address.cardId).toBe('two')
+    expect(one.queue.answers.value).toEqual(['011'])
   })
 
   // The answer is withdrawn from the vault once, regardless of a second press.
@@ -346,19 +346,19 @@ describe('an answer taken back', () => {
       },
     }
     const one = useReviewSession({ cards, reportError: () => undefined, now: () => 1000 })
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
 
-    const first = one.takeBack()
-    expect(one.writing.value).toBe(true)
-    await one.takeBack()
+    const first = one.actions.takeBack()
+    expect(one.queue.writing.value).toBe(true)
+    await one.actions.takeBack()
     expect(asks).toHaveLength(1)
 
     settle()
     await first
-    expect(one.writing.value).toBe(false)
-    expect(one.card.value?.cardId).toBe('one')
+    expect(one.queue.writing.value).toBe(false)
+    expect(one.queue.card.value?.address.cardId).toBe('one')
   })
 
   it('leaves the session free to answer again once it fails', async () => {
@@ -377,17 +377,17 @@ describe('an answer taken back', () => {
     }
     const errors: unknown[] = []
     const one = useReviewSession({ cards, reportError: (why) => errors.push(why), now: () => 1000 })
-    await one.start('01VAULT', '')
-    one.show()
-    await one.answer('good')
+    await one.actions.start('01VAULT', '')
+    one.actions.show()
+    await one.actions.answer('good')
 
-    await one.takeBack()
+    await one.actions.takeBack()
     expect(errors).toHaveLength(1)
-    expect(one.writing.value).toBe(false)
+    expect(one.queue.writing.value).toBe(false)
 
     failure = false
-    await one.takeBack()
-    expect(one.card.value?.cardId).toBe('one')
+    await one.actions.takeBack()
+    expect(one.queue.card.value?.address.cardId).toBe('one')
   })
 })
 
@@ -419,14 +419,16 @@ describe('the cards a session opens on', () => {
     }
     const one = useReviewSession({ cards, reportError: () => undefined })
 
-    await one.start('01VAULT', '')
+    await one.actions.start('01VAULT', '')
 
-    expect(one.cardList.value).toEqual([
+    expect(one.queue.cardList.value).toEqual([
       {
-        deck: 'decks/Words.md',
-        section: 'Garden',
-        cardId: '3f4g5h6j7k',
-        template: 'Say it',
+        address: {
+          deck: 'decks/Words.md',
+          section: 'Garden',
+          cardId: '3f4g5h6j7k',
+          template: 'Say it',
+        },
         heading: 'Leaf mould',
         front: '<p>Leaf mould</p>',
         back: '<p>Compost made of fallen leaves alone</p>',
@@ -460,10 +462,10 @@ describe('a session keeping its own time', () => {
     }
     const one = useReviewSession({ cards, reportError: () => undefined })
 
-    await one.start('01VAULT', '')
+    await one.actions.start('01VAULT', '')
     vi.setSystemTime(new Date('2026-03-01T09:00:03Z'))
-    one.show()
-    await one.answer('good')
+    one.actions.show()
+    await one.actions.answer('good')
 
     expect(response.map((one) => one.durationMs)).toEqual([3000])
   })

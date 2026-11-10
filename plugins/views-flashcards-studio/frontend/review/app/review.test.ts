@@ -266,7 +266,7 @@ describe('a person who sat down and returned to the decks', () => {
     await review.decks.start('decks/Suffixes.md')
     review.session.toggleAgent()
     review.session.toggleNotes()
-    review.session.state.show()
+    review.session.state.actions.show()
     await settle()
     await settle()
 
@@ -284,10 +284,10 @@ describe('a person who sat down and returned to the decks', () => {
     await settle()
 
     expect(review.on.value).toBe('session')
-    expect(review.session.state.card.value?.cardId).toBe('mark-1')
+    expect(review.session.state.queue.card.value?.address.cardId).toBe('mark-1')
     expect(review.decks.reviewDays.streak.value).toBe(4)
     expect(review.session.agentPanel.about.value).not.toBeNull()
-    expect(review.session.notesPanel.notes.value).toHaveLength(1)
+    expect(review.session.notesPanel.content.notes.value).toHaveLength(1)
   })
 })
 
@@ -369,7 +369,7 @@ describe('a review closed by the window', () => {
     for (const close of closers.splice(0)) close()
 
     expect(review.on.value).toBe('decks')
-    expect(review.session.state.card.value).toBeNull()
+    expect(review.session.state.queue.card.value).toBeNull()
     expect(review.session.agentPanel.about.value).toBeNull()
   })
 })
@@ -432,7 +432,7 @@ describe('a session sat down to', () => {
     review.session.toggleAgent()
     expect(review.session.agentPanel.about.value).not.toBeNull()
 
-    review.session.state.show()
+    review.session.state.actions.show()
     await review.session.recordReview('good')
 
     expect(review.session.agentPanel.about.value).toBeNull()
@@ -484,7 +484,7 @@ describe('the keys of the review', () => {
     const review = await openSession()
 
     expect((await press(review, ' ')).isKept).toBe(true)
-    expect(review.session.state.isAnswerShown.value).toBe(true)
+    expect(review.session.state.queue.isAnswerShown.value).toBe(true)
 
     //     // With the answer displayed, the space bar does nothing for the card and is
     //     // left to the page.
@@ -495,7 +495,7 @@ describe('the keys of the review', () => {
 
     await press(review, 'u')
     expect(wire.takenBack).toHaveLength(1)
-    expect(review.session.state.card.value?.cardId).toBe('mark-1')
+    expect(review.session.state.queue.card.value?.address.cardId).toBe('mark-1')
   })
 
   it('scroll nothing, and break nothing, while no reading is drawn', async () => {
@@ -523,7 +523,7 @@ describe('the keys of the review', () => {
     await press(review, ' ')
 
     expect(wire.scrolled).toEqual([false])
-    expect(review.session.state.isAnswerShown.value).toBe(false)
+    expect(review.session.state.queue.isAnswerShown.value).toBe(false)
   })
 
   it('leave the session for the decks counted again, and the decks for the vaults of the window', async () => {

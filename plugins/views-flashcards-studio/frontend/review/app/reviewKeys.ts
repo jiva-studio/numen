@@ -42,7 +42,7 @@ const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: ReviewKe
 
   switch (request.does) {
     case 'all':
-      if (vault.due + vault.new > 0) deps.start('')
+      if (vault.totals.due + vault.totals.new > 0) deps.start('')
       break
     case 'deck': {
       const deck = vault.decks[request.at]

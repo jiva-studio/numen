@@ -44,7 +44,7 @@ export type {
 function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
   const picture = computed<PlexNeighbourhood | null>(() => {
     const neighbourhood = view.neighbourhood.value
-    if (!deps.isReady.value || !neighbourhood) return null
+    if (!deps.window.isReady.value || !neighbourhood) return null
     return convertNeighbourhood(neighbourhood, map.getNodeId)
   })
 
@@ -63,16 +63,16 @@ function usePlexImage(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof 
 
   const empty = computed(
     () =>
-      deps.isReady.value &&
+      deps.window.isReady.value &&
       !view.here.value &&
-      !deps.openingPath.value &&
+      !deps.window.openingPath.value &&
       !view.neighbourhood.value,
   )
 
   const dragged = computed<readonly string[]>(() => {
     const here = view.here.value
-    if (!deps.isReady.value || !view.neighbourhood.value || !here) return []
-    return deps.dragged.value.filter((path) => path !== here)
+    if (!deps.window.isReady.value || !view.neighbourhood.value || !here) return []
+    return deps.window.dragged.value.filter((path) => path !== here)
   })
 
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
@@ -111,8 +111,8 @@ function createPlexNodeActions(options: {
   const activate = (node: string) => {
     const path = map.getNodePath(node)
     if (path) {
-      view.go(path).catch((error: unknown) => deps.showMessage(formatErrorMessage(error)))
-      deps.onSelectPath?.(path, getName(path))
+      view.go(path).catch((error: unknown) => deps.window.showMessage(formatErrorMessage(error)))
+      deps.window.onSelectPath?.(path, getName(path))
     }
   }
 
@@ -129,7 +129,7 @@ function createPlexNodeActions(options: {
     const role = findRole(deps.creatable, relation)
     if (!path || !role) return
     const made = await deps.editor.createRelated({ from: path, role })
-    if (!made.ok) return deps.showMessage(getRelationErrorWords(made.error))
+    if (!made.ok) return deps.window.showMessage(getRelationErrorWords(made.error))
     await view.go(path)
   }
 
@@ -139,7 +139,7 @@ function createPlexNodeActions(options: {
     const role = findRole(deps.creatable, relation)
     if (!one || !other || !role) return
     const joined = await deps.editor.join(one, other, { role })
-    if (!joined.ok) return deps.showMessage(getRelationErrorWords(joined.error))
+    if (!joined.ok) return deps.window.showMessage(getRelationErrorWords(joined.error))
     await view.go(one)
   }
 
@@ -157,19 +157,19 @@ function createPlexNodeActions(options: {
       else notJoined.push(getName(path))
     }
 
-    if (notJoined.length > 0) deps.showMessage(`${words.notJoined} ${notJoined.join(', ')}`)
+    if (notJoined.length > 0) deps.window.showMessage(`${words.notJoined} ${notJoined.join(', ')}`)
     if (hasJoinedAny) await view.go(here)
   }
 
   const openNode = (node: string, how: PlexDestination = 'current') => {
     const path = map.getNodePath(node)
-    if (path) deps.openNote(path, { title: getName(path), showing: how })
+    if (path) deps.window.openNote(path, { title: getName(path), showing: how })
   }
 
   const openHeading = (node: string, heading: string) => {
     const path = map.getNodePath(node)
     if (!path || !/^\d+$/.test(heading)) return
-    deps.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
+    deps.window.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
   return { activate, createNode, joinNodes, dropNodes, openNode, openHeading }
@@ -192,9 +192,9 @@ function usePlexMenu(options: {
   showCreated: (path: string) => Promise<void>
 }) {
   const { map, tabDeps: deps, getName, getType, showCreated } = options
-  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+  const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
   const nodeMenu = useSlotMenu<NodeMenuTarget>({
-    listItems: (command, { target }) => deps.listItems(command, target),
+    listItems: (command, { target }) => deps.menu.listItems(command, target),
     words: MENU_WORDS,
     onError: reportFailure,
   })
@@ -224,13 +224,16 @@ function usePlexMenu(options: {
     if (request.node !== null && !path) return
     const target =
       request.node === null ? getCanvasTarget() : getNodeTarget(request.node, path ?? '')
-    nodeMenu.open(() => ({ target: { request, target }, entries: deps.getMenuEntries(target) }))
+    nodeMenu.open(() => ({
+      target: { request, target },
+      entries: deps.menu.getMenuEntries(target),
+    }))
   }
 
   const chooseMenuItem = (id: string) => {
     const choice = nodeMenu.pick(id)
     if (!choice) return
-    deps
+    deps.menu
       .runCommand(choice.command, choice.target.target, choice.itemId, choice.values)
       .then((made) => (choice.command === CREATE_NOTE && made ? showCreated(made) : undefined))
       .catch(reportFailure)
@@ -267,7 +270,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const { readHeadings, getHeadings } = usePlexHeadings(drawnNodes, types, deps, map)
   const linkInspectorModel = useLinkInspector(
     view,
-    { editor: deps.editor, showMessage: deps.showMessage },
+    { editor: deps.editor, showMessage: deps.window.showMessage },
     map,
     getName,
   )
@@ -287,42 +290,45 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     showCreated: (path) => view.go(path),
   })
 
-  const reportFailure = (error: unknown): void => deps.showMessage(formatErrorMessage(error))
+  const reportFailure = (error: unknown): void => deps.window.showMessage(formatErrorMessage(error))
 
-  const tabState: PlexTabState = {
-    view,
-    reportFailure,
-    picture,
-    empty,
-    dragged,
-    menu,
-    menuItems,
-    getMenuIcon,
-    getNodeIcon: (node: string) => {
-      const tabKind = getTabKind(node)
-      return tabKind === undefined ? null : deps.getNoteIcon(tabKind)
-    },
-    creatable: deps.creatable,
-    getType,
-    getHeadings,
-    maxHeadings: deps.headings,
-    readHeadings,
-    openMenu,
-    dismiss: () => {
-      close()
-      quickLinkModel.dismissQuickLink()
-      linkInspectorModel.dismissLinkInspector()
-    },
-    chooseMenuItem,
-    followMoves: (renames: readonly PathRename[]) => {
-      view.followMoves(renames)
-      map.updateRenamedNodes(renames)
-    },
-    getName,
-    ...quickLinkModel,
-    ...linkInspectorModel,
-    ...nodeActions,
+  const getNodeIcon = (node: string): Component | null => {
+    const tabKind = getTabKind(node)
+    return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
   }
 
-  return tabState
+  const dismiss = () => {
+    close()
+    quickLinkModel.dismissQuickLink()
+    linkInspectorModel.dismissLinkInspector()
+  }
+
+  const followMoves = (renames: readonly PathRename[]) => {
+    view.followMoves(renames)
+    map.updateRenamedNodes(renames)
+  }
+
+  return {
+    reportFailure,
+    canvas: { view, picture, empty, dragged, creatable: deps.creatable },
+    menu: { menu, menuItems, getMenuIcon, getNodeIcon, openMenu, dismiss, chooseMenuItem },
+    headings: {
+      maxHeadings: deps.notes.headings,
+      getType,
+      getHeadings,
+      readHeadings,
+      openHeading: nodeActions.openHeading,
+    },
+    nodes: {
+      activate: nodeActions.activate,
+      createNode: nodeActions.createNode,
+      joinNodes: nodeActions.joinNodes,
+      dropNodes: nodeActions.dropNodes,
+      openNode: nodeActions.openNode,
+      followMoves,
+      getName,
+    },
+    quickLink: quickLinkModel,
+    inspector: linkInspectorModel,
+  }
 }

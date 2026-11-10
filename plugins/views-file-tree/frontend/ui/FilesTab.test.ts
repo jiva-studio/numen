@@ -35,35 +35,41 @@ const mountFiles = async (open: readonly string[] = []) => {
   const isDone: string[] = []
   const list = createFileTree({ list: async (folderPath: string) => target[folderPath] ?? [] })
   const tab: FilesTabState = useFilesTab(list, {
-    ...renderDeps,
-    openEntry: (entry) => {
-      isDone.push(`lands file ${entry.path}`)
+    window: {
+      ...renderDeps,
+      openEntry: (entry) => {
+        isDone.push(`lands file ${entry.path}`)
+      },
+      setDraggedPaths: (paths) => {
+        isDone.push(`drags ${paths.join(' ') || '—'}`)
+      },
+      showError: (text) => {
+        isDone.push(`says ${text}`)
+      },
     },
-    listItems: async () => [],
-    getMenuEntries: () => ROW_MENU,
-    runCommand: async (command, rowTarget) => {
-      isDone.push(
-        `runs ${command} ${[rowTarget.path, ...rowTarget.others].join(' ')} ${rowTarget.title}`,
-      )
-      return ''
+    menu: {
+      listItems: async () => [],
+      getMenuEntries: () => ROW_MENU,
+      runCommand: async (command, rowTarget) => {
+        isDone.push(
+          `runs ${command} ${[rowTarget.path, ...rowTarget.others].join(' ')} ${rowTarget.title}`,
+        )
+        return ''
+      },
     },
-    movePath: async (from, to) => {
-      isDone.push(`moves ${from} ${to}`)
-    },
-    setDraggedPaths: (paths) => {
-      isDone.push(`drags ${paths.join(' ') || '—'}`)
-    },
-    canDropData: (types) => types.includes('text/uri-list'),
-    dropData: async (folderPath, data) => {
-      isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
-      return []
-    },
-    showError: (text) => {
-      isDone.push(`says ${text}`)
+    transfer: {
+      movePath: async (from, to) => {
+        isDone.push(`moves ${from} ${to}`)
+      },
+      canDropData: (types) => types.includes('text/uri-list'),
+      dropData: async (folderPath, data) => {
+        isDone.push(`drops into ${folderPath || '/'} ${data['text/uri-list']}`)
+        return []
+      },
     },
   })
-  await list.openFolder(ROOT)
-  for (const folderPath of open) await list.openFolder(folderPath)
+  await list.navigation.openFolder(ROOT)
+  for (const folderPath of open) await list.navigation.openFolder(folderPath)
   const window = mount(FilesTab, { props: { state: tab } })
   await settle()
   return { recorded: isDone, list, tab, window }
@@ -166,7 +172,7 @@ describe('a row the tree reports', () => {
     window.findComponent(Tree).vm.$emit('select', ['Entropy.md', 'Cover.png'])
     await settle()
 
-    expect(list.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
+    expect(list.state.selectedPaths.value).toStrictEqual(['Entropy.md', 'Cover.png'])
     expect(window.findComponent(Tree).props('selected')).toStrictEqual(['Entropy.md', 'Cover.png'])
   })
 
@@ -207,7 +213,7 @@ describe('the menu on a row', () => {
 
   const openMenu = async (path: string | null, selection: readonly string[] = []) => {
     const mounted = await mountFiles()
-    if (selection.length) mounted.list.selectPaths(selection)
+    if (selection.length) mounted.list.navigation.selectPaths(selection)
     mounted.window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settle()
     return mounted
@@ -288,18 +294,24 @@ describe('a folder that could not be read', () => {
       },
     })
     const tab: FilesTabState = useFilesTab(list, {
-      ...renderDeps,
-      openEntry: () => undefined,
-      listItems: async () => [],
-      getMenuEntries: () => [],
-      runCommand: async () => '',
-      movePath: async () => undefined,
-      setDraggedPaths: () => undefined,
-      canDropData: () => false,
-      dropData: async () => [],
-      showError: () => undefined,
+      window: {
+        ...renderDeps,
+        openEntry: () => undefined,
+        setDraggedPaths: () => undefined,
+        showError: () => undefined,
+      },
+      menu: {
+        listItems: async () => [],
+        getMenuEntries: () => [],
+        runCommand: async () => '',
+      },
+      transfer: {
+        movePath: async () => undefined,
+        canDropData: () => false,
+        dropData: async () => [],
+      },
     })
-    await list.openFolder(ROOT)
+    await list.navigation.openFolder(ROOT)
 
     const window = mount(FilesTab, { props: { state: tab } })
     await settle()
@@ -337,16 +349,22 @@ describe('the empty message of the tab', () => {
   const mountOver = (list: (folderPath: string) => Promise<readonly Entry[]>) => {
     const tree = createFileTree({ list })
     const tab = useFilesTab(tree, {
-      ...renderDeps,
-      openEntry: () => undefined,
-      listItems: async () => [],
-      getMenuEntries: () => ROW_MENU,
-      runCommand: async () => '',
-      movePath: async () => undefined,
-      setDraggedPaths: () => undefined,
-      canDropData: () => false,
-      dropData: async () => [],
-      showError: () => undefined,
+      window: {
+        ...renderDeps,
+        openEntry: () => undefined,
+        setDraggedPaths: () => undefined,
+        showError: () => undefined,
+      },
+      menu: {
+        listItems: async () => [],
+        getMenuEntries: () => ROW_MENU,
+        runCommand: async () => '',
+      },
+      transfer: {
+        movePath: async () => undefined,
+        canDropData: () => false,
+        dropData: async () => [],
+      },
     })
     const window = mount(FilesTab, { props: { state: tab } })
     return { tree, window }
@@ -354,7 +372,7 @@ describe('the empty message of the tab', () => {
 
   it('is absent while the first listing is still loading', async () => {
     const { tree, window } = mountOver(() => new Promise(() => undefined))
-    tree.openFolder(ROOT).catch(() => undefined)
+    tree.navigation.openFolder(ROOT).catch(() => undefined)
     await settle()
 
     expect(window.text()).not.toContain('No files in this vault')
@@ -363,7 +381,7 @@ describe('the empty message of the tab', () => {
   it('shows the entries once the first listing is returned', async () => {
     let resolve: (entries: readonly Entry[]) => void = () => undefined
     const { tree, window } = mountOver(() => new Promise((isDone) => (resolve = isDone)))
-    const opening = tree.openFolder(ROOT)
+    const opening = tree.navigation.openFolder(ROOT)
     resolve([file('Entropy.md')])
     await opening
     await settle()
@@ -374,7 +392,7 @@ describe('the empty message of the tab', () => {
 
   it('shows once the first listing is returned with no entries', async () => {
     const { tree, window } = mountOver(async () => [])
-    await tree.openFolder(ROOT)
+    await tree.navigation.openFolder(ROOT)
     await settle()
 
     expect(window.text()).toContain('No files in this vault')

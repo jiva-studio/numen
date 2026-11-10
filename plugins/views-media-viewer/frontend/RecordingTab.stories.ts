@@ -55,18 +55,13 @@ const createRecordings = (cues: readonly Cue[], canCreateText: boolean): Recordi
 })
 
 const createPlayer = (isPlaying: boolean): Player => ({
-  url: ref(MEDIA),
-  position: ref(NOW),
-  duration: ref(RUNS),
-  isPlaying: ref(isPlaying),
-  error: ref(''),
+  state: { url: ref(MEDIA), position: ref(NOW), duration: ref(RUNS), isPlaying: ref(isPlaying), error: ref('') },
   load: () => undefined,
   play: () => undefined,
   pause: () => undefined,
   seek: () => undefined,
   getDuration: async () => RUNS,
-  attach: () => undefined,
-  release: () => undefined,
+  surface: { attach: () => undefined, release: () => undefined },
 })
 
 const meta: Meta = {

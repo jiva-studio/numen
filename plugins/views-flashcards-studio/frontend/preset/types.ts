@@ -53,21 +53,18 @@ export type { Field }
 /** The value of one row of the receipt. */
 export type SettingValue = number | string | boolean | Load
 
-export interface PresetSettingsData {
-  readonly id: string
-  readonly settings: Readonly<Ref<Settings>>
-  readonly bounds: Readonly<Ref<SettingsBounds>>
+export interface PresetStatus {
   readonly problems: Readonly<Ref<readonly string[]>>
   readonly stopped: Readonly<Ref<StopReason>>
   readonly errorMessage: Readonly<Ref<string>>
   readonly hasExternalChange: Readonly<Ref<boolean>>
-  readonly material: Readonly<Ref<PresetCounts | null>>
 }
 
 export interface PresetCurveData {
   readonly curve: Readonly<Ref<Curve>>
   readonly place: Readonly<Ref<number>>
   readonly isWaiting: Readonly<Ref<boolean>>
+  readonly material: Readonly<Ref<PresetCounts | null>>
 }
 
 export interface PresetTabActions {
@@ -80,4 +77,11 @@ export interface PresetTabActions {
 }
 
 /** What one preset tab holds. */
-export type PresetTabState = PresetSettingsData & PresetCurveData & PresetTabActions
+export interface PresetTabState {
+  readonly id: string
+  readonly settings: Readonly<Ref<Settings>>
+  readonly bounds: Readonly<Ref<SettingsBounds>>
+  readonly curves: PresetCurveData
+  readonly status: PresetStatus
+  readonly actions: PresetTabActions
+}

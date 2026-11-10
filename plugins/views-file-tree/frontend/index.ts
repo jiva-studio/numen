@@ -46,7 +46,7 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'tree.renameFile',
     handler: runOnTab((state, path) => {
-      if (path !== ROOT) state.setRenamingPath(path)
+      if (path !== ROOT) state.renaming.setPath(path)
     }),
   })
 }

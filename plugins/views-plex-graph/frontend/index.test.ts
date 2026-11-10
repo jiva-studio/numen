@@ -123,7 +123,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     const state = strip.tabs[0]!.state as PlexTabState
-    expect(state.view.here.value).toBe('Other.md')
+    expect(state.canvas.view.here.value).toBe('Other.md')
   })
 
   it('shows the active note in the plex it opens', async () => {
@@ -162,7 +162,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     const state = strip.tabs[0]!.state as PlexTabState
-    expect(state.view.here.value).toBe('Other.md')
+    expect(state.canvas.view.here.value).toBe('Other.md')
   })
 
   it('registers no command that makes a note', () => {
@@ -206,7 +206,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
 
     expect(requested.headings.length).toBeGreaterThan(0)
-    expect(state.maxHeadings.value).toBe(3)
+    expect(state.headings.maxHeadings.value).toBe(3)
   })
 
   it('refuses to activate in a window that offers no workspace, notes or relationships', () => {

@@ -57,11 +57,11 @@ describe('what an agent tab asks of the window', () => {
     })
     const deps = createAgentTabDeps(host)
 
-    await deps.writeSetting?.(['app', 'agent', 'use'], 'omega')
+    await deps.settings?.writeSetting?.(['app', 'agent', 'use'], 'omega')
 
-    expect(deps.getSetting?.(['app', 'agent', 'use'])).toBe('zeta')
-    expect(deps.getModelsAt?.(['app', 'agent', 'zeta', 'model'])).toStrictEqual([model])
-    expect(deps.getModelsAt?.(['app', 'agent', 'nobody', 'model'])).toStrictEqual([])
+    expect(deps.settings?.getSetting?.(['app', 'agent', 'use'])).toBe('zeta')
+    expect(deps.settings?.getModelsAt?.(['app', 'agent', 'zeta', 'model'])).toStrictEqual([model])
+    expect(deps.settings?.getModelsAt?.(['app', 'agent', 'nobody', 'model'])).toStrictEqual([])
     expect(recorded.settings).toStrictEqual([[['app', 'agent', 'use'], 'omega']])
   })
 })
@@ -70,7 +70,7 @@ describe('opening the settings from an agent tab', () => {
   it('runs the command of the window that opens the settings, over no target', () => {
     const { host, recorded } = createHost({ focus: { path: 'Orchard.md', title: 'Orchard' } })
 
-    createAgentTabDeps(host).openSettings?.()
+    createAgentTabDeps(host).settings?.openSettings?.()
 
     expect(recorded.commands).toStrictEqual([['app:settings.open', undefined]])
   })
@@ -79,7 +79,7 @@ describe('opening the settings from an agent tab', () => {
     const { host, recorded } = createHost()
     const { commands: _commands, ...rest } = host
 
-    createAgentTabDeps(rest).openSettings?.()
+    createAgentTabDeps(rest).settings?.openSettings?.()
 
     expect(recorded.commands).toStrictEqual([])
   })

@@ -113,16 +113,21 @@ export interface PlexView {
   close(): void
 }
 
-/** Dependencies for plex tab state. */
-export interface PlexTabDeps {
-  readonly tabId: string
-  readonly editor: PlexEditor
+/** What a plex tab requests of the window: the notes it opens, selects and drags, and the messages it shows. */
+export interface PlexWindowDeps {
   readonly isReady: Readonly<Ref<boolean>>
-  readonly isNesting: Readonly<Ref<boolean>>
-  readonly headings: Readonly<Ref<number>>
+  readonly openingPath: Readonly<Ref<string>>
+  readonly dragged: Readonly<Ref<readonly string[]>>
   openNote(path: string, options?: OpenNoteOptions): void
   onSelectPath?(path: string, title?: string, state?: PlexTabState): void
-  readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
+  /** The icon the window draws a type of note with. */
+  getNoteIcon(tabKind: string): Component | null
+  showMessage(text: string): void
+  readOpeningPath(): Promise<string>
+}
+
+/** What a plex tab requests for its menu. */
+export interface PlexMenuDeps {
   /** The entries of the slot `plexGraph.context` over the note of a node, or over the canvas. */
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the note of a node. */
@@ -137,15 +142,25 @@ export interface PlexTabDeps {
     itemId?: string,
     values?: Readonly<Record<string, string>>,
   ): Promise<string>
-  /** The icon the window draws a type of note with. */
-  getNoteIcon(tabKind: string): Component | null
-  readonly openingPath: Readonly<Ref<string>>
-  readonly dragged: Readonly<Ref<readonly string[]>>
-  showMessage(text: string): void
-  readOpeningPath(): Promise<string>
-  readonly creatable: readonly ConnectionRole[]
+}
+
+/** What a plex tab reads of the notes: their headings and names, and whether it nests the headings. */
+export interface PlexNotesDeps {
+  readonly isNesting: Readonly<Ref<boolean>>
+  readonly headings: Readonly<Ref<number>>
+  readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   searchNames?(query: string, limit?: number): Promise<readonly { path: string; title: string }[]>
+}
+
+/** Dependencies for plex tab state. */
+export interface PlexTabDeps {
+  readonly tabId: string
+  readonly editor: PlexEditor
+  readonly creatable: readonly ConnectionRole[]
   readonly isNavigatingOnCreate?: Readonly<Ref<boolean>>
+  readonly window: PlexWindowDeps
+  readonly menu: PlexMenuDeps
+  readonly notes: PlexNotesDeps
 }
 
 export interface PlexViewState {
@@ -208,15 +223,16 @@ export interface PlexLinkInspectorState {
 }
 
 /** What one plex tab holds. */
-export type PlexTabState = PlexViewState &
-  PlexMenuState &
-  PlexHeadingsState &
-  PlexNodeActions &
-  PlexFailureReporter &
-  PlexQuickLinkState &
-  PlexLinkInspectorState & {
-    readonly pluginId?: string
-  }
+export interface PlexTabState {
+  readonly canvas: PlexViewState
+  readonly menu: PlexMenuState
+  readonly headings: PlexHeadingsState
+  readonly nodes: PlexNodeActions
+  readonly quickLink: PlexQuickLinkState
+  readonly inspector: PlexLinkInspectorState
+  readonly reportFailure: PlexFailureReporter['reportFailure']
+  readonly pluginId?: string
+}
 
 export interface PlexGraphViewProps {
   readonly state: PlexTabState

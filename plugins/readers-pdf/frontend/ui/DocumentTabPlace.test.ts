@@ -103,7 +103,7 @@ describe('the place a PDF tab saves when the reader navigates to another page', 
     await flush()
     savePlace.mockClear()
 
-    await reader.goToPage(3)
+    await reader.document.actions.goToPage(3)
     await flush()
 
     expect(savePlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
@@ -119,7 +119,7 @@ describe('the place a PDF tab reports to the window', () => {
     await flush()
     reportPlace.mockClear()
 
-    await reader.goToPage(3)
+    await reader.document.actions.goToPage(3)
     await flush()
 
     expect(reportPlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })

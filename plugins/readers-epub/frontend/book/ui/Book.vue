@@ -65,24 +65,25 @@ const layout = useBookLayout({
   takeLed: links.takeLed,
   getEdge,
 })
-const { isMeasured, isStood, setting, spreadCount, front, leftInChapter } = layout
+const { isMeasured, isStood, setting } = layout.state
+const { spreadCount, front, leftInChapter } = layout.position
 
 const hand = createBookPointer({
   area,
   paper,
-  turn: layout.turn,
+  turn: layout.actions.turn,
   getEdge,
 })
 
 /* -------------------------------- Handlers -------------------------------- */
-const onArrival = () => layout.settleKept()
+const onArrival = () => layout.actions.settleKept()
 
-const onFollow = (press: MouseEvent) => links.follow(press, layout.findFragmentOffset)
+const onFollow = (press: MouseEvent) => links.follow(press, layout.actions.findFragmentOffset)
 
 const onKey = (event: KeyboardEvent): boolean => {
   const way = getPageNavigationAction(event.key)
   if (!way) return false
-  layout.turn(way)
+  layout.actions.turn(way)
   return true
 }
 
@@ -102,7 +103,7 @@ defineExpose({
    * Lays out the text again. A reader rendered off screen has no reading area, and
    * the caller signals when it is on screen.
    */
-  measure: () => layout.settle(layout.getKeptOffset),
+  measure: () => layout.actions.settle(layout.actions.getKeptOffset),
   /** A key the tab caught: true where it turned the page. */
   handleKey: onKey,
 })

@@ -50,20 +50,20 @@ function onSelectRule(rule: string) {
 
 function onFieldType(field: Field, value: number | null) {
   if (value === null) return
-  props.state.updateSetting(field, getFieldValue(field, value))
+  props.state.actions.updateSetting(field, getFieldValue(field, value))
 }
 
 function onFieldCommit() {
-  props.state.flushPending()
+  props.state.actions.flushPending()
 }
 
 function onChooseSetting(field: Field, value: SettingValue) {
-  props.state.updateSetting(field, value)
-  props.state.flushPending()
+  props.state.actions.updateSetting(field, value)
+  props.state.actions.flushPending()
 }
 
 function onUpdateSlider(field: Field, share: number) {
-  props.state.updateSetting(field, share)
+  props.state.actions.updateSetting(field, share)
 }
 
 function onToggleEvenLoad(on: boolean) {

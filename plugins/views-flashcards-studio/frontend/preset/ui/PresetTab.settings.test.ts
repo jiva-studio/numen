@@ -140,7 +140,10 @@ describe('the settings under the control', () => {
 describe('what the tab says went wrong', () => {
   const mountWithError = (words: string) => {
     const one = createTab()
-    const state: PresetTabState = { ...one.state, errorMessage: ref(words) }
+    const state: PresetTabState = {
+      ...one.state,
+      status: { ...one.state.status, errorMessage: ref(words) },
+    }
     return { tab: mount(PresetTab, { props: { state } }), recorded: one.recorded }
   }
 
@@ -170,7 +173,10 @@ describe('what the tab says went wrong', () => {
 describe('a file that changed under the tab', () => {
   it('says so, and offers reading the file again', async () => {
     const one = createTab()
-    const state: PresetTabState = { ...one.state, hasExternalChange: ref(true) }
+    const state: PresetTabState = {
+      ...one.state,
+      status: { ...one.state.status, hasExternalChange: ref(true) },
+    }
     const tab = mount(PresetTab, { props: { state } })
     const response = tab.get('[role="status"].preset__answering')
     expect(response.text()).toContain(words.changed)
@@ -195,9 +201,12 @@ describe('the load of the week', () => {
     const loadWrites: [Field, SettingValue][] = []
     const state: PresetTabState = {
       ...one.state,
-      updateSetting: (field, value) => {
-        loadWrites.push([field, value])
-        one.recorded.push('type')
+      actions: {
+        ...one.state.actions,
+        updateSetting: (field, value) => {
+          loadWrites.push([field, value])
+          one.recorded.push('type')
+        },
       },
     }
     return { tab: mount(PresetTab, { props: { state } }), loadWrites, recorded: one.recorded }

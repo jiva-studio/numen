@@ -70,7 +70,7 @@ function createReviewActions(deps: ReviewActionDeps) {
   const readSchedules = () => deps.schedules.read(deps.vaultCount.value, deps.counts.day.value)
 
   const openSession = async (deck: string, preset?: string) => {
-    const report = await deps.state.start(deps.vault, deck, preset)
+    const report = await deps.state.actions.start(deps.vault, deck, preset)
     if (!report) return
     deps.goTo('session')
     reportSessionNotice(report, deps.showNotice)
@@ -94,7 +94,7 @@ function createReviewActions(deps: ReviewActionDeps) {
 
   const recordReview = async (how: Grade) => {
     deps.agentPanel.endConversation()
-    await deps.state.answer(how)
+    await deps.state.actions.answer(how)
   }
 
   const refresh = async () => {
@@ -138,7 +138,7 @@ export const useReview = (deps: ReviewDeps) => {
   const notesPage = shallowRef<NotesPage | null>(null)
 
   const panels = usePanels({
-    card: () => state.card.value,
+    card: () => state.queue.card.value,
     agent: deps.agent,
     unreachable: () => deps.agent.getUnreachable(),
     resolveLinks: (text) => deps.agent.resolveLinks(text, deps.vault),
@@ -147,10 +147,14 @@ export const useReview = (deps: ReviewDeps) => {
   })
 
   const { on, goTo } = useScreens(['decks', 'session'] as const, {
-    session: [state.forget, panels.agentPanel.endConversation, panels.notesPanel.endSession],
+    session: [
+      state.actions.forget,
+      panels.agentPanel.endConversation,
+      panels.notesPanel.actions.endSession,
+    ],
   })
   const vaultCount = computed(
-    () => deps.counts.vaults.value.find((one) => one.vault === deps.vault) ?? null,
+    () => deps.counts.vaults.value.find((one) => one.identity.vault === deps.vault) ?? null,
   )
 
   const actions = createReviewActions({
@@ -172,17 +176,17 @@ export const useReview = (deps: ReviewDeps) => {
     getScreen: () => on.value,
     getChosenVault: () => vaultCount.value,
     getPresetsByDeck: () => schedules.byDeck.value,
-    isShown: () => state.isAnswerShown.value,
+    isShown: () => state.queue.isAnswerShown.value,
     getShowing: () => panels.showing.value,
     start: (deck) => {
       actions.start(deck).catch(notices.reportError)
     },
-    show: state.show,
+    show: state.actions.show,
     answer: (how) => {
       actions.recordReview(how).catch(notices.reportError)
     },
     takeBack: () => {
-      state.takeBack().catch(notices.reportError)
+      state.actions.takeBack().catch(notices.reportError)
     },
     leave: () => {
       actions.leave().catch(notices.reportError)
@@ -192,7 +196,7 @@ export const useReview = (deps: ReviewDeps) => {
     toggleNotes: panels.toggleNotes,
     scrollPage: (back) => notesPage.value?.scrollPage(back),
     closeAgent: panels.agentPanel.closePanel,
-    closeNotes: panels.notesPanel.closePanel,
+    closeNotes: panels.notesPanel.actions.closePanel,
   })
 
   deps.counts.start()

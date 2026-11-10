@@ -17,12 +17,10 @@ const createTreeOf = () => {
   const close = vi.fn()
   const entries = new Map<string, Entry>()
   const tree = {
-    selectedPaths,
-    openFolder,
-    revealPath,
-    refreshChanged,
-    close,
-    getEntryAt: (path: string) => entries.get(path) ?? null,
+    state: { selectedPaths },
+    navigation: { openFolder, revealPath },
+    sync: { refreshChanged, close },
+    queries: { getEntryAt: (path: string) => entries.get(path) ?? null },
   } as unknown as FileTree
   return { tree, selectedPaths, openFolder, revealPath, refreshChanged, close, entries }
 }
@@ -167,7 +165,7 @@ describe('a files tab a linked tab moves', () => {
   it('reveals the path it is moved to, a note or not', async () => {
     const revealPath = vi.fn(async (_path: string) => undefined)
     const { kind } = createKindOver(createTreeOf().tree)
-    const state = { list: { revealPath } } as unknown as FilesTabState
+    const state = { list: { navigation: { revealPath } } } as unknown as FilesTabState
 
     await kind.navigate?.(state, 'Books/Guide.pdf', '')
 

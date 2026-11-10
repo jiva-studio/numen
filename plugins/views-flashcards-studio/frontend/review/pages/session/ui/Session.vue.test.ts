@@ -10,10 +10,7 @@ import type { ReviewCard } from '../../../entities/card'
 
 /** A card as the application provides it. */
 const card: ReviewCard = {
-  deck: 'decks/Words.md',
-  section: '',
-  cardId: '3f4g5h6j7k',
-  template: 'Say it',
+  address: { deck: 'decks/Words.md', section: '', cardId: '3f4g5h6j7k', template: 'Say it' },
   heading: 'Leaf mould',
   front: '<p>Leaf mould</p>',
   back: '<p>Compost made of fallen leaves alone. <a href="notes/Leaf mould.md">more</a></p>',

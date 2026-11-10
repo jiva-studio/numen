@@ -12,10 +12,7 @@ import type { ReviewCard } from '../../../entities/card'
 
 /** A card as the session hands one over. */
 const card: ReviewCard = {
-  deck: 'decks/Words.md',
-  section: '',
-  cardId: '3f4g5h6j7k',
-  template: 'Say it',
+  address: { deck: 'decks/Words.md', section: '', cardId: '3f4g5h6j7k', template: 'Say it' },
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',

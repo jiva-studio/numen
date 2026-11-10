@@ -28,14 +28,19 @@ defineExpose({ scrollPage })
 // are still being requested, and a note cannot be scrolled to before it is
 // rendered.
 watch(
-  () => [props.panel.open.value, props.panel.col.value, props.panel.notes.value] as const,
+  () =>
+    [
+      props.panel.view.open.value,
+      props.panel.view.col.value,
+      props.panel.content.notes.value,
+    ] as const,
   async ([open, col, notes]) => {
     if (!open || !col || !notes.length) return
     await nextTick(() => {
       const found = notes.find((one: Neighbour) => one.written === col || one.path === col)
       if (found)
         noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
-      props.panel.read()
+      props.panel.actions.read()
     })
   },
   { immediate: true },
@@ -67,14 +72,14 @@ function scrollPage(back = false) {
   <section class="reading" :aria-label="words.reading">
     <div ref="column" class="reading__column">
       <p
-        v-if="!props.panel.notes.value.length && !props.panel.isWorking.value"
+        v-if="!props.panel.content.notes.value.length && !props.panel.content.isWorking.value"
         class="reading__quiet"
       >
         {{ words.nothing }}
       </p>
 
       <article
-        v-for="one in props.panel.notes.value"
+        v-for="one in props.panel.content.notes.value"
         :key="getNoteKey(one)"
         :ref="(element) => registerNoteElement(one, element)"
         class="reading__note"
@@ -89,13 +94,13 @@ function scrollPage(back = false) {
         <Prose
           v-if="one.body"
           :text="one.body"
-          :links="props.panel.links.value.get(getNoteKey(one))?.links ?? NO_LINKS"
-          :unresolved="props.panel.links.value.get(getNoteKey(one))?.unresolved ?? NO_LINKS"
+          :links="props.panel.content.links.value.get(getNoteKey(one))?.links ?? NO_LINKS"
+          :unresolved="props.panel.content.links.value.get(getNoteKey(one))?.unresolved ?? NO_LINKS"
         />
       </article>
 
-      <p v-if="props.panel.unread.value" class="reading__quiet">
-        {{ words.named(props.panel.unread.value) }}
+      <p v-if="props.panel.content.unread.value" class="reading__quiet">
+        {{ words.named(props.panel.content.unread.value) }}
       </p>
     </div>
   </section>

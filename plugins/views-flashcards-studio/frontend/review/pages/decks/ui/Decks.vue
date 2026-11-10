@@ -26,12 +26,12 @@ defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 /** The whole vault's count: cards due today plus new cards. */
-const allDue = computed(() => props.vault.due + props.vault.new)
+const allDue = computed(() => props.vault.totals.due + props.vault.totals.new)
 </script>
 
 <template>
   <section class="decks">
-    <h1 class="decks__title">{{ vault.name }}</h1>
+    <h1 class="decks__title">{{ vault.identity.name }}</h1>
 
     <Progress :days="days" :due="due" />
 

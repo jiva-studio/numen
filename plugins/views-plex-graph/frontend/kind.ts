@@ -47,7 +47,7 @@ function createPlexTabs() {
     },
     find: (id: string): PlexTabState | undefined => tabs.get(id),
     getAll: (): readonly PlexTabState[] => [...tabs.values()],
-    getCurrentPath: (): string => getLast()?.view.here.value ?? '',
+    getCurrentPath: (): string => getLast()?.canvas.view.here.value ?? '',
   }
 }
 
@@ -56,8 +56,8 @@ async function refreshTabs(
   tabs: readonly PlexTabState[],
   event: VaultChangeEvent,
 ): Promise<void> {
-  for (const state of tabs) state.followMoves(event.renamed ?? [])
-  if (tabs.some((state) => !state.view.here.value)) {
+  for (const state of tabs) state.nodes.followMoves(event.renamed ?? [])
+  if (tabs.some((state) => !state.canvas.view.here.value)) {
     try {
       await host.workspace.readOpeningPath()
     } catch {
@@ -67,9 +67,11 @@ async function refreshTabs(
   await Promise.all(
     tabs.map(async (state) => {
       const path =
-        state.view.nextPath.value || state.view.here.value || host.workspace.openingPath.value
-      if (path) await state.view.go(path)
-      await state.readHeadings()
+        state.canvas.view.nextPath.value ||
+        state.canvas.view.here.value ||
+        host.workspace.openingPath.value
+      if (path) await state.canvas.view.go(path)
+      await state.headings.readHeadings()
     }),
   )
 }
@@ -96,27 +98,28 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
         host.workspace.openingPath.value
       const state = createPlexTab(createView(), createPlexTabDeps(host, id))
       tabs.add(id, state)
-      if (from) state.view.go(from).catch(state.reportFailure)
-      watch(state.view.here, (path) => {
-        if (path) host.workspace.syncPath(id, path, state.getName(path))
+      if (from) state.canvas.view.go(from).catch(state.reportFailure)
+      watch(state.canvas.view.here, (path) => {
+        if (path) host.workspace.syncPath(id, path, state.nodes.getName(path))
       })
       return state
     },
-    getTitle: (state) => getPlexTitle(state.view.neighbourhood.value?.focus.title ?? ''),
+    getTitle: (state) => getPlexTitle(state.canvas.view.neighbourhood.value?.focus.title ?? ''),
     onShow: (_state, id) => tabs.show(id),
     onClose: (state, id) => {
-      state.view.close()
+      state.canvas.view.close()
       tabs.remove(id)
       return true
     },
     getTarget: (state) => {
-      const path = state.view.here.value
-      return { path, title: (path && state.getName(path)) || path }
+      const path = state.canvas.view.here.value
+      return { path, title: (path && state.nodes.getName(path)) || path }
     },
-    getOpenTab: (state) => ({ path: state.view.here.value }),
-    getState: (state): PlexSavedState => ({ focus: state.view.here.value }),
+    getOpenTab: (state) => ({ path: state.canvas.view.here.value }),
+    getState: (state): PlexSavedState => ({ focus: state.canvas.view.here.value }),
     navigate: async (state, path) => {
-      if (isNotePath(path) && state.view.here.value !== path) await state.view.go(path)
+      if (isNotePath(path) && state.canvas.view.here.value !== path)
+        await state.canvas.view.go(path)
     },
   }
 

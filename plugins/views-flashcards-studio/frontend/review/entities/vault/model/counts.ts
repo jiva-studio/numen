@@ -75,13 +75,9 @@ export interface CountsDeps {
 }
 
 const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({
-  vault: one.id,
-  name: one.name,
-  path: one.path,
+  identity: { vault: one.id, name: one.name, path: one.path },
   isCounted: false,
-  reviewCards: 0,
-  due: 0,
-  new: 0,
+  totals: { reviewCards: 0, due: 0, new: 0 },
   decks: [],
   presets: [],
   unread: one.unread,
@@ -89,13 +85,9 @@ const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({
 })
 
 const createCountedVault = (one: VaultCounts): VaultCardsDue => ({
-  vault: one.id,
-  name: one.name,
-  path: one.path,
+  identity: { vault: one.id, name: one.name, path: one.path },
   isCounted: true,
-  reviewCards: one.reviewCards,
-  due: one.due,
-  new: one.new,
+  totals: { reviewCards: one.reviewCards, due: one.due, new: one.new },
   decks: one.decks.map((deck) => ({
     deck: deck.deck,
     reviewCards: deck.reviewCards,
@@ -132,16 +124,18 @@ function useVaultRows() {
   const vaults = shallowRef<readonly VaultCardsDue[]>([])
 
   const setVaults = (all: readonly VaultCounts[]) => {
-    const target = new Map(vaults.value.map((one) => [one.vault, one]))
+    const target = new Map(vaults.value.map((one) => [one.identity.vault, one]))
     vaults.value = all.map((one) => {
       const was = target.get(one.id)
-      return was?.isCounted ? { ...was, name: one.name, path: one.path } : createUncountedVault(one)
+      return was?.isCounted
+        ? { ...was, identity: { ...was.identity, name: one.name, path: one.path } }
+        : createUncountedVault(one)
     })
   }
 
   const setVaultCount = (one: VaultCounts) => {
     const now = one.isIndexing ? createUncountedVault(one) : createCountedVault(one)
-    vaults.value = vaults.value.map((row) => (row.vault === one.id ? now : row))
+    vaults.value = vaults.value.map((row) => (row.identity.vault === one.id ? now : row))
   }
 
   return { vaults, setVaults, setVaultCount }

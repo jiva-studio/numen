@@ -48,7 +48,7 @@ export const usePanels = (deps: PanelsDeps) => {
   const reportFailure = (why: unknown): void => deps.showNotice(formatErrorMessage(why))
 
   const moveTo = (where: PanelPlace) => {
-    if (where === 'before') notesPanel.openPanel().catch(reportFailure)
+    if (where === 'before') notesPanel.actions.openPanel().catch(reportFailure)
     else if (where === 'after') agentPanel.openPanel()
     else showing.value = 'here'
   }
@@ -75,7 +75,7 @@ export const usePanels = (deps: PanelsDeps) => {
       else if (showing.value === 'reading') showing.value = 'here'
     },
     vault: deps.vault,
-    deck: () => deps.card()?.deck ?? '',
+    deck: () => deps.card()?.address.deck ?? '',
     getDeckNeighbourhood,
     showNotice: deps.showNotice,
     resolveLinks: deps.resolveLinks,
@@ -88,8 +88,8 @@ export const usePanels = (deps: PanelsDeps) => {
    * A link pressed in the card opens the reading panel on the linked note.
    */
   const toggleNotes = (note = '') => {
-    if (note === '' && showing.value === 'reading') notesPanel.closePanel()
-    else notesPanel.openPanel(note).catch(reportFailure)
+    if (note === '' && showing.value === 'reading') notesPanel.actions.closePanel()
+    else notesPanel.actions.openPanel(note).catch(reportFailure)
   }
 
   const toggleAgent = () => {

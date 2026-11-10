@@ -34,14 +34,14 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
       const deps = createFilesTabDeps(host, id)
       const state = useFilesTab(createTree(), deps)
       tabs.set(id, state)
-      state.list.openFolder(ROOT).catch(state.reportFailure)
-      if (targetPath) state.list.revealPath(targetPath).catch(state.reportFailure)
-      watch(state.list.selectedPaths, (paths) => {
+      state.list.navigation.openFolder(ROOT).catch(state.reportFailure)
+      if (targetPath) state.list.navigation.revealPath(targetPath).catch(state.reportFailure)
+      watch(state.list.state.selectedPaths, (paths) => {
         const path = paths[0]
-        if (path) deps.onSelectPath?.(path, state)
+        if (path) deps.window.onSelectPath?.(path, state)
       })
       watch(
-        state.menu,
+        state.menu.request,
         (request) => {
           if (request) menuTab = state
         },
@@ -51,19 +51,21 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
     },
     getTitle: () => words.files,
     onClose: (state, id) => {
-      state.list.close()
+      state.list.sync.close()
       tabs.delete(id)
       if (menuTab === state) menuTab = null
       return true
     },
     navigate: async (state, path) => {
-      if (path) await state.list.revealPath(path)
+      if (path) await state.list.navigation.revealPath(path)
     },
   }
 
   /** Every files tab takes the change, the ones out of sight included. */
   const refresh = async ({ paths = [], renamed = [] }: VaultChangeEvent) => {
-    await Promise.all([...tabs.values()].map((state) => state.list.refreshChanged(paths, renamed)))
+    await Promise.all(
+      [...tabs.values()].map((state) => state.list.sync.refreshChanged(paths, renamed)),
+    )
   }
 
   /** The tab whose menu was opened last, or the tab opened last; null while none is open. */

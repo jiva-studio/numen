@@ -276,19 +276,15 @@ export function createBookSettling(options: BookSettlingOptions) {
  * `takeLed` returns the position a followed link led to, once.
  */
 export function useBookLayout(options: BookLayoutOptions) {
-  const { textSize, viewport, isMeasured, flow, spreadCount, setting, marks, ...column } =
-    useBookColumns(options)
+  const {
+    state: { textSize, viewport, isMeasured, isStood, setting },
+    laid: { flow, spreadCount, marks },
+    actions: column,
+  } = useBookColumns(options)
 
   const {
-    front,
-    leftInChapter,
-    stand,
-    enterSpread,
-    getKeptOffset,
-    keepOffset,
-    getSpreadOf,
-    turn: turnPage,
-    standing,
+    position: { front, leftInChapter, standing },
+    moves: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, turn: turnPage },
   } = useBookTurns({
     paper: options.paper,
     props: options.props,
@@ -314,7 +310,7 @@ export function useBookLayout(options: BookLayoutOptions) {
 
   const stoodFor = shallowRef<StoodFor | null>(null)
   const isStoodForMarkup = () =>
-    column.isStood.value &&
+    isStood.value &&
     stoodFor.value?.markup === options.props.markup &&
     stoodFor.value.start === options.props.span.start
 
@@ -323,8 +319,8 @@ export function useBookLayout(options: BookLayoutOptions) {
     if (isStoodForMarkup() || !isMeasured.value) turn(way)
     else if (queuedTurns.length < MAX_WAITING_TURNS) queuedTurns.push(way)
   }
-  watch(isStoodForMarkup, (isStood) => {
-    if (!isStood) return
+  watch(isStoodForMarkup, (stood) => {
+    if (!stood) return
     for (const way of queuedTurns.splice(0)) turn(way)
   })
 
@@ -345,26 +341,26 @@ export function useBookLayout(options: BookLayoutOptions) {
       markRuns: column.markRuns,
       markCopy: column.markCopy,
       unmarkCopy: column.unmarkCopy,
-      isStood: column.isStood,
+      isStood,
     },
     turns: { stand, enterSpread, getKeptOffset, keepOffset, getSpreadOf, standing },
     signals: { viewport, textSize },
   })
 
   const state = {
-    textSize,
-    isMeasured,
-    isStood: column.isStood,
-    flow,
-    spreadCount: holdUntilStood(isStoodForMarkup, () => spreadCount.value),
-    front: holdUntilStood(isStoodForMarkup, () => front.value),
-    leftInChapter: holdUntilStood(isStoodForMarkup, () => leftInChapter.value),
-    setting,
-    getKeptOffset,
-    settle,
-    settleKept,
-    findFragmentOffset: column.findFragmentOffset,
-    turn: turnWhenStood,
+    state: { textSize, isMeasured, isStood, flow, setting },
+    position: {
+      spreadCount: holdUntilStood(isStoodForMarkup, () => spreadCount.value),
+      front: holdUntilStood(isStoodForMarkup, () => front.value),
+      leftInChapter: holdUntilStood(isStoodForMarkup, () => leftInChapter.value),
+    },
+    actions: {
+      getKeptOffset,
+      settle,
+      settleKept,
+      findFragmentOffset: column.findFragmentOffset,
+      turn: turnWhenStood,
+    },
   }
   return state
 }

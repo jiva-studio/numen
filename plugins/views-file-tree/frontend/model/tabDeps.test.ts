@@ -18,13 +18,13 @@ const entry = (overrides: Partial<Entry> = {}): Entry => ({
 })
 
 const createTabState = (one: Entry | null) =>
-  ({ list: { getEntryAt: () => one } }) as unknown as FilesTabState
+  ({ list: { queries: { getEntryAt: () => one } } }) as unknown as FilesTabState
 
 describe('a file a files tab opens', () => {
   it('goes to the tabs linked to it where it is a note one of them takes', () => {
     const { host, recorded } = createHost({ linked: { files: true } })
 
-    createFilesTabDeps(host, 'files').openEntry(entry())
+    createFilesTabDeps(host, 'files').window.openEntry(entry())
 
     expect(recorded.synced).toStrictEqual([['files', 'a.md', 'a']])
     expect(recorded.opened).toStrictEqual([])
@@ -34,8 +34,8 @@ describe('a file a files tab opens', () => {
     const { host, recorded } = createHost({ linked: { files: true } })
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.openEntry(entry({ path: 'Heat.pdf', name: 'Heat.pdf', isNote: false }))
-    deps.openEntry(entry({ path: 'Untitled', name: '' }))
+    deps.window.openEntry(entry({ path: 'Heat.pdf', name: 'Heat.pdf', isNote: false }))
+    deps.window.openEntry(entry({ path: 'Untitled', name: '' }))
 
     expect(recorded.opened).toStrictEqual([
       ['Heat.pdf', { title: 'Heat.pdf', placement: 'current' }],
@@ -46,7 +46,7 @@ describe('a file a files tab opens', () => {
   it('opens under its path where it has no name and no linked tab takes it', () => {
     const { host, recorded } = createHost()
 
-    createFilesTabDeps(host, 'files').openEntry(entry({ path: 'Untitled', name: '' }))
+    createFilesTabDeps(host, 'files').window.openEntry(entry({ path: 'Untitled', name: '' }))
 
     expect(recorded.opened).toStrictEqual([
       ['Untitled', { title: 'Untitled', placement: 'current' }],
@@ -59,9 +59,15 @@ describe('a path a files tab selects', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.onSelectPath?.('a.md', createTabState(entry()))
-    deps.onSelectPath?.('b.md', createTabState(entry({ path: 'b.md', name: 'b', isNote: false })))
-    deps.onSelectPath?.('c.txt', createTabState(entry({ path: 'c.txt', name: 'c', isNote: true })))
+    deps.window.onSelectPath?.('a.md', createTabState(entry()))
+    deps.window.onSelectPath?.(
+      'b.md',
+      createTabState(entry({ path: 'b.md', name: 'b', isNote: false })),
+    )
+    deps.window.onSelectPath?.(
+      'c.txt',
+      createTabState(entry({ path: 'c.txt', name: 'c', isNote: true })),
+    )
 
     expect(recorded.synced).toStrictEqual([
       ['files', 'a.md', 'a'],
@@ -74,9 +80,12 @@ describe('a path a files tab selects', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.onSelectPath?.('notes', createTabState(entry({ path: 'notes', isFolder: true })))
-    deps.onSelectPath?.('Cover.png', createTabState(entry({ path: 'Cover.png', isNote: false })))
-    deps.onSelectPath?.('gone.md', createTabState(null))
+    deps.window.onSelectPath?.('notes', createTabState(entry({ path: 'notes', isFolder: true })))
+    deps.window.onSelectPath?.(
+      'Cover.png',
+      createTabState(entry({ path: 'Cover.png', isNote: false })),
+    )
+    deps.window.onSelectPath?.('gone.md', createTabState(null))
 
     expect(recorded.synced).toStrictEqual([])
   })
@@ -88,13 +97,13 @@ describe('the menu of a row', () => {
   it('is the entries of the slot of the file tree', () => {
     const { host } = createHost()
 
-    expect(createFilesTabDeps(host, 'files').getMenuEntries(rowTarget)).toStrictEqual(ROW_MENU)
+    expect(createFilesTabDeps(host, 'files').menu.getMenuEntries(rowTarget)).toStrictEqual(ROW_MENU)
   })
 
   it('runs the command of an entry through the commands of the window', async () => {
     const { host, commands } = createHost()
 
-    await createFilesTabDeps(host, 'files').runCommand('app:file.remove', rowTarget)
+    await createFilesTabDeps(host, 'files').menu.runCommand('app:file.remove', rowTarget)
 
     expect(commands.getRuns()).toStrictEqual([
       { command: 'app:file.remove', target: rowTarget, itemId: undefined },
@@ -104,7 +113,7 @@ describe('the menu of a row', () => {
   it('runs the command of an entry with the values of the entry', async () => {
     const { host, commands } = createHost()
 
-    await createFilesTabDeps(host, 'files').runCommand('app:file.open', rowTarget, undefined, {
+    await createFilesTabDeps(host, 'files').menu.runCommand('app:file.open', rowTarget, undefined, {
       placement: 'split',
     })
 
@@ -123,15 +132,15 @@ describe('the menu of a row', () => {
     const { slots: _slots, commands: _commands, ...withoutSlots } = host
     const deps = createFilesTabDeps(withoutSlots, 'files')
 
-    expect(deps.getMenuEntries(rowTarget)).toStrictEqual([])
-    await expect(deps.runCommand('app:file.remove', rowTarget)).resolves.toBe('')
+    expect(deps.menu.getMenuEntries(rowTarget)).toStrictEqual([])
+    await expect(deps.menu.runCommand('app:file.remove', rowTarget)).resolves.toBe('')
   })
 
   it('reads the entries of no slot but the menu of the file tree', () => {
     const { host, slots } = createHost()
     slots.setEntries(SLOT.tabStripContext, [])
 
-    expect(createFilesTabDeps(host, 'files').getMenuEntries(rowTarget)).toHaveLength(
+    expect(createFilesTabDeps(host, 'files').menu.getMenuEntries(rowTarget)).toHaveLength(
       ROW_MENU.length,
     )
   })
@@ -142,7 +151,7 @@ describe('what else a files tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    await deps.movePath('a.md', 'dir/a.md')
+    await deps.transfer.movePath('a.md', 'dir/a.md')
 
     expect(recorded.made).toStrictEqual(['move a.md dir/a.md'])
   })
@@ -151,12 +160,12 @@ describe('what else a files tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.setDraggedPaths(['a.md'])
-    deps.showError('taken')
+    deps.window.setDraggedPaths(['a.md'])
+    deps.window.showError('taken')
 
     expect(recorded.dragged).toStrictEqual([['a.md']])
     expect(recorded.errors).toStrictEqual(['taken'])
-    expect(deps.getEntryIcon(null, false)).toBeDefined()
+    expect(deps.window.getEntryIcon(null, false)).toBeDefined()
   })
 })
 
@@ -178,16 +187,18 @@ describe('data dropped from outside the window', () => {
       'files',
     )
 
-    expect(deps.canDropData(['text/uri-list'])).toBe(true)
-    expect(await deps.dropData('talks', { 'text/uri-list': 'https://video.test/clip' })).toEqual([
-      'talks/clip.md',
-    ])
+    expect(deps.transfer.canDropData(['text/uri-list'])).toBe(true)
+    expect(
+      await deps.transfer.dropData('talks', { 'text/uri-list': 'https://video.test/clip' }),
+    ).toEqual(['talks/clip.md'])
     expect(dropped).toEqual(['talks https://video.test/clip'])
   })
 
   it('returns no paths without a drop host', async () => {
     const deps = createFilesTabDeps(createHost().host, 'files')
-    expect(deps.canDropData(['text/uri-list'])).toBe(false)
-    expect(await deps.dropData('', { 'text/uri-list': 'https://video.test/clip' })).toEqual([])
+    expect(deps.transfer.canDropData(['text/uri-list'])).toBe(false)
+    expect(
+      await deps.transfer.dropData('', { 'text/uri-list': 'https://video.test/clip' }),
+    ).toEqual([])
   })
 })

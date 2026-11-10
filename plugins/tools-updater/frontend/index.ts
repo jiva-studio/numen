@@ -37,14 +37,14 @@ export function createStatusView(context: PluginContext, updates: Updates) {
         version: context.app.version,
         update: updates.announced.value,
         platform: context.app.platform,
-        onDownload: () => showFailure(context, updates.openDownload()),
-        onReleaseNotes: () => showFailure(context, updates.openNotes()),
-        onDismiss: () => updates.dismiss(),
+        onDownload: () => showFailure(context, updates.announcement.openDownload()),
+        onReleaseNotes: () => showFailure(context, updates.announcement.openNotes()),
+        onDismiss: () => updates.announcement.dismiss(),
       }),
   })
 }
 
-function showFailure(context: PluginContext, opening: ReturnType<Updates['openDownload']>): void {
+function showFailure(context: PluginContext, opening: ReturnType<Updates['announcement']['openDownload']>): void {
   opening.then(
     (result) => {
       if (!result.ok) context.notices?.show(result.error, 'error')
@@ -68,18 +68,18 @@ export const activate = (context: PluginContext, parts: UpdateParts = browserPar
     timer: parts.timer,
   })
   context.registerSlotView({ id: UPDATE_VIEW, component: createStatusView(context, updates) })
-  context.onSettingChange('checkIntervalHours', () => updates.reschedule())
+  context.onSettingChange('checkIntervalHours', () => updates.schedule.reschedule())
   const warnOfMissingAddress = () => showMissingAddress(context)
   context.onSettingChange('endpoint', () => {
-    updates.checkSoon()
+    updates.schedule.checkSoon()
     warnOfMissingAddress()
   })
   context.onSettingChange('channel', () => {
-    updates.checkSoon()
+    updates.schedule.checkSoon()
     warnOfMissingAddress()
   })
-  context.subscriptions.push({ dispose: () => updates.stop() })
-  updates.start()
+  context.subscriptions.push({ dispose: () => updates.schedule.stop() })
+  updates.schedule.start()
   warnOfMissingAddress()
 }
 

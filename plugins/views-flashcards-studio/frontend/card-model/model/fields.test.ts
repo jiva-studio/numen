@@ -140,7 +140,7 @@ describe('what a gesture makes of the card model', () => {
   it('adds a field at the end', () => {
     const { fields, state, typed } = create()
 
-    fields.createActions('a').addField('Weight')
+    fields.createActions('a').fields.addField('Weight')
 
     expect(fields.getCardModel('a').fields).toStrictEqual(['Height', 'Life span', 'Weight'])
     expect(typed).toHaveBeenCalledWith('a', state.body)
@@ -149,7 +149,7 @@ describe('what a gesture makes of the card model', () => {
   it('asks the wire to rename a field, and writes nothing itself', () => {
     const { fields, renamed, typed } = create()
 
-    fields.createActions('a').renameField('Height', 'Shoulder')
+    fields.createActions('a').fields.renameField('Height', 'Shoulder')
 
     expect(renamed).toHaveBeenCalledWith('a', 'Height', 'Shoulder')
     expect(typed).not.toHaveBeenCalled()
@@ -158,7 +158,7 @@ describe('what a gesture makes of the card model', () => {
   it('removes a field', () => {
     const { fields } = create()
 
-    fields.createActions('a').removeField('Life span')
+    fields.createActions('a').fields.removeField('Life span')
 
     expect(fields.getCardModel('a').fields).toStrictEqual(['Height'])
   })
@@ -166,9 +166,9 @@ describe('what a gesture makes of the card model', () => {
   it('moves a field before another', () => {
     const { fields } = create()
     const actions = fields.createActions('a')
-    actions.addField('Weight')
+    actions.fields.addField('Weight')
 
-    actions.moveField('Weight', 'Life span')
+    actions.fields.moveField('Weight', 'Life span')
 
     expect(fields.getCardModel('a').fields).toStrictEqual(['Height', 'Weight', 'Life span'])
   })
@@ -176,7 +176,7 @@ describe('what a gesture makes of the card model', () => {
   it('adds a template at the end', () => {
     const { fields, state } = create()
 
-    fields.createActions('a').addTemplate('Spot it')
+    fields.createActions('a').templates.addTemplate('Spot it')
 
     expect(getTemplateNames(state)).toStrictEqual(['Recognise', 'Name it', 'Spot it'])
   })
@@ -185,7 +185,7 @@ describe('what a gesture makes of the card model', () => {
     const { fields, state } = create()
     const template = fields.getCardModel('a').templates[0]?.id ?? ''
 
-    fields.createActions('a').renameTemplate(template, 'Spot it')
+    fields.createActions('a').templates.renameTemplate(template, 'Spot it')
 
     expect(getTemplateNames(state)).toStrictEqual(['Spot it', 'Name it'])
   })
@@ -194,7 +194,7 @@ describe('what a gesture makes of the card model', () => {
     const { fields, state } = create()
     const template = fields.getCardModel('a').templates[0]?.id ?? ''
 
-    fields.createActions('a').removeTemplate(template)
+    fields.createActions('a').templates.removeTemplate(template)
 
     expect(getTemplateNames(state)).toStrictEqual(['Name it'])
   })
@@ -203,7 +203,7 @@ describe('what a gesture makes of the card model', () => {
     const { fields, state } = create()
     const template = fields.getCardModel('a').templates[0]?.id ?? ''
 
-    fields.createActions('a').moveTemplate(template, null)
+    fields.createActions('a').templates.moveTemplate(template, null)
 
     expect(getTemplateNames(state)).toStrictEqual(['Name it', 'Recognise'])
   })
@@ -212,7 +212,7 @@ describe('what a gesture makes of the card model', () => {
     const { fields } = create()
     const template = fields.getCardModel('a').templates[0]?.id ?? ''
 
-    fields.createActions('a').writeTemplateHalf(template, 'back', 'changed')
+    fields.createActions('a').templates.writeTemplateHalf(template, 'back', 'changed')
 
     expect(fields.getCardModel('a').templates[0]?.back).toBe('changed')
     expect(fields.getCardModel('a').templates[0]?.front).toBe('{{Height}}')

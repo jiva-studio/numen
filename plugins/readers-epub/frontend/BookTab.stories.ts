@@ -148,7 +148,7 @@ const openAt =
       )
       storyTab = { state, places }
       watch(
-        reader.isLoading,
+        reader.book.state.isLoading,
         (isLoading) => {
           if (!isLoading) windowRanges.value = [...ranges]
         },
@@ -202,11 +202,11 @@ export const PassageAcrossTwoChaptersInTheNext: Story = {
   render: openAt([ACROSS]),
   play: async () => {
     const { state } = getStoryTab()
-    await waitFor(async () => await expect(state.renderedChapter.value).toBe('text/two.xhtml'), {
+    await waitFor(async () => await expect(state.book.drawn.renderedChapter.value).toBe('text/two.xhtml'), {
       timeout: LAYOUT_TIMEOUT,
     })
 
-    await state.goToOffset(THREE.span.start)
+    await state.book.actions.goToOffset(THREE.span.start)
 
     // The heading of the third chapter is part of the passage, and the markup sets a line between
     // the heading and the paragraph.

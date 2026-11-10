@@ -178,35 +178,41 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
 
     return {
       id,
-      note: computed(() => store.getOpenNote(id)),
-      deck,
-      deckCards: computed(() => createDeckCards(deck.value, summaries.value)),
-      sections: computed(() => createDeckSections(deck.value)),
-      cardModels,
-      marks: computed(() => getMarks(id)),
-      errorMessage: computed(() =>
-        vaultAnswers.getErrorMessage(store.getPath(id), store.getOpenNote(id).error !== null),
-      ),
-      scheduled: computed(() => getDeckPreset(id)),
-      choices,
-      setSchedule: (preset) => {
-        scheduleDeck(id, preset).catch(reportFailure)
+      data: {
+        note: computed(() => store.getOpenNote(id)),
+        deck,
+        deckCards: computed(() => createDeckCards(deck.value, summaries.value)),
+        sections: computed(() => createDeckSections(deck.value)),
+        cardModels,
+        marks: computed(() => getMarks(id)),
+        errorMessage: computed(() =>
+          vaultAnswers.getErrorMessage(store.getPath(id), store.getOpenNote(id).error !== null),
+        ),
       },
-      ...actions,
-      keepMine: () => store.keep(id),
-      takeFile: () => store.take(id),
-      close: (tab) => {
-        const path = store.getPath(id)
-        store
-          .close(id)
-          .then((removed) => {
-            if (!removed) return
-            read.forgetTab(id)
-            scheduled.forgetTab(id)
-            forgetPath(path)
-            closeTab(tab)
-          })
-          .catch(reportFailure)
+      schedule: {
+        scheduled: computed(() => getDeckPreset(id)),
+        choices,
+        setSchedule: (preset) => {
+          scheduleDeck(id, preset).catch(reportFailure)
+        },
+      },
+      actions,
+      file: {
+        keepMine: () => store.keep(id),
+        takeFile: () => store.take(id),
+        close: (tab) => {
+          const path = store.getPath(id)
+          store
+            .close(id)
+            .then((removed) => {
+              if (!removed) return
+              read.forgetTab(id)
+              scheduled.forgetTab(id)
+              forgetPath(path)
+              closeTab(tab)
+            })
+            .catch(reportFailure)
+        },
       },
     }
   }

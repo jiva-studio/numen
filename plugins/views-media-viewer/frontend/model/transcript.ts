@@ -86,7 +86,7 @@ export function useTranscript(
         recordings.canCreateText(path),
       ])
       if (!mine.isLatest()) return
-      playback.setSource(source)
+      playback.source.setSource(source)
       pageUrl.value = source.pageUrl
       cues.value = transcriptCues
       isArticle.value = transcriptCues.length === 0 && article !== ''
@@ -139,7 +139,7 @@ export function useTranscript(
     }
   }
 
-  const current = computed(() => findCueAt(lines.spans.value, playback.now.value))
+  const current = computed(() => findCueAt(lines.spans.value, playback.progress.now.value))
   const note = computed(() => {
     if (lines.times.value.length) return ''
     return isWorking.value ? WORDS.transcribing : WORDS.silence
@@ -184,7 +184,6 @@ export function useTranscript(
 
   return {
     path,
-    reportFailure,
     playback,
     draft,
     lines,
@@ -214,6 +213,6 @@ export function useTranscript(
       start: createText,
     },
     navigation: { seekToSpans, goToLine },
-    close,
+    lifecycle: { reportFailure, close },
   }
 }

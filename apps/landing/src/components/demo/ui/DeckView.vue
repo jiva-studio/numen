@@ -12,10 +12,10 @@ import type { Deck } from '../model/deck'
 const props = defineProps<{ deck: Deck }>()
 
 /* --------------------------------- State ---------------------------------- */
-const choices = computed(() => props.deck.presets.map((one) => ({ id: one.path, text: one.name })))
+const choices = computed(() => props.deck.review.presets.map((one) => ({ id: one.path, text: one.name })))
 const preset = computed({
-  get: () => props.deck.preset.value.path,
-  set: (path: string) => props.deck.setPreset(path),
+  get: () => props.deck.review.preset.value.path,
+  set: (path: string) => props.deck.review.setPreset(path),
 })
 
 /* -------------------------------- Helpers --------------------------------- */

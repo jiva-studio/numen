@@ -204,15 +204,7 @@ export function useBookTurns(options: BookTurnsOptions) {
   }
 
   return {
-    standing: activeSpread,
-    front,
-    leftInChapter,
-    stand,
-    enterSpread,
-    goTo,
-    getKeptOffset,
-    keepOffset,
-    getSpreadOf,
-    turn,
+    position: { standing: activeSpread, front, leftInChapter },
+    moves: { stand, enterSpread, goTo, getKeptOffset, keepOffset, getSpreadOf, turn },
   }
 }

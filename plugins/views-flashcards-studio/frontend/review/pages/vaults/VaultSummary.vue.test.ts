@@ -7,13 +7,9 @@ import VaultSummary from './VaultSummary.vue'
 import type { VaultCardsDue } from '../../entities/vault'
 
 const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
-  vault: '01A',
-  name: 'Studies',
-  path: '/vaults/01A',
+  identity: { vault: '01A', name: 'Studies', path: '/vaults/01A' },
   isCounted: true,
-  reviewCards: 40,
-  due: 8,
-  new: 2,
+  totals: { reviewCards: 40, due: 8, new: 2 },
   decks: [],
   presets: [],
   unread: '',
@@ -31,7 +27,10 @@ describe('the summary of a vault', () => {
   // A figure that has not been worked out is drawn as the shape it will be, in
   // the box it will stand in, so nothing moves when it lands.
   it('holds the room the number will take, and prints no number, before the count', () => {
-    for (const one of [null, vault({ isCounted: false, due: 0, new: 0 })]) {
+    for (const one of [
+      null,
+      vault({ isCounted: false, totals: { reviewCards: 40, due: 0, new: 0 } }),
+    ]) {
       const summary = mountSummary(one)
 
       expect(summary.findComponent(Skeleton).exists()).toBe(true)
@@ -42,7 +41,7 @@ describe('the summary of a vault', () => {
   //   // Zero is a vault with nothing to review, and it differs from a vault whose
   //   // count has not arrived.
   it('is not the same as a vault counted at nothing', () => {
-    const counted = mountSummary(vault({ due: 0, new: 0 }))
+    const counted = mountSummary(vault({ totals: { reviewCards: 40, due: 0, new: 0 } }))
 
     expect(counted.findComponent(Skeleton).exists()).toBe(false)
     expect(counted.text()).toContain('0')

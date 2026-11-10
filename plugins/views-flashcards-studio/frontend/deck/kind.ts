@@ -61,7 +61,7 @@ export function createDeckKind({
       return open === undefined ? path : open.slice(DECK.length + 1)
     },
     getTitle: (one) => vaultAnswers.getTitle(store.getPath(one.id)),
-    getMark: (one) => getMarkOf(one.note.value.state),
+    getMark: (one) => getMarkOf(one.data.note.value.state),
     onShow: () => {
       listCardModelsAgain()
       listPresetsAgain()
@@ -72,7 +72,7 @@ export function createDeckKind({
     }),
     getOpenTab: (one) => ({ path: store.getPath(one.id) }),
     onClose: (one, id) => {
-      one.close(id)
+      one.file.close(id)
       return false
     },
     // The tab state holds no resource beyond the buffer store.

@@ -19,10 +19,7 @@ vi.mock('../shared/clients', async (original) => ({
 }))
 
 const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
-  deck: 'decks/Words.md',
-  section: '',
-  cardId: '3f4g5h6j7k',
-  template: 'Say it',
+  address: { deck: 'decks/Words.md', section: '', cardId: '3f4g5h6j7k', template: 'Say it' },
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
@@ -52,7 +49,7 @@ describe('the window', () => {
     expect(showing.value).toBe('here')
     expect(targetPanel.value).toBe('here')
     expect(agentPanel.open.value).toBe(false)
-    expect(notesPanel.open.value).toBe(false)
+    expect(notesPanel.view.open.value).toBe(false)
   })
 
   it('brings the reading in before the card, and takes it away with the same key', async () => {
@@ -62,12 +59,12 @@ describe('the window', () => {
     await nextTick()
     expect(showing.value).toBe('reading')
     expect(targetPanel.value).toBe('before')
-    expect(notesPanel.open.value).toBe(true)
+    expect(notesPanel.view.open.value).toBe(true)
 
     toggleNotes()
     expect(showing.value).toBe('here')
     expect(targetPanel.value).toBe('here')
-    expect(notesPanel.open.value).toBe(false)
+    expect(notesPanel.view.open.value).toBe(false)
   })
 
   it('brings the conversation in after the card, and takes it away with the same key', () => {
@@ -90,7 +87,7 @@ describe('the window', () => {
     toggleNotes()
     toggleAgent()
     expect(showing.value).toBe('asking')
-    expect(notesPanel.open.value).toBe(false)
+    expect(notesPanel.view.open.value).toBe(false)
 
     toggleNotes()
     expect(showing.value).toBe('reading')
@@ -104,14 +101,14 @@ describe('the window', () => {
     toggleNotes('notes/Leaves.md')
 
     expect(showing.value).toBe('reading')
-    expect(notesPanel.col.value).toBe('notes/Leaves.md')
+    expect(notesPanel.view.col.value).toBe('notes/Leaves.md')
   })
 
   it('stays on the conversation when the reading is put away behind it', () => {
     const { showing, notesPanel, toggleAgent } = panels()
 
     toggleAgent()
-    notesPanel.closePanel()
+    notesPanel.actions.closePanel()
 
     expect(showing.value).toBe('asking')
   })
@@ -130,11 +127,11 @@ describe('the window', () => {
 
     moveTo('before')
     expect(showing.value).toBe('reading')
-    expect(notesPanel.open.value).toBe(true)
+    expect(notesPanel.view.open.value).toBe(true)
 
     moveTo('after')
     expect(showing.value).toBe('asking')
-    expect(agentPanel.about.value?.cardId).toBe('3f4g5h6j7k')
+    expect(agentPanel.about.value?.address.cardId).toBe('3f4g5h6j7k')
 
     moveTo('here')
     expect(showing.value).toBe('here')

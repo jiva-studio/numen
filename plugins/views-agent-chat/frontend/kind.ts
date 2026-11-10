@@ -20,7 +20,7 @@ import { WORDS as words } from './words'
 export const AGENT = 'agent'
 
 const getAgentTitle = (state: AgentTabState): string =>
-  createTabTitle(state.turns.value.find((turn) => turn.voice === 'prompt')?.text ?? '') ||
+  createTabTitle(state.addresses.turns.value.find((turn) => turn.voice === 'prompt')?.text ?? '') ||
   words.agent
 
 /** The agent kind as the window keeps it. Each tab holds a conversation made by `createState`. */
@@ -37,17 +37,17 @@ export function createAgentKind(
     placement: { pane: 'aside', order: 0 },
     open: (_targetPath, _id, saved) => {
       const state = createState(createAgentTabDeps(host))
-      state.restore(parseSavedConversation(saved))
+      state.draft.restore(parseSavedConversation(saved))
       return state
     },
-    getState: (state) => createSavedConversation(state.userQuestion.value, state.turns.value),
+    getState: (state) => createSavedConversation(state.draft.userQuestion.value, state.addresses.turns.value),
     getTitle: getAgentTitle,
     onClose: (state) => {
-      state.finish()
+      state.conversation.finish()
       return true
     },
     getTarget: () => host.workspace.getNoteInFocus(),
-    receiveText: (state, text) => state.setQuestion(text),
+    receiveText: (state, text) => state.draft.setQuestion(text),
   }
   return { kind }
 }

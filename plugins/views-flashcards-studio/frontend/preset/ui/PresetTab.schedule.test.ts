@@ -19,7 +19,9 @@ describe('a preset that schedules nothing', () => {
   /** The tab drawn for a preset stopped for that reason. */
   const mountStoppedTab = (why: StopReason) => {
     const { state } = createTab()
-    return mount(PresetTab, { props: { state: { ...state, stopped: ref(why) } } })
+    return mount(PresetTab, {
+      props: { state: { ...state, status: { ...state.status, stopped: ref(why) } } },
+    })
   }
 
   it('has a sentence of its own for each verdict there is', () => {

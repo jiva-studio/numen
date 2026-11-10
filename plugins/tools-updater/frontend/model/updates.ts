@@ -38,17 +38,21 @@ export interface UpdateDeps {
 export interface Updates {
   readonly status: Readonly<Ref<Status>>
   readonly announced: ComputedRef<Update | null>
-  /** Checks now and keeps checking at the interval of the setting. */
-  start(): void
-  /** Ends the waits between checks. */
-  stop(): void
-  /** Waits out the interval of the setting again, counting from now. */
-  reschedule(): void
-  /** Checks after a short wait, for a change of the feed. */
-  checkSoon(): void
-  dismiss(): void
-  openDownload(): Promise<Result<null>>
-  openNotes(): Promise<Result<null>>
+  readonly schedule: {
+    /** Checks now and keeps checking at the interval of the setting. */
+    start(): void
+    /** Ends the waits between checks. */
+    stop(): void
+    /** Waits out the interval of the setting again, counting from now. */
+    reschedule(): void
+    /** Checks after a short wait, for a change of the feed. */
+    checkSoon(): void
+  }
+  readonly announcement: {
+    dismiss(): void
+    openDownload(): Promise<Result<null>>
+    openNotes(): Promise<Result<null>>
+  }
 }
 
 /** The wait between two checks the setting names; the default where it holds no usable number. */
@@ -112,25 +116,29 @@ export function createUpdates(deps: UpdateDeps): Updates {
   return {
     status,
     announced,
-    start: () => {
-      isStopped = false
-      failureCount = 0
-      runCheck()
+    schedule: {
+      start: () => {
+        isStopped = false
+        failureCount = 0
+        runCheck()
+      },
+      stop: () => {
+        isStopped = true
+        clearWait()
+      },
+      reschedule: () => wait(getIntervalMs(deps.getIntervalHours())),
+      checkSoon: () => {
+        failureCount = 0
+        status.value = { state: 'unchecked' }
+        wait(SETTLE_DELAY_MS)
+      },
     },
-    stop: () => {
-      isStopped = true
-      clearWait()
+    announcement: {
+      dismiss: () => {
+        dismissedVersion.value = status.value.update?.version ?? ''
+      },
+      openDownload: () => open(announced.value?.downloadUrl),
+      openNotes: () => open(announced.value?.notesUrl),
     },
-    reschedule: () => wait(getIntervalMs(deps.getIntervalHours())),
-    checkSoon: () => {
-      failureCount = 0
-      status.value = { state: 'unchecked' }
-      wait(SETTLE_DELAY_MS)
-    },
-    dismiss: () => {
-      dismissedVersion.value = status.value.update?.version ?? ''
-    },
-    openDownload: () => open(announced.value?.downloadUrl),
-    openNotes: () => open(announced.value?.notesUrl),
   }
 }

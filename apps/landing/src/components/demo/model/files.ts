@@ -27,7 +27,7 @@ export function createFiles(deps: FilesDeps) {
   const menu = ref<{ readonly path: string | null; readonly at: Position } | null>(null)
 
   const getRows = (folder: string): Row[] =>
-    vault.list(folder).map((one) => ({
+    vault.read.list(folder).map((one) => ({
       id: one.path,
       name: one.name,
       hasChildren: one.isFolder,
@@ -54,28 +54,28 @@ export function createFiles(deps: FilesDeps) {
   }
 
   function activate(path: string) {
-    const entry = vault.getEntryAt(path)
+    const entry = vault.read.getEntryAt(path)
     if (!entry) return
     selected.value = [path]
     if (!entry.isFolder) deps.openFile(path)
   }
 
   function rename(path: string, name: string) {
-    const to = getRenamedPath(path, name, vault.getEntryAt(path)?.isFolder ?? false)
+    const to = getRenamedPath(path, name, vault.read.getEntryAt(path)?.isFolder ?? false)
     if (!to) return
-    vault.move(path, to)
+    vault.edit.move(path, to)
     selected.value = selected.value.map((one) => (one === path ? to : one))
   }
 
   function moveRows(paths: readonly string[], target: DropTarget) {
     const into = getDropFolder(target)
-    const taken = new Set(vault.list(into).map((one) => one.name))
+    const taken = new Set(vault.read.list(into).map((one) => one.name))
     for (const path of paths) {
       const name = getFileName(path)
       const to = into === ROOT ? name : `${into}/${name}`
       if (to === path || taken.has(name)) continue
       taken.add(name)
-      vault.move(path, to)
+      vault.edit.move(path, to)
     }
   }
 
@@ -84,8 +84,8 @@ export function createFiles(deps: FilesDeps) {
     const target = {
       path: path ?? ROOT,
       others: over.filter((one) => one !== path),
-      entry: path === null ? undefined : vault.getEntryAt(path),
-      isDemoNote: (one: string) => Boolean(vault.getNote(one)),
+      entry: path === null ? undefined : vault.read.getEntryAt(path),
+      isDemoNote: (one: string) => Boolean(vault.read.getNote(one)),
     }
     return getFileMenu(target)
   }
@@ -99,7 +99,7 @@ export function createFiles(deps: FilesDeps) {
 
   watch(selected, (paths) => {
     const first = paths[0]
-    const entry = first === undefined ? undefined : vault.getEntryAt(first)
+    const entry = first === undefined ? undefined : vault.read.getEntryAt(first)
     if (first !== undefined && entry && !entry.isFolder && entry.type === 'note' && entry.isNote) {
       deps.onSelectNote(first)
     }
@@ -109,34 +109,36 @@ export function createFiles(deps: FilesDeps) {
   selected.value = ['physics/Entropy.md']
 
   return {
-    rows,
-    openRows,
-    selected,
-    renaming,
-    menu,
-    getMenuItems,
-    getMenuTarget,
-    openFolder,
-    closeFolder,
-    reveal,
-    activate,
-    rename,
-    moveRows,
-    setRenaming: (row: string | null) => {
-      renaming.value = row
+    state: { rows, openRows, selected, renaming, menu },
+    tree: {
+      openFolder,
+      closeFolder,
+      reveal,
+      activate,
+      select: (paths: readonly string[]) => {
+        selected.value = paths
+      },
     },
-    openMenu: (path: string | null, at: Position) => {
-      menu.value = { path, at }
+    menus: {
+      getMenuItems,
+      getMenuTarget,
+      openMenu: (path: string | null, at: Position) => {
+        menu.value = { path, at }
+      },
+      closeMenu: () => {
+        menu.value = null
+      },
     },
-    closeMenu: () => {
-      menu.value = null
-    },
-    select: (paths: readonly string[]) => {
-      selected.value = paths
-    },
-    remove: (paths: readonly string[]) => {
-      const [first, ...others] = paths
-      if (first !== undefined) deps.remove(first, others)
+    edits: {
+      rename,
+      moveRows,
+      setRenaming: (row: string | null) => {
+        renaming.value = row
+      },
+      remove: (paths: readonly string[]) => {
+        const [first, ...others] = paths
+        if (first !== undefined) deps.remove(first, others)
+      },
     },
   }
 }

@@ -20,7 +20,7 @@ export interface RowRestoreSources {
   readonly pageLayout: Readonly<Ref<Row>>
   readonly getAt: () => number
   readonly getPaint: () => Paint
-  readonly scroll: Pick<PanScroll, 'getScrollOffset' | 'send' | 'restore' | 'isMoved'>
+  readonly scroll: PanScroll['moves']
 }
 
 export interface RowRestore {
@@ -54,7 +54,7 @@ export function useRowRestore(sources: RowRestoreSources): RowRestore {
     })
   }
 
-  function stand(page: number, how: Parameters<PanScroll['send']>[1]): void {
+  function stand(page: number, how: Parameters<PanScroll['moves']['send']>[1]): void {
     const to = getScrollTarget(pageLayout.value, viewport.value, page)
     if (to !== undefined) scroll.send(to, how)
   }

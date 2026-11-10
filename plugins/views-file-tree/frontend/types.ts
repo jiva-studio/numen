@@ -40,11 +40,18 @@ export interface MenuRequest {
 /** Where dropped rows landed, as the tree reports it. */
 export type DropPosition = { readonly into: string | null } | { readonly before: string }
 
-/** What a files tab requests from the window that hosts it. */
-export interface FilesTabDeps {
+/** What a files tab requests from the window: the files it opens, selects and shows. */
+export interface FilesTabWindowDeps {
   /** Opens the file a row represents. */
   openEntry(entry: Entry): void
   onSelectPath?(path: string, state: FilesTabState): void
+  setDraggedPaths(paths: readonly string[]): void
+  showError(text: string): void
+  getEntryIcon(entry: Entry | null, isOpen: boolean): Component
+}
+
+/** What a files tab requests for its menu. */
+export interface FilesTabMenuDeps {
   /** The entries of the menu of a row, over the row it was opened on. */
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the row. */
@@ -59,66 +66,115 @@ export interface FilesTabDeps {
     itemId?: string,
     values?: Readonly<Record<string, string>>,
   ): Promise<string>
+}
+
+/** What a files tab requests to move rows and to take dropped data. */
+export interface FilesTabTransferDeps {
   movePath(from: string, to: string): Promise<void>
-  setDraggedPaths(paths: readonly string[]): void
   /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
   canDropData(types: readonly string[]): boolean
   /** Hands data dropped into the folder to the plugin that takes it; answers what it made. */
   dropData(folder: string, data: DroppedData): Promise<readonly string[]>
-  showError(text: string): void
-  getEntryIcon(entry: Entry | null, isOpen: boolean): Component
 }
 
-export interface FileTree {
+/** What a files tab requests from the window that hosts it. */
+export interface FilesTabDeps {
+  readonly window: FilesTabWindowDeps
+  readonly menu: FilesTabMenuDeps
+  readonly transfer: FilesTabTransferDeps
+}
+
+/** What a tree shows, as values that change. */
+export interface FileTreeState {
   readonly rows: Ref<readonly ListingRow[]>
   readonly openRows: Ref<readonly string[]>
   readonly selectedPaths: Ref<readonly string[]>
   readonly errorMessage: Ref<string>
   readonly isLoaded: Ref<boolean>
+}
+
+/** What a tree answers about the folders it has loaded. */
+export interface FileTreeQueries {
   getEntriesInFolder(folder: string): readonly Entry[]
   isFolderOpen(folder: string): boolean
   getEntryAt(path: string): Entry | null
+}
+
+/** The operations that open, close and select folders and rows. */
+export interface FileTreeNavigation {
   loadFolder(folder: string): Promise<void>
   openFolder(folder: string): Promise<void>
   closeFolder(folder: string): void
   toggleFolder(folder: string): Promise<void>
   selectPaths(paths: readonly string[]): void
   revealPath(path: string): Promise<void>
+}
+
+/** The operations that bring the tree in line with the vault, and end it. */
+export interface FileTreeSync {
   refresh(): Promise<void>
   refreshChanged(paths?: readonly string[], renamed?: readonly PathRename[]): Promise<void>
   close(): void
 }
 
-/** What one files tab holds. */
-export interface FilesTabState {
-  readonly list: FileTree
-  readonly menu: Readonly<Ref<MenuRequest | null>>
-  readonly renamingPath: Ref<string | null>
-  setRenamingPath(path: string | null): void
-  getOverPaths(path: string): readonly string[]
-  getFolderFor(path: string | null): string
+export interface FileTree {
+  readonly state: FileTreeState
+  readonly queries: FileTreeQueries
+  readonly navigation: FileTreeNavigation
+  readonly sync: FileTreeSync
+}
+
+/** The operations over the rows of the tree. */
+export interface FilesTabEntries {
   activate(path: string): void
   open(path: string): void
   close(path: string): void
-  /** Shows the failure of an operation that runs in the background. */
-  reportFailure(error: unknown): void
   select(paths: readonly string[]): void
   rename(path: string, name: string): Promise<void>
+  remove(paths: readonly string[]): void
+  getNameOf(path: string): string
+  getEntryIcon(entry: Entry | null, isOpen: boolean): Component
+}
+
+/** The row whose name is in a field. */
+export interface FilesTabRenaming {
+  readonly path: Ref<string | null>
+  setPath(path: string | null): void
+}
+
+/** Moving rows within the tree, and dropping rows or outside data on it. */
+export interface FilesTabTransfer {
+  getFolderFor(path: string | null): string
   move(paths: readonly string[], target: DropPosition): Promise<void>
   drag(paths: readonly string[]): void
   drop(): void
-  remove(paths: readonly string[]): void
   /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
   canDropData(types: readonly string[]): boolean
   /** Hands data dropped on the tree to the plugin that takes it, into the folder of the selection. */
   dropData(data: DroppedData): Promise<readonly string[]>
-  openMenu(request: MenuRequest): void
-  dismissMenu(): void
-  chooseMenuItem(id: string): void
-  getNameOf(path: string): string
+}
+
+/** The menu of a row, or of no row. */
+export interface FilesTabMenu {
+  /** Where the open menu is, or null while none is open. */
+  readonly request: Readonly<Ref<MenuRequest | null>>
+  getOverPaths(path: string): readonly string[]
+  open(request: MenuRequest): void
+  dismiss(): void
+  choose(id: string): void
   /** The menu items: for the row the menu was opened on, or for no row. */
-  getMenuItems(path: string | null): readonly MenuItem[]
+  getItems(path: string | null): readonly MenuItem[]
   /** The icon of the command or submenu of the open menu drawn as the row `id`. */
-  getMenuIcon(id: string): Component | null
-  getEntryIcon(entry: Entry | null, isOpen: boolean): Component
+  getIcon(id: string): Component | null
+}
+
+/** What one files tab holds. */
+export interface FilesTabState {
+  readonly list: FileTree
+  readonly entries: FilesTabEntries
+  readonly renaming: FilesTabRenaming
+  readonly transfer: FilesTabTransfer
+  readonly menu: FilesTabMenu
+  /** Shows the failure of an operation that runs in the background. */
+  reportFailure(error: unknown): void
 }

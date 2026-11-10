@@ -136,20 +136,9 @@ export function useBookColumns(options: BookColumnsOptions) {
   }
 
   const state = {
-    textSize,
-    viewport,
-    isMeasured,
-    isStood,
-    flow: laidFlow,
-    spreadCount,
-    setting,
-    marks,
-    measure,
-    readColumns,
-    findFragmentOffset,
-    markRuns,
-    markCopy,
-    unmarkCopy,
+    state: { textSize, viewport, isMeasured, isStood, setting },
+    laid: { flow: laidFlow, spreadCount, marks },
+    actions: { measure, readColumns, findFragmentOffset, markRuns, markCopy, unmarkCopy },
   }
   return state
 }

@@ -106,7 +106,7 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
     getTarget: (one) => ({ path: one.id, title: getTitle(one.id) }),
     getOpenTab: (one) => ({ path: one.id }),
     onClose: (one, id) => {
-      one.close(id)
+      one.actions.close(id)
       return false
     },
     // The tab state holds no resource beyond the buffer store.

@@ -19,51 +19,51 @@ import { WORDS as words } from '../../cards'
 const props = defineProps<{ state: DeckTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { choices, deckCards, marks, errorMessage, note, scheduled, sections, cardModels } =
-  props.state
+const { deckCards, marks, errorMessage, note, sections, cardModels } = props.state.data
+const { choices, scheduled } = props.state.schedule
 
 /** Validation errors against cards as reported by deck marks. */
 const validationErrors = computed(() => ({ at: marks.value.at, ['under']: marks.value.bySection }))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChooseSchedule(path: string) {
-  props.state.setSchedule(path)
+  props.state.schedule.setSchedule(path)
 }
 
 function onAddCard(cardModel: string, section: string | null) {
-  props.state.addCard(cardModel, empty(cardModel), section)
+  props.state.actions.addCard(cardModel, empty(cardModel), section)
 }
 
 function onRemoveCard(id: string) {
-  props.state.removeCard(id)
+  props.state.actions.removeCard(id)
 }
 
 function onMoveCard(id: string, target: InsertionPoint) {
-  props.state.moveCard(id, target)
+  props.state.actions.moveCard(id, target)
 }
 
 function onWriteCard(...[id, field, index, text]: [string, string, number, string]) {
-  props.state.writeCardField(id, field, index, text)
+  props.state.actions.writeCardField(id, field, index, text)
 }
 
 function onAddSection(name: string) {
-  props.state.addSection(name)
+  props.state.actions.addSection(name)
 }
 
 function onRenameSection(id: string, name: string) {
-  props.state.renameSection(id, name)
+  props.state.actions.renameSection(id, name)
 }
 
 function onRemoveSection(id: string) {
-  props.state.removeSection(id)
+  props.state.actions.removeSection(id)
 }
 
 function onKeep() {
-  props.state.keepMine()
+  props.state.file.keepMine()
 }
 
 function onTake() {
-  props.state.takeFile()
+  props.state.file.takeFile()
 }
 
 /* -------------------------------- Helpers --------------------------------- */

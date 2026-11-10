@@ -35,36 +35,42 @@ const SPREAD_OF = (pos: number) => pos + 1000
 const setUp = () => {
   fake.frames.length = 0
   fake.columns = {
-    textSize: ref(1),
-    viewport: ref({ width: 300, height: 200 }),
-    isMeasured: ref(true),
-    isStood: ref(false),
-    flow: ref({}),
-    spreadCount: ref(5),
-    setting: ref({}),
-    marks: shallowRef([]),
-    measure: vi.fn(),
-    readColumns: vi.fn(),
-    findFragmentOffset: vi.fn(),
-    markRuns: vi.fn(),
-    markCopy: vi.fn(),
-    unmarkCopy: vi.fn(),
+    state: {
+      textSize: ref(1),
+      viewport: ref({ width: 300, height: 200 }),
+      isMeasured: ref(true),
+      isStood: ref(false),
+      setting: ref({}),
+    },
+    laid: { flow: ref({}), spreadCount: ref(5), marks: shallowRef([]) },
+    actions: {
+      measure: vi.fn(),
+      readColumns: vi.fn(),
+      findFragmentOffset: vi.fn(),
+      markRuns: vi.fn(),
+      markCopy: vi.fn(),
+      unmarkCopy: vi.fn(),
+    },
   }
   fake.turns = {
-    front: ref({}),
-    leftInChapter: ref(0),
-    stand: vi.fn(),
-    enterSpread: vi.fn(),
-    getKeptOffset: vi.fn(() => KEPT),
-    keepOffset: vi.fn(),
-    getSpreadOf: vi.fn(SPREAD_OF),
-    turn: vi.fn(),
-    standing: ref(0),
+    position: { front: ref({}), leftInChapter: ref(0), standing: ref(0) },
+    moves: {
+      stand: vi.fn(),
+      enterSpread: vi.fn(),
+      getKeptOffset: vi.fn(() => KEPT),
+      keepOffset: vi.fn(),
+      getSpreadOf: vi.fn(SPREAD_OF),
+      turn: vi.fn(),
+    },
   }
 }
 
+/** The parts the layout reads, as one object of the recorders. */
+const flatten = (parts: unknown): Record<string, unknown> =>
+  Object.assign({}, ...Object.values(parts as Record<string, object>))
+
 const columns = () =>
-  fake.columns as {
+  flatten(fake.columns) as {
     viewport: { value: { width: number; height: number } }
     textSize: { value: number }
     isMeasured: { value: boolean }
@@ -78,7 +84,7 @@ const columns = () =>
   }
 
 const turns = () =>
-  fake.turns as {
+  flatten(fake.turns) as {
     stand: ReturnType<typeof vi.fn>
     enterSpread: ReturnType<typeof vi.fn>
     turn: ReturnType<typeof vi.fn>
@@ -163,7 +169,7 @@ describe('setting the columns', () => {
     turns().stand.mockClear()
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     flushFrames()
@@ -178,7 +184,7 @@ describe('setting the columns', () => {
     const { layout } = room()
     columns().measure.mockClear()
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
 
     expect(columns().measure).toHaveBeenCalledTimes(1)
     expect(fake.frames).toHaveLength(0)
@@ -189,7 +195,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasArea: false })
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -201,7 +207,7 @@ describe('setting the columns', () => {
     const { layout } = room({ hasPaper: false })
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -216,7 +222,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
+    layout().actions.settle(() => 40, { path: 'ch1.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('here')
@@ -230,7 +236,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(0)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: '', fragment: 'top' })
+    layout().actions.settle(() => 40, { path: '', fragment: 'top' })
     flushFrames()
 
     expect(columns().findFragmentOffset).toHaveBeenCalledWith('top')
@@ -243,7 +249,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(150)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
+    layout().actions.settle(() => 40, { path: 'ch2.xhtml', fragment: 'here' })
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -256,7 +262,7 @@ describe('the place a link led to', () => {
     columns().findFragmentOffset.mockReturnValue(undefined)
     fake.frames.length = 0
 
-    layout().settle(() => 40, { path: '', fragment: 'missing' })
+    layout().actions.settle(() => 40, { path: '', fragment: 'missing' })
     flushFrames()
 
     expect(turns().stand).toHaveBeenLastCalledWith(SPREAD_OF(40), 'auto')
@@ -267,7 +273,7 @@ describe('the place a link led to', () => {
     const { layout, onMove } = room()
     fake.frames.length = 0
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
     flushFrames()
 
     expect(columns().findFragmentOffset).not.toHaveBeenCalled()
@@ -356,7 +362,7 @@ describe('the room or the type changing size', () => {
       columns().viewport.value = { width: 301, height: 200 }
     })
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
     await nextTick()
     flushAllFrames()
 
@@ -435,7 +441,7 @@ describe('a page turned while another document is drawn', () => {
     columns().isMeasured.value = false
     columns().isStood.value = false
 
-    layout().turn('next')
+    layout().actions.turn('next')
 
     expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
   })
@@ -444,7 +450,7 @@ describe('a page turned while another document is drawn', () => {
     const { layout } = room()
     flushFrames()
 
-    layout().turn('next')
+    layout().actions.turn('next')
 
     expect(turns().turn).toHaveBeenCalledExactlyOnceWith('next')
   })
@@ -455,8 +461,8 @@ describe('a page turned while another document is drawn', () => {
     props.markup = '<p>two</p>'
     await nextTick()
 
-    layout().turn('next')
-    layout().turn('next')
+    layout().actions.turn('next')
+    layout().actions.turn('next')
     expect(turns().turn).not.toHaveBeenCalled()
 
     flushFrames()
@@ -471,7 +477,7 @@ describe('a page turned while another document is drawn', () => {
     flushFrames()
     props.markup = '<p>two</p>'
     await nextTick()
-    layout().turn('back')
+    layout().actions.turn('back')
     flushFrames()
     await nextTick()
 
@@ -489,7 +495,7 @@ describe('a page turned while another document is drawn', () => {
     props.markup = '<p>two</p>'
     await nextTick()
 
-    for (let press = 0; press < 20; press += 1) layout().turn('next')
+    for (let press = 0; press < 20; press += 1) layout().actions.turn('next')
     flushFrames()
     await nextTick()
 
@@ -661,22 +667,22 @@ describe('the layout being mounted', () => {
 describe('the page counter of a document just drawn', () => {
   const pageOf = (page: number) => ({ page, pages: 40 })
   const setFront = (page: number) => {
-    ;(fake.turns['front'] as { value: unknown }).value = pageOf(page)
+    ;(turns() as unknown as { front: { value: unknown } }).front.value = pageOf(page)
   }
 
   it('stays on the page before it until the columns stand at their spread', async () => {
     const { layout, props } = room()
     flushFrames()
     setFront(48)
-    expect(layout().front.value).toStrictEqual(pageOf(48))
+    expect(layout().position.front.value).toStrictEqual(pageOf(48))
 
     props.markup = '<p>the document before</p>'
     await nextTick()
     setFront(1)
 
-    expect(layout().front.value).toStrictEqual(pageOf(48))
+    expect(layout().position.front.value).toStrictEqual(pageOf(48))
     flushFrames()
-    expect(layout().front.value).toStrictEqual(pageOf(1))
+    expect(layout().position.front.value).toStrictEqual(pageOf(1))
   })
 
   it('stays on the page before it when the span arrives before the markup', () => {
@@ -687,7 +693,7 @@ describe('the page counter of a document just drawn', () => {
     props.span = { start: 200, end: 300 }
     setFront(1)
 
-    expect(layout().front.value).toStrictEqual(pageOf(48))
+    expect(layout().position.front.value).toStrictEqual(pageOf(48))
   })
 
   it('follows a turn made once the columns stand', () => {
@@ -696,7 +702,7 @@ describe('the page counter of a document just drawn', () => {
 
     setFront(7)
 
-    expect(layout().front.value).toStrictEqual(pageOf(7))
+    expect(layout().position.front.value).toStrictEqual(pageOf(7))
   })
 })
 
@@ -706,9 +712,9 @@ describe('the text set again for a picture or a face that arrives', () => {
     flushFrames()
     turns().stand.mockClear()
 
-    layout().settleKept()
-    layout().settleKept()
-    layout().settleKept()
+    layout().actions.settleKept()
+    layout().actions.settleKept()
+    layout().actions.settleKept()
     flushFrames()
     flushFrames()
 
@@ -753,7 +759,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
     columns().readColumns.mockClear()
     turns().stand.mockClear()
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
     flushFrames()
 
     expect(columns().readColumns).not.toHaveBeenCalled()
@@ -768,7 +774,7 @@ describe('the columns of a document with a picture that has not arrived', () => 
     const picture = appendImage(text)
     columns().readColumns.mockClear()
 
-    layout().settle(() => 40)
+    layout().actions.settle(() => 40)
     flushFrames()
     picture.dispatchEvent(new Event('error'))
 
@@ -783,7 +789,7 @@ describe('a page turned into the adjacent document', () => {
     flushFrames()
     text.innerHTML = '<p data-offset="190">one</p>'
     turns().turn.mockReturnValue(200)
-    layout().turn('next')
+    layout().actions.turn('next')
     props.at = offset
     props.span = { start: 200, end: 300 }
     props.markup = '<p>two</p>'
