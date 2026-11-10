@@ -74,28 +74,9 @@ func run(cfg container.Config, debug debugOptions) error {
 		return err
 	}
 
-	list, err := cfg.Registry()
-	if err != nil {
-		return err
-	}
-
-	// The editor's window may write the same index at the same time.
-	db, err := container.OpenIndex(cfg, ctx)
-	if err != nil {
-		return err
-	}
-
-	vaults := container.OpenVaults(cfg, db, os.Stderr, appName)
-
 	api := makeWindowAPI(cfg)
-	container.SetShellNotes(cfg, api, db, vaults.UpdateIndex)
-	api.ListVaults = container.GetVaultList(cfg, list).Execute
-	container.BindVaultIndexer(cfg, ctx, api, vaults)
-	registry, err := cfg.Registry()
+	started, err := container.OpenFlashcards(cfg, ctx, api, os.Stderr, appName)
 	if err != nil {
-		return err
-	}
-	if err := container.InstallPluginVault(cfg, registry, db, getNoCurrentVault, getPluginVaultHooks(api)); err != nil {
 		return err
 	}
 
@@ -104,17 +85,11 @@ func run(cfg container.Config, debug debugOptions) error {
 		shutdown.Report(appName, os.Stderr, "plugins", func() error {
 			return cfg.StopPlugins(context.Background())
 		}),
-		vaults.CloseAndWait,
-		shutdown.Report(appName, os.Stderr, "", db.Close),
+		started.CloseVaults,
+		shutdown.Report(appName, os.Stderr, "", started.CloseIndex),
 	)
 	defer target.Run()
-
-	followChanges(ctx, cfg, api)
-	themes.Report(container.SetShellThemes(cfg, api, func(response string) {
-		if response != "" {
-			fmt.Fprintln(os.Stderr, "themes:", response)
-		}
-	}), os.Stderr)
+	themes.Report(started.Themes, os.Stderr)
 
 	pages, err := shell.Pages()
 	if err != nil {
@@ -135,21 +110,6 @@ func makeWindowAPI(cfg container.Config) *shell.API {
 		GetPluginDir:         func(id string) (string, bool) { return container.GetPluginDir(cfg, id) },
 		PluginServices:       container.GetPluginServices(cfg),
 	}
-}
-
-func getNoCurrentVault() (domain.Vault, bool) { return domain.Vault{}, false }
-
-func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
-	return container.PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
-}
-
-func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {
-	moves, err := container.Moves(cfg, ctx)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, appName+": the index is not being followed:", err)
-		return
-	}
-	api.ReportChangesFrom(ctx, moves)
 }
 
 func runApplication(handler http.Handler, target *shutdown.Sequence) error {

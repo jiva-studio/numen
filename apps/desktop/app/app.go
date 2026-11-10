@@ -172,7 +172,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
-	displayed, err := openInstallation(ctx, cfg, vault)
+	displayed, cfg, err := openInstallation(ctx, cfg, vault)
 	if err != nil {
 		return err
 	}
@@ -228,49 +228,16 @@ type shownInstallation struct {
 
 func openInstallation(
 	ctx context.Context, cfg container.Config, vault string,
-) (shownInstallation, error) {
+) (shownInstallation, container.Config, error) {
 	pages, err := editor.Pages()
 	if err != nil {
-		return shownInstallation{}, err
+		return shownInstallation{}, cfg, err
 	}
-	registry, err := cfg.Registry()
+	opened, cfg, err := container.OpenEditor(cfg, ctx, vault, os.Stdout)
 	if err != nil {
-		return shownInstallation{}, err
+		return shownInstallation{}, cfg, err
 	}
-	db, err := container.OpenIndex(cfg, ctx)
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	versions, err := container.NewTextVersions(cfg, db)
-	if err != nil {
-		return shownInstallation{}, errors.Join(err, db.Close())
-	}
-	cfg.TextVersions = versions
-
-	opened, err := container.OpenWindowOver(cfg, ctx, registry, db, vault, os.Stdout)
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	container.SetPluginVaultPath(cfg, opened.State.GetCurrentVault().Path)
-	getShownVault := func() (domain.Vault, bool) {
-		current := opened.State.GetCurrentVault()
-		return current, current.Path != ""
-	}
-	err = container.InstallPluginVault(cfg, registry, db, getShownVault, container.PluginVaultHooks{
-		Written: func() {
-			if wake := opened.State.Writes.NotifyNoteWritten; wake != nil {
-				wake()
-			}
-		},
-		Notes: opened.Notes(),
-	})
-	if err != nil {
-		return shownInstallation{}, err
-	}
-	container.SetEditorPluginVaultList(cfg, opened)
-	container.SetPluginTexts(cfg)
-	container.SetEditorPluginWindow(cfg, db, opened)
-	return shownInstallation{pages: pages, opened: opened}, nil
+	return shownInstallation{pages: pages, opened: opened}, cfg, nil
 }
 
 func makeApplication(

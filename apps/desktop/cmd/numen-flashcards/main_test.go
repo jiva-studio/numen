@@ -202,3 +202,9 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 		t.Errorf("the window answers as %q", api.Window.Name)
 	}
 }
+
+func getNoCurrentVault() (domain.Vault, bool) { return domain.Vault{}, false }
+
+func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
+	return container.PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
+}
