@@ -1,0 +1,163 @@
+<script setup lang="ts">
+import { getCurrentDate, measureRect } from '@numen/ui'
+/**
+ * Per-day review activity and the cards due on coming days, as a grid of weeks.
+ *
+ * A column is a week: the weeks before the current one run up to it, and a few
+ * coming weeks follow it. How many weeks are drawn is how many fit the available
+ * width.
+ *
+ * Each cell carries `data-heatmap-day`, the day it represents.
+ */
+import { computed, ref, useTemplateRef } from 'vue'
+
+import { Tooltip } from './tooltip'
+import type { Box } from '@numen/ui'
+import { DaySummary } from './day-summary'
+import { measureGrid } from '../../lib/heatmap/grid'
+import { getCells, getDays, getGridHeight } from '../../lib/heatmap/heatmap'
+import type { Day, Tally } from '../../lib/heatmap/heatmap'
+import { useWidth } from '../../model/heatmap/width'
+import type { Words } from '../../lib/heatmap/words'
+
+/* --------------------------------- Props ---------------------------------- */
+const props = withDefaults(
+  defineProps<{
+    did: ReadonlyMap<string, Tally>
+    due?: ReadonlyMap<string, number>
+    words: Words
+    now?: Date
+    cell?: number
+    gap?: number
+  }>(),
+  { due: () => new Map(), now: () => getCurrentDate(), cell: 11, gap: 3 },
+)
+
+/* ---------------------------------- State --------------------------------- */
+const root = useTemplateRef<HTMLElement>('root')
+const room = useWidth(root)
+
+const grid = computed(() => measureGrid({ width: room.value, cell: props.cell, gap: props.gap }))
+const visibleDays = computed(() =>
+  getDays(grid.value.columns, props.now, { did: props.did, due: props.due }),
+)
+
+const height = computed(() => getGridHeight(grid.value))
+
+const cells = computed(() => getCells(grid.value, visibleDays.value))
+
+/** The day under the pointer, and the box of the cell it is drawn in. */
+const pointed = ref<{ day: Day; at: Box } | null>(null)
+
+/* -------------------------------- Handlers -------------------------------- */
+const onSetPointed = (day: Day, press: MouseEvent) => {
+  const cell = measureRect(press.target as SVGRectElement)
+  pointed.value = {
+    day,
+    at: { x: cell.x, y: cell.y, width: cell.width, height: cell.height },
+  }
+}
+</script>
+
+<template>
+  <div ref="root" class="heatmap">
+    <svg
+      v-if="room > 0"
+      class="heatmap__grid"
+      :viewBox="`0 0 ${Math.max(1, room)} ${height}`"
+      :width="room"
+      :height="height"
+      role="img"
+      aria-label="What was answered on each day"
+    >
+      <rect
+        v-for="square in cells"
+        :key="square.day.day"
+        :x="square.x"
+        :y="square.y"
+        :width="square.size"
+        :height="square.size"
+        :rx="square.radius"
+        :ry="square.radius"
+        class="heatmap__day"
+        :data-heatmap-day="square.day.day"
+        :data-weight="square.day.weight"
+        :data-ahead="square.day.isAhead ? 'yes' : undefined"
+        :data-today="square.day.isToday ? 'yes' : undefined"
+        @mouseenter="onSetPointed(square.day, $event)"
+        @mouseleave="pointed = null"
+      />
+    </svg>
+
+    <Tooltip v-if="pointed" :at="pointed.at">
+      <DaySummary :day="pointed.day" :words="words" />
+    </Tooltip>
+  </div>
+</template>
+
+<style scoped>
+.heatmap {
+  inline-size: 100%;
+}
+
+.heatmap__grid {
+  display: block;
+  /* The day standing now is drawn with a ring around it, and a ring is centred
+     on the edge it is drawn at, so it stands half outside the grid. */
+  overflow: visible;
+}
+
+/* A day with no answers has the neutral fill of the grid, and a day
+   answered on is the accent, at the weight of what was done. */
+.heatmap__day {
+  fill: var(--numen-raised);
+  stroke: var(--numen-rule);
+  stroke-width: 1;
+}
+
+.heatmap__day[data-weight='1'] {
+  fill: color-mix(in oklab, var(--numen-accent) 25%, var(--numen-raised));
+  stroke: none;
+}
+
+.heatmap__day[data-weight='2'] {
+  fill: color-mix(in oklab, var(--numen-accent) 45%, var(--numen-raised));
+  stroke: none;
+}
+
+.heatmap__day[data-weight='3'] {
+  fill: color-mix(in oklab, var(--numen-accent) 70%, var(--numen-raised));
+  stroke: none;
+}
+
+.heatmap__day[data-weight='4'] {
+  fill: var(--numen-accent);
+  stroke: none;
+}
+
+.heatmap__day[data-ahead][data-weight='1'] {
+  fill: color-mix(in oklab, var(--numen-accent) 8%, var(--numen-raised));
+  stroke: none;
+}
+
+.heatmap__day[data-ahead][data-weight='2'] {
+  fill: color-mix(in oklab, var(--numen-accent) 15%, var(--numen-raised));
+  stroke: none;
+}
+
+.heatmap__day[data-ahead][data-weight='3'] {
+  fill: color-mix(in oklab, var(--numen-accent) 23%, var(--numen-raised));
+  stroke: none;
+}
+
+.heatmap__day[data-ahead][data-weight='4'] {
+  fill: color-mix(in oklab, var(--numen-accent) 32%, var(--numen-raised));
+  stroke: none;
+}
+
+/* Today is ringed whatever it holds. */
+.heatmap__day[data-today] {
+  stroke: var(--numen-ink);
+  stroke-width: 1.5;
+}
+</style>

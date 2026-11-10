@@ -6,7 +6,7 @@
  * the control computes nothing.
  */
 import { dayAfter, daysBetween } from '../../lib/day'
-import type { Bounds, Curve, Goal, Point, Settings, SettingsBounds } from '../types'
+import type { Bounds, Curve, Goal, Point, Settings, SettingsBounds } from '../../lib/presets'
 
 /**
  * What the curve of a goal is read in. A goal of minutes is read in the cards
