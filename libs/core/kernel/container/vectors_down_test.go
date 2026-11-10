@@ -57,7 +57,7 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{PluginResolver: h, PluginActivator: h}
+	return &container.PluginHost{Runtime: container.PluginRuntime{PluginResolver: h, PluginActivator: h}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a

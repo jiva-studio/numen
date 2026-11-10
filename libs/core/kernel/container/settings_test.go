@@ -238,7 +238,7 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = &PluginHost{Configuration: pluginConfiguration{SettingsPush: host}}
+	cfg.PluginHost = &PluginHost{Configuration: PluginConfiguration{SettingsPush: host}}
 
 	err := getSettingsWriter(settingsOf(cfg))([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {

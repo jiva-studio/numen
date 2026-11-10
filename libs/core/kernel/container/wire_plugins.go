@@ -100,8 +100,8 @@ func InstallPluginVault(c Config,
 	return installPluginVault(plugins(c), vaults, db, current, hooks)
 }
 
-// pluginRuntime is what runs, finds and addresses the plugins.
-type pluginRuntime struct {
+// PluginRuntime is what runs, finds and addresses the plugins.
+type PluginRuntime struct {
 	pluginport.PluginActivator
 	pluginport.PluginRetrier
 	pluginport.PluginDiscoverer
@@ -115,8 +115,8 @@ type pluginRuntime struct {
 	pluginport.ConfigWatcher
 }
 
-// pluginConfiguration is what carries the settings and the secrets to the plugins.
-type pluginConfiguration struct {
+// PluginConfiguration is what carries the settings and the secrets to the plugins.
+type PluginConfiguration struct {
 	pluginport.PluginSettingDeclarer
 	pluginport.SecretConfigurator
 	pluginport.SettingsPush
@@ -124,8 +124,8 @@ type pluginConfiguration struct {
 	pluginport.PersistHook
 }
 
-// pluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
-type pluginWatch struct {
+// PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
+type PluginWatch struct {
 	pluginport.PluginShutdown
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
@@ -137,9 +137,9 @@ type pluginWatch struct {
 // store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
 // provisions them as the environment names them now.
 type PluginHost struct {
-	Runtime             pluginRuntime
-	Configuration       pluginConfiguration
-	Watch               pluginWatch
+	Runtime             PluginRuntime
+	Configuration       PluginConfiguration
+	Watch               PluginWatch
 	Endpoint            *hostendpoint.Services
 	ApplySetting        settingsport.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
@@ -154,7 +154,7 @@ func AdaptPluginHost(host *plugin.Host) *PluginHost {
 
 func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
-		Runtime: pluginRuntime{
+		Runtime: PluginRuntime{
 			PluginActivator:    host.Activation,
 			PluginRetrier:      host.Activation,
 			PluginDiscoverer:   host.Discovery,
@@ -167,14 +167,14 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 			PluginFailures:     host.Failures,
 			ConfigWatcher:      host.Config,
 		},
-		Configuration: pluginConfiguration{
+		Configuration: PluginConfiguration{
 			PluginSettingDeclarer: host.Registry,
 			SecretConfigurator:    host.Config,
 			SettingsPush:          host.Settings,
 			SettingChecker:        host.Settings,
 			PersistHook:           host.Settings,
 		},
-		Watch: pluginWatch{
+		Watch: PluginWatch{
 			PluginShutdown:     host.Teardown,
 			DependencyReporter: host.Services,
 			ContentTypeTable:   host.ContentTypes,
