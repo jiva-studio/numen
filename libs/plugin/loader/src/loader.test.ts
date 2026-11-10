@@ -135,18 +135,18 @@ describe('createPluginLoader', () => {
 
     loader.registerPluginModule('sample.plugin', async () => mockPluginModule)
 
-    expect(loader.isPluginActive('sample.plugin')).toBe(false)
+    expect(loader.status.isPluginActive('sample.plugin')).toBe(false)
 
-    const success = await loader.activatePlugin('sample.plugin')
+    const success = await loader.activation.activatePlugin('sample.plugin')
     expect(success).toBe(true)
     expect(activated).toBe(true)
-    expect(loader.isPluginActive('sample.plugin')).toBe(true)
-    expect(loader.getActivePluginIds()).toContain('sample.plugin')
+    expect(loader.status.isPluginActive('sample.plugin')).toBe(true)
+    expect(loader.status.getActivePluginIds()).toContain('sample.plugin')
 
-    const deactivatedSuccess = await loader.deactivatePlugin('sample.plugin')
+    const deactivatedSuccess = await loader.activation.deactivatePlugin('sample.plugin')
     expect(deactivatedSuccess).toBe(true)
     expect(deactivated).toBe(true)
-    expect(loader.isPluginActive('sample.plugin')).toBe(false)
+    expect(loader.status.isPluginActive('sample.plugin')).toBe(false)
     expect(host.disposePlugin).toHaveBeenCalledWith('sample.plugin')
   })
 
@@ -163,19 +163,19 @@ describe('createPluginLoader', () => {
 
     await loader.start()
     expect(activatedCount).toBe(1)
-    expect(loader.isPluginActive('p1')).toBe(true)
+    expect(loader.status.isPluginActive('p1')).toBe(true)
 
     await loader.close()
-    expect(loader.isPluginActive('p1')).toBe(false)
+    expect(loader.status.isPluginActive('p1')).toBe(false)
     expect(host.disposeAll).toHaveBeenCalled()
 
     await host.triggerSettingChange('p1', 'enabled', true)
-    expect(loader.isPluginActive('p1')).toBe(false)
+    expect(loader.status.isPluginActive('p1')).toBe(false)
 
     await loader.start()
     expect(activatedCount).toBe(2)
     await host.triggerSettingChange('p1', 'enabled', false)
-    expect(loader.isPluginActive('p1')).toBe(false)
+    expect(loader.status.isPluginActive('p1')).toBe(false)
   })
 
   it('does not activate disabled plugins on start', async () => {
@@ -192,7 +192,7 @@ describe('createPluginLoader', () => {
 
     await loader.start()
     expect(activated).toBe(false)
-    expect(loader.isPluginActive('disabled.plugin')).toBe(false)
+    expect(loader.status.isPluginActive('disabled.plugin')).toBe(false)
   })
 
   it('deactivates and reactivates plugins when enabled setting is toggled', async () => {
@@ -213,13 +213,13 @@ describe('createPluginLoader', () => {
 
     await loader.start()
     expect(activated).toBe(true)
-    expect(loader.isPluginActive('toggleable.plugin')).toBe(true)
+    expect(loader.status.isPluginActive('toggleable.plugin')).toBe(true)
 
     // Toggle enabled -> false in settings
     await host.triggerSettingChange('toggleable.plugin', 'enabled', false)
 
     expect(deactivated).toBe(true)
-    expect(loader.isPluginActive('toggleable.plugin')).toBe(false)
+    expect(loader.status.isPluginActive('toggleable.plugin')).toBe(false)
     expect(host.disposePlugin).toHaveBeenCalledWith('toggleable.plugin')
 
     // Toggle enabled -> true in settings
@@ -227,7 +227,7 @@ describe('createPluginLoader', () => {
     await host.triggerSettingChange('toggleable.plugin', 'enabled', true)
 
     expect(activated).toBe(true)
-    expect(loader.isPluginActive('toggleable.plugin')).toBe(true)
+    expect(loader.status.isPluginActive('toggleable.plugin')).toBe(true)
   })
 
   it('loads plugin dynamically via manifest URL and mounts/unmounts stylesheet', async () => {
@@ -268,7 +268,7 @@ describe('createPluginLoader', () => {
       dynamicImport: mockDynamicImport,
     })
 
-    const success = await loader.activatePlugin('dynamic.sample')
+    const success = await loader.activation.activatePlugin('dynamic.sample')
     expect(success).toBe(true)
     expect(activated).toBe(true)
     expect(manifestFetchedUrl).toBe('/plugin/dynamic.sample/manifest.json')
@@ -282,7 +282,7 @@ describe('createPluginLoader', () => {
       expect.objectContaining({ id: 'dynamic.sample' }),
     )
 
-    const deactivateSuccess = await loader.deactivatePlugin('dynamic.sample')
+    const deactivateSuccess = await loader.activation.deactivatePlugin('dynamic.sample')
     expect(deactivateSuccess).toBe(true)
     expect(deactivated).toBe(true)
 
@@ -301,9 +301,9 @@ describe('createPluginLoader', () => {
       dynamicImport: mockDynamicImport,
     })
 
-    const success = await loader.activatePlugin('failing.plugin')
+    const success = await loader.activation.activatePlugin('failing.plugin')
     expect(success).toBe(false)
-    expect(loader.isPluginActive('failing.plugin')).toBe(false)
+    expect(loader.status.isPluginActive('failing.plugin')).toBe(false)
     expect(host.disposePlugin).toHaveBeenCalledWith('failing.plugin')
   })
 
@@ -320,9 +320,9 @@ describe('createPluginLoader', () => {
       dynamicImport: mockDynamicImport,
     })
 
-    const success = await loader.activatePlugin('throwing.plugin')
+    const success = await loader.activation.activatePlugin('throwing.plugin')
     expect(success).toBe(false)
-    expect(loader.isPluginActive('throwing.plugin')).toBe(false)
+    expect(loader.status.isPluginActive('throwing.plugin')).toBe(false)
     expect(host.disposePlugin).toHaveBeenCalledWith('throwing.plugin')
   })
 })
@@ -395,9 +395,11 @@ describe('createPluginLoader failures, order and toggles', () => {
 
     await loader.start()
 
-    expect(loader.isPluginActive('bad')).toBe(false)
-    expect(loader.getPluginFailure('bad')).toBe('activate exploded')
-    expect(loader.getFailedPlugins()).toStrictEqual([{ id: 'bad', error: 'activate exploded' }])
+    expect(loader.status.isPluginActive('bad')).toBe(false)
+    expect(loader.status.getPluginFailure('bad')).toBe('activate exploded')
+    expect(loader.status.getFailedPlugins()).toStrictEqual([
+      { id: 'bad', error: 'activate exploded' },
+    ])
     expect(onError).toHaveBeenCalledWith('bad', fault)
   })
 
@@ -417,14 +419,14 @@ describe('createPluginLoader failures, order and toggles', () => {
         }),
       },
     )
-    await loader.activatePlugin('flaky')
+    await loader.activation.activatePlugin('flaky')
     shouldFail = false
-    await loader.activatePlugin('flaky')
+    await loader.activation.activatePlugin('flaky')
 
-    expect(loader.getPluginFailure('flaky')).toBeUndefined()
-    expect(loader.getFailedPlugins()).toEqual([])
-    expect(loader.isPluginActive('flaky')).toBe(true)
-    expect(await loader.activatePlugin('flaky')).toBe(true)
+    expect(loader.status.getPluginFailure('flaky')).toBeUndefined()
+    expect(loader.status.getFailedPlugins()).toEqual([])
+    expect(loader.status.isPluginActive('flaky')).toBe(true)
+    expect(await loader.activation.activatePlugin('flaky')).toBe(true)
   })
 
   it('does not call a failed plugin active when its module cannot be loaded', async () => {
@@ -440,8 +442,8 @@ describe('createPluginLoader failures, order and toggles', () => {
         },
       },
     )
-    await loader.activatePlugin('gone')
-    expect(loader.getPluginFailure('gone')).toBe('chunk missing')
+    await loader.activation.activatePlugin('gone')
+    expect(loader.status.getPluginFailure('gone')).toBe('chunk missing')
   })
 
   it('activates in the order the modules were registered, one after the other', async () => {
@@ -500,7 +502,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const started = loader.start()
       await vi.advanceTimersByTimeAsync(3_000)
       expect(log).toStrictEqual(['quick'])
-      expect(loader.isPluginActive('slow')).toBe(false)
+      expect(loader.status.isPluginActive('slow')).toBe(false)
 
       finishReading({
         activate: () => {
@@ -509,7 +511,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       })
       await started
       expect(log).toStrictEqual(['quick', 'slow'])
-      expect(loader.isPluginActive('slow')).toBe(true)
+      expect(loader.status.isPluginActive('slow')).toBe(true)
     } finally {
       vi.useRealTimers()
     }
@@ -529,7 +531,7 @@ describe('createPluginLoader failures, order and toggles', () => {
 
     await loader.start()
 
-    expect(loader.getPluginFailure('broken')).toBe('chunk missing')
+    expect(loader.status.getPluginFailure('broken')).toBe('chunk missing')
     expect(log).toStrictEqual(['fine'])
   })
 
@@ -540,7 +542,10 @@ describe('createPluginLoader failures, order and toggles', () => {
     })
     const loader = registerModules(createPluginLoader({ host }), { p: async () => ({ activate }) })
 
-    await Promise.all([loader.activatePlugin('p'), loader.activatePlugin('p')])
+    await Promise.all([
+      loader.activation.activatePlugin('p'),
+      loader.activation.activatePlugin('p'),
+    ])
 
     expect(activate).toHaveBeenCalledTimes(1)
   })
@@ -552,10 +557,10 @@ describe('createPluginLoader failures, order and toggles', () => {
     })
     const spy = vi.fn()
 
-    const wait = loader.settlePlugin('p').then(spy)
+    const wait = loader.status.settlePlugin('p').then(spy)
     await Promise.resolve()
     expect(spy).not.toHaveBeenCalled()
-    await loader.activatePlugin('p')
+    await loader.activation.activatePlugin('p')
     await wait
 
     expect(spy).toHaveBeenCalledOnce()
@@ -566,9 +571,9 @@ describe('createPluginLoader failures, order and toggles', () => {
     const loader = registerModules(createPluginLoader({ host }), {
       p: async () => ({ activate: () => undefined }),
     })
-    await loader.activatePlugin('p')
+    await loader.activation.activatePlugin('p')
 
-    await expect(loader.settlePlugin('p')).resolves.toBeUndefined()
+    await expect(loader.status.settlePlugin('p')).resolves.toBeUndefined()
   })
 
   it('settles a wait for a plugin whose activation failed', async () => {
@@ -580,9 +585,9 @@ describe('createPluginLoader failures, order and toggles', () => {
         },
       }),
     })
-    const wait = loader.settlePlugin('p')
+    const wait = loader.status.settlePlugin('p')
 
-    await loader.activatePlugin('p')
+    await loader.activation.activatePlugin('p')
 
     await expect(wait).resolves.toBeUndefined()
   })
@@ -594,7 +599,7 @@ describe('createPluginLoader failures, order and toggles', () => {
       const loader = createPluginLoader({ host })
       const spy = vi.fn()
 
-      const wait = loader.settlePlugin('never').then(spy)
+      const wait = loader.status.settlePlugin('never').then(spy)
       await vi.advanceTimersByTimeAsync(30_000 - 1)
       expect(spy).not.toHaveBeenCalled()
       await vi.advanceTimersByTimeAsync(1)
@@ -626,10 +631,13 @@ describe('createPluginLoader failures, order and toggles', () => {
       },
     )
 
-    await Promise.all([loader.activatePlugin('p'), loader.deactivatePlugin('p')])
+    await Promise.all([
+      loader.activation.activatePlugin('p'),
+      loader.activation.deactivatePlugin('p'),
+    ])
 
     expect(log).toStrictEqual(['activate', 'deactivate'])
-    expect(loader.isPluginActive('p')).toBe(false)
+    expect(loader.status.isPluginActive('p')).toBe(false)
   })
 
   it('treats a plugin with no enabled setting as enabled', async () => {
@@ -653,9 +661,9 @@ describe('createPluginLoader failures, order and toggles', () => {
 
     expect(host.onSettingChange).toHaveBeenCalledTimes(1)
     await listeners.get('p')?.(false)
-    expect(loader.isPluginActive('p')).toBe(false)
+    expect(loader.status.isPluginActive('p')).toBe(false)
     await listeners.get('p')?.(true)
-    expect(loader.isPluginActive('p')).toBe(true)
+    expect(loader.status.isPluginActive('p')).toBe(true)
   })
 
   /** A loader whose one plugin, `dyn`, is known only by a manifest with a frontend, and the urls it imports. */
@@ -682,15 +690,15 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.start()
     await loader.trackPlugins(['dyn'])
 
-    expect(loader.isPluginActive('dyn')).toBe(true)
+    expect(loader.status.isPluginActive('dyn')).toBe(true)
     expect(host.onSettingChange).toHaveBeenCalledTimes(1)
   })
 
   it('imports a dynamic plugin from its entrypoint url at each activation', async () => {
     const { imports, loader } = createDynamicLoader()
-    await loader.activatePlugin('dyn')
-    await loader.deactivatePlugin('dyn')
-    await loader.activatePlugin('dyn')
+    await loader.activation.activatePlugin('dyn')
+    await loader.activation.deactivatePlugin('dyn')
+    await loader.activation.activatePlugin('dyn')
 
     expect(imports).toStrictEqual(['/plugin/dyn/dist/index.js', '/plugin/dyn/dist/index.js'])
   })
@@ -707,9 +715,9 @@ describe('createPluginLoader failures, order and toggles', () => {
         }) as Response) as unknown as typeof fetch,
       dynamicImport,
     })
-    await expect(loader.activatePlugin('ocr')).resolves.toBe(false)
+    await expect(loader.activation.activatePlugin('ocr')).resolves.toBe(false)
     expect(dynamicImport).not.toHaveBeenCalled()
-    expect(loader.getPluginFailure('ocr')).toBeUndefined()
+    expect(loader.status.getPluginFailure('ocr')).toBeUndefined()
   })
 
   it('fails a dynamic plugin whose manifest.json cannot be fetched', async () => {
@@ -719,8 +727,10 @@ describe('createPluginLoader failures, order and toggles', () => {
       onError: vi.fn(),
       fetch: (async () => ({ ok: false, status: 404 }) as Response) as unknown as typeof fetch,
     })
-    await loader.activatePlugin('lost')
-    expect(loader.getPluginFailure('lost')).toBe('manifest.json of plugin "lost" answered 404')
+    await loader.activation.activatePlugin('lost')
+    expect(loader.status.getPluginFailure('lost')).toBe(
+      'manifest.json of plugin "lost" answered 404',
+    )
   })
 
   it('fails a dynamic plugin whose manifest.json is invalid JSON', async () => {
@@ -734,8 +744,8 @@ describe('createPluginLoader failures, order and toggles', () => {
           text: async () => '{invalid',
         }) as Response) as unknown as typeof fetch,
     })
-    await loader.activatePlugin('corrupt')
-    expect(loader.getPluginFailure('corrupt')).toContain(
+    await loader.activation.activatePlugin('corrupt')
+    expect(loader.status.getPluginFailure('corrupt')).toContain(
       'manifest.json of plugin "corrupt" is invalid:',
     )
   })
@@ -758,16 +768,18 @@ describe('createPluginLoader failures, order and toggles', () => {
       }),
     })
 
-    expect(await loader.activatePlugin('styled.bad')).toBe(false)
+    expect(await loader.activation.activatePlugin('styled.bad')).toBe(false)
     expect(getPluginStyle('styled.bad')).toBeUndefined()
-    expect(loader.getPluginFailure('styled.bad')).toBe('the plugin threw a string, not an Error')
+    expect(loader.status.getPluginFailure('styled.bad')).toBe(
+      'the plugin threw a string, not an Error',
+    )
 
     registerPluginStyle('never.active', '/plugin/never.active/dist/styles.css')
     loader.registerPluginManifest('never.active', createMockManifest('never.active'))
-    expect(await loader.deactivatePlugin('never.active')).toBe(false)
+    expect(await loader.activation.deactivatePlugin('never.active')).toBe(false)
     expect(getPluginStyle('never.active')).toBeUndefined()
     expect(host.disposePlugin).toHaveBeenCalledWith('never.active')
-    await loader.activatePlugin('never.active', { activate: () => undefined })
+    await loader.activation.activatePlugin('never.active', { activate: () => undefined })
     expect(host.createContext).toHaveBeenLastCalledWith('never.active', undefined)
   })
 
@@ -793,25 +805,25 @@ describe('createPluginLoader failures, order and toggles', () => {
       }),
     })
 
-    expect(await loader.activatePlugin('dyn.throw')).toBe(true)
-    expect(await loader.deactivatePlugin('dyn.throw')).toBe(true)
+    expect(await loader.activation.activatePlugin('dyn.throw')).toBe(true)
+    expect(await loader.activation.deactivatePlugin('dyn.throw')).toBe(true)
     expect(onError).toHaveBeenCalledWith('dyn.throw', deactivateFault)
-    expect(loader.isPluginActive('dyn.throw')).toBe(false)
+    expect(loader.status.isPluginActive('dyn.throw')).toBe(false)
 
     // Re-activating with inline module after deactivation uses undefined manifest because deactivate deleted it
-    await loader.activatePlugin('dyn.throw', { activate: () => undefined })
+    await loader.activation.activatePlugin('dyn.throw', { activate: () => undefined })
     expect(host.createContext).toHaveBeenLastCalledWith('dyn.throw', undefined)
-    await loader.deactivatePlugin('dyn.throw')
+    await loader.activation.deactivatePlugin('dyn.throw')
 
     // Re-activating dynamically re-runs loadDynamicModule and passes the newly fetched manifest
-    await loader.activatePlugin('dyn.throw')
+    await loader.activation.activatePlugin('dyn.throw')
     expect(manifestFetches).toBe(2)
 
     // Deactivating a plugin without deactivate hook does not report an error
     loader.registerPluginModule('no.hooks', async () => ({}))
-    expect(await loader.activatePlugin('no.hooks')).toBe(true)
+    expect(await loader.activation.activatePlugin('no.hooks')).toBe(true)
     expect(host.createContext).not.toHaveBeenCalledWith('no.hooks', expect.anything())
-    expect(await loader.deactivatePlugin('no.hooks')).toBe(true)
+    expect(await loader.activation.deactivatePlugin('no.hooks')).toBe(true)
     expect(onError).toHaveBeenCalledTimes(1)
   })
 
@@ -838,22 +850,22 @@ describe('createPluginLoader failures, order and toggles', () => {
     })
 
     await loader.trackPlugins(['tracked.one', 'tracked.one', 'backend.only'])
-    expect(loader.isPluginActive('tracked.one')).toBe(false)
+    expect(loader.status.isPluginActive('tracked.one')).toBe(false)
     expect(host.onSettingChange).not.toHaveBeenCalled()
 
     await loader.start()
-    expect(loader.isPluginActive('tracked.one')).toBe(true)
-    expect(loader.isPluginActive('backend.only')).toBe(false)
+    expect(loader.status.isPluginActive('tracked.one')).toBe(true)
+    expect(loader.status.isPluginActive('backend.only')).toBe(false)
     expect(manifestCount).toBe(2)
 
     // Deactivating tracked.one and calling trackPlugins(['tracked.one']) again skips already-tracked id
-    await loader.deactivatePlugin('tracked.one')
+    await loader.activation.deactivatePlugin('tracked.one')
     await loader.trackPlugins(['tracked.one'])
-    expect(loader.isPluginActive('tracked.one')).toBe(false)
+    expect(loader.status.isPluginActive('tracked.one')).toBe(false)
 
     // Tracking a disabled plugin after start listens to settings without activating it
     await loader.trackPlugins(['disabled.tracked'])
-    expect(loader.isPluginActive('disabled.tracked')).toBe(false)
+    expect(loader.status.isPluginActive('disabled.tracked')).toBe(false)
     expect(listeners.has('disabled.tracked')).toBe(true)
 
     let lateActivated = false
@@ -880,7 +892,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.close()
 
     await loader.trackPlugins(['after.close'])
-    expect(loader.isPluginActive('after.close')).toBe(false)
+    expect(loader.status.isPluginActive('after.close')).toBe(false)
   })
 })
 
@@ -956,10 +968,10 @@ describe('createPluginLoader failure state', () => {
         }),
       },
     )
-    await loader.activatePlugin('bad')
+    await loader.activation.activatePlugin('bad')
 
-    await loader.deactivatePlugin('bad')
+    await loader.activation.deactivatePlugin('bad')
 
-    expect(loader.getPluginFailure('bad')).toBe('no start')
+    expect(loader.status.getPluginFailure('bad')).toBe('no start')
   })
 })

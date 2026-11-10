@@ -29,7 +29,7 @@ describe('a command run by its id', () => {
       }),
     )
     const handler = vi.fn()
-    host.createContext('sample.plugin').register.command({ id: 'count', handler })
+    host.lifecycle.createContext('sample.plugin').register.command({ id: 'count', handler })
     const note = {
       path: 'Notes/One.md',
       title: 'One',
@@ -39,12 +39,12 @@ describe('a command run by its id', () => {
       tab: '',
     }
 
-    expect(host.hasCommand('sample.plugin:count')).toBe(true)
-    expect(host.hasCommand('count')).toBe(false)
-    expect(host.hasCommand('xxxxxxxcount')).toBe(false)
-    expect(host.hasCommand('other')).toBe(false)
-    expect(await host.executeCommand('sample.plugin:count', note)).toBe(true)
-    expect(await host.executeCommand('other', note)).toBe(false)
+    expect(host.commands.hasCommand('sample.plugin:count')).toBe(true)
+    expect(host.commands.hasCommand('count')).toBe(false)
+    expect(host.commands.hasCommand('xxxxxxxcount')).toBe(false)
+    expect(host.commands.hasCommand('other')).toBe(false)
+    expect(await host.commands.executeCommand('sample.plugin:count', note)).toBe(true)
+    expect(await host.commands.executeCommand('other', note)).toBe(false)
     expect(handler).toHaveBeenCalledOnce()
   })
 })
@@ -52,7 +52,7 @@ describe('a command run by its id', () => {
 describe('a registration replaced under the same id', () => {
   it('stays when the registration it replaced is disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin', {
+    const ctx = host.lifecycle.createContext('sample.plugin', {
       id: 'sample.plugin',
       name: 'Sample',
       version: '1',
@@ -77,8 +77,10 @@ describe('a registration replaced under the same id', () => {
     firstTab.dispose()
     firstAgent.dispose()
 
-    expect(host.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['Second'])
-    expect(host.getRegisteredTabKinds().map((one) => one.title)).toStrictEqual(['Second'])
+    expect(host.registered.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['Second'])
+    expect(host.registered.getRegisteredTabKinds().map((one) => one.title)).toStrictEqual([
+      'Second',
+    ])
     secondAgent.dispose()
   })
 
@@ -86,47 +88,56 @@ describe('a registration replaced under the same id', () => {
     const host = createPluginHost(createDeps())
     const handler = vi.fn()
     for (const pluginId of ['first.plugin', 'second.plugin']) {
-      host.registerManifest(pluginId, {
+      host.lifecycle.registerManifest(pluginId, {
         id: pluginId,
         name: pluginId,
         version: '1',
         permissions: ['vault:read'],
       } as never)
-      const ctx = host.createContext(pluginId)
+      const ctx = host.lifecycle.createContext(pluginId)
       ctx.register.command({ id: `${pluginId}.count`, handler })
       ctx.register.agentProvider({ id: `${pluginId}.agent`, name: pluginId, createAgent: vi.fn() })
       ctx.register.reader({ id: `${pluginId}.reader`, title: pluginId, component: null })
       ctx.register.tabKind({ kind: `${pluginId}.kind`, component: {} })
     }
 
-    host.disposePlugin('first.plugin')
-    expect(host.createContext('first.plugin').plugin.hasPermission?.('vault:read')).toBe(false)
+    host.lifecycle.disposePlugin('first.plugin')
+    expect(host.lifecycle.createContext('first.plugin').plugin.hasPermission?.('vault:read')).toBe(
+      false,
+    )
 
-    expect(host.getRegisteredCommands().map((one) => one.id)).toStrictEqual(['second.plugin.count'])
-    expect(host.getRegisteredReaders().map((one) => one.title)).toStrictEqual(['second.plugin'])
-    expect(host.getRegisteredTabKinds().map((one) => one.kind)).toStrictEqual([
+    expect(host.registered.getRegisteredCommands().map((one) => one.id)).toStrictEqual([
+      'second.plugin.count',
+    ])
+    expect(host.registered.getRegisteredReaders().map((one) => one.title)).toStrictEqual([
+      'second.plugin',
+    ])
+    expect(host.registered.getRegisteredTabKinds().map((one) => one.kind)).toStrictEqual([
       'second.plugin.kind',
     ])
   })
 
   it('disposes orphan entries across all registries on disposeAll', () => {
     const host = createPluginHost(createDeps())
-    host.contextHost.registerReader('orphan.reader', { id: 'r1', component: null })
-    host.contextHost.registerTabKind('orphan.tab', { kind: 't1', component: null })
-    host.contextHost.registerCommand('orphan.cmd', { id: 'c1', handler: vi.fn() })
-    host.contextHost.registerSettingsView('orphan.settings', { id: 's1', component: {} })
+    host.contextHost.registration.registerReader('orphan.reader', { id: 'r1', component: null })
+    host.contextHost.registration.registerTabKind('orphan.tab', { kind: 't1', component: null })
+    host.contextHost.registration.registerCommand('orphan.cmd', { id: 'c1', handler: vi.fn() })
+    host.contextHost.registration.registerSettingsView('orphan.settings', {
+      id: 's1',
+      component: {},
+    })
 
-    expect(host.getRegisteredReaders()).toHaveLength(1)
-    expect(host.getRegisteredTabKinds()).toHaveLength(1)
-    expect(host.getRegisteredCommands()).toHaveLength(1)
-    expect(host.getRegisteredSettingsViews('orphan.settings').size).toBe(1)
+    expect(host.registered.getRegisteredReaders()).toHaveLength(1)
+    expect(host.registered.getRegisteredTabKinds()).toHaveLength(1)
+    expect(host.registered.getRegisteredCommands()).toHaveLength(1)
+    expect(host.registered.getRegisteredSettingsViews('orphan.settings').size).toBe(1)
 
-    host.disposeAll()
+    host.lifecycle.disposeAll()
 
-    expect(host.getRegisteredReaders()).toHaveLength(0)
-    expect(host.getRegisteredTabKinds()).toHaveLength(0)
-    expect(host.getRegisteredCommands()).toHaveLength(0)
-    expect(host.getRegisteredSettingsViews('orphan.settings').size).toBe(0)
+    expect(host.registered.getRegisteredReaders()).toHaveLength(0)
+    expect(host.registered.getRegisteredTabKinds()).toHaveLength(0)
+    expect(host.registered.getRegisteredCommands()).toHaveLength(0)
+    expect(host.registered.getRegisteredSettingsViews('orphan.settings').size).toBe(0)
 
     expect(() =>
       disposePluginEntry('none', {
@@ -153,19 +164,29 @@ describe('a registration replaced under the same id', () => {
 describe('the settings views of a plugin', () => {
   it('are the registrations of that plugin, by view id', () => {
     const host = createPluginHost(createDeps())
-    host.createContext('first.plugin').register.settingsView({ id: 'floor', component: 'A' })
-    host.createContext('second.plugin').register.settingsView({ id: 'floor', component: 'B' })
+    host.lifecycle
+      .createContext('first.plugin')
+      .register.settingsView({ id: 'floor', component: 'A' })
+    host.lifecycle
+      .createContext('second.plugin')
+      .register.settingsView({ id: 'floor', component: 'B' })
 
-    expect([...host.getRegisteredSettingsViews('first.plugin').keys()]).toStrictEqual(['floor'])
-    expect(host.getRegisteredSettingsViews('first.plugin').get('floor')?.component).toBe('A')
-    expect(host.getRegisteredSettingsViews('second.plugin').get('floor')?.component).toBe('B')
-    expect(host.getRegisteredSettingsViews('missing.plugin').size).toBe(0)
+    expect([...host.registered.getRegisteredSettingsViews('first.plugin').keys()]).toStrictEqual([
+      'floor',
+    ])
+    expect(host.registered.getRegisteredSettingsViews('first.plugin').get('floor')?.component).toBe(
+      'A',
+    )
+    expect(
+      host.registered.getRegisteredSettingsViews('second.plugin').get('floor')?.component,
+    ).toBe('B')
+    expect(host.registered.getRegisteredSettingsViews('missing.plugin').size).toBe(0)
   })
 
   it('re-evaluate a computed when a view is registered or disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin')
-    const count = computed(() => host.getRegisteredSettingsViews('sample.plugin').size)
+    const ctx = host.lifecycle.createContext('sample.plugin')
+    const count = computed(() => host.registered.getRegisteredSettingsViews('sample.plugin').size)
 
     expect(count.value).toBe(0)
     const disposable = ctx.register.settingsView({ id: 'floor', component: {} })
@@ -176,26 +197,32 @@ describe('the settings views of a plugin', () => {
 
   it('stay when the registration they replaced is disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin')
+    const ctx = host.lifecycle.createContext('sample.plugin')
     const first = ctx.register.settingsView({ id: 'floor', component: 'First' })
     ctx.register.settingsView({ id: 'floor', component: 'Second' })
 
     first.dispose()
 
-    expect(host.getRegisteredSettingsViews('sample.plugin').get('floor')?.component).toBe('Second')
+    expect(
+      host.registered.getRegisteredSettingsViews('sample.plugin').get('floor')?.component,
+    ).toBe('Second')
   })
 
   it('are removed with the plugin and with the host', () => {
     const host = createPluginHost(createDeps())
-    host.createContext('first.plugin').register.settingsView({ id: 'floor', component: {} })
-    host.createContext('second.plugin').register.settingsView({ id: 'floor', component: {} })
+    host.lifecycle
+      .createContext('first.plugin')
+      .register.settingsView({ id: 'floor', component: {} })
+    host.lifecycle
+      .createContext('second.plugin')
+      .register.settingsView({ id: 'floor', component: {} })
 
-    host.disposePlugin('first.plugin')
-    expect(host.getRegisteredSettingsViews('first.plugin').size).toBe(0)
-    expect(host.getRegisteredSettingsViews('second.plugin').size).toBe(1)
+    host.lifecycle.disposePlugin('first.plugin')
+    expect(host.registered.getRegisteredSettingsViews('first.plugin').size).toBe(0)
+    expect(host.registered.getRegisteredSettingsViews('second.plugin').size).toBe(1)
 
-    host.disposeAll()
-    expect(host.getRegisteredSettingsViews('second.plugin').size).toBe(0)
+    host.lifecycle.disposeAll()
+    expect(host.registered.getRegisteredSettingsViews('second.plugin').size).toBe(0)
   })
 })
 
@@ -218,10 +245,10 @@ describe('the views the plugins place in a slot of a bar', () => {
     )
 
     expect(components.value).toStrictEqual([])
-    host
+    host.lifecycle
       .createContext('second.plugin', manifest('update'))
       .register.slotView({ id: 'update', component: 'B' })
-    host
+    host.lifecycle
       .createContext('first.plugin', manifest('update'))
       .register.slotView({ id: 'update', component: 'A' })
 
@@ -230,19 +257,19 @@ describe('the views the plugins place in a slot of a bar', () => {
 
   it('are removed with the plugin and with the host', () => {
     const host = createPluginHost(createDeps({ getSlotEntries: () => entries }))
-    host
+    host.lifecycle
       .createContext('first.plugin', manifest('update'))
       .register.slotView({ id: 'update', component: {} })
-    host
+    host.lifecycle
       .createContext('second.plugin', manifest('update'))
       .register.slotView({ id: 'update', component: {} })
 
-    host.disposePlugin('first.plugin')
+    host.lifecycle.disposePlugin('first.plugin')
     expect(
       host.slots.getEntries('statusBar.right').map((one) => one.kind === 'view' && one.pluginId),
     ).toStrictEqual(['second.plugin'])
 
-    host.disposeAll()
+    host.lifecycle.disposeAll()
     expect(host.slots.getEntries('statusBar.right')).toStrictEqual([])
   })
 })
@@ -257,7 +284,7 @@ describe('a tab kind opened as the editor of a path', () => {
         return unregReturn as () => void
       }),
     })
-    const sub = host
+    const sub = host.lifecycle
       .createContext('sample.plugin', {
         id: 'sample.plugin',
         name: 'Sample',
@@ -329,7 +356,7 @@ describe('a tab kind opened as the editor of a path', () => {
 describe('the settings of a window that keeps none', () => {
   it('answers nothing and follows nothing', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin')
+    const ctx = host.lifecycle.createContext('sample.plugin')
 
     expect(ctx.settings.get('fontSize')).toBeUndefined()
     expect(() => ctx.settings.onChange('fontSize', vi.fn()).dispose()).not.toThrow()
@@ -361,7 +388,7 @@ describe('a reader opened at a selector', () => {
         registerExtensionReader,
       }),
     )
-    const sub1 = host
+    const sub1 = host.lifecycle
       .createContext('sample.plugin', {
         id: 'sample.plugin',
         name: 'Sample',
@@ -369,7 +396,7 @@ describe('a reader opened at a selector', () => {
         permissions: ['vault:read'],
       } as never)
       .register.reader({ id: 'reader:bin', component: null, icon })
-    const sub2 = host
+    const sub2 = host.lifecycle
       .createContext('sample.plugin')
       .register.reader({ id: 'unprefixed', component: null })
     const selector = { page: 3 }
@@ -384,7 +411,9 @@ describe('a reader opened at a selector', () => {
     expect(unregExt).toHaveBeenCalledTimes(1)
 
     // Re-register reader:bin to test selector setting and error handling
-    host.createContext('sample.plugin').register.reader({ id: 'reader:bin', component: null, icon })
+    host.lifecycle
+      .createContext('sample.plugin')
+      .register.reader({ id: 'reader:bin', component: null, icon })
     readers.get('bin')?.('Books/One.bin', selector)
     readers.get('bin')?.('Books/Gone.bin', selector)
     readers.get('bin')?.('Books/Fail.bin', selector)
@@ -410,13 +439,13 @@ describe('a reader opened at a selector', () => {
         },
       }),
     )
-    hostNoState.createContext('p').register.reader({ id: 'raw', component: null })
+    hostNoState.lifecycle.createContext('p').register.reader({ id: 'raw', component: null })
     noStateReader?.('Books/Raw.raw', { page: 1 })
     await Promise.resolve()
 
     const hostNoExts = createPluginHost(createDeps())
     expect(() =>
-      hostNoExts.createContext('p').register.reader({ id: 'none', component: null }),
+      hostNoExts.lifecycle.createContext('p').register.reader({ id: 'none', component: null }),
     ).not.toThrow()
   })
 })

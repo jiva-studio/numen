@@ -204,21 +204,30 @@ export interface NoteBuffer {
   getErrorMessage(id: string): string
 }
 
-export interface PluginContextHost {
+/** The window a plugin runs in: its application, its target and how it opens web links. */
+export interface ContextInfoHost {
+  readonly app: AppInfo
+  readonly target?: string
+  openExternal(this: void, url: string): Promise<void>
+}
+
+/** The registrations a plugin makes into the registry of the host. */
+export interface ContextRegistrationHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
+  registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
+  registerCommand(pluginId: string, registration: CommandRegistration): Disposable
+  registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
+}
+
+/** The views and drop handlers a plugin registers, and the views it mounts. */
+export interface ContextViewHost {
   registerSlotView(
     this: void,
     pluginId: string,
     slot: string,
     registration: SlotViewRegistration,
   ): Disposable
-  readonly app: AppInfo
-  readonly target?: string
-  openExternal(this: void, url: string): Promise<void>
-  registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
-  registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   registerView(
     pluginId: string,
     registration: ViewRegistration,
@@ -232,6 +241,10 @@ export interface PluginContextHost {
   ): MountedView
   registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
   readonly drops: DropHost
+}
+
+/** The settings a plugin reads and follows. */
+export interface ContextSettingHost {
   getSetting<T = unknown>(this: void, pluginId: string, key: string): T | undefined
   onSettingChange<T = unknown>(
     this: void,
@@ -239,6 +252,10 @@ export interface PluginContextHost {
     key: string,
     handler: (value: T) => void | Promise<void>,
   ): Disposable
+}
+
+/** The events of the vault and of the selection that plugins listen to and emit. */
+export interface ContextEventHost {
   onVaultChange(
     pluginId: string,
     handler: (event: VaultChangeEvent) => void | Promise<void>,
@@ -249,23 +266,47 @@ export interface PluginContextHost {
   ): Disposable
   emitVaultChange(pluginId: string, event: VaultChangeEvent): void
   emitFileSelect(pluginId: string, event: FileSelectEvent): void
+}
+
+/** The tabs a plugin opens, navigates and closes. */
+export interface ContextTabHost {
   openTab?(kind: string, at?: string): Promise<string>
   navigateTab?(kind: string, path: string): Promise<string> | undefined
   closeTab?(id: string): void
-  getWorkspace?(): WorkspaceHost | undefined
+}
+
+/** The services that read and write the vault. */
+export interface ContextVaultHost {
   getNotes?(): VaultNotes | undefined
   getRelations?(): VaultRelations | undefined
   getFiles?(): VaultFiles | undefined
+  getBuffers?(): BufferHost | undefined
+  getVaults?(): VaultsHost | undefined
+  getTexts?(pluginId: string): VaultTexts | undefined
+}
+
+/** The services of the window itself: its workspace, commands, notices, tasks, slots and agent. */
+export interface ContextWindowHost {
+  getWorkspace?(): WorkspaceHost | undefined
   getAgent?(): AgentHost | undefined
   getCommands?(): CommandsHost | undefined
-  getVaults?(): VaultsHost | undefined
   getWindow?(): WindowHost | undefined
-  getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
   getTasks?(pluginId: string): TaskHost | undefined
   getBackgroundTasks?(): BackgroundTaskHost | undefined
-  getTexts?(pluginId: string): VaultTexts | undefined
   getSlots?(): SlotHost | undefined
+}
+
+/** What a plugin context is made from, by the responsibility of each part. */
+export interface PluginContextHost {
+  readonly info: ContextInfoHost
+  readonly registration: ContextRegistrationHost
+  readonly views: ContextViewHost
+  readonly settings: ContextSettingHost
+  readonly events: ContextEventHost
+  readonly tabs: ContextTabHost
+  readonly vault: ContextVaultHost
+  readonly window: ContextWindowHost
 }
 
 /** What the host runs with: the deps of the window, with the one reader of its conditions. */

@@ -102,7 +102,7 @@ function createPaletteItems(
       ...(options.getAppCommands?.() ?? []),
       ...(options.declaredCommands?.paletteCommands.value ?? []),
     ],
-    pluginHost,
+    pluginCommands: pluginHost?.commands,
     getTarget: options.getTarget,
     runApp: async (id, target, itemId, values) => {
       const invocation = withValues(createInvocation(id, target, itemId), values)
@@ -110,7 +110,11 @@ function createPaletteItems(
     },
     runPlugin: async (id, target, itemId, values) => {
       const note = await getCommandNote(target)
-      await pluginHost?.executeCommand(id, note, { itemId, ...getValues(values), isAwaited: true })
+      await pluginHost?.commands.executeCommand(id, note, {
+        itemId,
+        ...getValues(values),
+        isAwaited: true,
+      })
     },
     readTarget: async (target) => {
       const { type, properties } = await getCommandNote(target)

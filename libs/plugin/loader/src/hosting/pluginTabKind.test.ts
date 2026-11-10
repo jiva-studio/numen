@@ -207,7 +207,7 @@ describe('a declared kind registered through a plugin context', () => {
       registerExtensionReader: vi.fn(() => vi.fn()),
       openTab: vi.fn(() => Promise.resolve('tab')),
     }
-    const context = createPluginHost(deps).createContext(
+    const context = createPluginHost(deps).lifecycle.createContext(
       'md.numen.sample',
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
@@ -237,19 +237,21 @@ describe('the services a plugin context is given', () => {
 
   it('are the window and the notes the host has made by the time the plugin activates', async () => {
     const focus = { path: 'Orchard/Pruning.md', title: 'Pruning' }
-    const workspace = { getNoteInFocus: () => focus } as unknown as NonNullable<PluginUi['workspace']>
+    const workspace = { getNoteInFocus: () => focus } as unknown as NonNullable<
+      PluginUi['workspace']
+    >
     const read = vi.fn(async () => ({ body: 'Pruning notes.' }))
     const notes = { read } as unknown as NonNullable<PluginVault['notes']>
     const host = createPluginHost(
       createDeps({ getWorkspace: () => workspace, getNotes: () => notes }),
     )
 
-    const context = host.createContext(
+    const context = host.lifecycle.createContext(
       'md.numen.sample',
       createMockManifest('md.numen.sample', { name: 'Sample', permissions: ['vault:read'] }),
     )
 
-        expect(context.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
+    expect(context.ui.workspace?.getNoteInFocus()).toStrictEqual(focus)
     await expect(context.vault.notes!.read('Orchard/Pruning.md')).resolves.toStrictEqual({
       body: 'Pruning notes.',
     })
@@ -257,7 +259,7 @@ describe('the services a plugin context is given', () => {
   })
 
   it('are absent where the host offers none', () => {
-    const context = createPluginHost(createDeps()).createContext('md.numen.sample')
+    const context = createPluginHost(createDeps()).lifecycle.createContext('md.numen.sample')
 
     expect(context).not.toHaveProperty('workspace')
     expect(context).not.toHaveProperty('notes')
@@ -271,10 +273,10 @@ describe('the services a plugin context is given', () => {
       name: 'One',
       permissions: ['vault:read'],
     })
-    host.createContext('md.numen.one', readText).events.onVaultChange((event) => {
+    host.lifecycle.createContext('md.numen.one', readText).events.onVaultChange((event) => {
       received.push(event)
     })
-    host.createContext('md.numen.two', readText).events.onVaultChange(() => {
+    host.lifecycle.createContext('md.numen.two', readText).events.onVaultChange(() => {
       throw new Error('no')
     })
 

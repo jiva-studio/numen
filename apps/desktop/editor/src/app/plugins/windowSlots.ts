@@ -59,12 +59,12 @@ export function createWindowSlots(deps: WindowSlotsDeps) {
   const findCommand = createSlotCommandFinder({
     getWhenValues,
     whenReader: whenContext.whenReader,
-    getPluginCommands: () => deps.hostHolder.current?.getPaletteCommands() ?? [],
+    getPluginCommands: () => deps.hostHolder.current?.commands.getPaletteCommands() ?? [],
     getDeclaredCommands: () => deps.declaredCommands.commands.value,
     getHandlerDeclarations: () => deps.declaredCommands.contributions.handlers.value,
     getEditorCommands: () => deps.getAppCommands?.() ?? [],
     hasPluginItems: (command) =>
-      (deps.hostHolder.current?.hasCommandItems(command) ?? false) ||
+      (deps.hostHolder.current?.commands.hasCommandItems(command) ?? false) ||
       (deps.declaredCommands.commands.value?.some(
         (one) => one.hasItems && getPaletteId(one) === command,
       ) ??

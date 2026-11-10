@@ -94,11 +94,11 @@ const createBar = (name: string, context: BarContext) =>
 const registerBar = async (pluginId: string, name = 'LedgerBar') => {
   const { contextHost } = hosts.current!
   const context = {
-    app: contextHost.app,
-    vaults: contextHost.getVaults?.(),
-    window: contextHost.getWindow?.(),
+    app: contextHost.info.app,
+    vaults: contextHost.vault.getVaults?.(),
+    window: contextHost.window.getWindow?.(),
   }
-  contextHost.registerSlotView(pluginId, 'titleBar', {
+  contextHost.views.registerSlotView(pluginId, 'titleBar', {
     id: 'bar',
     component: createBar(name, context),
   })
@@ -233,7 +233,7 @@ describe('the platform the plugins of the window are given', () => {
       frame.platform = platform
       await mountWindow()
 
-      expect(hosts.current!.contextHost.app.platform).toBe(platform)
+      expect(hosts.current!.contextHost.info.app.platform).toBe(platform)
     },
   )
 })

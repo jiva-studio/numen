@@ -18,7 +18,12 @@ import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { limitAgentSettings } from './guards/agentSettings'
 import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
-import { createMountView, createRegistrations, type Track } from './guards/registrations'
+import {
+  createMountView,
+  createRegistrations,
+  type RegistrationGuard,
+  type Track,
+} from './guards/registrations'
 import { guardService, SERVICE_RULES } from './guards/servicePermissions'
 import { createSubscriptionList, type SubscriptionList } from './guards/subscriptions'
 import { createSlotViewRegistration } from './guards/slotContext'
@@ -46,29 +51,29 @@ const EDITOR_TARGET = 'desktop.editor'
 
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
-    get: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
+    get: <T = unknown>(key: string) => host.settings.getSetting<T>(pluginId, key),
     onChange: <T = unknown>(key: string, h: (v: T) => void) =>
-      add(host.onSettingChange<T>(pluginId, key, h)),
+      add(host.settings.onSettingChange<T>(pluginId, key, h)),
   }
 }
 
 function createEvents(pluginId: string, host: PluginContextHost, add: Track): PluginEvents {
   return {
     onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) =>
-      add(host.onVaultChange(pluginId, h)),
+      add(host.events.onVaultChange(pluginId, h)),
     onFileSelect: (h: (e: FileSelectEvent) => void | Promise<void>) =>
-      add(host.onFileSelect(pluginId, h)),
-    emitVaultChange: (e: VaultChangeEvent) => host.emitVaultChange(pluginId, e),
-    emitFileSelect: (e: FileSelectEvent) => host.emitFileSelect(pluginId, e),
+      add(host.events.onFileSelect(pluginId, h)),
+    emitVaultChange: (e: VaultChangeEvent) => host.events.emitVaultChange(pluginId, e),
+    emitFileSelect: (e: FileSelectEvent) => host.events.emitFileSelect(pluginId, e),
   }
 }
 
 function createTabs(host: PluginContextHost): PluginTabs {
   return {
-    open: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
-    navigate: (kind: string, targetPath: string) => host.navigateTab?.(kind, targetPath),
+    open: (kind: string, targetPath?: string) => host.tabs.openTab?.(kind, targetPath),
+    navigate: (kind: string, targetPath: string) => host.tabs.navigateTab?.(kind, targetPath),
     close: (id: string) => {
-      host.closeTab?.(id)
+      host.tabs.closeTab?.(id)
     },
   }
 }
@@ -83,34 +88,45 @@ function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined
 }
 
 function createVault(pluginId: string, host: PluginContextHost, add: Track): PluginVault {
-  const buffers = host.getBuffers?.()
+  const buffers = host.vault.getBuffers?.()
   return pickDefined<PluginVault>({
-    notes: host.getNotes?.(),
-    relations: host.getRelations?.(),
-    files: host.getFiles?.(),
-    texts: host.getTexts?.(pluginId),
+    notes: host.vault.getNotes?.(),
+    relations: host.vault.getRelations?.(),
+    files: host.vault.getFiles?.(),
+    texts: host.vault.getTexts?.(pluginId),
     buffers: buffers && createBuffers(buffers, add),
-    vaults: host.getVaults?.(),
+    vaults: host.vault.getVaults?.(),
   })
 }
 
 function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
   return pickDefined<Omit<PluginUi, 'mountView'>>({
-    workspace: host.getWorkspace?.(),
-    window: host.getWindow?.(),
-    commands: host.getCommands?.(),
-    slots: host.getSlots?.(),
-    notices: host.getNotices?.(pluginId),
-    drops: host.drops,
+    workspace: host.window.getWorkspace?.(),
+    window: host.window.getWindow?.(),
+    commands: host.window.getCommands?.(),
+    slots: host.window.getSlots?.(),
+    notices: host.window.getNotices?.(pluginId),
+    drops: host.views.drops,
   })
 }
 
+function createUiService(
+  pluginId: string,
+  host: PluginContextHost,
+  guards: { readonly guard: RegistrationGuard; readonly check: RequirePermission },
+): PluginUi {
+  return {
+    ...guardService(createUi(pluginId, host), SERVICE_RULES.ui, { check: guards.check }),
+    mountView: createMountView(host, guards.guard),
+  }
+}
+
 function createWork(pluginId: string, host: PluginContextHost): PluginWork {
-  const agent = host.getAgent?.()
+  const agent = host.window.getAgent?.()
   return pickDefined<PluginWork>({
     agent: agent && limitAgentSettings(agent),
-    tasks: host.getTasks?.(pluginId),
-    backgroundTasks: host.getBackgroundTasks?.(),
+    tasks: host.window.getTasks?.(pluginId),
+    backgroundTasks: host.window.getBackgroundTasks?.(),
   })
 }
 
@@ -139,9 +155,9 @@ export function createPluginContext(
   return {
     plugin: {
       id: pluginId,
-      target: host.target ?? EDITOR_TARGET,
-      app: host.app,
-      openExternal: createExternalOpener(host.openExternal),
+      target: host.info.target ?? EDITOR_TARGET,
+      app: host.info.app,
+      openExternal: createExternalOpener(host.info.openExternal),
       subscriptions: subscriptions.view,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
@@ -154,10 +170,7 @@ export function createPluginContext(
     events: guardService(createEvents(pluginId, host, add), rules.events, { check }),
     tabs: guardService(createTabs(host), rules.tabs, { check }),
     vault: guardService(createVault(pluginId, host, add), rules.vault, { check }),
-    ui: {
-      ...guardService(createUi(pluginId, host), rules.ui, { check }),
-      mountView: createMountView(host, registration),
-    },
+    ui: createUiService(pluginId, host, { guard: registration, check }),
     work: guardService(createWork(pluginId, host), rules.work, { check }),
   }
 }

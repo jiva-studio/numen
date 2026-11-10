@@ -31,7 +31,7 @@ import { createEditorVaults } from '../plugins/windowVaults'
 
 const getDeclaredCommandsDeps = (hostHolder: { current?: PluginHost }, rest: SettingsStore) => ({
   isListed: (id: string): boolean =>
-    hostHolder.current?.getPaletteCommands().some((one) => one.id === id) ?? false,
+    hostHolder.current?.commands.getPaletteCommands().some((one) => one.id === id) ?? false,
   hasBackend: (pluginId: string): boolean =>
     rest.state.plugins.value.find((one) => one.id === pluginId)?.hasBackend ?? true,
   getConfig: () => getWindowConfig(rest),
@@ -175,7 +175,8 @@ export function createWindowFrameServices(
   const appIds = [...new Set(commands.featureCommands.commands.map((one) => one.command ?? one.id))]
   const windowCommands = createWindowCommands({
     getAppIds: () => appIds,
-    getPluginIds: () => base.plugins.host.pluginHost.getPaletteCommands().map((one) => one.id),
+    getPluginIds: () =>
+      base.plugins.host.pluginHost.commands.getPaletteCommands().map((one) => one.id),
     runCommandToEnd,
     listItems: items.listCommandItems,
     runWithItem: items.runWithItem,
@@ -194,6 +195,6 @@ export function createWindowFrameServices(
 }
 
 export const getPluginViews = (pluginHost: PluginHost) => ({
-  titleBarView: pluginHost.getSlotView(SLOT.titleBar),
-  statusBarView: pluginHost.getSlotView(SLOT.statusBar),
+  titleBarView: pluginHost.slotViews.getSlotView(SLOT.titleBar),
+  statusBarView: pluginHost.slotViews.getSlotView(SLOT.statusBar),
 })

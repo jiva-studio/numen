@@ -69,8 +69,10 @@ const SLOTS: DeclaredSlot[] = [
 
 function setup(slotEntries: readonly DeclaredSlot[] = SLOTS) {
   const host = {
-    getPaletteCommands: () => [],
-    hasCommandItems: (id: string) => id === `${HARBOR}:harbor.dock`,
+    commands: {
+      getPaletteCommands: () => [],
+      hasCommandItems: (id: string) => id === `${HARBOR}:harbor.dock`,
+    },
   }
   const slots = createWindowSlots({
     declaredCommands: {

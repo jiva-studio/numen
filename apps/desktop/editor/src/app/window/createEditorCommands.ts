@@ -199,7 +199,8 @@ export function createWindowKinds(
     tabSync,
     getPluginCommandIcon: (id) => {
       const name =
-        base.plugins.host.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon ??
+        base.plugins.host.pluginHost.commands.getPaletteCommands().find((one) => one.id === id)
+          ?.icon ??
         base.plugins.declaredCommands.commands.value?.find((one) => getPaletteId(one) === id)?.icon
       return name ? getNamedIcon(name) : undefined
     },

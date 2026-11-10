@@ -23,8 +23,8 @@ const READ_WRITE = createMockManifest('p', {
 describe('the plugin context events', () => {
   it('delivers a vault change emitted by one plugin to the listeners of every plugin', async () => {
     const host = createPluginHost(createDeps())
-    const emitter = host.createContext('emitter', READ_WRITE)
-    const listener = host.createContext('listener', READ_WRITE)
+    const emitter = host.lifecycle.createContext('emitter', READ_WRITE)
+    const listener = host.lifecycle.createContext('listener', READ_WRITE)
     const handler = vi.fn()
     listener.events.onVaultChange(handler)
 
@@ -36,7 +36,7 @@ describe('the plugin context events', () => {
 
   it('delivers a file selection to listeners until they are disposed', async () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('tree', READ_WRITE)
+    const ctx = host.lifecycle.createContext('tree', READ_WRITE)
     const handler = vi.fn()
     const sub = ctx.events.onFileSelect(handler)
 
@@ -52,12 +52,12 @@ describe('the plugin context events', () => {
 
   it('stops delivering to a plugin that was disposed', async () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('tree', READ_WRITE)
+    const ctx = host.lifecycle.createContext('tree', READ_WRITE)
     const handler = vi.fn()
     ctx.events.onVaultChange(handler)
 
-    host.disposePlugin('tree')
-    host.createContext('other', READ_WRITE).events.emitVaultChange({ vaultPath: '/v' })
+    host.lifecycle.disposePlugin('tree')
+    host.lifecycle.createContext('other', READ_WRITE).events.emitVaultChange({ vaultPath: '/v' })
     await Promise.resolve()
 
     expect(handler).not.toHaveBeenCalled()
@@ -66,8 +66,8 @@ describe('the plugin context events', () => {
   it('reports a rejecting listener under its plugin id and still calls the others', async () => {
     const onError = vi.fn()
     const host = createPluginHost(createDeps({ onError }))
-    const bad = host.createContext('bad', READ_WRITE)
-    const good = host.createContext('good', READ_WRITE)
+    const bad = host.lifecycle.createContext('bad', READ_WRITE)
+    const good = host.lifecycle.createContext('good', READ_WRITE)
     const fault = new Error('listener failed')
     const handler = vi.fn()
     bad.events.onVaultChange(async () => {
@@ -98,16 +98,16 @@ describe('command handlers', () => {
         ],
       }),
     )
-    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+x', command: 'run' }])
+    host.keybindings.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+x', command: 'run' }])
     const fault = new Error('boom')
-    host.createContext('cmd.plugin').register.command({
+    host.lifecycle.createContext('cmd.plugin').register.command({
       id: 'run',
       handler: async () => {
         throw fault
       },
     })
 
-    const handled = host.handleShortcut(
+    const handled = host.commands.handleShortcut(
       new KeyboardEvent('keydown', { key: 'x', ctrlKey: true, shiftKey: true }),
       async () => ({ path: '', title: '', type: 'note', isFolder: false, others: [], tab: '' }),
     )
@@ -126,7 +126,7 @@ describe('command handlers', () => {
       }),
     )
     const fault = new Error('sync boom')
-    host.createContext('cmd.plugin').register.command({
+    host.lifecycle.createContext('cmd.plugin').register.command({
       id: 'run',
       handler: () => {
         throw fault
@@ -134,7 +134,7 @@ describe('command handlers', () => {
     })
 
     await expect(
-      host.executeCommand('cmd.plugin:run', {
+      host.commands.executeCommand('cmd.plugin:run', {
         path: '',
         title: '',
         type: 'note',
@@ -171,11 +171,11 @@ describe('a command over a note', () => {
       }),
     )
     const handler = vi.fn()
-    host.createContext('cmd.plugin').register.command({ id: 'summary', handler })
+    host.lifecycle.createContext('cmd.plugin').register.command({ id: 'summary', handler })
 
-    await host.executeCommand('cmd.plugin:summary', NOTE)
+    await host.commands.executeCommand('cmd.plugin:summary', NOTE)
 
-    expect(host.getPaletteCommands()).toStrictEqual([
+    expect(host.commands.getPaletteCommands()).toStrictEqual([
       { id: 'cmd.plugin:summary', title: 'Open summary', when: 'target.isNote' },
     ])
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
@@ -194,15 +194,17 @@ describe('a command over a note', () => {
         ],
       }),
     )
-    host.registerKeybindings('cmd.plugin', [{ key: 'ctrl+shift+y', command: 'summary' }])
+    host.keybindings.registerKeybindings('cmd.plugin', [
+      { key: 'ctrl+shift+y', command: 'summary' },
+    ])
     const handler = vi.fn()
-    host.createContext('cmd.plugin').register.command({ id: 'summary', handler })
+    host.lifecycle.createContext('cmd.plugin').register.command({ id: 'summary', handler })
     const event = new KeyboardEvent('keydown', { key: 'y', ctrlKey: true, shiftKey: true })
 
     const NO_NOTE = { path: '', title: '', isFolder: false, others: [], tab: '' }
 
-    host.handleShortcut(event, async () => ({ ...NOTE, path: '' }), { target: NO_NOTE })
-    host.handleShortcut(event, async () => NOTE, { target: NOTE })
+    host.commands.handleShortcut(event, async () => ({ ...NOTE, path: '' }), { target: NO_NOTE })
+    host.commands.handleShortcut(event, async () => NOTE, { target: NOTE })
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE, undefined, {})
@@ -219,7 +221,7 @@ describe('a tab kind component', () => {
       }),
     })
     const host = createPluginHost(deps)
-    const ctx = host.createContext('tree', READ_WRITE)
+    const ctx = host.lifecycle.createContext('tree', READ_WRITE)
     const received: unknown[] = []
     const View = defineComponent({
       props: { context: { type: Object, default: undefined } },
@@ -275,10 +277,10 @@ describe('a tab kind component', () => {
       }),
     })
     const host = createPluginHost(deps)
-    host.registerManifest('reader.plugin', READ_WRITE)
-    host.registerKeybindings('reader.plugin', [{ key: 'ctrl+b', command: 'rich' }])
-    const ctx = host.createContext('reader.plugin')
-    expect(host.createContext('reader.plugin')).toBe(ctx)
+    host.lifecycle.registerManifest('reader.plugin', READ_WRITE)
+    host.keybindings.registerKeybindings('reader.plugin', [{ key: 'ctrl+b', command: 'rich' }])
+    const ctx = host.lifecycle.createContext('reader.plugin')
+    expect(host.lifecycle.createContext('reader.plugin')).toBe(ctx)
     expect(ctx.plugin.hasPermission?.('vault:read')).toBe(true)
     expect(ctx.plugin.app).toEqual({
       name: 'numen',
@@ -316,7 +318,7 @@ describe('a tab kind component', () => {
 
     // The palette lists what the manifest declares
     ctx.register.command({ id: 'rich', handler: vi.fn() })
-    expect(host.getPaletteCommands()).toStrictEqual([
+    expect(host.commands.getPaletteCommands()).toStrictEqual([
       {
         id: 'reader.plugin:rich',
         title: 'Rich',
@@ -327,13 +329,15 @@ describe('a tab kind component', () => {
 
     // Unmatched shortcut returns false and does not call getNote
     const getNote = vi.fn()
-    expect(host.handleShortcut(new KeyboardEvent('keydown', { key: 'z' }), getNote)).toBe(false)
+    expect(host.commands.handleShortcut(new KeyboardEvent('keydown', { key: 'z' }), getNote)).toBe(
+      false,
+    )
     expect(getNote).not.toHaveBeenCalled()
 
     // Failing getNote reports error
     const noteErr = new Error('cannot read note')
     expect(
-      host.handleShortcut(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }), () =>
+      host.commands.handleShortcut(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }), () =>
         Promise.reject(noteErr),
       ),
     ).toBe(true)
@@ -352,7 +356,7 @@ describe('a tab kind component', () => {
         ],
       }),
     )
-    const bareCtx = bareHost.createContext('bare', READ_WRITE)
+    const bareCtx = bareHost.lifecycle.createContext('bare', READ_WRITE)
     expect(bareCtx.plugin.app).toEqual({
       name: 'numen',
       version: '0.0.0-dev',
@@ -372,7 +376,7 @@ describe('a tab kind component', () => {
       },
     })
     await expect(
-      bareHost.executeCommand('bare:fail-quietly', {
+      bareHost.commands.executeCommand('bare:fail-quietly', {
         path: '',
         title: '',
         type: 'note',

@@ -57,7 +57,7 @@ export function createWindowServices(base: WindowCore) {
     windowTabs: base.tabs.windowTabs,
     onSizeChanged: () => editing.noted.measureAll(),
     getSettingsViews: (pluginId) =>
-      base.plugins.host.pluginHost.getRegisteredSettingsViews(pluginId),
+      base.plugins.host.pluginHost.registered.getRegisteredSettingsViews(pluginId),
     getPlatform: () => base.frame.platform.value,
   })
 

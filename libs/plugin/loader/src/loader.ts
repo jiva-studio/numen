@@ -190,6 +190,29 @@ function createTracking(deps: PluginLoaderDeps, state: LoaderState, activation: 
   return { tracked, isRunning, isEnabled, listPlugins, starts }
 }
 
+interface Starts {
+  readonly isPluginStarting: (id: string) => boolean
+  readonly settlePlugin: (id: string) => Promise<void>
+  readonly waitForTabPlugins: () => Promise<void>
+}
+
+/** Where each plugin of the window stands: active, failed, or still starting. */
+function createStatus(state: LoaderState, starts: Starts, waitForInterface: () => Promise<void>) {
+  const { activePlugins, failures } = state
+  return {
+    isPluginActive: (id: string) => activePlugins.value.has(id),
+    getActivePluginIds: () => [...activePlugins.value.keys()],
+    getPluginFailure: (id: string): string | undefined => failures.value.get(id),
+    getFailedPlugins: (): { id: string; error: string }[] =>
+      [...failures.value].map(([id, error]) => ({ id, error })),
+    isPluginStarting: starts.isPluginStarting,
+    settlePlugin: starts.settlePlugin,
+    waitForTabPlugins: starts.waitForTabPlugins,
+    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
+    waitForInterface,
+  }
+}
+
 function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: Activation) {
   const { host } = deps
   const { activatePlugin, deactivatePlugin, loadModule } = activation
@@ -217,7 +240,7 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
   }
 
   return {
-    ...starts,
+    status: createStatus(state, starts, () => interfaceStarted.promise),
     registerPluginModule: (id: string, loader: () => Promise<unknown>) => {
       moduleLoaders.set(id, loader)
       if (isRunning.value) {
@@ -243,8 +266,6 @@ function createRuntime(deps: PluginLoaderDeps, state: LoaderState, activation: A
         onInterfaceStarted,
       )
     },
-    /** Settles once the plugins of the window slots have started or INTERFACE_WAIT_MS has passed. */
-    waitForInterface: (): Promise<void> => interfaceStarted.promise,
     close: async (): Promise<void> => {
       isRunning.value = false
       await closeLoader(
@@ -264,21 +285,20 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     manifests: new Map(),
     moduleLoaders: new Map(),
   }
-  const { activePlugins, failures, manifests } = state
   const activation = createActivation(deps, state)
+  const runtime = createRuntime(deps, state, activation)
 
   return {
-    ...createRuntime(deps, state, activation),
-    ...activation,
+    registerPluginModule: runtime.registerPluginModule,
     registerPluginManifest: (id: string, manifest: Manifest) => {
-      manifests.set(id, manifest)
+      state.manifests.set(id, manifest)
       host.registerManifest?.(id, manifest)
     },
-    isPluginActive: (id: string) => activePlugins.value.has(id),
-    getActivePluginIds: () => [...activePlugins.value.keys()],
-    getPluginFailure: (id: string): string | undefined => failures.value.get(id),
-    getFailedPlugins: (): { id: string; error: string }[] =>
-      [...failures.value].map(([id, error]) => ({ id, error })),
+    trackPlugins: runtime.trackPlugins,
+    start: runtime.start,
+    close: runtime.close,
+    activation,
+    status: runtime.status,
   }
 }
 export type PluginLoader = ReturnType<typeof createPluginLoader>

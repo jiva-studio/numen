@@ -73,8 +73,8 @@ describe('the start of one plugin', () => {
   it('is going on until the plugins are listed, then until that plugin has started', async () => {
     vi.useFakeTimers()
     const loader = createLoader({ [ORCHARD]: 100, [LEDGER]: 5_000 })
-    const isOrchardStarting = computed(() => loader.isPluginStarting(ORCHARD))
-    const isLedgerStarting = computed(() => loader.isPluginStarting(LEDGER))
+    const isOrchardStarting = computed(() => loader.status.isPluginStarting(ORCHARD))
+    const isLedgerStarting = computed(() => loader.status.isPluginStarting(LEDGER))
 
     expect(isOrchardStarting.value).toBe(true)
     const started = startAll(loader)
@@ -95,7 +95,7 @@ describe('the start of one plugin', () => {
     await vi.runAllTimersAsync()
     await started
 
-    expect(loader.isPluginStarting(ORCHARD)).toBe(false)
+    expect(loader.status.isPluginStarting(ORCHARD)).toBe(false)
   })
 
   it('is over once the plugin did not start within the limit', async () => {
@@ -105,7 +105,7 @@ describe('the start of one plugin', () => {
     const started = startAll(loader)
     await vi.advanceTimersByTimeAsync(30_000 + 1_000)
 
-    expect(loader.isPluginStarting(LEDGER)).toBe(false)
+    expect(loader.status.isPluginStarting(LEDGER)).toBe(false)
     await vi.runAllTimersAsync()
     await started
   })
@@ -119,13 +119,13 @@ describe('the start of one plugin', () => {
     await started
     broken.length = 0
 
-    const again = loader.activatePlugin(ORCHARD)
+    const again = loader.activation.activatePlugin(ORCHARD)
     await vi.advanceTimersByTimeAsync(100)
 
-    expect(loader.isPluginStarting(ORCHARD)).toBe(true)
+    expect(loader.status.isPluginStarting(ORCHARD)).toBe(true)
     await vi.runAllTimersAsync()
     expect(await again).toBe(true)
-    expect(loader.isPluginStarting(ORCHARD)).toBe(false)
+    expect(loader.status.isPluginStarting(ORCHARD)).toBe(false)
   })
 
   it('is not going on for a plugin that is turned off, once the plugins are listed', async () => {
@@ -135,7 +135,7 @@ describe('the start of one plugin', () => {
     const started = startAll(loader)
     await vi.advanceTimersByTimeAsync(0)
 
-    expect(loader.isPluginStarting(ORCHARD)).toBe(false)
+    expect(loader.status.isPluginStarting(ORCHARD)).toBe(false)
     await vi.runAllTimersAsync()
     await started
   })
@@ -148,13 +148,13 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     let isSettled = false
 
     const started = startAll(loader)
-    const wait = loader.waitForTabPlugins().then(() => (isSettled = true))
+    const wait = loader.status.waitForTabPlugins().then(() => (isSettled = true))
     await vi.advanceTimersByTimeAsync(300)
     expect(isSettled).toBe(false)
     await vi.advanceTimersByTimeAsync(1_000)
 
     expect(isSettled).toBe(true)
-    expect(loader.isPluginStarting(HARBOR)).toBe(true)
+    expect(loader.status.isPluginStarting(HARBOR)).toBe(true)
     await vi.runAllTimersAsync()
     await Promise.all([started, wait])
   })
@@ -165,7 +165,7 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     let isSettled = false
 
     const started = startAll(loader)
-    const wait = loader.waitForTabPlugins().then(() => (isSettled = true))
+    const wait = loader.status.waitForTabPlugins().then(() => (isSettled = true))
     await vi.runAllTimersAsync()
     await Promise.all([started, wait])
 
@@ -178,7 +178,7 @@ describe('the wait of a new vault for the plugins of its tabs', () => {
     let isSettled = false
 
     const started = startAll(loader)
-    const wait = loader.waitForTabPlugins().then(() => (isSettled = true))
+    const wait = loader.status.waitForTabPlugins().then(() => (isSettled = true))
     await vi.advanceTimersByTimeAsync(1_000)
 
     expect(isSettled).toBe(true)

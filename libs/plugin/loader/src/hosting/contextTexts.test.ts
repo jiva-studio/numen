@@ -13,7 +13,12 @@ const createContext = (permissions: readonly string[]) => {
     createEdit: vi.fn(() => Promise.resolve({ ok: false, error: 'missing' })),
   } as unknown as VaultTexts
   const getTexts = vi.fn(() => texts)
-  const host = { getTexts } as unknown as PluginContextHost
+  const host = {
+    info: {},
+    views: {},
+    vault: { getTexts },
+    window: {},
+  } as unknown as PluginContextHost
   const context = createPluginContext('md.numen.player', host, {
     id: 'md.numen.player',
     name: 'Player',

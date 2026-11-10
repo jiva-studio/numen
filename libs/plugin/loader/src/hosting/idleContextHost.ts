@@ -1,14 +1,25 @@
 import type { Disposable } from '@numen/plugin-sdk'
-import type { PluginContextHost } from './types'
+import type {
+  ContextInfoHost,
+  ContextRegistrationHost,
+  ContextTabHost,
+  ContextVaultHost,
+  ContextViewHost,
+  ContextWindowHost,
+  PluginContextHost,
+} from './types'
 
 const NOTHING: Disposable = { dispose: () => undefined }
 
 /** What a window must give to host plugin contexts; everything else it leaves idle. */
-export type IdleContextHostParts = Pick<
-  PluginContextHost,
-  'app' | 'openExternal' | 'registerTabKind' | 'registerView' | 'registerSlotView' | 'mountView'
-> &
-  Partial<PluginContextHost>
+export interface IdleContextHostParts {
+  readonly info: ContextInfoHost
+  readonly registration: Pick<ContextRegistrationHost, 'registerTabKind'>
+  readonly views: Pick<ContextViewHost, 'registerView' | 'registerSlotView' | 'mountView'>
+  readonly tabs?: ContextTabHost
+  readonly vault?: ContextVaultHost
+  readonly window?: ContextWindowHost
+}
 
 /**
  * The host of a window that has no services of the editor: nothing is read, listened to or dropped,
@@ -17,18 +28,28 @@ export type IdleContextHostParts = Pick<
  */
 export function createIdleContextHost(parts: IdleContextHostParts): PluginContextHost {
   return {
-    registerReader: () => NOTHING,
-    registerSettingsView: () => NOTHING,
-    registerCommand: () => NOTHING,
-    registerAgentProvider: () => NOTHING,
-    registerDropHandler: () => NOTHING,
-    drops: { canDrop: () => false, drop: () => Promise.resolve([]) },
-    getSetting: () => undefined,
-    onSettingChange: () => NOTHING,
-    onVaultChange: () => NOTHING,
-    onFileSelect: () => NOTHING,
-    emitVaultChange: () => undefined,
-    emitFileSelect: () => undefined,
-    ...parts,
+    info: parts.info,
+    registration: {
+      registerReader: () => NOTHING,
+      registerSettingsView: () => NOTHING,
+      registerCommand: () => NOTHING,
+      registerAgentProvider: () => NOTHING,
+      ...parts.registration,
+    },
+    views: {
+      registerDropHandler: () => NOTHING,
+      drops: { canDrop: () => false, drop: () => Promise.resolve([]) },
+      ...parts.views,
+    },
+    settings: { getSetting: () => undefined, onSettingChange: () => NOTHING },
+    events: {
+      onVaultChange: () => NOTHING,
+      onFileSelect: () => NOTHING,
+      emitVaultChange: () => undefined,
+      emitFileSelect: () => undefined,
+    },
+    tabs: parts.tabs ?? {},
+    vault: parts.vault ?? {},
+    window: parts.window ?? {},
   }
 }

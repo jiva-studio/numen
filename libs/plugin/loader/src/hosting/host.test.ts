@@ -59,8 +59,13 @@ describe('createPluginHost', () => {
   it('manages readers, tab kinds, commands, and settings', async () => {
     const { deps, registeredKinds, extensionReaders } = createMockDeps()
     const host = createPluginHost(deps)
-    host.registerKeybindings('sample.plugin', [{ key: 'ctrl+shift+k', command: 'test.run' }])
-    const ctx = host.createContext('sample.plugin', createMockManifest('sample.plugin', { name: 'Sample', permissions: ['vault:read'] }))
+    host.keybindings.registerKeybindings('sample.plugin', [
+      { key: 'ctrl+shift+k', command: 'test.run' },
+    ])
+    const ctx = host.lifecycle.createContext(
+      'sample.plugin',
+      createMockManifest('sample.plugin', { name: 'Sample', permissions: ['vault:read'] }),
+    )
 
     // Register reader
     const readerSub = ctx.register.reader({
@@ -72,7 +77,7 @@ describe('createPluginHost', () => {
     expect(deps.registerKind).toHaveBeenCalled()
     expect(extensionReaders.has('cpdf')).toBe(true)
     expect(extensionReaders.has('cpdf2')).toBe(true)
-    expect(host.getRegisteredReaders()).toHaveLength(1)
+    expect(host.registered.getRegisteredReaders()).toHaveLength(1)
 
     // Register tab kind
     const tabSub = ctx.register.tabKind({
@@ -80,7 +85,7 @@ describe('createPluginHost', () => {
       component: null,
       title: 'My Tab',
     })
-    expect(host.getRegisteredTabKinds()).toHaveLength(1)
+    expect(host.registered.getRegisteredTabKinds()).toHaveLength(1)
     expect(registeredKinds).toHaveLength(2)
 
     // Register command
@@ -91,16 +96,16 @@ describe('createPluginHost', () => {
         executed = true
       },
     })
-    expect(host.hasCommand('sample.plugin:test.run')).toBe(true)
-    expect(host.getRegisteredCommands()).toHaveLength(1)
+    expect(host.commands.hasCommand('sample.plugin:test.run')).toBe(true)
+    expect(host.registered.getRegisteredCommands()).toHaveLength(1)
 
     // Palette commands
-    const palette = host.getPaletteCommands()
+    const palette = host.commands.getPaletteCommands()
     expect(palette).toHaveLength(1)
     expect(palette[0]?.id).toBe('sample.plugin:test.run')
 
     // Execute command
-    await host.executeCommand('sample.plugin:test.run', {
+    await host.commands.executeCommand('sample.plugin:test.run', {
       path: '',
       title: '',
       type: 'note',
@@ -117,7 +122,7 @@ describe('createPluginHost', () => {
       ctrlKey: true,
       shiftKey: true,
     })
-    const handled = host.handleShortcut(event, async () => ({
+    const handled = host.commands.handleShortcut(event, async () => ({
       path: '',
       title: '',
       type: 'note',
@@ -131,13 +136,13 @@ describe('createPluginHost', () => {
 
     // Cleanups via dispose
     cmdSub.dispose()
-    expect(host.hasCommand('sample.plugin:test.run')).toBe(false)
+    expect(host.commands.hasCommand('sample.plugin:test.run')).toBe(false)
 
     readerSub.dispose()
     expect(extensionReaders.has('cpdf')).toBe(false)
 
     tabSub.dispose()
-    expect(host.getRegisteredTabKinds()).toHaveLength(0)
+    expect(host.registered.getRegisteredTabKinds()).toHaveLength(0)
   })
 
   it('disposes all registrations when plugin is disposed', () => {
@@ -152,7 +157,7 @@ describe('createPluginHost', () => {
         },
       ],
     })
-    const ctx = host.createContext('disposable.plugin')
+    const ctx = host.lifecycle.createContext('disposable.plugin')
 
     ctx.register.reader({
       id: 'reader1',
@@ -164,13 +169,13 @@ describe('createPluginHost', () => {
     })
 
     expect(extensionReaders.has('ext1')).toBe(true)
-    expect(host.hasCommand('disposable.plugin:cmd1')).toBe(true)
+    expect(host.commands.hasCommand('disposable.plugin:cmd1')).toBe(true)
 
-    host.disposePlugin('disposable.plugin')
+    host.lifecycle.disposePlugin('disposable.plugin')
 
     expect(extensionReaders.has('ext1')).toBe(false)
-    expect(host.hasCommand('disposable.plugin:cmd1')).toBe(false)
-    expect(host.getRegisteredReaders()).toHaveLength(0)
+    expect(host.commands.hasCommand('disposable.plugin:cmd1')).toBe(false)
+    expect(host.registered.getRegisteredReaders()).toHaveLength(0)
 
     // Disposing a plugin cleans up its agent providers, and disposeAllEntries cleans up agentProviders without context
     const reg: HostRegistry = {
@@ -216,7 +221,10 @@ describe('createPluginHost', () => {
       openTab: vi.fn(async () => 't1'),
       registerEditor: vi.fn(() => undefined as unknown as () => void),
     })
-    const ctxNoExt = hostNoExt.createContext('noext.plugin', createMockManifest('noext.plugin', { name: 'No ext', permissions: ['vault:read'] }))
+    const ctxNoExt = hostNoExt.lifecycle.createContext(
+      'noext.plugin',
+      createMockManifest('noext.plugin', { name: 'No ext', permissions: ['vault:read'] }),
+    )
     ctxNoExt.register.reader({ id: 'r-noext', component: null })
     expect(registerExtensionReader).not.toHaveBeenCalled()
     const tabSubVoid = ctxNoExt.register.tabKind({ kind: 'void-editor', component: null })
@@ -231,7 +239,9 @@ describe('createPluginHost', () => {
       getTabState: (id) => stateMap.get(id),
       onError,
     })
-    hostWithExt.createContext('ext.plugin').register.reader({ id: 'r-pdf', component: null })
+    hostWithExt.lifecycle
+      .createContext('ext.plugin')
+      .register.reader({ id: 'r-pdf', component: null })
     expect(extCallback).toBeDefined()
 
     // When getTabState returns undefined, selector assignment is skipped without error
@@ -254,7 +264,7 @@ describe('createPluginHost', () => {
     const closeTabsForPlugin = vi.fn()
     const host = createPluginHost({ ...deps, closeTabsForPlugin })
 
-    host.disposePlugin('test.plugin')
+    host.lifecycle.disposePlugin('test.plugin')
     expect(closeTabsForPlugin).toHaveBeenCalledWith('test.plugin')
   })
 
@@ -265,8 +275,8 @@ describe('createPluginHost', () => {
     const clearNotices = vi.fn()
     const host = createPluginHost({ ...deps, getNotices, clearNotices })
 
-    host.createContext('test.plugin').ui.notices?.show('Saved.')
-    host.disposePlugin('test.plugin')
+    host.lifecycle.createContext('test.plugin').ui.notices?.show('Saved.')
+    host.lifecycle.disposePlugin('test.plugin')
 
     expect(getNotices).toHaveBeenCalledWith('test.plugin')
     expect(notices.show).toHaveBeenCalledWith('Saved.')
@@ -277,7 +287,7 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.createContext('test.plugin').ui.notices).toBeUndefined()
+    expect(host.lifecycle.createContext('test.plugin').ui.notices).toBeUndefined()
   })
 
   it('gives each plugin the task host for its own id', () => {
@@ -287,7 +297,7 @@ describe('createPluginHost', () => {
     const host = createPluginHost({ ...deps, getTasks })
 
     const handler = vi.fn()
-    host.createContext('test.plugin').work.tasks?.watch(handler)
+    host.lifecycle.createContext('test.plugin').work.tasks?.watch(handler)
 
     expect(tasks.watch).toHaveBeenCalledWith(handler)
     expect(getTasks).toHaveBeenCalledWith('test.plugin')
@@ -297,7 +307,7 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.createContext('test.plugin').work.tasks).toBeUndefined()
+    expect(host.lifecycle.createContext('test.plugin').work.tasks).toBeUndefined()
   })
 
   it('gives every plugin the background tasks of the window', () => {
@@ -307,8 +317,8 @@ describe('createPluginHost', () => {
 
     const first = vi.fn()
     const second = vi.fn()
-    host.createContext('test.plugin').work.backgroundTasks?.watch(first)
-    host.createContext('other.plugin').work.backgroundTasks?.watch(second)
+    host.lifecycle.createContext('test.plugin').work.backgroundTasks?.watch(first)
+    host.lifecycle.createContext('other.plugin').work.backgroundTasks?.watch(second)
 
     expect(first).toHaveBeenCalled()
     expect(second).toHaveBeenCalled()
@@ -319,19 +329,21 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost({ ...deps, getBackgroundTasks: () => undefined })
 
-    expect(host.createContext('test.plugin').work.backgroundTasks).toBeUndefined()
-    expect(createPluginHost(deps).createContext('test.plugin').work.backgroundTasks).toBeUndefined()
+    expect(host.lifecycle.createContext('test.plugin').work.backgroundTasks).toBeUndefined()
+    expect(
+      createPluginHost(deps).lifecycle.createContext('test.plugin').work.backgroundTasks,
+    ).toBeUndefined()
   })
 
   it('delegates getSetting and onSettingChange through host', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.getSetting('test.plugin', 'fontSize')).toBe(14)
+    expect(host.lifecycle.getSetting('test.plugin', 'fontSize')).toBe(14)
     expect(deps.getSetting).toHaveBeenCalledWith('test.plugin', 'fontSize')
 
     const handler = vi.fn()
-    const sub = host.onSettingChange('test.plugin', 'fontSize', handler)
+    const sub = host.lifecycle.onSettingChange('test.plugin', 'fontSize', handler)
     expect(deps.onSettingChange).toHaveBeenCalledWith(
       'test.plugin',
       'fontSize',
@@ -344,10 +356,10 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
     const initialManifest = createMockManifest('test.plugin', { name: 'Original' })
-    host.createContext('test.plugin', initialManifest)
+    host.lifecycle.createContext('test.plugin', initialManifest)
 
     expect(() => {
-      host.registerManifest(
+      host.lifecycle.registerManifest(
         'test.plugin',
         createMockManifest('test.plugin', {
           name: 'Tampered',
@@ -418,12 +430,12 @@ describe('createPluginHost', () => {
       props: { context: { type: Object, required: true } },
       setup: (props) => () => h('p', (props.context as { focus: string }).focus),
     })
-    host
+    host.lifecycle
       .createContext('md.numen.chat')
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
 
-    const mounted = host
+    const mounted = host.lifecycle
       .createContext('org.example.sample')
       .ui.mountView(CONVERSATION, panel, { focus: 'Samples/Physics.md' })
     expect(panel.textContent).toBe('Samples/Physics.md')
@@ -436,13 +448,13 @@ describe('createPluginHost', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
     const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
-    host
+    host.lifecycle
       .createContext('md.numen.chat')
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
-    host.createContext('org.example.sample').ui.mountView(CONVERSATION, panel, {})
+    host.lifecycle.createContext('org.example.sample').ui.mountView(CONVERSATION, panel, {})
 
-    host.disposePlugin('md.numen.chat')
+    host.lifecycle.disposePlugin('md.numen.chat')
 
     expect(panel.textContent).toBe('')
   })
@@ -450,19 +462,22 @@ describe('createPluginHost', () => {
   it('routes a drop to the handler another plugin registered until it is disposed', async () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
-    host.createContext('md.numen.links').register.dropHandler?.({
+    host.lifecycle.createContext('md.numen.links').register.dropHandler?.({
       types: ['text/uri-list'],
       drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
     })
-    const drops = host.createContext(
+    const drops = host.lifecycle.createContext(
       'md.numen.views.file.tree',
-      createMockManifest('md.numen.views.file.tree', { name: 'Tree', permissions: ['vault:write'] }),
+      createMockManifest('md.numen.views.file.tree', {
+        name: 'Tree',
+        permissions: ['vault:write'],
+      }),
     ).ui.drops
 
     expect(drops?.canDrop(['text/uri-list'])).toBe(true)
     expect(await drops?.drop('talks', { 'text/uri-list': 'clip' })).toEqual(['talks/clip.md'])
 
-    host.disposePlugin('md.numen.links')
+    host.lifecycle.disposePlugin('md.numen.links')
     expect(drops?.canDrop(['text/uri-list'])).toBe(false)
   })
 })
@@ -478,7 +493,7 @@ describe('a view mounted by a plugin', () => {
       openTab: () => Promise.resolve('tab'),
       getNotes: () => ({ read }) as unknown as VaultNotes,
     } as unknown as PluginHostDeps)
-    const notesPlugin = host.createContext(
+    const notesPlugin = host.lifecycle.createContext(
       'md.numen.notes',
       createMockManifest('md.numen.notes', {
         name: 'Notes',
@@ -507,7 +522,7 @@ describe('a view mounted by a plugin', () => {
     }
     if (registerNow) registerViews()
     const createCaller = (permissions: string[]) =>
-      host.createContext(
+      host.lifecycle.createContext(
         'md.numen.caller',
         createMockManifest('md.numen.caller', { name: 'Caller', permissions }),
       )
@@ -605,7 +620,9 @@ describe('a view mounted by a plugin', () => {
     const { createCaller } = createHost()
     const element = document.createElement('div')
 
-    createCaller(['vault:read', 'vault:write']).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' })
+    createCaller(['vault:read', 'vault:write']).ui.mountView(NOTE_EDITOR, element, {
+      path: 'Notes/Example.md',
+    })
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
   })
 

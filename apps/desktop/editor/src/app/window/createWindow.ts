@@ -47,7 +47,7 @@ function createWindowCore(): WindowCore {
     tabOpeners: tabs.tabOpeners,
     rest,
   })
-  pluginStarts.current = plugins.host.pluginLoader.isPluginStarting
+  pluginStarts.current = plugins.host.pluginLoader.status.isPluginStarting
   return { frame, log, rest, writeMessage, runs, tabs, plugins }
 }
 

@@ -18,7 +18,7 @@ export interface WindowLists {
   previewItem(command: string, item: string): void
 }
 
-type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined
+type ItemHost = Pick<PluginHost['commands'], 'hasCommandItems' | 'listCommandItems'> | undefined
 
 /** The items a command offered over one target, kept with the key of that target. */
 interface ListedItems {

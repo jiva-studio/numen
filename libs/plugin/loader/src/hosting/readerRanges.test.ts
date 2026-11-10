@@ -33,7 +33,7 @@ describe('the ranges of a reader tab', () => {
       getReaderExtensions: () => ['bin'],
     }
     createPluginHost(deps)
-      .createContext('sample.plugin')
+      .lifecycle.createContext('sample.plugin')
       .register.reader({ id: 'reader:bin', component: null })
     const ranges: readonly TextRange[] = [
       { start: 1500, end: 1580 },
