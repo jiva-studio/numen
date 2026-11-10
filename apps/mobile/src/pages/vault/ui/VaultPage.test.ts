@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { Code, ConnectError } from '@connectrpc/connect'
+import type * as Capacitor from '@capacitor/core'
 import { CapacitorException } from '@capacitor/core'
 import { IonToast } from '@ionic/vue'
 import { formatErrorMessage } from '@numen/core-client'
@@ -12,7 +13,7 @@ import VaultPage from './VaultPage.vue'
 const plugin = vi.hoisted(() => ({ start: vi.fn() }))
 
 vi.mock('@capacitor/core', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@capacitor/core')>()),
+  ...(await importOriginal<typeof Capacitor>()),
   registerPlugin: () => plugin,
 }))
 
