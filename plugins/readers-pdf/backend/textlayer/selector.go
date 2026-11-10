@@ -1,4 +1,6 @@
-package service
+// Package textlayer holds the rules that tie the text of a PDF file to its pages: the selector of a
+// segment, the segments cut from the pages and the boxes a run of text covers.
+package textlayer
 
 import (
 	"encoding/json"
@@ -8,15 +10,16 @@ import (
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
-// pageSelector locates a segment on a page of the document (W3C Web Annotation selector). Page
+// PageSelector locates a segment on a page of the document (W3C Web Annotation selector). Page
 // counts from 1 (RFC 8118); Boxes are rectangles on the page, each [minX, minY, maxX, maxY] in
 // fractions of the page.
-type pageSelector struct {
+type PageSelector struct {
 	Page  int          `json:"page,omitempty"`
 	Boxes [][4]float32 `json:"boxes,omitempty"`
 }
 
-func (s pageSelector) encode() (domain.Selector, error) {
+// Encode returns the selector as the host keeps it.
+func (s PageSelector) Encode() (domain.Selector, error) {
 	raw, err := json.Marshal(s)
 	if err != nil {
 		return "", fmt.Errorf("encode page selector: %w", err)
@@ -24,8 +27,9 @@ func (s pageSelector) encode() (domain.Selector, error) {
 	return domain.Selector(raw), nil
 }
 
-func readPageSelector(raw domain.Selector) (pageSelector, error) {
-	var out pageSelector
+// ReadPageSelector returns the selector raw holds; an empty selector has no page.
+func ReadPageSelector(raw domain.Selector) (PageSelector, error) {
+	var out PageSelector
 	if raw == "" {
 		return out, nil
 	}
@@ -33,7 +37,8 @@ func readPageSelector(raw domain.Selector) (pageSelector, error) {
 	return out, err
 }
 
-func getBoxes(text domain.VersionText, run pdf.ByteRange) []pdf.HighlightBox {
+// GetBoxes returns the boxes of the segments of text that run covers.
+func GetBoxes(text domain.VersionText, run pdf.ByteRange) []pdf.HighlightBox {
 	if run.Start >= run.End {
 		return nil
 	}
@@ -42,7 +47,7 @@ func getBoxes(text domain.VersionText, run pdf.ByteRange) []pdf.HighlightBox {
 	for _, segment := range text.GetSegments() {
 		to := from + len(segment.Text)
 		if to > run.Start && from < run.End {
-			if selector, err := readPageSelector(segment.Selector); err == nil && selector.Page > 0 {
+			if selector, err := ReadPageSelector(segment.Selector); err == nil && selector.Page > 0 {
 				for _, box := range selector.Boxes {
 					boxes = append(boxes, pdf.HighlightBox{
 						Page:      selector.Page - 1,

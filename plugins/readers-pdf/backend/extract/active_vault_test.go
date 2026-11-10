@@ -1,15 +1,15 @@
-package service
+package extract_test
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/testsupport"
 )
 
 // switchableVault is the vault the host shows, which a test sets to another vault of the host.
@@ -41,15 +41,12 @@ func (v *switchableVault) Read(ctx context.Context, path string) ([]byte, domain
 }
 
 func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	raw := testsupport.ReadFixture(t, "tiny.pdf")
 	atlas := hosttest.OnDisk(t, "Atlas", map[string]string{"books/tiny.pdf": string(raw)})
 	botany := hosttest.New("Botany")
 	atlas.Beside(botany)
 	files := &switchableVault{Vault: atlas, active: "Atlas"}
-	vaults := func(id domain.VaultID) vaultFiles {
+	vaults := func(id domain.VaultID) extract.Files {
 		if id == "" {
 			return files
 		}
@@ -59,23 +56,22 @@ func TestCreateTextKeepsTheVaultActiveOnEntry(t *testing.T) {
 	texts.File("books/tiny.pdf", raw)
 	queue := hosttest.NewQueue()
 	texts.SetStore(pluginID, atlas.Store())
-	server := newTextServerOver(t, vaults, atlas, texts, queue)
-	t.Cleanup(server.Close)
+	writer := testsupport.NewWriter(t, vaults, atlas, texts, queue)
 	held, err := queue.EnqueueWork(t.Context(), host.Work{IsUserStarted: true, OnWaiting: nil})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := server.CreateText(t.Context(), TextRequest{Vault: "", Path: "books/tiny.pdf"}); err != nil {
+	if err := writer.CreateText(t.Context(), extract.Request{Vault: "", Path: "books/tiny.pdf"}); err != nil {
 		t.Fatal(err)
 	}
 	files.setActive("Botany")
 	if err := held.Release(); err != nil {
 		t.Fatal(err)
 	}
-	server.Wait()
+	writer.Wait()
 
-	if text := readLive(t, texts, "books/tiny.pdf"); text.Version().Kind != textKind {
+	if text := testsupport.ReadLive(t, texts, "books/tiny.pdf"); text.Version().Kind != extract.TextKind {
 		t.Errorf("Atlas has the live version %+v, want the text layer", text.Version())
 	}
 	inBotany, err := texts.With("Botany").ListVersions(t.Context(), "books/tiny.pdf")

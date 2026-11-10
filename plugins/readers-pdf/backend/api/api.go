@@ -1,9 +1,9 @@
-// Package service serves the PDF reader plugin's text layer and JSON methods.
-package service
+// Package api holds the JSON messages of the PDF reader plugin's service.
+package api
 
-// APIService is the service name the plugin's JSON methods are mounted under. The manifest
+// Service is the service name the plugin's JSON methods are mounted under. The manifest
 // `services` declares the same name.
-const APIService = "md.numen.readers.pdf"
+const Service = "md.numen.readers.pdf"
 
 // FileStat identifies the bytes of a file.
 type FileStat struct {
