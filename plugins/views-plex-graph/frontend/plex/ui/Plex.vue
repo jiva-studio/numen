@@ -151,7 +151,6 @@ watch(
   () => props.neighborhood,
   () => emit('dismiss'),
 )
-
 </script>
 
 <template>

@@ -56,8 +56,7 @@ const toHighlightedPage = (place: DocumentPlace): PageHighlight => ({
   rects: place.rects.map(toRect),
 })
 
-const toHighlightedPages = (run: DocumentRun): PageHighlight[] =>
-  run.places.map(toHighlightedPage)
+const toHighlightedPages = (run: DocumentRun): PageHighlight[] => run.places.map(toHighlightedPage)
 
 const toPageSize = (page: Page) => ({ width: page.width, height: page.height })
 

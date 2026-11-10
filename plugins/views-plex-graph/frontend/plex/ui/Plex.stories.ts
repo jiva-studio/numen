@@ -18,7 +18,14 @@ import { ring } from '../fixtures/ring'
 import type { Position } from '../lib/node'
 import type { Clock } from '../model/transition'
 import type { MenuTrigger } from '@numen/ui'
-import type { PlexHeading, PlexEdge, PlexNeighborhood, PlexNode, PlexRelation, PlexDestination } from '../../types'
+import type {
+  PlexHeading,
+  PlexEdge,
+  PlexNeighborhood,
+  PlexNode,
+  PlexRelation,
+  PlexDestination,
+} from '../../types'
 
 interface Knobs {
   neighborhood: PlexNeighborhood

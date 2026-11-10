@@ -32,7 +32,6 @@ import {
 import type { Cards } from '../../../types'
 import type { DeckTabState } from './tabState'
 
-
 /** What the deck tabs of a window are made from. */
 export interface DeckTabsOptions {
   readonly buffers: BufferHost

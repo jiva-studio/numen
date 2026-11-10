@@ -110,13 +110,15 @@ describe('a change to the vault', () => {
   it('keeps the plex on its navigation target when the vault changes before the response', async () => {
     const fixture = createHost()
     const answers: (() => void)[] = []
-    const plexes = createPlexKind(fixture.host, () =>
-      usePlexView({
-        neighborhood: async (path) => {
-          await new Promise<void>((resolve) => answers.push(resolve))
-          return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
-        },
-      }),
+    const plexes = createPlexKind(
+      fixture.host,
+      () =>
+        usePlexView({
+          neighborhood: async (path) => {
+            await new Promise<void>((resolve) => answers.push(resolve))
+            return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
+          },
+        }),
       PlexGraphView,
     )
     const state = effectScope(true).run(() => plexes.kind.open!('One.md', `${PLEX}:1`))!

@@ -590,13 +590,14 @@ check_dependencies: ## run dependency-cruiser over the frontend sources: package
 check_styles: ## run stylelint over every stylesheet and component style: tokens, no colour literal, no var() fallback
 	node $(LAYERS)/check.mjs styles-use-tokens
 
+# Dead code is judged across packages: the apps import the shell through its build, so it is built first.
 .PHONY: check_quality
-check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
+check_quality: lib_workbench_build ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
 	node --test $(QUALITY)/checks/apiTypes.test.mjs
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
 
 .PHONY: check_knip
-check_knip: ## check dead code and unused dependencies of every TS package and plugin with knip
+check_knip: lib_workbench_build ## check dead code and unused dependencies of every TS package and plugin with knip
 	npx knip
 
 .PHONY: lint_narrative

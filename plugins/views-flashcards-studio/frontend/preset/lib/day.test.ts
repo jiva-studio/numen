@@ -13,7 +13,14 @@ import { asValue } from '@numen/plugin-sdk'
 import { dayAfter } from '../../lib/day'
 
 import { usePresetTab } from '../model/kind'
-import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from '../../lib/presets'
+import {
+  DEFAULTS,
+  NO_BOUNDS,
+  type Curve,
+  type Point,
+  type Presets,
+  type Settings,
+} from '../../lib/presets'
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 import PresetTab from '../ui/PresetTab.vue'

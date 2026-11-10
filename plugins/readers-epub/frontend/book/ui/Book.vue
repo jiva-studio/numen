@@ -111,8 +111,7 @@ const vMarkup: Directive<HTMLElement, string> = {
 /* -------------------------------- Handlers -------------------------------- */
 const onArrival = () => layout.settling.settleKept()
 
-const onFollow = (press: MouseEvent) =>
-  links.follow(press, column.runMarks.findFragmentOffset)
+const onFollow = (press: MouseEvent) => links.follow(press, column.runMarks.findFragmentOffset)
 
 const onKey = (event: KeyboardEvent): boolean => {
   const way = getPageNavigationAction(event.key)
@@ -120,7 +119,6 @@ const onKey = (event: KeyboardEvent): boolean => {
   layout.turn(way)
   return true
 }
-
 </script>
 
 <template>

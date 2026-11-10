@@ -4,11 +4,7 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './ui/MarkdownNoteEditor.vue'
 import { createNoteEditorView } from './ui/noteEditorView'
-import {
-  createWikilinkExtension,
-  type WikilinkOption,
-  type WikilinkOptions,
-} from './lib/wikilinks'
+import { createWikilinkExtension, type WikilinkOption, type WikilinkOptions } from './lib/wikilinks'
 import { parseFrontmatter, type FrontmatterResult } from './lib/frontmatter'
 import {
   bindMarkdownEditorPreferences,

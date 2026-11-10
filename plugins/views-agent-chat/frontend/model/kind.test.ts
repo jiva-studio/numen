@@ -15,24 +15,28 @@ import { useAgentConversation, type AgentTabState } from './useAgentConversation
 const window = (options: HostOptions = {}) => {
   const fixture = createHost(options)
   const conversations: { said: ReturnType<typeof ref<Turn[]>>; stopped: string[] }[] = []
-  const chats = createAgentKind(fixture.host, (deps) => {
-    const turn = ref<Turn[]>([])
-    const stopCalls: string[] = []
-    const conversation: Conversation = {
-      turns: turn,
-      isAnswerPending: ref(false),
-      ask: async () => undefined,
-      getSourceLocation: () => null,
-      stop: () => {
-        stopCalls.push('stop')
-      },
-      finish: () => {
-        stopCalls.push('finish')
-      },
-    }
-    conversations.push({ said: turn, stopped: stopCalls })
-    return useAgentConversation(conversation, deps)
-  }, AgentTab)
+  const chats = createAgentKind(
+    fixture.host,
+    (deps) => {
+      const turn = ref<Turn[]>([])
+      const stopCalls: string[] = []
+      const conversation: Conversation = {
+        turns: turn,
+        isAnswerPending: ref(false),
+        ask: async () => undefined,
+        getSourceLocation: () => null,
+        stop: () => {
+          stopCalls.push('stop')
+        },
+        finish: () => {
+          stopCalls.push('finish')
+        },
+      }
+      conversations.push({ said: turn, stopped: stopCalls })
+      return useAgentConversation(conversation, deps)
+    },
+    AgentTab,
+  )
   const open = (): AgentTabState => chats.kind.open!('', `${AGENT}:1`)
   return { ...fixture, ...chats, open, conversations }
 }

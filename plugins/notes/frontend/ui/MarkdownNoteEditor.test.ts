@@ -185,7 +185,10 @@ describe('MarkdownNoteEditor over a note whose file changed on disk', () => {
 
   it('offers to write the text again when the file was removed', async () => {
     const wrapper = mount(MarkdownNoteEditor, {
-      props: { filePath: 'notes/Tide.md', state: createState({ fileConflict: ref<FileConflict>('gone') }) },
+      props: {
+        filePath: 'notes/Tide.md',
+        state: createState({ fileConflict: ref<FileConflict>('gone') }),
+      },
     })
     await nextTick()
 

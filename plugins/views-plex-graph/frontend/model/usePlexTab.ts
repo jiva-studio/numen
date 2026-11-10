@@ -17,21 +17,29 @@ import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
 import { WORDS as words } from '../words'
-import type { MenuRequest, PlexTabDeps, PlexTabState, QuickLinkRequest, PlexView, PathRename, NoteType, PlexNeighborhood, PlexRelation, PlexDestination } from '../types'
+import type {
+  MenuRequest,
+  PlexTabDeps,
+  PlexTabState,
+  QuickLinkRequest,
+  PlexView,
+  PathRename,
+  NoteType,
+  PlexNeighborhood,
+  PlexRelation,
+  PlexDestination,
+} from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'
 
-export type {
-  
-  
-  
-  PlexTabDeps,
-  PlexTabState,
-  
-}
+export type { PlexTabDeps, PlexTabState }
 
-function usePlexPicture(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
+function usePlexPicture(
+  view: PlexView,
+  deps: PlexTabDeps,
+  map: ReturnType<typeof createNodeIdMap>,
+) {
   const picture = computed<PlexNeighborhood | null>(() => {
     const neighborhood = view.neighborhood.value
     if (!deps.window.isReady.value || !neighborhood) return null
@@ -259,8 +267,7 @@ function usePlexMenu(options: {
 }
 
 function getPlexNodeName(neighborhood: PlexView['neighborhood']['value'], path: string): string {
-  if (neighborhood?.focus.path === path && neighborhood.focus.title)
-    return neighborhood.focus.title
+  if (neighborhood?.focus.path === path && neighborhood.focus.title) return neighborhood.focus.title
   const foundNode = neighborhood?.related.find((one) => one.path === path)
   return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }

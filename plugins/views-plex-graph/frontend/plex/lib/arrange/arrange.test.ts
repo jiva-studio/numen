@@ -165,14 +165,7 @@ describe('a box is as wide as its title needs', () => {
   })
 
   it('leaves a row packed to one gap between boxes, and centred on the focus', () => {
-    const mixed = createNeighborhood(
-      'child',
-      'A',
-      'Domain',
-      'Composition root',
-      'Port',
-      'Use case',
-    )
+    const mixed = createNeighborhood('child', 'A', 'Domain', 'Composition root', 'Port', 'Use case')
     const children = getNodesByRelation(arrangePlex(mixed, { measure: byTitle }), 'child')
 
     expect(new Set(children.map((node) => node.width)).size).toBeGreaterThan(1)

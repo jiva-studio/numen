@@ -5,7 +5,14 @@
  * not rendered.
  */
 import { describe, expect, it } from 'vitest'
-import { DEFAULTS, NO_CURVE_POINT, type Curve, type Presets, type Settings, type SettingsBounds } from '../../lib/presets'
+import {
+  DEFAULTS,
+  NO_CURVE_POINT,
+  type Curve,
+  type Presets,
+  type Settings,
+  type SettingsBounds,
+} from '../../lib/presets'
 import { estimateCurve } from '../lib/sketch'
 import { getShapeKey } from '../lib/fields'
 import { WORDS as words } from '../lib/words'

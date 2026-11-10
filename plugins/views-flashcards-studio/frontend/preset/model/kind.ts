@@ -25,7 +25,7 @@ import {
 import { flushWrites } from './writeQueue'
 import type { PresetTabState } from './types'
 
-export type { PresetTabState,  }
+export type { PresetTabState }
 
 /** The word preset tabs are filed under. */
 export const PRESET = 'preset'

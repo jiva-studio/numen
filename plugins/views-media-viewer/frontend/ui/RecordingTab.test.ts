@@ -169,7 +169,10 @@ describe('a recording tab', () => {
   it('seeks to the cue of a search hit span', async () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)
-    const state = reactive<{ path: string; ranges: readonly { start: number; end: number }[] | null }>({
+    const state = reactive<{
+      path: string
+      ranges: readonly { start: number; end: number }[] | null
+    }>({
       path: 'talks/Ants.mp3',
       ranges: null,
     })

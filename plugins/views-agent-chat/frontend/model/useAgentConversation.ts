@@ -15,7 +15,6 @@ import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 import type { SavedConversation } from '../lib/saved'
 
-
 export type { AgentTabDeps } from '../types'
 
 /** What one agent tab holds. */

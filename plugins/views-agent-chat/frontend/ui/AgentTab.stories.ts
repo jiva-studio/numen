@@ -22,22 +22,26 @@ const createTab = (turn: readonly Turn[]) =>
     name: 'AgentKindTab',
     setup() {
       const request: string[] = []
-      const { kind } = createAgentKind(createHost().host, (deps) => {
-        const conversation: Conversation = {
-          turns: ref([...turn]),
-          isAnswerPending: ref(false),
-          ask: async (text) => {
-            request.push(text)
-          },
-          getSourceLocation: () => null,
-          stop: () => undefined,
-          finish: () => undefined,
-        }
-        return useAgentConversation(conversation, {
-          ...deps,
-          settings: { ...deps.settings, getModelsAt: getStoryModels },
-        })
-      }, AgentTab)
+      const { kind } = createAgentKind(
+        createHost().host,
+        (deps) => {
+          const conversation: Conversation = {
+            turns: ref([...turn]),
+            isAnswerPending: ref(false),
+            ask: async (text) => {
+              request.push(text)
+            },
+            getSourceLocation: () => null,
+            stop: () => undefined,
+            finish: () => undefined,
+          }
+          return useAgentConversation(conversation, {
+            ...deps,
+            settings: { ...deps.settings, getModelsAt: getStoryModels },
+          })
+        },
+        AgentTab,
+      )
       const state = kind.open!('', 'agent:story')
       return () =>
         h('div', { style: { width: '100vw', height: '100vh' } }, [h(AgentTab, { state })])

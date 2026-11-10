@@ -1,7 +1,7 @@
 /**
  * Flashcard deck domain model, conversions, and operations.
  */
-export type { BufferCard, BufferDeck,  } from './types'
+export type { BufferCard, BufferDeck } from './types'
 
 export {
   deserializeVaultDeck,

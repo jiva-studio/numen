@@ -2,7 +2,15 @@
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
 import { dayAfter, daysBetween, isDay } from '../../lib/day'
-import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../lib/presets'
+import type {
+  Bounds,
+  BudgetUnit,
+  Goal,
+  Load,
+  Rule,
+  Settings,
+  SettingsBounds,
+} from '../../lib/presets'
 import { clamp, findNearest } from './curve'
 import type { Field } from './fields'
 

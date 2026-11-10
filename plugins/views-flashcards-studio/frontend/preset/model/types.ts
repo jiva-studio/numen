@@ -4,9 +4,14 @@
 import type { Ref } from 'vue'
 import type { Field } from '../lib/fields'
 import type { SettingValue } from '../lib/settings'
-import type { Curve, Goal, PresetCounts, Settings, SettingsBounds, StopReason } from '../../lib/presets'
-
-
+import type {
+  Curve,
+  Goal,
+  PresetCounts,
+  Settings,
+  SettingsBounds,
+  StopReason,
+} from '../../lib/presets'
 
 /** The value of one row of the receipt. */
 

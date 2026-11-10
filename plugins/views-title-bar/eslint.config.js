@@ -39,7 +39,10 @@ const slicePolicies = [
     from: { element: { type: 'api' } },
     allow: { to: [sharedFiles, sharedParts] },
   },
-  { from: { element: { type: 'lib' } }, allow: { to: [sharedFiles, { element: { type: 'lib' } }] } },
+  {
+    from: { element: { type: 'lib' } },
+    allow: { to: [sharedFiles, { element: { type: 'lib' } }] },
+  },
   {
     from: { element: { type: 'slice-ui' } },
     allow: {
@@ -350,7 +353,10 @@ export default [
   {
     files: ['**/*.test.ts'],
     plugins: { numen },
-    rules: { 'numen/no-style-declaration-read': 'error', 'numen/no-mock-of-subject-slice': 'error' },
+    rules: {
+      'numen/no-style-declaration-read': 'error',
+      'numen/no-mock-of-subject-slice': 'error',
+    },
   },
   {
     files: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**'],

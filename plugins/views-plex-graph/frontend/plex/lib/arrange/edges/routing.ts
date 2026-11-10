@@ -1,4 +1,14 @@
-import { getArrow, getHeading, getLength, type EdgeCurve, type EdgeHeading, type EdgeSide, type EdgeTitle, type LabelType, type PlacedEdge } from '../../edge'
+import {
+  getArrow,
+  getHeading,
+  getLength,
+  type EdgeCurve,
+  type EdgeHeading,
+  type EdgeSide,
+  type EdgeTitle,
+  type LabelType,
+  type PlacedEdge,
+} from '../../edge'
 import type { PlacedNode, Position } from '../../node'
 import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
 import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
@@ -318,8 +328,7 @@ export function routeEdge(
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const routingOptions =
-    'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const opacity = 'tuning' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
   const curve = curveBetween(from, to, routingOptions)
@@ -343,8 +352,7 @@ export function routeEdges(
   byId: ReadonlyMap<string, PlacedNode>,
   routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
-  const routingOptions =
-    'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions = 'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
     'tuning' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
 

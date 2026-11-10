@@ -164,4 +164,4 @@ const mountPresetTab = (
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 
-export {  curve, mountPresetTab, heights, point, rows, createTab }
+export { curve, mountPresetTab, heights, point, rows, createTab }

@@ -9,7 +9,7 @@ import { useDocumentViewport } from './useDocumentViewport'
 import { useDocumentHighlights } from './useDocumentHighlights'
 import type { Documents, Page } from '../types'
 
-export type {  Documents, Page,   }
+export type { Documents, Page }
 export { useDocumentNavigation } from './useDocumentNavigation'
 
 export { useDocumentHighlights } from './useDocumentHighlights'

@@ -31,8 +31,6 @@ export const STOP_REASONS: readonly StopReason[] = [
   StopReason.NOTHING,
 ]
 
-
-
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
 

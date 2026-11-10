@@ -71,9 +71,7 @@ const createEdge = (neighbor: PlexNode): PlexEdge => {
       ? createLine(neighbor.id, 'focus', label, 'from')
       : { from: neighbor.id, to: 'focus' }
   }
-  return label
-    ? createLine('focus', neighbor.id, label, 'to')
-    : { from: 'focus', to: neighbor.id }
+  return label ? createLine('focus', neighbor.id, label, 'to') : { from: 'focus', to: neighbor.id }
 }
 
 const createNeighborhood = (neighbors: readonly PlexNode[]): PlexNeighborhood => ({

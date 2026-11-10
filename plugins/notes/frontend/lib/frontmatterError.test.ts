@@ -7,7 +7,8 @@ describe('the frontmatter a reader would refuse', () => {
   })
 
   it('is none for lists, nested maps and quoted values', () => {
-    const note = '---\ntitle: "Tides: a study"\ntags: [moon,\n  sea]\nlinks:\n  - to: "[[Moon]]"\n---\nBody'
+    const note =
+      '---\ntitle: "Tides: a study"\ntags: [moon,\n  sea]\nlinks:\n  - to: "[[Moon]]"\n---\nBody'
 
     expect(getFrontmatterError(note)).toBe('')
   })

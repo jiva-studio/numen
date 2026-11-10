@@ -6,7 +6,14 @@
  */
 import { ref } from 'vue'
 import { asFailure, asValue, NOTE_TYPE, type Connection, type LinkMarker } from '@numen/plugin-sdk'
-import type { PlexEditor, PlexView, Neighborhood, NoteType, PathRename, PlexRelation } from '../types'
+import type {
+  PlexEditor,
+  PlexView,
+  Neighborhood,
+  NoteType,
+  PathRename,
+  PlexRelation,
+} from '../types'
 
 /** A tick that lets whatever a gesture requested from the vault resolve. */
 export const settle = () => new Promise((isDone) => setTimeout(isDone, 0))

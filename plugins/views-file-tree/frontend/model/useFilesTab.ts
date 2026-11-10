@@ -27,7 +27,7 @@ import type {
 } from '../types'
 import * as create from './create'
 
-export type {  FilesTabDeps, FilesTabState,  }
+export type { FilesTabDeps, FilesTabState }
 
 const createFailureReporter = (deps: FilesTabDeps) => (error: Caught) => {
   deps.window.showError(formatErrorMessage(error))

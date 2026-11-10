@@ -11,14 +11,7 @@ import { createPlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab
 import type { CommandTarget, SlotCommand, SlotItem } from '@numen/plugin-sdk'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
-import {
-  createLine,
-  createVault,
-  settle,
-  viewOn,
-  type Types,
-  type NeighborSpec,
-} from '../fixtures'
+import { createLine, createVault, settle, viewOn, type Types, type NeighborSpec } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
 

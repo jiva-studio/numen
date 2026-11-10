@@ -24,7 +24,7 @@ import { createCardModelFields } from './fields'
 import type { Cards } from '../../../types'
 import type { CardModelTabState } from './types'
 
-export type { CardModelTabState,  }
+export type { CardModelTabState }
 
 /** The word card model tabs are filed under. */
 export const CARD_MODEL = 'card-model'
