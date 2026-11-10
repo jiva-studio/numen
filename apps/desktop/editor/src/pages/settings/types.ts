@@ -40,7 +40,7 @@ export interface InstallationSettings {
   isRequested?(at: readonly string[]): boolean
   getModels(at: readonly string[]): readonly Model[]
   /** The operating system of the window: darwin, windows or linux; the `app.platform` of conditions. */
-  getPlatform?(): string
+  readonly getPlatform?: (() => string) | undefined
   write(content: readonly SettingEdit[]): void
   readonly file: Readonly<Ref<string>>
 }
@@ -72,7 +72,8 @@ export interface InstallationPlugin {
    * The components a plugin's frontend registered for its settings views, by view id. A view the
    * plugin declares and has not registered is absent.
    */
-  getSettingsViews?(pluginId: string): ReadonlyMap<string, { readonly component: unknown }>
+  readonly getSettingsViews?:
+    ((pluginId: string) => ReadonlyMap<string, { readonly component: unknown }>) | undefined
 }
 
 /**

@@ -27,10 +27,8 @@ import { useSettingsTab } from '@/pages/settings'
 import type {
   Installation,
   InstallationPlugin,
-  InstallationSecrets,
   InstallationSettings,
 } from '@/pages/settings'
-import type { Writable } from '@/shared/lib/writable'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WINDOW_WORDS } from './words'
 import type { WindowTabs } from '@/entities/tab'
@@ -55,14 +53,14 @@ interface SettingsTabConfigDeps {
   reportError: (error: unknown) => void
 }
 
-function createInstallationSettings(deps: SettingsTabConfigDeps): InstallationSettings {
+function createInstallationSettings(deps: SettingsTabConfigDeps) {
   const { appearance, rest, getPlatform, reportError } = deps
   /** The window follows a write of a setting of the shell: it reads and applies the appearance. */
   const followShell = async (content: readonly SettingEdit[]): Promise<void> => {
     if (!content.some((one) => one.at[0] === 'app')) return
     await appearance.reload()
   }
-  const settings: Writable<InstallationSettings> = {
+  return {
     getSetting: (targetPath: readonly string[]) => rest.read.getSetting(targetPath),
     getConfirmedSetting: (targetPath: readonly string[]) =>
       rest.read.getCommittedSetting(targetPath),
@@ -78,14 +76,13 @@ function createInstallationSettings(deps: SettingsTabConfigDeps): InstallationSe
       return promise
     },
     file: rest.state.path,
+    getPlatform,
   }
-  if (getPlatform) settings.getPlatform = getPlatform
-  return settings
 }
 
-function createInstallationPlugin(deps: SettingsTabConfigDeps): InstallationPlugin {
+function createInstallationPlugin(deps: SettingsTabConfigDeps) {
   const { rest, retry, getSettingsViews, catalogEntries } = deps
-  const plugin: Writable<InstallationPlugin> = {
+  return {
     catalog: catalogEntries,
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
     choosePath: async (pluginId: string, key: string): Promise<string> => {
@@ -110,12 +107,11 @@ function createInstallationPlugin(deps: SettingsTabConfigDeps): InstallationPlug
     },
     plugins: rest.state.plugins,
     app: rest.state.app,
+    getSettingsViews,
   }
-  if (getSettingsViews) plugin.getSettingsViews = getSettingsViews
-  return plugin
 }
 
-function createInstallationSecrets({ rest, secrets }: SettingsTabConfigDeps): InstallationSecrets {
+function createInstallationSecrets({ rest, secrets }: SettingsTabConfigDeps) {
   return {
     sections: rest.state.secretSections,
     menus: rest.state.secretMenus,

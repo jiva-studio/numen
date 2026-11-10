@@ -7,7 +7,7 @@
  *
  * Every value here is invented.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { Select, Switch } from '@numen/ui'

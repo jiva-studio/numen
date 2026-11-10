@@ -267,7 +267,7 @@ function createWindowCommandPalette(
 
 export function createCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
-  const { pluginHost, declaredCommands } = options
+  const { pluginHost, declaredCommands, rest } = options
   const plugins = usePluginCommands(
     options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
     pluginHost,
@@ -276,21 +276,17 @@ export function createCommands(options: CommandsDepsOptions) {
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
-  const palette = useSearch(
-    core,
-    { ...words, ...PALETTE_WORDS },
-    {
-      coverage,
-      menu: createSearchMenu(options.slots),
-      getTarget,
-    },
-  )
+  const palette = useSearch(core, { ...words, ...PALETTE_WORDS }, {
+    coverage,
+    menu: createSearchMenu(options.slots),
+    getTarget,
+  })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = createWindowCommandPalette(options, lists, listExtras)
 
-  watchCommandLists({ ...options, plugins: options.rest.state?.plugins }, commands.palette.open)
+  watchCommandLists({ ...options, plugins: rest.state?.plugins }, commands.palette.open)
   resetWhenClosed(commands.palette.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
@@ -344,11 +340,7 @@ export function createCommands(options: CommandsDepsOptions) {
   }
 
   if (pluginHost && declaredCommands?.contributions.keybindings) {
-    syncKeybindings(
-      pluginHost,
-      declaredCommands.contributions.keybindings,
-      options.rest.state?.plugins,
-    )
+    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, rest.state?.plugins)
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
