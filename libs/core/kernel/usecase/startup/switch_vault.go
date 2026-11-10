@@ -10,7 +10,7 @@ import (
 type SwitchVault[Open any] struct {
 	Show        func(ctx context.Context, v domain.Vault, open Open) error
 	FollowVault func(path string)
-	// After is told the outcome of each switch, with the error of the attempt.
+	// After receives the outcome of each switch, with the error of the attempt.
 	After func(v domain.Vault, err error)
 }
 

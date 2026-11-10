@@ -22,7 +22,7 @@ func TestAbsentRuntimeAnswersUnavailableForItsReason(t *testing.T) {
 	}
 }
 
-func TestAbsentRuntimeHoldsNoPlugin(t *testing.T) {
+func TestAbsentRuntimeHasNoPlugin(t *testing.T) {
 	runtime := AbsentRuntime{Reason: plugindomain.NotInstalled}
 
 	if len(runtime.GetPluginInfos()) != 0 || runtime.IsPluginEnabled("ocr") || runtime.IsEnabled("ocr") {

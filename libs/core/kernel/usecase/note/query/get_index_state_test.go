@@ -11,16 +11,16 @@ import (
 )
 
 type vaultsHeld struct {
-	held map[domain.VaultID]bool
-	err  error
+	inIndex map[domain.VaultID]bool
+	err     error
 }
 
 func (h vaultsHeld) Has(_ context.Context, id domain.VaultID) (bool, error) {
-	return h.held[id], h.err
+	return h.inIndex[id], h.err
 }
 
-func TestGetIndexStateIsIndexedOnceTheIndexHoldsTheVaultAndIndexingBefore(t *testing.T) {
-	state := query.NewGetIndexState(vaultsHeld{held: map[domain.VaultID]bool{"garden": true}})
+func TestGetIndexStateReturnsIndexedForAVaultInTheIndexAndIndexingForAnyOther(t *testing.T) {
+	state := query.NewGetIndexState(vaultsHeld{inIndex: map[domain.VaultID]bool{"garden": true}})
 
 	got, err := state.Execute(t.Context(), domain.Vault{ID: "garden"})
 	if err != nil || got.Status != plugindomain.Indexed {

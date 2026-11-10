@@ -32,7 +32,7 @@ func newEditorStart(log *[]string) startup.OpenEditor[string, fakeIndex, string]
 	}
 }
 
-func TestOpenEditorTakesTheStepsInOrder(t *testing.T) {
+func TestOpenEditorRunsTheStepsInOrder(t *testing.T) {
 	var log []string
 
 	window, err := newEditorStart(&log).Execute(t.Context())

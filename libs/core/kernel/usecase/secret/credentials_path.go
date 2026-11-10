@@ -15,12 +15,12 @@ type CredentialsLocator interface {
 
 // GetCredentialsPath returns the function that answers where the values of the key store are kept: the file
 // of a store that keeps them in one, else the empty text.
-func GetCredentialsPath(store pluginport.KeyStore) func() string {
-	return func() string {
+func GetCredentialsPath(store pluginport.KeyStore) func(ctx context.Context) string {
+	return func(ctx context.Context) string {
 		locator, isLocator := store.(CredentialsLocator)
 		if !isLocator {
 			return ""
 		}
-		return locator.GetCredentialsPath(context.Background())
+		return locator.GetCredentialsPath(ctx)
 	}
 }

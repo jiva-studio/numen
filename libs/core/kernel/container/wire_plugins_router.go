@@ -87,7 +87,7 @@ type pluginInstall struct {
 	PluginCatalog   catalog.Config
 	PluginDirs      []string
 	KeyStore        pluginport.KeyStore
-	CredentialsPath func() string
+	CredentialsPath func(ctx context.Context) string
 }
 
 type pluginSettingsAccess struct {

@@ -33,7 +33,7 @@ func newFlashcardsStart(log, messages *[]string) startup.OpenFlashcards[string, 
 	}
 }
 
-func TestOpenFlashcardsTakesTheStepsInOrderAndSaysWhatThemesAnswer(t *testing.T) {
+func TestOpenFlashcardsRunsTheStepsInOrderAndReportsWhatThemesAnswer(t *testing.T) {
 	var log, messages []string
 
 	opened, err := newFlashcardsStart(&log, &messages).Execute(t.Context())
@@ -47,7 +47,7 @@ func TestOpenFlashcardsTakesTheStepsInOrderAndSaysWhatThemesAnswer(t *testing.T)
 	}
 }
 
-func TestOpenFlashcardsSaysThatTheIndexIsNotFollowedAndGoesOn(t *testing.T) {
+func TestOpenFlashcardsReportsThatTheIndexIsNotFollowedAndGoesOn(t *testing.T) {
 	var log, messages []string
 	start := newFlashcardsStart(&log, &messages)
 	start.FollowChanges = func(context.Context) (<-chan struct{}, error) { return nil, errors.New("watch refused") }
@@ -62,7 +62,7 @@ func TestOpenFlashcardsSaysThatTheIndexIsNotFollowedAndGoesOn(t *testing.T) {
 	}
 }
 
-func TestOpenFlashcardsReturnsWhatItOpenedWhereThePluginVaultFails(t *testing.T) {
+func TestOpenFlashcardsReturnsTheOpenPartsWhereThePluginVaultFails(t *testing.T) {
 	var log, messages []string
 	start := newFlashcardsStart(&log, &messages)
 	failure := errors.New("install")

@@ -186,11 +186,11 @@ func twoProviders(t *testing.T) (*plugin.Host, *providerServer, *providerServer)
 	return host, one, two
 }
 
-func TestAgentProviderWithoutAHostListsNoProgramsAndTakesNoTask(t *testing.T) {
+func TestAgentProviderWithoutAHostRunsNothing(t *testing.T) {
 	assertNoAgentRuns(t, container.NewConfig(container.Config{}).AgentProvider())
 }
 
-func TestAgentProviderInSafeModeListsNoProgramsAndTakesNoTask(t *testing.T) {
+func TestAgentProviderInSafeModeRunsNothing(t *testing.T) {
 	host, _, _ := twoProviders(t)
 	assertNoAgentRuns(t, container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SafeMode: true}).AgentProvider())
 }

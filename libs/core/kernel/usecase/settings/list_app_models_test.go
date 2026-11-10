@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
 
-func TestListAppModelsAddressesEveryModelAndWriteUnderTheAppOwner(t *testing.T) {
+func TestListAppModelsPrefixesEveryModelAndWritePathWithTheAppOwner(t *testing.T) {
 	list := settings.NewListAppModels(func() []settingsdomain.Model {
 		return []settingsdomain.Model{{
 			Path:   []string{"agent", "use"},

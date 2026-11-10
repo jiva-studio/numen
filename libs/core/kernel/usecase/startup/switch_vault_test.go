@@ -10,12 +10,12 @@ import (
 )
 
 func TestSwitchVaultPointsThePluginsAtTheVaultOnlyWhereItWasShown(t *testing.T) {
-	shown := domain.Vault{Name: "garden", Path: "/vaults/garden"}
+	target := domain.Vault{Name: "garden", Path: "/vaults/garden"}
 	var followed []string
 	var told []error
 	failure := errors.New("not a vault")
 	show := func(_ context.Context, v domain.Vault, _ struct{}) error {
-		if v.Name != shown.Name {
+		if v.Name != target.Name {
 			return failure
 		}
 		return nil
@@ -26,7 +26,7 @@ func TestSwitchVaultPointsThePluginsAtTheVaultOnlyWhereItWasShown(t *testing.T) 
 		After:       func(_ domain.Vault, err error) { told = append(told, err) },
 	}
 
-	okErr := switching.Execute(t.Context(), shown, struct{}{})
+	okErr := switching.Execute(t.Context(), target, struct{}{})
 	badErr := switching.Execute(t.Context(), domain.Vault{Name: "missing", Path: "/vaults/missing"}, struct{}{})
 
 	if okErr != nil || !errors.Is(badErr, failure) {

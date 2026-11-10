@@ -37,7 +37,7 @@ type FlashcardsOpened[Index Closer, Vaults any] struct {
 	Themes error
 }
 
-// Execute returns what the start opened. Where the plugin vault cannot be installed it returns what was opened
+// Execute returns what the start opened. Where the plugin vault cannot be installed it returns what was open
 // up to then with the failure.
 func (u OpenFlashcards[Registry, Index, Vaults]) Execute(ctx context.Context) (FlashcardsOpened[Index, Vaults], error) {
 	var none FlashcardsOpened[Index, Vaults]
@@ -51,13 +51,13 @@ func (u OpenFlashcards[Registry, Index, Vaults]) Execute(ctx context.Context) (F
 	}
 	vaults := u.OpenVaults(index)
 	u.BindWindow(ctx, registry, index, vaults)
-	opened := FlashcardsOpened[Index, Vaults]{Index: index, Vaults: vaults}
+	result := FlashcardsOpened[Index, Vaults]{Index: index, Vaults: vaults}
 	if err := u.InstallVault(registry, index); err != nil {
-		return opened, err
+		return result, err
 	}
 	u.followChanges(ctx)
-	opened.Themes = u.BindThemes(u.sayTheme)
-	return opened, nil
+	result.Themes = u.BindThemes(u.sayTheme)
+	return result, nil
 }
 
 func (u OpenFlashcards[Registry, Index, Vaults]) followChanges(ctx context.Context) {

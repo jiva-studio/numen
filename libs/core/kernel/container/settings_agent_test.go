@@ -102,7 +102,7 @@ func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 	}
 }
 
-func TestTheSettingsAgentWithoutAHostTakesNoTask(t *testing.T) {
+func TestTheSettingsAgentWithoutAHostRunsNothing(t *testing.T) {
 	agent := container.NewConfig(container.Config{}).GetSettingsAgent()
 
 	if _, err := agent.StartRun(t.Context(), agentdomain.Task{Question: "q"}); err == nil {

@@ -111,11 +111,11 @@ func readWholeVault(c searchWiring,
 	if err := fitIndex(c, db).Execute(ctx, embedder); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	return buildReadWholeVault(c, ctx, db, embedder, v, refresh)
+	return buildReadWholeVault(c, db, embedder, v, refresh)
 }
 
 func buildReadWholeVault(c searchWiring,
-	ctx context.Context, db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
+	db *vault.Index, embedder embeddingport.Embedder, v domain.Vault, refresh vault.Refresh,
 ) (indexing.ReadWholeVault, error) {
 	texts, err := indexTexts(c, db, v)
 	if err != nil {

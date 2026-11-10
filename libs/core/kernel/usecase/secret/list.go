@@ -1,6 +1,7 @@
 package secret
 
 import (
+	"context"
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -18,11 +19,11 @@ type Listing struct {
 // List reads the secrets from the list, without their values.
 type List struct {
 	operation
-	credentialsPath func() string
+	credentialsPath func(ctx context.Context) string
 }
 
 // Execute returns the sections of the page and the menu of each declaration of the installed plugins.
-func (u *List) Execute() (Listing, error) {
+func (u *List) Execute(ctx context.Context) (Listing, error) {
 	list, err := u.ledger.GetSecrets()
 	if err != nil {
 		return Listing{}, err
@@ -38,7 +39,7 @@ func (u *List) Execute() (Listing, error) {
 		listing.Menus = append(listing.Menus, plugin.SecretMenu{Declaration: one, Secrets: plugin.ListSecretMenu(listing.Sections, one)})
 	}
 	if u.credentialsPath != nil {
-		listing.CredentialsPath = u.credentialsPath()
+		listing.CredentialsPath = u.credentialsPath(ctx)
 	}
 	return listing, nil
 }
