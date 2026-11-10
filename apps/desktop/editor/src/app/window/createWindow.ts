@@ -9,7 +9,7 @@ import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { createMessageLog } from '@/shared/notices/messages'
 import { useAppHotkeys } from '@/features/hotkeys'
-import { watchPluginSettings } from '../plugins/pluginSupport'
+import { createWindowPluginStatus, watchPluginSettings } from '../plugins/pluginSupport'
 import {
   createEditorCommands,
   createNoteKindReader,
@@ -34,9 +34,8 @@ function createWindowCore(): WindowCore {
   const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
   const writeMessage = log.getWriter('command')
   const frame = useWindowFrame()
-  // The plugin loader is made after the tabs; until then every plugin counts as starting.
-  const pluginStarts: { current?: (pluginId: string) => boolean } = {}
-  const tabs = createTabsCore({ writeMessage, rest, pluginStarts })
+  const status = createWindowPluginStatus(rest)
+  const tabs = createTabsCore({ writeMessage, rest, isPluginStarting: status.isPluginStarting })
   const runs = runSupport()
   const plugins = createPluginsCore({
     log,
@@ -46,8 +45,8 @@ function createWindowCore(): WindowCore {
     tabLinks: tabs.tabLinks,
     tabOpeners: tabs.tabOpeners,
     rest,
+    status,
   })
-  pluginStarts.current = plugins.host.pluginLoader.isPluginStarting
   return { frame, log, rest, writeMessage, runs, tabs, plugins }
 }
 

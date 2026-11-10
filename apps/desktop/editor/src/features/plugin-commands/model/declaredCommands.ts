@@ -101,13 +101,22 @@ const isSameList = (
   received: readonly unknown[],
 ): boolean => current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
-export interface DeclaredCommandsDeps {
+/** What the lists of declarations are read through. */
+export interface DeclaredStateDeps {
   readonly list?: typeof listDeclaredCommands
+  readonly getConfig?: () => WhenSettings
+  readonly whenReader?: WhenReader
+}
+
+export interface DeclaredCommandsDeps extends DeclaredStateDeps {
+  /**
+   * The lists of declarations, made first where the plugin host reads them before the commands that
+   * depend on the host can be made.
+   */
+  readonly state?: DeclaredState
   readonly run?: typeof runDeclaredCommand
   readonly isListed?: (id: string) => boolean
   readonly hasBackend?: (pluginId: string) => boolean
-  readonly getConfig?: () => WhenSettings
-  readonly whenReader?: WhenReader
   readonly listItems?: ListItems
 }
 
@@ -130,15 +139,11 @@ const toDeclaredRun = (one: DeclaredCommand, invocation: CommandInvocation) => (
 })
 
 /**
- * The declared commands, reloaded by `load`, each registered with a handler that runs
- * it, writes the plugin message and opens the returned path.
+ * The lists the enabled plugins declare, reloaded by `load`: commands, slots, shared handlers and
+ * keybindings, and what the conditions of the commands read.
  */
-export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
+export function createDeclaredState(deps: DeclaredStateDeps = {}) {
   const list = deps.list ?? listDeclaredCommands
-  const run = deps.run ?? runDeclaredCommand
-  const isListed = deps.isListed ?? (() => false)
-  const listItems = deps.listItems ?? listItemsOfOne
-  const hasBackend = deps.hasBackend ?? (() => true)
   const declared = shallowRef<readonly DeclaredCommand[] | undefined>(undefined)
   const declaredSlots = shallowRef<readonly DeclaredSlot[] | undefined>(undefined)
   const declaredHandlers = shallowRef<readonly HandlerDeclaration[] | undefined>(undefined)
@@ -150,37 +155,6 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     whenReader: deps.whenReader ?? createWhenReader(),
   }
   let newest = 0
-  let unregisterAll: readonly (() => void)[] = []
-
-  /**
-   * The declared commands a backend runs and the palette lists: those the plugin host does not list,
-   * because no frontend handler is registered for them and their frontend is not loading, and only
-   * for a plugin that has a backend.
-   */
-  const backendCommands = computed(() =>
-    (declared.value ?? []).filter(
-      (one) => hasBackend(one.pluginId) && !isListed(getPaletteId(one)),
-    ),
-  )
-
-  watch(
-    backendCommands,
-    (commands) => {
-      for (const unregister of unregisterAll) unregister()
-      unregisterAll = commands.map((one) =>
-        registerCommand(getPaletteId(one), async (invocation, on) => {
-          const outcome = await run(one, toDeclaredRun(one, invocation), whenContext.whenReader)
-          if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
-          const { message, openedPath } = outcome.value
-          if (message) on.writeMessage(message, 'info')
-          if (!openedPath) return
-          on.notes.openFile(openedPath, '', 'current')
-          return openedPath
-        }),
-      )
-    },
-    { flush: 'sync' },
-  )
 
   let onFirstList: () => void = () => undefined
   const firstList = new Promise<void>((resolve) => {
@@ -204,18 +178,9 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     onFirstList()
   }
 
-  const load = (): Promise<void> =>
-    read().catch((error: unknown) => {
-      onFirstList()
-      throw error
-    })
-
   return {
     /** Settles once the lists of a read are held, or a read has failed. */
     waitForFirstList: (): Promise<void> => firstList,
-    paletteCommands: computed(() =>
-      createDeclaredPaletteCommands(backendCommands.value, whenContext, listItems),
-    ),
     /** What the when conditions of the commands read besides their target. */
     whenContext,
     commands: computed(() => declared.value),
@@ -226,7 +191,73 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
       keybindings: computed(() => declaredKeybindings.value),
     },
     declarations: computed(() => declared.value?.map(createCommandDeclaration)),
-    load,
+    load: (): Promise<void> =>
+      read().catch((error: unknown) => {
+        onFirstList()
+        throw error
+      }),
+  }
+}
+
+export type DeclaredState = ReturnType<typeof createDeclaredState>
+
+/**
+ * The declared commands, reloaded by `load`, each registered with a handler that runs
+ * it, writes the plugin message and opens the returned path.
+ */
+export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
+  const state = deps.state ?? createDeclaredState(deps)
+  const run = deps.run ?? runDeclaredCommand
+  const isListed = deps.isListed ?? (() => false)
+  const listItems = deps.listItems ?? listItemsOfOne
+  const hasBackend = deps.hasBackend ?? (() => true)
+  let unregisterAll: readonly (() => void)[] = []
+
+  /**
+   * The declared commands a backend runs and the palette lists: those the plugin host does not list,
+   * because no frontend handler is registered for them and their frontend is not loading, and only
+   * for a plugin that has a backend.
+   */
+  const backendCommands = computed(() =>
+    (state.commands.value ?? []).filter(
+      (one) => hasBackend(one.pluginId) && !isListed(getPaletteId(one)),
+    ),
+  )
+
+  watch(
+    backendCommands,
+    (commands) => {
+      for (const unregister of unregisterAll) unregister()
+      unregisterAll = commands.map((one) =>
+        registerCommand(getPaletteId(one), async (invocation, on) => {
+          const outcome = await run(
+            one,
+            toDeclaredRun(one, invocation),
+            state.whenContext.whenReader,
+          )
+          if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
+          const { message, openedPath } = outcome.value
+          if (message) on.writeMessage(message, 'info')
+          if (!openedPath) return
+          on.notes.openFile(openedPath, '', 'current')
+          return openedPath
+        }),
+      )
+    },
+    { flush: 'sync' },
+  )
+
+  return {
+    waitForFirstList: state.waitForFirstList,
+    paletteCommands: computed(() =>
+      createDeclaredPaletteCommands(backendCommands.value, state.whenContext, listItems),
+    ),
+    whenContext: state.whenContext,
+    commands: state.commands,
+    slots: state.slots,
+    contributions: state.contributions,
+    declarations: state.declarations,
+    load: state.load,
   }
 }
 

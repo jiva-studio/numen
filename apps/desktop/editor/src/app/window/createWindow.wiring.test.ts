@@ -55,6 +55,10 @@ vi.mock('@/features/tab-linking', async (importOriginal) => ({
     h.args.tabLinks = args
     return h.f.tabLinks
   },
+  createTabReports: (args: unknown) => {
+    h.args.tabReports = args
+    return h.f.tabReports
+  },
   createTabLinkSession: (args: unknown) => {
     h.args.tabLinkSession = args
     return h.f.tabLinkSession
@@ -151,6 +155,7 @@ vi.mock('@/entities/window', async (original) => ({
   },
 }))
 vi.mock('../plugins/pluginSupport', () => ({
+  createWindowPluginStatus: () => h.f.status,
   createPluginSupport: (args: unknown) => {
     h.args.plugins = args
     return { pluginHost: h.f.pluginHost, pluginLoader: h.f.pluginLoader }
@@ -186,13 +191,19 @@ beforeEach(() => {
     writer,
     log: { getWriter: vi.fn(() => writer) },
     tabLinks: { name: 'tabLinks' },
+    status: { isPluginStarting: vi.fn((_pluginId: string) => false) },
+    tabReports: {
+      reportTabs: vi.fn(),
+      waitForReports: vi.fn(async () => undefined),
+      stop: vi.fn(),
+      resume: vi.fn(),
+    },
     tabLinkSession: {
       start: vi.fn(async () => undefined),
       close: vi.fn(),
       reportTabs: vi.fn(),
       reopen: vi.fn(async () => undefined),
       acceptMove: vi.fn(),
-      waitForReports: vi.fn(async () => undefined),
     },
     windowReport: ref<unknown>({ tabs: [], window: {} }),
     tabMover: {
@@ -300,7 +311,6 @@ beforeEach(() => {
       start: vi.fn(async () => undefined),
       waitForInterface: vi.fn(async () => undefined),
       waitForTabPlugins: vi.fn(async () => undefined),
-      isPluginStarting: vi.fn((_pluginId: string) => false),
       close: vi.fn(async () => undefined),
     },
     navigation: { travel: vi.fn(), leavePath: vi.fn(async () => undefined) },
@@ -648,7 +658,8 @@ describe('the services a plugin is given', () => {
   it('are the ones the kinds made, the window task list, the background tasks, the commands with those over a tab, the vaults and the window', () => {
     createWindow()
 
-    const { taskList, backgroundTasks, commands, vaults, window, ...made } = h.args.plugins.services
+    const { taskList, backgroundTasks, commands, vaults, window, ...made } =
+      h.args.plugins.getServices()
     expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
     expect(vaults?.getState()).toBeDefined()
@@ -657,9 +668,9 @@ describe('the services a plugin is given', () => {
     expect(backgroundTasks).toStrictEqual({ name: 'backgroundTasks' })
   })
 
-  it('lets a tab wait while the plugin loader says its own plugin is starting', () => {
+  it('lets a tab wait while the plugin status says its own plugin is starting', () => {
     createWindow()
-    h.f.pluginLoader.isPluginStarting.mockImplementation((pluginId: string) => pluginId === 'p1')
+    h.f.status.isPluginStarting.mockImplementation((pluginId: string) => pluginId === 'p1')
 
     expect(h.args.windowTabs.isPluginStarting('p1')).toBe(true)
     expect(h.args.windowTabs.isPluginStarting('p2')).toBe(false)
@@ -871,7 +882,7 @@ describe('the services a plugin is given', () => {
 describe('tab links wiring', () => {
   it('writes a link after the pending tab reports', async () => {
     let finishReports: () => void = () => undefined
-    h.f.tabLinkSession.waitForReports.mockImplementationOnce(
+    h.f.tabReports.waitForReports.mockImplementationOnce(
       () => new Promise<undefined>((resolve) => (finishReports = () => resolve(undefined))),
     )
     createWindow()
@@ -924,7 +935,7 @@ describe('tab links wiring', () => {
 
     h.f.windowReport.value = { tabs: [], window: { isMain: true, tabCount: 1 } }
     await vi.waitFor(() => expect(h.f.tabLinkSession.reportTabs).toHaveBeenCalledOnce())
-    expect(h.args.tabLinkSession.getReport()).toStrictEqual(h.f.windowReport.value)
+    expect(h.args.tabReports.getReport()).toStrictEqual(h.f.windowReport.value)
   })
 
   it('reports an error when the core rejects a link', () => {
