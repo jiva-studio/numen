@@ -18,6 +18,7 @@ import {
   stripMarkdownExtension,
 } from './pluginView'
 import type { NoteBuffer } from './types'
+import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('createPluginPaneWrapper', () => {
   it('unwraps es module default export and forwards normalized props', async () => {
@@ -83,7 +84,7 @@ describe('createReaderTabKind', () => {
   it('computes dynamic title and book target for epub reader', () => {
     const readerKind = createReaderTabKind('md.numen.readers.epub', {
       id: 'reader-epub',
-      component: null,
+      component: STUB_COMPONENT,
       title: 'EPUB Reader',
     })
 
@@ -127,7 +128,7 @@ describe('createCustomTabKind', () => {
   it('computes note title and note target', () => {
     const customKind = createCustomTabKind('md.numen.notes', {
       kind: 'note',
-      component: null,
+      component: STUB_COMPONENT,
       title: 'Markdown Note',
     })
 
@@ -172,7 +173,7 @@ describe('createCustomTabKind', () => {
       'md.numen.notes',
       {
         kind: 'note',
-        component: null,
+        component: STUB_COMPONENT,
         title: 'Markdown Note',
       },
       {
@@ -205,7 +206,7 @@ describe('createCustomTabKind', () => {
 })
 
 describe('createCustomTabKind (loading)', () => {
-  const registration = { kind: 'note', component: null, title: 'Markdown Note' }
+  const registration = { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' }
   const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
@@ -251,7 +252,7 @@ describe('createCustomTabKind (failed writes)', () => {
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
     createCustomTabKind(
       'md.numen.notes',
-      { kind: 'note', component: null, title: 'Markdown Note' },
+      { kind: 'note', component: STUB_COMPONENT, title: 'Markdown Note' },
       host(writeNote),
     ).open('notes/test.md', 'tab') as {
       errorMessage: { value: string }
@@ -307,7 +308,7 @@ describe('createCustomTabKind (failed writes)', () => {
 
 describe('createReaderTabKind (place)', () => {
   it('opens at the place saved before a restart and saves the place the reader shows', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
 
     const state = kind.open('a.bin', 'tab', { page: 4 }) as {
       selector: unknown
@@ -321,7 +322,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('opens a new tab at no place and saves none', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
 
     const state = kind.open('a.bin', 'tab')
 
@@ -330,7 +331,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('reports to the open tabs the last place the reader reports', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('library/Wading Birds.pdf', 'tab') as {
       reportPlace: (place: unknown) => void
     }
@@ -345,7 +346,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('leaves the place out of the open tab while the reader has reported none', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
 
     const state = kind.open('library/Wading Birds.pdf', 'tab', { page: 4 })
 
@@ -353,7 +354,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('keeps the place it saves for a restart apart from the place it reports', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT })
     const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
       savePlace: (place: unknown) => void
       reportPlace: (place: unknown) => void
@@ -372,7 +373,7 @@ describe('createReaderTabKind (place)', () => {
 
   it('carries the icon the reader registers', () => {
     const icon = { name: 'Icon' }
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null, icon })
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: STUB_COMPONENT, icon })
 
     expect(kind.icon).toBe(icon)
   })
@@ -409,70 +410,7 @@ describe('createReaderTabKind (place)', () => {
   })
 })
 
-describe('createCustomTabKind (actions)', () => {
-  it('binds extensible action handlers from registration and host deps', () => {
-    const customAction = vi.fn()
-    const hostAction = vi.fn()
-
-    const kind = createCustomTabKind(
-      'sample-plugin',
-      {
-        kind: 'sample',
-        component: null,
-        actions: {
-          exportSample: customAction,
-        },
-      },
-      {
-        registerKind: vi.fn(() => vi.fn()),
-        registerExtensionReader: vi.fn(() => vi.fn()),
-        openTab: vi.fn(async () => 'tab-1'),
-        tabActionHandlers: {
-          syncSample: hostAction,
-        },
-      },
-    )
-
-    const state = kind.open('samples/test.md', 'tab') as Record<string, unknown>
-    expect(typeof state.exportSample).toBe('function')
-    expect(typeof state.syncSample).toBe('function')
-
-    ;(state.exportSample as (arg: string) => void)('json')
-    expect(customAction).toHaveBeenCalledWith('samples/test.md', 'json')
-
-    ;(state.syncSample as (force: boolean) => void)(true)
-    expect(hostAction).toHaveBeenCalledWith('samples/test.md', true)
-  })
-
-  it('prevents action names from overwriting tab-state fields', () => {
-    const collidingAction = vi.fn()
-
-    const kind = createCustomTabKind(
-      'sample-plugin',
-      {
-        kind: 'sample',
-        component: null,
-        actions: {
-          path: collidingAction,
-          title: collidingAction,
-        },
-      },
-      {
-        registerKind: vi.fn(() => vi.fn()),
-        registerExtensionReader: vi.fn(() => vi.fn()),
-        openTab: vi.fn(async () => 'tab-1'),
-        tabActionHandlers: {
-          file: collidingAction,
-        },
-      },
-    )
-
-    const state = kind.open('samples/secure.md', 'tab') as Record<string, unknown>
-    expect(state.path).toBe('samples/secure.md')
-    expect(state.file).toBeUndefined()
-    expect(typeof state.path).toBe('string')
-  })
-
+describe('createCustomTabKind (notes)', () => {
   it('navigates note tab in place and syncs path when shown', async () => {
     const syncPath = vi.fn(() => true)
     const writeCalls: Array<{ path: string; body: string }> = []
@@ -480,7 +418,7 @@ describe('createCustomTabKind (actions)', () => {
       'md.numen.notes',
       {
         kind: 'note',
-        component: null,
+        component: STUB_COMPONENT,
         title: 'Note',
       },
       {
@@ -531,7 +469,7 @@ describe('createCustomTabKind (actions)', () => {
 
     const prefixedReader = createReaderTabKind('p', {
       id: 'reader:pdf',
-      component: null,
+      component: STUB_COMPONENT,
     })
     expect(prefixedReader.kind).toBe('reader:pdf')
     expect(prefixedReader.getTitle!(undefined)).toBe('')
@@ -543,7 +481,7 @@ describe('createCustomTabKind (actions)', () => {
 
     const middleReader = createReaderTabKind('p', {
       id: 'my-reader:2',
-      component: null,
+      component: STUB_COMPONENT,
       title: 'Fallback Reader',
     })
     expect(middleReader.kind).toBe('reader:my-reader:2')
@@ -566,10 +504,6 @@ describe('createCustomTabKind (actions)', () => {
     expect(prefixedReader.onKeyPress!({ handleKeyPress }, enterEv)).toBe(true)
     expect(prefixedReader.onKeyPress!({ handleKeyPress }, escEv)).toBe(false)
 
-    // CustomTabKind action priority and dispatch
-    const regDoWork = vi.fn()
-    const hostDoWork = vi.fn()
-    const onTabAction = vi.fn()
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
 
@@ -577,15 +511,12 @@ describe('createCustomTabKind (actions)', () => {
       'p',
       {
         kind: 'custom',
-        component: null,
-        actions: { doWork: regDoWork },
+        component: STUB_COMPONENT,
       },
       {
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
-        tabActionHandlers: { doWork: hostDoWork },
-        onTabAction,
         getWorkspace: () => ({ files: { syncPath } }) as never,
         readNote: (path: string) =>
           path === 'notes/slow.md'
@@ -597,23 +528,15 @@ describe('createCustomTabKind (actions)', () => {
     )
 
     const st = kindWithDispatch.open('notes/slow.md', 't1') as Record<string, unknown>
-    ;(st.doWork as (x: number) => void)(42)
-    expect(regDoWork).toHaveBeenCalledWith('notes/slow.md', 42)
-    expect(hostDoWork).not.toHaveBeenCalled()
-
-    ;(st.dispatch as (action: string, arg: string) => void)('ping', 'pong')
-    expect(onTabAction).toHaveBeenCalledWith('ping', 'notes/slow.md', 'pong')
-
     // Save while loading & unedited is ignored
     const writeNote = vi.fn(async () => undefined)
     const kindSaveGuard = createCustomTabKind(
       'p',
-      { kind: 'note', component: null, actions: { dispatch: regDoWork } },
+      { kind: 'note', component: STUB_COMPONENT },
       {
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
         openTab: async () => '',
-        onTabAction,
         readNote: () => new Promise(() => undefined),
         writeNote,
       },
@@ -621,10 +544,7 @@ describe('createCustomTabKind (actions)', () => {
     const loadingState = kindSaveGuard.open('notes/load.md', 't2') as {
       save: () => void
       updateBody: (b: string) => void
-      dispatch: (a: string) => void
     }
-    loadingState.dispatch('custom')
-    expect(onTabAction).toHaveBeenCalledTimes(1)
     loadingState.save()
     expect(writeNote).not.toHaveBeenCalled()
     loadingState.updateBody('edited while loading')
@@ -676,11 +596,11 @@ describe('createCustomTabKind (actions)', () => {
     expect(m2).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
-    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: null })
+    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: STUB_COMPONENT })
     expect(() => kindNoDeps.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
     const kindUndefWorkspace = createCustomTabKind(
       'p',
-      { kind: 'custom', component: null },
+      { kind: 'custom', component: STUB_COMPONENT },
       {
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
@@ -753,7 +673,7 @@ describe('createBufferedNoteState', () => {
 
     const customKind = createCustomTabKind(
       'md.numen.notes',
-      { kind: 'note', component: null, title: 'Note' },
+      { kind: 'note', component: STUB_COMPONENT, title: 'Note' },
       {
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
@@ -864,7 +784,7 @@ describe('createBufferedNoteState', () => {
     vi.mocked(buffer.open).mockClear()
     const nonNoteWithBuffer = createCustomTabKind(
       'p',
-      { kind: 'custom-other', component: null },
+      { kind: 'custom-other', component: STUB_COMPONENT },
       {
         registerKind: () => vi.fn(),
         registerExtensionReader: () => vi.fn(),
@@ -878,7 +798,7 @@ describe('createBufferedNoteState', () => {
     // Fallbacks when deps/notes/workspace are missing
     const bareState = createBufferedNoteState(
       { targetPath: 'notes/bare.md', id: 'bare', buffer },
-      { pluginId: 'p', title: 'Explicit Title', actions: {} },
+      { pluginId: 'p', title: 'Explicit Title' },
     )
     expect(bareState.title).toBe('Explicit Title')
     expect(await bareState.wikilinks.search('q')).toEqual([])
@@ -889,7 +809,6 @@ describe('createBufferedNoteState', () => {
       { targetPath: 'notes/nonotes.md', id: 'nonotes', buffer },
       {
         pluginId: 'p',
-        actions: {},
         deps: {
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -907,7 +826,6 @@ describe('createBufferedNoteState', () => {
       { targetPath: '', id: 'empty', buffer },
       {
         pluginId: 'p',
-        actions: {},
         deps: {
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -927,7 +845,6 @@ describe('createBufferedNoteState', () => {
       { targetPath: '', id: 'undef-find', buffer },
       {
         pluginId: 'p',
-        actions: {},
         deps: {
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -947,7 +864,6 @@ describe('createBufferedNoteState', () => {
       { targetPath: 'notes/unmapped.md', id: 'unmapped', buffer },
       {
         pluginId: 'p',
-        actions: {},
         deps: {
           registerKind: () => vi.fn(),
           registerExtensionReader: () => vi.fn(),
@@ -1193,7 +1109,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(
       renderPaneContent({
         pluginId: 'p',
-        component: null,
+        component: STUB_COMPONENT,
         state: {},
         shadowRoot: null,
         containerClass: 'c',

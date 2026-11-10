@@ -2,6 +2,7 @@
  * The files of the vault: which of them a file is, what a listing of one folder
  * reports, and what making one or moving one returns.
  */
+import type { JsonObject } from '@numen/plugin-loader'
 import type { Result } from '@/shared/lib/result'
 import type { ErrorCode } from '@/shared/api/errors'
 
@@ -19,7 +20,7 @@ export interface FileKind {
   readonly isNote: boolean
   readonly type: NoteType
   readonly tabKind?: string
-  readonly properties?: Readonly<Record<string, unknown>>
+  readonly properties?: JsonObject
 }
 
 export interface Entry {

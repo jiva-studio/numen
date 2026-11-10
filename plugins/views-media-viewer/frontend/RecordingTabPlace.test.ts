@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
+import type { Selector } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import { TALK_URL, createPlayer, createRecordings, flush } from './model/fakes'
 
@@ -21,7 +22,7 @@ vi.mock('@numen/ui', async (original) => ({
 
 const OTHER_URL = 'http://127.0.0.1:1/token/v/talks/Bees.mp3'
 
-const mountTab = (selector: Record<string, unknown> | null) => {
+const mountTab = (selector: Selector | null) => {
   const { recordings } = createRecordings()
   const { player } = createPlayer()
   const savePlace = vi.fn()

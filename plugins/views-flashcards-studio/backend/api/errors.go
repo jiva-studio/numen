@@ -6,7 +6,7 @@ type ErrorCode string
 // ErrorCode values.
 const (
 	ErrorCodeUnspecified    ErrorCode = ""
-	ErrorCodeNotFound       ErrorCode = "notFound"
+	ErrorCodeNotFound       ErrorCode = "not_found"
 	ErrorCodeNotANote       ErrorCode = "not_a_note"
 	ErrorCodeNotText        ErrorCode = "not_text"
 	ErrorCodeTooLarge       ErrorCode = "too_large"

@@ -7,13 +7,19 @@
  * its `context` prop, behind the stylesheet of the plugin that declared it.
  */
 import { createApp, type App, type Component } from 'vue'
-import type { Disposable, MountedView, ViewRegistration } from '@numen/plugin-sdk'
+import type { Disposable, MountedView } from '@numen/plugin-sdk'
 import { adoptPluginStyle, getPluginStyle, type StyleRoot } from './styles'
+
+/** A view as the registry keeps it. The registry matches capabilities by name and knows no list of them. */
+export interface DeclaredViewRegistration {
+  readonly capability: string
+  readonly component: Component
+}
 
 interface DeclaredView {
   readonly pluginId: string
   readonly vaultPermissions: readonly string[]
-  readonly registration: ViewRegistration
+  readonly registration: DeclaredViewRegistration
 }
 
 interface ViewInstance {
@@ -39,7 +45,7 @@ interface Mount {
   readonly capability: string
   readonly access: MountAccess
   readonly element: HTMLElement
-  readonly context: unknown
+  readonly context: object
   instance?: ViewInstance | undefined
 }
 
@@ -76,7 +82,7 @@ function drawView(mount: Mount, view: DeclaredView): ViewInstance {
   const release = adoptPluginStyle(view.pluginId, mount.element.getRootNode() as StyleRoot)
   const nodes = release ? [root] : [...createStyle(view.pluginId), root]
   mount.element.append(...nodes)
-  const app = createApp(view.registration.component as Component, { context: mount.context })
+  const app = createApp(view.registration.component, { context: mount.context })
   const exposed = app.mount(root) as { focus?: () => void }
   return { view, app, nodes, exposed, release }
 }
@@ -100,7 +106,7 @@ export function createViewRegistry() {
 
   const registerView = (
     pluginId: string,
-    registration: ViewRegistration,
+    registration: DeclaredViewRegistration,
     permissions: readonly string[] = [],
   ): Disposable => {
     const vaultPermissions = permissions.filter((one) => one.startsWith('vault:'))
@@ -124,7 +130,7 @@ export function createViewRegistry() {
   const mountView = (
     capability: string,
     element: HTMLElement,
-    ...[context, access]: [context: unknown, access: MountAccess]
+    ...[context, access]: [context: object, access: MountAccess]
   ): MountedView => {
     const declaredView = declared.find((one) => one.registration.capability === capability)
     for (const permission of access.inherits ? (declaredView?.vaultPermissions ?? []) : []) {

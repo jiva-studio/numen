@@ -9,6 +9,7 @@ import {
   SLOT,
   useSlotMenu,
   type CommandItem,
+  type JsonObject,
   type CommandsHost,
   type CommandTarget as RunTarget,
   type SlotHost,
@@ -62,7 +63,7 @@ const getMoveWindow = (
 /** The type the vault files a note as, and its frontmatter where it has any. */
 export interface NoteKind {
   readonly noteType: string
-  readonly properties?: Readonly<Record<string, unknown>>
+  readonly properties?: JsonObject
 }
 
 const readTypedTarget = async (

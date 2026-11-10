@@ -14,6 +14,11 @@ export {
   type AskAgentResponse,
   type Entry,
   type MoveResult,
+  type PluginCommand,
+  type PluginHandler,
+  type PluginKeybinding,
+  type PluginSlotEntry,
+  type RunPluginCommandResponse,
   type TextSegment as TextSegmentMessage,
   type TextVersion as TextVersionMessage,
 } from '@numen/protocol'

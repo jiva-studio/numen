@@ -125,18 +125,6 @@ describe('the bar', () => {
 
     expect(wrapper.find('[data-status-bar-slot="statusBar.left"]').text()).toBe('Count words')
   })
-
-  it('draws an empty bar where the window offers no slots', () => {
-    const context = createMockPluginContext({ pluginId: manifest.id })
-    const { slots: _slots, ...ui } = context.ui
-    activate({ ...context, ui })
-    const [registration] = context.getRegisteredSlotViews()
-
-    const wrapper = mountBar(registration!.component as Component)
-
-    expect(wrapper.find('footer[role="region"]').exists()).toBe(true)
-    expect(wrapper.findAll('[data-status-bar-entry]')).toHaveLength(0)
-  })
 })
 
 describe('a command', () => {

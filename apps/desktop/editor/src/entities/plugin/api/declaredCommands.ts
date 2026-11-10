@@ -3,7 +3,14 @@
  * plugins' backends run. The application checks a run against the declaration
  * before it is sent to the plugin.
  */
-import { COMMAND_ERROR_CODE } from '@numen/core-client'
+import {
+  COMMAND_ERROR_CODE,
+  type PluginCommand,
+  type PluginHandler,
+  type PluginKeybinding,
+  type PluginSlotEntry,
+  type RunPluginCommandResponse,
+} from '@numen/core-client'
 import {
   createWhenReader,
   type CommandItem,
@@ -11,55 +18,7 @@ import {
   type WhenReader,
 } from '@numen/plugin-loader'
 import { pluginCommands } from '@/shared/api/clients'
-
-interface WireCommand {
-  readonly pluginId: string
-  readonly id: string
-  readonly title: string
-  readonly icon?: string
-  readonly when: string
-  readonly hasItems?: boolean
-  readonly arguments: readonly {
-    readonly name: string
-    readonly title: string
-    readonly isRequired: boolean
-  }[]
-}
-
-interface WireSlotEntry {
-  readonly pluginId: string
-  readonly entry?:
-    | {
-        readonly slot: string
-        readonly placed: { readonly case?: string | undefined; readonly value?: string | undefined }
-        readonly title: string
-        readonly icon: string
-        readonly group: string
-        readonly order?: number | undefined
-        readonly when: string
-        readonly values?: Readonly<Record<string, string>> | undefined
-      }
-    | undefined
-}
-
-interface WireHandler {
-  readonly pluginId: string
-  readonly handler?:
-    { readonly command: string; readonly title: string; readonly when: string } | undefined
-  readonly hasItems: boolean
-}
-
-interface WireKeybinding {
-  readonly pluginId: string
-  readonly keybinding?:
-    | {
-        readonly key: string
-        readonly command: string
-        readonly values?: Readonly<Record<string, string>> | undefined
-        readonly when: string
-      }
-    | undefined
-}
+import { getRunPath } from '../lib/commandRun'
 
 interface DeclaredArgument {
   readonly name: string
@@ -130,7 +89,7 @@ export type DeclaredCommandOutcome =
   | { ok: true; value: { readonly message: string; readonly openedPath: string } }
   | { ok: false; error: string }
 
-const readCommand = (wire: WireCommand): DeclaredCommand => ({
+const readCommand = (wire: PluginCommand): DeclaredCommand => ({
   pluginId: wire.pluginId,
   id: wire.id,
   title: wire.title,
@@ -146,12 +105,12 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
 
 const PLACED_KINDS = ['command', 'view', 'submenu'] as const
 
-const readPlaced = (entry: WireSlotEntry['entry']) => {
+const readPlaced = (entry: PluginSlotEntry['entry']) => {
   const kind = PLACED_KINDS.find((one) => one === entry?.placed.case)
   return kind && entry?.placed.value ? { [kind]: entry.placed.value } : {}
 }
 
-const readArrangement = (entry: WireSlotEntry['entry']) => ({
+const readArrangement = (entry: PluginSlotEntry['entry']) => ({
   ...(entry?.group ? { group: entry.group } : {}),
   ...(entry?.order === undefined ? {} : { order: entry.order }),
   ...(entry?.when ? { when: entry.when } : {}),
@@ -160,7 +119,7 @@ const readArrangement = (entry: WireSlotEntry['entry']) => ({
     : {}),
 })
 
-const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
+const readSlotEntry = ({ pluginId, entry }: PluginSlotEntry): DeclaredSlot => {
   return {
     pluginId,
     slot: entry?.slot ?? '',
@@ -171,7 +130,7 @@ const readSlotEntry = ({ pluginId, entry }: WireSlotEntry): DeclaredSlot => {
   }
 }
 
-const readHandler = ({ pluginId, handler, hasItems }: WireHandler): HandlerDeclaration => ({
+const readHandler = ({ pluginId, handler, hasItems }: PluginHandler): HandlerDeclaration => ({
   pluginId,
   command: handler?.command ?? '',
   title: handler?.title ?? '',
@@ -179,7 +138,7 @@ const readHandler = ({ pluginId, handler, hasItems }: WireHandler): HandlerDecla
   hasItems,
 })
 
-const readKeybinding = ({ pluginId, keybinding }: WireKeybinding): DeclaredKeybinding => ({
+const readKeybinding = ({ pluginId, keybinding }: PluginKeybinding): DeclaredKeybinding => ({
   pluginId,
   key: keybinding?.key ?? '',
   command: keybinding?.command ?? '',
@@ -196,31 +155,41 @@ export async function listDeclaredCommands(): Promise<DeclaredList> {
     commands: answer.commands.map(readCommand),
     slots: answer.slots.map(readSlotEntry),
     contentTypes: { ...answer.contentTypeByExtension },
-    handlers: (answer.handlers as readonly WireHandler[] | undefined)?.map(readHandler) ?? [],
-    keybindings:
-      (answer.keybindings as readonly WireKeybinding[] | undefined)?.map(readKeybinding) ?? [],
+    handlers: answer.handlers.map(readHandler),
+    keybindings: answer.keybindings.map(readKeybinding),
   }
 }
+
+const readOutcome = (answer: RunPluginCommandResponse): DeclaredCommandOutcome =>
+  answer.error === COMMAND_ERROR_CODE.UNSPECIFIED
+    ? { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
+    : { ok: false, error: answer.message }
+
+const runPluginCommand = async (
+  pluginId: string,
+  command: string,
+  path: string,
+  run: DeclaredCommandRun,
+): Promise<DeclaredCommandOutcome> =>
+  readOutcome(
+    await pluginCommands.runPluginCommand({
+      pluginId,
+      command,
+      path,
+      arguments: { ...run.values },
+      ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
+    }),
+  )
 
 /**
  * Runs the plugin's handler of the shared command in its backend, over the file, with the values of
  * the arguments the command declares and the item picked.
  */
-export async function runDeclaredHandler(
+export function runDeclaredHandler(
   handler: Pick<HandlerDeclaration, 'pluginId' | 'command'>,
   run: DeclaredCommandRun,
 ): Promise<DeclaredCommandOutcome> {
-  const answer = await pluginCommands.runPluginCommand({
-    pluginId: handler.pluginId,
-    command: handler.command,
-    path: run.path,
-    arguments: { ...run.values },
-    ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
-  })
-  if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
-    return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
-  }
-  return { ok: false, error: answer.message }
+  return runPluginCommand(handler.pluginId, handler.command, run.path, run)
 }
 
 /**
@@ -228,23 +197,12 @@ export async function runDeclaredHandler(
  * reads the target, it offers items, or a place named the file. The reader reads the condition; a
  * window passes its one reader.
  */
-export async function runDeclaredCommand(
+export function runDeclaredCommand(
   command: DeclaredCommand,
   run: DeclaredCommandRun,
   whenReader: WhenReader = createWhenReader(),
 ): Promise<DeclaredCommandOutcome> {
-  const answer = await pluginCommands.runPluginCommand({
-    pluginId: command.pluginId,
-    command: command.id,
-    path:
-      isOverTarget(command, whenReader) || command.hasItems || run.isTargetNamed ? run.path : '',
-    arguments: { ...run.values },
-    ...(run.itemId === undefined ? {} : { itemId: run.itemId }),
-  })
-  if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
-    return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
-  }
-  return { ok: false, error: answer.message }
+  return runPluginCommand(command.pluginId, command.id, getRunPath(command, run, whenReader), run)
 }
 
 /** One command of a plugin whose items are listed: a command it declares, or its handler of a shared command. */
@@ -284,14 +242,4 @@ export async function listDeclaredItemLists(
           }
         : { ok: false, error: one.message },
   }))
-}
-
-/** Whether the condition of the command reads its target, so a run of it names the path it is over. */
-export function isOverTarget(
-  command: Pick<DeclaredCommand, 'when'>,
-  whenReader: WhenReader,
-): boolean {
-  return (
-    whenReader.getCondition(command.when)?.names.some((name) => name.startsWith('target.')) ?? false
-  )
 }

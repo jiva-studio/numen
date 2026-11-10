@@ -6,6 +6,7 @@ import type {
   Disposable,
   FileSelectEvent,
   PluginContext,
+  JsonValue,
   PluginEvents,
   PluginSettings,
   PluginTabs,
@@ -191,8 +192,8 @@ interface EventGuard {
 
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
-    get: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
-    onChange: <T = unknown>(key: string, h: (v: T) => void) =>
+    get: <T extends JsonValue = JsonValue>(key: string) => host.getSetting<T>(pluginId, key),
+    onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
       add(host.onSettingChange<T>(pluginId, key, h)),
   }
 }
@@ -265,14 +266,14 @@ function createUi(
   mountView: PluginUi['mountView'],
 ): PluginUi {
   return {
-    ...pickDefined<Omit<PluginUi, 'mountView'>>({
+    ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
       workspace: host.getWorkspace?.(),
       window: host.getWindow?.(),
       commands: host.getCommands?.(),
-      slots: host.getSlots?.(),
-      notices: host.getNotices?.(pluginId),
       drops: host.drops,
     }),
+    slots: host.getSlots(),
+    notices: host.getNotices(pluginId),
     mountView,
   }
 }

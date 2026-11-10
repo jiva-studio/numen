@@ -57,7 +57,6 @@ export type {
   CommandDeclaration,
   HandlerDeclaration,
   BackendHandlerRun,
-  TabActionHandler,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
 export {

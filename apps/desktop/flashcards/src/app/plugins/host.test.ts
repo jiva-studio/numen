@@ -222,7 +222,7 @@ describe('createShellHost', () => {
 
     host
       .createContext('md.numen.cards')
-      .ui.mountView(CONVERSATION, panel, { focus: 'Decks/Physics.md' })
+      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: 'Decks/Physics.md' })
     expect(panel.textContent).toBe('Decks/Physics.md')
 
     host.disposePlugin('md.numen.chat')
@@ -236,7 +236,7 @@ describe('createShellHost', () => {
       .createContext('md.numen.chat')
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
-    host.createContext('md.numen.cards').ui.mountView(CONVERSATION, panel, {})
+    host.createContext('md.numen.cards').ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: '' })
 
     host.disposePlugin('md.numen.cards')
 

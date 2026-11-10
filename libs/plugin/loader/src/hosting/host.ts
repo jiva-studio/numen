@@ -19,7 +19,13 @@ import { createPluginContext } from './context'
 import { addListener, notifyListeners } from './events'
 import { createCommandApi } from './commandApi'
 import { createWhenReader, type WhenReader } from '../when/whenReader'
-import { APP_KEYBINDINGS, isSharedCommand } from '@numen/plugin-sdk'
+import {
+  APP_KEYBINDINGS,
+  isSharedCommand,
+  type JsonValue,
+  type NoticeHost,
+  type SlotHost,
+} from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER } from '../commandId'
 import {
   createKeybindingRegistry,
@@ -117,9 +123,9 @@ function createSettingBridge(
   deps: PluginHostDeps,
 ): Pick<PluginContextHost, 'getSetting' | 'onSettingChange'> {
   return {
-    getSetting: <T = unknown>(pluginId: string, key: string) =>
+    getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T = unknown>(
+    onSettingChange: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
@@ -130,7 +136,7 @@ function createSettingBridge(
         dispose: deps.onSettingChange(
           pluginId,
           key,
-          handler as (v: unknown) => void | Promise<void>,
+          handler as (v: JsonValue | undefined) => void | Promise<void>,
         ),
       }
     },
@@ -167,7 +173,11 @@ interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
   readonly slotViews: SlotViewRegistry
+  readonly slots: SlotHost
 }
+
+/** The notices of a window that shows none: what a plugin reports is dropped. */
+const DISCARDING_NOTICES: NoticeHost = { show: () => undefined, setTasks: () => undefined }
 
 function createHostContextBridge(
   deps: PluginHostDeps,
@@ -186,6 +196,7 @@ function createHostContextBridge(
     ...createEventBridge(deps, registry),
     ...createTabBridge(deps),
     ...createServiceBridge(deps),
+    getSlots: () => shared.slots,
   }
 }
 
@@ -217,7 +228,7 @@ function createServiceBridge(
     getVaults: () => deps.getVaults?.(),
     getWindow: () => deps.getWindow?.(),
     getBuffers: () => deps.getBuffers?.(),
-    getNotices: (pluginId) => deps.getNotices?.(pluginId),
+    getNotices: (pluginId) => deps.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
     getBackgroundTasks: () => deps.getBackgroundTasks?.(),
     getTexts: (pluginId) => deps.getTexts?.(pluginId),
@@ -324,11 +335,6 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
   const slotViews = createSlotViewRegistry(
     deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
   )
-  const contextHost = createHostContextBridge(deps, registry, {
-    views: createViewRegistry(),
-    drops: createDropRegistry(),
-    slotViews,
-  })
   const { keybindings, registerKeybindings, unregisterKeybindings, unregisterAllKeybindings } =
     createKeybindingApi(deps)
   const slots = createSlotRegistry({
@@ -340,7 +346,12 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     ...(deps.getSlotWhenValues ? { getWhenValues: deps.getSlotWhenValues } : {}),
     whenReader,
   })
-  contextHost.getSlots = () => slots
+  const contextHost = createHostContextBridge(deps, registry, {
+    views: createViewRegistry(),
+    drops: createDropRegistry(),
+    slotViews,
+    slots,
+  })
   const parts = { registry, slotViews, deps }
 
   return {

@@ -52,7 +52,7 @@ export interface WindowTab {
   readonly id: string
   readonly vault: string
   readonly view: PluginView
-  readonly state: unknown
+  readonly state: object
   readonly scope: EffectScope
 }
 
@@ -82,6 +82,10 @@ function createWindowTab(front: () => PluginView | null) {
     const scope = effectScope(true)
     try {
       const state = scope.run(() => view.registration.open?.(vault, id))
+      if (!state) {
+        scope.stop()
+        return
+      }
       tab.value = { id, vault, view, state, scope }
     } catch (error) {
       scope.stop()
@@ -181,7 +185,7 @@ function mountDeclaredView(
   registry: ViewRegistry,
   caller: { pluginId: string; manifest?: Manifest | undefined },
 ) {
-  return (capability: string, element: HTMLElement, viewContext: unknown) =>
+  return (capability: string, element: HTMLElement, viewContext: object) =>
     registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
 }
 

@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, reactive } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type Selector } from '@numen/plugin-sdk'
 import RecordingTab from './RecordingTab.vue'
 import { createPlayer, createRecordings, flush } from './model/fakes'
 import type { TextRange } from './types'
@@ -111,7 +111,7 @@ describe('the place a recording tab saves when the window moves it', () => {
     const savePlace = vi.fn()
     const state = reactive({
       path: 'talks/Ants.mp3',
-      selector: null as Record<string, unknown> | null,
+      selector: null as Selector | null,
       ranges,
       savePlace,
     })

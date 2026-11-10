@@ -13,7 +13,10 @@ import type {
   Disposable,
   DropHost,
   DropRegistration,
+  Caught,
+  FilePlacement,
   FileSelectEvent,
+  JsonValue,
   MountedView,
   NoticeHost,
   PluginContext,
@@ -26,7 +29,6 @@ import type {
   TabKindRegistration,
   TaskHost,
   VaultChangeEvent,
-  ViewRegistration,
   VaultFiles,
   VaultNotes,
   VaultRelations,
@@ -40,7 +42,7 @@ import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
 import type { WhenValues } from '../when/when'
 import type { WhenReader } from '../when/whenReader'
 import type { Component } from 'vue'
-import type { MountAccess } from '../views'
+import type { DeclaredViewRegistration, MountAccess } from '../views'
 
 export type {
   AgentProviderRegistration,
@@ -100,8 +102,6 @@ export interface PluginPaletteCommand {
   readonly icon?: string
 }
 
-export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
-
 export interface PluginHostDeps {
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
@@ -129,23 +129,25 @@ export interface PluginHostDeps {
   readonly getReaderExtensions?: (pluginId: string, readerId: string) => readonly string[]
   readonly registerEditor?: (
     type: string,
-    open: (path: string, title?: string, options?: unknown) => void,
+    open: (
+      path: string,
+      title?: string,
+      options?: FilePlacement | { readonly where?: FilePlacement | undefined },
+    ) => void,
   ) => (() => void) | void
   readonly openTab: (kind: string, at?: string) => Promise<string>
   readonly openTabAdjacent?: (kind: string, at?: string) => Promise<string>
   readonly navigateTab?: (kind: string, path: string) => Promise<string>
   readonly closeTab?: (id: string) => void
-  readonly getTabState?: (id: string) => unknown
-  readonly getSetting?: (pluginId: string, key: string) => unknown
+  readonly getTabState?: (id: string) => object | undefined
+  readonly getSetting?: (pluginId: string, key: string) => JsonValue | undefined
   readonly onSettingChange?: (
     pluginId: string,
     key: string,
-    handler: (value: unknown) => void | Promise<void>,
+    handler: (value: JsonValue | undefined) => void | Promise<void>,
   ) => () => void
   readonly closeTabsForPlugin?: (pluginId: string) => void
-  readonly onError?: (pluginId: string, error: unknown) => void
-  readonly tabActionHandlers?: Record<string, TabActionHandler>
-  readonly onTabAction?: (action: string, targetPath: string, ...args: unknown[]) => unknown
+  readonly onError?: (pluginId: string, error: Caught) => void
 
   readonly readNote?:
     ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined
@@ -220,19 +222,19 @@ export interface PluginContextHost {
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   registerView(
     pluginId: string,
-    registration: ViewRegistration,
+    registration: DeclaredViewRegistration,
     permissions?: readonly string[],
   ): Disposable
   mountView(
     capability: string,
     element: HTMLElement,
-    context: unknown,
+    context: object,
     access: MountAccess,
   ): MountedView
   registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
   readonly drops: DropHost
-  getSetting<T = unknown>(this: void, pluginId: string, key: string): T | undefined
-  onSettingChange<T = unknown>(
+  getSetting<T extends JsonValue = JsonValue>(this: void, pluginId: string, key: string): T | undefined
+  onSettingChange<T extends JsonValue = JsonValue>(
     this: void,
     pluginId: string,
     key: string,
@@ -260,11 +262,11 @@ export interface PluginContextHost {
   getVaults?(): VaultsHost | undefined
   getWindow?(): WindowHost | undefined
   getBuffers?(): BufferHost | undefined
-  getNotices?(pluginId: string): NoticeHost | undefined
+  getNotices(pluginId: string): NoticeHost
   getTasks?(pluginId: string): TaskHost | undefined
   getBackgroundTasks?(): BackgroundTaskHost | undefined
   getTexts?(pluginId: string): VaultTexts | undefined
-  getSlots?(): SlotHost | undefined
+  getSlots(): SlotHost
 }
 
 /** What the host runs with: the deps of the window, with the one reader of its conditions. */

@@ -50,16 +50,16 @@ function showFailure(
 ): void {
   opening.then(
     (result) => {
-      if (!result.ok) context.ui.notices?.show(result.error, 'error')
+      if (!result.ok) context.ui.notices.show(result.error, 'error')
     },
-    (error: unknown) => context.ui.notices?.show(String(error), 'error'),
+    (error: unknown) => context.ui.notices.show(String(error), 'error'),
   )
 }
 
 function showMissingAddress(context: PluginContext): void {
   const address = context.settings.get<string>('endpoint')
   if (context.settings.get<string>('channel') !== 'custom' || (address ?? '').trim() !== '') return
-  context.ui.notices?.show(words.missingAddress, 'error')
+  context.ui.notices.show(words.missingAddress, 'error')
 }
 
 export const activate = (context: PluginContext, parts: UpdateParts = browserParts): void => {

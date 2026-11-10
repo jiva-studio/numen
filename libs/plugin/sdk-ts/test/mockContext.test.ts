@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
 import type { PluginVault, PluginWork } from '../src/types'
+import type { AgentPort } from '../src/agent'
 import { CONVERSATION } from '../src/views'
+
+/** An agent that answers nothing, for views that need one to be mounted. */
+const AGENT: AgentPort = {
+  ask: async function* () {},
+  finish: async () => undefined,
+}
 
 describe('mock plugin context', () => {
   it('manages tab kind registrations', () => {
@@ -82,7 +89,7 @@ describe('mock plugin context', () => {
 
     const [kind] = ctx.getRegisteredTabKinds()
     const state = kind?.open?.('Start.md', 'graph:1')
-    await kind?.navigate?.(state, 'Next.md', 'Next')
+    await kind?.navigate?.(state ?? {}, 'Next.md', 'Next')
 
     expect(state).toStrictEqual({ here: 'Start.md' })
     expect(navigated).toStrictEqual(['Start.md -> Next.md'])
@@ -124,7 +131,7 @@ describe('mock plugin context', () => {
     const d = ctx.register.agentProvider({
       id: 'custom-llm',
       name: 'Custom LLM',
-      createAgent: () => ({}),
+      createAgent: () => AGENT,
       capabilities: ['chat'],
     })
 
@@ -139,7 +146,7 @@ describe('mock plugin context', () => {
     const declared = ctx.register.view({ capability: CONVERSATION, component: {} })
     const element = {} as HTMLElement
 
-    const view = ctx.ui.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
+    const view = ctx.ui.mountView(CONVERSATION, element, { agent: AGENT, focus: 'Decks/Physics.md' })
     view.focus()
     view.dispose()
 
@@ -148,7 +155,7 @@ describe('mock plugin context', () => {
       {
         capability: CONVERSATION,
         element,
-        context: { focus: 'Decks/Physics.md' },
+        context: { agent: AGENT, focus: 'Decks/Physics.md' },
         isDisposed: true,
         focusCount: 1,
       },

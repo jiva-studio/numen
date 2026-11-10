@@ -7,7 +7,6 @@ import { COMMAND_ERROR_CODE } from '@numen/core-client'
 import { createWhenReader } from '@numen/plugin-loader'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import {
-  isOverTarget,
   listDeclaredCommands,
   listDeclaredItemLists,
   runDeclaredCommand,
@@ -23,7 +22,17 @@ const request = {
 let restore: () => void
 
 beforeEach(() => {
-  restore = installCoreAnswers({ pluginCommands: request })
+  restore = installCoreAnswers({
+    pluginCommands: {
+      ...request,
+      listCommands: async (...asked: unknown[]) => ({
+        contentTypeByExtension: {},
+        handlers: [],
+        keybindings: [],
+        ...((await request.listCommands(...asked)) as object),
+      }),
+    },
+  })
 })
 
 afterEach(() => {
@@ -212,13 +221,6 @@ describe('the commands the plugins declare', () => {
     expect(one).toStrictEqual(proofread)
   })
 
-  it('run over a target where their condition reads one', () => {
-    const reader = createWhenReader()
-
-    expect(isOverTarget(convert, reader)).toBe(true)
-    expect(isOverTarget({ when: 'window.isVaultReady' }, reader)).toBe(false)
-    expect(isOverTarget({}, reader)).toBe(false)
-  })
 })
 
 describe('a run', () => {

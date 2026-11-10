@@ -6,10 +6,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h, shallowRef } from 'vue'
-import type { Selector, TabPlace } from '@numen/plugin-sdk'
+import type { ReaderTabState, Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
-import { useDocumentReader } from '../model/useDocumentReader'
-import { useDocumentTab } from '../model/useDocumentTab'
 import type { Documents, TextRange } from '../types'
 
 vi.mock('../reader', () => ({
@@ -53,17 +51,25 @@ const createDocuments = () => {
 }
 
 const mountTab = (documents: Documents) => {
-  const reader = useDocumentTab(useDocumentReader(documents, PATH))
   const ranges = shallowRef<readonly TextRange[] | null>(null)
   const savePlace = vi.fn((_place: Selector) => undefined)
   const reportPlace = vi.fn((_place: TabPlace) => undefined)
-  const state = Object.defineProperty(
-    Object.assign(reader, { title: 'Wading Birds', selector: null, savePlace, reportPlace }),
-    'ranges',
-    { get: () => ranges.value, enumerable: true },
-  )
-  const tab = mount(DocumentTab, { props: { state } })
-  return { tab, ranges, savePlace, reportPlace, reader }
+  const state: ReaderTabState = {
+    path: PATH,
+    title: 'Wading Birds',
+    selector: null,
+    get ranges() {
+      return ranges.value
+    },
+    savePlace,
+    reportPlace,
+  }
+  const tab = mount(DocumentTab, { props: { state, documents } })
+  const goToPage = async (page: number) => {
+    tab.getComponent({ name: 'Reader' }).vm.$emit('go', page)
+    await flush()
+  }
+  return { tab, ranges, savePlace, reportPlace, goToPage }
 }
 
 describe('the place a PDF tab saves when the window moves it', () => {
@@ -99,12 +105,11 @@ describe('the place a PDF tab saves when the reader navigates to another page', 
   it('is the page shown, from 1, and the number of pages of the document', async () => {
     const { documents, release } = createDocuments()
     release()
-    const { tab, savePlace, reader } = mountTab(documents)
+    const { tab, savePlace, goToPage } = mountTab(documents)
     await flush()
     savePlace.mockClear()
 
-    await reader.document.actions.goToPage(3)
-    await flush()
+    await goToPage(3)
 
     expect(savePlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
     tab.unmount()
@@ -115,12 +120,11 @@ describe('the place a PDF tab reports to the window', () => {
   it('is the page shown, from 1, and the page count when the reader navigates to another page', async () => {
     const { documents, release } = createDocuments()
     release()
-    const { tab, reportPlace, reader } = mountTab(documents)
+    const { tab, reportPlace, goToPage } = mountTab(documents)
     await flush()
     reportPlace.mockClear()
 
-    await reader.document.actions.goToPage(3)
-    await flush()
+    await goToPage(3)
 
     expect(reportPlace).toHaveBeenLastCalledWith({ page: 4, pageCount: 12 })
     tab.unmount()

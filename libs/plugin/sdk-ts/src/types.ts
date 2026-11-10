@@ -1,4 +1,6 @@
-import type { AgentHost } from './agent'
+import type { Component } from 'vue'
+import type { JsonValue } from './json'
+import type { AgentHost, AgentPort } from './agent'
 import type { BufferHost } from './buffers'
 import type { DropHost, DropRegistration } from './drops'
 import type { NoticeHost } from './notices'
@@ -8,7 +10,7 @@ import type { CommandItem, CommandsHost, CommandTarget } from './commands/comman
 import type { SlotHost } from './slots/slots'
 import type { VaultsHost, WindowHost } from './window'
 import type { Selector, VaultTexts } from './texts'
-import type { MountedView, ViewRegistration } from './views'
+import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
@@ -31,32 +33,31 @@ export type { Result } from './result'
 // its `state` prop.
 export interface ReaderRegistration {
   id: string
-  component: unknown
+  component: Component
   title?: string
-  icon?: unknown
+  icon?: Component
   capabilities?: readonly string[]
-  metadata?: Record<string, unknown>
 }
 
 // SettingsViewRegistration registers a component the plugin's settings page mounts. The manifest
 // declares, under `settingsViews` with the same id, its title.
 export interface SettingsViewRegistration {
   readonly id: string
-  readonly component: unknown
+  readonly component: Component
 }
 
 // SettingsViewProps are the props the settings page passes the component of a settings view. The
 // component emits `update:setting` with a key and a value; the host writes it to that setting.
 export interface SettingsViewProps {
   readonly pluginId: string
-  readonly values: Readonly<Record<string, unknown>>
+  readonly values: Readonly<Record<string, JsonValue>>
 }
 
 // SlotViewRegistration registers a component a slot draws. The manifest places it, as an entry
 // `{ "slot", "view" }` of `contributes.slots` with the same id, in the slots it is drawn in.
 export interface SlotViewRegistration {
   readonly id: string
-  readonly component: unknown
+  readonly component: Component
 }
 
 // AppInfo describes the application build a plugin runs in.
@@ -77,6 +78,13 @@ export interface TabPlace {
   readonly chapter?: string
 }
 
+// ReaderHandle is what a reader component lets its tab call: moving the keyboard into the reader, and
+// laying it out again once the tab is visible.
+export interface ReaderHandle {
+  focus(): void
+  measure(): void
+}
+
 // ReaderTabState is the `state` prop the window passes the component of a reader tab.
 export interface ReaderTabState {
   readonly path: string
@@ -88,6 +96,8 @@ export interface ReaderTabState {
   savePlace(place: Selector): void
   // Reports the place the reader shows to the window, which an agent reads with the open tabs.
   reportPlace(place: TabPlace): void
+  // Hands the window the reader, which it focuses and lays out when the tab is shown.
+  attachReader?(reader: ReaderHandle | null): void
 }
 
 // ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
@@ -96,7 +106,7 @@ export interface ReaderPaneProps {
   readonly file?: string
   readonly pluginId?: string
   readonly title?: string
-  readonly state?: unknown
+  readonly state?: ReaderTabState
 }
 
 // TabTarget identifies the tab a command applies to.
@@ -116,17 +126,16 @@ export interface TabPlacement {
 // declares open owns the content of its tabs; one that does not displays the
 // note at the path its tab opens on. A kind that declares getState has its
 // tabs reopened after a restart with the saved state.
-export interface TabKindRegistration<State = unknown> {
+export interface TabKindRegistration<State extends object = object> {
   kind: string
-  component: unknown
+  component: Component
   title?: string
-  actions?: Record<string, (targetPath: string, ...args: unknown[]) => unknown>
   onClose?(this: void, state: State, id: string): boolean
   // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope. `saved` is
   // what getState returned for the tab before a restart, and absent for a new tab.
-  open?(targetPath: string, id: string, saved?: unknown): State
+  open?(targetPath: string, id: string, saved?: JsonValue): State
   // The JSON value the window keeps for the tab and passes to open after a restart.
-  getState?(this: void, state: State): unknown
+  getState?(this: void, state: State): JsonValue
   getTitle?(this: void, state: State): string
   // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
   identity?(this: void, targetPath: string): string
@@ -150,7 +159,7 @@ export interface TabKindRegistration<State = unknown> {
   flushPending?(this: void, state: State): Promise<void>
   // A file made in a folder under a name, as the file this kind edits.
   createFile?(this: void, folder: string, name: string): Promise<Result<{ path: string }, string>>
-  icon?: unknown
+  icon?: Component
   placement?: TabPlacement
 }
 
@@ -179,7 +188,7 @@ export interface CommandRegistration {
 export interface AgentProviderRegistration {
   id: string
   name: string
-  createAgent: (options?: unknown) => unknown
+  createAgent: () => AgentPort
   capabilities?: string[]
 }
 
@@ -222,7 +231,7 @@ export interface PluginRegistrations {
   // `contributes.slots`, drawn in every slot the manifest places it in. An id the manifest places
   // nowhere throws.
   slotView(registration: SlotViewRegistration): Disposable
-  tabKind<State>(registration: TabKindRegistration<State>): Disposable
+  tabKind<State extends object>(registration: TabKindRegistration<State>): Disposable
   command(registration: CommandRegistration): Disposable
   agentProvider(registration: AgentProviderRegistration): Disposable
   // Declares a view other plugins mount by its capability.
@@ -233,8 +242,8 @@ export interface PluginRegistrations {
 
 // PluginSettings is the settings of the plugin.
 export interface PluginSettings {
-  get<T = unknown>(key: string): T | undefined
-  onChange<T = unknown>(key: string, handler: (value: T) => void): Disposable
+  get<T extends JsonValue = JsonValue>(key: string): T | undefined
+  onChange<T extends JsonValue = JsonValue>(key: string, handler: (value: T) => void): Disposable
 }
 
 // PluginEvents is what a plugin receives of the vault and says to the other plugins.
@@ -250,7 +259,7 @@ export interface PluginTabs {
   open?(kind: string, at?: string): Promise<string> | void
   // Brings the most recently active tab of the kind to the front and navigates it to `path`; opens a tab of that kind at `path` when none is open.
   navigate?(kind: string, path: string): Promise<string> | void
-  close?(id: string): void
+  close(id: string): void
 }
 
 // PluginVault is what a plugin reads and writes of the vault.
@@ -268,12 +277,16 @@ export interface PluginUi {
   readonly workspace?: WorkspaceHost
   readonly window?: WindowHost
   readonly commands?: CommandsHost
-  readonly slots?: SlotHost
-  readonly notices?: NoticeHost
+  readonly slots: SlotHost
+  readonly notices: NoticeHost
   readonly drops?: DropHost
   // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
   // plugin declares one the element stays empty, and the view is drawn once one does.
-  mountView(capability: string, element: HTMLElement, context: unknown): MountedView
+  mountView<C extends ViewCapability>(
+    capability: C,
+    element: HTMLElement,
+    context: ViewContexts[C],
+  ): MountedView
 }
 
 // PluginWork is the agent and the background work of the core.

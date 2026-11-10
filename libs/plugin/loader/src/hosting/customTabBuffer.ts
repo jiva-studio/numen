@@ -6,6 +6,7 @@
  * a file that changed with nothing unsaved is shown at once, and a renamed file is followed.
  */
 import { computed, onScopeDispose, shallowReactive, watch } from 'vue'
+import type { EditorHandle } from '@numen/plugin-sdk'
 import { extractFilename, stripMarkdownExtension } from './pluginView'
 import type { NoteBuffer, PluginHostDeps } from './types'
 
@@ -20,19 +21,9 @@ const getFileConflict = (state: string): FileConflict =>
 
 const getDefaultName = (path: string): string => stripMarkdownExtension(extractFilename(path))
 
-/** The fields of a buffered note tab, which a tab's own actions cannot replace. */
-export const BUFFERED_FIELDS = [
-  'fileConflict',
-  'keepMine',
-  'takeFile',
-  'wikilinks',
-  'followLink',
-] as const
-
 export interface BufferedNoteOptions {
   readonly pluginId: string
   readonly title?: string
-  readonly actions: Record<string, unknown>
   readonly deps?: PluginHostDeps | undefined
 }
 
@@ -97,6 +88,7 @@ export function createBufferedNoteState(
   })
 
   const note = computed(() => buffer.getOpenNote(id))
+  let editor: EditorHandle | null = null
 
   const state = shallowReactive({
     at: targetPath,
@@ -115,6 +107,10 @@ export function createBufferedNoteState(
     fileConflict: computed(() => getFileConflict(note.value.state)),
     keepMine: () => buffer.keep(id),
     takeFile: () => buffer.take(id),
+    attachEditor: (attached: EditorHandle | null): void => {
+      editor = attached
+    },
+    measure: (): void => editor?.measure?.(),
     updateBody: (body: string) => buffer.setBody(id, body),
     save: () => buffer.save(id),
     navigate: (nextPath: string, nextTitle?: string): void => {
@@ -126,7 +122,6 @@ export function createBufferedNoteState(
         .catch(() => undefined)
       setPath(nextPath, nextTitle)
     },
-    ...options.actions,
   })
 
   function setPath(nextPath: string, nextTitle?: string): void {

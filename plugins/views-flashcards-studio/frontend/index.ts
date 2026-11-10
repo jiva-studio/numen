@@ -54,7 +54,7 @@ export function activate(context: PluginContext): void {
   if (!buffers) {
     throw new Error('the flashcards need the window their tabs are drawn in and its open files')
   }
-  const closeTab = (id: string): void => context.tabs.close?.(id)
+  const closeTab = (id: string): void => context.tabs.close(id)
   const decks = useDeckTabs(cards, presets, {
     buffers,
     closeTab,

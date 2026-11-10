@@ -18,6 +18,7 @@ import {
   type DeclaredTabKindRegistration,
 } from './pluginTabKind'
 import type { PluginHostDeps } from './types'
+import { STUB_COMPONENT } from '../testing/stubComponent'
 
 interface Held {
   readonly at: string
@@ -96,11 +97,11 @@ describe('the hooks a registration passes over', () => {
     const onClose = () => true
     const icon = { name: 'Icon' }
 
-    expect(pickDeclaredHooks({ kind: 'k', component: null, onClose, icon })).toStrictEqual({
+    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT, onClose, icon })).toStrictEqual({
       onClose,
       icon,
     })
-    expect(pickDeclaredHooks({ kind: 'k', component: null })).toStrictEqual({})
+    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT })).toStrictEqual({})
   })
 
   it('include what the window asks of the kind that edits a file', () => {
@@ -111,7 +112,7 @@ describe('the hooks a registration passes over', () => {
       createFile: async () => ({ ok: true as const, value: { path: 'a.md' } }),
     }
 
-    expect(pickDeclaredHooks({ kind: 'k', component: null, ...hooks })).toStrictEqual(hooks)
+    expect(pickDeclaredHooks({ kind: 'k', component: STUB_COMPONENT, ...hooks })).toStrictEqual(hooks)
   })
 })
 

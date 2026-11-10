@@ -1,5 +1,8 @@
 import tseslint from 'typescript-eslint'
-import { createBaseConfig } from '../../../tools/lint-layers/base-eslint.mjs'
+import {
+  createBaseConfig,
+  createNoUnknownContractConfig,
+} from '../../../tools/lint-layers/base-eslint.mjs'
 
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
@@ -10,4 +13,5 @@ export default tseslint.config(
       'stories/.storybook/**',
     ],
   }),
+  createNoUnknownContractConfig(['src/**/*.ts']),
 )

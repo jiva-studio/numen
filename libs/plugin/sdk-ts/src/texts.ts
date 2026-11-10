@@ -1,3 +1,4 @@
+import type { JsonObject } from './json'
 import type { Result } from './types'
 
 // TextKind is what a text version is, as the plugin that makes it names it. The core
@@ -7,7 +8,7 @@ export type TextKind = string
 // Selector locates a segment in the file its text was made from (W3C Web Annotation selector). The
 // core stores it as is and returns it with search hits; the plugin that made the text and the view
 // that opens the file agree on its keys.
-export type Selector = Readonly<Record<string, unknown>>
+export type Selector = JsonObject
 
 // TextSegment is one segment of a version's text. `heading` is the heading the segment opens, and
 // absent for a segment inside one.

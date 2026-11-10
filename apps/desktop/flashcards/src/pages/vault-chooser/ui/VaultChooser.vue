@@ -12,10 +12,14 @@ import { WORDS } from '../words'
 import MountedView from './MountedView.vue'
 
 /* --------------------------------- Props ---------------------------------- */
-defineProps<{
+const props = defineProps<{
   vaults: readonly Vault[]
   isListing: boolean
-  mountView: (capability: string, element: HTMLElement, context: unknown) => Mounted
+  mountView: (
+    capability: typeof VAULT_SUMMARY,
+    element: HTMLElement,
+    context: { vault: string },
+  ) => Mounted
 }>()
 
 /* --------------------------------- Events --------------------------------- */
@@ -32,11 +36,7 @@ defineEmits<{ (event: 'open', vault: string): void }>()
   >
     <!-- What a plugin says of each vault, such as what is due in it today. -->
     <template #vault="{ vault }">
-      <MountedView
-        :capability="VAULT_SUMMARY"
-        :context="{ vault: vault.id }"
-        :mount-view="mountView"
-      />
+      <MountedView :mount="(element) => props.mountView(VAULT_SUMMARY, element, { vault: vault.id })" />
     </template>
 
     <!-- Nothing is known about the installation yet, not even which vaults it

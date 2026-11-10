@@ -3,7 +3,9 @@
  * item lists of their commands are read, the menu is shown or its open is cancelled, a row is picked
  * and the menu is closed.
  */
-import { computed, shallowRef, watch, type ComputedRef, type ShallowRef } from 'vue'
+import { computed, shallowRef, watch, type Component, type ComputedRef, type ShallowRef } from 'vue'
+import type { MenuItem } from '@numen/ui'
+import type { Caught } from '../errors/error'
 import type { CommandItem } from '../commands/commands'
 import {
   createSlotMenu,
@@ -27,7 +29,7 @@ export interface SlotMenuRequest<T> {
 export interface SlotMenuOptions<T> {
   readonly listItems: (command: string, target: T) => Promise<readonly CommandItem[]>
   readonly words: SlotMenuWords
-  readonly onError?: (error: unknown) => void
+  readonly onError?: (error: Caught) => void
   readonly events?: EventTarget
 }
 
@@ -43,7 +45,7 @@ export interface SlotMenuState<T> {
   open(read: () => SlotMenuRequest<T> | Promise<SlotMenuRequest<T>>): void
   pick(id: string): SlotMenuChoice<T> | undefined
   close(): void
-  getIcon(id: string): unknown
+  getIcon(id: string): Component | undefined
 }
 
 const listItemCommands = (entries: readonly SlotItem[]): readonly SlotCommand[] =>
@@ -67,17 +69,17 @@ function listenForCancel(events: EventTarget | undefined, onCancel: () => void):
 }
 
 /** The state of one open: whether it is still the current one, and whether its hold is over. */
-interface Opening {
+interface Opening<T> {
   isCurrent: boolean
   isHoldOver: boolean
-  request?: SlotMenuRequest<unknown>
+  request?: SlotMenuRequest<T>
   lists: CommandItemLists
 }
 
-function startHold(
-  opening: Opening,
+function startHold<T>(
+  opening: Opening<T>,
   events: EventTarget | undefined,
-  onHoldOver: (opening: Opening) => void,
+  onHoldOver: (opening: Opening<T>) => void,
   onCancel: () => void,
 ): () => void {
   const timer = setTimeout(() => {
@@ -94,19 +96,19 @@ function startHold(
 function runRead<T>(
   read: () => SlotMenuRequest<T> | Promise<SlotMenuRequest<T>>,
   onRequest: (request: SlotMenuRequest<T>) => void,
-  onError: (error: unknown) => void,
+  onError: (error: Caught) => void,
 ): void {
   try {
     const request = read()
     if (request instanceof Promise) request.then(onRequest, onError)
     else onRequest(request)
-  } catch (error: unknown) {
+  } catch (error: Caught) {
     onError(error)
   }
 }
 
 function closeWhenEmpty(
-  menu: ComputedRef<{ readonly items: readonly unknown[] } | null>,
+  menu: ComputedRef<{ readonly items: readonly MenuItem[] } | null>,
   close: () => void,
 ): void {
   watch(
@@ -123,7 +125,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
   const target = shallowRef<T | null>(null)
   const entries = shallowRef<readonly SlotItem[]>([])
   const lists = shallowRef<CommandItemLists>(new Map())
-  let current: Opening | null = null
+  let current: Opening<T> | null = null
   let stopOpening = (): void => undefined
 
   const menu = computed(() =>
@@ -139,8 +141,8 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
     lists.value = new Map()
   }
 
-  const show = (opening: Opening): void => {
-    const request = opening.request as SlotMenuRequest<T> | undefined
+  const show = (opening: Opening<T>): void => {
+    const request = opening.request
     if (!opening.isCurrent || !request) return
     stopOpening()
     entries.value = request.entries
@@ -148,16 +150,16 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
     target.value = request.target
   }
 
-  const isShown = (opening: Opening): boolean => opening.isCurrent && target.value !== null
+  const isShown = (opening: Opening<T>): boolean => opening.isCurrent && target.value !== null
 
-  const setList = (opening: Opening, key: string, items: readonly CommandItem[]): void => {
+  const setList = (opening: Opening<T>, key: string, items: readonly CommandItem[]): void => {
     if (!opening.isCurrent) return
     opening.lists = new Map([...opening.lists, [key, items]])
     if (isShown(opening)) lists.value = opening.lists
     else if ([...opening.lists.values()].every((one) => one !== null)) show(opening)
   }
 
-  const readLists = (opening: Opening, request: SlotMenuRequest<T>): void => {
+  const readLists = (opening: Opening<T>, request: SlotMenuRequest<T>): void => {
     const commands = listItemCommands(request.entries)
     opening.request = request
     opening.lists = new Map(commands.map((one) => [one.key, null]))
@@ -166,7 +168,7 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
       options
         .listItems(entry.command, request.target)
         .then((items) => setList(opening, entry.key, items))
-        .catch((error: unknown) => {
+        .catch((error: Caught) => {
           if (!opening.isCurrent) return
           options.onError?.(error)
           setList(opening, entry.key, [])
@@ -176,10 +178,10 @@ export function useSlotMenu<T>(options: SlotMenuOptions<T>): SlotMenuState<T> {
 
   const open = (read: () => SlotMenuRequest<T> | Promise<SlotMenuRequest<T>>): void => {
     close()
-    const opening: Opening = { isCurrent: true, isHoldOver: false, lists: new Map() }
+    const opening: Opening<T> = { isCurrent: true, isHoldOver: false, lists: new Map() }
     current = opening
     stopOpening = startHold(opening, options.events ?? globalThis.document, show, close)
-    const fail = (error: unknown): void => {
+    const fail = (error: Caught): void => {
       if (!opening.isCurrent) return
       close()
       options.onError?.(error)

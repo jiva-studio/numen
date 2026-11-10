@@ -13,7 +13,7 @@ export { BudgetName, StopReason }
 
 /** ErrorCode names why a read or a write of a note failed. It is carried in the `error` field of a response; an empty value is no error. */
 export const ErrorCode = {
-  NOT_FOUND: 'notFound',
+  NOT_FOUND: 'not_found',
   NOT_A_NOTE: 'not_a_note',
   NOT_TEXT: 'not_text',
   TOO_LARGE: 'too_large',

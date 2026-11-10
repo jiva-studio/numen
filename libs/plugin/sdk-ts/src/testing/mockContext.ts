@@ -24,8 +24,11 @@ import type { NoticeHost } from '../notices'
 import type { VaultTexts } from '../texts'
 import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
 import { asFailure, asValue, type Result } from '../result'
-import type { MountedView, ViewRegistration } from '../views'
+import type { MountedView, ViewCapability, ViewContexts, ViewRegistration } from '../views'
+import type { JsonValue } from '../json'
+import type { Caught } from '../errors/error'
 import type { DropRegistration } from '../drops'
+import { createMockNoticeHost } from './mockNotices'
 import {
   createMockBackgroundTaskHost,
   createMockCommandsHost,
@@ -41,9 +44,9 @@ import {
 
 // MockMountedView records one mountView call of a plugin under test, and whether its view was disposed.
 export interface MockMountedView {
-  readonly capability: string
+  readonly capability: ViewCapability
   readonly element: HTMLElement
-  readonly context: unknown
+  readonly context: ViewContexts[ViewCapability]
   isDisposed: boolean
   focusCount: number
 }
@@ -70,7 +73,7 @@ export interface MockContextInit {
   readonly pluginId?: string
   readonly target?: string
   readonly app?: AppInfo
-  readonly initialSettings?: Record<string, unknown>
+  readonly initialSettings?: Record<string, JsonValue>
   readonly workspace?: WorkspaceHost
   readonly notes?: VaultNotes
   readonly relations?: VaultRelations
@@ -105,7 +108,7 @@ export interface MockPluginContext extends PluginContext {
     itemId?: string,
     values?: Readonly<Record<string, string>>,
   ): Promise<void>
-  setSetting<T = unknown>(key: string, value: T): void
+  setSetting(key: string, value: JsonValue): void
   dispose(): void
 }
 
@@ -136,7 +139,7 @@ function addSetListener<T>(listeners: Set<T>, handler: T, subscriptions: Disposa
 }
 
 function notifyListener<T>(listener: (event: T) => void | Promise<void>, event: T): void {
-  Promise.resolve(listener(event)).catch((error: unknown) => {
+  Promise.resolve(listener(event)).catch((error: Caught) => {
     queueMicrotask(() => {
       throw error
     })
@@ -185,8 +188,8 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
   const views: ViewRegistration[] = []
   const drops: DropRegistration[] = []
   const mounted: MockMountedView[] = []
-  const settings = new Map<string, unknown>(Object.entries(init.initialSettings ?? {}))
-  const settingListeners = new Map<string, Set<(val: unknown) => void>>()
+  const settings = new Map<string, JsonValue>(Object.entries(init.initialSettings ?? {}))
+  const settingListeners = new Map<string, Set<(val: JsonValue) => void>>()
   const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
   const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
   const subscriptions: Disposable[] = []
@@ -195,7 +198,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     reader: (registration) => registerInList(readers, registration, subscriptions),
     settingsView: (registration) => registerInList(settingsViews, registration, subscriptions),
     slotView: (registration) => registerInList(slotViews, registration, subscriptions),
-    tabKind: <State>(registration: TabKindRegistration<State>) =>
+    tabKind: <State extends object>(registration: TabKindRegistration<State>) =>
       registerInList(tabKinds, registration, subscriptions),
     command: (registration) => registerInList(commands, registration, subscriptions),
     agentProvider: (registration) => registerInList(agentProviders, registration, subscriptions),
@@ -203,10 +206,10 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     view: (registration) => registerInList(views, registration, subscriptions),
   }
 
-  const mountView = (
-    capability: string,
+  const mountView = <C extends ViewCapability>(
+    capability: C,
     element: HTMLElement,
-    viewContext: unknown,
+    viewContext: ViewContexts[C],
   ): MountedView => {
     const view: MockMountedView = {
       capability,
@@ -226,16 +229,19 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
     }
   }
 
-  const getSettingValue = <T = unknown>(key: string): T | undefined =>
+  const getSettingValue = <T extends JsonValue = JsonValue>(key: string): T | undefined =>
     settings.get(key) as T | undefined
 
-  const onSettingChange = <T = unknown>(key: string, handler: (value: T) => void): Disposable => {
+  const onSettingChange = <T extends JsonValue = JsonValue>(
+    key: string,
+    handler: (value: T) => void,
+  ): Disposable => {
     let listeners = settingListeners.get(key)
     if (!listeners) {
       listeners = new Set()
       settingListeners.set(key, listeners)
     }
-    return addSetListener(listeners, handler as (val: unknown) => void, subscriptions)
+    return addSetListener(listeners, handler as (val: JsonValue) => void, subscriptions)
   }
 
   const events: PluginEvents = {
@@ -258,7 +264,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       if (init.navigateTab) return init.navigateTab(kind, path)
       return Promise.resolve(`${kind}:${path}`)
     },
-    ...(init.closeTab ? { close: init.closeTab } : {}),
+    close: init.closeTab ?? (() => undefined),
   }
 
   const context: MockPluginContext = {
@@ -288,10 +294,8 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       vaults: createMockVaultsHost(),
     },
     ui: {
-      ...pickDefined<Pick<PluginUi, 'workspace' | 'notices'>>({
-        workspace: init.workspace,
-        notices: init.notices,
-      }),
+      ...pickDefined<Pick<PluginUi, 'workspace'>>({ workspace: init.workspace }),
+      notices: init.notices ?? createMockNoticeHost(),
       commands: createMockCommandsHost(),
       slots: createMockSlotHost(),
       window: createMockWindowHost(),
@@ -302,7 +306,7 @@ export function createMockPluginContext(initialValues?: MockContextInit): MockPl
       backgroundTasks: createMockBackgroundTaskHost(),
     },
 
-    setSetting<T = unknown>(key: string, value: T): void {
+    setSetting(key: string, value: JsonValue): void {
       settings.set(key, value)
       const listeners = settingListeners.get(key)
       if (listeners) {

@@ -18,6 +18,7 @@ import path from "node:path";
 import process from "node:process";
 
 import { runDuplicationCheck } from "./checks/duplication.mjs";
+import { runApiTypesCheck } from "./checks/apiTypes.mjs";
 import { runKnipCheck } from "./checks/knip.mjs";
 import { runStructureCheck } from "./checks/structure.mjs";
 
@@ -36,6 +37,11 @@ const ALL_CHECKS = [
     run: (opts) => runKnipCheck({ repoRoot: REPO_ROOT, ...opts }),
   },
   {
+    id: "api-types",
+    name: "Plugin API types match their Go structs",
+    run: (opts) => runApiTypesCheck({ repoRoot: REPO_ROOT, ...opts }),
+  },
+  {
     id: "structure",
     name: "Directory Structure & Size (max 20 source files)",
     run: (opts) => runStructureCheck({ repoRoot: REPO_ROOT, ...opts }),
@@ -47,7 +53,7 @@ function printHelp() {
 Usage: node check.mjs [options]
 
 Options:
-  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,structure)
+  --check=<name>       Run specific check(s) by ID (comma-separated: duplication,knip,api-types,structure)
   --changed-only       Run only checks relevant to modified files against git base
   --warn               Non-blocking mode: report findings with exit code 0
   --strict             Fail on any detected finding (default)
@@ -112,7 +118,7 @@ function resolveChecks(args, changedOnly) {
     targetIds = targetIds.filter((id) => {
       if (id === "duplication") return hasGo || hasTsOrVue;
       if (id === "knip") return hasTsOrVue || hasPackageManifest;
-      if (id === "structure") return hasGo || hasTsOrVue;
+      if (id === "structure" || id === "api-types") return hasGo || hasTsOrVue;
       return true;
     });
   }
