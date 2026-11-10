@@ -105,15 +105,15 @@ func OpenFlashcards(c Config, ctx context.Context, api *shell.API, errOut io.Wri
 // FlushTimeout is how long a page may take to write its unsaved data when the vault closes.
 func FlushTimeout() time.Duration { return windowsession.FlushTimeout }
 
-// FollowVaultShown makes the window call shown after each time it puts a vault in its place, with the error
+// FollowVaultSwitch makes the window call after each time it puts a vault in its place, with the error
 // of that attempt. The plugins follow the vault by themselves.
-func FollowVaultShown(c Config, opened *editor.Installation, shown func(v domain.Vault, err error)) {
+func FollowVaultSwitch(c Config, opened *editor.Installation, after func(v domain.Vault, err error)) {
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 		err := opened.Show(ctx, v, open)
 		if err == nil {
 			SetPluginVaultPath(c, v.Path)
 		}
-		shown(v, err)
+		after(v, err)
 		return err
 	}
 }

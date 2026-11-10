@@ -332,7 +332,7 @@ func connectWindow(
 		importDroppedFiles(ctx, opened, event)
 	})
 
-	container.FollowVaultShown(hooks.cfg, opened, func(domain.Vault, error) {
+	container.FollowVaultSwitch(hooks.cfg, opened, func(domain.Vault, error) {
 		naming(opened.State.Runtime.GetOpenTabs())
 	})
 

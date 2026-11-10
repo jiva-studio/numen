@@ -58,6 +58,6 @@ func (d *DebugOptions) serveHTTP(
 	pages http.Handler,
 ) error {
 	opened.State.NotifyOpenTabs = func(domain.OpenTabs) {}
-	container.FollowVaultShown(cfg, opened, func(domain.Vault, error) {})
+	container.FollowVaultSwitch(cfg, opened, func(domain.Vault, error) {})
 	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }
