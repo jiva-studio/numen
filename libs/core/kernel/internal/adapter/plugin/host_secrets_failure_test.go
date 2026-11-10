@@ -122,8 +122,8 @@ func newConfiguredHost(t *testing.T) (*Host, *configured, *listing) {
 	t.Helper()
 	host, probe := newSecretHost(t, newKeys(map[string]string{"secret/" + secretID: fromKeychain}))
 	source := newListing("Work")
-	host.SetSecretSource(source.source())
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	host.Config.SetSecretSource(source.source())
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	return host, probe, source
@@ -137,21 +137,21 @@ func prepareActivation(t *testing.T, host *Host, dormant bool) func() error {
 
 func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx context.Context) error {
 	t.Helper()
-	port := host.endpoints[secretPluginID].Port
+	port := host.Registry.t.endpoints[secretPluginID].Port
 	sleeper := plugintest.StartSleepProcess(t).Process
-	host.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(context.Context, manifest.Discovered, int, string) (*os.Process, io.ReadCloser, error) {
 		return sleeper, plugintest.GetReadyOutput(port), nil
 	})
-	p := host.plugins[secretPluginID]
+	p := host.Registry.t.plugins[secretPluginID]
 	p.Manifest.Backend = manifest.Backend{Entrypoint: "bin/plugin"}
 	activating := lifecycle.New(testsupport.GetMachine())
 	activating.SetActivating()
 	if dormant {
-		delete(host.endpoints, secretPluginID)
-		host.supervisors[secretPluginID] = activating
+		delete(host.Registry.t.endpoints, secretPluginID)
+		host.Registry.t.supervisors[secretPluginID] = activating
 	}
 	return func(ctx context.Context) error {
-		_, err := host.runActivation(ctx, p, activating)
+		_, err := host.Activation.runActivation(ctx, p, activating)
 		return err
 	}
 }
@@ -163,14 +163,14 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(probe))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	host.plugins[pluginID] = manifest.Discovered{Manifest: manifest.Manifest{
+	host.Registry.t.plugins[pluginID] = manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      pluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: declared, Title: "API key"}},
 	}}
 	sup := lifecycle.New(testsupport.GetMachine())
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
-	host.supervisors[pluginID] = sup
-	host.endpoints[pluginID] = plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
+	host.Registry.t.supervisors[pluginID] = sup
+	host.Registry.t.endpoints[pluginID] = plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
 	source.allow(pluginID)
 	return probe
 }
@@ -178,7 +178,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	failed := &collectFailures{}
-	host.SetOnPluginFailed(failed.add)
+	host.Failures.SetOnPluginFailed(failed.add)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("rejected the key "+fromKeychain)))
 
 	committed := false
@@ -201,11 +201,11 @@ func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 	if failed.count() != 0 {
 		t.Errorf("%d failures passed on, want none", failed.count())
 	}
-	sup := host.supervisors[secretPluginID]
+	sup := host.Registry.t.supervisors[secretPluginID]
 	if sup.IsActivationFailed() {
 		t.Error("the plugin is marked as failed")
 	}
-	for _, info := range host.GetPluginInfos() {
+	for _, info := range host.Registry.GetPluginInfos() {
 		if info.ID == secretPluginID && info.Failure != nil {
 			t.Errorf("the plugin page shows %+v", info.Failure)
 		}
@@ -215,7 +215,7 @@ func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 func TestRefreshSkipsSameRejectedSecretList(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	reported := &collectErrors{}
-	host.SetErrorHandler(reported.add)
+	host.Failures.SetErrorHandler(reported.add)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
 	if err := applyChange(host, t.Context(), source.renameBy("Renamed")); err == nil {
 		t.Fatal("the operation returned nil although the plugin did not accept the list")
@@ -223,7 +223,7 @@ func TestRefreshSkipsSameRejectedSecretList(t *testing.T) {
 	probe.setFailure(nil)
 	calls := probe.count()
 
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Errorf("the refresh returned %v, want the failure to reach the person once", err)
 	}
 	if probe.count() != calls {
@@ -245,7 +245,7 @@ func TestARefreshSendsToAFailedPluginWhoseListChanged(t *testing.T) {
 	calls := probe.count()
 	source.rename("Renamed again")
 
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 || deliveredName(t, probe) != "Renamed again" {
@@ -292,7 +292,7 @@ func TestARestartedPluginIsSentTheListThatFailedBefore(t *testing.T) {
 		t.Fatalf("%d Configure calls after the restart, last list %q, want %d and the list that failed",
 			probe.count(), deliveredName(t, probe), calls+1)
 	}
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+1 {
@@ -303,7 +303,7 @@ func TestARestartedPluginIsSentTheListThatFailedBefore(t *testing.T) {
 func TestFailedActivationConfigureReportedOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	reported := &collectErrors{}
-	host.SetErrorHandler(reported.add)
+	host.Failures.SetErrorHandler(reported.add)
 	probe.setFailure(connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it")))
 	calls := probe.count()
 
@@ -315,7 +315,7 @@ func TestFailedActivationConfigureReportedOnce(t *testing.T) {
 			probe.count(), reported.count(), calls+1)
 	}
 	probe.setFailure(nil)
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Errorf("the refresh returned %v", err)
 	}
 	if probe.count() != calls+1 || reported.count() != 1 {
@@ -324,7 +324,7 @@ func TestFailedActivationConfigureReportedOnce(t *testing.T) {
 	}
 
 	source.rename("Renamed")
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if probe.count() != calls+2 || deliveredName(t, probe) != "Renamed" {
@@ -393,7 +393,7 @@ func TestHungConfigureTimesOutOnce(t *testing.T) {
 	}
 
 	followUps := map[string]func() error{
-		"the refresh after the operation": func() error { return host.Refresh(ctx) },
+		"the refresh after the operation": func() error { return host.Config.Refresh(ctx) },
 		"an operation that concerns no plugin": func() error {
 			return applyChange(host, ctx, func() ([]string, error) { return nil, nil })
 		},
@@ -422,7 +422,7 @@ func TestNotifyingAHungPluginWaitsForTheTimeoutOnce(t *testing.T) {
 
 	result := make(chan error, 1)
 	ctx := t.Context()
-	go func() { result <- host.NotifyPluginConfig(ctx, secretPluginID) }()
+	go func() { result <- host.Config.NotifyPluginConfig(ctx, secretPluginID) }()
 	var err error
 	select {
 	case err = <-result:
@@ -457,12 +457,12 @@ func TestConfigureCallbackDoesNotDeadlockRefresh(t *testing.T) {
 	probe.during = func() {
 		ctx, cancel := context.WithTimeout(t.Context(), 200*time.Millisecond)
 		defer cancel()
-		nested <- host.Refresh(ctx)
+		nested <- host.Config.Refresh(ctx)
 	}
 	probe.mu.Unlock()
 
 	result := make(chan error, 1)
-	go func() { result <- host.Refresh(t.Context()) }()
+	go func() { result <- host.Config.Refresh(t.Context()) }()
 	select {
 	case err := <-result:
 		if err != nil {
@@ -478,7 +478,7 @@ func TestConfigureCallbackDoesNotDeadlockRefresh(t *testing.T) {
 	probe.during = nil
 	probe.mu.Unlock()
 	source.rename("Again")
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatalf("the lock stays held after the round: %v", err)
 	}
 	if got := deliveredName(t, probe); got != "Again" {
@@ -490,18 +490,18 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-	if err := host.secrets.lockSecrets(t.Context()); err != nil {
+	if err := host.Config.delivery.lockSecrets(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return host.secrets.isAwaitingFirstConfigure(secretPluginID)
+		return host.Config.delivery.isAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
-	go func() { refresh <- host.Refresh(t.Context()) }()
-	host.secrets.unlockSecrets()
+	go func() { refresh <- host.Config.Refresh(t.Context()) }()
+	host.Config.delivery.unlockSecrets()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)
@@ -526,7 +526,7 @@ func TestRefreshDuringActivationConfigureWaitsThenSendsLatestList(t *testing.T) 
 
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
-	go func() { refresh <- host.Refresh(t.Context()) }()
+	go func() { refresh <- host.Config.Refresh(t.Context()) }()
 	select {
 	case err := <-refresh:
 		t.Fatalf("the refresh ran while the Configure of the activation was on its way: %v", err)
@@ -576,10 +576,10 @@ func TestTheErrorNamesEveryPluginWhoseSendFailed(t *testing.T) {
 	failure := connect.NewError(connect.CodeInternal, errors.New("the plugin cannot take it"))
 	first.setFailure(failure)
 	secondProbe.setFailure(failure)
-	if err := host.NotifyPluginConfig(t.Context(), second); err == nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), second); err == nil {
 		t.Fatal("the second plugin accepted the list")
 	}
-	if err := host.NotifyPluginConfig(t.Context(), third); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), third); err != nil {
 		t.Fatal(err)
 	}
 	secondCalls, thirdCalls := secondProbe.count(), thirdProbe.count()

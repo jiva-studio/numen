@@ -16,9 +16,9 @@ func waitForCount(t *testing.T, got *atomic.Int32, want int32) {
 func TestAWatcherRunsWhenThePluginIsConfigured(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
 	var runs atomic.Int32
-	host.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
+	host.Config.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := updateSetting(t.Context(), host, secretPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -29,10 +29,10 @@ func TestAWatcherRunsWhenThePluginIsConfigured(t *testing.T) {
 func TestAWatcherDoesNotRunForAnotherPlugin(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
 	var runs, others atomic.Int32
-	host.WatchPluginConfig("md.numen.other", func() { runs.Add(1) })
-	host.WatchPluginConfig(secretPluginID, func() { others.Add(1) })
+	host.Config.WatchPluginConfig("md.numen.other", func() { runs.Add(1) })
+	host.Config.WatchPluginConfig(secretPluginID, func() { others.Add(1) })
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := updateSetting(t.Context(), host, secretPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,11 +46,11 @@ func TestAWatcherDoesNotRunForAnotherPlugin(t *testing.T) {
 func TestAStoppedWatcherRunsNoMore(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
 	var stopped, remaining atomic.Int32
-	stop := host.WatchPluginConfig(secretPluginID, func() { stopped.Add(1) })
-	host.WatchPluginConfig(secretPluginID, func() { remaining.Add(1) })
+	stop := host.Config.WatchPluginConfig(secretPluginID, func() { stopped.Add(1) })
+	host.Config.WatchPluginConfig(secretPluginID, func() { remaining.Add(1) })
 	stop()
 
-	if err := host.UpdatePluginSetting(t.Context(), secretPluginID, "model", "opus"); err != nil {
+	if err := updateSetting(t.Context(), host, secretPluginID, "model", "opus"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -64,7 +64,7 @@ func TestAStoppedWatcherRunsNoMore(t *testing.T) {
 func TestAWatcherRunsWhenASecretIsHandedToThePlugin(t *testing.T) {
 	host, _ := newSecretHost(t, newKeys(map[string]string{}))
 	var runs atomic.Int32
-	host.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
+	host.Config.WatchPluginConfig(secretPluginID, func() { runs.Add(1) })
 
 	err := applyChange(host, t.Context(), func() ([]string, error) { return []string{secretPluginID}, nil })
 	if err != nil {

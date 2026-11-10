@@ -164,6 +164,19 @@ A type that two slices use lives in the lowest layer that makes sense:
 
 `apps/mobile` is one Capacitor window over the same core client. Its code takes the same layers, segments and rules as the editor: a new call to the core is in an `api/` segment, a screen is a page, a scenario is a feature. `apps/landing` and `apps/docs` are Astro sites with components, layouts and content; they hold no vault domain and no core call. The rules that apply to them are the design tokens, the naming, the size limits and the plain English of the text.
 
+## Size and role
+
+A structure is judged by what one object does, not by the interfaces it is cut into.
+
+- A source file has at most 500 lines. A file that holds a second responsibility is split into a slice, a segment or a module named after the thing it holds.
+- A window holds composition, routing, window state and small window-specific logic. A scenario another client would need is a use case in the core; a capability a person could turn off is a plugin.
+- Shared code is an entity, a `shared/lib` module named for what it computes, or a library chosen by the decision list; never a folder collected for reuse.
+- A slice is imported through its `index.ts` only.
+- A value of unknown type is parsed once, at the `api` boundary, into the window's own type. Screens, models and libs receive the named type.
+- A `catch` shows the failure as text or returns a `Result` with the error; it never discards it.
+- One host concern has one port: the clock, the viewport, the storage and the window API each enter through a single parameter or composable.
+- Production code is not written for a test double. The test mounts the real component or model and replaces only the transport at the outer edge.
+
 ## What the checks enforce
 
 Each structural check and lint rule is listed by what it forbids in [`checks.md`](checks.md). In short, they forbid an import of a higher layer, an import between slices of one layer, an import of a slice other than through its `index.ts`, a segment importing a segment before it in the list above, a `@numen/core-client` import outside an `api` segment, a component outside `ui`, a file in `shared` that one slice uses, a composable that returns more than eight properties, a `.vue` file that calls a client, a plugin imported by a window, a wire type in `libs/ui/components`, a color literal in a style, and the machine clock outside a port. An RPC call carried by `provide`/`inject`, and a command declared outside the owning feature's `model/commands.ts`, are refused in review.

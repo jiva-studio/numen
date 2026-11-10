@@ -13,7 +13,7 @@ import (
 // NotifyPlugins gives the plugins the settings that changed.
 type NotifyPlugins struct {
 	codec          settingsport.ValueCodec
-	plugins        settingsport.PluginSettings
+	apply          settingsport.PluginSettingApplier
 	config         settingsport.PluginConfig
 	refreshSecrets settingsport.SecretRefresh
 	resolveProfile settingsport.ProfileResolver
@@ -21,15 +21,23 @@ type NotifyPlugins struct {
 	report         func(error)
 }
 
-// NewNotifyPlugins makes the use case. signal is called once the plugins have received the batch. It is
-// optional.
-func NewNotifyPlugins(
-	codec settingsport.ValueCodec, host settingsport.PluginHost, refreshSecrets settingsport.SecretRefresh,
-	resolveProfile settingsport.ProfileResolver, signal func(), report func(error),
-) *NotifyPlugins {
+// NotifyPluginsDeps is what NotifyPlugins is made of. Signal is called once the plugins have received the
+// batch. It is optional.
+type NotifyPluginsDeps struct {
+	Codec          settingsport.ValueCodec
+	Apply          settingsport.PluginSettingApplier
+	Config         settingsport.PluginConfig
+	RefreshSecrets settingsport.SecretRefresh
+	ResolveProfile settingsport.ProfileResolver
+	Signal         func()
+	Report         func(error)
+}
+
+// NewNotifyPlugins makes the use case.
+func NewNotifyPlugins(deps NotifyPluginsDeps) *NotifyPlugins {
 	return &NotifyPlugins{
-		codec: codec, plugins: host, config: host, refreshSecrets: refreshSecrets,
-		resolveProfile: resolveProfile, signal: signal, report: report,
+		codec: deps.Codec, apply: deps.Apply, config: deps.Config, refreshSecrets: deps.RefreshSecrets,
+		resolveProfile: deps.ResolveProfile, signal: deps.Signal, report: deps.Report,
 	}
 }
 
@@ -82,7 +90,7 @@ func (u *NotifyPlugins) updatePluginSettings(entries []settingsdomain.Setting) {
 		if err != nil {
 			continue
 		}
-		if err := u.plugins.UpdatePluginSetting(context.Background(), one.Path[0], one.Path[1], value); err != nil {
+		if err := u.apply(context.Background(), one.Path[0], one.Path[1], value); err != nil {
 			u.report(fmt.Errorf("update plugin setting %s: %w", strings.Join(one.Path, "."), err))
 		}
 	}

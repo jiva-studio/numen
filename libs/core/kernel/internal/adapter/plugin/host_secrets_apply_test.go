@@ -7,5 +7,5 @@ func applyChange(host *Host, ctx context.Context, change func() ([]string, error
 	if err != nil {
 		return err
 	}
-	return host.Refresh(ctx, readers...)
+	return host.Config.Refresh(ctx, readers...)
 }

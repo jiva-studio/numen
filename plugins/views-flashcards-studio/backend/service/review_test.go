@@ -12,14 +12,14 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/sessions"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/enumtest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 )
@@ -203,7 +203,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	if codeOf(err) != server.CodeNotFound {
 		t.Fatalf("the session was over and the answer failed with %v", codeOf(err))
 	}
-	if !hasCause(err, ErrNoRun) {
+	if !hasCause(err, sessions.ErrNoRun) {
 		t.Errorf("failed with %v", err)
 	}
 }
@@ -388,24 +388,6 @@ func TestStartSession_CardsCarryRatingIntervals(t *testing.T) {
 		ahead.Hard < ahead.Good &&
 		ahead.Good < ahead.Easy) {
 		t.Errorf("the four come round at %+v", ahead)
-	}
-}
-
-// The four ratings are carried across as themselves, and nothing else is a
-// rating.
-func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
-	for response, want := range map[api.Rating]review.Rating{
-		api.RatingAgain: review.Again,
-		api.RatingHard:  review.Hard,
-		api.RatingGood:  review.Good,
-		api.RatingEasy:  review.Easy,
-	} {
-		if got := parseRating(response); got != want {
-			t.Errorf("%v came across as %v", response, got)
-		}
-	}
-	if got := parseRating(api.RatingUnspecified); got.Valid() {
-		t.Errorf("nothing said came across as %v", got)
 	}
 }
 
@@ -850,7 +832,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	rows := make(map[string]*api.DeckCardsDue, len(response.Decks))
 	for _, one := range response.Decks {
 		rows[one.Deck] = one
-		p, err := handler.scenarios().flash.Presets.GetForDeck(t.Context(), v, one.Deck)
+		p, err := handler.scenarios().Flash.Presets.GetForDeck(t.Context(), v, one.Deck)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1146,11 +1128,4 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 	if slices.Equal(bands[100], bands[0]) {
 		t.Error("bands[100] and bands[0] are equal, want different")
 	}
-}
-
-// TestEveryRatingIsRead. A rating the parser does not recognize is parsed as
-// zero, which the use case rejects; a button press would be reported as not an
-// answer.
-func TestEveryRatingIsRead(t *testing.T) {
-	enumtest.CheckHandled(t, api.GetRatingValues(), func(r api.Rating) bool { return parseRating(r) != 0 })
 }

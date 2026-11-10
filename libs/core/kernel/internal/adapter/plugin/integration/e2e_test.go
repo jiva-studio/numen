@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,23 +24,23 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	plugins := host.GetPlugins()
+	plugins := host.Registry.GetPlugins()
 	if len(plugins) == 0 {
 		t.Fatal("expected to discover embedding plugin in real plugins/")
 	}
 
 	ctx := t.Context()
-	bridge, err := embedderbridge.Open(ctx, host)
+	bridge, err := embedderbridge.Open(ctx, pluginhost.Join(host))
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge with real binary failed: %v", err)
 	}
 	defer func() {
 		testsupport.Close(t, bridge)
-		if err := host.TeardownAll(ctx, 1*time.Second); err != nil {
+		if err := host.Teardown.TeardownAll(ctx, 1*time.Second); err != nil {
 			t.Error(err)
 		}
 	}()

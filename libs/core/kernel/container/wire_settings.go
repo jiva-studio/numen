@@ -416,10 +416,12 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 	if c.PluginChanges != nil {
 		signal = c.PluginChanges.Signal
 	}
-	return settingsusecase.NewNotifyPlugins(
-		settingsadapter.JSONCodec{}, c.PluginHost, func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
-		func(profile string) string { return resolveProfile(c, profile) }, signal, func(err error) { settingsHandleError(c, err) },
-	)
+	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
+		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost,
+		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
+		ResolveProfile: func(profile string) string { return resolveProfile(c, profile) }, Signal: signal,
+		Report: func(err error) { settingsHandleError(c, err) },
+	})
 }
 
 func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {

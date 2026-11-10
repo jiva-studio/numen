@@ -245,10 +245,10 @@ func hostOver(t *testing.T, plugins ...testPlugin) *plugin.Host {
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		port, isServed := ports[p.Manifest.ID]
 		if !isServed {
 			return nil, nil, errors.New("this plugin cannot be started")
@@ -507,12 +507,12 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 		testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}},
 	)
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	host.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.GetEndpointCallers())
+	host.Services.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.Services.GetEndpointCallers())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -521,7 +521,7 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	caller, err := host.EnsureActive(t.Context(), mcpPlugin)
+	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
 	if err != nil {
 		t.Fatal(err)
 	}

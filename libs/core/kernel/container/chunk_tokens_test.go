@@ -79,11 +79,11 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 		t.Fatal(err)
 	}
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cmd := plugintest.StartSleepProcess(t)
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
 	return container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), ServiceDir: ".numen"}), host, reporter
@@ -147,7 +147,7 @@ func TestAChangeOfTheChunkSizeOfThePluginReachesTheCell(t *testing.T) {
 	openEmbedder(t, cfg)
 
 	reporter.tokens.Store(128)
-	if err := host.UpdatePluginSetting(t.Context(), chunkEmbeddingPluginID, "chunkTokens", 128); err != nil {
+	if err := updateSetting(t.Context(), host, chunkEmbeddingPluginID, "chunkTokens", 128); err != nil {
 		t.Fatal(err)
 	}
 
