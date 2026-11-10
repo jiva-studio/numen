@@ -7,10 +7,10 @@ import (
 )
 
 type collector struct {
-	sent []*agentrun.Response
+	steps []*agentrun.Response
 }
 
-func (c *collector) Send(resp *agentrun.Response) { c.sent = append(c.sent, resp) }
+func (c *collector) Send(resp *agentrun.Response) { c.steps = append(c.steps, resp) }
 
 func TestAnAgentMessageBecomesText(t *testing.T) {
 	var sink collector
@@ -18,8 +18,8 @@ func TestAnAgentMessageBecomesText(t *testing.T) {
 	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": "The answer."}})
 	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": ""}})
 
-	if len(sink.sent) != 1 || sink.sent[0].GetText() != "The answer." {
-		t.Errorf("sent %v", sink.sent)
+	if len(sink.steps) != 1 || sink.steps[0].GetText() != "The answer." {
+		t.Errorf("steps %v", sink.steps)
 	}
 }
 
@@ -31,14 +31,14 @@ func TestAToolCallStartsAndFinishes(t *testing.T) {
 	}})
 	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "mcp_tool_call"}})
 
-	if len(sink.sent) != 2 {
-		t.Fatalf("sent %v", sink.sent)
+	if len(sink.steps) != 2 {
+		t.Fatalf("steps %v", sink.steps)
 	}
-	if call := sink.sent[0].GetToolCall(); call.Tool != "read_note" || call.About != `{"path":"a.md"}` {
-		t.Errorf("tool call is %v", sink.sent[0])
+	if call := sink.steps[0].GetToolCall(); call.Tool != "read_note" || call.About != `{"path":"a.md"}` {
+		t.Errorf("tool call is %v", sink.steps[0])
 	}
-	if !sink.sent[1].IsToolFinished() {
-		t.Errorf("expected a finished tool, got %v", sink.sent[1])
+	if !sink.steps[1].IsToolFinished() {
+		t.Errorf("expected a finished tool, got %v", sink.steps[1])
 	}
 }
 
@@ -49,8 +49,8 @@ func TestAToolCallNamesItsToolByTheToolField(t *testing.T) {
 		"type": "mcp_tool_call", "server": "numen", "tool": "search_notes", "arguments": map[string]any{"q": "x"},
 	}})
 
-	if len(sink.sent) != 1 || sink.sent[0].GetToolCall().Tool != "search_notes" {
-		t.Errorf("sent %v", sink.sent)
+	if len(sink.steps) != 1 || sink.steps[0].GetToolCall().Tool != "search_notes" {
+		t.Errorf("steps %v", sink.steps)
 	}
 }
 
@@ -64,8 +64,8 @@ func TestOtherEventsSendNothing(t *testing.T) {
 	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "other"}})
 	Handle(&sink, map[string]any{"type": "item.completed", "item": map[string]any{"type": "reasoning", "text": "hidden"}})
 
-	if len(sink.sent) != 0 {
-		t.Errorf("sent %v", sink.sent)
+	if len(sink.steps) != 0 {
+		t.Errorf("steps %v", sink.steps)
 	}
 }
 

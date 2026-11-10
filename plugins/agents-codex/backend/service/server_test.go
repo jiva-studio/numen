@@ -205,7 +205,7 @@ func TestTheProgramOfTheConfiguredPathListsItsModels(t *testing.T) {
 	}
 }
 
-func TestAskStopsWhenTheStreamCannotBeWritten(t *testing.T) {
+func TestAsk_FirstSendFailure(t *testing.T) {
 	sendErr := errors.New("send failed")
 
 	err := newAgentServer(false).Ask(t.Context(), &agentrun.Request{Prompt: "q"}, func(*agentrun.Response) error {
