@@ -12,11 +12,11 @@ export const ErrorCode = {
   failedPrecondition: 'failed_precondition',
 } as const
 
-export interface GetLinkRequest {
+interface GetLinkRequest {
   readonly path: string
 }
 
-export interface GetLinkResponse {
+interface GetLinkResponse {
   readonly url: string
   readonly isCopyable: boolean
 }
@@ -28,12 +28,12 @@ interface CopyMediaRequest {
 
 type CopyMediaResponse = Record<string, never>
 
-export interface CreateLinksRequest {
+interface CreateLinksRequest {
   readonly folder: string
   readonly urls: readonly string[]
 }
 
-export interface CreateLinksResponse {
+interface CreateLinksResponse {
   readonly paths: readonly string[]
   readonly failed: readonly string[]
 }

@@ -25,8 +25,7 @@ export const NEW_LINK_ROLE: ConnectionRole = 'jump'
 
 const BLANK_SIDE: ConnectionSide = { label: '', marker: null, reason: '' }
 
-/** The record one note writes in a draft, and null where it writes none. */
-export const getSide = (draft: Connection, key: SideKey): ConnectionSide | null =>
+const getSide = (draft: Connection, key: SideKey): ConnectionSide | null =>
   key === 'first' ? draft.firstSide : draft.secondSide
 
 const withSide = (draft: Connection, key: SideKey, side: ConnectionSide | null): Connection =>

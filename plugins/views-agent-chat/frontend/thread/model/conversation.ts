@@ -21,7 +21,7 @@ export interface ConversationStrings {
   readonly nothing: string
 }
 
-export interface AskOptions {
+interface AskOptions {
   readonly agentId?: string
   readonly modelId?: string
   readonly reasoning?: string

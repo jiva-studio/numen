@@ -24,9 +24,8 @@ import {
 } from './open'
 import { flushWrites } from './writeQueue'
 import type { PresetTabState } from './types'
-import type { SettingValue } from '../lib/settings'
 
-export type { PresetTabState, SettingValue }
+export type { PresetTabState,  }
 
 /** The word preset tabs are filed under. */
 export const PRESET = 'preset'

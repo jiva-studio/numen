@@ -9,7 +9,7 @@ export type NodesByRelation = Readonly<Partial<Record<PlexRelation, readonly Ple
 /** How wide a node's box is drawn, clamped before a strategy is called. */
 export type Widths = (node: PlexNode) => number
 
-export interface PlacementContext {
+interface PlacementContext {
   readonly options: PlexOptions
   readonly limits: Limits
   readonly width: Widths

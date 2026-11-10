@@ -10,7 +10,7 @@ import { sleep } from './wait'
 import type { Caught } from '@numen/plugin-sdk'
 
 /** The pause after the last slider move before the value is written. */
-export const SLIDER_DEBOUNCE_MS = 300
+const SLIDER_DEBOUNCE_MS = 300
 
 export interface UseFloorOptions {
   client?: FloorClient
@@ -155,5 +155,3 @@ export function useFloor(options: UseFloorOptions) {
     actions: { load, calibrate, setMode, setManualFloor, probe, reportFailure },
   }
 }
-
-export type FloorModel = ReturnType<typeof useFloor>

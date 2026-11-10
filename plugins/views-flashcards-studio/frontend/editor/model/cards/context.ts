@@ -5,7 +5,7 @@
  */
 import type { InjectionKey } from 'vue'
 
-export interface CardFieldTarget {
+interface CardFieldTarget {
   readonly field: string
   readonly index: number
 }

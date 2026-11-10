@@ -11,7 +11,7 @@ import type { FileConflict } from '@numen/plugin-sdk'
 
 // --- Props & Emits ---
 /** The words the two conflicts are put in. */
-export interface FileConflictWords {
+interface FileConflictWords {
   readonly gone: string
   readonly makeAgain: string
   readonly stale: string

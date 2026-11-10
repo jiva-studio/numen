@@ -42,7 +42,7 @@ export interface MenuRequest {
 export type DropPosition = { readonly into: string | null } | { readonly before: string }
 
 /** What a files tab requests from the window: the files it opens, selects and shows. */
-export interface FilesTabWindowDeps {
+interface FilesTabWindowDeps {
   /** Opens the file a row represents. */
   openEntry(entry: Entry): void
   onSelectPath?(path: string, state: FilesTabState): void
@@ -52,7 +52,7 @@ export interface FilesTabWindowDeps {
 }
 
 /** What a files tab requests for its menu. */
-export interface FilesTabMenuDeps {
+interface FilesTabMenuDeps {
   /** The entries of the menu of a row, over the row it was opened on. */
   getMenuEntries(target: CommandTarget): readonly SlotItem[]
   /** The items a command of the menu offers over the row. */
@@ -70,7 +70,7 @@ export interface FilesTabMenuDeps {
 }
 
 /** What a files tab requests to move rows and to take dropped data. */
-export interface FilesTabTransferDeps {
+interface FilesTabTransferDeps {
   movePath(from: string, to: string): Promise<void>
   /** Whether a plugin takes data dragged in from outside the window, of one of the types. */
   canDropData(types: readonly string[]): boolean
@@ -86,14 +86,14 @@ export interface FilesTabDeps {
 }
 
 /** What a tree shows, as values that change. */
-export interface FileTreeState {
+interface FileTreeState {
   readonly selectedPaths: Ref<readonly string[]>
   readonly errorMessage: Ref<string>
   readonly isLoaded: Ref<boolean>
 }
 
 /** What a tree answers about the folders it has loaded. */
-export interface FileTreeQueries {
+interface FileTreeQueries {
   readonly rows: Ref<readonly ListingRow[]>
   readonly openRows: Ref<readonly string[]>
   getEntriesInFolder(folder: string): readonly Entry[]
@@ -102,14 +102,14 @@ export interface FileTreeQueries {
 }
 
 /** The operations that open and close folders. */
-export interface FileTreeFolders {
+interface FileTreeFolders {
   openFolder(folder: string): Promise<void>
   closeFolder(folder: string): void
   toggleFolder(folder: string): Promise<void>
 }
 
 /** The operations that bring the tree in line with the vault. */
-export interface FileTreeSync {
+interface FileTreeSync {
   loadFolder(folder: string): Promise<void>
   refresh(): Promise<void>
   refreshChanged(paths?: readonly string[], renamed?: readonly PathRename[]): Promise<void>
@@ -139,13 +139,13 @@ export interface FilesTabEntries {
 }
 
 /** The row whose name is in a field. */
-export interface FilesTabRenaming {
+interface FilesTabRenaming {
   readonly path: Ref<string | null>
   setPath(path: string | null): void
 }
 
 /** Moving rows within the tree, and dropping rows or outside data on it. */
-export interface FilesTabTransfer {
+interface FilesTabTransfer {
   getFolderFor(path: string | null): string
   move(paths: readonly string[], target: DropPosition): Promise<void>
   drag(paths: readonly string[]): void

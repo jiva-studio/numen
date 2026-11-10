@@ -31,7 +31,7 @@ export const STOP_REASONS: readonly StopReason[] = [
   StopReason.NOTHING,
 ]
 
-export type { BudgetName }
+
 
 /** The three, in the order they are offered. */
 export const GOALS: readonly Goal[] = ['minutes', 'retention', 'date']
@@ -106,7 +106,7 @@ export type PresetReadResult = Result<ReadPreset, ErrorCode>
 export type PresetWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** Where a preset was filed, or why none was made. */
-export type MakeResult = Result<{ readonly path: string }, ErrorCode>
+type MakeResult = Result<{ readonly path: string }, ErrorCode>
 
 /** What a preset evaluates to at one place of the grid. */
 export interface Point {

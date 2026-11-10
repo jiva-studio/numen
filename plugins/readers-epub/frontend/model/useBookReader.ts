@@ -11,18 +11,15 @@ import { useBookDocument } from './useBookDocument'
 import { useBookHighlights } from './useBookHighlights'
 import type {
   Book,
-  BookHandle,
-  BookPart,
   Books,
   BookWords,
-  PrintedPage,
   SpineDocument,
 } from '../types'
 
-export type { Book, BookHandle, BookPart, Books, BookWords, PrintedPage, SpineDocument }
+export type { Book,   Books, BookWords,  SpineDocument }
 export { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 export { useBookDocument } from './useBookDocument'
-export { useBookHighlights } from './useBookHighlights'
+
 
 export type BookReaderState = ReturnType<typeof useBookReader>
 

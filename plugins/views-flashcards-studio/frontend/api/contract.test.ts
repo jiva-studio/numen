@@ -23,7 +23,7 @@ interface Field {
 const parseTypes = (source: string) => {
   const interfaces = new Map<string, Map<string, Field>>()
   const enums = new Map<string, readonly string[]>()
-  for (const match of source.matchAll(/export interface (\w+) \{([^}]*)\}/g)) {
+  for (const match of source.matchAll(/^(?:export )?interface (\w+) \{([^}]*)\}/gm)) {
     const fields = new Map<string, Field>()
     for (const line of (match[2] ?? '').split('\n')) {
       const field = /^\s*(\w+)(\?)?: ([\w<>, ]+?)(\[\])?\s*$/.exec(line)

@@ -7,21 +7,21 @@ import type { OpenNote } from '../../lib/buffer/types'
 import type { Marks } from '../../../lib/marks'
 import type { BufferCardModel } from '../../lib/card-model/card-model'
 
-export interface CardModelDataState {
+interface CardModelDataState {
   readonly note: ComputedRef<OpenNote>
   readonly cardModel: ComputedRef<BufferCardModel>
   readonly marks: ComputedRef<Marks>
   readonly errorMessage: ComputedRef<string>
 }
 
-export interface CardModelFieldActions {
+interface CardModelFieldActions {
   addField(name: string): void
   renameField(field: string, name: string): void
   removeField(field: string): void
   moveField(field: string, target: string | null): void
 }
 
-export interface CardModelTemplateActions {
+interface CardModelTemplateActions {
   addTemplate(name: string): void
   renameTemplate(id: string, name: string): void
   removeTemplate(id: string): void
@@ -29,7 +29,7 @@ export interface CardModelTemplateActions {
   writeTemplateHalf(id: string, half: Half, text: string): void
 }
 
-export interface CardModelTabLifecycle {
+interface CardModelTabLifecycle {
   keepMine(): void
   takeFile(): void
   close(id: string): void

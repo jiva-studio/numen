@@ -46,7 +46,7 @@ export interface EditorProps {
   tabSize?: number | undefined
 }
 
-export interface EditorEmit {
+interface EditorEmit {
   (event: 'open', address: string): void
   (event: 'save'): void
 }

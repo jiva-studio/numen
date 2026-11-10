@@ -2,7 +2,7 @@
  * Strings of the search relevance panel: the threshold, its source, the noise measured on the
  * vault, and the query check.
  */
-export const CALIBRATION_MIN_NOTES = 20
+const CALIBRATION_MIN_NOTES = 20
 
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {

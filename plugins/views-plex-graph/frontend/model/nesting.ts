@@ -20,11 +20,9 @@ export interface Nesting {
   readonly headings: Readonly<Ref<number>>
 }
 
-/** An unset value nests the headings. */
-export const parseIsNesting = (value: Unvalidated): boolean => value !== false
+const parseIsNesting = (value: Unvalidated): boolean => value !== false
 
-/** A value that is no whole number is the default; a number outside the range is clamped to it. */
-export const parseHeadingLimit = (value: Unvalidated): number =>
+const parseHeadingLimit = (value: Unvalidated): number =>
   typeof value === 'number' && Number.isInteger(value)
     ? Math.min(Math.max(value, HEADING_LIMIT_MIN), HEADING_LIMIT_MAX)
     : DEFAULT_HEADING_LIMIT

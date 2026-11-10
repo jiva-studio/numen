@@ -4,8 +4,6 @@
 import { ref } from 'vue'
 import type { VaultNotes, Caught } from '@numen/plugin-sdk'
 
-export type NoteFileState = ReturnType<typeof useNoteFile>
-
 const getErrorMessage = (error: Caught): string =>
   error instanceof Error ? error.message : String(error)
 

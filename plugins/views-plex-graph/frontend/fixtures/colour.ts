@@ -7,8 +7,7 @@
  * painting the background and the colour over it and reading the pixel back.
  */
 
-/** A colour composited over a background, as red, green and blue. */
-export function resolveColour(colour: string, ground = '#000'): readonly [number, number, number] {
+function resolveColour(colour: string, ground = '#000'): readonly [number, number, number] {
   const paint = document.createElement('canvas').getContext('2d', { willReadFrequently: true })
   if (!paint) throw new Error('no canvas to read a colour on')
   for (const fill of [ground, colour]) {

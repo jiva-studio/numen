@@ -66,22 +66,22 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 /** The rule in the windows' words, and nothing for a message naming none. */
-export const ruleOf: Readonly<Record<Rules, Rule | null>> = {
+const ruleOf: Readonly<Record<Rules, Rule | null>> = {
   [Rules.UNSPECIFIED]: null,
   [Rules.INTERVAL]: 'interval',
   [Rules.RETENTION]: 'retention',
 }
 
-export const ruleNames: Readonly<Record<Rule, Rules>> = getNames<Rule, Rules>(ruleOf)
+const ruleNames: Readonly<Record<Rule, Rules>> = getNames<Rule, Rules>(ruleOf)
 
 /** The unit in the windows' words, and nothing for a message naming none. */
-export const budgetUnitOf: Readonly<Record<BudgetUnits, BudgetUnit | null>> = {
+const budgetUnitOf: Readonly<Record<BudgetUnits, BudgetUnit | null>> = {
   [BudgetUnits.UNSPECIFIED]: null,
   [BudgetUnits.CARDS]: 'cards',
   [BudgetUnits.SHOWS]: 'shows',
 }
 
-export const budgetUnitNames: Readonly<Record<BudgetUnit, BudgetUnits>> = getNames<
+const budgetUnitNames: Readonly<Record<BudgetUnit, BudgetUnits>> = getNames<
   BudgetUnit,
   BudgetUnits
 >(budgetUnitOf)

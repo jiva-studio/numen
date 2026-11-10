@@ -7,7 +7,7 @@ import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@nu
 
 export const SEARCH_DEBOUNCE_MS = 120
 
-export type Wait = (ms: number) => Promise<void>
+type Wait = (ms: number) => Promise<void>
 
 const sleep: Wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -16,13 +16,13 @@ export interface DebouncedSearchOptions {
   guard?: RequestGuard
 }
 
-export interface DebouncedSearchSteps {
+interface DebouncedSearchSteps {
   blank(): void
   pending?(): void
   run(query: string, mine: InFlightRequest): Promise<void>
 }
 
-export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
+function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   const wait = options.wait ?? sleep
   const guard = options.guard ?? createRequestGuard()
 

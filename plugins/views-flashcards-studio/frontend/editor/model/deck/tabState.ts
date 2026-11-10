@@ -9,7 +9,7 @@ import type { BufferDeck } from '../../lib/deck/types'
 import type { Choice, DeckPreset } from './useDeckSchedule'
 
 /** Reactive data state of an open deck tab. */
-export interface DeckDataState {
+interface DeckDataState {
   readonly note: ComputedRef<OpenNote>
   readonly deck: ComputedRef<BufferDeck>
   readonly deckCards: ComputedRef<readonly DeckCard[]>
@@ -20,14 +20,14 @@ export interface DeckDataState {
 }
 
 /** Schedule preset state for a deck tab. */
-export interface DeckScheduleState {
+interface DeckScheduleState {
   readonly scheduled: ComputedRef<DeckPreset>
   readonly choices: ComputedRef<readonly Choice[]>
   setSchedule(preset: string): void
 }
 
 /** Edits to the cards and sections of a deck tab. */
-export interface DeckActions {
+interface DeckActions {
   addCard(
     cardModel: string,
     values: readonly { field: string; text: string }[],
@@ -42,7 +42,7 @@ export interface DeckActions {
 }
 
 /** What the tab does with the file it shows. */
-export interface DeckFileActions {
+interface DeckFileActions {
   keepMine(): void
   takeFile(): void
   close(id: string): void

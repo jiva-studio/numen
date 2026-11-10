@@ -6,25 +6,25 @@ import type { Field } from '../lib/fields'
 import type { SettingValue } from '../lib/settings'
 import type { Curve, Goal, PresetCounts, Settings, SettingsBounds, StopReason } from '../../lib/presets'
 
-export type { Field }
+
 
 /** The value of one row of the receipt. */
 
-export interface PresetStatus {
+interface PresetStatus {
   readonly problems: Readonly<Ref<readonly string[]>>
   readonly stopped: Readonly<Ref<StopReason>>
   readonly errorMessage: Readonly<Ref<string>>
   readonly hasExternalChange: Readonly<Ref<boolean>>
 }
 
-export interface PresetCurveData {
+interface PresetCurveData {
   readonly curve: Readonly<Ref<Curve>>
   readonly place: Readonly<Ref<number>>
   readonly isWaiting: Readonly<Ref<boolean>>
   readonly material: Readonly<Ref<PresetCounts | null>>
 }
 
-export interface PresetTabActions {
+interface PresetTabActions {
   reload(): void
   chooseGoal(goal: Goal): void
   moveSlider(place: number): void

@@ -9,7 +9,7 @@ import {
   type Extent,
 } from '../../lib/plot'
 
-export function useCurveScale(getCurve: () => Curve) {
+function useCurveScale(getCurve: () => Curve) {
   const scale = shallowRef<{ goal: string; extent: Extent } | null>(null)
 
   watch(

@@ -18,7 +18,7 @@ export * from '../types'
 export * from './serialize'
 
 /** Deck persistence and lifecycle service. */
-export const deckService: DeckService = {
+const deckService: DeckService = {
   createDeck: async (title, folder) => {
     const answer = await cardsService.createDeck({ title, path: folder })
     const error = findErrorCode(answer)
@@ -50,7 +50,7 @@ export const deckService: DeckService = {
 }
 
 /** Card model metadata and schema service. */
-export const cardModelService: CardModelService = {
+const cardModelService: CardModelService = {
   cardModels: async (limit) => {
     const answer = await cardsService.listCardModels({ limit: limit ?? 0 })
     return { cardModels: answer.cardModels.map(deserializeCardModelSummary), total: answer.total }

@@ -28,7 +28,7 @@ export const BudgetUnit = {
 export type BudgetUnit = (typeof BudgetUnit)[keyof typeof BudgetUnit]
 
 /** Settings is the scheduling settings of a preset. Load maps a weekday name to the cards due that day. */
-export interface Settings {
+interface Settings {
   goal: Goal
   byDate: string
   minutesADay: number
@@ -112,7 +112,7 @@ export interface ListPresetsResponse {
 }
 
 /** PresetSummary is the listing entry of a preset. */
-export interface PresetSummary {
+interface PresetSummary {
   path: string
   title: string
 }

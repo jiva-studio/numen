@@ -44,12 +44,7 @@ export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds
   return { width, offset: middle - node.x }
 }
 
-/**
- * The box as it is drawn: the one the node was placed with, carried towards the
- * one it opens to as far as it has got. A node with nothing more of its title
- * to show is drawn as it was placed, however long the attention rests on it.
- */
-export function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
+function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
   if (!expanded) return { width: node.width, offset: 0 }
   return {
     width: lerp(node.width, expanded.width, open),

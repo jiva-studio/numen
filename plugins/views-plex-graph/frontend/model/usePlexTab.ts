@@ -17,18 +17,18 @@ import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
 import { WORDS as words } from '../words'
-import type { LinkInspectorRequest, MenuRequest, PlexEditor, PlexTabDeps, PlexTabState, QuickLinkRequest, PlexView, PathRename, NoteType, PlexNeighborhood, PlexRelation, PlexDestination } from '../types'
+import type { MenuRequest, PlexTabDeps, PlexTabState, QuickLinkRequest, PlexView, PathRename, NoteType, PlexNeighborhood, PlexRelation, PlexDestination } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'
 
 export type {
-  LinkInspectorRequest,
-  MenuRequest,
-  PlexEditor,
+  
+  
+  
   PlexTabDeps,
   PlexTabState,
-  QuickLinkRequest,
+  
 }
 
 function usePlexPicture(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {

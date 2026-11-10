@@ -1,7 +1,7 @@
 import type { Result } from '@numen/plugin-sdk'
 
 /** Where a deck, a card model or a preset was filed, or why none was made. */
-export type CreateResult = Result<{ readonly path: string }, ErrorCode>
+type CreateResult = Result<{ readonly path: string }, ErrorCode>
 
 /** One card model as the list of them names it. */
 export interface CardModelSummary {
@@ -95,13 +95,13 @@ export interface VaultCardModel extends Surrounds {
 export type CardsFailure = ErrorCode | 'changed'
 
 /** Why a deck was not read or not written, with the size that stopped a read. */
-export interface DeckFailure {
+interface DeckFailure {
   readonly code: CardsFailure
   readonly bound: number
 }
 
 /** What reading a deck returned. */
-export type DeckReadResult = Result<
+type DeckReadResult = Result<
   {
     readonly deck: VaultDeck
     readonly at: string
@@ -110,19 +110,19 @@ export type DeckReadResult = Result<
 >
 
 /** What writing a deck returned. */
-export type DeckWriteResult = Result<{ readonly at: string }, DeckFailure>
+type DeckWriteResult = Result<{ readonly at: string }, DeckFailure>
 
 /** What reading a card model returned. */
-export type CardModelReadResult = Result<
+type CardModelReadResult = Result<
   { readonly cardModel: VaultCardModel; readonly at: string },
   CardsFailure
 >
 
 /** What writing a card model returned. */
-export type CardModelWriteResult = Result<{ readonly at: string }, CardsFailure>
+type CardModelWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** One deck a rename did not reach, which keeps the heading it had. */
-export interface UnwrittenDeck {
+interface UnwrittenDeck {
   readonly path: string
   readonly text: string
 }

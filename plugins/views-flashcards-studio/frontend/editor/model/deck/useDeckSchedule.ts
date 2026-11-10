@@ -37,7 +37,7 @@ const readDeckPreset = (answer: PresetReadResult): DeckPreset => {
   return { path: readItem.path, name: readItem.title || words.unnamed(readItem.path), errorMessage }
 }
 
-export function usePresetListing(presets: Presets) {
+function usePresetListing(presets: Presets) {
   const listedPresets = shallowRef<readonly PresetChoice[]>([])
   let presetsWereListed = true
 

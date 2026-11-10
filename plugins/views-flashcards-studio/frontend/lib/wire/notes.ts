@@ -62,14 +62,14 @@ export interface CardModel {
 }
 
 /** CardModelSummary is the listing entry of a card model. */
-export interface CardModelSummary {
+interface CardModelSummary {
   path: string
   title: string
   fields: string[]
 }
 
 /** CardTemplate is one template of a card model; front and back are Markdown with `{{Field}}` placeholders. */
-export interface CardTemplate {
+interface CardTemplate {
   name: string
   front: string
   back: string
@@ -88,7 +88,7 @@ export interface Deck {
 }
 
 /** Section is a heading of a deck that groups cards. */
-export interface Section {
+interface Section {
   name: string
   preamble: string
 }
@@ -114,7 +114,7 @@ export interface Card {
 }
 
 /** Value is the text a card holds for one field of its card model. */
-export interface Value {
+interface Value {
   field: string
   text: string
 }
@@ -192,7 +192,7 @@ export interface RenameCardModelFieldResponse {
 }
 
 /** UnwrittenDeck is a deck that a field rename did not reach, with the problem that stopped it. */
-export interface UnwrittenDeck {
+interface UnwrittenDeck {
   path: string
   problem?: Problem
 }

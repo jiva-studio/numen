@@ -4,7 +4,7 @@ import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
 import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
 
 /** `auto` means take the axis from the geometry. */
-export type Axis = 'vertical' | 'horizontal' | 'auto'
+type Axis = 'vertical' | 'horizontal' | 'auto'
 
 export interface Routing {
   readonly tuning: RoutingOptions

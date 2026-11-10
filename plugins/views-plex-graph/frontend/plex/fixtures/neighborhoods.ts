@@ -38,10 +38,10 @@ function run(
 }
 
 /** Nothing points at it and it points at nothing. A vault's first note. */
-export const solitary: PlexNeighborhood = neighborhood('An orphan note', [])
+const solitary: PlexNeighborhood = neighborhood('An orphan note', [])
 
 /** The ordinary case, and the one to judge the proportions by. */
-export const typical: PlexNeighborhood = neighborhood('Hexagonal architecture', [
+const typical: PlexNeighborhood = neighborhood('Hexagonal architecture', [
   { id: 'parent-0', title: 'Software architecture', relation: 'parent' },
   { id: 'parent-1', title: 'Ports and adapters', relation: 'parent' },
   { id: 'child-0', title: 'Domain', relation: 'child' },
@@ -58,7 +58,7 @@ export const typical: PlexNeighborhood = neighborhood('Hexagonal architecture', 
 ])
 
 /** Two parents, one a parent of the other: an edge inside a row. */
-export const diamond: PlexNeighborhood = neighborhood(
+const diamond: PlexNeighborhood = neighborhood(
   'Recursive CTE',
   [
     { id: 'parent-0', title: 'SQL', relation: 'parent' },
@@ -70,22 +70,22 @@ export const diamond: PlexNeighborhood = neighborhood(
 )
 
 /** Nothing above it. The top of a hierarchy has to look deliberate, not broken. */
-export const root: PlexNeighborhood = neighborhood('Everything', [
+const root: PlexNeighborhood = neighborhood('Everything', [
   ...run('child', 5, (i) => ['Ideas', 'People', 'Places', 'Work', 'Reading'][i] ?? `Child ${i}`),
 ])
 
 /** Nothing below it, and the plex has to stay centred anyway. */
-export const leaf: PlexNeighborhood = neighborhood('Nothing below', [
+const leaf: PlexNeighborhood = neighborhood('Nothing below', [
   { id: 'parent-0', title: 'Inbox', relation: 'parent' },
 ])
 
 /** One past what a side can hold, where an off-by-one in the overflow shows. */
-export const crowded: PlexNeighborhood = neighborhood('Verbs', [
+const crowded: PlexNeighborhood = neighborhood('Verbs', [
   ...run('child', 21, (i) => `Child ${i + 1}`),
 ])
 
 /** Past every limit. What the overflow report is for. */
-export const overcrowded: PlexNeighborhood = neighborhood('Everything, again', [
+const overcrowded: PlexNeighborhood = neighborhood('Everything, again', [
   ...run('parent', 9, (i) => `Parent ${i + 1}`),
   ...run('child', 200, (i) => `Child ${i + 1}`),
   ...run('jump', 40, (i) => `Jump ${i + 1}`),
@@ -114,7 +114,7 @@ export const awkwardLabels: PlexNeighborhood = neighborhood(
  * row cross the near one, so their titles compete for space in a band the
  * near row's titles already occupy.
  */
-export const labelledRows: PlexNeighborhood = {
+const labelledRows: PlexNeighborhood = {
   nodes: [
     { id: 'focus', title: 'Marrowfield allotments', relation: 'focus' },
     { id: 'parent-0', title: 'Untitled note 3', relation: 'parent' },

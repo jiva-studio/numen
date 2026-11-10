@@ -4,7 +4,7 @@
  */
 import type { Calibration, GetFloorResponse, ProbeFloorResponse } from '../api/relevance'
 
-export type { FloorCalibrationResult, FloorClient, FloorWriteResult } from '../api/relevance'
+export type {  FloorClient,  } from '../api/relevance'
 
 export type FloorCalibration = Calibration
 export type FloorState = GetFloorResponse

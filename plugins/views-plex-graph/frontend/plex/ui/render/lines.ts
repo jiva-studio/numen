@@ -15,7 +15,7 @@ export interface EdgeLine {
 }
 
 /** Positioned title along an edge line. */
-export interface TitleLine {
+interface TitleLine {
   readonly words: string
   readonly path: string
   readonly line: string

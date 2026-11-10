@@ -70,7 +70,7 @@ export const mockVaultList = {
   showing: 'physics',
 }
 
-export { mockVaultState as vaultState, mockVaultList as listed }
+
 
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
@@ -168,7 +168,7 @@ export const changed = (() => {
  * title, and the vault chooses the extension, not the caller. The extension is
  * not markdown, so a window that builds the path itself does not match it.
  */
-export const maker = (() => {
+const maker = (() => {
   const filed = new Set<string>()
   /** Whether the vault is reachable. */
   let reached = true

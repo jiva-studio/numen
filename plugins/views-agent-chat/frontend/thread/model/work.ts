@@ -8,7 +8,7 @@ import type { SourceLocation } from '@numen/plugin-sdk'
 
 const getSpokenTool = (tool: string) => tool.replaceAll('_', ' ')
 
-export interface WorkCall {
+interface WorkCall {
   readonly tool: string
   readonly subject: string
   readonly location?: SourceLocation | null | undefined

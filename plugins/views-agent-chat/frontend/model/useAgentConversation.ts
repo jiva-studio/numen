@@ -15,13 +15,13 @@ import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 import type { SavedConversation } from '../lib/saved'
 
-export { createTabTitle } from '../lib/title'
+
 export type { AgentTabDeps } from '../types'
 
 /** What one agent tab holds. */
 export type AgentTabState = ReturnType<typeof useAgentConversation>
 
-export type ResolvedAddressMap = ReadonlyMap<string, string>
+type ResolvedAddressMap = ReadonlyMap<string, string>
 
 const AGENT_USE_AT = ['app', 'agent', 'use'] as const
 

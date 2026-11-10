@@ -52,10 +52,7 @@ export function columnHeight(height: number, line: number): number {
   return Math.max(Math.floor(height / line), 1) * line
 }
 
-/**
- * Distance between consecutive columns.
- */
-export function columnPitch(flow: Flow): number {
+function columnPitch(flow: Flow): number {
   if (flow.columns <= 0) return 0
   return flow.width / flow.columns
 }

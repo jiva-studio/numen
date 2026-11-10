@@ -76,7 +76,6 @@ interface TabsApiParts {
 
 const getTabsApi = (base: WindowCore, parts: TabsApiParts) => ({
   windowTabs: base.tabs.windowTabs,
-  tabOpeners: base.tabs.tabOpeners,
   layout: base.tabs.windowTabs.panes.layout,
   closeTab: parts.closeTab,
   getTabIcon: parts.openTabs.getTabIcon,

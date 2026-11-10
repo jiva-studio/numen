@@ -103,7 +103,7 @@ const getCounts = (one: Curve): PresetCounts | null =>
     ? { decks: one.decks, cards: one.cards, overdue: one.overdue, unbegun: one.unbegun }
     : null
 
-export interface TabFixtureOptions {
+interface TabFixtureOptions {
   isWaiting?: boolean
   counts?: PresetCounts | null
 }
@@ -164,4 +164,4 @@ const mountPresetTab = (
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 
-export { getCounts, curve, mountPresetTab, heights, point, rows, createTab }
+export {  curve, mountPresetTab, heights, point, rows, createTab }

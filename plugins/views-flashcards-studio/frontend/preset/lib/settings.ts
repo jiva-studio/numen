@@ -10,7 +10,7 @@ import type { Field } from './fields'
 export type SettingValue = number | string | boolean | Load
 
 /** How far off the day a goal of a date opens on, where the file names none. */
-export const DATE_GOAL_OFFSET_DAYS = 30
+const DATE_GOAL_OFFSET_DAYS = 30
 
 /** Whether the value is a valid load record with daily numeric shares. */
 export const isLoad = (value: SettingValue): value is Load =>

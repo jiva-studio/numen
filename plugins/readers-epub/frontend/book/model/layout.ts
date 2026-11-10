@@ -163,8 +163,7 @@ function holdUntilStood<T>(isStood: () => boolean, read: () => T): Readonly<Ref<
   return followed
 }
 
-/** Handles re-settling and watching dimensions / links in book layout. */
-export function createBookSettling(options: BookSettlingOptions) {
+function createBookSettling(options: BookSettlingOptions) {
   let entry: { way: BorderTurn['way']; leaving: LeavingSpread | undefined } | undefined
 
   const removeCopy = (copy: HTMLElement) => {

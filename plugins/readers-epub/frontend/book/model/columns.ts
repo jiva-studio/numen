@@ -56,8 +56,7 @@ export interface BookFlowState {
   readonly measure: () => void
 }
 
-/** The flow and sizing of the book reading area. */
-export function useBookFlow(
+function useBookFlow(
   area: Readonly<ShallowRef<HTMLElement | null>>,
   props: SettledBookProps,
   contentWidth: ShallowRef<number> | import('vue').Ref<number>,

@@ -7,11 +7,11 @@ import type { TextRange } from '../types'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'
 import { useDocumentHighlights } from './useDocumentHighlights'
-import type { DocumentLayout, Documents, Page, PageHighlight, Rect } from '../types'
+import type { Documents, Page } from '../types'
 
-export type { DocumentLayout, Documents, Page, PageHighlight, Rect }
+export type {  Documents, Page,   }
 export { useDocumentNavigation } from './useDocumentNavigation'
-export { useDocumentViewport } from './useDocumentViewport'
+
 export { useDocumentHighlights } from './useDocumentHighlights'
 
 /** What one open document holds. */

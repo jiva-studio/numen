@@ -59,7 +59,7 @@ import type {
 } from '../lib/wire/notes'
 
 /** The name the manifest declares for the service. */
-export const SERVICE = 'md.numen.views.flashcards.studio'
+const SERVICE = 'md.numen.views.flashcards.studio'
 
 /** Options of one call. */
 export interface CallOptions {

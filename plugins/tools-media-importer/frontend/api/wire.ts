@@ -6,9 +6,6 @@ import type { DroppedLinks, Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
 import { ErrorCode, SERVICE, type Methods } from './importer'
 
-/** The id the manifest declares the plugin under. */
-export const PLUGIN_ID = 'md.numen.tools.media.importer'
-
 const BUSY_ATTEMPTS = 5
 const BUSY_DELAY_MS = 1000
 

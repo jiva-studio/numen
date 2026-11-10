@@ -108,8 +108,7 @@ export interface Entry {
   readonly isFolder: boolean
 }
 
-/** What one folder of the vault holds, by path. Empty is the root. */
-export const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
+const listFiles = async (request: APIRequestContext, folder = ''): Promise<Entry[]> => {
   const answer = await callRPC(request, 'FileService/ListFiles', { path: folder })
   return ((answer['entries'] as Partial<Entry>[] | undefined) ?? []).map((one) => ({
     path: one.path ?? '',
@@ -185,7 +184,7 @@ export const destroyTrashed = async (request: APIRequestContext, name: string): 
 }
 
 /** One record a connection holds: the role it was written with, its type, label and marker. */
-export interface ConnectionRecord {
+interface ConnectionRecord {
   readonly role?: string
   readonly type?: string
   readonly label?: string
@@ -283,10 +282,7 @@ export const readSettings = async (request: APIRequestContext): Promise<JsonObje
   ) as JsonObject
 
 /** The values stored under an owner of numen.json: `app` or a plugin id. */
-export const readOwner = async (
-  request: APIRequestContext,
-  owner: string,
-): Promise<JsonObject> =>
+export const readOwner = async (request: APIRequestContext, owner: string): Promise<JsonObject> =>
   ((await readSettings(request))[owner] ?? {}) as JsonObject
 
 /** Whether a note's title and the name of its file are kept as one name. */
@@ -298,8 +294,7 @@ export const isSyncingTitles = async (request: APIRequestContext): Promise<boole
 export const createUniqueTitle = (words: string): string =>
   `${words} ${Math.random().toString(36).slice(2, 7)}`
 
-/** The row of the files tab for the path, with the folder above it opened. */
-export const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
+const revealTreeRow = async (page: Page, filePath: string): Promise<Locator> => {
   await page.getByRole('tab', { name: /^Files/ }).click()
   const folder = path.posix.dirname(filePath)
   if (folder !== '.') {

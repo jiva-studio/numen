@@ -47,7 +47,7 @@ export const GAP = 16
  * The default page size, used for pages whose size is unknown. A document
  * reports its page sizes, and a document that has not reported yet is still laid out.
  */
-export const UPRIGHT: Page = { width: 612, height: 792 }
+const UPRIGHT: Page = { width: 612, height: 792 }
 
 /**
  * How far beyond the viewport edge pages are drawn, as a fraction of the

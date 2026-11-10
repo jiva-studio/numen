@@ -33,7 +33,7 @@ export interface ManifestKeybinding {
   readonly when?: string
 }
 
-export interface ManifestSlot {
+interface ManifestSlot {
   readonly slot: string
   readonly command?: string
   readonly values?: Readonly<Record<string, string>>

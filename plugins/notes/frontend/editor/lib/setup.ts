@@ -158,7 +158,7 @@ export const getTabSizeExtension = (tabSize: number): Extension => {
  * editor. It is handled here, so the letter is not inserted and
  * the page's own handling of the chord does not run.
  */
-export const saveKeyBinding: KeyBinding = {
+const saveKeyBinding: KeyBinding = {
   key: 'Mod-s',
   run: (view) => {
     view.state.facet(saveHandler)()

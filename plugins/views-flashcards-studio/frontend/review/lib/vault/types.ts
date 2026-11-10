@@ -43,14 +43,14 @@ export interface BudgetKeys {
 }
 
 /** Which vault it is: its id, its name and where it lies. */
-export interface VaultIdentity {
+interface VaultIdentity {
   readonly vault: string
   readonly name: string
   readonly path: string
 }
 
 /** What the cards of a vault come to today. */
-export interface VaultTotals {
+interface VaultTotals {
   readonly reviewCards: number
   readonly due: number
   readonly new: number

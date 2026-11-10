@@ -16,7 +16,7 @@ export interface VaultListSources {
 }
 
 /** What the popup that draws the list is given. */
-export interface VaultListPopup {
+interface VaultListPopup {
   readonly items: readonly ListItem[]
   readonly modelValue: string | null
   readonly at: { readonly x: number; readonly y: number }

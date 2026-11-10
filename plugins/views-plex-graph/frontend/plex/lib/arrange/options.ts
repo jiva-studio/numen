@@ -6,7 +6,7 @@ export type Direction = 'up' | 'down' | 'left' | 'right'
 
 export type { Size }
 
-export interface BoxOptions {
+interface BoxOptions {
   readonly focusSize: Size
   readonly nodeSize: Size
   readonly minWidth: number
@@ -21,7 +21,7 @@ export interface BoxOptions {
   readonly squeeze: number
 }
 
-export interface LimitOptions {
+interface LimitOptions {
   readonly maxPerLine: number
   readonly maxLines: number
   readonly maxHeadings: number
@@ -39,12 +39,12 @@ export interface RoutingOptions {
  * deliberately asymmetric: the departing element moves early, so the layout is
  * never at its most crowded halfway through.
  */
-export interface MotionOptions {
+interface MotionOptions {
   readonly arriveAfter: number
   readonly leaveBefore: number
 }
 
-export interface GestureOptions {
+interface GestureOptions {
   readonly verticalBias: number
 }
 
@@ -56,7 +56,7 @@ export interface PlexOptions extends BoxOptions, LimitOptions {
   readonly viewport?: Size | undefined
 }
 
-export const DEFAULT_DIRECTION: Readonly<Record<PlexRelation, Direction>> = Object.fromEntries(
+const DEFAULT_DIRECTION: Readonly<Record<PlexRelation, Direction>> = Object.fromEntries(
   Object.entries(RELATIONS).map(([relation, descriptor]) => [relation, descriptor.grows]),
 ) as Record<PlexRelation, Direction>
 

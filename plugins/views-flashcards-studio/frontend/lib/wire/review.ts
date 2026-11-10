@@ -13,7 +13,7 @@ export const Rating = {
 export type Rating = (typeof Rating)[keyof typeof Rating]
 
 /** VaultCardsDue is what one vault has due for review. Unread holds the reason the vault could not be counted. */
-export interface VaultCardsDue {
+interface VaultCardsDue {
   id: string
   name: string
   path: string
@@ -27,7 +27,7 @@ export interface VaultCardsDue {
 }
 
 /** DeckCardsDue is what one deck has due for review. */
-export interface DeckCardsDue {
+interface DeckCardsDue {
   deck: string
   reviewCards: number
   due: number
@@ -38,7 +38,7 @@ export interface DeckCardsDue {
 }
 
 /** PresetCardsDue is the review count of the decks of one preset and what the current day has used. */
-export interface PresetCardsDue {
+interface PresetCardsDue {
   preset: string
   title: string
   decks: number
@@ -60,7 +60,7 @@ export interface PresetCardsDue {
 }
 
 /** Intervals is the interval in seconds that each rating would give a card. */
-export interface Intervals {
+interface Intervals {
   again: number
   hard: number
   good: number
@@ -68,7 +68,7 @@ export interface Intervals {
 }
 
 /** SessionCard is one card of a review session, laid out for one template. */
-export interface SessionCard {
+interface SessionCard {
   deck: string
   section: string
   cardId: string
@@ -147,7 +147,7 @@ export interface ListReviewDaysResponse {
 }
 
 /** ReviewDay is the review counts of one day. Tested and Recalled count the cards whose retention was measured. */
-export interface ReviewDay {
+interface ReviewDay {
   day: string
   reviewed: number
   again: number
@@ -171,7 +171,7 @@ export interface GetDeckNeighbourhoodResponse {
 }
 
 /** DeckNeighbour is a note a deck links to or is linked from. Address is the link target as the deck spells it. */
-export interface DeckNeighbour {
+interface DeckNeighbour {
   address: string
   path: string
   title: string

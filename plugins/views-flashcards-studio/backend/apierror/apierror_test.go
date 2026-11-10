@@ -45,7 +45,7 @@ func TestDescribeCreateReturnsTheReasonByCode(t *testing.T) {
 	if got := apierror.DescribeCreate(api.ErrorCodeInvalidName); got != "a note cannot be called that" {
 		t.Fatalf("unexpected invalid name error: %q", got)
 	}
-	if got := apierror.DescribeCreate(api.ErrorCodeNotFound); got != "the file could not be made: notFound" {
+	if got := apierror.DescribeCreate(api.ErrorCodeNotFound); got != "the file could not be made: not_found" {
 		t.Fatalf("unexpected missing error: %q", got)
 	}
 	if got := apierror.DescribeCreate(api.ErrorCode("CUSTOM")); got != "the file could not be made: CUSTOM" {

@@ -1,3 +1,3 @@
 export { default as WeekdayChips } from './WeekdayChips.vue'
-export { rotateWeek, WEEK } from './week'
-export type { Day, DayName } from './week'
+export {  WEEK } from './week'
+export type { Day,  } from './week'

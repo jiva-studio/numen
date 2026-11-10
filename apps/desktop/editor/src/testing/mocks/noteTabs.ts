@@ -3,11 +3,15 @@
  * the vault reports its notes as that kind, and the window opens them in it.
  */
 import { defineComponent, h, reactive } from 'vue'
+import { createMockManifest } from '@numen/core-client/testing'
+import type { PluginHost } from '@numen/plugin-loader'
 import type { createWindow } from '@/app/window/createWindow'
-import type { TabKind } from '@/entities/tab'
 import { mockVaultState } from '../answers'
+import { hosts } from './pluginHost'
 
 const NOTE_TAB = 'sample'
+
+const NOTE_PLUGIN = 'org.example.notes'
 
 interface NoteTabState {
   path: string
@@ -18,31 +22,40 @@ const pane = defineComponent({
   setup: () => () => h('div'),
 })
 
-const noteTabKind: TabKind<NoteTabState> = {
+type TabKindRegistration = Parameters<
+  ReturnType<PluginHost['lifecycle']['createContext']>['register']['tabKind']
+>[0]
+
+const isNoteTab = (state: object): state is NoteTabState => 'path' in state
+
+const getPath = (state: object): string => (isNoteTab(state) ? state.path : '')
+
+const noteTabKind: TabKindRegistration = {
   kind: NOTE_TAB,
-  open: (targetPath) => reactive({ path: targetPath }),
-  pane,
-  getTitle: (state) => state.path,
-  address: {
-    identity: (targetPath) => targetPath,
-    navigate: (state, path) => {
-      state.path = path
-    },
-    getTarget: (state) => ({ path: state.path, file: state.path, title: state.path }),
-    getOpenTab: (state) => ({ path: state.path }),
+  component: pane,
+  open: (targetPath) => reactive<NoteTabState>({ path: targetPath }),
+  getTitle: getPath,
+  identity: (targetPath) => targetPath,
+  navigate: (state, path) => {
+    if (isNoteTab(state)) state.path = path
   },
+  getTarget: (state) => ({ path: getPath(state), file: getPath(state), title: getPath(state) }),
+  getOpenTab: (state) => ({ path: getPath(state) }),
 }
 
 type WindowParts = ReturnType<typeof createWindow>
 
 /** Makes the window open the notes of the vault in tabs of the sample kind. */
-export const registerNoteTabs = ({ tabs }: Pick<WindowParts, 'tabs'>): void => {
-  const { windowTabs, tabOpeners } = tabs
+export const registerNoteTabs = (): void => {
+  const host = hosts.current
+  if (!host) throw new Error('No window is mounted; mock the plugin support with recordHosts')
   mockVaultState.tabKind = NOTE_TAB
-  windowTabs.groups.registerKind(noteTabKind)
-  tabOpeners.registerEditor(NOTE_TAB, (path) => {
-    windowTabs.tabs.openTabOfKind(NOTE_TAB, path).catch(() => undefined)
-  })
+  host.lifecycle
+    .createContext(
+      NOTE_PLUGIN,
+      createMockManifest(NOTE_PLUGIN, { name: 'Notes', permissions: ['vault:read'] }),
+    )
+    .register.tabKind(noteTabKind)
 }
 
 /** Opens a note in a tab of the sample kind and returns the id of the tab. */

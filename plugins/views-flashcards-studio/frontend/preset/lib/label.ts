@@ -11,7 +11,7 @@ import {
 } from './plot'
 
 /** CSS inline position style for a plot label. */
-export interface InlinePositionStyle {
+interface InlinePositionStyle {
   readonly insetInlineStart?: string
   readonly insetBlockStart?: string
   readonly translate?: string

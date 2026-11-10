@@ -9,7 +9,7 @@ import type { Platform } from '../types'
 export const SERVICE = 'md.numen.tools.updater'
 
 /** What the last check found. */
-export type State = 'unchecked' | 'current' | 'available' | 'unreachable'
+type State = 'unchecked' | 'current' | 'available' | 'unreachable'
 
 /** The running build, as the backend compares it with the newest one. */
 export interface App {
@@ -18,14 +18,14 @@ export interface App {
   readonly platform: Platform
 }
 
-export interface CheckRequest {
+interface CheckRequest {
   readonly app: App
 }
 
-export type GetStatusRequest = Record<string, never>
+type GetStatusRequest = Record<string, never>
 
 /** The file of a release for the running platform. */
-export interface ReleaseFile {
+interface ReleaseFile {
   readonly name: string
   readonly arch: string
   readonly kind: string

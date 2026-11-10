@@ -44,5 +44,3 @@ export function useConversationView(context: ConversationContext, paint?: Paint)
     getSilence,
   }
 }
-
-export type ConversationViewState = ReturnType<typeof useConversationView>

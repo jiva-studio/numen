@@ -28,7 +28,7 @@ export interface NotesPanelDeps {
 }
 
 /** The links of one note's body, as the panel draws them. */
-export interface NoteLinks {
+interface NoteLinks {
   readonly links: readonly LinkPiece[]
   readonly unresolved: readonly string[]
 }

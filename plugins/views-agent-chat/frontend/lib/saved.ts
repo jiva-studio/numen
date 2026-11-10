@@ -7,7 +7,7 @@ import type { JsonValue } from '@numen/plugin-sdk'
 import type { Turn, Voice } from '../types'
 
 /** One settled turn, as an agent tab saves it. */
-export type SavedTurn = {
+type SavedTurn = {
   readonly id: string
   readonly voice: Voice
   readonly text: string

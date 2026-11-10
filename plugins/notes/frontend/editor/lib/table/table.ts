@@ -8,7 +8,7 @@
 import type { EditorState } from '@codemirror/state'
 import type { SyntaxNode } from '@lezer/common'
 
-export type Align = 'none' | 'start' | 'centre' | 'end'
+type Align = 'none' | 'start' | 'centre' | 'end'
 
 /** One cell, and where it is written. */
 export interface Cell {

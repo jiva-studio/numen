@@ -13,19 +13,19 @@ export interface NoteBaseline {
   readonly stat: string
 }
 
-export interface LinkAddress {
+interface LinkAddress {
   readonly url: string
   readonly embed: string
 }
 
-export interface NoteContents {
+interface NoteContents {
   readonly body: string
   readonly link?: LinkAddress
   readonly at?: string
 }
 
 export type NoteResult = Result<NoteContents, string>
-export type WriteResult = Result<NoteContents, string>
+type WriteResult = Result<NoteContents, string>
 
 export interface OpenNote {
   readonly path: string

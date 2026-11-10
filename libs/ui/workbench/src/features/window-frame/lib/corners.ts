@@ -5,16 +5,16 @@ export type WindowPlatform = 'darwin' | 'windows' | 'linux'
  * The corner radius of a macOS window with a hidden title bar before macOS 26, in points. Every
  * window has the same radius there.
  */
-export const MAC_RADIUS_EARLIER = 10
+const MAC_RADIUS_EARLIER = 10
 
 /**
  * The corner radius of a macOS 26 window with a hidden title bar, in points, measured on a screenshot
  * of macOS 26.6.2 (14 to 16). Windows with a toolbar are rounder; macOS documents no value.
  */
-export const MAC_RADIUS_TAHOE = 16
+const MAC_RADIUS_TAHOE = 16
 
 /** The first macOS version with the larger corner radius. */
-export const MAC_TAHOE_MAJOR = 26
+const MAC_TAHOE_MAJOR = 26
 
 /**
  * The name of the CSS variable on the document root that holds the width of the hairline macOS
@@ -23,7 +23,7 @@ export const MAC_TAHOE_MAJOR = 26
 export const WINDOW_EDGE_VARIABLE = '--numen-window-edge'
 
 /** The width in points of the top hairline of a macOS window. */
-export const MAC_TOP_EDGE = 1
+const MAC_TOP_EDGE = 1
 
 /** The name of the CSS variable on the document root that holds the radius, as a length. */
 export const WINDOW_RADIUS_VARIABLE = '--numen-window-radius'

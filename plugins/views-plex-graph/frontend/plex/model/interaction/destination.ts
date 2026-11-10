@@ -15,16 +15,16 @@ import type { PlexDestination } from '../../../types'
  * Where an opened node is shown, declared once. The modifier that selects the
  * destination and the caller's behavior are derived from this table.
  */
-export interface DestinationDescriptor {
+interface DestinationDescriptor {
   readonly hasModifier: boolean
 }
 
-export const DESTINATIONS = {
+const DESTINATIONS = {
   current: { hasModifier: false },
   split: { hasModifier: true },
 } as const satisfies Record<PlexDestination, DestinationDescriptor>
 
-export const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestination[]
+const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestination[]
 
 /** One name per modifier, taken from the table. */
 const BY_MODIFIER = Object.fromEntries(

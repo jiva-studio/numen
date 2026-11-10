@@ -26,7 +26,7 @@ import { cell } from './cell.mjs'
 
 const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
 // The window's shared layer, which is where the words stand.
-const UI = new URL('shared/', EDITOR)
+const UI = new URL('shared/ui/', EDITOR)
 // The slices that declare the commands the palette lists, in the order the palette draws them, and
 // the words each one names its text in. The palette's own commands name their text in the window's
 // words directly.

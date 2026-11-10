@@ -11,7 +11,7 @@ import { generateId, type IdMaker } from '../../../lib/identity'
 import type { Surrounds, VaultTemplate, VaultCardModel } from '../../../types'
 
 /** One template as the window holds it: the file's content, under its own identity. */
-export interface BufferTemplate {
+interface BufferTemplate {
   readonly id: string
   readonly name: string
   readonly preamble: string
@@ -26,7 +26,7 @@ export interface BufferCardModel extends Surrounds {
 }
 
 /** A card model that is empty and shows nothing. */
-export const NO_CARD_MODEL: BufferCardModel = { fields: [], preamble: '', templates: [], tail: '' }
+const NO_CARD_MODEL: BufferCardModel = { fields: [], preamble: '', templates: [], tail: '' }
 
 /** A card model as the vault read it, each template under an identity this window mints. */
 export const createBufferCardModel = (

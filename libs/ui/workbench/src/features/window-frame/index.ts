@@ -1,8 +1,8 @@
 export {
-  getWindowRadius,
-  readMajorVersion,
-  WINDOW_EDGE_VARIABLE,
-  WINDOW_RADIUS_VARIABLE,
+  
+  
+  
+  
   type WindowPlatform,
 } from './lib/corners'
 export { MAC_BUTTONS_INSET } from './lib/sizes'

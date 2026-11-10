@@ -2,7 +2,7 @@
 import type { Grade } from './grades'
 
 /** Where a review card lives: its deck and section, and the card and template it is drawn from. */
-export interface CardAddress {
+interface CardAddress {
   readonly deck: string
   readonly section: string
   readonly cardId: string

@@ -8,7 +8,7 @@ import type { AgentPort } from '@numen/plugin-sdk'
 import type { ReviewCard } from '../../lib/card/cards'
 
 /** The keys under which the card tools read the card currently displayed. */
-export const CARD_CONTEXT = {
+const CARD_CONTEXT = {
   deck: 'md.numen.views.flashcards.studio/deck',
   card: 'md.numen.views.flashcards.studio/card',
   template: 'md.numen.views.flashcards.studio/template',

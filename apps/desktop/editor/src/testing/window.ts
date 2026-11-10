@@ -16,14 +16,12 @@ import { tabAnswers } from './mocks/tab'
 import { readWindowTasks, windowAnswers } from './mocks/window'
 import { mergeAnswers } from './mergeAnswers'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { getPanes, WorkspaceLayout, type Workspace } from '@numen/workbench'
+import { WorkspaceLayout } from '@numen/workbench'
 import { requests, forgetRequests } from './requests'
 import {
   changed,
-  folders,
   forgetAnswers,
   mockVaultList,
-  maker,
   nameAnswer,
   outside,
   passageAnswer,
@@ -116,13 +114,6 @@ const cards = (): readonly string[] =>
     .filter((task) => task.state === 'failed')
     .map((task) => [task.label, task.about].filter(Boolean).join(' '))
 
-const nodeInPlex = (window: VueWrapper): string => {
-  const state = window.findComponent({ name: 'PlexTab' }).props('state') as {
-    picture: { value: { nodes: readonly { id: string }[] } | null }
-  }
-  return state.picture.value?.nodes[0]?.id ?? ''
-}
-
 type WindowParts = ReturnType<typeof createWindow>
 
 const hasWindowParts = (vm: object): vm is { parts: WindowParts } => 'parts' in vm
@@ -150,12 +141,6 @@ const submitPalette = async (): Promise<void> => {
   await settle()
 }
 
-const getLayout = (window: VueWrapper): Workspace =>
-  window.findComponent(WorkspaceLayout).props('modelValue')
-
-const paneKinds = (window: VueWrapper): readonly (readonly string[])[] =>
-  getPanes(getLayout(window).root).map((one) => one.tabs.map((tab) => tab.split(':')[0] ?? ''))
-
 const getTabs = (window: VueWrapper): readonly { id: string; title: string }[] =>
   window.findComponent(WorkspaceLayout).props('tabs')
 
@@ -166,20 +151,20 @@ export {
   getWindowParts,
   submitPalette,
   typeInPalette,
-  maker,
+  
   DEBOUNCE,
   mountWindow,
   mountWindowWithPalette,
-  editor,
-  folders,
-  getLayout,
-  mockVaultList,
+  
+  
+  
+  
   nameAnswer,
-  nodeInPlex,
+  
   outside,
-  paneKinds,
+  
   passageAnswer,
-  reader,
+  
   mockVaultState,
   mockVaultState as vaultState,
   mockVaultList as listed,

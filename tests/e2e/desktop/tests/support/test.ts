@@ -83,8 +83,7 @@ const readTasks = (
     call.end(Buffer.concat([header, json]))
   })
 
-/** The tasks that ended in failure, each as its title, what it is about and why it failed. */
-export const readFailedTasks = async (baseURL: string): Promise<string[]> =>
+const readFailedTasks = async (baseURL: string): Promise<string[]> =>
   (await readTasks(baseURL))
     .filter((one) => one.error)
     .map((one) => [one.title, one.about, one.error].filter(Boolean).join(': '))

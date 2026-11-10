@@ -19,13 +19,12 @@ import {
   createCardModelState,
   createCardModelWire,
   type CardModelState,
-  type VaultAnswer,
 } from '../../api/card-model/wire'
 import { createCardModelFields } from './fields'
 import type { Cards } from '../../../types'
 import type { CardModelTabState } from './types'
 
-export type { CardModelTabState, VaultAnswer }
+export type { CardModelTabState,  }
 
 /** The word card model tabs are filed under. */
 export const CARD_MODEL = 'card-model'

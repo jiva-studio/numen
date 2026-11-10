@@ -158,7 +158,7 @@ export function templateRows(
 }
 
 /** What one part of the window a template is edited in holds. */
-export type PaneMode = 'written' | 'preview'
+type PaneMode = 'written' | 'preview'
 
 /** One part of the window a template is edited in. */
 export interface Pane {
