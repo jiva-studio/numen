@@ -8,8 +8,8 @@
 import { describe, expect, it } from 'vitest'
 import { keyChord } from '@numen/ui'
 import type { VaultList, Vault } from '@/entities/vault'
-import { findChordKeys } from '@/features/command-palette'
-import { COMMAND } from '@/shared/commandIds'
+import { findChordKeys } from '@/entities/command'
+import { COMMAND } from '@/entities/command'
 import {
   COMMANDS,
   createVaultRows,

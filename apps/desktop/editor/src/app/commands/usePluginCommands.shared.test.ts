@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { HandlerDeclaration, PluginHost } from '@numen/plugin-loader'
-import { commands, type AnswerWords, type CommandDeps } from '@/features/command-palette'
+import { commands, type CommandDeps } from '@/features/command-palette'
 import type { CommandInvocation, CommandTarget, RunSupport } from '@/entities/command'
 import { getFileKinds } from '@/entities/file'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
@@ -109,7 +109,6 @@ describe('a shared command that asks for a value', () => {
         values: { address: 'https://example.com/tides' },
       } as unknown as CommandInvocation,
       {} as CommandDeps,
-      {} as AnswerWords,
     )
 
     expect(host.executeCommand).toHaveBeenCalledWith(

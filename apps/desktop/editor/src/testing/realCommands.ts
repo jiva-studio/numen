@@ -12,11 +12,12 @@ import {
   type DeclaredSlotEntry,
   type PluginHost,
 } from '@numen/plugin-loader'
-import { createCommands, runSupport } from '@/features/command-palette'
+import { runSupport } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { createSlotCommandFinder } from '@/app/commands/pluginSlots'
 import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'
 import { WORDS } from '@/shared/words'
+import { createAppCommands } from './appCommands'
 
 export interface ManifestKeybinding {
   readonly key: string
@@ -99,7 +100,7 @@ const createHost = (parts: RealWindowParts): PluginHost => {
     findSlotCommand: createSlotCommandFinder({
       getPluginCommands: () => [],
       getDeclaredCommands: () => [],
-      getEditorCommands: () => createCommands(WORDS),
+      getEditorCommands: () => createAppCommands(),
       getWhenValues: getValues,
       whenReader,
     }),

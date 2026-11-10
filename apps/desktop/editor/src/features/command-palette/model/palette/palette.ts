@@ -20,7 +20,6 @@ import {
 import { createRequestGuard as latest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
-import { createCommands } from '../../lib/commands/commands'
 import { getPaletteView } from '../view/view'
 import { createInvocation } from '../../lib/entries/invocation'
 import type { CommandsDeps, NoteLookup, PaletteLists } from '../../types'
@@ -49,7 +48,7 @@ export interface CommandPaletteDeps {
   readonly lists: PaletteLists
   readonly runs: RunSupport
   readonly wait?: Wait
-  readonly getExtraCommands?: () => readonly Command[]
+  readonly getCommands?: () => readonly Command[]
 }
 
 interface PaletteSearchDeps {
@@ -206,7 +205,7 @@ type PaletteArgs =
 
 function parsePaletteDeps(args: PaletteArgs): CommandPaletteDeps {
   if (args.length === 1) return args[0]
-  const [core, words, targetPoint, knows, lists, runs, wait, getExtraCommands] = args
+  const [core, words, targetPoint, knows, lists, runs, wait, getCommands] = args
   return {
     core,
     words,
@@ -217,7 +216,7 @@ function parsePaletteDeps(args: PaletteArgs): CommandPaletteDeps {
     // Stryker disable next-line ConditionalExpression: Setting optional property to undefined is equivalent when read.
     ...(wait !== undefined ? { wait } : {}),
     // Stryker disable next-line ConditionalExpression: Setting optional property to undefined is equivalent when read.
-    ...(getExtraCommands !== undefined ? { getExtraCommands } : {}),
+    ...(getCommands !== undefined ? { getCommands } : {}),
   }
 }
 
@@ -411,9 +410,8 @@ function createPalettePresentation(
 }
 
 function createRows(deps: CommandPaletteDeps) {
-  const staticCommands = createCommands(deps.words)
-  // Stryker disable next-line ArrayDeclaration: Empty fallback when getExtraCommands is not provided.
-  const getCommands = () => [...staticCommands, ...(deps.getExtraCommands?.() ?? [])]
+  // Stryker disable next-line ArrayDeclaration: Empty fallback when getCommands is not given.
+  const getCommands = () => deps.getCommands?.() ?? []
   const byId = computed(() => new Map(getCommands().map((one) => [one.id, one])))
   return { getCommands, byId }
 }

@@ -7,17 +7,14 @@ import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
 import { createFileCreators, type FileOpeners, type WindowTabs } from '@/entities/tab'
 import { listFiles, type CreateResult } from '@/entities/file'
 import {
-  ANSWER_WORDS,
   createInvocation,
   runInvocation,
   type CommandDeps,
 } from '@/features/command-palette'
-import type { CommandTarget } from '@/entities/command'
+import { COMMAND, findIcon, type CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 import { getKnownErrorCode } from '@/shared/api/errors'
-import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
-import { findIcon } from '@/shared/icons'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { getEntryIcon } from '../tabs/entryIcon'
 
@@ -104,7 +101,7 @@ export interface VaultFilesDeps {
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   const { making, getTarget, commandDeps } = deps
   const run = async (id: string, target: CommandTarget, name: string): Promise<void> => {
-    await runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
+    await runInvocation(createInvocation(id, target, name), commandDeps())
   }
   return {
     list: (folder) => listFiles(folder),

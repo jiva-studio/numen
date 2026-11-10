@@ -13,6 +13,7 @@ import { useCommandPalette, type Commands } from './palette'
 import type { VaultList, Vault } from '@/entities/vault'
 import type { NameMatch } from '../search/search'
 import { WORDS as words } from '@/shared/words'
+import { createAppCommands } from '@/testing/appCommands'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
 function rethrow(error: unknown): never {
@@ -135,7 +136,7 @@ const createPalette = (
     retainedItem.paletteLists,
     runs,
     vi.fn(() => Promise.resolve()),
-    () => (Object.keys(entries).length > 0 ? SETTING_COMMANDS : []),
+    () => [...createAppCommands(), ...(Object.keys(entries).length > 0 ? SETTING_COMMANDS : [])],
   )
   commands.setOpen(true)
   return {
@@ -581,6 +582,7 @@ describe('a command that asks for a note', () => {
       { getStepGroups: () => [], previewItem: vi.fn() },
       runSupport(),
       vi.fn(() => Promise.resolve()),
+      createAppCommands,
     )
     commands.setOpen(true)
     commands.startCommand('app:file.open#note', front())
@@ -934,6 +936,7 @@ describe('a command that asks for a vault', () => {
       { getStepGroups: () => [], previewItem: vi.fn() },
       runSupport(),
       vi.fn(() => Promise.resolve()),
+      createAppCommands,
     )
     commands.setOpen(true)
 
@@ -1092,6 +1095,7 @@ const createSlowPalette = (commandLists: Record<string, readonly StepGroup[]> = 
     createLists(commandLists).paletteLists,
     runSupport(),
     wait,
+    createAppCommands,
   )
   return { commands, names, lists, holds, hold, requests: request }
 }
@@ -1578,6 +1582,7 @@ describe('the icon of a command', () => {
       runSupport(),
       vi.fn(() => Promise.resolve()),
       () => [
+        ...createAppCommands(),
         {
           id: 'org.example.sample:graph.run',
           text: 'New graph',
@@ -1605,7 +1610,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),
-      getExtraCommands: () => [
+      getCommands: () => [
         { id: 'app:test.reveal', text: 'Reveal', group: 'note', isAvailable: () => false },
       ],
     })
@@ -1635,7 +1640,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),
-      getExtraCommands: () => [
+      getCommands: () => [
         {
           id: 'org.example.sample:args.run',
           text: 'With args',
@@ -1686,7 +1691,7 @@ describe('runSupport, arguments steps, and palette shortcuts', () => {
       knows: createLookup().knows,
       lists: createLists({}).paletteLists,
       runs: runSupport(),
-      getExtraCommands: () => [
+      getCommands: () => [
         {
           id: 'org.example.sample:args.run',
           text: 'With args',

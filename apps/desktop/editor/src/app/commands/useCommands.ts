@@ -8,32 +8,33 @@ import { runInBackground } from '@numen/ui'
 import {
   runInvocation,
   createInvocation,
+  registerCommand,
   useCommandPalette,
   useSearch,
-  ANSWER_WORDS,
   type CommandDeps,
   type ResultChoice,
   type SearchMenuDeps,
-  type Notes,
   type NoteLookup,
   type PaletteLists,
 } from '@/features/command-palette'
-import type {
-  Command,
-  CommandInvocation,
-  CommandTarget,
-  RunSupport,
-  VaultRef,
+import {
+  COMMAND,
+  type Command,
+  type CommandInvocation,
+  type CommandTarget,
+  type Notes,
+  type RunSupport,
+  type VaultRef,
 } from '@/entities/command'
-import { createCommandDeps } from './commandDeps'
-import { COMMAND } from '@/shared/commandIds'
+import { createCommandDeps, createCommandNotes } from './commandDeps'
+import { collectFeatureCommands, type FeatureCommandsDeps } from './featureCommands'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
 import { toRunTarget } from './runTarget'
 import { createCommandItems } from './commandItems'
 import { watchCommandLists } from './watchCommandLists'
 import { syncKeybindings } from './syncKeybindings'
-import type { TabsHold } from './leaveVault'
+import type { TabsHold } from '@/features/vault-commands'
 import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
@@ -99,10 +100,12 @@ const toResultTarget = (place: NonNullable<ResultChoice['over']>) => ({
   ...(place.selector === undefined ? {} : { selector: place.selector }),
 })
 
-const listExtraCommands = (
+const listAllCommands = (
   options: CommandsDepsOptions,
+  featureCommands: readonly Command[],
   pluginEntries: readonly Command[],
 ): readonly Command[] => [
+  ...featureCommands,
   ...(options.getAppCommands?.() ?? []),
   ...(options.settingPalette?.getCommands() ?? []),
   ...(options.declaredCommands?.paletteCommands.value ?? []),
@@ -162,7 +165,7 @@ async function runInvocationToEnd(
     if (severity === 'error') errors.push(text)
     else deps.writeMessage(text, severity)
   }
-  const made = await runInvocation(invocation, { ...deps, writeMessage }, ANSWER_WORDS)
+  const made = await runInvocation(invocation, { ...deps, writeMessage })
   if (errors[0] !== undefined) throw new Error(errors[0])
   return made
 }
@@ -213,7 +216,7 @@ export function createCommandRunner(parts: CommandRunnerParts) {
     if (invocation) {
       const deps = parts.getCommandDeps()
       const run = withValues(invocation, way.values)
-      return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps, ANSWER_WORDS)
+      return way.isAwaited ? runInvocationToEnd(run, deps) : runInvocation(run, deps)
     }
     if (commands.open.value) {
       palette.setOpen(false)
@@ -241,10 +244,42 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   }
 }
 
+/** What the commands of the features use of the window. */
+function createFeatureDeps(options: CommandsDepsOptions, notes: Notes): FeatureCommandsDeps {
+  const { windowTabs, writeMessage } = options
+  return {
+    notes: {
+      making: options.making,
+      notes,
+      navigator: {
+        travel: async (path) => {
+          await options.travel(path)
+        },
+        leave: async (from, to) => {
+          await options.leavePath(from, to)
+        },
+        getOpeningNote: options.getOpeningNote,
+        showTab: (kind, path) =>
+          runInBackground(windowTabs.navigateTab(kind, path), (error) =>
+            writeMessage(formatErrorMessage(error), 'error'),
+          ),
+      },
+      writeMessage,
+    },
+    files: { notes, writeMessage },
+    vaults: {
+      tabsHold: options.tabsHold,
+      setVaultName: options.setVaultName,
+      reload: options.reload,
+      writeMessage,
+    },
+  }
+}
+
 function useWindowCommandPalette(
   options: CommandsDepsOptions,
   lists: PaletteLists,
-  listExtras: () => readonly Command[],
+  listCommands: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
   return useCommandPalette(
@@ -255,7 +290,7 @@ function useWindowCommandPalette(
     lists,
     runs,
     undefined,
-    listExtras,
+    listCommands,
   )
 }
 
@@ -277,14 +312,19 @@ export function useCommands(options: CommandsDepsOptions) {
   })
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
-  const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
-  const commands = useWindowCommandPalette(options, lists, listExtras)
+  const notes = createCommandNotes(options.reached, windowTabs)
+  const features = collectFeatureCommands(createFeatureDeps(options, notes), words)
+  for (const [id, run] of Object.entries(features.handlers)) registerCommand(id, run)
+  const listAll = () =>
+    removeEmptyCommands(listAllCommands(options, features.commands, getPaletteEntries()))
+  const commands = useWindowCommandPalette(options, lists, listAll)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
+    notes,
     search: () => {
       commands.setOpen(false)
       palette.setOpen(true)
@@ -316,7 +356,7 @@ export function useCommands(options: CommandsDepsOptions) {
    */
   const runKeyWithValues = (command: string, values: Values): void => {
     const invocation = withValues(createInvocation(command, getTarget()), values)
-    runInBackground(runInvocation(invocation, commandDeps, ANSWER_WORDS), (error) =>
+    runInBackground(runInvocation(invocation, commandDeps), (error) =>
       writeMessage(formatErrorMessage(error), 'error'),
     )
   }
@@ -350,6 +390,7 @@ export function useCommands(options: CommandsDepsOptions) {
     palette,
     commands,
     commandDeps,
+    featureCommands: features.commands,
     pluginRuns: { items, runCommandToEnd },
     runCommand,
     runChoice,

@@ -12,13 +12,9 @@ import { runInBackground } from '@numen/ui'
 import {
   runInvocation,
   createInvocation,
-  createRowKeys,
-  ANSWER_WORDS,
 } from '@/features/command-palette'
-import type { VaultRef } from '@/entities/command'
+import { COMMAND, createRowKeys, findIcon, type VaultRef } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
-import { COMMAND } from '@/shared/commandIds'
-import { findIcon } from '@/shared/icons'
 import { getUserAgent } from '@/shared/lib/dom'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
@@ -82,7 +78,6 @@ function onOpen(id: string) {
     runInvocation(
       createInvocation(COMMAND.openVault, { ...props.getTarget(), vault }),
       props.doing,
-      ANSWER_WORDS,
     ),
     (error) => props.doing.writeMessage(formatError(error), 'error'),
   )

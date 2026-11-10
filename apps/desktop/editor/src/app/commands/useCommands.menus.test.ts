@@ -1,5 +1,6 @@
 /** Running an entry of the menu of a search result, and what the window hands the search. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as CommandModule from '@/entities/command'
 import { formatErrorMessage } from '@numen/core-client'
 import {
   SLOT,
@@ -26,9 +27,11 @@ const h = vi.hoisted(() => ({
   getExtraCommands: null as null | (() => readonly unknown[]),
 }))
 
-vi.mock('@/features/command-palette', () => ({
-  ANSWER_WORDS: { name: 'answer words' },
+vi.mock('@/entities/command', async (importOriginal) => ({
+  ...(await importOriginal<typeof CommandModule>()),
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
+}))
+vi.mock('@/features/command-palette', () => ({
   runInvocation: h.runInvocation,
   registerCommand: vi.fn(),
   useSearch: (_core: unknown, _words: unknown, options: typeof h.searchOptions) => {
@@ -45,7 +48,13 @@ vi.mock('@/features/command-palette', () => ({
     }
   },
 }))
-vi.mock('./commandDeps', () => ({ createCommandDeps: () => ({ name: 'command deps' }) }))
+vi.mock('./commandDeps', () => ({
+  createCommandDeps: () => ({ name: 'command deps' }),
+  createCommandNotes: () => ({ name: 'notes' }),
+}))
+vi.mock('./featureCommands', () => ({
+  collectFeatureCommands: () => ({ commands: [], handlers: {} }),
+}))
 
 const ATLAS = 'org.example.atlas'
 const SHOW = `${ATLAS}:graph.showNote`
@@ -177,7 +186,6 @@ describe('running the action of a search result that is an entry of its menu', (
     expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
       { id: 'inv' },
       { name: 'command deps' },
-      { name: 'answer words' },
     )
   })
 
@@ -263,7 +271,6 @@ describe('opening the note of a search result as a command', () => {
     expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
       { id: 'inv' },
       { name: 'command deps' },
-      { name: 'answer words' },
     )
     expect(one.writeMessage).not.toHaveBeenCalled()
   })
@@ -369,7 +376,6 @@ describe('running the action of a chosen document', () => {
     expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
       { id: 'inv' },
       { name: 'command deps' },
-      { name: 'answer words' },
     )
     expect(one.executeCommand).not.toHaveBeenCalled()
     expect(one.writeMessage).not.toHaveBeenCalled()
@@ -409,7 +415,6 @@ describe('running the action of the row that creates a note', () => {
     expect(h.runInvocation).toHaveBeenCalledExactlyOnceWith(
       { id: 'inv' },
       { name: 'command deps' },
-      { name: 'answer words' },
     )
   })
 

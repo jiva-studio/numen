@@ -49,7 +49,7 @@ const createPalette = () => {
     knows: { getTitle: () => '', getTabAt: () => null },
     lists: { getStepGroups: () => [], previewItem: vi.fn() },
     runs: runSupport(),
-    getExtraCommands: () => [createSample],
+    getCommands: () => [createSample],
   })
   commands.setOpen(true)
   return commands
@@ -125,7 +125,7 @@ describe('a command that arrives after the palette is made', () => {
       knows: { getTitle: () => '', getTabAt: () => null },
       lists: { getStepGroups: () => [], previewItem: vi.fn() },
       runs: runSupport(),
-      getExtraCommands: () => extra.value,
+      getCommands: () => extra.value,
     })
     commands.setOpen(true)
     commands.setTyped('a sample').catch(rethrow)

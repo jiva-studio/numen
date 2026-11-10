@@ -7,7 +7,7 @@ import { defineComponent, h, shallowRef } from 'vue'
 import { WorkspaceLayout } from '@numen/workbench'
 import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { cards, listed, mountWindow, requests, settle } from '@/testing/window'
-import { COMMAND } from '@/shared/commandIds'
+import { COMMAND } from '@/entities/command'
 import type * as ShellModule from '@numen/workbench'
 import type * as UseWindowPluginsModule from '../plugins/useWindowPlugins'
 

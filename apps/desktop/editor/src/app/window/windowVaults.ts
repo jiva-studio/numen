@@ -5,15 +5,13 @@
 import { computed, watch, type Ref } from 'vue'
 import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
 import {
-  ANSWER_WORDS,
   createInvocation,
   runInvocation,
   type CommandDeps,
 } from '@/features/command-palette'
-import type { CommandTarget, VaultRef } from '@/entities/command'
+import { COMMAND, type CommandTarget, type VaultRef } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 import { formatError } from '@/shared/api/errors'
-import { COMMAND } from '@/shared/commandIds'
 
 interface WindowVaultsDeps {
   readonly vaultList: Readonly<Ref<VaultList>>
@@ -53,7 +51,6 @@ export function createEditorVaults(window: {
       runInvocation(
         createInvocation(COMMAND.openVault, { ...window.getTarget(), vault }),
         commandDeps,
-        ANSWER_WORDS,
       ).then(
         () => undefined,
         (error: unknown) => commandDeps.writeMessage(formatError(error), 'error'),

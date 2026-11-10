@@ -2,8 +2,7 @@
  * The ids and titles the editor's own commands are offered under.
  */
 import { describe, expect, it } from 'vitest'
-import { createCommands } from './table'
-import { WORDS as words } from '@/shared/words'
+import { createAppCommands } from '@/testing/appCommands'
 
 const OWNED = /^app:[a-z][a-zA-Z0-9]*\.[a-z][a-zA-Z0-9]*$/
 
@@ -35,7 +34,7 @@ const TITLES: Readonly<Record<string, string>> = {
 }
 
 describe('the commands of the editor', () => {
-  const commands = createCommands(words)
+  const commands = createAppCommands()
 
   it('are filed under the owner app and an object and an action', () => {
     for (const one of commands) expect(one.command ?? one.id, one.id).toMatch(OWNED)

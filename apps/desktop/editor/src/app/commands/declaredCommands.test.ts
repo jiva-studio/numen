@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { createWhenReader } from '@numen/plugin-loader'
-import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
+import { commands, runInvocation, type CommandDeps } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -128,7 +128,6 @@ describe('a declared command with items', () => {
     await runInvocation(
       invocation('org.example.ears/ears'),
       { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(run).toHaveBeenCalledWith(
@@ -168,7 +167,6 @@ describe('a run of a declared command', () => {
         isTargetNamed: true,
       },
       { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(run).toHaveBeenCalledWith(
@@ -211,7 +209,6 @@ describe('a run of a declared command', () => {
         values: { title: 'Verbs' },
       },
       { writeMessage, notes: { openFile } } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(run).toHaveBeenCalledWith(
@@ -248,7 +245,6 @@ describe('a run of a declared command', () => {
         tab: 'tab',
       },
       { writeMessage } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(writeMessage).toHaveBeenLastCalledWith('the disk is full', 'error')
@@ -292,7 +288,6 @@ describe('a run that opens a file', () => {
         tab: 'tab',
       },
       { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(path).toBe('Verbs.md')
@@ -324,7 +319,6 @@ describe('a run that opens a file and says nothing', () => {
         values: { title: 'Verbs' },
       },
       { writeMessage, notes: { openFile } } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(writeMessage).not.toHaveBeenCalled()
@@ -354,7 +348,6 @@ describe('a run that opens a file and says nothing', () => {
         tab: 'tab',
       },
       { writeMessage, notes: { openFile } } as unknown as CommandDeps,
-      ANSWER_WORDS,
     )
 
     expect(writeMessage).toHaveBeenCalledWith('Done', 'info')

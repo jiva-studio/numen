@@ -1,11 +1,10 @@
 /**
  * Palette types: the context the commands run over. The `Command` family is in `entities/command`.
  *
- * This file defines types only. The command table is `lib/table.ts`, availability
- * rules are `lib/availability.ts`, display words are `words.ts`, and the services
+ * This file defines types only. The commands the palette owns are `lib/commands/table.ts`, display
+ * words are `words.ts`, and the services
  * available while a command runs are `model/deps.ts`.
  */
-import type { CommandPlace } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { StepGroup } from '@/shared/steps'
@@ -45,26 +44,6 @@ export interface NoteLookup {
   getTitle(path: string): string
   /** The identity of the tab holding it, and nothing where none holds it. */
   getTabAt(path: string): string | null
-}
-
-/**
- * The files the window has an editor open on, as accessed by commands. Notes
- * of every type are included.
- */
-export interface Notes {
-  /** The identity of the tab standing at a file, and nothing where none does. */
-  getTabAt(path: string): string | null
-  getPath(id: string): string
-  asking(id: string): boolean
-  /** Answers once nothing of that note is on its way to the file. */
-  flushPending(id: string): Promise<void>
-  /** The tab holding a note releases it. */
-  close(id: string): void
-  /**
-   * Opens a file in the editor matching its type, in its own tab or beside the
-   * current one.
-   */
-  openFile(path: string, title: string, placement: 'current' | 'split', at?: CommandPlace): void
 }
 
 /**

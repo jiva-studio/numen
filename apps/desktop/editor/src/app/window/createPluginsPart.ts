@@ -7,7 +7,6 @@ import { createWindowHost, SLOT, type PluginHost } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
 import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import type { fileOpeners } from '@/entities/tab'
-import { createCommands } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
 import { getFileKinds } from '@/entities/file'
 import { readNote, resolveLinks, writeNote } from '@/entities/note'
@@ -182,7 +181,9 @@ export function createWindowFrameServices(
   const { items, runCommandToEnd } = getCommands(ctx).pluginRuns
   const windowCommands = createWindowCommands({
     getAppIds: () => [
-      ...(tableIds ??= [...new Set(createCommands(words).map((one) => one.command ?? one.id))]),
+      ...(tableIds ??= [
+        ...new Set(getCommands(ctx).featureCommands.map((one) => one.command ?? one.id)),
+      ]),
       ...getAppCommands().map((one) => one.id),
     ],
     getPluginIds: () => base.pluginHost.getPaletteCommands().map((one) => one.id),

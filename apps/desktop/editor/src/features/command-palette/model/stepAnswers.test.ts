@@ -5,6 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { WORDS as words } from '@/shared/words'
+import { createAppCommands } from '@/testing/appCommands'
 import * as stepModule from '../lib/step/step'
 import { runSupport } from './palette/runSupport'
 import { useCommandPalette } from './palette/palette'
@@ -46,7 +47,8 @@ const createPalette = () => {
     knows: { getTitle: () => '', getTabAt: () => null },
     lists: { getStepGroups: () => THEMES, previewItem: vi.fn() },
     runs: runSupport(),
-    getExtraCommands: () => [
+    getCommands: () => [
+      ...createAppCommands(),
       {
         id: 'setting:app:appearance.theme',
         text: 'Theme',

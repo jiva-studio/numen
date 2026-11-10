@@ -16,9 +16,9 @@ import {
   type WhenValues,
 } from '@numen/plugin-loader'
 import type { Component } from 'vue'
-import type { Command } from '@/entities/command'
+import { findIcon, type Command } from '@/entities/command'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
-import { findIcon, getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/icons'
 import { getPaletteId } from './declaredCommands'
 import { APP_SLOT_ENTRIES } from './appPlacements'
 

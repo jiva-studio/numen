@@ -1,30 +1,13 @@
 /**
- * Construction of the full list of commands offered by the application.
+ * The commands the palette itself owns. The commands of the features come to the palette from the
+ * window that collects them.
  */
-import { createNoteCommands } from '../note-commands/noteCommands'
-import { createVaultCommands } from '../vault-commands/vaultCommands'
-import {
-  createWindowCreationCommands,
-  createWindowNavigationCommands,
-  createWindowSettingsCommands,
-} from '../window-commands/windowCommands'
+import { createWindowCommands } from '../window-commands/windowCommands'
 import type { Command } from '@/entities/command'
 import type { Words } from '../../words'
 
-/**
- * Every command, in the order it is drawn. The keyboard it is being read on
- * decides how the keystrokes on it are written.
- *
- * A command reached by Shift and Enter on another one's row is offered here
- * too and drawn nowhere: the row it belongs to is the one that names it.
- */
+/** The commands the palette owns, in the order they are drawn. */
 export const createCommands = (
   words: Words,
   agent: string = navigator.userAgent,
-): readonly Command[] => [
-  ...createNoteCommands(words, agent),
-  ...createWindowCreationCommands(words, agent),
-  ...createWindowNavigationCommands(words, agent),
-  ...createWindowSettingsCommands(words),
-  ...createVaultCommands(words, agent),
-]
+): readonly Command[] => createWindowCommands(words, agent)

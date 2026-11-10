@@ -1,72 +1,15 @@
 /**
  * What the window offers a command being carried out, one port to a job.
  *
- * Nothing here does anything. `handlers.ts` is what carries a command out
- * through these, `vaults.ts` what it does to the vaults, and `../lib/voice.ts`
- * how what it has to say becomes one line.
+ * Nothing here does anything. `handlers.ts` is what carries a command out through these.
  */
-import type { Movement } from '@/entities/file'
-import type { ConnectionRole } from '@numen/plugin-loader'
-import type { RemoveResult, RenameResult } from '@/entities/note'
-import type { Vaults } from '@/entities/vault'
-import type { ErrorCode } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { Notes } from '../../types'
-import type { CommandInvocation, RunSupport, VaultRef } from '@/entities/command'
-import type { AnswerWords } from '../../words'
+import type { CommandInvocation, Notes, RunSupport } from '@/entities/command'
 
-/** A note a command made: where it is filed, and what it is called. */
-export interface NewNote {
-  readonly path: string
-  readonly title: string
-}
-
-/** The vault as a command changes its contents. */
-export interface VaultWriter {
-  /** A note made under the name it is given, in a relation of another one. */
-  createNote(title: string, from: string, relation: ConnectionRole | null): Promise<NewNote | null>
-  /** A note named "Untitled note N" made in the folder; its path, empty where none was made. */
-  createUntitled(folder: string): Promise<string>
-  /** A note given a different name, and its file renamed with it where the two are one name. */
-  rename(path: string, title: string): Promise<RenameResult>
-  /** A note taken out of the vault, into the trash. */
-  remove(path: string): Promise<RemoveResult>
-  /** Everything the trash holds, deleted for good; how many paths could not be deleted. */
-  emptyTrash(): Promise<number>
-  /**
-   * A file or a folder filed somewhere else. The last segment of `to` is what
-   * it is called from now on.
-   */
-  move(from: string, to: string): Promise<Movement>
-  /** The names of what one folder holds. The root is the empty path. */
-  listNames(folder: string): Promise<readonly string[]>
-  /** An empty folder. The folders above it are made with it. */
-  createFolder(path: string): Promise<ErrorCode | null>
-}
-
-/** The vaults this installation holds, as a command changes which one shows. */
-export interface VaultSwitcher extends Vaults {
-  /** Updates the displayed name of one vault in the list. */
-  setVaultName(vault: VaultRef): void
-  /**
-   * The page drawn again, on the vault the window shows now. Every tab and
-   * every plex belonged to the vault that has gone.
-   */
-  reload(): void
-}
-
-/** Where a command takes the window. */
+/** Where a command of the palette takes the window. */
 export interface WindowNavigator {
-  /** Shows a note in the plugin that displays notes. */
-  travel(path: string): Promise<void>
-  /** Every tab standing on a note moves to another one. */
-  leave(from: string, to: string): Promise<void>
-  /** The note the vault opens with. */
-  getOpeningNote(): string
   /** A tab of a kind, opened and put in front. */
   openTab(kind: string): void
-  /** The tab of a kind last in front, or a new one, shown at a path. */
-  showTab(kind: string, path: string): void
   /** A tab release. */
   closeTab(tab: string): void
   /** The search, in place of the commands. */
@@ -87,12 +30,6 @@ export interface Voice {
   readonly writeMessage: MessageWriter
 }
 
-/** The vault a command operates on: what it writes, and which one is active. */
-export interface VaultContext {
-  readonly files: VaultWriter
-  readonly vaults: VaultSwitcher
-}
-
 /** The tabs a command operates on: their files, and where the window navigates. */
 export interface TabContext {
   readonly notes: Notes
@@ -105,10 +42,8 @@ export interface RunContext {
 }
 
 /** What the window offers a command being carried out, one port to a job. */
-export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice {
+export interface CommandDeps extends TabContext, RunContext, Voice {
   readonly settings: SettingsWriter
-  /** A path copied to the clipboard. */
-  copyPath(path: string): void
   readonly emitEvent?: (event: string) => void
 }
 
@@ -116,5 +51,4 @@ export interface CommandDeps extends VaultContext, TabContext, RunContext, Voice
 export type CommandHandler = (
   invocation: CommandInvocation,
   on: CommandDeps,
-  words: AnswerWords,
 ) => Promise<string | void> | string | void

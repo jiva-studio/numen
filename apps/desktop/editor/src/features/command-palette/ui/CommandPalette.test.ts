@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
 import { WORDS as words } from '@/shared/words'
+import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
 import { useCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
@@ -97,6 +98,8 @@ async function mountField(
     { getTitle: () => '', getTabAt: () => null },
     { getStepGroups: () => [], previewItem: () => undefined },
     runSupport(),
+    undefined,
+    createAppCommands,
   )
   search.setOpen(true)
   await search.setTyped(text)

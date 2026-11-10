@@ -1,5 +1,6 @@
 /** How a command runs, and what a key press triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as CommandModule from '@/entities/command'
 import type { CommandDeps, PaletteLists } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
@@ -20,9 +21,11 @@ const h = vi.hoisted(() => ({
   lists: null as null | PaletteLists,
 }))
 
-vi.mock('@/features/command-palette', () => ({
-  ANSWER_WORDS: { name: 'answer words' },
+vi.mock('@/entities/command', async (importOriginal) => ({
+  ...(await importOriginal<typeof CommandModule>()),
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
+}))
+vi.mock('@/features/command-palette', () => ({
   runInvocation: h.runInvocation,
   createInvocation: (id: string, on: { path: string }) => ({ id, path: on.path }),
   registerCommand: h.registerCommand,
@@ -45,6 +48,10 @@ vi.mock('./commandDeps', () => ({
     h.depsOptions = options
     return { name: 'command deps' }
   },
+  createCommandNotes: () => ({ name: 'notes' }),
+}))
+vi.mock('./featureCommands', () => ({
+  collectFeatureCommands: () => ({ commands: [], handlers: {} }),
 }))
 
 const target = { path: 'a.md' } as unknown as CommandTarget
@@ -102,9 +109,7 @@ describe('running a command', () => {
     one.runCommand('save', target)
 
     expect(h.startCommand).toHaveBeenCalledWith('save', target)
-    expect(h.runInvocation).toHaveBeenCalledWith({ id: 'inv' }, one.commandDeps, {
-      name: 'answer words',
-    })
+    expect(h.runInvocation).toHaveBeenCalledWith({ id: 'inv' }, one.commandDeps)
     expect(h.setPaletteOpen).not.toHaveBeenCalled()
     expect(one.messages).toStrictEqual([])
     expect(h.getExtraCommands?.()).toStrictEqual([])

@@ -19,7 +19,7 @@ import { isFieldFocused } from '@/shared/isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import { core } from '../vault'
-import type { TabsHold } from '../commands/leaveVault'
+import type { TabsHold } from '@/features/vault-commands'
 import type { CommandItemLists } from '../commands/commandItemLists'
 import { getPaletteId, type useDeclaredCommands } from '../commands/declaredCommands'
 import { createCommandNoteReader } from '../commands/usePluginCommands'
@@ -113,7 +113,7 @@ export function initWindowKindsAndCommands(
 ) {
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
-  base.appCommands.current = () => getAppCommandList(ctx)
+  base.appCommands.current = () => getEditorCommandList(ctx)
   base.slotWindowValues.current = () => {
     const inFront = getTarget()
     return {
@@ -221,4 +221,10 @@ export function createWindowVersionCommands(base: WindowCore) {
 export const getAppCommandList = (ctx: WindowContext): readonly Command[] => [
   ...(ctx.tabCommands?.commands ?? []),
   ...(ctx.versionCommands?.commands ?? []),
+]
+
+/** Every command of the editor: those of the features, then the rest of the application's. */
+export const getEditorCommandList = (ctx: WindowContext): readonly Command[] => [
+  ...(ctx.commands?.featureCommands ?? []),
+  ...getAppCommandList(ctx),
 ]

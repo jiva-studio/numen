@@ -4,13 +4,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { isSharedCommand } from '@numen/plugin-loader'
-import {
-  ANSWER_WORDS,
-  createCommands,
-  createInvocation,
-  runInvocation,
-} from '@/features/command-palette'
-import { WORDS } from '@/shared/words'
+import { createInvocation, runInvocation } from '@/features/command-palette'
+import { createAppCommands } from '@/testing/appCommands'
 import { createRealWindow, NOTE, readAllManifests } from '@/testing/realCommands'
 
 type Values = Readonly<Record<string, string>>
@@ -37,7 +32,7 @@ const listNamed = (): readonly Named[] => {
 }
 
 const NAMED = listNamed()
-const TABLE = createCommands(WORDS)
+const TABLE = createAppCommands()
 
 const setup = () => {
   const events: string[] = []
@@ -59,7 +54,7 @@ describe('the commands of the application the manifests name', () => {
     const window = setup()
     const invocation = createInvocation(one.command, NOTE)
 
-    await runInvocation(invocation, window.used.commandDeps, ANSWER_WORDS)
+    await runInvocation(invocation, window.used.commandDeps)
 
     expect(window.events).toStrictEqual([`onCommand:${one.command}`])
   })

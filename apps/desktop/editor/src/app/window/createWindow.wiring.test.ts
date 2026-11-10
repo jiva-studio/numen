@@ -31,7 +31,6 @@ const h = vi.hoisted(() => ({
 vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
-  createCommands: () => [{ id: 'app:vault.create' }],
   registerCommand: () => () => undefined,
 }))
 vi.mock('@/features/tab-linking', () => ({
@@ -259,6 +258,7 @@ beforeEach(() => {
         },
       },
       commandDeps: { name: 'commandDeps' },
+      featureCommands: [{ id: 'app:vault.create' }],
       palette: {},
       onKeyDown: vi.fn(),
       pluginWays: ref([]),

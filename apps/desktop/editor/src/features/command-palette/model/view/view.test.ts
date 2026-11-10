@@ -7,13 +7,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, ref } from 'vue'
 import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
-import { findIcon } from '@/shared/icons'
-import { COMMAND } from '@/shared/commandIds'
+import { findIcon, COMMAND, type Command, type CommandTarget } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
-import { createCommands } from '../../lib/commands/commands'
+import { createAppCommands } from '@/testing/appCommands'
 import type { PendingStep } from '../../lib/step/step'
 import type { PaletteLists } from '../../types'
-import type { Command, CommandTarget } from '@/entities/command'
 import type { Commands } from '../palette/palette'
 import { runSupport } from '../palette/runSupport'
 import { findRowIcon } from '../rowIcons'
@@ -64,7 +62,7 @@ const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget
   view.createGroups(null, target, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
-  const view = createView(createCommands(words))
+  const view = createView(createAppCommands())
 
   it('lights nothing where nothing is typed', () => {
     const readItem = getNoteGroup(view, front(), '')?.items.find(
@@ -132,7 +130,7 @@ describe('the command reached on the same row', () => {
 })
 
 describe('empty command groups', () => {
-  const view = createView(createCommands(words))
+  const view = createView(createAppCommands())
 
   it('omits groups that hold no commands', () => {
     expect(getNoteGroup(view, front({ isReady: false }), '')).toBeUndefined()
@@ -333,7 +331,7 @@ describe('the icon of the command that opens a document', () => {
 })
 
 describe('the two choices of the confirmation that empties the trash', () => {
-  const emptyTrash = createCommands(words).find((one) => one.id === COMMAND.emptyTrash)
+  const emptyTrash = createAppCommands().find((one) => one.id === COMMAND.emptyTrash)
 
   it('are both drawn with an icon', () => {
     const groups = createStepGroups({

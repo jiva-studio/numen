@@ -5,9 +5,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { Folder, FolderOpen } from '@lucide/vue'
-import { ANSWER_WORDS, createInvocation, runInvocation } from '@/features/command-palette'
-import { COMMAND } from '@/shared/commandIds'
-import { findIcon } from '@/shared/icons'
+import { createInvocation, runInvocation } from '@/features/command-palette'
+import { COMMAND, findIcon } from '@/entities/command'
 import { createFileMakers, createIconHost, createVaultFiles } from './fileServices'
 import type * as CommandPaletteModule from '@/features/command-palette'
 
@@ -74,7 +73,6 @@ describe('the files of the vault a plugin is handed', () => {
     expect(runInvocation).toHaveBeenCalledWith(
       createInvocation('app:file.move', { ...target, path: 'a.md' } as never, 'dir/a.md'),
       commandDeps(),
-      ANSWER_WORDS,
     )
   })
 
@@ -86,7 +84,6 @@ describe('the files of the vault a plugin is handed', () => {
     expect(runInvocation).toHaveBeenCalledWith(
       createInvocation('app:folder.create', target as never, 'dir'),
       commandDeps(),
-      ANSWER_WORDS,
     )
   })
 
