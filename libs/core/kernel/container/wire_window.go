@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -26,7 +27,7 @@ type windowWiring struct {
 	vaults *vault.Scenarios
 
 	inst   *editor.Installation
-	files  *editor.FileHandler
+	files  *filewindow.Handler
 	server *editor.FileServer
 	wrap   func(editor.Sources) editor.Sources
 }

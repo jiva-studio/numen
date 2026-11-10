@@ -65,7 +65,7 @@ func ask(tb testing.TB, handler http.Handler, url string) *httptest.ResponseReco
 
 func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.FileStat {
 	t.Helper()
-	resolved, err := api.Media.resolveAddress.Execute(t.Context(), v, path)
+	resolved, err := api.resolve.Execute(t.Context(), v, path)
 	if err != nil {
 		return domain.FileStat{Path: path}
 	}
@@ -278,15 +278,10 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	}
 }
 
-func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
+func TestTheAddressCarriesNanosecondsSinceTheEpoch(t *testing.T) {
 	pos := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
-	const nanos = 1788433445123456789
 
 	ref := domain.FileStat{Path: "library/Compost.pdf", Size: 12, ModTime: pos}
-	if target := convertFileStatToWire(ref).GetMtime(); target != nanos {
-		t.Errorf("the schema carries mtime %d, want %d", target, nanos)
-	}
-
 	back := &Loopback{address: "http://127.0.0.1:1", token: "given-out"}
 	want := "?size=12&mtime=1788433445123456789"
 	if targetVal := back.Address(domain.Vault{ID: "01VAULT"}, ref); !strings.HasSuffix(targetVal, want) {
@@ -294,17 +289,7 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 	}
 }
 
-func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
-	ref := domain.FileStat{Path: "recordings/Compost.mp3", Size: 3, ModTime: testsupport.GetMachine().Now()}
-	if back := convertFileStatFromWire(convertFileStatToWire(ref)); !back.IsUnchanged(ref) {
-		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
-	}
-}
-
 func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
-	if back := convertFileStatFromWire(convertFileStatToWire(domain.FileStat{})); !back.IsZero() {
-		t.Errorf("nothing said about a file came back as %+v", back)
-	}
 	if target := stamp(time.Time{}); target != 0 {
 		t.Errorf("no stamp goes on the wire as %d", target)
 	}

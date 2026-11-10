@@ -1,4 +1,4 @@
-package editor
+package file
 
 import (
 	"context"
@@ -6,7 +6,12 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (h *FileHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+// ListTabKinds is the kind of tab each of the files opens in.
+func (h *Folders) ListTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+	return h.listTabKinds(ctx, v, paths)
+}
+
+func (h *Folders) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
 	kinds := map[string]string{}
 	if h.getFileKinds == nil || h.chooseTabKind == nil || len(paths) == 0 {
 		return kinds, nil
