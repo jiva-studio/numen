@@ -4,7 +4,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect } from 'storybook/test'
 import Thread from './Thread.vue'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 import { STORY_BOXES } from '../../fixtures/frame'
 import {
   ARABIC,

@@ -5,7 +5,7 @@
 import { computed } from 'vue'
 import { describeHistogram, getHistogramBars, getMarkerPercent } from '../model/present'
 import type { FloorCalibration } from '../model/types'
-import { WORDS } from '../words'
+import { WORDS } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

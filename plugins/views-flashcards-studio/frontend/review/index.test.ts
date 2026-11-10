@@ -7,7 +7,7 @@ import { VAULT_SUMMARY } from '@numen/plugin-sdk'
 
 const wire = vi.hoisted(() => ({ countsOpened: 0 }))
 
-vi.mock('./shared/clients', () => ({
+vi.mock('./api/clients', () => ({
   cards: {
     watchCardsDue: async function* () {
       wire.countsOpened += 1

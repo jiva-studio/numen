@@ -1,11 +1,4 @@
-import type { PlexEdge } from './edge'
-import type { PlexNode } from './node'
-
-/** One neighbourhood: the node in focus and everything shown around it. */
-export interface PlexNeighbourhood {
-  readonly nodes: readonly PlexNode[]
-  readonly edges: readonly PlexEdge[]
-}
+import type { PlexNeighbourhood, PlexNode } from '../../types'
 
 /**
  * Check the two invariants and return the focus. Throws: a neighbourhood that

@@ -7,10 +7,9 @@ import type { Drop } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { NodeHeadings } from '../../lib/inside'
 import type { GestureRole, PlacedNode, Position } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
 import type { WideBox } from '../../model/sizing/expansion'
 import type { PlexBehaviour } from '../../model/behaviour'
-import type { PlexDestination } from '../../model/interaction/destination'
+import type { PlexRelation, PlexDestination } from '../../../types'
 
 export interface PlexPending {
   from: string

@@ -1,18 +1,7 @@
-import type { PlexNodeRelation } from './relation'
 import type { Position, Size } from '@numen/ui'
+import type { PlexNode } from '../../types'
 
 export type { Position }
-
-/**
- * A node as the caller describes it. The id is opaque: the plex cannot query what
- * it addresses, and the relation is a position in the layout, not a claim about
- * a graph.
- */
-export interface PlexNode {
-  readonly id: string
-  readonly title: string
-  readonly relation: PlexNodeRelation
-}
 
 /** A node placed on the canvas, in the plex's own coordinates. */
 export interface PlacedNode extends PlexNode {

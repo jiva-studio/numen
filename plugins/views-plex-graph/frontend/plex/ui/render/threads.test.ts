@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { PlexFrame } from '../../lib/frame'
 import type { PlacedNode } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
 import { getDraggedShape, getPendingThread, getReachGhost, getReachThread } from './threads'
+import type { PlexRelation } from '../../../types'
 
 const SIZE = { width: 40, height: 20 }
 
