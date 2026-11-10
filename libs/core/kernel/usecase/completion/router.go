@@ -14,27 +14,37 @@ import (
 var (
 	errNoConfig   = errors.New("a router needs the settings to read")
 	errNoPrograms = errors.New("a router needs the programs to ask")
+	errNoAnswerer = errors.New("a router needs the answerer of the questions")
 	errNoMessage  = errors.New("the question holds no message to answer")
 )
+
+// Answerer sends the agent one question and returns its reply.
+type Answerer interface {
+	Execute(ctx context.Context, task agent.Task) (string, error)
+}
 
 // Router answers a plugin's question with the default agent and model of the
 // settings.
 type Router struct {
 	config   func() Config
 	programs agentport.CompletionPrograms
+	answerer Answerer
 	limits   *limits
 }
 
 // NewRouter returns a router reading the settings at every question, so a default
 // edited in the settings applies to the next one.
-func NewRouter(config func() Config, programs agentport.CompletionPrograms) (*Router, error) {
+func NewRouter(config func() Config, programs agentport.CompletionPrograms, answerer Answerer) (*Router, error) {
 	if config == nil {
 		return nil, errNoConfig
 	}
 	if programs == nil {
 		return nil, errNoPrograms
 	}
-	return &Router{config: config, programs: programs, limits: newLimits()}, nil
+	if answerer == nil {
+		return nil, errNoAnswerer
+	}
+	return &Router{config: config, programs: programs, answerer: answerer, limits: newLimits()}, nil
 }
 
 // Complete answers the question of a plugin by the default agent and model. The
@@ -65,7 +75,7 @@ func (r *Router) Complete(ctx context.Context, _ string, question completiondoma
 	if isReplaced {
 		task.Model = model
 	}
-	text, err := agentport.Answer(ctx, r.programs, task)
+	text, err := r.answerer.Execute(ctx, task)
 	if err != nil && isReplaced {
 		return "", fmt.Errorf("%w (the model %q is not available from %s; requested %q)", err, route.Model, program.Name, model)
 	}

@@ -3,12 +3,9 @@ package vaultport
 import (
 	"context"
 	"io"
-	pathpkg "path"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
-	"github.com/jiva-studio/numen/libs/note/markdown"
 )
 
 // ErrNotANote is what a path gets when there is a file at it and the vault does
@@ -70,48 +67,4 @@ type VaultReader interface {
 // on is decided while it runs.
 type VaultReaders interface {
 	Open(v domain.Vault) (VaultReader, error)
-}
-
-// IsNote reports whether the file at the path is a note, by its extension.
-func IsNote(path string) bool {
-	return strings.EqualFold(pathpkg.Ext(path), domain.NoteExtension)
-}
-
-// ReadNote returns the type and the frontmatter of the note at the path, read from the current file;
-// a path that holds no note has neither.
-func ReadNote(ctx context.Context, readers VaultReaders, v domain.Vault, path string) (domain.NoteType, map[string]any, error) {
-	if !IsNote(path) {
-		return "", map[string]any{}, nil
-	}
-	reader, err := readers.Open(v)
-	if err != nil {
-		return "", nil, err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return "", nil, err
-	}
-	note := markdown.Parse(domain.FileStat{}, raw)
-	if note.Frontmatter == nil {
-		return note.Type, map[string]any{}, nil
-	}
-	return note.Type, note.Frontmatter, nil
-}
-
-// ReadNoteType returns the type declared in the frontmatter of the note at the
-// path, read from the current file, so a newly written note has its type before
-// the index holds it. A file that is not a note has no type and is not read.
-func ReadNoteType(ctx context.Context, readers VaultReaders, v domain.Vault, path string) (domain.NoteType, error) {
-	if !IsNote(path) {
-		return "", nil
-	}
-	reader, err := readers.Open(v)
-	if err != nil {
-		return "", err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return "", err
-	}
-	return markdown.Parse(domain.FileStat{}, raw).Type, nil
 }

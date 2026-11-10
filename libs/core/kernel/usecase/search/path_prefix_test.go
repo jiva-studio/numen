@@ -7,6 +7,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
+	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -32,7 +33,7 @@ func (s *prefixSpy) FindNearest(_ context.Context, _ domain.VaultID, q source.Ne
 
 func TestSearchPassesPathPrefixToEveryRanking(t *testing.T) {
 	spy := &prefixSpy{}
-	searching := search.New(spy, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, nil)
+	searching := search.New(spy, vaultreader.Readers{}, nil, oneWay{direction: newVector(+1)}, vectorscase.NewEmbedQueries(oneWay{direction: newVector(+1)}, nil), nil)
 
 	p := search.Parameters{Limit: 5, PathPrefix: "library/"}
 	if _, err := searching.Execute(t.Context(), domain.Vault{ID: "01VAULT"}, "heron", p); err != nil {

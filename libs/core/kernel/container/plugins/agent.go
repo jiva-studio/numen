@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
+	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 )
 
@@ -75,11 +76,12 @@ func (c Config) newCompletionRouter() (*completion.Router, error) {
 	if provider == nil {
 		return nil, errNoCompletionProvider
 	}
+	programs := completion.NewPrograms(provider, c.completionAgentSettings)
 	return completion.NewRouter(
 		func() completion.Config {
 			return completion.Config{Default: completion.Route(c.GetSettingsOrDefaults().AI.Default)}
 		},
-		completion.NewPrograms(provider, c.completionAgentSettings),
+		programs, agentcase.NewAnswer(programs),
 	)
 }
 

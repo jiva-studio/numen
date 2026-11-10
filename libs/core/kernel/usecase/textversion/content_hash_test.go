@@ -17,6 +17,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -146,7 +147,7 @@ func newLookup(t *testing.T) *lookup {
 		clock: &setClock{now: getAtlasTime().Add(time.Minute)},
 	}
 	l.repo.addScannedSource(l.vault.ID, atlasPath, int64(len(getAtlasContent())), getAtlasTime())
-	versions, err := textversion.NewVersions(l.repo, &memoryFiles{}, &plugins{}, l.files, l.clock)
+	versions, err := textversion.NewVersions(l.repo, &memoryFiles{}, &plugins{}, l.files, note.NewReadFrontmatter(l.files), l.clock)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -425,7 +426,7 @@ func TestAOneGigabyteFileIsHashedFromAStreamWithBoundedMemory(t *testing.T) {
 	files := &generatedVault{t: t, path: path}
 	repo := &memoryVersions{}
 	repo.addScannedSource("v1", path, gigabyte, getAtlasTime())
-	versions, err := textversion.NewVersions(repo, &memoryFiles{}, &plugins{}, files, &setClock{now: getAtlasTime().Add(time.Minute)})
+	versions, err := textversion.NewVersions(repo, &memoryFiles{}, &plugins{}, files, note.NewReadFrontmatter(files), &setClock{now: getAtlasTime().Add(time.Minute)})
 	if err != nil {
 		t.Fatal(err)
 	}

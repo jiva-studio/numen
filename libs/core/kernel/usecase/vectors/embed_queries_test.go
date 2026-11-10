@@ -1,4 +1,4 @@
-package embeddingport_test
+package vectors
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
 // documentsOnly has one kind of vector.
@@ -30,7 +29,7 @@ func (d *twoKinds) EmbedQueries(_ context.Context, texts []string) ([][]float32,
 
 func TestEmbedQueriesAsksAnEmbedderThatTellsQueriesApartForQueryVectors(t *testing.T) {
 	e := &twoKinds{}
-	if _, err := embeddingport.EmbedQueries(t.Context(), e, []string{"q"}); err != nil {
+	if _, err := NewEmbedQueries(e, e).Execute(t.Context(), []string{"q"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := e.Embed(t.Context(), []string{"d"}); err != nil {
@@ -43,7 +42,7 @@ func TestEmbedQueriesAsksAnEmbedderThatTellsQueriesApartForQueryVectors(t *testi
 
 func TestEmbedQueriesAsksAnyOtherEmbedderForItsOnlyKind(t *testing.T) {
 	e := &documentsOnly{}
-	if _, err := embeddingport.EmbedQueries(t.Context(), e, []string{"q"}); err != nil {
+	if _, err := NewEmbedQueries(e, nil).Execute(t.Context(), []string{"q"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := strings.Join(e.calls, ","); got != "document" {

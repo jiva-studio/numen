@@ -30,19 +30,11 @@ type Embedder interface {
 // QueryEmbedder is an Embedder that makes the vectors of queries, which a model that tells a question
 // from the passage that answers it reads with a prefix of its own. Embed makes those of documents.
 //
-// An Embedder that is no QueryEmbedder has one kind of vector, and EmbedQueries asks it for that.
+// An Embedder that is no QueryEmbedder has one kind of vector, and queries are embedded with Embed.
 type QueryEmbedder interface {
 	Embedder
 	// EmbedQueries returns one vector per query, in the order the queries arrived.
 	EmbedQueries(ctx context.Context, queries []string) ([][]float32, error)
-}
-
-// EmbedQueries returns one vector per text, made for searching with the text as the question.
-func EmbedQueries(ctx context.Context, e Embedder, queries []string) ([][]float32, error) {
-	if q, ok := e.(QueryEmbedder); ok {
-		return q.EmbedQueries(ctx, queries)
-	}
-	return e.Embed(ctx, queries)
 }
 
 // FloorAdvisor is an Embedder that reports the similarity a passage starts out

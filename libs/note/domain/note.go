@@ -1,5 +1,15 @@
 package domain
 
+import (
+	pathpkg "path"
+	"strings"
+)
+
+// IsNoteFile reports whether the file at the path is a note, by its extension.
+func IsNoteFile(path string) bool {
+	return strings.EqualFold(pathpkg.Ext(path), NoteExtension)
+}
+
 // Note is a parsed markdown file. Frontmatter is kept as it was found: the
 // application owns a closed set of keys and preserves everything else verbatim,
 // so the parser is not allowed to normalise or drop what it does not recognize.

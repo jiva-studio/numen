@@ -2,12 +2,8 @@ package agentport
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strings"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // Agent takes tasks. It works a vault on behalf of the user through tools. The
@@ -70,72 +66,4 @@ type CompletionPrograms interface {
 	// StartRun starts the task on the program it names, under that program's
 	// section of the settings.
 	StartRun(ctx context.Context, task agentdomain.Task) (Run, error)
-}
-
-// stoppedDone is the reason an agent gives when it stopped because it was done.
-const stoppedDone = "done"
-
-var errNoAnswer = errors.New("agent returned empty response")
-
-// Starter starts the tasks an agent is given.
-type Starter interface {
-	StartRun(ctx context.Context, task agentdomain.Task) (Run, error)
-}
-
-// Answer gives the agent one question and returns its reply. The task is sent with no tools, no
-// tool endpoint and no conversation, so the agent has no access to the vault. An agent that
-// cannot be started, stops with an error or returns no text fails with
-// domain.ErrUnavailable. Cancellation of the context stops the run and fails with the context's error.
-func Answer(ctx context.Context, agent Starter, task agentdomain.Task) (_ string, err error) {
-	task.Tools = nil
-	task.ToolDeclarations = nil
-	task.Endpoint = agentdomain.ToolEndpoint{}
-	task.Conversation = ""
-
-	run, err := agent.StartRun(ctx, task)
-	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil {
-			return "", ctxErr
-		}
-		return "", fmt.Errorf("%w: %w", domain.ErrUnavailable, err)
-	}
-	defer func() { err = errors.Join(err, run.Stop()) }()
-	return readAnswer(ctx, run.GetSteps())
-}
-
-func readAnswer(ctx context.Context, steps <-chan agentdomain.Step) (string, error) {
-	var response strings.Builder
-	for {
-		select {
-		case <-ctx.Done():
-			return "", ctx.Err()
-		case step, isOpen := <-steps:
-			if !isOpen {
-				return finishAnswer(ctx, response.String())
-			}
-			if step.Kind == domain.StepSay {
-				response.WriteString(step.Text)
-			}
-			if step.Kind == domain.StepStop && step.Detail != "" && step.Detail != stoppedDone {
-				return "", failAnswer(ctx, fmt.Errorf("the agent stopped: %s", step.Detail))
-			}
-		}
-	}
-}
-
-func finishAnswer(ctx context.Context, response string) (string, error) {
-	if err := ctx.Err(); err != nil {
-		return "", err
-	}
-	if strings.TrimSpace(response) == "" {
-		return "", fmt.Errorf("%w: %w", domain.ErrUnavailable, errNoAnswer)
-	}
-	return response, nil
-}
-
-func failAnswer(ctx context.Context, err error) error {
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return ctxErr
-	}
-	return fmt.Errorf("%w: %w", domain.ErrUnavailable, err)
 }

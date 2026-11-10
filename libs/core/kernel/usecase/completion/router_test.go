@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -75,7 +76,7 @@ func ask(text string) completiondomain.Question {
 
 func newRouter(t *testing.T, config completion.Config, fake *programs) *completion.Router {
 	t.Helper()
-	router, err := completion.NewRouter(func() completion.Config { return config }, fake)
+	router, err := completion.NewRouter(func() completion.Config { return config }, fake, agentcase.NewAnswer(fake))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,11 +86,14 @@ func newRouter(t *testing.T, config completion.Config, fake *programs) *completi
 // A router is made with what it needs or not at all.
 func TestARouterIsRefusedWhatItCannotWorkWithout(t *testing.T) {
 	config := func() completion.Config { return completion.Config{} }
-	if _, err := completion.NewRouter(nil, &programs{}); err == nil {
+	if _, err := completion.NewRouter(nil, &programs{}, agentcase.NewAnswer(&programs{})); err == nil {
 		t.Error("a router without settings was made")
 	}
-	if _, err := completion.NewRouter(config, nil); err == nil {
+	if _, err := completion.NewRouter(config, nil, agentcase.NewAnswer(&programs{})); err == nil {
 		t.Error("a router without programs was made")
+	}
+	if _, err := completion.NewRouter(config, &programs{}, nil); err == nil {
+		t.Error("a router without an answerer was made")
 	}
 }
 
@@ -312,7 +316,8 @@ func TestAQuestionCancelledBeforeItStartsStartsNoTask(t *testing.T) {
 func TestAChangedLimitAppliesToTheNextQuestions(t *testing.T) {
 	block := newBlocker()
 	config := completion.Config{Default: completion.Route{Concurrency: 1}}
-	router, err := completion.NewRouter(func() completion.Config { return config }, &programs{answer: block.answer})
+	blocked := &programs{answer: block.answer}
+	router, err := completion.NewRouter(func() completion.Config { return config }, blocked, agentcase.NewAnswer(blocked))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,7 +405,7 @@ func TestAFailureAfterAReplacementStatesIt(t *testing.T) {
 func TestADefaultEditedInTheSettingsAppliesToTheNextQuestion(t *testing.T) {
 	fake := &programs{}
 	config := completion.Config{Default: completion.Route{Agent: "early"}}
-	router, err := completion.NewRouter(func() completion.Config { return config }, fake)
+	router, err := completion.NewRouter(func() completion.Config { return config }, fake, agentcase.NewAnswer(fake))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,6 +30,11 @@ type CommandRun interface {
 	Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error)
 }
 
+// NoteReader reads the type and the frontmatter of a note from its current file.
+type NoteReader interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
+}
+
 // Versions gives the text versions of a file as target.versions holds them.
 type Versions interface {
 	// ListTargetVersions lists the versions of the file, each with its kind, its plugin and whether it
@@ -42,6 +47,7 @@ type Triggers struct {
 	plugins  Plugins
 	run      CommandRun
 	readers  vaultport.VaultReaders
+	notes    NoteReader
 	types    contenttypeport.ContentTypeTable
 	versions Versions
 	config   pluginport.WhenConfig
@@ -50,14 +56,15 @@ type Triggers struct {
 	mu         sync.Mutex
 }
 
-// NewTriggers runs the triggers of the plugins with run over the files the readers open, the table
-// giving a file its type, the versions giving target.versions and config giving the settings.
+// NewTriggers runs the triggers of the plugins with run over the files the readers open, the notes giving
+// the type and properties of a note, the table giving a file its type, the versions giving
+// target.versions and config giving the settings.
 func NewTriggers(
-	plugins Plugins, run CommandRun, readers vaultport.VaultReaders, types contenttypeport.ContentTypeTable,
+	plugins Plugins, run CommandRun, readers vaultport.VaultReaders, notes NoteReader, types contenttypeport.ContentTypeTable,
 	versions Versions, config pluginport.WhenConfig,
 ) *Triggers {
 	return &Triggers{
-		plugins: plugins, run: run, readers: readers, types: types, versions: versions, config: config,
+		plugins: plugins, run: run, readers: readers, notes: notes, types: types, versions: versions, config: config,
 		conditions: pluginport.NewConditions(),
 	}
 }
@@ -202,7 +209,7 @@ func (p *pass) runFile(ctx context.Context, path string) {
 func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, error) {
 	result := evaluate(current.values, one)
 	if result == pluginport.ConditionUnknown && current.values.IsNote() && !current.isNoteRead {
-		noteType, properties, err := vaultport.ReadNote(ctx, p.triggers.readers, p.vault, current.path)
+		noteType, properties, err := p.triggers.notes.Execute(ctx, p.vault, current.path)
 		if err != nil {
 			return false, err
 		}

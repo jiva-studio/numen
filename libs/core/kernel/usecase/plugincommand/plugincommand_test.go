@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -241,7 +242,7 @@ func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 		"links/talk.md":  "---\ntype: link\nurl: https://video.example/talk\n---\n",
 		"notes/plain.md": "# A plain note\n",
 	}
-	commands := plugincommand.NewCommands(declared, getTypes(), files, nil)
+	commands := plugincommand.NewCommands(declared, getTypes(), note.NewReadFrontmatter(files), nil)
 
 	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/talk.md"}); err != nil {
 		t.Fatalf("a link note was refused: %v", err)
@@ -280,7 +281,7 @@ func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{
 		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
-	commands := plugincommand.NewCommands(declared, getTypes(), noteFiles{}, nil)
+	commands := plugincommand.NewCommands(declared, getTypes(), note.NewReadFrontmatter(noteFiles{}), nil)
 
 	_, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/gone.md"})
 

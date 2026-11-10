@@ -15,8 +15,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
+
+// NoteReader reads the type and the frontmatter of a note from its current file.
+type NoteReader interface {
+	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
+}
 
 // The ports' terms for a command, used by a driving adapter.
 type (
@@ -49,16 +53,16 @@ type Commands struct {
 }
 
 // NewCommands makes both scenarios over the commands, which may be nothing, the table that gives a
-// file its type, the vault files a note's type is read from, and the settings a condition reads as
+// file its type, the reader of the type and properties of a note, and the settings a condition reads as
 // config; without settings a condition over config is undecided and holds.
 func NewCommands(
-	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, readers vaultport.VaultReaders,
+	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, notes NoteReader,
 	config pluginport.WhenConfig,
 ) Commands {
 	conditions := pluginport.NewConditions()
 	return Commands{
 		List: List{commands: commands, types: types, conditions: conditions},
-		Run:  Run{commands: commands, types: types, readers: readers, config: config, conditions: conditions},
+		Run:  Run{commands: commands, types: types, notes: notes, config: config, conditions: conditions},
 	}
 }
 
@@ -152,7 +156,7 @@ func (u List) Find(id string) (plugin.CommandEntry, bool) {
 type Run struct {
 	commands   pluginport.PluginCommands
 	types      contenttypeport.ContentTypeTable
-	readers    vaultport.VaultReaders
+	notes      NoteReader
 	config     pluginport.WhenConfig
 	conditions *pluginport.PluginConditions
 }
@@ -279,10 +283,10 @@ func (u Run) readNote(
 	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, target plugin.TargetValues, path string,
 ) (plugin.TargetValues, error) {
 	names := condition.ListNames()
-	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.readers == nil || !target.IsNote() {
+	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.notes == nil || !target.IsNote() {
 		return target, nil
 	}
-	noteType, properties, err := vaultport.ReadNote(ctx, u.readers, v, path)
+	noteType, properties, err := u.notes.Execute(ctx, v, path)
 	if err != nil {
 		return target, err
 	}

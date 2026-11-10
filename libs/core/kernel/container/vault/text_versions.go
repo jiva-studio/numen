@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -20,7 +21,7 @@ func (c Config) NewTextVersions(db *Index) (*textversion.Versions, error) {
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = textbridge.NewPlugins(c.PluginHost)
 	}
-	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, c.VaultReaders(), c.Clock)
+	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: c.vaultOptions()}, plugins, c.VaultReaders(), note.NewReadFrontmatter(c.VaultReaders()), c.Clock)
 }
 
 // GetTextReaders returns the text readers configured for this installation.

@@ -110,7 +110,7 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.VaultReaders, c.GetWhenConfig())
+	return plugincommand.NewCommands(c.openPluginCommands(), c.PluginHost, c.newNoteReader(), c.GetWhenConfig())
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -474,7 +474,7 @@ func (c Config) OpenVersionItems() *textversion.VersionItems {
 	if c.PluginHost != nil && !c.SafeMode {
 		commands, types = c.openPluginCommands(), c.PluginHost
 	}
-	run := plugincommand.NewCommands(commands, types, c.VaultReaders, c.GetWhenConfig()).Run
+	run := plugincommand.NewCommands(commands, types, c.newNoteReader(), c.GetWhenConfig()).Run
 	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
 	if err != nil {
 		c.handleError(err)
@@ -490,9 +490,16 @@ func (c Config) OpenTriggers() *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(
-		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders, c.PluginHost,
+		manifestlist.Open(c.PluginHost), c.GetPluginCommands().Run, c.VaultReaders, c.newNoteReader(), c.PluginHost,
 		c.TextVersions, c.GetWhenConfig(),
 	)
+}
+
+func (c Config) newNoteReader() plugincommand.NoteReader {
+	if c.VaultReaders == nil {
+		return nil
+	}
+	return note.NewReadFrontmatter(c.VaultReaders)
 }
 
 // GetWhenConfig is the settings a condition reads as config.

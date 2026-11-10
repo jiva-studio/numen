@@ -15,12 +15,14 @@ import (
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	searchpolicyport "github.com/jiva-studio/numen/libs/core/kernel/usecase/search/searchpolicycontract"
+	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
 // Search is pluginport.PluginSearch over the index of the installation and the model that fills it.
 type Search struct {
 	Embedder embeddingport.Embedder
+	Queries  *vectorscase.EmbedQueries
 	Samples  searchpolicyport.Samples
 	Nearest  searchpolicyport.Nearest
 	Progress indexport.IndexProgress
@@ -115,7 +117,7 @@ func (s Search) EmbedTexts(ctx context.Context, texts []string) (plugin.Embedded
 	if len(texts) == 0 {
 		return plugin.EmbeddedTexts{Recipe: recipe}, nil
 	}
-	vectors, err := embeddingport.EmbedQueries(ctx, s.Embedder, texts)
+	vectors, err := s.Queries.Execute(ctx, texts)
 	if err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
 			return plugin.EmbeddedTexts{}, ctxErr
