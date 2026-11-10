@@ -276,8 +276,6 @@ linters:
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
-            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/pluginchanges"
-              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
 
         # A bridge calls a plugin for the core. It uses the shared bridge package and no other
         # bridge, and nothing of the host side that serves plugin calls.

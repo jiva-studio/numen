@@ -33,7 +33,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -482,7 +481,7 @@ type pluginsWiring struct {
 	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
 	BuildNotes            func(*vault.Index, edit.IndexUpdater) note.Scenarios
 	Moves                 func(context.Context) (<-chan struct{}, error)
-	PluginChanges         *pluginchanges.Signals
+	PluginChanges         *settingsusecase.PluginChanges
 	TextVersions          *textversion.Versions
 	ListAppSettings       func() []plugindomain.Setting
 	CredentialsPath       func() string
@@ -952,7 +951,7 @@ func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
 }
 
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
-	settings := settingsusecase.WhenConfig{App: c.ListAppSettings}
+	settings := settingsusecase.WhenConfig{Codec: settingsadapter.JSONCodec{}, App: c.ListAppSettings}
 	if c.PluginHost != nil {
 		settings.Plugins = c.PluginHost.GetPluginInfos
 	}

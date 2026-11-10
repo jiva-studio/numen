@@ -6,6 +6,7 @@ import (
 	"math"
 	"slices"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"path/filepath"
@@ -152,7 +153,7 @@ func (w readingParts) OpenVaultWith(
 	scan := vault.NewScan(walking, db.Vaults(), db.Notes(), db.FileStats(), db.Maintenance())
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
-	buffered := &vault.BufferedNotes{NoteRepository: db.Notes()}
+	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
 }
 

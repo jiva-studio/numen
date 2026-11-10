@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -142,7 +141,7 @@ type settingsWiring struct {
 	Programs                  *settingsadapter.ProgramList
 	SecretGate                *secret.Gate
 	SubscribedHosts           *settingsusecase.HostSubscriptions
-	PluginChanges             *pluginchanges.Signals
+	PluginChanges             *settingsusecase.PluginChanges
 	ErrorHandler              func(error)
 	AgentProvider             func() agentport.AgentProvider
 	GetAgentPrograms          func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program

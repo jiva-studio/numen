@@ -19,7 +19,7 @@ func TestTheConfigOfAConditionIsTheResolvedValueOrTheDefaultOfEachSetting(t *tes
 		{Key: "pages", DefaultJSON: "3"},
 	}}}
 
-	got := settings.BuildWhenConfig(app, plugins)
+	got := settings.BuildWhenConfig(jsonCodec{}, app, plugins)
 
 	want := map[string]any{
 		"app": map[string]any{"editor": map[string]any{"lineNumbers": true}, "theme": "dusk"},

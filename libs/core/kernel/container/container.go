@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -86,7 +85,7 @@ type Resources struct {
 	settingsFiles   *settingsadapter.Files
 	settingEvents   *settingevents.Events
 	secretGate      *secret.Gate
-	pluginChanges   *pluginchanges.Signals
+	pluginChanges   *settingsusecase.PluginChanges
 	programs        *settingsadapter.ProgramList
 	subscribedHosts settingsusecase.HostSubscriptions
 }
@@ -98,7 +97,7 @@ func NewResources() *Resources {
 		watches:       vaultwatch.NewHub(),
 		settingsFiles: settingsadapter.NewFiles(),
 		settingEvents: settingevents.New(),
-		pluginChanges: &pluginchanges.Signals{},
+		pluginChanges: &settingsusecase.PluginChanges{},
 		secretGate:    secret.NewGate(),
 		programs:      &settingsadapter.ProgramList{},
 	}
@@ -120,7 +119,7 @@ func (c Config) getResources() *Resources {
 	if c.Resources != nil {
 		return c.Resources
 	}
-	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &pluginchanges.Signals{}}
+	return &Resources{vaultLocks: nil, watches: nil, settingsFiles: nil, settingEvents: nil, secretGate: nil, pluginChanges: &settingsusecase.PluginChanges{}}
 }
 
 func (c Config) getPrograms() *settingsadapter.ProgramList {

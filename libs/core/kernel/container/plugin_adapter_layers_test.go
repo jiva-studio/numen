@@ -141,11 +141,10 @@ func TestPluginIsolationRuleDeniesEverySiblingAdapter(t *testing.T) {
 // Every bridge and every host package is on the rule of its side, and each side denies every package of the other.
 func TestPluginSideRulesNameEveryPackage(t *testing.T) {
 	rules := getDepguardRules(t)
-	var bridges, hosts []string
-	hosts = getDirNames(t, "../adapter/plugin")
+	hosts := getDirNames(t, "../adapter/plugin")
+	var bridges []string
 	for _, name := range getDirNames(t, "../internal/adapter/plugin") {
-		switch {
-		case strings.HasSuffix(name, "bridge") && name != "bridge":
+		if strings.HasSuffix(name, "bridge") && name != "bridge" {
 			bridges = append(bridges, name)
 		}
 	}

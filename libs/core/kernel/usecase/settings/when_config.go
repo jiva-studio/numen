@@ -1,14 +1,21 @@
-package settings
+		if text == "" {
+			continue
+		}
+		value, err := codec.Decode(text)
+		if err != nil {
+			continue
+		}package settings
 
 import (
-	"encoding/json"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // WhenConfig reads the resolved settings of the application and of the plugins.
 type WhenConfig struct {
+	Codec   settingsport.ValueCodec
 	App     func() []plugin.Setting
 	Plugins func() []plugin.Info
 }
@@ -23,7 +30,7 @@ func (s WhenConfig) GetWhenConfig() map[string]any {
 	if s.Plugins != nil {
 		plugins = s.Plugins()
 	}
-	return BuildWhenConfig(app, plugins)
+	return BuildWhenConfig(s.Codec, app, plugins)
 }
 
 // configAppOwner is the owner of the settings of the application in config.
@@ -33,16 +40,16 @@ const configAppOwner = "app"
 // application at config.app.<key>, and one of a plugin at config.<plugin id split at its dots>.<key>,
 // the key split at its dots too. A setting holds its value, or its default where no value is set; a
 // setting with neither is left out.
-func BuildWhenConfig(app []plugin.Setting, plugins []plugin.Info) map[string]any {
+func BuildWhenConfig(codec settingsport.ValueCodec, app []plugin.Setting, plugins []plugin.Info) map[string]any {
 	config := map[string]any{}
-	addSettings(config, []string{configAppOwner}, app)
+	addSettings(codec, config, []string{configAppOwner}, app)
 	for _, plugin := range plugins {
-		addSettings(config, strings.Split(plugin.ID, "."), plugin.Settings)
+		addSettings(codec, config, strings.Split(plugin.ID, "."), plugin.Settings)
 	}
 	return config
 }
 
-func addSettings(config map[string]any, owner []string, settings []plugin.Setting) {
+func addSettings(codec settingsport.ValueCodec, config map[string]any, owner []string, settings []plugin.Setting) {
 	for _, one := range settings {
 		text := one.ValueJSON
 		if text == "" {

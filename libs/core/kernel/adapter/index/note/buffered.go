@@ -1,4 +1,4 @@
-package vault
+package note
 
 import (
 	"context"
@@ -8,15 +8,15 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// BufferedNotes is the note repository of the index, keeping the paths of the notes written through it while
+// Buffered is the note repository of the index, keeping the paths of the notes written through it while
 // the first walk is still reading the vault.
-type BufferedNotes struct {
+type Buffered struct {
 	noteport.NoteRepository
-	NoteWrites
+	Writes
 }
 
-// NoteWrites is every path written through the index while a walk is reading the vault.
-type NoteWrites struct {
+// Writes is every path written through the index while a walk is reading the vault.
+type Writes struct {
 	mu       sync.Mutex
 	paths    []string
 	recorded map[string]bool
@@ -24,7 +24,7 @@ type NoteWrites struct {
 }
 
 // Save writes the notes and records their paths.
-func (r *BufferedNotes) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
+func (r *Buffered) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
 	for _, one := range notes {
 		r.Record(one.Note.FileStat.Path)
 	}
@@ -32,7 +32,7 @@ func (r *BufferedNotes) Save(ctx context.Context, vaultID domain.VaultID, notes 
 }
 
 // Remove removes the notes at the paths and records the paths.
-func (r *BufferedNotes) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
+func (r *Buffered) Remove(ctx context.Context, vaultID domain.VaultID, paths []string) error {
 	for _, path := range paths {
 		r.Record(path)
 	}
@@ -40,7 +40,7 @@ func (r *BufferedNotes) Remove(ctx context.Context, vaultID domain.VaultID, path
 }
 
 // StartRecording holds the paths written through this, for the length of one walk.
-func (w *NoteWrites) StartRecording() {
+func (w *Writes) StartRecording() {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -49,7 +49,7 @@ func (w *NoteWrites) StartRecording() {
 }
 
 // Record takes the path before the write it belongs to.
-func (w *NoteWrites) Record(path string) {
+func (w *Writes) Record(path string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -64,7 +64,7 @@ func (w *NoteWrites) Record(path string) {
 }
 
 // StopRecording is every path held, and the end of the holding.
-func (w *NoteWrites) StopRecording() []string {
+func (w *Writes) StopRecording() []string {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.isOver = true

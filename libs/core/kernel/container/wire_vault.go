@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
@@ -500,7 +501,7 @@ func vaultOpenerWith(c vaultWiring,
 	}
 	scan.Walks = db.Walks()
 
-	buffered := &vault.BufferedNotes{NoteRepository: db.Notes()}
+	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))
 }
 
