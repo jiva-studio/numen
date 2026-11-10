@@ -1,4 +1,4 @@
-package service
+package codexcli
 
 import (
 	"encoding/json"

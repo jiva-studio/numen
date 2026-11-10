@@ -1,4 +1,6 @@
-package service
+// Package codexcli reaches the Codex CLI and its files on this machine: it finds the program, lists the
+// models it offers, reads its configuration and builds the command lines of a run.
+package codexcli
 
 import (
 	"os"
@@ -57,13 +59,4 @@ func findCodexIn(places []string, customPath ...string) string {
 		}
 	}
 	return "codex"
-}
-
-func programCommand(commands []agentrun.ProgramCommand, name string) []string {
-	for _, one := range commands {
-		if one.Program == name {
-			return one.Command
-		}
-	}
-	return nil
 }

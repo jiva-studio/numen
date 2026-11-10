@@ -1,4 +1,4 @@
-package service
+package run
 
 import (
 	"os"
@@ -26,10 +26,10 @@ func runCodexWithTools(t *testing.T) (arguments []string, token string) {
 			`echo '{"type":"turn.completed"}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{
+	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{
 		Command: []string{script}, Prompt: "Shelve the atlas of rivers.", Tools: []string{"atlas_open"},
 		Root: t.TempDir(), ToolsURL: orchardToolsURL, ToolsToken: orchardToolsToken,
-	}))
+	}, "")
 	if err != nil {
 		t.Fatal(err)
 	}

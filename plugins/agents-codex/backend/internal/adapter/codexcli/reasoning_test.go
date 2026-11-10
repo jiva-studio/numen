@@ -1,4 +1,4 @@
-package service
+package codexcli
 
 import (
 	"bytes"
@@ -9,9 +9,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/agentmodel"
 )
 
-func getLevelNames(model AgentModel) []string {
+func getLevelNames(model agentmodel.Model) []string {
 	var names []string
 	for _, one := range model.Reasoning {
 		names = append(names, one.Name)
