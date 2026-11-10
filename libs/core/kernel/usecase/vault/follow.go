@@ -5,8 +5,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // Follow keeps the index consistent with a vault that is edited concurrently,
@@ -19,7 +19,7 @@ type Follow struct {
 	scan    Scan
 
 	Changed      func(VaultChanges)
-	ErrorHandler windowport.ErrorHandler
+	ErrorHandler window.ErrorHandler
 }
 
 // NewFollow creates a Follow from the watcher that reports file changes, the

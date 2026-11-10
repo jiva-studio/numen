@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -51,7 +50,7 @@ var (
 	ErrBadArguments = errors.New("the arguments do not meet the command")
 	// ErrUnavailable is a plugin that cannot be started or reached, or an installation with no plugin
 	// host.
-	ErrUnavailable = completionport.ErrUnavailable
+	ErrUnavailable = domain.ErrUnavailable
 )
 
 // Commands is both scenarios over the commands the plugins declare.

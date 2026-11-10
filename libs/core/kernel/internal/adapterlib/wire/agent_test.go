@@ -8,27 +8,28 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 type closingAgent struct{}
 
-func (closingAgent) StartRun(_ context.Context, _ agentport.Task) (agentport.Run, error) {
-	steps := make(chan agentport.Step, 1)
-	steps <- agentport.Step{Kind: domain.StepSay, Text: "Hey! How can I help you today?"}
+func (closingAgent) StartRun(_ context.Context, _ agent.Task) (agentport.Run, error) {
+	steps := make(chan agent.Step, 1)
+	steps <- agent.Step{Kind: domain.StepSay, Text: "Hey! How can I help you today?"}
 	close(steps)
 	return closingRun{steps: steps}, nil
 }
 
 func (closingAgent) EndConversation(_ context.Context, _ string) error { return nil }
 
-type closingRun struct{ steps <-chan agentport.Step }
+type closingRun struct{ steps <-chan agent.Step }
 
-func (r closingRun) GetSteps() <-chan agentport.Step { return r.steps }
-func (closingRun) Stop() error                       { return nil }
+func (r closingRun) GetSteps() <-chan agent.Step { return r.steps }
+func (closingRun) Stop() error                   { return nil }
 
 // A run that closes its steps channel without an explicit stop still writes a stopped frame and a
 // trailing frame to flush it to the window.

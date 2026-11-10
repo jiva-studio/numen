@@ -16,10 +16,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -256,7 +256,7 @@ func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Instructions: instructions})
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Instructions: instructions})
 
 	requests := agent.getRequests()
 	if len(requests) != 1 {

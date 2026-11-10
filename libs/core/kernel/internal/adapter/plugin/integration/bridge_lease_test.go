@@ -11,10 +11,10 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -47,7 +47,7 @@ func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
 
 	const runs = 3
 	for range runs {
-		run, err := bridge.StartRun(t.Context(), agentport.Task{Question: "q"})
+		run, err := bridge.StartRun(t.Context(), agent.Task{Question: "q"})
 		if err != nil {
 			t.Fatal(err)
 		}

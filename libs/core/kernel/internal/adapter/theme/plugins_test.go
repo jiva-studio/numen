@@ -16,8 +16,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugintheme/themecontract"
 )
 
 const (
@@ -28,13 +28,13 @@ const (
 // fakePlugins is a source of plugin themes held in memory.
 type fakePlugins struct {
 	mu     sync.Mutex
-	themes []themecontract.PluginTheme
+	themes []themedomain.PluginTheme
 	texts  map[string]string
 }
 
 func createFakePlugins() *fakePlugins {
 	return &fakePlugins{
-		themes: []themecontract.PluginTheme{
+		themes: []themedomain.PluginTheme{
 			{PluginID: pluginID, ID: "night", Name: "Night", Appearance: "dark"},
 			{PluginID: pluginID, ID: "day", Name: "Day"},
 		},
@@ -45,10 +45,10 @@ func createFakePlugins() *fakePlugins {
 	}
 }
 
-func (f *fakePlugins) ListThemes() []themecontract.PluginTheme {
+func (f *fakePlugins) ListThemes() []themedomain.PluginTheme {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]themecontract.PluginTheme(nil), f.themes...)
+	return append([]themedomain.PluginTheme(nil), f.themes...)
 }
 
 func (f *fakePlugins) ReadTheme(pluginID, themeID string) (string, error) {
@@ -59,10 +59,10 @@ func (f *fakePlugins) ReadTheme(pluginID, themeID string) (string, error) {
 			return f.texts[pluginID+"/"+themeID], nil
 		}
 	}
-	return "", themecontract.ErrNoTheme
+	return "", themedomain.ErrNoTheme
 }
 
-func (f *fakePlugins) enable(themes ...themecontract.PluginTheme) {
+func (f *fakePlugins) enable(themes ...themedomain.PluginTheme) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.themes = append(f.themes, themes...)

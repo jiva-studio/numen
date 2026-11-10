@@ -7,6 +7,7 @@ import (
 	"slices"
 	"sync"
 
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -66,9 +67,9 @@ func (r *Router) getProviders() []string {
 // still returned.
 func (r *Router) GetPrograms(
 	ctx context.Context, commands map[string][]string,
-) ([]agentport.AgentProgram, error) {
+) ([]agentdomain.Program, error) {
 	ids := r.getProviders()
-	items := make([][]agentport.AgentProgram, len(ids))
+	items := make([][]agentdomain.Program, len(ids))
 	failed := make([]error, len(ids))
 
 	var group sync.WaitGroup
@@ -79,7 +80,7 @@ func (r *Router) GetPrograms(
 	}
 	group.Wait()
 
-	var programs []agentport.AgentProgram
+	var programs []agentdomain.Program
 	for _, one := range items {
 		programs = append(programs, one...)
 	}
@@ -89,7 +90,7 @@ func (r *Router) GetPrograms(
 
 func (r *Router) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
-) (programs []agentport.AgentProgram, err error) {
+) (programs []agentdomain.Program, err error) {
 	agent, err := OpenForPlugin(ctx, r.host, id)
 	if isDisabled(err) {
 		return nil, nil
@@ -106,7 +107,7 @@ func isDisabled(err error) bool {
 	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginDisabled
 }
 
-func (r *Router) setProviders(programs []agentport.AgentProgram) {
+func (r *Router) setProviders(programs []agentdomain.Program) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.providers = make(map[string]string, len(programs))
@@ -142,7 +143,7 @@ func (r *Router) getProvider(ctx context.Context, program string, command []stri
 }
 
 // StartRun starts the task on the plugin that runs the program it names.
-func (r *Router) StartRun(ctx context.Context, task agentport.Task) (run agentport.Run, err error) {
+func (r *Router) StartRun(ctx context.Context, task agentdomain.Task) (run agentport.Run, err error) {
 	id, err := r.getProvider(ctx, task.Agent, task.Command)
 	if err != nil {
 		return nil, err

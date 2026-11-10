@@ -20,10 +20,10 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"connectrpc.com/connect"
-	completionport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/completioncontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func CreateTestPluginTree(t *testing.T, dir string) {
@@ -249,9 +249,9 @@ func (h *LeaseHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, boo
 	return domain.NoteProfile{}, false
 }
 
-type CompleterFunc func(ctx context.Context, question completionport.Question) (string, error)
+type CompleterFunc func(ctx context.Context, question completion.Question) (string, error)
 
-func (f CompleterFunc) Complete(ctx context.Context, _ string, question completionport.Question) (string, error) {
+func (f CompleterFunc) Complete(ctx context.Context, _ string, question completion.Question) (string, error) {
 	return f(ctx, question)
 }
 

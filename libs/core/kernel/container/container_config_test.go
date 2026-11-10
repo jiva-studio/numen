@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func isolate(t *testing.T) string {
@@ -66,7 +65,7 @@ func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	if _, response, err := (NewConfig(Config{})).ReadSettings()(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
-	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{
+	err := NewConfig(Config{}).GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err == nil {
@@ -169,7 +168,7 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := NewConfig(Config{}).GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`}})
+	err := NewConfig(Config{}).GetSettingsWriter()([]settings.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -178,7 +177,7 @@ func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 func TestASettingThatIsNotJSONIsNotASetting(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `opus`}})
+	err := cfg.GetSettingsWriter()([]settings.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `opus`}})
 	if !errors.Is(err, settings.ErrNotASetting) {
 		t.Errorf("got %v", err)
 	}

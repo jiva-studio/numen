@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func newSource(t *testing.T, read func() (settingevents.Values, error)) settingevents.Source {
@@ -21,7 +21,7 @@ func newSource(t *testing.T, read func() (settingevents.Values, error)) settinge
 	}
 }
 
-func receive(t *testing.T, changes <-chan []settingsport.Setting) []settingsport.Setting {
+func receive(t *testing.T, changes <-chan []settings.Setting) []settings.Setting {
 	t.Helper()
 	select {
 	case batch := <-changes:

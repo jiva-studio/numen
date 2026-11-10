@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // Themes provides the themes the window can use: the catalog of themes, and
@@ -102,13 +102,13 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 		}{appearance("textScale"), selectedVal.TextScale})
 	}
 
-	writing := make([]settingsport.Setting, 0, len(values))
+	writing := make([]settingsdomain.Setting, 0, len(values))
 	for _, one := range values {
 		encoded, err := json.Marshal(one.value)
 		if err != nil {
 			return fmt.Errorf("%s: %w", strings.Join(one.path, "."), err)
 		}
-		writing = append(writing, settingsport.Setting{Path: one.path, JSON: string(encoded)})
+		writing = append(writing, settingsdomain.Setting{Path: one.path, JSON: string(encoded)})
 	}
 	if err := c.WriteSettings(writing); err != nil {
 		return err

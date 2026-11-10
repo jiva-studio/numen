@@ -6,15 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 )
 
 // ProgramList keeps the programs the agent providers listed last, and lists them again in the
 // background, so a read of the settings does not wait for a provider that is slow to start.
 type ProgramList struct {
 	mu       sync.Mutex
-	programs []agentport.AgentProgram
-	late     []agentport.AgentProgram
+	programs []agent.Program
+	late     []agent.Program
 	isAsking bool
 	isLate   bool
 }
@@ -22,7 +22,7 @@ type ProgramList struct {
 // Get starts a listing unless one is running, and returns what the listing found within wait, or
 // else the programs listed before. When a listing ends after wait with different programs, each
 // function in onLate is called.
-func (l *ProgramList) Get(wait time.Duration, list func() []agentport.AgentProgram, onLate ...func()) []agentport.AgentProgram {
+func (l *ProgramList) Get(wait time.Duration, list func() []agent.Program, onLate ...func()) []agent.Program {
 	ended := make(chan struct{})
 	l.mu.Lock()
 	if l.isAsking {
@@ -46,7 +46,7 @@ func (l *ProgramList) Get(wait time.Duration, list func() []agentport.AgentProgr
 	return slices.Clone(l.programs)
 }
 
-func (l *ProgramList) runList(ended chan<- struct{}, list func() []agentport.AgentProgram, onLate []func()) {
+func (l *ProgramList) runList(ended chan<- struct{}, list func() []agent.Program, onLate []func()) {
 	found := list()
 	l.mu.Lock()
 	notify := l.isLate && !reflect.DeepEqual(l.programs, found)
@@ -67,7 +67,7 @@ func (l *ProgramList) runList(ended chan<- struct{}, list func() []agentport.Age
 }
 
 // GetLate returns the programs of the last listing that ended after Get timed out.
-func (l *ProgramList) GetLate() []agentport.AgentProgram {
+func (l *ProgramList) GetLate() []agent.Program {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return slices.Clone(l.late)

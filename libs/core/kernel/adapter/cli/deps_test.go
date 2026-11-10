@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -19,8 +20,6 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 func (s *session) deps(where cli.Locations) cli.Deps {
@@ -80,7 +79,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 		},
 
 		// No embedder: a test uses no model, so a query is answered by words alone.
-		Search: func(ctx context.Context, _ domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
+		Search: func(ctx context.Context, _ domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return cli.Search{}, err

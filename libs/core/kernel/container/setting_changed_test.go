@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 const (
@@ -98,7 +98,7 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 
 // listener is one reader of the setting-changed event, such as a window or a plugin.
 type listener struct {
-	changes <-chan []settingsport.Setting
+	changes <-chan []settings.Setting
 }
 
 func listen(t *testing.T, cfg container.Config) listener {
@@ -108,7 +108,7 @@ func listen(t *testing.T, cfg container.Config) listener {
 	return listener{changes: changes}
 }
 
-func (l listener) await(t *testing.T) []settingsport.Setting {
+func (l listener) await(t *testing.T) []settings.Setting {
 	t.Helper()
 	select {
 	case batch, open := <-l.changes:
@@ -133,7 +133,7 @@ func (l listener) expectNothing(t *testing.T) {
 	}
 }
 
-func expectChange(t *testing.T, batch []settingsport.Setting, path []string, json string) {
+func expectChange(t *testing.T, batch []settings.Setting, path []string, json string) {
 	t.Helper()
 	if len(batch) != 1 || !slices.Equal(batch[0].Path, path) || batch[0].JSON != json {
 		t.Errorf("the change is %v, want %v set to %s", batch, path, json)
@@ -144,7 +144,7 @@ func TestAWriteByTheSettingsPageReachesEveryReaderOnceWithItsDeclaredPath(t *tes
 	cfg, _, _ := openInstallation(t, `{}`)
 	window, other := listen(t, cfg), listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -161,7 +161,7 @@ func TestAWriteOfSeveralSettingsArrivesAsOneBatch(t *testing.T) {
 	cfg, _, _ := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "appearance", "textScale"}, JSON: `1.2`},
 	})
@@ -180,7 +180,7 @@ func TestAWriteByAPluginReachesEveryReaderOnceWithItsDeclaredPath(t *testing.T) 
 	cfg, _, _ := openInstallation(t, `{}`)
 	window, other := listen(t, cfg), listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{eventPlugin, "mode"}, JSON: `"b"`},
 	})
 	if err != nil {
@@ -197,7 +197,7 @@ func TestAWriteTheCheckRejectsReachesNoReader(t *testing.T) {
 	cfg, _, _ := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	if err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{eventPlugin, "undeclared"}, JSON: `"x"`},
 	}); err == nil {
 		t.Fatal("a key nobody declares was written")
@@ -210,7 +210,7 @@ func TestAWriteThatChangesNoValueReachesNoReader(t *testing.T) {
 	cfg, _, _ := openInstallation(t, `{"app":{"appearance":{"mode":"dark"}}}`)
 	reader := listen(t, cfg)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -331,7 +331,7 @@ func TestAWriteByAPluginReachesThePluginHostOnce(t *testing.T) {
 	cfg, _, host := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	if err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{eventPlugin, "mode"}, JSON: `"b"`},
 	}); err != nil {
 		t.Fatal(err)
@@ -350,7 +350,7 @@ func TestAReaderThatStoppedListeningReceivesNothingMore(t *testing.T) {
 	changes, stop := cfg.SubscribeSettingChanges()
 	stop()
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -408,7 +408,7 @@ func TestAWriteOfThePerformanceProfileReachesThePluginHostOnce(t *testing.T) {
 	reader := listen(t, cfg)
 	before := len(host.listProfiles())
 
-	if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	if err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "performance", "profile"}, JSON: `"eco"`},
 	}); err != nil {
 		t.Fatal(err)

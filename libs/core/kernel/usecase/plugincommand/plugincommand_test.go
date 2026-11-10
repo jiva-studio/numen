@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
@@ -166,7 +165,7 @@ func TestAnInstallationWithNoPluginHostListsNoCommandAndRunsNone(t *testing.T) {
 	if entries := commands.List.Execute(); len(entries) != 0 {
 		t.Errorf("got %+v", entries)
 	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{Command: "tidy"}); !errors.Is(err, completionport.ErrUnavailable) {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{Command: "tidy"}); !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a run answered %v, want unavailable", err)
 	}
 }

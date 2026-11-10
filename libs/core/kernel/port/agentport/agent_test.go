@@ -3,6 +3,7 @@ package agentport_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
@@ -10,13 +11,13 @@ import (
 // first installed, and only then what is not installed.
 func TestTheDefaultProgramIsAnInstalledOneWhereThereIsOne(t *testing.T) {
 	for name, one := range map[string]struct {
-		programs []agentport.AgentProgram
+		programs []agent.Program
 		want     string
 	}{
-		"installed and marked":    {[]agentport.AgentProgram{{Name: "a", IsInstalled: true}, {Name: "b", IsInstalled: true, IsDefault: true}}, "b"},
-		"marked but not there":    {[]agentport.AgentProgram{{Name: "a", IsDefault: true}, {Name: "b", IsInstalled: true}}, "b"},
-		"nothing installed":       {[]agentport.AgentProgram{{Name: "a"}, {Name: "b", IsDefault: true}}, "b"},
-		"nothing marked or there": {[]agentport.AgentProgram{{Name: "a"}, {Name: "b"}}, "a"},
+		"installed and marked":    {[]agent.Program{{Name: "a", IsInstalled: true}, {Name: "b", IsInstalled: true, IsDefault: true}}, "b"},
+		"marked but not there":    {[]agent.Program{{Name: "a", IsDefault: true}, {Name: "b", IsInstalled: true}}, "b"},
+		"nothing installed":       {[]agent.Program{{Name: "a"}, {Name: "b", IsDefault: true}}, "b"},
+		"nothing marked or there": {[]agent.Program{{Name: "a"}, {Name: "b"}}, "a"},
 	} {
 		got, found := agentport.GetDefaultProgram(one.programs)
 		if !found || got.Name != one.want {

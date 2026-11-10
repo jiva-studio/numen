@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	completiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
 
 var (
@@ -42,7 +42,7 @@ func NewRouter(config func() Config, programs agentport.CompletionPrograms) (*Ro
 // else its first; a failure then states the replacement. A program that is not there fails with
 // port.ErrNoRoute. The wait for a place under the agent's limit, and the answer, end with the
 // context.
-func (r *Router) Complete(ctx context.Context, _ string, question completionport.Question) (string, error) {
+func (r *Router) Complete(ctx context.Context, _ string, question completiondomain.Question) (string, error) {
 	task, err := newTask(question)
 	if err != nil {
 		return "", err
@@ -72,7 +72,7 @@ func (r *Router) Complete(ctx context.Context, _ string, question completionport
 	return text, err
 }
 
-func getReplacementModel(program agentport.AgentProgram, selected string) (string, bool) {
+func getReplacementModel(program agent.Program, selected string) (string, bool) {
 	if selected == "" || len(program.Models) == 0 {
 		return "", false
 	}
@@ -89,9 +89,9 @@ func getReplacementModel(program agentport.AgentProgram, selected string) (strin
 	return program.Models[0].Name, true
 }
 
-func newTask(question completionport.Question) (agentport.Task, error) {
+func newTask(question completiondomain.Question) (agent.Task, error) {
 	var system []string
-	var turns []completionport.Message
+	var turns []completiondomain.Message
 	for _, message := range question.Messages {
 		switch message.Role {
 		case "system":
@@ -99,16 +99,16 @@ func newTask(question completionport.Question) (agentport.Task, error) {
 		case "", "user", "assistant":
 			turns = append(turns, message)
 		default:
-			return agentport.Task{}, fmt.Errorf("%w: unknown role %q", completiondomain.ErrInvalidQuestion, message.Role)
+			return agent.Task{}, fmt.Errorf("%w: unknown role %q", completiondomain.ErrInvalidQuestion, message.Role)
 		}
 	}
 	if len(turns) == 0 {
-		return agentport.Task{}, fmt.Errorf("%w: %w", completiondomain.ErrInvalidQuestion, errNoMessage)
+		return agent.Task{}, fmt.Errorf("%w: %w", completiondomain.ErrInvalidQuestion, errNoMessage)
 	}
-	return agentport.Task{Question: writePrompt(turns), Instructions: strings.Join(system, "\n\n")}, nil
+	return agent.Task{Question: writePrompt(turns), Instructions: strings.Join(system, "\n\n")}, nil
 }
 
-func writePrompt(turns []completionport.Message) string {
+func writePrompt(turns []completiondomain.Message) string {
 	if len(turns) == 1 {
 		return turns[0].Text
 	}

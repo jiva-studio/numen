@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"slices"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // The groups the models of a program stand on.
@@ -16,7 +17,7 @@ const (
 
 // AgentModels returns the rows of the agent section: the programs the setting
 // can name, each filed under the given key.
-func AgentModels(targetPath string, target Agent, programs []agentport.AgentProgram) []settingsport.Model {
+func AgentModels(targetPath string, target Agent, programs []agent.Program) []settingsdomain.Model {
 	useAt := []string{targetPath, "use"}
 	models := getProgramModels(useAt, programs)
 	for _, one := range programs {
@@ -28,54 +29,54 @@ func AgentModels(targetPath string, target Agent, programs []agentport.AgentProg
 	return models
 }
 
-func getProgramModels(useAt []string, programs []agentport.AgentProgram) []settingsport.Model {
+func getProgramModels(useAt []string, programs []agent.Program) []settingsdomain.Model {
 	byDefault, hasDefault := agentport.GetDefaultProgram(programs)
 
-	models := make([]settingsport.Model, 0, len(programs)+1)
+	models := make([]settingsdomain.Model, 0, len(programs)+1)
 	for _, one := range programs {
-		presence := settingsport.NotFetched
+		presence := settingsdomain.NotFetched
 		if one.IsInstalled {
-			presence = settingsport.Present
+			presence = settingsdomain.Present
 		}
-		models = append(models, settingsport.Model{
+		models = append(models, settingsdomain.Model{
 			Path:      useAt,
 			Name:      one.Name,
 			Title:     one.Title,
 			IsDefault: hasDefault && one.Name == byDefault.Name,
-			Writes:    []settingsport.Setting{newSetting(useAt, one.Name)},
+			Writes:    []settingsdomain.Setting{newSetting(useAt, one.Name)},
 			Presence:  presence,
 		})
 	}
-	return append(models, settingsport.Model{
+	return append(models, settingsdomain.Model{
 		Path:      useAt,
 		Title:     "No agent responds",
 		IsDefault: !hasDefault,
-		Writes:    []settingsport.Setting{newSetting(useAt, "")},
-		Presence:  settingsport.NothingToFetch,
+		Writes:    []settingsdomain.Setting{newSetting(useAt, "")},
+		Presence:  settingsdomain.NothingToFetch,
 	})
 }
 
-func getModelsOfProgram(pos []string, program agentport.AgentProgram, set string) []settingsport.Model {
-	var models []settingsport.Model
+func getModelsOfProgram(pos []string, program agent.Program, set string) []settingsdomain.Model {
+	var models []settingsdomain.Model
 	switch {
 	case len(program.Models) == 0 && set != "":
-		models = []settingsport.Model{{Path: pos, Name: set, Title: set, IsDefault: true}}
+		models = []settingsdomain.Model{{Path: pos, Name: set, Title: set, IsDefault: true}}
 	case len(program.Models) == 0:
-		models = []settingsport.Model{{Path: pos, Title: "Default model", IsDefault: true}}
+		models = []settingsdomain.Model{{Path: pos, Title: "Default model", IsDefault: true}}
 	default:
 		models = getReportedModels(pos, set, program.Models)
 	}
 	for place := range models {
-		models[place].Presence = settingsport.NothingToFetch
-		models[place].Writes = []settingsport.Setting{newSetting(pos, models[place].Name)}
+		models[place].Presence = settingsdomain.NothingToFetch
+		models[place].Writes = []settingsdomain.Setting{newSetting(pos, models[place].Name)}
 	}
 	return models
 }
 
-func getReportedModels(pos []string, set string, available []agentport.AgentModel) []settingsport.Model {
-	isSet := slices.ContainsFunc(available, func(one agentport.AgentModel) bool { return one.Name == set })
-	isReportedDefault := slices.ContainsFunc(available, func(one agentport.AgentModel) bool { return one.IsDefault })
-	var models []settingsport.Model
+func getReportedModels(pos []string, set string, available []agent.Model) []settingsdomain.Model {
+	isSet := slices.ContainsFunc(available, func(one agent.Model) bool { return one.Name == set })
+	isReportedDefault := slices.ContainsFunc(available, func(one agent.Model) bool { return one.IsDefault })
+	var models []settingsdomain.Model
 	for place, one := range available {
 		title := one.Title
 		if title == "" {
@@ -85,21 +86,21 @@ func getReportedModels(pos []string, set string, available []agentport.AgentMode
 		if !isSet {
 			isDefault = one.IsDefault || (place == 0 && !isReportedDefault)
 		}
-		models = append(models, settingsport.Model{
+		models = append(models, settingsdomain.Model{
 			Path: pos, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
 			ReasoningLevels: one.ReasoningLevels, DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	if set != "" && !isSet {
-		models = append(models, settingsport.Model{Path: pos, Name: set, Title: set, Group: groupConfigured})
+		models = append(models, settingsdomain.Model{Path: pos, Name: set, Title: set, Group: groupConfigured})
 	}
 	return models
 }
 
-func newSetting(pos []string, value any) settingsport.Setting {
+func newSetting(pos []string, value any) settingsdomain.Setting {
 	response, err := json.Marshal(value)
 	if err != nil {
-		return settingsport.Setting{Path: pos, JSON: ""}
+		return settingsdomain.Setting{Path: pos, JSON: ""}
 	}
-	return settingsport.Setting{Path: pos, JSON: string(response)}
+	return settingsdomain.Setting{Path: pos, JSON: string(response)}
 }

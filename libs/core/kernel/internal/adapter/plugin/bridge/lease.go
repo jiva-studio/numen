@@ -9,8 +9,8 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	completionport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // Lease is the one reference a bridge holds on its plugin, from the moment
@@ -82,5 +82,5 @@ func ReadActivationError(err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	return fmt.Errorf("%w: %w", completionport.ErrUnavailable, err)
+	return fmt.Errorf("%w: %w", domain.ErrUnavailable, err)
 }

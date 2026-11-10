@@ -12,11 +12,10 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func writeAt(cfg Config, json string, path ...string) error {
-	return cfg.GetSettingsWriter()([]settingsport.Setting{{Path: path, JSON: json}})
+	return cfg.GetSettingsWriter()([]settings.Setting{{Path: path, JSON: json}})
 }
 
 func TestAProfileThatIsNoOptionIsRefusedAndNotSent(t *testing.T) {
@@ -90,7 +89,7 @@ func TestAKeyAPluginDoesNotDeclareIsRefused(t *testing.T) {
 
 func TestAWriteOfSeveralSettingsIsRefusedWholeWhenOneIsRefused(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 		{Path: []string{"app", "appearance", "textScale"}, JSON: `9`},
 	})

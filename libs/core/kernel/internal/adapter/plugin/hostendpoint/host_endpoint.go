@@ -16,6 +16,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	completionport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/completioncontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -197,7 +198,7 @@ func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostSer
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
-	if errors.Is(err, completionport.ErrInvalidQuestion) {
+	if errors.Is(err, completion.ErrInvalidQuestion) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if code, isRefusal := writeRefusal(err); isRefusal {

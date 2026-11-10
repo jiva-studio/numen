@@ -20,13 +20,12 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
 func createTestAgentPluginTree(t *testing.T, dir string) {
@@ -55,14 +54,14 @@ func TestAgentBridge(t *testing.T) {
 	bridge := openTestBridge(t, &plugintest.MockAgentServer{})
 	ctx := t.Context()
 
-	run, err := bridge.StartRun(ctx, agentport.Task{
+	run, err := bridge.StartRun(ctx, agent.Task{
 		Question: "hello world",
 	})
 	if err != nil {
 		t.Fatalf("StartRun failed: %v", err)
 	}
 
-	var steps []agentport.Step
+	var steps []agent.Step
 	for step := range run.GetSteps() {
 		steps = append(steps, step)
 	}
@@ -146,7 +145,7 @@ func TestAgentBridge_UnreadChannelDoesNotDeadlock(t *testing.T) {
 	bridge := openTestBridge(t, &floodAgentServer{})
 	ctx := t.Context()
 
-	run, err := bridge.StartRun(ctx, agentport.Task{Question: "test flood"})
+	run, err := bridge.StartRun(ctx, agent.Task{Question: "test flood"})
 	if err != nil {
 		t.Fatalf("StartRun failed: %v", err)
 	}
@@ -247,11 +246,11 @@ func TestTheBridgeListsTheProgramsAPluginRuns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []agentport.AgentProgram{{
+	want := []agent.Program{{
 		Provider: "md.numen.agents.numen", Name: "one", Title: "One", IsInstalled: true, IsDefault: true, LimitsTools: true,
-		Models: []agentport.AgentModel{{
+		Models: []agent.Model{{
 			Name: "m1", Title: "M one", IsDefault: true, DefaultReasoning: "low",
-			ReasoningLevels: []agentport.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},
+			ReasoningLevels: []domain.ReasoningLevel{{Name: "low", Title: "Low"}, {Name: "high", Title: "High"}},
 		}, {Name: "m2"}},
 	}}
 	if !reflect.DeepEqual(got, want) {
@@ -281,7 +280,7 @@ func TestALimitOnStepsIsCachedWithinWhatTheRequestCarries(t *testing.T) {
 		math.MaxInt32: math.MaxInt32,
 		math.MaxInt:   math.MaxInt32,
 	} {
-		if got := newAskRequest(agentport.Task{MaxSteps: limit}).GetMaxSteps(); got != want {
+		if got := newAskRequest(agent.Task{MaxSteps: limit}).GetMaxSteps(); got != want {
 			t.Errorf("%d was sent as %d, want %d", limit, got, want)
 		}
 	}
@@ -290,12 +289,12 @@ func TestALimitOnStepsIsCachedWithinWhatTheRequestCarries(t *testing.T) {
 // Everything the task provides to the agent is present in the request, and the
 // effect of each tool is encoded in the word the plugins read.
 func TestTheRequestCarriesWhatTheTaskProducesTheAgent(t *testing.T) {
-	got := newAskRequest(agentport.Task{
+	got := newAskRequest(agent.Task{
 		Question: "q", Focus: "f", Conversation: "c", Agent: "one", Model: "m", Reasoning: "high", Instructions: "i",
 		Tools: []string{"note_edit"}, MaxSteps: 7, Root: "/vault", Command: []string{"/bin/one"},
-		Endpoint: agentport.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
+		Endpoint: agent.ToolEndpoint{URL: "http://127.0.0.1:1/mcp", Token: "t"},
 		Context:  map[string]string{"org.example.sample/item": "k7"},
-		ToolDeclarations: []agentport.ToolDeclaration{
+		ToolDeclarations: []agent.ToolDeclaration{
 			{Name: "note_edit", Title: "Edit a note", Kind: domain.StepEdit, About: "path", Match: "stood", Text: "becomes"},
 			{Name: "note_read", Kind: domain.StepToolCall, Element: "path"},
 		},
@@ -342,7 +341,7 @@ func TestAChangeBeingSavedIsADraft(t *testing.T) {
 		EditProgress: &v1.EditProgress{Call: "toolu_01", Path: "a/b.md", Match: "old", Text: "new"},
 	}})
 
-	want := agentport.Step{
+	want := agent.Step{
 		Kind: domain.StepDraft, Call: "toolu_01", Place: domain.Place{Path: "a/b.md"}, Match: "old", Text: "new",
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -369,7 +368,7 @@ func (s *failingAgentServer) AskAgent(
 func TestARunWhoseStreamFailsStopsWithTheError(t *testing.T) {
 	bridge := openTestBridge(t, &failingAgentServer{})
 
-	run, err := bridge.StartRun(t.Context(), agentport.Task{Question: "q"})
+	run, err := bridge.StartRun(t.Context(), agent.Task{Question: "q"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,7 +378,7 @@ func TestARunWhoseStreamFailsStopsWithTheError(t *testing.T) {
 		}
 	}()
 
-	var steps []agentport.Step
+	var steps []agent.Step
 	for step := range run.GetSteps() {
 		steps = append(steps, step)
 	}

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // An UnavailableError is ErrUnavailable regardless of its reason, keeps its
@@ -24,7 +24,7 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 		if got := tc.err.Error(); got != tc.want {
 			t.Errorf("Error() = %q, want %q", got, tc.want)
 		}
-		if !errors.Is(tc.err, completionport.ErrUnavailable) {
+		if !errors.Is(tc.err, domain.ErrUnavailable) {
 			t.Errorf("%q is not ErrUnavailable", tc.want)
 		}
 		if errors.Is(tc.err, completion.ErrNoRoute) {

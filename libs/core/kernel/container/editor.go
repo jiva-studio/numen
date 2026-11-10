@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -120,7 +121,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 func (c Config) startVault(db *Index) func(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	notified func(paths, assets []string, reload bool),
-	handleError windowport.ErrorHandler,
+	handleError window.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),
@@ -130,7 +131,7 @@ func (c Config) startVault(db *Index) func(
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool,
 		notified func(paths, assets []string, reload bool),
-		handleError windowport.ErrorHandler,
+		handleError window.ErrorHandler,
 	) (
 		read func(ctx context.Context, during func()) (notes int, err error),
 		run func(ctx context.Context),

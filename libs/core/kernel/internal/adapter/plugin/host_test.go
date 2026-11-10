@@ -22,6 +22,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
@@ -31,7 +32,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -1221,7 +1221,7 @@ func TestTheHostServesItsEndpointOnceItHasACompleter(t *testing.T) {
 		t.Fatalf("without a completer: port %d, %v", got, err)
 	}
 
-	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
+	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
 	first, err := host.openHostEndpoint(t.Context())
 	if err != nil || first <= 0 {
 		t.Fatalf("with a completer: port %d, %v", first, err)
@@ -1262,7 +1262,7 @@ func TestALaunchedPluginIsReportedTheHostPort(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
+	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
 
 	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
 	if err != nil {
@@ -1286,7 +1286,7 @@ func TestAHostEndpointThatCannotStartDoesNotStopALaunch(t *testing.T) {
 		}
 	})
 	host.hostAddress = "127.0.0.1:-1"
-	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completionport.Question) (string, error) { return "", nil }))
+	host.SetCompleter(plugintest.CompleterFunc(func(context.Context, completion.Question) (string, error) { return "", nil }))
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
 

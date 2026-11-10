@@ -3,30 +3,30 @@ package settingevents
 import (
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 // subscriber is one reader. Its batches wait in a queue, so a reader that is slow to take them
 // never holds up the write that made them.
 type subscriber struct {
-	out   chan []settingsport.Setting
+	out   chan []settings.Setting
 	leave chan struct{}
 	wake  chan struct{}
 	once  sync.Once
 
 	mu    sync.Mutex
-	queue [][]settingsport.Setting
+	queue [][]settings.Setting
 }
 
 func newSubscriber() *subscriber {
 	return &subscriber{
-		out:   make(chan []settingsport.Setting),
+		out:   make(chan []settings.Setting),
 		leave: make(chan struct{}),
 		wake:  make(chan struct{}, 1),
 	}
 }
 
-func (s *subscriber) push(batch []settingsport.Setting) {
+func (s *subscriber) push(batch []settings.Setting) {
 	s.mu.Lock()
 	s.queue = append(s.queue, batch)
 	s.mu.Unlock()
@@ -36,7 +36,7 @@ func (s *subscriber) push(batch []settingsport.Setting) {
 	}
 }
 
-func (s *subscriber) next() ([]settingsport.Setting, bool) {
+func (s *subscriber) next() ([]settings.Setting, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(s.queue) == 0 {

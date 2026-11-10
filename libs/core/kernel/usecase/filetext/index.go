@@ -11,10 +11,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // sourcesPerQuery is the page size of the query for sources that need text,
@@ -46,7 +46,7 @@ type Index struct {
 
 	IsSkipped func(path string) bool
 
-	ErrorHandler windowport.ErrorHandler
+	ErrorHandler window.ErrorHandler
 
 	ReadNote func(ctx context.Context, v domain.Vault, path string) error
 }

@@ -22,6 +22,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -36,7 +37,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 func getBefore() []string {
@@ -453,7 +453,7 @@ type gatedWalk struct {
 func (g gatedWalk) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	notified func(paths, assets []string, reload bool),
-	handleError windowport.ErrorHandler,
+	handleError window.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),

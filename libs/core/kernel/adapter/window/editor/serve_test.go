@@ -35,10 +35,11 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -679,11 +680,11 @@ func TestEveryNamingIsSavedFromOne(t *testing.T) {
 }
 
 func TestEveryPresenceIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Presence]settingsport.Presence{
-		v1.Presence_PRESENCE_PRESENT:          settingsport.Present,
-		v1.Presence_PRESENCE_NOT_FETCHED:      settingsport.NotFetched,
-		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settingsport.NothingToFetch,
-	}, func(is settingsport.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
+	testsupport.CheckProduced(t, map[v1.Presence]settings.Presence{
+		v1.Presence_PRESENCE_PRESENT:          settings.Present,
+		v1.Presence_PRESENCE_NOT_FETCHED:      settings.NotFetched,
+		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settings.NothingToFetch,
+	}, func(is settings.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
 }
 
 func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
@@ -904,22 +905,22 @@ func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
 }
 
 type testAgentRun struct {
-	steps chan agentport.Step
+	steps chan agentdomain.Step
 }
 
-func (r *testAgentRun) GetSteps() <-chan agentport.Step { return r.steps }
-func (r *testAgentRun) Stop() error                     { return nil }
+func (r *testAgentRun) GetSteps() <-chan agentdomain.Step { return r.steps }
+func (r *testAgentRun) Stop() error                       { return nil }
 
 type testAgentProvider struct {
 	agentport.Agent
-	tasks chan agentport.Task
+	tasks chan agentdomain.Task
 }
 
-func (m *testAgentProvider) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+func (m *testAgentProvider) StartRun(ctx context.Context, task agentdomain.Task) (agentport.Run, error) {
 	m.tasks <- task
-	run := &testAgentRun{steps: make(chan agentport.Step, 2)}
-	run.steps <- agentport.Step{Kind: domain.StepSay, Text: "hello from agent"}
-	run.steps <- agentport.Step{Kind: domain.StepStop, Detail: "done"}
+	run := &testAgentRun{steps: make(chan agentdomain.Step, 2)}
+	run.steps <- agentdomain.Step{Kind: domain.StepSay, Text: "hello from agent"}
+	run.steps <- agentdomain.Step{Kind: domain.StepStop, Detail: "done"}
 	close(run.steps)
 	return run, nil
 }
@@ -953,7 +954,7 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
-	agent := &testAgentProvider{tasks: make(chan agentport.Task, 1)}
+	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
 	services.Agent.GetAgent = func() agentport.Agent { return agent }
 	plugins := &testInterceptingPlugins{}
 	services.PluginServices = plugins

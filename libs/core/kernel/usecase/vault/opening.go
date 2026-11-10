@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -15,7 +15,7 @@ import (
 // the reconciliation a write requests.
 type VaultOpener struct {
 	Told          func(VaultChanges)
-	ErrorHandler  windowport.ErrorHandler
+	ErrorHandler  window.ErrorHandler
 	ShouldRebuild bool
 
 	watcher  vaultport.VaultWatcher

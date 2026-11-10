@@ -6,15 +6,15 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // The use cases a handler holds, for the tests that wrap one in a fake.
@@ -31,7 +31,7 @@ func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
 func (s *Services) SetTabKindChoice(choose *tabkind.Choose) { s.File.chooseTabKind = choose }
 
 // NewWireModels is the models as the wire carries them.
-func NewWireModels(target []setting.Model) []*v1.Model { return settings.NewWireModels(target) }
+func NewWireModels(target []settingsdomain.Model) []*v1.Model { return settings.NewWireModels(target) }
 
 // NewAssembly is the window's assembly over a configuration, bound the way an
 // application binds one. The index it opens is the window's to close.
@@ -73,7 +73,7 @@ func newWatched(
 func (w watched) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	notified func(paths, assets []string, reload bool),
-	handleError windowport.ErrorHandler,
+	handleError window.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 )
 
@@ -67,7 +68,7 @@ func (h *AgentHandler) AskAgent(
 		vault = h.GetVault()
 	}
 
-	task := agentport.Task{
+	task := agent.Task{
 		Question:     r.Msg.GetPrompt(),
 		Focus:        r.Msg.GetFocus(),
 		Conversation: r.Msg.GetConversation(),

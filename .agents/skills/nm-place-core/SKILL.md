@@ -94,7 +94,7 @@ An adapter is driving or driven, never both. A package that would be both is spl
 - A use case calls a rule of the domain for a decision and a port for data; it holds the order of the steps and the failure handling.
 - Use cases are isolated: no use case imports another. Logic two use cases share goes into the domain when it follows from values, and behind a port both consume when it needs data; the container binds the port to the other scenario.
 - A driving adapter takes the use cases it calls as separate fields of one RPC service. No struct holds more than five use cases, and no object holds every service of the window.
-- Errors are wrapped with `%w` and the context that locates them. Nothing is logged; a background failure goes to `windowport.ErrorHandler`.
+- Errors are wrapped with `%w` and the context that locates them. Nothing is logged; a background failure goes to `window.ErrorHandler`.
 
 ## How an adapter is shaped
 

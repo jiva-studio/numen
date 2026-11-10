@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 const (
@@ -73,7 +73,7 @@ func TestEnablingAPluginTogetherWithATokenKeepsThePersonsToken(t *testing.T) {
 	for name, write := range map[string]func(t *testing.T, cfg container.Config, path string){
 		"one write of both settings": func(t *testing.T, cfg container.Config, _ string) {
 			t.Helper()
-			if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+			if err := cfg.GetSettingsWriter()([]settings.Setting{
 				{Path: []string{courierPlugin, "enabled"}, JSON: `true`},
 				{Path: []string{courierPlugin, "token"}, JSON: `"` + courierToken + `"`},
 			}); err != nil {

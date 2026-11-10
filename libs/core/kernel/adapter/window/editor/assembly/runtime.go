@@ -3,6 +3,7 @@ package assembly
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
@@ -31,7 +32,7 @@ import (
 type StartVaultFunc func(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	onSync func(paths, assets []string, reload bool),
-	handleError windowport.ErrorHandler,
+	handleError window.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),
@@ -143,7 +144,7 @@ func (e Runtime[H, V]) ReadWholeVault(ctx context.Context, embedder embeddingpor
 func (e Runtime[H, V]) StartVault(
 	ctx context.Context, v domain.Vault, rebuild bool,
 	notified func(paths, assets []string, reload bool),
-	handleError windowport.ErrorHandler,
+	handleError window.ErrorHandler,
 ) (
 	read func(ctx context.Context, during func()) (notes int, err error),
 	run func(ctx context.Context),

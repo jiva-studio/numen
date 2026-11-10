@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 )
 
@@ -23,7 +24,7 @@ import (
 func StreamAgentTask(
 	ctx context.Context,
 	taking agentport.Agent,
-	task agentport.Task,
+	task agent.Task,
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) (err error) {
 	work, err := taking.StartRun(ctx, task)
@@ -54,7 +55,7 @@ func StreamAgentTask(
 	}
 }
 
-func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agentport.Step) (bool, error) {
+func sendStep(stream *connect.ServerStream[v1.AskAgentResponse], step agent.Step) (bool, error) {
 	if step.Kind == domain.StepStop {
 		return true, finishStream(stream, step.Detail)
 	}
@@ -76,7 +77,7 @@ func finishStream(stream *connect.ServerStream[v1.AskAgentResponse], detail stri
 	return stream.Send(&v1.AskAgentResponse{})
 }
 
-func convertSteps(step agentport.Step) []*v1.AskAgentResponse {
+func convertSteps(step agent.Step) []*v1.AskAgentResponse {
 	switch step.Kind {
 	case domain.StepToolCall, domain.StepRead, domain.StepEdit,
 		domain.StepRemove, domain.StepMove, domain.StepSearch:

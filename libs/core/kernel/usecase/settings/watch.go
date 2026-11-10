@@ -1,6 +1,9 @@
 package settings
 
-import "github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+import (
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+)
 
 // Watch follows the settings that change, whoever changes them: a write by a window, a plugin or
 // the palette, and an edit of the file by hand.
@@ -14,6 +17,6 @@ func NewWatch(subscribe settingsport.ChangeSubscriber) *Watch {
 
 // Execute starts listening. Each batch holds the settings that changed together, named by their
 // declared path, once. Calling the returned function stops the delivery.
-func (u *Watch) Execute() (<-chan []Setting, func()) {
+func (u *Watch) Execute() (<-chan []settingsdomain.Setting, func()) {
 	return u.subscribe()
 }

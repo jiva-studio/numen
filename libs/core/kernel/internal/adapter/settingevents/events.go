@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // Values is the value in force of every declared setting as JSON, by its path joined with
@@ -45,7 +45,7 @@ func New() *Events {
 
 // Subscribe starts delivering to a new reader. The first reader starts the watch of the file. The
 // returned function stops the delivery and closes the channel.
-func (e *Events) Subscribe(source Source) (<-chan []settingsport.Setting, func()) {
+func (e *Events) Subscribe(source Source) (<-chan []settings.Setting, func()) {
 	one := newSubscriber()
 	e.mu.Lock()
 	if len(e.subscribers) == 0 {
@@ -108,14 +108,14 @@ func (e *Events) Refresh(read func() (Values, error)) {
 		e.source.Report(err)
 		return
 	}
-	var batch []settingsport.Setting
+	var batch []settings.Setting
 	for _, key := range slices.Sorted(maps.Keys(merge(e.values, now))) {
 		after, isSet := now[key]
 		if !isSet {
 			after = removed
 		}
 		if before, wasSet := e.values[key]; before != after || wasSet != isSet {
-			batch = append(batch, settingsport.Setting{Path: strings.Split(key, pathSeparator), JSON: after})
+			batch = append(batch, settings.Setting{Path: strings.Split(key, pathSeparator), JSON: after})
 		}
 	}
 	e.values = now

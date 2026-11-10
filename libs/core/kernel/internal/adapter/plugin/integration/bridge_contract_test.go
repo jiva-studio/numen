@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // bridgeHost is what every bridge is opened on.
@@ -90,7 +90,7 @@ func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context
 	return problems
 }
 
-func isUnavailable(err error) bool { return errors.Is(err, completionport.ErrUnavailable) }
+func isUnavailable(err error) bool { return errors.Is(err, domain.ErrUnavailable) }
 
 func isNotInstalled(err error) bool {
 	var unavailable *pluginport.UnavailableError

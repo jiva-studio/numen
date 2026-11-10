@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
 
 // The question a plugin sends is read with its messages and its purpose.
@@ -17,7 +17,7 @@ func TestAQuestionIsReadWithItsMessagesAndPurpose(t *testing.T) {
 		Messages: []*v1.CompletionMessage{{Role: "system", Text: "be brief"}, {Role: "user", Text: "hi"}},
 		Purpose:  "proofreading",
 	})
-	if got.Purpose != "proofreading" || len(got.Messages) != 2 || got.Messages[0] != (completionport.Message{Role: "system", Text: "be brief"}) {
+	if got.Purpose != "proofreading" || len(got.Messages) != 2 || got.Messages[0] != (completion.Message{Role: "system", Text: "be brief"}) {
 		t.Errorf("read %+v", got)
 	}
 	if bareMsg := readWireQuestion(nil); len(bareMsg.Messages) != 0 {
@@ -32,7 +32,7 @@ func TestCompletion_ErrorResponseCarriesCode(t *testing.T) {
 		want v1.CompletionErrorCode
 	}{
 		{completion.ErrNoRoute, v1.CompletionErrorCode_COMPLETION_ERROR_CODE_NO_ROUTE},
-		{fmt.Errorf("%w: down", completionport.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE},
+		{fmt.Errorf("%w: down", domain.ErrUnavailable), v1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE},
 	} {
 		if got, isRefusal := writeRefusal(tc.err); !isRefusal || got != tc.want {
 			t.Errorf("%v: got %v, %v; want %v", tc.err, got, isRefusal, tc.want)

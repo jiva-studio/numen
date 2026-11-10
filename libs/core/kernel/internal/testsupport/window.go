@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
@@ -22,15 +23,15 @@ func NewRootedHandler(handler http.Handler, entered, returned chan<- struct{}) h
 // model does.
 type SilentAgent struct{}
 
-func (SilentAgent) StartRun(context.Context, agentport.Task) (agentport.Run, error) {
-	return NoopRun{steps: make(chan agentport.Step)}, nil
+func (SilentAgent) StartRun(context.Context, agent.Task) (agentport.Run, error) {
+	return NoopRun{steps: make(chan agent.Step)}, nil
 }
 
 func (SilentAgent) EndConversation(context.Context, string) error { return nil }
 
 // NoopRun is a run of a SilentAgent: a step never arrives, and stopping it
 // costs nothing.
-type NoopRun struct{ steps chan agentport.Step }
+type NoopRun struct{ steps chan agent.Step }
 
-func (w NoopRun) GetSteps() <-chan agentport.Step { return w.steps }
-func (w NoopRun) Stop() error                     { return nil }
+func (w NoopRun) GetSteps() <-chan agent.Step { return w.steps }
+func (w NoopRun) Stop() error                 { return nil }

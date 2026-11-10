@@ -1,4 +1,4 @@
-// Package theme holds the sentinel errors of the themes plugins contribute.
+// Package theme holds the themes plugins contribute and the errors that fail reading one.
 package theme
 
 import "errors"

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -24,13 +25,13 @@ type ChosenPath struct {
 type ChoosePluginPath struct {
 	dialog  machineport.PathDialog
 	plugins func() []PluginInfo
-	write   func(settings []Setting) error
+	write   func(settings []settingsdomain.Setting) error
 }
 
 // NewChoosePluginPath makes the use case over the picker and the plugins:
 // write writes settings as Write does.
 func NewChoosePluginPath(
-	dialog machineport.PathDialog, plugins func() []PluginInfo, write func(settings []Setting) error,
+	dialog machineport.PathDialog, plugins func() []PluginInfo, write func(settings []settingsdomain.Setting) error,
 ) *ChoosePluginPath {
 	return &ChoosePluginPath{dialog: dialog, plugins: plugins, write: write}
 }
@@ -47,7 +48,7 @@ func (u *ChoosePluginPath) Execute(ctx context.Context, pluginID, key string) (C
 		return ChosenPath{}, err
 	}
 	result := ChosenPath{Path: path, IsChosen: true}
-	return result, u.write([]Setting{{Path: []string{pluginID, key}, JSON: strconv.Quote(path)}})
+	return result, u.write([]settingsdomain.Setting{{Path: []string{pluginID, key}, JSON: strconv.Quote(path)}})
 }
 
 func (u *ChoosePluginPath) findSetting(pluginID, key string) (PluginSetting, error) {

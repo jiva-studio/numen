@@ -1,2 +1,2 @@
-// Package settingsport declares the settings a user configures and the models they choose between.
+// Package settingsport declares how a change of the settings is delivered.
 package settingsport
