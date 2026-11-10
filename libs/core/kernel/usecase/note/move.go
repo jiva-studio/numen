@@ -216,7 +216,7 @@ func (u Move) repair(
 		return linkUntouched, err
 	}
 	raw, err := reader.Read(ctx, in)
-	if errors.Is(err, vaultport.ErrNotExist) {
+	if errors.Is(err, edit.ErrNotExist) {
 		// The note that wrote the link went between the backlinks being read
 		// and this. Its link went with it.
 		return linkUntouched, nil

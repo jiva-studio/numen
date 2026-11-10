@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -98,7 +100,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass never asked for the held note's vectors")
 	}
-	if !events.tasks.Cancel(MakingVectors) {
+	if !events.tasks.Cancel(work.MakingVectors) {
 		t.Fatalf("the vector pass is not cancellable: %+v", events.tasks.List())
 	}
 	select {

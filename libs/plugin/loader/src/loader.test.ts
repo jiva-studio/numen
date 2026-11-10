@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginSettings, PluginLifecycle } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
+import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import type { LoaderHost } from './host'
 import { getPluginStyle, registerPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
@@ -86,9 +87,13 @@ describe('createPluginLoader', () => {
             emitVaultChange: vi.fn(),
             emitFileSelect: vi.fn(),
           },
-          tabs: {},
+          tabs: { open: vi.fn(), navigate: vi.fn(), close: vi.fn() },
           vault: {},
-          ui: { mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })) },
+          ui: {
+            slots: createMockSlotHost(),
+            notices: createMockNoticeHost(),
+            mountView: vi.fn(() => ({ focus: vi.fn(), dispose: vi.fn() })),
+          },
           work: {},
         }
         contexts.set(pluginId, ctx)

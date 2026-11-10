@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { AddressSource } from '@numen/plugin-sdk'
+import type { AddressSource, JsonValue } from '@numen/plugin-sdk'
 import { createSources } from './sources'
 
 const resolve = async (address: string): Promise<AddressSource> => ({
@@ -11,7 +11,7 @@ const resolve = async (address: string): Promise<AddressSource> => ({
       : 'audio/mpeg',
 })
 
-const notesOf = (properties: Record<string, Record<string, unknown>>) => ({
+const notesOf = (properties: Record<string, Record<string, JsonValue>>) => ({
   readProperties: async (path: string) => properties[path] ?? {},
 })
 

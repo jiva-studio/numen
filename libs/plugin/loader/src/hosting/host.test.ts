@@ -13,6 +13,7 @@ import {
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
+import { STUB_AGENT, STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('createPluginHost', () => {
   function createMockDeps(): {
@@ -70,7 +71,7 @@ describe('createPluginHost', () => {
     // Register reader
     const readerSub = ctx.register.reader({
       id: 'custom-pdf',
-      component: null,
+      component: STUB_COMPONENT,
       title: 'Custom PDF',
     })
 
@@ -82,7 +83,7 @@ describe('createPluginHost', () => {
     // Register tab kind
     const tabSub = ctx.register.tabKind({
       kind: 'my-tab',
-      component: null,
+      component: STUB_COMPONENT,
       title: 'My Tab',
     })
     expect(host.registered.getRegisteredTabKinds()).toHaveLength(1)
@@ -161,7 +162,7 @@ describe('createPluginHost', () => {
 
     ctx.register.reader({
       id: 'reader1',
-      component: null,
+      component: STUB_COMPONENT,
     })
     ctx.register.command({
       id: 'cmd1',
@@ -225,9 +226,9 @@ describe('createPluginHost', () => {
       'noext.plugin',
       createMockManifest('noext.plugin', { name: 'No ext', permissions: ['vault:read'] }),
     )
-    ctxNoExt.register.reader({ id: 'r-noext', component: null })
+    ctxNoExt.register.reader({ id: 'r-noext', component: STUB_COMPONENT })
     expect(registerExtensionReader).not.toHaveBeenCalled()
-    const tabSubVoid = ctxNoExt.register.tabKind({ kind: 'void-editor', component: null })
+    const tabSubVoid = ctxNoExt.register.tabKind({ kind: 'void-editor', component: STUB_COMPONENT })
     expect(() => tabSubVoid.dispose()).not.toThrow()
 
     // Host with getReaderExtensions and getTabState returning undefined vs object
@@ -241,7 +242,7 @@ describe('createPluginHost', () => {
     })
     hostWithExt.lifecycle
       .createContext('ext.plugin')
-      .register.reader({ id: 'r-pdf', component: null })
+      .register.reader({ id: 'r-pdf', component: STUB_COMPONENT })
     expect(extCallback).toBeDefined()
 
     // When getTabState returns undefined, selector assignment is skipped without error
@@ -275,7 +276,7 @@ describe('createPluginHost', () => {
     const clearNotices = vi.fn()
     const host = createPluginHost({ ...deps, getNotices, clearNotices })
 
-    host.lifecycle.createContext('test.plugin').ui.notices?.show('Saved.')
+    host.lifecycle.createContext('test.plugin').ui.notices.show('Saved.')
     host.lifecycle.disposePlugin('test.plugin')
 
     expect(getNotices).toHaveBeenCalledWith('test.plugin')
@@ -283,11 +284,13 @@ describe('createPluginHost', () => {
     expect(clearNotices).toHaveBeenCalledWith('test.plugin')
   })
 
-  it('gives a plugin no notices where the window offers none', () => {
+  it('drops what a plugin reports where the window offers no notices', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)
 
-    expect(host.lifecycle.createContext('test.plugin').ui.notices).toBeUndefined()
+    expect(() =>
+      host.lifecycle.createContext('test.plugin').ui.notices.show('Saved.'),
+    ).not.toThrow()
   })
 
   it('gives each plugin the task host for its own id', () => {
@@ -437,7 +440,7 @@ describe('createPluginHost', () => {
 
     const mounted = host.lifecycle
       .createContext('org.example.sample')
-      .ui.mountView(CONVERSATION, panel, { focus: 'Samples/Physics.md' })
+      .ui.mountView(CONVERSATION, panel, { agent: STUB_AGENT, focus: 'Samples/Physics.md' })
     expect(panel.textContent).toBe('Samples/Physics.md')
 
     mounted.dispose()
@@ -452,7 +455,9 @@ describe('createPluginHost', () => {
       .createContext('md.numen.chat')
       .register.view({ capability: CONVERSATION, component: conversation })
     const panel = document.createElement('section')
-    host.lifecycle.createContext('org.example.sample').ui.mountView(CONVERSATION, panel, {})
+    host.lifecycle
+      .createContext('org.example.sample')
+      .ui.mountView(CONVERSATION, panel, { agent: STUB_AGENT, focus: '' })
 
     host.lifecycle.disposePlugin('md.numen.chat')
 
@@ -550,7 +555,9 @@ describe('a view mounted by a plugin', () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
 
-    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, {})).toThrow(/vault:read/)
+    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, { path: '' })).toThrow(
+      /vault:read/,
+    )
     await settle()
 
     expect(read).not.toHaveBeenCalled()
@@ -561,7 +568,7 @@ describe('a view mounted by a plugin', () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
     let reads = 0
-    const context = {
+    const context: NoteEditorContext = {
       get path() {
         return reads++ === 0 ? '' : 'Notes/Example.md'
       },
@@ -577,13 +584,10 @@ describe('a view mounted by a plugin', () => {
   it('refuses to mount the note editor with a context that hides its path from in', async () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
-    const context = new Proxy(
-      {},
-      {
-        has: () => false,
-        get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined),
-      },
-    )
+    const context = new Proxy({} as NoteEditorContext, {
+      has: () => false,
+      get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined),
+    })
 
     expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
     await settle()
@@ -597,7 +601,9 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
     const context: { path?: string } = {}
 
-    expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)
+    expect(() =>
+      createCaller([]).ui.mountView(NOTE_EDITOR, element, context as NoteEditorContext),
+    ).toThrow(/vault:read/)
     context.path = 'Notes/Example.md'
     registerViews()
     await settle()
@@ -630,7 +636,9 @@ describe('a view mounted by a plugin', () => {
     const { read, createCaller } = createHost()
     const element = document.createElement('div')
 
-    expect(() => createCaller([]).ui.mountView(CONVERSATION, element, {})).not.toThrow()
+    expect(() =>
+      createCaller([]).ui.mountView(CONVERSATION, element, { agent: STUB_AGENT, focus: '' }),
+    ).not.toThrow()
     await settle()
 
     expect(element.textContent).toBe('conversation')

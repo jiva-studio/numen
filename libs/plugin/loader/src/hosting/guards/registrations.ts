@@ -6,8 +6,8 @@ import type {
   CommandRegistration,
   Disposable,
   DropRegistration,
-  MountedView,
   PluginRegistrations,
+  PluginUi,
   ReaderRegistration,
   SettingsViewRegistration,
   SlotViewRegistration,
@@ -44,7 +44,7 @@ export function createRegistrations(
     settingsView: (reg: SettingsViewRegistration) =>
       add(host.registration.registerSettingsView(pluginId, reg)),
     slotView,
-    tabKind: <State>(reg: TabKindRegistration<State>) =>
+    tabKind: <State extends object>(reg: TabKindRegistration<State>) =>
       add(host.registration.registerTabKind(pluginId, reg)),
     command: (reg: CommandRegistration) => add(host.registration.registerCommand(pluginId, reg)),
     agentProvider: (reg: AgentProviderRegistration) =>
@@ -58,7 +58,7 @@ export function createRegistrations(
 export function createMountView(
   host: PluginContextHost,
   guard: RegistrationGuard,
-): (capability: string, element: HTMLElement, context: unknown) => MountedView {
+): PluginUi['mountView'] {
   const { target, add } = guard
   return (capability, element, context) => {
     const access = requireMountAccess(capability, target)

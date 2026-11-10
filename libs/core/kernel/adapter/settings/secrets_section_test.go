@@ -77,7 +77,7 @@ func TestAWriteOfAnotherSettingKeepsTheSecretsSectionAsItWas(t *testing.T) {
 	path := write(t, `{`+validSecretsSection+`}`)
 	cfg := container.NewConfig(container.Config{SettingsPath: path})
 
-	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{
+	err := container.GetSettingsWriter(cfg)([]settingsdomain.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -101,7 +101,7 @@ func TestAWriteAtTheSecretsSectionIsRejectedAndTheFileIsUnchanged(t *testing.T) 
 	cfg := container.NewConfig(container.Config{SettingsPath: path})
 
 	for _, target := range [][]string{{"secrets"}, {"secrets", "0", "allowed"}} {
-		err := cfg.GetSettingsWriter()([]settingsdomain.Setting{{Path: target, JSON: `[]`}})
+		err := container.GetSettingsWriter(cfg)([]settingsdomain.Setting{{Path: target, JSON: `[]`}})
 		if err == nil {
 			t.Errorf("a write at %v was accepted", target)
 		}

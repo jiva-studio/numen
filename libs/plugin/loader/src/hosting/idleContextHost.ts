@@ -18,7 +18,7 @@ export interface IdleContextHostParts {
   readonly views: Pick<ContextViewHost, 'registerView' | 'registerSlotView' | 'mountView'>
   readonly tabs?: ContextTabHost
   readonly vault?: ContextVaultHost
-  readonly window?: ContextWindowHost
+  readonly window: Pick<ContextWindowHost, 'getSlots' | 'getNotices'> & Partial<ContextWindowHost>
 }
 
 /**
@@ -50,6 +50,6 @@ export function createIdleContextHost(parts: IdleContextHostParts): PluginContex
     },
     tabs: parts.tabs ?? {},
     vault: parts.vault ?? {},
-    window: parts.window ?? {},
+    window: parts.window,
   }
 }

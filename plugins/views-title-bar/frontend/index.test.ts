@@ -11,11 +11,12 @@ import {
 import {
   SLOT,
   type AppInfo,
+  type JsonValue,
   type PluginContext,
   type SlotViewRegistration,
 } from '@numen/plugin-sdk'
 import { activate, TITLE_BAR_VIEW } from './index'
-import { command, separator, submenu, view } from './testing/entries'
+import { command, commandWithoutIcon, separator, submenu, view } from './testing/entries'
 
 const manifest = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../manifest.json'), 'utf8'),
@@ -37,7 +38,7 @@ const mounted: VueWrapper[] = []
 
 interface Options {
   readonly platform?: AppInfo['platform']
-  readonly settings?: Record<string, unknown>
+  readonly settings?: Record<string, JsonValue>
 }
 
 const activateBar = ({ platform = 'windows', settings = {} }: Options = {}) => {
@@ -139,7 +140,7 @@ describe('the commands of the slots', () => {
   it('writes the title as the button of a command without an icon', async () => {
     const { context, bar } = mountBar()
 
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [command('chart.open', { icon: undefined })])
+    context.ui.slots.setEntries(SLOT.titleBarCommands, [commandWithoutIcon('chart.open')])
     await nextTick()
 
     expect(getButton(bar, 'org.example.tide:chart.open').text()).toBe('Open chart.open')
@@ -529,7 +530,7 @@ describe('the bar in a window that offers no slots, vaults or window', () => {
   it('draws the title of the application and no entry', () => {
     const registerSlotView = vi.fn(() => ({ dispose: () => undefined }))
     const mock = createMockPluginContext()
-    const { slots: _slots, window: _window, ...ui } = mock.ui
+    const { window: _window, ...ui } = mock.ui
     const { vaults: _vaults, ...vault } = mock.vault
     const context: PluginContext = {
       ...mock,

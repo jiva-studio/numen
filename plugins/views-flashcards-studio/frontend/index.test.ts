@@ -51,26 +51,6 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredViews().map((one) => one.capability)).toStrictEqual([VAULT_SUMMARY])
   })
 
-  it('refuses to draw the review in a window that offers no notices', () => {
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
-      closeTab: vi.fn(),
-      agent: createMockAgentHost(),
-    })
-
-    expect(() => activate(ctx)).toThrow(/notices/)
-  })
-
-  it('refuses to draw the review in a window that cannot close its tab', () => {
-    const ctx = createMockPluginContext({
-      target: 'desktop.flashcards',
-      notices: createMockNoticeHost(),
-      agent: createMockAgentHost(),
-    })
-
-    expect(() => activate(ctx)).toThrow(/tabs/)
-  })
-
   it('refuses to draw the review in a window that offers no agent', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',

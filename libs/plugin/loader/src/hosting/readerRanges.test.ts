@@ -8,10 +8,14 @@ import { getReaderTabKind } from './customTabKind'
 import { createPluginHost } from './host'
 import type { SourceReader } from './tabKinds'
 import type { PluginHostDeps } from './types'
+import { STUB_COMPONENT } from '../testing/stubComponent'
 
 describe('the ranges of a reader tab', () => {
   it('are none on a tab just opened', () => {
-    const kind = getReaderTabKind('sample.plugin', { id: 'reader:bin', component: null })
+    const kind = getReaderTabKind('sample.plugin', {
+      id: 'reader:bin',
+      component: STUB_COMPONENT,
+    })
 
     const state = kind.open('library/Birds.bin', 'tab-1') as { ranges?: unknown }
 
@@ -34,7 +38,7 @@ describe('the ranges of a reader tab', () => {
     }
     createPluginHost(deps)
       .lifecycle.createContext('sample.plugin')
-      .register.reader({ id: 'reader:bin', component: null })
+      .register.reader({ id: 'reader:bin', component: STUB_COMPONENT })
     const ranges: readonly TextRange[] = [
       { start: 1500, end: 1580 },
       { start: 400, end: 1100 },

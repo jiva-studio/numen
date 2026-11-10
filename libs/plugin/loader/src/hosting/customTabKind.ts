@@ -15,7 +15,9 @@ import {
 } from 'vue'
 import {
   isNotePath,
+  type EditorHandle,
   type PluginContext,
+  type ReaderHandle,
   type ReaderRegistration,
   type Selector,
   type TabKindRegistration,
@@ -37,7 +39,7 @@ import {
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'
-import { BUFFERED_FIELDS, NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
+import { NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
   pluginIdOrComponent: string | unknown,
@@ -102,6 +104,7 @@ const isSelector = (value: unknown): value is Selector =>
 
 const createReaderState = (pluginId: string, targetPath: string, saved: unknown) => {
   const place = isSelector(saved) ? saved : null
+  let reader: ReaderHandle | null = null
   const state = reactive({
     path: targetPath,
     file: targetPath,
@@ -114,6 +117,11 @@ const createReaderState = (pluginId: string, targetPath: string, saved: unknown)
       state.place = next
     },
     reported: null as TabPlace | null,
+    attachReader: (attached: ReaderHandle | null): void => {
+      reader = attached
+    },
+    focusTab: (): void => reader?.focus(),
+    measure: (): void => reader?.measure(),
     reportPlace: (next: TabPlace) => {
       state.reported = next
     },
@@ -138,7 +146,7 @@ export function getReaderTabKind(
   return {
     kind: kindId,
     pluginId,
-    ...(registration.icon ? { icon: registration.icon as Component } : {}),
+    ...(registration.icon ? { icon: registration.icon } : {}),
     open: (targetPath: string, _id: string, saved?: unknown) =>
       createReaderState(pluginId, targetPath, saved),
     getState: (state: unknown) =>
@@ -174,64 +182,6 @@ export function getReaderTabKind(
   }
 }
 
-const FORBIDDEN_ACTION_NAMES = new Set([
-  'at',
-  'path',
-  'file',
-  'pluginId',
-  'title',
-  'note',
-  'errorMessage',
-  'isLoading',
-  'body',
-  'updateBody',
-  'save',
-  'navigate',
-  ...BUFFERED_FIELDS,
-])
-
-function bindCustomTabHandlers(
-  tabId: string,
-  actions: Record<string, unknown>,
-  handlers: Record<string, (targetPath: string, ...args: unknown[]) => void> | undefined,
-): void {
-  if (!handlers) return
-  for (const [name, handler] of Object.entries(handlers)) {
-    if (FORBIDDEN_ACTION_NAMES.has(name) || actions[name]) continue
-    actions[name] = (...args: unknown[]) => handler(tabId, ...args)
-  }
-}
-
-function appendHostActions(
-  tabId: string,
-  actions: Record<string, unknown>,
-  deps?: PluginHostDeps,
-): void {
-  if (!deps) return
-  bindCustomTabHandlers(tabId, actions, deps.tabActionHandlers)
-  const onTabAction = deps.onTabAction
-  if (onTabAction && !actions.dispatch) {
-    actions.dispatch = (action: string, ...args: unknown[]) => onTabAction(action, tabId, ...args)
-  }
-}
-
-function createTabActions(
-  tabId: string,
-  registration: TabKindRegistration,
-  deps?: PluginHostDeps,
-): Record<string, unknown> {
-  const actions: Record<string, unknown> = {}
-
-  for (const [actionName, handler] of Object.entries(registration.actions ?? {})) {
-    if (!FORBIDDEN_ACTION_NAMES.has(actionName)) {
-      actions[actionName] = (...args: unknown[]) => handler(tabId, ...args)
-    }
-  }
-
-  appendHostActions(tabId, actions, deps)
-  return actions
-}
-
 interface CustomTabStateDeps {
   readonly pluginId: string
   readonly registration: TabKindRegistration
@@ -245,6 +195,7 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
   const isLoading = ref(false)
   let currentPath = targetPath
   let hasEdited = false
+  let editor: EditorHandle | null = null
   let write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
   const readAt = (pathToRead: string): void => {
@@ -270,6 +221,10 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     errorMessage: errorMessageRef,
     isLoading,
     body: computed(() => noteRef.value.body),
+    attachEditor: (attached: EditorHandle | null): void => {
+      editor = attached
+    },
+    measure: (): void => editor?.measure?.(),
     updateBody: (body: string) => {
       hasEdited = true
       noteRef.value = { path: currentPath, body }
@@ -291,7 +246,6 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
       write = createNoteWriter(nextPath, deps.hostDeps?.writeNote, errorMessageRef)
       readAt(nextPath)
     },
-    ...createTabActions(targetPath, deps.registration, deps.hostDeps),
   })
   return state
 }
@@ -348,7 +302,6 @@ export function getCustomTabKind(
         { targetPath, id, buffer },
         {
           pluginId,
-          actions: createTabActions(targetPath, registration, deps),
           deps,
         },
       )

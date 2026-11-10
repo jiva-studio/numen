@@ -17,7 +17,7 @@ const createContext = () => {
 const createWindow = () => {
   let getKinds = (): readonly TabKindRegistration[] => []
   const tabOpens: (readonly [string, string])[] = []
-  const tabs: { kind: string; state: unknown }[] = []
+  const tabs: { kind: string; state: object }[] = []
   const navigateTab = async (kind: string, path: string): Promise<string> => {
     const registration = getKinds().find((one) => one.kind === kind)!
     const last = tabs.filter((one) => one.kind === kind).at(-1)

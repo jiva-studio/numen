@@ -7,7 +7,12 @@
  */
 import { watch, type Component } from 'vue'
 import { Waypoints } from '@lucide/vue'
-import { isNotePath, type TabKindRegistration, type VaultChangeEvent } from '@numen/plugin-sdk'
+import {
+  isNotePath,
+  type JsonValue,
+  type TabKindRegistration,
+  type VaultChangeEvent,
+} from '@numen/plugin-sdk'
 import { createPlexTab } from './usePlexTab'
 import { createPlexTabDeps, type PlexHost } from './tabDeps'
 import { WORDS as words } from '../words'
@@ -17,11 +22,11 @@ import type { PlexTabState, PlexView } from '../types'
 export const PLEX = 'plex'
 
 /** What a plex tab saves across restarts: the note in focus. */
-interface PlexSavedState {
+type PlexSavedState = {
   readonly focus: string
 }
 
-const readSavedFocus = (saved: unknown): string => {
+const readSavedFocus = (saved: JsonValue | undefined): string => {
   const focus = (saved as Partial<PlexSavedState> | null | undefined)?.focus
   return typeof focus === 'string' ? focus : ''
 }

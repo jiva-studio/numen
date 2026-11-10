@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -50,8 +51,8 @@ func (u *FocusPassages) Execute(ctx context.Context, v domain.Vault, in FocusPas
 		return err
 	}
 	_, err = reader.StatFile(ctx, in.Path)
-	if vaultport.IsNoNote(err) {
-		return fmt.Errorf("no file at %s: %w", in.Path, vaultport.ErrNotExist)
+	if edit.IsNoNote(err) {
+		return fmt.Errorf("no file at %s: %w", in.Path, edit.ErrNotExist)
 	}
 	if err != nil {
 		return err

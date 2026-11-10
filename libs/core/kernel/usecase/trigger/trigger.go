@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -93,7 +94,7 @@ func (u *Triggers) Execute(ctx context.Context, v domain.Vault, paths []string) 
 	return u.execute(ctx, v, func(reader vaultport.VaultReader, each func(domain.FileStat) error) error {
 		for _, path := range paths {
 			stat, err := reader.StatFile(ctx, path)
-			if errors.Is(err, vaultport.ErrNotExist) {
+			if errors.Is(err, edit.ErrNotExist) {
 				continue
 			}
 			if err != nil {

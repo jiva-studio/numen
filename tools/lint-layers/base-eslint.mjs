@@ -474,6 +474,17 @@ export function createBaseConfig(dirname, options = {}) {
 }
 
 /**
+ * Bans `unknown` in the exported declarations of the given files, which are a contract other code
+ * is written against.
+ *
+ * @param {string[]} files The globs of the files; tests are left out
+ * @returns {object}
+ */
+export function createNoUnknownContractConfig(files) {
+  return { files, ignores: ['**/*.test.ts', '**/*.spec.ts'], plugins: { numen: numenPlugin }, rules: { 'numen/no-unknown-in-contract': 'error' } }
+}
+
+/**
  * The flat configuration of a TypeScript library without Vue (`libs/core/client`,
  * `libs/plugin/loader`): the strict rules, the size limits, the package boundary and the
  * determinism of its sources.

@@ -50,7 +50,7 @@ describe('a start cancelled at the limit', () => {
         context.vault.vaults?.watch(() => undefined)
         context.ui.window?.watch(() => undefined)
         context.vault.buffers?.addFlushHandler(async () => undefined)
-        context.ui.mountView('conversation', {} as HTMLElement, {})
+        context.ui.mountView('note-editor', {} as HTMLElement, { path: 'a.md' })
         context.plugin.subscriptions.push(pushed)
       },
     }))

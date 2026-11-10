@@ -2,17 +2,13 @@
 /**
  * Standalone Markdown and plain text editor tab component using CodeMirror 6.
  */
-import { computed, ref, useTemplateRef, watch, type Ref } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from '../editor'
 import type { Extension } from '@codemirror/state'
-import { createWikilinkExtension, type WikilinkOptions } from '../lib/wikilinks'
+import type { EditorHandle, NoteTabState } from '@numen/plugin-sdk'
+import { createWikilinkExtension } from '../lib/wikilinks'
 import { editorPreferences } from '../model/preferences'
-import {
-  getEditorLanguage,
-  readFileConflict,
-  useMarkdownDocument,
-  type EditorHandle,
-} from '../model/useMarkdownDocument'
+import { getEditorLanguage, useMarkdownDocument } from '../model/useMarkdownDocument'
 import { Button } from '@numen/ui'
 import { WORDS } from '../words'
 
@@ -21,10 +17,10 @@ interface Props {
   readonly modelValue?: string
   readonly path?: string
   readonly filePath?: string
-  readonly errorMessage?: string | Readonly<Ref<string>>
+  readonly errorMessage?: string
   readonly isReadOnly?: boolean
   readonly extensions?: Extension | readonly Extension[] | undefined
-  readonly state?: Record<string, unknown> | undefined
+  readonly state?: NoteTabState | undefined
   readonly softWrap?: boolean | undefined
   readonly lineNumbers?: boolean | undefined
   readonly tabSize?: number | undefined
@@ -83,13 +79,12 @@ const {
 /** The completion of wikilinks over the notes the host offers, unless the caller passes extensions. */
 const editorExtensions = computed(() => {
   if (props.extensions) return props.extensions as Extension
-  const links = props.state?.['wikilinks'] as
-    Pick<WikilinkOptions, 'search' | 'headings'> | undefined
+  const links = props.state?.wikilinks
   return links ? createWikilinkExtension(links) : undefined
 })
 
 const editorLanguage = computed(() => getEditorLanguage(props))
-const fileConflict = computed(() => readFileConflict(props.state?.['fileConflict']))
+const fileConflict = computed(() => props.state?.fileConflict?.value ?? null)
 
 const DEFAULT_TAB_SIZE = 2
 const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
@@ -103,13 +98,11 @@ watch(displayErrorMessage, () => {
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKeep() {
-  const keep = props.state?.['keepMine']
-  if (typeof keep === 'function') keep()
+  props.state?.keepMine?.()
 }
 
 function onTake() {
-  const take = props.state?.['takeFile']
-  if (typeof take === 'function') take()
+  props.state?.takeFile?.()
 }
 
 function onDismiss() {
@@ -118,8 +111,7 @@ function onDismiss() {
 
 function onOpen(url: string) {
   emit('open', url)
-  const follow = props.state?.['followLink']
-  if (typeof follow === 'function') follow(url)
+  props.state?.followLink?.(url)
 }
 </script>
 

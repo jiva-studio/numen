@@ -22,7 +22,7 @@ import (
 // The sizes are part of what a chunk is kept under, and the one thing that
 // assembles a cut carries them.
 func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
-	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,7 +31,7 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	target := container.NewConfig(container.Config{ServiceDir: ".numen"})
 	target.Chunks.Set(512)
 
-	trimmed, err := target.IndexTexts(db, domain.Vault{ID: "v", Path: t.TempDir()})
+	trimmed, err := container.IndexTexts(target, db, domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestSplitNotes_LimitFollowsTheChunkTokens(t *testing.T) {
 // vectors for are its small ones, and each is under the input limit of the
 // model that will embed it.
 func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
-	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	target.Chunks.Set(maxTokens)
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	_, err = target.ReadWholeVault(t.Context(), db, wide{384}, v)
+	_, err = container.ReadWholeVault(target, t.Context(), db, wide{384}, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +105,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 // The vector index is built for one width, and the width is the model's.
 // Whichever entry point makes a vault searchable settles it.
 func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
-	db, err := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}).OpenIndex(t.Context())
+	db, err := container.OpenIndex(container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")}), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,12 +114,12 @@ func TestMakingAVaultSearchableFitsTheVectorIndex(t *testing.T) {
 	target := container.NewConfig(container.Config{ServiceDir: ".numen"})
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
-	if _, err := target.ReadWholeVault(t.Context(), db, wide{384}, v); err != nil {
+	if _, err := container.ReadWholeVault(target, t.Context(), db, wide{384}, v); err != nil {
 		t.Fatal(err)
 	}
 	// A width the index cannot be built for prevents anything from becoming
 	// searchable, and it is detected before any vector is requested.
-	_, err = target.ReadWholeVault(t.Context(), db, wide{0}, v)
+	_, err = container.ReadWholeVault(target, t.Context(), db, wide{0}, v)
 	if err == nil || !strings.Contains(err.Error(), "not a vector") {
 		t.Fatalf("got %v", err)
 	}

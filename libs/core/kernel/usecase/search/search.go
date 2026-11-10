@@ -9,6 +9,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
@@ -339,7 +340,7 @@ func fillSource(
 	}
 	first := found[indices[0]]
 	prose, version, err := of.getText(ctx, source, first.Producer)
-	if vaultport.IsNoNote(err) || errors.Is(err, errUnreadable) {
+	if edit.IsNoNote(err) || errors.Is(err, errUnreadable) {
 		return nil
 	}
 	if err != nil {

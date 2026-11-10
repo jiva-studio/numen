@@ -22,13 +22,6 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	return func(where cli.Locations) cli.Deps {
 		cfg = configureLocations(cfg, where)
 
-		return cli.Deps{
-			Vaults:         cfg.OpenCLIVaults,
-			Links:          cfg.OpenCLILinks,
-			Scan:           cfg.OpenCLIScan,
-			Search:         cfg.OpenCLISearch,
-			Problems:       cfg.OpenCLIProblems,
-			PluginCommands: cfg.GetCLIPluginCommands,
-		}
+		return container.OpenCLI(cfg)
 	}
 }

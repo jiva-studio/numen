@@ -5,6 +5,7 @@
  */
 import { computed, onMounted } from 'vue'
 import { Button, SegmentedControl, Slider } from '@numen/ui'
+import type { JsonValue } from '@numen/plugin-sdk'
 import { useFloor } from '../model/useFloor'
 import { formatFloor, formatNoise, getCalibrationNote, getSourceLabel } from '../model/present'
 import type { FloorClient } from '../model/types'
@@ -15,7 +16,7 @@ import { SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, WORDS } from '../lib/words'
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   pluginId: string
-  values: Record<string, unknown>
+  values: Readonly<Record<string, JsonValue>>
   client?: FloorClient
 }>()
 

@@ -13,14 +13,9 @@ import (
 // ErrClosing is returned for work requested after the window began closing.
 var ErrClosing = errors.New("the window is closing")
 
-// OpenerFactory provides a VaultOpener for an index.
-type OpenerFactory[I any] interface {
-	VaultOpener(I) *VaultOpener
-}
-
 // OpenVaults is every vault this window has open.
-type OpenVaults[C OpenerFactory[I], I any] struct {
-	Config      C
+type OpenVaults[I any] struct {
+	Opener      func(I) *VaultOpener
 	Index       I
 	Label       string
 	RecordVault func(domain.Vault)
@@ -41,7 +36,7 @@ type openedVault struct {
 }
 
 // CloseAndWait releases every vault and holds until nothing is still writing to the index.
-func (o *OpenVaults[C, I]) CloseAndWait() {
+func (o *OpenVaults[I]) CloseAndWait() {
 	o.mu.Lock()
 	o.isClosing = true
 	cancels := o.cancels
@@ -54,7 +49,7 @@ func (o *OpenVaults[C, I]) CloseAndWait() {
 	o.running.Wait()
 }
 
-func (o *OpenVaults[C, I]) tryBeginWork() bool {
+func (o *OpenVaults[I]) tryBeginWork() bool {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -65,7 +60,7 @@ func (o *OpenVaults[C, I]) tryBeginWork() bool {
 	return true
 }
 
-func (o *OpenVaults[C, I]) getOpenedVault(ctx context.Context, v domain.Vault) *openedVault {
+func (o *OpenVaults[I]) getOpenedVault(ctx context.Context, v domain.Vault) *openedVault {
 	o.mu.Lock()
 	one, there := o.opened[v.ID]
 	if !there {
@@ -81,8 +76,8 @@ func (o *OpenVaults[C, I]) getOpenedVault(ctx context.Context, v domain.Vault) *
 	return one
 }
 
-func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *openedVault) {
-	opening := o.Config.VaultOpener(o.Index)
+func (o *OpenVaults[I]) openVault(ctx context.Context, v domain.Vault, one *openedVault) {
+	opening := o.Opener(o.Index)
 	opening.Told = func(VaultChanges) { o.RecordVault(v) }
 	opening.ErrorHandler = func(err error) {
 		if err != nil {
@@ -113,7 +108,7 @@ func (o *OpenVaults[C, I]) openVault(ctx context.Context, v domain.Vault, one *o
 	}
 }
 
-func (o *OpenVaults[C, I]) writeOutput(format string, args ...any) {
+func (o *OpenVaults[I]) writeOutput(format string, args ...any) {
 	if _, err := fmt.Fprintf(o.Out, format, args...); err != nil {
 		o.mu.Lock()
 		o.outputErr = errors.Join(o.outputErr, err)
@@ -121,7 +116,7 @@ func (o *OpenVaults[C, I]) writeOutput(format string, args ...any) {
 	}
 }
 
-func (o *OpenVaults[C, I]) takeOutputError() error {
+func (o *OpenVaults[I]) takeOutputError() error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	err := o.outputErr
@@ -130,7 +125,7 @@ func (o *OpenVaults[C, I]) takeOutputError() error {
 }
 
 // IndexVault scans a vault and adds its files to the index.
-func (o *OpenVaults[C, I]) IndexVault(ctx context.Context, v domain.Vault) error {
+func (o *OpenVaults[I]) IndexVault(ctx context.Context, v domain.Vault) error {
 	if !o.tryBeginWork() {
 		return ErrClosing
 	}
@@ -141,7 +136,7 @@ func (o *OpenVaults[C, I]) IndexVault(ctx context.Context, v domain.Vault) error
 }
 
 // UpdateIndex brings the paths a write touched up to date, through the opening of the vault they are in.
-func (o *OpenVaults[C, I]) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
+func (o *OpenVaults[I]) UpdateIndex(ctx context.Context, v domain.Vault, paths []string) error {
 	if !o.tryBeginWork() {
 		return ErrClosing
 	}
@@ -152,4 +147,4 @@ func (o *OpenVaults[C, I]) UpdateIndex(ctx context.Context, v domain.Vault, path
 }
 
 // OpenedCount returns the number of opened vaults.
-func (o *OpenVaults[C, I]) OpenedCount() int { return len(o.opened) }
+func (o *OpenVaults[I]) OpenedCount() int { return len(o.opened) }

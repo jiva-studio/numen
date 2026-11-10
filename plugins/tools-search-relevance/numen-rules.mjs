@@ -715,6 +715,37 @@ export default {
       },
     },
 
+    'no-unknown-in-contract': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Forbid `unknown` in an exported declaration of a contract: name the real type, JsonValue for a value that crosses as JSON, or Caught for a caught error',
+        },
+        messages: {
+          unknownInContract:
+            'A contract does not say `unknown`. Name the type, use JsonValue for JSON, or Caught for a caught value.',
+        },
+      },
+      create(context) {
+        const isInside = (node, type) => {
+          for (let up = node.parent; up; up = up.parent) if (up.type === type) return true
+          return false
+        }
+        const isCaughtAlias = (node) => {
+          const alias = node.parent
+          return alias?.type === 'TSTypeAliasDeclaration' && alias.id.name === 'Caught'
+        }
+        return {
+          TSUnknownKeyword(node) {
+            if (!isInside(node, 'ExportNamedDeclaration')) return
+            if (isInside(node, 'BlockStatement') || isCaughtAlias(node)) return
+            context.report({ node, messageId: 'unknownInContract' })
+          },
+        }
+      },
+    },
+
     'no-comment-only-catch': {
       meta: {
         type: 'problem',

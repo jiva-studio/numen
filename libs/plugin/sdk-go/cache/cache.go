@@ -111,7 +111,7 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 			opt(&cfg)
 		}
 	}
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the clock is read only when a TTL or a failure backoff is set, and the one test that passes a nil clock sets neither"
 	if cfg.clock == nil {
 		cfg.clock = clock.System{}
 	}
@@ -336,7 +336,7 @@ func (c *Cache[V]) loadDiskOrFetchSyncLocked(ctx context.Context, key string, lo
 		return diskVal, true, nil
 	}
 	c.mu.Lock()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="Get checked freshness before it released the lock; this repeats the check after the lock is taken again, and only a load finished in between changes the answer"
 	if current, ok := c.entries[key]; ok && c.isFreshLocked(current.fetchedAt) {
 		c.mu.Unlock()
 		return current.value, true, nil
@@ -408,7 +408,7 @@ func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V]
 }
 
 func (c *Cache[V]) cachePath() (string, error) {
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="shouldUseDiskLocked returns false for a cache without a name, so the callers that reach the disk have a name and this guard repeats that check"
 	if c.name == "" {
 		return "", errors.New("cache name is empty")
 	}
@@ -484,19 +484,19 @@ func getGrantedDir(name string) (string, error) {
 func (c *Cache[V]) readDiskEntry(key string) (V, bool) {
 	var zero V
 	path, err := c.cachePath()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="without the return the empty path makes ReadFile fail and take the same return a few lines below"
 	if err != nil {
 		return zero, false
 	}
 	c.diskMu.Lock()
 	data, err := os.ReadFile(path)
 	c.diskMu.Unlock()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="without the return the empty data makes the decode below fail and take the same return"
 	if err != nil {
 		return zero, false
 	}
 	var all map[string]V
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="without the return the lookup below reads a map that is empty when the input is not valid JSON and gives the same zero and false"
 	if json.Unmarshal(data, &all) != nil {
 		return zero, false
 	}
@@ -539,12 +539,12 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 	}
 	all[key] = val
 	data, err := json.Marshal(all)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="json.Marshal of a map keyed by strings fails only for a value type that JSON cannot encode, which no test stores"
 	if err != nil {
 		return err
 	}
 	dir := filepath.Dir(path)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
@@ -553,18 +553,18 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 
 func writeFileAtomic(dir, path string, data []byte) error {
 	tmp, err := os.CreateTemp(dir, ".cache-*.tmp")
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return err
 	}
 	tmpName := tmp.Name()
 	_, writeErr := tmp.Write(data)
 	closeErr := tmp.Close()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := errors.Join(writeErr, closeErr); err != nil {
 		return errors.Join(err, os.Remove(tmpName))
 	}
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := os.Rename(tmpName, path); err != nil {
 		return errors.Join(err, os.Remove(tmpName))
 	}

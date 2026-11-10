@@ -13,12 +13,16 @@ import {
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
+import {
+  createMockCommandsHost,
+  createMockNoticeHost,
+  createMockSlotHost,
+} from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
 
-/** A host that offers no service: every part of it is empty. */
+/** A host that offers no service: every part of it is empty, but for the notices and slots every window has. */
 const NO_SERVICES = {
   info: {},
   registration: {},
@@ -27,7 +31,7 @@ const NO_SERVICES = {
   events: {},
   tabs: {},
   vault: {},
-  window: {},
+  window: { getNotices: () => createMockNoticeHost(), getSlots: () => createMockSlotHost() },
 } as unknown as PluginContextHost
 
 const createServices = () => {
@@ -86,6 +90,8 @@ const createServices = () => {
       getAgent: () => agent,
       getWorkspace: () => workspace,
       getCommands: () => commands,
+      getNotices: () => createMockNoticeHost(),
+      getSlots: () => createMockSlotHost(),
     },
   } as unknown as PluginContextHost
   return { host, workspace, notes, relations, files, agent, buffers, commands }

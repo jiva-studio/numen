@@ -5,6 +5,7 @@ import type {
   BufferHost,
   Disposable,
   FileSelectEvent,
+  JsonValue,
   PluginContext,
   PluginEvents,
   PluginSettings,
@@ -51,8 +52,9 @@ const EDITOR_TARGET = 'desktop.editor'
 
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
-    get: <T = unknown>(key: string) => host.settings.getSetting<T>(pluginId, key),
-    onChange: <T = unknown>(key: string, h: (v: T) => void) =>
+    get: <T extends JsonValue = JsonValue>(key: string) =>
+      host.settings.getSetting<T>(pluginId, key),
+    onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
       add(host.settings.onSettingChange<T>(pluginId, key, h)),
   }
 }
@@ -100,14 +102,16 @@ function createVault(pluginId: string, host: PluginContextHost, add: Track): Plu
 }
 
 function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
-  return pickDefined<Omit<PluginUi, 'mountView'>>({
-    workspace: host.window.getWorkspace?.(),
-    window: host.window.getWindow?.(),
-    commands: host.window.getCommands?.(),
-    slots: host.window.getSlots?.(),
-    notices: host.window.getNotices?.(pluginId),
-    drops: host.views.drops,
-  })
+  return {
+    ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
+      workspace: host.window.getWorkspace?.(),
+      window: host.window.getWindow?.(),
+      commands: host.window.getCommands?.(),
+      drops: host.views.drops,
+    }),
+    slots: host.window.getSlots(),
+    notices: host.window.getNotices(pluginId),
+  }
 }
 
 function createUiService(

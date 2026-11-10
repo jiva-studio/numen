@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // ErrNoNotePath is returned by a focus with no path.
@@ -31,7 +31,7 @@ func NewFocusNote(queries noteport.NoteRefs, view PlaceFocus) *FocusNote {
 }
 
 // Execute puts the note at path in focus and returns its reference. A path with no note in the
-// index returns vaultport.ErrNotExist.
+// index returns edit.ErrNotExist.
 func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error) {
 	if path == "" {
 		return domain.NoteRef{}, plugin.InvalidFocus(ErrNoNotePath)
@@ -42,7 +42,7 @@ func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (d
 	}
 	ref, recognized := found[path]
 	if !recognized {
-		return domain.NoteRef{}, fmt.Errorf("no note at %s: %w", path, vaultport.ErrNotExist)
+		return domain.NoteRef{}, fmt.Errorf("no note at %s: %w", path, edit.ErrNotExist)
 	}
 	if err := u.view.FocusPlace(ctx, domain.Place{Path: path}); err != nil {
 		return domain.NoteRef{}, err

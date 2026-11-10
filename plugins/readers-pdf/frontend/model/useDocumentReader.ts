@@ -7,7 +7,6 @@ import type { TextRange } from '../types'
 import { useDocumentNavigation } from './useDocumentNavigation'
 import { useDocumentViewport } from './useDocumentViewport'
 import { useDocumentHighlights } from './useDocumentHighlights'
-import { documents as servedDocuments } from '../api/wire'
 import type { DocumentLayout, Documents, Page, PageHighlight, Rect } from '../types'
 
 export type { DocumentLayout, Documents, Page, PageHighlight, Rect }
@@ -39,9 +38,7 @@ function createDocumentReaderNavigation(
   return { goToPage, goToNextPage, goToPreviousPage, focusSpans }
 }
 
-export function useDocumentReader(documentsOrPath: Documents | string, maybePath?: string) {
-  const documents = typeof documentsOrPath === 'string' ? servedDocuments : documentsOrPath
-  const path = typeof documentsOrPath === 'string' ? documentsOrPath : maybePath!
+export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
   const stat = ref<string>()
   const error = ref('')

@@ -1,8 +1,8 @@
 package container_test
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -40,16 +40,16 @@ type windowVaults struct {
 	db       *vault.Index
 }
 
-func (w windowVaults) GetRefresh() vault.Refresh { return w.cfg.GetRefresh(w.db) }
+func (w windowVaults) GetRefresh() vault.Refresh { return container.GetRefresh(w.cfg, w.db) }
 
 func (w windowVaults) OpenNotes(index edit.IndexUpdater) note.Scenarios {
-	return w.cfg.Notes(w.db, index)
+	return container.Notes(w.cfg, w.db, index)
 }
 
 func (w windowVaults) OpenPluginVault(
 	current func() (domain.Vault, bool), hooks container.PluginVaultHooks,
 ) (*hostendpoint.VaultAccess, error) {
-	if err := w.cfg.InstallPluginVault(w.registry, w.db, current, hooks); err != nil {
+	if err := container.InstallPluginVault(w.cfg, w.registry, w.db, current, hooks); err != nil {
 		return nil, err
 	}
 	return w.cfg.PluginHost.GetPluginVault(), nil

@@ -10,6 +10,7 @@ import (
 
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -278,7 +279,7 @@ func TestEveryNamedPathIsSortedIntoItsOutcome(t *testing.T) {
 	w.addNote("Settled.md", "settled", old)
 	w.index("Settled.md")
 	w.files["Gone.md"] = &memFile{statErr: fs.ErrNotExist}
-	w.files["Foreign.png"] = &memFile{statErr: vaultport.ErrNotANote}
+	w.files["Foreign.png"] = &memFile{statErr: edit.ErrNotANote}
 	w.files["Locked.md"] = &memFile{statErr: fs.ErrPermission}
 	w.addNote("Vanish.md", "vanish", old).readErr = fs.ErrNotExist
 	w.addNote("Denied.md", "denied", old).readErr = fs.ErrPermission

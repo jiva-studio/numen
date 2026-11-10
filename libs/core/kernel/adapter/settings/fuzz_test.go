@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	domaintheme "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
 // FuzzAt checks that a settings file yields either settings this build can run
@@ -62,7 +63,7 @@ func FuzzAt(f *testing.F) {
 			t.Fatalf("%s was read at version %d", raw, target.Version)
 		}
 		switch target.Appearance.Mode {
-		case settings.ModeSystem, settings.ModeLight, settings.ModeDark:
+		case domaintheme.SchemeSystem, domaintheme.SchemeLight, domaintheme.SchemeDark:
 		default:
 			t.Fatalf("%s was read as %q, which is no half of a color pair",
 				raw, target.Appearance.Mode)

@@ -2,8 +2,14 @@
  * The registration of one reader or tab kind of a plugin: the tab kind the window holds for it, the
  * extensions it opens, and the undoing of both.
  */
-import type { Component } from 'vue'
-import type { Disposable, ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
+import type {
+  Disposable,
+  FilePlacement,
+  ReaderRegistration,
+  Selector,
+  TabKindRegistration,
+  TextRange,
+} from '@numen/plugin-sdk'
 import { reportError } from './events'
 import { getReaderTabKind, getCustomTabKind } from './customTabKind'
 import { getDeclaredTabKind, isDeclaredTabKind } from './pluginTabKind'
@@ -32,7 +38,7 @@ export function registerReaderEntry(
             .then((tabId) => {
               if ((!selector && !ranges) || !deps.getTabState) return
               const state = deps.getTabState(tabId) as
-                { selector?: unknown; ranges?: unknown } | undefined
+                { selector: Selector | null; ranges: readonly TextRange[] | null } | undefined
               if (!state) return
               // A new object each time, so a reader watching it moves to the same place again.
               if (selector) state.selector = { ...selector }
@@ -40,7 +46,7 @@ export function registerReaderEntry(
             })
             .catch((error: unknown) => reportError(deps, pluginId, error))
         },
-        registration.icon as Component | undefined,
+        registration.icon,
       ),
     )
   }
@@ -59,12 +65,10 @@ export function registerReaderEntry(
   return { dispose: entry.cleanup }
 }
 
-function extractWhere(options?: unknown): unknown {
-  if (typeof options === 'string') return options
-  if (typeof options === 'object' && options !== null && 'where' in options) {
-    return (options as { where?: unknown }).where
-  }
-  return undefined
+function extractWhere(
+  options?: FilePlacement | { readonly where?: FilePlacement | undefined },
+): FilePlacement | undefined {
+  return typeof options === 'string' ? options : options?.where
 }
 
 export function registerTabKindEntry(
@@ -80,7 +84,7 @@ export function registerTabKindEntry(
   if (deps.registerEditor) {
     const unreg = deps.registerEditor(
       registration.kind,
-      (path: string, _title?: string, options?: unknown) => {
+      (path, _title, options) => {
         const where = extractWhere(options)
         if (where === 'split' && deps.openTabAdjacent) {
           deps

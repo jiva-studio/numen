@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	domainsettings "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -130,7 +131,7 @@ func TestEveryDefaultOfTheShellIsReadFromTheDeclaration(t *testing.T) {
 		if declared.Default == nil {
 			continue
 		}
-		path := append([]string{settings.OwnerApp}, strings.Split(declared.Key, ".")...)
+		path := append([]string{domainsettings.AppOwner}, strings.Split(declared.Key, ".")...)
 		got, ok := file.GetValue(path...)
 		if !ok || got != declared.Default {
 			t.Errorf("%v is %v (found %v) in the default file, and %v in the declaration", path, got, ok, declared.Default)

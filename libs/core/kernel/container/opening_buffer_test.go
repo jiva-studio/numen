@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/bufferednotes"
+	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -40,7 +40,7 @@ func notesAt(paths ...string) []domain.NoteChunks {
 // Each path written through the index while a walk runs is held once, in the
 // order it was first written, whether it was saved or removed.
 func TestBufferedNoteRepository_RecordsPathsOnceInOrder(t *testing.T) {
-	buffered := &bufferednotes.Repository{NoteRepository: repositoryAnswering{}}
+	buffered := &indexnote.Buffered{NoteRepository: repositoryAnswering{}}
 	buffered.StartRecording()
 
 	if err := buffered.Save(t.Context(), "v", notesAt("b.md", "a.md")); err != nil {
@@ -65,7 +65,7 @@ func TestBufferedNoteRepository_RecordsPathsOnceInOrder(t *testing.T) {
 // A write that fails is answered with the failure.
 func TestBufferedNoteRepository_ReturnsWriteError(t *testing.T) {
 	broken := errors.New("the index is full")
-	buffered := &bufferednotes.Repository{NoteRepository: repositoryAnswering{err: broken}}
+	buffered := &indexnote.Buffered{NoteRepository: repositoryAnswering{err: broken}}
 
 	if err := buffered.Save(t.Context(), "v", notesAt("a.md")); !errors.Is(err, broken) {
 		t.Errorf("a save was answered %v", err)
@@ -78,7 +78,7 @@ func TestBufferedNoteRepository_ReturnsWriteError(t *testing.T) {
 // After the paths are taken the walk is over and later writes are not recorded;
 // the next walk starts recording again.
 func TestBufferedNoteRepository_StopsRecordingAfterStop(t *testing.T) {
-	buffered := &bufferednotes.Repository{NoteRepository: repositoryAnswering{}}
+	buffered := &indexnote.Buffered{NoteRepository: repositoryAnswering{}}
 	buffered.StartRecording()
 	if err := buffered.Save(t.Context(), "v", notesAt("a.md")); err != nil {
 		t.Fatal(err)
@@ -115,17 +115,17 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 		{"a note written under the walk", true, 1},
 	} {
 		cfg := NewConfig(Config{IndexPath: indexfile.Path(t)})
-		db, err := cfg.OpenIndex(t.Context())
+		db, err := openIndex(vaultOf(cfg), t.Context())
 		if err != nil {
 			t.Fatal(err)
 		}
 		testsupport.CloseAfter(t, db)
 		v := testsupport.NewVault(t, map[string]string{"Leaf.md": "---\ntitle: Leaf\n---\n\n# Leaf\n"})
 
-		opening := cfg.VaultOpener(db)
+		opening := vaultOpener(vaultOf(cfg), db)
 		broken := errors.New("index unavailable")
 		opening.Refresh = vault.NewRefresh(
-			cfg.VaultReaders(), db.Stores.Vaults, repositoryAnswering{err: broken},
+			vaultReaders(vaultOf(cfg)), db.Stores.Vaults, repositoryAnswering{err: broken},
 			db.Source.RemovalLookup, db.Source.Sources, cfg.Clock(),
 		)
 		var received []error
@@ -162,7 +162,7 @@ func TestARefreshAfterTheWalkReportsItsFailure(t *testing.T) {
 // one ledger by every refresh of the index.
 func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 	cfg := NewConfig(Config{IndexPath: indexfile.Path(t)})
-	db, err := cfg.OpenIndex(t.Context())
+	db, err := openIndex(vaultOf(cfg), t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -172,13 +172,13 @@ func TestEveryRefreshOfAnIndexSharesItsLedger(t *testing.T) {
 		"Two.md": "---\ntitle: Two\n---\n\n# Two\n",
 	})
 
-	if err := cfg.VaultOpener(db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
+	if err := vaultOpener(vaultOf(cfg), db).UpdateIndex(t.Context(), v, []string{"One.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger().Len(); got != 1 {
 		t.Fatalf("the opener's refresh left %d notes in the index's ledger", got)
 	}
-	if err := cfg.UpdateIndex(db)(t.Context(), v, []string{"Two.md"}); err != nil {
+	if err := updateIndex(vaultOf(cfg), db)(t.Context(), v, []string{"Two.md"}); err != nil {
 		t.Fatal(err)
 	}
 	if got := db.Ledger().Len(); got != 2 {

@@ -11,13 +11,12 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // The vocabulary is one. Every window naming an error names it from here, so
@@ -63,7 +62,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_TOO_LARGE, true,
 		},
 		"a title no note can be given": {
-			fmt.Errorf("%w: nothing to name it", query.ErrInvalidName),
+			fmt.Errorf("%w: nothing to name it", domain.ErrInvalidName),
 			v1.ErrorCode_ERROR_CODE_INVALID_NAME, true,
 		},
 		"a frontmatter written on one line": {
@@ -87,7 +86,7 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true,
 		},
 		"a file the vault leaves alone": {
-			fmt.Errorf("Old.png: %w", vaultport.ErrNotANote),
+			fmt.Errorf("Old.png: %w", edit.ErrNotANote),
 			v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true,
 		},
 		"a file where the note would go": {

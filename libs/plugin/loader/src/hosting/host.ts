@@ -7,6 +7,7 @@ import type {
   SettingsViewRegistration,
   VaultChangeEvent,
   DropRegistry,
+  JsonValue,
   SlotHost,
 } from '@numen/plugin-sdk'
 import { ReportedError, type Manifest } from '@numen/core-client'
@@ -32,14 +33,13 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
+import { createVaultServiceBridge, createWindowServiceBridge } from './bridge/services'
 import type {
   ContextEventHost,
   ContextRegistrationHost,
   ContextSettingHost,
   ContextTabHost,
-  ContextVaultHost,
   ContextViewHost,
-  ContextWindowHost,
   PluginContextHost,
   PluginHostDeps,
 } from './types'
@@ -108,9 +108,9 @@ function createRegistrationBridge(
 
 function createSettingBridge(deps: PluginHostDeps): ContextSettingHost {
   return {
-    getSetting: <T = unknown>(pluginId: string, key: string) =>
+    getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
-    onSettingChange: <T = unknown>(
+    onSettingChange: <T extends JsonValue = JsonValue>(
       pluginId: string,
       key: string,
       handler: (value: T) => void | Promise<void>,
@@ -121,7 +121,7 @@ function createSettingBridge(deps: PluginHostDeps): ContextSettingHost {
         dispose: deps.onSettingChange(
           pluginId,
           key,
-          handler as (v: unknown) => void | Promise<void>,
+          handler as (v: JsonValue | undefined) => void | Promise<void>,
         ),
       }
     },
@@ -152,7 +152,7 @@ interface SharedRegistries {
   readonly views: ViewRegistry
   readonly drops: DropRegistry
   readonly slotViews: SlotViewRegistry
-  readonly getSlots: () => SlotHost
+  readonly slots: SlotHost
 }
 
 function createHostContextBridge(
@@ -174,34 +174,7 @@ function createHostContextBridge(
     events: createEventBridge(deps, registry),
     tabs: createTabBridge(deps),
     vault: createVaultServiceBridge(deps),
-    window: createWindowServiceBridge(deps, shared.getSlots),
-  }
-}
-
-function createVaultServiceBridge(deps: PluginHostDeps): ContextVaultHost {
-  return {
-    getNotes: () => deps.getNotes?.(),
-    getRelations: () => deps.getRelations?.(),
-    getFiles: () => deps.getFiles?.(),
-    getTexts: (pluginId) => deps.getTexts?.(pluginId),
-    getBuffers: () => deps.getBuffers?.(),
-    getVaults: () => deps.getVaults?.(),
-  }
-}
-
-function createWindowServiceBridge(
-  deps: PluginHostDeps,
-  getSlots: () => SlotHost,
-): ContextWindowHost {
-  return {
-    getWorkspace: () => deps.getWorkspace?.(),
-    getAgent: () => deps.getAgent?.(),
-    getCommands: () => deps.getCommands?.(),
-    getWindow: () => deps.getWindow?.(),
-    getNotices: (pluginId) => deps.getNotices?.(pluginId),
-    getTasks: (pluginId) => deps.getTasks?.(pluginId),
-    getBackgroundTasks: () => deps.getBackgroundTasks?.(),
-    getSlots,
+    window: createWindowServiceBridge(deps, shared.slots),
   }
 }
 
@@ -338,7 +311,7 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     views: createViewRegistry(),
     drops: createDropRegistry(),
     slotViews,
-    getSlots: () => slots,
+    slots,
   })
   const entries = { registry, slotViews, deps }
 

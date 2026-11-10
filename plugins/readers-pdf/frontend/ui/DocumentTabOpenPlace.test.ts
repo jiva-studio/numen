@@ -6,10 +6,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h } from 'vue'
-import type { Selector, TabPlace } from '@numen/plugin-sdk'
+import type { ReaderTabState, Selector, TabPlace } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
-import { useDocumentReader } from '../model/useDocumentReader'
-import { useDocumentTab } from '../model/useDocumentTab'
 import type { Documents } from '../types'
 
 vi.mock('../reader', () => ({
@@ -35,17 +33,17 @@ const documents: Documents = {
 }
 
 const mountTab = (selector: Selector | null) => {
-  const reader = useDocumentTab(useDocumentReader(documents, PATH))
   const savePlace = vi.fn((_place: Selector) => undefined)
   const reportPlace = vi.fn((_place: TabPlace) => undefined)
-  const state = Object.assign(reader, {
+  const state: ReaderTabState = {
+    path: PATH,
     title: 'Marsh Birds',
     selector,
     ranges: null,
     savePlace,
     reportPlace,
-  })
-  const tab = mount(DocumentTab, { props: { state } })
+  }
+  const tab = mount(DocumentTab, { props: { state, documents } })
   return { tab, reportPlace }
 }
 

@@ -23,7 +23,7 @@ export function activate(context: PluginContext): void {
     {
       workspace,
       ...(context.ui.commands ? { commands: context.ui.commands } : {}),
-      ...(context.ui.slots ? { slots: context.ui.slots } : {}),
+      slots: context.ui.slots,
       notes,
       relations,
       nesting: readNesting(context),

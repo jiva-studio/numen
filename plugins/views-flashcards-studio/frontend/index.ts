@@ -30,11 +30,7 @@ export function activate(context: PluginContext): void {
     const { notices } = context.ui
     const { close: closeTab } = context.tabs
     const { agent } = context.work
-    if (!notices || !closeTab || !agent) {
-      throw new Error(
-        'the review needs the notices, the tabs and the agent of the window it is drawn in',
-      )
-    }
+    if (!agent) throw new Error('the review needs the agent of the window it is drawn in')
     const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
     context.plugin.subscriptions.push({ dispose: counts.dispose })
     context.register.view(createVaultSummaryView(counts))
@@ -52,7 +48,7 @@ export function activate(context: PluginContext): void {
   if (!buffers) {
     throw new Error('the flashcards need the window their tabs are drawn in and its open files')
   }
-  const closeTab = (id: string): void => context.tabs.close?.(id)
+  const closeTab = (id: string): void => context.tabs.close(id)
   const decks = useDeckTabs(cards, presets, {
     buffers,
     closeTab,

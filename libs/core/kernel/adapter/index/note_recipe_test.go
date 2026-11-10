@@ -4,13 +4,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func saveChunkedAt(t *testing.T, db *DB, vault domain.Vault, tokens int, notes ...domain.Note) string {
 	t.Helper()
-	splitter := query.NewCutNotes(tokens)
+	splitter := chunking.NewCutNotes(tokens)
 	if err := db.Notes().Save(t.Context(), vault.ID, splitter.Execute(notes)); err != nil {
 		t.Fatal(err)
 	}

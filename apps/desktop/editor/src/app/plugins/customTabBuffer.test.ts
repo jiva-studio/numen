@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
 import { openNotes as openNotesOn } from '@/entities/note'
 import { getCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
+import { blank } from '@/testing/stubs'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
 const statFile = (body: string): string => `1 1 at:${body}`
@@ -53,7 +54,7 @@ function openNoteTab(path: string) {
   const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
   const kind = getCustomTabKind(
     'md.numen.notes',
-    { kind: 'note', component: null, title: 'Note' },
+    { kind: 'note', component: blank, title: 'Note' },
     { getNoteBuffer: () => notes } as unknown as PluginHostDeps,
   )
   const scope = effectScope(true)
@@ -160,7 +161,7 @@ describe('the links of a note tab of the note kind', () => {
     const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
     const kind = getCustomTabKind(
       'md.numen.notes',
-      { kind: 'note', component: null, title: 'Note' },
+      { kind: 'note', component: blank, title: 'Note' },
       {
         getNoteBuffer: () => notes,
         getNotes: () => ({
@@ -247,7 +248,7 @@ describe('note tab restored from the saved path', () => {
       const saved = (
         getCustomTabKind('md.numen.notes', {
           kind: 'note',
-          component: null,
+          component: blank,
           title: 'Note',
         }).getOpenTab?.(first.state) ?? { path: '' }
       ).path

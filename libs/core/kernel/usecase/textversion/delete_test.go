@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
 func (s *scene) findVersion(t *testing.T, id domain.TextVersionID) (domain.TextVersion, bool) {
@@ -72,7 +71,7 @@ func TestDeleteVersionRejectsAVersionTheFileDoesNotHave(t *testing.T) {
 
 	err := s.versions.DeleteVersion(t.Context(), s.vault, scanPath, "org.example.scans/none")
 
-	if !errors.Is(err, textversion.ErrInvalidVersion) {
+	if !errors.Is(err, textdomain.ErrInvalidVersion) {
 		t.Errorf("got %v, want ErrInvalidVersion", err)
 	}
 }

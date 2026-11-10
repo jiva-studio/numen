@@ -47,34 +47,41 @@ type windowWiring struct {
 
 // OpenWindow opens the registry and the cache, builds the services of the editor window over
 // them, and opens the vault named, or the one shown last when none is named.
-func (c Config) OpenWindow(ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
+func OpenWindow(c Config, ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
 	ports, err := c.Registry()
 	if err != nil {
 		return nil, err
 	}
-	db, err := c.OpenIndex(ctx)
+	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return nil, err
 	}
-	return c.OpenWindowOver(ctx, ports, db, named, out)
+	return OpenWindowOver(c, ctx, ports, db, named, out)
 }
 
 // OpenWindowOver is OpenWindow over a registry and a cache already open, for a caller that opened
 // them itself. The window closes the cache.
-func (c Config) OpenWindowOver(
+func OpenWindowOver(c Config,
 	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
 ) (*editor.Installation, error) {
-	return c.OpenWindowWith(ctx, ports, db, named, out, nil)
+	return OpenWindowWith(c, ctx, WindowOpening{Ports: ports, DB: db, Named: named, Out: out})
 }
 
-// OpenWindowWith is OpenWindowOver with the walk of the vault put through wrap, for a caller
-// that holds one back or drives it. A nil wrap leaves it as it is.
-func (c Config) OpenWindowWith(
-	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
-	wrap func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc,
-) (*editor.Installation, error) {
-	w := &windowWiring{cfg: c, ports: ports, db: db, wrap: wrap}
-	return openWindow(ctx, w, named, out)
+// WindowOpening is what OpenWindowWith opens a window over: the registry and the cache already open,
+// the vault to show, where the window writes, and an optional function the walk of the vault goes through.
+type WindowOpening struct {
+	Ports registry.Ports
+	DB    *vault.Index
+	Named string
+	Out   io.Writer
+	Wrap  func(windowsession.VaultPassesFunc) windowsession.VaultPassesFunc
+}
+
+// OpenWindowWith is OpenWindowOver with the walk of the vault put through Wrap, for a caller
+// that holds one back or drives it. A nil Wrap leaves it as it is.
+func OpenWindowWith(c Config, ctx context.Context, opening WindowOpening) (*editor.Installation, error) {
+	w := &windowWiring{cfg: c, ports: opening.Ports, db: opening.DB, wrap: opening.Wrap}
+	return openWindow(ctx, w, opening.Named, opening.Out)
 }
 
 func openWindow(ctx context.Context, w *windowWiring, named string, out io.Writer) (*editor.Installation, error) {
@@ -88,20 +95,20 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	// before any component that reports into it.
 	tasks := run.NewTasks()
 	models := &run.Lock{}
-	w.cfg.ReportPluginFailures(tasks)
-	w.cfg.ReportDependencies(tasks)
-	w.cfg.SetPluginWork(tasks, models)
+	reportPluginFailures(plugins(w.cfg), tasks)
+	reportDependencies(plugins(w.cfg), tasks)
+	setPluginWork(plugins(w.cfg), tasks, models)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
-	embedder, asking, closeEmbedder, why := w.cfg.Embedders(ctx, tasks)
+	embedder, asking, closeEmbedder, why := searchEmbedders(searchOf(w.cfg), ctx, tasks)
 	w.embedder, w.asking = embedder, asking
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
 	embedding := indexing.NewEmbedding(embedder, w.db.Chunks.Progress)
 	state := editor.NewState(tasks)
-	state.Events.Emit = func(event string) { emitPluginEvent(w.cfg.plugins(), event) }
+	state.Events.Emit = func(event string) { emitPluginEvent(plugins(w.cfg), event) }
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
 	state.Writes.NotifyNoteWritten = indexer.WakeNotes
@@ -113,14 +120,14 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		if running := refreshing.Load(); running != nil {
 			return *running
 		}
-		return w.cfg.GetRefresh(w.db)
+		return GetRefresh(w.cfg, w.db)
 	}
-	notes := w.cfg.Notes(w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
+	notes := vaultNotes(vaultOf(w.cfg), w.db, vault.NewUpdateIndex(getRefresh).Execute).FollowMoves(windowView(state))
 	w.notes = &notes
-	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Place.Move)
+	moves := vaultVaults(vaultOf(w.cfg), w.ports, w.db, w.notes.Place.Move)
 	w.vaults = &moves
 
-	passes := w.cfg.startVault(w.db, &refreshing)
+	passes := startVault(w.cfg, w.db, &refreshing)
 	if w.wrap != nil {
 		passes = w.wrap(passes)
 	}
@@ -129,11 +136,11 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
-			Identity: vault.NewCheckIdentity(w.cfg.VaultIdentity()), Recorded: moves.RecordOpen, Passes: passes,
-			Texts: w.cfg.getTextVersions(),
+			Identity: vault.NewCheckIdentity(vaultIdentity(vaultOf(w.cfg))), Recorded: moves.RecordOpen, Passes: passes,
+			Texts: getTextVersions(w.cfg),
 		},
 		Index: windowsession.IndexPorts{
-			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: w.cfg.getTriggerSource(), Model: embedding,
+			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: getTriggerSource(w.cfg), Model: embedding,
 		},
 		Shutdown: windowsession.ShutdownPorts{
 			Door: state.Gate,

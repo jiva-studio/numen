@@ -4,6 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { VaultTexts } from '@numen/plugin-sdk'
+import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import type { PluginContextHost } from './types'
 
@@ -17,7 +18,7 @@ const createContext = (permissions: readonly string[]) => {
     info: {},
     views: {},
     vault: { getTexts },
-    window: {},
+    window: { getNotices: () => createMockNoticeHost(), getSlots: () => createMockSlotHost() },
   } as unknown as PluginContextHost
   const context = createPluginContext('md.numen.player', host, {
     id: 'md.numen.player',

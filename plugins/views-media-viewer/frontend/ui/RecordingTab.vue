@@ -5,7 +5,7 @@
  *
  * Media plays through the window's single player, so the controls only report the user's actions.
  */
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onUnmounted, watch } from 'vue'
 import Player from './Player.vue'
 import VideoSurface from './VideoSurface.vue'
 import MediaLayout from './MediaLayout.vue'
@@ -19,13 +19,13 @@ import { WORDS as words } from '../words'
 const props = defineProps<{
   readonly path?: string
   readonly file?: string
-  readonly state?: Partial<ReaderTabState> & { file?: string; [key: string]: unknown }
+  readonly state?: Partial<ReaderTabState>
   readonly recordings?: Recordings
   readonly how?: TranscriptOptions
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const targetPath = props.path || props.file || props.state?.path || props.state?.file || ''
+const targetPath = props.path || props.file || props.state?.path || ''
 
 const tab = useTranscript(props.recordings, targetPath, props.how)
 const { source, progress } = tab.playback
@@ -56,13 +56,6 @@ const seekToSpans = async (...spans: readonly TextRange[]) => {
   const ms = await tab.navigation.seekToSpans(...spans)
   if (ms !== null) saveTime(ms)
 }
-
-onMounted(() => {
-  if (props.state) {
-    const shared = props.state as Record<string, unknown>
-    shared.focusSpans = seekToSpans
-  }
-})
 
 watch(
   () => props.state?.selector,

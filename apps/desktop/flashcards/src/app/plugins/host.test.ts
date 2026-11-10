@@ -259,7 +259,7 @@ describe('createShellHost', () => {
 
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, { focus: 'Decks/Physics.md' })
+      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: 'Decks/Physics.md' })
     expect(panel.textContent).toBe('Decks/Physics.md')
 
     host.disposePlugin('md.numen.chat')
@@ -275,7 +275,7 @@ describe('createShellHost', () => {
     const panel = document.createElement('section')
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, {})
+      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: '' })
 
     host.disposePlugin('md.numen.cards')
 
@@ -286,9 +286,9 @@ describe('createShellHost', () => {
     const { host, notices } = createShellHost()
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
 
-    context.ui.notices?.show('Could not save the deck.', 'error')
-    context.ui.notices?.show('Saved.')
-    context.ui.notices?.setTasks([{ id: 'index', label: 'Reading the vault', done: 2, total: 5 }])
+    context.ui.notices.show('Could not save the deck.', 'error')
+    context.ui.notices.show('Saved.')
+    context.ui.notices.setTasks([{ id: 'index', label: 'Reading the vault', done: 2, total: 5 }])
 
     expect(notices.notices.value.map((one) => [one.text, one.severity])).toEqual([
       ['Reading the vault', undefined],
@@ -300,8 +300,8 @@ describe('createShellHost', () => {
 
   it('takes away what a plugin showed once it is disposed', () => {
     const { host, notices } = createShellHost()
-    host.createContext('md.numen.example', withVault('md.numen.example')).ui.notices?.show('Saved.')
-    host.createContext('md.numen.other', withVault('md.numen.other')).ui.notices?.show('Drawn.')
+    host.createContext('md.numen.example', withVault('md.numen.example')).ui.notices.show('Saved.')
+    host.createContext('md.numen.other', withVault('md.numen.other')).ui.notices.show('Drawn.')
 
     host.disposePlugin('md.numen.example')
 

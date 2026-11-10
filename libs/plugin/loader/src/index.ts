@@ -60,7 +60,6 @@ export type {
   BackendHandlerRun,
   HostCommandReads,
   SlotCommandFinder,
-  TabActionHandler,
 } from './hosting/types'
 export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
 export {

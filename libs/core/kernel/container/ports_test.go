@@ -146,7 +146,7 @@ func (c Config) Cleaners() ([]*trash.Cleaner, error) { return nil, nil }`,
 		{
 			what: "a driving adapter the compiler holds: an application mounts it",
 			src: `package container
-import "` + module + `internal/adapter/theme"
+import "` + module + `adapter/window/theme"
 func (c Config) Themes() *theme.Service { return nil }`,
 			isRefused: false,
 		},
@@ -167,7 +167,7 @@ func (c Config) Trash() port.Trash { return nil }`,
 		{
 			what: "an adapter the compiler holds, kept to this package",
 			src: `package container
-import "` + module + `internal/adapter/theme"
+import "` + module + `adapter/window/theme"
 func (c Config) someTheme() (theme.Theme, error) {
 	return theme.Theme{}, nil
 }`,
@@ -176,7 +176,7 @@ func (c Config) someTheme() (theme.Theme, error) {
 		{
 			what: "the same, on a receiver nothing outside can name",
 			src: `package container
-import "` + module + `internal/adapter/theme"
+import "` + module + `adapter/window/theme"
 type appearances struct{}
 func (a appearances) Read() (theme.Appearance, error) { return theme.Appearance{}, nil }`,
 			isRefused: false,

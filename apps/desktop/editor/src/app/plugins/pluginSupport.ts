@@ -13,6 +13,7 @@ import {
   createPluginNotices,
   createPluginTasks,
   type CommandDeclaration,
+  type JsonValue,
   type PluginHostDeps,
   type PluginLoader,
   type PluginStatus,
@@ -57,9 +58,14 @@ export interface PluginSupportDeps {
   >
 }
 
-const getPluginSetting = (rest: SettingsStore, pluginId: string, key: string): unknown => {
+const getPluginSetting = (
+  rest: SettingsStore,
+  pluginId: string,
+  key: string,
+): JsonValue | undefined => {
+  // The vault stores a setting as JSON.
   // Stryker disable next-line StringLiteral: rest reads under the plugin id.
-  const value = rest.read.getCommittedSetting([pluginId, key])
+  const value = rest.read.getCommittedSetting([pluginId, key]) as JsonValue | undefined
   if (value !== undefined) return value
   return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
 }
@@ -74,13 +80,13 @@ function createPluginSettingsAccessor(
   rest: SettingsStore,
   reportError: (pluginId: string, error: unknown) => void,
 ) {
-  const getSetting = (pluginId: string, key: string): unknown =>
+  const getSetting = (pluginId: string, key: string): JsonValue | undefined =>
     getPluginSetting(rest, pluginId, key)
 
   const onSettingChange = (
     pluginId: string,
     key: string,
-    handler: (value: unknown) => void | Promise<void>,
+    handler: (value: JsonValue | undefined) => void | Promise<void>,
   ): (() => void) =>
     watch(
       () => getSetting(pluginId, key),
@@ -190,7 +196,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     openTabAdjacent: windowTabs.tabs.openTabAdjacentOfKind,
     navigateTab: windowTabs.tabs.navigateTab,
     closeTab: windowTabs.panes.finishClose,
-    getTabState: (id: string) => windowTabs.tabs.getTab(id)?.state,
+    getTabState: (id: string) => windowTabs.tabs.getTab(id)?.state as object | undefined,
     getSetting,
     onSettingChange,
     closeTabsForPlugin,

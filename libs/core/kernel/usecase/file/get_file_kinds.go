@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -34,11 +35,11 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 	refs := make(map[string]domain.FileStat, len(paths))
 	for _, path := range paths {
 		ref, err := reader.StatFile(ctx, path)
-		if errors.Is(err, vaultport.ErrNotExist) || errors.Is(err, vault.ErrOutside) {
+		if errors.Is(err, edit.ErrNotExist) || errors.Is(err, vault.ErrOutside) {
 			continue
 		}
 		// A file the vault ignores is present and is not a source.
-		if err != nil && !errors.Is(err, vaultport.ErrNotANote) {
+		if err != nil && !errors.Is(err, edit.ErrNotANote) {
 			return Folder{}, err
 		}
 		entries = append(entries, domain.Entry{Path: path, Kind: ref.Kind})
@@ -65,7 +66,7 @@ func readNotes(
 			continue
 		}
 		raw, err := reader.Read(ctx, entry.Path)
-		if errors.Is(err, vaultport.ErrNotExist) {
+		if errors.Is(err, edit.ErrNotExist) {
 			continue
 		}
 		if err != nil {

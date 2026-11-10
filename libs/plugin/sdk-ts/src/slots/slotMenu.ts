@@ -31,7 +31,7 @@ export interface SlotMenu {
   // What the row of the id runs; undefined for a row that runs nothing.
   getPick(id: string): SlotMenuPick | undefined
   // The icon component of the entry the row of the id is drawn for; undefined for none.
-  getIcon(id: string): unknown
+  getIcon(id: string): Component | undefined
 }
 
 const ITEM_MARK = '#item:'
@@ -40,7 +40,7 @@ interface MenuParts {
   readonly lists: CommandItemLists
   readonly words: SlotMenuWords
   readonly picks: Map<string, SlotMenuPick>
-  readonly icons: Map<string, unknown>
+  readonly icons: Map<string, Component>
 }
 
 const getValues = (entry: SlotCommand): Pick<SlotMenuPick, 'values'> =>

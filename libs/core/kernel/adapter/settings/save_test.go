@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	domaintheme "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
 func theme(name string) settings.Setting {
@@ -72,7 +73,7 @@ func TestAHandArrangedFileReachesBackWithOneValueChanged(t *testing.T) {
 func TestTheThemeAndTheModeAreSavedWithoutMovingAnythingElse(t *testing.T) {
 	path := write(t, arranged)
 	if err := settings.NewFiles().Save(path, newDocument(), theme("preset:nord"),
-		settings.Setting{At: []string{"app", "appearance", "mode"}, Written: settings.ModeDark}); err != nil {
+		settings.Setting{At: []string{"app", "appearance", "mode"}, Written: domaintheme.SchemeDark}); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -280,7 +281,7 @@ func TestSavingIntoAFileThatIsNotThereWritesTheSettingAlone(t *testing.T) {
 	if cfg.Appearance.Theme != "preset:gruvbox" {
 		t.Errorf("applied %q", cfg.Appearance.Theme)
 	}
-	if cfg.Appearance.Mode != settings.ModeSystem || cfg.Appearance.TextScale != settings.AsDesigned {
+	if cfg.Appearance.Mode != domaintheme.SchemeSystem || cfg.Appearance.TextScale != settings.AsDesigned {
 		t.Errorf("the rest of the file is not the defaults: %+v", cfg)
 	}
 }

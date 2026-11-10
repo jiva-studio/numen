@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // VaultReader reads one vault from disk.
@@ -254,7 +255,7 @@ func (s *VaultReader) checkSize(path string, info fs.FileInfo) error {
 		return nil
 	}
 	return fmt.Errorf("%s is %d bytes, and %d is the most a note is read at: %w",
-		path, info.Size(), linked, vaultconfig.ErrNotANote)
+		path, info.Size(), linked, edit.ErrNotANote)
 }
 
 // Open is one file, to read a part of. The path is checked by the same rule
@@ -293,7 +294,7 @@ func checkReadable(path string, info fs.FileInfo) error {
 	if info.Mode().IsRegular() || info.IsDir() {
 		return nil
 	}
-	return fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
+	return fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 }
 
 // StatFile answers the same question about one path that Walk answers about all of
@@ -336,7 +337,7 @@ func (s *VaultReader) getNotANoteError(path string) error {
 	if _, err := os.Lstat(target); err != nil {
 		return fs.ErrNotExist
 	}
-	return fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
+	return fmt.Errorf("%s: %w", path, edit.ErrNotANote)
 }
 
 func (s *VaultReader) isSkipped(path, name string) bool {

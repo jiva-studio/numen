@@ -42,7 +42,7 @@ Placing a new feature here: a new question the scenarios ask of the vault is a m
 - It passes them to the servers as narrow SDK interfaces such as `host.FileReader` and `host.TextVersions` (`mount`, `:35`), so `hosttest` fakes replace them in tests.
 - It registers the API (`s.NewAPI(APIService)`), the page route, the commands (`command.Mount`) and what to close (`s.OnClose`).
 - The engine is the package `backend/pdf`, outside `service`. `service` calls it, and `pdf` imports nothing of `service`.
-- The manifest declares `vault:read` and `vault:write` (`manifest.json:50`), the permissions the vault calls need; the host rejects a call of a backend without them in `hostendpoint.authorize` (`libs/core/kernel/internal/adapter/plugin/hostendpoint/host_endpoint.go:185`).
+- The manifest declares `vault:read` and `vault:write` (`manifest.json:50`), the permissions the vault calls need; the host rejects a call of a backend without them in `hostendpoint.authorize` (`libs/core/kernel/adapter/plugin/hostendpoint/host_endpoint.go:185`).
 
 Placing a new feature here: a new host call is a client built in `Mount` and passed down as an interface; a new permission is added in the manifest in the change that adds the call.
 

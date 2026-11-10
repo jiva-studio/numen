@@ -21,7 +21,24 @@ const request = {
 let restore: () => void
 
 beforeEach(() => {
-  restore = installCoreAnswers({ pluginCommands: request })
+  restore = installCoreAnswers({
+    pluginCommands: {
+      ...request,
+      listCommands: async (...asked: unknown[]) => {
+        const answer = (await request.listCommands(...asked)) as { slots?: { entry?: object }[] }
+        // A message from the core always carries its maps and lists, empty where it has none.
+        return {
+          contentTypeByExtension: {},
+          handlers: [],
+          keybindings: [],
+          ...answer,
+          slots: (answer.slots ?? []).map((one) =>
+            one.entry ? { ...one, entry: { values: {}, ...one.entry } } : one,
+          ),
+        }
+      },
+    },
+  })
 })
 
 afterEach(() => {

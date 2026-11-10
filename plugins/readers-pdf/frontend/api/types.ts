@@ -10,13 +10,13 @@ export interface FileStat {
 }
 
 /** A run of a text version, as byte offsets from `start` up to `end`. */
-export interface TextRun {
+export interface Range {
   readonly start: number
   readonly end: number
 }
 
 /** The size of one page. */
-export interface PageSize {
+export interface Page {
   readonly width: number
   readonly height: number
 }
@@ -26,13 +26,13 @@ export interface GetDocumentRequest {
 }
 
 export interface GetDocumentResponse {
-  readonly pages: readonly PageSize[]
+  readonly pages: readonly Page[]
   readonly stat?: FileStat
 }
 
 export interface GetHighlightsRequest {
   readonly path: string
-  readonly ranges: readonly TextRun[]
+  readonly ranges: readonly Range[]
 }
 
 /** A rectangle on a page, in fractions of the page size. */

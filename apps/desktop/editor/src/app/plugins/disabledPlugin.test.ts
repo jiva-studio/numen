@@ -7,6 +7,7 @@ import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { CATALOG_STATE, type CatalogEntry, type Manifest } from '@numen/core-client'
+import type { JsonValue } from '@numen/plugin-loader'
 import { createMockCatalogEntry, createMockManifest } from '@numen/core-client/testing'
 import { answerTabKinds } from '@/testing/tabCatalog'
 import { createTestTabs } from '@/testing/tabs'
@@ -58,7 +59,7 @@ const createWindow = () => {
   holder.activate = () => {
     support.pluginHost.lifecycle
       .createContext(PLUGIN_ID, manifest)
-      .register.tabKind<{ targetPath: string; saved?: unknown }>({
+      .register.tabKind<{ targetPath: string; saved?: JsonValue | undefined }>({
         kind: 'deck',
         component: DeckPane,
         title: 'Deck',
