@@ -56,32 +56,8 @@ func NewMove(d MoveDeps) Move {
 	}
 }
 
-// WithSources replaces the source repository.
-func (u Move) WithSources(sources sourceport.SourceRepository) Move {
-	u.sources = sources
-	return u
-}
-
-// WithReaders replaces the vault readers.
-func (u Move) WithReaders(readers vaultport.VaultReaders) Move {
-	u.readers = readers
-	return u
-}
-
-// WithWriters replaces the vault writers.
-func (u Move) WithWriters(writers MoveWriting) Move {
-	u.writers = writers
-	return u
-}
-
-// Sources returns the source repository.
-func (u Move) Sources() sourceport.SourceRepository { return u.sources }
-
-// Writers returns the vault writers.
-func (u Move) Writers() MoveWriting { return u.writers }
-
-// Readers returns the vault readers.
-func (u Move) Readers() vaultport.VaultReaders { return u.readers }
+// IsConfigured reports whether the move was made by NewMove.
+func (u Move) IsConfigured() bool { return u.readers != nil }
 
 // MoveResult reports the new path of the note and the changes made to the links
 // that pointed at it.

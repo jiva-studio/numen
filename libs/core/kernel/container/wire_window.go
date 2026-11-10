@@ -101,7 +101,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
 	}
-	embedding := indexing.NewEmbedding(embedder, w.db.Progress())
+	embedding := indexing.NewEmbedding(embedder, w.db.Chunks.Progress)
 	state := editor.NewState(tasks)
 	state.EmitEvent = func(event string) { emitPluginEvent(w.cfg.plugins(), event) }
 	state.SetIndexing(embedding)

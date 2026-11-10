@@ -13,7 +13,7 @@ import (
 
 func (s *scene) findVersion(t *testing.T, id domain.TextVersionID) (domain.TextVersion, bool) {
 	t.Helper()
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
+	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {
 		t.Fatal(err)
 	}

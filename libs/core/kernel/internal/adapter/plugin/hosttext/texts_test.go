@@ -171,7 +171,7 @@ func newTexts(t *testing.T, readers vaultport.VaultReaders, repo *mapsVersions) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	return hosttext.NewTexts(versions, versions)
+	return hosttext.NewTexts(versions, versions.Texts)
 }
 
 func TestListVersionsReturnsTheReaderFailure(t *testing.T) {

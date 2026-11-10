@@ -8,7 +8,7 @@ import (
 
 func (s *scene) reportFilesChanged(t *testing.T, paths ...string) []string {
 	t.Helper()
-	if err := s.versions.ReportFilesChanged(t.Context(), s.vault, paths); err != nil {
+	if err := s.versions.Changes.ReportFilesChanged(t.Context(), s.vault, paths); err != nil {
 		t.Fatal(err)
 	}
 	return s.listener.take()

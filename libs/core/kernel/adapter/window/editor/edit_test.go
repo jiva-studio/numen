@@ -359,7 +359,7 @@ func TestEditLoad(t *testing.T) {
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
+	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
 	api.state.SetVault(v)
 
 	startTime := testsupport.GetMachine().Now()

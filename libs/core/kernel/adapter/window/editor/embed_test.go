@@ -164,7 +164,7 @@ func (r counts) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) e
 
 func getVectorProgress(t *testing.T, f *behind, model embeddingport.Embedder) (target, embedded int64) {
 	t.Helper()
-	target, embedded, err := f.index.Progress().GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
+	target, embedded, err := f.index.Chunks.Progress.GetProgress(t.Context(), f.vault.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}

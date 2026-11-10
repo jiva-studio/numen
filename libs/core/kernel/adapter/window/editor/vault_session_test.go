@@ -760,7 +760,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 
-	found, err := db.Passages().FindLexical(
+	found, err := db.Chunks.Passages.FindLexical(
 		t.Context(), installation.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
