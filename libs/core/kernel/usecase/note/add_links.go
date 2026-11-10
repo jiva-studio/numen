@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
@@ -57,7 +58,7 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 			group := groups.links[from]
 			content, err = u.linking.Add(ctx, v, from, groups.stats[from], group[0], group[1:]...)
 		}
-		if err != nil && ctx.Err() != nil && !errors.Is(err, ErrIndexOutdated) {
+		if err != nil && ctx.Err() != nil && !errors.Is(err, edit.ErrIndexOutdated) {
 			err = fmt.Errorf("the call was canceled before the links were added to %s: %w", from, plugin.ErrNotAttempted)
 		}
 		for _, i := range groups.positions[from] {

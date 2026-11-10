@@ -1049,8 +1049,8 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 		t.Errorf("the link was written by a name two notes answer to:\n%s", made)
 	}
 
-	center, err := f.client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "physics/Ontology.md"}))
+	center, err := f.client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "physics/Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1273,7 +1273,7 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Errorf("the note under the folder holds:\n%s", now)
 	}
 
-	center, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+	center, err := f.client.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil {

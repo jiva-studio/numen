@@ -38,20 +38,27 @@ func getProgramModels(useAt []string, programs []agent.Program) []settingsdomain
 			presence = settingsdomain.Present
 		}
 		models = append(models, settingsdomain.Model{
-			Path:      useAt,
-			Name:      one.Name,
-			Title:     one.Title,
-			IsDefault: hasDefault && one.Name == byDefault.Name,
-			Writes:    []settingsdomain.Setting{newSetting(useAt, one.Name)},
-			Presence:  presence,
+			Path:             useAt,
+			Name:             one.Name,
+			Title:            one.Title,
+			Group:            "",
+			IsDefault:        hasDefault && one.Name == byDefault.Name,
+			Writes:           []settingsdomain.Setting{newSetting(useAt, one.Name)},
+			Presence:         presence,
+			ReasoningLevels:  nil,
+			DefaultReasoning: "",
 		})
 	}
 	return append(models, settingsdomain.Model{
-		Path:      useAt,
-		Title:     "No agent responds",
-		IsDefault: !hasDefault,
-		Writes:    []settingsdomain.Setting{newSetting(useAt, "")},
-		Presence:  settingsdomain.NothingToFetch,
+		Path:             useAt,
+		Name:             "",
+		Title:            "No agent responds",
+		Group:            "",
+		IsDefault:        !hasDefault,
+		Writes:           []settingsdomain.Setting{newSetting(useAt, "")},
+		Presence:         settingsdomain.NothingToFetch,
+		ReasoningLevels:  nil,
+		DefaultReasoning: "",
 	})
 }
 
@@ -59,9 +66,9 @@ func getModelsOfProgram(pos []string, program agent.Program, set string) []setti
 	var models []settingsdomain.Model
 	switch {
 	case len(program.Models) == 0 && set != "":
-		models = []settingsdomain.Model{{Path: pos, Name: set, Title: set, IsDefault: true}}
+		models = []settingsdomain.Model{newDefaultModel(pos, set, set)}
 	case len(program.Models) == 0:
-		models = []settingsdomain.Model{{Path: pos, Title: "Default model", IsDefault: true}}
+		models = []settingsdomain.Model{newDefaultModel(pos, "", "Default model")}
 	default:
 		models = getReportedModels(pos, set, program.Models)
 	}
@@ -87,13 +94,24 @@ func getReportedModels(pos []string, set string, available []agent.Model) []sett
 		}
 		models = append(models, settingsdomain.Model{
 			Path: pos, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
+			Writes: nil, Presence: settingsdomain.NothingToFetch,
 			ReasoningLevels: one.ReasoningLevels, DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	if set != "" && !isSet {
-		models = append(models, settingsdomain.Model{Path: pos, Name: set, Title: set, Group: groupConfigured})
+		models = append(models, settingsdomain.Model{
+			Path: pos, Name: set, Title: set, Group: groupConfigured, IsDefault: false,
+			Writes: nil, Presence: settingsdomain.NothingToFetch, ReasoningLevels: nil, DefaultReasoning: "",
+		})
 	}
 	return models
+}
+
+func newDefaultModel(pos []string, name, title string) settingsdomain.Model {
+	return settingsdomain.Model{
+		Path: pos, Name: name, Title: title, Group: "", IsDefault: true,
+		Writes: nil, Presence: settingsdomain.NothingToFetch, ReasoningLevels: nil, DefaultReasoning: "",
+	}
 }
 
 func newSetting(pos []string, value any) settingsdomain.Setting {

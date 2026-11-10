@@ -35,7 +35,7 @@ const createDid = (id: string, text: string, subject: string, aside: string): Tu
 
 const INITIAL_TURNS: readonly Turn[] = [
   createAsked('1', 'What does this note leave out?'),
-  createDid('2', 'note neighbourhood', 'Entropy', '4 links'),
+  createDid('2', 'note neighborhood', 'Entropy', '4 links'),
   createAnswered(
     '3',
     'Two things. The note says the demon has to pay, but not where the payment ' +

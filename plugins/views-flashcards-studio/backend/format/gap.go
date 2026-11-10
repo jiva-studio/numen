@@ -7,7 +7,7 @@ import (
 )
 
 func formatSection(value string, last bool) string {
-	text := trimBlankLines(markdown.Normalise(value))
+	text := trimBlankLines(markdown.Normalize(value))
 	switch {
 	case text == "" && last:
 		return ""
@@ -28,7 +28,7 @@ func insert(body []byte, pos int, block string) string {
 }
 
 func getSeparator(body []byte, pos int) string {
-	above := markdown.Normalise(string(body[:pos]))
+	above := markdown.Normalize(string(body[:pos]))
 	switch {
 	// Only blank lines before the position means the top of the body, and a block
 	// written there needs no separator.

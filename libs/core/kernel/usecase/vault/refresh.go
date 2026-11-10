@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
@@ -318,11 +318,22 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	removed, err := vaultreading.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
+	removed, err := sourcedomain.FindRemoved(res.Removed,
+		func(path string) ([]domain.FileStat, error) { return u.queries.GetSourcesUnder(ctx, v.ID, path) },
+		func(path string) (sourcedomain.Text, bool, error) { return u.queries.GetSourceText(ctx, v.ID, path) })
 	if err != nil {
 		return err
 	}
-	_, err = vaultreading.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
+	_, err = sourcedomain.MoveRenamed(removed, res.Assets,
+		func(path string) (domain.FileStat, error) { return reader.StatFile(ctx, path) },
+		func(path string) (string, error) {
+			raw, err := reader.Read(ctx, path)
+			if err != nil {
+				return "", err
+			}
+			return domain.HashContent(raw), nil
+		},
+		func(from, to string) error { return u.sources.MoveSources(ctx, v.ID, from, to) })
 	return err
 }
 

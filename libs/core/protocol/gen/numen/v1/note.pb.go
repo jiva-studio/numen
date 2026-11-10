@@ -8,7 +8,7 @@
 //
 // A note is addressed by the path it is filed under, which is what the vault
 // calls it. What is here is what a note holds and what it is joined to: its
-// prose, its headings, its neighbourhood, the addresses written in it, and
+// prose, its headings, its neighborhood, the addresses written in it, and
 // every way of writing one. Where a note sits among the vault's other files is
 // file.proto.
 
@@ -395,27 +395,27 @@ func (x *GetOpeningNoteResponse) GetNote() *Note {
 	return nil
 }
 
-type GetNeighbourhoodRequest struct {
+type GetNeighborhoodRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetNeighbourhoodRequest) Reset() {
-	*x = GetNeighbourhoodRequest{}
+func (x *GetNeighborhoodRequest) Reset() {
+	*x = GetNeighborhoodRequest{}
 	mi := &file_numen_v1_note_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNeighbourhoodRequest) String() string {
+func (x *GetNeighborhoodRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNeighbourhoodRequest) ProtoMessage() {}
+func (*GetNeighborhoodRequest) ProtoMessage() {}
 
-func (x *GetNeighbourhoodRequest) ProtoReflect() protoreflect.Message {
+func (x *GetNeighborhoodRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -427,19 +427,19 @@ func (x *GetNeighbourhoodRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNeighbourhoodRequest.ProtoReflect.Descriptor instead.
-func (*GetNeighbourhoodRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetNeighborhoodRequest.ProtoReflect.Descriptor instead.
+func (*GetNeighborhoodRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetNeighbourhoodRequest) GetPath() string {
+func (x *GetNeighborhoodRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type GetNeighbourhoodResponse struct {
+type GetNeighborhoodResponse struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Focus   *Note                  `protobuf:"bytes,1,opt,name=focus,proto3" json:"focus,omitempty"`
 	Related []*Neighbor            `protobuf:"bytes,2,rep,name=related,proto3" json:"related,omitempty"`
@@ -447,7 +447,7 @@ type GetNeighbourhoodResponse struct {
 	// what it is. Empty for an ordinary note.
 	FocusType string `protobuf:"bytes,3,opt,name=focus_type,json=focusType,proto3" json:"focus_type,omitempty"`
 	// One connection for every line the client draws: a pair of the drawn notes
-	// (the focus and its neighbours) that a record joins, whether the focus is one
+	// (the focus and its neighbors) that a record joins, whether the focus is one
 	// of them or not. A hierarchical connection has the parent as first and the
 	// child as second, and each side holds the label and the marker of the record
 	// written in that note.
@@ -459,20 +459,20 @@ type GetNeighbourhoodResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetNeighbourhoodResponse) Reset() {
-	*x = GetNeighbourhoodResponse{}
+func (x *GetNeighborhoodResponse) Reset() {
+	*x = GetNeighborhoodResponse{}
 	mi := &file_numen_v1_note_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetNeighbourhoodResponse) String() string {
+func (x *GetNeighborhoodResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetNeighbourhoodResponse) ProtoMessage() {}
+func (*GetNeighborhoodResponse) ProtoMessage() {}
 
-func (x *GetNeighbourhoodResponse) ProtoReflect() protoreflect.Message {
+func (x *GetNeighborhoodResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_note_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -484,40 +484,40 @@ func (x *GetNeighbourhoodResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetNeighbourhoodResponse.ProtoReflect.Descriptor instead.
-func (*GetNeighbourhoodResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetNeighborhoodResponse.ProtoReflect.Descriptor instead.
+func (*GetNeighborhoodResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_note_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *GetNeighbourhoodResponse) GetFocus() *Note {
+func (x *GetNeighborhoodResponse) GetFocus() *Note {
 	if x != nil {
 		return x.Focus
 	}
 	return nil
 }
 
-func (x *GetNeighbourhoodResponse) GetRelated() []*Neighbor {
+func (x *GetNeighborhoodResponse) GetRelated() []*Neighbor {
 	if x != nil {
 		return x.Related
 	}
 	return nil
 }
 
-func (x *GetNeighbourhoodResponse) GetFocusType() string {
+func (x *GetNeighborhoodResponse) GetFocusType() string {
 	if x != nil {
 		return x.FocusType
 	}
 	return ""
 }
 
-func (x *GetNeighbourhoodResponse) GetConnections() []*Connection {
+func (x *GetNeighborhoodResponse) GetConnections() []*Connection {
 	if x != nil {
 		return x.Connections
 	}
 	return nil
 }
 
-func (x *GetNeighbourhoodResponse) GetFocusTabKind() string {
+func (x *GetNeighborhoodResponse) GetFocusTabKind() string {
 	if x != nil {
 		return x.FocusTabKind
 	}
@@ -525,7 +525,7 @@ func (x *GetNeighbourhoodResponse) GetFocusTabKind() string {
 }
 
 // Neighbor is one note joined to the one in focus. The records that join notes
-// are in GetNeighbourhoodResponse.connections.
+// are in GetNeighborhoodResponse.connections.
 type Neighbor struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	Note     *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
@@ -3050,10 +3050,10 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\x15GetOpeningNoteRequest\"J\n" +
 	"\x16GetOpeningNoteResponse\x12'\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01B\a\n" +
-	"\x05_note\"-\n" +
-	"\x17GetNeighbourhoodRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xeb\x01\n" +
-	"\x18GetNeighbourhoodResponse\x12$\n" +
+	"\x05_note\",\n" +
+	"\x16GetNeighborhoodRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xea\x01\n" +
+	"\x17GetNeighborhoodResponse\x12$\n" +
 	"\x05focus\x18\x01 \x01(\v2\x0e.numen.v1.NoteR\x05focus\x12,\n" +
 	"\arelated\x18\x02 \x03(\v2\x12.numen.v1.NeighborR\arelated\x12\x1d\n" +
 	"\n" +
@@ -3267,11 +3267,11 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"NameSource\x12\x1b\n" +
 	"\x17NAME_SOURCE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17NAME_SOURCE_FRONTMATTER\x10\x01\x12\x18\n" +
-	"\x14NAME_SOURCE_FILENAME\x10\x022\xd4\n" +
+	"\x14NAME_SOURCE_FILENAME\x10\x022\xd1\n" +
 	"\n" +
 	"\vNoteService\x12S\n" +
-	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12Y\n" +
-	"\x10GetNeighbourhood\x12!.numen.v1.GetNeighbourhoodRequest\x1a\".numen.v1.GetNeighbourhoodResponse\x12Y\n" +
+	"\x0eGetOpeningNote\x12\x1f.numen.v1.GetOpeningNoteRequest\x1a .numen.v1.GetOpeningNoteResponse\x12V\n" +
+	"\x0fGetNeighborhood\x12 .numen.v1.GetNeighborhoodRequest\x1a!.numen.v1.GetNeighborhoodResponse\x12Y\n" +
 	"\x10ResolveAddresses\x12!.numen.v1.ResolveAddressesRequest\x1a\".numen.v1.ResolveAddressesResponse\x12M\n" +
 	"\fListHeadings\x12\x1d.numen.v1.ListHeadingsRequest\x1a\x1e.numen.v1.ListHeadingsResponse\x12A\n" +
 	"\bReadNote\x12\x19.numen.v1.ReadNoteRequest\x1a\x1a.numen.v1.ReadNoteResponse\x12D\n" +
@@ -3314,8 +3314,8 @@ var file_numen_v1_note_proto_goTypes = []any{
 	(*Note)(nil),                      // 4: numen.v1.Note
 	(*GetOpeningNoteRequest)(nil),     // 5: numen.v1.GetOpeningNoteRequest
 	(*GetOpeningNoteResponse)(nil),    // 6: numen.v1.GetOpeningNoteResponse
-	(*GetNeighbourhoodRequest)(nil),   // 7: numen.v1.GetNeighbourhoodRequest
-	(*GetNeighbourhoodResponse)(nil),  // 8: numen.v1.GetNeighbourhoodResponse
+	(*GetNeighborhoodRequest)(nil),    // 7: numen.v1.GetNeighborhoodRequest
+	(*GetNeighborhoodResponse)(nil),   // 8: numen.v1.GetNeighborhoodResponse
 	(*Neighbor)(nil),                  // 9: numen.v1.Neighbor
 	(*ResolveAddressesRequest)(nil),   // 10: numen.v1.ResolveAddressesRequest
 	(*ResolveAddressesResponse)(nil),  // 11: numen.v1.ResolveAddressesResponse
@@ -3363,9 +3363,9 @@ var file_numen_v1_note_proto_goTypes = []any{
 }
 var file_numen_v1_note_proto_depIdxs = []int32{
 	4,  // 0: numen.v1.GetOpeningNoteResponse.note:type_name -> numen.v1.Note
-	4,  // 1: numen.v1.GetNeighbourhoodResponse.focus:type_name -> numen.v1.Note
-	9,  // 2: numen.v1.GetNeighbourhoodResponse.related:type_name -> numen.v1.Neighbor
-	29, // 3: numen.v1.GetNeighbourhoodResponse.connections:type_name -> numen.v1.Connection
+	4,  // 1: numen.v1.GetNeighborhoodResponse.focus:type_name -> numen.v1.Note
+	9,  // 2: numen.v1.GetNeighborhoodResponse.related:type_name -> numen.v1.Neighbor
+	29, // 3: numen.v1.GetNeighborhoodResponse.connections:type_name -> numen.v1.Connection
 	4,  // 4: numen.v1.Neighbor.note:type_name -> numen.v1.Note
 	0,  // 5: numen.v1.Neighbor.relation:type_name -> numen.v1.Relation
 	13, // 6: numen.v1.ResolveAddressesResponse.resolved:type_name -> numen.v1.ResolvedAddress
@@ -3410,7 +3410,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	49, // 45: numen.v1.RenameNoteResponse.error:type_name -> numen.v1.ErrorCode
 	52, // 46: numen.v1.WatchEditsResponse.range:type_name -> numen.v1.Range
 	5,  // 47: numen.v1.NoteService.GetOpeningNote:input_type -> numen.v1.GetOpeningNoteRequest
-	7,  // 48: numen.v1.NoteService.GetNeighbourhood:input_type -> numen.v1.GetNeighbourhoodRequest
+	7,  // 48: numen.v1.NoteService.GetNeighborhood:input_type -> numen.v1.GetNeighborhoodRequest
 	10, // 49: numen.v1.NoteService.ResolveAddresses:input_type -> numen.v1.ResolveAddressesRequest
 	14, // 50: numen.v1.NoteService.ListHeadings:input_type -> numen.v1.ListHeadingsRequest
 	18, // 51: numen.v1.NoteService.ReadNote:input_type -> numen.v1.ReadNoteRequest
@@ -3427,7 +3427,7 @@ var file_numen_v1_note_proto_depIdxs = []int32{
 	45, // 62: numen.v1.NoteService.RenameNote:input_type -> numen.v1.RenameNoteRequest
 	47, // 63: numen.v1.NoteService.WatchEdits:input_type -> numen.v1.WatchEditsRequest
 	6,  // 64: numen.v1.NoteService.GetOpeningNote:output_type -> numen.v1.GetOpeningNoteResponse
-	8,  // 65: numen.v1.NoteService.GetNeighbourhood:output_type -> numen.v1.GetNeighbourhoodResponse
+	8,  // 65: numen.v1.NoteService.GetNeighborhood:output_type -> numen.v1.GetNeighborhoodResponse
 	11, // 66: numen.v1.NoteService.ResolveAddresses:output_type -> numen.v1.ResolveAddressesResponse
 	15, // 67: numen.v1.NoteService.ListHeadings:output_type -> numen.v1.ListHeadingsResponse
 	19, // 68: numen.v1.NoteService.ReadNote:output_type -> numen.v1.ReadNoteResponse

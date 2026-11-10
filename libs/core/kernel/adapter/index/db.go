@@ -63,7 +63,7 @@ func getPragmas() []string {
 
 const (
 	shipped        = "synchronous(NORMAL)"
-	unsynchronised = "synchronous(OFF)"
+	unsynchronized = "synchronous(OFF)"
 )
 
 // Option is what an index is opened with.
@@ -77,7 +77,7 @@ type settings struct{ synchronous string }
 // writer and the busy timeout stay as they are; only the moment of the flush
 // moves. The grant is obtainable only inside this module.
 func SkipFlush(testonly.Grant) Option {
-	return func(s *settings) { s.synchronous = unsynchronised }
+	return func(s *settings) { s.synchronous = unsynchronized }
 }
 
 func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {

@@ -17,7 +17,6 @@ import {
   requireMountAccess,
   type ViewRegistry,
   SLOT,
-  openExternalUrl,
   type LoaderHost,
   type Manifest,
   type AgentHost,
@@ -28,6 +27,7 @@ import {
   type WindowHost,
 } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
+import { openExternalUrl } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
 import { TARGET } from '@/shared/config/window'
 

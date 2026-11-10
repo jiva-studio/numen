@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -253,7 +254,7 @@ func TestAMoveOfAPathThatContainsNothingIsNoNote(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "physics/Missing.md", "archive/Missing.md")
-	if !errors.Is(err, note.ErrNoNote) {
+	if !errors.Is(err, edit.ErrNoNote) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.IsMoved {

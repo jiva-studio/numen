@@ -17,7 +17,7 @@ import {
   settle,
   viewOn,
   type Types,
-  type NeighbourSpec,
+  type NeighborSpec,
 } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
@@ -92,11 +92,11 @@ const createDeps = (editor: PlexTabDeps['editor'], overrides: DepsOverrides = {}
 
 const tab = (
   targetPath: string,
-  neighbours: readonly NeighbourSpec[] = [],
+  neighbors: readonly NeighborSpec[] = [],
   takes = true,
   types: Types = {},
 ) => {
-  const plex = viewOn(targetPath, neighbours, types)
+  const plex = viewOn(targetPath, neighbors, types)
   const vault = createVault(takes)
   const openedCalls: [string, string, string][] = []
   const request: string[] = []
@@ -308,7 +308,7 @@ describe('the menu on a node', () => {
 describe('a plex drawing nothing', () => {
   const plex = (overrides: DepsOverrides) => {
     const view = {
-      neighbourhood: ref(null),
+      neighborhood: ref(null),
       here: ref(''),
       error: ref(''),
       go: async () => undefined,
@@ -738,12 +738,12 @@ describe('a heading of a node chosen', () => {
 })
 
 /** A note beside another: where it is located, and the note it comes through. */
-type NeighbourRow = readonly [path: string, relation: NoteRelation, through?: string]
+type NeighborRow = readonly [path: string, relation: NoteRelation, through?: string]
 
 const getNoteTitle = (path: string) => (path.split('/').pop() ?? path).replace(/\.md$/, '')
 
-const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[] = []) => {
-  let relatedItems = initialNeighbours.map(([path, relation, through]) => ({
+const inVault = async (focus: string, initialNeighbors: readonly NeighborRow[] = []) => {
+  let relatedItems = initialNeighbors.map(([path, relation, through]) => ({
     path,
     relation,
     through: through ?? '',
@@ -758,7 +758,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
   const ran: [string, string, string][] = []
 
   const view = viewing({
-    neighbourhood: async (path) => {
+    neighborhood: async (path) => {
       request.push(path)
       if (pendingGate) await pendingGate
       return {
@@ -815,7 +815,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     await view.go(view.here.value)
   }
   /** The user navigates to another note, which is a graph of its own. */
-  const goToNote = async (path: string, ...now: readonly NeighbourRow[]) => {
+  const goToNote = async (path: string, ...now: readonly NeighborRow[]) => {
     relatedItems = now.map(([at, relation, through]) => ({
       path: at,
       relation,
@@ -1305,7 +1305,7 @@ describe('the notes a plex asks the vault for the headings of', () => {
   it('are none while the plex draws nothing', async () => {
     const one = tab('Root.md')
 
-    one.state.canvas.view.neighbourhood.value = null
+    one.state.canvas.view.neighborhood.value = null
     await settle()
 
     expect(one.requestedHeadings).toStrictEqual([['Root.md']])
@@ -1361,7 +1361,7 @@ describe('a quick link confirmed', () => {
 describe('what a note is called where the picture names it nowhere', () => {
   it('is the file it is filed under while the plex draws nothing', () => {
     const one = tab('Root.md')
-    one.state.canvas.view.neighbourhood.value = null
+    one.state.canvas.view.neighborhood.value = null
 
     expect(one.state.nodes.getName('Deep/Elsewhere.md')).toBe('Elsewhere')
   })

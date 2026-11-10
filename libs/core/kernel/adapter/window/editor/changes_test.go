@@ -145,8 +145,8 @@ func TestAnEditReachesAListener(t *testing.T) {
 	}
 
 	// And the index matches the disk by the time it is announced.
-	displayed, err := client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Note.md"}))
+	displayed, err := client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Note.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1400,8 +1400,8 @@ func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 			"## Layout\n\n### Header\n\nan animal\n\n### Footer\n\nheight\n",
 	})
 
-	center, err := client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Ontology.md"}))
+	center, err := client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1425,8 +1425,8 @@ func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 
 	// The focused note carries its type in the same way, when the graph is
 	// centered on a typed note.
-	item, err := client.GetNeighbourhood(t.Context(),
-		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
+	item, err := client.GetNeighborhood(t.Context(),
+		connect.NewRequest(&v1.GetNeighborhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}

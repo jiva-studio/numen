@@ -253,7 +253,7 @@ func TestPageUsesInterfaceScaleOfFile(t *testing.T) {
 
 // The built stylesheet declares `color-scheme` at zero weight alone, so the
 // element the page carries takes effect regardless of the theme.
-func TestTheBuiltStylesheetDoesNotPinTheColourScheme(t *testing.T) {
+func TestTheBuiltStylesheetDoesNotPinTheColorScheme(t *testing.T) {
 	constructed, err := wire.GetInterface(pages)
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)

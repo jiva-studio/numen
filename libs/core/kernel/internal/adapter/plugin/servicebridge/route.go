@@ -52,7 +52,7 @@ func (p *Proxy) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	out.Header.Del("Origin")
 	out.Header.Set("Authorization", "Bearer "+endpoint.Token)
 
-	res, err := transport.EndpointClient(endpoint).Do(out)
+	res, err := transport.GetClient(p.host, endpoint).Do(out)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadGateway)
 		return

@@ -40,7 +40,7 @@ type PlexProps = InstanceType<typeof Plex>['$props']
 
 const mountPlex = (props: Partial<PlexProps> = {}) => {
   const plex = mount(Plex, {
-    props: { neighbourhood: NEIGHBOURHOOD, duration: 0, dragged: DRAGGED, ...props },
+    props: { neighborhood: NEIGHBOURHOOD, duration: 0, dragged: DRAGGED, ...props },
     attachTo: document.body,
   })
   stubMatrix(plex.find('svg').element as SVGSVGElement)

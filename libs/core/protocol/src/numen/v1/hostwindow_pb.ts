@@ -304,7 +304,7 @@ export const HostWindowErrorCodeSchema: GenEnum<HostWindowErrorCode> = /*@__PURE
  */
 export const HostWindowService: GenService<{
   /**
-   * FocusNote makes a note the current one, and the neighbourhood view is centred on it.
+   * FocusNote makes a note the current one, and the neighborhood view is centered on it.
    *
    * @generated from rpc numen.v1.HostWindowService.FocusNote
    */

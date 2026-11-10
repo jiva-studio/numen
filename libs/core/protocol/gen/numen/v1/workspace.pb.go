@@ -256,7 +256,7 @@ func (*WatchFocusRequest) Descriptor() ([]byte, []int) {
 
 type WatchFocusResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The source to put in front of the person: a note to see the neighbourhood
+	// The source to put in front of the person: a note to see the neighborhood
 	// from, or a document to open.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The runs of that source's text to open on, counted in bytes. The person is

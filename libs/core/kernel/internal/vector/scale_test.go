@@ -22,7 +22,7 @@ func unit(rng *rand.Rand, d int) []float32 {
 	for i := range v {
 		v[i] = float32(rng.NormFloat64())
 	}
-	return vector.Normalise(v)
+	return vector.Normalize(v)
 }
 
 func exact(a, b []float32) float64 {
@@ -72,12 +72,12 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 	}
 }
 
-// TestQuantisingCostsTheSameAtEveryWidth checks that at any width a stored
+// TestQuantizingCostsTheSameAtEveryWidth checks that at any width a stored
 // vector puts the rerank's similarity within a few steps of the scale.
 // The width is drawn from 256 upwards: below that a unit-length vector starts
 // to carry a component beyond the scale, which is clamped, and the scale has
 // headroom for that clamping.
-func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
+func TestQuantizingCostsTheSameAtEveryWidth(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		d := rapid.IntRange(256, 4096).Draw(t, "dimensions")
 		rng := rand.New(rand.NewPCG(rapid.Uint64().Draw(t, "seed"), 1))

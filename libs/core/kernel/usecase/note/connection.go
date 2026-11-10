@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -30,7 +31,7 @@ type noteChange struct {
 type connectionEditor struct {
 	readers   vaultport.VaultReaders
 	writers   NoteWriting
-	index     IndexUpdater
+	index     edit.IndexUpdater
 	now       machineport.Clock
 	links     noteport.LinkQueries
 	addresses *query.GetLinkAddress
@@ -144,7 +145,7 @@ func (e connectionEditor) apply(ctx context.Context, v domain.Vault, changes []n
 	for i, c := range changes {
 		raw, err := reader.Read(ctx, c.path)
 		if err != nil {
-			return fmt.Errorf("read %s: %w", c.path, mapMissingNote(err))
+			return fmt.Errorf("read %s: %w", c.path, edit.MapMissingNote(err))
 		}
 		doc, err := markdown.Open(raw)
 		if err != nil {
@@ -200,7 +201,7 @@ func (e connectionEditor) updateIndex(ctx context.Context, v domain.Vault, chang
 		paths[i] = c.path
 	}
 	// The files are written, so the index follows them even when the caller is canceled.
-	return WrapIndexOutdated(e.index(context.WithoutCancel(ctx), v, paths), paths...)
+	return edit.WrapIndexOutdated(e.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 func getKind(c domain.Connection) string {
@@ -222,7 +223,7 @@ type SaveConnection struct {
 // NewSaveConnection builds the use case over the vault, the index that is brought
 // index updater after a write, the link queries, and the clock.
 func NewSaveConnection(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) SaveConnection {
 	return SaveConnection{editor: connectionEditor{
@@ -256,7 +257,7 @@ type RemoveConnection struct {
 // NewRemoveConnection builds the use case over the same collaborators as
 // NewSaveConnection.
 func NewRemoveConnection(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) RemoveConnection {
 	return RemoveConnection{editor: connectionEditor{
@@ -288,7 +289,7 @@ type RemoveSide struct {
 // NewRemoveSide builds the use case over the same collaborators as
 // NewSaveConnection.
 func NewRemoveSide(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) RemoveSide {
 	return RemoveSide{editor: connectionEditor{
@@ -317,7 +318,7 @@ type Join struct {
 
 // NewJoin builds the use case over the same collaborators as NewSaveConnection.
 func NewJoin(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater,
 	now machineport.Clock, links noteport.LinkQueries, addresses *query.GetLinkAddress,
 ) Join {
 	return Join{editor: connectionEditor{

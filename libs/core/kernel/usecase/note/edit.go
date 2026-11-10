@@ -12,33 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// ErrNoNote is what an operation gets when the vault holds no note at the path
-// it was given. A vault that cannot be reached at all is returned as it arrived.
-var ErrNoNote = edit.ErrNoNote
-
-// ErrIndexOutdated is returned when a file was written but the index could not be
-// updated. The vault holds the written content, and the next scan updates the
-// index for the path.
-var ErrIndexOutdated = edit.ErrIndexOutdated
-
-// WrapIndexOutdated wraps an index update failure in ErrIndexOutdated, which
-// distinguishes it from a write that failed. The paths are the ones the index
-// update covered.
-func WrapIndexOutdated(err error, paths ...string) error {
-	return edit.WrapIndexOutdated(err, paths...)
-}
-
-func mapMissingNote(err error) error {
-	return edit.MapMissingNote(err)
-}
-
-// Baseline is the state of the note that the caller last read before saving.
-type Baseline = edit.Baseline
-
-// IndexUpdater updates the index for the named notes, so a write's changes are
-// searchable before the write is reported complete.
-type IndexUpdater = edit.IndexUpdater
-
 // Edit applies a change to the contents of an existing note.
 //
 // The sequence is: read the note, reject content that cannot be read, write the
@@ -46,13 +19,13 @@ type IndexUpdater = edit.IndexUpdater
 type Edit struct {
 	readers vaultport.VaultReaders
 	writers NoteWriting
-	index   IndexUpdater
+	index   edit.IndexUpdater
 	now     machineport.Clock
 
 	FileStat        domain.FileStat
 	ShouldOverwrite bool
 	Bound           int
-	Baseline        *Baseline
+	Baseline        *edit.Baseline
 }
 
 // NewEdit is what a change to an existing note is made through: the vault it
@@ -61,7 +34,7 @@ type Edit struct {
 // caller believes is on disk, and how much of a file it will hold, are set
 // beside it.
 func NewEdit(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
 ) Edit {
 	return Edit{readers: readers, writers: writers, index: index, now: now}
 }

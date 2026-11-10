@@ -112,7 +112,7 @@ describe('a change to the vault', () => {
     const answers: (() => void)[] = []
     const plexes = createPlexKind(fixture.host, () =>
       usePlexView({
-        neighbourhood: async (path) => {
+        neighborhood: async (path) => {
           await new Promise<void>((resolve) => answers.push(resolve))
           return { focus: { path, title: path }, focusType: 'note', related: [], connections: [] }
         },
@@ -272,10 +272,10 @@ describe('plex tab notifications', () => {
     expect(one.kind.getTitle!(nowhere.state)).toBe('Plex')
   })
 
-  it('calls it a plex while its view holds no neighbourhood', async () => {
+  it('calls it a plex while its view holds no neighborhood', async () => {
     const one = window({ opening: '' })
     const { state } = await one.openTab()
-    ;(state.canvas.view.neighbourhood as { value: unknown }).value = null
+    ;(state.canvas.view.neighborhood as { value: unknown }).value = null
 
     expect(one.kind.getTitle!(state)).toBe('Plex')
   })

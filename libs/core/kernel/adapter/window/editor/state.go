@@ -51,7 +51,7 @@ type IndexState struct {
 
 // NewState makes the state of a window that shows no vault.
 func NewState(tasks *run.Tasks) *State {
-	tasked := &wire.Window{Named: wire.Editor, Tasking: tasks}
+	tasked := &wire.Window{Name: wire.Editor, Tasks: tasks}
 	state := &State{
 		Gate:    &Gate{},
 		Writes:  &Writes{window: tasked},

@@ -8,10 +8,8 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/note/edit"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 )
@@ -23,17 +21,17 @@ import (
 // and not one per window.
 
 // ConvertOutcomeToErrorCode returns which error code an outcome is, and whether it is one at all.
-func ConvertOutcomeToErrorCode(o note.ReadOutcome) (v1.ErrorCode, bool) {
+func ConvertOutcomeToErrorCode(o edit.ReadOutcome) (v1.ErrorCode, bool) {
 	switch o {
-	case note.Missing:
+	case edit.Missing:
 		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
-	case note.NotANote:
+	case edit.NotANote:
 		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
-	case note.NotText:
+	case edit.NotText:
 		return v1.ErrorCode_ERROR_CODE_NOT_TEXT, true
-	case note.TooLarge:
+	case edit.TooLarge:
 		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
-	case note.Unreadable:
+	case edit.Unreadable:
 		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
 	default:
 		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
@@ -46,18 +44,18 @@ func GetErrorCode(err error) (v1.ErrorCode, bool) {
 	switch {
 	case errors.Is(err, edit.ErrStale):
 		return v1.ErrorCode_ERROR_CODE_CONFLICT, true
-	case errors.Is(err, note.ErrNoNote):
+	case errors.Is(err, edit.ErrNoNote):
 		return v1.ErrorCode_ERROR_CODE_NOT_FOUND, true
-	case errors.Is(err, note.ErrTooLarge):
+	case errors.Is(err, edit.ErrTooLarge):
 		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
 	case errors.Is(err, query.ErrInvalidName):
 		return v1.ErrorCode_ERROR_CODE_INVALID_NAME, true
-	case errors.Is(err, note.ErrUnreadable),
-		errors.Is(err, note.ErrInline),
-		errors.Is(err, note.ErrUnterminated),
-		errors.Is(err, note.ErrAnchored):
+	case errors.Is(err, edit.ErrUnreadable),
+		errors.Is(err, edit.ErrInline),
+		errors.Is(err, edit.ErrUnterminated),
+		errors.Is(err, edit.ErrAnchored):
 		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
-	case errors.Is(err, note.ErrBodyUnwritable):
+	case errors.Is(err, edit.ErrBodyUnwritable):
 		return v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true
 	case errors.Is(err, edit.ErrNotANote):
 		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true

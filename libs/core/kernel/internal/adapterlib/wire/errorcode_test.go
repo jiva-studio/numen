@@ -11,8 +11,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/note/edit"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -24,18 +25,18 @@ import (
 
 func TestWhichErrorCodeAnOutcomeIs(t *testing.T) {
 	for name, c := range map[string]struct {
-		outcome note.ReadOutcome
+		outcome edit.ReadOutcome
 		want    v1.ErrorCode
 		is      bool
 	}{
-		"a note that is not there":  {note.Missing, v1.ErrorCode_ERROR_CODE_NOT_FOUND, true},
-		"a file that is not a note": {note.NotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true},
-		"a file that is not text":   {note.NotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT, true},
-		"a note past its bound":     {note.TooLarge, v1.ErrorCode_ERROR_CODE_TOO_LARGE, true},
+		"a note that is not there":  {edit.Missing, v1.ErrorCode_ERROR_CODE_NOT_FOUND, true},
+		"a file that is not a note": {edit.NotANote, v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true},
+		"a file that is not text":   {edit.NotText, v1.ErrorCode_ERROR_CODE_NOT_TEXT, true},
+		"a note past its bound":     {edit.TooLarge, v1.ErrorCode_ERROR_CODE_TOO_LARGE, true},
 		"frontmatter nobody can read": {
-			note.Unreadable, v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
+			edit.Unreadable, v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
 		},
-		"a note that was read": {note.Ok, v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false},
+		"a note that was read": {edit.Ok, v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false},
 	} {
 		t.Run(name, func(t *testing.T) {
 			reason, ok := wire.ConvertOutcomeToErrorCode(c.outcome)
@@ -54,11 +55,11 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 		is   bool
 	}{
 		"the vault holds no note there": {
-			fmt.Errorf("read Old.md: %w", note.ErrNoNote),
+			fmt.Errorf("read Old.md: %w", edit.ErrNoNote),
 			v1.ErrorCode_ERROR_CODE_NOT_FOUND, true,
 		},
 		"more text than a note is written with": {
-			fmt.Errorf("%w: 9 bytes", note.ErrTooLarge),
+			fmt.Errorf("%w: 9 bytes", edit.ErrTooLarge),
 			v1.ErrorCode_ERROR_CODE_TOO_LARGE, true,
 		},
 		"a title no note can be given": {
@@ -66,23 +67,23 @@ func TestWhichErrorCodeAWritesErrorIs(t *testing.T) {
 			v1.ErrorCode_ERROR_CODE_INVALID_NAME, true,
 		},
 		"a frontmatter written on one line": {
-			fmt.Errorf("Old.md: %w", note.ErrInline),
+			fmt.Errorf("Old.md: %w", edit.ErrInline),
 			v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
 		},
 		"a frontmatter block that is never closed": {
-			fmt.Errorf("Old.md: %w", note.ErrUnterminated),
+			fmt.Errorf("Old.md: %w", edit.ErrUnterminated),
 			v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
 		},
 		"a frontmatter carrying a YAML anchor": {
-			fmt.Errorf("Old.md: %w", note.ErrAnchored),
+			fmt.Errorf("Old.md: %w", edit.ErrAnchored),
 			v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
 		},
 		"frontmatter that is not YAML": {
-			fmt.Errorf("Old.md: %w", note.ErrUnreadable),
+			fmt.Errorf("Old.md: %w", edit.ErrUnreadable),
 			v1.ErrorCode_ERROR_CODE_UNREADABLE, true,
 		},
 		"a whole note returned as prose": {
-			fmt.Errorf("Old.md: %w", note.ErrBodyUnwritable),
+			fmt.Errorf("Old.md: %w", edit.ErrBodyUnwritable),
 			v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE, true,
 		},
 		"a file the vault leaves alone": {

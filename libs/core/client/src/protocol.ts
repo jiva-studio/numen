@@ -8,7 +8,7 @@ export {
   AskAgentResponseSchema,
   FindCatalogEntryByTabKindResponseSchema,
   GetCatalogEntryResponseSchema,
-  GetNeighbourhoodResponseSchema,
+  GetNeighborhoodResponseSchema,
   ListCatalogResponseSchema,
   ToolCallSchema,
   type AskAgentResponse,

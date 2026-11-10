@@ -513,14 +513,14 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 	}
 }
 
-func TestTheNeighbourhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
+func TestTheNeighborhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
 	t.Parallel()
 	db, v := newIndexedVault(t, map[string]string{
 		"Heat.md":    "---\ntitle: Heat\nlinks:\n  - to: Entropy\n    role: jump\n    marker: arrow\n---\n# Heat\n",
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := query.NewShowNeighbourhood(db.NoteQueries.Links, db.NoteQueries.NoteRefs).Execute(t.Context(), v, "Heat.md")
+	got, err := query.NewShowNeighborhood(db.NoteQueries.Links, db.NoteQueries.NoteRefs).Execute(t.Context(), v, "Heat.md")
 	if err != nil {
 		t.Fatal(err)
 	}

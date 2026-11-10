@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -29,20 +30,20 @@ type Remove struct {
 	writers vaultport.FileMovers
 	links   noteport.LinkQueries
 	queries sourceport.SourcesUnder
-	index   IndexUpdater
+	index   edit.IndexUpdater
 }
 
 // NewRemove is what takes a note out of the vault: the vault it is moved
 // within, the links that pointed at it, what the index holds about the files
 // under it, and what updates the index for the path it left.
 func NewRemove(
-	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index IndexUpdater,
+	writers vaultport.FileMovers, links noteport.LinkQueries, queries sourceport.SourcesUnder, index edit.IndexUpdater,
 ) Remove {
 	return Remove{writers: writers, links: links, queries: queries, index: index}
 }
 
 // WithIndex replaces the index function.
-func (u Remove) WithIndex(index IndexUpdater) Remove {
+func (u Remove) WithIndex(index edit.IndexUpdater) Remove {
 	u.index = index
 	return u
 }
@@ -126,7 +127,7 @@ func moveToTrash(ctx context.Context, writer vaultport.FileMover, path string) (
 			return target, nil
 		}
 		if !errors.Is(err, vault.ErrAlreadyExists) {
-			return "", mapMissingNote(err)
+			return "", edit.MapMissingNote(err)
 		}
 		if attempt > 100 {
 			return "", fmt.Errorf("%s cannot be moved to the trash; the trash already has 100 files of that name", path)
@@ -148,7 +149,7 @@ func (u Remove) Destroy(ctx context.Context, v domain.Vault, path string) (Remov
 		return res, err
 	}
 	if err := writer.Remove(ctx, path); err != nil {
-		return res, mapMissingNote(err)
+		return res, edit.MapMissingNote(err)
 	}
 	// The file is off the disk from here on, so the index update result is reported
 	// alongside the links that now resolve to nothing.
@@ -164,7 +165,7 @@ func (u Remove) updateIndex(ctx context.Context, v domain.Vault, paths ...string
 		return nil
 	}
 	// The files are written, so the index follows them even when the caller is canceled.
-	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
+	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 func withSuffix(path, suffix string) string {

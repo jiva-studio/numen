@@ -144,7 +144,7 @@ func resolveToken(value string, tokens map[string]string) string {
 
 func getValueKind(value string) valueKind {
 	switch {
-	case isColour(value):
+	case isColor(value):
 		return color
 	case isLength(value):
 		return length
@@ -156,7 +156,7 @@ func getValueKind(value string) valueKind {
 func hasValueKind(value string, want valueKind) bool {
 	switch want {
 	case color:
-		return isColour(value)
+		return isColor(value)
 	case length:
 		return isLength(value)
 	default:
@@ -166,11 +166,11 @@ func hasValueKind(value string, want valueKind) bool {
 
 var hex = regexp.MustCompile(`^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$`)
 
-func isColour(value string) bool {
+func isColor(value string) bool {
 	if inner, is := getLightDarkPair(value); is {
 		halves := splitOn(inner, ',')
 		return len(halves) == 2 &&
-			isColour(strings.TrimSpace(halves[0])) && isColour(strings.TrimSpace(halves[1]))
+			isColor(strings.TrimSpace(halves[0])) && isColor(strings.TrimSpace(halves[1]))
 	}
 	return hex.MatchString(value)
 }
@@ -182,7 +182,7 @@ func isLength(value string) bool { return value == "0" || measure.MatchString(va
 func isElevationValue(value string) bool {
 	for _, layer := range splitOn(value, ',') {
 		parts := splitWords(layer)
-		if len(parts) < 3 || !isColour(parts[len(parts)-1]) {
+		if len(parts) < 3 || !isColor(parts[len(parts)-1]) {
 			return false
 		}
 		for _, one := range parts[:len(parts)-1] {

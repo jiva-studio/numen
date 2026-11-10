@@ -15,6 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // ReadNote hands the client the prose of a note.
@@ -178,9 +179,9 @@ func (h *Outline) GetOpeningNote(
 	return connect.NewResponse(out), nil
 }
 
-func (h *Outline) GetNeighbourhood(
-	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
-) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
+func (h *Outline) GetNeighborhood(
+	ctx context.Context, r *connect.Request[v1.GetNeighborhoodRequest],
+) (*connect.Response[v1.GetNeighborhoodResponse], error) {
 	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
@@ -205,7 +206,7 @@ func (h *Outline) GetNeighbourhood(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.GetNeighbourhoodResponse{
+	out := &v1.GetNeighborhoodResponse{
 		Focus:        convertNoteToWire(found.Focus),
 		FocusType:    convertNoteTypeToWire(types[found.Focus.Path]),
 		FocusTabKind: tabKinds[found.Focus.Path],
@@ -309,11 +310,11 @@ func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
-func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
+func newBaseline(baseline *v1.ReadBaseline) *edit.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &note.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
+	return &edit.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
 }
 
 func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
@@ -378,7 +379,7 @@ func (h *Handler) WatchEdits(
 		return err
 	}
 
-	repeat := time.NewTicker(wire.Again)
+	repeat := time.NewTicker(wire.ResendInterval)
 	defer repeat.Stop()
 
 	for {
@@ -454,7 +455,7 @@ func newWireNameSource(delta query.NameSource) v1.NameSource {
 	}
 }
 
-func newMoveResult(moved note.MoveResult) *v1.MoveResult {
+func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,

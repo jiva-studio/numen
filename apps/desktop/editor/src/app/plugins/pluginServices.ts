@@ -20,7 +20,7 @@ import type {
 import type { SearchDeps } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
-import { getNeighbourhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
+import { getNeighborhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -142,7 +142,7 @@ const FOUND_LIMIT = 20
 
 export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps): VaultNotes {
   return {
-    getNeighbourhood: (path) => getNeighbourhood(path),
+    getNeighborhood: (path) => getNeighborhood(path),
     getHeadings: (paths) => listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),

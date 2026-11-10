@@ -3,6 +3,7 @@ package transport
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"connectrpc.com/connect"
@@ -18,9 +19,9 @@ const pingTimeout = 3 * time.Second
 
 // CheckPluginProtocol pings a started plugin and returns port.ErrUnsupportedProtocol when the protocol
 // it reports differs from the one its manifest declares or from manifest.ProtocolVersion.
-func CheckPluginProtocol(ctx context.Context, m manifest.Manifest, endpoint plugin.Endpoint) error {
+func CheckPluginProtocol(ctx context.Context, httpClient *http.Client, m manifest.Manifest, endpoint plugin.Endpoint) error {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
-		EndpointClient(endpoint),
+		httpClient,
 		GetBaseURL(endpoint),
 		connect.WithInterceptors(AuthInterceptor(endpoint.Token)),
 	)

@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -480,7 +480,7 @@ func (u producer) prepareBatch(
 			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
-			Kind:    embedding.QuantisedInt8,
+			Kind:    embedding.QuantizedInt8,
 			Value:   value,
 			Coarse:  vector.Coarse(vector.Dimensions(value)),
 		}
@@ -522,7 +522,7 @@ func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completed
 				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
-				Kind:    embedding.QuantisedInt8,
+				Kind:    embedding.QuantizedInt8,
 				Value:   unique[pos].value,
 				Coarse:  unique[pos].coarse,
 			}
@@ -602,10 +602,10 @@ func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]unique
 		if len(v) != prep.model.Dimensions {
 			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 		}
-		quantised := vector.Bytes(vector.Normalise(v))
+		quantized := vector.Bytes(vector.Normalize(v))
 		unique[i] = uniqueVector{
-			value:  packVector(quantised),
-			coarse: vector.Coarse(quantised),
+			value:  packVector(quantized),
+			coarse: vector.Coarse(quantized),
 		}
 	}
 	return unique, nil

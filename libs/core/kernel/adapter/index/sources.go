@@ -199,9 +199,9 @@ func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path
 	}, true, nil
 }
 
-// GetRecognisedSources is the sources of one kind whose text a producer made.
-func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourcedomain.Text, error) {
-	found, err := s.read.GetRecognisedSources(ctx, vaultID, string(kind))
+// GetRecognizedSources is the sources of one kind whose text a producer made.
+func (s queries) GetRecognizedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourcedomain.Text, error) {
+	found, err := s.read.GetRecognizedSources(ctx, vaultID, string(kind))
 	if err != nil {
 		return nil, err
 	}

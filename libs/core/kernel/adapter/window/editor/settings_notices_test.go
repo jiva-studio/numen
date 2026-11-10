@@ -13,7 +13,7 @@ func TestTheNoticesOfTheSettingsReachTheWindowAsNoticesAndNotAsFailedTasks(t *te
 
 	(&Installation{State: state}).Report([]string{notice})
 
-	tasks := state.Window.Tasking.List()
+	tasks := state.Window.Tasks.List()
 	if len(tasks) != 1 || !strings.Contains(tasks[0].About, notice) {
 		t.Fatalf("the notice is not among the tasks as text: %+v", tasks)
 	}

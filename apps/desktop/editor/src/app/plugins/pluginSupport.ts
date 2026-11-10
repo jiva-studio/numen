@@ -1,5 +1,5 @@
 import { watch } from 'vue'
-import { runInBackground } from '@numen/ui'
+import { openExternalUrl, runInBackground } from '@numen/ui'
 import type { PluginServices } from './pluginServices'
 import { registerTabKindIcon } from '@/entities/note'
 import { getPluginTexts } from '@/entities/plugin'
@@ -12,7 +12,6 @@ import {
   isPluginEnabledValue,
   createPluginNotices,
   createPluginTasks,
-  openExternalUrl,
   type CommandDeclaration,
   type PluginHostDeps,
   type PluginLoader,
