@@ -25,4 +25,7 @@ export const stepTo = (key: string, pos: number, count: number): number | null =
 
 /** Whether a function ref received something that takes keyboard focus. */
 export const isFocusable = (value: Unvalidated): value is { focus: () => void } =>
-  typeof value === 'object' && value !== null && 'focus' in value && typeof value.focus === 'function'
+  typeof value === 'object' &&
+  value !== null &&
+  'focus' in value &&
+  typeof value.focus === 'function'

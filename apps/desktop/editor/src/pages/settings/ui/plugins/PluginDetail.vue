@@ -43,7 +43,8 @@ const managed = computed(
   () => createManagedFromEntries([props.plugin], props.manager.catalog.value)[0],
 )
 
-const readEnabled = (): JsonValue | undefined => props.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
+const readEnabled = (): JsonValue | undefined =>
+  props.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
 const isEnabled = computed<boolean>(() => {
   const value = readEnabled()
   return typeof value === 'boolean' ? value : true

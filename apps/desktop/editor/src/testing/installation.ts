@@ -10,11 +10,11 @@ type Flat<T> = { [K in keyof T]: T[K] }
 /** What a test puts over the defaults of an installation, named without the group it belongs to. */
 export type InstallationOverrides = Flat<
   Partial<Installation['settings']> &
-  Partial<Omit<Installation['plugin'], 'files'>> &
-  Partial<Installation['plugin']['files']> &
-  Partial<Omit<Installation['secrets'], 'edit' | 'access'>> &
-  Partial<Installation['secrets']['edit']> &
-  Partial<Installation['secrets']['access']>
+    Partial<Omit<Installation['plugin'], 'files'>> &
+    Partial<Installation['plugin']['files']> &
+    Partial<Omit<Installation['secrets'], 'edit' | 'access'>> &
+    Partial<Installation['secrets']['edit']> &
+    Partial<Installation['secrets']['access']>
 >
 
 const SETTINGS_KEYS = [

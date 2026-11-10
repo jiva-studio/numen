@@ -127,37 +127,36 @@ const PLUGINS: readonly PluginInfo[] = [
 const DONE: string[] = []
 
 const APP_SETTINGS: Installation['plugin']['app'] = ref([
-      {
-        key: 'appearance.theme',
-        type: 'enum',
-        title: 'Theme',
-        description: 'The stylesheet the window is drawn with.',
-        default: 'preset:numen',
-        optionsFrom: 'themes',
-        preview: true,
-        activeOptions: [
-          { value: 'preset:numen', title: 'numen', detail: '' },
-          { value: 'preset:dracula', title: 'dracula', detail: '' },
-          { value: 'mine:sea', title: 'sea', detail: '' },
-        ],
-        isShown: true,
-        value: 'preset:numen',
-      },
-      {
-        key: 'appearance.textScale',
-        type: 'range',
-        title: 'Reading size',
-        description: 'Scale of note and book text. 1 is the default.',
-        default: 1,
-        min: 0.8,
-        max: 1.75,
-        step: 0.1,
-        preview: true,
-        isShown: true,
-        value: 1.25,
-      },
+  {
+    key: 'appearance.theme',
+    type: 'enum',
+    title: 'Theme',
+    description: 'The stylesheet the window is drawn with.',
+    default: 'preset:numen',
+    optionsFrom: 'themes',
+    preview: true,
+    activeOptions: [
+      { value: 'preset:numen', title: 'numen', detail: '' },
+      { value: 'preset:dracula', title: 'dracula', detail: '' },
+      { value: 'mine:sea', title: 'sea', detail: '' },
+    ],
+    isShown: true,
+    value: 'preset:numen',
+  },
+  {
+    key: 'appearance.textScale',
+    type: 'range',
+    title: 'Reading size',
+    description: 'Scale of note and book text. 1 is the default.',
+    default: 1,
+    min: 0.8,
+    max: 1.75,
+    step: 0.1,
+    preview: true,
+    isShown: true,
+    value: 1.25,
+  },
 ])
-
 
 const INSTALLED: Installation['plugin']['plugins'] = ref(PLUGINS)
 

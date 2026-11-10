@@ -4,13 +4,7 @@
  */
 
 /** A value a setting holds: anything that survives JSON.stringify and JSON.parse unchanged. */
-export type SettingValue =
-  | string
-  | number
-  | boolean
-  | null
-  | SettingList
-  | SettingObject
+export type SettingValue = string | number | boolean | null | SettingList | SettingObject
 
 /** The list a setting value holds. */
 export interface SettingList extends ReadonlyArray<SettingValue> {}

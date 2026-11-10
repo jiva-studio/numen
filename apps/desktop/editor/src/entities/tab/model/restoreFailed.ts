@@ -23,18 +23,18 @@ export const createRestoreFailedKind = (
   error: Caught,
 ): AnyTabKind => {
   const restoreFailed: TabKind<RestoreFailedState> = {
-  kind,
-  open: (targetPath: string, _id: string, saved?: JsonValue): RestoreFailedState => ({
     kind,
-    targetPath,
-    saved,
-    message: error instanceof Error ? error.message : String(error),
-  }),
-  getTitle: (state) => title || state.targetPath.split('/').pop() || kind,
-  getOpenTab: (state) => ({ path: state.targetPath }),
-  getState: (state) => state.saved,
-  pane,
-  identity: (targetPath: string) => targetPath,
+    open: (targetPath: string, _id: string, saved?: JsonValue): RestoreFailedState => ({
+      kind,
+      targetPath,
+      saved,
+      message: error instanceof Error ? error.message : String(error),
+    }),
+    getTitle: (state) => title || state.targetPath.split('/').pop() || kind,
+    getOpenTab: (state) => ({ path: state.targetPath }),
+    getState: (state) => state.saved,
+    pane,
+    identity: (targetPath: string) => targetPath,
   }
   return restoreFailed
 }

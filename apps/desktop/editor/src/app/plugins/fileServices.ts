@@ -115,8 +115,7 @@ export interface IconHostDeps {
 /** The icons the window draws commands and the entries of the vault with. */
 export function createIconHost(deps: IconHostDeps): WorkspaceIcons {
   return {
-    getCommand: (id) =>
-      deps.getPluginCommandIcon?.(id) ?? findIcon(id) ?? null,
+    getCommand: (id) => deps.getPluginCommandIcon?.(id) ?? findIcon(id) ?? null,
     getEntry: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
 }

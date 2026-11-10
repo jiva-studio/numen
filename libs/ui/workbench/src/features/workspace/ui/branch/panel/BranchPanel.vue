@@ -31,7 +31,6 @@ type BranchSlotName = 'tab' | 'icon' | 'mark' | 'silence'
 const slots = useSlots()
 
 const passed = computed(() => Object.keys(slots) as BranchSlotName[])
-
 </script>
 
 <template>

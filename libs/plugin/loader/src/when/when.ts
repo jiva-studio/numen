@@ -126,7 +126,8 @@ function collectNames(expr: Expr, names: Set<string>): void {
 }
 
 /** A value as the evaluator reads it: a JSON object is a map. */
-type CelValue = string | number | boolean | null | readonly CelValue[] | ReadonlyMap<string, CelValue>
+type CelValue =
+  string | number | boolean | null | readonly CelValue[] | ReadonlyMap<string, CelValue>
 
 function toCelMap(value: JsonValue): CelValue {
   if (Array.isArray(value)) return value.map(toCelMap)

@@ -97,7 +97,8 @@ export function createDeclaredPaletteCommands(
   })
 }
 
-const isSameList = <T>(current: readonly T[] | undefined, received: readonly T[]): boolean => current !== undefined && JSON.stringify(current) === JSON.stringify(received)
+const isSameList = <T>(current: readonly T[] | undefined, received: readonly T[]): boolean =>
+  current !== undefined && JSON.stringify(current) === JSON.stringify(received)
 
 /** What the lists of declarations are read through. */
 export interface DeclaredStateDeps {

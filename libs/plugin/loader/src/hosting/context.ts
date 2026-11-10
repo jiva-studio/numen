@@ -44,7 +44,8 @@ function createBuffers(buffers: BufferHost, add: Track): BufferHost {
 
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
-    get: <T extends JsonValue = JsonValue>(key: string) => host.settings.getSetting<T>(pluginId, key),
+    get: <T extends JsonValue = JsonValue>(key: string) =>
+      host.settings.getSetting<T>(pluginId, key),
     onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
       add(host.settings.onSettingChange<T>(pluginId, key, h)),
   }

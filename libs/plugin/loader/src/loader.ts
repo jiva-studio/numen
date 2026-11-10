@@ -166,7 +166,11 @@ type LoaderState = Pick<PluginStatus, 'activePlugins' | 'failures' | 'moduleLoad
 
 interface Activation {
   readonly loadModule: (id: string) => Promise<PluginModule | undefined>
-  readonly activatePlugin: (id: string, module?: PluginModule, limit?: StartLimit) => Promise<boolean>
+  readonly activatePlugin: (
+    id: string,
+    module?: PluginModule,
+    limit?: StartLimit,
+  ) => Promise<boolean>
   readonly deactivatePlugin: (id: string) => Promise<boolean>
   readonly isInterface: (id: string) => Promise<boolean>
   readonly hasTabKinds: (id: string) => Promise<boolean>

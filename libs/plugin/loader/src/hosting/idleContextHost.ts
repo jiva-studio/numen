@@ -89,7 +89,13 @@ export function createIdleContextHost(parts: IdleContextHostParts): PluginContex
     events: NO_EVENTS,
     tabs: { ...NO_TABS, ...parts.tabs },
     vault: { ...NO_VAULT, ...parts.vault },
-    ui: { getWorkspace: () => undefined, getWindow: () => undefined, getCommands: () => undefined, drops: NO_DROPS, ...parts.ui },
+    ui: {
+      getWorkspace: () => undefined,
+      getWindow: () => undefined,
+      getCommands: () => undefined,
+      drops: NO_DROPS,
+      ...parts.ui,
+    },
     work: { ...NO_WORK, ...parts.work },
   }
 }

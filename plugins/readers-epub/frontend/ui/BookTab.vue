@@ -95,12 +95,7 @@ function onFollow(destPath: string) {
 </script>
 
 <template>
-  <div
-    :ref="onSetTabElement"
-    class="book-tab"
-    tabindex="-1"
-    @keydown="onPageTurnKey"
-  >
+  <div :ref="onSetTabElement" class="book-tab" tabindex="-1" @keydown="onPageTurnKey">
     <!-- Until the book has been read, a blank page and a book with no text in
          it are drawn the same way. -->
     <LoadingIndicator v-if="tabState.book.state.isLoading.value" :label="words.loading" />

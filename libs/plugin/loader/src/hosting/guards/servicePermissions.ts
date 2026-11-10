@@ -245,8 +245,7 @@ function guardMember(
       enumerable: true,
       value: (...args: never[]) => {
         const failure = requireAll(rule, operation, check)
-        if (failure === undefined)
-          return Reflect.apply(service[key] as () => Value, service, args)
+        if (failure === undefined) return Reflect.apply(service[key] as () => Value, service, args)
         if (rule.isAsync) return Promise.reject(failure.error)
         throw failure.error
       },

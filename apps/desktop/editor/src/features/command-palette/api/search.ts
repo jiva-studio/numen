@@ -21,7 +21,9 @@ const modes = getNames<SearchMode, SearchModeCode>(queryModes)
 const parseSelector = (json: string): Selector | null => {
   try {
     const value: JsonValue = JSON.parse(json)
-    return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as JsonObject) : null
+    return typeof value === 'object' && value !== null && !Array.isArray(value)
+      ? (value as JsonObject)
+      : null
   } catch {
     return null
   }

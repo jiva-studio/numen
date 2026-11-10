@@ -261,7 +261,10 @@ describe('useMenuNavigation', () => {
     expect(nav.submenu.active.value?.from).toBeNull()
 
     const rowEl = document.createElement('button')
-    nav.submenu.onRegisterRow('sub', Object.assign(document.createElement('button'), { getElement: () => rowEl }))
+    nav.submenu.onRegisterRow(
+      'sub',
+      Object.assign(document.createElement('button'), { getElement: () => rowEl }),
+    )
     nav.focusInitial()
     expect(nav.here.value).toBe(0)
     nav.onKey(createKey('ArrowRight'))

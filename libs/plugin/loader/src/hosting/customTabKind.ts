@@ -237,12 +237,15 @@ function resolveTargetTitle(title?: string, defaultName?: string, fallback = '')
 }
 
 type CustomTabState =
-  | ReturnType<typeof createCustomTabState>
-  | ReturnType<typeof createBufferedNoteState>
+  ReturnType<typeof createCustomTabState> | ReturnType<typeof createBufferedNoteState>
 
 function resolveCustomTabTarget(state: CustomTabState, registration: TabKindRegistration) {
   const defaultName = stripMarkdownExtension(extractFilename(state.path))
-  const title = resolveTargetTitle(state.title, defaultName, registration.title || registration.kind)
+  const title = resolveTargetTitle(
+    state.title,
+    defaultName,
+    registration.title || registration.kind,
+  )
 
   return {
     ...(state.path ? { file: state.path, path: state.path } : {}),
@@ -250,7 +253,11 @@ function resolveCustomTabTarget(state: CustomTabState, registration: TabKindRegi
   }
 }
 
-function notifyCustomTabShown(state: CustomTabState, id: string | undefined, deps?: PluginHostDeps): void {
+function notifyCustomTabShown(
+  state: CustomTabState,
+  id: string | undefined,
+  deps?: PluginHostDeps,
+): void {
   state.measure()
   if (!id || !deps?.getWorkspace) return
   if (state.path) deps.getWorkspace()?.files.syncPath(id, state.path, state.title)

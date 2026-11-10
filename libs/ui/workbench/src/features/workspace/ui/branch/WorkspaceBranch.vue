@@ -6,7 +6,15 @@
  * holds, and a handle that moves reports shares back; the model is the only
  * place they are stored.
  */
-import { computed, inject, resolveComponent, useTemplateRef, type Component, type Ref, type VNode } from 'vue'
+import {
+  computed,
+  inject,
+  resolveComponent,
+  useTemplateRef,
+  type Component,
+  type Ref,
+  type VNode,
+} from 'vue'
 import { SplitterGroup } from 'reka-ui'
 import { BranchPanel } from './panel'
 import { WORKSPACE_CONTEXT, type WorkspaceContext } from '../../model/context'
@@ -76,7 +84,6 @@ const { onLayout, onHold: onSplitterHold } = useBranchResize({
   getFrame: () => frameElement.value ?? undefined,
   resize: (id, shares) => workspace.value.resize(id, shares),
 })
-
 </script>
 
 <template>

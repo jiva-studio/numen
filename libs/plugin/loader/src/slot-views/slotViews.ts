@@ -43,7 +43,10 @@ export interface SlotViewManifest {
     | {
         readonly slots: readonly {
           readonly slot: string
-          readonly placed: { readonly case?: string | undefined; readonly value?: string | undefined }
+          readonly placed: {
+            readonly case?: string | undefined
+            readonly value?: string | undefined
+          }
         }[]
       }
     | undefined

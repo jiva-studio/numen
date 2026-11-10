@@ -16,7 +16,10 @@ export type PluginComponentSource = Component | { readonly default: Component }
 
 /** A function that is no component: it has no component field and takes no props, so it loads one. */
 function isLoaderFunction(comp: { readonly length: number }): boolean {
-  return !('setup' in comp || 'render' in comp || 'props' in comp || '__name' in comp) && comp.length === 0
+  return (
+    !('setup' in comp || 'render' in comp || 'props' in comp || '__name' in comp) &&
+    comp.length === 0
+  )
 }
 
 function isAsyncRegistration(comp: Unvalidated): comp is AsyncComponentRegistration {
@@ -33,9 +36,7 @@ function isAsyncRegistration(comp: Unvalidated): comp is AsyncComponentRegistrat
 function isAsyncComponent(
   comp: Unvalidated,
 ): comp is (() => Promise<Component>) | AsyncComponentRegistration {
-  return typeof comp === 'function'
-    ? isLoaderFunction(comp)
-    : isAsyncRegistration(comp)
+  return typeof comp === 'function' ? isLoaderFunction(comp) : isAsyncRegistration(comp)
 }
 
 /**
