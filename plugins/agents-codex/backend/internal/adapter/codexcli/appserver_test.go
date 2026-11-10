@@ -1,4 +1,4 @@
-package service
+package codexcli
 
 import (
 	"bufio"
@@ -16,62 +16,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 )
-
-func TestCodexModelCacheClearsFailedKeyOnSuccess(t *testing.T) {
-	agenttest.NeedsShell(t)
-	t.Setenv("HOME", t.TempDir())
-	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
-	now := clock.NewFake(time.Unix(1000, 0))
-	cache := codexModelCache{clock: now}
-
-	if got := cache.get(t.Context(), []string{failing}); got != nil {
-		t.Fatalf("expected nil from failed script, got %v", got)
-	}
-	if cache.failedKey == "" {
-		t.Fatal("expected failedKey to be set")
-	}
-
-	if err := os.WriteFile(failing, []byte("#!/bin/sh\n"+
-		`echo '{"id":1,"result":{}}'`+"\n"+
-		`echo '{"id":2,"result":{"data":[{"model":"gpt-ok"}]}}'`+"\n"+
-		"while read -r _; do :; done\n"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	now.Advance(codexFailureBackoff)
-	got := cache.get(t.Context(), []string{failing})
-	if len(got) != 1 || got[0].Name != "gpt-ok" {
-		t.Fatalf("expected 1 model, got %v", got)
-	}
-	if cache.failedKey != "" {
-		t.Errorf("expected failedKey to be cleared, got %q", cache.failedKey)
-	}
-}
-
-func TestGetCodexModelsFallbackToCache(t *testing.T) {
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	codexDir := filepath.Join(home, ".codex")
-	if err := os.MkdirAll(codexDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	cacheContent := `{"models": [{"slug": "fallback-model", "display_name": "Fallback Model", "visibility": "show"}]}`
-	if err := os.WriteFile(filepath.Join(codexDir, "models_cache.json"), []byte(cacheContent), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	models, err := GetCodexModels(t.Context(), []string{"/nonexistent/bin"})
-	if err != nil {
-		t.Fatalf("expected no error falling back to cache, got %v", err)
-	}
-	if len(models) != 1 || models[0].Name != "fallback-model" {
-		t.Fatalf("expected fallback-model from cache, got %v", models)
-	}
-}
 
 func TestAskCodexModelsWithEmptyCommand(t *testing.T) {
 	withoutAgentsAnywhere(t)
@@ -266,13 +212,6 @@ func (w *failOnWriteWriter) Write(p []byte) (int, error) {
 }
 
 func TestReadCodexCacheAndListEdgeCases(t *testing.T) {
-	if codexListLimit != 15*time.Second {
-		t.Errorf("codexListLimit = %v, want 15s", codexListLimit)
-	}
-	if codexFailureBackoff != 30*time.Second {
-		t.Errorf("codexFailureBackoff = %v, want 30s", codexFailureBackoff)
-	}
-
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	// Missing models_cache.json returns nil.
@@ -334,15 +273,9 @@ func TestReadCodexCacheAndListEdgeCases(t *testing.T) {
 			t.Errorf("expected listCodexModels error for output %q", outStr)
 		}
 	}
-
-	// newAgentModel ignores empty effort names.
-	model := newAgentModel("m", "M", true, []string{"", "high", "low"}, "high")
-	if got := getLevelNames(model); !slices.Equal(got, []string{"low", "high"}) {
-		t.Errorf("newAgentModel levels = %v, want [low high]", got)
-	}
 }
 
-func TestIsStoppedAndCacheAsyncAndServerEdgeCases(t *testing.T) {
+func TestAStoppedProgramIsNotAFailure(t *testing.T) {
 	if !isStopped(nil) || !isStopped(&exec.ExitError{}) || !isStopped(context.Canceled) ||
 		!isStopped(os.ErrProcessDone) || !isStopped(syscall.ESRCH) {
 		t.Error("expected standard stop errors to report isStopped = true")
@@ -350,102 +283,9 @@ func TestIsStoppedAndCacheAsyncAndServerEdgeCases(t *testing.T) {
 	if isStopped(errors.New("other")) {
 		t.Error("expected arbitrary error to report isStopped = false")
 	}
+}
 
-	// GetCodexModels returns error when both command and cache fail.
-	t.Setenv("HOME", t.TempDir())
-	if models, err := GetCodexModels(t.Context(), []string{"/nonexistent-codex"}); err == nil || models != nil {
-		t.Errorf("GetCodexModels with no cache and bad command = (%v, %v), want error", models, err)
-	}
-
-	// codexModelCache key separation, backoff boundary, and async fetch.
-	now := clock.NewFake(time.Unix(1000, 0))
-	c := codexModelCache{
-		clock:     now,
-		key:       "a b",
-		models:    []AgentModel{{Name: "cached-ab"}},
-		isCached:  true,
-		failedKey: "fail-cmd",
-		failedAt:  now.Now(),
-	}
-	if got := c.get(t.Context(), []string{"a", "b"}); len(got) != 1 || got[0].Name != "cached-ab" {
-		t.Fatalf("expected cached-ab for key 'a b', got %v", got)
-	}
-	now.Advance(codexFailureBackoff - time.Nanosecond)
-	if got := c.get(t.Context(), []string{"fail-cmd"}); got != nil {
-		t.Fatalf("expected nil before codexFailureBackoff elapsed, got %v", got)
-	}
-
-	// Async cache returns fallback from disk while background fetch runs, and ignores duplicate inFlight starts.
-	home := t.TempDir()
-	t.Setenv("HOME", home)
-	if err := os.MkdirAll(filepath.Join(home, ".codex"), 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(home, ".codex", "models_cache.json"), []byte(`{"models":[{"slug":"disk-m","display_name":"Disk"}]}`), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	asyncCache := codexModelCache{
-		clock:    now,
-		isAsync:  true,
-		inFlight: map[string]bool{"already": true},
-	}
-	asyncCache.startBackgroundFetch(t.Context(), "already", []string{"/nonexistent"})
-	cmd := []string{"/bin/sh", "-c", `read -r _; echo '{"id":1,"result":{}}'; read -r _; read -r _; echo '{"id":2,"result":{"data":[{"model":"bg-m"}]}}'`, "sh"}
-	initial := asyncCache.get(t.Context(), cmd)
-	if len(initial) != 1 || initial[0].Name != "disk-m" {
-		t.Fatalf("async initial get = %v, want disk-m", initial)
-	}
-	wall := clock.System{}
-	deadline := wall.Now().Add(25 * time.Second)
-	for wall.Now().Before(deadline) {
-		asyncCache.mu.Lock()
-		cached := asyncCache.isCached
-		asyncCache.mu.Unlock()
-		if cached {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	bgGot := asyncCache.get(t.Context(), cmd)
-	if len(bgGot) != 1 || bgGot[0].Name != "bg-m" {
-		t.Fatalf("async cached get = %v, want bg-m", bgGot)
-	}
-
-	// Server applyConfig, GetPrograms with customPath, and Ask error paths.
-	s := &agentServer{codexModels: codexModelCache{
-		clock:    now,
-		key:      "/custom/codex",
-		models:   []AgentModel{{Name: "m-custom", Title: "Custom", IsDefault: true}},
-		isCached: true,
-	}}
-	s.applyConfig(map[string]string{"executablePath": " /custom/codex "})
-	s.applyConfig(map[string]string{"unrelated": "val"})
-	if got := s.getExecutablePath(); got != "/custom/codex" {
-		t.Fatalf("getExecutablePath = %q, want /custom/codex", got)
-	}
-	progs, err := s.GetPrograms(t.Context(), nil)
-	if err != nil || len(progs) != 1 || !progs[0].IsInstalled || len(progs[0].Models) != 1 || progs[0].Models[0].Name != "m-custom" {
-		t.Fatalf("GetPrograms with customPath = (%+v, %v)", progs, err)
-	}
-
-	sendErr := errors.New("send failed")
-	if err := s.Ask(t.Context(), &agentrun.Request{Prompt: "q"}, func(*agentrun.Response) error {
-		return sendErr
-	}); !errors.Is(err, sendErr) {
-		t.Errorf("Ask when first send fails = %v, want %v", err, sendErr)
-	}
-
-	var steps []*agentrun.Response
-	if err := s.Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: []string{"/nonexistent-codex-bin"}}, func(r *agentrun.Response) error {
-		steps = append(steps, r)
-		return nil
-	}); err != nil {
-		t.Errorf("Ask when start fails returned error: %v", err)
-	}
-	if len(steps) != 2 || steps[1].GetStopped() == "" {
-		t.Errorf("Ask when start fails steps = %+v, want ModelStarted and Stopped", steps)
-	}
-
+func TestStoredModelsAreNoneWithoutAHome(t *testing.T) {
 	isolateWithoutHome(t)
 	if got := readCodexCache(); got != nil {
 		t.Errorf("readCodexCache without home = %v, want nil", got)

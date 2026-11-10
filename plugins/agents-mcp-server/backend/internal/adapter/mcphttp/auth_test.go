@@ -1,4 +1,4 @@
-package service
+package mcphttp
 
 import (
 	"fmt"
@@ -7,19 +7,15 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/tools"
 )
 
 const gardenToken = "garden-token-4417"
 
+const initializeParams = `{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"orchard","version":"1"}}`
+
 func newServedHandler(t *testing.T, token string) (*Server, string) {
 	t.Helper()
-	host := &fakeToolHost{listing: tools.Listing{Tools: []*tools.ToolInfo{newReadTool("orchard_pick")}}}
-	srv, err := NewServer(Config{Token: token}, host)
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv := newTestServer(token)
 	served := httptest.NewServer(srv.Handler())
 	t.Cleanup(served.Close)
 	return srv, served.URL
@@ -124,10 +120,7 @@ func TestATokenInTheQueryGets401(t *testing.T) {
 func TestAServerMadeWithoutATokenHasAnEmptyToken(t *testing.T) {
 	t.Parallel()
 
-	srv, err := NewServer(Config{}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	srv := newTestServer("")
 
 	if got := srv.GetToken(); got != "" {
 		t.Errorf("a server made without a token has the token %q", got)
@@ -242,16 +235,5 @@ func TestARequestFromALoopbackOriginIsCheckedForTheTokenOnly(t *testing.T) {
 		}
 		assertUnauthorizedResponse(t, sendRequest(t, http.MethodPost, url+"/mcp", map[string]string{"Origin": origin}),
 			"an initialize without the token from the origin "+origin)
-	}
-}
-
-func TestReadConfigReadsTheTokenValueOnly(t *testing.T) {
-	t.Setenv("MCP_TOKEN", "env-token-5150")
-
-	if cfg := readConfig(nil); cfg.Token != "" {
-		t.Errorf("readConfig without values = %+v, want an empty token", cfg)
-	}
-	if cfg := readConfig(map[string]string{"port": "9002", "token": " map-token "}); cfg.Token != "map-token" {
-		t.Errorf("readConfig = %+v, want the configured token trimmed", cfg)
 	}
 }

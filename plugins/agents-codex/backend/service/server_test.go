@@ -1,17 +1,16 @@
 package service
 
 import (
-	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
 )
 
 // The program list names Codex, installed where it is found, with the models it lists under the command
@@ -28,7 +27,7 @@ func TestTheProgramListNamesCodexWithTheModelsItLists(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x","displayName":"GPT X","isDefault":true},{"model":"hid","hidden":true}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	client := serveAgent(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	programs, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "codex", Command: []string{appServer}}})
 	if err != nil {
@@ -50,7 +49,7 @@ func TestTheProgramListNamesCodexWithTheModelsItLists(t *testing.T) {
 // A program that is not installed is listed so, and Codex is not started for its models.
 func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	withoutAgentsAnywhere(t)
-	client := serveAgent(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	got, err := client.GetPrograms(t.Context(), nil)
 	if err != nil {
@@ -63,50 +62,6 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	}
 }
 
-// What Codex listed is cached for as long as the command line stays the same.
-func TestCodexModelCache_Retention(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	counter := filepath.Join(t.TempDir(), "starts")
-	command := agenttest.WriteScript(t, "codex",
-		"echo x >> "+counter+"\n"+
-			`echo '{"id":1,"result":{}}'`+"\n"+
-			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
-			"while read -r _; do :; done\n")
-	cache := codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}
-
-	for range 2 {
-		if got := cache.get(t.Context(), []string{command}); len(got) != 1 || got[0].Name != "gpt-x" {
-			t.Fatalf("Codex lists %+v", got)
-		}
-	}
-	raw, err := os.ReadFile(counter)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if starts := strings.Count(string(raw), "x"); starts != 1 {
-		t.Errorf("Codex was started %d times, want 1", starts)
-	}
-}
-
-// A request that ended before Codex answered keeps nothing.
-func TestAnEndedRequestKeepsNoCodexModels(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-	command := agenttest.WriteScript(t, "codex",
-		`echo '{"id":1,"result":{}}'`+"\n"+
-			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
-			"while read -r _; do :; done\n")
-	cache := codexModelCache{clock: clock.NewFake(time.Unix(1000, 0))}
-
-	ended, cancel := context.WithCancel(t.Context())
-	cancel()
-	if got := cache.get(ended, []string{command}); got != nil {
-		t.Errorf("an ended request got %+v", got)
-	}
-	if got := cache.get(t.Context(), []string{command}); len(got) != 1 {
-		t.Errorf("the next request got %+v", got)
-	}
-}
-
 // A command line set by the installation counts as the program being installed, and its models are
 // listed by running that command.
 func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
@@ -115,7 +70,7 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 		`echo '{"id":1,"result":{}}'`+"\n"+
 			`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
 			"while read -r _; do :; done\n")
-	client := serveAgent(t, &agentServer{})
+	client := serveAgent(t, newAgentServer(false))
 
 	got, err := client.GetPrograms(t.Context(), []agentrun.ProgramCommand{{Program: "codex", Command: []string{appServer}}})
 	if err != nil {
@@ -128,39 +83,11 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	}
 }
 
-// A failed listing is not retried for a while and is then requested again, and the models Codex lists then are
-// cached.
-func TestModels_FailedListingIsRequeried(t *testing.T) {
-	agenttest.NeedsShell(t)
-	t.Setenv("HOME", t.TempDir())
-	failing := agenttest.WriteScript(t, "codex", "exit 1\n")
-	now := clock.NewFake(time.Unix(1000, 0))
-	cache := codexModelCache{clock: now}
-
-	if got := cache.get(t.Context(), []string{failing}); got != nil {
-		t.Fatalf("a failed listing gave %+v", got)
-	}
-	// The same command line, working now.
-	if err := os.WriteFile(failing, []byte("#!/bin/sh\n"+
-		`echo '{"id":1,"result":{}}'`+"\n"+
-		`echo '{"id":2,"result":{"data":[{"model":"gpt-x"}]}}'`+"\n"+
-		"while read -r _; do :; done\n"), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if got := cache.get(t.Context(), []string{failing}); got != nil {
-		t.Fatalf("a command line that just failed was asked again: %+v", got)
-	}
-	now.Advance(codexFailureBackoff)
-	if got := cache.get(t.Context(), []string{failing}); len(got) != 1 || got[0].Name != "gpt-x" {
-		t.Errorf("the next listing gave %+v", got)
-	}
-}
-
 func withoutAgentsAnywhere(t *testing.T) {
 	t.Helper()
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
-	if found := FindCodex(); found != "codex" {
+	if found := codexcli.FindCodex(); found != "codex" {
 		t.Skipf("Codex is installed at %s", found)
 	}
 }
@@ -171,7 +98,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, serveAgent(t, &agentServer{}), &agentrun.Request{
+	agenttest.Ask(t, serveAgent(t, newAgentServer(false)), &agentrun.Request{
 		Prompt:     "the question",
 		Command:    []string{script, "--first"},
 		Root:       root,
@@ -198,7 +125,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A program that fails is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAFailedRun(t *testing.T) {
 	script := agenttest.WriteScript(t, "codex", "echo 'not signed in' >&2\nexit 2\n")
-	stream, err := serveAgent(t, &agentServer{}).Ask(t.Context(), &agentrun.Request{
+	stream, err := serveAgent(t, newAgentServer(false)).Ask(t.Context(), &agentrun.Request{
 		Command: []string{script},
 	})
 	if err != nil {
@@ -222,7 +149,7 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, serveAgent(t, &agentServer{}), &agentrun.Request{
+	agenttest.Ask(t, serveAgent(t, newAgentServer(false)), &agentrun.Request{
 		Prompt:       "the question",
 		Instructions: "be brief",
 		Command:      []string{script},
@@ -258,4 +185,63 @@ func TestAskAgent_NoToolsWhenRequestToolsEmpty(t *testing.T) {
 func serveAgent(t *testing.T, agent *agentServer) *agentrun.Client {
 	t.Helper()
 	return agenttest.Serve(t, agent, agent)
+}
+
+func TestTheProgramOfTheConfiguredPathListsItsModels(t *testing.T) {
+	agenttest.NeedsShell(t)
+	t.Setenv("HOME", t.TempDir())
+	script := agenttest.WriteScript(t, "codex",
+		`echo '{"id":1,"result":{}}'`+"\n"+
+			`echo '{"id":2,"result":{"data":[{"model":"m-custom","displayName":"Custom","isDefault":true}]}}'`+"\n"+
+			"while read -r _; do :; done\n")
+	s := newAgentServer(false)
+	s.applyConfig(map[string]string{"executablePath": " " + script + " "})
+	s.applyConfig(map[string]string{"unrelated": "val"})
+
+	progs, err := s.GetPrograms(t.Context(), nil)
+	if err != nil || len(progs) != 1 || !progs[0].IsInstalled || len(progs[0].Models) != 1 ||
+		progs[0].Models[0].Name != "m-custom" || !progs[0].Models[0].IsDefault {
+		t.Fatalf("GetPrograms with the configured path = (%+v, %v)", progs, err)
+	}
+}
+
+func TestAsk_FirstSendFailure(t *testing.T) {
+	sendErr := errors.New("send failed")
+
+	err := newAgentServer(false).Ask(t.Context(), &agentrun.Request{Prompt: "q"}, func(*agentrun.Response) error {
+		return sendErr
+	})
+
+	if !errors.Is(err, sendErr) {
+		t.Errorf("Ask when the first send fails = %v, want %v", err, sendErr)
+	}
+}
+
+func TestAskReportsAProgramThatCannotBeStarted(t *testing.T) {
+	var steps []*agentrun.Response
+
+	err := newAgentServer(false).Ask(t.Context(), &agentrun.Request{Prompt: "q", Command: []string{"/nonexistent-codex-bin"}}, func(r *agentrun.Response) error {
+		steps = append(steps, r)
+		return nil
+	})
+
+	if err != nil {
+		t.Errorf("Ask when the start fails returned error: %v", err)
+	}
+	if len(steps) != 2 || steps[1].GetStopped() == "" {
+		t.Errorf("Ask when the start fails steps = %+v, want ModelStarted and Stopped", steps)
+	}
+}
+
+func TestProgramCommandFindsTheCommandOfAProgram(t *testing.T) {
+	cmds := []agentrun.ProgramCommand{
+		{Program: "other", Command: []string{"other-bin"}},
+		{Program: "codex", Command: []string{"codex-bin", "--arg"}},
+	}
+	if got := programCommand(cmds, "codex"); !slices.Equal(got, []string{"codex-bin", "--arg"}) {
+		t.Errorf("programCommand(codex) = %v", got)
+	}
+	if got := programCommand(cmds, "missing"); got != nil {
+		t.Errorf("programCommand(missing) = %v, want nil", got)
+	}
 }

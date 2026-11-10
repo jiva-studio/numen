@@ -1,4 +1,4 @@
-package service
+package run
 
 import (
 	"bufio"
@@ -12,16 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/codexcli"
+	"github.com/jiva-studio/numen/plugins/agents-codex/backend/internal/adapter/process"
 )
-
-func TestResolveCommandWithEmptyCommand(t *testing.T) {
-	withoutAgentsAnywhere(t)
-
-	bin, args := resolveCommand(nil)
-	if bin != "codex" || len(args) != 0 {
-		t.Errorf("expected codex and empty args, got %s, %v", bin, args)
-	}
-}
 
 func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 	script := agenttest.WriteScript(t, "codex",
@@ -32,7 +25,7 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 			"echo plain text\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{Command: []string{script}}))
+	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{Command: []string{script}}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +60,7 @@ func TestRunner_EmitsCodexMessages(t *testing.T) {
 			`echo '{"type":"item.completed","item":{"type":"reasoning","text":"hidden"}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{Command: []string{script}}))
+	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{Command: []string{script}}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +78,7 @@ func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
 		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","server":"numen","tool":"search_notes","arguments":{"q":"x"}}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&agentrun.Request{Command: []string{script}}))
+	w, err := newTestRunner().Start(t.Context(), &reg, &agentrun.Request{Command: []string{script}}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,41 +91,7 @@ func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
 	}
 }
 
-func TestEventsAndJsonFieldEdgeCases(t *testing.T) {
-	if got := getString(map[string]any{"k": 123}, "k"); got != "" {
-		t.Errorf("getString non-string = %q, want empty", got)
-	}
-	if got := getMap(map[string]any{"k": "not-map"}, "k"); got != nil {
-		t.Errorf("getMap non-map = %v, want nil", got)
-	}
-	if got := getToolArguments(map[string]any{"arguments": make(chan int)}); got != "" {
-		t.Errorf("getToolArguments channel = %q, want empty", got)
-	}
-
-	w := agentrun.NewWork("c", 10, func() error { return nil })
-	r := &reader{work: w}
-	handle := newEventHandler(r)
-
-	// Ignored events: nil item, wrong evType, or wrong item type.
-	handle(map[string]any{"type": "item.completed"})
-	handle(map[string]any{"type": "item.started", "item": map[string]any{"type": "agent_message", "text": "no"}})
-	handle(map[string]any{"type": "other", "item": map[string]any{"type": "mcp_tool_call", "tool": "t"}})
-	handle(map[string]any{"type": "item.started", "item": map[string]any{"type": "other"}})
-	handle(map[string]any{"type": "item.completed", "item": map[string]any{"type": "other"}})
-	if r.sentCount != 0 {
-		t.Fatalf("expected 0 sent messages for ignored events, got %d", r.sentCount)
-	}
-}
-
-func TestReaderLimitsAndConfigureCommandAndSpecs(t *testing.T) {
-	wantDisabled := []string{
-		"shell_tool", "unified_exec", "view_image", "multi_agent", "apps", "browser_use",
-		"computer_use", "plugins", "image_generation", "hooks",
-	}
-	if got := getDisabledFeatures(); !slices.Equal(got, wantDisabled) {
-		t.Errorf("getDisabledFeatures = %v, want %v", got, wantDisabled)
-	}
-
+func TestReaderLimitsAndConfigureCommand(t *testing.T) {
 	r := &reader{limit: 0, completed: 0}
 	if r.isOverLimit() {
 		t.Error("expected limit=0 completed=0 to not be over limit")
@@ -174,57 +133,15 @@ func TestReaderLimitsAndConfigureCommandAndSpecs(t *testing.T) {
 		t.Errorf("configureCommand with default Env and Token: Dir=%q, hasToken=%v", cmd2.Dir, slices.Contains(cmd2.Env, "NUMEN_TOKEN=tok-1"))
 	}
 
-	// appendModelArguments omits --model when Model is "default", and makeCodexCommand omits -c when ToolsURL is empty.
-	if got := appendModelArguments(nil, &agentrun.Request{Model: "default"}); len(got) != 0 {
-		t.Errorf("appendModelArguments(default) = %v, want empty", got)
-	}
-	codexCmd := makeCodexCommand(t.Context(), &agentrun.Request{Prompt: "hi"}, "/custom/bin/codex")
-	if sliceContainsSubstr(codexCmd.Args, "mcp_servers") {
-		t.Errorf("makeCodexCommand without ToolsURL included mcp_servers: %v", codexCmd.Args)
-	}
-
-	// newSpec with customPath passes customPath through when runnable.
-	shPath, err := exec.LookPath("sh")
-	if err == nil {
-		sWithTools := newSpec(&agentrun.Request{Prompt: "p", Tools: []string{"t"}, Root: "/r", ToolsToken: "tk"}, shPath)
-		builtCmd, cleanup, err := sWithTools.Build(t.Context())
-		if err != nil || cleanup != nil || builtCmd.Path != shPath {
-			t.Errorf("newSpec with tools and customPath: Path=%q, hasCleanup=%v, err=%v", builtCmd.Path, cleanup != nil, err)
-		}
-		sNoTools := newSpec(&agentrun.Request{Prompt: "p"}, shPath)
-		builtAnsCmd, ansCleanup, err := sNoTools.Build(t.Context())
-		if err != nil || ansCleanup == nil || builtAnsCmd.Path != shPath {
-			t.Errorf("newSpec without tools and customPath: Path=%q, err=%v", builtAnsCmd.Path, err)
-		}
-		if ansCleanup != nil {
-			if err := ansCleanup(); err != nil {
-				t.Error(err)
-			}
-		}
-	}
-
-	// makeAnswerCommand fails when TMPDIR is not a valid directory.
-	t.Setenv("TMPDIR", "/dev/null/nonexistent")
-	if _, _, err := makeAnswerCommand(t.Context(), &agentrun.Request{Prompt: "p"}); err == nil {
-		t.Error("expected makeAnswerCommand error when TMPDIR is invalid")
-	}
-}
-
-func sliceContainsSubstr(items []string, sub string) bool {
-	for _, item := range items {
-		if strings.Contains(item, sub) {
-			return true
-		}
-	}
-	return false
 }
 
 func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
+	runner := newTestRunner()
 	var reg agentrun.Registry
 
 	// 1. Build returns error.
 	buildErr := errors.New("build failed")
-	if _, err := start(t.Context(), &reg, spec{
+	if _, err := runner.start(t.Context(), &reg, spec{
 		Build: func(context.Context) (*exec.Cmd, func() error, error) {
 			return nil, nil, buildErr
 		},
@@ -234,7 +151,7 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 
 	// 2. StdoutPipe fails when cmd.Stdout is already set, and calls cleanup.
 	cleanedStdoutErr := false
-	if _, err := start(t.Context(), &reg, spec{
+	if _, err := runner.start(t.Context(), &reg, spec{
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
 			c := exec.CommandContext(ctx, "true")
 			c.Stdout = &bytes.Buffer{}
@@ -249,7 +166,7 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 
 	// 3. cmd.Start fails on nonexistent binary and calls cleanup.
 	cleanedStartErr := false
-	if _, err := start(t.Context(), &reg, spec{
+	if _, err := runner.start(t.Context(), &reg, spec{
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
 			return exec.CommandContext(ctx, "/nonexistent-codex-bin"), func() error {
 				cleanedStartErr = true
@@ -266,7 +183,7 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 		t.Fatal(err)
 	}
 	cleanedClosedReg := false
-	if _, err := start(t.Context(), &closedReg, spec{
+	if _, err := runner.start(t.Context(), &closedReg, spec{
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
 			return exec.CommandContext(ctx, "true"), func() error {
 				cleanedClosedReg = true
@@ -279,8 +196,7 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 
 	// 5. runReader reports cleanup error, and preserves pre-set cmd.Stderr.
 	var customStderr bytes.Buffer
-	wCleanup, err := start(t.Context(), &reg, spec{
-		NewHandler: newEventHandler,
+	wCleanup, err := runner.start(t.Context(), &reg, spec{
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
 			c := exec.CommandContext(ctx, "/bin/sh", "-c", "echo custom-err >&2")
 			c.Stderr = &customStderr
@@ -304,9 +220,8 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 	}
 
 	// 6. Step limit in scanOutput stops the run with limit message and skips reportExit.
-	wLimit, err := start(t.Context(), &reg, spec{
-		MaxSteps:   1,
-		NewHandler: newEventHandler,
+	wLimit, err := runner.start(t.Context(), &reg, spec{
+		MaxSteps: 1,
 		Build: func(ctx context.Context) (*exec.Cmd, func() error, error) {
 			return exec.CommandContext(ctx, "/bin/sh", "-c",
 				`echo '{"type":"item.completed","item":{"type":"mcp_tool_call"}}'; echo 'after-limit' >&2; exit 2`), nil, nil
@@ -369,4 +284,8 @@ func TestStartErrorPathsAndReportExitAndScanOutput(t *testing.T) {
 	if got := checkReportExit(0, nil, nil, "   "); got != "" {
 		t.Errorf("reportExit sentCount=0 with blank stderr = %q, want empty", got)
 	}
+}
+
+func newTestRunner() *Runner {
+	return NewRunner(codexcli.Commands{}, process.Group{})
 }

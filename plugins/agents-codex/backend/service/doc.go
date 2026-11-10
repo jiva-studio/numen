@@ -1,3 +1,3 @@
-// Package service serves the agents-codex plugin: it runs the Codex CLI for agent tasks and lists the
-// models the CLI offers.
+// Package service wires the agents-codex plugin: it builds the Codex adapters and use cases and
+// serves the agent service of the host with them.
 package service

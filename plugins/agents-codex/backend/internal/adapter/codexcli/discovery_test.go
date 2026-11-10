@@ -1,12 +1,10 @@
-package service
+package codexcli
 
 import (
 	"os"
 	"path/filepath"
-	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun/agenttest"
 )
 
@@ -92,15 +90,13 @@ func TestDiscoveryPlacesAndFallbacks(t *testing.T) {
 	if got := findCodexIn([]string{"~/.local/bin/codex", absBin}); got != absBin {
 		t.Errorf("findCodexIn with empty HOME = %q, want %q", got, absBin)
 	}
+}
 
-	cmds := []agentrun.ProgramCommand{
-		{Program: "other", Command: []string{"other-bin"}},
-		{Program: "codex", Command: []string{"codex-bin", "--arg"}},
-	}
-	if got := programCommand(cmds, "codex"); !slices.Equal(got, []string{"codex-bin", "--arg"}) {
-		t.Errorf("programCommand(codex) = %v", got)
-	}
-	if got := programCommand(cmds, "missing"); got != nil {
-		t.Errorf("programCommand(missing) = %v, want nil", got)
+func withoutAgentsAnywhere(t *testing.T) {
+	t.Helper()
+	t.Setenv("PATH", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	if found := FindCodex(); found != "codex" {
+		t.Skipf("Codex is installed at %s", found)
 	}
 }

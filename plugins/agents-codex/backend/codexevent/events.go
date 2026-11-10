@@ -1,4 +1,6 @@
-package service
+// Package codexevent turns the JSON events that Codex prints during a run into the steps of an agent
+// response.
+package codexevent
 
 import (
 	"encoding/json"
@@ -7,11 +9,13 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 )
 
-func newEventHandler(r *reader) func(map[string]any) {
-	return func(event map[string]any) { handleCodexEvent(r, event) }
+// Sink receives the steps that the events of a run produce.
+type Sink interface {
+	Send(resp *agentrun.Response)
 }
 
-func handleCodexEvent(r *reader, rawMap map[string]any) {
+// Handle sends the step that an event stands for to sink. An event that stands for no step is ignored.
+func Handle(sink Sink, rawMap map[string]any) {
 	evType := getString(rawMap, "type")
 	item := getMap(rawMap, "item")
 	if item == nil {
@@ -21,10 +25,10 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 	switch {
 	case evType == "item.completed" && item["type"] == "agent_message":
 		if text := getString(item, "text"); text != "" {
-			r.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
+			sink.Send(&agentrun.Response{Step: &agentrun.TextStep{Text: text}})
 		}
 	case evType == "item.started" && item["type"] == "mcp_tool_call":
-		r.Send(&agentrun.Response{
+		sink.Send(&agentrun.Response{
 			Step: &agentrun.ToolCallStep{
 				ToolCall: &toolcall.ToolCall{
 					Tool:   getToolName(item),
@@ -38,7 +42,7 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 			},
 		})
 	case evType == "item.completed" && item["type"] == "mcp_tool_call":
-		r.Send(&agentrun.Response{
+		sink.Send(&agentrun.Response{
 			Step: &agentrun.ToolFinishedStep{},
 		})
 	}

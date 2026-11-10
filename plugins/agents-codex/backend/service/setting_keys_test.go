@@ -3,7 +3,7 @@ package service
 import "testing"
 
 func TestExecutablePathIsReadFromTheCamelCaseKey(t *testing.T) {
-	s := &agentServer{}
+	s := newAgentServer(false)
 	s.applyConfig(map[string]string{"executablePath": "  /opt/bin/sample-agent  "})
 
 	if got := s.getExecutablePath(); got != "/opt/bin/sample-agent" {
@@ -12,7 +12,7 @@ func TestExecutablePathIsReadFromTheCamelCaseKey(t *testing.T) {
 }
 
 func TestExecutablePathIsNotReadFromTheSnakeCaseKey(t *testing.T) {
-	s := &agentServer{}
+	s := newAgentServer(false)
 	s.applyConfig(map[string]string{"executable_path": "/opt/bin/sample-agent"})
 
 	if got := s.getExecutablePath(); got != "" {
