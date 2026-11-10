@@ -159,8 +159,6 @@ func startWindow(ctx context.Context, w *windowWiring, first domain.Vault) error
 	return w.inst.Start(ctx, first, w.server)
 }
 
-// wrapPasses puts the walk of the vault through the function the caller gave, and leaves it as it is where none
-// was given.
 func wrapPasses(w *windowWiring, passes windowsession.VaultPassesFunc) windowsession.VaultPassesFunc {
 	if w.wrap == nil {
 		return passes

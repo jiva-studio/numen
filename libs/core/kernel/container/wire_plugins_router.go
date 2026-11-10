@@ -183,7 +183,6 @@ func newPluginCommands(c pluginsWiring, host *PluginHost) plugincommand.Commands
 	return plugincommand.NewCommands(pluginmanifest.New(host.Runtime), commandbridge.Open(host.Runtime), host.Watch, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
-// getPluginServices is where a window forwards the calls it receives for the services plugins serve.
 func getPluginServices(c pluginsWiring) editor.PluginServices {
 	return servicebridge.Open(c.PluginHost.Runtime)
 }
@@ -234,8 +233,6 @@ func openPluginCache(c pluginsWiring) (pluginport.PluginCache, error) {
 	return retained, nil
 }
 
-// newDependencyRegistry returns the registry of the dependencies the plugins provision, in the folder given
-// unless the environment names another. On mock models it provisions placeholders.
 func newDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
 	if onnxruntime.IsMockML() {
 		return provision.NewRegistry(provision.NewPlaceholderProvisioner(

@@ -142,8 +142,6 @@ func newArranger(
 	return arranger
 }
 
-// completeHooks fills the hooks a window leaves out with the ones the index gives: the state of the vault in the
-// index, and the moves of the index file.
 func completeHooks(c pluginsWiring, db *vault.Index, hooks PluginVaultHooks) PluginVaultHooks {
 	if hooks.IndexState == nil {
 		hooks.IndexState = query.NewGetIndexState(db.NoteQueries.VaultHolds).Execute

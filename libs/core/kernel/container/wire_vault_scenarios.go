@@ -236,8 +236,6 @@ func getMediaType(_ vaultWiring) *file.GetMediaType {
 	return file.NewGetMediaType(sharedmimeinfo.Open())
 }
 
-// openVaults is every vault a window has open over db: each is read into the index, and what it
-// reports goes to out under label.
 func openVaults(c Config, db *vault.Index, out io.Writer, label string) *vault.OpenVaults[*vault.Index] {
 	return &vault.OpenVaults[*vault.Index]{Opener: func(i *vault.Index) *vault.VaultOpener { return vaultOpener(vaultOf(c), i) }, Index: db, Out: out, Label: label}
 }

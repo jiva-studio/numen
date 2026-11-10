@@ -11,9 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
-// newAbsentHost returns the plugin host of an installation that runs no plugin, because none is installed or
-// because it started in safe mode, as reason says. Every plugin is unavailable for that reason, and what is set
-// on the host is kept nowhere.
 func newAbsentHost(reason plugindomain.UnavailableReason, cause error) *PluginHost {
 	runtime, settings := bridge.AbsentRuntime{Reason: reason, Cause: cause}, bridge.AbsentSettings{}
 	return &PluginHost{

@@ -219,9 +219,6 @@ func mountPlugin(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
-// shareEditorWindow gives the plugins the window: it focuses a note and the passages of a file
-// in it and returns the tabs it last reported. The window reads the vault of its state on each call,
-// so a vault opened later in the window is served without a new binding.
 func shareEditorWindow(c Config, db *vault.Index, opened *editor.Installation) {
 	view := GetWindowView(opened)
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
@@ -235,8 +232,6 @@ func shareEditorWindow(c Config, db *vault.Index, opened *editor.Installation) {
 	))
 }
 
-// shareVaultList gives the plugins the list of vaults of the window and the vault it
-// shows. It uses the vault use cases of the window, so a plugin and the user see the same errors.
 func shareVaultList(c Config, opened *editor.Installation) {
 	scenarios := opened.Vaults()
 	setPluginVaultList(plugins(c), windowsession.NewPluginVaults(&opened.State.Runtime, windowsession.VaultOps{

@@ -45,7 +45,6 @@ func openCLIVaults(c Config) (cli.Vaults, error) {
 	}, nil
 }
 
-// openWithIndex opens the index and returns what build makes over it.
 func openWithIndex[T any](c Config, ctx context.Context, build func(db *vault.Index) T) (T, error) {
 	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
