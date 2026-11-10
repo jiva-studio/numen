@@ -49,7 +49,12 @@ describe('createViewRegistry', () => {
     const element = document.createElement('section')
     const disposedBeforeRegister = document.createElement('section')
 
-    const earlyDisposed = views.mountView(CONVERSATION, disposedBeforeRegister, { focus: 'gone' }, NO_ACCESS)
+    const earlyDisposed = views.mountView(
+      CONVERSATION,
+      disposedBeforeRegister,
+      { focus: 'gone' },
+      NO_ACCESS,
+    )
     earlyDisposed.dispose()
 
     const mounted = views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
@@ -59,10 +64,6 @@ describe('createViewRegistry', () => {
     views.registerView('chat.plugin', {
       capability: CONVERSATION,
       component: createView('chat', { exposeFocus: false }).component,
-    })
-    views.registerView('second.plugin', {
-      capability: CONVERSATION,
-      component: createView('second').component,
     })
     mounted.focus()
     expect(element.textContent).toBe('chat: Decks/Physics.md')
@@ -101,29 +102,50 @@ describe('createViewRegistry', () => {
     expect(otherUnmounted).toHaveBeenCalledTimes(2)
   })
 
-  it('draws another declaration of the capability where the drawn one goes', () => {
+  it('refuses a second plugin the capability another plugin draws, and keeps the first view', () => {
+    const views = createViewRegistry()
+    views.registerView('first.plugin', {
+      capability: CONVERSATION,
+      component: createView('first').component,
+    })
+    const element = document.createElement('section')
+    views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
+
+    expect(() =>
+      views.registerView('second.plugin', {
+        capability: CONVERSATION,
+        component: createView('second').component,
+      }),
+    ).toThrow(/"first.plugin" already draws/)
+
+    expect(element.textContent).toBe('first: Decks/Physics.md')
+  })
+
+  it('refuses the same plugin to register a capability twice', () => {
+    const views = createViewRegistry()
+    const registration = { capability: CONVERSATION, component: createView('chat').component }
+    views.registerView('chat.plugin', registration)
+
+    expect(() => views.registerView('chat.plugin', registration)).toThrow(/already draws/)
+  })
+
+  it('accepts another plugin once the one that drew the capability is disposed', () => {
     const views = createViewRegistry()
     const first = views.registerView('first.plugin', {
       capability: CONVERSATION,
       component: createView('first').component,
     })
-    const second = views.registerView('second.plugin', {
-      capability: CONVERSATION,
-      component: createView('second').component,
-    })
     const element = document.createElement('section')
     views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
 
-    second.dispose()
-    expect(element.textContent).toBe('first: Decks/Physics.md')
-
-    views.registerView('third.plugin', {
-      capability: CONVERSATION,
-      component: createView('third').component,
-    })
     first.dispose()
+    expect(element.childElementCount).toBe(0)
+    views.registerView('second.plugin', {
+      capability: CONVERSATION,
+      component: createView('second').component,
+    })
 
-    expect(element.textContent).toBe('third: Decks/Physics.md')
+    expect(element.textContent).toBe('second: Decks/Physics.md')
   })
 
   it('adds the stylesheet link of the declaring plugin before the view', () => {

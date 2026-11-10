@@ -1,4 +1,5 @@
 import type { NoticeHost, SlotHost } from '@numen/plugin-sdk'
+import { formatCommandId } from '../../commandId'
 import type { ContextVaultHost, ContextWindowHost, PluginHostDeps } from '../types'
 
 /** The notices of a window that shows none: what a plugin reports is dropped. */
@@ -25,6 +26,13 @@ export function createWindowServiceBridge(
     getWorkspace: () => deps.getWorkspace?.(),
     getAgent: () => deps.getAgent?.(),
     getCommands: () => deps.getCommands?.(),
+    isCommandListed: (command) =>
+      (deps.getSlotEntries?.() ?? []).some(
+        (one) =>
+          one.command !== undefined &&
+          (one.command.includes(':') ? one.command : formatCommandId(one.pluginId, one.command)) ===
+            command,
+      ),
     getWindow: () => deps.getWindow?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId) ?? DISCARDING_NOTICES,
     getTasks: (pluginId) => deps.getTasks?.(pluginId),

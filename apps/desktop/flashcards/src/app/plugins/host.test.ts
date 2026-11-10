@@ -24,7 +24,11 @@ const createMockWindowHost = (): WindowHost => ({
 })
 
 const withVault = (id: string) =>
-  createMockManifest(id, { name: id, permissions: ['vault:read', 'vault:write'] })
+  createMockManifest(id, {
+    name: id,
+    permissions: ['vault:read', 'vault:write'],
+    viewCapabilities: [CONVERSATION, VAULT_SUMMARY],
+  })
 
 const view = (kind: string, order?: number) => ({
   kind,
@@ -62,9 +66,9 @@ describe('createShellHost', () => {
   it('activates a plugin in the window of the flashcards target', () => {
     const { host } = createShellHost()
 
-    expect(host.createContext('md.numen.example', withVault('md.numen.example')).plugin.target).toBe(
-      TARGET,
-    )
+    expect(
+      host.createContext('md.numen.example', withVault('md.numen.example')).plugin.target,
+    ).toBe(TARGET)
   })
 
   it('draws the main-pane view of the lowest order, and none that has no placement', () => {
@@ -259,7 +263,10 @@ describe('createShellHost', () => {
 
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: 'Decks/Physics.md' })
+      .ui.mountView(CONVERSATION, panel, {
+        agent: createMockAgentHost(),
+        focus: 'Decks/Physics.md',
+      })
     expect(panel.textContent).toBe('Decks/Physics.md')
 
     host.disposePlugin('md.numen.chat')

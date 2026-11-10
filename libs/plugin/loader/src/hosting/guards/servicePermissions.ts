@@ -23,25 +23,40 @@ const READ = 'vault:read'
 const WRITE = 'vault:write'
 const MANAGE = 'vault:manage'
 
+/**
+ * How a refusal of a rule reaches the caller: a sync member throws, an async member rejects, and a
+ * rule that lists no permission cannot refuse, so it fits either.
+ */
+type Mode = 'sync' | 'async' | 'none'
+
 /** What a member needs: every permission listed, and whether a refusal throws or rejects. */
-class Rule {
+class Rule<M extends Mode = Mode> {
   constructor(
     readonly permissions: readonly string[],
-    readonly isAsync: boolean,
+    readonly mode: M,
     readonly reason: string,
   ) {}
+
+  get isAsync(): boolean {
+    return this.mode === 'async'
+  }
 }
 
-function requirePermissions(...permissions: string[]): Rule {
-  return new Rule(permissions, false, '')
+function requirePermissions(...permissions: string[]): Rule<'sync'> {
+  return new Rule(permissions, 'sync', '')
 }
 
-function requirePermissionsAsync(...permissions: string[]): Rule {
-  return new Rule(permissions, true, '')
+function requirePermissionsAsync(...permissions: string[]): Rule<'async'> {
+  return new Rule(permissions, 'async', '')
 }
 
-function requireNothing(reason: string): Rule {
-  return new Rule([], false, reason)
+function requireNothing(reason: string): Rule<'none'> {
+  return new Rule([], 'none', reason)
+}
+
+/** The rule with the reason the table states for the permissions it asks. */
+function explain<M extends Mode>(rule: Rule<M>, reason: string): Rule<M> {
+  return new Rule(rule.permissions, rule.mode, reason)
 }
 
 type Leaf =
@@ -52,9 +67,21 @@ type Leaf =
   | number
   | boolean
 
+/**
+ * The rule a member can have, from its type: a member that returns a promise (or may) takes an
+ * async rule, so a refusal rejects instead of throwing; any other member takes a sync rule.
+ */
+type RuleOf<M> = M extends (...args: never[]) => infer R
+  ? [Extract<R, PromiseLike<unknown>>] extends [never]
+    ? Rule<'sync' | 'none'>
+    : Rule<'async' | 'none'>
+  : Rule<'sync' | 'none'>
+
 /** The rules of a service: one for each member, nested for a member that is a service itself. */
 export type RulesOf<S> = {
-  readonly [K in keyof S]-?: NonNullable<S[K]> extends Leaf ? Rule : RulesOf<NonNullable<S[K]>>
+  readonly [K in keyof S]-?: NonNullable<S[K]> extends Leaf
+    ? RuleOf<NonNullable<S[K]>>
+    : RulesOf<NonNullable<S[K]>>
 }
 
 /** The parts of a plugin context that offer services. */
@@ -76,7 +103,9 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     tabKind: requirePermissions(READ),
     command: requireNothing('a command runs where the user or a plugin invokes it'),
     agentProvider: requirePermissions(READ),
-    view: requireNothing('the view registry checks the permissions of whoever mounts the view'),
+    view: requireNothing(
+      'the manifest must list the kind and the plugin hold what the kind hands its views: checked in viewPermissions',
+    ),
     dropHandler: requireNothing('a handler takes dropped data and reads nothing of the vault'),
   },
   settings: {
@@ -87,12 +116,24 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
     onVaultChange: requirePermissions(READ),
     onFileSelect: requirePermissions(READ),
     emitVaultChange: requirePermissions(WRITE),
-    emitFileSelect: requirePermissions(READ),
+    emitFileSelect: explain(
+      requirePermissions(WRITE),
+      'the selection reaches every plugin that follows it, which then acts on the path: it is an event the plugin makes, as a vault change is',
+    ),
   },
   tabs: {
-    open: requirePermissions(READ),
-    navigate: requirePermissions(READ),
-    close: requirePermissions(READ),
+    open: explain(
+      requirePermissions(READ),
+      'the tab shows the user a file and answers only its id; the plugin of the tab kind reads the file under its own permissions',
+    ),
+    navigate: explain(
+      requirePermissions(READ),
+      'the tab shows the user a file and answers only its id; the plugin of the tab kind reads the file under its own permissions',
+    ),
+    close: explain(
+      requirePermissions(WRITE),
+      'it ends any tab of the window by id, and with it the unsaved state of that tab',
+    ),
   },
   vault: {
     notes: {
@@ -173,7 +214,10 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
       getIds: requireNothing('the ids of the commands, which hold no vault data'),
       watch: requireNothing('the ids of the commands, which hold no vault data'),
       listItems: requirePermissionsAsync(READ),
-      run: requirePermissionsAsync(WRITE),
+      run: explain(
+        requirePermissionsAsync(WRITE),
+        'a command runs only if its owner is the plugin, or a slot lists it, which shows the user a row for it, or it is in the short list of application commands plugins run: limitCommands checks it',
+      ),
     },
     slots: {
       getEntries: requireNothing('the entries the manifests of the plugins declare'),
@@ -191,7 +235,10 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   work: {
     agent: {
       ask: requirePermissions(WRITE),
-      finish: requirePermissions(READ),
+      finish: explain(
+        requirePermissionsAsync(WRITE),
+        'it ends a conversation the agent holds, as ask starts one',
+      ),
       resolveLinks: requirePermissions(READ),
       getUnreachable: requireNothing('why no agent can be reached, which holds no vault data'),
       getSetting: requirePermissions(READ),

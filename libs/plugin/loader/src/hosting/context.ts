@@ -17,6 +17,7 @@ import type {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
+import { limitCommands } from './guards/commandRun'
 import { limitAgentSettings } from './guards/agentSettings'
 import { checkPermission, type PermissionTarget, type RequirePermission } from './guards/permission'
 import {
@@ -99,11 +100,14 @@ function createVault(pluginId: string, host: PluginContextHost, add: Track): Plu
 
 function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
   const { window: ui, views } = host
+  const commands = ui.getCommands()
   return {
     ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
       workspace: ui.getWorkspace(),
       window: ui.getWindow(),
-      commands: ui.getCommands(),
+      commands:
+        commands &&
+        limitCommands(commands, { pluginId, isListed: (one) => ui.isCommandListed(one) }),
       drops: views.drops,
     }),
     slots: ui.getSlots(),

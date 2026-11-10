@@ -44,6 +44,8 @@ type Contributes struct {
 	TextKinds    []TextKind
 	Listeners    []Listener
 	Keybindings  []Keybinding
+	// ViewCapabilities are the kinds of view the frontend of the plugin draws for other plugins to mount.
+	ViewCapabilities []string
 }
 
 // TextKind is the readable name of one kind of text version the plugin makes.
@@ -107,6 +109,7 @@ func (m Manifest) listContributionIssues() []error {
 	issues = append(issues, listTextKindIssues(c.TextKinds)...)
 	issues = append(issues, m.listListenerIssues()...)
 	issues = append(issues, m.listKeybindingIssues()...)
+	issues = append(issues, m.listViewCapabilityIssues()...)
 	return append(issues, m.listFrameIssues()...)
 }
 

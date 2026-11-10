@@ -21,6 +21,13 @@ import { createTestContextHost } from '../testing/contextHost'
 
 const createEmptyHost = (): PluginContextHost => createTestContextHost()
 
+const LISTED_COMMANDS = [
+  'app:note.trash',
+  'app:note.createChild',
+  'app:note.rename',
+  'md.numen.engines.transcription:transcript.create',
+]
+
 const createServices = () => {
   const workspace = {
     files: { open: vi.fn() },
@@ -76,6 +83,7 @@ const createServices = () => {
       getAgent: () => agent,
       getWorkspace: () => workspace,
       getCommands: () => commands,
+      isCommandListed: (command) => LISTED_COMMANDS.includes(command),
     },
   })
   return { host, workspace, notes, relations, files, agent, buffers, commands }
@@ -348,12 +356,7 @@ describe('a file a plugin lists and writes', () => {
 
 describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A', isFolder: false, others: [], tab: '' }
-  const WRITES = [
-    'app:note.trash',
-    'app:note.createChild',
-    'app:note.rename',
-    'md.numen.engines.transcription:transcript.create',
-  ]
+  const WRITES = LISTED_COMMANDS
 
   it.each(WRITES)('runs %s through the commands of the window with vault:write', async (id) => {
     const { context, commands } = createContext(['vault:write'])
@@ -361,6 +364,49 @@ describe('a command a plugin runs over the vault', () => {
     await context.ui.commands!.run(id, target)
 
     expect(commands.getRuns()).toStrictEqual([{ command: id, target, itemId: undefined }])
+  })
+
+  it('runs a command of its own that no slot lists', async () => {
+    const { context, commands } = createContext(['vault:write'])
+
+    await context.ui.commands!.run('md.numen.sample:deck.create', target)
+
+    expect(commands.getRuns()).toHaveLength(1)
+  })
+
+  it.each(['app:vault.create', 'app:settings.open'])(
+    'runs the application command %s that no slot lists',
+    async (id) => {
+      const { context, commands } = createContext(['vault:write'])
+
+      await context.ui.commands!.run(id)
+
+      expect(commands.getRuns()).toHaveLength(1)
+    },
+  )
+
+  it.each([
+    'app:vault.delete',
+    'md.numen.other:deck.remove',
+    'md.numen.sample.evil:deck.remove',
+    'x:md.numen.sample:deck.remove',
+    'deck.remove',
+    'md.numen.sample',
+  ])('rejects %s, a command it does not own that no slot lists', async (id) => {
+    const { context, commands } = createContext(['vault:write'])
+
+    await expect(context.ui.commands!.run(id, target)).rejects.toThrowError(
+      /does not own and no slot lists/,
+    )
+    expect(commands.getRuns()).toStrictEqual([])
+  })
+
+  it('asks the permission before the command', async () => {
+    const { context } = createContext([])
+
+    await expect(context.ui.commands!.run('app:note.trash', target)).rejects.toThrowError(
+      'lacks required permission "vault:write" for commands.run',
+    )
   })
 
   it('reads the commands of the window and their items with no permission', () => {
@@ -401,7 +447,7 @@ const ASKING: Record<string, [string, Call]> = {
         signal: new AbortController().signal,
       }),
   ],
-  finish: ['vault:read', (c) => getAgent(c).finish('c')],
+  finish: ['vault:write', (c) => getAgent(c).finish('c')],
   resolveLinks: ['vault:read', (c) => getAgent(c).resolveLinks('[[A]]')],
 }
 

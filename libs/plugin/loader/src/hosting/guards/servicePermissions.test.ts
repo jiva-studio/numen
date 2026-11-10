@@ -31,7 +31,7 @@ import {
 } from '@numen/plugin-sdk'
 import { createPluginContext } from '../context'
 import { disposeSubscriptions } from './subscriptions'
-import { SERVICE_RULES } from './servicePermissions'
+import { SERVICE_RULES, type RulesOf } from './servicePermissions'
 import type { PluginContextHost } from '../types'
 import { createTestContextHost, type ContextHostParts } from '../../testing/contextHost'
 
@@ -96,6 +96,7 @@ function createHost(
       getWorkspace: () => ui.workspace,
       getWindow: () => ui.window,
       getCommands: () => ui.commands,
+      isCommandListed: () => true,
       getSlots: () => ui.slots as never,
       getNotices: () => ui.notices as never,
       getAgent: () => work.agent,
@@ -121,13 +122,17 @@ function pick(context: PluginContext, path: readonly string[]): { target: unknow
 
 function call(context: PluginContext, path: readonly string[]): unknown {
   const { target, key } = pick(context, path)
-  return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(['app', 'agent'], 'b.md')
+  return (target as Record<string, (...args: unknown[]) => unknown>)[key]?.(
+    ['app', 'agent'],
+    'b.md',
+  )
 }
 
 const MEMBERS = SERVICE_PARTS.flatMap((part) =>
-  listLeaves(asTree((SERVICE_RULES as unknown as Record<string, unknown>)[part])).map(
-    (leaf) => ({ ...leaf, path: [part, ...leaf.path] }),
-  ),
+  listLeaves(asTree((SERVICE_RULES as unknown as Record<string, unknown>)[part])).map((leaf) => ({
+    ...leaf,
+    path: [part, ...leaf.path],
+  })),
 ).filter((leaf) => leaf.rule.permissions.length > 0)
 
 const label = (path: readonly string[]) => path.join('.')
@@ -162,10 +167,7 @@ describe('every member of a service that lists a permission', () => {
       )
       const reached = call(allowed, member.path)
       await Promise.resolve(reached)
-      const service = pick(
-        { ...fakes, plugin: undefined } as unknown as PluginContext,
-        member.path,
-      )
+      const service = pick({ ...fakes, plugin: undefined } as unknown as PluginContext, member.path)
       expect((service.target as Record<string, unknown>)[service.key]).toHaveBeenCalled()
     },
   )
@@ -180,6 +182,9 @@ describe('the services of a plugin context', () => {
     expect(needs('vault.vaults.getState')).toStrictEqual(['vault:read'])
     expect(needs('vault.vaults.switchTo')).toStrictEqual(['vault:manage'])
     expect(needs('ui.commands.run')).toStrictEqual(['vault:write'])
+    expect(needs('work.agent.finish')).toStrictEqual(needs('work.agent.ask'))
+    expect(needs('tabs.close')).toStrictEqual(['vault:write'])
+    expect(needs('events.emitFileSelect')).toStrictEqual(needs('events.emitVaultChange'))
     expect(needs('ui.workspace.files.open')).toStrictEqual(['vault:read'])
     expect(needs('ui.workspace.ask')).toStrictEqual(['vault:write'])
     expect(needs('ui.drops.drop')).toStrictEqual(['vault:write'])
@@ -236,7 +241,11 @@ describe('the services of a plugin context', () => {
     const context = createPluginContext('md.numen.sample', host, MANIFEST([]))
     expect(context.vault.vaults).toBeUndefined()
 
-    services.vaults = { getState: vi.fn(), watch: vi.fn(), switchTo: vi.fn() } as unknown as VaultsHost
+    services.vaults = {
+      getState: vi.fn(),
+      watch: vi.fn(),
+      switchTo: vi.fn(),
+    } as unknown as VaultsHost
     const later = createPluginContext('md.numen.sample', host, MANIFEST([]))
 
     expect(() => later.vault.vaults?.getState()).toThrowError('vault:read')
@@ -266,6 +275,39 @@ describe('the services of a plugin context', () => {
     expectTypeOf<keyof Rules['work']['agent']>().toEqualTypeOf<keyof AgentHost>()
     expectTypeOf<keyof Rules['work']['tasks']>().toEqualTypeOf<keyof TaskHost>()
     expectTypeOf<keyof Rules['work']['backgroundTasks']>().toEqualTypeOf<keyof BackgroundTaskHost>()
+  })
+
+  it('takes the async flag of a rule from the type of the member', () => {
+    const syncRule = SERVICE_RULES.work.agent.ask
+    const asyncRule = SERVICE_RULES.vault.notes.read
+
+    // @ts-expect-error a member that returns a promise takes no sync rule: a refusal would throw
+    const promiseWithSync: RulesOf<{ read(): Promise<string> }> = { read: syncRule }
+    // @ts-expect-error a member that returns a promise or a value takes no sync rule
+    const eitherWithSync: RulesOf<{ read(): Promise<string> | string }> = { read: syncRule }
+    // @ts-expect-error a member that returns a value takes no async rule: a refusal would reject
+    const valueWithAsync: RulesOf<{ peek(): string }> = { peek: asyncRule }
+    const promiseWithAsync: RulesOf<{ read(): Promise<string> }> = { read: asyncRule }
+    const valueWithSync: RulesOf<{ peek(): string }> = { peek: syncRule }
+
+    expect([
+      promiseWithSync,
+      eitherWithSync,
+      valueWithAsync,
+      promiseWithAsync,
+      valueWithSync,
+    ]).toHaveLength(5)
+  })
+
+  it('rejects, and never throws, from every member whose type returns a promise', async () => {
+    const asyncMembers = MEMBERS.filter((one) => one.rule.isAsync)
+    expect(asyncMembers.length).toBeGreaterThan(0)
+    for (const member of asyncMembers) {
+      const denied = createPluginContext('md.numen.sample', createHost(createFakes()), MANIFEST([]))
+      let returned: unknown
+      expect(() => (returned = call(denied, member.path)), label(member.path)).not.toThrow()
+      await expect(returned, label(member.path)).rejects.toThrowError('lacks required permission')
+    }
   })
 
   it('states why a member needs no permission', () => {
@@ -298,11 +340,7 @@ describe('the services of a plugin context', () => {
 
 describe('the subscriptions of a plugin', () => {
   const createSubscribed = () => {
-    const context = createPluginContext(
-      'md.numen.sample',
-      createHost(createFakes()),
-      MANIFEST([]),
-    )
+    const context = createPluginContext('md.numen.sample', createHost(createFakes()), MANIFEST([]))
     return context.plugin.subscriptions
   }
 

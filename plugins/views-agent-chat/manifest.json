@@ -1,7 +1,7 @@
 {
   "id": "md.numen.views.agent.chat",
   "name": "Agent Chat",
-  "version": "2026.11.11",
+  "version": "2026.11.12",
   "protocol": 1,
   "description": "Interactive chat tab for working with AI assistants",
   "capabilities": [],
@@ -35,7 +35,8 @@
       { "slot": "fileTree.context", "command": "note.ask", "group": "5-agent", "order": 10 },
       { "slot": "plexGraph.context", "command": "note.ask", "group": "1-note", "order": 20 }
     ],
-    "keybindings": [{ "key": "mod+shift+a", "command": "chat.open" }]
+    "keybindings": [{ "key": "mod+shift+a", "command": "chat.open" }],
+    "viewCapabilities": ["conversation"]
   },
   "permissions": ["vault:read", "vault:write"],
   "settings": [

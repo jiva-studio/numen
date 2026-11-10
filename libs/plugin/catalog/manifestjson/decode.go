@@ -178,6 +178,8 @@ func newContributes(wire *v1.ManifestContributes) (manifest.Contributes, error) 
 		TextKinds:    newTextKinds(wire.GetTextKinds()),
 		Listeners:    newListeners(wire.GetListeners()),
 		Keybindings:  newKeybindings(wire.GetKeybindings()),
+
+		ViewCapabilities: wire.GetViewCapabilities(),
 	}, nil
 }
 
