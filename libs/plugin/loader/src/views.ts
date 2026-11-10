@@ -12,6 +12,7 @@ import { adoptPluginStyle, getPluginStyle, type StyleRoot } from './styles'
 
 interface DeclaredView {
   readonly pluginId: string
+  readonly vaultPermissions: readonly string[]
   readonly registration: ViewRegistration
 }
 
@@ -23,8 +24,20 @@ interface ViewInstance {
   readonly exposed: { focus?: () => void }
 }
 
+/**
+ * What a mounting plugin holds. For a view kind a plugin registers itself (`inherits`), the mount
+ * also needs every vault permission the registering plugin holds, because the view reads through
+ * the services of that plugin.
+ */
+export interface MountAccess {
+  readonly inherits: boolean
+  readonly permissions: readonly string[]
+  readonly requirePerm: (permission: string, operation: string) => void
+}
+
 interface Mount {
   readonly capability: string
+  readonly access: MountAccess
   readonly element: HTMLElement
   readonly context: unknown
   instance?: ViewInstance | undefined
@@ -53,6 +66,11 @@ function createStyle(pluginId: string): HTMLElement[] {
   return [link]
 }
 
+function isAllowed(mount: Mount, view: DeclaredView): boolean {
+  const { inherits, permissions } = mount.access
+  return !inherits || view.vaultPermissions.every((one) => permissions.includes(one))
+}
+
 function drawView(mount: Mount, view: DeclaredView): ViewInstance {
   const root = createRoot()
   const release = adoptPluginStyle(view.pluginId, mount.element.getRootNode() as StyleRoot)
@@ -77,11 +95,16 @@ export function createViewRegistry() {
 
   const draw = (mount: Mount) => {
     const view = declared.find((one) => one.registration.capability === mount.capability)
-    if (view) mount.instance = drawView(mount, view)
+    if (view && isAllowed(mount, view)) mount.instance = drawView(mount, view)
   }
 
-  const registerView = (pluginId: string, registration: ViewRegistration): Disposable => {
-    const view: DeclaredView = { pluginId, registration }
+  const registerView = (
+    pluginId: string,
+    registration: ViewRegistration,
+    permissions: readonly string[] = [],
+  ): Disposable => {
+    const vaultPermissions = permissions.filter((one) => one.startsWith('vault:'))
+    const view: DeclaredView = { pluginId, vaultPermissions, registration }
     declared.push(view)
     for (const mount of mounts) if (!mount.instance) draw(mount)
     return {
@@ -98,8 +121,16 @@ export function createViewRegistry() {
     }
   }
 
-  const mountView = (capability: string, element: HTMLElement, context: unknown): MountedView => {
-    const mount: Mount = { capability, element, context }
+  const mountView = (
+    capability: string,
+    element: HTMLElement,
+    ...[context, access]: [context: unknown, access: MountAccess]
+  ): MountedView => {
+    const declaredView = declared.find((one) => one.registration.capability === capability)
+    for (const permission of access.inherits ? (declaredView?.vaultPermissions ?? []) : []) {
+      access.requirePerm(permission, 'mountView')
+    }
+    const mount: Mount = { capability, element, context, access }
     mounts.add(mount)
     draw(mount)
     return {
