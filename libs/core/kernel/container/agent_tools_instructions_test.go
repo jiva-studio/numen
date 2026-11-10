@@ -13,8 +13,6 @@ import (
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
-
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
