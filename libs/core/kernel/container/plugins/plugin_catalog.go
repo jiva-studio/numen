@@ -5,7 +5,6 @@ import (
 	"slices"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/plugincatalog"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -62,15 +61,6 @@ func (c Config) GetPluginCatalog() *catalog.Service {
 	service, err := catalog.NewService(config)
 	if err != nil {
 		c.handleError(err)
-		return nil
-	}
-	return service
-}
-
-// GetEditorCatalog returns the plugin catalog as the editor window lists and finds plugins in it.
-func (c Config) GetEditorCatalog() plugincatalog.Catalog {
-	service := c.GetPluginCatalog()
-	if service == nil {
 		return nil
 	}
 	return service

@@ -41,7 +41,9 @@ func runWithDeps(deps cli.Deps, args ...string) (string, error) {
 }
 
 func createVaultList(target domain.Vault) func() (cli.Vaults, error) {
-	return func() (cli.Vaults, error) { return cli.Vaults{Registry: portsOfSingle(singleVaultList{target})}, nil }
+	return func() (cli.Vaults, error) {
+		return vaultParts{ports: portsOfSingle(singleVaultList{target})}.build(), nil
+	}
 }
 
 // failingLinkQueries answers every question about links with an error.
@@ -215,7 +217,7 @@ func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(getNotebook()),
 		Problems: func(context.Context) (cli.Problems, error) {
-			return cli.Problems{Problems: queries}, nil
+			return cli.Problems{Problems: vaults.NewStandardGetProblems(queries)}, nil
 		},
 	}
 }
@@ -332,7 +334,7 @@ func TestACommandProducesBackWhatItOpened(t *testing.T) {
 func TestAVaultTheListCannotReadKeepsTheReason(t *testing.T) {
 	t.Parallel()
 	provided := cli.Deps{Vaults: func() (cli.Vaults, error) {
-		return cli.Vaults{Registry: brokenVaultList{}.ports()}, nil
+		return vaultParts{ports: brokenVaultList{}.ports()}.build(), nil
 	}}
 	_, err := runWithDeps(provided, "links", "notebook", "Bees.md")
 	if !errors.Is(err, errRefused) {

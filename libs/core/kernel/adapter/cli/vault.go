@@ -11,9 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -67,7 +65,7 @@ func addVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	v, err := vault.NewAdd(vaults.Identity, vaults.Registry.Vaults, vaults.Registry.Lookup, vaults.Registry.Saver, vaults.Now).Execute(root, *name)
+	v, err := vaults.Add.Execute(root, *name)
 	if err != nil {
 		return err
 	}
@@ -84,7 +82,7 @@ func listVaults(out io.Writer, deps Deps) error {
 	}
 	// No vault is specified here, so the current one is the vault the next window
 	// opens.
-	recognized, err := registry.NewGetKnownVaults(vaults.Registry.Vaults, vaults.Registry.Last, vaults.Readers).Execute("")
+	recognized, err := vaults.Known.Execute("")
 	if err != nil {
 		return err
 	}
@@ -120,13 +118,13 @@ func renameVault(ctx context.Context, out io.Writer, deps Deps, args []string) (
 	if err != nil {
 		return err
 	}
-	rows, err := vaults.Rows(ctx)
+	renaming, err := vaults.OpenRename(ctx)
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, rows.Close)
+	defer closeInto(&err, renaming.Close)
 
-	renamed, err := vault.NewRename(vaults.Registry.Vaults, vaults.Registry.Saver, rows.Vaults).Execute(ctx, v, args[1])
+	renamed, err := renaming.Rename.Execute(ctx, v, args[1])
 	if err != nil {
 		return err
 	}
@@ -147,14 +145,13 @@ func removeVaultFromList(ctx context.Context, out io.Writer, deps Deps, args []s
 	if err != nil {
 		return err
 	}
-	rows, err := vaults.Rows(ctx)
+	forgetting, err := vaults.OpenUnregister(ctx)
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, rows.Close)
+	defer closeInto(&err, forgetting.Close)
 
-	forget := vault.NewUnregister(vaults.Registry.Vaults, vaults.Registry.Remover, rows.Vaults)
-	if err := forget.Execute(ctx, v); err != nil {
+	if err := forgetting.Unregister.Execute(ctx, v); err != nil {
 		return err
 	}
 	r := newReporter(out)
@@ -192,16 +189,13 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 		}
 	}
 
-	rows, err := vaults.Rows(ctx)
+	erasing, err := vaults.OpenErase(ctx)
 	if err != nil {
 		return err
 	}
-	defer closeInto(&err, rows.Close)
+	defer closeInto(&err, erasing.Close)
 
-	erase := vault.NewErase(
-		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry.Vaults, vaults.Registry.Remover, rows.Vaults),
-	)
-	res, err := erase.Execute(ctx, v)
+	res, err := erasing.Erase.Execute(ctx, v)
 	if errors.Is(err, picker.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, v.Name)
 	}
@@ -244,7 +238,7 @@ func openVault(out io.Writer, deps Deps, args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := vault.NewRecordOpen(vaults.Registry.Recorder).Execute(v.ID); err != nil {
+	if err := vaults.RecordOpen.Execute(v.ID); err != nil {
 		return err
 	}
 	r := newReporter(out)

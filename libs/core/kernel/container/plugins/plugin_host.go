@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
@@ -394,7 +395,7 @@ func (c Config) OpenSecretLedger() *settingsadapter.SecretLedger {
 
 // OpenSecrets returns the use cases on the secrets shared between plugins.
 func (c Config) OpenSecrets() *secret.Secrets {
-	var plugins pluginport.SecretPlugins = secret.NoPlugins{}
+	var plugins pluginport.SecretPlugins = textbridge.NoSecretPlugins{}
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}

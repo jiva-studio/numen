@@ -296,22 +296,13 @@ func (u *Versions) DeletePluginVersions(ctx context.Context, v domain.Vault, plu
 	return nil
 }
 
-// TextEdit is a user's edit of a version of a file: the edited segments, derived
-// from Source in the view of PluginID.
-type TextEdit struct {
-	PluginID string
-	Path     string
-	Source   domain.TextVersionID
-	Segments []domain.TextSegment
-}
-
 // editPrefix starts the key of a version created by editing another version.
 const editPrefix = "edit-"
 
 // CreateEdit records a user's edit as a new version derived from its source.
 // The core writes the segments into the folder of the plugin the user edits
 // in. The new version is the newest, and live while its chain is valid.
-func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit TextEdit) (domain.TextVersion, error) {
+func (u *Versions) CreateEdit(ctx context.Context, v domain.Vault, edit text.Edit) (domain.TextVersion, error) {
 	versions, err := u.getVersions(ctx, v, edit.Path)
 	if err != nil {
 		return domain.TextVersion{}, err

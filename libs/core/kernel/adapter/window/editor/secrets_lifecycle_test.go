@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -103,7 +104,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	}
 	testsupport.CloseAfter(t, installation)
 
-	path, handler := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
+	path, handler := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
 	mux := http.NewServeMux()
 	mux.Handle(path, handler)
 	server := httptest.NewUnstartedServer(mux)

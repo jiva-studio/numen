@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -27,7 +26,7 @@ type API struct {
 	GetFrontendPluginIDs func() []string
 	GetPluginDir         func(id string) (string, bool)
 	PluginServices       PluginServices
-	GetAgent             func() agent.Agent
+	Agent                numenv1connect.AgentServiceHandler
 	ListVaults           func() ([]domain.Vault, error)
 	ResolveLinks         *query.ResolveLinks
 

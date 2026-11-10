@@ -1,8 +1,11 @@
 package container
 
 import (
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // GetEditorAgent is the agent the editor window starts its tasks on: the programs of the plugins
@@ -12,5 +15,16 @@ func (c Config) GetEditorAgent() agentport.Agent {
 }
 
 func mountAgent(w *windowWiring) {
-	w.inst.Mount(editor.NewAgentRoute(w.inst.State, w.cfg.GetEditorAgent()))
+	state := w.inst.State
+	handler := &windowagent.Handler{
+		GetRoot:        func() string { return state.GetCurrentVault().Path },
+		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
+		GetUnreachable: state.Unreachable.Why,
+	}
+	if taking := w.cfg.GetEditorAgent(); taking != nil {
+		handler.Start = agent.NewStartTask(taking)
+		handler.End = agent.NewEndConversation(taking)
+	}
+	path, served := windowagent.NewRoute(handler, state.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

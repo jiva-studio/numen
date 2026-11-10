@@ -22,23 +22,21 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	adapterSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	editorSearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
-	editorSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -54,9 +52,6 @@ func bindNotes(services *Services, db *vaults.Index) {
 	services.NoteCases.Neighborhood = &neighborhood
 	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
 	services.UseNotes()
-	services.Search.GetNameMatches = search.NewGetNameMatches(db.NameMatches())
-	services.Search.GetTitles = query.NewGetTitles(refs)
-	services.Search.GetTypes = services.NoteCases.Types
 }
 
 // Vault watcher driven manually by the test, so reading a vault needs no filesystem or timer.
@@ -631,21 +626,6 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	}
 }
 
-func TestEverySearchModeIsRead(t *testing.T) {
-	testsupport.CheckHandled(t, func(mode v1.SearchMode) bool {
-		_, named := editorSearch.ConvertSearchModeFromWire(mode)
-		return named
-	})
-}
-
-func TestEveryPresenceIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Presence]settings.Presence{
-		v1.Presence_PRESENCE_PRESENT:          settings.Present,
-		v1.Presence_PRESENCE_NOT_FETCHED:      settings.NotFetched,
-		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settings.NothingToFetch,
-	}, func(is settings.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
-}
-
 func newThemeClient(t *testing.T, cfg themeConfig) numenv1connect.ThemeServiceClient {
 	t.Helper()
 
@@ -897,7 +877,13 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
-	services.Agent.GetAgent = func() agentport.Agent { return agent }
+	services.Mount(RouteOf(state, &windowagent.Handler{
+		Start:          agentuse.NewStartTask(agent),
+		End:            agentuse.NewEndConversation(agent),
+		GetRoot:        func() string { return state.GetCurrentVault().Path },
+		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
+		GetUnreachable: state.Unreachable.Why,
+	}, windowagent.NewRoute))
 	plugins := &testInterceptingPlugins{}
 	services.PluginServices = plugins
 

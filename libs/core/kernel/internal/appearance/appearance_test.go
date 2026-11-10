@@ -4,12 +4,13 @@ import (
 	"strings"
 	"testing"
 
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/appearance"
 )
 
 func buildSettings() appearance.Settings {
 	return appearance.Settings{
-		Mode:           appearance.Dark,
+		Mode:           themedomain.Dark,
 		Theme:          ":root{--numen-surface:#010203}",
 		InterfaceScale: 1.25,
 		TextScale:      1.5,
@@ -51,7 +52,7 @@ func TestTheThreeStandInTheOrderTheyWeigh(t *testing.T) {
 // A window at no size of its own is left to `tokens.css`, and nothing in the
 // head is marked as the sizes'.
 func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
-	head := appearance.Settings{Mode: appearance.Light}.Styles()
+	head := appearance.Settings{Mode: themedomain.Light}.Styles()
 
 	if strings.Contains(head, buildElementHead(appearance.IsSizes)) {
 		t.Errorf("the head ends with %q", head)
@@ -63,7 +64,7 @@ func TestAWindowAtNoSizeOfItsOwnCarriesNothingMarkedAsTheSizes(t *testing.T) {
 // inside it.
 func TestAThemeCannotMarkAnElementOfItsOwn(t *testing.T) {
 	forged := `</style>` + buildElementHead(appearance.IsMode) + `:root{color-scheme:light}`
-	head := appearance.Settings{Mode: appearance.Dark, Theme: forged}.Styles()
+	head := appearance.Settings{Mode: themedomain.Dark, Theme: forged}.Styles()
 
 	if count := strings.Count(head, "</style>"); count != 2 {
 		t.Errorf("the head ends with %d elements: %q", count, head)

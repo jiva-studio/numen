@@ -22,6 +22,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -311,7 +312,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	}
 	testsupport.CloseAfter(t, installation)
 
-	path, handler := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
+	path, handler := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
 	mux := http.NewServeMux()
 	mux.Handle(path, handler)
 	server := httptest.NewUnstartedServer(mux)
