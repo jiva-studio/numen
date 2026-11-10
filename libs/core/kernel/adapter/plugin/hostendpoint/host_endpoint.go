@@ -16,6 +16,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -63,7 +64,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(vault.NewHandler(endpoint, vaultSource{callers: callers}))
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
@@ -118,7 +119,7 @@ func (e *Endpoint) Complete(
 	ctx context.Context,
 	req *connect.Request[v1.HostServiceCompleteRequest],
 ) (*connect.Response[v1.HostServiceCompleteResponse], error) {
-	pluginID, err := e.authorize(req.Header().Get("Authorization"), manifest.PermissionAIComplete)
+	pluginID, err := e.Authorize(req.Header().Get("Authorization"), manifest.PermissionAIComplete)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +136,17 @@ func (e *Endpoint) Complete(
 	}), nil
 }
 
+// vaultSource lends the vault service what the callers lend.
+type vaultSource struct{ callers Callers }
+
+func (s vaultSource) GetPluginVault() *vault.Access { return s.callers.Vault.GetPluginVault() }
+
+func (s vaultSource) GetPluginVaultList() vault.List { return s.callers.Window.GetPluginVaultList() }
+
+func (e *Endpoint) getVault(header http.Header) (*vault.Access, error) {
+	return vault.Select(e.callers.Vault.GetPluginVault(), header)
+}
+
 func (e *Endpoint) authenticate(header string) (string, error) {
 	token, found := strings.CutPrefix(header, bearerPrefix)
 	pluginID, recognized := e.callers.Identity.GetPluginIDByToken(token)
@@ -144,7 +156,7 @@ func (e *Endpoint) authenticate(header string) (string, error) {
 	return pluginID, nil
 }
 
-func (e *Endpoint) authorize(header, permission string) (string, error) {
+func (e *Endpoint) Authorize(header, permission string) (string, error) {
 	pluginID, err := e.authenticate(header)
 	if err != nil {
 		return "", err

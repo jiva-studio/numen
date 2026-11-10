@@ -170,9 +170,9 @@ func TestTheCacheDirectoryIsRemovedWhenThePluginIsRemovedFromTheDisk(t *testing.
 func TestAPluginIdThatIsNotAFolderNameGetsNoDirectory(t *testing.T) {
 	host, cacheRoot, _ := newStorageHost(t)
 
-	vars, err := host.Storage.getStorageVars("../escape")
+	vars, err := host.Storage.GetVars("../escape")
 	if err == nil || len(vars) != 0 {
-		t.Errorf("getStorageVars() = %v, %v, want an error", vars, err)
+		t.Errorf("GetVars() = %v, %v, want an error", vars, err)
 	}
 	if _, statErr := os.Stat(filepath.Join(filepath.Dir(cacheRoot), "escape")); statErr == nil {
 		t.Error("a directory was created outside the root")

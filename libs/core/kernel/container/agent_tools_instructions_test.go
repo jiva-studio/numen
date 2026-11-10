@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
@@ -17,7 +18,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -84,22 +84,17 @@ func openToolsOfHost(t *testing.T, host *plugin.Host) numenv1connect.PluginToolS
 			t.Error(err)
 		}
 	})
-	host.Services.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.Services.GetEndpointCallers())
+	container.AdaptPluginHost(host).SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
+	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := served.Close(context.WithoutCancel(t.Context())); err != nil {
-			t.Error(err)
-		}
-	})
 	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return numenv1connect.NewPluginToolServiceClient(
-		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", served.GetPort()))
+		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", port))
 }
 
 func listToolsOfHost(t *testing.T, client numenv1connect.PluginToolServiceClient) *v1.ListToolsResponse {

@@ -21,13 +21,14 @@ func serveCompletions(t *testing.T, host *plugin.Host, output string) (hostendpo
 	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	cfg := container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), SettingsPath: path})
+	lent := container.AdaptPluginHost(host)
+	cfg := container.NewConfig(container.Config{PluginHost: lent, SettingsPath: path})
 	target, err := cfg.Settings()
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.SetSettings(target)
-	completer := host.Services.GetCompleter()
+	completer := lent.GetCompleter()
 	if completer == nil {
 		t.Fatal("the host has no completer")
 	}

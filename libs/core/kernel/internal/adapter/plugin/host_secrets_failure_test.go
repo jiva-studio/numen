@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -144,7 +145,7 @@ func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx cont
 	})
 	p := host.Registry.t.plugins[secretPluginID]
 	p.Manifest.Backend = manifest.Backend{Entrypoint: "bin/plugin"}
-	activating := lifecycle.New(testsupport.GetMachine())
+	activating := lifecycle.New(nil)
 	activating.SetActivating()
 	if dormant {
 		delete(host.Registry.t.endpoints, secretPluginID)
@@ -167,7 +168,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 		ID:      pluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: declared, Title: "API key"}},
 	}}
-	sup := lifecycle.New(testsupport.GetMachine())
+	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.Registry.t.supervisors[pluginID] = sup
 	host.Registry.t.endpoints[pluginID] = plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
@@ -202,7 +203,7 @@ func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 		t.Errorf("%d failures passed on, want none", failed.count())
 	}
 	sup := host.Registry.t.supervisors[secretPluginID]
-	if sup.IsActivationFailed() {
+	if sup.Failure.IsFailed() {
 		t.Error("the plugin is marked as failed")
 	}
 	for _, info := range host.Registry.GetPluginInfos() {
@@ -377,12 +378,12 @@ func TestHungConfigureTimesOutOnce(t *testing.T) {
 	select {
 	case early := <-result:
 		t.Fatalf("the operation returned %v before the Configure timeout", early)
-	case <-time.After(configureCallTimeout / 2):
+	case <-time.After(delivery.ConfigureTimeout / 2):
 	}
 	var err error
 	select {
 	case err = <-result:
-	case <-time.After(configureCallTimeout + 2*time.Second):
+	case <-time.After(delivery.ConfigureTimeout + 2*time.Second):
 		t.Fatal("the operation waits longer than the Configure timeout")
 	}
 	if len(entered) != 1 {
@@ -406,7 +407,7 @@ func TestHungConfigureTimesOutOnce(t *testing.T) {
 			if err != nil {
 				t.Errorf("%s returned %v", name, err)
 			}
-		case <-time.After(configureCallTimeout / 2):
+		case <-time.After(delivery.ConfigureTimeout / 2):
 			t.Fatalf("%s waits for the plugin that did not answer", name)
 		}
 	}
@@ -426,7 +427,7 @@ func TestNotifyingAHungPluginWaitsForTheTimeoutOnce(t *testing.T) {
 	var err error
 	select {
 	case err = <-result:
-	case <-time.After(configureCallTimeout + 2*time.Second):
+	case <-time.After(delivery.ConfigureTimeout + 2*time.Second):
 		t.Fatal("the call waits longer than the Configure timeout")
 	}
 	if err == nil || !strings.Contains(err.Error(), secretPluginID) || !strings.Contains(err.Error(), "timed out") {
@@ -468,7 +469,7 @@ func TestConfigureCallbackDoesNotDeadlockRefresh(t *testing.T) {
 		if err != nil {
 			t.Errorf("the round returned %v", err)
 		}
-	case <-time.After(configureCallTimeout + 2*time.Second):
+	case <-time.After(delivery.ConfigureTimeout + 2*time.Second):
 		t.Fatal("the round is stuck behind a handler that called back")
 	}
 	if err := <-nested; !errors.Is(err, context.DeadlineExceeded) {
@@ -490,18 +491,18 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-	if err := host.Config.delivery.lockSecrets(t.Context()); err != nil {
+	if err := host.Config.delivery.Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return host.Config.delivery.isAwaitingFirstConfigure(secretPluginID)
+		return host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
 	go func() { refresh <- host.Config.Refresh(t.Context()) }()
-	host.Config.delivery.unlockSecrets()
+	host.Config.delivery.Unlock()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)

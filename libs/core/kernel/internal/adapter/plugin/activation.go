@@ -42,7 +42,7 @@ func (a *Activation) CheckPluginPermission(pluginID, permission string) error {
 	if !ok {
 		return errPluginNotFound
 	}
-	return sup.CheckPermission(permission)
+	return sup.Permissions.Check(permission)
 }
 
 // GetPluginIDByToken returns the id of the running plugin the token was given

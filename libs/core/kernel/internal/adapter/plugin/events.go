@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/eventbus"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 

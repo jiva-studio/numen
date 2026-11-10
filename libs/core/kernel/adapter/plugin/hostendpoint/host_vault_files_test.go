@@ -71,52 +71,56 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 	readers := vaultreader.Readers{}
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	return hostvault.Vault{
-		Current: func() (domain.Vault, bool) {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-			if d.current == nil {
-				return domain.Vault{}, false
-			}
-			return *d.current, true
+		Session: hostvault.Session{
+			Current: func() (domain.Vault, bool) {
+				d.mu.Lock()
+				defer d.mu.Unlock()
+				if d.current == nil {
+					return domain.Vault{}, false
+				}
+				return *d.current, true
+			},
+			Watcher: vaults.NewWatchChanges(d.watcher).Execute,
+			Vaults: func() ([]domain.Vault, error) {
+				d.mu.Lock()
+				defer d.mu.Unlock()
+				out := []domain.Vault{}
+				for _, one := range d.vaults {
+					out = append(out, one)
+				}
+				slices.SortFunc(out, func(a, b domain.Vault) int { return compareIDs(a.ID, b.ID) })
+				return out, nil
+			},
+			Find: func(id domain.VaultID) (domain.Vault, error) {
+				d.mu.Lock()
+				defer d.mu.Unlock()
+				found, isKnown := d.vaults[id]
+				if !isKnown {
+					return domain.Vault{}, domain.ErrUnavailable
+				}
+				return found, nil
+			},
+			IndexState: func(context.Context, domain.Vault) (plugin.IndexState, error) {
+				d.mu.Lock()
+				defer d.mu.Unlock()
+				return d.state, nil
+			},
+			Moved: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
 		},
-		Stat:        file.NewStatFile(readers),
-		ReadFile:    file.NewReadFile(readers),
-		RangeReader: file.Read{Readers: readers},
-		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
-		LockVault:   writers.Lock,
-		Cache:       appstate.PluginCachesAt(t.TempDir()),
-		Watcher:     vaults.NewWatchChanges(d.watcher).Execute,
-		Vaults: func() ([]domain.Vault, error) {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-			out := []domain.Vault{}
-			for _, one := range d.vaults {
-				out = append(out, one)
-			}
-			slices.SortFunc(out, func(a, b domain.Vault) int { return compareIDs(a.ID, b.ID) })
-			return out, nil
+		Files: hostvault.Files{
+			Stat:        file.NewStatFile(readers),
+			ReadFile:    file.NewReadFile(readers),
+			RangeReader: file.Read{Readers: readers},
+			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
+			LockVault:   writers.Lock,
+			Index: func(_ context.Context, _ domain.Vault, paths []string) error {
+				d.mu.Lock()
+				defer d.mu.Unlock()
+				d.scanned = append(d.scanned, slices.Clone(paths))
+				return nil
+			},
 		},
-		Find: func(id domain.VaultID) (domain.Vault, error) {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-			found, isKnown := d.vaults[id]
-			if !isKnown {
-				return domain.Vault{}, domain.ErrUnavailable
-			}
-			return found, nil
-		},
-		IndexState: func(context.Context, domain.Vault) (plugin.IndexState, error) {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-			return d.state, nil
-		},
-		Moved: func(context.Context) (<-chan struct{}, error) { return d.moves, nil },
-		Index: func(_ context.Context, _ domain.Vault, paths []string) error {
-			d.mu.Lock()
-			defer d.mu.Unlock()
-			d.scanned = append(d.scanned, slices.Clone(paths))
-			return nil
-		},
+		Stores: hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
 	}
 }
 

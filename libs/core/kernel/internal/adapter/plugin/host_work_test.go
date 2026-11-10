@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"os"
 	"sync/atomic"
 	"testing"
@@ -30,7 +31,8 @@ func newWorkingHost(t *testing.T) workingHost {
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
 	tasks := run.NewTasks()
 	work := run.NewPluginWork(&run.Lock{}, tasks, nil)
-	host.Services.SetPluginWork(work)
+	services, _ := lendEndpoint(host, hostendpoint.Address)
+	services.SetPluginWork(work)
 	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatal(err)
 	}

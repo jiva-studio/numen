@@ -7,11 +7,11 @@ import (
 	"sync"
 	"testing"
 
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 )
 
 // windowIndex is the index updater of a window's note use cases, which records the paths it is given.
@@ -39,9 +39,9 @@ func openWindowScenarios(assembly windowVaults) (container.PluginVaultHooks, *wi
 	return container.PluginVaultHooks{Notes: scenarios}, index
 }
 
-func statFile(t *testing.T, shared *hostendpoint.VaultAccess, path string) domain.FileStat {
+func statFile(t *testing.T, shared *vaultapi.Access, path string) domain.FileStat {
 	t.Helper()
-	stat, err := shared.StatFile(t.Context(), path)
+	stat, err := shared.Files.StatFile(t.Context(), path)
 	if err != nil {
 		t.Fatalf("stat %s: %v", path, err)
 	}
@@ -59,12 +59,12 @@ func TestPluginLinkAddInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Scan(t.Context(), []string{"Danube.md", "Rhine.md"}); err != nil {
+	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Rhine.md"}); err != nil {
 		t.Fatal(err)
 	}
 	before := len(index.getPaths())
 
-	added, err := shared.AddLinks(t.Context(), []plugin.LinkAddition{{
+	added, err := shared.LinkEditor.AddLinks(t.Context(), []plugin.LinkAddition{{
 		From: "Rhine.md", Baseline: statFile(t, shared, "Rhine.md"),
 		Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, Role: domain.RoleRef},
 	}})
@@ -93,12 +93,12 @@ func TestPluginLinkRemoveInActiveVaultUsesWindowNoteUseCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
 		t.Fatal(err)
 	}
 	before := len(index.getPaths())
 
-	if _, err := shared.RemoveLinks(t.Context(), "Deltas.md", domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, "",
+	if _, err := shared.LinkEditor.RemoveLinks(t.Context(), "Deltas.md", domain.Address{Scheme: domain.SchemeName, Value: "Danube"}, "",
 		statFile(t, shared, "Deltas.md")); err != nil {
 		t.Fatalf("the removal failed: %v", err)
 	}
@@ -118,16 +118,16 @@ func TestPluginLinkAddInOtherVaultBypassesWindowNoteUseCases(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lakes, err := shared.With(other.ID)
+	lakes, err := shared.Switch.With(other.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := lakes.Scan(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
+	if err := lakes.Writer.Scan(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
 		t.Fatal(err)
 	}
 	before := len(index.getPaths())
 
-	added, err := lakes.AddLinks(t.Context(), []plugin.LinkAddition{{
+	added, err := lakes.LinkEditor.AddLinks(t.Context(), []plugin.LinkAddition{{
 		From: "Lakes.md", Baseline: statFile(t, lakes, "Lakes.md"),
 		Link: domain.Link{Target: domain.Address{Scheme: domain.SchemeName, Value: "Baikal"}, Role: domain.RoleChild},
 	}})

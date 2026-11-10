@@ -19,13 +19,14 @@ import (
 	"testing"
 	"time"
 
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+
 	"connectrpc.com/connect"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
@@ -484,7 +485,7 @@ func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 
 // shownVault is a host that exposes one vault and nothing else.
 type shownVault struct {
-	hostendpoint.VaultSwitch
+	vaultapi.Switch
 	vault domain.Vault
 }
 
@@ -511,22 +512,17 @@ func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	host.Services.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.Services.GetEndpointCallers())
+	container.AdaptPluginHost(host).SetPluginVault(&vaultapi.Access{Switch: shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}}})
+	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() {
-		if err := served.Close(context.WithoutCancel(t.Context())); err != nil {
-			t.Error(err)
-		}
-	})
 	caller, err := host.Activation.EnsureActive(t.Context(), mcpPlugin)
 	if err != nil {
 		t.Fatal(err)
 	}
 	client := numenv1connect.NewPluginToolServiceClient(
-		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", served.GetPort()))
+		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", port))
 
 	listed, err := client.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
 	if err != nil {

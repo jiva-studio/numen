@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -32,12 +33,12 @@ type callers struct {
 	allowed   map[string]bool
 	completer Completer
 	checked   []string
-	vault     *VaultAccess
+	vault     *vaultapi.Access
 	texts     TextVersions
 	search    *SearchAccess
 	work      WorkQueue
 	window    WindowControl
-	list      VaultList
+	list      vaultapi.List
 	granted   []string
 	confined  bool
 	tools     PluginTools
@@ -65,17 +66,17 @@ func (c *callers) CheckPluginPermission(pluginID, permission string) error {
 
 func (c *callers) GetCompleter() Completer { return c.completer }
 
-func (c *callers) GetPluginVault() *VaultAccess { return c.vault }
+func (c *callers) GetPluginVault() *vaultapi.Access { return c.vault }
 
-func (c *callers) GetPluginTexts() TextVersions   { return c.texts }
-func (c *callers) GetPluginSearch() *SearchAccess { return c.search }
-func (c *callers) GetDependencies() Dependencies  { return nil }
-func (c *callers) GetPluginWork() WorkQueue       { return c.work }
-func (c *callers) GetPluginTools() PluginTools    { return c.tools }
-func (c *callers) GetPluginWindow() WindowControl { return c.window }
-func (c *callers) GetPluginVaultList() VaultList  { return c.list }
+func (c *callers) GetPluginTexts() TextVersions      { return c.texts }
+func (c *callers) GetPluginSearch() *SearchAccess    { return c.search }
+func (c *callers) GetDependencies() Dependencies     { return nil }
+func (c *callers) GetPluginWork() WorkQueue          { return c.work }
+func (c *callers) GetPluginTools() PluginTools       { return c.tools }
+func (c *callers) GetPluginWindow() WindowControl    { return c.window }
+func (c *callers) GetPluginVaultList() vaultapi.List { return c.list }
 
-func (c *callers) over(list VaultList, granted ...string) Callers {
+func (c *callers) over(list vaultapi.List, granted ...string) Callers {
 	c.list, c.granted, c.confined = list, granted, true
 	return c.asCallers()
 }
@@ -95,14 +96,14 @@ func capability[T any](fake any) T {
 	return found
 }
 
-func vaultOf(fake any) *VaultAccess {
-	return &VaultAccess{
-		NoteLookup: capability[NoteLookup](fake), LinkLookup: capability[LinkLookup](fake),
-		FileReader: capability[FileReader](fake), FileWriter: capability[FileWriter](fake),
-		Arranger: capability[Arranger](fake), LinkEditor: capability[LinkEditor](fake),
-		Connections: capability[Connections](fake), RelatedNotes: capability[RelatedNotes](fake),
-		VaultWatch: capability[VaultWatch](fake), VaultSwitch: capability[VaultSwitch](fake),
-		StoreOpener: capability[StoreOpener](fake), CacheStore: capability[CacheStore](fake),
+func vaultOf(fake any) *vaultapi.Access {
+	return &vaultapi.Access{
+		Notes: capability[vaultapi.NoteLookup](fake), Links: capability[vaultapi.LinkLookup](fake),
+		Files: capability[vaultapi.FileReader](fake), Writer: capability[vaultapi.FileWriter](fake),
+		Arranger: capability[vaultapi.Arranger](fake), LinkEditor: capability[vaultapi.LinkEditor](fake),
+		Connections: capability[vaultapi.Connections](fake), Related: capability[vaultapi.RelatedNotes](fake),
+		Watch: capability[vaultapi.Watch](fake), Switch: capability[vaultapi.Switch](fake),
+		Stores: capability[vaultapi.StoreOpener](fake), Cache: capability[vaultapi.CacheStore](fake),
 	}
 }
 
@@ -253,7 +254,7 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	fakeCallers := newCallers(nil)
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	for _, header := range []string{"", "token-a", "Basic token-a", "bearer token-a"} {
-		if _, err := endpoint.authorize(header, manifest.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
+		if _, err := endpoint.Authorize(header, manifest.PermissionAIComplete); readCode(t, err) != connect.CodeUnauthenticated {
 			t.Errorf("header %q was accepted", header)
 		}
 	}

@@ -166,7 +166,7 @@ func (r *Registry) getPluginStatusLocked(pluginID string) PluginStatus {
 		Dir:           "",
 	}
 	if sup, ok := r.t.supervisors[pluginID]; ok {
-		if cause := sup.GetActivationFailure(); cause != nil {
+		if cause := sup.Failure.GetCause(); cause != nil {
 			status.Failed = true
 			status.FailureReason = cause.Error()
 		}
@@ -222,4 +222,10 @@ func (r *Registry) GetPluginInfos() []plugindomain.Info {
 		})
 	}
 	return result
+}
+
+// IsEnabled reports whether the host knows the plugin and has it enabled. In safe mode it has none.
+func (r *Registry) IsEnabled(pluginID string) bool {
+	_, ok := r.GetPlugin(pluginID)
+	return ok
 }

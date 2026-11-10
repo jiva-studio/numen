@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
@@ -121,15 +124,9 @@ type PluginHost struct {
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
 	transport.ClientLookup
+	textport.TextPlugins
+	*hostendpoint.Services
 	ApplySetting        settingsport.PluginSettingApplier
-	SetCompleter        func(completer hostendpoint.Completer)
-	SetPluginWork       func(work hostendpoint.WorkQueue)
-	SetPluginVault      func(vault *hostendpoint.VaultAccess)
-	GetPluginVault      func() *hostendpoint.VaultAccess
-	SetPluginTexts      func(texts hostendpoint.TextVersions)
-	SetPluginSearch     func(search *hostendpoint.SearchAccess)
-	SetPluginWindow     func(window hostendpoint.WindowControl)
-	SetPluginVaultList  func(list hostendpoint.VaultList)
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 }
@@ -142,6 +139,8 @@ func AdaptPluginHost(host *plugin.Host) *PluginHost {
 
 func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
+		Services:              lendHostEndpoint(host),
+		TextPlugins:           host.Registry,
 		PluginActivator:       host.Activation,
 		PluginRetrier:         host.Activation,
 		PluginDiscoverer:      host.Discovery,
@@ -162,18 +161,28 @@ func adaptPluginHost(host *plugin.Host) *PluginHost {
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
 		}).Execute,
-		SetCompleter:        host.Services.SetCompleter,
-		SetPluginWork:       host.Services.SetPluginWork,
-		SetPluginVault:      host.Services.SetPluginVault,
-		GetPluginVault:      host.Services.GetPluginVault,
-		SetPluginTexts:      host.Services.SetPluginTexts,
-		SetPluginSearch:     host.Services.SetPluginSearch,
-		SetPluginWindow:     host.Services.SetPluginWindow,
-		SetPluginVaultList:  host.Services.SetPluginVaultList,
 		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
 		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
 		ClientLookup:        host.Activation.ClientLookup(),
 	}
+}
+
+func lendHostEndpoint(host *plugin.Host) *hostendpoint.Services {
+	services := hostendpoint.NewServices()
+	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
+		Identity: host.Activation, Leases: host.Activation,
+		Completion: services, Vault: services, Texts: services, Search: services, Window: services, Work: services,
+		Dependencies: hostendpoint.DependencySourceFunc(func() hostendpoint.Dependencies {
+			if registry := host.Services.GetDependencies(); registry != nil {
+				return registry
+			}
+			return nil
+		}),
+		Tools: hostendpoint.ToolSourceFunc(func() hostendpoint.PluginTools {
+			return agenttoolsbridge.NewCatalog(plugin.NewToolHost(host.Activation, host.Registry), agenttoolsbridge.Full)
+		}),
+	}))
+	return services
 }
 
 func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {

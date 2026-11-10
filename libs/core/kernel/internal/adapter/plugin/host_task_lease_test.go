@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,7 +33,8 @@ func newTaskHost(t *testing.T) taskHost {
 	var started atomic.Int32
 	var procs []*os.Process
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
-	host.Services.SetPluginWork(run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil))
+	services, _ := lendEndpoint(host, hostendpoint.Address)
+	services.SetPluginWork(run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil))
 	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +44,7 @@ func newTaskHost(t *testing.T) taskHost {
 
 func newTaskClient(t *testing.T, host *Host) numenv1connect.HostQueueServiceClient {
 	t.Helper()
-	port, err := host.Services.openHostEndpoint(t.Context())
+	port, err := host.Services.OpenHostEndpoint(t.Context())
 	if err != nil || port == 0 {
 		t.Fatalf("the host endpoint is not serving: port %d, %v", port, err)
 	}

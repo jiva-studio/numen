@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -38,7 +39,7 @@ type CompletionSource interface {
 // VaultSource lends the vault the host works.
 type VaultSource interface {
 	// GetPluginVault returns the open vault, or nil when the host has none.
-	GetPluginVault() *VaultAccess
+	GetPluginVault() *vault.Access
 }
 
 // TextSource lends the text versions of the vaults.
@@ -58,7 +59,7 @@ type WindowSource interface {
 	// GetPluginWindow returns the main window of the vault, or nil when the host has no window.
 	GetPluginWindow() WindowControl
 	// GetPluginVaultList returns the list of vaults plugins change, or nil when the host has no window.
-	GetPluginVaultList() VaultList
+	GetPluginVaultList() vault.List
 }
 
 // WorkQueue is the core's shared queue of heavy work and its list of tasks, as the plugins use them.
@@ -186,17 +187,14 @@ type WindowControl interface {
 	ActivateTab(ctx context.Context, id string) (domain.OpenTabs, error)
 }
 
-// VaultList is the installation's list of vaults and the vault the window shows, changed by the
-// plugins that have vault:manage. The window provides it; a host with no window has none.
-type VaultList interface {
-	// AddVault adds the folder at the absolute root. An empty name means the folder's name.
-	AddVault(ctx context.Context, root, name string) (domain.Vault, error)
-	RenameVault(ctx context.Context, id domain.VaultID, name string) (domain.Vault, error)
-	// RemoveVault removes the vault from the list and from the index. The folder stays.
-	RemoveVault(ctx context.Context, id domain.VaultID) error
-	// OpenVault shows the vault in the window and returns once the window shows it. A rejected open
-	// returns plugin.ErrUnsavedChanges, ErrUnavailable, or an unknown-vault error.
-	OpenVault(ctx context.Context, id domain.VaultID) error
-	// IsMissing reports whether the vault's folder is missing.
-	IsMissing(v domain.Vault) bool
-}
+// DependencySourceFunc lends the provisioner the function returns, or nil.
+type DependencySourceFunc func() Dependencies
+
+// GetDependencies returns the provisioner, or nil when the host has none.
+func (f DependencySourceFunc) GetDependencies() Dependencies { return f() }
+
+// ToolSourceFunc lends the tools the function returns.
+type ToolSourceFunc func() PluginTools
+
+// GetPluginTools returns the tools the plugins offer.
+func (f ToolSourceFunc) GetPluginTools() PluginTools { return f() }
