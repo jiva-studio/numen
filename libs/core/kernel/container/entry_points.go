@@ -55,13 +55,11 @@ func OpenEditor(c Config, ctx context.Context, named string, out io.Writer) (*ed
 	return opened, c, nil
 }
 
-// Flashcards is what the flashcards application closes when it ends, and the result of loading its themes.
+// Flashcards is what the flashcards application closes when it ends: CloseVaults waits until nothing is still
+// writing to the index, CloseIndex closes it, and Themes is why the themes could not be loaded, or nil.
 type Flashcards struct {
-	// CloseVaults waits until nothing is still writing to the index.
 	CloseVaults func()
-	// CloseIndex closes the index.
 	CloseIndex func() error
-	// Themes is why the themes could not be loaded, or nil.
 	Themes error
 }
 
@@ -89,13 +87,13 @@ func OpenFlashcards(c Config, ctx context.Context, api *shell.API, errOut io.Wri
 		return started, err
 	}
 	if moves, err := Moves(c, ctx); err != nil {
-		fmt.Fprintln(errOut, label+": the index is not being followed:", err)
+		_, _ = fmt.Fprintln(errOut, label+": the index is not being followed:", err)
 	} else {
 		api.ReportChangesFrom(ctx, moves)
 	}
 	started.Themes = SetShellThemes(c, api, func(response string) {
 		if response != "" {
-			fmt.Fprintln(errOut, "themes:", response)
+			_, _ = fmt.Fprintln(errOut, "themes:", response)
 		}
 	})
 	return started, nil
