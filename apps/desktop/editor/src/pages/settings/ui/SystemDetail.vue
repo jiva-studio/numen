@@ -62,20 +62,23 @@ function onBack(): void {
 
 <style scoped>
 .system-detail {
+  --max-width: 54rem;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: 54rem;
+  max-inline-size: var(--max-width);
   margin-inline: auto;
 }
 
 .system-detail__back {
+  --margin-end: 0.75rem;
   align-self: flex-start;
-  margin-block-end: 0.75rem;
+  margin-block-end: var(--margin-end);
 }
 
 .system-detail__where {
-  margin-block-start: 0.75rem;
+  --margin-start: 0.75rem;
+  margin-block-start: var(--margin-start);
 }
 
 .system-detail__file {

@@ -49,15 +49,17 @@ defineExpose({
 
 <style scoped>
 .select-trigger {
+  --gap: 0.5rem;
+  --pad-inline: 0.625rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--gap);
   inline-size: 100%;
   max-inline-size: 100%;
   min-inline-size: 0;
   block-size: var(--numen-action-size);
-  padding-inline: 0.625rem;
+  padding-inline: var(--pad-inline);
   border: 1px solid var(--numen-field-border);
   border-radius: var(--numen-radius);
   background: var(--numen-field-bg);
@@ -85,8 +87,9 @@ defineExpose({
 /* One line, then an ellipsis. A model is named by a word and addressed by a
    line too long to read, and the name is what the line carries. */
 .select-trigger__reading {
+  --pad-block: 0.125rem;
   min-inline-size: 0;
-  padding-block: 0.125rem;
+  padding-block: var(--pad-block);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -99,9 +102,10 @@ defineExpose({
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .select-trigger__mark {
+  --size: 0.875rem;
   flex-shrink: 0;
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   stroke-width: 1.875;
   color: var(--numen-hushed);
 }

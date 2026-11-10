@@ -194,11 +194,12 @@ main {
 
 /* Another window offers to move a tab into this one. */
 main.is-highlighted::after {
+  --ring-width: 0.1875rem;
   content: '';
   position: fixed;
   inset: 0;
   z-index: var(--numen-lift-menu);
-  border: 3px solid var(--numen-accent);
+  border: var(--ring-width) solid var(--numen-accent);
   border-radius: var(--numen-window-radius);
   pointer-events: none;
 }
@@ -213,8 +214,9 @@ main.is-highlighted::after {
 }
 
 .tab-menu-icon {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --size: 0.875rem;
+  inline-size: var(--size);
+  block-size: var(--size);
   stroke-width: 1.75;
 }
 

@@ -63,11 +63,14 @@ function onLater(conflict: ConflictPrompt) {
 <style scoped>
 /* Overlays the content, because the prompt must be resolved before anything else. */
 .unsaved {
+  --inset-end: 1rem;
+  --inset-inline: 1rem;
+  --pad: 0.8rem 1rem;
   position: fixed;
-  inset-block-end: 1rem;
-  inset-inline: 1rem;
+  inset-block-end: var(--inset-end);
+  inset-inline: var(--inset-inline);
   z-index: var(--numen-lift-unsaved);
-  padding: 0.8rem 1rem;
+  padding: var(--pad);
   border-radius: var(--numen-radius);
   background: var(--numen-caution-bg);
   color: var(--numen-caution-fg);
@@ -77,22 +80,25 @@ function onLater(conflict: ConflictPrompt) {
 }
 
 .unsaved__says {
-  margin: 0 0 0.5rem;
+  --margin: 0 0 0.5rem;
+  margin: var(--margin);
 }
 
 .unsaved__notes {
+  --gap: 0.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .unsaved__note {
+  --gap: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--gap);
 }
 
 .unsaved__title {

@@ -103,7 +103,8 @@ async function submitValue(
 }
 
 .secret-value__failure {
-  margin: 0.25rem 0 0;
+  --margin: 0.25rem 0 0;
+  margin: var(--margin);
   color: var(--numen-alarm);
   font-size: var(--numen-text-1);
 }
