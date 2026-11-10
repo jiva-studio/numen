@@ -3,7 +3,10 @@ import type { AgentPort } from './agent'
 import type { Disposable } from './types'
 
 // ViewRegistration declares a view another plugin mounts by its capability, without knowing which
-// plugin draws it.
+// plugin draws it. The manifest lists the capability under `contributes.viewCapabilities`, only one
+// plugin draws a capability, and the plugin holds the permissions its context gives the view
+// (conversation and note-editor: vault:read and vault:write; vault-summary: vault:read). Otherwise
+// `register.view` throws.
 export interface ViewRegistration {
   readonly capability: ViewCapability
   readonly component: Component

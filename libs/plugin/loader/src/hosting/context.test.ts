@@ -169,7 +169,7 @@ describe('PluginContext', () => {
     const hostWithTabs = createPluginContext(
       'tabs.plugin',
       createTestContextHost({ tabs: { navigateTab, closeTab } }),
-      { permissions: ['vault:read'] },
+      { permissions: ['vault:read', 'vault:write'] },
     )
     await expect(hostWithTabs.tabs.navigate?.('note', 'a.md')).resolves.toBe('tab-new')
     expect(navigateTab).toHaveBeenCalledWith('note', 'a.md')
@@ -205,7 +205,7 @@ describe('PluginContext', () => {
     expect(ctx.plugin.subscriptions).toHaveLength(0)
   })
 
-  it('enforces vault:read permission for onVaultChange, onFileSelect, and emitFileSelect', () => {
+  it('enforces vault:read permission for onVaultChange and onFileSelect, and vault:write for emitFileSelect', () => {
     const { host } = createMockHost()
     const ctxNoPerms = createPluginContext('restricted.plugin', host, {
       id: 'restricted.plugin',
@@ -221,7 +221,7 @@ describe('PluginContext', () => {
       'Plugin "restricted.plugin" lacks required permission "vault:read" for onFileSelect',
     )
     expect(() => ctxNoPerms.events.emitFileSelect({ path: '/test.md' })).toThrowError(
-      'Plugin "restricted.plugin" lacks required permission "vault:read" for emitFileSelect',
+      'Plugin "restricted.plugin" lacks required permission "vault:write" for emitFileSelect',
     )
 
     const ctxUndefinedManifest = createPluginContext('no.manifest', host)
@@ -245,7 +245,9 @@ describe('PluginContext', () => {
 
     expect(() => ctxWithRead.events.onVaultChange(vi.fn())).not.toThrow()
     expect(() => ctxWithRead.events.onFileSelect(vi.fn())).not.toThrow()
-    expect(() => ctxWithRead.events.emitFileSelect({ path: '/test.md' })).not.toThrow()
+    expect(() => ctxWithRead.events.emitFileSelect({ path: '/test.md' })).toThrowError(
+      'Plugin "reader.plugin" lacks required permission "vault:write" for emitFileSelect',
+    )
   })
 
   it('enforces vault:write permission for emitVaultChange', () => {

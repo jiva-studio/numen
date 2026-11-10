@@ -9,6 +9,8 @@ const asCapability = (name: string) => name as ViewCapability
 
 const VIEW = asCapability('md.numen.owner.note-viewer')
 
+const NAMES = ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf']
+
 const settle = async () => {
   await new Promise((resolve) => setTimeout(resolve, 20))
   await nextTick()
@@ -23,7 +25,10 @@ const createHost = () => {
     getNotes: () => ({ read }) as unknown as VaultNotes,
   } as unknown as PluginHostDeps)
   const createPlugin = (id: string, permissions: string[]) =>
-    host.lifecycle.createContext(id, createMockManifest(id, { name: id, permissions }))
+    host.lifecycle.createContext(
+      id,
+      createMockManifest(id, { name: id, permissions, viewCapabilities: [VIEW, ...NAMES] }),
+    )
   return { read, createPlugin }
 }
 
@@ -94,7 +99,9 @@ describe('a view kind a plugin registers itself', () => {
     })
     const element = document.createElement('div')
 
-    expect(() => createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, { path: '' })).not.toThrow()
+    expect(() =>
+      createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, { path: '' }),
+    ).not.toThrow()
     expect(element.textContent).toBe('plain')
   })
 
@@ -111,7 +118,7 @@ describe('a view kind a plugin registers itself', () => {
 })
 
 describe('a view capability named like a property of every object', () => {
-  const names = ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf']
+  const names = NAMES
 
   it.each(names)(
     'waits for a registration when "%s" is mounted before one exists',

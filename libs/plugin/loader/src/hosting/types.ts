@@ -293,6 +293,7 @@ export interface ContextWindowHost {
   readonly getWorkspace: () => WorkspaceHost | undefined
   readonly getAgent: () => AgentHost | undefined
   readonly getCommands: () => CommandsHost | undefined
+  readonly isCommandListed: (command: string) => boolean
   readonly getWindow: () => WindowHost | undefined
   readonly getNotices: (pluginId: string) => NoticeHost
   readonly getTasks: (pluginId: string) => TaskHost | undefined

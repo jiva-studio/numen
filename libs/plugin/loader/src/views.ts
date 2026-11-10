@@ -2,8 +2,8 @@
  * The views plugins declare for other plugins, and the instances of them mounted into the elements of
  * the plugins that mount them.
  *
- * A mount waits for a declaration of its capability, and goes back to waiting when the plugin that
- * drew it is disposed. Each view is its own Vue application, given the mounting plugin's context as
+ * One plugin at a time draws a capability: a second registration of it throws. A mount waits for a
+ * declaration of its capability, and goes back to waiting when the plugin that drew it is disposed. Each view is its own Vue application, given the mounting plugin's context as
  * its `context` prop, behind the stylesheet of the plugin that declared it.
  */
 import { createApp, type App, type Component } from 'vue'
@@ -109,6 +109,14 @@ export function createViewRegistry() {
     registration: DeclaredViewRegistration,
     permissions: readonly string[] = [],
   ): Disposable => {
+    const registrant = declared.find(
+      (one) => one.registration.capability === registration.capability,
+    )
+    if (registrant) {
+      throw new Error(
+        `Plugin "${pluginId}" registers a view of "${registration.capability}", which plugin "${registrant.pluginId}" already draws`,
+      )
+    }
     const vaultPermissions = permissions.filter((one) => one.startsWith('vault:'))
     const view: DeclaredView = { pluginId, vaultPermissions, registration }
     declared.push(view)

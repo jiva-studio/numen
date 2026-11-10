@@ -16,7 +16,7 @@ import type {
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from '../types'
 import type { PermissionTarget } from './permission'
-import { requireMountAccess } from './viewPermissions'
+import { requireMountAccess, requireViewRegistration } from './viewPermissions'
 
 export type Track = (disposable: Disposable) => Disposable
 
@@ -49,7 +49,12 @@ export function createRegistrations(
     command: (reg: CommandRegistration) => add(host.registration.registerCommand(pluginId, reg)),
     agentProvider: (reg: AgentProviderRegistration) =>
       add(host.registration.registerAgentProvider(pluginId, reg)),
-    view: (reg: ViewRegistration) => add(host.views.registerView(pluginId, reg, permissions)),
+    view: (reg: ViewRegistration) => {
+      // Read once: a getter on the registration cannot answer the check and the registry differently.
+      const { capability, component } = reg
+      requireViewRegistration(capability, target)
+      return add(host.views.registerView(pluginId, { capability, component }, permissions))
+    },
     dropHandler: (reg: DropRegistration) => add(host.views.registerDropHandler(pluginId, reg)),
   }
 }

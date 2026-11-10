@@ -101,7 +101,8 @@ const MANIFEST = {
   name: 'Cards',
   version: '1.0.0',
   frontend: {},
-  permissions: ['vault:read'],
+  permissions: ['vault:read', 'vault:write'],
+  contributes: { viewCapabilities: [VAULT_SUMMARY] },
 }
 
 const serveCore = (

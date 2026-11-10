@@ -243,9 +243,13 @@ type ManifestContributes struct {
 	Listeners []*ManifestListener `protobuf:"bytes,14,rep,name=listeners,proto3" json:"listeners,omitempty"`
 	// keybindings bind keys to commands, see the keybindings list of commands.json for the keys of the
 	// application.
-	Keybindings   []*ManifestKeybinding `protobuf:"bytes,19,rep,name=keybindings,proto3" json:"keybindings,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Keybindings []*ManifestKeybinding `protobuf:"bytes,19,rep,name=keybindings,proto3" json:"keybindings,omitempty"`
+	// view_capabilities are the kinds of view the plugin's frontend draws for other plugins to mount: a
+	// kind the application defines (conversation, note-editor, vault-summary) or a kind named after the
+	// plugin id. The frontend registers a view only for a kind listed here.
+	ViewCapabilities []string `protobuf:"bytes,20,rep,name=view_capabilities,json=viewCapabilities,proto3" json:"view_capabilities,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ManifestContributes) Reset() {
@@ -372,6 +376,13 @@ func (x *ManifestContributes) GetListeners() []*ManifestListener {
 func (x *ManifestContributes) GetKeybindings() []*ManifestKeybinding {
 	if x != nil {
 		return x.Keybindings
+	}
+	return nil
+}
+
+func (x *ManifestContributes) GetViewCapabilities() []string {
+	if x != nil {
+		return x.ViewCapabilities
 	}
 	return nil
 }
@@ -2027,7 +2038,7 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\asecrets\x18\x10 \x03(\v2\x1b.numen.v1.SecretDeclarationR\asecrets\x12\x1a\n" +
 	"\bservices\x18\x11 \x03(\tR\bservices\x12E\n" +
 	"\x0esettings_views\x18\x18 \x03(\v2\x1e.numen.v1.ManifestSettingsViewR\rsettingsViews\x12?\n" +
-	"\vcontributes\x18\x1a \x01(\v2\x1d.numen.v1.ManifestContributesR\vcontributes\"\xd5\x05\n" +
+	"\vcontributes\x18\x1a \x01(\v2\x1d.numen.v1.ManifestContributesR\vcontributes\"\x82\x06\n" +
 	"\x13ManifestContributes\x126\n" +
 	"\ttab_kinds\x18\x01 \x03(\v2\x19.numen.v1.ManifestTabKindR\btabKinds\x12\x18\n" +
 	"\afeature\x18\x02 \x01(\tR\afeature\x12\x1a\n" +
@@ -2045,7 +2056,8 @@ const file_numen_v1_manifest_proto_rawDesc = "" +
 	"\n" +
 	"text_kinds\x18\x12 \x03(\v2\x1a.numen.v1.ManifestTextKindR\ttextKinds\x128\n" +
 	"\tlisteners\x18\x0e \x03(\v2\x1a.numen.v1.ManifestListenerR\tlisteners\x12>\n" +
-	"\vkeybindings\x18\x13 \x03(\v2\x1c.numen.v1.ManifestKeybindingR\vkeybindings\"\xd1\x01\n" +
+	"\vkeybindings\x18\x13 \x03(\v2\x1c.numen.v1.ManifestKeybindingR\vkeybindings\x12+\n" +
+	"\x11view_capabilities\x18\x14 \x03(\tR\x10viewCapabilities\"\xd1\x01\n" +
 	"\x12ManifestKeybinding\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x18\n" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12@\n" +
