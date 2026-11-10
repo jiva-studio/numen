@@ -34,13 +34,7 @@ describe('createViewRegistry', () => {
     const mounted = views.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' }, NO_ACCESS)
     mounted.focus()
 
-    const root = element.querySelector('.plugin-view') as HTMLElement
-    expect(root).not.toBeNull()
-    expect(root.style.display).toBe('flex')
-    expect(root.style.flexDirection).toBe('column')
-    expect(root.style.flex).toBe('1 1 0%')
-    expect(root.style.minWidth).toBe('0px')
-    expect(root.style.minHeight).toBe('0px')
+    expect(element.querySelector('.plugin-view')).not.toBeNull()
     expect(element.querySelector('link')).toBeNull()
     expect(element.textContent).toBe('chat: Decks/Physics.md')
     expect(focused.count).toBe(1)

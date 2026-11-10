@@ -131,8 +131,7 @@ corresponding handler in `<script>` is `onItemSelected`.
 
 ## 4. Vue component structure (`<script setup>` / `<script>`)
 
-All Vue components organize their `<script>` block into sections separated by
-80-character comment banners:
+All Vue components order their `<script>` block in sections: props and events, state, hooks, handlers, helpers. A section banner is optional, and a banner is the 80-character form:
 
 ```vue
 <script setup lang="ts">
@@ -163,15 +162,10 @@ function formatValue(val: string) { ... }
 
 Rules:
 
-1. Always follow the order: **Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**.
-2. Only include headers for sections that actually exist in the component.
-3. The banner is the 80-character form: `/* --------------------------------- <Name> ---------------------------------- */`.
-4. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
-5. Business logic does not live in a `.vue` file — it is a composable or a domain model.
-
-The components in the tree still use the short `// --- <Name> ---` form. They
-are being migrated to the banner above; until the migration is done, new and
-touched components use the banner.
+1. Always follow the order: **Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**. `numen/vue-script-sections` reads the order from the statements: macros, then state (variables, composable calls), then hooks (`watch`, `on...` lifecycle calls), then handlers (`on<Action>` functions), then other functions.
+2. A function a template binds to an event is named `on<Action>`, and no function of a script starts with `handle` (`numen/handler-naming`).
+3. A section with independent state, or a part rendered on its own elsewhere, is extracted into its own component.
+4. Business logic does not live in a `.vue` file — it is a composable or a domain model.
 
 ---
 

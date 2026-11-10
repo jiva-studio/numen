@@ -39,7 +39,7 @@ Each entry names a check or a lint rule by what it forbids. `node tools/lint-lay
 - `lib/` segments: no import of Vue, Pinia or `@vue/*`; no import of a `ui`, `model` or `api` segment at any depth and no `.vue` file; no `window`, `document`, `navigator`, `localStorage`, `sessionStorage`; no `setTimeout` or `setInterval`.
 - `model/` segments: no import from `ui`; no `window`, `document`, `navigator`.
 - `.vue` files: no import of a wire file, `@connectrpc/*` or `@bufbuild/*`; no `window`, `document`, `navigator`.
-- Components (`numen-rules.mjs`): at most six inline props (`numen/max-inline-props`), the section order Props, Emits, State, Hooks, Handlers, Helpers (`numen/vue-script-sections`), at most 100 script lines (`numen/max-script-lines`); the template, depth and composable-return limits of §8.
+- Components (`numen-rules.mjs`): at most six inline props (`numen/max-inline-props`), the statement order props and events, state, hooks, handlers, helpers (`numen/vue-script-sections`), `on<Action>` names for template event handlers (`numen/handler-naming`), at most 100 script lines (`numen/max-script-lines`); the template, depth and composable-return limits of §8.
 - `no-component-below-ui`: no `.vue` file in a `lib`, `api` or `model` segment.
 - `styles-use-tokens`: no colour literal, no `--numen-` declaration outside the token files, no `var()` fallback and no undeclared token in a style sheet.
 - Every package with a `package.json` or an ESLint configuration is linted with the strict rule set, and no `tsconfig` excludes a tracked file.

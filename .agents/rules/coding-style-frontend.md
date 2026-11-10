@@ -82,7 +82,7 @@ function formatValue(val: string) { ... }
 </script>
 ```
 
-**Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**, in the 80-character banner form. The components in the tree still use the short `// --- <Name> ---` form and are being migrated; a new or touched component uses the banner.
+**Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**, checked from the statements by `numen/vue-script-sections`; a banner comment is optional.
 
 ---
 
