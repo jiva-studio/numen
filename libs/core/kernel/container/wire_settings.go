@@ -206,8 +206,8 @@ func settingsModelsForProvider(c settingsWiring, provider agentport.AgentProvide
 	return func() []settingsdomain.Model {
 		target := settingsGetSettingsOrDefaults(c)
 		var programs []agentdomain.Program
-		if c.Plugins != nil {
-			programs = getAgentPrograms(c.Plugins(), provider, target.Agent)
+		if c.GetAgentPrograms != nil {
+			programs = c.GetAgentPrograms(provider, target.Agent)
 		}
 		return prefixModels(settingsdomain.AppOwner, settingsadapter.AgentModels(agentAt, target.Agent, programs))
 	}
