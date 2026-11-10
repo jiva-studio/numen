@@ -760,8 +760,8 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		Moved:      hooks.Moved,
 		Index:      index,
 	}
-	if c.vaultWatcher != nil {
-		vaults.Watcher = vault.NewWatchChanges(c.vaultWatcher).Execute
+	if c.VaultWatcher != nil {
+		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
 	}
 	if vaults.IndexState == nil {
 		vaults.IndexState = getIndexState(db)
