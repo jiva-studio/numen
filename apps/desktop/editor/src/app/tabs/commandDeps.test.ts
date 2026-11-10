@@ -157,7 +157,7 @@ describe('useSettings step groups', () => {
     } as never
 
     const settings = useSettings({
-      rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
+      rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
       words: WORDS,
       log,
       windowTabs,

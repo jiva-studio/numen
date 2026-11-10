@@ -125,9 +125,7 @@ describe('the slot entries of the window', () => {
 describe('a command of a slot entry', () => {
   const find = createSlotCommandFinder({
     whenReader: createWhenReader(),
-    getPluginCommands: () => [
-      { id: `${TIDE}:tide.live`, title: 'Live tide', icon: 'waves' },
-    ],
+    getPluginCommands: () => [{ id: `${TIDE}:tide.live`, title: 'Live tide', icon: 'waves' }],
     getDeclaredCommands: () => [
       declared({ id: 'tide.open', title: 'Open tide', icon: 'waves' }),
       declared({ id: 'tide.note', title: 'Tide note', when: 'target.isNote' }),

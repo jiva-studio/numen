@@ -11,7 +11,12 @@ import type { Command } from '@/entities/command'
 import { getFileKinds } from '@/entities/file'
 import { readNote, resolveLinks, writeNote } from '@/entities/note'
 import type { createMessageLog } from '@/shared/notices/messages'
-import { createBackendHandlers, createCommandItemLists, type CommandItemLists, useDeclaredCommands } from '@/features/plugin-commands'
+import {
+  createBackendHandlers,
+  createCommandItemLists,
+  type CommandItemLists,
+  useDeclaredCommands,
+} from '@/features/plugin-commands'
 import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'

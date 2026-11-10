@@ -655,7 +655,9 @@ describe('the settings views of a plugin', () => {
         new Map(Object.entries(registered).map(([id, component]) => [id, { component }])),
       plugins: ref([plugin]),
     })
-    const wrapper = mount(PluginDetail, { props: { state: createSettingsState(installation), plugin } })
+    const wrapper = mount(PluginDetail, {
+      props: { state: createSettingsState(installation), plugin },
+    })
     return { wrapper, recordedWrites }
   }
 
@@ -694,7 +696,9 @@ describe('the settings views of a plugin', () => {
       getSettingsViews: () => new Map([['top', { component: View }]]),
       plugins: ref([plugin]),
     })
-    const wrapper = mount(PluginDetail, { props: { state: createSettingsState(installation), plugin } })
+    const wrapper = mount(PluginDetail, {
+      props: { state: createSettingsState(installation), plugin },
+    })
     expect(wrapper.findAll('.view')).toHaveLength(1)
   })
 })
@@ -711,7 +715,9 @@ describe('the data of a plugin', () => {
       return problem
     })
     const installation = createInstallation({ getPluginData, deletePluginData })
-    const wrapper = mount(PluginDetail, { props: { state: createSettingsState(installation), plugin: TRANSCRIBER } })
+    const wrapper = mount(PluginDetail, {
+      props: { state: createSettingsState(installation), plugin: TRANSCRIBER },
+    })
     await flushPromises()
     return { wrapper, getPluginData, deletePluginData }
   }

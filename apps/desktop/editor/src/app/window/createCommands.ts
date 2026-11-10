@@ -5,7 +5,19 @@
 
 import { SLOT, type PluginHost, type SlotHost } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import { createCommands as createPaletteCommands, runInvocation, createInvocation, createCommandPalette, useSearch, PALETTE_WORDS, type ResultChoice, type SearchMenuDeps, type NoteLookup, type PaletteLists, type SearchDeps } from '@/features/command-palette'
+import {
+  createCommands as createPaletteCommands,
+  runInvocation,
+  createInvocation,
+  createCommandPalette,
+  useSearch,
+  PALETTE_WORDS,
+  type ResultChoice,
+  type SearchMenuDeps,
+  type NoteLookup,
+  type PaletteLists,
+  type SearchDeps,
+} from '@/features/command-palette'
 import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
 import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
 import { createTabCommands, type TabCommandsDeps } from '@/features/tab-commands'
@@ -15,11 +27,30 @@ import {
   type TabsHold,
   type VaultCommandsDeps,
 } from '@/features/vault-commands'
-import { COMMAND, type Command, type CommandInvocation, type CommandTarget, type FeatureCommands, type Notes, type RunSupport, type VaultRef, registerCommand, type CommandDeps } from '@/entities/command'
+import {
+  COMMAND,
+  type Command,
+  type CommandInvocation,
+  type CommandTarget,
+  type FeatureCommands,
+  type Notes,
+  type RunSupport,
+  type VaultRef,
+  registerCommand,
+  type CommandDeps,
+} from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 import { formatError } from '@/shared/api/errors'
 import { createCommandDeps } from '../tabs/commandDeps'
-import { createCommandNoteReader, usePluginCommands, createItemLists, toRunTarget, createCommandItems, watchCommandLists, type DeclaredCommands } from '@/features/plugin-commands'
+import {
+  createCommandNoteReader,
+  usePluginCommands,
+  createItemLists,
+  toRunTarget,
+  createCommandItems,
+  watchCommandLists,
+  type DeclaredCommands,
+} from '@/features/plugin-commands'
 import { syncKeybindings } from '@/features/hotkeys'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
@@ -248,11 +279,15 @@ export function createCommands(options: CommandsDepsOptions) {
   )
   const { getPaletteEntries, getCommandNote, pluginWays } = plugins
 
-  const palette = useSearch(core, { ...words, ...PALETTE_WORDS }, {
-    coverage,
-    menu: createSearchMenu(options.slots),
-    getTarget,
-  })
+  const palette = useSearch(
+    core,
+    { ...words, ...PALETTE_WORDS },
+    {
+      coverage,
+      menu: createSearchMenu(options.slots),
+      getTarget,
+    },
+  )
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))

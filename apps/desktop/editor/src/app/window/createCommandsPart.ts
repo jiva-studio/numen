@@ -17,7 +17,12 @@ import { getNamedIcon } from '@/shared/icons'
 import { isFieldFocused } from './isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
-import { type CommandItemLists, getPaletteId, type useDeclaredCommands, createCommandNoteReader } from '@/features/plugin-commands'
+import {
+  type CommandItemLists,
+  getPaletteId,
+  type useDeclaredCommands,
+  createCommandNoteReader,
+} from '@/features/plugin-commands'
 import { createCommandNotes } from '../tabs/commandDeps'
 import {
   collectFeatureCommands,

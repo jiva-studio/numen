@@ -126,10 +126,10 @@ describe('a declared command with items', () => {
     })
     await declared.load()
 
-    await runInvocation(
-      invocation('org.example.ears/ears'),
-      { writeMessage: vi.fn(), notes: { openFile: vi.fn() } } as unknown as CommandDeps,
-    )
+    await runInvocation(invocation('org.example.ears/ears'), {
+      writeMessage: vi.fn(),
+      notes: { openFile: vi.fn() },
+    } as unknown as CommandDeps)
 
     expect(run).toHaveBeenCalledWith(
       proofread,

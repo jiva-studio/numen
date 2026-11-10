@@ -148,11 +148,9 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginHost = createPluginHost({
     ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
-      rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
-        ?.hasFrontend ?? true,
+      rest.state.plugins.value.find((plugin) => plugin.id === pluginId)?.hasFrontend ?? true,
     hasPluginBackend: (pluginId) =>
-      rest.state.plugins.value.find((plugin) => plugin.id === pluginId)
-        ?.hasBackend ?? true,
+      rest.state.plugins.value.find((plugin) => plugin.id === pluginId)?.hasBackend ?? true,
     isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
     waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
     app: createAppInfo({

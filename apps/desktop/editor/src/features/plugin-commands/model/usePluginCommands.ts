@@ -10,7 +10,12 @@ import type {
   PluginPaletteCommand,
 } from '@numen/plugin-loader'
 import type { WelcomeAction } from '@numen/workbench'
-import { findShortcutKeys, type Command, type CommandTarget, registerCommand } from '@/entities/command'
+import {
+  findShortcutKeys,
+  type Command,
+  type CommandTarget,
+  registerCommand,
+} from '@/entities/command'
 import type { FileKind } from '@/entities/file'
 import { getNamedIcon } from '@/shared/icons'
 import {
@@ -86,7 +91,11 @@ export function usePluginCommands(
    */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => !hasNoteVariable(context.whenReader.getCondition(cmd.when)) && pluginHost?.getKeyFor(cmd.id))
+      .filter(
+        (cmd) =>
+          !hasNoteVariable(context.whenReader.getCondition(cmd.when)) &&
+          pluginHost?.getKeyFor(cmd.id),
+      )
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 
