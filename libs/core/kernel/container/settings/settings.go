@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -42,7 +43,7 @@ type Config struct {
 	InterfaceScale, TextScale float64
 	Hardware                  hardware.Specs
 	ResolvedCompute           hardware.ResolvedCompute
-	PluginHost                pluginport.PluginManager
+	PluginHost                *pluginswiring.Host
 	KeyStore                  pluginport.KeyStore
 	Watches                   *vaultwatch.Hub
 	SettingsFiles             *settingsadapter.Files
@@ -152,8 +153,7 @@ func (c Config) Plugins() func() []plugindomain.Info {
 		if c.PluginHost == nil {
 			return nil
 		}
-		var discoverer pluginport.PluginDiscoverer = c.PluginHost
-		return discoverer.GetPluginInfos()
+		return c.PluginHost.GetPluginInfos()
 	}
 }
 
@@ -199,8 +199,7 @@ func (c Config) GetDeclarations() settingsadapter.Declarations {
 		if c.PluginHost == nil {
 			return nil, false
 		}
-		var declarer pluginport.PluginSettingDeclarer = c.PluginHost
-		return declarer.GetPluginSettingDeclarations(owner)
+		return c.PluginHost.GetPluginSettingDeclarations(owner)
 	}
 }
 
@@ -565,7 +564,7 @@ func IsPluginSetting(path []string) bool {
 }
 
 // NotifyPluginSettings updates the plugin host for each plugin setting in entries.
-func NotifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsdomain.Setting, report func(error)) {
+func NotifyPluginSettings(host pluginport.SettingUpdater, entries []settingsdomain.Setting, report func(error)) {
 	if host == nil {
 		return
 	}

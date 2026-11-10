@@ -99,7 +99,7 @@ type Host struct {
 	secrets                *secretDelivery
 	hostEndpoint           *hostendpoint.Endpoint
 	hostAddress            string
-	dependencies           pluginport.DependencyCatalog
+	dependencies           Dependencies
 	work                   pluginport.PluginWork
 	builtIns               map[string]builtInPlugin
 	contentTypes           contentTypeTable

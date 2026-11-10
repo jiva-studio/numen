@@ -1343,7 +1343,7 @@ func run(origin time.Time) {
 }
 
 // TestContainerDoesNotDowncastPluginHost ensures container code interacts with
-// plugin supervisor solely through port.PluginManager interface, never downcasting
+// plugin supervisor solely through the capabilities of container/plugins.Host, never downcasting
 // to concrete *plugin.Host.
 func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 	files, err := filepath.Glob("*.go")
@@ -1377,7 +1377,7 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 				return true
 			}
 			if pkg.Name == "plugin" && sel.Sel.Name == "Host" {
-				t.Errorf("%s: downcast to *plugin.Host is forbidden; use port.PluginManager", file)
+				t.Errorf("%s: downcast to *plugin.Host is forbidden; use container/plugins.Host", file)
 			}
 			return true
 		})

@@ -193,7 +193,7 @@ func TestNoAgentProviderWithoutAHost(t *testing.T) {
 
 func TestNoAgentProviderInSafeMode(t *testing.T) {
 	host, _, _ := twoProviders(t)
-	if provider := (container.NewConfig(container.Config{PluginHost: host, SafeMode: true})).AgentProvider(); provider != nil {
+	if provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), SafeMode: true})).AgentProvider(); provider != nil {
 		t.Fatalf("expected no provider, got %v", provider)
 	}
 }
@@ -201,7 +201,7 @@ func TestNoAgentProviderInSafeMode(t *testing.T) {
 // A host with no plugin that runs agent programs lists none, and takes no task.
 func TestAHostWithoutProvidersListsNoPrograms(t *testing.T) {
 	host := hostWith(t, map[string][]string{"md.test.chatty": {"embedding"}}, nil)
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 	if provider == nil {
 		t.Fatal("a host has a provider, even where no plugin is one")
 	}
@@ -219,7 +219,7 @@ func TestAHostWithoutProvidersListsNoPrograms(t *testing.T) {
 // in plugin order, and a plugin without it is not queried.
 func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 	host, one, _ := twoProviders(t)
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	programs, err := provider.GetPrograms(t.Context(), map[string][]string{"alpha": {"/bin/alpha", "--x"}})
 	if err != nil {
@@ -249,7 +249,7 @@ func TestAProviderThatFailsIsReportedAdjacentTheOthers(t *testing.T) {
 	host := hostWith(t,
 		map[string][]string{providerOne: {"ai.agent.provider"}, providerTwo: {"ai.agent.provider"}},
 		map[string]*providerServer{providerTwo: served})
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	programs, err := provider.GetPrograms(t.Context(), nil)
 	if err == nil || !strings.Contains(err.Error(), providerOne) {
@@ -263,7 +263,7 @@ func TestAProviderThatFailsIsReportedAdjacentTheOthers(t *testing.T) {
 // A task goes to the plugin that runs the program it names, with everything it was given.
 func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 	host, one, two := twoProviders(t)
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	run, err := provider.StartRun(t.Context(), agent.Task{
 		Question: "hello", Agent: "beta", Model: "m", MaxSteps: 3, Root: "/vault",
@@ -293,7 +293,7 @@ func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 
 func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 	host, one, two := twoProviders(t)
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	for _, name := range []string{"", "gamma"} {
 		if _, err := provider.StartRun(t.Context(), agent.Task{Question: "q", Agent: name}); err == nil {
@@ -309,7 +309,7 @@ func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 // conversation that was never started sends nothing.
 func TestEndConversation_RoutesToStartingPlugin(t *testing.T) {
 	host, one, two := twoProviders(t)
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	run, err := provider.StartRun(t.Context(), agent.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
 	if err != nil {
@@ -340,7 +340,7 @@ func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	models := (container.NewConfig(container.Config{PluginHost: host, SettingsPath: settings})).Models()()
+	models := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), SettingsPath: settings})).Models()()
 
 	byPath := map[string][]settingsdomain.Model{}
 	for _, one := range models {
@@ -363,7 +363,7 @@ func TestAgentContainer_ExposesProgramsAndModels(t *testing.T) {
 // A conversation started on two plugins is ended on both.
 func TestEndConversation_EndsOnEveryPluginUsed(t *testing.T) {
 	host, one, two := twoProviders(t)
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	for _, program := range []string{"alpha", "beta", "alpha"} {
 		run, err := provider.StartRun(t.Context(), agent.Task{Question: "q", Agent: program, Conversation: "c-1"})
@@ -396,7 +396,7 @@ func TestModels_ReportsProviderListFailureToErrorHandler(t *testing.T) {
 	}
 	var notified []error
 	cfg := container.NewConfig(container.Config{
-		PluginHost: host, SettingsPath: settingsFile,
+		PluginHost: container.LendPluginHost(host), SettingsPath: settingsFile,
 		ErrorHandler: func(err error) { notified = append(notified, err) },
 	})
 	models := cfg.Models()()
@@ -424,7 +424,7 @@ func TestAProgramAvailableOnlyThroughItsCommandIsFound(t *testing.T) {
 	}
 	host := hostWith(t, map[string][]string{providerOne: {"ai.agent.provider"}},
 		map[string]*providerServer{providerOne: served})
-	provider := (container.NewConfig(container.Config{PluginHost: host})).AgentProvider()
+	provider := (container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host)})).AgentProvider()
 
 	if _, err := provider.StartRun(t.Context(), agent.Task{Question: "q", Agent: "gamma"}); err == nil ||
 		!strings.Contains(err.Error(), "no agent plugin runs") {

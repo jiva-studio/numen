@@ -2,21 +2,13 @@ package container
 
 import (
 	"errors"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"os"
 	"path/filepath"
 	"testing"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-)
-
-var (
-	_ pluginport.PluginManager          = (*plugin.Host)(nil)
-	_ pluginport.PluginLifecycleManager = (*plugin.Host)(nil)
-	_ pluginport.PluginRegistryManager  = (*plugin.Host)(nil)
 )
 
 func TestContainerSafeModeDegradation(t *testing.T) {
@@ -111,8 +103,8 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := NewPluginHost("desktop.editor", tmp)
-	cfg := NewConfig(Config{PluginHost: host})
+	host := pluginswiring.OpenPluginHost("desktop.editor", tmp)
+	cfg := NewConfig(Config{PluginHost: LendPluginHost(host)})
 
 	cfg.SetPluginVaultPath("vault")
 	if got := host.GetVaultPath(); got != "vault" {

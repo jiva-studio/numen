@@ -29,7 +29,8 @@ const (
 // recordingHost is a plugin host that records what the container tells it, and passes the rest to
 // the real host.
 type recordingHost struct {
-	pluginport.PluginManager
+	pluginport.SettingUpdater
+	pluginport.SettingsPush
 	mu       sync.Mutex
 	updates  []string
 	profiles []string
@@ -39,14 +40,14 @@ func (r *recordingHost) UpdatePluginSetting(ctx context.Context, pluginID, key s
 	r.mu.Lock()
 	r.updates = append(r.updates, pluginID+"."+key)
 	r.mu.Unlock()
-	return r.PluginManager.UpdatePluginSetting(ctx, pluginID, key, value)
+	return r.SettingUpdater.UpdatePluginSetting(ctx, pluginID, key, value)
 }
 
 func (r *recordingHost) SetPerformanceProfile(ctx context.Context, profile string) {
 	r.mu.Lock()
 	r.profiles = append(r.profiles, profile)
 	r.mu.Unlock()
-	r.PluginManager.SetPerformanceProfile(ctx, profile)
+	r.SettingsPush.SetPerformanceProfile(ctx, profile)
 }
 
 func (r *recordingHost) listUpdates() []string {
@@ -89,8 +90,10 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	host := &recordingHost{PluginManager: container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))}
-	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: host})
+	real := container.NewPluginHost("desktop.editor", writeEventfulPlugin(t))
+	host := &recordingHost{SettingUpdater: real, SettingsPush: real}
+	real.SettingUpdater, real.SettingsPush = host, host
+	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: real})
 	cfg = cfg.SetSettings(container.DefaultSettings())
 	t.Cleanup(cfg.UnsubscribeHost)
 	return cfg, path, host

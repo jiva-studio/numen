@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"math"
 	"slices"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
@@ -35,12 +35,12 @@ type Config struct {
 	ShouldRebuildIndex bool
 	Chunks             *note.ChunkTokens
 	ResolvedCompute    hardware.ResolvedCompute
-	PluginHost         pluginport.PluginManager
+	PluginHost         *pluginswiring.Host
 	Clock              machineport.Clock
 	VaultReaders       vaultport.VaultReaders
 	TextReaders        textport.TextReaders
 	ErrorHandler       func(error)
-	ResolvePlugin      func(capability string) (pluginport.PluginManager, error)
+	ResolvePlugin      func(capability string) (*pluginswiring.Host, error)
 }
 
 // CutNotes is how a source's text and a note are cut into the chunks the index

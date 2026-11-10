@@ -50,10 +50,15 @@ const pluginFailureTaskPrefix = "plugin-failed:"
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
-func NewPluginHost(target string, dirs ...string) *plugin.Host {
+func NewPluginHost(target string, dirs ...string) *Host {
+	return NewHost(OpenPluginHost(target, dirs...))
+}
+
+// OpenPluginHost is the plugin host NewPluginHost lends, before it is lent.
+func OpenPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(newDependencies(""))
+	host.SetDependencies(NewDependenciesIn(""))
 	if err := host.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}
@@ -61,7 +66,7 @@ func NewPluginHost(target string, dirs ...string) *plugin.Host {
 }
 
 // ResolvePlugin resolves the plugin manager for capability when available and not in safe mode.
-func (c Config) ResolvePlugin(capability string) (pluginport.PluginManager, error) {
+func (c Config) ResolvePlugin(capability string) (*Host, error) {
 	if c.PluginHost == nil {
 		return nil, &plugindomain.UnavailableError{Capability: capability, Reason: plugindomain.NotInstalled}
 	}

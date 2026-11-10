@@ -25,7 +25,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 const appName = "numen-flashcards"
@@ -100,11 +99,9 @@ func run(cfg container.Config, debug debugOptions) error {
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	api.ListVaults = list.Vaults.List
 	bindVaultIndexer(ctx, api, vaults)
-	lent, err := openPluginVault(cfg, db, api)
-	if err != nil {
+	if err := installPluginVault(cfg, db, api); err != nil {
 		return err
 	}
-	cfg.SetPluginVault(lent)
 
 	target := shutdown.NewSequence(
 		stop,
@@ -147,19 +144,18 @@ func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 	}
 }
 
-func openPluginVault(
-	cfg container.Config, db *container.Index, api *shell.API,
-) (pluginport.PluginVault, error) {
+func installPluginVault(cfg container.Config, db *container.Index, api *shell.API) error {
 	vaults, err := cfg.Registry()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return cfg.OpenPluginVault(vaults, db,
-		func() (domain.Vault, bool) { return domain.Vault{}, false },
-		container.PluginVaultHooks{
-			IndexState: api.EnsureIndexed,
-			Moved:      api.WatchMoves,
-		})
+	return cfg.InstallPluginVault(vaults, db, getNoCurrentVault, getPluginVaultHooks(api))
+}
+
+func getNoCurrentVault() (domain.Vault, bool) { return domain.Vault{}, false }
+
+func getPluginVaultHooks(api *shell.API) container.PluginVaultHooks {
+	return container.PluginVaultHooks{IndexState: api.EnsureIndexed, Moved: api.WatchMoves}
 }
 
 func bindVaultIndexer(ctx context.Context, api *shell.API, vaults *container.OpenVaults) {

@@ -2,6 +2,7 @@
 package vault
 
 import (
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
@@ -11,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -33,7 +33,7 @@ type Config struct {
 	ServiceDir   string
 	SafeMode     bool
 	Clock        machineport.Clock
-	PluginHost   pluginport.PluginManager
+	PluginHost   *pluginswiring.Host
 	TextVersions *textversion.Versions
 	TextReaders  textport.TextReaders
 	VaultLocks   *vaultwriter.Locks

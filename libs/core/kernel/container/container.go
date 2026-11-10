@@ -53,7 +53,7 @@ type Config struct {
 
 	Chunks *note.ChunkTokens
 
-	PluginHost pluginport.PluginManager
+	PluginHost *pluginswiring.Host
 
 	PluginCatalog catalog.Config
 

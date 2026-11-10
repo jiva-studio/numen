@@ -73,7 +73,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      host,
+		PluginHost:      container.LendPluginHost(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
@@ -144,7 +144,7 @@ func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.K
 	})
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      host,
+		PluginHost:      container.LendPluginHost(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),

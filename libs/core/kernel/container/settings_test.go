@@ -223,7 +223,7 @@ func TestTheModelsAreListedAgainstTheSettingsInForce(t *testing.T) {
 
 // profileHost records the profiles the container gives the plugin host.
 type profileHost struct {
-	pluginport.PluginManager
+	pluginport.SettingsPush
 	profiles []string
 }
 
@@ -235,7 +235,7 @@ func (p *profileHost) SetPerformanceProfile(_ context.Context, profile string) {
 func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	cfg, _ := writeSettings(t, `{}`)
 	host := &profileHost{}
-	cfg.PluginHost = host
+	cfg.PluginHost = &PluginHost{SettingsPush: host}
 
 	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {

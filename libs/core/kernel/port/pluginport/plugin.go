@@ -47,7 +47,8 @@ type PluginSettingDeclarer interface {
 	GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool)
 }
 
-type pluginSecretConfigurator interface {
+// SecretConfigurator hands the secrets to the plugins that declare them.
+type SecretConfigurator interface {
 	SetKeyStore(store KeyStore)
 	SetSecretSource(source plugin.SecretSource)
 	// Refresh configures the running plugins whose list of secrets differs from the one they were
@@ -56,19 +57,22 @@ type pluginSecretConfigurator interface {
 	ListDeclarations() []plugin.DeclarationKey
 }
 
-type pluginSettingsPush interface {
+// SettingsPush gives the plugins the settings the user keeps for them.
+type SettingsPush interface {
 	SetSettings(all map[string]map[string]any)
 	SetPerformanceProfile(ctx context.Context, profile string)
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
-// PluginConfigurator manages configuration and settings for plugins.
-type PluginConfigurator interface {
-	pluginSecretConfigurator
-	pluginSettingsPush
-	SetPersistHandler(handler plugin.PersistHandler)
+// SettingUpdater changes and checks one setting of a plugin.
+type SettingUpdater interface {
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
 	CheckPluginSetting(pluginID, key string, value any) error
+}
+
+// PersistHook receives the function that saves a setting a plugin changes.
+type PersistHook interface {
+	SetPersistHandler(handler plugin.PersistHandler)
 }
 
 // PluginEventEmitter broadcasts events to plugins.
@@ -76,54 +80,18 @@ type PluginEventEmitter interface {
 	EmitEvent(event string)
 }
 
-type pluginFailureCallbacks interface {
+// PluginFailures reports the plugins whose start failed and restarts them.
+type PluginFailures interface {
 	SetOnPluginFailed(fn func(plugin.Failure))
 	SetOnFailureCleared(fn func(pluginID string))
 	RetryPlugin(ctx context.Context, pluginID string) (*plugin.Failure, error)
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }
 
-type pluginVaultBinding interface {
+// PluginBinding gives the host the mode, the vault and the work the plugins run under.
+type PluginBinding interface {
 	SetSafeMode(enabled bool)
 	SetPluginVault(vault PluginVault)
 	SetPluginWork(work PluginWork)
 	SetVaultPath(path string)
-}
-
-// PluginLifecycleManager coordinates process lifecycle, failure handling, and teardown for plugins.
-type PluginLifecycleManager interface {
-	PluginActivator
-	pluginVaultBinding
-	pluginFailureCallbacks
-}
-
-// PluginRegistryManager coordinates discovery, configuration, resolution, and capabilities for plugins.
-type PluginRegistryManager interface {
-	PluginDiscoverer
-	PluginResolver
-	PluginConfigurator
-	PluginSettingDeclarer
-	PluginEventEmitter
-}
-
-type pluginContentTypes interface {
-	GetContentType(name string) domain.ContentType
-	ListExtensions(mask domain.ContentType) []string
-}
-
-// pluginHostServices receives what the host lends the plugins that call it.
-type pluginHostServices interface {
-	PluginTextHost
-	PluginSearchHost
-	PluginWindowHost
-	PluginVaultListHost
-}
-
-// PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.
-type PluginManager interface {
-	PluginLifecycleManager
-	PluginRegistryManager
-	pluginHostServices
-	pluginContentTypes
-	GetDependencies() DependencyCatalog
 }
