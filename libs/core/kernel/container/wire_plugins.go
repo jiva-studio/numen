@@ -32,6 +32,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
@@ -271,6 +272,9 @@ type PluginHost struct {
 
 // GetClient returns the HTTP client for calls to the plugin process the endpoint belongs to.
 func (h *PluginHost) GetClient(endpoint plugindomain.Endpoint) *http.Client {
+	if h.getClient == nil {
+		return transport.NewClients().Get(endpoint)
+	}
 	return h.getClient(endpoint)
 }
 
