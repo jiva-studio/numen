@@ -17,16 +17,9 @@ import { separateTitles } from './titles'
 import { runBoxes } from '../layout/boxes'
 import { build } from '../../../fixtures/build'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
-import {
-  getHeading,
-  getLength,
-  createPointOnCurve,
-  type EdgeArrow,
-  type EdgeLabel,
-  type PlacedEdge,
-} from '../../edge'
-import type { PlexNeighbourhood } from '../../neighbourhood'
+import { getHeading, getLength, createPointOnCurve, type PlacedEdge } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
+import type { EdgeArrow, EdgeLabel, PlexNeighbourhood } from '../../../../types'
 
 const perLetter = (width: number) => (label: string) => width * [...label].length
 

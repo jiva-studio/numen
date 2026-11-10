@@ -31,18 +31,18 @@ func TestExecutablePathHasNoDefaultOrOptionsFromThePath(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
-	for _, info := range host.GetPluginInfos() {
+	for _, info := range host.Registry.GetPluginInfos() {
 		for _, s := range info.Settings {
 			if s.DefaultJSON != `""` || len(s.Options) != 0 {
 				t.Errorf("%s: default %s, options %+v; want the empty default of the manifest and no options", s.Key, s.DefaultJSON, s.Options)
 			}
 		}
 	}
-	if got := host.GetPluginSettings("md.numen.agents.acp")["executablePath"]; got != "" {
+	if got := host.Settings.GetPluginSettings("md.numen.agents.acp")["executablePath"]; got != "" {
 		t.Errorf("executablePath = %v, want the empty path of the manifest", got)
 	}
 }

@@ -70,7 +70,7 @@ func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	if size, err := data.GetPluginData(t.Context(), s.vault, ocr); err != nil || size.FileCount != 0 {
 		t.Fatalf("after the delete the recogniser's folder holds %+v (%v)", size, err)
 	}
-	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
+	listing, err := s.versions.Texts.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -65,6 +65,10 @@ func TestTheTypeCheckedWorkspaceObeysItsRules(t *testing.T) {
 		t.Parallel()
 		checkNoWiringPackageExistsOutsideTheContainer(t, workspace)
 	})
+	t.Run("ThePluginAdapterHasNoGodStruct", func(t *testing.T) {
+		t.Parallel()
+		checkThePluginAdapterHasNoGodStruct(t, workspace)
+	})
 }
 
 func loadWorkspace(t *testing.T) workspacePackages {

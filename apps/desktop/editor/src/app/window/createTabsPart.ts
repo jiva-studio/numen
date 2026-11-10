@@ -23,26 +23,27 @@ import {
 } from '@/features/tab-linking'
 import { acceptTabMove, createMovedTabOpener, createTabMover } from '@/features/tab-move'
 import { createCommandNotes } from '../tabs/commandDeps'
-import type { TabsCore, WindowCore, WindowServices } from './createDisplayPart'
+import type { TabsCore, WindowCore } from './windowCore'
+import type { WindowServices } from './createWindowServices'
 import { isSecondaryWindow } from './createLifecyclePart'
-import type { useSettings } from './useSettings'
+import type { SettingsStore } from '@/entities/settings'
 import { focusWindow } from '@/entities/window'
 
 interface TabsCoreDeps {
   readonly writeMessage: WindowCore['writeMessage']
-  readonly settingsHolder: { current?: ReturnType<typeof useSettings> }
+  readonly rest: SettingsStore
   readonly pluginStarts: { current?: (pluginId: string) => boolean }
 }
 
 export function createTabsCore(deps: TabsCoreDeps): TabsCore {
-  const { writeMessage, settingsHolder, pluginStarts } = deps
+  const { writeMessage, rest, pluginStarts } = deps
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {
       isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
       enablePlugin: async (pluginId) => {
-        await settingsHolder.current?.rest.write.writeSetting([pluginId, 'enabled'], true)
+        await rest.write.writeSetting([pluginId, 'enabled'], true)
       },
       openPlugin: (pluginId) =>
         globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
@@ -171,7 +172,7 @@ export function createWindowTabMoves(
   }
 }
 
-export const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
+export const createWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
   useOpenTabs({
     windowTabs: base.tabs.windowTabs,
     isWriting,

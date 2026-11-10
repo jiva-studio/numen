@@ -1,6 +1,8 @@
 package vault
 
 import (
+	"io"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -12,61 +14,83 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
-// IndexBackend is the lifecycle and the vector index of an index store.
-type IndexBackend interface {
-	Close() error
-	embeddingport.VectorIndex
+// IndexStores are the repositories of the vaults and their notes, the tabs open in a window and the
+// maintenance of the index.
+type IndexStores struct {
+	Vaults      vaultport.VaultRepository
+	Notes       noteport.NoteRepository
+	OpenTabs    windowport.OpenTabsStore
+	Maintenance indexport.IndexMaintenance
 }
 
-// IndexPorts bundles the ports and backend of an open index database.
-type IndexPorts struct {
-	Backend       IndexBackend
-	Path          string
-	Vaults        vaultport.VaultRepository
-	Notes         noteport.NoteRepository
-	FileStats     noteport.FileStats
-	NameMatches   noteport.NameMatches
-	Headings      noteport.Headings
-	Summaries     noteport.VaultSummaries
-	NoteTypes     noteport.NoteTypes
-	TypedPaths    noteport.TypedPaths
-	VaultHolds    noteport.VaultHolds
-	NoteRefs      noteport.NoteRefs
-	OpeningNote   noteport.OpeningNote
-	NamedPaths    noteport.NamedPaths
+// IndexNoteQueries are the questions the index answers about the notes of a vault.
+type IndexNoteQueries struct {
+	FileStats   noteport.FileStats
+	NameMatches noteport.NameMatches
+	Headings    noteport.Headings
+	Summaries   noteport.VaultSummaries
+	NoteTypes   noteport.NoteTypes
+	TypedPaths  noteport.TypedPaths
+	VaultHolds  noteport.VaultHolds
+	NoteRefs    noteport.NoteRefs
+	OpeningNote noteport.OpeningNote
+	NamedPaths  noteport.NamedPaths
+	Links       noteport.LinkQueries
+	Problems    problemport.ProblemQueries
+}
+
+// IndexChunks are the questions the index answers about the chunks it holds, and their vectors.
+type IndexChunks struct {
 	Passages      sourceport.PassageQueries
 	Progress      indexport.IndexProgress
 	Stats         indexport.IndexStats
+	Index         embeddingport.VectorIndex
+	Vectors       embeddingport.VectorRepository
+	VectorQueries embeddingport.VectorQueries
+}
+
+// IndexSources are the sources the index records, with the queries about them.
+type IndexSources struct {
 	Sources       sourceport.SourceRepository
 	SourcesUnder  sourceport.SourcesUnder
 	RemovalLookup sourceport.RemovalLookup
 	SourceRecords sourceport.SourceRecords
 	SourceBacklog sourceport.SourceBacklog
-	Vectors       embeddingport.VectorRepository
-	VectorQueries embeddingport.VectorQueries
-	Maintenance   indexport.IndexMaintenance
-	Links         noteport.LinkQueries
-	Problems      problemport.ProblemQueries
-	OpenTabs      windowport.OpenTabsStore
-	TextVersions  textport.VersionStores
-	SearchFloors  searchpolicyport.FloorStore
-	SearchSamples searchpolicyport.Samples
-	Nearest       searchpolicyport.Nearest
 }
 
-// Index exposes the cache as the ports the core requires.
+// IndexSearch is what the search of a vault ranks with and learns its floors from.
+type IndexSearch struct {
+	Nearest       searchpolicyport.Nearest
+	SearchFloors  searchpolicyport.FloorStore
+	SearchSamples searchpolicyport.Samples
+}
+
+// IndexPorts are the ports and backend of an open index database, by what they answer.
+type IndexPorts struct {
+	Closer       io.Closer
+	File         string
+	Stores       IndexStores
+	NoteQueries  IndexNoteQueries
+	Chunks       IndexChunks
+	Source       IndexSources
+	Search       IndexSearch
+	TextVersions textport.VersionStores
+}
+
+// Index exposes the cache as the ports the core requires: each group of them is a field a consumer
+// reads what it needs from.
 type Index struct {
-	ports  IndexPorts
+	IndexPorts
 	walks  Walks
 	ledger *Ledger
 }
 
-// NewIndex constructs an Index facade over the provided IndexPorts.
+// NewIndex constructs an Index over the provided IndexPorts.
 func NewIndex(ports IndexPorts) *Index {
-	return &Index{ports: ports, ledger: NewLedger()}
+	return &Index{IndexPorts: ports, ledger: NewLedger()}
 }
 
-func (i *Index) Close() error { return i.ports.Backend.Close() }
+func (i *Index) Close() error { return i.Closer.Close() }
 
 // Walks is the turns the vaults walked into this index take.
 func (i *Index) Walks() *Walks { return &i.walks }
@@ -75,36 +99,7 @@ func (i *Index) Walks() *Walks { return &i.walks }
 func (i *Index) Ledger() *Ledger { return i.ledger }
 
 // VectorIndex returns the store of vectors as a whole.
-func (i *Index) VectorIndex() embeddingport.VectorIndex { return i.ports.Backend }
+func (i *Index) VectorIndex() embeddingport.VectorIndex { return i.Chunks.Index }
 
-func (i *Index) Vaults() vaultport.VaultRepository          { return i.ports.Vaults }
-func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Notes }
-func (i *Index) FileStats() noteport.FileStats              { return i.ports.FileStats }
-func (i *Index) NameMatches() noteport.NameMatches          { return i.ports.NameMatches }
-func (i *Index) Headings() noteport.Headings                { return i.ports.Headings }
-func (i *Index) Summaries() noteport.VaultSummaries         { return i.ports.Summaries }
-func (i *Index) NoteTypes() noteport.NoteTypes              { return i.ports.NoteTypes }
-func (i *Index) TypedPaths() noteport.TypedPaths            { return i.ports.TypedPaths }
-func (i *Index) VaultHolds() noteport.VaultHolds            { return i.ports.VaultHolds }
-func (i *Index) NoteRefs() noteport.NoteRefs                { return i.ports.NoteRefs }
-func (i *Index) OpeningNote() noteport.OpeningNote          { return i.ports.OpeningNote }
-func (i *Index) NamedPaths() noteport.NamedPaths            { return i.ports.NamedPaths }
-func (i *Index) Passages() sourceport.PassageQueries        { return i.ports.Passages }
-func (i *Index) Progress() indexport.IndexProgress          { return i.ports.Progress }
-func (i *Index) Stats() indexport.IndexStats                { return i.ports.Stats }
-func (i *Index) Sources() sourceport.SourceRepository       { return i.ports.Sources }
-func (i *Index) SourcesUnder() sourceport.SourcesUnder      { return i.ports.SourcesUnder }
-func (i *Index) RemovalLookup() sourceport.RemovalLookup    { return i.ports.RemovalLookup }
-func (i *Index) SourceRecords() sourceport.SourceRecords    { return i.ports.SourceRecords }
-func (i *Index) SourceBacklog() sourceport.SourceBacklog    { return i.ports.SourceBacklog }
-func (i *Index) Vectors() embeddingport.VectorRepository    { return i.ports.Vectors }
-func (i *Index) VectorQueries() embeddingport.VectorQueries { return i.ports.VectorQueries }
-func (i *Index) Maintenance() indexport.IndexMaintenance    { return i.ports.Maintenance }
-func (i *Index) Path() string                               { return i.ports.Path }
-func (i *Index) Links() noteport.LinkQueries                { return i.ports.Links }
-func (i *Index) Problems() problemport.ProblemQueries       { return i.ports.Problems }
-func (i *Index) OpenTabs() windowport.OpenTabsStore         { return i.ports.OpenTabs }
-func (i *Index) TextVersions() textport.VersionStores       { return i.ports.TextVersions }
-func (i *Index) SearchFloors() searchpolicyport.FloorStore  { return i.ports.SearchFloors }
-func (i *Index) SearchSamples() searchpolicyport.Samples    { return i.ports.SearchSamples }
-func (i *Index) Nearest() searchpolicyport.Nearest          { return i.ports.Nearest }
+// Path is where the index file is.
+func (i *Index) Path() string { return i.File }

@@ -1,29 +1,11 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"slices"
-	"strings"
 	"sync"
-	"time"
-
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
-)
-
-var (
-	errNotForTarget      = errors.New("the plugin does not target this host")
-	errBuiltInRegistered = errors.New("a built-in plugin of this id is registered")
 )
 
 type pipeResponseWriter struct {
@@ -120,110 +102,4 @@ func (t *InProcessTransport) RoundTrip(req *http.Request) (*http.Response, error
 		ProtoMinor: 1,
 	}
 	return resp, nil
-}
-
-// RegisterBuiltIn registers a plugin linked into this binary from its manifest.json and what
-// makes the handler of its backend. serve is called at each activation with the variables a
-// launched process of the plugin is given: the host variables a process is launched with and the
-// launch variables. A plugin of the same id found on disk is registered
-// over it, and the built-in takes its place again when that one leaves the disk.
-func (h *Host) RegisterBuiltIn(manifestJSON []byte, serve func(vars map[string]string) (http.Handler, error)) error {
-	parsed, err := manifestjson.Read(bytes.NewReader(manifestJSON))
-	if err != nil {
-		return fmt.Errorf("register built-in plugin: %w", err)
-	}
-	if !slices.Contains(parsed.Targets, h.target) {
-		return fmt.Errorf("register built-in plugin %s: %w: %s", parsed.ID, errNotForTarget, h.target)
-	}
-	p := manifest.Discovered{Dir: "", Manifest: parsed}
-
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if _, exists := h.builtIns[parsed.ID]; exists {
-		return fmt.Errorf("register built-in plugin %s: %w", parsed.ID, errBuiltInRegistered)
-	}
-	h.builtIns[parsed.ID] = builtInPlugin{plugin: p, serve: serve}
-	if _, registered := h.plugins[parsed.ID]; !registered {
-		h.plugins[parsed.ID] = p
-		h.registerSupervisorLocked(p)
-	}
-	return nil
-}
-
-func (h *Host) activatePlugin(ctx context.Context, p manifest.Discovered, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
-	h.mu.RLock()
-	launcher := h.launcher
-	builtIn, isBuiltIn := h.getBuiltInLocked(p.Manifest.ID)
-	isBuiltIn = isBuiltIn && !h.onDisk[p.Manifest.ID]
-	h.mu.RUnlock()
-	if launcher != nil || !isBuiltIn {
-		return h.startPluginProcess(ctx, p, sup)
-	}
-	return h.startBuiltIn(ctx, p, builtIn, sup)
-}
-
-func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn builtInPlugin, sup *lifecycle.Supervisor) (plugindomain.Endpoint, error) {
-	token, err := transport.GenerateAuthToken()
-	if err != nil {
-		return emptyEndpoint(), fmt.Errorf("generate token: %w", err)
-	}
-	runtimeVars, err := h.exportRuntimeVars(ctx, h.getRequirements(p))
-	if err != nil {
-		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
-	}
-	vars := make(map[string]string)
-	launchVars := h.getEnvironmentVars(ctx, p.Manifest.ID, 0, token, runtimeVars)
-	for _, entry := range process.SanitizeEnvironment(os.Environ(), launchVars, p.Manifest.GetRuntimeIDs()) {
-		name, value, _ := strings.Cut(entry, "=")
-		vars[name] = value
-	}
-	handler, err := builtIn.serve(vars)
-	if err != nil {
-		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
-	}
-
-	endpoint := plugindomain.Endpoint{
-		Host:      "inprocess",
-		Port:      0,
-		Token:     token,
-		Transport: NewInProcessTransport(handler),
-	}
-	if err := transport.CheckPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
-		h.shutdownBuiltIn(ctx, endpoint)
-		return emptyEndpoint(), err
-	}
-
-	now := h.clock.Now()
-	h.mu.Lock()
-	if sup.GetState() != lifecycle.StateActivating {
-		h.mu.Unlock()
-		h.shutdownBuiltIn(ctx, endpoint)
-		return emptyEndpoint(), lifecycle.ErrActivationAborted
-	}
-	h.endpoints[p.Manifest.ID] = endpoint
-	sup.ActivateInProcess(now)
-	h.mu.Unlock()
-	return endpoint, nil
-}
-
-func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint plugindomain.Endpoint) {
-	if shutdown := h.createRPCShutdown(endpoint, time.Second); shutdown != nil {
-		if err := shutdown(context.WithoutCancel(ctx)); err != nil {
-			h.reportError(fmt.Errorf("shut down the handler of built-in plugin that was not activated: %w", err))
-		}
-	}
-}
-
-func (h *Host) exportRuntimeVars(ctx context.Context, requirements []manifest.DependencyRequirement) ([]string, error) {
-	vars, err := h.getRuntimeVars(ctx, requirements)
-	if err != nil {
-		return nil, err
-	}
-	for _, entry := range vars {
-		name, value, _ := strings.Cut(entry, "=")
-		if err := os.Setenv(name, value); err != nil {
-			return nil, err
-		}
-	}
-	return vars, nil
 }

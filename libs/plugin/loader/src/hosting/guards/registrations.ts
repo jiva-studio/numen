@@ -19,7 +19,6 @@ import type { PermissionTarget } from './permission'
 import { requireMountAccess } from './viewPermissions'
 
 export type Track = (disposable: Disposable) => Disposable
-export type RequirePermission = (permission: string, operation: string) => void
 
 /** What the registrations of a plugin are tracked and guarded with. */
 export interface RegistrationGuard {
@@ -32,6 +31,7 @@ export interface RegistrationDeps extends RegistrationGuard {
   readonly slotView: (registration: SlotViewRegistration) => Disposable
 }
 
+/** The registrations of a plugin, tracked; the permissions they need come from the table of the services. */
 export function createRegistrations(
   pluginId: string,
   host: PluginContextHost,

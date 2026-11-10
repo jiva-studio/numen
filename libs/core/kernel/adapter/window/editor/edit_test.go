@@ -21,8 +21,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -30,19 +28,20 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
 // A change arrives at every subscriber drawing the vault, the same way a note
 // opened in the editor does.
 func TestAChangeReachesEveryoneDrawing(t *testing.T) {
-	state := &State{Edits: newEditBroadcaster()}
-	line, isDone := state.Edits.subscribe()
+	state := NewState(run.NewTasks())
+	line, isDone := state.Notices.Edits.subscribe()
 	t.Cleanup(isDone)
 
 	response := domain.Edit{
 		Change: "one", Path: "Aggressor.md", From: 2, To: 12, Text: "An axe",
 	}
-	if err := (windowview.View{Notices: state}).ShowEdit(t.Context(), response); err != nil {
+	if err := state.Notices.ShowEdit(t.Context(), response); err != nil {
 		t.Fatal(err)
 	}
 
@@ -165,7 +164,7 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 	api := newBareServices()
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.setVault(testsupport.NewVault(t, notes))
+	api.state.Runtime.SetVault(testsupport.NewVault(t, notes))
 	return api
 }
 
@@ -353,30 +352,27 @@ func TestEditLoad(t *testing.T) {
 	writing := note.NewWrite(
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
-	api := createServices(&State{
-		ChangeEvents: newChangeBroadcaster(),
-		Places:       newPlaceBroadcaster(),
-	})
+	api := createServices(NewState(run.NewTasks()))
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
-	api.state.setVault(v)
+	api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
+	api.state.Runtime.SetVault(v)
 
 	startTime := testsupport.GetMachine().Now()
-	made := wired.session(db, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher())
-	worker := newIndexWorker(wired.readVault(db), api.state, nil, time.Hour, io.Discard)
-	_, wait := startIndexing(t.Context(), made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
-	t.Cleanup(wait)
-	for !api.state.Ready.Load() && api.state.Error.Why() == "" {
+	end := wired.startSession(t, t.Context(), db, api.state, v, wired.reading.GetVaultReaders(), wired.reading.GetVaultWatcher(), sessionOptions{
+		idle: time.Hour, out: io.Discard,
+	})
+	t.Cleanup(end)
+	for !api.state.Runtime.IsReady() && api.state.Runtime.GetError() == "" {
 		time.Sleep(50 * time.Millisecond)
 	}
-	if why := api.state.Error.Why(); why != "" {
+	if why := api.state.Runtime.GetError(); why != "" {
 		t.Fatalf("the vault could not be read: %s", why)
 	}
 	t.Logf("read %d notes in %s", notes, testsupport.GetMachine().Now().Sub(startTime).Round(time.Millisecond))
 
-	line, isDone := api.state.ChangeEvents.subscribe()
+	line, isDone := api.state.Notices.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
 	const path = "01/note-000001.md"

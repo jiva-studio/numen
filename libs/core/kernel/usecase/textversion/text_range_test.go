@@ -42,7 +42,7 @@ func TestGetTextRangeReturnsTheSegmentsLimitedToTheRange(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := newRiverScene(t)
 
-			got, err := s.versions.GetTextRange(t.Context(), s.vault, scanPath, s.getReaderVersion(), tc.start, tc.length)
+			got, err := s.versions.Texts.GetTextRange(t.Context(), s.vault, scanPath, s.getReaderVersion(), tc.start, tc.length)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -59,7 +59,7 @@ func TestGetTextRangeMovesStartInsideCharacterToNextCharacter(t *testing.T) {
 	s := newRiverScene(t)
 
 	// Byte 26 is the second byte of "о" in "морю".
-	got, err := s.versions.GetTextRange(t.Context(), s.vault, scanPath, s.getReaderVersion(), 26, 0)
+	got, err := s.versions.Texts.GetTextRange(t.Context(), s.vault, scanPath, s.getReaderVersion(), 26, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,7 @@ func TestGetTextRangeEndsBeforeACharacterTheLengthSplits(t *testing.T) {
 	s := newRiverScene(t)
 
 	// Three bytes from the start end inside "е", the second letter.
-	got, err := s.versions.GetTextRange(t.Context(), s.vault, scanPath, s.getReaderVersion(), 0, 3)
+	got, err := s.versions.Texts.GetTextRange(t.Context(), s.vault, scanPath, s.getReaderVersion(), 0, 3)
 	if err != nil {
 		t.Fatal(err)
 	}

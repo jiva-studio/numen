@@ -3,7 +3,7 @@
  * The one slider of a preset: the goal's curve, drawn as the track along which
  * the knob is dragged.
  */
-import type { Curve, PresetCounts } from '../../types'
+import type { Curve, PresetCounts } from '../../../lib/presets'
 import BacklogPlot from './backlog-plot/BacklogPlot.vue'
 import CurveTiles from './CurveTiles.vue'
 import { CurveFoot } from './curve-foot'

@@ -126,13 +126,11 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.FileStat) string {
 		"?" + formatFingerprint(ref)
 }
 
-// Close stops answering.
-func (l *Loopback) Close() error {
+// Close stops answering. ctx bounds the wait for the answers under way.
+func (l *Loopback) Close(ctx context.Context) error {
 	if l == nil {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	return l.server.Shutdown(ctx)
 }
 
@@ -164,7 +162,7 @@ func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 		refuse(w, err)
 		return
 	}
-	defer closeAndReport(h.state.reportTask, opened.Body)
+	defer closeAndReport(h.state.Window.AddTask, opened.Body)
 
 	w.Header().Set("Cache-Control", immutable)
 	if named := getMediaType(h.mediaTypes, opened.Path); named != "" {

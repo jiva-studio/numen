@@ -5,18 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -30,78 +24,31 @@ type PathDialog interface {
 
 // Installation is a window put together and running: the pieces the services
 // of its routes and anything else working the same vault need.
-// The index and the embedder belong to the installation and are made once.
-// The passes behind a vault belong to that vault and are rebuilt when another
-// is opened.
+// What runs behind the vault is the window session; the installation maps the
+// calls of the application onto it.
 type Installation struct {
 	State *State
 
 	notes  *note.Scenarios
 	vaults *vaults.Scenarios
 
-	session       SessionSource
-	triggers      triggerpasses.Source
-	closeIndex    func() error
-	embedding     *indexing.Embedding
-	pages         pageSet
-	dialogs       []func(dialog PathDialog)
-	out           io.Writer
-	checkIdentity vaults.CheckIdentity
-	closing       <-chan struct{}
-	indexer       *indexing.Worker
-	embedderError error
-	stopEmbedder  func() error
-	isRebuilding  bool
-
-	shutdown  shutdownState
-	sessionMu sync.Mutex
-}
-
-// Setup is what a window is made of before any service is mounted on it.
-type Setup struct {
-	Tasks         *run.Tasks
-	Out           io.Writer
-	CheckIdentity vaults.CheckIdentity
-	Embedding     *indexing.Embedding
-	EmbedderError error
-	StopEmbedder  func() error
-	ReadVault     indexing.OpenReading
-	CloseIndex    func() error
-	EmitEvent     func(event string)
-	IsRebuilding  bool
-	Closing       <-chan struct{}
+	session *windowsession.Scenarios
+	pages   pageSet
+	dialogs []func(dialog PathDialog)
+	out     io.Writer
 }
 
 // errNoVault is returned for a vault query on a window with no vault open.
 var errNoVault = errors.New("the window has no vault")
 
-// NewInstallation makes the state of a window and the worker that indexes its
-// vaults. Nothing is served and no vault is open until Start.
-func NewInstallation(in Setup, session SessionSource) *Installation {
-	if in.EmbedderError != nil {
-		writeDiagnostic(in.Tasks.Set, in.Out, "not embedding: %v\n", in.EmbedderError)
-		// Record indexing task failure when embedding provider initialization fails.
-		in.Tasks.Set(work.Task{ID: makingVectors, Title: "Indexing", Error: in.EmbedderError.Error()})
-	}
-	state := NewState(in.Tasks)
-	state.EmitEvent = in.EmitEvent
-	state.SetIndexing(in.Embedding)
-	indexer := newIndexWorker(in.ReadVault, state, in.Embedding, quietPeriod, in.Out)
-	state.NotifyNoteWritten = indexer.WakeNotes
-
+// NewInstallation makes the installation of a window over its state and the use cases of its session.
+// Nothing is served and no vault is open until Start.
+func NewInstallation(state *State, session *windowsession.Scenarios, out io.Writer) *Installation {
 	return &Installation{
-		State:         state,
-		embedding:     in.Embedding,
-		session:       session,
-		closeIndex:    in.CloseIndex,
-		pages:         pageSet{state: state},
-		out:           in.Out,
-		checkIdentity: in.CheckIdentity,
-		closing:       in.Closing,
-		indexer:       indexer,
-		embedderError: in.EmbedderError,
-		stopEmbedder:  in.StopEmbedder,
-		isRebuilding:  in.IsRebuilding,
+		State:   state,
+		session: session,
+		pages:   pageSet{state: state},
+		out:     out,
 	}
 }
 
@@ -116,17 +63,9 @@ func (o *Installation) UseScenarios(notes *note.Scenarios, target *vaults.Scenar
 // Mount adds the services the window answers through.
 func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.routes, routes...) }
 
-// SetTriggers sets where the passes of the plugins' triggers come from.
-func (o *Installation) SetTriggers(open func() *trigger.Triggers, watch func() (<-chan struct{}, func())) {
-	o.triggers = triggerpasses.Source{Open: open, Watch: watch}
-}
-
 // SetThemes sets the themes the window offers and puts on its pages. A window
 // put together without a catalog serves none.
 func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
-
-// GetThemes is the themes the window offers, and nil for a window put together without a catalog.
-func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
 
 // SetPlugins sets where the calls for the services plugins serve are forwarded,
 // and where the files of a plugin are read from.
@@ -151,22 +90,16 @@ func (o *Installation) SetFolderDialog(dialog PathDialog) {
 // Start opens the first vault, follows the model of the embedder and serves
 // recordings over the loopback socket.
 func (o *Installation) Start(ctx context.Context, first domain.Vault, files *FileServer) error {
-	followModel(o.embedding, o.State, o.indexer, o.rebuildSession)
-
-	// Reindexing every file applies to this launch only; it is not carried to a
-	// vault opened later.
-	if err := o.startVault(ctx, first, o.isRebuilding); err != nil {
-		return err
-	}
+	o.session.Start.Execute(ctx, first)
 
 	// Recordings are served over a dedicated socket, opened after every
 	// dependency it answers through is in place. When the socket cannot be opened,
 	// the player has no address.
 	onStop := func(why error) {
-		writeDiagnostic(o.State.reportTask, o.out, "recordings will no longer play: %v\n", why)
+		writeDiagnostic(o.State.Window.AddTask, o.out, "recordings will no longer play: %v\n", why)
 	}
 	if playing, why := Listen(ctx, files, onStop); why != nil {
-		writeDiagnostic(o.State.reportTask, o.out, "recordings will not play: %v\n", why)
+		writeDiagnostic(o.State.Window.AddTask, o.out, "recordings will not play: %v\n", why)
 	} else {
 		o.State.Playing.Store(playing)
 	}
@@ -174,18 +107,31 @@ func (o *Installation) Start(ctx context.Context, first domain.Vault, files *Fil
 }
 
 // Close shuts the door on every question, stops the passes behind the vault,
-// waits for them, and closes the index.
-func (o *Installation) Close() error {
-	// Searches, note reads and link lookups read the index directly; the index
-	// closes here, after the last of them has finished.
-	o.State.Close()
-	o.stopVault()
-	// The socket a recording was played over answers with the vault's files, so
-	// it stops before the vault does.
-	playingErr := o.State.Playing.Load().Close()
-	// The embedder goes after the work that uses it and before the database,
-	// which is the order they depend on each other in.
-	return errors.Join(playingErr, o.stopEmbedder(), o.closeIndex())
+// waits for them, and closes what the window holds open.
+func (o *Installation) Close() error { return o.session.Closing.Close.Execute(context.Background()) }
+
+// Show puts a vault in the window, in place of the current one or as the first. `open` is the plugin
+// open whose lock the switch shares, nil for a user switch.
+func (o *Installation) Show(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
+	return o.session.Switching.Show.Execute(ctx, v, open)
+}
+
+// OpenPluginVault switches the window to the vault on behalf of a plugin, through State.OpenVault.
+func (o *Installation) OpenPluginVault(ctx context.Context, v domain.Vault) error {
+	return o.session.Switching.OpenPlugin.Execute(ctx, v, o.State.OpenVault)
+}
+
+// FlushPending has every page write what only it holds, then waits for the
+// writes already taken. It returns false when a page holds work that needs
+// user confirmation.
+func (o *Installation) FlushPending(ctx context.Context) bool {
+	return o.session.Closing.Flush.Execute(ctx)
+}
+
+// WaitForFlush waits for every page to write its pending data. The wait is on
+// ctx ended or the vault was requested again.
+func (o *Installation) WaitForFlush(ctx context.Context) bool {
+	return o.State.Window.WaitForFlush(ctx)
 }
 
 // GetCurrentVault is the vault the window has open.
@@ -198,23 +144,7 @@ func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurren
 // Activity from callers other than the user is rendered through Notes.Drawing.
 func (o *Installation) Notes() note.Scenarios { return *o.notes }
 
-// Refresh brings named notes up to date. Whatever changes a note calls it, so
-// that what changed is findable before the change is reported done.
-func (o *Installation) Refresh() vaults.Refresh {
-	if on := o.State.session.Load(); on != nil {
-		return on.refresh
-	}
-	return o.session.GetRefresh()
-}
-
-// What each pass behind the window is called in the list of what is being done.
-// One name each, so a pass that reports itself again replaces itself.
 const (
-	walkingNotes  = indexing.WalkingNotes
-	indexingTexts = indexing.IndexingTexts
-	makingVectors = indexing.MakingVectors
-	// wordsAlone is the task ID for a search that runs without semantic retrieval.
-	wordsAlone = "search by words only"
 	// applyingTheme is the task ID for a theme the settings name that the catalog does not have.
 	applyingTheme = "apply theme"
 	// readingTheSettings is the task ID for a settings name that this build reads under another name.
@@ -230,16 +160,16 @@ const (
 // which says the theme the settings name is found now.
 func (o *Installation) SayTheme(message string) {
 	if message == "" {
-		o.State.finishTask(applyingTheme)
+		o.State.Window.RemoveTask(applyingTheme)
 		return
 	}
-	o.State.reportTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.State.Window.AddTask(work.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.State.reportTask(work.Task{
+		o.State.Window.AddTask(work.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
@@ -248,177 +178,9 @@ func (o *Installation) Report(messages []string) {
 	}
 }
 
-// NewState makes the state of a window that shows no vault.
-func NewState(tasks *run.Tasks) *State {
-	state := &State{
-		ChangeEvents: newChangeBroadcaster(),
-		Places:       newPlaceBroadcaster(),
-		TabIDs:       newTabIDBroadcaster(),
-		Edits:        newEditBroadcaster(),
-		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
-	}
-	// The editor is open on one vault, and answers which as itself.
-	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
-	return state
-}
-
-// SetIndexing sets how far the vault has been read for meaning, and the model it is read under.
-// It is set before any chunk is read: the model name and recipe determine whether
-// a chunk already carries a vector, and tell the window that chunks will be
-// embedded.
-func (s *State) SetIndexing(embedding *indexing.Embedding) {
-	s.Indexing.Embedding = embedding
-	s.storeModel(embedding)
-}
-
-// ReportWordsAlone records that the search runs on words only, with the reason. It is a task because
-// a window opened from a desktop entry has no terminal.
-func (s *State) ReportWordsAlone(err error) {
-	s.reportTask(work.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
-}
-
-// ReportFloorError records a similarity floor that is stored and cannot be read.
-func (s *State) ReportFloorError(err error) {
-	s.reportTask(work.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
-}
-
 // Vaults returns the use cases that act on the list of vaults, built once.
 // Agent components use the same instances, so both observe the same errors.
 func (o *Installation) Vaults() *vaults.Scenarios { return o.vaults }
-
-// shutdownState is whether a flush of pending writes is running and whether the
-// window has closed. Vault swaps and window close both flush, one at a time.
-//
-// A window that has closed shows no other vault.
-type shutdownState struct {
-	mu         sync.Mutex
-	isBusy     bool
-	isClosing  bool
-	pluginOpen *PluginOpen
-}
-
-// PluginOpen tracks a running plugin-initiated vault open; a user flush cancels it. A vault switch
-// given the running open shares the open's lock; a user vault switch is given nil.
-type PluginOpen struct {
-	cancel context.CancelCauseFunc
-	end    chan struct{}
-}
-
-// errCancelledByUser is the cause a plugin's vault open is canceled with when the user closes the window,
-// quits or switches its vault.
-var errCancelledByUser = errors.New("the user closed the window or switched its vault")
-
-func (s *shutdownState) tryBegin() error {
-	s.mu.Lock()
-	for s.pluginOpen != nil {
-		current := s.pluginOpen
-		s.mu.Unlock()
-		current.cancel(errCancelledByUser)
-		<-current.end
-		s.mu.Lock()
-	}
-	defer s.mu.Unlock()
-
-	switch {
-	case s.isClosing:
-		return window.ErrClosing
-	case s.isBusy:
-		return window.ErrFlushing
-	}
-	s.isBusy = true
-	return nil
-}
-
-func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context, *PluginOpen, func(), error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	switch {
-	case s.isClosing:
-		return nil, nil, nil, window.ErrClosing
-	case s.isBusy:
-		return nil, nil, nil, window.ErrFlushing
-	}
-	ctx, cancel := context.WithCancelCause(ctx)
-	open := &PluginOpen{cancel: cancel, end: make(chan struct{})}
-	s.isBusy, s.pluginOpen = true, open
-	return ctx, open, func() {
-		s.mu.Lock()
-		s.isBusy, s.pluginOpen = false, nil
-		s.mu.Unlock()
-		cancel(nil)
-		close(open.end)
-	}, nil
-}
-
-func (s *shutdownState) tryBeginSwitch(open *PluginOpen) (func(), bool, error) {
-	s.mu.Lock()
-	isInsidePluginOpen := open != nil && s.pluginOpen == open
-	s.mu.Unlock()
-	if isInsidePluginOpen {
-		return func() {}, true, nil
-	}
-	if err := s.tryBegin(); err != nil {
-		return nil, false, err
-	}
-	return s.endKeepOpen, false, nil
-}
-
-func (s *shutdownState) isClosed() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.isClosing
-}
-
-func (s *shutdownState) endKeepOpen() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.isBusy = false
-}
-
-func (s *shutdownState) end(closed bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.isBusy = false
-	s.isClosing = closed
-}
-
-// FlushPending has every page write what only it holds, then waits for the
-// writes already taken. Calling it again returns true immediately.
-// It returns false, with no write discarded, when a page holds work that needs
-// user confirmation. A close that arrives while a flush runs returns false: the
-// window stays, and the next close flushes again.
-func (o *Installation) FlushPending(ctx context.Context) bool {
-	switch err := o.shutdown.tryBegin(); {
-	case errors.Is(err, window.ErrClosing):
-		return true
-	case err != nil:
-		return false
-	}
-
-	flushed := flushPending(ctx, o.State.Window, &o.State.Writing)
-	o.shutdown.end(flushed)
-	return flushed
-}
-
-// WaitForFlush waits for every page to write its pending data. The wait is on
-// ctx ended or the vault was requested again.
-func (o *Installation) WaitForFlush(ctx context.Context) bool {
-	return o.State.Window.WaitForFlush(ctx)
-}
-
-func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) bool {
-	if !pages.RequestFlush(ctx) {
-		return false
-	}
-	<-writes.seal()
-	return true
-}
-
-// FlushTimeout bounds how long a page may take to write its unsaved data when
-// the vault closes. A page with a pending user prompt counts as responded;
-// further waiting depends on the user.
-const FlushTimeout = 3 * time.Second
 
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "import files"
@@ -437,27 +199,30 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	if showing.ID == "" {
 		return
 	}
-	if !state.Writing.begin() {
+	if !state.Writes.BeginWrite() {
 		return
 	}
-	defer state.Writing.finish()
+	defer state.Writes.FinishWrite()
 
 	pos := work.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
-	state.reportTask(pos)
+	state.Window.AddTask(pos)
 
 	imported, err := o.vaults.Tree.Import.Execute(ctx, showing, into, paths)
 	if direct := imported.DirectChildren(into); len(direct) > 0 {
-		state.ChangeEvents.publish(window.Change{Paths: direct})
+		state.Notices.ChangeEvents.publish(window.Change{Paths: direct})
 	}
 	if err != nil {
 		pos.Error = err.Error()
-		state.reportTask(pos)
+		state.Window.AddTask(pos)
 		return
 	}
 	if failureText := imported.DescribeFailures(); failureText != "" {
 		pos.Error = failureText
-		state.reportTask(pos)
+		state.Window.AddTask(pos)
 		return
 	}
-	state.finishTask(pos.ID)
+	state.Window.RemoveTask(pos.ID)
 }
+
+// ShowTabs is the use case that asks the window to make an open tab the active one.
+func (o *Installation) ShowTabs() windowsession.ShowTab { return o.session.ShowTab }

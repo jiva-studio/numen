@@ -211,11 +211,18 @@ export interface FileSelectEvent {
   readonly title?: string
 }
 
+// Subscriptions is where a plugin keeps what is released when it stops. A plugin adds to it; only the host
+// takes from it.
+export interface Subscriptions {
+  push(...disposables: Disposable[]): number
+  readonly length: number
+}
+
 // PluginIdentity is who the plugin is and where it runs.
 export interface PluginIdentity {
   readonly id: string
   readonly target: string
-  readonly subscriptions: Disposable[]
+  readonly subscriptions: Subscriptions
   readonly app: AppInfo
   // Opens an http or https address in the system browser. Any other address fails.
   openExternal(url: string): Promise<Result<null>>

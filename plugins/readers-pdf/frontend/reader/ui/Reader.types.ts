@@ -1,5 +1,6 @@
 import type { Paint } from '@numen/ui'
-import type { Fit, Page, ReaderWords, Rect } from '../lib/strip'
+import type { Page, ReaderWords, Rect } from '../lib/strip'
+import type { Fit } from '../../types'
 
 export interface ReaderProps {
   pages?: readonly Page[]

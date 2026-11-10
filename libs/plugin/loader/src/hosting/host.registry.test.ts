@@ -56,7 +56,12 @@ describe('a command run by its id', () => {
 describe('a registration replaced under the same id', () => {
   it('stays when the registration it replaced is disposed', () => {
     const host = createPluginHost(createDeps())
-    const ctx = host.createContext('sample.plugin')
+    const ctx = host.createContext('sample.plugin', {
+      id: 'sample.plugin',
+      name: 'Sample',
+      version: '1',
+      permissions: ['vault:read'],
+    } as never)
     const firstReader = ctx.register.reader({ id: 'pdf', title: 'First', component: STUB_COMPONENT })
     ctx.register.reader({ id: 'pdf', title: 'Second', component: STUB_COMPONENT })
     const firstTab = ctx.register.tabKind({ kind: 'custom', title: 'First', component: STUB_COMPONENT })
@@ -255,7 +260,12 @@ describe('a tab kind opened as the editor of a path', () => {
       }),
     })
     const sub = host
-      .createContext('sample.plugin')
+      .createContext('sample.plugin', {
+        id: 'sample.plugin',
+        name: 'Sample',
+        version: '1',
+        permissions: ['vault:read'],
+      } as never)
       .register.tabKind({ kind: 'sample', component: {} })
     return { open, sub }
   }
@@ -354,7 +364,12 @@ describe('a reader opened at a selector', () => {
       }),
     )
     const sub1 = host
-      .createContext('sample.plugin')
+      .createContext('sample.plugin', {
+        id: 'sample.plugin',
+        name: 'Sample',
+        version: '1',
+        permissions: ['vault:read'],
+      } as never)
       .register.reader({ id: 'reader:bin', component: STUB_COMPONENT, icon })
     const sub2 = host
       .createContext('sample.plugin')

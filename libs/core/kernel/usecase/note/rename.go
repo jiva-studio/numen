@@ -11,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
@@ -27,27 +25,6 @@ type Rename struct{ Move }
 // renamed and one that traveled because it was filed elsewhere settle the same
 // way, so both go through the one Move.
 func NewRename(moving Move) Rename { return Rename{Move: moving} }
-
-// WithSources replaces the source repository.
-func (u Rename) WithSources(sources sourceport.SourceRepository) Rename {
-	u.Move = u.Move.WithSources(sources)
-	return u
-}
-
-// WithWriters replaces the vault writers.
-func (u Rename) WithWriters(writers MoveWriting) Rename {
-	u.Move = u.Move.WithWriters(writers)
-	return u
-}
-
-// Sources returns the source repository.
-func (u Rename) Sources() sourceport.SourceRepository { return u.Move.Sources() }
-
-// Writers returns the vault writers.
-func (u Rename) Writers() MoveWriting { return u.Move.Writers() }
-
-// Readers returns the vault readers.
-func (u Rename) Readers() vaultport.VaultReaders { return u.Move.Readers() }
 
 // RenameResult reports the note's current name and what happened to the file.
 type RenameResult struct {

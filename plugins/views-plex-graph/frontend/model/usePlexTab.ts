@@ -3,7 +3,6 @@
  */
 import { computed, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import {
   formatErrorMessage,
   getFileName,
@@ -17,17 +16,7 @@ import { createNodeIdMap } from '../lib/nodeIdMap'
 import { findRole } from '../lib/roles'
 import { CREATE_NOTE } from '../lib/commands'
 import { WORDS as words } from '../words'
-import type {
-  LinkInspectorRequest,
-  MenuRequest,
-  PlexEditor,
-  PlexTabDeps,
-  PlexTabState,
-  QuickLinkRequest,
-  PlexView,
-  PathRename,
-  NoteType,
-} from '../types'
+import type { LinkInspectorRequest, MenuRequest, PlexEditor, PlexTabDeps, PlexTabState, QuickLinkRequest, PlexView, PathRename, NoteType, PlexNeighbourhood, PlexRelation, PlexDestination } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'
 import { usePlexHeadings } from './usePlexHeadings'

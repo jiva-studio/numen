@@ -1,4 +1,5 @@
 /** Running an entry of the menu of a search result, and what the window hands the search. */
+import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as CommandModule from '@/entities/command'
 import { formatErrorMessage } from '@numen/core-client'
@@ -29,12 +30,12 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/entities/command', async (importOriginal) => ({
   ...(await importOriginal<typeof CommandModule>()),
+  registerCommand: vi.fn(),
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
 }))
 vi.mock('@/features/command-palette', () => ({
   PALETTE_WORDS: {},
   runInvocation: h.runInvocation,
-  registerCommand: vi.fn(),
   useSearch: (_core: unknown, _words: unknown, options: typeof h.searchOptions) => {
     h.searchOptions = options
     return { setOpen: h.setPaletteOpen }
@@ -122,7 +123,7 @@ function setup(
     paletteLists: {},
     runs: {},
     coverage: () => ({}),
-    rest: {},
+    settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage,
     pluginHost,
     ...(options.slots ? { slots: options.slots } : {}),

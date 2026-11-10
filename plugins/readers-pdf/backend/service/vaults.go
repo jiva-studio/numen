@@ -1,20 +1,12 @@
 package service
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 )
-
-// vaultFiles is what the text server reads of a vault: its files and its name.
-type vaultFiles interface {
-	host.FileReader
-	GetVault(ctx context.Context) (domain.Vault, error)
-}
 
 func readVaultError(err error) error {
 	if errors.Is(err, host.ErrOutside) || errors.Is(err, host.ErrNoVault) {

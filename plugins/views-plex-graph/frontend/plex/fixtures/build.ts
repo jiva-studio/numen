@@ -1,8 +1,6 @@
-import type { PlexEdge } from '../lib/edge'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
-import type { PlexNode } from '../lib/node'
-import { RELATION_NAMES, type PlexRelation } from '../lib/relation'
+import { RELATION_NAMES } from '../lib/relation'
 import { createName } from './names'
+import type { PlexEdge, PlexNeighbourhood, PlexNode, PlexRelation } from '../../types'
 
 export type RelationCounts = Readonly<Partial<Record<PlexRelation, number>>>
 

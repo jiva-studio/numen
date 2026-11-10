@@ -19,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -62,7 +63,7 @@ func writeAgentProvider(t *testing.T, dir, id string) {
 // providerHost is a plugin host whose agent provider plugins are served by the handlers given, by
 // plugin id, with the plugins of the ids in disabled switched off. It records the plugins it launches.
 type providerHost struct {
-	*plugin.Host
+	pluginhost.Roles
 
 	mu       sync.Mutex
 	launched []string
@@ -88,20 +89,21 @@ func newProviderHost(t *testing.T, handlers map[string]numenv1connect.AgentServi
 		ports[id] = plugintest.GetPort(t, server)
 	}
 
-	host := &providerHost{Host: plugin.NewHost(testsupport.GetMachine(), "desktop.editor", dir)}
+	inner := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", dir)
+	host := &providerHost{Roles: pluginhost.Join(inner)}
 	settings := map[string]map[string]any{}
 	for _, id := range disabled {
 		settings[id] = map[string]any{"enabled": false}
 	}
-	host.SetSettings(settings)
-	if err := host.Discover(); err != nil {
+	inner.Settings.SetSettings(settings)
+	if err := inner.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	processes := map[string]*os.Process{}
 	for id := range handlers {
 		processes[id] = plugintest.StartSleepProcess(t).Process
 	}
-	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	inner.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		host.mu.Lock()
 		host.launched = append(host.launched, p.Manifest.ID)
 		host.mu.Unlock()

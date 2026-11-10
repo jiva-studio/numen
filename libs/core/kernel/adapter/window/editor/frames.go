@@ -80,7 +80,7 @@ func (l *Loopback) servePluginFile(w http.ResponseWriter, r *http.Request, rest 
 		refuse(w, err)
 		return
 	}
-	defer closeAndReport(l.files.state.reportTask, opened.Body)
+	defer closeAndReport(l.files.state.Window.AddTask, opened.Body)
 	if opened.Size != size {
 		refuse(w, file.ErrChanged)
 		return

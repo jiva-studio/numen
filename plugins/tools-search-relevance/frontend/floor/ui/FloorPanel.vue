@@ -11,7 +11,7 @@ import { formatFloor, formatNoise, getCalibrationNote, getSourceLabel } from '..
 import type { FloorClient } from '../model/types'
 import FloorHistogram from './FloorHistogram.vue'
 import FloorProbe from './FloorProbe.vue'
-import { SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, WORDS } from '../words'
+import { SLIDER_MAX, SLIDER_MIN, SLIDER_STEP, WORDS } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

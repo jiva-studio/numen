@@ -1,7 +1,7 @@
 import { AudioLines } from '@lucide/vue'
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
-import RecordingTab from './RecordingTab.vue'
-import MediaRecordingTab from './MediaRecordingTab.vue'
+import RecordingTab from './ui/RecordingTab.vue'
+import MediaRecordingTab from './ui/MediaRecordingTab.vue'
 import { bindCommands, bindNotes, bindTexts, refreshRecordings, setTaskHost } from './api/wire'
 
 export { RecordingTab, MediaRecordingTab }

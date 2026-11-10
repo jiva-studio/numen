@@ -19,8 +19,8 @@ func newCancelSetup(t *testing.T) *cancelSetup {
 	store := newKeys(map[string]string{"secret/" + secretID: fromKeychain})
 	host, probe := newSecretHost(t, store)
 	source := newListing("Work")
-	host.SetSecretSource(source.source())
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	host.Config.SetSecretSource(source.source())
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	return &cancelSetup{host: host, probe: probe, store: store, source: source}

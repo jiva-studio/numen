@@ -19,27 +19,32 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
-func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages) hostendpoint.WindowControl {
-	return windowfocus.Window{
-		GetVault: state.GetCurrentVault,
-		Note:     focusNote.Execute,
-		Passages: func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
+func newPluginWindow(
+	state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages, limit time.Duration,
+) hostendpoint.WindowControl {
+	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
+		Window:   windowsession.WindowPorts{Tasks: state.Window, TabFront: &state.Notices.TabIDs},
+		TabBound: limit,
+	})
+	return windowsession.NewPluginWindow(
+		&state.Runtime,
+		focusNote,
+		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
-		},
-		GetOpenTabs: state.GetOpenTabs,
-		ShowTab:     state.ShowTab,
-	}
+		}),
+		session.ShowTab,
+	)
 }
 
 // memoryTabs keeps the open tabs of each vault in memory.
@@ -61,19 +66,24 @@ func newWorkspace(t *testing.T, state *State) *workspace.Handler {
 		t.Fatal(err)
 	}
 	store := memoryTabs{}
-	return workspace.NewHandler(state, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
+	return workspace.NewHandler(state, state.Notices, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
 }
 
 func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
-	state := &State{Places: newPlaceBroadcaster()}
-	state.setVault(testsupport.NewVault(t, map[string]string{
+	return newBoundWindowWith(t, 0)
+}
+
+func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
+	t.Helper()
+	state := NewState(run.NewTasks())
+	state.Runtime.SetVault(testsupport.NewVault(t, map[string]string{
 		"library/Birds.pdf": "%PDF-1.7 a guide to the birds of the marsh",
 		"notes/Heron.md":    "# Grey Heron\nHerons fish at dusk.\n",
 	}))
-	line, unsubscribe := state.Places.subscribe()
+	line, unsubscribe := state.Notices.Places.subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, windowview.View{Notices: state})), line
+	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.Notices), limit), line
 }
 
 func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
@@ -162,7 +172,12 @@ type activateFixture struct {
 
 func newActivateFixture(t *testing.T) activateFixture {
 	t.Helper()
-	state, window, _ := newBoundWindow(t)
+	return newActivateFixtureWith(t, 0)
+}
+
+func newActivateFixtureWith(t *testing.T, limit time.Duration) activateFixture {
+	t.Helper()
+	state, window, _ := newBoundWindowWith(t, limit)
 	api := newWorkspace(t, state)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(api))
@@ -193,7 +208,7 @@ func (f activateFixture) waitSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
 	for {
-		if err := (windowview.View{Notices: f.state}).FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
+		if err := f.state.Notices.FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
 			t.Fatal(err)
 		}
 		select {
@@ -323,8 +338,7 @@ func TestPluginWindowActivateTabOfTheActiveTabPublishesIt(t *testing.T) {
 }
 
 func TestPluginWindowActivateTabTimeoutErrorNamesTheTab(t *testing.T) {
-	f := newActivateFixture(t)
-	f.state.TabActivationBound = 50 * time.Millisecond
+	f := newActivateFixtureWith(t, 50*time.Millisecond)
 	results := f.startActivation(t.Context(), "tab-2")
 	if msg := f.receiveTabID(t, 5*time.Second); msg == nil {
 		t.Fatal("the focus stream received no tab id")

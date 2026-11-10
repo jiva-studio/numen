@@ -11,7 +11,7 @@ import { computed, ref, shallowRef, type Ref } from 'vue'
 import { onNextFrame, type Paint } from '@numen/ui'
 import { createAnswer, type Answer } from './answer'
 import { createWorkLine, type WorkLine } from './work'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 import type { AgentPort, AgentQuery, AgentStep, SourceLocation } from '@numen/plugin-sdk'
 
 /** The words the panel sets up itself. */

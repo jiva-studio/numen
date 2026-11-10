@@ -18,7 +18,7 @@ import (
 
 func openListenerTarget(t *testing.T, host *Host) func() {
 	t.Helper()
-	_, release, err := host.createListenerTarget(listenerPlugin, "mcp")(t.Context())
+	_, release, err := host.Listeners.createTarget(listenerPlugin, "mcp")(t.Context())
 	if err != nil {
 		t.Fatalf("open the target of the listener: %v", err)
 	}
@@ -27,13 +27,13 @@ func openListenerTarget(t *testing.T, host *Host) func() {
 
 func isEvicted(t *testing.T, host *Host) bool {
 	t.Helper()
-	return slices.Contains(host.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
+	return slices.Contains(host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
 }
 
 func TestTheReleaseOfAStoppedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) {
 	w := newListenerHost(t)
 	releaseFirst := openListenerTarget(t, w.host)
-	if err := w.host.stopPlugin(t.Context(), listenerPlugin); err != nil {
+	if err := w.host.Teardown.StopPlugin(t.Context(), listenerPlugin); err != nil {
 		t.Fatal(err)
 	}
 	releaseSecond := openListenerTarget(t, w.host)
@@ -81,14 +81,14 @@ func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	launcher, getProcesses := startKillableLauncher(t, serveEcho(t))
-	host.SetLauncher(launcher)
+	host.Processes.SetLauncher(launcher)
 	discover(t, host)
 	releaseFirst := openListenerTarget(t, host)
 	if err := getProcesses()[0].Kill(); err != nil {
 		t.Fatal(err)
 	}
 	plugintest.WaitUntil(t, "the crashed plugin to stop", func() bool {
-		status, _ := host.GetPluginStatus(listenerPlugin)
+		status, _ := host.Registry.GetPluginStatus(listenerPlugin)
 		return !status.IsActive
 	})
 	releaseSecond := openListenerTarget(t, host)
@@ -103,18 +103,18 @@ func TestTheReleaseOfACrashedProcessKeepsTheLeaseOfTheNextProcess(t *testing.T) 
 
 func TestPortSettingFixedAfterBindFailureClearsFailureAndServes(t *testing.T) {
 	w := newUndiscoveredListenerHost(t, "mcp", getFreePort(t), "listener.mcp="+strconv.Itoa(serveEcho(t)))
-	w.host.SetSettings(map[string]map[string]any{listenerPlugin: {"port": float64(80)}})
+	w.host.Settings.SetSettings(map[string]map[string]any{listenerPlugin: {"port": float64(80)}})
 	discover(t, w.host)
 	waitForFailure(t, w.host)
 	var cleared []string
-	w.host.SetOnFailureCleared(func(id string) { cleared = append(cleared, id) })
+	w.host.Failures.SetOnFailureCleared(func(id string) { cleared = append(cleared, id) })
 	next := getFreePort(t)
 
-	if err := w.host.SetPluginSetting(t.Context(), listenerPlugin, "port", float64(next)); err != nil {
-		t.Fatalf("SetPluginSetting %d: %v", next, err)
+	if err := updateSetting(t.Context(), w.host, listenerPlugin, "port", float64(next)); err != nil {
+		t.Fatalf("applying port %d: %v", next, err)
 	}
 
-	if status, _ := w.host.GetPluginStatus(listenerPlugin); status.Failed {
+	if status, _ := w.host.Registry.GetPluginStatus(listenerPlugin); status.Failed {
 		t.Errorf("status = %+v after the port setting was fixed, want not failed", status)
 	}
 	if !slices.Equal(cleared, []string{listenerPlugin}) {
@@ -134,7 +134,7 @@ func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 
 	discover(t, w.host)
 
-	if status, _ := w.host.GetPluginStatus(listenerPlugin); status.Failed {
+	if status, _ := w.host.Registry.GetPluginStatus(listenerPlugin); status.Failed {
 		t.Errorf("status = %+v after the port was freed, want not failed", status)
 	}
 	if reply := sendLine(t, connectListener(t, takenPort), "freed"); reply != "freed" {
@@ -145,13 +145,13 @@ func TestListenerPortFreedAfterBindFailureClearsItOnDiscovery(t *testing.T) {
 func TestASyncKeepsTheFailureOfAPluginThatFailedToStart(t *testing.T) {
 	w := newListenerHost(t)
 	cause := errListenerNotReported
-	if failure := w.host.recordActivationFailure(listenerPlugin, cause); failure == nil {
+	if failure := w.host.Failures.recordActivationFailure(listenerPlugin, cause); failure == nil {
 		t.Fatal("the failure was not recorded")
 	}
 
-	w.host.SetSettings(map[string]map[string]any{listenerPlugin: {"port": float64(getFreePort(t))}})
+	w.host.Settings.SetSettings(map[string]map[string]any{listenerPlugin: {"port": float64(getFreePort(t))}})
 
-	if status, _ := w.host.GetPluginStatus(listenerPlugin); !status.Failed {
+	if status, _ := w.host.Registry.GetPluginStatus(listenerPlugin); !status.Failed {
 		t.Errorf("status = %+v, want the failure of the start kept", status)
 	}
 }
@@ -188,7 +188,7 @@ func connectUntilClosed(t *testing.T, port int) {
 func TestRepeatedActivationFailureIsReportedOnceAndAfterRetry(t *testing.T) {
 	w := newUndiscoveredListenerHost(t, "console", getFreePort(t), "")
 	var reports listenerTargetErrors
-	w.host.SetErrorHandler(reports.add)
+	w.host.Failures.SetErrorHandler(reports.add)
 	discover(t, w.host)
 
 	for i := range 3 {
@@ -198,7 +198,7 @@ func TestRepeatedActivationFailureIsReportedOnceAndAfterRetry(t *testing.T) {
 		}
 	}
 
-	failure, err := w.host.RetryPlugin(t.Context(), listenerPlugin)
+	failure, err := w.host.Activation.RetryPlugin(t.Context(), listenerPlugin)
 	if failure == nil && err == nil {
 		t.Fatal("RetryPlugin succeeded for a plugin that does not report its listener")
 	}

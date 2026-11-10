@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -29,7 +30,7 @@ func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(sharedmimeinfo.Open()))
-	api.state.setVault(vault)
+	api.state.Runtime.SetVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
 
@@ -52,7 +53,7 @@ func openLoopback(t *testing.T, api *Services) (*Loopback, http.Handler) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testsupport.CloseAfter(t, back)
+	testsupport.CloseAfter(t, loopbackCloser{back})
 	return back, back.getHandler()
 }
 
@@ -96,7 +97,7 @@ func TestLoopback_ReportsListenerFailure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, back)
+	defer testsupport.Close(t, loopbackCloser{back})
 
 	select {
 	case res := <-response:
@@ -143,7 +144,7 @@ func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	back, handler := openLoopback(t, api)
 
 	// The window moves to a vault holding nothing of the kind.
-	api.state.setVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
+	api.state.Runtime.SetVault(testsupport.NewVault(t, map[string]string{"other.md": "somewhere else"}))
 
 	if out := ask(t, handler, back.Address(target, statOf(t, api, target, talk))); out.Code != http.StatusOK {
 		t.Errorf("the recording of the vault that moved out of the window was answered %d: %s",
@@ -172,7 +173,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	})
 	api := newBareServices()
 	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(sharedmimeinfo.Open()))
-	api.state.setVault(vault)
+	api.state.Runtime.SetVault(vault)
 	back, handler := openLoopback(t, api)
 
 	if out := ask(t, handler, back.Address(vault, statOf(t, api, vault, "note.md"))); out.Code != http.StatusOK {
@@ -244,7 +245,7 @@ func TestARecordingIsReachedOverTheSocket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, back)
+	defer testsupport.Close(t, loopbackCloser{back})
 
 	out := fetch(t, http.DefaultClient, back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)))
 	if out.StatusCode != http.StatusOK {
@@ -265,7 +266,7 @@ func TestThePolicyNamesTheSocketAndNothingElse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testsupport.Close(t, back)
+	defer testsupport.Close(t, loopbackCloser{back})
 	api.state.Playing.Store(back)
 
 	response := getResponse(t, api.NewHandler(http.NotFoundHandler()), "/").
@@ -294,3 +295,8 @@ func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
 		t.Errorf("no stamp goes on the wire as %d", target)
 	}
 }
+
+// loopbackCloser closes a loopback with no bound on the wait.
+type loopbackCloser struct{ *Loopback }
+
+func (c loopbackCloser) Close() error { return c.Loopback.Close(context.Background()) }

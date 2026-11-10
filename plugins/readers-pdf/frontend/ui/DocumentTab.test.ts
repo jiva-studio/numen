@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, reactive, ref, shallowRef } from 'vue'
+import { h, nextTick, reactive, ref, shallowRef } from 'vue'
 import DocumentTab from './DocumentTab.vue'
 import type { TextRange } from '../types'
 
@@ -34,14 +34,11 @@ vi.mock('../model/useDocumentReader', () => ({
 }))
 
 vi.mock('../reader', () => ({
-  Reader: defineComponent({
-    name: 'Reader',
-    setup: () => () => h('div', { class: 'reader-stub' }),
-  }),
+  Reader: () => h('div', { class: 'reader-stub' }),
 }))
 
 vi.mock('@numen/ui', () => ({
-  LoadingIndicator: defineComponent({ setup: () => () => h('span') }),
+  LoadingIndicator: () => h('span'),
 }))
 
 const RANGES: readonly TextRange[] = [

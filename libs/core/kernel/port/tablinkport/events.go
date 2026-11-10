@@ -1,0 +1,22 @@
+// Package tablinkport declares what the tab links require of the process around them: the delivery of events to
+// watching windows and timers.
+package tablinkport
+
+import (
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
+)
+
+// Events delivers the events of the tab links to the watching windows.
+type Events interface {
+	// Publish queues the event for every subscriber.
+	Publish(event tablink.Event)
+	// Subscribe starts a subscription: the channel of the events published from now on, and the function
+	// that ends it and closes the channel.
+	Subscribe() (<-chan tablink.Event, func())
+}
+
+// Schedule runs f once after d and returns a function that cancels the run. The cancel function returns
+// whether the run was prevented.
+type Schedule func(d time.Duration, f func()) (cancel func() bool)

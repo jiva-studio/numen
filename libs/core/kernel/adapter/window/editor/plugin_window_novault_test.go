@@ -6,14 +6,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func TestPluginWindowWithNoVaultReturnsErrNoWindow(t *testing.T) {
-	state := &State{Places: newPlaceBroadcaster()}
-	window := newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, windowview.View{Notices: state}))
+	state := NewState(run.NewTasks())
+	window := newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.Notices), 0)
 	ctx := t.Context()
 
 	if _, err := window.FocusNote(ctx, "notes/Heron.md"); !errors.Is(err, plugin.ErrNoWindow) {

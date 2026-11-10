@@ -61,7 +61,7 @@ describe('createPluginHost', () => {
     const { deps, registeredKinds, extensionReaders } = createMockDeps()
     const host = createPluginHost(deps)
     host.registerKeybindings('sample.plugin', [{ key: 'ctrl+shift+k', command: 'test.run' }])
-    const ctx = host.createContext('sample.plugin')
+    const ctx = host.createContext('sample.plugin', createMockManifest('sample.plugin', { name: 'Sample', permissions: ['vault:read'] }))
 
     // Register reader
     const readerSub = ctx.register.reader({
@@ -217,7 +217,7 @@ describe('createPluginHost', () => {
       openTab: vi.fn(async () => 't1'),
       registerEditor: vi.fn(() => undefined as unknown as () => void),
     })
-    const ctxNoExt = hostNoExt.createContext('noext.plugin')
+    const ctxNoExt = hostNoExt.createContext('noext.plugin', createMockManifest('noext.plugin', { name: 'No ext', permissions: ['vault:read'] }))
     ctxNoExt.register.reader({ id: 'r-noext', component: STUB_COMPONENT })
     expect(registerExtensionReader).not.toHaveBeenCalled()
     const tabSubVoid = ctxNoExt.register.tabKind({ kind: 'void-editor', component: STUB_COMPONENT })
@@ -287,7 +287,10 @@ describe('createPluginHost', () => {
     const getTasks = vi.fn(() => tasks)
     const host = createPluginHost({ ...deps, getTasks })
 
-    expect(host.createContext('test.plugin').work.tasks).toBe(tasks)
+    const handler = vi.fn()
+    host.createContext('test.plugin').work.tasks?.watch(handler)
+
+    expect(tasks.watch).toHaveBeenCalledWith(handler)
     expect(getTasks).toHaveBeenCalledWith('test.plugin')
   })
 
@@ -303,8 +306,14 @@ describe('createPluginHost', () => {
     const backgroundTasks = createMockBackgroundTaskHost()
     const host = createPluginHost({ ...deps, getBackgroundTasks: () => backgroundTasks })
 
-    expect(host.createContext('test.plugin').work.backgroundTasks).toBe(backgroundTasks)
-    expect(host.createContext('other.plugin').work.backgroundTasks).toBe(backgroundTasks)
+    const first = vi.fn()
+    const second = vi.fn()
+    host.createContext('test.plugin').work.backgroundTasks?.watch(first)
+    host.createContext('other.plugin').work.backgroundTasks?.watch(second)
+
+    expect(first).toHaveBeenCalled()
+    expect(second).toHaveBeenCalled()
+    expect(backgroundTasks.watch).toBeDefined()
   })
 
   it('gives a plugin no background tasks where the window offers none', () => {
@@ -446,7 +455,10 @@ describe('createPluginHost', () => {
       types: ['text/uri-list'],
       drop: async (folder, data) => [`${folder}/${data['text/uri-list']}.md`],
     })
-    const drops = host.createContext('md.numen.views.file.tree').ui.drops
+    const drops = host.createContext(
+      'md.numen.views.file.tree',
+      createMockManifest('md.numen.views.file.tree', { name: 'Tree', permissions: ['vault:write'] }),
+    ).ui.drops
 
     expect(drops?.canDrop(['text/uri-list'])).toBe(true)
     expect(await drops?.drop('talks', { 'text/uri-list': 'clip' })).toEqual(['talks/clip.md'])
@@ -582,11 +594,21 @@ describe('a view mounted by a plugin', () => {
     expect(element.textContent).toBe('')
   })
 
-  it('mounts a view with a note path for a plugin with vault:read', async () => {
+  it('refuses to mount the note editor to a plugin that holds vault:read and not vault:write', () => {
+    const { read, createCaller } = createHost()
+    const element = document.createElement('div')
+
+    expect(() =>
+      createCaller(['vault:read']).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' }),
+    ).toThrow(/vault:write/)
+    expect(read).not.toHaveBeenCalled()
+  })
+
+  it('mounts a view with a note path for a plugin with vault:read and vault:write', async () => {
     const { createCaller } = createHost()
     const element = document.createElement('div')
 
-    createCaller(['vault:read']).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' })
+    createCaller(['vault:read', 'vault:write']).ui.mountView(NOTE_EDITOR, element, { path: 'Notes/Example.md' })
     await vi.waitFor(() => expect(element.textContent).toBe('Body of Notes/Example.md'))
   })
 

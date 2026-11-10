@@ -5,9 +5,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import type { Curve } from '../types'
+import type { Curve } from '../../lib/presets'
 import { mountPresetTab, heights, point } from '../fixtures'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 // Past the target day of the goal, the preset schedules nothing: no card is
 // answered and the pile grows. Every series stops at that day.

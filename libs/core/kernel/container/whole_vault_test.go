@@ -124,7 +124,7 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 
 func unembeddedTo(t *testing.T, db *vault.Index, v domain.Vault, model embeddingport.Embedder) int {
 	t.Helper()
-	unembedded, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
+	unembedded, _, err := db.Chunks.VectorQueries.GetUnembeddedChunks(t.Context(), v.ID, model.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

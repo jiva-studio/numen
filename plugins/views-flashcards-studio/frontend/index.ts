@@ -1,8 +1,8 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { cards, presets } from './cards'
-import { useDeckTabs } from './deck/model/useDeckTabs'
-import { createCardModelTabs } from './card-model/kind'
-import { usePresetTab } from './preset/kind'
+import { cards } from './api/cards'
+import { presets } from './api/presets.wire'
+import { useDeckTabs, createCardModelTabs } from './editor'
+import { usePresetTab } from './preset'
 import {
   createNotices,
   createReviewKind,
@@ -10,19 +10,17 @@ import {
   createVaultSummaryView,
 } from './review'
 
-export { DECK } from './deck/kind'
-export { CARD_MODEL } from './card-model/kind'
-export { PRESET } from './preset/kind'
-export { default as DeckTab } from './deck/ui/DeckTab.vue'
-export { default as CardModelTab } from './card-model/ui/CardModelTab.vue'
-export { default as PresetTab } from './preset/ui/PresetTab.vue'
-export { useDeckTabs } from './deck/model/useDeckTabs'
-export { createCardModelTabs } from './card-model/kind'
-export { usePresetTab } from './preset/kind'
-export type { DeckTabState } from './deck/types'
-export type { CardModelTabState } from './card-model/types'
-export type { PresetTabState } from './preset/types'
-
+export {
+  DECK,
+  CARD_MODEL,
+  DeckTab,
+  CardModelTab,
+  useDeckTabs,
+  createCardModelTabs,
+  type DeckTabState,
+  type CardModelTabState,
+} from './editor'
+export { PRESET, PresetTab, usePresetTab, type PresetTabState } from './preset'
 export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {

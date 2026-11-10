@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { Prose } from '@numen/ui'
 import Thread from './Thread.vue'
 import { NO_UNRESOLVED } from '../lib/turn'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 
 const createRequested = (id: string, text = 'text', state?: Turn['state']): Turn =>
   state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }

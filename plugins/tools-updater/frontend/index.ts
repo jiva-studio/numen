@@ -6,7 +6,7 @@ import { defineComponent, h } from 'vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { updater, type UpdateApi } from './api/wire'
 import { createUpdates, type Timer, type Updates } from './model/updates'
-import UpdateIndicator from './UpdateIndicator.vue'
+import UpdateIndicator from './ui/UpdateIndicator.vue'
 import { WORDS as words } from './words'
 import './styles.css'
 
