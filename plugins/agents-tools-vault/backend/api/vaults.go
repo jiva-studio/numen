@@ -94,3 +94,6 @@ type VaultInfoOutput struct {
 	Path      string `json:"path" jsonschema:"vault root directory path on disk"`
 	NoteCount int    `json:"noteCount" jsonschema:"total number of indexed notes in the vault"`
 }
+
+// VaultListInput is the input of the vault_list tool.
+type VaultListInput struct{}
