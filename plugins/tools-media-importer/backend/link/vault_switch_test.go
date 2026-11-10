@@ -93,8 +93,8 @@ func TestADownloadWritesOnlyTheVaultItStartedIn(t *testing.T) {
 			return link.Vault{Files: other, Writer: other}
 		}, Store: func(id domain.VaultID) link.Folder {
 			if id == "" {
-				shown := currentStore{Store: mills.Store(), current: current}
-				return link.Folder{Files: shown, Writer: shown}
+				active := currentStore{Store: mills.Store(), current: current}
+				return link.Folder{Files: active, Writer: active}
 			}
 			other := mills.Store().With(id)
 			return link.Folder{Files: other, Writer: other}
