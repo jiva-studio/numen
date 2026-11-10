@@ -11,4 +11,4 @@ export type FloorState = GetFloorResponse
 export type FloorProbeResult = ProbeFloorResponse
 
 /** Pauses for a number of milliseconds. */
-export type Wait = (ms: number) => Promise<unknown>
+export type Wait = (ms: number) => Promise<void>
