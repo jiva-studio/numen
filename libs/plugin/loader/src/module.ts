@@ -3,7 +3,7 @@
  */
 import { parseManifest, type Manifest } from '@numen/core-client'
 import type { PluginLifecycle, SlotName, Unvalidated } from '@numen/plugin-sdk'
-import { WINDOW_SLOTS } from './slots/windowSlots'
+import { WINDOW_SLOTS } from './slots'
 import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
 /** The bundle every plugin frontend builds to, relative to the plugin folder. */

@@ -5,8 +5,7 @@
  */
 import { computed, shallowRef, type Component, type ComputedRef, type ShallowRef } from 'vue'
 import { type Disposable, type SlotName, type SlotViewRegistration } from '@numen/plugin-sdk'
-import { WINDOW_SLOTS } from '../slots/windowSlots'
-import { createStyledView } from '../slots/styledView'
+import { WINDOW_SLOTS, createStyledView } from '../slots'
 
 /** A view of a slot with the plugin that registered it. */
 export interface DeclaredSlotView {

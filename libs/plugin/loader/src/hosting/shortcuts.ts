@@ -4,9 +4,8 @@
  */
 import { isSharedCommand, type CommandNote, type CommandTarget, type Caught } from '@numen/plugin-sdk'
 import { APP_COMMAND_OWNER, getCommandOwner } from '../commandId'
-import type { Keybinding, KeybindingRegistry } from '../keybindings/keybindingRegistry'
-import type { WhenValues } from '../when/when'
-import { getWhenValues } from '../when/whenValues'
+import type { Keybinding, KeybindingRegistry } from '../keybindings'
+import { type WhenValues, getWhenValues } from '../when'
 import type { AvailableCommand } from './available'
 import { reportError } from './events'
 import type { CommandRun, HostDeps } from './types'

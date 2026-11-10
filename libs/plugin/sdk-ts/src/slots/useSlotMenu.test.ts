@@ -3,7 +3,7 @@
  * picked. Every command and target is invented.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { CommandItem } from '../commands/commands'
+import type { CommandItem } from '../commands'
 import type { SlotCommand, SlotItem } from './slots'
 import { MENU_HOLD_MS, useSlotMenu, type SlotMenuRequest } from './useSlotMenu'
 

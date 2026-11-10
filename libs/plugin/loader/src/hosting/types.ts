@@ -36,9 +36,8 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from './tabKinds'
-import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
-import type { WhenValues } from '../when/when'
-import type { WhenReader } from '../when/whenReader'
+import type { DeclaredSlotEntry, SlotCommandLook } from '../slots'
+import type { WhenValues, WhenReader } from '../when'
 import type { Component } from 'vue'
 import type { DeclaredViewRegistration, MountAccess } from '../views'
 

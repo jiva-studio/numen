@@ -5,8 +5,8 @@
  */
 import { computed, shallowRef, watch, type Component, type ComputedRef, type ShallowRef } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { Caught } from '../errors/error'
-import type { CommandItem } from '../commands/commands'
+import type { Caught } from '../errors'
+import type { CommandItem } from '../commands'
 import {
   createSlotMenu,
   type CommandItemLists,

@@ -3,16 +3,18 @@ export * from './catalog'
 export * from './manifest'
 export * from './protocol'
 export { transport } from './transport'
-export { getNames } from './settings/enumNames'
-export * from './settings/agentSettings'
+export * from './settings'
 export {
   formatErrorCodeMessage,
   formatErrorMessage,
   ReportedError,
   type Caught,
   type Unvalidated,
-} from './errors/error'
-export { findErrorCode, isStaleAnswer, parseFingerprint } from './errors/answers'
-export { ERRORS, getKnownErrorCode } from './errors/codes'
+  findErrorCode,
+  isStaleAnswer,
+  parseFingerprint,
+  ERRORS,
+  getKnownErrorCode,
+} from './errors'
 export { asFailure, asValue, type Result } from './result'
-export { findServiceInfo, getServiceInfo, type ServiceInfo } from './services/services'
+export { findServiceInfo, getServiceInfo, type ServiceInfo } from './services'

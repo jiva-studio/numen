@@ -1,6 +1,6 @@
 /** Whether the host runs a command of a plugin over a note: its when condition. Every plugin here is invented. */
 import { describe, expect, it } from 'vitest'
-import { createWhenReader } from '../when/whenReader'
+import { createWhenReader } from '../when'
 import { isCommandAvailable } from './commandWhen'
 
 const declaration = (when?: string) => ({

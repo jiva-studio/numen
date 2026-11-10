@@ -9,19 +9,24 @@ export * from './texts'
 export * from './notices'
 export * from './tasks'
 export * from './backgroundTasks'
-export * from './commands/commands'
-export * from './commands/sharedCommands'
-export * from './slots/slots'
-export * from './slots/slotMenu'
-export * from './slots/useSlotMenu'
+export * from './commands'
+export * from './slots'
 export * from './window'
 export * from './drops'
 export { createApi, UNAVAILABLE } from './api'
 export type { Api, ApiError } from './api'
-export { formatErrorMessage, ReportedError, type Caught, type Unvalidated } from './errors/error'
 export { asFailure, asValue } from './result'
 export type { Result } from './result'
-export { formatFingerprint, getAssetUrl, getBytesQuery, MAX_BUSY_RETRIES } from './errors/answers'
-export type { ErrorCode } from './errors/errorCode'
-export { getRelationErrorWords } from './errors/codes'
+export {
+  formatErrorMessage,
+  formatFingerprint,
+  getAssetUrl,
+  getBytesQuery,
+  getRelationErrorWords,
+  MAX_BUSY_RETRIES,
+  ReportedError,
+  type Caught,
+  type ErrorCode,
+  type Unvalidated,
+} from './errors'
 export { resolveAddress, type AddressSource } from './media'

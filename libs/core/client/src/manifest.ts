@@ -9,7 +9,7 @@ import {
   type ManifestContributes as ManifestContributesMessage,
   type ManifestTabKind as ManifestTabKindMessage,
 } from '@numen/protocol'
-import { formatErrorMessage } from './errors/error'
+import { formatErrorMessage } from './errors'
 import { asFailure, asValue, type Result } from './result'
 
 /** The schema of a plugin's manifest.json. */

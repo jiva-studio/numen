@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { defineComponent } from 'vue'
-import type { CommandItem } from '../commands/commands'
+import type { CommandItem } from '../commands'
 import type { SlotCommand, SlotItem, SlotSeparator, SlotSubmenu, SlotView } from './slots'
 import { createSlotMenu, type CommandItemLists } from './slotMenu'
 

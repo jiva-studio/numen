@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, type Component } from 'vue'
 import { clearPluginStyles, registerPluginStyle } from '../styles'
-import { createSlotViewRegistry } from '../slot-views/slotViews'
+import { createSlotViewRegistry } from '../slot-views'
 
 const LEDGER = 'org.example.ledger'
 const BALANCE = defineComponent({

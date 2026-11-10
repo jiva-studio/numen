@@ -6,7 +6,7 @@
 import type { Component } from 'vue'
 import type { Disposable } from '../types'
 import type { SlotName } from './slotNames'
-import type { CommandTarget } from '../commands/commands'
+import type { CommandTarget } from '../commands'
 
 export { SLOT, type SlotName } from './slotNames'
 export { WHEN_VARIABLES } from './whenVariables'

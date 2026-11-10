@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { parseManifest } from '@numen/core-client'
 import { createPluginHost } from './host'
-import { getTargetValues } from '../when/targetValues'
+import { getTargetValues } from '../when'
 import type { CommandDeclaration, PluginHostDeps } from './types'
 
 type Manifest = Parameters<ReturnType<typeof createPluginHost>['lifecycle']['registerManifest']>[1]

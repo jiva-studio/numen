@@ -3,8 +3,8 @@
  * for the unit tests of the plugins that draw them.
  */
 import type { Disposable } from '../types'
-import type { CommandItem, CommandsHost, CommandTarget } from '../commands/commands'
-import type { SlotHost, SlotItem, SlotPlace } from '../slots/slots'
+import type { CommandItem, CommandsHost, CommandTarget } from '../commands'
+import type { SlotHost, SlotItem, SlotPlace } from '../slots'
 import type { VaultsHost, VaultsState, WindowHost, WindowState } from '../window'
 import type { BackgroundTask, BackgroundTaskHost } from '../backgroundTasks'
 

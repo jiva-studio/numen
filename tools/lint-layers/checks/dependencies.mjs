@@ -127,6 +127,43 @@ function createSegmentRules() {
   }))
 }
 
+/** The layer folders of a library that is cut into layers; a library without any of them is flat. */
+const LAYER_FOLDERS = ['shared', 'features', 'screens', 'entities', 'pages', 'app']
+
+/** Top-level folders that are no area: the segments and the test support. */
+const NOT_AREAS = [...SEGMENTS, 'testing', 'fixtures', 'testdata']
+
+/** The `src` folders of the flat libraries of `root`: libraries whose `src` has none of the layer folders. */
+export function listFlatLibraryRoots(root, packages = listPackages(root)) {
+  return packages
+    .filter((one) => one.kind === 'library')
+    .map((one) => path.posix.join(one.dir, 'src'))
+    .filter((source) => {
+      const abs = path.join(root, source)
+      return fs.existsSync(abs) && !LAYER_FOLDERS.some((layer) => fs.existsSync(path.join(abs, layer)))
+    })
+}
+
+/**
+ * The rule of one flat library: a file outside a top-level folder of `src` imports that folder only through its
+ * `index.ts`. Two entries state it, for a file inside another folder and for a file directly in `src`.
+ */
+function createAreaRules(source) {
+  const escaped = escapeRegExp(source)
+  const index = `^${escaped}/[^/]+/index\\.ts$`
+  const rule = (from, pathNot) => ({
+    name: 'area-imported-through-its-index',
+    comment: `a file of ${source} outside a folder of it imports that folder through its index.ts, never a deeper file`,
+    severity: 'error',
+    from: { path: from },
+    to: { path: `^${escaped}/(?!(?:${NOT_AREAS.join('|')})/)[^/]+/.+`, pathNot },
+  })
+  return [
+    rule(`^${escaped}/([^/]+)/`, [`^${escaped}/$1/`, index]),
+    rule(`^${escaped}/[^/]+$`, [index]),
+  ]
+}
+
 /** The dependency-cruiser configuration for the packages under `root`. */
 export function createCruiseConfig(root, matrix = PACKAGE_DEPENDENCIES) {
   const packages = listPackages(root)
@@ -134,6 +171,7 @@ export function createCruiseConfig(root, matrix = PACKAGE_DEPENDENCIES) {
     forbidden: [
       ...packages.flatMap((one) => createPackageRules(one, packages, matrix)),
       ...createSegmentRules(),
+      ...listFlatLibraryRoots(root, packages).flatMap(createAreaRules),
       {
         name: 'plugin-loader-reaches-only-vue-vite-and-cel',
         comment:

@@ -10,7 +10,7 @@ import { isSharedCommand } from '@numen/plugin-sdk'
 import { createHandlerApi } from './handlers'
 import { reportError, runCommand } from './events'
 import type { HostRegistry } from './registry'
-import type { KeybindingRegistry } from '../keybindings/keybindingRegistry'
+import type { KeybindingRegistry } from '../keybindings'
 import { createShortcutHandler } from './shortcuts'
 import type { CommandRun, HostDeps } from './types'
 

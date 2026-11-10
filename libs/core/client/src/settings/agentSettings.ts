@@ -1,4 +1,4 @@
-import type { Unvalidated } from '../errors/error'
+import type { Unvalidated } from '../errors'
 
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType =

@@ -14,7 +14,7 @@ import type {
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import type { SlotViewRegistry } from '../slot-views/slotViews'
+import type { SlotViewRegistry } from '../slot-views'
 import type { PluginListener } from './events'
 import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginHostDeps } from './types'

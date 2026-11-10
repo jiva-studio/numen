@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { watch } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { createPluginHost } from './hosting/host'
-import type { CommandDeclaration, PluginHostDeps } from './hosting/types'
+import { createPluginHost, type CommandDeclaration, type PluginHostDeps } from './hosting'
 import { createPluginLoader } from './loader'
 
 const PLUGIN = 'md.numen.views.plex.graph'

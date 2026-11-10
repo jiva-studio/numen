@@ -15,9 +15,7 @@ import {
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { formatCommandId } from '../commandId'
-import { getTargetValues } from '../when/targetValues'
-import type { WhenValues } from '../when/when'
-import { createWhenReader, type WhenReader } from '../when/whenReader'
+import { getTargetValues, type WhenValues, createWhenReader, type WhenReader } from '../when'
 
 /** One entry of `contributes.slots` of an enabled plugin. Exactly one of command, view and submenu is set. */
 export interface DeclaredSlotEntry {

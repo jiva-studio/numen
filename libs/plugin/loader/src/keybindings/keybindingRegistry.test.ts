@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createWhenReader } from '../when/whenReader'
+import { createWhenReader } from '../when'
 import { createKeybindingRegistry, type KeybindingSource } from './keybindingRegistry'
 
 const press = (init: KeyboardEventInit) => new KeyboardEvent('keydown', init)

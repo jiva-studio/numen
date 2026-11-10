@@ -5,8 +5,7 @@
  */
 import type { Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { CommandItem } from '../commands/commands'
-import { isSharedCommand } from '../commands/commands'
+import { isSharedCommand, type CommandItem } from '../commands'
 import type { SlotCommand, SlotEntryKey, SlotItem } from './slots'
 
 // CommandItemLists is the items read for the commands of an open menu, by the key of their entry;

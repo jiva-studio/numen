@@ -7,8 +7,7 @@
  * over one of a plugin, then the one registered first. Another keybinding whose condition reads as many
  * variables as the winner's, and that runs another command, is a conflict, reported once.
  */
-import type { WhenCondition, WhenValues } from '../when/when'
-import type { WhenReader } from '../when/whenReader'
+import type { WhenCondition, WhenValues, WhenReader } from '../when'
 import { APP_COMMAND_OWNER, formatCommandId } from '../commandId'
 import { isKeyEvent, parseKey, type ParsedKey } from './parseKey'
 

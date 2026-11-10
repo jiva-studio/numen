@@ -2,8 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
-import { createPluginHost } from './hosting/host'
-import type { PluginHostDeps } from './hosting/types'
+import { createPluginHost, type PluginHostDeps } from './hosting'
 import { createPluginLoader } from './loader'
 
 const PLUGIN = 'org.example.ledger'

@@ -12,11 +12,16 @@ import {
   resolveModule,
   type PluginModule,
 } from './module'
-import { startLoader } from './loading/startLoader'
-import { activateEntry, type ActivateContext, type ActivePluginEntry } from './loading/activation'
-import type { StartLimit } from './loading/startLimit'
-import { createPluginStatus, type PluginStatus } from './loading/pluginStatus'
-import { createSignal } from './loading/signal'
+import {
+  activateEntry,
+  createPluginStatus,
+  createSignal,
+  startLoader,
+  type ActivateContext,
+  type ActivePluginEntry,
+  type PluginStatus,
+  type StartLimit,
+} from './loading'
 
 export interface PluginLoaderDeps {
   readonly host: LoaderHost

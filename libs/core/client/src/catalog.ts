@@ -11,7 +11,7 @@ import {
   type CatalogEntry as CatalogEntryMessage,
   type CatalogSourceError as CatalogSourceErrorMessage,
 } from '@numen/protocol'
-import { formatErrorMessage, type Caught } from './errors/error'
+import { formatErrorMessage, type Caught } from './errors'
 import { asFailure, asValue, type Result } from './result'
 import { transport } from './transport'
 

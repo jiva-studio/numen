@@ -1,6 +1,5 @@
 import { createMockNoticeHost, createMockSlotHost } from '@numen/plugin-sdk/testing'
-import { createIdleContextHost } from '../hosting/idleContextHost'
-import type { PluginContextHost } from '../hosting/types'
+import { createIdleContextHost, type PluginContextHost } from '../hosting'
 
 /** The parts a test replaces; every other member of a part does nothing. */
 export interface ContextHostParts {

@@ -12,7 +12,18 @@ const FILES = {
   "libs/core/protocol/package.json": json({ name: "@numen/protocol" }),
   "libs/core/protocol/src/index.ts": "export const message = 1\n",
   "libs/plugin/sdk-ts/package.json": json({ name: "@numen/plugin-sdk" }),
-  "libs/plugin/sdk-ts/src/index.ts": "export const sdk = 1\n",
+  "libs/plugin/sdk-ts/src/index.ts": [
+    "import { slots } from './slots'",
+    "import { menu } from './slots/menu'",
+    "import { helper } from './testing/helper'",
+    "export const sdk = [slots, menu, helper]",
+    "",
+  ].join("\n"),
+  "libs/plugin/sdk-ts/src/slots/index.ts": "import { menu } from './menu'\nexport const slots = menu\n",
+  "libs/plugin/sdk-ts/src/slots/menu.ts": "export const menu = 1\n",
+  "libs/plugin/sdk-ts/src/commands/index.ts": "import { slots } from '../slots'\nexport const commands = slots\n",
+  "libs/plugin/sdk-ts/src/commands/run.ts": "import { menu } from '../slots/menu'\nexport const run = menu\n",
+  "libs/plugin/sdk-ts/src/testing/helper.ts": "import { run } from '../commands/run'\nexport const helper = run\n",
   "libs/ui/components/package.json": json({ name: "@numen/ui" }),
   "libs/ui/components/src/index.ts": "export const button = 1\n",
   "libs/mystery/package.json": json({ name: "@numen/mystery" }),
@@ -83,6 +94,14 @@ describe("the dependency graph over a repository with a violation of each rule",
 
   it("reports a lib segment that imports the ui segment of its slice", () => {
     assert.deepEqual(rulesOf("apps/window/src/note/lib/count.ts"), ["segment-lib-imports-no-higher-segment"]);
+  });
+
+  it("reports a file that imports a folder of its flat library by a deeper file than the index", () => {
+    assert.deepEqual(rulesOf("libs/plugin/sdk-ts/src/index.ts"), ["area-imported-through-its-index"]);
+    assert.deepEqual(rulesOf("libs/plugin/sdk-ts/src/commands/run.ts"), ["area-imported-through-its-index"]);
+    assert.deepEqual(rulesOf("libs/plugin/sdk-ts/src/testing/helper.ts"), ["area-imported-through-its-index"]);
+    assert.deepEqual(rulesOf("libs/plugin/sdk-ts/src/commands/index.ts"), []);
+    assert.deepEqual(rulesOf("libs/plugin/sdk-ts/src/slots/index.ts"), []);
   });
 });
 

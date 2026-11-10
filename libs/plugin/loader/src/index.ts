@@ -5,8 +5,12 @@ export {
   type PluginLoader,
   type PluginLoaderDeps,
 } from './loader'
-export { createPluginStatus, type PluginStatus } from './loading/pluginStatus'
-export { INTERFACE_WAIT_MS, PLUGIN_START_LIMIT_MS } from './loading/limits'
+export {
+  createPluginStatus,
+  INTERFACE_WAIT_MS,
+  PLUGIN_START_LIMIT_MS,
+  type PluginStatus,
+} from './loading'
 export type { LoaderHost } from './host'
 export type { Manifest } from '@numen/core-client'
 export {
@@ -27,10 +31,12 @@ export {
   createSlotViewRegistry,
   findSlotView,
   getDeclaredSlots,
+  SlotViewHost,
+  usePluginStyles,
   type DeclaredSlotView,
   type SlotViewManifest,
   type SlotViewRegistry,
-} from './slot-views/slotViews'
+} from './slot-views'
 export { createAppInfo, DEV_VERSION, type AppInfoSource } from './appInfo'
 export {
   createExternalOpener,
@@ -44,42 +50,57 @@ export { APP_COMMAND_OWNER, formatCommandId, getCommandOwner } from './commandId
 export * from './contract'
 export { createPluginNotices, type NoticeList, type NoticeListTask } from './pluginNotices'
 export { createPluginTasks, type WindowTask } from './pluginTasks'
-export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './hosting/host'
-export { requireMountAccess } from './hosting/guards/viewPermissions'
-export { createPluginContext } from './hosting/context'
-export { createIdleContextHost, type IdleContextHostParts } from './hosting/idleContextHost'
-export { disposeSubscriptions } from './hosting/guards/subscriptions'
-export { createCustomTabKind } from './hosting/customTabKind'
-export type {
-  NoteBuffer,
-  PluginContextHost,
-  PluginHostDeps,
-  PluginPaletteCommand,
-  CommandDeclaration,
-  HandlerDeclaration,
-  BackendHandlerRun,
-  HostCommandReads,
-  SlotCommandFinder,
-} from './hosting/types'
-export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from './hosting/tabKinds'
+export {
+  createCustomTabKind,
+  createIdleContextHost,
+  createPluginContext,
+  createPluginHost,
+  createPluginPaneWrapper,
+  createWindowHost,
+  disposeSubscriptions,
+  requireMountAccess,
+  type AnyTabKind,
+  type BackendHandlerRun,
+  type CommandDeclaration,
+  type HandlerDeclaration,
+  type HostCommandReads,
+  type IdleContextHostParts,
+  type NoteBuffer,
+  type OpenTab,
+  type PluginContextHost,
+  type PluginHost,
+  type PluginHostDeps,
+  type PluginPaletteCommand,
+  type SlotCommandFinder,
+  type SourceReader,
+  type TabKind,
+  type TabTarget,
+  type WindowControls,
+} from './hosting'
 export {
   createSlotRegistry,
   readManifestSlotEntries,
   type DeclaredSlotEntry,
   type SlotCommandLook,
   type SlotRegistryDeps,
-} from './slots/slotRegistry'
-export { parseWhen, type WhenCondition, type WhenSettings, type WhenValues } from './when/when'
-export { getTargetValues } from './when/targetValues'
-export { createWhenReader, type WhenReader } from './when/whenReader'
+} from './slots'
+export {
+  createWhenReader,
+  getTargetValues,
+  getWhenValues,
+  parseWhen,
+  type WhenCondition,
+  type WhenReader,
+  type WhenSettings,
+  type WhenValueParts,
+  type WhenValues,
+} from './when'
 export {
   createKeybindingRegistry,
+  parseKey,
+  type ParsedKey,
   type Keybinding,
   type KeybindingRegistry,
   type KeybindingRegistryDeps,
   type KeybindingSource,
-} from './keybindings/keybindingRegistry'
-export { parseKey, type ParsedKey } from './keybindings/parseKey'
-export { getWhenValues, type WhenValueParts } from './when/whenValues'
-export { createWindowHost, type WindowControls } from './hosting/windowHost'
-export { SlotViewHost, usePluginStyles } from './slot-views/slotViewHost'
+} from './keybindings'
