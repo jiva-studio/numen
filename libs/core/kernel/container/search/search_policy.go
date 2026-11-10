@@ -39,7 +39,10 @@ func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder
 // NewEmbedQueries makes the vectors of queries with the embedder, as queries where its model tells a
 // query from a document.
 func NewEmbedQueries(embedder embeddingport.Embedder) *vectorscase.EmbedQueries {
-	queries, _ := embedder.(embeddingport.QueryEmbedder)
+	queries, ok := embedder.(embeddingport.QueryEmbedder)
+	if !ok {
+		return vectorscase.NewEmbedQueries(embedder, nil)
+	}
 	return vectorscase.NewEmbedQueries(embedder, queries)
 }
 

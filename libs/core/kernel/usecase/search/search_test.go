@@ -137,7 +137,10 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder embeddingport.Embedder) search.Search {
-	queries, _ := embedder.(embeddingport.QueryEmbedder)
+	queries, ok := embedder.(embeddingport.QueryEmbedder)
+	if !ok {
+		return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, nil), nil)
+	}
 	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, embedder, vectorscase.NewEmbedQueries(embedder, queries), nil)
 }
 
