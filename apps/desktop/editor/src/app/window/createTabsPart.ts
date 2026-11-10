@@ -36,7 +36,7 @@ interface TabsCoreDeps {
   readonly isPluginStarting: (pluginId: string) => boolean
 }
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 export function createTabsCore(deps: TabsCoreDeps): TabsCore {
   const { writeMessage, rest } = deps

@@ -81,7 +81,7 @@ function createFlushReporter(
 ) {
   let underVal: string | null = null
   let lastResult: FlushResult | null = null
-  let writing: Promise<void> | null = null
+  let writing: Promise<PromiseSettledResult<void>[]> | null = null
 
   async function report() {
     const token = underVal

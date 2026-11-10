@@ -9,6 +9,11 @@ import { watchVaultChanges, type VaultChange } from '@/entities/vault'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 
+/** What the window reads of the vault it asks about: whether its scan is done and what failed. */
+export interface VaultScan {
+  readonly scan: { readonly error?: string | undefined; readonly isReady?: boolean | undefined }
+}
+
 export interface WindowStreamsDeps {
   readonly listening: AbortController
   readonly isOpen: () => boolean
@@ -24,7 +29,7 @@ export interface WindowStreamsDeps {
     versionPaths: readonly string[],
   ) => Promise<void> | void
   readonly readInitialNote: () => Promise<string>
-  readonly ask: () => Promise<void>
+  readonly ask: () => Promise<VaultScan>
   readonly reportChange: (edit: NoteEdit) => void
   readonly travelTo: (path: string) => Promise<void> | void
   readonly openFileAt: (path: string, spans: readonly TextRange[]) => void
@@ -47,7 +52,7 @@ async function handleVaultChange(change: VaultChange, deps: WindowStreamsDeps): 
   await attempt(deps.ask)
 }
 
-async function attempt(step: () => Promise<void>): Promise<boolean> {
+async function attempt<T>(step: () => Promise<T>): Promise<boolean> {
   try {
     await step()
     return true

@@ -8,6 +8,7 @@ import { writeOpenTabs } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
 import type { Caught } from '@/shared/api/errors'
+import type { JsonValue } from '@/shared/api/json'
 
 export interface OpenTabsDeps {
   windowTabs: WindowTabs
@@ -16,7 +17,7 @@ export interface OpenTabsDeps {
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
-export const formatSavedState = (saved: unknown): string =>
+export const formatSavedState = (saved: JsonValue | undefined): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
 export function useOpenTabs({ windowTabs, isWriting = ref(true), reportError }: OpenTabsDeps) {
@@ -115,10 +116,10 @@ export function useOpenTabs({ windowTabs, isWriting = ref(true), reportError }: 
   }
 }
 
-const parseSavedState = (state: string): unknown => {
+const parseSavedState = (state: string): JsonValue | undefined => {
   /* Stryker disable BlockStatement: falling off catch returns undefined */
   try {
-    return JSON.parse(state) as unknown
+    return JSON.parse(state)
   } catch {
     return undefined
   }

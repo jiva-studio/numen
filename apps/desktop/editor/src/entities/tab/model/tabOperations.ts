@@ -3,6 +3,7 @@
  * of its own, so a part that needs an operation makes it from the store.
  */
 import { effectScope } from 'vue'
+import type { JsonValue } from '@/shared/api/json'
 import { closeTab, openTabAdjacent, paneById } from '@numen/workbench'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle } from '../lib/kinds'
 import type { SavedTab } from '../lib/tab'
@@ -15,7 +16,7 @@ const generatePaneId = () => crypto.randomUUID()
 
 export function createPlaceholders(store: TabStore) {
   /** One tab replaced by a tab of another kind opened on the same path with the same state. */
-  const replaceTab = (id: string, kind: AnyTabKind, path: string, saved: unknown) => {
+  const replaceTab = (id: string, kind: AnyTabKind, path: string, saved: JsonValue | undefined) => {
     store.drop(id)
     const scope = effectScope(true)
     const state = openInScope(scope, () => kind.open(path, id, saved))

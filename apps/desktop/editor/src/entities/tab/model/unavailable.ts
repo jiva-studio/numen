@@ -1,7 +1,8 @@
 import { shallowRef, type Component, type ShallowRef } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { findTabKindPlugin } from '../api/tabKindPlugin'
-import type { AnyTabKind } from '../lib/kinds'
+import type { JsonValue } from '@/shared/api/json'
+import type { AnyTabKind, TabKind } from '../lib/kinds'
 import type { Writable } from '../lib/writable'
 import type { UnavailableLookup } from '../lib/unavailableView'
 
@@ -22,7 +23,7 @@ export interface PlaceholderPanes {
 export interface UnavailableState {
   readonly kind: string
   readonly targetPath: string
-  readonly saved: unknown
+  readonly saved: JsonValue | undefined
   readonly title?: string | undefined
   readonly lookup: ShallowRef<UnavailableLookup>
   readonly services: UnavailableServices
@@ -69,9 +70,9 @@ export const createUnavailableKind = (
   options?: UnavailableKindOptions,
   services: UnavailableServices = {},
 ): AnyTabKind => {
-  const placeholder: Writable<AnyTabKind> = {
+  const placeholder: Writable<TabKind<UnavailableState>> = {
     kind,
-    open: (targetPath: string, _id: string, saved?: unknown): UnavailableState => ({
+    open: (targetPath: string, _id: string, saved?: JsonValue): UnavailableState => ({
       kind,
       targetPath,
       saved,
@@ -79,18 +80,14 @@ export const createUnavailableKind = (
       lookup: startLookup(kind),
       services,
     }),
-    getTitle: (state: unknown) => {
-      const unavailable = state as UnavailableState
-      return (
-        unavailable.title ||
-        getFileName(unavailable.targetPath) ||
-        options?.title ||
-        getDeclaredTitle(unavailable.lookup.value) ||
-        kind
-      )
-    },
-    getOpenTab: (state: unknown) => ({ path: (state as UnavailableState).targetPath }),
-    getState: (state: unknown) => (state as UnavailableState).saved,
+    getTitle: (state) =>
+      state.title ||
+      getFileName(state.targetPath) ||
+      options?.title ||
+      getDeclaredTitle(state.lookup.value) ||
+      kind,
+    getOpenTab: (state) => ({ path: state.targetPath }),
+    getState: (state) => state.saved,
     pane,
     identity: (targetPath: string) => targetPath,
   }

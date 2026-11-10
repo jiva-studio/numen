@@ -6,7 +6,7 @@ export type { AnyTabKind, OpenTab, SourceReader, TabKind, TabTarget } from '@num
 /** What one tab is: its kind, and what that kind gave it to hold. */
 export interface WindowTab {
   readonly kind: AnyTabKind
-  readonly state: unknown
+  readonly state: object
 }
 
 /** One tab of a kind, as that kind is given it back. */
@@ -19,7 +19,7 @@ export interface KindTab<TabState> {
 export interface ActiveTab {
   readonly id: string
   readonly kind: string | null
-  readonly state: unknown
+  readonly state: object
 }
 
 /** What a kind may ask of the window its tabs are drawn in. */

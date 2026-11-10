@@ -5,7 +5,7 @@ import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 import { formatError, type Caught } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
-import { createWindowStreams } from './useWindowStreams'
+import { createWindowStreams, type VaultScan } from './useWindowStreams'
 import { useDisplayHealth, type DisplayHealth } from './useDisplayHealth'
 import { useDisplayOpening } from './useDisplayOpening'
 import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVault'
@@ -49,7 +49,7 @@ export interface DisplayOptions {
 
 interface StartDisplayDeps {
   health: DisplayHealth
-  ask: () => Promise<void>
+  ask: () => Promise<VaultScan>
   readInitialNote: () => Promise<string>
   onVaultChanged: (paths: readonly string[], renames: readonly PathRename[]) => Promise<void> | void
   streams: ReturnType<typeof createWindowStreams>
@@ -71,7 +71,7 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   const { health, ask, readInitialNote, onVaultChanged, streams, wait, isOpen } = deps
   try {
     while (isOpen()) {
-      const vault = (await ask()) as { scan: { error?: string; isReady?: boolean } }
+      const vault = await ask()
       const note = await readInitialNote()
       if (!isOpen()) return
       if (note) {
