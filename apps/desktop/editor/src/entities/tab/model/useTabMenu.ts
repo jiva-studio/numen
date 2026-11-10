@@ -183,7 +183,9 @@ export function useWindowTabMenu(deps: WindowTabMenuDeps) {
     moveCommand: deps.moveCommand,
     slots,
     runCommand: (command, target, itemId, values) =>
-      commands?.run(command, target, itemId, values) ?? Promise.resolve(),
+      commands
+        ? commands.run(command, target, itemId, values).then(() => undefined)
+        : Promise.resolve(),
     listItems: (command, target) => commands?.listItems(command, target) ?? Promise.resolve([]),
     getTabTarget: (id) => getTabFileTarget(windowTabs, id),
     ...(deps.onHighlight ? { onHighlight: deps.onHighlight } : {}),
