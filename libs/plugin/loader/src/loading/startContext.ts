@@ -69,7 +69,6 @@ export interface StartScope {
   readonly end: () => void
 }
 
-/** Wraps the parts of a context, and the services in them, with what the start keeps. */
 function createContextWrapper(
   keeper: Keeper,
   subscriptionLists: Set<Disposable[]>,

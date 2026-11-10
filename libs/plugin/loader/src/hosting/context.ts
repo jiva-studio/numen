@@ -229,12 +229,10 @@ function createTabs(host: PluginContextHost): PluginTabs {
   }
 }
 
-/** A service the host has, guarded; the key is left out where the host has none. */
 function guarded<S, G>(service: S | undefined, guard: (service: S) => G): G | undefined {
   return service === undefined ? undefined : guard(service)
 }
 
-/** Sets the keys whose value is defined, so the result holds no key with an undefined value. */
 function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
   const picked: Partial<T> = {}
   for (const key of Object.keys(parts) as (keyof T)[]) {
