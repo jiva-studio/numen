@@ -255,3 +255,43 @@ func (w *Window) WaitForFlush(ctx context.Context) bool {
 
 // CancelFlush ends the running request and releases its waiters.
 func (w *Window) CancelFlush() { w.clients.endRequest() }
+
+func describeTasks(list []work.Task) []*v1.Task {
+	out := make([]*v1.Task, 0, len(list))
+	for _, item := range list {
+		out = append(out, &v1.Task{
+			Id:            item.ID,
+			Title:         item.Title,
+			About:         item.About,
+			Done:          item.Count,
+			Total:         item.Total,
+			Error:         item.Error,
+			IsUserStarted: item.IsUserStarted,
+			Unit:          convertUnit(item.Unit),
+			PluginId:      item.PluginID,
+			PluginName:    item.PluginName,
+			IsCancellable: item.Cancel != nil,
+			Kind:          convertKind(item.Kind),
+		})
+	}
+	return out
+}
+
+func convertUnit(in work.Unit) v1.Unit {
+	switch in {
+	case work.Bytes:
+		return v1.Unit_UNIT_BYTES
+	case work.Seconds:
+		return v1.Unit_UNIT_SECONDS
+	case work.Things:
+		return v1.Unit_UNIT_THINGS
+	}
+	return v1.Unit_UNIT_THINGS
+}
+
+func convertKind(in work.Kind) v1.TaskKind {
+	if in == work.KindNotice {
+		return v1.TaskKind_TASK_KIND_NOTICE
+	}
+	return v1.TaskKind_TASK_KIND_UNSPECIFIED
+}

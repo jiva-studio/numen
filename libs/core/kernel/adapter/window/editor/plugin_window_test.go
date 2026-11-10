@@ -83,7 +83,7 @@ func newBoundWindowWith(t *testing.T, limit time.Duration) (*State, hostendpoint
 	}))
 	line, unsubscribe := state.Notices.Places.subscribe()
 	t.Cleanup(unsubscribe)
-	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, state.Notices), limit), line
+	return state, newPluginWindow(state, nil, file.NewFocusPassages(vaultreader.Readers{}, ViewOf(state)), limit), line
 }
 
 func TestPluginWindowFocusPassagesSendsRangesToWindow(t *testing.T) {
@@ -208,7 +208,7 @@ func (f activateFixture) waitSubscribed(t *testing.T) {
 	t.Helper()
 	deadline := time.After(5 * time.Second)
 	for {
-		if err := f.state.Notices.FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
+		if err := ViewOf(f.state).FocusPlace(t.Context(), domain.Place{Path: "notes/Heron.md"}); err != nil {
 			t.Fatal(err)
 		}
 		select {

@@ -41,7 +41,7 @@ func (o *ownership) acceptTab(windowID string, tab tablink.Tab) bool {
 	case !isKnown:
 		s.roster.order = append(s.roster.order, tab.ID)
 	case previous.WindowID == windowID:
-	case s.presence.isLive(previous.WindowID):
+	case s.roster.presence.isLive(previous.WindowID):
 		return false
 	}
 	o.setOwner(windowID, tab)

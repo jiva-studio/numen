@@ -105,7 +105,7 @@ func TestMoveIntoAWindowEndsWhenItsWatchCloses(t *testing.T) {
 	r, clock := newTestRegistry(t)
 	writeTabs(r, "window-a", []tablink.Tab{plex("plex:2", "Orbits")})
 	writeTabs(r, "window-b", []tablink.Tab{plex("plex:3", "Tides")})
-	target := r.state.presence.watches["window-b"][0]
+	target := r.state.roster.presence.watches["window-b"][0]
 	result := r.Move("window-a", "window-b", newOrbits())
 
 	target.Close()
@@ -173,7 +173,7 @@ func TestTargetReportBeforeAcceptDoesNotChangeTheOwner(t *testing.T) {
 func TestTargetReportBeforeAcceptIsNoClaim(t *testing.T) {
 	r, _ := newTestRegistry(t)
 	writeTabs(r, "window-a", []tablink.Tab{plex("plex:1", "A"), plex("plex:2", "Orbits")})
-	source := r.state.presence.watches["window-a"][0]
+	source := r.state.roster.presence.watches["window-a"][0]
 	writeTabs(r, "window-b", nil)
 	r.Move("window-a", "window-b", newOrbits())
 	writeTabs(r, "window-b", []tablink.Tab{plex("plex:2", "Orbits")})

@@ -251,9 +251,9 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	container.SetPluginVaultPath(cfg, opened.GetCurrentVault().Path)
+	container.SetPluginVaultPath(cfg, opened.State.GetCurrentVault().Path)
 	getShownVault := func() (domain.Vault, bool) {
-		current := opened.GetCurrentVault()
+		current := opened.State.GetCurrentVault()
 		return current, current.Path != ""
 	}
 	err = container.InstallPluginVault(cfg, registry, db, getShownVault, container.PluginVaultHooks{
@@ -298,7 +298,7 @@ func makeWindow(app *application.App, opened *editor.Installation) *application.
 
 func getMainWindowOptions(opened *editor.Installation) application.WebviewWindowOptions {
 	return frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
 		Width:          1280,
 		Height:         860,
 		URL:            "/",
@@ -328,7 +328,7 @@ const (
 
 func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
-		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
+		Title:          getWindowTitle(opened.State.GetCurrentVault(), opened.State.Runtime.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
 		Height:         secondaryWindowHeight,
 		URL:            getSecondaryWindowURL(tab),
@@ -359,7 +359,7 @@ func connectWindow(
 ) {
 	opened.SetFolderDialog(folderdialog.New(window))
 
-	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
+	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.State.GetCurrentVault(), open)) }
 	opened.State.NotifyOpenTabs = naming
 
 	window.OnWindowEvent(events.Common.WindowFilesDropped, func(event *application.WindowEvent) {

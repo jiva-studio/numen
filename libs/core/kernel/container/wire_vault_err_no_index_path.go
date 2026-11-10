@@ -166,7 +166,7 @@ func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Sc
 	}
 }
 
-func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view windowport.Window) *query.FocusNote {
+func vaultFocusNote(_ vaultWiring, refs noteport.NoteRefs, view query.PlaceFocus) *query.FocusNote {
 	return query.NewFocusNote(refs, view)
 }
 

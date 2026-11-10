@@ -12,7 +12,7 @@ import (
 
 func TestFindLexicalLimitsWithinPathPrefix(t *testing.T) {
 	db := searchFixture(t)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
 		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
@@ -44,7 +44,7 @@ func TestAPathPrefixIsNotAPattern(t *testing.T) {
 	source{path: "aXb/two.md", kind: "note", large: "zebra", smalls: []string{"zebra"}}.save(t, db)
 	source{path: "100%/three.md", kind: "note", large: "zebra", smalls: []string{"zebra"}}.save(t, db)
 	source{path: "1000/four.md", kind: "note", large: "zebra", smalls: []string{"zebra"}}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	for prefix, want := range map[string]string{"a_b/": "a_b/one.md", "100%": "100%/three.md"} {
 		got, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "zebra", Kinds: nil, Limit: 10, IsGrowing: false, PathPrefix: prefix})
@@ -60,7 +60,7 @@ func TestGetNamedPassagesLimitsWithinPathPrefix(t *testing.T) {
 		path: "lib/guide.epub", kind: "file", producer: "ocr", large: "text", opens: []string{"Gardening"}, smalls: []string{"x"},
 	}.save(t, db)
 	source{path: "notes/Gardening.md", kind: "note", large: "text", opens: []string{"Gardening notes"}, smalls: []string{"y"}}.save(t, db)
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 
 	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindNote, domain.KindFile}} {
 		got, err := queries.GetNamedPassages(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "gardening", Kinds: kinds, Limit: 1, IsGrowing: false, PathPrefix: "notes/"})
@@ -80,7 +80,7 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 	source{path: "notes/far.md", kind: "note", hash: "h-far", large: "large far", smalls: []string{"first far"}}.save(t, db)
 	embed(t, db, vaultA, "notes/far.md", 0x0F)
 
-	got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+	got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil {
@@ -90,14 +90,14 @@ func TestFindNearestWithinPathPrefixReturnsOnlyPrefixChunks(t *testing.T) {
 		t.Errorf("one passage under notes/ is %v, want the note although 24 nearer chunks lie elsewhere", getSources(got))
 	}
 
-	kinded, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+	kinded, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Kinds: []domain.SourceKind{domain.KindNote}, Limit: 1, Floor: -1, PathPrefix: "notes/",
 	})
 	if err != nil || len(kinded) != 1 {
 		t.Errorf("a prefix with a kind found %d, %v", len(kinded), err)
 	}
 
-	none, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+	none, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 		Recipe: recipe, Vector: seedVector(0xF0), Limit: 3, Floor: -1, PathPrefix: "elsewhere/",
 	})
 	if err != nil || len(none) != 0 {
@@ -115,7 +115,7 @@ func TestFindNearestWithinPathPrefixFindsAPathThatIsNotUTF8(t *testing.T) {
 	}
 
 	for prefix, want := range map[string]string{"notes/": "notes/\xff.md", "\xff": "\xff\xff.md"} {
-		got, err := db.ChunkQueries().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
+		got, err := db.ChunkSearch().FindNearest(t.Context(), vaultA, sourcedomain.NearestQuery{
 			Recipe: recipe, Vector: seedVector(0xF0), Limit: 10, Floor: -1, PathPrefix: prefix,
 		})
 		if err != nil {
@@ -148,7 +148,7 @@ func openShelfIndex(t *testing.T, shelf string) (*index.DB, string) {
 func TestAPathPrefixMatchesTheFolderInEitherNormalForm(t *testing.T) {
 	for _, stored := range []string{shelfDecomposed, shelfComposed} {
 		db, book := openShelfIndex(t, stored)
-		queries := db.ChunkQueries()
+		queries := queriesOf(db)
 		for _, prefix := range []string{shelfComposed + "/", shelfDecomposed + "/"} {
 			lexical, err := queries.FindLexical(t.Context(), vaultA, sourcedomain.LexicalQuery{Text: "tea", Limit: 10, PathPrefix: prefix})
 			if err != nil || !slices.Equal(slices.Compact(getSources(lexical)), []string{book}) {

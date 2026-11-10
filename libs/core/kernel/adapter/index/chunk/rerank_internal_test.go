@@ -55,11 +55,11 @@ func (d scriptedDriver) Open(string) (driver.Conn, error)             { return d
 func (d scriptedDriver) Connect(context.Context) (driver.Conn, error) { return d.conn, nil }
 func (d scriptedDriver) Driver() driver.Driver                        { return d }
 
-func scripted(t *testing.T, data [][]driver.Value, fail error) *Queries {
+func scripted(t *testing.T, data [][]driver.Value, fail error) *Search {
 	t.Helper()
 	db := sql.OpenDB(scriptedDriver{conn: &scriptedConn{data: data, fail: fail}})
 	testsupport.CloseAfter(t, db)
-	return NewQueries(db)
+	return NewSearch(db)
 }
 
 func signed(values ...int8) []byte {

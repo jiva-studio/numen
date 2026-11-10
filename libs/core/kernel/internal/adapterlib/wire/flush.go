@@ -5,55 +5,10 @@ import (
 	"sync"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 )
-
-func describeTasks(list []work.Task) []*v1.Task {
-	out := make([]*v1.Task, 0, len(list))
-	for _, item := range list {
-		out = append(out, &v1.Task{
-			Id:            item.ID,
-			Title:         item.Title,
-			About:         item.About,
-			Done:          item.Count,
-			Total:         item.Total,
-			Error:         item.Error,
-			IsUserStarted: item.IsUserStarted,
-			Unit:          convertUnit(item.Unit),
-			PluginId:      item.PluginID,
-			PluginName:    item.PluginName,
-			IsCancellable: item.Cancel != nil,
-			Kind:          convertKind(item.Kind),
-		})
-	}
-	return out
-}
-
-func convertUnit(in work.Unit) v1.Unit {
-	switch in {
-	case work.Bytes:
-		return v1.Unit_UNIT_BYTES
-	case work.Seconds:
-		return v1.Unit_UNIT_SECONDS
-	case work.Things:
-		return v1.Unit_UNIT_THINGS
-	}
-	return v1.Unit_UNIT_THINGS
-}
 
 // flushState is what a page has left when it answers.
 type flushState int
-
-const (
-	// flushUnanswered is a client that has not responded to this request.
-	flushUnanswered flushState = iota
-	// flushWritten is a client with no unsaved work left.
-	flushWritten
-	// flushUnsaved is a client with unwritten work while the user decides what to
-	// do with it.
-	flushUnsaved
-)
 
 func parseFlushResult(result v1.FlushResult) flushState {
 	switch result {
@@ -247,9 +202,12 @@ func (l *flushCoordinator) updateProgress() {
 	close(r.allWritten)
 }
 
-func convertKind(in work.Kind) v1.TaskKind {
-	if in == work.KindNotice {
-		return v1.TaskKind_TASK_KIND_NOTICE
-	}
-	return v1.TaskKind_TASK_KIND_UNSPECIFIED
-}
+const (
+	// flushUnanswered is a client that has not responded to this request.
+	flushUnanswered flushState = iota
+	// flushWritten is a client with no unsaved work left.
+	flushWritten
+	// flushUnsaved is a client with unwritten work while the user decides what to
+	// do with it.
+	flushUnsaved
+)

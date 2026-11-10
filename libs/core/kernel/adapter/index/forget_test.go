@@ -239,7 +239,7 @@ func TestTheVaultThatIsCachedStillAnswers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	queries := db.ChunkQueries()
+	queries := queriesOf(db)
 	lexical, err := queries.FindLexical(ctx, getSecond().ID, sourcedomain.LexicalQuery{Text: "second", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)

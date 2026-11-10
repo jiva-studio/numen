@@ -1,8 +1,6 @@
 package editor
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -44,30 +42,6 @@ func (n *Notices) SubscribeEdits() (<-chan domain.Edit, func()) { return n.Edits
 // PublishChange tells the views drawing the vault that the paths changed.
 func (n *Notices) PublishChange(paths ...string) {
 	n.ChangeEvents.publish(window.Change{Paths: paths})
-}
-
-// FocusPlace asks the clients to show the place.
-func (n *Notices) FocusPlace(_ context.Context, pos domain.Place) error {
-	n.Places.publish(pos)
-	return nil
-}
-
-// ShowMove tells the clients that a note moved.
-func (n *Notices) ShowMove(_ context.Context, went domain.Move) error {
-	n.ChangeEvents.publish(window.Change{Renamed: []domain.Move{went}})
-	return nil
-}
-
-// ShowEdit tells the clients that a change to a note is in progress.
-func (n *Notices) ShowEdit(_ context.Context, edit domain.Edit) error {
-	n.Edits.publish(edit)
-	return nil
-}
-
-// ActivateTab asks the clients to bring the tab forward.
-func (n *Notices) ActivateTab(_ context.Context, id string) error {
-	n.TabIDs.publish(id)
-	return nil
 }
 
 type broadcaster[T any] struct {

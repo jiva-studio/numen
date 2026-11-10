@@ -80,7 +80,7 @@ func (w *Watch) Close() {
 	s := w.windows.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.presence.removeWatch(w) {
+	if !s.roster.presence.removeWatch(w) {
 		return
 	}
 	s.transit.endMovesInto(w.windowID)

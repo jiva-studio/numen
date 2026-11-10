@@ -28,7 +28,7 @@ type candidate struct {
 	order      int
 }
 
-func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
+func (q *Search) rerank(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) ([]int64, error) {
 	ranked, err := q.rankCandidates(ctx, recipe, query, candidates, of, floor)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 	return out, nil
 }
 
-func (q *Queries) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []candidate, err error) {
+func (q *Search) rankCandidates(ctx context.Context, recipe string, query []float32, candidates []int64, of []domain.SourceKind, floor float64) (_ []candidate, err error) {
 	if len(candidates) == 0 {
 		return nil, nil
 	}

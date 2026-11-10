@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/tablinkport"
 )
 
 // timers is a Schedule that a test fires manually.
@@ -381,7 +380,7 @@ func readUntilSync(t *testing.T, watch *Watch) received {
 
 func writeTabs(r *registry, windowID string, tabs []tablink.Tab) {
 	r.state.mu.Lock()
-	isWatched := len(r.state.presence.watches[windowID]) > 0
+	isWatched := len(r.state.roster.presence.watches[windowID]) > 0
 	r.state.mu.Unlock()
 	if !isWatched {
 		r.Watch(windowID)
@@ -759,7 +758,7 @@ type registry struct {
 	state *state
 }
 
-func newRegistry(grace time.Duration, schedule tablinkport.Schedule) (*registry, error) {
+func newRegistry(grace time.Duration, schedule Schedule) (*registry, error) {
 	tabs, err := New(grace, schedule, &testEvents{})
 	if err != nil {
 		return nil, err

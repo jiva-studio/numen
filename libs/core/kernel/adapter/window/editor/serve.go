@@ -137,9 +137,6 @@ func (o *Installation) WaitForFlush(ctx context.Context) bool {
 	return o.State.Window.WaitForFlush(ctx)
 }
 
-// GetCurrentVault is the vault the window has open.
-func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }
-
 // Notes returns the use cases this window works its vault through.
 // Other components working the same vault in this process, such as agent
 // tools, use the same instances and share error behavior and dependencies.
