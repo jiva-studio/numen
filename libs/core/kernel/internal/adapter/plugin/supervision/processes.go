@@ -207,7 +207,7 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 	}
 	launcher := p.getLauncher()
 	if launcher == nil {
-		launcher = func(ctx context.Context, plug manifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error) {
+		launcher = func(ctx context.Context, _ manifest.Discovered, port int, token string) (*os.Process, io.ReadCloser, error) {
 			return p.launchDefault(ctx, launch, port, token)
 		}
 	}
@@ -241,8 +241,10 @@ func (p *Processes) startPluginProcess(ctx context.Context, launch Launch, sup *
 		return NoEndpoint(), err
 	}
 
-	err = p.sups.AttachProcess(ctx, plug.Manifest.ID, sup, proc, endpoint, handshake.Listeners, p.clock.Now(), func() {
-		p.CloseStdin(plug.Manifest.ID, proc.Pid)
+	err = p.sups.AttachProcess(ctx, ProcessAttachment{
+		PluginID: plug.Manifest.ID, Supervisor: sup, Process: proc, Endpoint: endpoint,
+		Listeners: handshake.Listeners, Now: p.clock.Now(),
+		OnExit: func() { p.CloseStdin(plug.Manifest.ID, proc.Pid) },
 	})
 	if err != nil {
 		p.cleanupAbortedProcess(proc, stdout, plug.Manifest.ID)

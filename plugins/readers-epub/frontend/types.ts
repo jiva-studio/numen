@@ -12,14 +12,14 @@ export interface SpineDocument {
 }
 
 /** One section or chapter named by a book. */
-export interface BookPart {
+interface BookPart {
   readonly title: string
   readonly offset: number
   readonly level: number
 }
 
 /** One page label of a printed edition. */
-export interface PrintedPage {
+interface PrintedPage {
   readonly label: string
   readonly offset: number
 }

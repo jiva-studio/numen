@@ -76,13 +76,21 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	stopper := supervision.NewStopper(sups, processes, services, clock, errs.Report)
 
 	config := newConfigPush(registry, sups, errs.Report)
-	activation := newActivation(registry, mode, sups, processes, failures, config, clock)
+	activation := &Activation{
+		registry: registry, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock,
+	}
 	events := newEvents(registry, mode, sups, activation, clock)
-	listeners := newListeners(registry, mode, sups, activation, failures, clock, errs.Report)
+	listeners := &Listeners{
+		registry: registry, mode: mode, sups: sups, activator: activation, failures: failures, clock: clock,
+		report: errs.Report, bindings: make(map[string]map[string]listenerBinding),
+	}
 
 	return &Host{
 		Registry:     registry,
-		Discovery:    newDiscovery(registry, mode, sups, stopper, listeners, files, config, errs.Report, target, dirs),
+		Discovery: &Discovery{
+			registry: registry, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
+			storage: files, scans: config, report: errs.Report, dirs: dirs, target: target,
+		},
 		Activation:   activation,
 		Retry:        newRetry(registry, failures, activation, listeners),
 		Processes:    processes,

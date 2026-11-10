@@ -213,13 +213,23 @@ func (s *Supervisors) acquireRunningLocked(pluginID string, sup *lifecycle.Super
 	return endpoint, true
 }
 
+// ProcessAttachment is what AttachProcess records for a started plugin process.
+type ProcessAttachment struct {
+	PluginID   string
+	Supervisor *lifecycle.Supervisor
+	Process    *os.Process
+	Endpoint   plugindomain.Endpoint
+	Listeners  map[string]int
+	Now        time.Time
+	OnExit     func()
+}
+
 // AttachProcess records a process the supervisor now tracks, with its endpoint and the ports of its
 // listeners, and takes the first hold on it. It fails where the start was aborted meanwhile. onExit
 // runs after the endpoint is forgotten when the process exits.
-func (s *Supervisors) AttachProcess(
-	ctx context.Context, pluginID string, sup *lifecycle.Supervisor, proc *os.Process,
-	endpoint plugindomain.Endpoint, listeners map[string]int, now time.Time, onExit func(),
-) error {
+func (s *Supervisors) AttachProcess(ctx context.Context, attach ProcessAttachment) error {
+	pluginID, sup, proc, endpoint := attach.PluginID, attach.Supervisor, attach.Process, attach.Endpoint
+	now, listeners, onExit := attach.Now, attach.Listeners, attach.OnExit
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if sup.GetState() != lifecycle.StateActivating {

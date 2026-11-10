@@ -15,7 +15,8 @@ import (
 // The shapes below are what a plugin sees. A change of the library that alters one of them fails here, so
 // it is a decision about the plugins and not a side effect.
 
-var pinned = map[string]string{
+func getPinnedShapes() map[string]string {
+	return map[string]string{
 	"Address":            "struct{Scheme string; Value string}",
 	"Backlink":           "struct{ResolvedLink domain.ResolvedLink; SourceRole domain.LinkRole}",
 	"ByteRange":          "struct{Start int; End int}",
@@ -42,6 +43,7 @@ var pinned = map[string]string{
 	"VaultID":            "string",
 	"VaultProblem":       "struct{Path string; Kind domain.Check; Detail string; Target domain.Address; Candidates []string}",
 	"VersionText":        "struct{version domain.TextVersion; Text string; segments []domain.TextSegment; offsets []int}",
+	}
 }
 
 func describe(t reflect.Type) string {
@@ -49,8 +51,7 @@ func describe(t reflect.Type) string {
 		return t.Kind().String()
 	}
 	fields := make([]string, 0, t.NumField())
-	for i := range t.NumField() {
-		field := t.Field(i)
+	for field := range t.Fields() {
 		fields = append(fields, field.Name+" "+field.Type.String())
 	}
 	return "struct{" + strings.Join(fields, "; ") + "}"
@@ -90,6 +91,7 @@ func TestThePluginsSeeTheShapesOfTheNotesLibraryTheyAreBuiltAgainst(t *testing.T
 		names = append(names, name)
 	}
 	slices.Sort(names)
+	pinned := getPinnedShapes()
 	var report strings.Builder
 	for _, name := range names {
 		got := describe(shapes[name])

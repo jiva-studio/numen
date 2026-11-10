@@ -45,16 +45,6 @@ type Discovery struct {
 	target    string
 }
 
-func newDiscovery(
-	registry *Registry, mode *Mode, sups *supervision.Supervisors, stopper pluginStopper, listeners listenerControl,
-	storage cacheRemover, scans scanRecorder, report func(error), target string, dirs []string,
-) *Discovery {
-	return &Discovery{
-		registry: registry, mode: mode, sups: sups, stopper: stopper, listeners: listeners,
-		storage: storage, scans: scans, report: report, dirs: dirs, target: target,
-	}
-}
-
 // Discover scans the configured directories and synchronizes the registered plugins, and the ports bound
 // for their listeners, with what is on disk. A plugin whose directory could not be read stays
 // registered.

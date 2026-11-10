@@ -41,16 +41,6 @@ type Listeners struct {
 	bindings map[string]map[string]listenerBinding
 }
 
-func newListeners(
-	registry *Registry, mode *Mode, sups *supervision.Supervisors, activator pluginActivator,
-	failures *supervision.Failures, clock machineport.Clock, report func(error),
-) *Listeners {
-	return &Listeners{
-		registry: registry, mode: mode, sups: sups, activator: activator, failures: failures, clock: clock, report: report,
-		bindings: make(map[string]map[string]listenerBinding),
-	}
-}
-
 // listenerBinding is a bound listener port and the proxy that forwards its connections.
 type listenerBinding struct {
 	port  int

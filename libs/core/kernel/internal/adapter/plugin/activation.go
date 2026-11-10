@@ -25,15 +25,6 @@ type Activation struct {
 	clock     machineport.Clock
 }
 
-func newActivation(
-	registry *Registry, mode *Mode, sups *supervision.Supervisors, processes *supervision.Processes,
-	failures *supervision.Failures, config *ConfigPush, clock machineport.Clock,
-) *Activation {
-	return &Activation{
-		registry: registry, mode: mode, sups: sups, processes: processes, failures: failures, config: config, clock: clock,
-	}
-}
-
 // ClientLookup finds the HTTP client for calls to the plugin process an endpoint belongs to.
 func (a *Activation) ClientLookup() transport.ClientLookup {
 	return transport.NewClientLookup(a.sups.Clients())
