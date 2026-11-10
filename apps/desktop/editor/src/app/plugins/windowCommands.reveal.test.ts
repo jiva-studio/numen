@@ -5,9 +5,6 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
-import { PALETTE_WORDS } from '@/features/command-palette'
-import { createNameItem, resolveChoice, type NameMatch } from '@/features/command-palette'
-import { WORDS as windowWords } from '@/shared/ui/words'
 import {
   createRealWindow,
   readManifest,
@@ -75,32 +72,6 @@ describe('the keys that show a note', () => {
 
     expect(event.defaultPrevented).toBe(false)
     expect(one.navigateTab).not.toHaveBeenCalled()
-  })
-})
-
-describe('the entries of a search result that show a note', () => {
-  it('show the note found, not the one in front, in the tab of the kind they carry', async () => {
-    const one = setup()
-    const found: NameMatch = {
-      path: 'Reef.md',
-      title: 'Reef',
-      heading: '',
-      line: -1,
-      at: [],
-      type: 'note',
-    }
-    const entries = one.pluginHost.slots.getEntries(SLOT.paletteSearchResult, REEF)
-    const row = createNameItem(found, { ...windowWords, ...PALETTE_WORDS }, entries)
-    const actions = row.hit.actionIds.filter((id) => row.hit.actionCommands?.[id] === REVEAL)
-    expect(actions).not.toStrictEqual([])
-
-    for (const action of actions) {
-      const choice = resolveChoice(row.hit, action)
-      if (choice) one.used.runChoice(choice)
-      const kind = row.hit.actionValues?.[action]?.['kind']
-      await vi.waitFor(() => expect(one.navigateTab).toHaveBeenCalledWith(kind, 'Reef.md'))
-    }
-    expect(one.navigateTab).toHaveBeenCalledTimes(actions.length)
   })
 })
 

@@ -14,7 +14,7 @@ import {
   createPluginInfo,
   createSecretAnswer,
   createSettingsState,
-} from '@/testing/installation'
+} from '@/pages/settings/testing/installation'
 import {
   click,
   dispose,

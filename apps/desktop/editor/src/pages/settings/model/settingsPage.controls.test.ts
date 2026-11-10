@@ -10,7 +10,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
-import { SettingsTab } from '@/pages/settings'
+import SettingsTab from '../ui/SettingsTab.vue'
 import { createTestTabs } from '@/testing/tabs'
 import {
   createSettingsStore,
@@ -21,7 +21,8 @@ import {
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/model/notices/messages'
 import { WORDS } from '@/shared/ui/words'
-import { createWindowSettingsPart } from './windowSettings'
+import { createWindowSettings } from '@/features/settings-commands'
+import { createSettingsPage } from './createSettingsPage'
 
 type Tree = Record<string, Record<string, unknown>>
 
@@ -179,15 +180,20 @@ const create = (timing: Timing) => {
   } as unknown as SettingsCore
   restore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
-  const settings = createWindowSettingsPart({
-    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
-    words: WORDS,
-    log,
-    windowTabs: createTestTabs(),
-    onSizeChanged: vi.fn(),
-    getSettingsViews: () => new Map(),
-    getPlatform: () => 'linux',
-  })
+  const rest = createSettingsStore(SETTINGS_WORDS, log.getWriter('configured'))
+  const windowSettings = createWindowSettings({ rest, words: WORDS, log, onSizeChanged: vi.fn() })
+  const settings = {
+    rest,
+    ...windowSettings,
+    ...createSettingsPage({
+      rest,
+      appearance: windowSettings.appearance,
+      log,
+      windowTabs: createTestTabs(),
+      getSettingsViews: () => new Map(),
+      getPlatform: () => 'linux',
+    }),
+  }
   const page = mount(SettingsTab, {
     props: {
       state: { ...settings.configured.state, initialPluginId: ref<string | null>('system') },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { getRegisteredViews, getSettingValues } from './settingsViews'
 import { hasPluginSettings } from './pluginSettings'
-import { createPluginInfo } from '@/testing/installation'
+import { createPluginInfo } from '@/pages/settings/testing/installation'
 
 describe('getRegisteredViews', () => {
   const declared = [

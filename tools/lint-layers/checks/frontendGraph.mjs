@@ -208,7 +208,7 @@ function isEmptyValue(node) {
   return false;
 }
 
-/** Whether an object literal is empty or holds only empty values: a stub that stands in for a part made later. */
+/** Whether an object literal is empty or holds only empty values: a stub for a part made later. */
 function isEmptyStub(node) {
   if (!ts.isObjectLiteralExpression(node)) return false;
   return node.properties.every((one) => (ts.isPropertyAssignment(one) && isEmptyValue(one.initializer)) || (ts.isMethodDeclaration(one) && isEmptyValue(one)));
@@ -264,15 +264,16 @@ export function findLateBindings(files) {
   return { findings: shipped.flatMap(({ file, text }) => findLateBindingsIn(file, text)), read: shipped.length };
 }
 
-/** The names a window's `app` layer may take from a page: a page that is made (`create<Name>Page`) or drawn (`<Name>Screen`). */
-const PAGE_NAME = /^(?:create[A-Z]\w*Page|[A-Z]\w*Screen)$/;
+/** The names a window's `app` layer may take from a page: a page that is made (`create<Name>Page`). A component may also be drawn by a component of `app`. */
+const PAGE_NAME = /^create[A-Z]\w*Page$/;
+const COMPONENT_NAME = /^[A-Z]\w*$/;
 
 /** The page specifiers: `@/pages/...` as the windows write it. */
 const isPageSpecifier = (specifier) => /^@\/pages(?:\/|$)/.test(specifier);
 
 /**
  * The imports of `pages` that a layer below it or `app` must not make. `entities` and `features` import no page. `app`
- * composes pages, so it takes a page's `create<Name>Page` or `<Name>Screen` and a component, never a state a page owns
+ * composes pages, so it takes a page's `create<Name>Page`, and a component of `app` draws a page's component, never a state a page owns
  * for the window (a `use<Name>` composable, a store, a list).
  *
  * @param {Array<{ file: string, text: string }>} files Shipped files under `src/`, with their text
@@ -303,7 +304,8 @@ export function findPageImports(files) {
         findings.push({ file, line, symbol: `app imports ${specifier} as a whole` });
         continue;
       }
-      for (const name of names.filter((one) => !PAGE_NAME.test(one))) findings.push({ file, line, symbol: `app takes ${name} from ${specifier}` });
+      const isComponent = file.endsWith(".vue");
+      for (const name of names.filter((one) => !PAGE_NAME.test(one) && !(isComponent && COMPONENT_NAME.test(one)))) findings.push({ file, line, symbol: `app takes ${name} from ${specifier}` });
     }
   }
   return { findings, read: shipped.length };

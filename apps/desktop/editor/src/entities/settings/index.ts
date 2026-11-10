@@ -2,9 +2,6 @@
 export { DESIGNED, MODES, SCHEMES } from './lib/appearance'
 export type {
   Model,
-  Configuration,
-  PluginSettingCondition,
-  Presence,
   SettingEdit,
   PluginInfo,
   PluginSettingInfo,
@@ -36,5 +33,4 @@ export { createPluginRetry } from './model/retry'
 export { getFirstSecretName, getNextSecretName } from './model/serviceNames'
 export { getServiceInfo } from './api/services'
 export { createChangeFollower } from './model/changeFollower'
-export { watchSettings, choosePluginPath, getPluginData, deletePluginData } from './api/settings'
-export { getSettingAt } from './lib/settingAt'
+export { choosePluginPath, getPluginData, deletePluginData } from './api/settings'

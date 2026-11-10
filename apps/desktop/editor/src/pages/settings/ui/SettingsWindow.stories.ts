@@ -7,18 +7,19 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
+import { Settings as SettingsIcon } from '@lucide/vue'
 import { ref, type Component } from 'vue'
 
-import { SettingsTab, type Installation } from '@/pages/settings'
+import type { Installation } from '../types'
+import SettingsTab from './SettingsTab.vue'
 import type { Model, PluginInfo } from '@/entities/settings'
-import { findTabKindIcon } from '@/entities/tab'
 import { SETTINGS } from '@/entities/tab'
-import { createInstallation, createSettingsState } from '@/testing/installation'
+import { createInstallation, createSettingsState } from '@/pages/settings/testing/installation'
 
 /** Every tab this file draws, under the identity the window opens it at. */
 const TABS: readonly Tab[] = [{ id: SETTINGS, title: 'Settings' }]
 
-const getTabIcon = (id: string) => findTabKindIcon(id.split(':')[0] ?? id)
+const getTabIcon = () => SettingsIcon
 
 const window = (tab: string, tabPane: Component, state: unknown) => ({
   components: { WorkspaceLayout },

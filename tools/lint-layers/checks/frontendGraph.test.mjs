@@ -225,6 +225,7 @@ describe("the page rule of the layers around pages", () => {
   it("passes app that composes a page, draws a screen, and a file that imports no page", () => {
     assert.deepEqual(at("app/window/a.ts", "import { createSettingsPage } from \"@/pages/settings\""), []);
     assert.deepEqual(at("app/App.vue", "<script setup lang=\"ts\">\nimport { WelcomeScreen } from \"@/pages/welcome\"\n</script>"), []);
+    assert.deepEqual(at("app/window/a.ts", "import { WelcomeScreen } from \"@/pages/welcome\""), ["app takes WelcomeScreen from @/pages/welcome"]);
     assert.deepEqual(at("features/tabs/model/a.ts", "import { x } from \"@/entities/tab\""), []);
   });
 

@@ -49,19 +49,19 @@ export interface ShellServices {
 
 /**
  * The one place the host and the window depend on each other: the host is made first, because the
- * services are made from what it holds (its notices and its tab). The window opens the port with the
+ * services are made from its notices and its tab. The window opens the port with the
  * services it made. A read before that is a fault of the composition and throws.
  */
 export function createShellPort() {
-  let opened: ShellServices | undefined
+  let made: ShellServices | undefined
   return {
     getServices: (): ShellServices => {
-      if (opened === undefined) throw new Error('The host was asked before the window was composed')
-      return opened
+      if (made === undefined) throw new Error('The host was asked before the window was composed')
+      return made
     },
     open: (services: ShellServices): void => {
-      if (opened !== undefined) throw new Error('The port of the host is open already')
-      opened = services
+      if (made !== undefined) throw new Error('The port of the host is open already')
+      made = services
     },
   }
 }

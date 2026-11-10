@@ -5,18 +5,31 @@
  */
 import { MODEL_PRESENCE, type ModelPresenceCode } from '@numen/core-client'
 import { installCoreAnswers, type CoreAnswers } from '@numen/core-client/testing'
+import type { PluginSettingCondition } from '@numen/plugin-manager'
 import type {
-  Configuration,
   Model,
   PluginInfo,
-  PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
-  Presence,
   SecretMenu,
   SecretSection,
   SettingEdit,
 } from '@/entities/settings'
+
+type Presence = Model['presence']
+
+/** Every setting in effect and the models offered, as a test core answers them. */
+interface Configuration {
+  readonly jsonContent?: string | undefined
+  readonly written: string
+  readonly path: string
+  readonly models: readonly Model[]
+  readonly plugins?: readonly PluginInfo[] | undefined
+  readonly app?: readonly PluginSettingInfo[] | undefined
+  readonly secretSections?: readonly SecretSection[] | undefined
+  readonly secretMenus?: readonly SecretMenu[] | undefined
+  readonly credentialsPath?: string | undefined
+}
 
 const toWireOption = (option: PluginSettingOption) => ({
   value: option.value,
