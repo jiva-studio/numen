@@ -23,32 +23,37 @@ defineProps<{
 
 <style scoped>
 .tab-restore-failed {
+  --pad: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   inline-size: 100%;
   block-size: 100%;
-  padding: 2rem;
+  padding: var(--pad);
   box-sizing: border-box;
 }
 
 .tab-restore-failed__content {
+  --max-width: 28rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  max-inline-size: 28rem;
+  max-inline-size: var(--max-width);
 }
 
 .tab-restore-failed__icon {
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  margin-block-end: 0.75rem;
+  --size: 2.5rem;
+  --margin-end: 0.75rem;
+  inline-size: var(--size);
+  block-size: var(--size);
+  margin-block-end: var(--margin-end);
   color: var(--numen-caution-fg);
 }
 
 .tab-restore-failed__title {
-  margin: 0 0 0.5rem 0;
+  --margin: 0 0 0.5rem 0;
+  margin: var(--margin);
   font-size: var(--numen-text-4);
   font-weight: 600;
   color: var(--numen-ink);

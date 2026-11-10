@@ -37,11 +37,13 @@ defineProps<{
   --secret-name-width: 11rem;
   --secret-readers-width: 12rem;
 
+  --gap: 0.5rem;
+  --pad-block: 0.375rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) var(--secret-readers-width) var(--numen-action-size);
   align-items: start;
-  gap: 0.5rem;
-  padding-block: 0.375rem;
+  gap: var(--gap);
+  padding-block: var(--pad-block);
 }
 
 .secret-row--named {
@@ -51,8 +53,10 @@ defineProps<{
 }
 
 .secret-row__actions {
+  --gap: 0.125rem;
+  --min-width: 1.75rem;
   display: flex;
-  gap: 0.125rem;
-  min-inline-size: 1.75rem;
+  gap: var(--gap);
+  min-inline-size: var(--min-width);
 }
 </style>
