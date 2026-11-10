@@ -260,10 +260,75 @@ export function findSuppressions(sources) {
 
 const SUPPRESSION_FILES = /\.(go|ts|tsx|mts|cts|js|mjs|cjs|vue|ya?ml)$/;
 
+/** The files that hold styles or the configuration of the style linter. */
+const STYLE_FILES = /(\.(css|vue|astro)|(^|\/)\.?stylelint[^/]*)$/;
+const STYLELINT_DISABLE = /stylelint-(disable|enable)/;
+const STYLELINT_CONFIG = /(^|\/)(stylelint\.config\.[cm]?js|\.stylelintrc[^/]*|\.stylelintignore)$/;
+
+/** Files whose code is not shipped: tests, stories, fixtures, test data and the repository tools. */
+const NOT_SHIPPED = /^tools\/|(\.(test|spec|stories)\.[a-z]+|_test\.go)$|(^|\/)(testing|fixtures|testdata|e2e)\//;
+
+/** The most `Stryker disable` comments the shipped code holds: the count of the code when the cap was set, so it only falls. */
+export const STRYKER_DISABLE_CAP = 230;
+
+/**
+ * Every way a stylelint run is told to skip something: an `ignoreFiles` or `ignore` entry of a configuration,
+ * a `.stylelintignore` file, and a `stylelint-disable` comment in a stylesheet or a component.
+ */
+export function findStylelintSuppressions(sources) {
+  const found = [];
+  for (const { file, text } of sources) {
+    if (/(^|\/)\.stylelintignore$/.test(file)) found.push({ file, line: 1, symbol: ".stylelintignore" });
+    if (STYLELINT_CONFIG.test(file)) {
+      text.split("\n").forEach((line, index) => {
+        if (/\b(ignoreFiles|ignorePath|ignoreDisables|reportNeedlessDisables)\b/.test(line.replace(/\/\/.*$/, ""))) {
+          found.push({ file, line: index + 1, symbol: "stylelint ignore setting" });
+        }
+      });
+      continue;
+    }
+    text.split("\n").forEach((line, index) => {
+      if (STYLELINT_DISABLE.test(line)) found.push({ file, line: index + 1, symbol: "stylelint-disable comment" });
+    });
+  }
+  return found;
+}
+
+/** `Stryker disable [next-line] Mutators: reason`; the reason is a sentence, not a word. */
+const STRYKER_DISABLE = /Stryker disable(?: next-line)?\s+[A-Za-z]+(?:\s*,\s*[A-Za-z]+)*(?<reason>\s*:\s*\S.{9,})?/;
+
+/** The `Stryker disable` comments of shipped code, each with whether it states a reason. */
+export function findStrykerDisables(sources) {
+  const found = [];
+  for (const { file, text } of sources) {
+    if (NOT_SHIPPED.test(file) || isGenerated(text) || !/Stryker disable/.test(text)) continue;
+    for (const { line, value } of getComments(file, text)) {
+      const match = STRYKER_DISABLE.exec(value);
+      if (/Stryker disable/.test(value)) found.push({ file, line, symbol: "Stryker disable without a reason", hasReason: Boolean(match?.groups.reason) });
+    }
+  }
+  return found;
+}
+
+/** A `Stryker disable` without a reason, and more of them than the cap. */
+export function findStrykerFindings(sources, cap = STRYKER_DISABLE_CAP) {
+  const disables = findStrykerDisables(sources);
+  const found = disables.filter((one) => !one.hasReason).map(({ file, line, symbol }) => ({ file, line, symbol }));
+  if (disables.length > cap) {
+    found.push({ file: "tools/lint-layers/checks/discipline.mjs", line: 1, symbol: `${disables.length} Stryker disable comments in shipped code, cap ${cap}` });
+  }
+  return found;
+}
+
 export function verifyNoSuppressions() {
   const sources = readTrackedSources(["."], (file) => SUPPRESSION_FILES.test(file) && !file.includes("node_modules/"));
+  const styles = readTrackedSources(["."], (file) => STYLE_FILES.test(file) && !file.includes("node_modules/"));
   requireMatches("sources read for suppressions", sources.length, 500);
-  failOnFindings("Suppressions and exemptions", findSuppressions(sources));
+  requireMatches("stylesheets and components read for stylelint suppressions", styles.length, 150);
+  const stylelint = findStylelintSuppressions(styles);
+  const stryker = findStrykerDisables(sources);
+  console.log(`(stylelint suppressions: ${stylelint.length}, Stryker disable in shipped code: ${stryker.length} of ${STRYKER_DISABLE_CAP})`);
+  failOnFindings("Suppressions and exemptions", [...findSuppressions(sources), ...stylelint, ...findStrykerFindings(sources)]);
 }
 
 /* ------------------------------- Assignment ------------------------------- */
@@ -428,7 +493,7 @@ export const DISCIPLINE_VERIFIERS = [
     id: "no-suppressions",
     scope: "libs",
     module: "quality",
-    name: "Zero Suppressions (no nolint, eslint-disable, @ts-ignore, @ts-expect-error, exclusions, file exemptions)",
+    name: "Zero Suppressions (no nolint, eslint-disable, @ts-ignore, @ts-expect-error, stylelint ignores, exclusions, file exemptions; Stryker disable needs a reason and stays under a cap)",
     run: verifyNoSuppressions,
   },
   {

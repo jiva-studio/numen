@@ -4,8 +4,8 @@
     "files": "error",
     "dependencies": "error",
     "unlisted": "error",
-    "exports": "warn",
-    "types": "warn"
+    "exports": "error",
+    "types": "error"
   },
   "ignoreWorkspaces": [
     ".",
@@ -16,25 +16,27 @@
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
-        "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
         "src/**/*.{ts,vue,mdx,css}",
-        ".storybook/**/*.{ts,js}"
-      ]
+        ".storybook/**/*.{ts,js}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "libs/ui/workbench": {
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
-        "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
         "src/**/*.{ts,vue,mdx,css}",
-        ".storybook/**/*.{ts,js}"
-      ]
+        ".storybook/**/*.{ts,js}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "libs/core/protocol": {
       "entry": [
@@ -54,72 +56,70 @@
       ]
     },
     "libs/core/client": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
       "project": [
-        "src/**/*.ts"
-      ]
+        "src/**/*.ts",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "libs/plugin/loader": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
       "project": [
-        "src/**/*.ts"
-      ]
+        "src/**/*.ts",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "libs/plugin/manager": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
       "project": [
-        "src/**/*.{ts,vue}"
-      ]
+        "src/**/*.{ts,vue}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "libs/plugin/sdk-ts": {
       "entry": [
-        "src/**/*.test.ts",
-        "test/**/*.test.ts",
         "stories/vitest.config.ts",
         "stories/.storybook/**/*.{ts,js}"
       ],
       "project": [
         "src/**/*.{ts,vue}",
         "test/**/*.ts",
-        "stories/**/*.{ts,js}"
-      ]
+        "stories/**/*.{ts,js}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "apps/desktop/editor": {
       "entry": [
         "src/**/*.stories.ts",
-        "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
         "src/**/*.{ts,vue}",
-        ".storybook/**/*.{ts,js}"
-      ]
+        ".storybook/**/*.{ts,js}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "apps/desktop/flashcards": {
-      "entry": [
-        "src/**/*.test.ts"
-      ],
       "project": [
-        "src/**/*.{ts,vue}"
-      ]
+        "src/**/*.{ts,vue}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     },
     "apps/mobile": {
       "entry": [
-        "src/main.ts",
-        "src/**/*.test.ts"
+        "src/main.ts"
       ],
       "project": [
-        "src/**/*.{ts,vue}"
+        "src/**/*.{ts,vue}",
+        "!**/*.test.ts"
       ],
       "ignoreDependencies": [
         "vue-router"
-      ]
+      ],
+      "vitest": false
     },
     "apps/docs": {
       "entry": [
@@ -180,12 +180,13 @@
     "plugins/*": {
       "entry": [
         "frontend/index.ts",
-        "frontend/**/*.stories.ts",
-        "frontend/**/*.test.ts"
+        "frontend/**/*.stories.ts"
       ],
       "project": [
-        "frontend/**/*.{ts,vue}"
-      ]
+        "frontend/**/*.{ts,vue}",
+        "!**/*.test.ts"
+      ],
+      "vitest": false
     }
   }
 }

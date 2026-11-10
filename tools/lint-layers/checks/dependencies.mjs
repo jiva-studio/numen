@@ -80,7 +80,8 @@ const getSlug = (dir) => dir.replace(/[^A-Za-z0-9]+/g, '-')
 
 /** The rules of one package: the first-party packages it does not reach, and no relative path out of its directory. */
 function createPackageRules(one, packages, matrix) {
-  const allowed = getAllowedPackages(one, packages, matrix)
+  // A library the matrix has no row for reaches no first-party package; `findDependencyViolations` also reports it.
+  const allowed = getAllowedPackages(one, packages, matrix) ?? []
   const rules = [
     {
       name: `${getSlug(one.dir)}-stays-in-its-directory`,
@@ -94,7 +95,6 @@ function createPackageRules(one, packages, matrix) {
       },
     },
   ]
-  if (allowed === null) return rules
   const forbidden = packages
     .filter((other) => other.name !== one.name && !allowed.includes(other.name))
     .map(getPackagePattern)
@@ -241,8 +241,10 @@ function readCruiseRun(root, run, config) {
 }
 
 /** Cruises every source root of `root` and returns the violations and the number of modules read. */
-export function findDependencyViolations(root, config = CRUISE_CONFIG) {
-  const findings = []
+export function findDependencyViolations(root, config = CRUISE_CONFIG, matrix = PACKAGE_DEPENDENCIES) {
+  const findings = listPackages(root)
+    .filter((one) => getAllowedPackages(one, [], matrix) === null)
+    .map((one) => ({ file: `${one.dir}/package.json`, line: 1, symbol: `library ${one.name} has no row in the package matrix` }))
   let cruised = 0
   for (const run of listCruiseRuns(root)) {
     const one = readCruiseRun(root, run, config)

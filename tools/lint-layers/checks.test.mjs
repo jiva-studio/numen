@@ -4,6 +4,8 @@ import {
   findNonCamelCaseJsonKeys,
   findPluginCrossings,
   findPluginSchemas,
+  findStrykerFindings,
+  findStylelintSuppressions,
   findSuppressions,
   findUnassignedPaths,
   findWorkspaceGaps,
@@ -56,6 +58,33 @@ describe("the schemas of plugins", () => {
   it("finds a protobuf schema under a plugin and none elsewhere", () => {
     const files = ["plugins/alpha/proto/alpha.proto", "plugins/alpha/backend/a.go", "libs/core/protocol/proto/numen/v1/a.proto"];
     assert.deepEqual(findPluginSchemas(files).map((one) => one.file), ["plugins/alpha/proto/alpha.proto"]);
+  });
+});
+
+describe("the stylelint suppressions", () => {
+  const found = (file, text) => findStylelintSuppressions([{ file, text }]).map((one) => one.symbol);
+  it("finds an ignore setting in the configuration and a disable comment in a stylesheet or component", () => {
+    assert.deepEqual(found("stylelint.config.mjs", 'export default {\n  ignoreFiles: ["a/**"],\n}'), ["stylelint ignore setting"]);
+    assert.deepEqual(found("a.css", "/* stylelint-disable color-no-hex */\na { color: #fff }"), ["stylelint-disable comment"]);
+    assert.deepEqual(found("A.vue", "<style>\n/* stylelint-disable-next-line x */\n</style>"), ["stylelint-disable comment"]);
+    assert.deepEqual(found(".stylelintignore", "dist\n"), [".stylelintignore"]);
+  });
+  it("passes a configuration with no ignore setting", () => {
+    assert.deepEqual(found("stylelint.config.mjs", "export default { rules: {} }"), []);
+  });
+});
+
+describe("the Stryker disable comments", () => {
+  const find = (file, text, cap) => findStrykerFindings([{ file, text }], cap).map((one) => one.symbol);
+  it("fails a disable without a reason and passes one with a sentence", () => {
+    assert.deepEqual(find("a.ts", "// Stryker disable next-line StringLiteral\nconst a = 'x'"), ["Stryker disable without a reason"]);
+    assert.deepEqual(find("a.ts", "// Stryker disable next-line StringLiteral: label of the interface\nconst a = 'x'"), []);
+    assert.deepEqual(find("a.ts", "/* Stryker disable OptionalChaining,ObjectLiteral: forwards optional capabilities */\nconst a = 1"), []);
+  });
+  it("fails more disables than the cap in shipped code and counts no test", () => {
+    const text = "// Stryker disable next-line StringLiteral: label of the interface\nconst a = 'x'";
+    assert.equal(find("a.ts", text, 0).length, 1);
+    assert.deepEqual(find("a.test.ts", text, 0), []);
   });
 });
 

@@ -15,6 +15,8 @@ const FILES = {
   "libs/plugin/sdk-ts/src/index.ts": "export const sdk = 1\n",
   "libs/ui/components/package.json": json({ name: "@numen/ui" }),
   "libs/ui/components/src/index.ts": "export const button = 1\n",
+  "libs/mystery/package.json": json({ name: "@numen/mystery" }),
+  "libs/mystery/src/index.ts": "export const mystery = 1\n",
   "plugins/alpha/package.json": json({ name: "@numen/alpha" }),
   "plugins/alpha/frontend/index.ts": [
     "import { sdk } from '@numen/plugin-sdk'",
@@ -50,6 +52,13 @@ describe("the dependency graph over a repository with a violation of each rule",
   after(() => fs.rmSync(root, { recursive: true, force: true }));
 
   const rulesOf = (file) => [...new Set(result.findings.filter((one) => one.file === file).map((one) => one.symbol.split(":")[0]))];
+
+  it("fails a library that the package matrix has no row for", () => {
+    assert.deepEqual(
+      result.findings.filter((one) => one.symbol.startsWith("library ")).map((one) => `${one.file} ${one.symbol}`),
+      ["libs/mystery/package.json library @numen/mystery has no row in the package matrix"],
+    );
+  });
 
   it("runs the window whose tsconfig declares paths on its own", () => {
     const runs = listCruiseRuns(root);

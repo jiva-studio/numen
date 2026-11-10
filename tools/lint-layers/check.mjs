@@ -35,6 +35,7 @@ import { STORY_LINT_VERIFIERS } from "./checks/storyLint.mjs";
 import { assertGolangciLintBuild } from "./checks/tools.mjs";
 import { TYPECHECK_SCOPE_VERIFIERS } from "./checks/typecheckScope.mjs";
 import { FRONTEND_GRAPH_VERIFIERS } from "./checks/frontendGraph.mjs";
+import { FRONTEND_LAYOUT_VERIFIERS } from "./checks/frontendLayout.mjs";
 
 const VERIFIERS = [
   ...CORE_VERIFIERS,
@@ -43,6 +44,7 @@ const VERIFIERS = [
   ...CORE_CLIENT_VERIFIERS,
   ...DEPENDENCY_VERIFIERS,
   ...FRONTEND_GRAPH_VERIFIERS.filter((v) => v.scope === "libs"),
+  ...FRONTEND_LAYOUT_VERIFIERS.filter((v) => v.scope === "libs"),
   ...STYLE_VERIFIERS,
   ...STORY_VERIFIERS,
   ...STORY_LINT_VERIFIERS,
@@ -52,8 +54,10 @@ const VERIFIERS = [
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "libs"),
   ...PLUGIN_VERIFIERS,
   ...DISCIPLINE_VERIFIERS.filter((v) => v.scope === "plugins"),
+  ...FRONTEND_LAYOUT_VERIFIERS.filter((v) => v.scope === "plugins"),
   ...FRONTEND_VERIFIERS.filter((v) => v.scope === "apps"),
   ...FRONTEND_GRAPH_VERIFIERS.filter((v) => v.scope === "apps"),
+  ...FRONTEND_LAYOUT_VERIFIERS.filter((v) => v.scope === "apps"),
 ];
 
 const SCOPES = ["all", "libs", "plugins", "apps"];

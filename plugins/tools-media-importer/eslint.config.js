@@ -37,7 +37,8 @@ export default [
         'error',
         { considerDefaultExhaustiveForUnions: true },
       ],
-      complexity: ['error', 12],
+      complexity: ['error', 10],
+      'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
       'max-depth': ['error', 3],
       'max-params': ['error', 4],
       'no-console': 'error',
@@ -245,9 +246,20 @@ export default [
     plugins: { numen },
     rules: {
       'numen/max-inline-props': ['error', { max: 6 }],
-      'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
+      'numen/vue-script-sections': 'error',
+      'numen/handler-naming': 'error',
       'numen/max-script-lines': ['error', { max: 100 }],
     },
+  },
+  {
+    files: ['**/*.test.ts', '**/*.stories.ts', '**/*.spec.ts', 'stories/.storybook/**', '**/testing/**'],
+    plugins: { numen },
+    rules: { 'numen/no-style-declaration-read': 'error' },
+  },
+  {
+    files: ['**/*.test.ts'],
+    plugins: { numen },
+    rules: { 'numen/no-mock-of-subject-slice': 'error' },
   },
   {
     files: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**'],

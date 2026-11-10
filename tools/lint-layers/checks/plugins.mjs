@@ -283,6 +283,16 @@ function findPluginConfigDrift() {
     }
   }
 
+  const rulesSource = path.join(REPO_ROOT, 'tools/lint-layers/numen-rules.mjs')
+  const rulesGolden = path.join(exampleDir, 'numen-rules.mjs')
+  if (!fs.existsSync(rulesGolden) || fs.readFileSync(rulesSource, 'utf8') !== fs.readFileSync(rulesGolden, 'utf8')) {
+    found.push({
+      file: 'plugins/.example/numen-rules.mjs',
+      line: 1,
+      symbol: 'golden rules drifted from tools/lint-layers/numen-rules.mjs (copy the file with cp)',
+    })
+  }
+
   const checkGoldenFile = (plugin, fileName) => {
     const goldenPath = path.join(exampleDir, fileName)
     const targetPath = path.join(pluginsDir, plugin, fileName)
