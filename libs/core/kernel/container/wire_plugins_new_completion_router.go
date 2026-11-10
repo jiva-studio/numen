@@ -152,7 +152,6 @@ type pluginInstall struct {
 	PluginCatalog   catalog.Config
 	PluginDirs      []string
 	KeyStore        pluginport.KeyStore
-	CredentialsPath func() string
 }
 
 type pluginSettingsAccess struct {
