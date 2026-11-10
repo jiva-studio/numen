@@ -219,7 +219,7 @@ function countScriptCodeLines(sourceCode, script) {
 }
 
 /** The rule is shared with configurations that do not build on createBaseConfig. */
-export const maxComposableReturnProperties = {
+const maxComposableReturnProperties = {
   meta: {
     type: 'problem',
     docs: {
@@ -337,7 +337,7 @@ export const maxComposableReturnProperties = {
  * 2. vue-script-sections: Enforce section banners and canonical order (AGENTS.md rule 4).
  * 3. max-script-lines: Enforce max lines of executable code in <script> (ignoring comments/banners).
  */
-const numenPlugin = {
+export const numenPlugin = {
   rules: {
     'max-inline-props': {
       meta: {
@@ -787,32 +787,54 @@ const numenPlugin = {
       },
     },
 
-    'no-unknown-in-contract': {
+    'no-unknown': {
       meta: {
         type: 'problem',
         docs: {
           description:
-            'Forbid `unknown` in an exported declaration of a contract: name the real type, JsonValue for a value that crosses as JSON, or Caught for a caught error',
+            'Forbid `unknown`: name the real type, JsonValue for JSON, Caught for a caught error, and Unvalidated only for the parameter of a parse function',
         },
         messages: {
-          unknownInContract:
-            'A contract does not say `unknown`. Name the type, use JsonValue for JSON, or Caught for a caught value.',
+          unknownType:
+            '`unknown` is not a type to write. Name the type, use JsonValue for JSON, Caught for a caught value, or Unvalidated for the parameter of a parse function.',
+          unvalidatedOutsideParse:
+            '`Unvalidated` is the parameter of a function that validates it: name the function parseX, or return a type guard.',
         },
       },
       create(context) {
-        const isInside = (node, type) => {
-          for (let up = node.parent; up; up = up.parent) if (up.type === type) return true
-          return false
+        const HELPERS = new Set(['Caught', 'Unvalidated'])
+        const FUNCTIONS = new Set([
+          'FunctionDeclaration',
+          'FunctionExpression',
+          'ArrowFunctionExpression',
+          'TSDeclareFunction',
+        ])
+        const getFunctionName = (fn) => {
+          if (fn.id) return fn.id.name
+          const holder = fn.parent
+          if (holder?.type === 'VariableDeclarator' && holder.id.type === 'Identifier') return holder.id.name
+          if ((holder?.type === 'MethodDefinition' || holder?.type === 'Property') && holder.key.type === 'Identifier')
+            return holder.key.name
+          return ''
         }
-        const isCaughtAlias = (node) => {
-          const alias = node.parent
-          return alias?.type === 'TSTypeAliasDeclaration' && alias.id.name === 'Caught'
+        const isParseBoundary = (node) => {
+          const annotation = node.parent
+          const param = annotation?.parent
+          if (annotation?.type !== 'TSTypeAnnotation' || param?.type !== 'Identifier') return false
+          const fn = param.parent
+          if (!fn || !FUNCTIONS.has(fn.type) || !fn.params.includes(param)) return false
+          return fn.returnType?.typeAnnotation?.type === 'TSTypePredicate' || /^parse[A-Z]/.test(getFunctionName(fn))
         }
         return {
           TSUnknownKeyword(node) {
-            if (!isInside(node, 'ExportNamedDeclaration')) return
-            if (isInside(node, 'BlockStatement') || isCaughtAlias(node)) return
-            context.report({ node, messageId: 'unknownInContract' })
+            const alias = node.parent
+            const isHelper =
+              alias?.type === 'TSTypeAliasDeclaration' && alias.typeAnnotation === node && HELPERS.has(alias.id.name)
+            if (!isHelper) context.report({ node, messageId: 'unknownType' })
+          },
+          TSTypeReference(node) {
+            if (node.typeName.type === 'Identifier' && node.typeName.name === 'Unvalidated' && !isParseBoundary(node))
+              context.report({ node, messageId: 'unvalidatedOutsideParse' })
           },
         }
       },
@@ -1051,6 +1073,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': ['error', { max: 8 }],
         'numen/enforce-vue-reactivity-in-composable': 'error',
         'numen/no-double-type-assertion': 'error',
+        'numen/no-unknown': 'error',
         'numen/no-comment-only-catch': 'error',
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/consistent-type-assertions': [
@@ -1259,6 +1282,7 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-composable-return-properties': 'off',
         'numen/enforce-vue-reactivity-in-composable': 'off',
         'numen/no-double-type-assertion': 'off',
+        'numen/no-unknown': 'off',
         'numen/no-comment-only-catch': 'off',
         '@typescript-eslint/consistent-type-assertions': 'off',
         'max-depth': 'off',
@@ -1286,15 +1310,6 @@ export function createBaseConfig(dirname, options = {}) {
   ]
 }
 
-/**
- * Bans `unknown` in the exported declarations of the given files, which are a contract other code
- * is written against.
- *
- * @param {string[]} files The globs of the files; tests are left out
- * @returns {object}
- */
-export function createNoUnknownContractConfig(files) {
-  return { files, ignores: ['**/*.test.ts', '**/*.spec.ts'], plugins: { numen: numenPlugin }, rules: { 'numen/no-unknown-in-contract': 'error' } }
 }
 
 /**
@@ -1306,7 +1321,7 @@ export function createNoUnknownContractConfig(files) {
  * @returns {Array}
  */
 export function createPlainLibraryConfig(dirname) {
-  const sources = { files: ['**/*.ts'], ignores: ['**/*.test.ts', '**/*.spec.ts'] }
+  const sources = { files: ['**/*.ts'], ignores: ['**/*.test.ts', '**/*.spec.ts'], plugins: { numen: numenPlugin } }
   return [
     { ignores: ['dist/**', 'coverage/**', 'node_modules/**'] },
     js.configs.recommended,
@@ -1331,6 +1346,7 @@ export function createPlainLibraryConfig(dirname) {
     {
       ...sources,
       rules: {
+        'numen/no-unknown': 'error',
         'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
         'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
         complexity: ['error', 10],
