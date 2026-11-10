@@ -100,6 +100,8 @@ const answerFrom = (core: Fake) => {
             tasks: list.map((one) => ({
               id: one.id,
               title: one.label,
+              done: BigInt(one.completedCount),
+              total: BigInt(one.total),
               unit: TASK_UNIT.THINGS,
               kind: one.kind === 'notice' ? TASK_KIND.NOTICE : TASK_KIND.UNSPECIFIED,
             })),
@@ -579,7 +581,7 @@ describe('a vault that could not be read', () => {
     expect(window.isIndexing.value).toBe(false)
     expect(window.error.value).toBe('permission denied')
     expect(window.hasNote.value).toBe(false)
-    expect(travelled).toStrictEqual(['Focused.md'])
+    await vi.waitFor(() => expect(travelled).toStrictEqual(['Focused.md']))
   })
 })
 
@@ -669,7 +671,9 @@ describe('what the application is doing', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.tasks.value.map((one) => one.completedCount)).toEqual([32])
+    await vi.waitFor(() =>
+      expect(window.tasks.value.map((one) => one.completedCount)).toEqual([32]),
+    )
 
     window.close()
   })
@@ -701,8 +705,10 @@ describe('what the application is doing', () => {
     await flushPromises()
     await flushPromises()
 
+    await vi.waitFor(() =>
+      expect(window.tasks.value.map((one) => one.completedCount)).toEqual([48]),
+    )
     expect(openedWindows).toBeGreaterThan(1)
-    expect(window.tasks.value.map((one) => one.completedCount)).toEqual([48])
     // A stream taken up again is not a stream that was lost.
     expect(window.lost.value).toBe('')
 
