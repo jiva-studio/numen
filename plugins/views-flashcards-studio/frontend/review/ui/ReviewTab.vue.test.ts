@@ -87,7 +87,7 @@ const { default: ReviewTab } = await import('./ReviewTab.vue')
 const { useReview } = await import('../model/review')
 const { createVaultCounts } = await import('../model/counts')
 const { mountNothing } = await import('../model/views')
-const { Decks } = await import('../pages/decks')
+const { default: Decks } = await import('./decks/Decks.vue')
 
 type Review = ReturnType<typeof useReview>
 

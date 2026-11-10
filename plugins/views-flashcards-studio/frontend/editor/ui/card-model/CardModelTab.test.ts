@@ -13,7 +13,6 @@ import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/tes
 import CardModelTab from './CardModelTab.vue'
 import { CARD_MODEL, createCardModelTabs } from '../../model/card-model/kind'
 import { WORDS as words } from '../../../words'
-import CardModelTab from './CardModelTab.vue'
 import type { Cards, VaultTemplate, DeckProblem } from '../../../types'
 import type { CardModelTabState } from '../../model/card-model/types'
 

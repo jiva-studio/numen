@@ -160,6 +160,7 @@ const mountDeck = async (
   const decks = useDeckTabs(core, presets, {
     buffers: createMockBufferHost(),
     closeTab: windowTabs.finishClose,
+    component: DeckTab,
   })
   windowTabs.register(decks.kind)
   const id = await windowTabs.openTab(DECK, 'Animals.md')

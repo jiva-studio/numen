@@ -6,7 +6,7 @@ import { parseSettings } from '../../../lib/wire/settings'
 import type { SettingsMessage } from '../../../lib/wire/settings'
 
 import type { Settings } from '../../lib/decks/types'
-import type { ErrorCode } from '../../../types'
+import type { ErrorCode } from '../../../lib/wire/types'
 
 /**
  * What the application answers about the presets of a vault. Every question

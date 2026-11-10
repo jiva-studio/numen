@@ -1,5 +1,5 @@
-import { type Card as CardMessage, type Deck as DeckMessage, type Problem as ProblemMessage, type CardModel as CardModelMessage } from '../lib/wire/types'
-import type { ProblemKind, DeckProblem, CardModelSummary, VaultCard, VaultDeck, VaultCardModel, ProblemKind as ProblemKinds } from '../types'
+import { ProblemKind as ProblemKinds, type Card as CardMessage, type Deck as DeckMessage, type Problem as ProblemMessage, type CardModel as CardModelMessage } from '../lib/wire/types'
+import type { ProblemKind, DeckProblem, CardModelSummary, VaultCard, VaultDeck, VaultCardModel } from '../types'
 
 /** The problem kind, named as the window names it. */
 const kinds: Record<ProblemKinds, ProblemKind> = {

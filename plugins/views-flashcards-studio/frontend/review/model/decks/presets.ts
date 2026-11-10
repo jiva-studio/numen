@@ -12,11 +12,10 @@ import { getDeckName } from '../../lib/vault/names'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '../../lib/vault/types'
 
 import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from '../../api/decks/presets'
-import type { DeckPresetResult, PresetsClient } from '../../api/decks/presets'
+import type { DeckPreset, DeckPresetResult, PresetsClient } from '../../api/decks/presets'
 import { CLOSES_NOTHING } from '../../lib/decks/types'
 import type { Budget, Preset, Settings } from '../../lib/decks/types'
 import { getStoppedWords } from '../../lib/decks/words'
-import type { DeckPreset } from '../../../editor/model/deck/useDeckSchedule'
 
 export interface VaultPresetsDeps {
   presets: PresetsClient
