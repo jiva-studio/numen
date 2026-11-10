@@ -36,11 +36,14 @@ const nameId = computed(() => `plugin-row-${props.at}`)
 
 <style scoped>
 .detail-row {
+  --detail-gap: 0.5rem;
+  --detail-pad-block: 0.625rem;
+  --detail-value-min-size: 2rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem var(--numen-panel-gap);
-  padding-block: 0.625rem;
+  gap: var(--detail-gap) var(--numen-panel-gap);
+  padding-block: var(--detail-pad-block);
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }
 
@@ -69,6 +72,6 @@ const nameId = computed(() => `plugin-row-${props.at}`)
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-block-size: 2rem;
+  min-block-size: var(--detail-value-min-size);
 }
 </style>

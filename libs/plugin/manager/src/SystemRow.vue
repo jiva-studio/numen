@@ -52,12 +52,20 @@ function onKeydown(e: KeyboardEvent): void {
 
 <style scoped>
 .plugin-row {
+  --row-min-size: 3.5rem;
+  --row-pad-block: 0.625rem;
+  --row-pad-inline: 0.75rem;
+  --row-text-gap: 0.125rem;
+  --row-header-gap: 0.5rem;
+  --focus-width: 0.125rem;
+  --focus-inset: -0.125rem;
+  --chevron-size: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--numen-panel-gap);
-  min-block-size: 3.5rem;
-  padding: 0.625rem 0.75rem;
+  min-block-size: var(--row-min-size);
+  padding: var(--row-pad-block) var(--row-pad-inline);
   cursor: pointer;
   user-select: none;
   transition:
@@ -71,14 +79,14 @@ function onKeydown(e: KeyboardEvent): void {
 }
 
 .plugin-row:focus-visible {
-  outline: 2px solid var(--numen-accent);
-  outline-offset: -2px;
+  outline: var(--focus-width) solid var(--numen-accent);
+  outline-offset: var(--focus-inset);
 }
 
 .plugin-row__main {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--row-text-gap);
   flex: 1 1 auto;
   min-inline-size: 0;
 }
@@ -86,7 +94,7 @@ function onKeydown(e: KeyboardEvent): void {
 .plugin-row__header {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--row-header-gap);
 }
 
 .plugin-row__name {
@@ -113,7 +121,7 @@ function onKeydown(e: KeyboardEvent): void {
 }
 
 .plugin-row__chevron {
-  font-size: 1.25rem;
+  font-size: var(--chevron-size);
   line-height: 1;
   color: var(--numen-hushed);
 }

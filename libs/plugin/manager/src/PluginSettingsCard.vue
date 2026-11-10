@@ -13,14 +13,16 @@
 
 <style scoped>
 .plugin-settings-card {
-  padding-inline: 1rem;
+  --card-pad-inline: 1rem;
+  --card-spacing: 1.25rem;
+  padding-inline: var(--card-pad-inline);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);
 }
 
 .plugin-settings-card + .plugin-settings-card {
-  margin-block-start: 1.25rem;
+  margin-block-start: var(--card-spacing);
 }
 
 .plugin-settings-card :deep(.settings__row:last-child) {

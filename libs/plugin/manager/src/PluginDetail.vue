@@ -140,26 +140,38 @@ function onDeleteData(): void {
 
 <style scoped>
 .plugin-detail {
+  --detail-max-size: 54rem;
+  --back-spacing: 0.75rem;
+  --header-row-gap: 0.625rem;
+  --header-pad-block: 0.875rem;
+  --header-pad-inline: 1rem;
+  --header-spacing: 1.25rem;
+  --more-pad: 0.625rem;
+  --toggle-gap: 0.25rem;
+  --toggle-pad-block: 0.125rem;
+  --badge-pad-block: 0.125rem;
+  --badge-pad-inline: 0.4375rem;
+  --badge-offset: 0.375rem;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  max-inline-size: 54rem;
+  max-inline-size: var(--detail-max-size);
   margin-inline: auto;
 }
 
 .plugin-detail__back {
   align-self: flex-start;
-  margin-block-end: 0.75rem;
+  margin-block-end: var(--back-spacing);
 }
 
 .plugin-detail__header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: var(--numen-panel-gap);
-  row-gap: 0.625rem;
+  row-gap: var(--header-row-gap);
   align-items: center;
-  padding: 0.875rem 1rem;
-  margin-block-end: 1.25rem;
+  padding: var(--header-pad-block) var(--header-pad-inline);
+  margin-block-end: var(--header-spacing);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);
@@ -175,7 +187,7 @@ function onDeleteData(): void {
 .plugin-version-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.4375rem;
+  padding: var(--badge-pad-block) var(--badge-pad-inline);
   border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
@@ -185,7 +197,7 @@ function onDeleteData(): void {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
-  margin-inline-start: 0.375rem;
+  margin-inline-start: var(--badge-offset);
 }
 
 .plugin-detail__master-switch {
@@ -224,7 +236,7 @@ function onDeleteData(): void {
 
 .plugin-detail__more {
   grid-column: 1 / -1;
-  padding-block-start: 0.625rem;
+  padding-block-start: var(--more-pad);
   border-block-start: var(--numen-stroke) solid var(--numen-rule);
   font-size: var(--numen-text-2);
 }
@@ -234,8 +246,8 @@ function onDeleteData(): void {
   justify-self: start;
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.125rem 0;
+  gap: var(--toggle-gap);
+  padding: var(--toggle-pad-block) 0;
   border: none;
   background: none;
   color: var(--numen-hushed);

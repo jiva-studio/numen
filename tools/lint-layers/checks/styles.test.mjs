@@ -45,7 +45,7 @@ describe("the style rules", () => {
   });
 
   it("accepts a declared token, a local property, and colours in token and theme files", async () => {
-    assert.deepEqual(await lint("view/a.css", "a { --gap: 1px; margin: var(--gap); color: var(--numen-ink); }"), []);
+    assert.deepEqual(await lint("view/a.css", "a { --gap: 0.25rem; margin: var(--gap); color: var(--numen-ink); }"), []);
     assert.deepEqual(await lint("view/tokens/tokens.css", ":root { --numen-ink: light-dark(#000, rgb(255 255 255)); }"), []);
     assert.deepEqual(await lint("view/themes/dark.css", ":root { --numen-ink: white; }"), []);
   });
@@ -60,18 +60,66 @@ describe("the rule on a border and a radius", () => {
 
   it("rejects a border on one side in a rule that rounds the box", async () => {
     const rejected = ["numen/no-rounded-side-border"];
-    assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; border-radius: 4px; }"), rejected);
-    assert.deepEqual(await lint("a { border-bottom: 1px solid currentColor; border-top-left-radius: 4px; }"), rejected);
-    assert.deepEqual(await lint("a { border-inline-start: 2px solid currentColor; border-radius: 4px; }"), rejected);
+    assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; border-radius: var(--round); }"), rejected);
+    assert.deepEqual(await lint("a { border-bottom: 1px solid currentColor; border-top-left-radius: var(--round); }"), rejected);
+    assert.deepEqual(await lint("a { border-inline-start: 1px solid currentColor; border-radius: var(--round); }"), rejected);
     assert.deepEqual(await lint("a { @apply border-b rounded-md; }"), rejected);
   });
 
   it("accepts a border on one side without a radius, a radius with a border on every side, and a side border that draws nothing", async () => {
     assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; }"), []);
-    assert.deepEqual(await lint("a { border: 1px solid currentColor; border-radius: 4px; }"), []);
-    assert.deepEqual(await lint("a { border-block-end: none; border-radius: 4px; }"), []);
+    assert.deepEqual(await lint("a { border: 1px solid currentColor; border-radius: var(--round); }"), []);
+    assert.deepEqual(await lint("a { border-block-end: none; border-radius: var(--round); }"), []);
     assert.deepEqual(await lint("a { border-block-end: 1px solid currentColor; border-radius: 0; }"), []);
     assert.deepEqual(await lint("a { @apply border-b rounded-none; }"), []);
+  });
+});
+
+describe("the rule on lengths", () => {
+  /** The rules stylelint reports for `code` written at `file`. */
+  const lint = async (file, code) => {
+    const { results } = await stylelint.lint({ code, codeFilename: path.join(REPO_ROOT, file), config, configBasedir: REPO_ROOT });
+    return results[0].warnings.map((one) => one.rule);
+  };
+  const rejected = ["numen/no-bare-length"];
+
+  it("rejects a planted component that writes a length straight on a property", async () => {
+    const planted = "<template><p /></template>\n<style scoped>\np { padding: 0.3rem; }\n</style>\n";
+    assert.deepEqual(await lint("apps/desktop/editor/src/Planted.vue", planted), rejected);
+  });
+
+  it("rejects a length on a property in rem, em, ch and inside calc()", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { gap: 0.5rem; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { margin-inline-start: 1.5em; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { max-inline-size: 60ch; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { inline-size: calc(100% - 2rem); }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { padding: var(--pad) 0.5rem; }"), rejected);
+  });
+
+  it("rejects px on a property and in a custom property, and a border wider than a hairline", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { outline: 2px solid currentColor; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border-radius: 4px; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --gap: 4px; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border: 2px solid currentColor; }"), rejected);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { outline: 1px solid currentColor; }"), rejected);
+  });
+
+  it("accepts a local custom property in rem or em, read with var()", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { --pad: 0.3rem; --icon: 1.2em; padding: var(--pad); inline-size: calc(var(--icon) * 2); }"), []);
+  });
+
+  it("accepts a 1px hairline border, zero, proportions and a length inside url()", async () => {
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { border: 1px solid currentColor; border-block-end: 1px dashed currentColor; border-width: 1px; }"), []);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { margin: 0; padding: 0px; inline-size: 50%; block-size: 100vh; flex: 1 1 0%; line-height: 1.4; }"), []);
+    assert.deepEqual(await lint("plugins/views-tasks/frontend/a.css", "a { background: url(icon-16px.png); transition-duration: 150ms; }"), []);
+  });
+
+  it("leaves a package outside the converted ones alone", async () => {
+    assert.deepEqual(await lint("apps/docs/src/a.css", "a { gap: 0.5rem; border-radius: 4px; }"), []);
+  });
+
+  it("leaves the token files alone", async () => {
+    assert.deepEqual(await lint("libs/ui/components/src/shared/tokens/tokens.css", ":root { --numen-hairline: 1px; --numen-radius: 4px; }"), []);
   });
 });
 

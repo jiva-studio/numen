@@ -20,12 +20,18 @@ export default {
   overrides: [
     { files: ["**/*.vue"], customSyntax: "postcss-html" },
     {
+      // Lengths: the shared libraries, the plugin manager, the desktop windows and the plugin frontends.
+      files: ["libs/ui/**/*.{css,vue}", "libs/plugin/manager/**/*.{css,vue}", "apps/desktop/**/*.{css,vue}", "plugins/*/frontend/**/*.{css,vue}"],
+      rules: { "numen/no-bare-length": true },
+    },
+    {
       files: ["**/tokens/**/*.css", "**/theme/**/*.css", "**/themes/**/*.css"],
       rules: {
         "color-no-hex": null,
         "color-named": null,
         "function-disallowed-list": null,
         "numen/no-token-declaration": null,
+        "numen/no-bare-length": null,
       },
     },
   ],
