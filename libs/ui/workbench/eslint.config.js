@@ -3,7 +3,8 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, createPortConfig } from '../../../tools/lint-layers/base-eslint.mjs'
+import storybook from 'eslint-plugin-storybook'
+import { createBaseConfig, createPortConfig, createStoryConfig } from '../../../tools/lint-layers/base-eslint.mjs'
 import { createDomainImports, createLibraryLayerConfigs } from '../../../tools/lint-layers/layers.mjs'
 
 /** The files that stand outside the layers. */
@@ -31,4 +32,6 @@ export default tseslint.config(
     files: ['src/**/*.ts'],
     ignores: ['src/**/*.test.ts', 'src/**/*.stories.ts', 'src/**/fixtures/**'],
   }),
+
+  ...createStoryConfig(storybook),
 )
