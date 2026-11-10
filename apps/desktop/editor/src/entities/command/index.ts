@@ -11,4 +11,4 @@ export type {
   RetypeWords,
   RunSupport,
   VaultRef,
-} from './lib/command'
+} from './model/command'
