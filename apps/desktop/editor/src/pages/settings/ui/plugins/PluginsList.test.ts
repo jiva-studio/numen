@@ -2,12 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import PluginsList from './PluginsList.vue'
-import {
-  createCatalogEntry,
-  createInstallation,
-  createPluginInfo,
-  createSettingsState,
-} from '@/testing/installation'
+import { createCatalogEntry, createInstallation, createPluginInfo } from '@/testing/installation'
 import type { CatalogEntry } from '@/entities/plugin'
 import type { Installation } from '../../types'
 import { getSettingAt as at, type PluginInfo, type SettingEdit } from '@/entities/settings'
@@ -27,9 +22,13 @@ const createList = (
     plugins: ref(plugins),
     catalog: ref(catalog),
   })
-  const state = createSettingsState(installation)
   const wrapper = mount(PluginsList, {
-    props: { state, plugins },
+    props: {
+      settings: installation.settings,
+      catalog: installation.plugin.catalog.value,
+      query: '',
+      plugins,
+    },
   })
   return { wrapper, recordedWrites, installation }
 }

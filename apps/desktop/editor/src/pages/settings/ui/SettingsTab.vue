@@ -16,6 +16,7 @@ const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const initialPluginId = props.state.initialPluginId
+const initialSearchQuery = props.state.initialSearchQuery
 const selectedPluginId = ref<string | null>(initialPluginId.value)
 
 watch(
@@ -25,9 +26,10 @@ watch(
   },
 )
 
-const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugin.plugins.value)
+const installation = props.state.installation
+const plugins = computed<readonly PluginInfo[]>(() => installation.plugin.plugins.value)
 const uninstalled = computed(() =>
-  createManagedFromEntries([], props.state.installation.plugin.catalog.value).find(
+  createManagedFromEntries([], installation.plugin.catalog.value).find(
     (one) => one.id === selectedPluginId.value,
   ),
 )
@@ -48,6 +50,10 @@ function onSelectPlugin(pluginId: string): void {
   initialPluginId.value = pluginId
 }
 
+function onUpdateQuery(query: string): void {
+  initialSearchQuery.value = query
+}
+
 function onBack(): void {
   selectedPluginId.value = null
   initialPluginId.value = null
@@ -58,25 +64,39 @@ function onBack(): void {
   <div class="settings">
     <div class="settings__page">
       <div class="settings__main">
-        <SystemDetail v-if="selectedPluginId === 'system'" :state="props.state" @back="onBack" />
+        <SystemDetail
+          v-if="selectedPluginId === 'system'"
+          :settings="installation.settings"
+          :manager="installation.plugin"
+          :choices="installation.secrets"
+          @back="onBack"
+          @open-secrets="onSelectPlugin('secrets')"
+        />
         <SecretsPage
           v-else-if="selectedPluginId === 'secrets'"
-          :state="props.state"
+          :secrets="installation.secrets"
+          :plugins="plugins"
           @back="onBack"
         />
         <PluginDetail
           v-else-if="selectedPlugin"
           :key="selectedPlugin.id"
-          :state="props.state"
+          :settings="installation.settings"
+          :manager="installation.plugin"
+          :choices="installation.secrets"
           :plugin="selectedPlugin"
           @back="onBack"
+          @open-secrets="onSelectPlugin('secrets')"
         />
         <AvailablePluginDetail v-else-if="uninstalled" :plugin="uninstalled" @back="onBack" />
         <PluginsList
           v-else
-          :state="props.state"
+          :settings="installation.settings"
+          :catalog="installation.plugin.catalog.value"
+          :query="initialSearchQuery"
           :plugins="plugins"
           @select-plugin="onSelectPlugin"
+          @update:query="onUpdateQuery"
         />
       </div>
     </div>

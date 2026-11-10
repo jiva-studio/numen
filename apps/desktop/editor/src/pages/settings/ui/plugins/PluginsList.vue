@@ -6,37 +6,38 @@
 import { computed, ref, watch } from 'vue'
 import { PluginsList as PluginsListView } from '@numen/plugin-manager'
 import { createManagedFromEntries } from '../../lib/pluginListing'
-import type { SettingsTabState } from '../../types'
+import type { InstallationSettings } from '../../types'
+import type { CatalogEntry } from '@/entities/plugin'
 import { write, type PluginInfo } from '@/entities/settings'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: Pick<InstallationSettings, 'getSetting' | 'write'>
+  catalog: readonly CatalogEntry[]
+  query: string
   plugins: readonly PluginInfo[]
 }>()
 
 const emit = defineEmits<{
   (e: 'select-plugin', pluginId: string): void
+  (e: 'update:query', query: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const searchQuery = ref(props.state.initialSearchQuery.value)
+const searchQuery = ref(props.query)
 
 watch(
-  () => props.state.initialSearchQuery.value,
+  () => props.query,
   (newQuery) => {
     searchQuery.value = newQuery
   },
 )
 
 watch(searchQuery, (newQuery) => {
-  const initialQuery = props.state.initialSearchQuery
-  if (initialQuery.value !== newQuery) initialQuery.value = newQuery
+  if (props.query !== newQuery) emit('update:query', newQuery)
 })
 
-const managed = computed(() =>
-  createManagedFromEntries(props.plugins, props.state.installation.plugin.catalog.value),
-)
+const managed = computed(() => createManagedFromEntries(props.plugins, props.catalog))
 
 const enabled = computed(() =>
   Object.fromEntries(props.plugins.map((one) => [one.id, isPluginEnabled(one.id)])),
@@ -48,12 +49,12 @@ function onSelectPlugin(pluginId: string): void {
 }
 
 function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
-  props.state.installation.settings.write([{ at: [pluginId, 'enabled'], value: write(isEnabled) }])
+  props.settings.write([{ at: [pluginId, 'enabled'], value: write(isEnabled) }])
 }
 
 /* -------------------------------- Helpers --------------------------------- */
 function isPluginEnabled(pluginId: string): boolean {
-  const val = props.state.installation.settings.getSetting([pluginId, 'enabled'])
+  const val = props.settings.getSetting([pluginId, 'enabled'])
   return typeof val === 'boolean' ? val : true
 }
 </script>
