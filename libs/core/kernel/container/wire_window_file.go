@@ -10,13 +10,13 @@ func mountFile(w *windowWiring) {
 	state := w.inst.State
 	readers := w.cfg.VaultReaders()
 	folders := filewindow.NewFolders(
-		state, state,
+		editor.NewSession(state), state.Events,
 		file.NewGetFolderEntries(readers, w.db.NoteTypes()),
 		file.NewGetFileKinds(readers, w.db.NoteTypes()),
 		w.cfg.OpenChooseTabKind(),
 		file.NewCreateFolder(folderWriters(w.cfg.vault())),
 	)
-	changes := filewindow.NewChanges(state, state, state, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)
+	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.files = handler
 	w.server = editor.NewFileServer(
