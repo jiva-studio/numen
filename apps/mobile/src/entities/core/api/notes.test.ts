@@ -10,17 +10,16 @@ import { createNoteApi } from './notes'
 /** The file a note was read from, as the wire writes it. */
 const FILE = { path: 'Kept.md', size: '10', mtime: '7' }
 
-/** Answers every request with `answer`, and returns the bodies it was sent. */
 function answerWith(answer: object) {
-  const sent: unknown[] = []
+  const requests: unknown[] = []
   vi.stubGlobal('fetch', async (_input: unknown, init?: RequestInit) => {
-    sent.push(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)))
+    requests.push(JSON.parse(new TextDecoder().decode(init?.body as Uint8Array)))
     return new Response(JSON.stringify(answer), {
       headers: { 'content-type': 'application/json' },
     })
   })
   const api = createNoteApi(createConnectTransport({ baseUrl: 'http://127.0.0.1:1' }))
-  return { api, sent }
+  return { api, requests }
 }
 
 afterEach(() => {
@@ -29,13 +28,13 @@ afterEach(() => {
 
 describe('reading a note', () => {
   it('gives the prose and the file it came out of', async () => {
-    const { api, sent } = answerWith({ body: 'One line.\n', at: FILE })
+    const { api, requests } = answerWith({ body: 'One line.\n', at: FILE })
 
     expect(await api.readNote('Kept.md')).toStrictEqual({
       ok: true,
       value: { prose: 'One line.\n', stamp: { path: 'Kept.md', size: 10n, mtime: 7n } },
     })
-    expect(sent).toStrictEqual([{ path: 'Kept.md' }])
+    expect(requests).toStrictEqual([{ path: 'Kept.md' }])
   })
 
   it('says why the core did not read it, in words', async () => {
@@ -53,7 +52,7 @@ describe('reading a note', () => {
 
 describe('writing a note', () => {
   it('sends the prose with the version the caller read', async () => {
-    const { api, sent } = answerWith({})
+    const { api, requests } = answerWith({})
 
     const answer = await api.writeNote('Kept.md', 'Two lines.\n', {
       prose: 'One line.\n',
@@ -61,7 +60,7 @@ describe('writing a note', () => {
     })
 
     expect(answer).toStrictEqual({ ok: true, value: null })
-    expect(sent).toStrictEqual([
+    expect(requests).toStrictEqual([
       {
         path: 'Kept.md',
         body: 'Two lines.\n',
@@ -71,11 +70,11 @@ describe('writing a note', () => {
   })
 
   it('sends no version for a note that was read without one', async () => {
-    const { api, sent } = answerWith({})
+    const { api, requests } = answerWith({})
 
     await api.writeNote('Kept.md', 'Two lines.\n', null)
 
-    expect(sent).toStrictEqual([{ path: 'Kept.md', body: 'Two lines.\n' }])
+    expect(requests).toStrictEqual([{ path: 'Kept.md', body: 'Two lines.\n' }])
   })
 
   it('says why the core did not write it, in words', async () => {

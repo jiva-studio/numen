@@ -10,7 +10,6 @@ vi.mock('@capacitor/core', () => ({
   registerPlugin: () => ({ start: async () => ({ port: 45123, dir: '/data' }) }),
 }))
 
-/** Answers each service call of the core by its method name, in the protocol's JSON encoding. */
 function answerWith(answers: Record<string, object>) {
   vi.stubGlobal('fetch', async (input: RequestInfo | URL) => {
     const method = String(input instanceof Request ? input.url : input).split('/').pop() ?? ''
