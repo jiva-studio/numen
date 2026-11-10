@@ -16,7 +16,7 @@ import {
   getSettingsConfig,
   type SettingOwner,
 } from '../lib/settingsConfig'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 
 /** The words a row is drawn with. */
 export interface SettingWords {
