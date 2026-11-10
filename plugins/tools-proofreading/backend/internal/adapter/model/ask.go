@@ -1,3 +1,4 @@
+// Package model asks the language model, through the host or over HTTP, and holds the mock proofreader.
 package model
 
 import (

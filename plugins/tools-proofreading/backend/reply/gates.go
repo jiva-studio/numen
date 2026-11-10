@@ -1,3 +1,4 @@
+// Package reply reads a model reply into corrections: it refuses a reply that breaks the rules and gathers the corrections of overlapping batches.
 package reply
 
 import (

@@ -1,3 +1,4 @@
+// Package segments reads the lines and pages of text segments and puts corrected lines back into them.
 package segments
 
 import (

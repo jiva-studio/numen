@@ -1,3 +1,4 @@
+// Package prompt builds the text and the instructions the model is asked about.
 package prompt
 
 import (

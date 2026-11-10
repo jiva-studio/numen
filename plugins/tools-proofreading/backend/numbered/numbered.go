@@ -1,3 +1,4 @@
+// Package numbered holds the numbered lines of a text, the batches they are sent in, and the digest of a recording.
 package numbered
 
 // Line is one numbered run of words. Last is the final line number of a run put

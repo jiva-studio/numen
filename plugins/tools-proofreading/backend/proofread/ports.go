@@ -1,3 +1,4 @@
+// Package proofread proofreads a text version: it reads the version, asks the model about its lines and reports the corrected text as a new version.
 package proofread
 
 import (
