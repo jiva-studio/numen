@@ -48,13 +48,20 @@ export const createCommandNoteReader =
     }
   }
 
+/** What `usePluginCommands` reads beyond the host: the context of the conditions and the shared handlers. */
+export interface PluginCommandsExtras {
+  readonly context?: WindowWhenContext
+  readonly getHandlers?: () => readonly HandlerDeclaration[] | undefined
+}
+
 export function usePluginCommands(
   registry: Pick<CommandRegistry, 'register'>,
   getCommandNote: ReturnType<typeof createCommandNoteReader>,
   pluginHost: PluginHost | undefined,
-  context: WindowWhenContext = createEmptyWhenContext(),
-  getHandlers: () => readonly HandlerDeclaration[] | undefined = () => [],
+  extras: PluginCommandsExtras = {},
 ) {
+  const context = extras.context ?? createEmptyWhenContext()
+  const getHandlers = extras.getHandlers ?? (() => [])
   const isWhenAvailable = createWhenAvailability(context)
   const getPluginCommands = () => pluginHost?.commands.getPaletteCommands() ?? []
   const { getSharedCommands, getSharedEntries } = createSharedCommands(getHandlers, isWhenAvailable)

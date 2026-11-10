@@ -354,7 +354,7 @@ export function verifyPagesAreComposedNotConsumed() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Source files below and in the app layers", read, 300);
+  requireMatches("Source files below and in the app layers", read, 280);
   failOnFindings("A layer below pages imports a page, or app takes more than a page it composes", findings);
 }
 

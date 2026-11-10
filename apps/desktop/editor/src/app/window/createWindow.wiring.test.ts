@@ -98,9 +98,17 @@ vi.mock('@/entities/settings', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   createSettingsStore: () => h.f.settings.rest,
 }))
-vi.mock('./windowSettings', () => ({
-  createWindowSettingsPart: (args: unknown) => {
+vi.mock('@/features/settings-commands', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createWindowSettings: (args: unknown) => {
     h.args.settings = args
+    return h.f.settings
+  },
+}))
+vi.mock('@/pages/settings', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  createSettingsPage: (args: unknown) => {
+    h.args.settingsPage = args
     return h.f.settings
   },
 }))
@@ -681,7 +689,7 @@ describe('the services a plugin is given', () => {
     // settings callbacks
     h.args.settings.onSizeChanged()
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
-    expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
+    expect(h.args.settingsPage.getSettingsViews('p1')).toEqual(['view-1'])
 
     // background tasks & noticeTasks
     expect(h.args.noticeTasks.window).toStrictEqual({

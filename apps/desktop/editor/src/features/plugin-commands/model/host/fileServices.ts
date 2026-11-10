@@ -11,7 +11,7 @@ import type { NoteCreator } from '@/entities/note'
 import { getKnownErrorCode } from '@/shared/api/errors'
 import { WORDS as words } from '@/shared/ui/words'
 import type { MessageWriter } from '@/shared/model/notices/messages'
-import { getEntryIcon } from '../../lib/entryIcon'
+import { getEntryIcon } from './entryIcon'
 
 /** A handler that creates a file in a vault folder under the given title. */
 export type FileCreatorFn = (title: string, folder: string) => Promise<CreateResult | null>

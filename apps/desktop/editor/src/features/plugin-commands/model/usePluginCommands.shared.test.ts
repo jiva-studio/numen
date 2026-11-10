@@ -33,15 +33,13 @@ describe('a shared command in the palette', () => {
       createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [HANDLER],
+      { getHandlers: () => [HANDLER] },
     )
     const unhandled = usePluginCommands(
       createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [],
+      { getHandlers: () => [] },
     )
 
     expect(handled.getPaletteEntries()).toMatchObject([
@@ -55,8 +53,7 @@ describe('a shared command in the palette', () => {
       createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [HANDLER],
+      { getHandlers: () => [HANDLER] },
     ).getPaletteEntries()
     const target = { path: 'scan.pdf', file: 'scan.pdf', isReady: true } as CommandTarget
 
@@ -73,8 +70,7 @@ describe('a shared command that asks for a value', () => {
       createCommandRegistry(),
       createCommandNoteReader({ fileKinds: getFileKinds }),
       createHost(),
-      undefined,
-      () => [importer],
+      { getHandlers: () => [importer] },
     ).getPaletteEntries()
 
     expect(entry).toMatchObject({
@@ -101,8 +97,7 @@ describe('a shared command that asks for a value', () => {
       registry,
       createCommandNoteReader({ fileKinds: async () => new Map() }),
       host,
-      undefined,
-      () => [importer],
+      { getHandlers: () => [importer] },
     )
     const run = registry.get('app:link.import')
 
