@@ -1,23 +1,22 @@
 /**
- * The window composed: the vault it reads, the kinds it declares, and the
- * few requests one kind makes of another.
+ * The window composed: the services that read the vault, the commands, the kinds of tab and the
+ * plugins, made in the order each needs the one before.
  */
 import { formatError } from '@/shared/api/errors'
 import { ref, type Ref } from 'vue'
 import { useWindowFrame } from '@numen/workbench'
 import { runSupport } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import { createMessageLog } from '@/shared/notices/messages'
 import { useAppHotkeys } from '@/features/hotkeys'
 import { watchPluginSettings } from '../plugins/useWindowPlugins'
-import { createNoteKindReader, initWindowKindsAndCommands } from './createCommandsPart'
 import {
-  getCommands,
-  getKinds,
-  getVaults,
-  initWindowServices,
-  type WindowContext,
-  type WindowCore,
-} from './createDisplayPart'
+  createEditorCommands,
+  createNoteKindReader,
+  createWindowKinds,
+} from './createEditorCommands'
+import { createWindowServices } from './createWindowServices'
+import type { WindowCore } from './windowCore'
 import { closeWhenEmpty, initAppLifecycle, isSecondaryWindow } from './createLifecyclePart'
 import { createPluginsCore, createWindowFrameServices, getPluginViews } from './createPluginsPart'
 import {
@@ -53,19 +52,19 @@ function createWindowCore(): WindowCore {
 }
 
 function createPaletteApi(
-  ctx: WindowContext,
-  kindsAndCommands: ReturnType<typeof initWindowKindsAndCommands>,
+  parts: ReturnType<typeof createEditorCommands>,
+  kinds: ReturnType<typeof createWindowKinds>,
 ) {
-  const { commands, palette, commandDeps, pluginWays } = getCommands(ctx)
+  const { palette, commands, commandDeps, pluginWays, runCommand, runChoice } = parts.commands
   return {
     commands,
     search: palette,
     commandDeps,
     pluginWays,
-    destinations: getKinds(ctx).destinations,
-    runCommand: kindsAndCommands.runCommand,
-    runChoice: kindsAndCommands.runChoice,
-    getTarget: kindsAndCommands.getTarget,
+    destinations: kinds.destinations,
+    runCommand: (id: string, target: CommandTarget) => runCommand(id, target),
+    runChoice,
+    getTarget: parts.getTarget,
   }
 }
 
@@ -89,29 +88,31 @@ const getTabsApi = (base: WindowCore, parts: TabsApiParts) => ({
 /** Everything the window is made of, made once and handed to what draws it. */
 export const createWindow = () => {
   const base = createWindowCore()
-  const ctx: WindowContext = {}
-  const services = initWindowServices(base, ctx)
-  const { editing, window, settings } = services
+  const services = createWindowServices(base)
+  const { editing, window, settings, vaults } = services
   const closeTab = createTabCloser(base)
   const moves = createWindowTabMoves(base, editing, closeTab)
-  const kindsAndCommands = initWindowKindsAndCommands(base, ctx, services, moves)
-  watchPluginSettings(base.rest, base.plugins.host.pluginLoader, (error) =>
-    base.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
-  )
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
   const openTabs = useWindowOpenTabs(base, isWritingTabs)
-  ctx.tabsHold = openTabs
+  const commands = createEditorCommands(base, services, moves, {
+    pause: async () => openTabs.pause(),
+    resume: () => openTabs.resume(),
+  })
+  const kinds = createWindowKinds(base, services, commands)
+  watchPluginSettings(base.rest, base.plugins.host.pluginLoader, (error) =>
+    base.writeMessage(`Plugins were not tracked: ${formatError(error)}`, 'error'),
+  )
 
   const isHighlighted = ref(false)
-  useAppHotkeys(getCommands(ctx).onKeyDown)
+  useAppHotkeys(commands.commands.onKeyDown)
   const tabLinkSession = createWindowTabLinks(base, {
     tabSync: services.tabSync,
     closeTab,
     isHighlighted,
   })
   const bootstrap = initAppLifecycle({
-    vaultsModule: getVaults(ctx),
+    vaultsModule: vaults,
     windowTabs: base.tabs.windowTabs,
     settings,
     window,
@@ -130,11 +131,11 @@ export const createWindow = () => {
 
   if (isSecondaryWindow()) closeWhenEmpty(base, isLayoutReady)
 
-  const frameServices = createWindowFrameServices(base, ctx, kindsAndCommands)
+  const frameServices = createWindowFrameServices(base, services, commands)
   return {
     frame: base.frame,
     tabs: getTabsApi(base, { closeTab, openTabs, isHighlighted, moves }),
-    palette: createPaletteApi(ctx, kindsAndCommands),
+    palette: createPaletteApi(commands, kinds),
     plugins: {
       slots: frameServices.slots,
       windowCommands: frameServices.windowCommands,
@@ -146,7 +147,7 @@ export const createWindow = () => {
       getTitle: editing.getTitle,
     },
     display: {
-      vaultList: getVaults(ctx).vaultList,
+      vaultList: vaults.vaultList,
       readNoteKind: createNoteKindReader(base.plugins.itemLists),
     },
     settings: {

@@ -1,5 +1,6 @@
 /** How a command runs, and what a key press triggers. */
 import { type CommandDeps } from '@/entities/command'
+import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as CommandModule from '@/entities/command'
 import type { PaletteLists } from '@/features/command-palette'
@@ -24,13 +25,13 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/entities/command', async (importOriginal) => ({
   ...(await importOriginal<typeof CommandModule>()),
+  registerCommand: h.registerCommand,
   findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
 }))
 vi.mock('@/features/command-palette', () => ({
   PALETTE_WORDS: {},
   runInvocation: h.runInvocation,
   createInvocation: (id: string, on: { path: string }) => ({ id, path: on.path }),
-  registerCommand: h.registerCommand,
   useSearch: () => {
     return { setOpen: h.setPaletteOpen, open: h.isSearchOpen }
   },
@@ -78,7 +79,7 @@ const setup = (isPrevented = false, pluginHost?: object) => {
     paletteLists: {},
     runs: {},
     coverage: () => ({}),
-    rest: {},
+    settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage: (text: string, severity: string) => content.push([text, severity]),
     ...(pluginHost ? { pluginHost } : {}),
   } as unknown as CommandsDepsOptions
@@ -322,7 +323,7 @@ describe('a plugin command over a note', () => {
       paletteLists: {},
       runs: {},
       coverage: () => ({}),
-      rest: {},
+      settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
       writeMessage,
       pluginHost,
       ...extra,
@@ -523,7 +524,7 @@ describe('a plugin command with items in the palette', () => {
       paletteLists: windowLists,
       runs: {},
       coverage: () => ({}),
-      rest: {},
+      settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
       writeMessage: vi.fn(),
       pluginHost,
     } as unknown as CommandsDepsOptions

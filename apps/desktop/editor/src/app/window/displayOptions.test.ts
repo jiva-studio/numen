@@ -1,15 +1,16 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
+import { createEmitter } from '@/shared/lib/emitter'
+import type { PathRename } from '@/shared/paths'
 import { createDisplayOptions, type DisplayWiring } from './displayOptions'
 
 const createWiring = (leavePath: (from: string, to: string) => Promise<void>) => {
   const writeMessage = vi.fn()
   const wiring = {
     editing: { notes: { applyPathChanges: vi.fn() }, changes: { reportChange: vi.fn() } },
-    getCommands: () => ({ commands: { navigation: { applyRenames: vi.fn() } } }),
-    getKinds: () => ({ leavePath, travel: vi.fn() }),
+    navigation: { leavePath, travel: vi.fn() },
+    renames: createEmitter<readonly PathRename[]>(),
     tabOpeners: { openFileAt: vi.fn() },
-    getVaults: () => ({ reload: vi.fn() }),
     notifyPlugins: vi.fn(),
     writeMessage,
   } as unknown as DisplayWiring
@@ -63,6 +64,18 @@ describe('a change of the vault', () => {
     await vi.waitFor(() =>
       expect(writeMessage).toHaveBeenCalledWith('Numen is not responding; retrying', 'error'),
     )
+  })
+})
+
+describe('the renames of a change of the vault', () => {
+  it('are handed to whatever listens to them', () => {
+    const { wiring } = createWiring(() => Promise.resolve())
+    const heard = vi.fn()
+    wiring.renames.subscribe(heard)
+
+    createDisplayOptions(wiring).onVaultChanged(['b.md'], [{ from: 'a.md', to: 'b.md' }])
+
+    expect(heard).toHaveBeenCalledExactlyOnceWith([{ from: 'a.md', to: 'b.md' }])
   })
 })
 

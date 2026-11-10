@@ -22,7 +22,10 @@ const setup = (load: () => Promise<void>, plugins?: Ref<{ id: string; isActive: 
   const declaredCommands = { paletteCommands: shallowRef([]), load } as unknown as DeclaredCommands
   createCommands({
     windowTabs: {},
-    rest: { write: { writeSettings: () => undefined }, state: { plugins } },
+    settings: {
+      state: { plugins: plugins ?? ref([]) },
+      read: { getCommittedSetting: () => undefined },
+    },
     getTarget: () => ({ file: 'books/Scan.pdf' }),
     writeMessage: (text: string, kind: string) => messages.push([text, kind]),
     declaredCommands,

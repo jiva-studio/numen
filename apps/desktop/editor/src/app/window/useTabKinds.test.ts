@@ -169,42 +169,6 @@ describe('the note the window relies on', () => {
   })
 })
 
-describe('a note travelled to', () => {
-  it('is opened in its editor', async () => {
-    const { deps, window } = create()
-
-    await window.travel('a.md')
-
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'current')
-  })
-
-  it('moves every tab standing on a note that left the vault', async () => {
-    const { deps, window } = create()
-
-    await window.leavePath('Gone.md', 'Root.md')
-
-    expect(deps.windowTabs.tabs.navigateTabsAt).toHaveBeenCalledWith(
-      'Gone.md',
-      'Root.md',
-      expect.any(Function),
-    )
-  })
-
-  it('records the new path of each moved tab in the tab sync', async () => {
-    const { deps, window } = create()
-    const setShownPath = vi.fn()
-    Object.assign(deps, { tabSync: { setShownPath } })
-    vi.mocked(deps.windowTabs.tabs.navigateTabsAt).mockImplementationOnce((_from, _to, onMove) => {
-      onMove?.('graph:1')
-      return Promise.resolve()
-    })
-
-    await window.leavePath('Gone.md', 'Root.md')
-
-    expect(setShownPath).toHaveBeenCalledExactlyOnceWith('graph:1', 'Root.md')
-  })
-})
-
 describe('the destinations', () => {
   it('give the icon of the reader that opens a file', () => {
     const { deps, window } = create()

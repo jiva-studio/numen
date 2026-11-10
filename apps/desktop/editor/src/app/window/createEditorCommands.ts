@@ -32,15 +32,9 @@ import {
 } from './createCommands'
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
-import {
-  getCommands,
-  getKinds,
-  getTabsHold,
-  getVaults,
-  type WindowContext,
-  type WindowCore,
-  type WindowServices,
-} from './createDisplayPart'
+import type { WindowCore } from './windowCore'
+import type { WindowServices } from './createWindowServices'
+import type { TabsHold } from '@/features/vault-commands'
 import type { useSettings } from '@/pages/settings'
 import type { useVaults } from './useVaults'
 import type { createWindowTabMoves } from './createTabsPart'
@@ -82,7 +76,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     coverage: vaultsModule.coverage,
     reached: editing.reached,
     settingPalette: settings.settingPalette,
-    rest: settings.rest,
+    settings: settings.rest,
     writeMessage,
     pluginHost: deps.pluginHost,
   })
@@ -96,33 +90,29 @@ export const createNoteKindReader = (itemLists: CommandItemLists) => async (path
   }
 }
 
-function isPaletteOpen(ctx: WindowContext): boolean {
-  const { commands } = ctx
-  return commands ? commands.palette.open.value || commands.commands.palette.open.value : false
+function isPaletteOpen(commands: ReturnType<typeof createCommands>): boolean {
+  return commands.palette.open.value || commands.commands.palette.open.value
 }
 
-function initFeatureCommands(
+function createFeatureCommands(
   base: WindowCore,
-  ctx: WindowContext,
   services: WindowServices,
   moves: ReturnType<typeof createWindowTabMoves>,
+  tabsHold: TabsHold,
 ) {
-  const { editing, window } = services
+  const { editing, window, navigation, vaults } = services
   const { windowTabs, tabLinks } = base.tabs
-  ctx.featureCommands = collectFeatureCommands(
+  const featureCommands = collectFeatureCommands(
     createFeatureDeps({
       making: editing.making,
-      notes: createCommandNotes(editing.reached, base.tabs.windowTabs),
-      windowTabs: base.tabs.windowTabs,
-      travel: (path) => getKinds(ctx).travel(path),
-      leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
+      notes: createCommandNotes(editing.reached, windowTabs),
+      windowTabs,
+      travel: navigation.travel,
+      leavePath: navigation.leavePath,
       getOpeningNote: () => window.opening.path.value,
-      tabsHold: {
-        pause: async () => getTabsHold(ctx).pause(),
-        resume: () => getTabsHold(ctx).resume(),
-      },
-      setVaultName: getVaults(ctx).setVaultName,
-      reload: getVaults(ctx).reload,
+      tabsHold,
+      setVaultName: vaults.setVaultName,
+      reload: vaults.reload,
       writeMessage: base.writeMessage,
       tabs: {
         tabLinks,
@@ -138,18 +128,40 @@ function initFeatureCommands(
     }),
     words,
   )
-  registerFeatureCommands(ctx.featureCommands)
+  registerFeatureCommands(featureCommands)
+  return featureCommands
 }
 
-export function initWindowKindsAndCommands(
+export function createEditorCommands(
   base: WindowCore,
-  ctx: WindowContext,
   services: WindowServices,
   moves: ReturnType<typeof createWindowTabMoves>,
+  tabsHold: TabsHold,
 ) {
-  const { editing, settings, window, tabSync } = services
-  const getTarget = createTargetResolver(base.tabs.windowTabs, () => getVaults(ctx), window)
-  base.plugins.appCommands.current = () => getEditorCommandList(ctx)
+  const { editing, settings, window, vaults } = services
+  const getTarget = createTargetResolver(base.tabs.windowTabs, vaults, window)
+  const featureCommands = createFeatureCommands(base, services, moves, tabsHold)
+  const knows: NoteLookup = createNoteLookup(editing, base.tabs.windowTabs)
+
+  const commands = initWindowCommands({
+    windowTabs: base.tabs.windowTabs,
+    getTarget,
+    knows,
+    settings,
+    runs: base.runs,
+    vaultsModule: vaults,
+    editing,
+    writeMessage: base.writeMessage,
+    log: base.log,
+    pluginHost: base.plugins.host.pluginHost,
+    declaredCommands: base.plugins.declaredCommands,
+    slots: base.plugins.host.pluginHost.slots,
+    getAppCommands: () => featureCommands.commands,
+    readCommandNote: createCommandNoteReader(base.plugins.itemLists),
+  })
+  services.renames.subscribe((renamed) => commands.commands.navigation.applyRenames(renamed))
+
+  base.plugins.appCommands.current = () => featureCommands.commands
   base.plugins.slotWindowValues.current = () => {
     const inFront = getTarget()
     return {
@@ -157,12 +169,21 @@ export function initWindowKindsAndCommands(
       'window.isVaultReady': inFront.isReady,
       'window.isTabOpen': inFront.tab !== '',
       'window.isFieldFocused': isFieldFocused(),
-      'window.isPaletteOpen': isPaletteOpen(ctx),
+      'window.isPaletteOpen': isPaletteOpen(commands),
     }
   }
+  return { getTarget, featureCommands, commands }
+}
 
-  const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
-  ctx.kinds = useTabKinds({
+/** The kinds of tab the window declares, and the services the plugins are given from them. */
+export function createWindowKinds(
+  base: WindowCore,
+  services: WindowServices,
+  parts: Pick<ReturnType<typeof createEditorCommands>, 'getTarget' | 'commands'>,
+) {
+  const { editing, settings, window, tabSync } = services
+  const { getTarget, commands } = parts
+  const kinds = useTabKinds({
     core: searchCore,
     log: base.log,
     tabOpeners: base.tabs.tabOpeners,
@@ -172,8 +193,8 @@ export function initWindowKindsAndCommands(
     settings,
     window,
     getTarget,
-    runCommand,
-    commandDeps: () => getCommands(ctx).commandDeps,
+    runCommand: commands.runCommand,
+    commandDeps: () => commands.commandDeps,
     tabLinks: base.tabs.tabLinks,
     tabSync,
     getPluginCommandIcon: (id) => {
@@ -184,37 +205,11 @@ export function initWindowKindsAndCommands(
     },
   })
 
-  Object.assign(base.plugins.pluginServices, getKinds(ctx).services, {
+  Object.assign(base.plugins.pluginServices, kinds.services, {
     taskList: window.tasks,
     backgroundTasks: createBackgroundTasks(base, window, settings),
   })
-
-  const knows: NoteLookup = createNoteLookup(editing, base.tabs.windowTabs)
-
-  initFeatureCommands(base, ctx, services, moves)
-
-  ctx.commands = initWindowCommands({
-    windowTabs: base.tabs.windowTabs,
-    getTarget,
-    knows,
-    settings,
-    runs: base.runs,
-    vaultsModule: getVaults(ctx),
-    editing,
-    writeMessage: base.writeMessage,
-    log: base.log,
-    pluginHost: base.plugins.host.pluginHost,
-    declaredCommands: base.plugins.declaredCommands,
-    slots: base.plugins.host.pluginHost.slots,
-    getAppCommands: () => getEditorCommandList(ctx),
-    readCommandNote: createCommandNoteReader(base.plugins.itemLists),
-  })
-
-  return {
-    getTarget,
-    runCommand,
-    runChoice: getCommands(ctx).runChoice,
-  }
+  return kinds
 }
 
 type WindowSettings = ReturnType<typeof useSettings>
@@ -243,7 +238,3 @@ function createBackgroundTasks(
     openSettings: (pluginId) => settings.configured.openSettings(pluginId),
   })
 }
-
-/** Every command of the editor, as the features declare them. */
-export const getEditorCommandList = (ctx: WindowContext): readonly Command[] =>
-  ctx.featureCommands?.commands ?? []

@@ -61,8 +61,8 @@ import { getVaultList } from './vaultList'
 
 type Words = typeof WORDS
 
-import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
-import type { Ref } from 'vue'
+import type { SettingsStore } from '@/entities/settings'
+import { createEmitter } from '@/shared/lib/emitter'
 
 export interface CommandsDepsOptions {
   core: SearchDeps
@@ -79,14 +79,8 @@ export interface CommandsDepsOptions {
     getCommands: () => readonly Command[]
     choose: (command: string, item: string) => Promise<void>
   }
-  rest: {
-    write: { writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void }
-    read?: {
-      getModelsAt?: (at: readonly string[]) => readonly Model[]
-      getCommittedSetting?: (path: readonly string[]) => unknown
-    }
-    state?: { plugins?: Ref<readonly PluginInfo[]> }
-  }
+  /** The plugins of the installation and the settings that switch them on. */
+  settings: Pick<SettingsStore, 'read' | 'state'>
   writeMessage: MessageWriter
   pluginHost?: PluginHost | undefined
   slots?: SlotHost
@@ -125,7 +119,7 @@ function createPaletteItems(
     'getAppCommands' | 'declaredCommands' | 'pluginHost' | 'getTarget'
   >,
   getCommandNote: ReturnType<typeof createCommandNoteReader>,
-  getCommandDeps: () => CommandDeps,
+  commandDeps: CommandDeps,
 ) {
   const { pluginHost } = options
   return createCommandItems({
@@ -137,7 +131,7 @@ function createPaletteItems(
     getTarget: options.getTarget,
     runApp: async (id, target, itemId, values) => {
       const invocation = withValues(createInvocation(id, target, itemId), values)
-      await runInvocationToEnd(invocation, getCommandDeps())
+      await runInvocationToEnd(invocation, commandDeps)
     },
     runPlugin: async (id, target, itemId, values) => {
       const note = await getCommandNote(target)
@@ -270,7 +264,7 @@ function createWindowCommandPalette(
 
 export function createCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, coverage, writeMessage } = options
-  const { pluginHost, declaredCommands, rest } = options
+  const { pluginHost, declaredCommands, settings } = options
   const plugins = usePluginCommands(
     options.readCommandNote ?? createCommandNoteReader({ fileKinds: getFileKinds }),
     pluginHost,
@@ -288,20 +282,36 @@ export function createCommands(options: CommandsDepsOptions) {
       getTarget,
     },
   )
-  const items = createPaletteItems(options, getCommandNote, () => commandDeps)
+  const searchRequests = createEmitter<void>()
+  const commandDeps: CommandDeps = createCommandDeps({
+    core,
+    windowTabs,
+    reached: options.reached,
+    ...(options.settingPalette ? { settingPalette: options.settingPalette } : {}),
+    runs: options.runs,
+    writeMessage,
+    search: () => searchRequests.emit(),
+  })
+  const items = createPaletteItems(options, getCommandNote, commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
   const commands = createWindowCommandPalette(options, lists, listExtras)
 
-  watchCommandLists({ ...options, plugins: rest.state?.plugins }, commands.palette.open)
+  if (declaredCommands) {
+    watchCommandLists(
+      {
+        declaredCommands,
+        writeMessage,
+        plugins: settings.state.plugins,
+        getCommittedSetting: settings.read.getCommittedSetting,
+      },
+      commands.palette.open,
+    )
+  }
   resetWhenClosed(commands.palette.open)
-
-  const commandDeps: CommandDeps = createCommandDeps({
-    ...options,
-    search: () => {
-      commands.palette.setOpen(false)
-      palette.setOpen(true)
-    },
+  searchRequests.subscribe(() => {
+    commands.palette.setOpen(false)
+    palette.setOpen(true)
   })
 
   const { runCommand, runCommandToEnd } = createCommandRunner({
@@ -347,7 +357,7 @@ export function createCommands(options: CommandsDepsOptions) {
   }
 
   if (pluginHost && declaredCommands?.contributions.keybindings) {
-    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, rest.state?.plugins)
+    syncKeybindings(pluginHost, declaredCommands.contributions.keybindings, settings.state.plugins)
   }
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */

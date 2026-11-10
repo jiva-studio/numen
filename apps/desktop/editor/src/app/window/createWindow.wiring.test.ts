@@ -91,6 +91,7 @@ vi.mock('@/entities/tab', async (importOriginal) => ({
     h.args.tabSyncResult = { name: 'tabSync', applySync: vi.fn(), applyGroupPaths: vi.fn() }
     return h.args.tabSyncResult
   },
+  createTabNavigation: () => h.f.navigation,
   useOpenTabs: (args: unknown) => {
     h.args.openTabs = args
     return h.f.openTabs
@@ -300,9 +301,8 @@ beforeEach(() => {
       isPluginStarting: vi.fn((_pluginId: string) => false),
       close: vi.fn(async () => undefined),
     },
+    navigation: { travel: vi.fn(), leavePath: vi.fn() },
     kinds: {
-      travel: vi.fn(),
-      leavePath: vi.fn(),
       dragged: ref([]),
       services: { workspace: { name: 'workspace' }, notes: { name: 'notes' } },
       made: {},
@@ -379,12 +379,12 @@ describe('the parts of the window', () => {
     expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed: renamedItems })
   })
 
-  it('are requested to travel to a path through the kinds', () => {
+  it('are requested to travel to a path through the tab navigation', () => {
     createWindow()
 
     h.args.display.travelTo('a.md')
 
-    expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
+    expect(h.f.navigation.travel).toHaveBeenCalledWith('a.md')
   })
 
   it('are requested to open a file at the spans through the openers', () => {
@@ -396,12 +396,15 @@ describe('the parts of the window', () => {
     expect(h.f.tabOpeners.openFileAt).toHaveBeenCalledWith('a.md', spans)
   })
 
-  it('are requested to reload through the vaults', () => {
+  it('are requested to reload the page', () => {
+    const reload = vi.fn()
+    vi.stubGlobal('location', { ...globalThis.location, reload })
     createWindow()
 
     h.args.display.reload()
 
-    expect(h.f.vaults.reload).toHaveBeenCalledOnce()
+    expect(reload).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
   })
 
   it('hand the kinds the commands dependencies as they stand', () => {
@@ -419,13 +422,13 @@ describe('the parts of the window', () => {
     expect(h.args.kinds.getPluginCommandIcon('org.example.sample:none.run')).toBeUndefined()
   })
 
-  it('hand the commands the kinds as they stand', () => {
+  it('hand the commands the tab navigation', () => {
     createWindow()
 
     h.args.featureWindow.travel('a.md')
     h.args.featureWindow.leavePath('a.md', 'b.md')
-    expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
-    expect(h.f.kinds.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
+    expect(h.f.navigation.travel).toHaveBeenCalledWith('a.md')
+    expect(h.f.navigation.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
     expect(h.args.featureWindow.getOpeningNote()).toBe('opening')
   })
 

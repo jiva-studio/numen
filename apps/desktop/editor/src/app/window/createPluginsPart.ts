@@ -20,15 +20,9 @@ import {
 import { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'
-import type { initWindowKindsAndCommands } from './createCommandsPart'
-import {
-  getCommands,
-  getVaults,
-  type PluginsCore,
-  type TabsCore,
-  type WindowContext,
-  type WindowCore,
-} from './createDisplayPart'
+import type { createEditorCommands } from './createEditorCommands'
+import type { PluginsCore, TabsCore, WindowCore } from './windowCore'
+import type { WindowServices } from './createWindowServices'
 import { getSettingsConfig } from '@/features/settings-commands'
 import type { SettingsStore } from '@/entities/settings'
 import { createWindowCommands } from '../plugins/windowCommands'
@@ -170,17 +164,17 @@ export function createPluginsCore(deps: PluginsCoreDeps): PluginsCore {
 
 export function createWindowFrameServices(
   base: WindowCore,
-  ctx: WindowContext,
-  commands: Pick<ReturnType<typeof initWindowKindsAndCommands>, 'getTarget'>,
+  services: Pick<WindowServices, 'vaults'>,
+  commands: Pick<
+    ReturnType<typeof createEditorCommands>,
+    'getTarget' | 'featureCommands' | 'commands'
+  >,
 ) {
   const { frame } = base
-  let tableIds: readonly string[] | undefined
-  const { items, runCommandToEnd } = getCommands(ctx).pluginRuns
+  const { items, runCommandToEnd } = commands.commands.pluginRuns
+  const appIds = [...new Set(commands.featureCommands.commands.map((one) => one.command ?? one.id))]
   const windowCommands = createWindowCommands({
-    getAppIds: () =>
-      (tableIds ??= [
-        ...new Set((ctx.featureCommands?.commands ?? []).map((one) => one.command ?? one.id)),
-      ]),
+    getAppIds: () => appIds,
     getPluginIds: () => base.plugins.host.pluginHost.getPaletteCommands().map((one) => one.id),
     runCommandToEnd,
     listItems: items.listCommandItems,
@@ -190,9 +184,9 @@ export function createWindowFrameServices(
   Object.assign(base.plugins.pluginServices, {
     commands: windowCommands,
     vaults: createEditorVaults({
-      vaultList: getVaults(ctx).vaultList,
+      vaultList: services.vaults.vaultList,
       getTarget: commands.getTarget,
-      commandDeps: getCommands(ctx).commandDeps,
+      commandDeps: commands.commands.commandDeps,
     }),
     window: createWindowHost(frame, (error) => base.writeMessage(formatError(error), 'error')),
   })

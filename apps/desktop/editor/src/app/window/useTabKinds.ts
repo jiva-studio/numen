@@ -52,11 +52,6 @@ export function useTabKinds(deps: WindowKindsDeps) {
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
-  /** Opens the note in a tab of the current window. */
-  const travel = async (path: string): Promise<void> => {
-    await tabOpeners.openFile(path, '', 'current')
-  }
-
   /**
    * The note the most recently active tool tab depends on, among the tools that
    * follow a note: those that navigate to a path and report the path they show.
@@ -110,9 +105,6 @@ export function useTabKinds(deps: WindowKindsDeps) {
     made: createdItem,
     destinations,
     dragged,
-    travel,
-    leavePath: (from: string, to: string) =>
-      windowTabs.tabs.navigateTabsAt(from, to, (tabId) => deps.tabSync?.setShownPath(tabId, to)),
     services,
   }
 }

@@ -1,30 +1,29 @@
 import { formatError } from '@/shared/api/errors'
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import type { fileOpeners, WindowTabs } from '@/entities/tab'
+import type { createTabNavigation, fileOpeners, WindowTabs } from '@/entities/tab'
+import type { Emitter } from '@/shared/lib/emitter'
 import type { CommandTarget } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
-import type { createCommands } from './createCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
 import type { WindowDisplay } from '@/features/window-display'
-import type { useTabKinds } from './useTabKinds'
 
 export interface DisplayWiring {
   editing: ReturnType<typeof createNoteEditors>
-  getCommands: () => ReturnType<typeof createCommands>
-  getKinds: () => ReturnType<typeof useTabKinds>
+  navigation: ReturnType<typeof createTabNavigation>
+  /** Receives the renames of a change of the vault, for whatever keeps paths of its own. */
+  renames: Emitter<readonly PathRename[]>
   tabOpeners: ReturnType<typeof fileOpeners>
   windowTabs: Pick<WindowTabs, 'groups'>
-  getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
   writeMessage: MessageWriter
 }
 
 export function createDisplayOptions(deps: DisplayWiring) {
-  const { editing, getCommands, getKinds, tabOpeners, windowTabs, getVaults, notifyPlugins } = deps
+  const { editing, navigation, renames, tabOpeners, windowTabs, notifyPlugins } = deps
   const { writeMessage } = deps
   return {
     onVaultChanged: (
@@ -41,27 +40,27 @@ export function createDisplayOptions(deps: DisplayWiring) {
       editing.notes.applyPathChanges(paths, renamed)
       // Every open tab on a moved or renamed file is navigated to the new path.
       for (const one of renamed) {
-        runInBackground(Promise.resolve(getKinds().leavePath(one.from, one.to)), (error) =>
+        runInBackground(navigation.leavePath(one.from, one.to), (error) =>
           writeMessage(formatError(error), 'error'),
         )
       }
-      getCommands().commands.navigation.applyRenames(renamed)
+      renames.emit(renamed)
       notifyPlugins({ paths: changed, renamed })
     },
     reportChange: editing.changes.reportChange,
-    travelTo: (path: string) => getKinds().travel(path),
+    travelTo: navigation.travel,
     openFileAt: (path: string, spans: readonly TextRange[]) =>
       runInBackground(tabOpeners.openFileAt(path, spans), (error) =>
         writeMessage(formatError(error), 'error'),
       ),
     activateTab: (id: string) => windowTabs.groups.handle.show(id),
-    reload: () => getVaults().reload(),
+    reload: () => globalThis.location.reload(),
   }
 }
 
 export function createTargetResolver(
   windowTabs: WindowTabs,
-  getVaults: () => ReturnType<typeof useVaults>,
+  vaults: Pick<ReturnType<typeof useVaults>, 'activeVault'>,
   window: WindowDisplay,
 ) {
   const getFront = () => {
@@ -79,7 +78,7 @@ export function createTargetResolver(
       path: on?.path ?? '',
       title: on?.title ?? '',
       file,
-      vault: getVaults().activeVault.value,
+      vault: vaults.activeVault.value,
       isReady: !window.health.failure.value,
     }
   }
