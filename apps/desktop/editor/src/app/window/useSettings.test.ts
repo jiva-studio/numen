@@ -3,23 +3,26 @@
  * each setting, and the settings tab reaching each setting through the same
  * piece of code the palette does.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettings } from './useSettings'
 import { WORDS } from '@/shared/words'
 import type { Model, PluginInfo, PluginSettingInfo } from '@/entities/settings'
-import type { SettingsPort } from '@/app/ports/settings'
+import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowTabs } from '@/entities/tab'
-import {
-  ListCatalogResponseSchema,
-  asFailure,
-  asValue,
-  create,
-  type PluginCatalog,
-} from '@numen/core-client'
-import { createLostConnection } from '@numen/core-client/testing'
+import { createLostConnection, type CoreAnswers } from '@numen/core-client/testing'
 
-const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = {}) => {
+let restore: (() => void) | undefined
+
+afterEach(() => {
+  restore?.()
+  restore = undefined
+})
+
+const createSettings = (
+  overrides: Partial<Parameters<typeof useSettings>[0]> = {},
+  others: CoreAnswers = {},
+) => {
   const writers: string[] = []
   const writerFns: Record<string, ReturnType<typeof vi.fn>> = {}
   const core = {
@@ -45,7 +48,9 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
     choosePluginPath: vi.fn(async () => ({ path: '/picked', isChosen: true, problem: '' })),
     getPluginData: vi.fn(async () => 5),
     deletePluginData: vi.fn(async () => undefined),
-  } as unknown as SettingsPort
+  } as unknown as SettingsCore
+  restore?.()
+  restore = installSettingsCore(core, others)
   const log = {
     getWriter: (name: string) => {
       writers.push(name)
@@ -58,7 +63,6 @@ const createSettings = (overrides: Partial<Parameters<typeof useSettings>[0]> = 
   const windowTabs = { handle } as unknown as ReturnType<typeof useWindowTabs>
   const onSizeChanged = vi.fn()
   const settings = useSettings({
-    core,
     words: WORDS,
     log,
     windowTabs,
@@ -320,10 +324,7 @@ describe('the settings tab', () => {
 
   it('delegates settings tab installation actions, path choosing, plugin data, and error reporting', async () => {
     const getSettingsViews = vi.fn(() => new Map())
-    const catalog = {
-      listPlugins: vi.fn(async () => ({ plugins: [] })),
-    } as unknown as NonNullable<Parameters<typeof useSettings>[0]['catalog']>
-    const { settings, core, writerFns } = createSettings({ getSettingsViews, catalog })
+    const { settings, core, writerFns } = createSettings({ getSettingsViews })
     const { installation } = settings.configured.state
 
     expect(installation.getSettingsViews).toBe(getSettingsViews)
@@ -473,26 +474,23 @@ describe('the settings tab', () => {
 })
 
 describe('the plugin catalog', () => {
-  const createCatalog = (listing: Awaited<ReturnType<PluginCatalog['list']>>): PluginCatalog => ({
-    list: vi.fn(async () => listing),
-    get: vi.fn(),
-    findByTabKind: vi.fn(),
-  })
-
   it('writes the reason a plugin source failed to the window log', async () => {
-    const catalog = createCatalog(
-      asValue(
-        create(ListCatalogResponseSchema, {
-          sourceErrors: [
-            {
-              source: 'local',
-              message: 'duplicate plugin id "sample.notes" in /plugins/a and /plugins/b',
-            },
-          ],
-        }),
-      ),
+    const { settings, writerFns } = createSettings(
+      {},
+      {
+        pluginCatalog: {
+          listCatalog: () => ({
+            entries: [],
+            sourceErrors: [
+              {
+                source: 'local',
+                message: 'duplicate plugin id "sample.notes" in /plugins/a and /plugins/b',
+              },
+            ],
+          }),
+        },
+      },
     )
-    const { settings, writerFns } = createSettings({ catalog })
 
     settings.rest.plugins.value = [SCANNER]
 
@@ -506,16 +504,22 @@ describe('the plugin catalog', () => {
   })
 
   it('writes the reason the catalog is unavailable to the window log', async () => {
-    const catalog = createCatalog(
-      asFailure({ kind: 'unavailable', message: 'Numen is busy; try again' }),
+    const { settings, writerFns } = createSettings(
+      {},
+      {
+        pluginCatalog: {
+          listCatalog: () => {
+            throw createLostConnection('the catalog is down')
+          },
+        },
+      },
     )
-    const { settings, writerFns } = createSettings({ catalog })
 
     settings.rest.plugins.value = [SCANNER]
 
     await vi.waitFor(() =>
       expect(writerFns.configured).toHaveBeenCalledWith(
-        'The plugin catalog is unavailable: Numen is busy; try again',
+        'The plugin catalog is unavailable: Numen is not responding; retrying',
         'error',
       ),
     )

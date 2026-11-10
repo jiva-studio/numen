@@ -1,54 +1,57 @@
 /**
- * The settings entity's part of the mocks: the settings of the vault, and the themes the window
- * lists. The theme module is mocked together with the door that passes it on.
+ * The settings entity's part of the answers: the settings of the vault, the themes the window
+ * lists and the plugin catalog, answered to the real clients over the router transport.
  */
-import { vi } from 'vitest'
+import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
+import { createLostConnection } from '@numen/core-client/testing'
 import { requests } from '../requests'
 import { getSettingInForce, keepSetting, mockVaultState, pendingStream } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
-import type * as SettingsModule from '@/entities/settings'
+import { toWireSetting } from '../settingsWire'
 
-export const settingsCoreMock = {
-  getSettings: () =>
-    Promise.resolve({
+const MODE_CODES = {
+  system: THEME_MODE.SYSTEM,
+  light: THEME_MODE.LIGHT,
+  dark: THEME_MODE.DARK,
+} as const
+
+export const settingsAnswers = {
+  settingsService: {
+    getSettings: () => ({
       written: '{}',
       path: '/vaults/Physics/.numen/settings.json',
       models: [],
       plugins: [],
-      app: mockVaultState.app.map(getSettingInForce),
+      app: mockVaultState.app.map(getSettingInForce).map(toWireSetting),
     }),
-  updateSettings: (edits: readonly { at: readonly string[]; value: string }[]) => {
-    if (mockVaultState.writeError) return Promise.reject(new Error(mockVaultState.writeError))
-    for (const one of edits) {
-      requests.settingsWritten.push(`${one.at.join('.')} ${one.value}`)
-      keepSetting(one.at.join('.'), JSON.parse(one.value))
-    }
-    return Promise.resolve()
+    writeSettings: (request: { settings: readonly { at: readonly string[]; value: string }[] }) => {
+      if (mockVaultState.writeError) throw createLostConnection(mockVaultState.writeError)
+      for (const one of request.settings) {
+        requests.settingsWritten.push(`${one.at.join('.')} ${one.value}`)
+        keepSetting(one.at.join('.'), JSON.parse(one.value))
+      }
+      return {}
+    },
+    watchSettings: pendingStream,
   },
-  watchSettings: pendingStream,
-} satisfies Partial<VaultCore>
-
-const themesResponse = {
-  themes: {
-    getAppearance: () =>
-      Promise.resolve({
-        themes: [
-          { name: 'preset:numen', title: 'numen', isBuiltIn: true, pluginId: '', isPinned: false },
-          { name: 'mine:sea', title: 'sea', isBuiltIn: false, pluginId: '', isPinned: false },
-        ],
-        applied: mockVaultState.applied,
-        mode: mockVaultState.mode,
-        sizes: mockVaultState.sizes,
-        bounds: { interfaceScale: { min: 0.8, max: 2 }, textScale: { min: 0.8, max: 1.75 } },
-      }),
-    readTheme: (name: string) => Promise.resolve(`:root { --numen-surface: ${name} }`),
+  theme: {
+    listThemes: () => ({
+      themes: [
+        { name: 'preset:numen', title: 'numen', origin: THEME_ORIGIN.PRESET },
+        { name: 'mine:sea', title: 'sea', origin: THEME_ORIGIN.MINE },
+      ],
+      applied: mockVaultState.applied,
+      mode: MODE_CODES[mockVaultState.mode],
+      interfaceScale: mockVaultState.sizes.interfaceScale,
+      textScale: mockVaultState.sizes.textScale,
+      interfaceScaleBounds: { min: 0.8, max: 2 },
+      textScaleBounds: { min: 0.8, max: 1.75 },
+    }),
+    readTheme: (request: { name: string }) => ({
+      css: `:root { --numen-surface: ${request.name} }`,
+    }),
     watchThemes: pendingStream,
   },
+  pluginCatalog: {
+    listCatalog: () => ({ entries: [], sourceErrors: [] }),
+  },
 }
-
-vi.mock('@/entities/settings/api/theme', () => themesResponse)
-
-vi.mock('@/entities/settings', async (original) => ({
-  ...(await original<typeof SettingsModule>()),
-  ...themesResponse,
-}))

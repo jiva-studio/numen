@@ -1,58 +1,73 @@
-import { describe, expect, it, vi } from 'vitest'
-import { ReportedError } from '@numen/core-client'
-import { createSecretStore, type SecretDeps } from './secrets'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createLostConnection, installCoreAnswers } from '@numen/core-client/testing'
+import { createSecretStore } from './secrets'
 
 const words = { secretFailed: 'The secret was not saved.' }
 
+let restore: (() => void) | undefined
+
+afterEach(() => {
+  restore?.()
+  restore = undefined
+})
+
 const createStore = (failure: string | null = null) => {
   const calls: string[] = []
-  const answer = <T>(value: T): Promise<T> =>
-    failure ? Promise.reject(new ReportedError(failure)) : Promise.resolve(value)
-  const core: SecretDeps = {
-    createSecret: (group, name, value) => {
-      calls.push(`create ${group} ${name} ${value}`)
-      return answer('s0a1b2c3d')
-    },
-    renameSecret: (id, name) => {
-      calls.push(`rename ${id} ${name}`)
-      return answer(undefined)
-    },
-    writeSecret: (id, value) => {
-      calls.push(`write ${id} ${value}`)
-      return answer(undefined)
-    },
-    deleteSecret: (id) => {
-      calls.push(`delete ${id}`)
-      return answer(undefined)
-    },
-    deleteSecretGroup: (group) => {
-      calls.push(`delete group ${group}`)
-      return answer(undefined)
-    },
-    listSecretStates: () => {
-      calls.push('list states')
-      return answer(new Map([['s0a1b2c3d', true]]))
-    },
-    moveSecret: (id, beforeId) => {
-      calls.push(`move ${id} before [${beforeId}]`)
-      return answer(undefined)
-    },
-    renameSecretGroup: (group, name) => {
-      calls.push(`rename group ${group} ${name}`)
-      return answer(undefined)
-    },
-    allowPluginSecret: (secretId, pluginId, name, group) => {
-      calls.push(`allow ${secretId} ${pluginId} ${name} [${group}]`)
-      return answer(undefined)
-    },
-    denyPluginSecret: (secretId, pluginId, name, group) => {
-      calls.push(`deny ${secretId} ${pluginId} ${name} [${group}]`)
-      return answer(undefined)
-    },
+  const answer = <T>(value: T): T => {
+    if (failure) throw createLostConnection(failure)
+    return value
   }
+  restore = installCoreAnswers({
+    settingsService: {
+      createSecret: (request) => {
+        calls.push(`create ${request.group} ${request.name} ${request.value}`)
+        return answer({ id: 's0a1b2c3d' })
+      },
+      renameSecret: (request) => {
+        calls.push(`rename ${request.id} ${request.name}`)
+        return answer({})
+      },
+      writeSecret: (request) => {
+        calls.push(`write ${request.id} ${request.value}`)
+        return answer({})
+      },
+      deleteSecret: (request) => {
+        calls.push(`delete ${request.id}`)
+        return answer({})
+      },
+      deleteSecretGroup: (request) => {
+        calls.push(`delete group ${request.group}`)
+        return answer({})
+      },
+      listSecretStates: () => {
+        calls.push('list states')
+        return answer({ states: [{ id: 's0a1b2c3d', hasValue: true }] })
+      },
+      moveSecret: (request) => {
+        calls.push(`move ${request.id} before [${request.beforeId}]`)
+        return answer({})
+      },
+      renameSecretGroup: (request) => {
+        calls.push(`rename group ${request.group} ${request.name}`)
+        return answer({})
+      },
+      allowPluginSecret: (request) => {
+        calls.push(
+          `allow ${request.secretId} ${request.pluginId} ${request.name} [${request.group}]`,
+        )
+        return answer({})
+      },
+      denyPluginSecret: (request) => {
+        calls.push(
+          `deny ${request.secretId} ${request.pluginId} ${request.name} [${request.group}]`,
+        )
+        return answer({})
+      },
+    },
+  })
   const notifier = vi.fn()
   const refresh = vi.fn(() => Promise.resolve())
-  const store = createSecretStore(core, { words, notify: notifier, refresh })
+  const store = createSecretStore({ words, notify: notifier, refresh })
   return { calls, notifier, refresh, store }
 }
 
@@ -137,7 +152,7 @@ describe('the permission of a plugin declaration to read a secret', () => {
     const { notifier, store } = createStore('plugin is not installed')
     await store.allowPluginSecret('s0a1b2c3d', 'md.numen.sample', 'apiKey', '')
     expect(notifier).toHaveBeenLastCalledWith(
-      expect.stringContaining('plugin is not installed'),
+      expect.stringContaining('Numen is not responding; retrying'),
       'error',
     )
   })
@@ -165,7 +180,7 @@ describe('the states of the values', () => {
     await store.loadStates()
     expect(store.states.value.size).toBe(0)
     expect(notifier).toHaveBeenLastCalledWith(
-      expect.stringContaining('the keychain is locked'),
+      expect.stringContaining('Numen is not responding; retrying'),
       'error',
     )
   })

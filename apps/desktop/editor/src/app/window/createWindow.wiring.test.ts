@@ -7,6 +7,8 @@ import { createLostConnection } from '@numen/core-client/testing'
 import { getNamedIcon } from '@/shared/icons'
 import { ref } from 'vue'
 import { createWindow } from './createWindow'
+import type * as BackgroundTasksModule from '@/features/background-tasks'
+import type * as WindowModule from '@/entities/window'
 import type * as UseOpenTabsModule from '../tabs/useOpenTabs'
 
 /** What each part was made with, and what it was made as. */
@@ -18,7 +20,7 @@ const h = vi.hoisted(() => ({
     fileKinds: vi.fn(),
     readOpenTabs: vi.fn(async () => ({ tabs: [], activeId: '' })),
     resolveLinks: vi.fn(async () => [{ path: 'resolved.md' }]),
-    cancelTask: vi.fn(async () => undefined),
+    cancelTask: vi.fn(async (_id: string) => undefined),
     detachTab: vi.fn(),
     writeTabLinks: vi.fn(async () => undefined),
     syncTabPath: vi.fn(async () => undefined),
@@ -93,19 +95,18 @@ vi.mock('./useWindowDisplay', () => ({
     return h.f.display
   },
 }))
-vi.mock('../shell/useNoticeTasks', () => ({
-  useNoticeTasks: (args: unknown) => {
-    h.args.noticeTasks = args
-    return { value: [{ id: 'notice:1' }] }
-  },
-}))
 vi.mock('./useWindowKinds', () => ({
   useWindowKinds: (args: unknown) => {
     h.args.kinds = args
     return h.f.kinds
   },
 }))
-vi.mock('../shell/backgroundTasks', () => ({
+vi.mock('@/features/background-tasks', async (original) => ({
+  ...(await original<typeof BackgroundTasksModule>()),
+  useNoticeTasks: (args: unknown) => {
+    h.args.noticeTasks = args
+    return { value: [{ id: 'notice:1' }] }
+  },
   createBackgroundTaskHost: (args: unknown) => {
     h.args.backgroundTasks = args
     return { name: 'backgroundTasks' }
@@ -129,7 +130,9 @@ vi.mock('../tabs/tabMove', () => ({
     return h.f.openMovedTab
   },
 }))
-vi.mock('./windowRuntime', () => ({
+vi.mock('@/entities/window', async (original) => ({
+  ...(await original<typeof WindowModule>()),
+  cancelTask: (id: string) => h.core.cancelTask(id),
   focusWindow: vi.fn(async () => undefined),
   closeWindow: vi.fn(async () => undefined),
   closeWindowWhenEmpty: (args: unknown) => {

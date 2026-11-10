@@ -2,7 +2,8 @@ import { ref, shallowRef } from 'vue'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
 import type { NoteEdit } from '@/entities/note'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
+import { getAgentUnreachable, getVaultState } from '@/entities/vault'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 import { formatErrorMessage } from '@numen/core-client'
@@ -119,8 +120,8 @@ async function startDisplay(deps: StartDisplayDeps): Promise<void> {
   }
 }
 
-async function askDisplayState(core: VaultPort, display: DisplayState): Promise<unknown> {
-  const [state, agent] = await Promise.all([core.state(), core.agentUnreachable()])
+async function askDisplayState(display: DisplayState): Promise<unknown> {
+  const [state, agent] = await Promise.all([getVaultState(), getAgentUnreachable()])
   display.unreachable.value = agent
   display.name.value = state.name
   if (display.at.value === '') display.at.value = state.path
@@ -132,11 +133,11 @@ async function askDisplayState(core: VaultPort, display: DisplayState): Promise<
   return state
 }
 
-async function checkVaultSwapped(core: VaultPort, display: DisplayState): Promise<boolean> {
+async function checkVaultSwapped(display: DisplayState): Promise<boolean> {
   const was = display.at.value
   /* Stryker disable BlockStatement: callers only test truthiness of checkVaultSwapped */
   try {
-    const state = (await askDisplayState(core, display)) as { path: string }
+    const state = (await askDisplayState(display)) as { path: string }
     return was !== '' && state.path !== was
   } catch {
     return false
@@ -144,7 +145,7 @@ async function checkVaultSwapped(core: VaultPort, display: DisplayState): Promis
   /* Stryker restore BlockStatement */
 }
 
-async function readInitialNotePath(core: VaultPort, display: DisplayState): Promise<string> {
+async function readInitialNotePath(core: Pick<VaultPort, 'getInitialOpenPath'>, display: DisplayState): Promise<string> {
   const note = await core.getInitialOpenPath()
   display.hasNote.value = note !== null
   display.opening.value = note?.path ?? ''
@@ -152,7 +153,7 @@ async function readInitialNotePath(core: VaultPort, display: DisplayState): Prom
 }
 
 export function useWindowDisplay(
-  core: VaultPort & Pick<NotePort, 'watchEdits'>,
+  core: Pick<VaultPort, 'getInitialOpenPath'> & Pick<NotePort, 'watchEdits'>,
   how: DisplayOptions = {},
 ) {
   const wait = how.wait ?? sleep
@@ -163,9 +164,9 @@ export function useWindowDisplay(
   let open = true
   const abortController = new AbortController()
 
-  const ask = () => askDisplayState(core, display)
+  const ask = () => askDisplayState(display)
   const readInitialNote = () => readInitialNotePath(core, display)
-  const isVaultSwapped = () => checkVaultSwapped(core, display)
+  const isVaultSwapped = () => checkVaultSwapped(display)
 
   const streams = createWindowStreams({
     core,

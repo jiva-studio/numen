@@ -1,21 +1,90 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
+import { TASK_UNIT } from '@numen/core-client'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { createWindowStreams, type WindowStreamsDeps } from './useWindowStreams'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 
 async function* yielding<T>(...items: T[]): AsyncIterable<T> {
   for (const item of items) yield item
 }
 
-const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
+interface Change {
+  paths: string[]
+  shouldReload: boolean
+  renamed: { from: string; to: string }[]
+  versionPaths?: string[]
+}
+
+interface Focus {
+  path: string
+  ranges: { start: number; end: number }[]
+  tabId: string
+}
+
+const task = (id: string): Task => ({
+  id,
+  label: 'Indexing',
+  about: '',
+  completedCount: 0,
+  total: 0,
+  counting: 'items',
+  error: '',
+  isUserStarted: false,
+  pluginId: '',
+  pluginName: '',
+  isCancellable: false,
+  kind: 'work',
+})
+
+/** What the core sends for the streams the window follows. A stream not named sends nothing. */
+interface Streams {
+  changes?: Change[]
+  focus?: Focus[]
+  tasks?: Task[][]
+}
+
+let restore: () => void = () => undefined
+
+afterEach(() => {
+  restore()
+})
+
+const answer = (streams: Streams) => {
+  restore = installCoreAnswers({
+    vault: {
+      watchVaultChanges: () =>
+        yielding(
+          ...(streams.changes ?? []).map((one) => ({
+            paths: one.paths,
+            reload: one.shouldReload,
+            renamed: one.renamed,
+            versionPaths: one.versionPaths ?? [],
+          })),
+        ),
+    },
+    workspace: { watchFocus: () => yielding(...(streams.focus ?? [])) },
+    windowService: {
+      watchTasks: () =>
+        yielding(
+          ...(streams.tasks ?? []).map((list) => ({
+            tasks: list.map((one) => ({
+              id: one.id,
+              title: one.label,
+              unit: TASK_UNIT.THINGS,
+              error: one.error,
+            })),
+          })),
+        ),
+    },
+  })
+}
+
+const setup = (streams: Streams = {}, overrides: Partial<WindowStreamsDeps> = {}) => {
+  answer(streams)
   let open = true
   const deps = {
-    core: {
-      watchVaultChanges: () => yielding(),
-      watchFocus: () => yielding(),
-      watchTasks: () => yielding(),
-      watchEdits: () => yielding(),
-    },
+    core: { watchEdits: () => yielding() },
     listening: new AbortController(),
     isOpen: () => open,
     setLost: vi.fn(),
@@ -38,29 +107,10 @@ const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
   return deps
 }
 
-const task = (id: string): Task => ({
-  id,
-  label: 'Indexing',
-  about: '',
-  completedCount: 0,
-  total: 0,
-  counting: 'items',
-  error: '',
-  isUserStarted: false,
-  pluginId: '',
-  pluginName: '',
-  isCancellable: false,
-  kind: 'work',
-})
-
 describe('following the vault', () => {
   it('passes on a change that names only files whose text versions changed', async () => {
     const deps = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () =>
-          yielding({ paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }),
-      },
+      changes: [{ paths: [], shouldReload: false, renamed: [], versionPaths: ['talks/a.mp3'] }],
     })
 
     await createWindowStreams(deps).follow()
@@ -69,12 +119,7 @@ describe('following the vault', () => {
   })
 
   it('ignores a change that names no path, no reload and no rename', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () => yielding({ paths: [], shouldReload: false, renamed: [] }),
-      },
-    })
+    const deps = setup({ changes: [{ paths: [], shouldReload: false, renamed: [] }] })
 
     await createWindowStreams(deps).follow()
 
@@ -87,9 +132,7 @@ describe('following the vault', () => {
     ['a reload', { paths: [], shouldReload: true, renamed: [] }],
     ['a rename', { paths: [], shouldReload: false, renamed: [{ from: 'a.md', to: 'b.md' }] }],
   ])('tells a change that names %s', async (_name, change) => {
-    const deps = setup({
-      core: { ...setup().core, watchVaultChanges: () => yielding(change) },
-    })
+    const deps = setup({ changes: [change] })
 
     await createWindowStreams(deps).follow()
 
@@ -98,15 +141,14 @@ describe('following the vault', () => {
   })
 
   it('asks for the counts again after a change, and an error does not end the stream', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () => yielding({ paths: ['a.md'], shouldReload: false, renamed: [] }),
+    const deps = setup(
+      { changes: [{ paths: ['a.md'], shouldReload: false, renamed: [] }] },
+      {
+        ask: vi.fn(async () => {
+          throw new Error('failed')
+        }),
       },
-      ask: vi.fn(async () => {
-        throw new Error('failed')
-      }),
-    })
+    )
 
     await createWindowStreams(deps).follow()
 
@@ -116,36 +158,32 @@ describe('following the vault', () => {
 
   it('reads the opening note again when that very note is renamed, and not another', async () => {
     const renamedOpening = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () =>
-          yielding({
-            paths: [],
-            shouldReload: false,
-            renamed: [
-              { from: 'Other.md', to: 'Moved.md' },
-              { from: 'Opening.md', to: 'Renamed.md' },
-            ],
-          }),
-      },
+      changes: [
+        {
+          paths: [],
+          shouldReload: false,
+          renamed: [
+            { from: 'Other.md', to: 'Moved.md' },
+            { from: 'Opening.md', to: 'Renamed.md' },
+          ],
+        },
+      ],
     })
     await createWindowStreams(renamedOpening).follow()
     expect(renamedOpening.readInitialNote).toHaveBeenCalledTimes(1)
 
     const renamedOther = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () =>
-          yielding({
-            paths: [],
-            shouldReload: false,
-            renamed: [
-              { from: 'Other.md', to: 'Moved.md' },
-              { from: 'Opening.md', to: 'Renamed.md' },
-              { from: 'Third.md', to: 'Fourth.md' },
-            ],
-          }),
-      },
+      changes: [
+        {
+          paths: [],
+          shouldReload: false,
+          renamed: [
+            { from: 'Other.md', to: 'Moved.md' },
+            { from: 'Opening.md', to: 'Renamed.md' },
+            { from: 'Third.md', to: 'Fourth.md' },
+          ],
+        },
+      ],
     })
     renamedOther.opening.value = 'Elsewhere.md'
     await createWindowStreams(renamedOther).follow()
@@ -153,23 +191,25 @@ describe('following the vault', () => {
   })
 
   it('survives an error when the opening note is read again', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () =>
-          yielding({
+    const deps = setup(
+      {
+        changes: [
+          {
             paths: [],
             shouldReload: false,
             renamed: [
               { from: 'Other.md', to: 'Moved.md' },
               { from: 'Opening.md', to: 'Renamed.md' },
             ],
-          }),
+          },
+        ],
       },
-      readInitialNote: vi.fn(async () => {
-        throw new Error('gone')
-      }),
-    })
+      {
+        readInitialNote: vi.fn(async () => {
+          throw new Error('gone')
+        }),
+      },
+    )
 
     await createWindowStreams(deps).follow()
 
@@ -178,13 +218,10 @@ describe('following the vault', () => {
   })
 
   it('draws the page again on a reload that swaps the vault, and notifies nothing', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchVaultChanges: () => yielding({ paths: [], shouldReload: true, renamed: [] }),
-      },
-      isVaultSwapped: vi.fn(async () => true),
-    })
+    const deps = setup(
+      { changes: [{ paths: [], shouldReload: true, renamed: [] }] },
+      { isVaultSwapped: vi.fn(async () => true) },
+    )
 
     await createWindowStreams(deps).follow()
 
@@ -195,12 +232,14 @@ describe('following the vault', () => {
 
 describe('following the edits', () => {
   it('reports an edit that names a path, and not the opening silence', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchEdits: () => yielding({ path: '' }, { path: 'a.md' }),
-      } as unknown as WindowStreamsDeps['core'],
-    })
+    const deps = setup(
+      {},
+      {
+        core: {
+          watchEdits: () => yielding({ path: '' }, { path: 'a.md' }),
+        } as unknown as WindowStreamsDeps['core'],
+      },
+    )
 
     await createWindowStreams(deps).draw()
 
@@ -211,9 +250,7 @@ describe('following the edits', () => {
 
 describe('following the focus', () => {
   it('travels nowhere on a focus that names no path', async () => {
-    const deps = setup({
-      core: { ...setup().core, watchFocus: () => yielding({ path: '', ranges: [], tabId: '' }) },
-    })
+    const deps = setup({ focus: [{ path: '', ranges: [], tabId: '' }] })
 
     await createWindowStreams(deps).watch()
 
@@ -223,15 +260,11 @@ describe('following the focus', () => {
 
   it('travels to the path of a focus that names no span, and opens one that names a span', async () => {
     const deps = setup({
-      core: {
-        ...setup().core,
-        watchFocus: () =>
-          yielding(
-            { path: 'a.md', ranges: [], tabId: '' },
-            { path: 'b.md', ranges: [{ start: 3, end: 3 }], tabId: '' },
-            { path: 'c.md', ranges: [{ start: 2, end: 9 }], tabId: '' },
-          ),
-      },
+      focus: [
+        { path: 'a.md', ranges: [], tabId: '' },
+        { path: 'b.md', ranges: [{ start: 3, end: 3 }], tabId: '' },
+        { path: 'c.md', ranges: [{ start: 2, end: 9 }], tabId: '' },
+      ],
     })
 
     await createWindowStreams(deps).watch()
@@ -244,12 +277,7 @@ describe('following the focus', () => {
   })
 
   it('activates the tab of a focus with a tab id, and does not navigate or open a file', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchFocus: () => yielding({ path: '', ranges: [], tabId: 'tab-2' }),
-      },
-    })
+    const deps = setup({ focus: [{ path: '', ranges: [], tabId: 'tab-2' }] })
 
     await createWindowStreams(deps).watch()
 
@@ -260,12 +288,7 @@ describe('following the focus', () => {
   })
 
   it('does not activate a tab on a focus that names a path', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchFocus: () => yielding({ path: 'a.md', ranges: [], tabId: '' }),
-      },
-    })
+    const deps = setup({ focus: [{ path: 'a.md', ranges: [], tabId: '' }] })
 
     await createWindowStreams(deps).watch()
 
@@ -276,9 +299,7 @@ describe('following the focus', () => {
 
 describe('following the tasks', () => {
   it('keeps the list it is given and asks nothing of the first one', async () => {
-    const deps = setup({
-      core: { ...setup().core, watchTasks: () => yielding([]) },
-    })
+    const deps = setup({ tasks: [[]] })
 
     await createWindowStreams(deps).followTasks()
 
@@ -286,12 +307,7 @@ describe('following the tasks', () => {
   })
 
   it('asks for the counts again when a list that retained work empties, and only then', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchTasks: () => yielding([task('a')], [task('a'), task('b')], [], []),
-      },
-    })
+    const deps = setup({ tasks: [[task('a')], [task('a'), task('b')], [], []] })
 
     await createWindowStreams(deps).followTasks()
 
@@ -300,9 +316,7 @@ describe('following the tasks', () => {
   })
 
   it('does not ask while the list still holds work', async () => {
-    const deps = setup({
-      core: { ...setup().core, watchTasks: () => yielding([task('a')], [task('b')]) },
-    })
+    const deps = setup({ tasks: [[task('a')], [task('b')]] })
 
     await createWindowStreams(deps).followTasks()
 
@@ -311,12 +325,14 @@ describe('following the tasks', () => {
   })
 
   it('survives an error of the counts', async () => {
-    const deps = setup({
-      core: { ...setup().core, watchTasks: () => yielding([task('a')], []) },
-      ask: vi.fn(async () => {
-        throw new Error('failed')
-      }),
-    })
+    const deps = setup(
+      { tasks: [[task('a')], []] },
+      {
+        ask: vi.fn(async () => {
+          throw new Error('failed')
+        }),
+      },
+    )
 
     await createWindowStreams(deps).followTasks()
 

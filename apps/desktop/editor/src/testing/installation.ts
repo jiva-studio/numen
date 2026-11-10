@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { createMockPluginInfo } from '@numen/plugin-manager/testing'
 import type { Model, PluginInfo, Secret, SecretMenu, SecretSection } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
+import type { CatalogEntry } from '@/entities/plugin'
 
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
 export const createInstallation = (overrides: Partial<Installation> = {}): Installation => ({
@@ -69,6 +70,22 @@ export const createSecretAnswer = (
 
 /** A plugin the installation lists, with what a test cares about put over the defaults. */
 export const createPluginInfo = createMockPluginInfo
+
+/** A catalog entry for the plugin `id`, in no category unless the overrides say otherwise. */
+export const createCatalogEntry = (
+  id: string,
+  overrides: Partial<CatalogEntry> = {},
+): CatalogEntry => ({
+  id,
+  name: id,
+  version: '1.0.0',
+  description: '',
+  category: '',
+  feature: '',
+  tabKinds: [],
+  isAvailable: false,
+  ...overrides,
+})
 
 /** A program a plugin lists, and the models it reports. */
 export interface ProgramFixture {

@@ -17,7 +17,7 @@ import type { useSettings } from './useSettings'
 import { useAppBootstrap } from './useAppBootstrap'
 import type { useVaults } from './useVaults'
 import type { useWindowDisplay } from './useWindowDisplay'
-import { closeWindow, closeWindowWhenEmpty } from './windowRuntime'
+import { closeWindow, closeWindowWhenEmpty } from '@/entities/window'
 
 interface AppLifecycleDeps {
   vaultsModule: ReturnType<typeof useVaults>

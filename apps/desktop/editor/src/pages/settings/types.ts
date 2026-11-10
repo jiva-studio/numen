@@ -6,7 +6,7 @@
  * command of the same name in the palette go through one piece of code.
  */
 import type { Ref } from 'vue'
-import type { CatalogEntry } from '@numen/core-client'
+import type { CatalogEntry } from '@/entities/plugin'
 import type {
   Model,
   PluginInfo,

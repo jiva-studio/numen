@@ -6,13 +6,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { ReportedError, THEME_MODE, type ThemeModeCode } from '@numen/core-client'
-import { installCoreAnswers } from '@numen/core-client/testing'
+import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
+import { createLostConnection } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
 import { SettingsTab } from '@/pages/settings'
 import { useWindowTabs } from '@/entities/tab'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
-import type { SettingsPort } from '@/app/ports/settings'
+import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
 import { WORDS } from '@/shared/words'
 import { useSettings } from './useSettings'
@@ -145,7 +145,7 @@ const create = (timing: Timing) => {
         new Promise<void>((resolve, reject) => {
           setTimeout(() => {
             if (timing.rejectedWith) {
-              reject(new ReportedError(timing.rejectedWith))
+              reject(createLostConnection(timing.rejectedWith))
               return
             }
             before = clone(file.current)
@@ -167,10 +167,10 @@ const create = (timing: Timing) => {
         }),
     ),
     watchSettings: vi.fn(() => feed.open()),
-  } as unknown as SettingsPort
+  } as unknown as SettingsCore
+  restore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => say } as unknown as MessageLog
   const settings = useSettings({
-    core,
     words: WORDS,
     log,
     windowTabs: useWindowTabs(),
@@ -237,32 +237,32 @@ const MODES: Record<string, ThemeModeCode> = {
   dark: THEME_MODE.DARK,
 }
 
-let restore: () => void
+/** What the core answers about the themes: the mode, the theme and the size the file holds. */
+const THEME = {
+  listThemes: () => {
+    const appearance = ((file.current['app'] as Tree)['appearance'] ?? {}) as Record<
+      string,
+      unknown
+    >
+    return {
+      themes: [],
+      applied: appearance['theme'] as string,
+      mode: MODES[appearance['mode'] as string] ?? THEME_MODE.SYSTEM,
+      interfaceScale: appearance['interfaceScale'] as number,
+      textScale: 1,
+      interfaceScaleBounds: { min: 0.8, max: 2 },
+      textScaleBounds: { min: 0.8, max: 2 },
+    }
+  },
+  readTheme: ({ name }: { name: string }) => ({ css: `:root { --theme: "${name}"; }` }),
+  async *watchThemes() {
+    yield* []
+  },
+}
+
+let restore: (() => void) | undefined
 
 beforeEach(() => {
-  restore = installCoreAnswers({
-    theme: {
-      listThemes: () => {
-        const appearance = ((file.current['app'] as Tree)['appearance'] ?? {}) as Record<
-          string,
-          unknown
-        >
-        return {
-          themes: [],
-          applied: appearance['theme'] as string,
-          mode: MODES[appearance['mode'] as string] ?? THEME_MODE.SYSTEM,
-          interfaceScale: appearance['interfaceScale'] as number,
-          textScale: 1,
-          interfaceScaleBounds: { min: 0.8, max: 2 },
-          textScaleBounds: { min: 0.8, max: 2 },
-        }
-      },
-      readTheme: ({ name }) => ({ css: `:root { --theme: "${name}"; }` }),
-      async *watchThemes() {
-        yield* []
-      },
-    },
-  })
   vi.useFakeTimers()
   vi.stubGlobal(
     'ResizeObserver',
@@ -275,7 +275,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  restore()
+  restore?.()
+  restore = undefined
   vi.useRealTimers()
   vi.unstubAllGlobals()
   document.head.querySelectorAll('style[data-appearance]').forEach((one) => one.remove())
@@ -329,7 +330,10 @@ describe('a list of the page System after the person chooses a value', () => {
     const samples = await sampleControl(() => getControlValue(page, 'Light or dark', Select), 600)
 
     expect(getDistinct(samples)).toStrictEqual(['dark', 'system'])
-    expect(say).toHaveBeenCalledWith(expect.stringContaining('the disk is full'), 'error')
+    expect(say).toHaveBeenCalledWith(
+      expect.stringContaining('Numen is not responding; retrying'),
+      'error',
+    )
     settings.close()
     page.unmount()
   })

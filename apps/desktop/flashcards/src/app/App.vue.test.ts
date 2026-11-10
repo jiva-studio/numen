@@ -103,6 +103,7 @@ const MANIFEST = {
   name: 'Cards',
   version: '1.0.0',
   frontend: {},
+  permissions: ['vault:read'],
 }
 
 const createDeps = (listVaults: () => Promise<readonly VaultRow[]> = async () => VAULTS) => ({
