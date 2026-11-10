@@ -8,7 +8,7 @@ import {
   createWorkspaceHost,
   type WorkspaceHostDeps,
 } from './pluginServices'
-import type { CommandTarget } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 
 const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {

@@ -1,4 +1,4 @@
-import type { CommandInvocation, CommandTarget } from '../../types'
+import type { CommandInvocation, CommandTarget } from '@/entities/command'
 
 /** One command as executed, with the target it was invoked on. */
 export const createInvocation = (

@@ -15,8 +15,8 @@ import {
   createInvocation,
   createRowKeys,
   ANSWER_WORDS,
-  type VaultRef,
 } from '@/features/command-palette'
+import type { VaultRef } from '@/entities/command'
 import { COMMAND } from '@/shared/commandIds'
 import { findIcon } from '@/shared/icons'
 import { getUserAgent } from '@/shared/lib/dom'

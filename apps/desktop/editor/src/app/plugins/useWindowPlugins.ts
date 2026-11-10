@@ -20,7 +20,7 @@ import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/workbench'
 import type { useSettings } from '../window/useSettings'
 import type { WindowPlatform } from '@numen/workbench'
-import { texts } from '@/shared/clients'
+import { texts } from '@/shared/api/clients'
 
 export interface PluginSupportDeps {
   readonly windowTabs: ReturnType<typeof useWindowTabs>

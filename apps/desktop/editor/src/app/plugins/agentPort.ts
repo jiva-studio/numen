@@ -4,6 +4,6 @@
  * defines what the steps mean.
  */
 import { createAgentPort } from '@numen/plugin-loader'
-import { agentService } from '@/shared/clients'
+import { agentService } from '@/shared/api/clients'
 
 export const agentPort = createAgentPort(agentService)

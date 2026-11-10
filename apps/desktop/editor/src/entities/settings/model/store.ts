@@ -5,7 +5,7 @@
  */
 import { ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/core-client'
-import { createRemoteValues } from '@numen/ui'
+import { createRemoteValues } from './remoteValues'
 import type {
   Model,
   PluginInfo,

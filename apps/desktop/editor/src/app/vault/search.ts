@@ -1,7 +1,7 @@
 /**
  * Search and lookup domain methods for the window core.
  */
-import { search } from '@/shared/clients'
+import { search } from '@/shared/api/clients'
 import type { Selector } from '@numen/plugin-loader'
 import { modes, mapNoteType, mapRange } from './words'
 import type { SearchDeps } from '@/features/command-palette'

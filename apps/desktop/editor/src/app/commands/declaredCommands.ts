@@ -13,12 +13,8 @@ import {
   type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-loader'
-import {
-  registerCommand,
-  type Command,
-  type CommandInvocation,
-  type CommandTarget,
-} from '@/features/command-palette'
+import { registerCommand } from '@/features/command-palette'
+import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import {
   listDeclaredItemLists,

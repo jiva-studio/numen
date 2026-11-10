@@ -12,8 +12,8 @@ import {
   createInvocation,
   runInvocation,
   type CommandDeps,
-  type CommandTarget,
 } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'

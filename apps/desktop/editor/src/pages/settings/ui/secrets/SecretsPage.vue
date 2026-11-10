@@ -5,7 +5,7 @@
  */
 import { computed, nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { Plus } from '@lucide/vue'
-import { Button, ConfirmDialog } from '@numen/ui'
+import { Button } from '@numen/ui'
 import {
   getFirstSecretName,
   getNewGroupName,
@@ -22,6 +22,7 @@ import type { SettingsTabState } from '../../types'
 import { useSecretDeletion } from '../../model/secretDeletion'
 import { useSecretDrafts } from '../../model/secretDrafts'
 import { WORDS as words } from '../../words'
+import { ConfirmDialog } from '../confirm-dialog'
 import SecretSection from './SecretSection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */

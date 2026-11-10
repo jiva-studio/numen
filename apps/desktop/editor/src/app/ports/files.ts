@@ -1,5 +1,5 @@
 /** The vault operations on files and folders available to the window. */
-import type { ErrorCode } from '@/shared/errors'
+import type { ErrorCode } from '@/shared/api/errors'
 import type { Entry, FileKind, Movement } from '@/entities/file'
 
 export interface FilePort {

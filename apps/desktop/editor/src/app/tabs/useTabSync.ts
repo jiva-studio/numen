@@ -6,9 +6,8 @@
  * carries the path of each group, and a window moves its tabs that missed a
  * sync to it.
  */
-import type { useWindowTabs } from '@/entities/tab'
-import type { TabId, TabLinkGroup, TabLinksState } from '@/features/tab-linking'
-import type { TabPathSync } from '../ports/vault'
+import type { useWindowTabs, TabId, TabLinkGroup, TabPathSync } from '@/entities/tab'
+import type { TabLinksState } from '@/features/tab-linking'
 
 export interface TabSyncDeps {
   windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab'>

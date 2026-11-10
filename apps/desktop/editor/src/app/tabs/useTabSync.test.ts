@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { TabLinkGroup } from '@/features/tab-linking'
-import type { TabPathSync } from '../ports/vault'
+import type { TabLinkGroup, TabPathSync } from '@/entities/tab'
 import { createTabSync, type TabSyncDeps } from './useTabSync'
 
 type Navigate = (state: unknown, path: string, title: string) => void | Promise<void>

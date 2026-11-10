@@ -2,6 +2,7 @@
  * The window composed: the vault it reads, the kinds it declares, and the
  * few requests one kind makes of another.
  */
+import { formatError } from '@/shared/api/errors'
 import { ref, type Ref } from 'vue'
 import { useWindowFrame } from '@numen/workbench'
 import { runSupport } from '@/features/command-palette'
@@ -14,7 +15,6 @@ import {
   initWindowKindsAndCommands,
 } from './createCommandsPart'
 import {
-  formatError,
   getCommands,
   getKinds,
   getVaults,

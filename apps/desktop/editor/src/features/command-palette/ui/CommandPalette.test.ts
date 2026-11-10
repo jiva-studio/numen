@@ -7,7 +7,7 @@ import { runSupport } from '../model/palette/runSupport'
 import { useCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
 import type { CommandDeps } from '../model/handlers/deps'
-import type { CommandTarget } from '../types'
+import type { CommandTarget } from '@/entities/command'
 import CommandPalette from './CommandPalette.vue'
 import type * as HandlersModule from '../model/handlers/handlers'
 

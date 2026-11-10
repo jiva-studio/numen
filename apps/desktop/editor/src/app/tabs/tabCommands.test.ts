@@ -3,8 +3,10 @@
  * with another tab, the last two with one item per window and per tab.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { commands, createInvocation, type CommandTarget } from '@/features/command-palette'
-import type { TabLinkGroup, TabLinksState } from '@/features/tab-linking'
+import { commands, createInvocation } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
+import type { TabLinksState } from '@/features/tab-linking'
+import type { TabLinkGroup } from '@/entities/tab'
 import { createTabCommands, TAB_COMMAND } from './tabCommands'
 
 const GROUP: TabLinkGroup = { id: 'g', colorIndex: 0, tabs: ['reef', 'plex'], path: '', title: '' }

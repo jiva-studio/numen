@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
 import { runSupport } from './runSupport'
 import { useCommandPalette, type Commands } from './palette'
-import type { Command, CommandTarget } from '../../types'
+import type { Command, CommandTarget } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
 
 function rethrow(error: unknown): never {

@@ -17,7 +17,8 @@ import type {
   WindowHost,
   WorkspaceHost,
 } from '@numen/plugin-loader'
-import type { CommandTarget, SearchDeps } from '@/features/command-palette'
+import type { SearchDeps } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
 import type { NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'

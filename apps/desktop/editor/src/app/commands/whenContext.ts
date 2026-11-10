@@ -9,7 +9,7 @@ import {
   type WhenReader,
   type WhenSettings,
 } from '@numen/plugin-loader'
-import type { CommandTarget } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import { getPaletteValues } from '@/shared/paletteValues'
 
 export interface WindowWhenContext {

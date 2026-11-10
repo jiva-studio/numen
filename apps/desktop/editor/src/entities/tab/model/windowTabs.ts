@@ -14,7 +14,7 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import type { Result } from '@numen/core-client'
+import type { Result } from '@/shared/lib/result'
 import { closeTab, openTab, openTabAdjacent, pane, paneById, getPanes } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from './kinds'

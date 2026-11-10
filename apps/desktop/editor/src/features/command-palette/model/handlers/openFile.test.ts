@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { COMMAND } from '@/shared/commandIds'
 import { createInvocation } from '../../lib/entries/invocation'
 import { ANSWER_WORDS } from '../../words'
-import type { CommandTarget } from '../../types'
+import type { CommandTarget } from '@/entities/command'
 import type { CommandDeps } from './deps'
 import { runInvocation } from './handlers'
 

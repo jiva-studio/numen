@@ -3,7 +3,7 @@
  */
 import type { ConnectionRole } from '@numen/plugin-loader'
 import type { CommandDeps, TabContext, VaultContext, Voice } from './deps'
-import type { CommandInvocation } from '../../types'
+import type { CommandInvocation } from '@/entities/command'
 import type { AnswerWords } from '../../words'
 import { NOTE } from '@/entities/tab'
 import { generateUniqueName } from '@/shared/paths'

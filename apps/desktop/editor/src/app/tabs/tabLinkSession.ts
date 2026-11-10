@@ -3,16 +3,17 @@
  * opens tabs sent from other windows, and cancels the watch on close.
  */
 import { createFollower } from '@numen/ui'
-import type { Result } from '@numen/core-client'
-import type { useWindowTabs } from '@/entities/tab'
-import type { TabLinkGroup, TabLinksState } from '@/features/tab-linking'
+import type { Result } from '@/shared/lib/result'
 import type {
+  useWindowTabs,
+  TabLinkGroup,
   MovedTab,
   TabMoveError,
   TabPathSync,
-  VaultPort,
   WindowTabsReport,
-} from '../ports/vault'
+} from '@/entities/tab'
+import type { TabLinksState } from '@/features/tab-linking'
+import type { VaultPort } from '../ports/vault'
 
 /** How long a failed tab report waits before it is sent again. */
 export const REPORT_RETRY_MS = 2000

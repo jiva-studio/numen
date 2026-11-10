@@ -7,7 +7,8 @@ import {
   type SlotHost,
   type CommandTarget as RunTarget,
 } from '@numen/plugin-loader'
-import type { CommandTarget, ResultChoice } from '@/features/command-palette'
+import type { ResultChoice } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import { useCommands, type CommandsDepsOptions } from './useCommands'
 
 const h = vi.hoisted(() => ({

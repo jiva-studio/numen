@@ -1,11 +1,13 @@
 /**
  * The kinds of tab and the commands of the window, and the few requests one makes of the other.
  */
+import { formatError } from '@/shared/api/errors'
 import { computed } from 'vue'
 import type { PluginHost, SlotHost } from '@numen/plugin-loader'
 import { runDeclaredHandler } from '@/entities/plugin'
 import type { useWindowTabs } from '@/entities/tab'
-import type { Command, CommandTarget, NoteLookup, runSupport } from '@/features/command-palette'
+import type { NoteLookup, runSupport } from '@/features/command-palette'
+import type { Command, CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { isFieldFocused } from '@/shared/isFieldFocused'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
@@ -23,7 +25,6 @@ import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import {
-  formatError,
   getCommands,
   getKinds,
   getTabsHold,

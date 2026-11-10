@@ -2,11 +2,13 @@
  * The plugins of the window: the host and the loader, the services a plugin is given, and the words
  * a plugin's errors are reported in.
  */
+import { formatError } from '@/shared/api/errors'
 import { createWindowHost, SLOT, type PluginHost } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
 import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import type { fileOpeners } from '@/entities/tab'
-import { createCommands, type Command } from '@/features/command-palette'
+import { createCommands } from '@/features/command-palette'
+import type { Command } from '@/entities/command'
 import type { createMessageLog } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import { core } from '../vault'
@@ -18,7 +20,6 @@ import type { PluginServices } from '../plugins/pluginServices'
 import { createPluginSupport } from '../plugins/useWindowPlugins'
 import { getAppCommandList, type initWindowKindsAndCommands } from './createCommandsPart'
 import {
-  formatError,
   getCommands,
   getVaults,
   type WindowContext,

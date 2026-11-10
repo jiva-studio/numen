@@ -9,7 +9,7 @@
  */
 import { formatErrorMessage } from '@numen/core-client'
 import type { CommandDeps, CommandHandler } from './deps'
-import type { CommandInvocation, CommandPlace } from '../../types'
+import type { CommandInvocation, CommandPlace } from '@/entities/command'
 import type { AnswerWords } from '../../words'
 import { joinAll, formatNames } from '../../lib/voice/voice'
 export type { CommandDeps }

@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import { KeyRound } from '@lucide/vue'
 import { getServiceInfo } from '@numen/core-client'
-import { Button, MultiSelect, type SelectChoice } from '@numen/ui'
+import { Button } from '@numen/ui'
 import { isAllowed, type Secret, type SecretMenu } from '@/entities/settings'
 import {
   getMenuSecrets,
@@ -16,8 +16,10 @@ import {
   type Declaration,
   type SecretSection,
 } from '../../lib/secretSections'
+import type { SelectChoice } from '../../types'
 import { WORDS as words } from '../../words'
 import SettingRow from '../setting-row/SettingRow.vue'
+import { MultiSelect } from '../multi-select'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{

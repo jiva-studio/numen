@@ -4,7 +4,7 @@
  */
 import type { VaultRelations } from '@numen/plugin-loader'
 import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
-import { notes } from '@/shared/clients'
+import { notes } from '@/shared/api/clients'
 import {
   CONNECTION_ROLES,
   findRelationError,

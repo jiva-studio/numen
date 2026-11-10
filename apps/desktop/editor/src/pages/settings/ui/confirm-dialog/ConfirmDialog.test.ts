@@ -72,13 +72,12 @@ describe('ConfirmDialog', () => {
     expect(dialog.emitted('cancel')).toBeUndefined()
   })
 
-  it('draws the danger tone with the danger button and the default tone without it', () => {
+  it('marks the danger tone on the dialog and the default tone as default', () => {
     const danger = mountDialog({ tone: 'danger' })
-    expect(getButton(danger, 'Delete').classes()).toContain('text-alarm')
-    expect(danger.get('[role="alertdialog"]').classes()).toContain('border-alarm')
+    expect(danger.get('[role="alertdialog"]').attributes('data-tone')).toBe('danger')
     document.body.innerHTML = ''
     const neutral = mountDialog()
-    expect(getButton(neutral, 'Delete').classes()).not.toContain('text-alarm')
+    expect(neutral.get('[role="alertdialog"]').attributes('data-tone')).toBe('default')
   })
 
   it('keeps Tab between the two buttons', async () => {

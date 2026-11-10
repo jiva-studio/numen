@@ -5,14 +5,8 @@ import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } fro
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
 import { getPrompt, type PendingStep } from '../../lib/step/step'
-import type {
-  Command,
-  CommandInvocation,
-  CommandTarget,
-  NoteLookup,
-  PaletteLists,
-  PromptStep,
-} from '../../types'
+import type { NoteLookup, PaletteLists } from '../../types'
+import type { Command, CommandInvocation, CommandTarget, PromptStep } from '@/entities/command'
 import type { Words } from '../../words'
 import type { NameMatch } from '../search/search'
 

@@ -5,10 +5,8 @@
  * its identifier and whether it is now in force, and `update:selected` with the new list.
  */
 import { computed, ref, useTemplateRef } from 'vue'
-import { measureElementRect } from '@/shared/lib/dom'
-import { SearchableListPopup } from '../searchable-list'
-import type { Position } from '@/shared/lib/math/geometry'
-import type { MultiSelectProps } from './Select.types'
+import { measureRect, SearchableListPopup, type Position } from '@numen/ui'
+import type { MultiSelectProps } from './MultiSelect.types'
 import SelectTrigger from './SelectTrigger.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -53,7 +51,7 @@ defineExpose({
 const onOpenChoices = () => {
   const line = element.value
   if (!line || props.isDisabled) return
-  const box = measureElementRect(line)
+  const box = measureRect(line)
   menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
 

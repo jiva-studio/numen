@@ -9,7 +9,7 @@
 import type { Keystroke } from '@numen/ui'
 import { VAULT_ERRORS } from '@/entities/vault'
 import type { VaultErrorCode } from '@/entities/vault'
-import type { ErrorCode } from '@/shared/errors'
+import type { ErrorCode } from '@/shared/api/errors'
 import { WORDS } from '@/shared/words'
 import type { EmptyWords } from './model/search/search'
 
@@ -30,21 +30,6 @@ export interface AnswerWords {
   readonly unanswered: string
   readonly stale: string
   readonly alreadyExists: string
-}
-
-/** Text for the step that requires the user to retype a name. */
-export interface RetypeWords {
-  readonly action: string
-  readonly detail: string
-  readonly back: string
-}
-
-/** The words the step that confirms is drawn in. */
-export interface ConfirmWords {
-  readonly keeps: string
-  readonly retainedNotice: string
-  readonly action: string
-  readonly detail: string
 }
 
 /** Everything the commands say in the window's voice. */

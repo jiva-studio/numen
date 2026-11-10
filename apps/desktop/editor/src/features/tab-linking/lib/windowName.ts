@@ -1,4 +1,4 @@
-import type { TabWindow } from '../types'
+import type { TabWindow } from '@/entities/tab'
 
 /** The name of a window in a list of windows: its active tab and the count of its other tabs. */
 export const getWindowName = (window: TabWindow): string => {

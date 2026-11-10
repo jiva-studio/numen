@@ -1,6 +1,6 @@
-import type { Result } from '@numen/core-client'
+import type { Result } from '@/shared/lib/result'
 import type { NoteNeighbourhood } from '@numen/plugin-loader'
-import type { ErrorCode } from '@/shared/errors'
+import type { ErrorCode } from '@/shared/api/errors'
 import type { TextRange } from '@/shared/textRange'
 import type { MoveResult } from '@/shared/model/fileTypes'
 

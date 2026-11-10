@@ -12,7 +12,7 @@ import {
   type SlotItem,
 } from '@numen/plugin-loader'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
-import type { Command } from '@/features/command-palette'
+import type { Command } from '@/entities/command'
 import { createWindowSlots } from './windowSlots'
 
 const TIDE = 'org.example.tide'

@@ -3,10 +3,10 @@
  * sent from another window.
  */
 import { formatErrorMessage, type Result } from '@numen/core-client'
-import type { Tab, useWindowTabs } from '@/entities/tab'
+import type { Tab, useWindowTabs, MovedTab, TabMoveError } from '@/entities/tab'
 import type { Notes } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { MovedTab, TabMoveError, VaultPort } from '../ports/vault'
+import type { VaultPort } from '../ports/vault'
 import { formatSavedState, parseSavedTab } from './useOpenTabs'
 
 type Point = { readonly x: number; readonly y: number }

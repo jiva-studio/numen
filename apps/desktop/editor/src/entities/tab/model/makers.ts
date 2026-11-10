@@ -3,7 +3,7 @@
  * opened in a tab of its own.
  */
 import { formatErrorMessage } from '@numen/core-client'
-import type { ErrorCode } from '@/shared/errors'
+import type { ErrorCode } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/shared/model/fileTypes'
 import type { FileOpeners } from './openers'

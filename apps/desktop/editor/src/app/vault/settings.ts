@@ -1,7 +1,7 @@
 /**
  * Settings domain methods for the window core.
  */
-import { settingsService } from '@/shared/clients'
+import { settingsService } from '@/shared/api/clients'
 import { fetched } from './words'
 import type {
   Configuration,

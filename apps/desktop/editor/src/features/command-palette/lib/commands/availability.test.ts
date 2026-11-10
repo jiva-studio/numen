@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { getPaletteValues } from '@/shared/paletteValues'
 import { createAvailabilityCheck } from './availability'
-import type { CommandTarget } from '../../types'
+import type { CommandTarget } from '@/entities/command'
 
 const chosenDocument = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: '',

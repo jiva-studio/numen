@@ -1,7 +1,7 @@
 /**
  * Command grouping and filtering.
  */
-import type { Command, CommandGroup } from '../../types'
+import type { Command, CommandGroup } from '@/entities/command'
 
 export { createCommands } from './table'
 

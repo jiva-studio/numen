@@ -5,7 +5,7 @@ import { computed, ref, type Ref } from 'vue'
 import type { VaultList } from '@/entities/vault'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { VaultRef } from '@/features/command-palette'
+import type { VaultRef } from '@/entities/command'
 import type { WORDS } from '@/shared/words'
 import type { VaultCore } from '../vault'
 

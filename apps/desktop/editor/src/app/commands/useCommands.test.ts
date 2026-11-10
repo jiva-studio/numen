@@ -1,6 +1,7 @@
 /** How a command runs, and what a key press triggers. */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CommandDeps, CommandTarget, PaletteLists } from '@/features/command-palette'
+import type { CommandDeps, PaletteLists } from '@/features/command-palette'
+import type { CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
 import { createCommandRunner, useCommands, type CommandsDepsOptions } from './useCommands'
 

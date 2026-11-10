@@ -2,11 +2,12 @@
  * What every part of the window is handed of the others, and the parts that read and draw the
  * vault: the note editors, the display, the settings and the vaults.
  */
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
-import { pluginCatalog } from '@/shared/clients'
+import { pluginCatalog } from '@/shared/api/clients'
 import { core } from '../vault'
-import type { Command, runSupport } from '@/features/command-palette'
+import type { runSupport } from '@/features/command-palette'
+import type { Command } from '@/entities/command'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
@@ -28,9 +29,6 @@ import type { createWindowSlots } from './windowSlots'
 import type { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
 import type { createPluginSupport } from '../plugins/useWindowPlugins'
-
-/** The sentence an error is reported as. */
-export const formatError = formatErrorMessage
 
 /** What the window is made of before its parts exist: the tabs, the plugins and the message log. */
 export interface WindowCore {

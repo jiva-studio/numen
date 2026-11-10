@@ -3,12 +3,8 @@
  * of the file the core lists and has the core delete the one picked. The core serves it with no plugin.
  */
 import type { CommandItem } from '@numen/plugin-loader'
-import {
-  registerCommand,
-  type Command,
-  type CommandInvocation,
-  type CommandTarget,
-} from '@/features/command-palette'
+import { registerCommand } from '@/features/command-palette'
+import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
 import type { DeclaredCommandOutcome } from '@/entities/plugin'
 import { COMMAND } from '@/shared/commandIds'
 

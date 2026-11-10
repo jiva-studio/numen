@@ -3,19 +3,15 @@
  * it with another tab. Moving and linking offer one item per window and per tab.
  */
 import type { CommandItem } from '@numen/plugin-loader'
-import {
-  registerCommand,
-  type Command,
-  type CommandInvocation,
-  type CommandTarget,
-} from '@/features/command-palette'
+import { registerCommand } from '@/features/command-palette'
+import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
 import {
   getAllTabs,
   getEligibleTabs,
   getWindowName,
-  type TabId,
   type TabLinksState,
 } from '@/features/tab-linking'
+import type { TabId } from '@/entities/tab'
 import { COMMAND } from '@/shared/commandIds'
 
 export const TAB_COMMAND = {

@@ -4,7 +4,7 @@
 import { COMMAND, ROW } from '@/shared/commandIds'
 import { createRowKeys } from '../keys/keys'
 import { withWhen } from '../commands/availability'
-import type { Command } from '../../types'
+import type { Command } from '@/entities/command'
 import type { Words } from '../../words'
 
 export const createWindowCreationCommands = (words: Words, agent: string): readonly Command[] => [

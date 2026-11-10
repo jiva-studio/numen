@@ -12,7 +12,7 @@ import { createCommands } from '../lib/commands/table'
 import { runSupport } from './palette/runSupport'
 import { useCommandPalette } from './palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
-import type { CommandTarget } from '../types'
+import type { CommandTarget } from '@/entities/command'
 
 const ATLAS = 'org.example.atlas'
 const SHOW: SlotCommand = {

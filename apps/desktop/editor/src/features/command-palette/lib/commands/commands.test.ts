@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { createCommands, getGroupCommands, isCommandPrefixTyped } from './commands'
 import { getPrompt } from '../step/step'
-import type { CommandTarget } from '../../types'
+import type { CommandTarget } from '@/entities/command'
 import { WORDS as words } from '@/shared/words'
 
 describe('the character that means the commands', () => {

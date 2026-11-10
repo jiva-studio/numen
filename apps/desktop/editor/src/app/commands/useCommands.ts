@@ -11,18 +11,20 @@ import {
   useCommandPalette,
   useSearch,
   ANSWER_WORDS,
-  type Command,
   type CommandDeps,
-  type CommandInvocation,
-  type CommandTarget,
   type ResultChoice,
   type SearchMenuDeps,
   type Notes,
   type NoteLookup,
   type PaletteLists,
-  type RunSupport,
-  type VaultRef,
 } from '@/features/command-palette'
+import type {
+  Command,
+  CommandInvocation,
+  CommandTarget,
+  RunSupport,
+  VaultRef,
+} from '@/entities/command'
 import { createCommandDeps } from './commandDeps'
 import { COMMAND } from '@/shared/commandIds'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
