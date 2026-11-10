@@ -49,11 +49,11 @@ func (r *Reader) GetPages(ctx context.Context, vault domain.VaultID, path string
 	}
 	scan, err := r.workers.OpenBytes(raw)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrOpen, err)
+		return nil, fmt.Errorf("%w: %w", ErrOpen, err)
 	}
 	defer func() {
 		if closeErr := scan.Close(); closeErr != nil {
-			err = errors.Join(err, fmt.Errorf("%w: %v", ErrClose, closeErr))
+			err = errors.Join(err, fmt.Errorf("%w: %w", ErrClose, closeErr))
 		}
 	}()
 
@@ -62,7 +62,7 @@ func (r *Reader) GetPages(ctx context.Context, vault domain.VaultID, path string
 	for i := range pageCount {
 		w, h, err := scan.GetPageSize(i)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrPageSize, err)
+			return nil, fmt.Errorf("%w: %w", ErrPageSize, err)
 		}
 		pages = append(pages, Page{Width: w, Height: h})
 	}

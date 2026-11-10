@@ -60,7 +60,6 @@ func TestGetPagesNamesTheFailureToOpenAFile(t *testing.T) {
 func TestGetHighlightsRefusesRangesThatAreNotRangesOfAText(t *testing.T) {
 	vault := hosttest.OnDisk(t, "vault", map[string]string{"tiny.pdf": string(testsupport.ReadFixture(t, "tiny.pdf"))})
 	reader := newReader(t, vault)
-	var badRange *RangeError
 
 	for name, ranges := range map[string][]domain.ByteRange{
 		"none":      nil,
@@ -70,7 +69,7 @@ func TestGetHighlightsRefusesRangesThatAreNotRangesOfAText(t *testing.T) {
 		"backwards": {{Start: 5, End: 3}},
 	} {
 		_, err := reader.GetHighlights(t.Context(), "", "tiny.pdf", ranges)
-		if !errors.As(err, &badRange) {
+		if _, ok := errors.AsType[*RangeError](err); !ok {
 			t.Errorf("%s: error %v, want a RangeError", name, err)
 		}
 	}

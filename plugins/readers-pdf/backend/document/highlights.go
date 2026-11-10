@@ -44,7 +44,7 @@ func (r *Reader) GetHighlights(ctx context.Context, vault domain.VaultID, path s
 	}
 	text, err := readLiveText(ctx, r.texts(vault), path, end)
 	if err != nil {
-		return nil, fmt.Errorf("%w %s: %v", ErrText, path, err)
+		return nil, fmt.Errorf("%w %s: %w", ErrText, path, err)
 	}
 	out := make([][]pdf.HighlightBox, 0, len(ranges))
 	for _, run := range ranges {
