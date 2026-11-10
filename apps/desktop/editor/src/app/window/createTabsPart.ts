@@ -172,7 +172,7 @@ export function createWindowTabMoves(
   }
 }
 
-export const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
+export const createWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
   useOpenTabs({
     windowTabs: base.tabs.windowTabs,
     isWriting,

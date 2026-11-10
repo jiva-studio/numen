@@ -25,7 +25,7 @@ import {
   createWindowTabLinks,
   createWindowTabMoves,
   openPlacedTabs,
-  useWindowOpenTabs,
+  createWindowOpenTabs,
 } from './createTabsPart'
 import { createSettingsStore, SETTINGS_WORDS } from '@/entities/settings'
 
@@ -70,7 +70,7 @@ function createPaletteApi(
 
 interface TabsApiParts {
   readonly closeTab: ReturnType<typeof createTabCloser>
-  readonly openTabs: ReturnType<typeof useWindowOpenTabs>
+  readonly openTabs: ReturnType<typeof createWindowOpenTabs>
   readonly isHighlighted: Ref<boolean>
   readonly moves: ReturnType<typeof createWindowTabMoves>
 }
@@ -94,7 +94,7 @@ export const createWindow = () => {
   const moves = createWindowTabMoves(base, editing, closeTab)
   const isWritingTabs = ref(false)
   const isLayoutReady = ref(false)
-  const openTabs = useWindowOpenTabs(base, isWritingTabs)
+  const openTabs = createWindowOpenTabs(base, isWritingTabs)
   const commands = createEditorCommands(base, services, moves, {
     pause: async () => openTabs.pause(),
     resume: () => openTabs.resume(),
