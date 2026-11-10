@@ -26,7 +26,7 @@ export const Label: Story = {
   },
 }
 
-/** A label wider than the preview is cut to one line instead of growing. */
+/** A label wider than the preview is truncated to one line. */
 export const LongLabel: Story = {
   args: {
     label:
@@ -53,10 +53,10 @@ export const PointerPassesThrough: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     const box = canvas.getByText(args.label).getBoundingClientRect()
-    const hit = canvasElement.ownerDocument.elementFromPoint(
+    const topElement = canvasElement.ownerDocument.elementFromPoint(
       box.left + box.width / 2,
       box.top + box.height / 2,
     )
-    await expect(hit).toBe(canvas.getByRole('button', { name: 'Drop here' }))
+    await expect(topElement).toBe(canvas.getByRole('button', { name: 'Drop here' }))
   },
 }
