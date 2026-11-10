@@ -1,10 +1,9 @@
 package editor
 
 import (
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"context"
-	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"math"
 	"slices"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
-	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
