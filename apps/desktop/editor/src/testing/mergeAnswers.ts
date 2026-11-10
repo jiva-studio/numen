@@ -11,5 +11,5 @@ export const mergeAnswers = (...sets: readonly CoreAnswers[]): CoreAnswers => {
       merged[service] = { ...merged[service], ...calls }
     }
   }
-  return merged as CoreAnswers
+  return merged
 }
