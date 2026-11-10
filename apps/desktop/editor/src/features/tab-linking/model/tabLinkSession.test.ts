@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
+import { createLostConnection } from '@numen/core-client/testing'
 import { answerCore } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
 import {
@@ -40,7 +41,7 @@ const MOVED_TAB = {
   moveId: 'move-1',
 }
 
-const FAILURE = new Error('the core is gone')
+const FAILURE = createLostConnection('the core is gone')
 const isFailure = expect.objectContaining({
   message: expect.stringContaining('the core is gone'),
 })
@@ -52,7 +53,11 @@ const toWire = (event: TabLinksEvent) => {
     return {
       event: {
         case: 'links' as const,
-        value: { groups: groups.map(({ tabs: tabIds, ...rest }) => ({ ...rest, tabIds })), tabs, windows },
+        value: {
+          groups: groups.map(({ tabs: tabIds, ...rest }) => ({ ...rest, tabIds: [...tabIds] })),
+          tabs: [...tabs],
+          windows: [...windows],
+        },
       },
     }
   }

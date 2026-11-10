@@ -38,7 +38,13 @@ const setup = (asking: () => boolean = () => false) => {
       },
     ),
   }
-  const toTab = ({ id, kind, path, title, state }: Tab) => ({ id, kind, path, title, state })
+  const toTab = ({ id, kind, path, title, state }: Pick<Tab, 'id' | 'kind' | 'path' | 'title' | 'state'>) => ({
+    id,
+    kind,
+    path,
+    title,
+    state,
+  })
   answerCore({
     workspace: {
       detachTab: ({ tab, x, y, width, height }) =>
