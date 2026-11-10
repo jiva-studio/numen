@@ -71,7 +71,7 @@ func TestTheProgramListsTheModelsOfTheExecutablePath(t *testing.T) {
 	}
 }
 
-func TestAFailedListLeavesTheProgramWithoutModels(t *testing.T) {
+func TestAProgramWhoseListFailsHasNoModels(t *testing.T) {
 	program := &fakeProgram{installed: true, err: errors.New("no list")}
 
 	got := New(program, program, false).GetPrograms(t.Context(), "", nil)

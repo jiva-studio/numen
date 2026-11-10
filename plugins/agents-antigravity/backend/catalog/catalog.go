@@ -24,7 +24,7 @@ type Lister interface {
 	List(ctx context.Context, command []string) ([]models.Model, error)
 }
 
-// Installation tells whether the program is installed, at path when given.
+// Installation reports if the program is installed, at path when given.
 type Installation interface {
 	IsInstalled(path string) bool
 }
@@ -50,7 +50,7 @@ func New(lister Lister, installation Installation, isAsync bool) *Catalog {
 	}
 }
 
-// GetState says whether the program is reachable, with the reason when it is not.
+// GetState reports if the program is reachable, with the reason when it is not.
 func (c *Catalog) GetState(executablePath string) *agentrun.State {
 	if !c.installation.IsInstalled(executablePath) {
 		return &agentrun.State{Unreachable: "Antigravity was not found on this machine"}
