@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -25,13 +26,13 @@ func (c changing) newWrite() note.Write {
 	return note.NewWrite(vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.index, testsupport.NewClock())
 }
 
-func (c changing) openNote(t *testing.T, path string) *note.Baseline {
+func (c changing) openNote(t *testing.T, path string) *edit.Baseline {
 	t.Helper()
 	found, err := note.NewRead(vaultreader.Readers{}).Execute(t.Context(), c.vault, path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &note.Baseline{Prose: found.Body, FileStat: found.FileStat}
+	return &edit.Baseline{Prose: found.Body, FileStat: found.FileStat}
 }
 
 // A flow sequence is the most common frontmatter line, and an identifier
@@ -71,7 +72,7 @@ func TestASaveOverANoteWhoseFrontmatterNeverClosesIsRefused(t *testing.T) {
 	c := openChanging(t, map[string]string{"Heat.md": half})
 
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", nil)
-	if !errors.Is(err, note.ErrUnterminated) {
+	if !errors.Is(err, edit.ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
 	if body := c.read(t, "Heat.md"); body != half {
@@ -222,7 +223,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.Baseline{Prose: baseline.Prose, FileStat: pos}); err != nil {
+		&edit.Baseline{Prose: baseline.Prose, FileStat: pos}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -256,7 +257,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.Baseline{Prose: mine, FileStat: pos}); err != nil {
+		&edit.Baseline{Prose: mine, FileStat: pos}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 
@@ -510,8 +511,8 @@ func TestSavingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), nil)
-	if !errors.Is(err, note.ErrTooLarge) {
+	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", strings.Repeat("x", edit.MaxBytes+1), nil)
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
@@ -527,10 +528,10 @@ func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 		"Entropy.md": "---\ntags: [physics, thermodynamics]\n---\n# Entropy\n",
 	})
 
-	body := strings.Repeat("x", note.MaxBytes-16)
+	body := strings.Repeat("x", edit.MaxBytes-16)
 	baseline := c.openNote(t, "Entropy.md")
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Entropy.md", body, baseline)
-	if err != nil && !errors.Is(err, note.ErrTooLarge) {
+	if err != nil && !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatal(err)
 	}
 
@@ -538,7 +539,7 @@ func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found.Outcome != note.Ok {
+	if found.Outcome != edit.Ok {
 		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.FileStat.Size)
 	}
 }
@@ -549,20 +550,20 @@ func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
 
-	body := strings.Repeat("x", note.MaxBytes+1)
+	body := strings.Repeat("x", edit.MaxBytes+1)
 
 	// A writer that names no bound is a writer of notes.
 	_, err := c.newWrite().Save(t.Context(), c.vault, "Mammals.md", body, nil)
-	if !errors.Is(err, note.ErrTooLarge) {
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 
 	writing := c.newWrite()
-	writing.Bound = 2 * note.MaxBytes
+	writing.Bound = 2 * edit.MaxBytes
 	if _, err := writing.Save(t.Context(), c.vault, "Mammals.md", body, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(c.read(t, "Mammals.md")); got <= note.MaxBytes {
+	if got := len(c.read(t, "Mammals.md")); got <= edit.MaxBytes {
 		t.Errorf("the file is %d bytes, and the body written was larger", got)
 	}
 }
@@ -572,8 +573,8 @@ func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Execute(
-		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.FileStat{})
-	if !errors.Is(err, note.ErrTooLarge) {
+		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", edit.MaxBytes+1), domain.FileStat{})
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); body != "# Entropy\n" {
@@ -586,9 +587,9 @@ func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 	c := openChanging(t, nil)
 
 	made, err := c.create().Execute(t.Context(), c.vault, note.NewNote{
-		Title: "Entropy", Body: strings.Repeat("x", note.MaxBytes+1),
+		Title: "Entropy", Body: strings.Repeat("x", edit.MaxBytes+1),
 	})
-	if !errors.Is(err, note.ErrTooLarge) {
+	if !errors.Is(err, edit.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
 	if made.Path != "" {

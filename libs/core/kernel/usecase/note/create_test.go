@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 func TestATitleNoFileCanBeNamedAfterMakesNothing(t *testing.T) {
@@ -135,7 +136,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 
-	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, errDiskGone) {
+	if !errors.Is(err, edit.ErrIndexOutdated) || !errors.Is(err, errDiskGone) {
 		t.Errorf("want the index failure named as one, got %v", err)
 	}
 	if created.Path != "Heat.md" || created.ID == "" || created.Title != "Heat" {

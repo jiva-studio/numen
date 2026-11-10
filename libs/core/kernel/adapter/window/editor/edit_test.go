@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -120,7 +121,7 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 		is   bool
 	}{
 		"the vault holds no note there": {
-			err:  fmt.Errorf("read Old.md: %w", note.ErrNoNote),
+			err:  fmt.Errorf("read Old.md: %w", edit.ErrNoNote),
 			want: v1.ErrorCode_ERROR_CODE_NOT_FOUND,
 			is:   true,
 		},
@@ -133,12 +134,12 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 			is:   true,
 		},
 		"a frontmatter written on one line": {
-			err:  fmt.Errorf("Old.md: %w", note.ErrInline),
+			err:  fmt.Errorf("Old.md: %w", edit.ErrInline),
 			want: v1.ErrorCode_ERROR_CODE_UNREADABLE,
 			is:   true,
 		},
 		"a frontmatter block that is never closed": {
-			err:  fmt.Errorf("Old.md: %w", note.ErrUnterminated),
+			err:  fmt.Errorf("Old.md: %w", edit.ErrUnterminated),
 			want: v1.ErrorCode_ERROR_CODE_UNREADABLE,
 			is:   true,
 		},

@@ -12,34 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
-// ErrTooLarge is what a note over MaxBytes gets. Nothing is written. The bound
-// is measured against the whole file about to be stored, which is what a read
-// measures.
-var ErrTooLarge = edit.ErrTooLarge
-
-// CheckSize holds a file to the most it may be: its frontmatter and its prose
-// together, as they are about to go to disk. Zero holds it to nothing.
-func CheckSize(path string, size, limit int) error {
-	return edit.CheckSize(path, size, limit)
-}
-
-// ErrBodyUnwritable is a body that opens with the frontmatter delimiter.
-var ErrBodyUnwritable = edit.ErrBodyUnwritable
-
-// ErrUnreadable is a note whose frontmatter is not YAML. A write detects it and
-// leaves the file unchanged: repairing the block would mean guessing the user's
-// content.
-var ErrUnreadable = edit.ErrUnreadable
-
-// ErrInline, ErrUnterminated and ErrAnchored are frontmatter one key cannot be
-// changed in: a block written on one line, a block that is never closed, and a
-// block carrying a YAML anchor. Such a note is left alone.
-var (
-	ErrInline       = edit.ErrInline
-	ErrUnterminated = edit.ErrUnterminated
-	ErrAnchored     = edit.ErrAnchored
-)
-
 // Write replaces the prose of a note and leaves its frontmatter unchanged.
 //
 // The body belongs to the user and is replaced entirely. The frontmatter is
@@ -48,7 +20,7 @@ var (
 type Write struct {
 	readers vaultport.VaultReaders
 	writers NoteWriting
-	index   IndexUpdater
+	index   edit.IndexUpdater
 	now     machineport.Clock
 	Bound   int
 	Drawing TellEdit
@@ -57,7 +29,7 @@ type Write struct {
 // NewWrite returns the writer that saves a note to disk. It takes the vault
 // readers and writers, the index synchronizer, and the clock.
 func NewWrite(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
 ) Write {
 	return Write{readers: readers, writers: writers, index: index, now: now}
 }
@@ -75,7 +47,7 @@ func (u Write) WithWriters(writers NoteWriting) Write {
 }
 
 // WithIndex replaces the index function.
-func (u Write) WithIndex(index IndexUpdater) Write {
+func (u Write) WithIndex(index edit.IndexUpdater) Write {
 	u.index = index
 	return u
 }
@@ -92,7 +64,7 @@ func (u Write) Execute(
 		return domain.FileStat{}, err
 	}
 	if markdown.IsFrontmatterStart(body) {
-		return domain.FileStat{}, ErrBodyUnwritable
+		return domain.FileStat{}, edit.ErrBodyUnwritable
 	}
 
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
@@ -132,13 +104,13 @@ func (u Write) Execute(
 // identifier keeps none, and a created note has no frontmatter.
 // Baseline is the state the caller last read: a differing note is left unchanged and port.ErrStale is returned; nil skips the check.
 func (u Write) Save(
-	ctx context.Context, v domain.Vault, path, body string, baseline *Baseline,
+	ctx context.Context, v domain.Vault, path, body string, baseline *edit.Baseline,
 ) (domain.FileStat, error) {
 	if err := domain.CheckPath(path); err != nil {
 		return domain.FileStat{}, err
 	}
 	if markdown.IsFrontmatterStart(body) {
-		return domain.FileStat{}, ErrBodyUnwritable
+		return domain.FileStat{}, edit.ErrBodyUnwritable
 	}
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.ShouldOverwrite = true
@@ -151,7 +123,7 @@ func (u Write) Save(
 
 func (u Write) maxBound() int {
 	if u.Bound == 0 {
-		return MaxBytes
+		return edit.MaxBytes
 	}
 	return u.Bound
 }

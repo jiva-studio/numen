@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
@@ -20,7 +21,7 @@ import (
 type EditLinks struct {
 	readers vaultport.VaultReaders
 	writers NoteWriting
-	index   IndexUpdater
+	index   edit.IndexUpdater
 	now     machineport.Clock
 }
 
@@ -30,7 +31,7 @@ type EditLinks struct {
 // that is not indexed cannot be queried, and timestamps come from the injected
 // clock and not from the machine clock directly.
 func NewEditLinks(
-	readers vaultport.VaultReaders, writers NoteWriting, index IndexUpdater, now machineport.Clock,
+	readers vaultport.VaultReaders, writers NoteWriting, index edit.IndexUpdater, now machineport.Clock,
 ) EditLinks {
 	return EditLinks{readers: readers, writers: writers, index: index, now: now}
 }

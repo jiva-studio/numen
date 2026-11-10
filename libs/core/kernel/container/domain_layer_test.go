@@ -4,7 +4,6 @@ import (
 	"go/parser"
 	"go/token"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -34,13 +33,9 @@ func getDomainImportRefusal(to string) string {
 }
 
 // The packages under domain/ of the core import the standard library, the notes domain, the manifest of the plugin catalog and each other.
-// The walk reads every non-test file under domain/; the folder does not exist before the first domain
-// package is created, and then no file is read.
+// The walk reads every non-test file under domain/ and fails when it reads fewer than the domain holds.
 func TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer(t *testing.T) {
 	root := filepath.Join("..", "domain")
-	if _, err := os.Stat(root); os.IsNotExist(err) {
-		t.Skip("the core has no domain package yet")
-	}
 	var read int
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
@@ -65,8 +60,8 @@ func TestNoDomainPackageImportsThirdPartyCodeOrAnotherLayer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if read == 0 {
-		t.Fatal("no file under domain/ read: the rule is checked against nothing")
+	if read < 30 {
+		t.Fatalf("%d files under domain/ read: the rule is checked against nothing", read)
 	}
 }
 

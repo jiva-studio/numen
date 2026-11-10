@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // named answers what a vault holds under each name, and nothing else a query
@@ -28,7 +29,7 @@ func TestALinkIsSavedByNameWhereTheNameMeansOneNote(t *testing.T) {
 	t.Parallel()
 	target := named{"Untitled note": {"allotments/Untitled note.md"}}
 
-	to, err := note.GetAddress(t.Context(), target, "v", "allotments/Untitled note.md")
+	to, err := edit.GetAddress(t.Context(), target, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -46,7 +47,7 @@ func TestALinkIsSavedByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 	t.Parallel()
 	target := named{"Untitled note": {"Untitled note.md", "allotments/Untitled note.md"}}
 
-	to, err := note.GetAddress(t.Context(), target, "v", "allotments/Untitled note.md")
+	to, err := edit.GetAddress(t.Context(), target, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -61,7 +62,7 @@ func TestALinkIsSavedByPathWhereTheNameMeansAnotherNote(t *testing.T) {
 
 func TestALinkToANoteTheIndexDoesNotHoldYetIsSavedByName(t *testing.T) {
 	t.Parallel()
-	to, err := note.GetAddress(t.Context(), named{}, "v", "allotments/Untitled note.md")
+	to, err := edit.GetAddress(t.Context(), named{}, "v", "allotments/Untitled note.md")
 	if err != nil {
 		t.Fatalf("Addressed: %v", err)
 	}
@@ -73,14 +74,14 @@ func TestALinkToANoteTheIndexDoesNotHoldYetIsSavedByName(t *testing.T) {
 
 func TestALinkToNowhereIsRefused(t *testing.T) {
 	t.Parallel()
-	if _, err := note.GetAddress(t.Context(), named{}, "v", ""); err == nil {
+	if _, err := edit.GetAddress(t.Context(), named{}, "v", ""); err == nil {
 		t.Error("Addressed() = nil error, want an error: a link needs a note to go to")
 	}
 }
 
 func TestAddress_UnqueryableVaultWritesNoLink(t *testing.T) {
 	t.Parallel()
-	_, err := note.GetAddress(t.Context(), unreachable{}, "v", "Note.md")
+	_, err := edit.GetAddress(t.Context(), unreachable{}, "v", "Note.md")
 
 	if err == nil {
 		t.Error("Addressed() = nil error, want the one the index gave: a link written " +
@@ -102,8 +103,8 @@ func TestANoteNoLinkReachesIsRefused(t *testing.T) {
 	} {
 		target := named{domain.Basename(path): {path}}
 
-		to, err := note.GetAddress(t.Context(), target, "v", path)
-		if !errors.Is(err, note.ErrUnaddressable) {
+		to, err := edit.GetAddress(t.Context(), target, "v", path)
+		if !errors.Is(err, edit.ErrUnaddressable) {
 			t.Errorf("%s is addressed as %v %q, and answered %v",
 				path, to.Scheme, to.Value, err)
 		}
@@ -124,7 +125,7 @@ func TestAPathIsSavedWithoutItsExtension(t *testing.T) {
 		{"a/.hidden", named{".hidden": {".hidden", "a/.hidden"}}, "a/.hidden"},
 		{"a/b.c.md", named{"b.c": {"b.c.md", "a/b.c.md"}}, "a/b.c"},
 	} {
-		to, err := note.GetAddress(t.Context(), tc.targetVault, "v", tc.path)
+		to, err := edit.GetAddress(t.Context(), tc.targetVault, "v", tc.path)
 		if err != nil {
 			t.Fatalf("%s: %v", tc.path, err)
 		}
