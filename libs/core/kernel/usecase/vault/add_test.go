@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -173,7 +174,7 @@ func TestAFolderThatIsNotThereIsUnreadable(t *testing.T) {
 	add, registry := newAdd(t)
 
 	_, err := add.Execute(filepath.Join(t.TempDir(), "missing"), "")
-	if !errors.Is(err, vaults.ErrUnreadable) {
+	if !errors.Is(err, vaultdomain.ErrUnreadable) {
 		t.Fatalf("want ErrUnreadable, got %v", err)
 	}
 	recognized, recognizedErr := registry.List()
@@ -243,7 +244,7 @@ func TestACopyOfAVaultIsRefusedAndAMoveIsFollowed(t *testing.T) {
 	if err := os.CopyFS(copied, os.DirFS(original)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := add.Execute(copied, ""); !errors.Is(err, vaults.ErrCopy) {
+	if _, err := add.Execute(copied, ""); !errors.Is(err, vaultdomain.ErrCopy) {
 		t.Fatalf("want ErrCopy, got %v", err)
 	}
 	recognized, recognizedErr := registry.List()
@@ -296,7 +297,7 @@ func TestAnUnreadableFolderKeepsTheCauseInTheError(t *testing.T) {
 	add := vaults.NewAdd(refusingIdentity{checkReadable: errRefused}, registry, registry, registry, testsupport.NewClock())
 
 	_, err := add.Execute(folder(t, "notes"), "")
-	if !errors.Is(err, vaults.ErrUnreadable) || !errors.Is(err, errRefused) {
+	if !errors.Is(err, vaultdomain.ErrUnreadable) || !errors.Is(err, errRefused) {
 		t.Fatalf("want both the sentinel and the cause, got %v", err)
 	}
 }

@@ -24,7 +24,8 @@ import (
 	adapterSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	editorSearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
 	editorSettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
+	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -33,11 +34,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -173,7 +172,7 @@ type behind struct {
 	api         *Services
 	vault       domain.Vault
 	index       *vaults.Index
-	recordedVal <-chan change
+	recordedVal <-chan window.Change
 }
 
 func opening(t *testing.T, notes map[string]string, watcher vaultport.VaultWatcher, readers vaultport.VaultReaders) *behind {
@@ -312,7 +311,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 	sendChange(t, watcher, "Note.md")
 
-	if got := next(t, f.recordedVal); len(got.paths) != 1 || got.paths[0] != "Note.md" {
+	if got := next(t, f.recordedVal); len(got.Paths) != 1 || got.Paths[0] != "Note.md" {
 		t.Errorf("the window received %+v", got)
 	}
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Renamed" {
@@ -419,7 +418,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
 	sendChange(t, watcher, "Note.md")
 
-	if got := next(t, f.recordedVal); len(got.paths) != 1 || got.paths[0] != "Note.md" {
+	if got := next(t, f.recordedVal); len(got.Paths) != 1 || got.Paths[0] != "Note.md" {
 		t.Errorf("the window received %+v", got)
 	}
 }
@@ -592,18 +591,14 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
-			if err != nil {
-				t.Fatal(err)
-			}
-			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}, TabLinks: tabLinks}
+			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 			services := createServices(state)
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 			mux := http.NewServeMux()
-			vault, vaults := numenv1connect.NewVaultServiceHandler(services.Vault)
+			vault, vaults := numenv1connect.NewVaultServiceHandler(windowvault.NewHandler(state))
 			mux.Handle(vault, testsupport.NewRootedHandler(vaults, entered, returned))
-			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(services.Workspace)
+			standing, workspace := numenv1connect.NewWorkspaceServiceHandler(newWorkspace(t, state))
 			mux.Handle(standing, testsupport.NewRootedHandler(workspace, entered, returned))
 			filed, notes := numenv1connect.NewNoteServiceHandler(services.Note)
 			mux.Handle(filed, testsupport.NewRootedHandler(notes, entered, returned))
@@ -648,23 +643,6 @@ func TestEveryPresenceIsSavedFromOne(t *testing.T) {
 		v1.Presence_PRESENCE_NOT_FETCHED:      settings.NotFetched,
 		v1.Presence_PRESENCE_NOTHING_TO_FETCH: settings.NothingToFetch,
 	}, func(is settings.Presence) v1.Presence { return editorSettings.GetPresences()[is] })
-}
-
-func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.VaultsErrorCode]error{
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE: vaults.ErrUnreadable,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY:       vaults.ErrCopy,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS:   domain.ErrOverlaps,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN: vaults.ErrNameTaken,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT: vaults.ErrLastVault,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT:    registry.ErrShowing,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND:  registry.ErrUnknown,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH:   machine.ErrNoTrash,
-		v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED:    errAnswerPending,
-	}, func(err error) v1.VaultsErrorCode {
-		reason, _ := vaultsErrorCodeBy(err)
-		return reason
-	})
 }
 
 func newThemeClient(t *testing.T, cfg themeConfig) numenv1connect.ThemeServiceClient {

@@ -270,12 +270,6 @@ func NewFileRoute(state *State, handler *filewindow.Handler) Route {
 	return NewRoute(path, served, handler)
 }
 
-// NewVaultsRoute is the route of the service that lists and changes the vaults.
-func NewVaultsRoute(state *State, handler *VaultsHandler) Route {
-	path, served := numenv1connect.NewVaultsServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
 // NewMediaRoute is the route of the service that tells where a media file is played from.
 func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	path, served := numenv1connect.NewMediaServiceHandler(handler, state.CountQuestions())

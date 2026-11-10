@@ -1,6 +1,7 @@
 package editor
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -29,7 +30,7 @@ func (s *State) NoteWritten() {
 func (s *State) SubscribeEdits() (<-chan domain.Edit, func()) { return s.Edits.subscribe() }
 
 // PublishChange tells the views drawing the vault that the paths changed.
-func (s *State) PublishChange(paths ...string) { s.ChangeEvents.publish(change{paths: paths}) }
+func (s *State) PublishChange(paths ...string) { s.ChangeEvents.publish(window.Change{Paths: paths}) }
 
 // EmitFileEvent tells the plugins of the window that an event happened, when the window has plugins.
 func (s *State) EmitFileEvent(event string) {

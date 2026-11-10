@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -47,7 +48,7 @@ func TestANameAnotherVaultHasIsRefused(t *testing.T) {
 	// The comparison is the one the list is searched by: without case, over
 	// normalised text.
 	_, err := vaults.NewRename(registry, registry, index).Execute(t.Context(), renamed, "PERSONAL")
-	if !errors.Is(err, vaults.ErrNameTaken) {
+	if !errors.Is(err, vaultdomain.ErrNameTaken) {
 		t.Fatalf("a name %s already has was answered %v", acquired.Name, err)
 	}
 	onTheList, found, err := registry.FindVault(string(renamed.ID))

@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
@@ -390,11 +388,11 @@ func TestEditLoad(t *testing.T) {
 	durationCh := make(chan time.Duration, 1)
 	go func() {
 		for what := range line {
-			if slices.Contains(what.paths, path) {
+			if slices.Contains(what.Paths, path) {
 				durationCh <- testsupport.GetMachine().Now().Sub(saving)
 				return
 			}
-			if what.shouldReload {
+			if what.ShouldReload {
 				durationCh <- testsupport.GetMachine().Now().Sub(saving)
 				return
 			}
@@ -407,200 +405,5 @@ func TestEditLoad(t *testing.T) {
 			wrote.Round(time.Millisecond), reached.Round(time.Millisecond))
 	case <-time.After(2 * time.Minute):
 		t.Fatalf("the change never reached a client; the save itself took %s", wrote)
-	}
-}
-
-// The window reports the tabs that are currently open, and the handler returns
-// the latest report.
-
-func TestWriteOpenTabs_StoresLatestTabs(t *testing.T) {
-	state := &State{}
-	api := &workspaceHandler{state: state}
-
-	if open := state.GetOpenTabs(); len(open.Tabs) != 0 || open.ActiveID != "" {
-		t.Fatalf("a window that has said nothing has %+v open", open)
-	}
-
-	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
-		ActiveId: "two",
-		Tabs: []*v1.Tab{
-			{Id: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
-			{Id: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
-		},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := domain.OpenTabs{
-		ActiveID: "two",
-		Tabs: []domain.Tab{
-			{ID: "one", Kind: "plex", Path: "Entropy.md", Title: "Entropy"},
-			{ID: "two", Kind: "reader:player", Path: "Talk.bin", Title: "Talk", State: `{"t":[12]}`},
-		},
-	}
-	if got := state.GetOpenTabs(); !reflect.DeepEqual(got, want) {
-		t.Errorf("the window has %+v open", got)
-	}
-}
-
-// memoryTabs keeps the open tabs of each vault in memory.
-type memoryTabs map[domain.VaultID]domain.OpenTabs
-
-func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (domain.OpenTabs, error) {
-	return m[v.ID], nil
-}
-
-func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open domain.OpenTabs) error {
-	m[v.ID] = open
-	return nil
-}
-
-func TestReadOpenTabsReturnsTabsSavedForVault(t *testing.T) {
-	store := memoryTabs{}
-	state := &State{OpenTabsStore: store}
-	state.setVault(domain.Vault{ID: "v", Path: t.TempDir()})
-	api := &workspaceHandler{state: state}
-
-	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
-		ActiveId: "one",
-		Tabs:     []*v1.Tab{{Id: "one", Kind: "reader:viewer", Path: "a.bin", Title: "a", State: `{"page":3}`}},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	// A core started again reads the store, not the tabs held in memory.
-	restarted := &workspaceHandler{state: &State{OpenTabsStore: store}}
-	restarted.state.setVault(state.GetCurrentVault())
-	got, err := restarted.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got.Msg.GetActiveId() != "one" || len(got.Msg.GetTabs()) != 1 || got.Msg.GetTabs()[0].GetState() != `{"page":3}` {
-		t.Errorf("read %+v", got.Msg)
-	}
-}
-
-func TestReadOpenTabsReturnsNoneWithoutAVault(t *testing.T) {
-	api := &workspaceHandler{state: &State{OpenTabsStore: memoryTabs{}}}
-	got, err := api.ReadOpenTabs(t.Context(), connect.NewRequest(&v1.ReadOpenTabsRequest{}))
-	if err != nil || len(got.Msg.GetTabs()) != 0 {
-		t.Errorf("read %+v, %v", got.Msg, err)
-	}
-}
-
-func TestAttendingTellsWhoeverIsListening(t *testing.T) {
-	var received []domain.OpenTabs
-	state := &State{NotifyOpenTabs: func(open domain.OpenTabs) { received = append(received, open) }}
-	api := &workspaceHandler{state: state}
-
-	_, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
-		ActiveId: "one",
-		Tabs:     []*v1.Tab{{Id: "one", Kind: "note", Path: "Entropy.md", Title: "Entropy"}},
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(received) != 1 {
-		t.Fatalf("what the window has open was said %d times", len(received))
-	}
-	front, target := received[0].GetActiveTab()
-	if !target || front.Path != "Entropy.md" {
-		t.Errorf("the tab in front is %+v", front)
-	}
-}
-
-func TestFrontedIsTheTabThePersonIsLookingAt(t *testing.T) {
-	for name, c := range map[string]struct {
-		open domain.OpenTabs
-		want string
-	}{
-		"a tab in front": {
-			open: domain.OpenTabs{
-				ActiveID: "two",
-				Tabs:     []domain.Tab{{ID: "one", Path: "Entropy.md"}, {ID: "two", Path: "Talk.mp3"}},
-			},
-			want: "Talk.mp3",
-		},
-		"nothing open":     {open: domain.OpenTabs{}},
-		"a tab it lets go": {open: domain.OpenTabs{ActiveID: "three", Tabs: []domain.Tab{{ID: "one"}}}},
-		"a tab with no identity": {
-			open: domain.OpenTabs{Tabs: []domain.Tab{{Path: "Entropy.md"}}},
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			front, target := c.open.GetActiveTab()
-			if target != (c.want != "") {
-				t.Fatalf("a tab in front is %v", target)
-			}
-			if front.Path != c.want {
-				t.Errorf("the tab in front holds %q", front.Path)
-			}
-		})
-	}
-}
-
-func newTabLinks(t *testing.T) *tablinks.Registry {
-	t.Helper()
-	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return tabLinks
-}
-
-func TestDetachTabInvokesState(t *testing.T) {
-	var got DetachedTab
-	state := &State{TabLinks: newTabLinks(t)}
-	state.DetachTab = func(_ context.Context, tab DetachedTab) error {
-		got = tab
-		// The new window reads and accepts the tab, so DetachTab responds.
-		_, moveID, _ := state.TabLinks.ReadDetached("window-b", tab.ID)
-		state.TabLinks.Accept("window-b", tab.ID, moveID)
-		return nil
-	}
-	api := &workspaceHandler{state: state}
-
-	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{
-		Tab:    &v1.Tab{Id: "plex:7a2e", Kind: "plex", Path: "physics/Ontology.md"},
-		X:      150,
-		Y:      250,
-		Width:  640,
-		Height: 480,
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := DetachedTab{ID: "plex:7a2e", X: 150, Y: 250, Width: 640, Height: 480}
-	if got != want {
-		t.Errorf("detached tab: got %+v, want %+v", got, want)
-	}
-}
-
-func TestDetachTabRequiresATabID(t *testing.T) {
-	state := &State{
-		DetachTab: func(context.Context, DetachedTab) error { return nil },
-		TabLinks:  newTabLinks(t),
-	}
-	api := &workspaceHandler{state: state}
-
-	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Kind: "plex"}}))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Errorf("got code %v, want %v", connect.CodeOf(err), connect.CodeInvalidArgument)
-	}
-}
-
-func TestDetachTabFailsWhenUnimplemented(t *testing.T) {
-	state := &State{}
-	api := &workspaceHandler{state: state}
-
-	_, err := api.DetachTab(t.Context(), connect.NewRequest(&v1.DetachTabRequest{Tab: &v1.Tab{Id: "plex:1", Kind: "plex"}}))
-	if err == nil {
-		t.Fatal("expected error when DetachTab is nil, got nil")
-	}
-	if connect.CodeOf(err) != connect.CodeUnavailable {
-		t.Errorf("got code %v, want %v", connect.CodeOf(err), connect.CodeUnavailable)
 	}
 }

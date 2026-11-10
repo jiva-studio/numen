@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -20,10 +21,6 @@ type vaultSession struct {
 	cancel context.CancelFunc
 	wait   func()
 }
-
-// errAnswerPending is returned when a vault is requested while a page holds work
-// awaiting the user's confirmation.
-var errAnswerPending = errors.New("pending review confirmation")
 
 // Show puts a vault in the window, in place of the current one or as the first.
 // The index and the embedder stay; everything belonging to the vault is rebuilt.
@@ -50,7 +47,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpe
 	defer elapsed()
 
 	if !flushPending(target, o.State.Window, &o.State.Writing) {
-		return errAnswerPending
+		return window.ErrAnswerPending
 	}
 	// A plugin's open canceled during the flush switches nothing.
 	if isInsidePluginOpen && ctx.Err() != nil {
@@ -77,7 +74,7 @@ func (o *Installation) Show(ctx context.Context, v domain.Vault, open *PluginOpe
 	// this vault's.
 	o.State.Window.CancelFlush()
 	// Every page's held content was read from the previous vault.
-	o.State.ChangeEvents.publish(change{shouldReload: true})
+	o.State.ChangeEvents.publish(window.Change{ShouldReload: true})
 	return err
 }
 
@@ -178,5 +175,5 @@ func newVersionChangeReporter(state *State, index *indexing.Session) versionChan
 
 func (r versionChangeReporter) ReportVersionsChanged(v domain.Vault, path string) {
 	r.index.ReportVersionsChanged(v, path)
-	r.state.ChangeEvents.publish(change{versionPaths: []string{path}})
+	r.state.ChangeEvents.publish(window.Change{VersionPaths: []string{path}})
 }

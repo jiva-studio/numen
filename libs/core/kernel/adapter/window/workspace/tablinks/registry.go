@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/broadcast"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 )
 
 // maxColorIndex is the number of group colors; groups past it share colors.

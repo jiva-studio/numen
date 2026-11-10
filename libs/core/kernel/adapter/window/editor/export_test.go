@@ -29,17 +29,14 @@ import (
 type Services struct {
 	state *State
 
-	Vault     *vaultHandler
-	Workspace *workspaceHandler
-	File      *filewindow.Handler
-	Note      *notewindow.Handler
-	Search    *search.Handler
-	Vaults    *VaultsHandler
-	Settings  *settings.Handler
-	Agent     *wire.AgentHandler
-	Command   *command.Handler
-	Media     *mediawindow.Handler
-	Text      *texts.Handler
+	File     *filewindow.Handler
+	Note     *notewindow.Handler
+	Search   *search.Handler
+	Settings *settings.Handler
+	Agent    *wire.AgentHandler
+	Command  *command.Handler
+	Media    *mediawindow.Handler
+	Text     *texts.Handler
 
 	Themes numenv1connect.ThemeServiceHandler
 
@@ -48,6 +45,8 @@ type Services struct {
 	Plugin numenv1connect.PluginServiceHandler
 
 	Catalog numenv1connect.CatalogServiceHandler
+
+	Extra []Route
 
 	getPluginDir func(id string) (string, bool)
 
@@ -91,15 +90,12 @@ func (s *Services) UseNotes() {
 
 func createServices(state *State) *Services {
 	services := &Services{
-		state:     state,
-		Vault:     &vaultHandler{state: state},
-		Workspace: &workspaceHandler{state: state},
+		state: state,
 		File: filewindow.NewHandler(
 			filewindow.NewFolders(state, state, state, nil, nil, nil, nil),
 			filewindow.NewChanges(state, state, state, state, nil, nil, nil),
 		),
 		Search:   search.NewHandler(state),
-		Vaults:   NewVaultsHandler(state),
 		Settings: settings.NewHandler(),
 		Agent:    newAgentHandler(state),
 		Command:  command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
@@ -120,18 +116,12 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 func (s *Services) pages() pageSet {
 	counted := s.state.CountQuestions()
 	var routes []Route
-	path, served := numenv1connect.NewVaultServiceHandler(s.Vault, counted)
-	routes = append(routes, NewRoute(path, served, s.Vault))
-	path, served = numenv1connect.NewWorkspaceServiceHandler(s.Workspace, counted)
-	routes = append(routes, NewRoute(path, served, s.Workspace))
-	path, served = numenv1connect.NewFileServiceHandler(s.File, counted)
+	path, served := numenv1connect.NewFileServiceHandler(s.File, counted)
 	routes = append(routes, NewRoute(path, served, s.File))
 	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
 	routes = append(routes, NewRoute(path, served, s.Note))
 	path, served = numenv1connect.NewSearchServiceHandler(s.Search, counted)
 	routes = append(routes, NewRoute(path, served, s.Search))
-	path, served = numenv1connect.NewVaultsServiceHandler(s.Vaults, counted)
-	routes = append(routes, NewRoute(path, served, s.Vaults))
 	path, served = numenv1connect.NewSettingsServiceHandler(s.Settings, counted)
 	routes = append(routes, NewRoute(path, served, s.Settings))
 	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
@@ -150,6 +140,7 @@ func (s *Services) pages() pageSet {
 		path, served = numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)
 		routes = append(routes, NewRoute(path, served, s.Catalog))
 	}
+	routes = append(routes, s.Extra...)
 	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
 }
 
@@ -169,18 +160,12 @@ func ServicesOf(o *Installation) *Services {
 	services := &Services{state: o.State, installation: o}
 	for _, one := range o.pages.routes {
 		switch handler := one.service.(type) {
-		case *vaultHandler:
-			services.Vault = handler
-		case *workspaceHandler:
-			services.Workspace = handler
 		case *filewindow.Handler:
 			services.File = handler
 		case *notewindow.Handler:
 			services.Note = handler
 		case *search.Handler:
 			services.Search = handler
-		case *VaultsHandler:
-			services.Vaults = handler
 		case *settings.Handler:
 			services.Settings = handler
 		case *mediawindow.Handler:
