@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
@@ -87,13 +88,13 @@ func OpenFlashcards(c Config, ctx context.Context, api *shell.API, errOut io.Wri
 		return started, err
 	}
 	if moves, err := Moves(c, ctx); err != nil {
-		_, _ = fmt.Fprintln(errOut, label+": the index is not being followed:", err)
+		fmt.Fprintln(os.Stderr, label+": the index is not being followed:", err)
 	} else {
 		api.ReportChangesFrom(ctx, moves)
 	}
 	started.Themes = SetShellThemes(c, api, func(response string) {
 		if response != "" {
-			_, _ = fmt.Fprintln(errOut, "themes:", response)
+			fmt.Fprintln(os.Stderr, "themes:", response)
 		}
 	})
 	return started, nil
