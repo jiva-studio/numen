@@ -2,7 +2,8 @@
  * Pure mutation operations for deck cards.
  */
 import { HEAD as CARD_HEAD, getRunEnd, type InsertionPoint } from '../../lib/cards'
-import { type Value, generateId, type IdMaker } from '../../cards'
+import type { Value } from '../../cards/api/cards'
+import { generateId, type IdMaker } from '../../cards/lib/identity'
 import { getFileStem } from '@numen/plugin-sdk'
 import type { BufferCard, BufferDeck } from '../types'
 

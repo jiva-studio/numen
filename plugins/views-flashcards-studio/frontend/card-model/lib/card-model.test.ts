@@ -1,6 +1,6 @@
 /** The effect of a card model gesture on the file, tested without a screen. */
 import { describe, expect, it } from 'vitest'
-import type { VaultCardModel } from '../../cards'
+import type { VaultCardModel } from '../../cards/api/cards'
 import {
   addTemplate,
   addField,

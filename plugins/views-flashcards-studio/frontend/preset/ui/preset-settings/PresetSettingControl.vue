@@ -5,17 +5,8 @@
 import { computed } from 'vue'
 import { NumberField, SegmentedControl, Select, Slider, Switch } from '@numen/ui'
 import { WeekdayChips, WEEK, type Day } from '../../../ui/weekday-chips'
-import {
-  type PresetTabState,
-  type SettingValue,
-  BUDGET_UNITS,
-  LOADS,
-  RULES,
-  WHOLE_LOAD,
-  getLoadOn,
-  setLoadOn,
-  type BudgetUnit,
-} from '../../types'
+import { type PresetTabState, type SettingValue } from '../../types'
+import { BUDGET_UNITS, LOADS, RULES, WHOLE_LOAD, getLoadOn, setLoadOn, type BudgetUnit } from '../../../cards/lib/presets'
 import { getFieldCount, getFieldLimits, getFieldValue, type Field } from '../../lib/fields'
 import { WORDS as words } from '../../words'
 

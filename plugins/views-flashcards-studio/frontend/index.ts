@@ -1,5 +1,6 @@
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { cards, presets } from './cards'
+import { cards } from './cards/api/cards'
+import { presets } from './cards/api/presets.wire'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { createCardModelTabs } from './card-model/kind'
 import { usePresetTab } from './preset/kind'

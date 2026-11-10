@@ -6,7 +6,8 @@
  * the displayed one keeps the displayed one, so the card being edited is not
  * rendered again under a new identity.
  */
-import { type DeckProblem, createMarks, areMarksEqual, type Marks } from '../../cards'
+import type { DeckProblem } from '../../cards/api/cards'
+import { createMarks, areMarksEqual, type Marks } from '../../cards/lib/marks'
 import {
   deserializeBufferDeckFromString,
   applyReadHeadings,

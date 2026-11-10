@@ -2,7 +2,7 @@
  * UI representation mappings and comparisons for decks and card models.
  */
 import type { DeckCard, DeckSection, CardModel } from '../../lib/cards'
-import type { CardModelSummary, VaultCard } from '../../cards'
+import type { CardModelSummary, VaultCard } from '../../cards/api/cards'
 import type { BufferDeck } from '../types'
 import {
   serializeBufferCardsToVaultCards,

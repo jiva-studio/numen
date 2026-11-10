@@ -11,13 +11,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { StopReason } from '../../api/types.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { ErrorCode } from '../../cards/wire/errors'
-import type { Cards, VaultCard, DeckProblem, Preset } from '../../cards'
-import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../cards'
+import type { Cards, VaultCard, DeckProblem } from '../../cards/api/cards'
+import type { Preset } from '../../cards/lib/presets'
+import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../cards/lib/presets'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
 import { DECK } from '../kind'
 import DeckTab from './DeckTab.vue'
 import { useDeckTabs, type DeckTabState } from '../model/useDeckTabs'
-import { WORDS as words } from '../../cards'
+import { WORDS as words } from '../../cards/words'
 
 /** A preset that schedules, which is what every preset here is. */
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } satisfies Pick<

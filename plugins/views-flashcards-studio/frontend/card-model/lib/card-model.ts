@@ -7,13 +7,9 @@
  * the fields and the templates a file is written from, is done here.
  */
 import { orderNames, reorderFields, type InsertionPoint } from '../../lib/cards'
-import {
-  type VaultTemplate,
-  type VaultCardModel,
-  generateId,
-  type IdMaker,
-  type Surrounds,
-} from '../../cards'
+import type { VaultTemplate, VaultCardModel } from '../../cards/api/cards'
+import { generateId, type IdMaker } from '../../cards/lib/identity'
+import type { Surrounds } from '../../cards/lib/surrounds'
 
 /** One template as the window holds it: the file's content, under its own identity. */
 export interface BufferTemplate {

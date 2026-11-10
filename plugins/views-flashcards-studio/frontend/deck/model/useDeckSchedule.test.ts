@@ -5,15 +5,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { StopReason } from '../../api/types.js'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import {
-  DEFAULTS,
-  NO_BOUNDS,
-  WORDS,
-  type PresetChoice,
-  type PresetReadResult,
-  type PresetWriteResult,
-  type Presets,
-} from '../../cards'
+import { DEFAULTS, NO_BOUNDS, type PresetChoice, type PresetReadResult, type PresetWriteResult, type Presets } from '../../cards/lib/presets'
+import { WORDS } from '../../cards/words'
 import { useDeckSchedule, type ScheduledStore } from './useDeckSchedule'
 
 const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING }

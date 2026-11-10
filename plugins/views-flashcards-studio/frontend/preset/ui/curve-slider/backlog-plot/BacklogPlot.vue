@@ -18,7 +18,7 @@ import {
   PLOT_WIDTH,
   type Extent,
 } from '../../../lib/plot'
-import type { Curve } from '../../../types'
+import type { Curve } from '../../../../cards/lib/presets'
 import { WORDS as words } from '../../../words'
 import { BacklogChart } from './backlog-chart'
 import '../curve-slider.css'

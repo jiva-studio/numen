@@ -1,7 +1,7 @@
 /**
  * Pure mutation operations for deck sections.
  */
-import { generateId, type IdMaker } from '../../cards'
+import { generateId, type IdMaker } from '../../cards/lib/identity'
 import type { BufferDeck } from '../types'
 
 /** A section made at the end of the deck, holding no card. */

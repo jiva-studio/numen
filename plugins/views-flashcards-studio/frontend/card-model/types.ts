@@ -3,8 +3,8 @@
  */
 import type { ComputedRef } from 'vue'
 import type { Half } from '../lib/cards'
-import type { OpenNote } from '../buffer'
-import type { Marks } from '../cards'
+import type { OpenNote } from '../buffer/types'
+import type { Marks } from '../cards/lib/marks'
 import type { BufferCardModel } from './lib/card-model'
 
 export interface CardModelDataState {

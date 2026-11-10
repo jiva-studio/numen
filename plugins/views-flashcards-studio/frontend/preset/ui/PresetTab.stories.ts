@@ -9,15 +9,8 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'
 import PresetTab from './PresetTab.vue'
-import {
-  DEFAULTS,
-  type Curve,
-  type Point,
-  type PresetCounts,
-  type Settings,
-  type SettingsBounds,
-  type PresetTabState,
-} from '../types'
+import { type PresetTabState } from '../types'
+import { DEFAULTS, type Curve, type Point, type PresetCounts, type Settings, type SettingsBounds } from '../../cards/lib/presets'
 import { BACKLOG_PLOT_HEIGHT, PLOT_HEIGHT, PLOT_WIDTH } from '../lib/plot'
 import { WORDS as words } from '../words'
 

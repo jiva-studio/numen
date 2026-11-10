@@ -13,15 +13,8 @@ import { asValue } from '@numen/plugin-sdk'
 import { dayAfter } from '../../lib/day'
 
 import { usePresetTab } from '../kind'
-import {
-  DEFAULTS,
-  NO_BOUNDS,
-  type Curve,
-  type Point,
-  type Presets,
-  type PresetTabState,
-  type Settings,
-} from '../types'
+import { type PresetTabState } from '../types'
+import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from '../../cards/lib/presets'
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 

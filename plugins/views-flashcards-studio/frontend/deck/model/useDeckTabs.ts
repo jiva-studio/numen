@@ -10,8 +10,10 @@ import {
   type MessageWriter,
   type PathRename,
 } from '@numen/plugin-sdk'
-import { openNotes } from '../../buffer'
-import { getFailureCode, type Cards, type Presets } from '../../cards'
+import { openNotes } from '../../buffer/notes'
+import { getFailureCode } from '../../cards/lib/failures'
+import type { Cards } from '../../cards/api/cards'
+import type { Presets } from '../../cards/lib/presets'
 import { createDeckAnswers } from './answers'
 import { createDeckReader } from './reader'
 import { useDeckScheduleSync } from './useDeckScheduleSync'

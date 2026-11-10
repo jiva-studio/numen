@@ -3,8 +3,9 @@
  */
 import { computed, shallowRef } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'
-import type { openNotes } from '../../buffer'
-import type { Cards, CardModelSummary, Presets } from '../../cards'
+import type { openNotes } from '../../buffer/notes'
+import type { Cards, CardModelSummary } from '../../cards/api/cards'
+import type { Presets } from '../../cards/lib/presets'
 import { useDeckSchedule } from './useDeckSchedule'
 import { areCardModelChoicesEqual, createCardModelChoices } from '../lib/deck'
 

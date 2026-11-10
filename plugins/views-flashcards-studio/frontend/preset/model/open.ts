@@ -4,16 +4,8 @@
 import { StopReason } from '../../api/types.js'
 import { ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
-import {
-  DEFAULTS,
-  type Field,
-  type Goal,
-  type Presets,
-  type PresetTabState,
-  type Settings,
-  type SettingsBounds,
-  type SettingValue,
-} from '../types'
+import { type Field, type PresetTabState, type SettingValue } from '../types'
+import { DEFAULTS, type Goal, type Presets, type Settings, type SettingsBounds } from '../../cards/lib/presets'
 import { produceSchedule } from '../lib/curve'
 import { getShapeKey, getGoalField } from '../lib/fields'
 import { WORDS as words } from '../words'

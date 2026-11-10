@@ -11,8 +11,10 @@ import {
   type PathRename,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
-import { getMarkOf, openNotes } from '../buffer'
-import { WORDS as words, type Cards } from '../cards'
+import { getMarkOf } from '../buffer/words'
+import { openNotes } from '../buffer/notes'
+import { WORDS as words } from '../cards/words'
+import type { Cards } from '../cards/api/cards'
 import CardModelTab from './ui/CardModelTab.vue'
 import type { CardModelTabState } from './types'
 import { createCardModelWire, type VaultAnswer } from './api/wire'

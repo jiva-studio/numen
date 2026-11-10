@@ -5,7 +5,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { fn } from 'storybook/test'
 import { computed } from 'vue'
-import { createMarks, type Marks } from '../../cards'
+import { createMarks, type Marks } from '../../cards/lib/marks'
 import type { DeckTabState } from '../types'
 import DeckTab from './DeckTab.vue'
 

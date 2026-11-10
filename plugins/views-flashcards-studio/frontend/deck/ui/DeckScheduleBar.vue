@@ -6,7 +6,7 @@ import { computed, ref, useId } from 'vue'
 import { Menu, type Position, measureRect } from '@numen/ui'
 import { ChevronDown } from '@lucide/vue'
 import type { Choice, DeckPreset } from '../model/useDeckSchedule'
-import { WORDS as words } from '../../cards'
+import { WORDS as words } from '../../cards/words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{

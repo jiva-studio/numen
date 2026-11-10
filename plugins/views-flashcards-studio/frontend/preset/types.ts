@@ -3,50 +3,7 @@
  */
 import type { Ref } from 'vue'
 import type { Field } from './lib/fields'
-import type {
-  Curve,
-  Goal,
-  Load,
-  PresetCounts,
-  Settings,
-  SettingsBounds,
-  StopReason,
-} from '../cards'
-
-export type {
-  Goal,
-  BudgetUnit,
-  Rule,
-  Settings,
-  Load,
-  Bounds,
-  SettingsBounds,
-  Preset,
-  PresetReadResult,
-  PresetWriteResult,
-  ReadPreset,
-  MakeResult,
-  Point,
-  CurvePoint,
-  PresetCounts,
-  Curve,
-  PresetChoice,
-  StopReason,
-  Presets,
-} from '../cards'
-export {
-  GOALS,
-  BUDGET_UNITS,
-  RULES,
-  STOP_REASONS,
-  WHOLE_LOAD,
-  LOADS,
-  getLoadOn,
-  setLoadOn,
-  DEFAULTS,
-  NO_BOUNDS,
-  NO_CURVE_POINT,
-} from '../cards'
+import type { Curve, Goal, Load, PresetCounts, Settings, SettingsBounds, StopReason } from '../cards/lib/presets'
 
 export type { Field }
 

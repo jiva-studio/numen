@@ -4,7 +4,7 @@
  * card model listing is compared card model by card model.
  */
 import { describe, expect, it } from 'vitest'
-import type { CardModelSummary } from '../../cards'
+import type { CardModelSummary } from '../../cards/api/cards'
 import type { BufferCard, BufferDeck, BufferSection } from '../types'
 import { applyReadHeadings, applyScreenIds, areDecksEqual, areCardModelChoicesEqual } from './view'
 

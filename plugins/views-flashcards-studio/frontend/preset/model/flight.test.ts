@@ -11,7 +11,7 @@ import {
   createWriteOpts,
   flushPromises,
 } from '../fixtures/writes'
-import type { Presets, PresetWriteResult } from '../types'
+import type { Presets, PresetWriteResult } from '../../cards/lib/presets'
 import { WORDS as words } from '../words'
 import { canCloseTab, createWriteFlight, flushWrites, requestWrite, sendWrite } from './flight'
 

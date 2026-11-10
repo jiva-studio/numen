@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { DeckProblem, VaultCardModel } from '../../cards'
+import type { DeckProblem, VaultCardModel } from '../../cards/api/cards'
 import { serializeCardModel, createBufferCardModel } from '../lib/card-model'
 import { createCardModelFields } from './fields'
 

@@ -5,10 +5,10 @@
 import { computed } from 'vue'
 import { type InsertionPoint, type Half } from '../../lib/cards'
 import { CardModelEditor } from '../../ui/cards'
-import { parseFileConflict } from '../../buffer'
+import { parseFileConflict } from '../../buffer/words'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { CardModelTabState } from '../types'
-import { WORDS as words } from '../../cards'
+import { WORDS as words } from '../../cards/words'
 
 // --- Props & Emits ---
 const props = defineProps<{ state: CardModelTabState }>()

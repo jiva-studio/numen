@@ -9,11 +9,11 @@ import {
   type InsertionPoint,
 } from '../../lib/cards'
 import { DeckEditor } from '../../ui/cards'
-import { parseFileConflict } from '../../buffer'
+import { parseFileConflict } from '../../buffer/words'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { DeckTabState } from '../types'
 import DeckScheduleBar from './DeckScheduleBar.vue'
-import { WORDS as words } from '../../cards'
+import { WORDS as words } from '../../cards/words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ state: DeckTabState }>()

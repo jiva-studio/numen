@@ -7,14 +7,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type {
-  Cards,
-  DeckProblem,
-  FieldRenameResult,
-  RenamedField,
-  VaultCardModel,
-} from '../../cards'
-import { WORDS as words } from '../../cards'
+import type { Cards, DeckProblem, FieldRenameResult, RenamedField, VaultCardModel } from '../../cards/api/cards'
+import { WORDS as words } from '../../cards/words'
 import { ERRORS } from '../../cards/wire/errors'
 import { createCardModelWire, NOTHING } from './wire'
 

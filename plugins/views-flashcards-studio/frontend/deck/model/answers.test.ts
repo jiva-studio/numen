@@ -3,7 +3,8 @@
  * kept across reads.
  */
 import { describe, expect, it } from 'vitest'
-import { WORDS, type DeckProblem } from '../../cards'
+import { WORDS } from '../../cards/words'
+import type { DeckProblem } from '../../cards/api/cards'
 import { createDeckAnswers } from './answers'
 
 const PROBLEM: DeckProblem = { kind: 'unknown', card: 0, template: null, field: '', text: 'Odd' }

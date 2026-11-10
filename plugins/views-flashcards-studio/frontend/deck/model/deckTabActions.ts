@@ -1,7 +1,7 @@
 /**
  * Tab-level card and section mutations for flashcard deck tabs.
  */
-import type { CardModelSummary, Value } from '../../cards'
+import type { CardModelSummary, Value } from '../../cards/api/cards'
 import {
   addCard,
   addSection,

@@ -12,13 +12,8 @@ import {
   type PathRename,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
-import {
-  NO_BOUNDS,
-  type Presets,
-  type SettingsBounds,
-  type PresetTabState,
-  type SettingValue,
-} from './types'
+import { type PresetTabState, type SettingValue } from './types'
+import { NO_BOUNDS, type Presets, type SettingsBounds } from '../cards/lib/presets'
 import { WORDS as words } from './words'
 import {
   createOpenPreset,

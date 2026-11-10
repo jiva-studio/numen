@@ -4,7 +4,7 @@ import { type ErrorCode, getErrorWords } from '../cards/wire/errors'
 import { formatStopReasonMessage } from '../cards/wire/stop'
 /** Interface copy of the preset tab: the control, its settings, and error messages. */
 import { many, percent } from '@numen/ui'
-import type { BudgetUnit, Goal, Rule } from './types'
+import type { BudgetUnit, Goal, Rule } from '../cards/lib/presets'
 import type { Field } from './lib/fields'
 import {
   getBuyFacts,

@@ -1,5 +1,6 @@
 import type { ErrorCode } from '../../cards/wire/errors'
-import { type DeckProblem, WORDS as words } from '../../cards'
+import type { DeckProblem } from '../../cards/api/cards'
+import { WORDS as words } from '../../cards/words'
 import { getFileName } from '@numen/plugin-sdk'
 
 /** What the vault reported about one file the last time it was read or written. */

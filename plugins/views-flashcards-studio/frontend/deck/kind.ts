@@ -3,8 +3,8 @@
  */
 import { Layers } from '@lucide/vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
-import { getMarkOf } from '../buffer'
-import type { Cards } from '../cards'
+import { getMarkOf } from '../buffer/words'
+import type { Cards } from '../cards/api/cards'
 import DeckTab from './ui/DeckTab.vue'
 import type { DeckTabState } from './types'
 

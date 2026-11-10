@@ -10,15 +10,8 @@ import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import PresetTab from '../ui/PresetTab.vue'
-import {
-  DEFAULTS,
-  type Curve,
-  type Point,
-  type PresetCounts,
-  type Settings,
-  type SettingsBounds,
-  type PresetTabState,
-} from '../types'
+import { type PresetTabState } from '../types'
+import { DEFAULTS, type Curve, type Point, type PresetCounts, type Settings, type SettingsBounds } from '../../cards/lib/presets'
 
 /**
  * The range of each setting, as the application returns it on a read. A test

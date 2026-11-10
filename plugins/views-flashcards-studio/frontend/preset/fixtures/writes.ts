@@ -1,7 +1,7 @@
 /** A fake vault and window for the tests of the preset writes: replies on demand, and records each message. */
 import { afterEach, expect } from 'vitest'
 import type { MessageWriter } from '@numen/plugin-sdk'
-import { DEFAULTS, type Presets, type PresetWriteResult } from '../types'
+import { DEFAULTS, type Presets, type PresetWriteResult } from '../../cards/lib/presets'
 
 const PATH = 'presets/Daily.md'
 

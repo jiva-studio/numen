@@ -13,21 +13,9 @@ import type { PresetTabState, SettingValue } from './types'
 import { StopReason } from '../api/types.js'
 import { getGoalValue, findNearest } from './lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import type { CardsFailure } from '../cards'
+import type { CardsFailure } from '../cards/api/cards'
 import { getGoalFields, getGoalField, type Field } from './lib/fields'
-import {
-  DEFAULTS,
-  NO_BOUNDS,
-  type Curve,
-  type Goal,
-  type Point,
-  type Presets,
-  type Preset,
-  type PresetReadResult,
-  type PresetWriteResult,
-  type ReadPreset,
-  type Settings,
-} from './types'
+import { DEFAULTS, NO_BOUNDS, type Curve, type Goal, type Point, type Presets, type Preset, type PresetReadResult, type PresetWriteResult, type ReadPreset, type Settings } from '../cards/lib/presets'
 import { BOUNDS } from './fixtures'
 import { ERRORS, type ErrorCode } from '../cards/wire/errors'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'

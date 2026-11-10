@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NO_CURVE_POINT, type Point } from '../types'
+import { NO_CURVE_POINT, type Point } from '../../cards/lib/presets'
 import { clearBacklog } from '../lib/curve'
 import { PLOT_BOTTOM } from '../lib/plot'
 import { mountPresetTab, heights, point, createTab } from '../fixtures'

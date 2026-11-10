@@ -3,7 +3,7 @@
  * were read from.
  */
 import { describe, expect, it } from 'vitest'
-import type { DeckProblem } from '../../cards'
+import type { DeckProblem } from '../../cards/api/cards'
 import { serializeBufferDeckToString, type BufferCard, type BufferDeck } from '../lib/deck'
 import { createDeckReader, type ShownStore } from './reader'
 
