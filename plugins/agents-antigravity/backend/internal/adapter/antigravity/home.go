@@ -1,4 +1,4 @@
-package service
+package antigravity
 
 import (
 	"encoding/json"
@@ -10,15 +10,15 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
-// Endpoint is the address at which the agent calls the tools of this vault over MCP.
-type Endpoint struct {
+// endpoint is the address at which the agent calls the tools of this vault over MCP.
+type endpoint struct {
 	URL   string
 	Token string
 }
 
 func noRelease() error { return nil }
 
-func setupAntigravityHome(tools *Endpoint) (string, func() error, error) {
+func setupAntigravityHome(tools *endpoint) (string, func() error, error) {
 	tempHome, cleanup, err := agentrun.CreateTempDir("numen-antigravity-*")
 	if err != nil {
 		return "", noRelease, err
@@ -65,7 +65,7 @@ func setupAntigravityHome(tools *Endpoint) (string, func() error, error) {
 	return tempHome, cleanup, nil
 }
 
-func makeMCPConfig(tools Endpoint, existingPath string) map[string]any {
+func makeMCPConfig(tools endpoint, existingPath string) map[string]any {
 	servers := map[string]any{
 		"numen": map[string]any{
 			"type":      "http",

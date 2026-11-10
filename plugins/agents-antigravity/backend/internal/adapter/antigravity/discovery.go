@@ -1,4 +1,4 @@
-package service
+package antigravity
 
 import (
 	"os"
@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
-func getAntigravityPlaces() []string {
+func getPlaces() []string {
 	return []string{
 		"~/.local/bin/antigravity",
 		"~/.local/bin/agy",
@@ -21,21 +21,19 @@ func getAntigravityPlaces() []string {
 	}
 }
 
-// IsAntigravityInstalled checks whether Google Antigravity CLI is available on this machine.
-func IsAntigravityInstalled(customPath ...string) bool {
+func isInstalled(customPath ...string) bool {
 	if len(customPath) > 0 && customPath[0] != "" {
 		return agentrun.IsRunnable(customPath[0])
 	}
-	found := FindAntigravity()
+	found := findProgram()
 	return agentrun.IsRunnable(found)
 }
 
-// FindAntigravity returns the path of the Antigravity CLI, or the bare name where not found.
-func FindAntigravity(customPath ...string) string {
-	return findAntigravityIn(getAntigravityPlaces(), customPath...)
+func findProgram(customPath ...string) string {
+	return findIn(getPlaces(), customPath...)
 }
 
-func findAntigravityIn(places []string, customPath ...string) string {
+func findIn(places []string, customPath ...string) string {
 	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
 		return customPath[0]
 	}
@@ -58,13 +56,4 @@ func findAntigravityIn(places []string, customPath ...string) string {
 		}
 	}
 	return "agy"
-}
-
-func programCommand(commands []agentrun.ProgramCommand, name string) []string {
-	for _, one := range commands {
-		if one.Program == name {
-			return one.Command
-		}
-	}
-	return nil
 }

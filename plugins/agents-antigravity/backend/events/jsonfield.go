@@ -1,4 +1,4 @@
-package service
+package events
 
 func getString(object map[string]any, key string) string {
 	value, ok := object[key].(string)

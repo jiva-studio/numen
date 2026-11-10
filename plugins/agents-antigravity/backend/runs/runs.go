@@ -1,4 +1,6 @@
-package service
+// Package runs starts the Antigravity program for an agent request and streams what it prints as the
+// steps of the run.
+package runs
 
 import (
 	"bufio"
@@ -12,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/internal/adapter/process"
+	"github.com/jiva-studio/numen/plugins/agents-antigravity/backend/events"
 )
 
 const (
@@ -24,56 +26,89 @@ const (
 
 var errNoOutput = errors.New("the program ended without output")
 
+// Commands builds the command that runs a request, and the function that releases what it needs.
+type Commands interface {
+	Build(
+		ctx context.Context, req *agentrun.Request, reg *agentrun.Registry, executablePath string,
+	) (*exec.Cmd, func() error, error)
+}
+
+// Supervisor ends the whole process group of a command when its context is canceled.
+type Supervisor interface {
+	Supervise(cmd *exec.Cmd)
+}
+
+// ModelResolver replaces the model of a request with the listed model that the request names.
+type ModelResolver interface {
+	ResolveModel(ctx context.Context, req *agentrun.Request)
+}
+
+// Runner runs the requests of one agent service.
+type Runner struct {
+	registry   *agentrun.Registry
+	commands   Commands
+	supervisor Supervisor
+	resolver   ModelResolver
+}
+
+// New returns a runner that records its runs and their sessions in registry.
+func New(registry *agentrun.Registry, commands Commands, supervisor Supervisor, resolver ModelResolver) *Runner {
+	return &Runner{registry: registry, commands: commands, supervisor: supervisor, resolver: resolver}
+}
+
 type spec struct {
 	Conversation string
 	MaxSteps     int
 	Root         string
 	Token        string
 	Build        func(ctx context.Context) (*exec.Cmd, func() error, error)
-	NewHandler   func(r *reader) func(event map[string]any)
+	NewHandler   func(sink events.Sink) func(event map[string]any)
 }
 
-type reader struct {
-	work         *agentrun.Work
-	registry     *agentrun.Registry
-	conversation string
-	limit        int
-	completed    int
-	sentCount    int
-	isFinished   bool
-}
-
-func (r *reader) Send(resp *agentrun.Response) {
-	select {
-	case r.work.Output <- resp:
-	case <-r.work.Stopped():
-		return
+// Ask answers a request: it reports that the model started, runs the program, and forwards the steps
+// to send. A run that cannot start ends with a stopped step that gives the reason.
+func (r *Runner) Ask(
+	ctx context.Context, req *agentrun.Request, executablePath string, send func(*agentrun.Response) error,
+) error {
+	if err := send(&agentrun.Response{Step: &agentrun.ModelStartedStep{}}); err != nil {
+		return err
 	}
-	r.sentCount++
-	if resp.IsToolFinished() {
-		r.completed++
+
+	r.resolver.ResolveModel(ctx, req)
+	work, err := r.Start(ctx, req, executablePath)
+	if err != nil {
+		return send(&agentrun.Response{
+			Step: &agentrun.StoppedStep{Stopped: err.Error()},
+		})
 	}
+	return agentrun.ForwardResponses(ctx, work, send)
 }
 
-func (r *reader) CountStep() { r.completed++ }
+// Start runs the program for req and returns the work whose output carries the steps.
+func (r *Runner) Start(ctx context.Context, req *agentrun.Request, executablePath string) (*agentrun.Work, error) {
+	return r.start(ctx, r.newSpec(req, executablePath))
+}
 
-func (r *reader) SetSession(session string) {
-	if r.conversation != "" && session != "" {
-		r.registry.SetSession(r.conversation, session)
+func (r *Runner) newSpec(req *agentrun.Request, executablePath string) spec {
+	s := spec{
+		Conversation: req.Conversation,
+		MaxSteps:     int(req.MaxSteps),
+		NewHandler:   events.NewHandler,
+		Root:         "",
+		Token:        "",
+		Build:        nil,
 	}
+	if agentrun.HasTools(req) {
+		s.Root = req.Root
+		s.Token = req.ToolsToken
+	}
+	s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
+		return r.commands.Build(ctx, req, r.registry, executablePath)
+	}
+	return s
 }
 
-func (r *reader) isOverLimit() bool { return r.limit > 0 && r.completed >= r.limit }
-
-func (r *reader) reportLimit() {
-	r.reportStop(fmt.Sprintf("reached maximum limit of %d steps", r.limit))
-}
-
-func (r *reader) reportStop(reason string) {
-	r.Send(&agentrun.Response{Step: &agentrun.StoppedStep{Stopped: reason}})
-}
-
-func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
+func (r *Runner) start(ctx context.Context, s spec) (*agentrun.Work, error) {
 	runCtx, stop := context.WithCancel(ctx)
 	cmd, cleanup, err := s.Build(runCtx)
 	if err != nil {
@@ -88,8 +123,8 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 	if cmd.Stderr == nil {
 		cmd.Stderr = &stderr
 	}
-	// gomutants:disable-next-line STATEMENT_REMOVE reason="process.Supervise sets OS process-group attributes for child cleanup."
-	process.Supervise(cmd)
+	// gomutants:disable-next-line STATEMENT_REMOVE reason="Supervise sets OS process-group attributes for child cleanup."
+	r.supervisor.Supervise(cmd)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -97,18 +132,18 @@ func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work,
 		return nil, errors.Join(err, cleanup())
 	}
 	w := agentrun.NewWork(s.Conversation, outputBuffer, agentrun.StopByCancel(stop))
-	if !reg.Add(w) {
+	if !r.registry.Add(w) {
 		stop()
 		return nil, errors.Join(errors.New("agent runner is terminating"), stdout.Close(), cleanup())
 	}
 	if err := cmd.Start(); err != nil {
 		w.End()
-		reg.Remove(w)
+		r.registry.Remove(w)
 		stop()
 		return nil, errors.Join(fmt.Errorf("start %s: %w", cmd.Path, err), stdout.Close(), cleanup())
 	}
 
-	go runReader(runCtx, &runProcess{stop: stop, cmd: cmd, stdout: stdout, stderr: &stderr, cleanup: cleanup}, w, reg, s)
+	go runReader(runCtx, &runProcess{stop: stop, cmd: cmd, stdout: stdout, stderr: &stderr, cleanup: cleanup}, w, r.registry, s)
 	return w, nil
 }
 
@@ -203,97 +238,4 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 	case r.sentCount == 0 && strings.TrimSpace(stderr) != "":
 		r.reportStop(agentrun.FailureMessage(errNoOutput, stderr))
 	}
-}
-
-func newSpec(req *agentrun.Request, reg *agentrun.Registry, customPath ...string) spec {
-	execPath := ""
-	if len(customPath) > 0 {
-		execPath = customPath[0]
-	}
-	s := spec{
-		Conversation: req.Conversation,
-		MaxSteps:     int(req.MaxSteps),
-		NewHandler:   newEventHandler,
-		Root:         "",
-		Token:        "",
-		Build:        nil,
-	}
-	if agentrun.HasTools(req) {
-		s.Root = req.Root
-		s.Token = req.ToolsToken
-	}
-	s.Build = func(ctx context.Context) (*exec.Cmd, func() error, error) {
-		return makeAntigravityCommand(ctx, req, reg, execPath)
-	}
-	return s
-}
-
-func resolveCommand(command []string, customPath ...string) (string, []string) {
-	if len(command) > 0 {
-		return command[0], command[1:]
-	}
-	return FindAntigravity(customPath...), nil
-}
-
-func makeAntigravityCommand(
-	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
-) (*exec.Cmd, func() error, error) {
-	if !agentrun.HasTools(req) {
-		return makeAnswerCommand(runCtx, req, reg, customPath...)
-	}
-	binName, baseArgs := resolveCommand(req.Command, customPath...)
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", req.Prompt,
-		"--output-format", "stream-json",
-		"--dangerously-skip-permissions",
-	)
-	if model := req.Model; model != "" && model != defaultModelName {
-		args = append(args, "--model", model)
-	}
-	if sessID := reg.GetSession(req.Conversation); sessID != "" {
-		args = append(args, "--conversation", sessID)
-	}
-
-	cmd := exec.CommandContext(runCtx, binName, args...)
-	if req.ToolsURL != "" {
-		tempHome, clean, err := setupAntigravityHome(&Endpoint{URL: req.ToolsURL, Token: req.ToolsToken})
-		if err != nil {
-			return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
-		}
-		cmd.Env = append(os.Environ(), "HOME="+tempHome)
-		return cmd, clean, nil
-	}
-	return cmd, nil, nil
-}
-
-func makeAnswerCommand(
-	runCtx context.Context, req *agentrun.Request, reg *agentrun.Registry, customPath ...string,
-) (*exec.Cmd, func() error, error) {
-	tempHome, cleanHome, err := setupAntigravityHome(nil)
-	if err != nil {
-		return nil, nil, fmt.Errorf("set up the Antigravity home: %w", err)
-	}
-	dir, cleanDir, err := agentrun.CreateTempDir("numen-antigravity-run-*")
-	if err != nil {
-		return nil, nil, errors.Join(fmt.Errorf("create the folder to run in: %w", err), cleanHome())
-	}
-	binName, baseArgs := resolveCommand(req.Command, customPath...)
-	args := append([]string{}, baseArgs...)
-	args = append(args,
-		"-p", agentrun.WritePrompt(req.Instructions, req.Prompt),
-		"--output-format", "stream-json",
-	)
-	if model := req.Model; model != "" && model != defaultModelName {
-		args = append(args, "--model", model)
-	}
-	if sessID := reg.GetSession(req.Conversation); sessID != "" {
-		args = append(args, "--conversation", sessID)
-	}
-	cmd := exec.CommandContext(runCtx, binName, args...)
-	cmd.Dir = dir
-	cmd.Env = append(os.Environ(), "HOME="+tempHome)
-	return cmd, func() error {
-		return errors.Join(cleanHome(), cleanDir())
-	}, nil
 }
