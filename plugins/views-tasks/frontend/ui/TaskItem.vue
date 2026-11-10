@@ -57,7 +57,9 @@ const isCancelShown = computed(
   () => (props.task.state === 'running' || isCancelling.value) && props.task.allowed.cancel,
 )
 const isRetryShown = computed(() => isFailed.value && props.task.allowed.retry)
-const isDismissShown = computed(() => isNotice.value || (isFailed.value && !props.task.allowed.retry))
+const isDismissShown = computed(
+  () => isNotice.value || (isFailed.value && !props.task.allowed.retry),
+)
 const hasAction = computed(() => isCancelShown.value || isRetryShown.value || isDismissShown.value)
 
 /* -------------------------------- Handlers -------------------------------- */

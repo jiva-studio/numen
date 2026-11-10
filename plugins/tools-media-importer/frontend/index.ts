@@ -34,7 +34,9 @@ export const activate = (
         return []
       }
       if (made.value.failed.length > 0) {
-        context.ui.workspace?.messages.showError(`${words.notCreated} ${made.value.failed.join(', ')}`)
+        context.ui.workspace?.messages.showError(
+          `${words.notCreated} ${made.value.failed.join(', ')}`,
+        )
       }
       return made.value.paths
     },

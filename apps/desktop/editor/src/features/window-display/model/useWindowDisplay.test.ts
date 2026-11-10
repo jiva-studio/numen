@@ -631,9 +631,7 @@ describe('what the application is doing', () => {
     await window.start()
     await flushPromises()
 
-    await vi.waitFor(() =>
-      expect(window.tasks.value.map((one) => one.progress.done)).toEqual([32]),
-    )
+    await vi.waitFor(() => expect(window.tasks.value.map((one) => one.progress.done)).toEqual([32]))
 
     window.close()
   })
@@ -665,9 +663,7 @@ describe('what the application is doing', () => {
     await flushPromises()
     await flushPromises()
 
-    await vi.waitFor(() =>
-      expect(window.tasks.value.map((one) => one.progress.done)).toEqual([48]),
-    )
+    await vi.waitFor(() => expect(window.tasks.value.map((one) => one.progress.done)).toEqual([48]))
     expect(openedWindows).toBeGreaterThan(1)
     // A stream taken up again is not a stream that was lost.
     expect(window.health.lost.value).toBe('')

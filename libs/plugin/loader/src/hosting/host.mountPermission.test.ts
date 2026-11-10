@@ -111,32 +111,40 @@ describe('a view kind a plugin registers itself', () => {
 describe('a view capability named like a property of every object', () => {
   const names = ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'valueOf']
 
-  it.each(names)('waits for a registration when "%s" is mounted before one exists', async (name) => {
-    const { createPlugin } = createHost()
-    const caller = createPlugin('md.numen.caller', [])
-    const element = document.createElement('div')
+  it.each(names)(
+    'waits for a registration when "%s" is mounted before one exists',
+    async (name) => {
+      const { createPlugin } = createHost()
+      const caller = createPlugin('md.numen.caller', [])
+      const element = document.createElement('div')
 
-    expect(() => caller.ui.mountView(name, element, {})).not.toThrow()
-    createPlugin('md.numen.owner', []).register.view({
-      capability: name,
-      component: defineComponent({ setup: () => () => h('p', 'late') }),
-    })
-    await settle()
+      expect(() => caller.ui.mountView(name, element, {})).not.toThrow()
+      createPlugin('md.numen.owner', []).register.view({
+        capability: name,
+        component: defineComponent({ setup: () => () => h('p', 'late') }),
+      })
+      await settle()
 
-    expect(element.textContent).toBe('late')
-  })
+      expect(element.textContent).toBe('late')
+    },
+  )
 
-  it.each(names)('refuses a plugin without vault:read to mount the registered "%s"', async (name) => {
-    const { read, createPlugin } = createHost()
-    registerNoteViewer(createPlugin('md.numen.owner', ['vault:read']), name)
-    const element = document.createElement('div')
+  it.each(names)(
+    'refuses a plugin without vault:read to mount the registered "%s"',
+    async (name) => {
+      const { read, createPlugin } = createHost()
+      registerNoteViewer(createPlugin('md.numen.owner', ['vault:read']), name)
+      const element = document.createElement('div')
 
-    expect(() =>
-      createPlugin('md.numen.caller', []).ui.mountView(name, element, { path: 'Notes/Example.md' }),
-    ).toThrow(/vault:read/)
-    await settle()
+      expect(() =>
+        createPlugin('md.numen.caller', []).ui.mountView(name, element, {
+          path: 'Notes/Example.md',
+        }),
+      ).toThrow(/vault:read/)
+      await settle()
 
-    expect(read).not.toHaveBeenCalled()
-    expect(element.textContent).toBe('')
-  })
+      expect(read).not.toHaveBeenCalled()
+      expect(element.textContent).toBe('')
+    },
+  )
 })

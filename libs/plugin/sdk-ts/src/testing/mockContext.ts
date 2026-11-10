@@ -173,9 +173,7 @@ function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined
 }
 
 // createMockPluginContext builds a controllable context for unit tests.
-export function createMockPluginContext(
-  initialValues?: MockContextInit,
-): MockPluginContext {
+export function createMockPluginContext(initialValues?: MockContextInit): MockPluginContext {
   const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
   const settingsViews: SettingsViewRegistration[] = []
@@ -205,7 +203,11 @@ export function createMockPluginContext(
     view: (registration) => registerInList(views, registration, subscriptions),
   }
 
-  const mountView = (capability: string, element: HTMLElement, viewContext: unknown): MountedView => {
+  const mountView = (
+    capability: string,
+    element: HTMLElement,
+    viewContext: unknown,
+  ): MountedView => {
     const view: MockMountedView = {
       capability,
       element,

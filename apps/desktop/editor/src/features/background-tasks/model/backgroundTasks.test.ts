@@ -64,7 +64,9 @@ describe('the tasks of the window as background tasks', () => {
   })
 
   it('carries what the task is about and what it counts', () => {
-    expect(first({ ...base, about: 'doc.pdf', progress: { ...base.progress, counting: 'seconds' } })).toMatchObject({
+    expect(
+      first({ ...base, about: 'doc.pdf', progress: { ...base.progress, counting: 'seconds' } }),
+    ).toMatchObject({
       about: 'doc.pdf',
       progress: { counting: 'seconds' },
     })
@@ -90,7 +92,11 @@ describe('the tasks of the window as background tasks', () => {
   })
 
   it('carries the settings action of a failed task of a plugin', () => {
-    const task: Task = { ...base, error: 'OAuth session expired', source: { ...base.source, pluginId: 'md.example.agent' } }
+    const task: Task = {
+      ...base,
+      error: 'OAuth session expired',
+      source: { ...base.source, pluginId: 'md.example.agent' },
+    }
     const host = createBackgroundTaskHost(
       createDeps([base, task], {
         resolveAction: (one) => ({ label: 'Configure', pluginId: one.source.pluginId }),
@@ -122,7 +128,13 @@ describe('the tasks of the window as background tasks', () => {
 
   it('lists the same ids in the same order through every report of a task', async () => {
     const report = (step: number): readonly Task[] => [
-      { ...base, id: 'vectors', label: 'Indexing', about: `file ${step}`, progress: { ...base.progress, done: step } },
+      {
+        ...base,
+        id: 'vectors',
+        label: 'Indexing',
+        about: `file ${step}`,
+        progress: { ...base.progress, done: step },
+      },
       { ...base, id: 'texts', label: 'Reading', source: { ...base.source, pluginName: 'Reader' } },
       { ...base, id: 'lost', error: 'The vault is gone' },
     ]

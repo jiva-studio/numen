@@ -114,7 +114,9 @@ describe('the summary', () => {
     const { context, view } = activateTasks()
     const wrapper = mountTasks(view)
 
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'running', progress: { done: 1, total: 2 } })])
+    context.work.backgroundTasks.setTasks([
+      createTask({ id: 'a', state: 'running', progress: { done: 1, total: 2 } }),
+    ])
     await settle(APPEAR_DELAY_MS)
 
     const fill = wrapper.find('.tasks-status__ring-fill')
@@ -233,7 +235,12 @@ describe('the list', () => {
   it('shows what a task is done to and how much of it is done', async () => {
     const { context, view } = activateTasks()
     context.work.backgroundTasks.setTasks([
-      createTask({ id: 'a', label: 'Index books', about: 'Gita.pdf', progress: { done: 3, total: 12 } }),
+      createTask({
+        id: 'a',
+        label: 'Index books',
+        about: 'Gita.pdf',
+        progress: { done: 3, total: 12 },
+      }),
     ])
     const wrapper = mountTasks(view)
 
@@ -319,14 +326,18 @@ describe('the actions of a task', () => {
 
   it('dismisses a failed task that cannot be retried', async () => {
     const { context, view } = activateTasks()
-    context.work.backgroundTasks.setTasks([createTask({ id: 'a', state: 'failed', error: 'timeout' })])
+    context.work.backgroundTasks.setTasks([
+      createTask({ id: 'a', state: 'failed', error: 'timeout' }),
+    ])
     const wrapper = mountTasks(view)
     await openList(wrapper)
 
     expect(wrapper.find('button[aria-label="Retry task"]').exists()).toBe(false)
     await wrapper.find('button[aria-label="Dismiss"]').trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'a' }])
+    expect(context.work.backgroundTasks.getActions()).toStrictEqual([
+      { action: 'dismiss', id: 'a' },
+    ])
   })
 
   it('dismisses a notice', async () => {
@@ -340,7 +351,9 @@ describe('the actions of a task', () => {
     expect(wrapper.find('[data-task-id="n"] .task-item__notice-icon').exists()).toBe(true)
     await wrapper.find('[data-task-id="n"] button[aria-label="Dismiss"]').trigger('click')
 
-    expect(context.work.backgroundTasks.getActions()).toStrictEqual([{ action: 'dismiss', id: 'n' }])
+    expect(context.work.backgroundTasks.getActions()).toStrictEqual([
+      { action: 'dismiss', id: 'n' },
+    ])
   })
 
   it('opens the settings of the plugin a failed task names', async () => {

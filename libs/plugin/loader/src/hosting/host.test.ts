@@ -4,7 +4,12 @@ import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
 import { disposeAllEntries, type HostRegistry } from './registry'
 import { registerPluginStyle } from '../styles'
-import { CONVERSATION, NOTE_EDITOR, type NoteEditorContext, type VaultNotes } from '@numen/plugin-sdk'
+import {
+  CONVERSATION,
+  NOTE_EDITOR,
+  type NoteEditorContext,
+  type VaultNotes,
+} from '@numen/plugin-sdk'
 import { createMockBackgroundTaskHost } from '@numen/plugin-sdk/testing'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { PluginHostDeps } from './types'
@@ -547,7 +552,10 @@ describe('a view mounted by a plugin', () => {
     const element = document.createElement('div')
     const context = new Proxy(
       {},
-      { has: () => false, get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined) },
+      {
+        has: () => false,
+        get: (_target, key) => (key === 'path' ? 'Notes/Example.md' : undefined),
+      },
     )
 
     expect(() => createCaller([]).ui.mountView(NOTE_EDITOR, element, context)).toThrow(/vault:read/)

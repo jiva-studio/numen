@@ -46,6 +46,8 @@ describe('resolveTaskAction', () => {
   })
 
   it('returns undefined for a core task', () => {
-    expect(resolveTaskAction({ ...failed, source: { ...failed.source, pluginId: '', pluginName: '' } })).toBeUndefined()
+    expect(
+      resolveTaskAction({ ...failed, source: { ...failed.source, pluginId: '', pluginName: '' } }),
+    ).toBeUndefined()
   })
 })

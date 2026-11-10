@@ -280,7 +280,12 @@ describe('a tab kind component', () => {
     const ctx = host.createContext('reader.plugin')
     expect(host.createContext('reader.plugin')).toBe(ctx)
     expect(ctx.plugin.hasPermission?.('vault:read')).toBe(true)
-    expect(ctx.plugin.app).toEqual({ name: 'numen', version: '1.2.3', build: 9, platform: 'darwin' })
+    expect(ctx.plugin.app).toEqual({
+      name: 'numen',
+      version: '1.2.3',
+      build: 9,
+      platform: 'darwin',
+    })
     expect(ctx.vault.relations).toBeDefined()
     expect(ctx.vault.files).toBeDefined()
     expect(ctx.work.agent).toBeDefined()

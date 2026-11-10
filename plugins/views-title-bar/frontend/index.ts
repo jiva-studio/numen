@@ -70,7 +70,8 @@ export function createTitleBarView(context: PluginContext) {
                 }
               },
               onSwitchVault: (id: string) => {
-                if (context.vault.vaults) runInBackground(context.vault.vaults.switchTo(id), reportError)
+                if (context.vault.vaults)
+                  runInBackground(context.vault.vaults.switchTo(id), reportError)
               },
               onCreateVault: () => {
                 if (context.ui.commands)

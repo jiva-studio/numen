@@ -46,7 +46,9 @@ describe('createShellHost', () => {
   })
 
   it('gives a plugin Windows where the window gives no platform, as the frame does without the runtime', () => {
-    expect(createShellHost().host.createContext('md.numen.example').plugin.app.platform).toBe('windows')
+    expect(createShellHost().host.createContext('md.numen.example').plugin.app.platform).toBe(
+      'windows',
+    )
   })
 
   it('activates a plugin in the window of the flashcards target', () => {

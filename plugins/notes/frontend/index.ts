@@ -39,7 +39,8 @@ export function activate(context: PluginContext): void {
     title: 'Note',
   })
 
-  if (context.vault.notes) context.register.view(createNoteEditorView(context.vault.notes, preferences))
+  if (context.vault.notes)
+    context.register.view(createNoteEditorView(context.vault.notes, preferences))
 }
 
 export function deactivate(): void {

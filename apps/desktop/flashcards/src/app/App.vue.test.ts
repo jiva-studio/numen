@@ -220,7 +220,9 @@ describe('App', () => {
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
-                work: { agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> } }
+                work: {
+                  agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+                }
                 plugin: { subscriptions: { dispose: () => void }[] }
                 register: { tabKind: (one: unknown) => void }
               }) => {
@@ -590,8 +592,7 @@ describe('the appearance palette', () => {
     await flushPromises()
     expect(
       shell?.notices.notices.value.some(
-        (one) =>
-          one.severity === 'error' && one.text === CORE_FAULT,
+        (one) => one.severity === 'error' && one.text === CORE_FAULT,
       ),
     ).toBe(true)
 

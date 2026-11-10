@@ -157,7 +157,6 @@ export interface ShellServices {
   window?: WindowHost
 }
 
-
 const registerInSlots = (
   slotViews: SlotViewRegistry,
   plugin: { readonly pluginId: string; readonly manifest: Manifest | undefined },

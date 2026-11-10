@@ -73,7 +73,9 @@ describe('createPluginLoader', () => {
             agentProvider: vi.fn(noop),
           },
           settings: {
-            get: vi.fn((key: string) => getSetting(pluginId, key)) as unknown as PluginSettings['get'],
+            get: vi.fn((key: string) =>
+              getSetting(pluginId, key),
+            ) as unknown as PluginSettings['get'],
             onChange: vi.fn((key: string, handler: (val: unknown) => void) =>
               onSettingChange(pluginId, key, handler),
             ),

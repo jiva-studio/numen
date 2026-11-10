@@ -366,7 +366,9 @@ describe('a command with items', () => {
   it('shows the error of a list that failed to read', async () => {
     const notices = createMockNoticeHost()
     const context = createMockPluginContext({ pluginId: manifest.id, notices })
-    vi.spyOn(context.ui.commands, 'listItems').mockRejectedValue(new Error('the languages are gone'))
+    vi.spyOn(context.ui.commands, 'listItems').mockRejectedValue(
+      new Error('the languages are gone'),
+    )
     activate(context)
     context.ui.slots.setEntries('statusBar.right', [LANGUAGE])
     const wrapper = mountBar(context.getRegisteredSlotViews()[0]!.component as Component)

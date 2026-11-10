@@ -67,7 +67,9 @@ async function refreshTabs(
   await Promise.all(
     tabs.map(async (state) => {
       const path =
-        state.view.nextPath.value || state.view.here.value || host.workspace.window.openingPath.value
+        state.view.nextPath.value ||
+        state.view.here.value ||
+        host.workspace.window.openingPath.value
       if (path) await state.view.go(path)
       await state.readHeadings()
     }),

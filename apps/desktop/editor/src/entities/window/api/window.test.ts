@@ -185,4 +185,3 @@ describe('the streams a window follows', () => {
     await expect(cancelTask('gone')).rejects.toThrow('not found')
   })
 })
-
