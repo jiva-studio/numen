@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -70,15 +71,15 @@ func (d *declaredCommands) RunCommand(_ context.Context, call plugin.CommandCall
 
 func newDeclared() *declaredCommands {
 	return &declaredCommands{entries: []plugin.CommandEntry{
-		{PluginID: "md.numen.a", Command: plugincommand.Command{
+		{PluginID: "md.numen.a", Command: manifest.Command{
 			ID: "convert", Title: "Convert", When: "target.contentType == 'application/pdf'",
-			Arguments: []plugincommand.Argument{
-				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
-				{Name: "again", Title: "Again", Type: plugincommand.ArgumentBoolean},
+			Arguments: []manifest.CommandArgument{
+				{Name: "pages", Title: "Pages", Type: manifest.CommandArgumentNumber, IsRequired: true},
+				{Name: "again", Title: "Again", Type: manifest.CommandArgumentBoolean},
 			},
 		}},
-		{PluginID: "md.numen.a", Command: plugincommand.Command{ID: "tidy", Title: "Tidy"}},
-		{PluginID: "md.numen.b", Command: plugincommand.Command{ID: "tidy", Title: "Tidy as well"}},
+		{PluginID: "md.numen.a", Command: manifest.Command{ID: "tidy", Title: "Tidy"}},
+		{PluginID: "md.numen.b", Command: manifest.Command{ID: "tidy", Title: "Tidy as well"}},
 	}}
 }
 
@@ -194,7 +195,7 @@ func TestACommandWithoutAConditionRunsOverAnyPathOrNone(t *testing.T) {
 
 func TestRunCommandRejectsEmptyPathForFileCommand(t *testing.T) {
 	for _, when := range []string{"target.isFile || target.isNote", "version.isLive && version.kind != ''"} {
-		declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: plugincommand.Command{
+		declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "md.numen.a", Command: manifest.Command{
 			ID: "proofreading.create", Title: "Proofread", When: when,
 		}}}}
 		commands := plugincommand.NewCommands(declared, getTypes(), nil, nil)
@@ -236,7 +237,7 @@ func (r noteReader) Read(_ context.Context, path string) ([]byte, error) {
 
 func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{
-		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
+		{PluginID: "md.numen.links", Command: manifest.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
 	files := noteFiles{
 		"links/talk.md":  "---\ntype: link\nurl: https://video.example/talk\n---\n",
@@ -264,7 +265,7 @@ type settingsOf map[string]any
 func (s settingsOf) GetWhenConfig() map[string]any { return s }
 
 func TestRunRejectsDisabledCommandSetting(t *testing.T) {
-	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "org.example.scans", Command: plugincommand.Command{
+	declared := &declaredCommands{entries: []plugin.CommandEntry{{PluginID: "org.example.scans", Command: manifest.Command{
 		ID: "scan", Title: "Scan", When: "config.org.example.scans.isEnabled == true",
 	}}}}
 	config := settingsOf{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isEnabled": false}}}}
@@ -279,7 +280,7 @@ func TestRunRejectsDisabledCommandSetting(t *testing.T) {
 
 func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
 	declared := &declaredCommands{entries: []plugin.CommandEntry{
-		{PluginID: "md.numen.links", Command: plugincommand.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
+		{PluginID: "md.numen.links", Command: manifest.Command{ID: "fetch", Title: "Fetch", When: "target.noteType == 'link'"}},
 	}}
 	commands := plugincommand.NewCommands(declared, getTypes(), note.NewReadFrontmatter(noteFiles{}), nil)
 

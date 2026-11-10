@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -16,7 +17,7 @@ type vaultSessionAssembly interface {
 	GetOpenTabsStore() windowport.OpenTabsStore
 	ReadWholeVault(
 		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-	) (vaults.ReadWholeVault, error)
+	) (vaultreading.ReadWholeVault, error)
 	StartVault(
 		ctx context.Context, v domain.Vault, rebuild bool,
 		onSync func(paths, assets []string, reload bool),

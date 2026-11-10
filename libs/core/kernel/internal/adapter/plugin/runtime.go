@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ErrRuntimeUnavailable indicates that a plugin declares a dependency the host cannot provision.
@@ -30,7 +31,7 @@ func (h *Host) GetDependencies() pluginport.DependencyCatalog {
 	return h.dependencies
 }
 
-func (h *Host) getRuntimeVars(ctx context.Context, requirements []pluginport.DependencyRequirement) ([]string, error) {
+func (h *Host) getRuntimeVars(ctx context.Context, requirements []manifest.DependencyRequirement) ([]string, error) {
 	var vars []string
 	for _, req := range requirements {
 		catalog := h.GetDependencies()

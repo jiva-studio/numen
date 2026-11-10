@@ -11,6 +11,8 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
@@ -21,20 +23,6 @@ import (
 type NoteReader interface {
 	Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteType, map[string]any, error)
 }
-
-// The ports' terms for a command, used by a driving adapter.
-type (
-	// Command is a command as its manifest declares it.
-	Command = pluginport.PluginCommand
-	// Argument is one argument a command takes.
-	Argument = pluginport.PluginCommandArgument
-)
-
-// The types an argument holds.
-const (
-	ArgumentNumber  = pluginport.CommandArgumentNumber
-	ArgumentBoolean = pluginport.CommandArgumentBoolean
-)
 
 var (
 	// ErrUnknownCommand is a command no enabled plugin declares.
@@ -59,7 +47,7 @@ func NewCommands(
 	commands pluginport.PluginCommands, types contenttypeport.ContentTypeTable, notes NoteReader,
 	config pluginport.WhenConfig,
 ) Commands {
-	conditions := pluginport.NewConditions()
+	conditions := when.NewConditions()
 	return Commands{
 		List: List{commands: commands, types: types, conditions: conditions},
 		Run:  Run{commands: commands, types: types, notes: notes, config: config, conditions: conditions},
@@ -70,7 +58,7 @@ func NewCommands(
 type List struct {
 	commands   pluginport.PluginCommands
 	types      contenttypeport.ContentTypeTable
-	conditions *pluginport.PluginConditions
+	conditions *when.Conditions
 }
 
 // Execute lists the commands that a plugin backend runs. Where there is no plugin host it lists none.
@@ -158,7 +146,7 @@ type Run struct {
 	types      contenttypeport.ContentTypeTable
 	notes      NoteReader
 	config     pluginport.WhenConfig
-	conditions *pluginport.PluginConditions
+	conditions *when.Conditions
 }
 
 // Execute checks the call against the declaration and runs it over the vault; a call of a shared
@@ -169,7 +157,7 @@ func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCal
 		return plugin.CommandResult{}, ErrUnavailable
 	}
 	var entries []plugin.CommandEntry
-	if pluginport.IsSharedCommand(call.Command) {
+	if manifest.IsSharedCommand(call.Command) {
 		entries = u.commands.ListHandlers()
 	} else {
 		entries = u.commands.ListCommands()
@@ -198,14 +186,14 @@ func (u Run) IsAvailable(ctx context.Context, v domain.Vault, entry plugin.Comma
 	return u.checkPath(ctx, v, entry.Command, plugin.CommandCall{PluginID: entry.PluginID, Command: entry.Command.ID, Path: path}) == nil
 }
 
-func (u Run) checkCall(ctx context.Context, v domain.Vault, declared Command, call plugin.CommandCall) error {
+func (u Run) checkCall(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall) error {
 	if err := u.checkPath(ctx, v, declared, call); err != nil {
 		return err
 	}
 	return checkArguments(declared, call, hasItems(u.conditions, declared))
 }
 
-func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, call plugin.CommandCall) error {
+func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Command, call plugin.CommandCall) error {
 	condition, err := u.conditions.Parse(declared.When)
 	if err != nil {
 		return fmt.Errorf("%w: %s: %w", ErrBadArguments, declared.ID, err)
@@ -220,14 +208,14 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared Command, ca
 	if u.config != nil && slices.Contains(condition.ListNames(), "config") {
 		values = values.WithConfig(u.config.GetWhenConfig())
 	}
-	if condition.Evaluate(values.Get()) == pluginport.ConditionFalse {
+	if condition.Evaluate(values.Get()) == when.False {
 		return fmt.Errorf("%w: %s is not available over %q, as its condition %q does not hold there",
 			ErrBadArguments, declared.ID, call.Path, declared.When)
 	}
 	return nil
 }
 
-func checkArguments(declared Command, call plugin.CommandCall, hasItems bool) error {
+func checkArguments(declared manifest.Command, call plugin.CommandCall, hasItems bool) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
 		if name == ArgumentVersion && hasItems {
 			continue
@@ -250,20 +238,20 @@ func checkArguments(declared Command, call plugin.CommandCall, hasItems bool) er
 
 func isOfType(argumentType, value string) bool {
 	switch argumentType {
-	case ArgumentNumber:
+	case manifest.CommandArgumentNumber:
 		_, err := strconv.ParseFloat(value, 64)
 		return err == nil
-	case ArgumentBoolean:
+	case manifest.CommandArgumentBoolean:
 		_, err := strconv.ParseBool(value)
 		return err == nil
 	}
 	return true
 }
 
-func normalizeArguments(declared Command, arguments map[string]string) map[string]string {
+func normalizeArguments(declared manifest.Command, arguments map[string]string) map[string]string {
 	normalized := make(map[string]string, len(arguments))
 	for name, value := range arguments {
-		if argument, _ := declared.GetArgument(name); argument.Type == ArgumentBoolean {
+		if argument, _ := declared.GetArgument(name); argument.Type == manifest.CommandArgumentBoolean {
 			parsed, err := strconv.ParseBool(value)
 			value = strconv.FormatBool(err == nil && parsed)
 		}
@@ -280,7 +268,7 @@ func (u Run) getContentType(path string) domain.ContentType {
 }
 
 func (u Run) readNote(
-	ctx context.Context, v domain.Vault, condition pluginport.PluginCondition, target plugin.TargetValues, path string,
+	ctx context.Context, v domain.Vault, condition when.Condition, target plugin.TargetValues, path string,
 ) (plugin.TargetValues, error) {
 	names := condition.ListNames()
 	if (!slices.Contains(names, "target.noteType") && !slices.Contains(names, "target.properties")) || u.notes == nil || !target.IsNote() {
@@ -307,21 +295,21 @@ func (u List) ListContentTypes() map[string]string {
 
 // HasItems reports whether the command offers one item per text version of a file: its condition
 // names version.*. A condition that cannot be read counts as having items, so it is listed nowhere.
-func (u List) HasItems(command Command) bool {
+func (u List) HasItems(command manifest.Command) bool {
 	return hasItems(u.conditions, command)
 }
 
-func hasItems(conditions *pluginport.PluginConditions, command Command) bool {
+func hasItems(conditions *when.Conditions, command manifest.Command) bool {
 	condition, err := conditions.Parse(command.When)
 	return err != nil || condition.HasItems()
 }
 
 // HasTargetVariable reports whether the condition of the command names the target it runs over, so a
 // call names a path.
-func (u List) HasTargetVariable(command Command) bool {
+func (u List) HasTargetVariable(command manifest.Command) bool {
 	condition, err := u.conditions.Parse(command.When)
 	return err == nil && (condition.HasTargetVariable() || condition.HasItems())
 }
 
 // IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.
-func IsSharedCommand(id string) bool { return pluginport.IsSharedCommand(id) }
+func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }

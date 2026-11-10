@@ -99,7 +99,7 @@ func (m Manifests) ListHandlers() []plugindomain.CommandEntry {
 		for _, handler := range plugin.Manifest.Contributes.Handlers {
 			found = append(found, plugindomain.CommandEntry{
 				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name,
-				Command: pluginport.PluginCommand{
+				Command: manifest.Command{
 					ID: handler.Command, Title: handler.Title, When: handler.When,
 					Arguments: manifest.GetSharedCommandArguments(handler.Command),
 				},

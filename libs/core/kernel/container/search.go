@@ -7,16 +7,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-// ChunkTokens is the chunk size the embedding plugin reports, shared by every copy of Config.
-type ChunkTokens = searchwiring.ChunkTokens
 
 var errNoteUnreadable = searchwiring.ErrNoteUnreadable
 
@@ -32,7 +29,7 @@ func newModelReadReporter(tasks *run.Tasks) func(error) {
 
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
-func (c Config) CutNotes() note.CutNotes {
+func (c Config) CutNotes() query.CutNotes {
 	return c.search().CutNotes()
 }
 

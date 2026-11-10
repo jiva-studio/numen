@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -38,17 +39,17 @@ func (p pluginCommands) ListHandlers() []plugin.CommandEntry { return nil }
 
 func (p pluginCommands) ListCommands() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "org.example.sample", Command: plugincommand.Command{
+		{PluginID: "org.example.sample", Command: manifest.Command{
 			ID: "sample.create", Title: "Create a sample", Icon: "layers", When: "target.contentType == 'text/markdown'",
-			Arguments: []plugincommand.Argument{
-				{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true},
-				{Name: "preview", Title: "Preview", Type: plugincommand.ArgumentBoolean},
+			Arguments: []manifest.CommandArgument{
+				{Name: "pages", Title: "Pages", Type: manifest.CommandArgumentNumber, IsRequired: true},
+				{Name: "preview", Title: "Preview", Type: manifest.CommandArgumentBoolean},
 			},
 		}},
-		{PluginID: "org.example.sample", Command: plugincommand.Command{
+		{PluginID: "org.example.sample", Command: manifest.Command{
 			ID: "print-sample", Title: "Print a sample", When: "target.contentType == 'text/markdown'",
 		}},
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "shuffle-deck", Title: "Shuffle a deck", When: "target.noteType == 'deck'"}},
+		{PluginID: "md.numen.cards", Command: manifest.Command{ID: "shuffle-deck", Title: "Shuffle a deck", When: "target.noteType == 'deck'"}},
 	}
 }
 

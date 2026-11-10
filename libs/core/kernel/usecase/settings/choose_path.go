@@ -9,7 +9,7 @@ import (
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ErrNoPathSetting is a plugin or a setting of it that holds no path.
@@ -58,7 +58,7 @@ func (u *ChoosePluginPath) findSetting(pluginID, key string) (plugindomain.Setti
 			continue
 		}
 		for _, declared := range plugin.Settings {
-			if declared.Key == key && declared.Type == pluginport.SettingTypeFile {
+			if declared.Key == key && declared.Type == manifest.SettingTypeFile {
 				return declared, nil
 			}
 		}

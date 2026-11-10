@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
@@ -24,7 +25,7 @@ func (c changing) rename() note.Rename {
 
 func (c changing) renameApart() note.Rename {
 	mover := c.move()
-	mover.Sync = func() note.SyncTitleAndFilename { return false }
+	mover.Sync = func() query.SyncTitleAndFilename { return false }
 	return note.Rename{Move: mover}
 }
 
@@ -45,7 +46,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 		raw   string
 		title string
 		path  string
-		delta note.NameSource
+		delta query.NameSource
 		holds []string
 		lacks []string
 	}{
@@ -53,14 +54,14 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "---\ntitle: Old\n---\n# Old\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			delta: note.ByFrontmatter,
+			delta: query.ByFrontmatter,
 			holds: []string{"title: Entropy", "# Old"},
 		},
 		"a level-one heading, which names nothing and is left standing": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			delta: note.ByFilename,
+			delta: query.ByFilename,
 			holds: []string{"# Old", "A measure."},
 			lacks: []string{"title:", "id: "},
 		},
@@ -68,7 +69,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "TCP/IP",
 			path:  "TCP-IP.md",
-			delta: note.ByFrontmatter,
+			delta: query.ByFrontmatter,
 			holds: []string{"title: TCP/IP", "A measure.", "id: "},
 			lacks: []string{"# TCP/IP"},
 		},
@@ -76,7 +77,7 @@ func TestRenamingWritesWhateverNamesTheNote(t *testing.T) {
 			raw:   "A measure.\n",
 			title: "Entropy",
 			path:  "Entropy.md",
-			delta: note.ByFilename,
+			delta: query.ByFilename,
 			holds: []string{"A measure."},
 			lacks: []string{"id: ", "# Entropy", "title:"},
 		},
@@ -186,7 +187,7 @@ func TestATitleOnlyTheKeyCanCarryIsSavedThere(t *testing.T) {
 			if err != nil {
 				t.Fatalf("the rename failed: %v", err)
 			}
-			if renamed.By != note.ByFrontmatter {
+			if renamed.By != query.ByFrontmatter {
 				t.Errorf("want named by the frontmatter, got %s", renamed.By)
 			}
 			if got := v.title(t, renamed.Path); got != "C#" {
@@ -362,7 +363,7 @@ func TestRename_RejectsInvalidTitle(t *testing.T) {
 			c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 			renamed, err := c.rename().Execute(t.Context(), c.vault, "Old.md", title)
-			if !errors.Is(err, note.ErrInvalidName) {
+			if !errors.Is(err, query.ErrInvalidName) {
 				t.Fatalf("want ErrInvalidName, got %v", err)
 			}
 			if renamed.Path != "" {
@@ -410,7 +411,7 @@ func TestRename_LongTitleTruncatesNameAndCachesFullTitle(t *testing.T) {
 	if len(renamed.Path) >= len(title) {
 		t.Errorf("the name was not cut: %s", renamed.Path)
 	}
-	if renamed.By != note.ByFrontmatter {
+	if renamed.By != query.ByFrontmatter {
 		t.Errorf("want named by the frontmatter, got %s", renamed.By)
 	}
 	if body := c.read(t, renamed.Path); !strings.Contains(body, "title: "+title) {
@@ -522,19 +523,19 @@ func TestRename_RetitlesInFrontmatterWithoutMovingFile(t *testing.T) {
 	for name, c := range map[string]struct {
 		raw   string
 		title string
-		delta note.NameSource
+		delta query.NameSource
 		holds string
 	}{
 		"a title in the frontmatter": {
 			raw:   "---\ntitle: Old\n---\nA measure.\n",
 			title: "Entropy",
-			delta: note.ByFrontmatter,
+			delta: query.ByFrontmatter,
 			holds: "title: Entropy",
 		},
 		"no key, and a title the filename cannot carry": {
 			raw:   "# Old\n\nA measure.\n",
 			title: "TCP/IP",
-			delta: note.ByFrontmatter,
+			delta: query.ByFrontmatter,
 			holds: "title: TCP/IP",
 		},
 	} {
@@ -585,7 +586,7 @@ func TestRenamingANoteItsFilenameNamesMovesTheFileEitherWay(t *testing.T) {
 			if renamed.Path != "Entropy.md" {
 				t.Fatalf("the note is filed at %q", renamed.Path)
 			}
-			if renamed.By != note.ByFilename {
+			if renamed.By != query.ByFilename {
 				t.Errorf("want named by filename, got %s", renamed.By)
 			}
 			if body := v.read(t, "Entropy.md"); body != "A measure.\n" {

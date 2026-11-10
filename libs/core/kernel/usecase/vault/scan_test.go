@@ -16,6 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -629,7 +630,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	db := openIndex(t)
 
 	scan := scanner(vaultreader.Readers{}, db)
-	scan.OnProgress = func(vaults.ScanResult) { cancel() }
+	scan.OnProgress = func(vaultreading.ScanResult) { cancel() }
 
 	res, err := scan.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {

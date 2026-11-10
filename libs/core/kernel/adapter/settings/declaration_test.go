@@ -6,11 +6,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func findDeclared(t *testing.T, key string) pluginport.PluginManifestSetting {
+func findDeclared(t *testing.T, key string) manifest.Setting {
 	t.Helper()
 	for _, one := range settings.GetAppDeclaration() {
 		if one.Key == key {
@@ -18,7 +17,7 @@ func findDeclared(t *testing.T, key string) pluginport.PluginManifestSetting {
 		}
 	}
 	t.Fatalf("the shell does not declare %s", key)
-	return pluginport.PluginManifestSetting{}
+	return manifest.Setting{}
 }
 
 func TestTheShellDeclaresItsSixSettingsInTheFormatOfAManifest(t *testing.T) {
@@ -43,7 +42,7 @@ func TestTheDeclarationOfTheShellBreaksNoRuleOfAManifest(t *testing.T) {
 		t.Fatal("the shell declares nothing")
 	}
 	// The key of a shell setting is a path joined by dots; a manifest key of a plugin is one segment.
-	flat := make([]pluginport.PluginManifestSetting, 0, len(declared))
+	flat := make([]manifest.Setting, 0, len(declared))
 	for _, one := range declared {
 		one.Key = strings.ReplaceAll(one.Key, ".", "")
 		flat = append(flat, one)

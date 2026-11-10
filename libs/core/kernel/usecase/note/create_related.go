@@ -7,6 +7,7 @@ import (
 	pathpkg "path"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -21,12 +22,12 @@ const MaxUntitledAttempts = 100
 // the record about From, with the inverse role, and is filed in the folder of From.
 type CreateInRelation struct {
 	create    Create
-	addresses *GetLinkAddress
+	addresses *query.GetLinkAddress
 }
 
 // NewCreateInRelation builds the use case over the creation of a note and the
 // address under which a link names the note it is related to.
-func NewCreateInRelation(create Create, addresses *GetLinkAddress) CreateInRelation {
+func NewCreateInRelation(create Create, addresses *query.GetLinkAddress) CreateInRelation {
 	return CreateInRelation{create: create, addresses: addresses}
 }
 

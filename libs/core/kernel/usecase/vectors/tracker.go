@@ -1,6 +1,7 @@
 package vectors
 
 import (
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"slices"
 	"sync"
 )
@@ -15,7 +16,7 @@ import (
 type tracker struct {
 	u       Embed
 	workers int
-	res     *EmbedResult
+	res     *vaultreading.EmbedResult
 	mu      *sync.Mutex
 	order   sync.Mutex
 
@@ -30,7 +31,7 @@ type flightBatch struct {
 	sources []string
 }
 
-func newTracker(u Embed, workers int, res *EmbedResult, mu *sync.Mutex) *tracker {
+func newTracker(u Embed, workers int, res *vaultreading.EmbedResult, mu *sync.Mutex) *tracker {
 	return &tracker{u: u, workers: workers, res: res, mu: mu}
 }
 
@@ -72,7 +73,7 @@ func (t *tracker) getActive() (active []string) {
 	return active
 }
 
-func (t *tracker) publish(change func(res *EmbedResult)) {
+func (t *tracker) publish(change func(res *vaultreading.EmbedResult)) {
 	t.order.Lock()
 	defer t.order.Unlock()
 
@@ -88,7 +89,7 @@ func (t *tracker) publish(change func(res *EmbedResult)) {
 }
 
 func (t *tracker) publishNext(source string) {
-	t.publish(func(res *EmbedResult) {
+	t.publish(func(res *vaultreading.EmbedResult) {
 		if t.isIdle() {
 			res.CurrentSource = source
 		}
@@ -97,5 +98,5 @@ func (t *tracker) publishNext(source string) {
 
 func (t *tracker) withdraw(id uint64) {
 	t.leave(id)
-	t.publish(func(res *EmbedResult) { res.CurrentSource = "" })
+	t.publish(func(res *vaultreading.EmbedResult) { res.CurrentSource = "" })
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"io"
 	"net"
 	"net/http"
@@ -15,7 +16,6 @@ import (
 	"testing"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // servingHost serves the services it is given from the plugins it runs.
@@ -23,23 +23,23 @@ type servingHost struct {
 	infos     []plugindomain.Info
 	services  map[string]string
 	endpoints map[string]plugindomain.Endpoint
-	manifests map[string]pluginport.PluginManifest
+	manifests map[string]catalogmanifest.Manifest
 	mu        sync.Mutex
 	released  int
 }
 
-func (h *servingHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
+func (h *servingHost) ResolveCapability(string) (catalogmanifest.Discovered, error) {
+	return catalogmanifest.Discovered{}, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 }
 
-func (h *servingHost) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
+func (h *servingHost) GetPlugin(id string) (catalogmanifest.Discovered, bool) {
 	manifest, found := h.manifests[id]
-	return pluginport.DiscoveredPlugin{Manifest: manifest}, found
+	return catalogmanifest.Discovered{Manifest: manifest}, found
 }
 
-func (h *servingHost) ResolveService(service string) (pluginport.DiscoveredPlugin, bool) {
+func (h *servingHost) ResolveService(service string) (catalogmanifest.Discovered, bool) {
 	id, serves := h.services[service]
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, serves
+	return catalogmanifest.Discovered{Manifest: catalogmanifest.Manifest{ID: id}}, serves
 }
 
 func (h *servingHost) EnsureActive(_ context.Context, id string) (plugindomain.Endpoint, error) {

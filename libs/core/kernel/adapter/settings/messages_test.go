@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestTheNoticesOfReadingTheFileNameTheKeyAndWhatHappens(t *testing.T) {
@@ -63,8 +63,8 @@ func TestTheErrorsOfAWriteNameTheKeyAndTheFault(t *testing.T) {
 }
 
 func TestFormatRangeWithoutUpperLimitPrintsInf(t *testing.T) {
-	declared := func(owner string) ([]pluginport.PluginManifestSetting, bool) {
-		return []pluginport.PluginManifestSetting{{Key: "port", Type: "number", Title: "Port", Min: new(float64(1024))}}, owner == "org.example.relay"
+	declared := func(owner string) ([]manifest.Setting, bool) {
+		return []manifest.Setting{{Key: "port", Type: "number", Title: "Port", Min: new(float64(1024))}}, owner == "org.example.relay"
 	}
 	err := settings.CheckWrite(declared, nil, []string{"org.example.relay", "port"}, 80.0)
 	if want := `"org.example.relay.port": 80 is out of range 1024..+inf`; err == nil || err.Error() != want {

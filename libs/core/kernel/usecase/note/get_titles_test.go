@@ -4,14 +4,14 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 func TestGetTitles_PreservesRequestOrderAndReportsMissing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n", "Work.md": "# Work\n"})
 
-	got, err := note.NewGetTitles(c.db.Queries()).Execute(t.Context(), c.vault,
+	got, err := query.NewGetTitles(c.db.Queries()).Execute(t.Context(), c.vault,
 		[]string{"Work.md", "Gone.md", "Heat.md", "Lost.md"})
 	if err != nil {
 		t.Fatal(err)

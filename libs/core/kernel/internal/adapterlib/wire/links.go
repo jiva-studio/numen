@@ -7,7 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
@@ -16,7 +16,7 @@ import (
 // text within one vault. An address that resolves to nothing is omitted from the
 // result. Every window that resolves links uses it.
 func ResolveAddresses(
-	ctx context.Context, resolve *note.ResolveLinks, v domain.Vault, r *v1.ResolveAddressesRequest,
+	ctx context.Context, resolve *query.ResolveLinks, v domain.Vault, r *v1.ResolveAddressesRequest,
 ) (*v1.ResolveAddressesResponse, error) {
 	inText, addresses := getTextLinks(r.GetText())
 	requested := append(slices.Clone(r.GetWritten()), addresses...)

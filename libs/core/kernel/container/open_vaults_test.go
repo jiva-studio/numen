@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 // A vault is walked once however many counts ask for it at the same moment.
@@ -40,7 +41,7 @@ func TestClosingWindowReadsNothing(t *testing.T) {
 
 	vaults.CloseAndWait()
 
-	if err := vaults.IndexVault(t.Context(), target[0]); !errors.Is(err, ErrClosing) {
+	if err := vaults.IndexVault(t.Context(), target[0]); !errors.Is(err, vault.ErrClosing) {
 		t.Errorf("a walk asked for while closing came back with %v", err)
 	}
 }
@@ -54,7 +55,7 @@ func TestClosingWindowUpdatesNothing(t *testing.T) {
 	vaults.CloseAndWait()
 
 	err := vaults.UpdateIndex(t.Context(), target[0], []string{"samples/Words.md"})
-	if !errors.Is(err, ErrClosing) {
+	if !errors.Is(err, vault.ErrClosing) {
 		t.Errorf("an index update asked for while closing came back with %v", err)
 	}
 }

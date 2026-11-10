@@ -3,14 +3,13 @@ package manifestlist
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestListSlots_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	order := 5
 	host := &manifestHost{
-		plugins: []pluginport.DiscoveredPlugin{
+		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Slots: []manifest.SlotEntry{
 				{Slot: "titleBar.commands", Command: "atlas.open", Group: "navigate", Order: &order},
 				{Slot: "palette.searchResult", Command: "atlas.open"},

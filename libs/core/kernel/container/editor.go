@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -26,7 +27,7 @@ import (
 type EditorAssembly = assembly.Runtime[PluginVaultHooks, pluginport.PluginVault]
 
 // UnknownVaultError is a vault named at start that the registry does not hold.
-type UnknownVaultError = vault.UnknownError
+type UnknownVaultError = registry.UnknownError
 
 // GetEditorAssembly opens the cache and binds everything that window relies on
 // to this installation's adapters.
@@ -145,7 +146,7 @@ func (c Config) startVault(db *Index) func(
 		opening.ShouldRebuild = rebuild
 		opening.ErrorHandler = handleError
 		if notified != nil {
-			opening.Told = func(m VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+			opening.Told = func(m vault.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
 		}
 
 		open := opening.Begin(ctx, v)

@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestTheFramesOfAPluginAreListedWhileItIsEnabled(t *testing.T) {
 	host := &servingHost{
 		infos: []plugin.Info{{ID: "org.example.off"}, {ID: "org.example.player"}, {ID: "org.example.reader"}},
-		manifests: map[string]pluginport.PluginManifest{
-			"org.example.player": {ID: "org.example.player", Contributes: pluginport.PluginContributes{FrameOrigins: []string{"https://player.example"}}},
-			"org.example.reader": {ID: "org.example.reader", Contributes: pluginport.PluginContributes{FrameOrigins: []string{"https://player.example", "https://maps.example"}}},
+		manifests: map[string]manifest.Manifest{
+			"org.example.player": {ID: "org.example.player", Contributes: manifest.Contributes{FrameOrigins: []string{"https://player.example"}}},
+			"org.example.reader": {ID: "org.example.reader", Contributes: manifest.Contributes{FrameOrigins: []string{"https://player.example", "https://maps.example"}}},
 		},
 	}
 	proxy := Open(host)

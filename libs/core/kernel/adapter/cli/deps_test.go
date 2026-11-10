@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -47,7 +47,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Links{}, err
 			}
-			return cli.Links{Show: note.NewShowLinks(db.NoteQueries()), Close: db.Close}, nil
+			return cli.Links{Show: query.NewShowLinks(db.NoteQueries()), Close: db.Close}, nil
 		},
 
 		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
@@ -146,7 +146,7 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 			return cli.Vaults{Registry: singleVaultList{target}}, nil
 		},
 		Links: func(context.Context) (cli.Links, error) {
-			return cli.Links{Show: note.NewShowLinks(fixedLinkQueries{
+			return cli.Links{Show: query.NewShowLinks(fixedLinkQueries{
 				links: []domain.ResolvedLink{{
 					Link: domain.Link{
 						Target: domain.Address{Scheme: domain.SchemeName, Value: "Hives"},

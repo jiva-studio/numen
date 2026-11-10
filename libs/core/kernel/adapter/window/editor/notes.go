@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -444,11 +445,11 @@ func (h *noteHandler) RenameNote(
 	return connect.NewResponse(out), nil
 }
 
-func newWireNameSource(delta note.NameSource) v1.NameSource {
+func newWireNameSource(delta query.NameSource) v1.NameSource {
 	switch delta {
-	case note.ByFrontmatter:
+	case query.ByFrontmatter:
 		return v1.NameSource_NAME_SOURCE_FRONTMATTER
-	case note.ByFilename:
+	case query.ByFilename:
 		return v1.NameSource_NAME_SOURCE_FILENAME
 	default:
 		return v1.NameSource_NAME_SOURCE_UNSPECIFIED

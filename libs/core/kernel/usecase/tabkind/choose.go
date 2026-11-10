@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
@@ -17,7 +18,7 @@ type Choose struct {
 	kinds      pluginport.PluginTabKinds
 	types      contenttypeport.ContentTypeTable
 	config     pluginport.WhenConfig
-	conditions *pluginport.PluginConditions
+	conditions *when.Conditions
 }
 
 // NewChoose makes the choice over the tab kinds, the table that gives a file its type, and the
@@ -26,7 +27,7 @@ func NewChoose(kinds pluginport.PluginTabKinds, types contenttypeport.ContentTyp
 	if kinds == nil || types == nil {
 		return nil, errors.New("the choice of a tab kind needs the tab kinds and the content type table")
 	}
-	return &Choose{kinds: kinds, types: types, config: config, conditions: pluginport.NewConditions()}, nil
+	return &Choose{kinds: kinds, types: types, config: config, conditions: when.NewConditions()}, nil
 }
 
 // Execute gives the kind of tab the note at the path opens in: of the kinds whose when condition
@@ -48,7 +49,7 @@ func (u *Choose) Execute(path string, noteType domain.NoteType, properties map[s
 		if _, isRead := values["config"]; !isRead && u.config != nil && slices.Contains(condition.ListNames(), "config") {
 			values["config"] = u.config.GetWhenConfig()
 		}
-		if condition.Evaluate(values) != pluginport.ConditionTrue {
+		if condition.Evaluate(values) != when.True {
 			continue
 		}
 		matching = append(matching, domain.ContentHandler{

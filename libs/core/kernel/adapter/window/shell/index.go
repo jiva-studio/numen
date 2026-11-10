@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -116,7 +116,7 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 }
 
 func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
-	pos := run.Task{
+	pos := vaultreading.Task{
 		ID:            "indexing\t" + string(v.ID),
 		Title:         "Indexing the vault",
 		About:         v.Name,

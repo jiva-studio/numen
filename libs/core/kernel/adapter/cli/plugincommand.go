@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // PluginCommands is the commands the enabled plugins declare, and what readies the plugins to run
@@ -41,14 +42,14 @@ func writePluginCommandUsage(r *reporter, deps Deps) {
 	}
 }
 
-func getPluginCommandSynopsis(list plugincommand.List, command plugincommand.Command) string {
+func getPluginCommandSynopsis(list plugincommand.List, command manifest.Command) string {
 	words := []string{command.ID, "<vault>"}
 	if list.HasTargetVariable(command) {
 		words = append(words, "<file>")
 	}
 	for _, argument := range command.Arguments {
 		word := "--" + argument.Name
-		if argument.Type != plugincommand.ArgumentBoolean {
+		if argument.Type != manifest.CommandArgumentBoolean {
 			word += " <" + argument.Type + ">"
 		}
 		if !argument.IsRequired {
@@ -98,7 +99,7 @@ func runPluginCommand(
 	return writeResult(out, result)
 }
 
-func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string]string) {
+func newArgumentFlags(declared manifest.Command) (*flag.FlagSet, map[string]string) {
 	fs := flag.NewFlagSet(declared.ID, flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	arguments := map[string]string{}
@@ -107,7 +108,7 @@ func newArgumentFlags(declared plugincommand.Command) (*flag.FlagSet, map[string
 			arguments[argument.Name] = value
 			return nil
 		}
-		if argument.Type == plugincommand.ArgumentBoolean {
+		if argument.Type == manifest.CommandArgumentBoolean {
 			fs.BoolFunc(argument.Name, argument.Title, set)
 		} else {
 			fs.Func(argument.Name, argument.Title, set)

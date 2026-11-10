@@ -3,14 +3,14 @@ package note_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func TestIsVaultIndexedReturnsWhetherTheIndexCarriesTheVault(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	indexed := note.NewIsVaultIndexed(c.db.Queries())
+	indexed := query.NewIsVaultIndexed(c.db.Queries())
 
 	if !indexed.Execute(t.Context(), c.vault) {
 		t.Error("a vault in the index is not carried")
@@ -22,10 +22,10 @@ func TestIsVaultIndexedReturnsWhetherTheIndexCarriesTheVault(t *testing.T) {
 
 func TestIsVaultIndexedAnswersFalseWhereNoIndexIsBound(t *testing.T) {
 	t.Parallel()
-	if note.NewIsVaultIndexed(nil).Execute(t.Context(), domain.Vault{ID: "any"}) {
+	if query.NewIsVaultIndexed(nil).Execute(t.Context(), domain.Vault{ID: "any"}) {
 		t.Error("a build with no index carries a vault")
 	}
-	var unset *note.IsVaultIndexed
+	var unset *query.IsVaultIndexed
 	if unset.Execute(t.Context(), domain.Vault{ID: "any"}) {
 		t.Error("an unset use case carries a vault")
 	}

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/chunk"
-	notecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/chunking"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -20,7 +20,7 @@ func (s *store) saveNote(vault domain.VaultID, path, title string, named bool) {
 	if named {
 		n.Frontmatter = map[string]any{"title": title}
 	}
-	if err := s.db.Notes().Save(s.t.Context(), vault, notecase.CutNotes{}.Execute([]domain.Note{n})); err != nil {
+	if err := s.db.Notes().Save(s.t.Context(), vault, chunking.CutNotes{}.Execute([]domain.Note{n})); err != nil {
 		s.t.Fatal(err)
 	}
 }

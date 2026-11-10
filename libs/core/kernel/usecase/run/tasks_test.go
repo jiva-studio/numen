@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"reflect"
 	"sync"
 	"testing"
@@ -11,8 +12,8 @@ import (
 
 func TestWhatIsBeingCompletedIsWhatIsListed(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", About: "book.pdf"})
-	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
+	tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan", About: "book.pdf"})
+	tasks.Set(vaultreading.Task{ID: "indexing", Title: "Indexing"})
 
 	list := tasks.List()
 	if len(list) != 2 {
@@ -31,8 +32,8 @@ func TestWhatIsBeingCompletedIsWhatIsListed(t *testing.T) {
 
 func TestWorkReportedAgainReplacesItself(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", Count: 1, Total: 9})
-	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", Count: 4, Total: 9})
+	tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan", Count: 1, Total: 9})
+	tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan", Count: 4, Total: 9})
 
 	list := tasks.List()
 	if len(list) != 1 {
@@ -53,8 +54,8 @@ func TestRemove_MissingTaskIsNoOp(t *testing.T) {
 
 func TestClearConsumesAllTasksOut(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan"})
-	tasks.Set(Task{ID: "indexing", Title: "Indexing"})
+	tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan"})
+	tasks.Set(vaultreading.Task{ID: "indexing", Title: "Indexing"})
 
 	if len(tasks.List()) != 2 {
 		t.Fatalf("listed %d, want 2", len(tasks.List()))
@@ -68,7 +69,7 @@ func TestClearConsumesAllTasksOut(t *testing.T) {
 
 func TestWatchingReturnsWhatIsBeingCompletedAndThenWhatChanges(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan"})
+	tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan"})
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
@@ -80,7 +81,7 @@ func TestWatchingReturnsWhatIsBeingCompletedAndThenWhatChanges(t *testing.T) {
 		t.Fatalf("first said %+v", list)
 	}
 
-	tasks.Set(Task{ID: "fetching", Title: "Fetching"})
+	tasks.Set(vaultreading.Task{ID: "fetching", Title: "Fetching"})
 	if list := next(t, watching); len(list) != 2 {
 		t.Errorf("after one more: %+v", list)
 	}
@@ -100,7 +101,7 @@ func TestAListenerPriorIsGivenTheNewestAndNotAQueue(t *testing.T) {
 	watching := tasks.Watch(ctx)
 
 	for i := int64(1); i <= 5; i++ {
-		tasks.Set(Task{ID: "recognition", Title: "Recognizing a scan", Count: i, Total: 5})
+		tasks.Set(vaultreading.Task{ID: "recognition", Title: "Recognizing a scan", Count: i, Total: 5})
 	}
 	if list := next(t, watching); len(list) != 1 || list[0].Count != 5 {
 		t.Errorf("said %+v, want the newest", list)
@@ -135,10 +136,10 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
 	watching := tasks.Watch(ctx)
 
-	ended := make(chan []Task, 1)
+	ended := make(chan []vaultreading.Task, 1)
 	go func() {
 		far := map[string]int64{}
-		var last []Task
+		var last []vaultreading.Task
 		for list := range watching {
 			for _, item := range list {
 				if item.Count < far[item.ID] {
@@ -156,7 +157,7 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 		reporting.Go(func() {
 			id := fmt.Sprintf("recognition-%d", which)
 			for page := int64(1); page <= 200; page++ {
-				tasks.Set(Task{ID: id, Title: "Recognizing a scan", Count: page, Total: 200})
+				tasks.Set(vaultreading.Task{ID: id, Title: "Recognizing a scan", Count: page, Total: 200})
 			}
 		})
 	}
@@ -171,7 +172,7 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 	}
 }
 
-func next(t *testing.T, watching <-chan []Task) []Task {
+func next(t *testing.T, watching <-chan []vaultreading.Task) []vaultreading.Task {
 	t.Helper()
 	select {
 	case list := <-watching:
@@ -182,7 +183,7 @@ func next(t *testing.T, watching <-chan []Task) []Task {
 	return nil
 }
 
-func quiet(t *testing.T, watching <-chan []Task, why string) {
+func quiet(t *testing.T, watching <-chan []vaultreading.Task, why string) {
 	t.Helper()
 	select {
 	case list := <-watching:
@@ -198,7 +199,7 @@ func TestWorkWithNoNameIsNotListed(t *testing.T) {
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(Task{Title: "Recognizing a scan"})
+	tasks.Set(vaultreading.Task{Title: "Recognizing a scan"})
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
 	}
@@ -218,10 +219,10 @@ func TestFinishingWhatIsNotThereNotifiesNoListener(t *testing.T) {
 
 func TestWorkTakenOutCanBeReportedAgain(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "a"})
-	tasks.Set(Task{ID: "b"})
+	tasks.Set(vaultreading.Task{ID: "a"})
+	tasks.Set(vaultreading.Task{ID: "b"})
 	tasks.Remove("a")
-	tasks.Set(Task{ID: "a", Title: "again"})
+	tasks.Set(vaultreading.Task{ID: "a", Title: "again"})
 
 	list := tasks.List()
 	if len(list) != 2 || list[0].ID != "b" || list[1].ID != "a" || list[1].Title != "again" {
@@ -236,14 +237,14 @@ func TestClearingConsumesAllTasksOutAndTellsListeners(t *testing.T) {
 	watching := tasks.Watch(ctx)
 	next(t, watching)
 
-	tasks.Set(Task{ID: "a"})
+	tasks.Set(vaultreading.Task{ID: "a"})
 	next(t, watching)
 	tasks.Clear()
 	if list := next(t, watching); len(list) != 0 {
 		t.Errorf("told %+v after the list was cleared", list)
 	}
 
-	tasks.Set(Task{ID: "a", Title: "again"})
+	tasks.Set(vaultreading.Task{ID: "a", Title: "again"})
 	if list := tasks.List(); len(list) != 1 || list[0].Title != "again" {
 		t.Errorf("listed %+v after reporting the work again", list)
 	}
@@ -262,7 +263,7 @@ func TestClearingWhatIsEmptyNotifiesNoListener(t *testing.T) {
 
 func TestClearingASingleTaskConsumesItOut(t *testing.T) {
 	tasks := NewTasks()
-	tasks.Set(Task{ID: "a"})
+	tasks.Set(vaultreading.Task{ID: "a"})
 	tasks.Clear()
 	if list := tasks.List(); len(list) != 0 {
 		t.Errorf("listed %+v", list)
@@ -288,7 +289,7 @@ func TestAListenerThatEndedDoesNotStopTheOthersBeingReported(t *testing.T) {
 	}
 
 	// Telling the ended listener would send on a closed channel.
-	tasks.Set(Task{ID: "a"})
+	tasks.Set(vaultreading.Task{ID: "a"})
 	if list := next(t, staying); len(list) != 1 {
 		t.Errorf("the listener that stayed received %+v", list)
 	}
@@ -298,8 +299,8 @@ func TestCancelCancelsTheTaskAndKeepsItListed(t *testing.T) {
 	tasks := NewTasks()
 	work, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	tasks.Set(Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
-	tasks.Set(Task{ID: "walk", Title: "Indexing the vault"})
+	tasks.Set(vaultreading.Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
+	tasks.Set(vaultreading.Task{ID: "walk", Title: "Indexing the vault"})
 
 	if !tasks.Cancel("indexing") {
 		t.Fatal("a cancellable task was not canceled")

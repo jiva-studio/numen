@@ -198,7 +198,7 @@ func writeLinks(links []domain.ResolvedLink) []*v1.HostLink {
 func (e *vaultEndpoint) GetHostVault(
 	ctx context.Context, req *connect.Request[v1.GetHostVaultRequest],
 ) (*connect.Response[v1.GetHostVaultResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (e *vaultEndpoint) GetHostVault(
 func (e *vaultEndpoint) ListHostVaults(
 	_ context.Context, req *connect.Request[v1.ListHostVaultsRequest],
 ) (*connect.Response[v1.ListHostVaultsResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (e *vaultEndpoint) ListHostVaults(
 func (e *vaultEndpoint) EnsureVaultIndexed(
 	ctx context.Context, req *connect.Request[v1.EnsureVaultIndexedRequest],
 ) (*connect.Response[v1.EnsureVaultIndexedResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func (e *vaultEndpoint) EnsureVaultIndexed(
 func (e *vaultEndpoint) WatchMoves(
 	ctx context.Context, req *connect.Request[v1.WatchMovesRequest], stream *connect.ServerStream[v1.WatchMovesResponse],
 ) error {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func (e *vaultEndpoint) WatchMoves(
 func (e *vaultEndpoint) StatFile(
 	ctx context.Context, req *connect.Request[v1.StatFileRequest],
 ) (*connect.Response[v1.StatFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -314,7 +314,7 @@ func (e *vaultEndpoint) StatFile(
 func (e *vaultEndpoint) ReadFile(
 	ctx context.Context, req *connect.Request[v1.ReadFileRequest],
 ) (*connect.Response[v1.ReadFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -425,7 +425,7 @@ func (e *vaultEndpoint) ScanFiles(
 func (e *vaultEndpoint) GetNoteRefs(
 	ctx context.Context, req *connect.Request[v1.GetNoteRefsRequest],
 ) (*connect.Response[v1.GetNoteRefsResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +449,7 @@ func (e *vaultEndpoint) GetNoteRefs(
 func (e *vaultEndpoint) GetNoteTypes(
 	ctx context.Context, req *connect.Request[v1.GetNoteTypesRequest],
 ) (*connect.Response[v1.GetNoteTypesResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -471,7 +471,7 @@ func (e *vaultEndpoint) GetNoteTypes(
 func (e *vaultEndpoint) GetNamedPaths(
 	ctx context.Context, req *connect.Request[v1.GetNamedPathsRequest],
 ) (*connect.Response[v1.GetNamedPathsResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +489,7 @@ func (e *vaultEndpoint) GetNamedPaths(
 func (e *vaultEndpoint) GetPathsOfType(
 	ctx context.Context, req *connect.Request[v1.GetPathsOfTypeRequest],
 ) (*connect.Response[v1.GetPathsOfTypeResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -507,7 +507,7 @@ func (e *vaultEndpoint) GetPathsOfType(
 func (e *vaultEndpoint) GetLinks(
 	ctx context.Context, req *connect.Request[v1.GetLinksRequest],
 ) (*connect.Response[v1.GetLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -525,7 +525,7 @@ func (e *vaultEndpoint) GetLinks(
 func (e *vaultEndpoint) GetBacklinks(
 	ctx context.Context, req *connect.Request[v1.GetBacklinksRequest],
 ) (*connect.Response[v1.GetBacklinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -548,7 +548,7 @@ func (e *vaultEndpoint) GetBacklinks(
 func (e *vaultEndpoint) ResolveLinks(
 	ctx context.Context, req *connect.Request[v1.ResolveLinksRequest],
 ) (*connect.Response[v1.ResolveLinksResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -570,7 +570,7 @@ func (e *vaultEndpoint) ResolveLinks(
 func (e *vaultEndpoint) GetParseProblems(
 	ctx context.Context, req *connect.Request[v1.GetParseProblemsRequest],
 ) (*connect.Response[v1.GetParseProblemsResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -592,7 +592,7 @@ func (e *vaultEndpoint) GetParseProblems(
 func (e *vaultEndpoint) ReadCache(
 	ctx context.Context, req *connect.Request[v1.ReadCacheRequest],
 ) (*connect.Response[v1.ReadCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	pluginID, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
@@ -624,7 +624,7 @@ func (e *vaultEndpoint) WriteCache(
 func (e *vaultEndpoint) WatchVault(
 	ctx context.Context, req *connect.Request[v1.WatchVaultRequest], stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return err
 	}

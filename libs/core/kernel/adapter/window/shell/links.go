@@ -8,7 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -21,7 +21,7 @@ var errNoVault = errors.New("this window shows no vault, so a request names the 
 // NoteService belongs to the editor.
 type noteLinks struct {
 	numenv1connect.UnimplementedNoteServiceHandler
-	resolve *note.ResolveLinks
+	resolve *query.ResolveLinks
 	list    func() ([]domain.Vault, error)
 }
 

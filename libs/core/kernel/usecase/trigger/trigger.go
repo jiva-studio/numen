@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
@@ -52,7 +53,7 @@ type Triggers struct {
 	versions Versions
 	config   pluginport.WhenConfig
 
-	conditions *pluginport.PluginConditions
+	conditions *when.Conditions
 	mu         sync.Mutex
 }
 
@@ -65,7 +66,7 @@ func NewTriggers(
 ) *Triggers {
 	return &Triggers{
 		plugins: plugins, run: run, readers: readers, notes: notes, types: types, versions: versions, config: config,
-		conditions: pluginport.NewConditions(),
+		conditions: when.NewConditions(),
 	}
 }
 
@@ -128,8 +129,8 @@ func (u *Triggers) execute(
 // trigger is one trigger with its condition and the condition of its handler read.
 type trigger struct {
 	entry     plugin.TriggerEntry
-	condition pluginport.PluginCondition
-	handler   pluginport.PluginCondition
+	condition when.Condition
+	handler   when.Condition
 }
 
 func (u *Triggers) readTriggers() []trigger {
@@ -208,7 +209,7 @@ func (p *pass) runFile(ctx context.Context, path string) {
 
 func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, error) {
 	result := evaluate(current.values, one)
-	if result == pluginport.ConditionUnknown && current.values.IsNote() && !current.isNoteRead {
+	if result == when.Unknown && current.values.IsNote() && !current.isNoteRead {
 		noteType, properties, err := p.triggers.notes.Execute(ctx, p.vault, current.path)
 		if err != nil {
 			return false, err
@@ -216,7 +217,7 @@ func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, er
 		current.values, current.isNoteRead = current.values.WithNote(noteType, properties), true
 		result = evaluate(current.values, one)
 	}
-	if result == pluginport.ConditionUnknown && !current.isVersionsRead {
+	if result == when.Unknown && !current.isVersionsRead {
 		versions, err := p.triggers.versions.ListTargetVersions(ctx, p.vault, current.path)
 		if err != nil {
 			return false, err
@@ -224,17 +225,17 @@ func (p *pass) isTrue(ctx context.Context, current *file, one trigger) (bool, er
 		current.values, current.isVersionsRead = current.values.WithVersions(versions), true
 		result = evaluate(current.values, one)
 	}
-	return result == pluginport.ConditionTrue, nil
+	return result == when.True, nil
 }
 
-func evaluate(values plugin.TargetValues, one trigger) pluginport.PluginConditionResult {
+func evaluate(values plugin.TargetValues, one trigger) when.Result {
 	got := values.Get()
-	results := []pluginport.PluginConditionResult{one.condition.Evaluate(got), one.handler.Evaluate(got)}
+	results := []when.Result{one.condition.Evaluate(got), one.handler.Evaluate(got)}
 	switch {
-	case slices.Contains(results, pluginport.ConditionFalse):
-		return pluginport.ConditionFalse
-	case slices.Contains(results, pluginport.ConditionUnknown):
-		return pluginport.ConditionUnknown
+	case slices.Contains(results, when.False):
+		return when.False
+	case slices.Contains(results, when.Unknown):
+		return when.Unknown
 	}
-	return pluginport.ConditionTrue
+	return when.True
 }

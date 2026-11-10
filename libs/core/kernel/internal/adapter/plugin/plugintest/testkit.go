@@ -23,7 +23,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -216,16 +215,16 @@ type LeaseHost struct {
 	Released  atomic.Int32
 }
 
-func (h *LeaseHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, nil
+func (h *LeaseHost) ResolveCapability(string) (manifestdomain.Discovered, error) {
+	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, nil
 }
 
-func (h *LeaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{}, false
+func (h *LeaseHost) ResolveService(string) (manifestdomain.Discovered, bool) {
+	return manifestdomain.Discovered{}, false
 }
 
-func (h *LeaseHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "org.example.stub"}}, true
+func (h *LeaseHost) GetPlugin(string) (manifestdomain.Discovered, bool) {
+	return manifestdomain.Discovered{Manifest: manifestdomain.Manifest{ID: "org.example.stub"}}, true
 }
 
 func (h *LeaseHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {

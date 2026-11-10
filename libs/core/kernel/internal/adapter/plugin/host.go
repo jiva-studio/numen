@@ -423,7 +423,7 @@ func (h *Host) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile,
 	return domain.NoteProfile{}, false
 }
 
-func getProfileOf(declared pluginport.PluginNoteType) domain.NoteProfile {
+func getProfileOf(declared manifest.NoteType) domain.NoteProfile {
 	return declared.GetProfile()
 }
 
@@ -1416,7 +1416,7 @@ func (h *Host) listActiveDeclarationsLocked(pluginID string, values map[string]a
 	return active
 }
 
-func (h *Host) toPluginSettings(manifestSettings []pluginport.PluginManifestSetting) []plugindomain.Setting {
+func (h *Host) toPluginSettings(manifestSettings []manifest.Setting) []plugindomain.Setting {
 	settings := make([]plugindomain.Setting, 0, len(manifestSettings))
 	for _, s := range manifestSettings {
 		defVal, options := s.Default, s.Options
@@ -1571,7 +1571,7 @@ func (h *Host) RetryPlugin(ctx context.Context, pluginID string) (*plugindomain.
 	return failure, nil
 }
 
-func (h *Host) getRequirements(p manifest.Discovered) []pluginport.DependencyRequirement {
+func (h *Host) getRequirements(p manifest.Discovered) []manifest.DependencyRequirement {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))

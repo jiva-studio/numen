@@ -15,6 +15,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 
@@ -26,7 +27,7 @@ func openListEndpoint(t *testing.T, list pluginport.PluginVaultList) (*Endpoint,
 	t.Helper()
 	hostCallers := newCallers(nil)
 	hostCallers.vault = newFakeNoteVault()
-	endpoint, err := Open(t.Context(), Address, vaultListCallers{callers: hostCallers, list: list, granted: []string{pluginport.PermissionVaultManage}})
+	endpoint, err := Open(t.Context(), Address, vaultListCallers{callers: hostCallers, list: list, granted: []string{manifest.PermissionVaultManage}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -57,7 +57,7 @@ func TestEveryVaultOnTheListIsKnown(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 
-	recognized, err := vaults.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ func TestTheVaultOpenedLastIsTheCurrentOne(t *testing.T) {
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
 
-	recognized, err := vaults.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestTheCurrentVaultReachesFirst(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			list := &theList{rows: all, last: domain.Vault{ID: c.last}, isKept: c.last != ""}
-			recognized, err := vaults.NewGetKnownVaults(list, folders{}).Execute("")
+			recognized, err := registry.NewGetKnownVaults(list, folders{}).Execute("")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -133,7 +133,7 @@ func TestTheVaultBeingWorkedExistsOverWhatTheListRemembers(t *testing.T) {
 	list, there := twoRows()
 	list.last, list.isKept = list.rows[1], true
 
-	recognized, err := vaults.NewGetKnownVaults(list, there).Execute("wren")
+	recognized, err := registry.NewGetKnownVaults(list, there).Execute("wren")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestAListWithNoOpenedVaultHasNoCurrentVault(t *testing.T) {
 	t.Parallel()
 	list, there := twoRows()
 
-	recognized, err := vaults.NewGetKnownVaults(list, there).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, there).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,7 +168,7 @@ func TestAVaultWhoseFolderHasMissingIsMarkedAndStays(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 
-	recognized, err := vaults.NewGetKnownVaults(list, folders{"wren": true}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, folders{"wren": true}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestABuildThatCannotOpenAVaultMarksNoFolderMissing(t *testing.T) {
 	t.Parallel()
 	list, _ := twoRows()
 
-	recognized, err := vaults.NewGetKnownVaults(list, nil).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, nil).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestAnEmptyListIsNoVaults(t *testing.T) {
 	t.Parallel()
 	list := &theList{}
 
-	recognized, err := vaults.NewGetKnownVaults(list, folders{}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, folders{}).Execute("")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,7 +225,7 @@ func TestAListThatCannotBeReadIsTheAnswer(t *testing.T) {
 	broken := errors.New("the list is not readable")
 	list := &theList{rows: []domain.Vault{{ID: "wren"}}, fails: broken}
 
-	recognized, err := vaults.NewGetKnownVaults(list, folders{}).Execute("")
+	recognized, err := registry.NewGetKnownVaults(list, folders{}).Execute("")
 	if !errors.Is(err, broken) {
 		t.Fatalf("got %v", err)
 	}

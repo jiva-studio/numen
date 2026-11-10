@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -211,11 +212,11 @@ type conditionalCommands struct{ pluginCommands }
 
 func (conditionalCommands) ListCommands() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{
+		{PluginID: "md.numen.tools.proofreading", Command: manifest.Command{
 			ID: "proofreading.create", Title: "Proofread text",
 			When: "version.isLive",
 		}},
-		{PluginID: "md.numen.tools.updater", Command: plugincommand.Command{ID: "updater.check", Title: "Check for updates"}},
+		{PluginID: "md.numen.tools.updater", Command: manifest.Command{ID: "updater.check", Title: "Check for updates"}},
 	}
 }
 
@@ -224,9 +225,9 @@ type comparingCommands struct{ pluginCommands }
 
 func (comparingCommands) ListCommands() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{ID: "proofreading.create", Title: "Proofread text", When: "version.isLive"}},
-		{PluginID: "md.numen.tools.proofreading", Command: plugincommand.Command{ID: "proofreading.compare", Title: "Compare text", When: "version.isLive"}},
-		{PluginID: "md.numen.tools.updater", Command: plugincommand.Command{ID: "updater.check", Title: "Check for updates"}},
+		{PluginID: "md.numen.tools.proofreading", Command: manifest.Command{ID: "proofreading.create", Title: "Proofread text", When: "version.isLive"}},
+		{PluginID: "md.numen.tools.proofreading", Command: manifest.Command{ID: "proofreading.compare", Title: "Compare text", When: "version.isLive"}},
+		{PluginID: "md.numen.tools.updater", Command: manifest.Command{ID: "updater.check", Title: "Check for updates"}},
 	}
 }
 

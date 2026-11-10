@@ -5,13 +5,12 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestGetParts_ReadsTheManifestOfThePlugin(t *testing.T) {
 	command := []manifest.Command{{ID: "tree.open", Title: "Open file tree"}}
-	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
+	host := &manifestHost{plugins: []manifest.Discovered{
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Commands: command}}},
 		{Manifest: manifest.Manifest{ID: "md.numen.job", Backend: manifest.Backend{Entrypoint: "bin/job"}, Contributes: manifest.Contributes{Commands: command}}},
 		{Manifest: manifest.Manifest{ID: "md.numen.empty", Contributes: manifest.Contributes{Commands: command}}},
@@ -38,7 +37,7 @@ type suspendedHost struct{ *manifestHost }
 func (h suspendedHost) IsPluginSuspended(string) bool { return true }
 
 func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
-	host := suspendedHost{&manifestHost{plugins: []pluginport.DiscoveredPlugin{
+	host := suspendedHost{&manifestHost{plugins: []manifest.Discovered{
 		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}, Frontend: &manifest.Frontend{}}},
 	}}}
 
@@ -50,7 +49,7 @@ func TestGetParts_ReportsASuspendedPlugin(t *testing.T) {
 }
 
 func TestGetParts_ReadsNoListingOfThePlugins(t *testing.T) {
-	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
+	host := &manifestHost{plugins: []manifest.Discovered{
 		{Manifest: manifest.Manifest{ID: "md.numen.cards", Backend: manifest.Backend{Entrypoint: "bin/cards"}}},
 		{Manifest: manifest.Manifest{ID: "md.numen.tree", Frontend: &manifest.Frontend{}}},
 	}}
@@ -66,7 +65,7 @@ func TestGetParts_ReadsNoListingOfThePlugins(t *testing.T) {
 }
 
 func TestGetParts_ReadsTheNameAndTheTextKindsOfThePlugin(t *testing.T) {
-	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
+	host := &manifestHost{plugins: []manifest.Discovered{
 		{Manifest: manifest.Manifest{
 			ID: "md.numen.ears", Name: "Transcription", Backend: manifest.Backend{Entrypoint: "bin/ears"},
 			Contributes: manifest.Contributes{TextKinds: []manifest.TextKind{{Kind: "transcript", Title: "Transcript"}}},

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // PluginResolver locates plugins by capability or identifier. Of several enabled plugins that
@@ -13,14 +14,14 @@ import (
 type PluginResolver interface {
 	// ResolveCapability returns the plugin for the capability. Where none answers, the error is an
 	// *UnavailableError saying whether none is installed or every one is disabled.
-	ResolveCapability(capability string) (DiscoveredPlugin, error)
+	ResolveCapability(capability string) (manifest.Discovered, error)
 	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
 	// to the windows, and false where none does.
-	ResolveService(service string) (DiscoveredPlugin, bool)
+	ResolveService(service string) (manifest.Discovered, bool)
 	// ResolveNoteProfile returns how the index keeps the notes of a type, as the enabled plugin that
 	// declares the type defines, and false where none does.
 	ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool)
-	GetPlugin(id string) (DiscoveredPlugin, bool)
+	GetPlugin(id string) (manifest.Discovered, bool)
 }
 
 // PluginActivator activates plugins and manages active references.
@@ -43,7 +44,7 @@ type PluginDiscoverer interface {
 type PluginSettingDeclarer interface {
 	// GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and
 	// false for a plugin the host does not know.
-	GetPluginSettingDeclarations(pluginID string) ([]PluginManifestSetting, bool)
+	GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool)
 }
 
 type pluginSecretConfigurator interface {

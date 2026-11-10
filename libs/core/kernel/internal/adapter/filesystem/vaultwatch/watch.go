@@ -23,16 +23,17 @@ const Backlog = 65536
 // scheduling; the bound that decides anything is Backlog.
 const handover = 1024
 
-// Hub places the watches that the watchers of one container share.
+// Hub is the hub the watchers of one container share. The composition root may not import internal/adapterlib, so
+// it names the hub through this adapter.
 type Hub = watchhub.Hub
 
 // NewHub returns the hub of one container.
-func NewHub() *Hub { return watchhub.NewHub() }
+func NewHub() *watchhub.Hub { return watchhub.NewHub() }
 
 // Watcher follows vaults on disk.
 type Watcher struct {
 	Options vaultconfig.Options
-	Hub     *Hub
+	Hub     *watchhub.Hub
 }
 
 // WatchVault follows one vault and reports the sources that change in it.

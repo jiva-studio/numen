@@ -24,9 +24,6 @@ const envMockML = pluginswiring.EnvMockML
 
 const programsLimit = pluginswiring.ProgramsLimit
 
-// PluginServices is where a window forwards the calls it receives for the services plugins serve.
-type PluginServices = pluginswiring.PluginServices
-
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.
 type PluginVaultHooks = pluginswiring.PluginVaultHooks
 
@@ -143,7 +140,7 @@ func (c Config) openPluginWork(db *Index, v domain.Vault) (Config, *run.PluginWo
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func (c Config) GetPluginServices() PluginServices {
+func (c Config) GetPluginServices() pluginswiring.PluginServices {
 	return c.plugins().GetPluginServices()
 }
 

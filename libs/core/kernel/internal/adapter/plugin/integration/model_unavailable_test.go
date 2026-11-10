@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // stubModelHost resolves every capability to one plugin listening at the endpoint given.
@@ -24,19 +24,19 @@ type stubModelHost struct {
 	released atomic.Int32
 }
 
-func (h *stubModelHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
+func (h *stubModelHost) ResolveCapability(string) (manifest.Discovered, error) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, nil
 }
 
 // WatchPluginConfig registers nothing: the stub is never configured.
 func (h *stubModelHost) WatchPluginConfig(string, func()) func() { return func() {} }
 
-func (h *stubModelHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{}, false
+func (h *stubModelHost) ResolveService(string) (manifest.Discovered, bool) {
+	return manifest.Discovered{}, false
 }
 
-func (h *stubModelHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, true
+func (h *stubModelHost) GetPlugin(string) (manifest.Discovered, bool) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.stub"}}, true
 }
 
 func (h *stubModelHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {

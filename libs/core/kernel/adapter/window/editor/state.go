@@ -19,9 +19,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -116,7 +116,7 @@ func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
 
 func (s *State) setSession(on *vaultSession) { s.session.Store(on) }
 
-func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
+func (s *State) reportTask(pos vaultreading.Task) { s.Window.AddTask(pos) }
 
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 
@@ -128,7 +128,7 @@ func (s *State) isIndexOutdated(err error) bool {
 	if !errors.Is(err, note.ErrIndexOutdated) {
 		return false
 	}
-	s.reportTask(run.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
+	s.reportTask(vaultreading.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
 	return true
 }
 

@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // OwnerApp is the owner of the settings of the shell. Every other first-level key of the file
@@ -43,7 +43,7 @@ func (e noDeclaringPluginError) Error() string {
 func (e noDeclaringPluginError) Is(target error) bool { return target == ErrUndeclared }
 
 // Declarations returns the settings an owner declares, and false for an owner that has no declaration.
-type Declarations func(owner string) ([]pluginport.PluginManifestSetting, bool)
+type Declarations func(owner string) ([]manifest.Setting, bool)
 
 // Registries returns the values a registry lists, such as the installed themes, and false for a
 // registry that has no provider.
@@ -68,7 +68,7 @@ func CheckWrite(declared Declarations, registries Registries, path []string, val
 	if err != nil || name == "" {
 		return wrapAt(label, err)
 	}
-	index := slices.IndexFunc(settings, func(one pluginport.PluginManifestSetting) bool { return one.Key == name })
+	index := slices.IndexFunc(settings, func(one manifest.Setting) bool { return one.Key == name })
 	if index < 0 {
 		return fmt.Errorf("%q: %w", label, ErrUndeclared)
 	}
@@ -108,7 +108,7 @@ func checkHostField(name string, value any) (reserved bool, err error) {
 	return true, nil
 }
 
-func checkValue(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
+func checkValue(declared manifest.Setting, registries Registries, value any) error {
 	if value == nil {
 		return nil
 	}
@@ -129,7 +129,7 @@ func checkValue(declared pluginport.PluginManifestSetting, registries Registries
 	return nil
 }
 
-func checkNumber(declared pluginport.PluginManifestSetting, value any) error {
+func checkNumber(declared manifest.Setting, value any) error {
 	number, isNumber := toNumber(value)
 	if !isNumber || math.IsNaN(number) || math.IsInf(number, 0) {
 		return fmt.Errorf("%w: expected a number", ErrWrongType)
@@ -161,7 +161,7 @@ func toNumber(value any) (float64, bool) {
 	return 0, false
 }
 
-func checkOption(declared pluginport.PluginManifestSetting, registries Registries, value any) error {
+func checkOption(declared manifest.Setting, registries Registries, value any) error {
 	text, isText := value.(string)
 	if !isText {
 		return fmt.Errorf("%w: expected a string", ErrWrongType)
@@ -259,7 +259,7 @@ func (f *File) dropInvalidApp(declared Declarations, registries Registries) {
 	}
 }
 
-func (f *File) resetApp(declared pluginport.PluginManifestSetting) {
+func (f *File) resetApp(declared manifest.Setting) {
 	switch declared.Key {
 	case keyTheme:
 		f.Appearance.Theme = getAppString(keyTheme)

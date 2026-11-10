@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // fakeCatalog provisions the requirements whose id it holds and records the requests.
@@ -18,30 +19,30 @@ type fakeCatalog struct {
 	pluginport.DependencyCatalog
 	resolved map[string]plugindomain.ResolvedDependency
 	err      error
-	calls    []pluginport.DependencyRequirement
+	calls    []manifest.DependencyRequirement
 }
 
-func (f *fakeCatalog) CanProvision(req pluginport.DependencyRequirement) bool {
+func (f *fakeCatalog) CanProvision(req manifest.DependencyRequirement) bool {
 	_, ok := f.resolved[req.ID]
 	return ok
 }
 
-func (f *fakeCatalog) Register(pluginport.DependencyRequirement) {}
+func (f *fakeCatalog) Register(manifest.DependencyRequirement) {}
 
-func (f *fakeCatalog) Provision(_ context.Context, req pluginport.DependencyRequirement, _ func(plugindomain.DependencyStatus)) (plugindomain.ResolvedDependency, error) {
+func (f *fakeCatalog) Provision(_ context.Context, req manifest.DependencyRequirement, _ func(plugindomain.DependencyStatus)) (plugindomain.ResolvedDependency, error) {
 	f.calls = append(f.calls, req)
 	return f.resolved[req.ID], f.err
 }
 
 func newONNXCatalog() *fakeCatalog {
 	return &fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
-		pluginport.RuntimeONNX: {ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: "/models/libonnxruntime.so", process.EnvONNXProvider: "coreml"}},
+		plugindomain.RuntimeONNX: {ID: plugindomain.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: "/models/libonnxruntime.so", process.EnvONNXProvider: "coreml"}},
 	}}
 }
 
-func newRuntimeRequirements(dir string) []pluginport.DependencyRequirement {
-	return pluginport.PluginManifest{Dependencies: []pluginport.DependencyRequirement{
-		{ID: pluginport.RuntimeONNX, Kind: pluginport.DependencyKindRuntime},
+func newRuntimeRequirements(dir string) []manifest.DependencyRequirement {
+	return manifest.Manifest{Dependencies: []manifest.DependencyRequirement{
+		{ID: plugindomain.RuntimeONNX, Kind: manifest.DependencyKindRuntime},
 	}}.GetDependencyRequirements(dir, nil)
 }
 
@@ -75,7 +76,7 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.calls) != 1 || catalog.calls[0].PluginDir != "/plugins/a" || catalog.calls[0].Kind != pluginport.DependencyKindRuntime {
+	if len(catalog.calls) != 1 || catalog.calls[0].PluginDir != "/plugins/a" || catalog.calls[0].Kind != manifest.DependencyKindRuntime {
 		t.Errorf("the runtime was provisioned as %+v", catalog.calls)
 	}
 	for _, want := range []string{"NUMEN_ONNX_RUNTIME_LIB=/models/libonnxruntime.so", "NUMEN_ONNX_PROVIDER=coreml"} {
@@ -95,7 +96,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 	host.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 		"whisper": {ID: "whisper", EnvVars: map[string]string{"NUMEN_DEPENDENCY_WHISPER": "/deps/whisper.bin"}},
 	}})
-	manifest := pluginport.PluginManifest{Dependencies: []pluginport.DependencyRequirement{{ID: "whisper", Kind: pluginport.DependencyKindModel}}}
+	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
 
 	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), 5, "t")
 	if err != nil {
@@ -172,7 +173,7 @@ func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
 		}
 	})
 	host.SetDependencies(newONNXCatalog())
-	unknown := []pluginport.DependencyRequirement{{ID: "tensorrt", Kind: pluginport.DependencyKindRuntime}}
+	unknown := []manifest.DependencyRequirement{{ID: "tensorrt", Kind: manifest.DependencyKindRuntime}}
 
 	if _, err := host.getLaunchVars(t.Context(), "md.numen.a", unknown, 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
 		t.Fatalf("getLaunchVars() = %v, want ErrRuntimeUnavailable", err)

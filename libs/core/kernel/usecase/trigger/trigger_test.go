@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
@@ -157,7 +156,7 @@ func (p *plugins) ListHandlers() []plugin.CommandEntry {
 	defer p.mu.Unlock()
 	var out []plugin.CommandEntry
 	for _, one := range p.triggers {
-		out = append(out, plugin.CommandEntry{PluginID: one.PluginID, Command: pluginport.PluginCommand{
+		out = append(out, plugin.CommandEntry{PluginID: one.PluginID, Command: manifest.Command{
 			ID: one.Trigger.Command, When: p.handlerWhen[one.Trigger.Command],
 		}})
 	}

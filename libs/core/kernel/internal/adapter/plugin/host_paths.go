@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // The reasons a setting of type file does not accept a path.
@@ -33,7 +33,7 @@ func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {
 		return nil
 	}
 	declared, ok := p.Manifest.GetSetting(key)
-	if !ok || declared.Type != pluginport.SettingTypeFile {
+	if !ok || declared.Type != manifest.SettingTypeFile {
 		return nil
 	}
 	path, isText := value.(string)
@@ -57,7 +57,7 @@ func (h *Host) CheckPluginSetting(pluginID, key string, value any) error {
 
 // GetPluginSettingDeclarations returns the settings the manifest of the plugin declares, and false
 // for a plugin the host does not know.
-func (h *Host) GetPluginSettingDeclarations(pluginID string) ([]pluginport.PluginManifestSetting, bool) {
+func (h *Host) GetPluginSettingDeclarations(pluginID string) ([]manifest.Setting, bool) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	p, ok := h.plugins[pluginID]
@@ -67,7 +67,7 @@ func (h *Host) GetPluginSettingDeclarations(pluginID string) ([]pluginport.Plugi
 	return slices.Clone(p.Manifest.Settings), true
 }
 
-func checkPath(declared pluginport.PluginManifestSetting, path string) error {
+func checkPath(declared manifest.Setting, path string) error {
 	info, err := os.Stat(path)
 	if err != nil {
 		return fmt.Errorf("%s: %w", path, errPathNotFound)

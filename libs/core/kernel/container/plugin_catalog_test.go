@@ -68,7 +68,7 @@ func TestTheGeneratedPluginIndexEqualsTheManifests(t *testing.T) {
 		t.Errorf("the index lists %d plugins and the tree holds %d manifests: run make plugins_index", len(listed), len(manifests))
 	}
 	for _, one := range manifests {
-		want := catalog.NewEntry(indexsource.Name, catalog.StateAvailable, one.PluginManifest)
+		want := catalog.NewEntry(indexsource.Name, catalog.StateAvailable, one.Manifest)
 		index := slices.IndexFunc(listed, func(entry catalog.Entry) bool { return entry.ID == one.ID })
 		if index < 0 {
 			t.Errorf("the index lacks %s: run make plugins_index", one.ID)

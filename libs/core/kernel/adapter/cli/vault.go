@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -82,7 +84,7 @@ func listVaults(out io.Writer, deps Deps) error {
 	}
 	// No vault is specified here, so the current one is the vault the next window
 	// opens.
-	recognized, err := vault.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
+	recognized, err := registry.NewGetKnownVaults(vaults.Registry, vaults.Readers).Execute("")
 	if err != nil {
 		return err
 	}
@@ -200,7 +202,7 @@ func eraseVault(ctx context.Context, out io.Writer, deps Deps, args []string) (e
 		vaults.Identity, vaults.Trash, vault.NewUnregister(vaults.Registry, rows.Vaults),
 	)
 	res, err := erase.Execute(ctx, v)
-	if errors.Is(err, vault.ErrNoTrash) {
+	if errors.Is(err, picker.ErrNoTrash) {
 		return fmt.Errorf("%w — take it off the list with: numen-cli vault remove %s", err, v.Name)
 	}
 	if err != nil {

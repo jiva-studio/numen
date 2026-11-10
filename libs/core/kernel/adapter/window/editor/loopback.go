@@ -15,14 +15,14 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // fileServer answers with one file of one vault, as it is read.
 type fileServer struct {
 	state          *State
-	find           *vaults.Find
+	find           *registry.Find
 	openFile       *file.OpenFile
 	openPluginFile *file.OpenPluginFile
 	mediaTypes     *file.GetMediaType

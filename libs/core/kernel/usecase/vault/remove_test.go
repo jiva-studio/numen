@@ -6,12 +6,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 func newRemove(registry *appstate.VaultRegistry) (vaults.Remove, *bin, *indexRows) {
 	erase, trash, index, _ := newErase(registry)
 	return vaults.NewRemove(
-		vaults.NewFind(registry),
+		vaultregistry.NewFind(registry),
 		vaults.NewUnregister(registry, index),
 		erase,
 	), trash, index
@@ -55,7 +56,7 @@ func TestRemoveKeepsTheVaultInFrontOfThePerson(t *testing.T) {
 
 	for _, trashed := range []bool{false, true} {
 		err := remove.Execute(t.Context(), string(showing.ID), showing.ID, trashed)
-		if !errors.Is(err, vaults.ErrShowing) {
+		if !errors.Is(err, vaultregistry.ErrShowing) {
 			t.Fatalf("error is %v, want ErrShowing", err)
 		}
 	}
@@ -79,7 +80,7 @@ func TestRemove_RejectsUnlistedVault(t *testing.T) {
 
 	err := remove.Execute(t.Context(), "nothing", retained.ID, false)
 
-	if !errors.Is(err, vaults.ErrUnknown) {
+	if !errors.Is(err, vaultregistry.ErrUnknown) {
 		t.Fatalf("error is %v, want ErrUnknown", err)
 	}
 }

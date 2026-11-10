@@ -6,7 +6,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) {
@@ -21,7 +21,7 @@ func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) 
 			host.SetDependencies(&fakeCatalog{resolved: map[string]plugindomain.ResolvedDependency{
 				"model": {ID: "model", EnvVars: map[string]string{name: "/evil"}},
 			}})
-			requirements := []pluginport.DependencyRequirement{{ID: "model", Kind: pluginport.DependencyKindModel}}
+			requirements := []manifest.DependencyRequirement{{ID: "model", Kind: manifest.DependencyKindModel}}
 
 			vars, err := host.getRuntimeVars(t.Context(), requirements)
 

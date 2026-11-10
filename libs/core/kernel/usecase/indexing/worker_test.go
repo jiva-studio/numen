@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -41,13 +41,13 @@ type recorder struct {
 
 func newRecorder() *recorder { return &recorder{tasks: run.NewTasks()} }
 
-func (r *recorder) ReportTask(pos run.Task)                        { r.tasks.Set(pos) }
-func (r *recorder) FinishTask(id string)                           { r.tasks.Remove(id) }
-func (r *recorder) ReportError(error)                              {}
-func (r *recorder) ReportNotes(domain.Vault, int)                  {}
-func (r *recorder) ReportTexts(domain.Vault, filetext.IndexResult) {}
+func (r *recorder) ReportTask(pos vaultreading.Task)                   { r.tasks.Set(pos) }
+func (r *recorder) FinishTask(id string)                               { r.tasks.Remove(id) }
+func (r *recorder) ReportError(error)                                  {}
+func (r *recorder) ReportNotes(domain.Vault, int)                      {}
+func (r *recorder) ReportTexts(domain.Vault, vaultreading.IndexResult) {}
 
-func findTask(t *testing.T, r *recorder, id string) *run.Task {
+func findTask(t *testing.T, r *recorder, id string) *vaultreading.Task {
 	t.Helper()
 	for _, item := range r.tasks.List() {
 		if item.ID == id {
@@ -198,7 +198,7 @@ type peeking struct {
 	tasks *run.Tasks
 
 	mu    sync.Mutex
-	while []run.Task
+	while []vaultreading.Task
 }
 
 func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
@@ -212,7 +212,7 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 
 func (*peeking) Concurrency() int { return 1 }
 
-func (p *peeking) opening(id string) (run.Task, bool) {
+func (p *peeking) opening(id string) (vaultreading.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	for _, item := range p.while {
@@ -220,7 +220,7 @@ func (p *peeking) opening(id string) (run.Task, bool) {
 			return item, true
 		}
 	}
-	return run.Task{}, false
+	return vaultreading.Task{}, false
 }
 
 // Indexing is always of something, and a row carrying the word alone leaves a
@@ -274,7 +274,7 @@ type overheard struct {
 	tasks *run.Tasks
 
 	mu      sync.Mutex
-	visited [][]run.Task
+	visited [][]vaultreading.Task
 }
 
 // GetModel is called at the start of every pass, before a source is opened.
@@ -296,7 +296,7 @@ func (o *overheard) keep() {
 	o.mu.Unlock()
 }
 
-func (o *overheard) lists() [][]run.Task {
+func (o *overheard) lists() [][]vaultreading.Task {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return o.visited

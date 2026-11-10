@@ -25,10 +25,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
@@ -48,7 +51,7 @@ type Config struct {
 
 	Hardware hardware.Specs
 
-	Chunks *ChunkTokens
+	Chunks *note.ChunkTokens
 
 	PluginHost pluginport.PluginManager
 
@@ -110,7 +113,7 @@ func NewConfig(c Config) Config {
 		c.Resources = NewResources()
 	}
 	if c.Chunks == nil {
-		c.Chunks = &ChunkTokens{}
+		c.Chunks = &note.ChunkTokens{}
 	}
 	return c
 }
@@ -275,7 +278,7 @@ func (c Config) plugins() pluginswiring.Config {
 		ReadCheckedSettings:   s.ReadCheckedSettings,
 		GetSettingsOrDefaults: s.GetSettingsOrDefaults,
 		RefreshSettingEvents:  s.RefreshSettingEvents,
-		MakeRefresh:           func(db *Index, notes noteRepository) vaultRefresh { return c.vault().MakeRefresh(db, notes) },
+		MakeRefresh:           func(db *Index, notes noteport.NoteRepository) vault.Refresh { return c.vault().MakeRefresh(db, notes) },
 		BuildNotes:            c.Notes,
 		Moves:                 v.Moves,
 	}

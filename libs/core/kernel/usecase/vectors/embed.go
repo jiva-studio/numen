@@ -45,7 +45,7 @@ type Embed struct {
 
 	Concurrency int
 
-	OnProgress func(EmbedResult)
+	OnProgress func(vaultreading.EmbedResult)
 
 	IsSkipped func(path, hash string) bool
 }
@@ -69,15 +69,12 @@ func NewEmbed(
 	return Embed{readers: readers, chunks: chunks, vectors: vectors}
 }
 
-// EmbedResult reports what embedding did.
-type EmbedResult = vaultreading.EmbedResult
-
 // EmbedWithProgress runs Execute with onProgress reporting each step when
 // non-nil, and leaves without vectors the chunks of every source isSkipped
 // names when non-nil.
 func (u Embed) EmbedWithProgress(
-	ctx context.Context, v domain.Vault, onProgress func(EmbedResult), isSkipped func(path, hash string) bool,
-) (EmbedResult, error) {
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+) (vaultreading.EmbedResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -121,7 +118,7 @@ type completedBatch struct {
 }
 
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
-func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, err error) {
+func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.EmbedResult, err error) {
 	if u.Embedder == nil {
 		return res, nil
 	}
@@ -153,7 +150,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res EmbedResult, er
 	track := newTracker(u, workers, &res, &mu)
 	updateProgress := func(comp completedBatch) {
 		track.leave(comp.id)
-		track.publish(func(r *EmbedResult) {
+		track.publish(func(r *vaultreading.EmbedResult) {
 			r.Embedded += len(comp.vectors)
 			r.Reused += comp.reused
 		})
@@ -253,7 +250,7 @@ func (u Embed) sendBatches(
 		pos += len(batch)
 		prep.id = track.enter(prep.sources)
 		// The batch is reported before it is sent, so no worker embeds it before a report names it.
-		track.publish(func(*EmbedResult) {})
+		track.publish(func(*vaultreading.EmbedResult) {})
 		select {
 		case <-ctx.Done():
 			track.withdraw(prep.id)
@@ -369,7 +366,7 @@ func (u Embed) read(
 	ctx context.Context,
 	source *extracted,
 	pending []domain.Passage,
-	res *EmbedResult,
+	res *vaultreading.EmbedResult,
 	mu *sync.Mutex,
 	track *tracker,
 ) ([]domain.Passage, []string, error) {
@@ -519,7 +516,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 	}, nil
 }
 
-func (u Embed) progress(res EmbedResult) {
+func (u Embed) progress(res vaultreading.EmbedResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

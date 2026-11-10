@@ -22,7 +22,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/appearance"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/csp"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -369,8 +370,8 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	begun := make(chan struct{}, 1)
 	until := make(chan struct{})
 	b := blockingVaults{begun: begun, until: until}
-	list := vaults.NewList(b)
-	check := vaults.NewFolderCheck(vaultreader.Readers{})
+	list := registry.NewList(b)
+	check := check.NewFolderCheck(vaultreader.Readers{})
 	api := newBareServices()
 	api.Vaults.list = &list
 	api.Vaults.folderCheck = &check

@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // pluginCommands declares the commands it is given and records every call made to run one.
@@ -39,15 +40,15 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugin.CommandCall) 
 
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 	declared := &pluginCommands{entries: []plugin.CommandEntry{
-		{PluginID: "org.example.sample", Command: plugincommand.Command{
+		{PluginID: "org.example.sample", Command: manifest.Command{
 			ID: "sample.create", Title: "Create a sample",
-			Arguments: []plugincommand.Argument{
+			Arguments: []manifest.CommandArgument{
 				{Name: "title", Title: "Title", Type: "string", IsRequired: true},
 				{Name: "folder", Title: "Folder", Type: "string"},
-				{Name: "open", Title: "Open", Type: plugincommand.ArgumentBoolean},
+				{Name: "open", Title: "Open", Type: manifest.CommandArgumentBoolean},
 			},
 		}},
-		{PluginID: "md.numen.pages", Command: plugincommand.Command{
+		{PluginID: "md.numen.pages", Command: manifest.Command{
 			ID: "count-pages", Title: "Count the pages", When: "target.contentType == 'application/pdf'",
 		}},
 	}}
@@ -186,7 +187,7 @@ func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
 func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
 	declared := &pluginCommands{entries: []plugin.CommandEntry{{
 		PluginID: "md.numen.engines.transcription",
-		Command:  plugincommand.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
+		Command:  manifest.Command{ID: "transcript.create", Title: "Transcribe a recording", When: "target.contentType.startsWith('audio/')"},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{
@@ -237,7 +238,7 @@ func (f fileTypes) ListExtensions(mask domain.ContentType) []string {
 func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 	declared := &pluginCommands{entries: []plugin.CommandEntry{{
 		PluginID: "md.numen.links",
-		Command:  plugincommand.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
+		Command:  manifest.Command{ID: "link.deleteVideo", Title: "Delete the copy", When: "target.noteType == 'link'"},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{}, nil, nil)
 	deps := cli.Deps{
@@ -256,7 +257,7 @@ func TestACommandOverNotesOfATypeIsTypedWithTheNote(t *testing.T) {
 func TestVersionCommandRequiresFile(t *testing.T) {
 	declared := &pluginCommands{entries: []plugin.CommandEntry{{
 		PluginID: "md.numen.tools.proofreading",
-		Command:  plugincommand.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
+		Command:  manifest.Command{ID: "proofreading.create", Title: "Proofread", When: "version.isLive && version.kind != ''"},
 	}}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".wav": "audio/vnd.wave"}, nil, nil)
 	deps := cli.Deps{

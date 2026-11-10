@@ -9,22 +9,23 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func createSharedCommandDeps() (cli.Deps, *pluginCommands) {
 	declared := &pluginCommands{handlers: []plugin.CommandEntry{
-		{PluginID: "org.example.layers", Command: plugincommand.Command{
+		{PluginID: "org.example.layers", Command: manifest.Command{
 			ID: "app:file.createText", Title: "Extract text layer", When: "target.contentType == 'application/pdf'",
 		}},
-		{PluginID: "org.example.scans", Command: plugincommand.Command{
+		{PluginID: "org.example.scans", Command: manifest.Command{
 			ID: "app:file.createText", Title: "Recognize text", When: "target.contentType == 'application/pdf'",
 		}},
-		{PluginID: "org.example.ears", Command: plugincommand.Command{
+		{PluginID: "org.example.ears", Command: manifest.Command{
 			ID: "app:file.createText", Title: "Transcribe", When: "target.contentType.startsWith('audio/')",
 		}},
-		{PluginID: "org.example.links", Command: plugincommand.Command{
+		{PluginID: "org.example.links", Command: manifest.Command{
 			ID: "app:link.import", Title: "Import link",
-			Arguments: []plugincommand.Argument{{Name: "address", Title: "Web address", Type: "string", IsRequired: true}},
+			Arguments: []manifest.CommandArgument{{Name: "address", Title: "Web address", Type: "string", IsRequired: true}},
 		}},
 	}}
 	commands := plugincommand.NewCommands(declared, fileTypes{".pdf": "application/pdf", ".wav": "audio/vnd.wave"}, nil, nil)

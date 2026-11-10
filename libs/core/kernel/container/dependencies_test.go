@@ -13,10 +13,11 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
@@ -30,12 +31,12 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 	host.SetDependencies(registry)
 	tasks := run.NewTasks()
 	NewConfig(Config{PluginHost: host}).ReportDependencies(tasks)
-	req := pluginport.DependencyRequirement{ID: "whisper", Kind: pluginport.DependencyKindModel}
+	req := manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel}
 
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateProvisioning, BytesDownloaded: 5, BytesTotal: 10})
 	list := tasks.List()
 	if len(list) != 1 || list[0].ID != "provision:whisper" || list[0].Title != "Downloading whisper" ||
-		list[0].Unit != run.Bytes || list[0].Count != 5 || list[0].Total != 10 || list[0].IsUserStarted {
+		list[0].Unit != vaultreading.Bytes || list[0].Count != 5 || list[0].Total != 10 || list[0].IsUserStarted {
 		t.Fatalf("tasks = %+v", list)
 	}
 	registry.Observe(req, plugindomain.DependencyStatus{State: plugindomain.DependencyStateFailed, Error: "boom"})
@@ -54,8 +55,8 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	registry := newDependencies("")
 
-	model := pluginport.DependencyRequirement{
-		ID: "pp-ocr-det", Kind: pluginport.DependencyKindModel,
+	model := manifest.DependencyRequirement{
+		ID: "pp-ocr-det", Kind: manifest.DependencyKindModel,
 		SourceURL:      "https://models.invalid/det.onnx",
 		ChecksumSHA256: "a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d",
 		Metadata:       map[string]string{"fileName": "pp-ocr-det.onnx", "envVar": "NUMEN_DEPENDENCY_PP_OCR_DET"},
@@ -71,7 +72,7 @@ func TestProvision_MockModelsReturnPlaceholders(t *testing.T) {
 		t.Errorf("the placeholder is %v, %v; want an empty file", info, err)
 	}
 
-	runtime := pluginport.DependencyRequirement{ID: pluginport.RuntimeONNX, Kind: pluginport.DependencyKindRuntime}
+	runtime := manifest.DependencyRequirement{ID: plugindomain.RuntimeONNX, Kind: manifest.DependencyKindRuntime}
 	resolved, err = registry.Provision(t.Context(), runtime, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -93,8 +94,8 @@ func TestAModelIsFetchedIntoTheFolderTheHostShares(t *testing.T) {
 	t.Cleanup(server.Close)
 	sum := sha256.Sum256(body)
 	models := t.TempDir()
-	req := pluginport.DependencyRequirement{
-		ID: "shared-model", Kind: pluginport.DependencyKindModel,
+	req := manifest.DependencyRequirement{
+		ID: "shared-model", Kind: manifest.DependencyKindModel,
 		SourceURL: server.URL + "/model.onnx", ChecksumSHA256: hex.EncodeToString(sum[:]),
 	}
 

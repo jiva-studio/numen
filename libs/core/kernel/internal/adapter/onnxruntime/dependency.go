@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // EnvLibrary is the variable that holds the path of the library a plugin loads.
@@ -29,13 +29,13 @@ func NewONNXProvisioner(cfg Config) *ONNXProvisioner {
 }
 
 // CanProvision reports whether the requirement is the ONNX Runtime.
-func (p *ONNXProvisioner) CanProvision(req pluginport.DependencyRequirement) bool {
-	return req.Kind == pluginport.DependencyKindRuntime && req.ID == pluginport.RuntimeONNX
+func (p *ONNXProvisioner) CanProvision(req manifest.DependencyRequirement) bool {
+	return req.Kind == manifest.DependencyKindRuntime && req.ID == plugin.RuntimeONNX
 }
 
 // Provision finds or fetches the library for the plugin folder of the requirement.
 func (p *ONNXProvisioner) Provision(
-	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus),
+	ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus),
 ) (plugin.ResolvedDependency, error) {
 	var last time.Time
 	report := func(done, total int64) {
@@ -69,7 +69,7 @@ func (p *ONNXProvisioner) Provision(
 
 // Status returns ready for a plugin folder the library was provisioned for, and
 // missing for any other folder.
-func (p *ONNXProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
+func (p *ONNXProvisioner) Status(_ context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
 	p.mu.Lock()
 	resolved, ok := p.ready[req.PluginDir]
 	p.mu.Unlock()

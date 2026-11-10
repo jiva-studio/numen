@@ -35,7 +35,7 @@ type Scan struct {
 
 	ShouldRebuildIndex bool
 
-	OnProgress func(ScanResult)
+	OnProgress func(vaultreading.ScanResult)
 }
 
 // NewScan returns a Scan that reads and writes through: the vault reader, the
@@ -56,11 +56,8 @@ func NewScan(
 	}
 }
 
-// ScanResult reports what a scan did, in the terms the user cares about.
-type ScanResult = vaultreading.ScanResult
-
 // ScanWithProgress runs Execute with onProgress reporting each group when non-nil.
-func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(ScanResult)) (ScanResult, error) {
+func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult)) (vaultreading.ScanResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -80,18 +77,18 @@ type FileStatQueries interface {
 // are read and parsed, which keeps a scan of an unchanged vault cheap.
 // One walk of a vault runs at a time among the scans sharing its turns. A walk
 // writes in groups, so its copy of a note lands last however early it was read.
-func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
-	var res ScanResult
+func (u Scan) Execute(ctx context.Context, v domain.Vault) (vaultreading.ScanResult, error) {
+	var res vaultreading.ScanResult
 
 	finished, err := u.Walks.startOne(ctx, v.ID)
 	if err != nil {
-		return ScanResult{}, err
+		return vaultreading.ScanResult{}, err
 	}
 	defer finished()
 
 	walk, err := u.readWalk(ctx, v)
 	if err != nil {
-		return ScanResult{}, err
+		return vaultreading.ScanResult{}, err
 	}
 
 	group := u.newGroup(v, &res)
@@ -179,7 +176,7 @@ func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.File
 	return found, nil
 }
 
-func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
+func (u Scan) newGroup(v domain.Vault, res *vaultreading.ScanResult) grouping {
 	return grouping{write: func(ctx context.Context, notes []domain.Note) error {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
@@ -195,7 +192,7 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 }
 
 func (u Scan) indexChanged(
-	ctx context.Context, walk vaultWalk, group *grouping, res *ScanResult,
+	ctx context.Context, walk vaultWalk, group *grouping, res *vaultreading.ScanResult,
 ) (map[string]bool, error) {
 	reader, found, indexed, recutPaths := walk.reader, walk.found, walk.recognized, walk.recutPaths
 	observed := make(map[string]bool, len(indexed))
@@ -227,7 +224,7 @@ func (u Scan) indexChanged(
 	return observed, nil
 }
 
-func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *ScanResult) ([]byte, bool) {
+func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path string, res *vaultreading.ScanResult) ([]byte, bool) {
 	raw, err := reader.Read(ctx, path)
 	switch {
 	case errors.Is(err, vaultport.ErrNotExist):
@@ -246,7 +243,7 @@ func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path strin
 }
 
 func (u Scan) removeGone(
-	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *ScanResult,
+	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *vaultreading.ScanResult,
 ) error {
 	var removed []string
 	for path := range indexed {

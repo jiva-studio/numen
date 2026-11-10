@@ -198,9 +198,9 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 			t.Error(err)
 		}
 	})
-	host.plugins[secretPluginID] = manifest.Discovered{Manifest: pluginport.PluginManifest{
+	host.plugins[secretPluginID] = manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      secretPluginID,
-		Secrets: []pluginport.SecretDeclaration{{Name: "apiKey", Title: "API key"}},
+		Secrets: []manifest.SecretDeclaration{{Name: "apiKey", Title: "API key"}},
 		Settings: []manifest.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
@@ -512,9 +512,9 @@ func TestARefreshAndAConfigureRunOneAtATime(t *testing.T) {
 // The declarations are listed for every installed plugin, with the group each declares.
 func TestEveryDeclarationOfEveryInstalledPluginIsListed(t *testing.T) {
 	host, _ := newSecretHost(t, nil)
-	host.plugins["md.numen.other"] = manifest.Discovered{Manifest: pluginport.PluginManifest{
+	host.plugins["md.numen.other"] = manifest.Discovered{Manifest: manifest.Manifest{
 		ID: "md.numen.other",
-		Secrets: []pluginport.SecretDeclaration{
+		Secrets: []manifest.SecretDeclaration{
 			{Name: "token", Title: "Token", Group: "mistral"},
 		},
 	}}

@@ -15,7 +15,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -148,7 +148,7 @@ func TestLoopback_ServesOnlyIssuedAddresses(t *testing.T) {
 func TestAFileIsServedFromTheVaultItsAddressNames(t *testing.T) {
 	api, _ := openRecordingWindow(t, nil)
 	target := api.state.GetCurrentVault()
-	find := vaults.NewFind(lockedVaults{target})
+	find := registry.NewFind(lockedVaults{target})
 	api.server.find = &find
 	back, handler := openLoopback(t, api)
 

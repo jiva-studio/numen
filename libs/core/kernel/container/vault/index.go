@@ -14,9 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// Index is the cache, exposed as the ports that the core uses.
-type Index = vaultusecase.Index
-
 // ErrNoIndexPath is a configuration that names no index database.
 var ErrNoIndexPath = errors.New("the configuration names no index database: the application sets IndexPath")
 
@@ -32,7 +29,7 @@ func (c Config) ResolveIndexPath() (string, error) {
 }
 
 // OpenIndex opens the cache. The caller closes it.
-func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
+func (c Config) OpenIndex(ctx context.Context) (*vaultusecase.Index, error) {
 	path, err := c.ResolveIndexPath()
 	if err != nil {
 		return nil, err
@@ -66,7 +63,7 @@ func (c Config) OpenIndex(ctx context.Context) (*Index, error) {
 }
 
 // UpdateIndex updates the notes at the paths given up to date in the index.
-func (c Config) UpdateIndex(db *Index) note.IndexUpdater {
+func (c Config) UpdateIndex(db *vaultusecase.Index) note.IndexUpdater {
 	refresh := vaultusecase.NewRefresh(
 		c.VaultReaders(),
 		db.Vaults(),

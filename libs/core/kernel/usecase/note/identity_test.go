@@ -10,7 +10,7 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 )
 
@@ -95,7 +95,7 @@ func TestANoteKeepsItsIdentifierAcrossRenameAndMove(t *testing.T) {
 				}
 				out, err := renaming.Execute(rt.Context(), c.vault, path,
 					rapid.SampledFrom(getTitles()).Draw(rt, "title"))
-				if err != nil && !errors.Is(err, note.ErrInvalidName) {
+				if err != nil && !errors.Is(err, query.ErrInvalidName) {
 					rt.Fatalf("rename %s: %v", path, err)
 				}
 				if out.Path != "" {
@@ -140,7 +140,7 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 		title := rapid.SampledFrom(getTitles()).Draw(rt, "title")
 
 		out, err := c.rename().Execute(rt.Context(), c.vault, path, title)
-		if err != nil && !errors.Is(err, note.ErrInvalidName) {
+		if err != nil && !errors.Is(err, query.ErrInvalidName) {
 			rt.Fatalf("rename: %v", err)
 		}
 		if err != nil {
@@ -166,7 +166,7 @@ func TestOnlyARenameThatWritesTheTitleStamps(t *testing.T) {
 		case had && !holds:
 			rt.Fatalf("a rename took the identifier out of %q", now)
 		}
-		if out.By == note.ByFilename && now != raw {
+		if out.By == query.ByFilename && now != raw {
 			rt.Fatalf("a rename by the filename wrote into the note: %q", now)
 		}
 	})

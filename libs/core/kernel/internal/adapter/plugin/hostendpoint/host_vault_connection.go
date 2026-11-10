@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -18,7 +17,7 @@ const invalidConnection = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_INVALID_CO
 func (e *vaultEndpoint) GetConnection(
 	ctx context.Context, req *connect.Request[v1.HostVaultServiceGetConnectionRequest],
 ) (*connect.Response[v1.HostVaultServiceGetConnectionResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}

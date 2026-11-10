@@ -16,12 +16,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/markdown"
@@ -29,6 +31,7 @@ import (
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
 	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -47,7 +50,7 @@ type Installation struct {
 	notes  note.Scenarios
 	vaults vaults.Scenarios
 
-	made          Assembly
+	made          assembly.Assembly
 	tasks         *run.Tasks
 	out           io.Writer
 	checkIdentity vaults.CheckIdentity
@@ -66,10 +69,10 @@ var errNoVault = errors.New("the window has no vault")
 
 // Open initializes the editor window session for the specified vault.
 // When targetVault is empty, opens the most recently viewed vault.
-func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer) (*Installation, error) {
+func Open(ctx context.Context, made assembly.Assembly, targetVault string, out io.Writer) (*Installation, error) {
 	registry := made.GetRegistry()
 
-	first, err := vaults.NewGetVaultToShow(registry).Execute(targetVault)
+	first, err := vaultregistry.NewGetVaultToShow(registry).Execute(targetVault)
 	if err != nil {
 		return nil, errors.Join(err, made.CloseIndex())
 	}
@@ -88,7 +91,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	if why != nil {
 		writeDiagnostic(tasks.Set, out, "not embedding: %v\n", why)
 		// Record indexing task failure when embedding provider initialization fails.
-		tasks.Set(run.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
+		tasks.Set(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: why.Error()})
 	}
 	if closeEmbedder == nil {
 		closeEmbedder = func() error { return nil }
@@ -106,7 +109,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// only. The degraded state is reported as a task because a window opened
 	// from a desktop entry has no terminal.
 	finds := made.NewSearch(asking, func(err error) {
-		state.reportTask(run.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
+		state.reportTask(vaultreading.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
 	})
 	services.Search.Finds = &finds
 	made.SetPluginSearch(embedder, newFloorErrorReporter(state))
@@ -238,23 +241,23 @@ func (o *Installation) SayTheme(message string) {
 		o.State.finishTask(applyingTheme)
 		return
 	}
-	o.State.reportTask(run.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
+	o.State.reportTask(vaultreading.Task{ID: applyingTheme, Title: "Apply theme", Error: message})
 }
 
 // Report records configuration messages as tasks that are notices, not failures.
 func (o *Installation) Report(messages []string) {
 	for item, one := range messages {
-		o.State.reportTask(run.Task{
+		o.State.reportTask(vaultreading.Task{
 			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Read settings",
 			About: one,
-			Kind:  run.KindNotice,
+			Kind:  vaultreading.KindNotice,
 		})
 	}
 }
 
 func createWindow(
-	made Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
+	made assembly.Assembly, tasks *run.Tasks, embedder embeddingport.Embedder,
 ) (*State, *Services, error) {
 	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
 	if err != nil {
@@ -274,12 +277,12 @@ func createWindow(
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
 	services.readFiles(readers, made.OpenPluginFile(), made.GetMediaType())
-	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
-	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
-	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
-	services.Note.resolveLinks = note.NewResolveLinks(made.GetLinkQueries())
+	services.Note.getOpeningNote = query.NewGetOpeningNote(made.GetNoteQueries())
+	services.Note.getTypes = query.NewGetTypes(made.GetNoteQueries())
+	services.Note.getHeadings = query.NewGetHeadings(made.GetNoteQueries())
+	services.Note.resolveLinks = query.NewResolveLinks(made.GetLinkQueries())
 	services.Search.GetNameMatches = search.NewGetNameMatches(made.GetNoteQueries())
-	services.Search.GetTitles = note.NewGetTitles(made.GetNoteQueries())
+	services.Search.GetTitles = query.NewGetTitles(made.GetNoteQueries())
 	services.Search.GetTypes = services.Note.getTypes
 	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
 	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
@@ -510,14 +513,6 @@ func flushPending(ctx context.Context, pages *wire.Window, writes *inflight) boo
 // further waiting depends on the user.
 const FlushTimeout = 3 * time.Second
 
-type Assembly = assembly.Assembly
-type VaultAssembly = assembly.VaultAssembly
-type IndexAssembly = assembly.IndexAssembly
-type PluginAssembly = assembly.PluginAssembly
-type SettingsAssembly = assembly.SettingsAssembly
-type WorkerAssembly = assembly.WorkerAssembly
-type ScenarioAssembly = assembly.ScenarioAssembly
-
 // importingFiles is what a drop is called in the list of what is being done.
 const importingFiles = "import files"
 
@@ -544,7 +539,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	pos := run.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
+	pos := vaultreading.Task{ID: importingFiles + " " + into, Title: "Import files", About: into}
 	state.reportTask(pos)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)

@@ -9,12 +9,14 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 var errNoVaultList = errors.New("this host has no list of vaults to change")
@@ -31,9 +33,9 @@ func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
 	case errors.Is(err, vaults.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
-	case errors.Is(err, vaults.ErrShowing):
+	case errors.Is(err, registry.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
-	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
+	case errors.Is(err, registry.ErrUnknown), errors.Is(err, registry.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
 	case errors.Is(err, plugin.ErrUnsavedChanges):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true
@@ -56,7 +58,7 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 }
 
 func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultList, error) {
-	if _, err := e.endpoint.authorize(header.Get("Authorization"), pluginport.PermissionVaultManage); err != nil {
+	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionVaultManage); err != nil {
 		return nil, err
 	}
 	list := e.endpoint.callers.GetPluginVaultList()
@@ -69,7 +71,7 @@ func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultLis
 func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
 	vault := e.endpoint.callers.GetPluginVault()
 	if vault == nil {
-		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), vaults.ErrUnknown)
+		return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), registry.ErrUnknown)
 	}
 	known, err := vault.GetVaults()
 	if err != nil {
@@ -80,7 +82,7 @@ func (e *vaultEndpoint) findVault(id domain.VaultID) (domain.Vault, error) {
 			return one, nil
 		}
 	}
-	return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), vaults.ErrUnknown)
+	return domain.Vault{}, domain.NewDetailError(fmt.Sprintf("the vault %s is not on the list", id), registry.ErrUnknown)
 }
 
 func writeVault(v domain.Vault) *v1.Vault {

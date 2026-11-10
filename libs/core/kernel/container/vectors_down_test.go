@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -24,16 +25,16 @@ type downEmbeddingHost struct {
 	acquired atomic.Int32
 }
 
-func (h *downEmbeddingHost) FindPluginByCapability(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.embeddings"}}, true
+func (h *downEmbeddingHost) FindPluginByCapability(string) (manifest.Discovered, bool) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, true
 }
 
-func (h *downEmbeddingHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.embeddings"}}, nil
+func (h *downEmbeddingHost) ResolveCapability(string) (manifest.Discovered, error) {
+	return manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.embeddings"}}, nil
 }
 
-func (h *downEmbeddingHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{}, false
+func (h *downEmbeddingHost) ResolveService(string) (manifest.Discovered, bool) {
+	return manifest.Discovered{}, false
 }
 
 func (h *downEmbeddingHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {

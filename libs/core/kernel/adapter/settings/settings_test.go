@@ -30,11 +30,11 @@ func write(t *testing.T, body string) string {
 	return path
 }
 
-func openAt(path string) (container.Settings, error) {
+func openAt(path string) (settings.File, error) {
 	return container.NewConfig(container.Config{SettingsPath: path}).Settings()
 }
 
-func newDocument() *container.Settings {
+func newDocument() *settings.File {
 	target := container.DefaultSettings()
 	return &target
 }
@@ -173,7 +173,7 @@ func TestAnUnconfiguredInstallationWritesItsSettingsDown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var back container.Settings
+	var back settings.File
 	if err := json.Unmarshal(raw, &back); err != nil {
 		t.Fatal(err)
 	}

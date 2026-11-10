@@ -12,6 +12,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/check"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -21,14 +24,14 @@ var errNoVaults = errors.New("this build serves no list of vaults")
 // vaultsHandler answers about the vaults this installation holds.
 type vaultsHandler struct {
 	state       *State
-	list        *vaults.List
-	find        *vaults.Find
-	folderCheck *vaults.FolderCheck
+	list        *registry.List
+	find        *registry.Find
+	folderCheck *check.FolderCheck
 	add         *vaults.Add
 	rename      *vaults.Rename
 	remove      *vaults.Remove
 
-	chooseFolder *vaults.ChooseFolder
+	chooseFolder *picker.ChooseFolder
 }
 
 // ListVaults returns every vault of the installation. The active vault is
@@ -60,7 +63,7 @@ func (s *vaultsHandler) ChooseFolder(
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoVaults)
 	}
 	selected, err := s.chooseFolder.Execute(ctx, r.Msg.GetTitle(), r.Msg.GetStartingAt())
-	if vaults.IsFolderDialogUnavailable(err) {
+	if picker.IsFolderDialogUnavailable(err) {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	if err != nil {
@@ -179,11 +182,11 @@ func vaultsErrorCodeBy(err error) (v1.VaultsErrorCode, bool) {
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
 	case errors.Is(err, vaults.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
-	case errors.Is(err, vaults.ErrShowing):
+	case errors.Is(err, registry.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true
-	case errors.Is(err, vaults.ErrUnknown), errors.Is(err, vaults.ErrNoName):
+	case errors.Is(err, registry.ErrUnknown), errors.Is(err, registry.ErrNoName):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NOT_FOUND, true
-	case errors.Is(err, vaults.ErrNoTrash):
+	case errors.Is(err, picker.ErrNoTrash):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NO_TRASH, true
 	case errors.Is(err, errAnswerPending):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNSAVED, true

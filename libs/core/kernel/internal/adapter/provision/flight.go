@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-func getFlightKey(req pluginport.DependencyRequirement) string {
+func getFlightKey(req manifest.DependencyRequirement) string {
 	return strings.Join([]string{string(req.Kind), req.ID, req.Version, req.SourceURL, req.ChecksumSHA256, req.PluginDir}, "\x00")
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
 // ErrLastVault is the one vault an installation has left. It stays on the list.
@@ -54,12 +55,12 @@ func keepTheLastVault(registry vaultport.VaultRegistry, v domain.Vault) error {
 // Remove takes the vault named by an identity off the list, and moves its
 // folder to the trash when requested. The current vault is kept.
 type Remove struct {
-	find       Find
+	find       registry.Find
 	unregister Unregister
 	erase      Erase
 }
 
-func NewRemove(find Find, unregister Unregister, erase Erase) Remove {
+func NewRemove(find registry.Find, unregister Unregister, erase Erase) Remove {
 	return Remove{find: find, unregister: unregister, erase: erase}
 }
 
@@ -69,7 +70,7 @@ func (u Remove) Execute(ctx context.Context, id string, showing domain.VaultID, 
 		return err
 	}
 	if v.ID == showing {
-		return domain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", v.Name), ErrShowing)
+		return domain.NewDetailError(fmt.Sprintf("%s is the vault the window shows", v.Name), registry.ErrShowing)
 	}
 	if trash {
 		_, err = u.erase.Execute(ctx, v)

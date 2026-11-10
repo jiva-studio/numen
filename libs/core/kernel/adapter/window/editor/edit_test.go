@@ -26,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -127,7 +128,7 @@ func TestOnlyTheCoreReturnsWhichNoteIsMissing(t *testing.T) {
 			err: fmt.Errorf("stat /vault: %w", fs.ErrNotExist),
 		},
 		"a title no note can be given": {
-			err:  fmt.Errorf("%w: nothing to name it", note.ErrInvalidName),
+			err:  fmt.Errorf("%w: nothing to name it", query.ErrInvalidName),
 			want: v1.ErrorCode_ERROR_CODE_INVALID_NAME,
 			is:   true,
 		},

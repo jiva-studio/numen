@@ -43,7 +43,7 @@ type Index struct {
 
 	ShouldRebuildIndex bool
 
-	OnProgress func(IndexResult)
+	OnProgress func(vaultreading.IndexResult)
 
 	IsSkipped func(path string) bool
 
@@ -64,14 +64,11 @@ func NewIndex(
 	return Index{readers: readers, sources: sources, queries: queries, texts: texts}
 }
 
-// IndexResult reports what indexing did.
-type IndexResult = vaultreading.IndexResult
-
 // IndexWithProgress runs Execute with onProgress reporting each step when
 // non-nil, and leaves uncut every source isSkipped names when non-nil.
 func (u Index) IndexWithProgress(
-	ctx context.Context, v domain.Vault, onProgress func(IndexResult), isSkipped func(path string) bool,
-) (IndexResult, error) {
+	ctx context.Context, v domain.Vault, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool,
+) (vaultreading.IndexResult, error) {
 	if onProgress != nil {
 		u.OnProgress = onProgress
 	}
@@ -83,8 +80,8 @@ func (u Index) IndexWithProgress(
 
 // Execute brings the chunks of one vault's file texts up to date with what is
 // on disk.
-func (u Index) Execute(ctx context.Context, v domain.Vault) (IndexResult, error) {
-	var res IndexResult
+func (u Index) Execute(ctx context.Context, v domain.Vault) (vaultreading.IndexResult, error) {
+	var res vaultreading.IndexResult
 
 	on, err := u.open(v)
 	if err != nil {
@@ -105,7 +102,7 @@ func (u Index) discover(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) (map[string]domain.FileStat, []string, error) {
 	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
@@ -157,7 +154,7 @@ func (u Index) walkAndRecord(
 	on openVault,
 	stats map[string]domain.FileStat,
 	noteStats map[string]domain.FileStat,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) (map[string]bool, []string, error) {
 	found := make(map[string]bool)
 	var notePaths []string
@@ -188,7 +185,7 @@ func (u Index) recordFile(
 	on openVault,
 	stats map[string]domain.FileStat,
 	ref domain.FileStat,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	previous, isKnown := stats[ref.Path]
 	if !isKnown {
@@ -217,7 +214,7 @@ func (u Index) checkNote(
 	on openVault,
 	noteStats map[string]domain.FileStat,
 	ref domain.FileStat,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) (bool, error) {
 	previous, isKnown := noteStats[ref.Path]
 	if !isKnown {
@@ -244,7 +241,7 @@ func (u Index) removeGone(
 	on openVault,
 	stats map[string]domain.FileStat,
 	found map[string]bool,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	var removed []string
 	for path := range stats {
@@ -302,7 +299,7 @@ func (u Index) dropOutdatedText(
 	v domain.Vault,
 	on openVault,
 	notePaths []string,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) ([]string, error) {
 	cut, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
@@ -341,7 +338,7 @@ func (u Index) recordIfOutdated(
 	v domain.Vault,
 	on openVault,
 	source sourcedomain.Text,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	ref, outdated, err := u.statIfOutdated(ctx, on, source)
 	if err != nil || !outdated {
@@ -387,7 +384,7 @@ func (u Index) cut(
 	on openVault,
 	noteStats map[string]domain.FileStat,
 	notePaths []string,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	sizes := u.sizes()
 	recognized := []string{recipe(versionReader, sizes)}
@@ -452,7 +449,7 @@ func (u Index) getNotePathsToCut(
 type cutRun struct {
 	tried map[string]bool
 	sizes chunking.Sizes
-	res   *IndexResult
+	res   *vaultreading.IndexResult
 }
 
 func (u Index) chunkNewPaths(
@@ -484,8 +481,8 @@ func (u Index) chunkNewPaths(
 
 // IndexOne brings a single file's chunks up to date with its live text
 // version. It is what the index does when the versions of a file change.
-func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (IndexResult, error) {
-	var res IndexResult
+func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error) {
+	var res vaultreading.IndexResult
 	on, err := u.open(v)
 	if err != nil {
 		return res, err
@@ -499,7 +496,7 @@ func (u Index) source(
 	on openVault,
 	path string,
 	sizes chunking.Sizes,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	res.CurrentSource = path
 	u.progress(*res)
@@ -562,7 +559,7 @@ func (u Index) saveWithoutText(
 	v domain.Vault,
 	source domain.Source,
 	readErr error,
-	res *IndexResult,
+	res *vaultreading.IndexResult,
 ) error {
 	res.Unreadable++
 	if !errors.Is(readErr, text.ErrNoText) {
@@ -684,7 +681,7 @@ func (u Index) Recipe() string { return recipe(versionReader, u.sizes()) }
 
 func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }
 
-func (u Index) progress(res IndexResult) {
+func (u Index) progress(res vaultreading.IndexResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}

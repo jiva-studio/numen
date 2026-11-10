@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
 // Rename gives a note a different name.
@@ -52,7 +53,7 @@ func (u Rename) Readers() vaultport.VaultReaders { return u.Move.Readers() }
 type RenameResult struct {
 	Path  string
 	Title string
-	By    NameSource
+	By    query.NameSource
 	Moved *MoveResult
 }
 
@@ -68,18 +69,18 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	}
 
 	to := pathpkg.Join(pathpkg.Dir(path), name+pathpkg.Ext(path))
-	var source NameSource
+	var source query.NameSource
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	_, err = e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if _, titled := doc.Title(); titled || !exact {
 			// A title key keeps the name, and so does a title that cannot be stored in a filename.
-			source = ByFrontmatter
+			source = query.ByFrontmatter
 			if err := u.checkTarget(ctx, v, path, to, source); err != nil {
 				return err
 			}
 			return doc.SetTitle(title)
 		}
-		source = ByFilename
+		source = query.ByFilename
 		return errFilenameNamesIt
 	})
 	if errors.Is(err, vault.ErrAlreadyExists) {
@@ -100,14 +101,14 @@ func (u Rename) Execute(ctx context.Context, v domain.Vault, path, title string)
 	if moved.IsMoved {
 		res.Path, res.Moved = moved.To, &moved
 	}
-	if source == ByFilename && errors.Is(err, vault.ErrAlreadyExists) {
+	if source == query.ByFilename && errors.Is(err, vault.ErrAlreadyExists) {
 		// A note whose title is stored in its filename was not written before the move, so it is unchanged.
 		return res, domain.NewDetailError(fmt.Sprintf("%s already exists; %s is unchanged", to, path), err)
 	}
 	return res, err
 }
 
-func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string, source NameSource) error {
+func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string, source query.NameSource) error {
 	if moves, _ := u.Sync.GetSetting().GetRenameEffects(source); !moves {
 		return nil
 	}
@@ -123,7 +124,7 @@ func (u Rename) checkTarget(ctx context.Context, v domain.Vault, from, to string
 // filename names carries its name nowhere else, and nothing is added to it.
 func (u Move) WriteFilenameAsTitle(ctx context.Context, v domain.Vault, path string) error {
 	// The note is opened only where the setting writes into it.
-	if _, writes := u.Sync.GetSetting().GetRenameEffects(ByFrontmatter); !writes {
+	if _, writes := u.Sync.GetSetting().GetRenameEffects(query.ByFrontmatter); !writes {
 		return nil
 	}
 

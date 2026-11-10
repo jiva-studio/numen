@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -40,8 +39,8 @@ func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	if got := getFailure(t, host, failingPluginID); got != nil {
 		t.Fatalf("failure before any start = %+v, want none", got)
 	}
-	if _, err := host.EnsureActive(t.Context(), failingPluginID); !errors.Is(err, pluginport.ErrUnsupportedProtocol) {
-		t.Fatalf("EnsureActive() = %v, want %v", err, pluginport.ErrUnsupportedProtocol)
+	if _, err := host.EnsureActive(t.Context(), failingPluginID); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
 	}
 
 	got := getFailure(t, host, failingPluginID)
@@ -51,7 +50,7 @@ func TestAPluginWhoseStartFailedIsListedWithItsReason(t *testing.T) {
 	if got.PluginID != failingPluginID || got.Name == "" || got.At.IsZero() {
 		t.Fatalf("failure = %+v, want the id, the name and the time", got)
 	}
-	if want := lifecycle.DescribeFailure(pluginport.ErrUnsupportedProtocol); got.Reason != want {
+	if want := lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol); got.Reason != want {
 		t.Fatalf("reason = %q, want %q", got.Reason, want)
 	}
 }
@@ -171,7 +170,7 @@ func TestAFailureIsDescribedInWordsAPersonReads(t *testing.T) {
 		cause error
 		want  string
 	}{
-		{"an unsupported protocol", pluginport.ErrUnsupportedProtocol, "Unsupported plugin protocol. Update the plugin or Numen"},
+		{"an unsupported protocol", manifest.ErrUnsupportedProtocol, "Unsupported plugin protocol. Update the plugin or Numen"},
 		{"a handshake that never came", transport.ErrHandshakeTimeout, "Timed out while starting"},
 		{"anything else", errors.New("exec format error"), "Failed to start"},
 	}

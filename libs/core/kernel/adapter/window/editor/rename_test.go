@@ -18,7 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -81,7 +81,7 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 // applies the one setting to all three.
 func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync   note.SyncTitleAndFilename
+		sync   query.SyncTitleAndFilename
 		posVal string
 		called string
 	}{

@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -88,7 +89,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		Links: w.links, Names: f.db.Queries(), Sources: f.db.Sources(), Index: w.index, Now: testsupport.NewClock(),
 	})
-	notes.Sync = func() note.SyncTitleAndFilename { return true }
+	notes.Sync = func() query.SyncTitleAndFilename { return true }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {
 		*f.went = append(*f.went, went)
 		return nil

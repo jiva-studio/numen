@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -20,8 +21,8 @@ const (
 	entropyNote = "---\ntitle: Entropy\nid: 01K5QF7T4ZPWY6X0N3EV8HMJRD\n---\n# Entropy\n"
 )
 
-func (c changing) addresses() *note.GetLinkAddress {
-	return note.NewGetLinkAddress(c.db.Queries())
+func (c changing) addresses() *query.GetLinkAddress {
+	return query.NewGetLinkAddress(c.db.Queries())
 }
 
 func (c changing) saveConnection() note.SaveConnection {
@@ -51,7 +52,7 @@ func (c changing) join() note.Join {
 
 func (c changing) connection(t *testing.T, a, b string) domain.Connection {
 	t.Helper()
-	got, err := note.NewGetConnection(c.db.Links()).Execute(t.Context(), c.vault, a, b, "")
+	got, err := query.NewGetConnection(c.db.Links()).Execute(t.Context(), c.vault, a, b, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +136,7 @@ func TestSavingAConnectionKeepsTheTypeAndTheReasonItIsGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := note.NewGetConnection(c.db.Links()).Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", "requires")
+	got, err := query.NewGetConnection(c.db.Links()).Execute(t.Context(), c.vault, "Heat.md", "Entropy.md", "requires")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -498,7 +499,7 @@ func TestBacklinksCarryTheirRoleAndTheRoleFromTheNoteAskedAbout(t *testing.T) {
 		"Idea.md": "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n    marker: arrow\n---\n# Idea\n",
 	})
 
-	got, err := note.NewGetBacklinks(c.db.Links()).Execute(t.Context(), c.vault, "Area.md")
+	got, err := query.NewGetBacklinks(c.db.Links()).Execute(t.Context(), c.vault, "Area.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -519,7 +520,7 @@ func TestTheNeighbourhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := note.NewShowNeighbourhood(db.Links(), db.Queries()).Execute(t.Context(), v, "Heat.md")
+	got, err := query.NewShowNeighbourhood(db.Links(), db.Queries()).Execute(t.Context(), v, "Heat.md")
 	if err != nil {
 		t.Fatal(err)
 	}

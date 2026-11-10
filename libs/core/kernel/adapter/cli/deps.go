@@ -6,13 +6,14 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
@@ -58,7 +59,7 @@ type Vaults struct {
 }
 
 func (v Vaults) find(nameOrPath string) (domain.Vault, error) {
-	target, err := vault.NewFind(v.Registry).Execute(nameOrPath)
+	target, err := registry.NewFind(v.Registry).Execute(nameOrPath)
 	if err != nil {
 		return domain.Vault{}, fmt.Errorf("%w — add it with: numen-cli vault add %s", err, nameOrPath)
 	}
@@ -73,7 +74,7 @@ type VaultRows struct {
 
 // Scan is one vault made searchable.
 type Scan struct {
-	Read       vault.ReadWholeVault
+	Read       vaultreading.ReadWholeVault
 	Summary    func(ctx context.Context) (domain.VaultSummary, error)
 	Unembedded error
 	Close      func() error
@@ -88,7 +89,7 @@ type Search struct {
 
 // Links is what one note points at and what points at it.
 type Links struct {
-	Show  note.ShowLinks
+	Show  query.ShowLinks
 	Close func() error
 }
 

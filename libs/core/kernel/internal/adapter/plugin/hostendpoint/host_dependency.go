@@ -9,6 +9,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -103,7 +104,7 @@ func (e *dependencyEndpoint) ProvisionDependency(
 }
 
 func (e *dependencyEndpoint) finishStream(
-	stream *connect.ServerStream[v1.ProvisionDependencyResponse], updates chan plugin.DependencyStatus, req pluginport.DependencyRequirement, runErr error,
+	stream *connect.ServerStream[v1.ProvisionDependencyResponse], updates chan plugin.DependencyStatus, req manifest.DependencyRequirement, runErr error,
 ) error {
 	var last *plugin.DependencyStatus
 	for drained := false; !drained; {
@@ -138,31 +139,31 @@ func sendLatest(updates chan plugin.DependencyStatus, status plugin.DependencySt
 	}
 }
 
-func readWireDependencyRequirement(wire *v1.DependencyRequirement) (pluginport.DependencyRequirement, error) {
+func readWireDependencyRequirement(wire *v1.DependencyRequirement) (manifest.DependencyRequirement, error) {
 	kind, err := readWireDependencyKind(wire.GetKind())
 	if err != nil {
-		return pluginport.DependencyRequirement{}, err
+		return manifest.DependencyRequirement{}, err
 	}
-	return pluginport.DependencyRequirement{
+	return manifest.DependencyRequirement{
 		ID: wire.GetId(), Kind: kind, Version: wire.GetVersion(), SourceURL: wire.GetSourceUrl(),
 		ChecksumSHA256: wire.GetChecksumSha256(), Metadata: wire.GetMetadata(),
 	}, nil
 }
 
-func readWireDependencyKind(wire v1.DependencyKind) (pluginport.DependencyKind, error) {
+func readWireDependencyKind(wire v1.DependencyKind) (manifest.DependencyKind, error) {
 	switch wire {
 	case v1.DependencyKind_DEPENDENCY_KIND_RUNTIME:
-		return pluginport.DependencyKindRuntime, nil
+		return manifest.DependencyKindRuntime, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_MODEL:
-		return pluginport.DependencyKindModel, nil
+		return manifest.DependencyKindModel, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_BINARY:
-		return pluginport.DependencyKindBinary, nil
+		return manifest.DependencyKindBinary, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_DATASET:
-		return pluginport.DependencyKindDataset, nil
+		return manifest.DependencyKindDataset, nil
 	case v1.DependencyKind_DEPENDENCY_KIND_UNSPECIFIED:
-		return "", pluginport.ErrInvalidDependency
+		return "", manifest.ErrInvalidDependency
 	}
-	return "", pluginport.ErrInvalidDependency
+	return "", manifest.ErrInvalidDependency
 }
 
 func writeWireDependencyStatus(status plugin.DependencyStatus) *v1.DependencyStatus {

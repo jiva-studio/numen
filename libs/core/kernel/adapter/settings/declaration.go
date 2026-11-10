@@ -3,7 +3,7 @@ package settings
 import (
 	_ "embed"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
@@ -26,7 +26,7 @@ const (
 // RegistryThemes names the registry that lists the installed themes.
 const RegistryThemes = "themes"
 
-func readAppDeclaration() []pluginport.PluginManifestSetting {
+func readAppDeclaration() []manifest.Setting {
 	decoded, err := manifestjson.Decode(appDeclaration)
 	if err != nil {
 		return nil
@@ -36,17 +36,17 @@ func readAppDeclaration() []pluginport.PluginManifestSetting {
 
 // GetAppDeclaration returns the settings of the owner app, declared in the format of a manifest
 // setting. A key is the path under the owner, joined by dots.
-func GetAppDeclaration() []pluginport.PluginManifestSetting {
+func GetAppDeclaration() []manifest.Setting {
 	return readAppDeclaration()
 }
 
-func findAppSetting(key string) pluginport.PluginManifestSetting {
+func findAppSetting(key string) manifest.Setting {
 	for _, one := range readAppDeclaration() {
 		if one.Key == key {
 			return one
 		}
 	}
-	return pluginport.PluginManifestSetting{}
+	return manifest.Setting{}
 }
 
 func getAppDefault(key string) any {

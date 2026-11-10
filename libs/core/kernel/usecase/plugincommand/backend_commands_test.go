@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // mixedCommands declares commands of plugins with a backend and a frontend, with a frontend only,
@@ -21,10 +22,10 @@ func (m *mixedCommands) ListHandlers() []plugin.CommandEntry { return nil }
 
 func (m *mixedCommands) ListCommands() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
-		{PluginID: "md.numen.tree", Command: plugincommand.Command{ID: "tree.open", Title: "Open file tree", When: "target.isNote"}},
-		{PluginID: "md.numen.empty", Command: plugincommand.Command{ID: "empty.run", Title: "Run"}},
-		{PluginID: "md.numen.down", Command: plugincommand.Command{ID: "down.run", Title: "Run"}},
+		{PluginID: "md.numen.cards", Command: manifest.Command{ID: "deck.create", Title: "Create deck"}},
+		{PluginID: "md.numen.tree", Command: manifest.Command{ID: "tree.open", Title: "Open file tree", When: "target.isNote"}},
+		{PluginID: "md.numen.empty", Command: manifest.Command{ID: "empty.run", Title: "Run"}},
+		{PluginID: "md.numen.down", Command: manifest.Command{ID: "down.run", Title: "Run"}},
 	}
 }
 

@@ -4,13 +4,13 @@ import (
 	"testing"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func TestDependencyKindsRoundTripTheWire(t *testing.T) {
-	for _, kind := range pluginport.GetDependencyKinds() {
+	for _, kind := range manifest.GetDependencyKinds() {
 		found := false
 		for value := range v1.DependencyKind_name {
 			got, err := readWireDependencyKind(v1.DependencyKind(value))

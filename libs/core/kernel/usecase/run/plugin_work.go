@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -103,7 +104,7 @@ func (w *PluginWork) ReportTask(pluginID string, task plugin.Task) {
 	w.getStateLocked(pluginID).tasks[task.ID] = task.Error == ""
 	w.notifyLocked()
 	w.mu.Unlock()
-	w.tasks.Set(Task{
+	w.tasks.Set(vaultreading.Task{
 		ID:            getPluginTaskID(pluginID, task.ID),
 		Title:         task.Title,
 		About:         task.About,
@@ -212,19 +213,19 @@ func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + plu
 
 func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
 
-func getUnits() map[plugin.TaskUnit]Unit {
-	return map[plugin.TaskUnit]Unit{
-		plugin.TaskUnitThings:  Things,
-		plugin.TaskUnitBytes:   Bytes,
-		plugin.TaskUnitSeconds: Seconds,
+func getUnits() map[plugin.TaskUnit]vaultreading.Unit {
+	return map[plugin.TaskUnit]vaultreading.Unit{
+		plugin.TaskUnitThings:  vaultreading.Things,
+		plugin.TaskUnitBytes:   vaultreading.Bytes,
+		plugin.TaskUnitSeconds: vaultreading.Seconds,
 	}
 }
 
-func readUnit(unit plugin.TaskUnit) Unit {
+func readUnit(unit plugin.TaskUnit) vaultreading.Unit {
 	if listed, isKnown := getUnits()[unit]; isKnown {
 		return listed
 	}
-	return Things
+	return vaultreading.Things
 }
 
 // lease is a plugin's hold on the lock.

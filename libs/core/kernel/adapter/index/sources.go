@@ -128,32 +128,29 @@ func (s queries) GetUnembeddedChunks(ctx context.Context, vaultID domain.VaultID
 	return out, next, nil
 }
 
-// Cursor is the point in the ordering a walk carries on after.
-type Cursor = chunk.Cursor
-
-func parseCursor(after embedding.ChunkCursor) (Cursor, error) {
+func parseCursor(after embedding.ChunkCursor) (chunk.Cursor, error) {
 	if after == "" {
-		return Cursor{MTime: math.MaxInt64, Source: math.MaxInt64}, nil
+		return chunk.Cursor{MTime: math.MaxInt64, Source: math.MaxInt64}, nil
 	}
 	parts := strings.Split(string(after), ":")
 	if len(parts) == 1 {
 		row, err := strconv.ParseInt(parts[0], 10, 64)
 		if err != nil {
-			return Cursor{}, fmt.Errorf("%q is no chunk of this index", after)
+			return chunk.Cursor{}, fmt.Errorf("%q is no chunk of this index", after)
 		}
-		return Cursor{MTime: math.MaxInt64, Source: math.MaxInt64, Chunk: row}, nil
+		return chunk.Cursor{MTime: math.MaxInt64, Source: math.MaxInt64, Chunk: row}, nil
 	}
 	numbers, err := parseCursorNumbers(after, parts)
 	if err != nil {
-		return Cursor{}, err
+		return chunk.Cursor{}, err
 	}
 	switch len(numbers) {
 	case 2:
-		return Cursor{MTime: numbers[0], Source: math.MaxInt64, Chunk: numbers[1]}, nil
+		return chunk.Cursor{MTime: numbers[0], Source: math.MaxInt64, Chunk: numbers[1]}, nil
 	case 3:
-		return Cursor{MTime: numbers[0], Source: numbers[1], Chunk: numbers[2]}, nil
+		return chunk.Cursor{MTime: numbers[0], Source: numbers[1], Chunk: numbers[2]}, nil
 	}
-	return Cursor{}, fmt.Errorf("%q is no cursor of this index", after)
+	return chunk.Cursor{}, fmt.Errorf("%q is no cursor of this index", after)
 }
 
 func parseCursorNumbers(after embedding.ChunkCursor, parts []string) ([]int64, error) {

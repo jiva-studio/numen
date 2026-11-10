@@ -120,7 +120,7 @@ func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 	if effect == v1.ToolEffect_TOOL_EFFECT_READ_WRITE {
 		return slices.Contains(permissions, manifest.PermissionVaultWrite)
 	}
-	return slices.Contains(permissions, pluginport.PermissionVaultRead) ||
+	return slices.Contains(permissions, manifest.PermissionVaultRead) ||
 		slices.Contains(permissions, manifest.PermissionVaultWrite)
 }
 

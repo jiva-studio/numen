@@ -26,8 +26,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
+	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
 
@@ -81,19 +81,19 @@ func servePlugin(t *testing.T, recorder *eventRecorder) int {
 	return addr.Port
 }
 
-func newEventHost(t *testing.T, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
+func newEventHost(t *testing.T, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *Host {
 	t.Helper()
 	return newEventHostWithClock(t, testsupport.GetMachine(), manifests, ports)
 }
 
-func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]pluginport.PluginManifest, ports map[string]int) *Host {
+func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[string]catalogmanifest.Manifest, ports map[string]int) *Host {
 	t.Helper()
 	host := NewHost(clock, "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for id, manifest := range manifests {
 		manifest.ID = id
-		manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
-		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: manifest}
+		manifest.Backend = catalogmanifest.Backend{Entrypoint: "bin/plugin"}
+		host.plugins[id] = catalogmanifest.Discovered{Manifest: manifest}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -104,7 +104,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 			plugintest.KillProcess(t, proc)
 		}
 	})
-	host.SetLauncher(func(ctx context.Context, p pluginport.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p catalogmanifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		cmd := plugintest.NewIdleCommand(context.WithoutCancel(ctx))
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
@@ -126,7 +126,7 @@ func newEventHostWithClock(t *testing.T, clock machineport.Clock, manifests map[
 func TestAFileEventReachesOnlyThePluginsDeclaringItsExtension(t *testing.T) {
 	pdf, notes := &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{
+		map[string]catalogmanifest.Manifest{
 			"md.test.pdf":   {ActivationEvents: []string{"onFile:pdf"}},
 			"md.test.notes": {ActivationEvents: []string{"onFile:md"}},
 		},
@@ -152,9 +152,9 @@ func TestAFileEventReachesOnlyThePluginsDeclaringItsExtension(t *testing.T) {
 func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 	startup, vectors, pdf, onDemand := &eventRecorder{}, &eventRecorder{}, &eventRecorder{}, &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{
-			"md.test.startup":  {ActivationEvents: []string{pluginport.ActivationEventStartup}},
-			"md.test.vectors":  {ActivationEvents: []string{pluginport.ActivationEventVectorsReady}},
+		map[string]catalogmanifest.Manifest{
+			"md.test.startup":  {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
+			"md.test.vectors":  {ActivationEvents: []string{catalogmanifest.ActivationEventVectorsReady}},
 			"md.test.pdf":      {ActivationEvents: []string{"onFile:pdf"}},
 			"md.test.ondemand": {},
 		},
@@ -174,7 +174,7 @@ func TestTriggerEventStartsOnlyPluginsDeclaringTheEvent(t *testing.T) {
 		t.Fatalf("activated %v on undeclared event, want none", activated)
 	}
 
-	activated, err = host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
+	activated, err = host.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
 	if err != nil {
 		t.Fatalf("TriggerEvent failed: %v", err)
 	}
@@ -207,11 +207,11 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 	clock := testsupport.NewClock()
 	recorder := &eventRecorder{}
 	host := newEventHostWithClock(t, clock,
-		map[string]pluginport.PluginManifest{parsed.ID: parsed},
+		map[string]catalogmanifest.Manifest{parsed.ID: parsed},
 		map[string]int{parsed.ID: servePlugin(t, recorder)},
 	)
 
-	for _, event := range []string{pluginport.ActivationEventStartup, "onFile:md"} {
+	for _, event := range []string{catalogmanifest.ActivationEventStartup, "onFile:md"} {
 		activated, triggerErr := host.TriggerEvent(t.Context(), event)
 		if triggerErr != nil {
 			t.Fatalf("TriggerEvent(%q) failed: %v", event, triggerErr)
@@ -252,7 +252,7 @@ func TestToolsSearchRelevanceRunsOnVectorsReadyAndEvictsWhenIdle(t *testing.T) {
 func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 	pdf := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.pdf": {ActivationEvents: []string{"onFile:pdf"}}},
+		map[string]catalogmanifest.Manifest{"md.test.pdf": {ActivationEvents: []string{"onFile:pdf"}}},
 		map[string]int{"md.test.pdf": servePlugin(t, pdf)},
 	)
 
@@ -268,11 +268,11 @@ func TestAnEventPublishedOnTheBusReachesTheSubscribedPlugin(t *testing.T) {
 
 func TestAPluginThatConsumesNoEventsIsActivatedWithoutAnError(t *testing.T) {
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.silent": {ActivationEvents: []string{pluginport.ActivationEventStartup}}},
+		map[string]catalogmanifest.Manifest{"md.test.silent": {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}}},
 		map[string]int{"md.test.silent": servePlugin(t, nil)},
 	)
 
-	activated, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
+	activated, err := host.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
 	if err != nil {
 		t.Fatalf("TriggerEvent() = %v, want no error for a plugin that takes no events", err)
 	}
@@ -285,19 +285,19 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 	refusing := &eventRecorder{reason: "the index is closed"}
 	working := &eventRecorder{}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{
-			"a.refusing": {ActivationEvents: []string{pluginport.ActivationEventStartup}},
-			"b.working":  {ActivationEvents: []string{pluginport.ActivationEventStartup}},
+		map[string]catalogmanifest.Manifest{
+			"a.refusing": {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
+			"b.working":  {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}},
 		},
 		map[string]int{"a.refusing": servePlugin(t, refusing), "b.working": servePlugin(t, working)},
 	)
 
-	_, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
+	_, err := host.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
 
 	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onStartup to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
 	}
-	if got := working.getEvents(); !slices.Equal(got, []string{pluginport.ActivationEventStartup}) {
+	if got := working.getEvents(); !slices.Equal(got, []string{catalogmanifest.ActivationEventStartup}) {
 		t.Fatalf("the working plugin received %v, want [onStartup]", got)
 	}
 }
@@ -305,11 +305,11 @@ func TestTriggerEvent_PluginErrorDoesNotBlockOtherPlugins(t *testing.T) {
 func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 	failing := &eventRecorder{failure: connect.NewError(connect.CodeInternal, errors.New("the handler panicked"))}
 	host := newEventHost(t,
-		map[string]pluginport.PluginManifest{"md.test.failing": {ActivationEvents: []string{pluginport.ActivationEventStartup}}},
+		map[string]catalogmanifest.Manifest{"md.test.failing": {ActivationEvents: []string{catalogmanifest.ActivationEventStartup}}},
 		map[string]int{"md.test.failing": servePlugin(t, failing)},
 	)
 
-	_, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
+	_, err := host.TriggerEvent(t.Context(), catalogmanifest.ActivationEventStartup)
 
 	if err == nil || errors.Is(err, transport.ErrEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)

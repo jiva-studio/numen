@@ -10,10 +10,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -33,7 +33,7 @@ type indexEvents struct {
 	out   io.Writer
 }
 
-func (e indexEvents) ReportTask(pos run.Task) { e.state.reportTask(pos) }
+func (e indexEvents) ReportTask(pos vaultreading.Task) { e.state.reportTask(pos) }
 
 func (e indexEvents) FinishTask(id string) { e.state.finishTask(id) }
 
@@ -44,13 +44,13 @@ func (e indexEvents) ReportNotes(v domain.Vault, notes int) {
 	e.state.Ready.Store(true)
 }
 
-func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
+func (e indexEvents) ReportTexts(v domain.Vault, res vaultreading.IndexResult) {
 	writeDiagnostic(e.state.reportTask, e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
 func newFloorErrorReporter(state *State) func(error) {
 	return func(err error) {
-		state.reportTask(run.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
+		state.reportTask(vaultreading.Task{ID: readingTheFloor, Title: "Read search floor", Error: err.Error()})
 	}
 }
 
@@ -58,7 +58,7 @@ func newFloorErrorReporter(state *State) func(error) {
 var errNoProgress = errors.New("index progress is unknown")
 
 func newIndexWorker(
-	made Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
+	made assembly.Assembly, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:  made.ReadWholeVault,
@@ -92,11 +92,11 @@ type indexJob struct {
 	out     io.Writer
 }
 
-func startIndexing(ctx context.Context, made Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
+func startIndexing(ctx context.Context, made assembly.Assembly, state *State, job indexJob) (vaults.Refresh, func()) {
 	v, rebuild, worker, session, out := job.vault, job.rebuild, job.worker, job.session, job.out
 	// The task is reported before the goroutine starts, so a window opened on a new
 	// vault shows the walk from the start.
-	state.reportTask(run.Task{ID: walkingNotes, Title: "Indexing the vault"})
+	state.reportTask(vaultreading.Task{ID: walkingNotes, Title: "Indexing the vault"})
 
 	var running sync.WaitGroup
 

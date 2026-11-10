@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -32,7 +32,7 @@ func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, pat
 // case the window does, and the tools pass the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync     note.SyncTitleAndFilename
+		sync     query.SyncTitleAndFilename
 		filename string
 	}{
 		"one name":   {sync: true, filename: "Disorder.md"},

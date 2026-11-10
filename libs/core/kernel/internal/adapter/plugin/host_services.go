@@ -142,7 +142,7 @@ func (h *Host) closeHostEndpoint(ctx context.Context) error {
 	return endpoint.Close(ctx)
 }
 
-func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []pluginport.DependencyRequirement, processPort int, token string) ([]string, error) {
+func (h *Host) getLaunchVars(ctx context.Context, pluginID string, requirements []manifest.DependencyRequirement, processPort int, token string) ([]string, error) {
 	runtimeVars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
 		return nil, fmt.Errorf("launch plugin %s: %w", pluginID, err)

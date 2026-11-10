@@ -6,26 +6,26 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
-func newReaderHost(manifests ...pluginport.PluginManifest) *Host {
+func newReaderHost(manifests ...catalogmanifest.Manifest) *Host {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	host.SetContentTypeTable(sharedmimeinfo.Open())
 	for _, manifest := range manifests {
-		manifest.Frontend = &pluginport.PluginFrontend{}
-		host.plugins[manifest.ID] = pluginport.DiscoveredPlugin{Manifest: manifest}
+		manifest.Frontend = &catalogmanifest.Frontend{}
+		host.plugins[manifest.ID] = catalogmanifest.Discovered{Manifest: manifest}
 	}
 	return host
 }
 
-func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...domain.ContentType) pluginport.PluginManifest {
-	return pluginport.PluginManifest{ID: pluginID, Contributes: pluginport.PluginContributes{
-		Readers: []pluginport.PluginReader{{ID: readerID, ContentTypes: types, Rank: rank}},
+func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...domain.ContentType) catalogmanifest.Manifest {
+	return catalogmanifest.Manifest{ID: pluginID, Contributes: catalogmanifest.Contributes{
+		Readers: []catalogmanifest.Reader{{ID: readerID, ContentTypes: types, Rank: rank}},
 	}}
 }
 
