@@ -28,24 +28,6 @@ type Run interface {
 	Stop() error
 }
 
-// GetDefaultProgram is the program an installation that names none answers with: the installed one
-// marked so, else the first installed, else the one marked so, else the first.
-func GetDefaultProgram(programs []agentdomain.Program) (agentdomain.Program, bool) {
-	for _, installedOnly := range []bool{true, false} {
-		for _, one := range programs {
-			if one.IsDefault && (one.IsInstalled || !installedOnly) {
-				return one, true
-			}
-		}
-		for _, one := range programs {
-			if one.IsInstalled || !installedOnly {
-				return one, true
-			}
-		}
-	}
-	return agentdomain.Program{}, false
-}
-
 // AgentProvider runs tasks on the programs that plugins provide and lists those programs.
 type AgentProvider interface {
 	Agent

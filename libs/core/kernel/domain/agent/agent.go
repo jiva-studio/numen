@@ -72,3 +72,21 @@ type Program struct {
 	Models      []Model
 	LimitsTools bool
 }
+
+// GetDefaultProgram is the program an installation that names none answers with: the installed one
+// marked so, else the first installed, else the one marked so, else the first.
+func GetDefaultProgram(programs []Program) (Program, bool) {
+	for _, installedOnly := range []bool{true, false} {
+		for _, one := range programs {
+			if one.IsDefault && (one.IsInstalled || !installedOnly) {
+				return one, true
+			}
+		}
+		for _, one := range programs {
+			if one.IsInstalled || !installedOnly {
+				return one, true
+			}
+		}
+	}
+	return Program{}, false
+}

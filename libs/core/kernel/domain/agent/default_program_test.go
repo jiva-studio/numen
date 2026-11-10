@@ -1,10 +1,9 @@
-package agentport_test
+package agent_test
 
 import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
 // The default program is an installed one where there is one: the installed one marked so, else the
@@ -19,12 +18,12 @@ func TestTheDefaultProgramIsAnInstalledOneWhereThereIsOne(t *testing.T) {
 		"nothing installed":       {[]agent.Program{{Name: "a"}, {Name: "b", IsDefault: true}}, "b"},
 		"nothing marked or there": {[]agent.Program{{Name: "a"}, {Name: "b"}}, "a"},
 	} {
-		got, found := agentport.GetDefaultProgram(one.programs)
+		got, found := agent.GetDefaultProgram(one.programs)
 		if !found || got.Name != one.want {
 			t.Errorf("%s: got %q, %v, want %q", name, got.Name, found, one.want)
 		}
 	}
-	if _, found := agentport.GetDefaultProgram(nil); found {
+	if _, found := agent.GetDefaultProgram(nil); found {
 		t.Error("a program was found where none is listed")
 	}
 }

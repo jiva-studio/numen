@@ -6,7 +6,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
 // The groups the models of a program stand on.
@@ -30,7 +29,7 @@ func AgentModels(targetPath string, target Agent, programs []agent.Program) []se
 }
 
 func getProgramModels(useAt []string, programs []agent.Program) []settingsdomain.Model {
-	byDefault, hasDefault := agentport.GetDefaultProgram(programs)
+	byDefault, hasDefault := agent.GetDefaultProgram(programs)
 
 	models := make([]settingsdomain.Model, 0, len(programs)+1)
 	for _, one := range programs {

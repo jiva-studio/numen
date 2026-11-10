@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
@@ -85,7 +84,7 @@ func getAgentUse(configured string, programs []agent.Program) string {
 	if configured != "" {
 		return configured
 	}
-	if def, ok := agentport.GetDefaultProgram(programs); ok {
+	if def, ok := agent.GetDefaultProgram(programs); ok {
 		return def.Name
 	}
 	return programs[0].Name
