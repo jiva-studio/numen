@@ -23,7 +23,7 @@ var errNotWritten = errors.New("the settings are read-only")
 // fakeAppearances is the settings behind the themes, held in memory.
 type fakeAppearances struct {
 	appearance themedomain.Appearance
-	written    []themedomain.Appearance
+	saves      []themedomain.Appearance
 	failure    error
 }
 
@@ -33,7 +33,7 @@ func (d *fakeAppearances) WriteAppearance(one themedomain.Appearance) error {
 	if d.failure != nil {
 		return d.failure
 	}
-	d.written = append(d.written, one)
+	d.saves = append(d.saves, one)
 	d.appearance = one
 	return nil
 }
@@ -46,7 +46,7 @@ func createService(t *testing.T, stored themedomain.Appearance) (*theme.Service,
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings := &fakeAppearances{appearance: stored, written: nil, failure: nil}
+	settings := &fakeAppearances{appearance: stored, saves: nil, failure: nil}
 	sources := themeusecase.Sources{Presets: files, Own: files, Plugins: nil}
 	scales := themeusecase.NewScales(0, 0)
 	service := theme.NewService(
@@ -107,12 +107,12 @@ func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 		t.Fatalf("failed: %v %q", err, answer.Msg.GetError())
 	}
 	want := themedomain.Appearance{ThemeName: themedomain.Default, Mode: themedomain.Dark}
-	if len(settings.written) != 1 || settings.written[0] != want {
-		t.Errorf("written: %+v", settings.written)
+	if len(settings.saves) != 1 || settings.saves[0] != want {
+		t.Errorf("written: %+v", settings.saves)
 	}
 }
 
-// The settings are unchanged, and the client is told why.
+// The settings are unchanged, and the response carries the reason.
 func TestAChoiceThatCannotBeAppliedIsRefusedAndReturnsWhy(t *testing.T) {
 	service, settings, _ := createService(t, themedomain.Appearance{ThemeName: themedomain.Default})
 	for _, selected := range []struct {
@@ -133,8 +133,8 @@ func TestAChoiceThatCannotBeAppliedIsRefusedAndReturnsWhy(t *testing.T) {
 			t.Errorf("%s, %v failed with %q", selected.name, selected.mode, failed)
 		}
 	}
-	if len(settings.written) != 0 {
-		t.Errorf("written: %+v", settings.written)
+	if len(settings.saves) != 0 {
+		t.Errorf("written: %+v", settings.saves)
 	}
 }
 

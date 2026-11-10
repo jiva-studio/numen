@@ -2,7 +2,7 @@ package theme
 
 import themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 
-// ListThemes lists every theme the installation offers.
+// ListThemes lists every theme the installation offers. Every name in the list is a theme that can be applied.
 type ListThemes struct {
 	catalog catalog
 }

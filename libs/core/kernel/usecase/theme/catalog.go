@@ -28,8 +28,6 @@ type catalog struct {
 	sources Sources
 }
 
-// list is every theme: the shipped one first, then the plugin themes in the order of their plugin
-// ids, then the user's themes ordered by name. Every name in this list is a theme that can be applied.
 func (c catalog) list() []themedomain.Theme {
 	var themes []themedomain.Theme
 	for _, file := range c.sources.Presets.ListPresets() {
@@ -81,8 +79,6 @@ func (c catalog) listPluginThemeNames() []string {
 	return names
 }
 
-// read returns the stylesheet a name selects, or an error wrapping ErrNoTheme where no theme answers
-// for the name.
 func (c catalog) read(name string) (string, error) {
 	if strings.HasPrefix(name, themedomain.PluginPrefix) {
 		return c.readPluginTheme(name)
@@ -117,8 +113,6 @@ func (c catalog) readPluginTheme(name string) (string, error) {
 	return text, nil
 }
 
-// getApplied is the theme a name selects. A name matching nothing yields this product's own
-// palette, and the name that was not found is returned.
 func (c catalog) getApplied(name string) (applied, missing string) {
 	if name == "" {
 		return themedomain.Default, ""

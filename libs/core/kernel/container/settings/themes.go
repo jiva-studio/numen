@@ -20,7 +20,7 @@ import (
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	files, err := c.openThemeFiles()
 	sources := c.getThemeSources(files)
-	store := appearanceStore{config: c, say: say}
+	store := settingsadapter.NewAppearanceStore(c.readAppearance, c.writeAppearance, say)
 	scales := themeusecase.NewScales(c.InterfaceScale, c.TextScale)
 	interfaceScale, textScale := settingsadapter.GetInterfaceScaleBounds(), settingsadapter.GetTextScaleBounds()
 	return theme.NewService(
@@ -61,24 +61,12 @@ func (c Config) openThemeFiles() (themefiles.Files, error) {
 	return themefiles.Open(c.Watches)
 }
 
-// appearanceStore keeps the appearance in the settings file and passes the theme warnings on.
-type appearanceStore struct {
-	config Config
-	say    func(string)
-}
-
-func (s appearanceStore) WarnTheme(text string) {
-	if s.say != nil {
-		s.say(text)
-	}
-}
-
-func (s appearanceStore) ReadAppearance() (themedomain.Appearance, error) {
-	path, err := s.config.SettingsFile()
+func (c Config) readAppearance() (themedomain.Appearance, error) {
+	path, err := c.SettingsFile()
 	if err != nil {
 		return themedomain.Appearance{}, err
 	}
-	activeSettings, err := s.config.GetSettingsAt(path)
+	activeSettings, err := c.GetSettingsAt(path)
 	if err != nil {
 		return themedomain.Appearance{}, err
 	}
@@ -90,26 +78,26 @@ func (s appearanceStore) ReadAppearance() (themedomain.Appearance, error) {
 	}, nil
 }
 
-func (s appearanceStore) WriteAppearance(selectedVal themedomain.Appearance) error {
+func (c Config) writeAppearance(selected themedomain.Appearance) error {
 	appearance := func(key string) []string { return []string{settingsadapter.OwnerApp, "appearance", key} }
 	values := []struct {
 		path  []string
 		value any
 	}{
-		{appearance("theme"), selectedVal.ThemeName},
-		{appearance("mode"), settingsadapter.GetModeName(selectedVal.Mode)},
+		{appearance("theme"), selected.ThemeName},
+		{appearance("mode"), settingsadapter.GetModeName(selected.Mode)},
 	}
-	if selectedVal.InterfaceScale > 0 {
+	if selected.InterfaceScale > 0 {
 		values = append(values, struct {
 			path  []string
 			value any
-		}{appearance("interfaceScale"), selectedVal.InterfaceScale})
+		}{appearance("interfaceScale"), selected.InterfaceScale})
 	}
-	if selectedVal.TextScale > 0 {
+	if selected.TextScale > 0 {
 		values = append(values, struct {
 			path  []string
 			value any
-		}{appearance("textScale"), selectedVal.TextScale})
+		}{appearance("textScale"), selected.TextScale})
 	}
 
 	writing := make([]settingsdomain.Setting, 0, len(values))
@@ -120,5 +108,5 @@ func (s appearanceStore) WriteAppearance(selectedVal themedomain.Appearance) err
 		}
 		writing = append(writing, settingsdomain.Setting{Path: one.path, JSON: string(encoded)})
 	}
-	return s.config.WriteSettings(writing)
+	return c.WriteSettings(writing)
 }

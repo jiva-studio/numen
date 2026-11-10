@@ -38,21 +38,21 @@ func startWatch(t *testing.T, desk *themesDesk) *reported {
 
 func (r *reported) await(t *testing.T, want ...string) {
 	t.Helper()
-	seen := map[string]bool{}
+	reports := map[string]bool{}
 	deadline := time.After(10 * time.Second)
 	for {
 		select {
 		case names := <-r.names:
 			for _, name := range names {
-				seen[name] = true
+				reports[name] = true
 			}
-			if !slices.ContainsFunc(want, func(name string) bool { return !seen[name] }) {
+			if !slices.ContainsFunc(want, func(name string) bool { return !reports[name] }) {
 				return
 			}
 		case err := <-r.stopped:
-			t.Fatalf("the watch ended with %v reported, want %v: %v", seen, want, err)
+			t.Fatalf("the watch ended with %v reported, want %v: %v", reports, want, err)
 		case <-deadline:
-			t.Fatalf("reported %v, want %v", seen, want)
+			t.Fatalf("reported %v, want %v", reports, want)
 		}
 	}
 }

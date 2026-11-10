@@ -25,15 +25,15 @@ func NewWriteAppearance(
 
 // Execute stores the appearance when its theme can be read. It returns the reason, and writes
 // nothing, where no theme answers for the name or the store refuses the values.
-func (u *WriteAppearance) Execute(chosen themedomain.Appearance) error {
-	if _, err := u.catalog.read(chosen.ThemeName); err != nil {
+func (u *WriteAppearance) Execute(choice themedomain.Appearance) error {
+	if _, err := u.catalog.read(choice.ThemeName); err != nil {
 		return err
 	}
-	if err := u.writer.WriteAppearance(chosen); err != nil {
+	if err := u.writer.WriteAppearance(choice); err != nil {
 		return err
 	}
-	u.scales.clear(chosen)
-	// The theme chosen is found, so a warning about the one that was missing is withdrawn.
+	u.scales.clear(choice)
+	// The theme choice is found, so a warning about the one that was missing is withdrawn.
 	u.warnings.WarnTheme("")
 	return nil
 }

@@ -77,12 +77,12 @@ func TestReadThemeOfABuildWithoutAFolderStillReadsThePresets(t *testing.T) {
 func TestChoosingWritesTheThemeAndTheHalfItIsReadAs(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{ThemeName: themedomain.Default})
 	desk.writeTheme(t, "nord.css", ":root {}")
-	chosen := themedomain.Appearance{ThemeName: "mine:nord", Mode: themedomain.Dark}
-	if err := desk.writeAppearance(chosen); err != nil {
+	choice := themedomain.Appearance{ThemeName: "mine:nord", Mode: themedomain.Dark}
+	if err := desk.writeAppearance(choice); err != nil {
 		t.Fatalf("failed: %v", err)
 	}
-	if len(desk.appearance.written) != 1 || desk.appearance.written[0] != chosen {
-		t.Fatalf("written: %+v", desk.appearance.written)
+	if len(desk.appearance.saves) != 1 || desk.appearance.saves[0] != choice {
+		t.Fatalf("written: %+v", desk.appearance.saves)
 	}
 	if answer := desk.getThemes(); answer.Applied != "mine:nord" {
 		t.Errorf("applied %q", answer.Applied)
@@ -116,7 +116,7 @@ func TestASettingsFileNamingNoSizeIsGeneratedAsDesigned(t *testing.T) {
 }
 
 // A scale given on the command line applies until the user chooses one explicitly.
-func TestACommandLineScaleHoldsUntilTheUserChoosesOne(t *testing.T) {
+func TestACommandLineScaleIsDroppedByAnExplicitScale(t *testing.T) {
 	desk := createThemesDesk(t, themedomain.Appearance{ThemeName: themedomain.Default, InterfaceScale: 1.25, TextScale: 1.5})
 	desk.scales = themeusecase.NewScales(1.75, 0)
 
@@ -146,8 +146,8 @@ func TestChoosingOneSizePreservesTheOtherAsItExists(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed: %v", err)
 	}
-	if len(desk.appearance.written) != 1 || desk.appearance.written[0].InterfaceScale != 1.75 || desk.appearance.written[0].TextScale != 0 {
-		t.Fatalf("written: %+v", desk.appearance.written)
+	if len(desk.appearance.saves) != 1 || desk.appearance.saves[0].InterfaceScale != 1.75 || desk.appearance.saves[0].TextScale != 0 {
+		t.Fatalf("written: %+v", desk.appearance.saves)
 	}
 }
 
@@ -164,8 +164,8 @@ func TestAChoiceThatCannotBeAppliedIsRefusedAndReturnsWhy(t *testing.T) {
 			t.Errorf("%s failed with %q", name, err)
 		}
 	}
-	if len(desk.appearance.written) != 0 {
-		t.Errorf("written: %+v", desk.appearance.written)
+	if len(desk.appearance.saves) != 0 {
+		t.Errorf("written: %+v", desk.appearance.saves)
 	}
 }
 

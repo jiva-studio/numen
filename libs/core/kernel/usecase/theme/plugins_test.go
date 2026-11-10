@@ -93,9 +93,9 @@ func TestAStoredPluginThemeThatNoLongerResolvesFallsBackToTheDefaultAndWarns(t *
 	if applied := desk.getThemes().Applied; applied != themedomain.Default {
 		t.Errorf("applied %q after the plugin is disabled", applied)
 	}
-	said := desk.appearance.warnings
-	if len(said) != 2 || said[0] != "" || !strings.Contains(said[1], name) {
-		t.Errorf("said %v, want an empty text for the first list and then the warning", said)
+	warned := desk.appearance.warnings
+	if len(warned) != 2 || warned[0] != "" || !strings.Contains(warned[1], name) {
+		t.Errorf("said %v, want an empty text for the first list and then the warning", warned)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestChoosingAPluginThemeWritesItsName(t *testing.T) {
 		t.Fatalf("failed: %v", err)
 	}
 
-	if len(desk.appearance.written) != 1 || desk.appearance.written[0].ThemeName != name {
-		t.Errorf("written: %+v", desk.appearance.written)
+	if len(desk.appearance.saves) != 1 || desk.appearance.saves[0].ThemeName != name {
+		t.Errorf("written: %+v", desk.appearance.saves)
 	}
 }

@@ -17,7 +17,6 @@ func NewScales(ui, text float64) *Scales {
 	return &Scales{mu: sync.Mutex{}, uiScale: ui, textScale: text}
 }
 
-// apply overrides the scales of the appearance with those of the command line, where given.
 func (s *Scales) apply(appearance *themedomain.Appearance) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -29,14 +28,13 @@ func (s *Scales) apply(appearance *themedomain.Appearance) {
 	}
 }
 
-// clear drops the command line scales the chosen appearance replaces.
-func (s *Scales) clear(chosen themedomain.Appearance) {
+func (s *Scales) clear(choice themedomain.Appearance) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if chosen.InterfaceScale > 0 {
+	if choice.InterfaceScale > 0 {
 		s.uiScale = 0
 	}
-	if chosen.TextScale > 0 {
+	if choice.TextScale > 0 {
 		s.textScale = 0
 	}
 }

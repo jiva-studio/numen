@@ -69,7 +69,7 @@ func (f *fakePlugins) disable() {
 // fakeAppearances is the settings behind the themes, held in memory.
 type fakeAppearances struct {
 	appearance themedomain.Appearance
-	written    []themedomain.Appearance
+	saves      []themedomain.Appearance
 	warnings   []string
 	failure    error
 }
@@ -82,7 +82,7 @@ func (d *fakeAppearances) WriteAppearance(one themedomain.Appearance) error {
 	if d.failure != nil {
 		return d.failure
 	}
-	d.written = append(d.written, one)
+	d.saves = append(d.saves, one)
 	d.appearance = one
 	return nil
 }
@@ -109,7 +109,7 @@ func createThemesDesk(t *testing.T, stored themedomain.Appearance) *themesDesk {
 	return &themesDesk{
 		files:      files,
 		plugins:    plugins,
-		appearance: &fakeAppearances{appearance: stored, written: nil, warnings: nil, failure: nil},
+		appearance: &fakeAppearances{appearance: stored, saves: nil, warnings: nil, failure: nil},
 		sources:    themeusecase.Sources{Presets: files, Own: files, Plugins: plugins},
 		scales:     themeusecase.NewScales(0, 0),
 	}
@@ -120,8 +120,8 @@ func (d *themesDesk) getThemes() themeusecase.Themes {
 		themeusecase.Bounds{Min: 0.8, Max: 2}, themeusecase.Bounds{Min: 0.8, Max: 1.75}).Execute()
 }
 
-func (d *themesDesk) writeAppearance(chosen themedomain.Appearance) error {
-	return themeusecase.NewWriteAppearance(d.sources, d.appearance, d.appearance, d.scales).Execute(chosen)
+func (d *themesDesk) writeAppearance(choice themedomain.Appearance) error {
+	return themeusecase.NewWriteAppearance(d.sources, d.appearance, d.appearance, d.scales).Execute(choice)
 }
 
 func (d *themesDesk) readTheme(name string) (string, error) {
