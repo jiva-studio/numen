@@ -7,12 +7,10 @@
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor } from 'storybook/test'
-import { shallowRef, watch } from 'vue'
-import type { Selector } from '@numen/plugin-sdk'
+import { shallowRef } from 'vue'
+import type { ReaderTabState, Selector } from '@numen/plugin-sdk'
 import DocumentTab from './DocumentTab.vue'
 import { frameStory } from '../fixtures/frame'
-import { useDocumentReader } from '../model/useDocumentReader'
-import { useDocumentTab } from '../model/useDocumentTab'
 import type { Documents, TextRange } from '../types'
 
 const meta = {
@@ -26,6 +24,9 @@ type Story = StoryObj<typeof meta>
 
 /** Timeout for saving the page the tab was moved to: shorter than the window's poll interval. */
 const AT_ONCE = 1_000
+
+/** How long the made-up port takes to serve the document before the window sets the ranges. */
+const LOADED = 100
 
 const PATH = 'library/Wading Birds.pdf'
 
@@ -63,30 +64,27 @@ const openAt =
   () => ({
     components: { DocumentTab },
     setup() {
-      const reader = useDocumentTab(useDocumentReader(DOCUMENTS, PATH))
       const windowRanges = shallowRef<readonly TextRange[] | null>(null)
       places = []
-      const state = Object.defineProperty(
-        Object.assign(reader, {
-          title: 'Wading Birds',
-          selector: null,
-          savePlace: (place: Selector) => {
-            places.push(place)
-          },
-        }),
-        'ranges',
-        { get: () => windowRanges.value, enumerable: true },
-      )
-      watch(
-        reader.document.state.isLoading,
-        (isLoading) => {
-          if (!isLoading) windowRanges.value = [...ranges]
+      const state: ReaderTabState = {
+        path: PATH,
+        title: 'Wading Birds',
+        selector: null,
+        get ranges() {
+          return windowRanges.value
         },
-        { immediate: true },
-      )
-      return { state }
+        savePlace: (place: Selector) => {
+          places.push(place)
+        },
+        reportPlace: () => undefined,
+      }
+      // The window sets the ranges once the tab has loaded.
+      setTimeout(() => {
+        windowRanges.value = [...ranges]
+      }, LOADED)
+      return { state, documents: DOCUMENTS }
     },
-    template: `<DocumentTab :state="state" />`,
+    template: `<DocumentTab :state="state" :documents="documents" />`,
   })
 
 /** The page the window moves the tab to is the place it saves on arrival. */

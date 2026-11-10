@@ -56,8 +56,8 @@ const readFailure = async (response: Response): Promise<ApiError> => {
   return { code: UNAVAILABLE, message: `HTTP ${response.status}` }
 }
 
-const createRequest = (
-  request: unknown,
+const createRequest = <Req>(
+  request: Req | undefined,
   signal: AbortSignal | undefined,
   accept: string,
 ): RequestInit => ({

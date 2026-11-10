@@ -7,6 +7,10 @@ import (
 	"fmt"
 	"io/fs"
 
+	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostvault"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -14,8 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -74,7 +76,7 @@ func installPluginVault(c pluginsWiring,
 
 func pluginsOpenPluginVault(c pluginsWiring,
 	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
-) (*hostendpoint.VaultAccess, error) {
+) (*pluginvault.Access, error) {
 	cache, err := openPluginCache(c)
 	if err != nil {
 		return nil, err
@@ -92,50 +94,58 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		Creator: note.NewRelatedNoteCreator(scenarios),
 	}
 	arranger := hostvault.Arranger{
-		Notes:  getNoteChanges(scenarios),
-		Checks: getProblemChecks(vault.NewStandardGetProblems(db.NoteQueries.Problems)),
+		Notes:    getNoteChanges(scenarios),
+		Checks:   getProblemChecks(vault.NewStandardGetProblems(db.NoteQueries.Problems)),
+		Problems: db.NoteQueries.Problems,
 	}
 	if hasReaders(hooks.Notes) {
 		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
 	}
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
-		Current:     current,
-		Stat:        file.NewStatFile(c.VaultReaders),
-		ReadFile:    file.NewReadFile(c.VaultReaders),
-		RangeReader: file.Read{Readers: c.VaultReaders},
-		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
-		LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
-		Notes:       db.NoteQueries.NoteRefs,
-		Types:       db.NoteQueries.NoteTypes,
-		NamedPaths:  db.NoteQueries.NamedPaths,
-		TypedPaths:  db.NoteQueries.TypedPaths,
-		Links:       db.NoteQueries.Links,
+		Session: hostvault.Session{
+			Current:    current,
+			Vaults:     registry.Vaults.List,
+			Find:       findVault(registry),
+			IndexState: hooks.IndexState,
+			Moved:      hooks.Moved,
+			Written:    hooks.Written,
+		},
+		Files: hostvault.Files{
+			Stat:        file.NewStatFile(c.VaultReaders),
+			ReadFile:    file.NewReadFile(c.VaultReaders),
+			RangeReader: file.Read{Readers: c.VaultReaders},
+			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
+			LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
+			Index:       index,
+		},
+		Lookups: hostvault.Lookups{
+			Notes:      db.NoteQueries.NoteRefs,
+			Types:      db.NoteQueries.NoteTypes,
+			NamedPaths: db.NoteQueries.NamedPaths,
+			TypedPaths: db.NoteQueries.TypedPaths,
+			Links:      db.NoteQueries.Links,
+		},
 		Connections: connections,
-		Problems:    db.NoteQueries.Problems,
 		Arranger:    arranger,
-		StoreReaders: func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error) {
-			return stores.Open(v, pluginID)
+		Stores: hostvault.Stores{
+			StoreReaders: func(v domain.Vault, pluginID string) (pluginvault.StoreReader, error) {
+				return stores.Open(v, pluginID)
+			},
+			StoreWriters: func(v domain.Vault, pluginID string) (pluginvault.StoreWriter, error) {
+				return stores.OpenWriter(v, pluginID)
+			},
+			Cache: cache,
 		},
-		StoreWriters: func(v domain.Vault, pluginID string) (hostendpoint.StoreWriter, error) {
-			return stores.OpenWriter(v, pluginID)
-		},
-		Cache:      cache,
-		Written:    hooks.Written,
-		Vaults:     registry.Vaults.List,
-		Find:       findVault(registry),
-		IndexState: hooks.IndexState,
-		Moved:      hooks.Moved,
-		Index:      index,
 	}
 	if c.VaultWatcher != nil {
-		vaults.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
+		vaults.Session.Watcher = vault.NewWatchChanges(c.VaultWatcher).Execute
 	}
-	if vaults.IndexState == nil {
-		vaults.IndexState = getIndexState(db)
+	if vaults.Session.IndexState == nil {
+		vaults.Session.IndexState = getIndexState(db)
 	}
-	if vaults.Moved == nil {
-		vaults.Moved = c.Moves
+	if vaults.Session.Moved == nil {
+		vaults.Session.Moved = c.Moves
 	}
 	return vaults.Access(), nil
 }
@@ -217,7 +227,7 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 }
 
 func openSecrets(c pluginsWiring) *secret.Secrets {
-	var plugins pluginport.SecretPlugins = textbridge.NoSecretPlugins{}
+	var plugins pluginport.SecretPlugins = plugin.Absent{}
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
@@ -270,7 +280,7 @@ func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
 	if c.PluginHost == nil {
 		return nil
 	}
-	choose, err := tabkind.NewChoose(manifestlist.Open(c.PluginHost), c.PluginHost, getWhenConfig(c))
+	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost), c.PluginHost, getWhenConfig(c))
 	if err != nil {
 		pluginsHandleError(c, err)
 		return nil
@@ -282,11 +292,11 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	if c.TextVersions == nil {
 		return nil
 	}
-	var commands pluginport.PluginCommands = manifestlist.NoManifests{}
+	var commands pluginport.PluginCommands = plugin.Absent{}
 	var runs pluginport.PluginCommandRuns = commandbridge.NoCommands{}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, runs, types = manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost
+		commands, runs, types = pluginmanifest.New(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost
 	}
 	run := plugincommand.NewCommands(commands, runs, types, pluginsNewNoteReader(c), getWhenConfig(c)).Run
 	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
@@ -302,7 +312,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 		return nil
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
-		Plugins: manifestlist.Open(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
+		Plugins: pluginmanifest.New(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
 		Notes: pluginsNewNoteReader(c), Types: c.PluginHost, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }

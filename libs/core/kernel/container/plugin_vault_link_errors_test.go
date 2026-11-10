@@ -12,8 +12,8 @@ func TestLinkEditOfUnlinkedTargetReportsTargetWithoutScheme(t *testing.T) {
 	volga := domain.Address{Scheme: domain.SchemeName, Value: "Volga"}
 	const want = "Deltas.md: no link to Volga is written here"
 
-	_, removeErr := shared.RemoveLinks(t.Context(), "Deltas.md", volga, "", statFile(t, shared, "Deltas.md"))
-	_, updateErr := shared.UpdateLinks(t.Context(), "Deltas.md", volga, domain.Link{Label: "flows into"}, statFile(t, shared, "Deltas.md"))
+	_, removeErr := shared.LinkEditor.RemoveLinks(t.Context(), "Deltas.md", volga, "", statFile(t, shared, "Deltas.md"))
+	_, updateErr := shared.LinkEditor.UpdateLinks(t.Context(), "Deltas.md", volga, domain.Link{Label: "flows into"}, statFile(t, shared, "Deltas.md"))
 
 	for call, err := range map[string]error{"RemoveLinks": removeErr, "UpdateLinks": updateErr} {
 		if err == nil || err.Error() != want {

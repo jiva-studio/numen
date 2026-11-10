@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -154,7 +155,7 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv
 	}
 	endpoint := &Endpoint{callers: hostCallers.over(nil, granted...)}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))

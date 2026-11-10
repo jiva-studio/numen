@@ -10,18 +10,19 @@ import (
 	"slices"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
+	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/pluginmanifest"
+
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/onnxruntime"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/commandbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
@@ -270,7 +271,7 @@ func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
+	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -344,13 +345,13 @@ func pluginsGetPluginName(c pluginsWiring, pluginID string) string {
 	return pluginID
 }
 
-func setPluginVault(c pluginsWiring, v *hostendpoint.VaultAccess) {
+func setPluginVault(c pluginsWiring, v *pluginvault.Access) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVault(v)
 	}
 }
 
-func setPluginVaultList(c pluginsWiring, list hostendpoint.VaultList) {
+func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
 	if c.PluginHost != nil {
 		c.PluginHost.SetPluginVaultList(list)
 	}

@@ -2,6 +2,7 @@ package hostendpoint
 
 import (
 	"context"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -91,7 +92,7 @@ func TestAPluginCallsTheToolsInTheVaultItNames(t *testing.T) {
 	fakeCallers.tools, fakeCallers.vault = tools, vaultOf(vault)
 
 	req := connect.NewRequest(&v1.CallToolRequest{Name: "note_read"})
-	req.Header().Set(vaultHeader, "v2")
+	req.Header().Set(vaultapi.Header, "v2")
 	if _, err := newToolClient(t, fakeCallers, "token-a").CallTool(t.Context(), req); err != nil {
 		t.Fatal(err)
 	}

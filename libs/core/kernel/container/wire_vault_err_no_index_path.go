@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+
 	indexnote "github.com/jiva-studio/numen/libs/core/kernel/adapter/index/note"
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 
@@ -17,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
@@ -200,9 +201,9 @@ func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteReposit
 }
 
 func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, error) {
-	var plugins textport.TextPlugins = textbridge.NoPlugins{}
+	var plugins textport.TextPlugins = plugin.Absent{}
 	if c.PluginHost != nil && !c.SafeMode {
-		plugins = textbridge.NewPlugins(c.PluginHost)
+		plugins = c.PluginHost
 	}
 	return textversion.NewVersions(db.TextVersions, textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }

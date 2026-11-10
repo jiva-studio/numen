@@ -176,10 +176,10 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	}
 	lent := cfg.PluginHost.GetPluginVault()
 
-	recognized, listErr := lent.GetVaults()
-	linked, withErr := lent.With(target[1].ID)
-	_, hasVault := lent.GetVault()
-	state, stateErr := linked.EnsureIndexed(t.Context())
+	recognized, listErr := lent.Switch.GetVaults()
+	linked, withErr := lent.Switch.With(target[1].ID)
+	_, hasVault := lent.Switch.GetVault()
+	state, stateErr := linked.Switch.EnsureIndexed(t.Context())
 
 	if listErr != nil || len(recognized) != 2 || withErr != nil || hasVault {
 		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)

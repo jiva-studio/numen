@@ -6,7 +6,14 @@ const NOTHING: Disposable = { dispose: () => undefined }
 /** What a window must give to host plugin contexts; everything else it leaves idle. */
 export type IdleContextHostParts = Pick<
   PluginContextHost,
-  'app' | 'openExternal' | 'registerTabKind' | 'registerView' | 'registerSlotView' | 'mountView'
+  | 'app'
+  | 'openExternal'
+  | 'registerTabKind'
+  | 'registerView'
+  | 'registerSlotView'
+  | 'mountView'
+  | 'getSlots'
+  | 'getNotices'
 > &
   Partial<PluginContextHost>
 

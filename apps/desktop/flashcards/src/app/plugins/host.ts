@@ -77,7 +77,7 @@ function mountDeclaredView(
   registry: ViewRegistry,
   caller: { pluginId: string; manifest?: Manifest | undefined },
 ) {
-  return (capability: string, element: HTMLElement, viewContext: unknown) =>
+  return (capability: string, element: HTMLElement, viewContext: object) =>
     registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
 }
 

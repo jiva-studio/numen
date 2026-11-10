@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+
 	"connectrpc.com/connect"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -42,7 +44,7 @@ type Processes struct {
 	clock        machineport.Clock
 	errs         *errorSink
 	services     *Services
-	storage      *Storage
+	storage      *storage.Storage
 	dropEndpoint func(pluginID string)
 
 	mu       sync.RWMutex
@@ -53,7 +55,7 @@ type Processes struct {
 	stdins   map[stdinKey]io.Closer
 }
 
-func newProcesses(t *table, clock machineport.Clock, errs *errorSink, services *Services, storage *Storage) *Processes {
+func newProcesses(t *table, clock machineport.Clock, errs *errorSink, services *Services, storage *storage.Storage) *Processes {
 	return &Processes{
 		t: t, clock: clock, errs: errs, services: services, storage: storage,
 		limits: process.DefaultLimits(),
@@ -73,9 +75,6 @@ func (p *Processes) SetActivationPolicy(policy lifecycle.ActivationPolicy) {
 	p.t.mu.Lock()
 	defer p.t.mu.Unlock()
 	p.t.activation = policy
-	for _, sup := range p.t.supervisors {
-		sup.SetActivationPolicy(policy)
-	}
 }
 
 // SetLauncher overrides the process launcher for testing.

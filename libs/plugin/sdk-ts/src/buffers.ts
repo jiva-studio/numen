@@ -11,7 +11,7 @@ export interface BufferHost {
   // a buffer is reported to the user before the window closes.
   track(buffers: FileBuffers): Disposable
   // Work the window finishes before it quits.
-  addFlushHandler(handler: () => Promise<unknown>): Disposable
+  addFlushHandler(handler: () => Promise<void>): Disposable
 }
 
 export type FileConflict = 'gone' | 'stale' | null

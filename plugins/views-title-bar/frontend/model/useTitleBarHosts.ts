@@ -26,10 +26,8 @@ export function useTitleBarHosts(context: PluginContext) {
 
   const watches: Disposable[] = []
   const { slots } = context.ui
-  if (slots) {
-    watches.push(slots.watchEntries(SLOT.titleBarCommands, (next) => (commands.value = next)))
-    watches.push(slots.watchEntries(SLOT.titleBarStatus, (next) => (status.value = next)))
-  }
+  watches.push(slots.watchEntries(SLOT.titleBarCommands, (next) => (commands.value = next)))
+  watches.push(slots.watchEntries(SLOT.titleBarStatus, (next) => (status.value = next)))
   if (context.ui.commands)
     watches.push(context.ui.commands.watch((next) => (commandIds.value = next)))
   if (context.vault.vaults)

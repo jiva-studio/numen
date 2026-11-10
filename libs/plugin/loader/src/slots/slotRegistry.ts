@@ -4,7 +4,7 @@
  * of no group last, entries sort by order and then plugin id, and a separator divides two
  * groups that draw anything. A submenu holds the entries that name it as their slot.
  */
-import { computed, watch } from 'vue'
+import { computed, watch, type Component } from 'vue'
 import {
   SLOT,
   type Disposable,
@@ -27,7 +27,7 @@ export interface DeclaredSlotEntry {
   readonly view?: string | undefined
   readonly submenu?: string | undefined
   readonly title?: string | undefined
-  readonly icon?: unknown
+  readonly icon?: Component
   readonly group?: string | undefined
   readonly order?: number | undefined
   readonly when?: string | undefined
@@ -37,7 +37,7 @@ export interface DeclaredSlotEntry {
 /** How a command available in a slot is drawn. */
 export interface SlotCommandLook {
   readonly title: string
-  readonly icon?: unknown
+  readonly icon?: Component
   readonly hasItems?: boolean | undefined
 }
 
@@ -51,7 +51,7 @@ export interface SlotRegistryDeps {
     command: string,
     target: CommandTarget | undefined,
   ) => SlotCommandLook | undefined
-  readonly findView: (pluginId: string, view: string) => unknown
+  readonly findView: (pluginId: string, view: string) => Component | undefined
   readonly reportIssue?: (pluginId: string, message: string, severity: 'warning' | 'error') => void
   readonly getWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly whenReader?: WhenReader
@@ -228,7 +228,7 @@ function toCommandItem(
 function toViewItem(
   entry: DeclaredSlotEntry,
   view: string,
-  component: unknown,
+  component: Component | undefined,
 ): SlotItem | undefined {
   if (component === undefined) return undefined
   return {
@@ -329,7 +329,7 @@ export function createSlotRegistry(deps: SlotRegistryDeps): SlotHost {
 export function readManifestSlotEntries(
   pluginId: string,
   manifest: Manifest,
-  getIcon: (name: string) => unknown,
+  getIcon: (name: string) => Component,
 ): DeclaredSlotEntry[] {
   return (manifest.contributes?.slots ?? []).map((one) => ({
     pluginId,

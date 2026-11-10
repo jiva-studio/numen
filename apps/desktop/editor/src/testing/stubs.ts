@@ -40,3 +40,6 @@ export const book = createStub('Book', {
     return event.key.startsWith('Arrow')
   },
 })
+
+/** A component that draws nothing, for a registration whose component a test never mounts. */
+export const blank = createStub('Blank', {})

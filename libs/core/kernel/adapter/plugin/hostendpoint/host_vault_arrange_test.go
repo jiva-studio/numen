@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -203,7 +204,7 @@ func (l *recordingList) IsMissing(v domain.Vault) bool {
 }
 
 func newArrangeClient(
-	t *testing.T, list VaultList, granted ...string,
+	t *testing.T, list vaultapi.List, granted ...string,
 ) (numenv1connect.HostVaultServiceClient, *fakeNoteVault, *callers) {
 	t.Helper()
 	vault := newFakeNoteVault()
@@ -211,7 +212,7 @@ func newArrangeClient(
 	hostCallers.vault = vaultOf(vault)
 	endpoint := &Endpoint{callers: hostCallers.over(list, granted...)}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
@@ -585,7 +586,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 			hostCallers.vault = vaultOf(failingRenameVault{fakeNoteVault: newFakeNoteVault(), err: fmt.Errorf("rename Danube.md: %w", c.err)})
 			endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 			mux := http.NewServeMux()
-			mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+			mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
 			server := httptest.NewServer(mux)
 			t.Cleanup(server.Close)
 			client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
@@ -727,7 +728,7 @@ func newEscapingPathClient(t *testing.T) (numenv1connect.HostVaultServiceClient,
 	hostCallers.vault = vaultOf(escapingPathVault{vault})
 	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))

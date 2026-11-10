@@ -8,6 +8,7 @@ import type {
   AgentModel,
   CommandTarget,
   CommandsHost,
+  JsonValue,
   NoteRef,
   OpenFileOptions,
   TextRange,
@@ -20,7 +21,7 @@ export interface HostOptions {
   readonly focus?: NoteRef
   readonly notes?: Readonly<Record<string, string>>
   readonly models?: Readonly<Record<string, readonly AgentModel[]>>
-  readonly settings?: Readonly<Record<string, unknown>>
+  readonly settings?: Readonly<Record<string, JsonValue>>
   readonly reasoning?: string
   readonly unreachable?: string
 }
@@ -37,7 +38,7 @@ export function createHost({
   const recorded = {
     opened: [] as [string, OpenFileOptions | undefined][],
     openedAt: [] as [string, readonly TextRange[]][],
-    settings: [] as [readonly string[], unknown][],
+    settings: [] as [readonly string[], JsonValue][],
     finished: [] as string[],
     resolved: [] as string[],
     questions: [] as string[],

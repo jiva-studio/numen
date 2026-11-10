@@ -8,6 +8,7 @@ import type {
   BackgroundTaskHost,
   BufferHost,
   CommandsHost,
+  JsonValue,
   NoteRef,
   VaultFiles,
   VaultNotes,
@@ -174,7 +175,8 @@ export function createAgentHost({ port, window, settings }: AgentHostDeps): Agen
     finish: (conversation) => port.finish(conversation),
     resolveLinks: (text, vault) => resolveLinks('', text, vault),
     getUnreachable: () => window.vault.unreachable.value,
-    getSetting: (path) => settings.rest.read.getSetting(path),
+    // The vault stores a setting as JSON.
+    getSetting: (path) => settings.rest.read.getSetting(path) as JsonValue | undefined,
     writeSetting: (path, value) => settings.rest.write.writeSetting(path, value),
     getModelsAt: (path) => settings.rest.read.getModelsAt(path),
   }

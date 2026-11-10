@@ -61,7 +61,10 @@ export class ReportedError extends Error {
   }
 }
 
-const isReportedError = (error: unknown): error is { readonly message: string } =>
+/** Whatever a try block threw or a promise rejected with: anything can be thrown. */
+export type Caught = unknown
+
+const isReportedError = (error: Caught): error is { readonly message: string } =>
   typeof error === 'object' &&
   error !== null &&
   'name' in error &&
@@ -72,7 +75,7 @@ const isReportedError = (error: unknown): error is { readonly message: string } 
 /**
  * The message for a caught error, shown to the user who awaited the result.
  */
-export const formatErrorMessage = (error: unknown): string => {
+export const formatErrorMessage = (error: Caught): string => {
   const reported = isReportedError(error) ? error.message.trim() : ''
   if (reported) return reported
   const fault = ConnectError.from(error)

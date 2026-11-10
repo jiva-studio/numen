@@ -12,7 +12,7 @@ export interface MockBufferHost extends BufferHost {
 // createMockBufferHost builds a buffer host that tracks buffers and flush handlers in memory.
 export function createMockBufferHost(): MockBufferHost {
   const tracked = new Set<FileBuffers>()
-  const handlers = new Set<() => Promise<unknown>>()
+  const handlers = new Set<() => Promise<void>>()
   const release = (release: () => void): Disposable => ({ dispose: release })
   return {
     track: (buffers) => {

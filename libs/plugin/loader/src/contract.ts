@@ -45,6 +45,8 @@ export type {
   ErrorCode,
   FileBuffers,
   FileSelectEvent,
+  JsonObject,
+  JsonValue,
   LinkMarker,
   LinkRole,
   MessageWriter,

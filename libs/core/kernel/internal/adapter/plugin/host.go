@@ -1,8 +1,11 @@
 package plugin
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
+	"context"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/storage"
+
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 )
 
@@ -21,16 +24,32 @@ type Host struct {
 	Listeners    *Listeners
 	Services     *Services
 	ContentTypes *ContentTypes
-	Storage      *Storage
+	Storage      *storage.Storage
 	Events       *Events
 	Mode         *Mode
 }
 
-// toolHost is what the catalog of tools starts plugins and lists them through.
-type toolHost struct {
-	*Activation
-	*Registry
+// ToolHost is what the catalog of tools starts plugins and lists them through.
+type ToolHost struct {
+	activation *Activation
+	registry   *Registry
 }
+
+// NewToolHost returns the host the catalog of tools works over.
+func NewToolHost(activation *Activation, registry *Registry) ToolHost {
+	return ToolHost{activation: activation, registry: registry}
+}
+
+// EnsureActive starts the plugin if it is not running and holds it.
+func (h ToolHost) EnsureActive(ctx context.Context, pluginID string) (plugindomain.Endpoint, error) {
+	return h.activation.EnsureActive(ctx, pluginID)
+}
+
+// Release gives up the hold EnsureActive took.
+func (h ToolHost) Release(pluginID string) { h.activation.Release(pluginID) }
+
+// GetPluginInfos lists the plugins the host knows.
+func (h ToolHost) GetPluginInfos() []plugindomain.Info { return h.registry.GetPluginInfos() }
 
 // NewHost creates a new plugin host for the specified target application and search paths.
 // The host reads the time from clock.
@@ -39,7 +58,11 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	errs := &errorSink{}
 	failures := newFailures(t, clock, errs)
 	services := newServices(t)
-	storage := newStorage(t, errs)
+	storage := storage.New(errs.report, func(pluginID string) string {
+		t.mu.RLock()
+		defer t.mu.RUnlock()
+		return t.plugins[pluginID].Manifest.Version
+	})
 	contentTypes := newContentTypes(t)
 	processes := newProcesses(t, clock, errs, services, storage)
 	listeners := newListeners(t, clock, errs, failures)
@@ -49,7 +72,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	registry := newRegistry(t, failures, contentTypes)
 	activation := newActivation(t, clock, failures, processes)
 	teardown := newTeardown(t, clock, errs, processes, services)
-	discovery := newDiscovery(t, clock, errs, target, dirs)
+	discovery := newDiscovery(t, errs, target, dirs)
 	events := newEvents(t, clock, activation)
 	mode := newMode(t, errs, teardown, listeners)
 
@@ -60,13 +83,6 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 	discovery.dropEndpoint, processes.dropEndpoint = teardown.dropEndpoint, teardown.dropEndpoint
 	config.prune = discovery.pruneSecretPermissions
 
-	services.tools = func() hostendpoint.PluginTools {
-		return agenttoolsbridge.NewCatalog(toolHost{Activation: activation, Registry: registry}, agenttoolsbridge.Full)
-	}
-	services.callers = hostendpoint.Callers{
-		Identity: activation, Leases: activation, Completion: services, Vault: services, Texts: services,
-		Search: services, Window: services, Work: services, Dependencies: services, Tools: services,
-	}
 	return &Host{
 		Registry: registry, Discovery: discovery, Activation: activation, Processes: processes, Teardown: teardown,
 		Failures: failures, Settings: settings, Config: config, Listeners: listeners, Services: services,

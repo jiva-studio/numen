@@ -1,6 +1,6 @@
 import type { Component, Ref } from 'vue'
+import type { JsonValue, TextRange } from './types'
 import type { Selector } from './texts'
-import type { TextRange } from './types'
 import type { Severity } from './notices'
 import type { ErrorCode } from './errors/errorCode'
 import type { Result } from './result'
@@ -63,7 +63,7 @@ export interface VaultNotes {
   // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
   write(path: string, body: string): Promise<void>
   // The frontmatter of the note at the path by its keys, and empty for a path holding no note.
-  readProperties(path: string): Promise<Readonly<Record<string, unknown>>>
+  readProperties(path: string): Promise<Readonly<Record<string, JsonValue>>>
 }
 
 // ConnectionRole is what the second note of a connection is to the first: its parent, its child, or a jump.

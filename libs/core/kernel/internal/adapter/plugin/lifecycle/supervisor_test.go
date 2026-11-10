@@ -17,7 +17,7 @@ import (
 )
 
 func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -51,19 +51,16 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 	}
 
 	threshold := 50 * time.Millisecond
-	if sup.IsIdle(threshold, now) {
-		t.Fatal("expected IsIdle to be false immediately")
-	}
-	if !sup.IsIdle(threshold, now.Add(60*time.Millisecond)) {
-		t.Fatal("expected IsIdle to be true after threshold expired")
+	if sup.BeginDeactivation(threshold, now) {
+		t.Fatal("BeginDeactivation took a plugin that was just released")
 	}
 
 	sup.Acquire(now.Add(70 * time.Millisecond))
 	if sup.GetState() != StateActive {
 		t.Fatalf("expected StateActive after re-acquire, got %v", sup.GetState())
 	}
-	if sup.IsIdle(threshold, now.Add(100*time.Millisecond)) {
-		t.Fatal("expected IsIdle to be false when ref count > 0")
+	if sup.BeginDeactivation(threshold, now.Add(200*time.Millisecond)) {
+		t.Fatal("BeginDeactivation took a plugin that has a consumer")
 	}
 
 	testsupport.Kill(t, cmd)
@@ -71,7 +68,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 }
 
 func TestSupervisorTeardownNotRunning(t *testing.T) {
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
 	if err == nil {
 		t.Fatal("expected error tearing down non-running supervisor, got nil")
@@ -84,7 +81,7 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
@@ -106,7 +103,7 @@ func TestSupervisorTeardownGraceful(t *testing.T) {
 }
 
 func TestSupervisorTeardownInProcessCallsRPC(t *testing.T) {
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	sup.SetActivating()
 	sup.ActivateInProcess(testsupport.GetEpoch())
 
@@ -132,7 +129,7 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 		t.Fatalf("failed to start process: %v", err)
 	}
 
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetEpoch()); err != nil {
 		t.Fatalf("failed to attach: %v", err)
 	}
@@ -147,22 +144,22 @@ func TestSupervisorTeardownForceKill(t *testing.T) {
 }
 
 func TestSupervisorPermissionNormalization(t *testing.T) {
-	sup := New(testsupport.NewClock())
-	sup.SetPermissions([]string{manifest.PermissionVaultRead, "network"})
+	sup := New(nil)
+	sup.Permissions.Set([]string{manifest.PermissionVaultRead, "network"})
 
-	if !sup.HasPermission(manifest.PermissionVaultRead) {
+	if !sup.Permissions.Has(manifest.PermissionVaultRead) {
 		t.Errorf("expected permission %s to be present", manifest.PermissionVaultRead)
 	}
-	if !sup.HasPermission(manifest.PermissionNetworkOutbound) {
+	if !sup.Permissions.Has(manifest.PermissionNetworkOutbound) {
 		t.Errorf("expected permission %s to be normalized and present", manifest.PermissionNetworkOutbound)
 	}
-	if !sup.HasPermission("network") {
+	if !sup.Permissions.Has("network") {
 		t.Errorf("expected alias network to return true")
 	}
-	if err := sup.CheckPermission(manifest.PermissionNetworkOutbound); err != nil {
+	if err := sup.Permissions.Check(manifest.PermissionNetworkOutbound); err != nil {
 		t.Errorf("expected CheckPermission for %s to pass: %v", manifest.PermissionNetworkOutbound, err)
 	}
-	if sup.HasPermission(manifest.PermissionVaultWrite) {
+	if sup.Permissions.Has(manifest.PermissionVaultWrite) {
 		t.Errorf("expected undeclared permission %s to be false", manifest.PermissionVaultWrite)
 	}
 }
@@ -173,7 +170,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 		t.Fatalf("start process: %v", err)
 	}
 
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	var stateInOnExit atomic.Value
 	sup.SetOnExit(func() {
 		stateInOnExit.Store(sup.GetState())
@@ -201,7 +198,7 @@ func TestSupervisorProcessCrashTriggersOnExit(t *testing.T) {
 }
 
 func TestSupervisorActivationLifecycle(t *testing.T) {
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	if sup.GetState() != StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
@@ -261,7 +258,7 @@ func TestSupervisorActivationLifecycle(t *testing.T) {
 }
 
 func TestSupervisorTeardownWhileActivating(t *testing.T) {
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	ch := sup.SetActivating()
 
 	err := sup.Teardown(t.Context(), 50*time.Millisecond, nil)
@@ -286,7 +283,7 @@ func TestAcquire_RejectsDeactivatingPlugin(t *testing.T) {
 	defer func() {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	now := testsupport.GetEpoch()
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
@@ -312,7 +309,7 @@ func TestADeactivationDoesNotBeginOnAHeldPlugin(t *testing.T) {
 	defer func() {
 		plugintest.KillProcess(t, cmd.Process)
 	}()
-	sup := New(testsupport.NewClock())
+	sup := New(nil)
 	now := testsupport.GetEpoch()
 	if err := sup.Attach(t.Context(), cmd.Process, now); err != nil {
 		t.Fatalf("failed to attach: %v", err)
@@ -332,27 +329,27 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	}
 
 	t.Run("permission denied without vault:read", func(t *testing.T) {
-		sup := New(testsupport.NewClock())
-		sup.SetPermissions([]string{"network:outbound"})
+		sup := New(nil)
+		sup.Permissions.Set([]string{"network:outbound"})
 
-		if err := sup.CheckPermission("vault:read"); !errors.Is(err, plugin.ErrPermissionDenied) {
+		if err := sup.Permissions.Check("vault:read"); !errors.Is(err, plugin.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)
 		}
 
-		if _, err := sup.ValidatePath(vaultDir, "doc.pdf"); !errors.Is(err, plugin.ErrPermissionDenied) {
+		if _, err := sup.Permissions.ValidatePath(vaultDir, "doc.pdf"); !errors.Is(err, plugin.ErrPermissionDenied) {
 			t.Fatalf("expected ErrPermissionDenied, got %v", err)
 		}
 	})
 
 	t.Run("permission granted with vault:read", func(t *testing.T) {
-		sup := New(testsupport.NewClock())
-		sup.SetPermissions([]string{"vault:read", "vault:write"})
+		sup := New(nil)
+		sup.Permissions.Set([]string{"vault:read", "vault:write"})
 
-		if err := sup.CheckPermission("vault:read"); err != nil {
+		if err := sup.Permissions.Check("vault:read"); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		got, err := sup.ValidatePath(vaultDir, "doc.pdf")
+		got, err := sup.Permissions.ValidatePath(vaultDir, "doc.pdf")
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -362,10 +359,10 @@ func TestSupervisorPermissionsAndPathValidation(t *testing.T) {
 	})
 
 	t.Run("traversal blocked even with vault:read", func(t *testing.T) {
-		sup := New(testsupport.NewClock())
-		sup.SetPermissions([]string{"vault:read"})
+		sup := New(nil)
+		sup.Permissions.Set([]string{"vault:read"})
 
-		_, err := sup.ValidatePath(vaultDir, "../secret.txt")
+		_, err := sup.Permissions.ValidatePath(vaultDir, "../secret.txt")
 		if !errors.Is(err, plugin.ErrPathTraversal) {
 			t.Fatalf("expected ErrPathTraversal, got %v", err)
 		}

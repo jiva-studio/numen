@@ -52,14 +52,14 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, _, _, err := shared.RenameNote(t.Context(), "Danube.md", "Donau"); err != nil {
+	if _, _, _, err := shared.Arranger.RenameNote(t.Context(), "Danube.md", "Donau"); err != nil {
 		t.Fatalf("the rename in %s failed: %v", v.Name, err)
 	}
-	if _, err := shared.MoveNote(t.Context(), "Donau.md", "Rivers/Donau.md"); err != nil {
+	if _, err := shared.Arranger.MoveNote(t.Context(), "Donau.md", "Rivers/Donau.md"); err != nil {
 		t.Fatalf("the move failed: %v", err)
 	}
 
@@ -106,18 +106,18 @@ func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	lakes, err := shared.With(other.ID)
+	lakes, err := shared.Switch.With(other.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := lakes.Scan(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
+	if err := lakes.Writer.Scan(t.Context(), []string{"Baikal.md", "Lakes.md"}); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, _, _, err := lakes.RenameNote(t.Context(), "Baikal.md", "Danube"); err != nil {
+	if _, _, _, err := lakes.Arranger.RenameNote(t.Context(), "Baikal.md", "Danube"); err != nil {
 		t.Fatalf("the rename in %s failed: %v", other.Name, err)
 	}
-	if _, err := lakes.MoveNote(t.Context(), "Lakes.md", "Siberia/Lakes.md"); err != nil {
+	if _, err := lakes.Arranger.MoveNote(t.Context(), "Lakes.md", "Siberia/Lakes.md"); err != nil {
 		t.Fatalf("the move in %s failed: %v", other.Name, err)
 	}
 
@@ -182,12 +182,12 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Scan(t.Context(), []string{"Danube.md"}); err != nil {
+	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md"}); err != nil {
 		t.Fatal(err)
 	}
 	isSwitched.Store(false)
 
-	if _, _, _, err := shared.RenameNote(t.Context(), "Danube.md", "Donau"); err != nil {
+	if _, _, _, err := shared.Arranger.RenameNote(t.Context(), "Danube.md", "Donau"); err != nil {
 		t.Fatalf("the rename in %s failed: %v", rivers.Name, err)
 	}
 
@@ -213,10 +213,10 @@ func TestWindowMoveAfterPluginMoveIsShownToTheWindow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
+	if err := shared.Writer.Scan(t.Context(), []string{"Danube.md", "Deltas.md", "Estuaries.md"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := shared.MoveNote(t.Context(), "Danube.md", "Donau.md"); err != nil {
+	if _, err := shared.Arranger.MoveNote(t.Context(), "Danube.md", "Donau.md"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := scenarios.Place.Move.Execute(t.Context(), v, "Deltas.md", "Delta.md"); err != nil {

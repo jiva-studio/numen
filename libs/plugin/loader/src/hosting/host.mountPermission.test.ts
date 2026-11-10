@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref, type PropType } from 'vue'
-import type { VaultNotes } from '@numen/plugin-sdk'
+import type { VaultNotes, ViewCapability } from '@numen/plugin-sdk'
 import { createMockManifest } from '@numen/core-client/testing'
 import { createPluginHost } from './host'
 import type { PluginHostDeps } from './types'
 
-const VIEW = 'md.numen.owner.note-viewer'
+const asCapability = (name: string) => name as ViewCapability
+
+const VIEW = asCapability('md.numen.owner.note-viewer')
 
 const settle = async () => {
   await new Promise((resolve) => setTimeout(resolve, 20))
@@ -27,7 +29,7 @@ const createHost = () => {
 
 type Plugin = ReturnType<ReturnType<typeof createHost>['createPlugin']>
 
-const registerNoteViewer = (owner: Plugin, capability = VIEW) =>
+const registerNoteViewer = (owner: Plugin, capability: ViewCapability = VIEW) =>
   owner.register.view({
     capability,
     component: defineComponent({
@@ -92,7 +94,7 @@ describe('a view kind a plugin registers itself', () => {
     })
     const element = document.createElement('div')
 
-    expect(() => createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, {})).not.toThrow()
+    expect(() => createPlugin('md.numen.caller', []).ui.mountView(VIEW, element, { path: '' })).not.toThrow()
     expect(element.textContent).toBe('plain')
   })
 
@@ -118,9 +120,9 @@ describe('a view capability named like a property of every object', () => {
       const caller = createPlugin('md.numen.caller', [])
       const element = document.createElement('div')
 
-      expect(() => caller.ui.mountView(name, element, {})).not.toThrow()
+      expect(() => caller.ui.mountView(asCapability(name), element, { path: '' })).not.toThrow()
       createPlugin('md.numen.owner', []).register.view({
-        capability: name,
+        capability: asCapability(name),
         component: defineComponent({ setup: () => () => h('p', 'late') }),
       })
       await settle()
@@ -133,11 +135,11 @@ describe('a view capability named like a property of every object', () => {
     'refuses a plugin without vault:read to mount the registered "%s"',
     async (name) => {
       const { read, createPlugin } = createHost()
-      registerNoteViewer(createPlugin('md.numen.owner', ['vault:read']), name)
+      registerNoteViewer(createPlugin('md.numen.owner', ['vault:read']), asCapability(name))
       const element = document.createElement('div')
 
       expect(() =>
-        createPlugin('md.numen.caller', []).ui.mountView(name, element, {
+        createPlugin('md.numen.caller', []).ui.mountView(asCapability(name), element, {
           path: 'Notes/Example.md',
         }),
       ).toThrow(/vault:read/)

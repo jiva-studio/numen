@@ -79,7 +79,7 @@ func (d *Teardown) teardownTarget(ctx context.Context, target pluginTeardownTarg
 	err := target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
 	d.t.clients.Remove(target.endpoint.Token)
 	d.processes.closeStdin(target.id, target.pid)
-	d.services.clearPluginWork(target.id)
+	d.services.clearPlugin(target.id)
 	return err
 }
 
@@ -88,8 +88,7 @@ func (d *Teardown) dropEndpoint(pluginID string) {
 	d.t.clients.Remove(d.t.endpoints[pluginID].Token)
 	d.t.forgetEndpointLocked(pluginID)
 	d.t.mu.Unlock()
-	d.services.clearPluginWork(pluginID)
-	d.services.clearPluginTasks(pluginID)
+	d.services.clearPlugin(pluginID)
 }
 
 // EvictIdle stops the plugins that hold no lease and have been idle for longer than threshold.

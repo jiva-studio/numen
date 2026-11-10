@@ -1,4 +1,4 @@
-import type { TextRange } from './types'
+import type { JsonValue, TextRange } from './types'
 
 // SourceLocation is where a call was working: a file, and the run of its text the call named.
 export interface SourceLocation {
@@ -75,8 +75,8 @@ export interface AgentHost extends AgentPort {
   resolveLinks(text: string, vault?: string): Promise<readonly TextLink[]>
   // Why the agent cannot be reached, and empty where it can.
   getUnreachable(): string
-  getSetting(path: readonly string[]): unknown
-  writeSetting(path: readonly string[], value: unknown): Promise<void>
+  getSetting(path: readonly string[]): JsonValue | undefined
+  writeSetting(path: readonly string[], value: JsonValue): Promise<void>
   // The agents or models the setting at a path offers.
   getModelsAt(path: readonly string[]): readonly AgentModel[]
 }

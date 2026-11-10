@@ -259,7 +259,7 @@ describe('createShellHost', () => {
 
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, { focus: 'Decks/Physics.md' })
+      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: 'Decks/Physics.md' })
     expect(panel.textContent).toBe('Decks/Physics.md')
 
     host.disposePlugin('md.numen.chat')
@@ -275,7 +275,7 @@ describe('createShellHost', () => {
     const panel = document.createElement('section')
     host
       .createContext('md.numen.cards', withVault('md.numen.cards'))
-      .ui.mountView(CONVERSATION, panel, {})
+      .ui.mountView(CONVERSATION, panel, { agent: createMockAgentHost(), focus: '' })
 
     host.disposePlugin('md.numen.cards')
 

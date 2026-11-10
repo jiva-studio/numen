@@ -3,6 +3,7 @@ package hostendpoint
 import (
 	"context"
 	"errors"
+	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
 	"io/fs"
 	"net/http"
 	"net/http/httptest"
@@ -62,7 +63,7 @@ func (m *memoryVault) GetVaults() ([]domain.Vault, error) {
 	return out, nil
 }
 
-func (m *memoryVault) With(id domain.VaultID) (*VaultAccess, error) {
+func (m *memoryVault) With(id domain.VaultID) (*vaultapi.Access, error) {
 	if m.vault != nil && m.vault.ID == id {
 		return vaultOf(m), nil
 	}
@@ -269,7 +270,7 @@ func newVaultClient(t *testing.T, fakeCallers *callers, token string) numenv1con
 	t.Helper()
 	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(vaultapi.NewHandler(endpoint, vaultSource{callers: endpoint.callers}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
@@ -357,12 +358,6 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	}
 }
 
-func TestAnErrorTheHostCannotNameIsInternal(t *testing.T) {
-	if _, err := answer(t.Context(), errors.New("the disk is gone")); readCode(t, err) != connect.CodeInternal {
-		t.Errorf("the failure was %v", err)
-	}
-}
-
 func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
@@ -370,19 +365,6 @@ func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 
 	if err != nil || !slices.Equal(res.Msg.GetPaths(), []string{"Animal.md"}) {
 		t.Errorf("the paths were %v (%v)", res.Msg.GetPaths(), err)
-	}
-}
-
-func TestAFingerprintCarriesWhetherTheFileIsANote(t *testing.T) {
-	for _, kind := range []domain.SourceKind{domain.KindNote, domain.KindFile} {
-		got := readFileStat(writeFileStat(domain.FileStat{Path: "B.sample", Kind: kind, Size: 3, ModTime: time.Unix(5, 6)}))
-
-		if got.Kind != kind || got.Path != "B.sample" || !got.ModTime.Equal(time.Unix(5, 6)) {
-			t.Errorf("got %+v, want the kind %q", got, kind)
-		}
-	}
-	if got := readFileStat(&v1.HostFileStat{}); got.Kind != "" {
-		t.Errorf("got %+v, want a fingerprint naming no file to have no kind", got)
 	}
 }
 

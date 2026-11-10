@@ -9,6 +9,7 @@ import {
 } from '@numen/plugin-loader'
 import { createNoticeQueue } from '@numen/workbench'
 import { createTestTabs } from '@/testing/tabs'
+import { blank } from '@/testing/stubs'
 import type { AnyTabKind } from '@/entities/tab'
 import type { Manifest } from '@numen/core-client'
 import { createMockManifest } from '@numen/core-client/testing'
@@ -56,7 +57,7 @@ describe('closing the tabs of a plugin', () => {
         'md.numen.a',
         createMockManifest('md.numen.a', { name: 'md.numen.a', permissions: ['vault:read'] }),
       )
-      .register.tabKind({ kind: 'a-kind', component: null, title: 'A' })
+      .register.tabKind({ kind: 'a-kind', component: blank, title: 'A' })
     const id = await windowTabs.tabs.createTab('a-kind', 'x')
     windowTabs.panes.show(id)
 
@@ -87,7 +88,7 @@ describe('closing the tabs of a plugin', () => {
         'md.numen.b',
         createMockManifest('md.numen.b', { name: 'md.numen.b', permissions: ['vault:read'] }),
       )
-      .register.tabKind({ kind: 'b-kind', component: null, title: 'B' })
+      .register.tabKind({ kind: 'b-kind', component: blank, title: 'B' })
     const id = await windowTabs.tabs.createTab('b-kind', 'x')
 
     support.pluginHost.disposePlugin('md.numen.a')
@@ -103,7 +104,7 @@ const manifest: Manifest = createMockManifest('md.numen.sample.chat', {
 })
 
 const activate = (context: PluginContext) => {
-  context.register.tabKind({ kind: 'chat', component: null, title: 'Chat' })
+  context.register.tabKind({ kind: 'chat', component: blank, title: 'Chat' })
 }
 
 describe('the tab kind a plugin adds', () => {
@@ -205,7 +206,7 @@ describe('the settings and notices a plugin is given', () => {
 
     pluginHost
       .createContext('md.numen.pdf')
-      .register.reader({ id: 'document', title: 'Document', component: null })
+      .register.reader({ id: 'document', title: 'Document', component: blank })
 
     expect(registerExtensionReader).toHaveBeenCalledTimes(1)
     expect(registerExtensionReader).toHaveBeenCalledWith('.pdf', expect.any(Function), undefined)
@@ -390,10 +391,10 @@ describe('the settings and notices a plugin is given', () => {
     expect(notices.notices.value).toStrictEqual([])
   })
 
-  it('gives a plugin no notices where the window keeps no list', () => {
+  it('drops what a plugin reports where the window keeps no list', () => {
     const { pluginHost } = createWith({})
 
-    expect(pluginHost.createContext('md.numen.a').ui.notices).toBeUndefined()
+    expect(() => pluginHost.createContext('md.numen.a').ui.notices.show('Saved.')).not.toThrow()
   })
 })
 
@@ -463,7 +464,7 @@ describe('the plugins the window loads', () => {
     const icon = { name: 'CustomIcon' }
     ctx.register.tabKind({
       kind: 'sample' as never,
-      component: null,
+      component: blank,
       title: 'Sample',
       icon,
     })

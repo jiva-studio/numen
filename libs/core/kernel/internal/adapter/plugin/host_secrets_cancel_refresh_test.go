@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"testing"
 	"time"
 
@@ -48,7 +49,7 @@ func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T
 			case <-ctx.waitSignal:
 			case err := <-result:
 				t.Fatalf("the call returned %v without waiting for its context", err)
-			case <-time.After(configureCallTimeout):
+			case <-time.After(delivery.ConfigureTimeout):
 				t.Fatal("the call does not wait for the end of its context")
 			}
 			cancel()
@@ -57,7 +58,7 @@ func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T
 				if !errors.Is(err, context.Canceled) {
 					t.Errorf("the call returned %v, want the context error", err)
 				}
-			case <-time.After(configureCallTimeout):
+			case <-time.After(delivery.ConfigureTimeout):
 				t.Fatal("the call still waits for the lock after its context ended")
 			}
 
@@ -104,7 +105,7 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 					if !errors.Is(err, context.Canceled) {
 						t.Errorf("the call returned %v, want the context error", err)
 					}
-				case <-time.After(configureCallTimeout):
+				case <-time.After(delivery.ConfigureTimeout):
 					t.Fatal("the call still waits for the lock after its context ended")
 				}
 
@@ -125,14 +126,14 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefreshConfiguresThePlugin(t *testing.T) {
 	c := newCancelSetup(t)
 	calls := c.probe.count()
-	if err := c.host.Config.delivery.lockSecrets(t.Context()); err != nil {
+	if err := c.host.Config.delivery.Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	isLocked := true
 	unlock := func() {
 		if isLocked {
 			isLocked = false
-			c.host.Config.delivery.unlockSecrets()
+			c.host.Config.delivery.Unlock()
 		}
 	}
 	defer unlock()
@@ -142,7 +143,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 	activation := make(chan error, 1)
 	go func() { activation <- activate(ctx) }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return c.host.Config.delivery.isAwaitingFirstConfigure(secretPluginID)
+		return c.host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
 	})
 	cancel()
 	select {
@@ -150,10 +151,10 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("the activation returned %v, want the context error", err)
 		}
-	case <-time.After(configureCallTimeout):
+	case <-time.After(delivery.ConfigureTimeout):
 		t.Fatal("the activation still waits for the lock after its context ended")
 	}
-	if c.host.Config.delivery.isAwaitingFirstConfigure(secretPluginID) {
+	if c.host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID) {
 		t.Error("the plugin still awaits a Configure that will not be sent")
 	}
 

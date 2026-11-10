@@ -2,6 +2,7 @@
  * The menu tree of the entries of a slot.
  */
 import { describe, expect, it } from 'vitest'
+import { defineComponent } from 'vue'
 import type { CommandItem } from '../commands/commands'
 import type { SlotCommand, SlotItem, SlotSeparator, SlotSubmenu, SlotView } from './slots'
 import { createSlotMenu, type CommandItemLists } from './slotMenu'
@@ -41,7 +42,9 @@ const VIEW: SlotView = {
   component: { name: 'Sketch' },
 }
 
-const OPEN = command('open', { icon: 'open-icon' })
+const OPEN_ICON = defineComponent({ name: 'OpenIcon' })
+const TEXT_ICON = defineComponent({ name: 'TextIcon' })
+const OPEN = command('open', { icon: OPEN_ICON })
 const RENAME = command('rename')
 const MOVE = command('moveToWindow', { hasItems: true })
 const CREATE_TEXT = command('createText', {
@@ -224,16 +227,16 @@ describe('the pick of a row', () => {
 
 describe('the icon of a row', () => {
   it('is the icon of its entry, and of the entry of a shared command drawn as one row', () => {
-    const shared = { ...CREATE_TEXT, icon: 'text-icon' }
+    const shared = { ...CREATE_TEXT, icon: TEXT_ICON }
     const menu = createSlotMenu(
       [OPEN, RENAME, shared],
       lists([[shared, [{ id: 'md.numen.pdf', title: 'Extract text layer' }]]]),
       WORDS,
     )
 
-    expect(menu.getIcon(OPEN.key)).toBe('open-icon')
+    expect(menu.getIcon(OPEN.key)).toBe(OPEN_ICON)
     expect(menu.getIcon(RENAME.key)).toBeUndefined()
-    expect(menu.getIcon(`${shared.key}#item:md.numen.pdf`)).toBe('text-icon')
+    expect(menu.getIcon(`${shared.key}#item:md.numen.pdf`)).toBe(TEXT_ICON)
   })
 })
 

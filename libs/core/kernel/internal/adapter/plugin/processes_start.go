@@ -60,12 +60,12 @@ func (p *Processes) getLaunchVars(ctx context.Context, pluginID string, requirem
 }
 
 func (p *Processes) getEnvironmentVars(ctx context.Context, pluginID string, processPort int, token string, runtimeVars []string) []string {
-	hostPort, err := p.services.openHostEndpoint(ctx)
+	hostPort, err := p.services.OpenHostEndpoint(ctx)
 	if err != nil {
 		p.errs.report(fmt.Errorf("open host endpoint for plugin %s: %w", pluginID, err))
 		hostPort = 0
 	}
-	storageVars, err := p.storage.getStorageVars(pluginID)
+	storageVars, err := p.storage.GetVars(pluginID)
 	if err != nil {
 		p.errs.report(err)
 	}
@@ -102,7 +102,7 @@ func (p *Processes) startBuiltIn(ctx context.Context, plug manifest.Discovered, 
 		Port:  0,
 		Token: token,
 	}
-	p.t.clients.Add(token, NewInProcessTransport(handler))
+	p.t.clients.Add(token, transport.NewInProcessTransport(handler))
 	if err := transport.CheckPluginProtocol(ctx, p.t.clients.Get(endpoint), plug.Manifest, endpoint); err != nil {
 		p.t.clients.Remove(token)
 		p.shutdownBuiltIn(ctx, endpoint)
