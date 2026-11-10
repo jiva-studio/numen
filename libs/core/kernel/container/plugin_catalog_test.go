@@ -26,7 +26,7 @@ func readFrontendSource(t *testing.T, dir string) string {
 	return all.String()
 }
 
-var registersTab = regexp.MustCompile(`\bregister\.(tabKind|reader)\(`)
+var registersTab = regexp.MustCompile(`\bregister\.(tabKind|reader)\b`)
 
 func TestAPluginThatRegistersTabsDeclaresThemInItsManifest(t *testing.T) {
 	checked := 0
