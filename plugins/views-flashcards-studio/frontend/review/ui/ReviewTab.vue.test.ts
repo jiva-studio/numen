@@ -104,7 +104,7 @@ const mountReview = async (vault: string) => {
       agent: createMockAgentHost(),
       mountView: mountNothing,
       goToVaults: () => undefined,
-      getViewportWidth: () => 0,
+      getViewport: () => ({ screen: 0, page: 0 }),
     }),
   ) as Review
   const tab: VueWrapper = mount(ReviewTab, { props: { state } })

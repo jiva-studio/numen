@@ -31,8 +31,8 @@ export interface ReviewDeps {
   readonly agent: AgentHost
   readonly mountView: MountView
   readonly goToVaults: () => void
-  /** The width of the widest thing the window can draw the heatmap in, in pixels. */
-  readonly getViewportWidth: () => number
+  /** The widths, in pixels, of the screen and of the page, whose wider the heatmap is drawn for. */
+  readonly getViewport: () => { readonly screen: number; readonly page: number }
 }
 
 /** The reading, as far as the keys reach into it. */
@@ -136,7 +136,10 @@ export const useReview = (deps: ReviewDeps) => {
   const reviewDays = useReviewDays({
     cards,
     reportError: notices.reportError,
-    widest: deps.getViewportWidth,
+    widest: () => {
+      const { screen, page } = deps.getViewport()
+      return Math.max(screen, page)
+    },
   })
   const schedules = useVaultPresets({ presets: cards })
   const notesPage = shallowRef<NotesPage | null>(null)

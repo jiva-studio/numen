@@ -51,8 +51,10 @@ export function createReviewKind(deps: ReviewKindDeps): TabKindRegistration<Revi
         agent: deps.agent,
         mountView: deps.mountView,
         goToVaults: () => deps.closeTab(id),
-        getViewportWidth: () =>
-          Math.max(window.screen.width, document.documentElement.clientWidth),
+        getViewport: () => ({
+          screen: window.screen.width,
+          page: document.documentElement.clientWidth,
+        }),
       }),
     getTitle: (state) => state.vaultCount.value?.identity.name ?? 'Flashcards',
     onKeyPress: (state, event) => state.onKeyDown(event),

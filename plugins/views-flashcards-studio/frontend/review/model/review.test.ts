@@ -190,7 +190,7 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
   const counts = createVaultCounts({ reportError: vi.fn() })
   const scope = effectScope()
   const review = scope.run(() =>
-    useReview({ vault: 'roots', counts, notices, agent, mountView: mountNothing, goToVaults, getViewportWidth: () => 0 }),
+    useReview({ vault: 'roots', counts, notices, agent, mountView: mountNothing, goToVaults, getViewport: () => ({ screen: window.screen.width, page: document.documentElement.clientWidth }) }),
   ) as Review
   if (isPageDrawn) {
     review.notesPage.value = { scrollPage: (back: boolean) => wire.scrolled.push(back) }
