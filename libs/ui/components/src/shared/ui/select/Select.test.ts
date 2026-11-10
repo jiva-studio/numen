@@ -253,12 +253,12 @@ describe('searching the choices', () => {
 describe('the value written on the line', () => {
   it('is kept to one line and read whole from its title', () => {
     const control = mountSelect({
-      choices: [{ id: 'long', text: 'Agent of the panel (OpenAI Codex) with a long tail' }],
+      choices: [{ id: 'long', text: 'Helper of the panel (Grove Press) with a long tail' }],
       modelValue: 'long',
     })
     const readingElement = control.get('.select__reading')
     expect(readingElement.attributes('title')).toBe(
-      'Agent of the panel (OpenAI Codex) with a long tail',
+      'Helper of the panel (Grove Press) with a long tail',
     )
   })
 })

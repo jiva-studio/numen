@@ -7,14 +7,14 @@
  */
 import type { Component } from 'vue'
 import { KeyCap } from '@numen/ui'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 
 defineProps<{
   icon?: Component | undefined
   text: string
   aside?: string | undefined
   whole?: string | undefined
-  keys?: PaletteKeys | undefined
+  keys?: Keystroke | undefined
   isDisabled?: boolean | undefined
 }>()
 

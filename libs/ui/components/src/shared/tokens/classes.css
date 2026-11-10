@@ -1,6 +1,6 @@
 /*
  * The classes every window draws the same way, whoever renders them: the
- * components, a window's own parts, and the plugins' views.
+ * components, a window's own parts, and the views of add-ons.
  */
 
 .caution {

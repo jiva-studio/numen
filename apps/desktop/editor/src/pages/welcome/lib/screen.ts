@@ -4,7 +4,7 @@
  * The screen renders these rows and decides nothing, so a test can query what a
  * window on a vault, or on none, presents to the user.
  */
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import type { VaultRow, WelcomeAction } from '@numen/workbench'
 import type { VaultList } from '@/entities/vault'
 import { createRowKeys } from '@/features/command-palette'
@@ -19,9 +19,9 @@ export interface CurrentVault {
 /** Every label the welcome screen shows. */
 export interface Words {
   readonly find: string
-  readonly findKeys: PaletteKeys
+  readonly findKeys: Keystroke
   readonly commands: string
-  readonly commandsKeys: PaletteKeys
+  readonly commandsKeys: Keystroke
   readonly newNote: string
   readonly settings: string
   readonly vaults: string

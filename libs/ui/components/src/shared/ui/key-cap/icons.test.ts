@@ -8,9 +8,9 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ICONS } from './icons'
-import type { PaletteIcon } from './keys'
+import type { KeyIcon } from './keys'
 
-const EVERY = Object.entries(ICONS) as readonly [PaletteIcon, (typeof ICONS)[PaletteIcon]][]
+const EVERY = Object.entries(ICONS) as readonly [KeyIcon, (typeof ICONS)[KeyIcon]][]
 
 describe('how thick an icon is stroked', () => {
   it('is thinner by exactly as much as the icon is drawn larger', () => {

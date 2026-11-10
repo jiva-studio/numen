@@ -7,7 +7,7 @@ import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
 import type { Position } from '@/shared/lib/math/geometry'
 
-const ROWS: readonly Row[] = [{ id: 'notes', name: 'Notes', hasChildren: false }]
+const ROWS: readonly Row[] = [{ id: 'pages', name: 'Pages', hasChildren: false }]
 
 const create = (
   renamingPath = ref<string | null>(null),
@@ -69,7 +69,7 @@ describe('menu keys when getMenuAt returns a position', () => {
 
     gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true }))
 
-    expect(notified).toStrictEqual([['menu', 'notes', pos]])
+    expect(notified).toStrictEqual([['menu', 'pages', pos]])
   })
 
   it('ignores F10 without Shift', () => {
@@ -95,26 +95,26 @@ describe('menu keys when getMenuAt returns a position', () => {
 
 describe('renaming handlers', () => {
   it('clears renamingPath on blur, rename, or abandon and restores row focus', async () => {
-    const renamingPath = ref<string | null>('notes')
+    const renamingPath = ref<string | null>('pages')
     const { gestures, notified, rows } = create(renamingPath)
     const focusSpy = vi.spyOn(rows, 'focusRow')
 
     gestures.onFieldBlur()
     expect(renamingPath.value).toBeNull()
 
-    renamingPath.value = 'notes'
-    gestures.onRename('notes', 'Renamed')
+    renamingPath.value = 'pages'
+    gestures.onRename('pages', 'Renamed')
     expect(renamingPath.value).toBeNull()
-    expect(notified).toStrictEqual([['rename', 'notes', 'Renamed']])
-    expect(focusSpy).toHaveBeenCalledWith('notes')
+    expect(notified).toStrictEqual([['rename', 'pages', 'Renamed']])
+    expect(focusSpy).toHaveBeenCalledWith('pages')
 
-    renamingPath.value = 'notes'
-    gestures.onAbandon('notes')
+    renamingPath.value = 'pages'
+    gestures.onAbandon('pages')
     expect(renamingPath.value).toBeNull()
     expect(focusSpy).toHaveBeenCalledTimes(2)
 
     gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
     expect(focusSpy).toHaveBeenCalledTimes(3)
-    expect(focusSpy).toHaveBeenLastCalledWith('notes')
+    expect(focusSpy).toHaveBeenLastCalledWith('pages')
   })
 })

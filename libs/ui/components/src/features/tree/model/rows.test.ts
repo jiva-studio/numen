@@ -7,7 +7,7 @@ import { useDrawnRows } from './rows'
 
 const ROWS: readonly Row[] = [
   { id: 'work', name: 'Work', hasChildren: false },
-  { id: 'notes', name: 'Notes', hasChildren: false },
+  { id: 'pages', name: 'Pages', hasChildren: false },
   { id: 'loose', name: 'Loose', hasChildren: false },
 ]
 
@@ -32,13 +32,13 @@ describe('the row the tab key reaches', () => {
   })
 
   it('is the first row of the selection', () => {
-    expect(create(ROWS, ['loose', 'notes']).tabbed.value).toBe('loose')
+    expect(create(ROWS, ['loose', 'pages']).tabbed.value).toBe('loose')
   })
 
   it('is the row the keyboard was left on', () => {
     const rows = create(ROWS, ['loose'])
-    rows.here.value = 'notes'
-    expect(rows.tabbed.value).toBe('notes')
+    rows.here.value = 'pages'
+    expect(rows.tabbed.value).toBe('pages')
   })
 
   it('is not a row the keyboard was left on once it is no longer drawn', () => {
@@ -57,26 +57,26 @@ describe('a row as it is drawn', () => {
   it('is found under the row it remains for', () => {
     const rows = create()
     const { rendered } = createDrawn()
-    rows.setRowElement('notes', rendered)
+    rows.setRowElement('pages', rendered)
 
-    expect(rows.getRowElement('notes')).toBe(rendered.$el)
+    expect(rows.getRowElement('pages')).toBe(rendered.$el)
     expect(rows.getRowElement('work')).toBeNull()
   })
 
   it('is forgotten once it is taken away', () => {
     const rows = create()
-    rows.setRowElement('notes', createDrawn().rendered)
-    rows.setRowElement('notes', null)
+    rows.setRowElement('pages', createDrawn().rendered)
+    rows.setRowElement('pages', null)
 
-    expect(rows.getRowElement('notes')).toBeNull()
+    expect(rows.getRowElement('pages')).toBeNull()
   })
 
   it('is forgotten once it is replaced by something that draws nothing', () => {
     const rows = create()
-    rows.setRowElement('notes', createDrawn().rendered)
-    rows.setRowElement('notes', {})
+    rows.setRowElement('pages', createDrawn().rendered)
+    rows.setRowElement('pages', {})
 
-    expect(rows.getRowElement('notes')).toBeNull()
+    expect(rows.getRowElement('pages')).toBeNull()
   })
 })
 
@@ -84,11 +84,11 @@ describe('the keyboard put onto a row', () => {
   it('lands on the row once the rows are drawn', async () => {
     const rows = create()
     const { focus, rendered } = createDrawn()
-    rows.setRowElement('notes', rendered)
+    rows.setRowElement('pages', rendered)
 
-    const isDone = rows.focusRow('notes')
+    const isDone = rows.focusRow('pages')
     expect(focus).not.toHaveBeenCalled()
-    expect(rows.here.value).toBe('notes')
+    expect(rows.here.value).toBe('pages')
 
     await isDone
     expect(focus).toHaveBeenCalledTimes(1)
@@ -97,12 +97,12 @@ describe('the keyboard put onto a row', () => {
   it('lands on no row for no row', async () => {
     const rows = create()
     const { focus, rendered } = createDrawn()
-    rows.setRowElement('notes', rendered)
-    rows.here.value = 'notes'
+    rows.setRowElement('pages', rendered)
+    rows.here.value = 'pages'
 
     await rows.focusRow(null)
 
-    expect(rows.here.value).toBe('notes')
+    expect(rows.here.value).toBe('pages')
     expect(focus).not.toHaveBeenCalled()
   })
 
@@ -127,9 +127,9 @@ describe('the keyboard put onto a row', () => {
       scrollToRow,
     )
     const { focus, rendered } = createDrawn()
-    rows.setRowElement('notes', rendered)
+    rows.setRowElement('pages', rendered)
 
-    await rows.focusRow('notes')
+    await rows.focusRow('pages')
 
     expect(scrollToRow).toHaveBeenCalledWith(1)
     expect(focus).toHaveBeenCalledTimes(1)
@@ -144,9 +144,9 @@ describe('the keyboard put onto a row', () => {
       defaultScroll,
     )
     const { rendered } = createDrawn()
-    rows.setRowElement('notes', rendered)
+    rows.setRowElement('pages', rendered)
 
-    await rows.focusRow('notes', explicitScroll)
+    await rows.focusRow('pages', explicitScroll)
 
     expect(defaultScroll).not.toHaveBeenCalled()
     expect(explicitScroll).toHaveBeenCalledWith(1)

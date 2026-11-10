@@ -9,9 +9,9 @@
  */
 import { computed } from 'vue'
 import { ICONS } from './icons'
-import type { PaletteKeys } from './keys'
+import type { Keystroke } from './keys'
 
-const props = defineProps<{ keys: PaletteKeys }>()
+const props = defineProps<{ keys: Keystroke }>()
 
 /**
  * The keystroke as words, in the order the keys are pressed. This is all that
@@ -45,7 +45,7 @@ const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills 
 
 <style scoped>
 /* Small text on the cap's background, inside a line at a quarter of the text color. */
-/* The type is a token, so a cap in the palette footer and a cap on a row are identical. */
+/* The type is a token, so a cap in a footer and a cap on a row are identical. */
 .cap {
   /* The corner of a key cap, which is tighter than the corner of a node. */
   --cap-radius: 0.25rem;

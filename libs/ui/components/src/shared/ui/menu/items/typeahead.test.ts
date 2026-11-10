@@ -9,7 +9,7 @@ import { isLetter, jumpTo, NOTHING_TYPED, type Typeahead } from './typeahead'
 
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
-  { id: 'child', text: 'New child note' },
+  { id: 'child', text: 'New child page' },
   { id: 'copy', text: 'Copy path' },
   { id: 'cut', text: 'Cut' },
 ]

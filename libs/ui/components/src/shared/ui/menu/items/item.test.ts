@@ -103,7 +103,7 @@ describe('the rules a menu draws between its groups', () => {
     expect(
       getRules([
         { id: 'open', text: 'Open', group: 'open' },
-        { id: 'note', text: 'New note', group: 'file' },
+        { id: 'page', text: 'New page', group: 'file' },
         { id: 'folder', text: 'New folder', group: 'file' },
         { id: 'remove', text: 'Remove', group: 'gone' },
       ]),
@@ -127,7 +127,7 @@ describe('the rules a menu draws between its groups', () => {
     expect(
       getRules([
         { id: 'one', text: 'One', group: 'file' },
-        { id: 'two', text: 'Two', group: 'plex' },
+        { id: 'two', text: 'Two', group: 'map' },
         { id: 'three', text: 'Three', group: 'file' },
       ]),
     ).toStrictEqual([false, true, true])
@@ -136,7 +136,7 @@ describe('the rules a menu draws between its groups', () => {
   it('carries every item through, in the order it was given', () => {
     const items: MenuItem[] = [
       { id: 'one', text: 'One', group: 'file', isDisabled: true },
-      { id: 'two', text: 'Two', group: 'plex' },
+      { id: 'two', text: 'Two', group: 'map' },
     ]
     expect(groupItems(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
     expect(groupItems(items)[0]?.isDisabled).toBe(true)

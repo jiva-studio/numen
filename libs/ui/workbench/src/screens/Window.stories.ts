@@ -14,7 +14,7 @@ import { expect, waitFor, within } from 'storybook/test'
 import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
 import { ref } from 'vue'
 import { Tree, keyChord } from '@numen/ui'
-import type { PaletteKeys, Row, TextRange } from '@numen/ui'
+import type { Keystroke, Row, TextRange } from '@numen/ui'
 import {
   WorkspaceLayout,
   branch,
@@ -319,7 +319,7 @@ const KEYBOARD = 'Macintosh'
 
 const RUN = [{ id: 'run', text: 'Run it' }]
 
-const command = (id: string, title: string, keys?: PaletteKeys): PaletteItem => ({
+const command = (id: string, title: string, keys?: Keystroke): PaletteItem => ({
   id,
   title,
   actions: RUN,

@@ -26,7 +26,7 @@ export const LINK =
   'https://example.invalid/a/very/long/path/that/keeps/going/and/going?with=query&and=more#and-a-fragment'
 
 export const LONG =
-  'The vault format is not settled, so a component built against today’s guess ' +
+  'The seed format is not settled, so a component built against today’s guess ' +
   'at it would be rewritten when the guess is replaced. That is why a component ' +
   'here takes props it defines itself and emits events carrying opaque ' +
   'identifiers: whoever renders it translates the domain into that shape, and ' +

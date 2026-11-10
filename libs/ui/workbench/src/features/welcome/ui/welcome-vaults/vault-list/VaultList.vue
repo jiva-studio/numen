@@ -7,7 +7,7 @@ import { FolderRoot } from '@lucide/vue'
 import { WelcomeRow } from '../../welcome-row'
 import { vaultLetter } from '../../../lib/letters'
 import type { VaultRow } from '../../../lib/welcome'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 
 defineProps<{
   vaults: readonly VaultRow[]
@@ -23,7 +23,7 @@ defineSlots<{
   vault?(props: { vault: VaultRow }): unknown
 }>()
 
-const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => {
+const getVaultKeys = (pos: number, vault: VaultRow): Keystroke | undefined => {
   const letter = vaultLetter(pos)
   if (!letter || vault.isWorking) return undefined
   return { icons: [], letter }

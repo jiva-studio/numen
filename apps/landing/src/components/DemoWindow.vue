@@ -39,7 +39,7 @@ import {
   Type,
   Waypoints,
 } from '@lucide/vue'
-import { Menu, keyChord, type MenuItem, type PaletteKeys, type TextRange } from '@numen/ui'
+import { Menu, keyChord, type MenuItem, type Keystroke, type TextRange } from '@numen/ui'
 import {
   Palette,
   WorkspaceLayout,
@@ -2109,7 +2109,7 @@ const PALETTE_ACTION_WORDS: ActionWords = {
 interface RawCommandItem {
   readonly id: string
   readonly title: string
-  readonly keys?: PaletteKeys
+  readonly keys?: Keystroke
   readonly also?: { readonly id: string; readonly text: string }
 }
 

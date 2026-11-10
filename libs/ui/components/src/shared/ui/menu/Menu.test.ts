@@ -14,7 +14,7 @@ import type { MenuProps } from './Menu.types'
 
 const ITEMS: MenuItem[] = [
   { id: 'open', text: 'Open' },
-  { id: 'child', text: 'New child note' },
+  { id: 'child', text: 'New child page' },
   { id: 'copy', text: 'Copy path' },
 ]
 

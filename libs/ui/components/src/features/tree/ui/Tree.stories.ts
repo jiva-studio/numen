@@ -275,13 +275,13 @@ export const One: Story = { args: { corpus: 'one' } }
 export const Empty: Story = { args: { corpus: 'empty' } }
 
 /** A name in a field, over the row it belongs to. */
-export const Renaming: Story = { args: { renamingPath: 'notes' } }
+export const Renaming: Story = { args: { renamingPath: 'pages' } }
 
 /** Several rows selected at once. */
-export const Several: Story = { args: { selected: ['work', 'notes', 'loose'] } }
+export const Several: Story = { args: { selected: ['work', 'pages', 'loose'] } }
 
 /** A selection running from inside a folder out past the end of it. */
-export const AcrossAFolder: Story = { args: { selected: ['plans', 'notes', 'empty'] } }
+export const AcrossAFolder: Story = { args: { selected: ['plans', 'pages', 'empty'] } }
 
 const getRow = (canvas: HTMLElement, row: string) => {
   const element = canvas.querySelector<HTMLElement>(`[data-tree-row="${row}"]`)
@@ -347,7 +347,7 @@ export const DragsIntoARow: Story = {
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
       'work',
       'plans',
-      'notes',
+      'pages',
       'loose',
       'empty',
     ])
@@ -369,7 +369,7 @@ export const DragsBetweenRows: Story = {
       'loose',
       'work',
       'plans',
-      'notes',
+      'pages',
       'empty',
     ])
     await expect(getRow(canvasElement, 'loose').getAttribute('aria-level')).toBe('1')
@@ -403,7 +403,7 @@ export const ReachesToARow: Story = {
 
     await hand.keyboard('{Shift>}')
     await hand.click(getRow(canvasElement, 'empty'))
-    await expect(getSelected(canvasElement)).toStrictEqual(['plans', 'notes', 'empty'])
+    await expect(getSelected(canvasElement)).toStrictEqual(['plans', 'pages', 'empty'])
 
     await hand.click(getRow(canvasElement, 'work'))
     await expect(getSelected(canvasElement)).toStrictEqual(['work', 'plans'])
@@ -413,7 +413,7 @@ export const ReachesToARow: Story = {
 
 /** Two rows dragged at once, held part way to the folder they are going into. */
 export const DraggingSeveral: Story = {
-  args: { selected: ['notes', 'loose'] },
+  args: { selected: ['pages', 'loose'] },
   play: async ({ canvasElement }) => {
     const from = getRow(canvasElement, 'loose')
     const start = getMiddle(from)
@@ -433,14 +433,14 @@ export const DraggingSeveral: Story = {
 /** Two rows dropped over a folder land in it together. */
 export const DragsSeveralIntoARow: Story = {
   tags: ['!dev'],
-  args: { selected: ['notes', 'loose'] },
+  args: { selected: ['pages', 'loose'] },
   play: async ({ canvasElement }) => {
     await dragTo(getRow(canvasElement, 'loose'), getMiddle(getRow(canvasElement, 'work')))
 
     await expect(getDrawnRows(canvasElement)).toStrictEqual([
       'work',
       'plans',
-      'notes',
+      'pages',
       'loose',
       'empty',
     ])
@@ -465,7 +465,7 @@ export const RejectsWhatItContains: Story = {
 /** A name typed over a row, and taken. */
 export const TakesAName: Story = {
   tags: ['!dev'],
-  args: { renamingPath: 'notes' },
+  args: { renamingPath: 'pages' },
   play: async ({ canvasElement }) => {
     const field = canvasElement.querySelector<HTMLInputElement>('.tree__field')
     if (!field) throw new Error('no field')
@@ -474,14 +474,14 @@ export const TakesAName: Story = {
     await userEvent.type(field, 'Грядки{Enter}')
 
     await expect(canvasElement.querySelector('.tree__field')).toBeNull()
-    await expect(getRow(canvasElement, 'notes').textContent).toContain('Грядки')
+    await expect(getRow(canvasElement, 'pages').textContent).toContain('Грядки')
   },
 }
 
 /** A name typed over a row, and abandoned. */
 export const AbandonsAName: Story = {
   tags: ['!dev'],
-  args: { renamingPath: 'notes' },
+  args: { renamingPath: 'pages' },
   play: async ({ canvasElement }) => {
     const field = canvasElement.querySelector<HTMLInputElement>('.tree__field')
     if (!field) throw new Error('no field')
@@ -490,6 +490,6 @@ export const AbandonsAName: Story = {
     await userEvent.type(field, 'Something else{Escape}')
 
     await expect(canvasElement.querySelector('.tree__field')).toBeNull()
-    await expect(getRow(canvasElement, 'notes').textContent).toContain('Notes')
+    await expect(getRow(canvasElement, 'pages').textContent).toContain('Pages')
   },
 }

@@ -37,7 +37,7 @@ export type { ListItem } from './shared/ui/searchable-list'
 export { isTyping } from './shared/lib/dom/typing'
 
 export { KeyCap, keyChord } from './shared/ui/key-cap'
-export type { PaletteIcon, PaletteKeys } from './shared/ui/key-cap'
+export type { KeyIcon, Keystroke } from './shared/ui/key-cap'
 
 /** A moment of a recording as a player writes one. */
 export { clock } from './shared/lib/time/duration'

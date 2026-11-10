@@ -10,9 +10,9 @@ import type { ListItem } from './rows'
 import { useListRows } from './useListRows'
 
 const MODELS: ListItem[] = [
-  { id: 'opus', text: 'Opus 5.5', group: 'Claude Code' },
-  { id: 'sonnet', text: 'Sonnet 5.5', group: 'Claude Code' },
-  { id: 'gemini', text: 'Gemini 4', group: 'Antigravity', detail: 'by Google' },
+  { id: 'plum', text: 'Plum 5.5', group: 'Orchard' },
+  { id: 'pear', text: 'Pear 5.5', group: 'Orchard' },
+  { id: 'quince', text: 'Quince 4', group: 'Meadow', detail: 'by Grove' },
 ]
 
 type ListProps = InstanceType<typeof SearchableList>['$props']
@@ -61,13 +61,13 @@ describe('the frame', () => {
 
 describe('the rows', () => {
   it('are every item, in the order given', () => {
-    expect(getTexts(mountList())).toStrictEqual(['Opus 5.5', 'Sonnet 5.5', 'Gemini 4by Google'])
+    expect(getTexts(mountList())).toStrictEqual(['Plum 5.5', 'Pear 5.5', 'Quince 4by Grove'])
   })
 
   it('keep the items that name every word typed', async () => {
     const list = mountList()
-    await getInput(list).setValue('claude son')
-    expect(getTexts(list)).toStrictEqual(['Sonnet 5.5'])
+    await getInput(list).setValue('orchard pea')
+    expect(getTexts(list)).toStrictEqual(['Pear 5.5'])
   })
 
   it('are left as given where the caller does the filtering', async () => {
@@ -101,7 +101,7 @@ describe('the rows', () => {
   it('put the name of a group over the first row of the group only', () => {
     const list = mountList()
     const names = list.findAll('.searchable-list__heading').map((one) => one.text())
-    expect(names).toStrictEqual(['Claude Code', 'Antigravity'])
+    expect(names).toStrictEqual(['Orchard', 'Meadow'])
   })
 
   it('draw what the slots give before and after the words of an item', () => {
@@ -114,7 +114,7 @@ describe('the rows', () => {
   })
 
   it('mark the item in force', () => {
-    const list = mountList({ modelValue: 'sonnet' })
+    const list = mountList({ modelValue: 'pear' })
     expect(getOptions(list).map((one) => one.attributes('aria-current'))).toStrictEqual([
       undefined,
       'true',
@@ -136,7 +136,7 @@ describe('the keyboard', () => {
   it('starts on the first row, or on the item in force', () => {
     expect(getActive(mountList())).toBe(0)
     mounted?.unmount()
-    expect(getActive(mountList({ modelValue: 'sonnet' }))).toBe(1)
+    expect(getActive(mountList({ modelValue: 'pear' }))).toBe(1)
   })
 
   it('moves down and up, and round at both ends', async () => {
@@ -156,7 +156,7 @@ describe('the keyboard', () => {
     expect(getActive(list)).toBe(2)
     await press(list, 'Home')
     expect(getActive(list)).toBe(0)
-    await getInput(list).setValue('s')
+    await getInput(list).setValue('q')
     await press(list, 'End')
     expect(getActive(list)).toBe(0)
   })
@@ -165,8 +165,8 @@ describe('the keyboard', () => {
     const list = mountList()
     await press(list, 'ArrowDown')
     await press(list, 'Enter')
-    expect(list.emitted('select')).toStrictEqual([['sonnet']])
-    expect(list.emitted('update:modelValue')).toStrictEqual([['sonnet']])
+    expect(list.emitted('select')).toStrictEqual([['pear']])
+    expect(list.emitted('update:modelValue')).toStrictEqual([['pear']])
   })
 
   it('chooses a row by a click, and moves to it with the pointer', async () => {
@@ -174,7 +174,7 @@ describe('the keyboard', () => {
     await getOptions(list)[2]!.trigger('pointerenter')
     expect(getActive(list)).toBe(2)
     await getOptions(list)[2]!.trigger('click')
-    expect(list.emitted('select')).toStrictEqual([['gemini']])
+    expect(list.emitted('select')).toStrictEqual([['quince']])
   })
 
   it('keeps the row where the user put it as the items are replaced', async () => {
@@ -187,11 +187,11 @@ describe('the keyboard', () => {
   })
 
   it('returns to the item in force when it changes from outside, over a row under the pointer', async () => {
-    const list = mountList({ modelValue: 'opus' })
+    const list = mountList({ modelValue: 'plum' })
     await getOptions(list)[2]!.trigger('pointerenter')
     expect(getActive(list)).toBe(2)
 
-    await list.setProps({ modelValue: 'sonnet' })
+    await list.setProps({ modelValue: 'pear' })
 
     expect(getActive(list)).toBe(1)
   })
@@ -208,7 +208,7 @@ describe('the keyboard', () => {
   })
 
   it('returns to the first row as the query changes', async () => {
-    const list = mountList({ modelValue: 'sonnet' })
+    const list = mountList({ modelValue: 'pear' })
     expect(getActive(list)).toBe(1)
     await press(list, 'ArrowUp')
     expect(getActive(list)).toBe(0)
@@ -230,8 +230,8 @@ describe('the keyboard', () => {
 
 describe('the action row', () => {
   const FOUND: ListItem[] = [
-    { id: 'notes/books-about.md', text: 'Books about' },
-    { id: 'notes/books.md', text: 'Books' },
+    { id: 'pages/books-about.md', text: 'Books about' },
+    { id: 'pages/books.md', text: 'Books' },
   ]
   const action = '<b class="act">Create "{{ params.query }}"</b>'
   const mountAction = (props: Partial<ListProps> = {}) =>
@@ -279,7 +279,7 @@ describe('the action row', () => {
     expect(getOptions(list)[0]!.element).toBe(row)
     expect(getActive(list)).toBe(0)
     await press(list, 'Enter')
-    expect(list.emitted('select')).toStrictEqual([['notes/books.md']])
+    expect(list.emitted('select')).toStrictEqual([['pages/books.md']])
     expect(list.emitted('act')).toBeUndefined()
   })
 })

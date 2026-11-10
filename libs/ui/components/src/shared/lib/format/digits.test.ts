@@ -24,8 +24,8 @@ describe('a share', () => {
 
 describe('the thing a count counts', () => {
   it('is singular where there is one of it', () => {
-    expect(plural(1, 'deck')).toBe('deck')
-    expect(plural(0, 'deck')).toBe('decks')
+    expect(plural(1, 'tray')).toBe('tray')
+    expect(plural(0, 'tray')).toBe('trays')
     expect(plural(2, 'card')).toBe('cards')
   })
 

@@ -1,4 +1,4 @@
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import type { ActionWords } from '../lib/actions'
 import type { PaletteGroup } from '../lib/item'
 
@@ -14,5 +14,5 @@ export interface PaletteProps {
   to?: string | HTMLElement
   name?: string
   actionWords?: ActionWords
-  actionKey?: PaletteKeys
+  actionKey?: Keystroke
 }

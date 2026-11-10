@@ -11,8 +11,8 @@ const mountDialog = (props: Partial<DialogProps> = {}) =>
   mount(ConfirmDialog, {
     attachTo: document.body,
     props: {
-      text: 'Delete the note?',
-      label: 'Delete note',
+      text: 'Delete the page?',
+      label: 'Delete page',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       ...props,
@@ -34,15 +34,15 @@ describe('ConfirmDialog', () => {
     const dialog = mountDialog()
     const box = dialog.get('[role="alertdialog"]')
     expect(box.attributes('aria-modal')).toBe('true')
-    expect(box.attributes('aria-label')).toBe('Delete note')
-    expect(box.text()).toContain('Delete the note?')
+    expect(box.attributes('aria-label')).toBe('Delete page')
+    expect(box.text()).toContain('Delete the page?')
   })
 
   it('points the dialog at its question as the description', () => {
     const dialog = mountDialog()
     const describedBy = dialog.get('[role="alertdialog"]').attributes('aria-describedby')
     expect(describedBy).toBeTruthy()
-    expect(document.getElementById(describedBy!)?.textContent).toBe('Delete the note?')
+    expect(document.getElementById(describedBy!)?.textContent).toBe('Delete the page?')
   })
 
   it('starts focus on the cancel button', () => {

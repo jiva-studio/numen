@@ -42,8 +42,8 @@ describe('a pane that is loading', () => {
   })
 
   it('writes the words it is given', () => {
-    const pane = mount(LoadingIndicator, { props: { delay: 0, label: 'Reading the vault' } })
-    expect(pane.text()).toBe('Reading the vault')
+    const pane = mount(LoadingIndicator, { props: { delay: 0, label: 'Reading the shed' } })
+    expect(pane.text()).toBe('Reading the shed')
   })
 
   it('takes its timer away with it, so nothing is drawn into a pane that has gone', () => {

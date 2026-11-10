@@ -7,7 +7,7 @@
  */
 import type { Component } from 'vue'
 import type { CommandItem, Selector } from '@numen/plugin-loader'
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { StepGroup } from '@/shared/steps'
@@ -90,7 +90,7 @@ export interface Command {
   readonly values?: Readonly<Record<string, string>>
   readonly text: string
   readonly detail?: string
-  readonly keys?: PaletteKeys
+  readonly keys?: Keystroke
   readonly icon?: Component
   readonly iconName?: string
   readonly input?: PromptStep

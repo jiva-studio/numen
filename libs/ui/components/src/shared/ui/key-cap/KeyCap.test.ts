@@ -6,9 +6,9 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import KeyCap from './KeyCap.vue'
 import { ICONS } from './icons'
-import type { PaletteKeys } from './keys'
+import type { Keystroke } from './keys'
 
-const mountCap = (keys: PaletteKeys) => mount(KeyCap, { props: { keys } })
+const mountCap = (keys: Keystroke) => mount(KeyCap, { props: { keys } })
 
 describe('what a reader who is listening receives', () => {
   it('is the keys in the order they are pressed, and then the letter', () => {

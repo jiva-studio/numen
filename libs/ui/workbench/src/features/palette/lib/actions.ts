@@ -1,5 +1,5 @@
 /** The action panel as plain values: the words it is drawn with, and its rows. */
-import type { PaletteKeys } from '@numen/ui'
+import type { Keystroke } from '@numen/ui'
 import type { PaletteAction } from './item'
 import { PALETTE_KEYS } from './keys'
 import { getParts, type PalettePart } from './parts'
@@ -22,7 +22,7 @@ export interface PlacedAction {
   readonly action: PaletteAction
   readonly at: number
   readonly name: readonly PalettePart[]
-  readonly key: PaletteKeys | null
+  readonly key: Keystroke | null
 }
 
 /**

@@ -50,7 +50,7 @@ src/
       window.css     the window frame
     lib/             pure helpers: async, dom, format, math, text, time (the clock)
     ui/              one folder per component: button, menu, select, slider, switch, ...
-    fixtures/        made-up text, colours and a clock for stories
+    fixtures/        made-up text and a clock for stories
   features/
     tree/            the tree component and its pure model
 ```

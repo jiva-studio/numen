@@ -1,6 +1,6 @@
 /**
  * The theme, interface size and text size a story is looked at through, as
- * toolbar switches. Shared by the stories of `@numen/ui` and of the plugins.
+ * toolbar switches. Shared by the stories of `@numen/ui` and of the add-ons.
  */
 import type { Preview } from '@storybook/vue3-vite'
 
@@ -44,7 +44,7 @@ export const toolbar = {
     },
     font: {
       description:
-        'How large the text a person reads is set: a note, a book, an answer, the editor',
+        'How large the text a person reads is set: a page, a book, an answer, a text field',
       toolbar: {
         title: 'Text',
         icon: 'paragraph',
