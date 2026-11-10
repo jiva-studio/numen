@@ -56,6 +56,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/localsource"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -507,7 +508,7 @@ type pluginsWiring struct {
 	GetSettingsOrDefaults func() settingsadapter.File
 	RefreshSettingEvents  func()
 	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes            func(*vault.Index, note.IndexUpdater) note.Scenarios
+	BuildNotes            func(*vault.Index, edit.IndexUpdater) note.Scenarios
 	Moves                 func(context.Context) (<-chan struct{}, error)
 	PluginChanges         *pluginchanges.Signals
 	TextVersions          *textversion.Versions

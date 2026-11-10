@@ -15,10 +15,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // State is what every handler of the window reads: the vault shown and how far it is read (the
@@ -166,7 +166,7 @@ func (s *State) isIndexOutdated(err error) bool {
 		s.finishTask(updatingIndex)
 		return false
 	}
-	if !errors.Is(err, note.ErrIndexOutdated) {
+	if !errors.Is(err, edit.ErrIndexOutdated) {
 		return false
 	}
 	s.reportTask(work.Task{ID: updatingIndex, Title: "Update index", Error: err.Error()})
