@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
 var (
@@ -27,7 +27,7 @@ var (
 // pooled for the life of the process.
 type NetworkTransport struct{ *http.Transport }
 
-// RoundTripTransport marks NetworkTransport as a PluginTransport.
+// RoundTripTransport marks NetworkTransport as a plugin.Transport.
 func (NetworkTransport) RoundTripTransport() {}
 
 // NewNetworkTransport returns the transport for a plugin process that listens on a port.
@@ -51,12 +51,9 @@ func newHTTPTransport() *http.Transport {
 	}
 }
 
-// PluginTransport is an in-process or custom transport for a plugin endpoint.
-type PluginTransport = pluginport.PluginTransport
-
 // GetBaseURL returns the HTTP scheme, host and port of the plugin server at e.
 // An endpoint with neither host nor port is the in-process server.
-func GetBaseURL(e Endpoint) string {
+func GetBaseURL(e plugin.Endpoint) string {
 	host := e.Address()
 	if host == "" {
 		host = "inprocess"
@@ -65,7 +62,7 @@ func GetBaseURL(e Endpoint) string {
 }
 
 // EndpointClient returns an HTTP client routed to this endpoint.
-func EndpointClient(e Endpoint) *http.Client {
+func EndpointClient(e plugin.Endpoint) *http.Client {
 	if e.Transport != nil {
 		e.Transport.RoundTripTransport()
 		if rt, ok := e.Transport.(http.RoundTripper); ok && rt != nil {
@@ -77,9 +74,6 @@ func EndpointClient(e Endpoint) *http.Client {
 	unpooled.DisableKeepAlives = true
 	return &http.Client{Transport: unpooled}
 }
-
-// Endpoint holds connection parameters and credentials for an active plugin.
-type Endpoint = pluginport.Endpoint
 
 // GenerateAuthToken produces a cryptographically secure hex-encoded 32-byte secret token.
 func GenerateAuthToken() (string, error) {

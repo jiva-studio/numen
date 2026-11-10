@@ -8,10 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 const sampleManifest = `{
@@ -72,8 +71,8 @@ func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 
 	_, err := cfg.GetPluginRetrier()(t.Context(), "md.numen.sample")
 
-	var unavailable *pluginport.UnavailableError
-	if !errors.As(err, &unavailable) || unavailable.Reason != pluginport.PluginNotInstalled {
+	var unavailable *plugin.UnavailableError
+	if !errors.As(err, &unavailable) || unavailable.Reason != plugin.NotInstalled {
 		t.Fatalf("retry = %v, want a plugin that is not installed", err)
 	}
 }

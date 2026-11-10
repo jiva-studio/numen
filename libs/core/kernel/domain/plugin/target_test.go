@@ -1,4 +1,4 @@
-package pluginport_test
+package plugin_test
 
 import (
 	"encoding/json"
@@ -8,9 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // targetVectors are the targets section of libs/core/protocol/when.json, which the plugin host derives
@@ -56,7 +55,7 @@ func TestTheValuesOfATargetAreTheOnesOfWhenJSON(t *testing.T) {
 		if contentType == "" {
 			contentType = domain.UnknownContentType
 		}
-		values := pluginport.NewTargetValues(one.Target.Path, one.Target.IsFolder, contentType)
+		values := plugin.NewTargetValues(one.Target.Path, one.Target.IsFolder, contentType)
 		if one.Note != nil {
 			values = values.WithNote(domain.NoteType(one.Note.Type), one.Note.Properties)
 		}
@@ -67,7 +66,7 @@ func TestTheValuesOfATargetAreTheOnesOfWhenJSON(t *testing.T) {
 }
 
 func TestTheNoteOfANoteIsUnknownUntilItIsRead(t *testing.T) {
-	got := pluginport.NewTargetValues("notes/Bees.md", false, "text/markdown").Get()
+	got := plugin.NewTargetValues("notes/Bees.md", false, "text/markdown").Get()
 
 	if _, isGiven := got["target.noteType"]; isGiven {
 		t.Errorf("the note type of a note not read is %v, want it left out", got["target.noteType"])
@@ -78,7 +77,7 @@ func TestTheNoteOfANoteIsUnknownUntilItIsRead(t *testing.T) {
 }
 
 func TestTheVersionsAndTheConfigAreGivenWhereTheyAreRead(t *testing.T) {
-	pathOnly := pluginport.NewTargetValues("scans/a.png", false, "image/png").Get()
+	pathOnly := plugin.NewTargetValues("scans/a.png", false, "image/png").Get()
 	if _, isGiven := pathOnly["target.versions"]; isGiven {
 		t.Error("the versions are given before they are read")
 	}
@@ -86,8 +85,8 @@ func TestTheVersionsAndTheConfigAreGivenWhereTheyAreRead(t *testing.T) {
 		t.Error("the config is given before it is read")
 	}
 
-	got := pluginport.NewTargetValues("scans/a.png", false, "image/png").
-		WithVersions([]pluginport.TargetVersion{{Kind: "recognition", PluginID: "org.example.scans", IsLive: true, IsValid: true}}).
+	got := plugin.NewTargetValues("scans/a.png", false, "image/png").
+		WithVersions([]plugin.TargetVersion{{Kind: "recognition", PluginID: "org.example.scans", IsLive: true, IsValid: true}}).
 		WithConfig(map[string]any{"app": map[string]any{}}).
 		WithVersion("recognition", true).Get()
 

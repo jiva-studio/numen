@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -36,12 +37,12 @@ func (v *versionItems) ListVersionItems(_ context.Context, _ domain.Vault, path 
 
 func (v *versionItems) RunVersionItem(
 	_ context.Context, _ domain.Vault, path string, entry pluginport.PluginCommandEntry, version domain.TextVersionID,
-) (pluginport.PluginCommandResult, error) {
+) (plugin.CommandResult, error) {
 	if version != "org.example.ears/ears" {
-		return pluginport.PluginCommandResult{}, textversion.ErrInvalidVersion
+		return plugin.CommandResult{}, textversion.ErrInvalidVersion
 	}
 	v.ran = append(v.ran, entry.PluginID+":"+entry.Command.ID+" "+path+" "+string(version))
-	return pluginport.PluginCommandResult{Message: "Proofread"}, nil
+	return plugin.CommandResult{Message: "Proofread"}, nil
 }
 
 func newItemsHandler(items *versionItems) *command.Handler {
@@ -181,12 +182,12 @@ func TestRunPluginCommand_PassesTheItemPickedToACommandWithoutVersionItems(t *te
 // runRecorded is conditionalCommands recording the runs that reach the plugins.
 type runRecorded struct {
 	conditionalCommands
-	ran []plugincommand.Call
+	ran []plugin.CommandCall
 }
 
-func (p *runRecorded) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
+func (p *runRecorded) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
 	p.ran = append(p.ran, call)
-	return plugincommand.Result{}, nil
+	return plugin.CommandResult{}, nil
 }
 
 func TestRunPluginCommand_RejectsAnItemNotListedAndARunWithoutAnItem(t *testing.T) {

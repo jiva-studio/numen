@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -67,45 +68,45 @@ func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, 
 }
 
 // Status returns whether the machine or the folder holds the dependency.
-func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
+func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
 	if found := p.cfg.Discovery.find(req); found != "" {
 		return readyStatus(req, filepath.Dir(found), found), nil
 	}
 	dir, err := p.getDir(req)
 	if err != nil {
-		return pluginport.DependencyStatus{}, err
+		return plugin.DependencyStatus{}, err
 	}
 	if resolved, ok := readCached(req, dir); ok {
-		return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
+		return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}, nil
 	}
-	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateMissing}, nil
+	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateMissing}, nil
 }
 
 // Provision returns the dependency: the one the machine holds, the one in the
 // folder, or the one it fetches. Processes provisioning the same dependency
 // take turns.
 func (p *FileProvisioner) Provision(
-	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus),
-) (_ pluginport.ResolvedDependency, err error) {
+	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus),
+) (_ plugin.ResolvedDependency, err error) {
 	if onProgress == nil {
-		onProgress = func(pluginport.DependencyStatus) {}
+		onProgress = func(plugin.DependencyStatus) {}
 	}
 	if found := p.cfg.Discovery.find(req); found != "" {
 		return newResolved(req, filepath.Dir(found), found), nil
 	}
 	dir, err := p.getDir(req)
 	if err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	if req.SourceURL == "" {
-		return pluginport.ResolvedDependency{}, fmt.Errorf("%s %s is not on this machine and names no sourceUrl", req.Kind, req.ID)
+		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s is not on this machine and names no sourceUrl", req.Kind, req.ID)
 	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	release, err := lockFile(ctx, dir+".lock")
 	if err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	defer func() { err = errors.Join(err, release()) }()
 
@@ -113,28 +114,28 @@ func (p *FileProvisioner) Provision(
 		return resolved, nil
 	}
 	if p.cfg.Offline {
-		return pluginport.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
+		return plugin.ResolvedDependency{}, fmt.Errorf("%s %s: %w", req.Kind, req.ID, ErrOffline)
 	}
 	name, err := getFileName(req)
 	if err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	primary := filepath.Join(dir, name)
 	title := "Downloading " + req.ID
 	err = transfer{
 		client: p.cfg.Client, address: req.SourceURL, dest: primary, sum: req.ChecksumSHA256, backoff: p.cfg.Backoff, clock: p.cfg.Clock,
 		onProgress: func(done, total int64) {
-			onProgress(pluginport.DependencyStatus{
-				ID: req.ID, State: pluginport.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
+			onProgress(plugin.DependencyStatus{
+				ID: req.ID, State: plugin.DependencyStateProvisioning, BytesDownloaded: done, BytesTotal: total,
 				ProgressPercent: getPercent(done, total), Message: title,
 			})
 		},
 	}.fetch(ctx)
 	if err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	if err := writeReady(ctx, dir, name, req.ChecksumSHA256); err != nil {
-		return pluginport.ResolvedDependency{}, err
+		return plugin.ResolvedDependency{}, err
 	}
 	return newResolved(req, dir, primary), nil
 }
@@ -171,28 +172,28 @@ func pickFileName(req pluginport.DependencyRequirement) (string, error) {
 	return cleanName(req.ID), nil
 }
 
-func readCached(req pluginport.DependencyRequirement, dir string) (pluginport.ResolvedDependency, bool) {
+func readCached(req pluginport.DependencyRequirement, dir string) (plugin.ResolvedDependency, bool) {
 	if !isReady(dir) {
-		return pluginport.ResolvedDependency{}, false
+		return plugin.ResolvedDependency{}, false
 	}
 	name, sum, err := readReady(dir)
 	if err != nil || !isPlainName(name) || sum != req.ChecksumSHA256 {
-		return pluginport.ResolvedDependency{}, false
+		return plugin.ResolvedDependency{}, false
 	}
 	primary := filepath.Join(dir, name)
 	if _, err := os.Stat(primary); err != nil {
-		return pluginport.ResolvedDependency{}, false
+		return plugin.ResolvedDependency{}, false
 	}
 	return newResolved(req, dir, primary), true
 }
 
-func readyStatus(req pluginport.DependencyRequirement, root, primary string) pluginport.DependencyStatus {
+func readyStatus(req pluginport.DependencyRequirement, root, primary string) plugin.DependencyStatus {
 	resolved := newResolved(req, root, primary)
-	return pluginport.DependencyStatus{ID: req.ID, State: pluginport.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
+	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
 }
 
-func newResolved(req pluginport.DependencyRequirement, root, primary string) pluginport.ResolvedDependency {
-	return pluginport.ResolvedDependency{
+func newResolved(req pluginport.DependencyRequirement, root, primary string) plugin.ResolvedDependency {
+	return plugin.ResolvedDependency{
 		ID: req.ID, RootPath: root, PrimaryPath: primary,
 		EnvVars:  map[string]string{GetEnvName(req): primary},
 		Metadata: req.Metadata,

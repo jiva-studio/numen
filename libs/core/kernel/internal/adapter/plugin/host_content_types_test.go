@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -28,8 +29,8 @@ func newReader(pluginID, readerID string, rank domain.HandlerRank, types ...doma
 	}}
 }
 
-func getReaders(host *Host) map[string][]pluginport.PluginReaderInfo {
-	out := map[string][]pluginport.PluginReaderInfo{}
+func getReaders(host *Host) map[string][]plugindomain.ReaderInfo {
+	out := map[string][]plugindomain.ReaderInfo{}
 	for _, info := range host.GetPluginInfos() {
 		out[info.ID] = info.Readers
 	}
@@ -43,7 +44,7 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 	)
 
 	got := getReaders(host)
-	want := map[string][]pluginport.PluginReaderInfo{
+	want := map[string][]plugindomain.ReaderInfo{
 		"org.example.a": {{ID: "pdf", Extensions: []string{"pdf"}}},
 		"org.example.b": {{ID: "pdf"}},
 	}
@@ -52,7 +53,7 @@ func TestGetReaders_AssignsDefaultTypeToLowerPluginID(t *testing.T) {
 	}
 
 	host.SetSettings(map[string]map[string]any{"org.example.a": {settingEnabled: false}})
-	if got := getReaders(host)["org.example.b"]; !reflect.DeepEqual(got, []pluginport.PluginReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
+	if got := getReaders(host)["org.example.b"]; !reflect.DeepEqual(got, []plugindomain.ReaderInfo{{ID: "pdf", Extensions: []string{"pdf"}}}) {
 		t.Fatalf("with the lower id disabled, readers = %+v", got)
 	}
 }

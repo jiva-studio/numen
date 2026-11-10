@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
@@ -92,7 +93,7 @@ func (r countingReader) Open(ctx context.Context, path string) (io.ReadSeekClose
 // commands offers the commands it holds, and records each run.
 type commands struct {
 	all []pluginport.PluginCommandEntry
-	ran []pluginport.PluginCommandCall
+	ran []plugin.CommandCall
 }
 
 func (c *commands) ListKeybindings() []pluginport.PluginKeybindingEntry { return nil }
@@ -103,13 +104,13 @@ func (c *commands) ListHandlers() []pluginport.PluginCommandEntry { return nil }
 
 func (c *commands) ListCommands() []pluginport.PluginCommandEntry { return c.all }
 
-func (c *commands) GetParts(string) pluginport.PluginParts {
-	return pluginport.PluginParts{HasBackend: true}
+func (c *commands) GetParts(string) plugin.Parts {
+	return plugin.Parts{HasBackend: true}
 }
 
-func (c *commands) Execute(_ context.Context, _ domain.Vault, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
+func (c *commands) Execute(_ context.Context, _ domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	c.ran = append(c.ran, call)
-	return pluginport.PluginCommandResult{}, nil
+	return plugin.CommandResult{}, nil
 }
 
 // types gives a file its type by the extension.
@@ -162,7 +163,7 @@ func TestFileMenuRunsACommandOverAVersionItemWithTheVersionArgument(t *testing.T
 	if _, err := menu.RunVersionItem(t.Context(), s.vault, scanPath, proofread, s.getReaderVersion()); err != nil {
 		t.Fatal(err)
 	}
-	want := []pluginport.PluginCommandCall{{
+	want := []plugin.CommandCall{{
 		PluginID: proofreader, Command: "proofreading.create", Path: scanPath,
 		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(s.getReaderVersion())},
 	}}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -145,14 +146,14 @@ func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 	return out
 }
 
-func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []pluginport.PluginReaderInfo {
+func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []plugindomain.ReaderInfo {
 	if len(manifest.Contributes.Readers) == 0 {
 		return nil
 	}
 	byReader := h.listOpenedExtensionsLocked(manifest.ID)
-	out := make([]pluginport.PluginReaderInfo, 0, len(manifest.Contributes.Readers))
+	out := make([]plugindomain.ReaderInfo, 0, len(manifest.Contributes.Readers))
 	for _, reader := range manifest.Contributes.Readers {
-		out = append(out, pluginport.PluginReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})
+		out = append(out, plugindomain.ReaderInfo{ID: reader.ID, Extensions: slices.Clone(byReader[reader.ID])})
 	}
 	return out
 }

@@ -6,7 +6,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 )
 
@@ -22,7 +22,7 @@ func (s forbiddenStore) GetKey(_ context.Context, name string) (string, error) {
 }
 
 func TestListReadsNoValueFromTheKeyStore(t *testing.T) {
-	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Here", Group: "g"})
+	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"})
 	f.secrets = secret.NewSecrets(f.ledger, forbiddenStore{keys: f.keys, t: t}, f.plugins, nil, func() string { return "/credentials.json" }, nil)
 
 	listing, err := f.secrets.List.Execute()
@@ -36,8 +36,8 @@ func TestListReadsNoValueFromTheKeyStore(t *testing.T) {
 
 func TestListReturnsSectionsInPageOrderAndMenus(t *testing.T) {
 	f := newFixture(
-		pluginport.Secret{ID: "s00000001", Name: "Mine", Group: "home"},
-		pluginport.Secret{ID: "s00000002", Name: "Work", Group: "openrouter"},
+		plugin.Secret{ID: "s00000001", Name: "Mine", Group: "home"},
+		plugin.Secret{ID: "s00000002", Name: "Work", Group: "openrouter"},
 	)
 	listing, err := f.secrets.List.Execute()
 	if err != nil {
@@ -65,7 +65,7 @@ func TestListReturnsSectionsInPageOrderAndMenus(t *testing.T) {
 }
 
 func TestListStatesReportsValuePresence(t *testing.T) {
-	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Here", Group: "g"}, pluginport.Secret{ID: "s00000002", Name: "Away", Group: "g"})
+	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"}, plugin.Secret{ID: "s00000002", Name: "Away", Group: "g"})
 	f.keys["secret/s00000001"] = "value-that-must-stay-secret"
 
 	states, err := f.secrets.ListStates.Execute(t.Context())
@@ -79,7 +79,7 @@ func TestListStatesReportsValuePresence(t *testing.T) {
 }
 
 func TestListStatesFailsOnACancelledContext(t *testing.T) {
-	f := newFixture(pluginport.Secret{ID: "s00000001", Name: "Here", Group: "g"})
+	f := newFixture(plugin.Secret{ID: "s00000001", Name: "Here", Group: "g"})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, err := f.secrets.ListStates.Execute(ctx); !errors.Is(err, context.Canceled) {

@@ -10,6 +10,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -116,10 +117,10 @@ func isAvailable(spec *v1.PluginTool, server Server) bool {
 
 func hasPermission(permissions []string, effect v1.ToolEffect) bool {
 	if effect == v1.ToolEffect_TOOL_EFFECT_READ_WRITE {
-		return slices.Contains(permissions, pluginport.PermissionVaultWrite)
+		return slices.Contains(permissions, manifest.PermissionVaultWrite)
 	}
 	return slices.Contains(permissions, pluginport.PermissionVaultRead) ||
-		slices.Contains(permissions, pluginport.PermissionVaultWrite)
+		slices.Contains(permissions, manifest.PermissionVaultWrite)
 }
 
 func (p plugins) getPermissions(pluginID string) []string {

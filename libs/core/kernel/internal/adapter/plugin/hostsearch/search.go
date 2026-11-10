@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
@@ -104,12 +105,12 @@ func (s Search) EmbedTexts(ctx context.Context, texts []string) (pluginport.Plug
 	if err != nil {
 		return pluginport.PluginEmbeddedTexts{}, err
 	}
-	if len(texts) > pluginport.MaxEmbeddedTexts {
-		return pluginport.PluginEmbeddedTexts{}, fmt.Errorf("%w: %d texts, at most %d", pluginport.ErrLimitExceeded, len(texts), pluginport.MaxEmbeddedTexts)
+	if len(texts) > plugin.MaxEmbeddedTexts {
+		return pluginport.PluginEmbeddedTexts{}, fmt.Errorf("%w: %d texts, at most %d", pluginport.ErrLimitExceeded, len(texts), plugin.MaxEmbeddedTexts)
 	}
 	for i, text := range texts {
-		if len(text) > pluginport.MaxEmbeddedBytes {
-			return pluginport.PluginEmbeddedTexts{}, fmt.Errorf("%w: text %d holds %d bytes, at most %d", pluginport.ErrLimitExceeded, i, len(text), pluginport.MaxEmbeddedBytes)
+		if len(text) > plugin.MaxEmbeddedBytes {
+			return pluginport.PluginEmbeddedTexts{}, fmt.Errorf("%w: text %d holds %d bytes, at most %d", pluginport.ErrLimitExceeded, i, len(text), plugin.MaxEmbeddedBytes)
 		}
 	}
 	if len(texts) == 0 {

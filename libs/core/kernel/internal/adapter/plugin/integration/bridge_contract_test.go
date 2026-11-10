@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -93,8 +93,8 @@ func listRefusalProblems(ctx context.Context, host bridgeHost, open func(context
 func isUnavailable(err error) bool { return errors.Is(err, domain.ErrUnavailable) }
 
 func isNotInstalled(err error) bool {
-	var unavailable *pluginport.UnavailableError
-	return errors.As(err, &unavailable) && unavailable.Reason == pluginport.PluginNotInstalled && isUnavailable(err)
+	var unavailable *plugindomain.UnavailableError
+	return errors.As(err, &unavailable) && unavailable.Reason == plugindomain.NotInstalled && isUnavailable(err)
 }
 
 func TestEveryBridgeAnswersAPluginThatIsDownWithAnErrorAndNoValue(t *testing.T) {
@@ -145,27 +145,27 @@ func TestErrorCheck_RejectsBridgeWithWrongResponse(t *testing.T) {
 		want string
 	}{
 		{"an error with no value", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
-			return nil, nil, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+			return nil, nil, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 		}, ""},
 		{"a call that fails as it should", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) {
-				return true, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+				return true, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 			}, nil
 		}, ""},
 		{"a bridge returned with the error", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
-			return brokenBridge{}, nil, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+			return brokenBridge{}, nil, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 		}, "a bridge was returned"},
 		{"a call that succeeds", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) { return false, nil }, nil
 		}, "returned no error"},
 		{"a value with the error", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return brokenBridge{}, func(context.Context) (bool, error) {
-				return false, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+				return false, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 			}, nil
 		}, "a value was returned"},
 		{"a bridge that fails to close", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {
 			return failingBridge{}, func(context.Context) (bool, error) {
-				return true, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
+				return true, &plugindomain.UnavailableError{Reason: plugindomain.NotInstalled}
 			}, nil
 		}, "closing the bridge failed"},
 		{"an error that is not unavailable", func(context.Context, bridgeHost) (io.Closer, bridgeCall, error) {

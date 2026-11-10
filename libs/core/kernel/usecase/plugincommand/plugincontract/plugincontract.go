@@ -8,15 +8,11 @@ import (
 )
 
 type (
-	CommandFailedError     = pluginport.CommandFailedError
 	DependencyCatalog      = pluginport.DependencyCatalog
 	DependencyKind         = pluginport.DependencyKind
 	DependencyProvisioner  = pluginport.DependencyProvisioner
 	DependencyRequirement  = pluginport.DependencyRequirement
-	DependencyState        = pluginport.DependencyState
-	DependencyStatus       = pluginport.DependencyStatus
 	DiscoveredPlugin       = pluginport.DiscoveredPlugin
-	Endpoint               = pluginport.Endpoint
 	KeyStore               = pluginport.KeyStore
 	Lease                  = pluginport.Lease
 	PluginActivator        = pluginport.PluginActivator
@@ -24,9 +20,7 @@ type (
 	PluginCache            = pluginport.PluginCache
 	PluginCommand          = pluginport.PluginCommand
 	PluginCommandArgument  = pluginport.PluginCommandArgument
-	PluginCommandCall      = pluginport.PluginCommandCall
 	PluginCommandEntry     = pluginport.PluginCommandEntry
-	PluginCommandResult    = pluginport.PluginCommandResult
 	PluginSlotEntry        = pluginport.PluginSlotEntry
 	PluginKeybindingEntry  = pluginport.PluginKeybindingEntry
 	PluginTabKindEntry     = pluginport.PluginTabKindEntry
@@ -34,7 +28,6 @@ type (
 	PluginContributes      = pluginport.PluginContributes
 	PluginCommands         = pluginport.PluginCommands
 	PluginDeclarations     = pluginport.PluginDeclarations
-	PluginParts            = pluginport.PluginParts
 	PluginConfigurator     = pluginport.PluginConfigurator
 	PluginDiscoverer       = pluginport.PluginDiscoverer
 	PluginEmbeddedTexts    = pluginport.PluginEmbeddedTexts
@@ -43,7 +36,6 @@ type (
 	PluginExtensionStats   = pluginport.PluginExtensionStats
 	PluginIndexStats       = pluginport.PluginIndexStats
 	PluginEventEmitter     = pluginport.PluginEventEmitter
-	PluginFailure          = pluginport.PluginFailure
 	PluginFloorSource      = pluginport.PluginFloorSource
 	PluginFrontend         = pluginport.PluginFrontend
 	PluginIndexState       = pluginport.PluginIndexState
@@ -56,9 +48,7 @@ type (
 	PluginManifest         = pluginport.PluginManifest
 	PluginManifestSetting  = pluginport.PluginManifestSetting
 	PluginNoteType         = pluginport.PluginNoteType
-	PluginPersistHandler   = pluginport.PluginPersistHandler
 	PluginReader           = pluginport.PluginReader
-	PluginReaderInfo       = pluginport.PluginReaderInfo
 	PluginRegistryManager  = pluginport.PluginRegistryManager
 	PluginResolver         = pluginport.PluginResolver
 	PluginSearch           = pluginport.PluginSearch
@@ -70,9 +60,6 @@ type (
 	PluginSimilarityQuery  = pluginport.PluginSimilarityQuery
 	PluginSimilaritySample = pluginport.PluginSimilaritySample
 	SecretDeclaration      = pluginport.SecretDeclaration
-	SecretSource           = pluginport.SecretSource
-	Secret                 = pluginport.Secret
-	DeclarationKey         = pluginport.DeclarationKey
 	PluginSettingsView     = pluginport.PluginSettingsView
 	PluginSetting          = pluginport.PluginSetting
 	PluginSettingCondition = pluginport.PluginSettingCondition
@@ -90,7 +77,6 @@ type (
 	PluginTextPage         = pluginport.PluginTextPage
 	PluginTextRange        = pluginport.PluginTextRange
 	PluginTextPut          = pluginport.PluginTextPut
-	PluginTransport        = pluginport.PluginTransport
 	PluginVault            = pluginport.PluginVault
 	PluginVaultLifecycle   = pluginport.PluginVaultLifecycle
 	PluginWindow           = pluginport.PluginWindow
@@ -101,10 +87,7 @@ type (
 	PluginVaultStore       = pluginport.PluginVaultStore
 	PluginVaultWriter      = pluginport.PluginVaultWriter
 	PluginWork             = pluginport.PluginWork
-	ResolvedDependency     = pluginport.ResolvedDependency
 	TaskUnit               = pluginport.TaskUnit
-	UnavailableError       = pluginport.UnavailableError
-	UnavailableReason      = pluginport.UnavailableReason
 )
 
 const (
@@ -119,36 +102,23 @@ const (
 	DependencyKindDataset       = pluginport.DependencyKindDataset
 	DependencyKindModel         = pluginport.DependencyKindModel
 	DependencyKindRuntime       = pluginport.DependencyKindRuntime
-	DependencyStateFailed       = pluginport.DependencyStateFailed
-	DependencyStateMissing      = pluginport.DependencyStateMissing
-	DependencyStateProvisioning = pluginport.DependencyStateProvisioning
-	DependencyStateReady        = pluginport.DependencyStateReady
 	PermissionAIComplete        = pluginport.PermissionAIComplete
 	PermissionIndexRead         = pluginport.PermissionIndexRead
 	PermissionSearchPolicy      = pluginport.PermissionSearchPolicy
 	PermissionNetworkAlias      = pluginport.PermissionNetworkAlias
 	PermissionNetworkOutbound   = pluginport.PermissionNetworkOutbound
 	PermissionVaultRead         = pluginport.PermissionVaultRead
-	PermissionVaultWrite        = pluginport.PermissionVaultWrite
 	PermissionVaultManage       = pluginport.PermissionVaultManage
 	PermissionWindowFocus       = pluginport.PermissionWindowFocus
-	MaxEmbeddedBytes            = pluginport.MaxEmbeddedBytes
-	MaxEmbeddedTexts            = pluginport.MaxEmbeddedTexts
 	MaxSampledQueries           = pluginport.MaxSampledQueries
 	MaxSampledPassages          = pluginport.MaxSampledPassages
 	PluginFloorDefault          = pluginport.PluginFloorDefault
 	PluginFloorModelHint        = pluginport.PluginFloorModelHint
 	PluginFloorStored           = pluginport.PluginFloorStored
-	PluginDisabled              = pluginport.PluginDisabled
-	PluginFailed                = pluginport.PluginFailed
 	PluginIndexFailed           = pluginport.PluginIndexFailed
 	PluginIndexed               = pluginport.PluginIndexed
 	PluginIndexing              = pluginport.PluginIndexing
-	PluginNotInstalled          = pluginport.PluginNotInstalled
-	PluginProtocolVersion       = pluginport.PluginProtocolVersion
-	PluginWithoutBackend        = pluginport.PluginWithoutBackend
 	RuntimeONNX                 = pluginport.RuntimeONNX
-	ConfigPerformanceProfile    = pluginport.ConfigPerformanceProfile
 	SettingTypeEnum             = pluginport.SettingTypeEnum
 	SettingTypeFile             = pluginport.SettingTypeFile
 	SettingTypeString           = pluginport.SettingTypeString
@@ -202,7 +172,6 @@ var (
 	ErrRangeInvalidBounds     = pluginport.ErrRangeInvalidBounds
 	ErrRecipeMismatch         = plugin.ErrRecipeMismatch
 	ErrReservedSettingKey     = pluginport.ErrReservedSettingKey
-	ErrUnavailable            = pluginport.ErrUnavailable
 	ErrUnsupportedProtocol    = pluginport.ErrUnsupportedProtocol
 )
 
@@ -220,9 +189,4 @@ func PluginPermissions() []string { return pluginport.PluginPermissions() }
 
 func NewPluginSetting(declared PluginManifestSetting, defaultJSON string, options PluginSettingOptions) PluginSetting {
 	return pluginport.NewPluginSetting(declared, defaultJSON, options)
-}
-
-// GetSharedCommandArguments returns the arguments the shared command of the full id takes.
-func GetSharedCommandArguments(id string) []PluginCommandArgument {
-	return pluginport.GetSharedCommandArguments(id)
 }

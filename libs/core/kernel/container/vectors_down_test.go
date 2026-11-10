@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -18,7 +19,7 @@ import (
 // downEmbeddingHost resolves an embedding plugin whose process is not listening.
 type downEmbeddingHost struct {
 	pluginport.PluginManager
-	endpoint pluginport.Endpoint
+	endpoint plugin.Endpoint
 	released atomic.Int32
 	acquired atomic.Int32
 }
@@ -35,7 +36,7 @@ func (h *downEmbeddingHost) ResolveService(string) (pluginport.DiscoveredPlugin,
 	return pluginport.DiscoveredPlugin{}, false
 }
 
-func (h *downEmbeddingHost) EnsureActive(context.Context, string) (pluginport.Endpoint, error) {
+func (h *downEmbeddingHost) EnsureActive(context.Context, string) (plugin.Endpoint, error) {
 	h.acquired.Add(1)
 	return h.endpoint, nil
 }
@@ -51,7 +52,7 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 	}
 	serverPort := addr.Port
 	server.Close()
-	return &downEmbeddingHost{endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: serverPort}}
+	return &downEmbeddingHost{endpoint: plugin.Endpoint{Host: "127.0.0.1", Port: serverPort}}
 }
 
 // A plugin that does not answer names no model, and a vault read without a

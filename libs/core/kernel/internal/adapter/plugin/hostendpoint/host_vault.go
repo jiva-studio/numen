@@ -14,6 +14,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -333,7 +334,7 @@ func (e *vaultEndpoint) ReadFile(
 func (e *vaultEndpoint) WriteFile(
 	ctx context.Context, req *connect.Request[v1.WriteFileRequest],
 ) (*connect.Response[v1.WriteFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +352,7 @@ func (e *vaultEndpoint) WriteFile(
 func (e *vaultEndpoint) CreateFile(
 	ctx context.Context, req *connect.Request[v1.CreateFileRequest],
 ) (*connect.Response[v1.CreateFileResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +366,7 @@ func (e *vaultEndpoint) CreateFile(
 func (e *vaultEndpoint) LockVault(
 	ctx context.Context, req *connect.Request[v1.LockVaultRequest],
 ) (*connect.Response[v1.LockVaultResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +400,7 @@ func (e *vaultEndpoint) unlock(id string) {
 func (e *vaultEndpoint) UnlockVault(
 	_ context.Context, req *connect.Request[v1.UnlockVaultRequest],
 ) (*connect.Response[v1.UnlockVaultResponse], error) {
-	if _, _, err := e.begin(req.Header(), pluginport.PermissionVaultWrite); err != nil {
+	if _, _, err := e.begin(req.Header(), manifest.PermissionVaultWrite); err != nil {
 		return nil, err
 	}
 	e.unlock(req.Msg.GetLock())
@@ -409,7 +410,7 @@ func (e *vaultEndpoint) UnlockVault(
 func (e *vaultEndpoint) ScanFiles(
 	ctx context.Context, req *connect.Request[v1.ScanFilesRequest],
 ) (*connect.Response[v1.ScanFilesResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -608,7 +609,7 @@ func (e *vaultEndpoint) ReadCache(
 func (e *vaultEndpoint) WriteCache(
 	ctx context.Context, req *connect.Request[v1.WriteCacheRequest],
 ) (*connect.Response[v1.WriteCacheResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
+	pluginID, vault, err := e.begin(req.Header(), manifest.PermissionVaultWrite)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -177,7 +178,7 @@ func newWirePluginSettings(target []setting.PluginSetting) []*v1.PluginSetting {
 	return settings
 }
 
-func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
+func newWirePluginFailure(failure *plugin.Failure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
 	}
@@ -194,8 +195,8 @@ func (h *Handler) RetryPlugin(
 	}
 	failure, err := h.PluginRetry.Execute(ctx, r.Msg.GetPluginId())
 	if err != nil {
-		var unavailable *setting.UnavailableError
-		if errors.As(err, &unavailable) && unavailable.Reason == setting.PluginNotInstalled {
+		var unavailable *plugin.UnavailableError
+		if errors.As(err, &unavailable) && unavailable.Reason == plugin.NotInstalled {
 			return nil, connect.NewError(connect.CodeNotFound, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -297,7 +298,7 @@ func newWireSettingsViews(views []setting.PluginSettingsView) []*v1.PluginSettin
 	return out
 }
 
-func newWireReaders(readers []setting.PluginReaderInfo) []*v1.PluginReader {
+func newWireReaders(readers []plugin.ReaderInfo) []*v1.PluginReader {
 	out := make([]*v1.PluginReader, 0, len(readers))
 	for _, one := range readers {
 		out = append(out, &v1.PluginReader{Id: one.ID, Extensions: one.Extensions})

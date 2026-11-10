@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -16,7 +17,7 @@ import (
 type pluginCommands struct {
 	entries  []plugincommand.Entry
 	handlers []plugincommand.Entry
-	calls    []plugincommand.Call
+	calls    []plugin.CommandCall
 }
 
 func (p *pluginCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
@@ -27,13 +28,13 @@ func (p *pluginCommands) ListHandlers() []plugincommand.Entry { return p.handler
 
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 
-func (p *pluginCommands) GetParts(string) plugincommand.Parts {
-	return plugincommand.Parts{HasBackend: true}
+func (p *pluginCommands) GetParts(string) plugin.Parts {
+	return plugin.Parts{HasBackend: true}
 }
 
-func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
+func (p *pluginCommands) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
 	p.calls = append(p.calls, call)
-	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
+	return plugin.CommandResult{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {

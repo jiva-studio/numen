@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -397,16 +398,16 @@ func TestTextsAreEmbeddedWithinTheLimits(t *testing.T) {
 		t.Errorf("no texts gave %+v (%v)", empty, err)
 	}
 
-	many := make([]string, pluginport.MaxEmbeddedTexts+1)
+	many := make([]string, plugin.MaxEmbeddedTexts+1)
 	if _, err := f.search.EmbedTexts(ctx, many); !errors.Is(err, pluginport.ErrLimitExceeded) {
 		t.Errorf("%d texts gave %v", len(many), err)
 	}
-	if _, err := f.search.EmbedTexts(ctx, []string{strings.Repeat("x", pluginport.MaxEmbeddedBytes+1)}); !errors.Is(err, pluginport.ErrLimitExceeded) {
+	if _, err := f.search.EmbedTexts(ctx, []string{strings.Repeat("x", plugin.MaxEmbeddedBytes+1)}); !errors.Is(err, pluginport.ErrLimitExceeded) {
 		t.Errorf("a long text gave %v", err)
 	}
-	atLimit := make([]string, pluginport.MaxEmbeddedTexts)
+	atLimit := make([]string, plugin.MaxEmbeddedTexts)
 	for i := range atLimit {
-		atLimit[i] = strings.Repeat("x", pluginport.MaxEmbeddedBytes)
+		atLimit[i] = strings.Repeat("x", plugin.MaxEmbeddedBytes)
 	}
 	if _, err := f.search.EmbedTexts(ctx, atLimit); err != nil {
 		t.Errorf("texts at the limit gave %v", err)

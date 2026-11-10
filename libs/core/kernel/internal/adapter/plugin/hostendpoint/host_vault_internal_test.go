@@ -12,11 +12,11 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 const (
@@ -54,7 +54,7 @@ func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fake
 	vault := newFakeNoteVault()
 	hostCallers := newCallers(nil)
 	hostCallers.vault = brokenVault{vault}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

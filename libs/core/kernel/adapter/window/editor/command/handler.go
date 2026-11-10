@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -76,7 +77,7 @@ func (h *Handler) RunPluginCommand(
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
 	result, isItemRun, err := h.runWithArgument(ctx, r.Msg)
 	if !isItemRun {
-		result, err = h.run.Execute(ctx, h.vaults.GetCurrentVault(), plugincommand.Call{
+		result, err = h.run.Execute(ctx, h.vaults.GetCurrentVault(), plugin.CommandCall{
 			PluginID:  r.Msg.GetPluginId(),
 			Command:   r.Msg.GetCommand(),
 			Path:      r.Msg.GetPath(),

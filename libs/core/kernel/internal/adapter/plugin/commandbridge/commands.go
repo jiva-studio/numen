@@ -12,6 +12,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
@@ -42,11 +43,11 @@ func Open(host Host) Commands {
 // RunCommand starts the plugin where it is not running and runs the command in its backend, holding
 // its reference for the length of the call.
 func (c Commands) RunCommand(
-	ctx context.Context, call pluginport.PluginCommandCall,
-) (result pluginport.PluginCommandResult, err error) {
+	ctx context.Context, call plugin.CommandCall,
+) (result plugin.CommandResult, err error) {
 	client, lease, err := bridge.Open(ctx, c.host, call.PluginID, numenv1connect.NewPluginCommandServiceClient)
 	if err != nil {
-		return pluginport.PluginCommandResult{}, err
+		return plugin.CommandResult{}, err
 	}
 	defer func() { err = errors.Join(err, lease.Close()) }()
 
@@ -54,21 +55,21 @@ func (c Commands) RunCommand(
 		Command: call.Command, Path: call.Path, Arguments: call.Arguments, ItemId: call.ItemID,
 	}))
 	if err != nil {
-		return pluginport.PluginCommandResult{}, readCommandError(ctx, call.PluginID, err)
+		return plugin.CommandResult{}, readCommandError(ctx, call.PluginID, err)
 	}
 	message := res.Msg.GetMessage()
 	switch res.Msg.GetError() {
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED:
-		return pluginport.PluginCommandResult{Message: message, OpenedPath: res.Msg.GetOpenedPath()}, nil
+		return plugin.CommandResult{Message: message, OpenedPath: res.Msg.GetOpenedPath()}, nil
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND:
-		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s", ErrUnknownCommand, call.Command)
+		return plugin.CommandResult{}, fmt.Errorf("%w: %s", ErrUnknownCommand, call.Command)
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS:
-		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s", ErrBadArguments, message)
+		return plugin.CommandResult{}, fmt.Errorf("%w: %s", ErrBadArguments, message)
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE:
-		return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginFailed, Err: errors.New(message)}
+		return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.Failed, Err: errors.New(message)}
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED:
 	}
-	return pluginport.PluginCommandResult{}, &pluginport.CommandFailedError{Message: message}
+	return plugin.CommandResult{}, &plugin.CommandFailedError{Message: message}
 }
 
 func readCommandError(ctx context.Context, pluginID string, err error) error {
@@ -79,12 +80,12 @@ func readCommandError(ctx context.Context, pluginID string, err error) error {
 	if errors.As(err, &failure) && failure.Code() != connect.CodeUnavailable && failure.Code() != connect.CodeUnimplemented {
 		return fmt.Errorf("command rpc: %w", err)
 	}
-	return &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginFailed, Err: err}
+	return &plugin.UnavailableError{PluginID: pluginID, Reason: plugin.Failed, Err: err}
 }
 
 // NoCommands is an installation with no plugin to run a command.
 type NoCommands struct{}
 
-func (NoCommands) RunCommand(_ context.Context, call pluginport.PluginCommandCall) (pluginport.PluginCommandResult, error) {
-	return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginNotInstalled}
+func (NoCommands) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
+	return plugin.CommandResult{}, &plugin.UnavailableError{PluginID: call.PluginID, Reason: plugin.NotInstalled}
 }

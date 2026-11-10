@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
@@ -86,11 +87,11 @@ func (namedVersions) ListEveryVersion(context.Context, domain.Vault, string) ([]
 
 type namingPlugins struct{ pluginCommands }
 
-func (namingPlugins) GetParts(pluginID string) plugincommand.Parts {
+func (namingPlugins) GetParts(pluginID string) plugin.Parts {
 	if pluginID != "org.example.ears" {
-		return plugincommand.Parts{}
+		return plugin.Parts{}
 	}
-	return plugincommand.Parts{Name: "Transcription", TextKinds: map[string]string{"transcript": "Transcript"}}
+	return plugin.Parts{Name: "Transcription", TextKinds: map[string]string{"transcript": "Transcript"}}
 }
 
 func TestListCommandItems_OfDeleteTextNamesAVersionByItsDeclaredKindAndDetailsItsPluginAndDate(t *testing.T) {

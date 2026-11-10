@@ -1,4 +1,4 @@
-package pluginport
+package plugin
 
 import (
 	"errors"
@@ -16,10 +16,10 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 		err  *UnavailableError
 		want string
 	}{
-		{&UnavailableError{Capability: "book", Reason: PluginNotInstalled}, "the plugin for book is not installed"},
-		{&UnavailableError{Capability: "book", Reason: PluginDisabled}, "the plugin for book is disabled"},
-		{&UnavailableError{PluginID: "md.numen.readers.epub", Reason: PluginDisabled}, "plugin md.numen.readers.epub is disabled"},
-		{&UnavailableError{PluginID: "md.numen.readers.epub", Reason: PluginFailed, Err: cause}, "plugin md.numen.readers.epub failed to start: exit status 1"},
+		{&UnavailableError{Capability: "book", Reason: NotInstalled}, "the plugin for book is not installed"},
+		{&UnavailableError{Capability: "book", Reason: Disabled}, "the plugin for book is disabled"},
+		{&UnavailableError{PluginID: "md.numen.readers.epub", Reason: Disabled}, "plugin md.numen.readers.epub is disabled"},
+		{&UnavailableError{PluginID: "md.numen.readers.epub", Reason: Failed, Err: cause}, "plugin md.numen.readers.epub failed to start: exit status 1"},
 	} {
 		if got := tc.err.Error(); got != tc.want {
 			t.Errorf("Error() = %q, want %q", got, tc.want)
@@ -31,7 +31,7 @@ func TestUnavailableErrorIsErrUnavailable(t *testing.T) {
 			t.Errorf("%q is ErrNoRoute", tc.want)
 		}
 	}
-	if !errors.Is(&UnavailableError{Reason: PluginFailed, Err: cause}, cause) {
+	if !errors.Is(&UnavailableError{Reason: Failed, Err: cause}, cause) {
 		t.Error("the cause is lost")
 	}
 }

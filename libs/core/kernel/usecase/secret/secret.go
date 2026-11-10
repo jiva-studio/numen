@@ -99,24 +99,24 @@ func (o operation) deleteValue(ctx context.Context, id string) error {
 	return nil
 }
 
-func getIndex(list []pluginport.Secret, id string) int {
-	return slices.IndexFunc(list, func(one pluginport.Secret) bool { return one.ID == id })
+func getIndex(list []plugin.Secret, id string) int {
+	return slices.IndexFunc(list, func(one plugin.Secret) bool { return one.ID == id })
 }
 
-func isNameTaken(list []pluginport.Secret, group, name, exceptID string) bool {
-	return slices.ContainsFunc(list, func(one pluginport.Secret) bool {
+func isNameTaken(list []plugin.Secret, group, name, exceptID string) bool {
+	return slices.ContainsFunc(list, func(one plugin.Secret) bool {
 		return one.Group == group && one.Name == name && one.ID != exceptID
 	})
 }
 
 func checkName(kind, name string) error {
-	if !pluginport.IsValidSecretName(name) {
-		return newInvalidError("the %s is empty, has leading or trailing space or is over %d characters", kind, pluginport.MaxSecretNameLength)
+	if !plugin.IsValidSecretName(name) {
+		return newInvalidError("the %s is empty, has leading or trailing space or is over %d characters", kind, plugin.MaxSecretNameLength)
 	}
 	return nil
 }
 
-func listPluginIDs(allowed []pluginport.DeclarationKey) []string {
+func listPluginIDs(allowed []plugin.DeclarationKey) []string {
 	var ids []string
 	for _, one := range allowed {
 		if !slices.Contains(ids, one.Plugin) {
@@ -174,7 +174,7 @@ func NewSecrets(
 type NoPlugins struct{}
 
 // ListDeclarations returns no declaration.
-func (NoPlugins) ListDeclarations() []pluginport.DeclarationKey { return nil }
+func (NoPlugins) ListDeclarations() []plugin.DeclarationKey { return nil }
 
 // Refresh configures no plugin.
 func (NoPlugins) Refresh(context.Context, ...string) error { return nil }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -24,7 +25,7 @@ func TestRun_RunsTheHandlerOfASharedCommandInItsPlugin(t *testing.T) {
 	plugins := &handlingPlugins{}
 	commands := plugincommand.NewCommands(plugins, getTypes(), nil, nil)
 
-	result, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugincommand.Call{
+	result, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugin.CommandCall{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "decks/tides.pdf",
 	})
 	if err != nil {
@@ -39,7 +40,7 @@ func TestRun_RefusesAHandlerWhoseConditionDoesNotHold(t *testing.T) {
 	plugins := &handlingPlugins{}
 	commands := plugincommand.NewCommands(plugins, getTypes(), nil, nil)
 
-	_, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugincommand.Call{
+	_, err := commands.Run.Execute(t.Context(), domain.Vault{}, plugin.CommandCall{
 		PluginID: "md.numen.cards", Command: "app:file.createText", Path: "notes/tides.md",
 	})
 	if !errors.Is(err, plugincommand.ErrBadArguments) || len(plugins.calls) != 0 {

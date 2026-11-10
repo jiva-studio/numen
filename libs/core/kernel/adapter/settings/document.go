@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -25,7 +25,7 @@ type File struct {
 	Performance hardware.Performance `json:"performance"`
 	AI          AI                   `json:"ai"`
 	Plugins     map[string]map[string]any
-	Secrets     []pluginport.Secret
+	Secrets     []plugin.Secret
 	Notices     []string
 }
 

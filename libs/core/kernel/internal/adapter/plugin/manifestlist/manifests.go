@@ -5,6 +5,7 @@ package manifestlist
 import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
@@ -100,7 +101,7 @@ func (m Manifests) ListHandlers() []pluginport.PluginCommandEntry {
 				PluginID: plugin.Manifest.ID, PluginName: plugin.Manifest.Name,
 				Command: pluginport.PluginCommand{
 					ID: handler.Command, Title: handler.Title, When: handler.When,
-					Arguments: pluginport.GetSharedCommandArguments(handler.Command),
+					Arguments: manifest.GetSharedCommandArguments(handler.Command),
 				},
 			})
 		}
@@ -125,12 +126,12 @@ func (m Manifests) ListTriggers() []pluginport.PluginTriggerEntry {
 }
 
 // GetParts says what the enabled plugin of the id has, and whether the host holds it suspended.
-func (m Manifests) GetParts(pluginID string) pluginport.PluginParts {
+func (m Manifests) GetParts(pluginID string) plugindomain.Parts {
 	plugin, isEnabled := m.host.GetPlugin(pluginID)
 	if !isEnabled {
-		return pluginport.PluginParts{}
+		return plugindomain.Parts{}
 	}
-	return pluginport.PluginParts{
+	return plugindomain.Parts{
 		HasBackend: plugin.Manifest.HasBackend(), HasFrontend: plugin.Manifest.HasFrontend(),
 		IsSuspended: m.host.IsPluginSuspended(pluginID),
 		Name:        plugin.Manifest.Name, TextKinds: listTextKinds(plugin.Manifest),
@@ -159,4 +160,4 @@ func (NoManifests) ListKeybindings() []pluginport.PluginKeybindingEntry { return
 
 func (NoManifests) ListHandlers() []pluginport.PluginCommandEntry { return nil }
 
-func (NoManifests) GetParts(string) pluginport.PluginParts { return pluginport.PluginParts{} }
+func (NoManifests) GetParts(string) plugindomain.Parts { return plugindomain.Parts{} }

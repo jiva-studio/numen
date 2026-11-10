@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
@@ -46,7 +47,7 @@ func getTypes() fileTypes {
 // declaredCommands lists the commands it is given and records every call it is given to run.
 type declaredCommands struct {
 	entries []plugincommand.Entry
-	calls   []plugincommand.Call
+	calls   []plugin.CommandCall
 }
 
 func (d *declaredCommands) ListKeybindings() []plugincommand.KeybindingEntry { return nil }
@@ -57,13 +58,13 @@ func (d *declaredCommands) ListHandlers() []plugincommand.Entry { return nil }
 
 func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.entries }
 
-func (d *declaredCommands) GetParts(string) plugincommand.Parts {
-	return plugincommand.Parts{HasBackend: true}
+func (d *declaredCommands) GetParts(string) plugin.Parts {
+	return plugin.Parts{HasBackend: true}
 }
 
-func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
+func (d *declaredCommands) RunCommand(_ context.Context, call plugin.CommandCall) (plugin.CommandResult, error) {
 	d.calls = append(d.calls, call)
-	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
+	return plugin.CommandResult{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
 func newDeclared() *declaredCommands {
@@ -83,7 +84,7 @@ func newDeclared() *declaredCommands {
 func TestRunCommandNormalizesBooleanArguments(t *testing.T) {
 	declared := newDeclared()
 
-	result, err := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugincommand.Call{
+	result, err := plugincommand.NewCommands(declared, getTypes(), nil, nil).Run.Execute(t.Context(), getVault(), plugin.CommandCall{
 		PluginID: "md.numen.a", Command: "convert", Path: "books/Some.PDF",
 		Arguments: map[string]string{"pages": "12", "again": "1"},
 	})
@@ -98,7 +99,7 @@ func TestRunCommandNormalizesBooleanArguments(t *testing.T) {
 }
 
 func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
-	cases := map[string]plugincommand.Call{
+	cases := map[string]plugin.CommandCall{
 		"a command over a file given none": {
 			PluginID: "md.numen.a", Command: "convert", Arguments: map[string]string{"pages": "1"},
 		},
@@ -138,10 +139,10 @@ func TestACommandIsRunInThePluginTheCallNames(t *testing.T) {
 	declared := newDeclared()
 	commands := plugincommand.NewCommands(declared, getTypes(), nil, nil)
 
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.b", Command: "tidy"}); err != nil {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.b", Command: "tidy"}); err != nil {
 		t.Fatal(err)
 	}
-	_, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.b", Command: "convert"})
+	_, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.b", Command: "convert"})
 
 	if declared.calls[0].PluginID != "md.numen.b" {
 		t.Errorf("the run went to %s", declared.calls[0].PluginID)
@@ -165,7 +166,7 @@ func TestAnInstallationWithNoPluginHostListsNoCommandAndRunsNone(t *testing.T) {
 	if entries := commands.List.Execute(); len(entries) != 0 {
 		t.Errorf("got %+v", entries)
 	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{Command: "tidy"}); !errors.Is(err, domain.ErrUnavailable) {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{Command: "tidy"}); !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("a run answered %v, want unavailable", err)
 	}
 }
@@ -184,7 +185,7 @@ func TestACommandWithoutAConditionRunsOverAnyPathOrNone(t *testing.T) {
 	commands := plugincommand.NewCommands(declared, getTypes(), nil, nil)
 
 	for _, path := range []string{"", "talks", "a.md"} {
-		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "tidy", Path: path}); err != nil {
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.a", Command: "tidy", Path: path}); err != nil {
 			t.Errorf("%q answered %v", path, err)
 		}
 	}
@@ -200,13 +201,13 @@ func TestRunCommandRejectsEmptyPathForFileCommand(t *testing.T) {
 		if !commands.List.HasTargetVariable(declared.entries[0].Command) {
 			t.Errorf("%q was reported as taking no file", when)
 		}
-		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create"}); !errors.Is(err, plugincommand.ErrBadArguments) {
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.a", Command: "proofreading.create"}); !errors.Is(err, plugincommand.ErrBadArguments) {
 			t.Errorf("%q: the root folder answered %v, want ErrBadArguments", when, err)
 		}
-		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "talks/a.mp3"}); err != nil {
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.a", Command: "proofreading.create", Path: "talks/a.mp3"}); err != nil {
 			t.Errorf("%q: a file answered %v", when, err)
 		}
-		if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.a", Command: "proofreading.create", Path: "README"}); err != nil {
+		if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.a", Command: "proofreading.create", Path: "README"}); err != nil {
 			t.Errorf("%q: a path of no known type, which the core cannot tell from a folder, answered %v", when, err)
 		}
 	}
@@ -242,13 +243,13 @@ func TestACommandOverNotesOfATypeRunsOverThoseNotesAlone(t *testing.T) {
 	}
 	commands := plugincommand.NewCommands(declared, getTypes(), files, nil)
 
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.links", Command: "fetch", Path: "links/talk.md"}); err != nil {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/talk.md"}); err != nil {
 		t.Fatalf("a link note was refused: %v", err)
 	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.links", Command: "fetch", Path: "notes/plain.md"}); !errors.Is(err, plugincommand.ErrBadArguments) {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "notes/plain.md"}); !errors.Is(err, plugincommand.ErrBadArguments) {
 		t.Fatalf("a plain note was run over: %v", err)
 	}
-	if _, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.links", Command: "fetch"}); !errors.Is(err, plugincommand.ErrBadArguments) {
+	if _, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch"}); !errors.Is(err, plugincommand.ErrBadArguments) {
 		t.Fatalf("a command over notes ran over no file: %v", err)
 	}
 	if len(declared.calls) != 1 || declared.calls[0].Path != "links/talk.md" {
@@ -268,7 +269,7 @@ func TestRunRejectsDisabledCommandSetting(t *testing.T) {
 	config := settingsOf{"org": map[string]any{"example": map[string]any{"scans": map[string]any{"isEnabled": false}}}}
 	run := plugincommand.NewCommands(declared, getTypes(), nil, config).Run
 
-	_, err := run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "org.example.scans", Command: "scan"})
+	_, err := run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "org.example.scans", Command: "scan"})
 
 	if !errors.Is(err, plugincommand.ErrBadArguments) || len(declared.calls) != 0 {
 		t.Errorf("got %v, ran %v", err, declared.calls)
@@ -281,7 +282,7 @@ func TestRunAnswersTheErrorOfANoteItCannotRead(t *testing.T) {
 	}}
 	commands := plugincommand.NewCommands(declared, getTypes(), noteFiles{}, nil)
 
-	_, err := commands.Run.Execute(t.Context(), getVault(), plugincommand.Call{PluginID: "md.numen.links", Command: "fetch", Path: "links/gone.md"})
+	_, err := commands.Run.Execute(t.Context(), getVault(), plugin.CommandCall{PluginID: "md.numen.links", Command: "fetch", Path: "links/gone.md"})
 
 	if !errors.Is(err, fs.ErrNotExist) || errors.Is(err, plugincommand.ErrBadArguments) || len(declared.calls) != 0 {
 		t.Errorf("got %v, ran %v, want the read error", err, declared.calls)

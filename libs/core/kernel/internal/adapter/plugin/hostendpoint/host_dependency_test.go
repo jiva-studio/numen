@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -27,11 +28,11 @@ func TestDependencyKindsRoundTripTheWire(t *testing.T) {
 }
 
 func TestWriteWireDependencyStateMapsEveryState(t *testing.T) {
-	want := map[pluginport.DependencyState]v1.DependencyState{
-		pluginport.DependencyStateMissing:      v1.DependencyState_DEPENDENCY_STATE_MISSING,
-		pluginport.DependencyStateProvisioning: v1.DependencyState_DEPENDENCY_STATE_PROVISIONING,
-		pluginport.DependencyStateReady:        v1.DependencyState_DEPENDENCY_STATE_READY,
-		pluginport.DependencyStateFailed:       v1.DependencyState_DEPENDENCY_STATE_FAILED,
+	want := map[plugin.DependencyState]v1.DependencyState{
+		plugin.DependencyStateMissing:      v1.DependencyState_DEPENDENCY_STATE_MISSING,
+		plugin.DependencyStateProvisioning: v1.DependencyState_DEPENDENCY_STATE_PROVISIONING,
+		plugin.DependencyStateReady:        v1.DependencyState_DEPENDENCY_STATE_READY,
+		plugin.DependencyStateFailed:       v1.DependencyState_DEPENDENCY_STATE_FAILED,
 	}
 	for state, wire := range want {
 		if got := writeWireDependencyState(state); got != wire {

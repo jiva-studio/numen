@@ -10,9 +10,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
@@ -331,10 +331,10 @@ const fileExtension = ".jsonl"
 // ListTargetVersions lists the versions of the file at the path as the when variable target.versions
 // holds them, each marked valid where its source chain still matches the file, and the live one. The
 // file is read for its content hash only where it has versions.
-func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]pluginport.TargetVersion, error) {
+func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path string) ([]plugin.TargetVersion, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil || len(versions) == 0 {
-		return []pluginport.TargetVersion{}, err
+		return []plugin.TargetVersion{}, err
 	}
 	contentHash, err := u.GetContentHash(ctx, v, path)
 	if err != nil {
@@ -348,9 +348,9 @@ func (u *Versions) ListTargetVersions(ctx context.Context, v domain.Vault, path 
 	if err != nil {
 		return nil, err
 	}
-	out := make([]pluginport.TargetVersion, 0, len(versions))
+	out := make([]plugin.TargetVersion, 0, len(versions))
 	for _, one := range versions {
-		out = append(out, pluginport.TargetVersion{
+		out = append(out, plugin.TargetVersion{
 			Kind: string(one.Kind), PluginID: one.PluginID, IsLive: hasLive && one.GetID() == live.GetID(),
 			IsValid: domain.IsChainValid(versions, one.GetID(), contentHash, properties),
 		})

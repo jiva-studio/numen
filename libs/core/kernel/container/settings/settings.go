@@ -17,6 +17,7 @@ import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
@@ -97,7 +98,7 @@ func (c Config) GetCheckedSettingsAt(path string) (Settings, error) {
 		target.DropInvalid(c.GetDeclarations(), c.GetRegistries())
 		target.DropInvalidSecrets(c.IsSecretDeclared)
 	} else {
-		target.DropInvalidSecrets(func(pluginport.DeclarationKey) bool { return true })
+		target.DropInvalidSecrets(func(plugindomain.DeclarationKey) bool { return true })
 	}
 	return target, nil
 }
@@ -481,7 +482,7 @@ func (c Config) NotifyHost(batch []settingsdomain.Setting) {
 }
 
 // IsSecretDeclared reports whether the plugin host declares permission.
-func (c Config) IsSecretDeclared(permission pluginport.DeclarationKey) bool {
+func (c Config) IsSecretDeclared(permission plugindomain.DeclarationKey) bool {
 	return slices.Contains(c.PluginHost.ListDeclarations(), permission)
 }
 
@@ -636,7 +637,7 @@ func (c Config) OpenChoosePluginPath(dialog machineport.PathDialog) *settingsuse
 }
 
 // OpenRetryPlugin builds the plugin retry use case.
-func (c Config) OpenRetryPlugin(retrier func(context.Context, string) (*pluginport.PluginFailure, error)) *settingsusecase.RetryPlugin {
+func (c Config) OpenRetryPlugin(retrier func(context.Context, string) (*plugindomain.Failure, error)) *settingsusecase.RetryPlugin {
 	retry, err := settingsusecase.NewRetryPlugin(retrier)
 	if err != nil {
 		return nil

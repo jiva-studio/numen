@@ -3,10 +3,10 @@ package textversion_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-func (s *scene) listTargetVersions(t *testing.T) []pluginport.TargetVersion {
+func (s *scene) listTargetVersions(t *testing.T) []plugin.TargetVersion {
 	t.Helper()
 	got, err := s.versions.ListTargetVersions(t.Context(), s.vault, scanPath)
 	if err != nil {
@@ -22,7 +22,7 @@ func TestTargetVersionsMarkTheSourceOfTheLiveVersionValid(t *testing.T) {
 
 	got := s.listTargetVersions(t)
 
-	want := []pluginport.TargetVersion{
+	want := []plugin.TargetVersion{
 		{Kind: string(kindRecognition), PluginID: ocr, IsLive: false, IsValid: true},
 		{Kind: string(kindRecognition), PluginID: proofreader, IsLive: true, IsValid: true},
 	}

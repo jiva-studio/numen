@@ -15,12 +15,12 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
@@ -120,7 +120,7 @@ func (v tooLargeMoveVault) MoveNote(ctx context.Context, from, to string) (domai
 func TestMoveNotesReturnsTooLargeForTheNoteThatIsTooLarge(t *testing.T) {
 	hostCallers := newCallers(nil)
 	hostCallers.vault = tooLargeMoveVault{newFakeNoteVault()}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{pluginport.PermissionVaultWrite}}}
+	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

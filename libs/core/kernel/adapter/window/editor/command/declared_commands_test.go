@@ -9,6 +9,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 )
 
@@ -30,15 +31,15 @@ func (declaredByTwoPlugins) ListCommands() []plugincommand.Entry {
 	}
 }
 
-func (declaredByTwoPlugins) GetParts(pluginID string) plugincommand.Parts {
+func (declaredByTwoPlugins) GetParts(pluginID string) plugin.Parts {
 	if pluginID == "md.numen.cards" {
-		return plugincommand.Parts{HasBackend: true, HasFrontend: true}
+		return plugin.Parts{HasBackend: true, HasFrontend: true}
 	}
-	return plugincommand.Parts{HasFrontend: true}
+	return plugin.Parts{HasFrontend: true}
 }
 
-func (declaredByTwoPlugins) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
-	return plugincommand.Result{Message: "ran"}, nil
+func (declaredByTwoPlugins) RunCommand(context.Context, plugin.CommandCall) (plugin.CommandResult, error) {
+	return plugin.CommandResult{Message: "ran"}, nil
 }
 
 func TestListCommands_CarriesTheDeclarationOfEachCommand(t *testing.T) {
@@ -75,8 +76,8 @@ func TestRunPluginCommand_AnswersUnknownForACommandOfAPluginWithoutABackend(t *t
 // suspendedPlugin declares a command of a plugin the host holds suspended after a failed start.
 type suspendedPlugin struct{ declaredByTwoPlugins }
 
-func (suspendedPlugin) GetParts(string) plugincommand.Parts {
-	return plugincommand.Parts{HasBackend: true, HasFrontend: true, IsSuspended: true}
+func (suspendedPlugin) GetParts(string) plugin.Parts {
+	return plugin.Parts{HasBackend: true, HasFrontend: true, IsSuspended: true}
 }
 
 func TestListCommands_ListsNoCommandOfASuspendedPlugin(t *testing.T) {

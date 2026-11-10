@@ -49,22 +49,22 @@ func (f *fakeProvisioner) CanProvision(req pluginport.DependencyRequirement) boo
 	return req.Kind == f.kind && (f.id == "" || req.ID == f.id)
 }
 
-func (f *fakeProvisioner) Provision(ctx context.Context, req pluginport.DependencyRequirement, onProgress func(pluginport.DependencyStatus)) (pluginport.ResolvedDependency, error) {
+func (f *fakeProvisioner) Provision(ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
 	f.calls.Add(1)
-	onProgress(pluginport.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
+	onProgress(plugin.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
 	if f.gate != nil {
 		select {
 		case <-f.gate:
 		case <-ctx.Done():
-			return pluginport.ResolvedDependency{}, ctx.Err()
+			return plugin.ResolvedDependency{}, ctx.Err()
 		}
 	}
-	onProgress(pluginport.DependencyStatus{BytesDownloaded: 2, BytesTotal: 2})
-	return pluginport.ResolvedDependency{ID: req.ID, PrimaryPath: "/p/" + req.ID}, nil
+	onProgress(plugin.DependencyStatus{BytesDownloaded: 2, BytesTotal: 2})
+	return plugin.ResolvedDependency{ID: req.ID, PrimaryPath: "/p/" + req.ID}, nil
 }
 
-func (f *fakeProvisioner) Status(context.Context, pluginport.DependencyRequirement) (pluginport.DependencyStatus, error) {
-	return pluginport.DependencyStatus{State: pluginport.DependencyStateMissing}, nil
+func (f *fakeProvisioner) Status(context.Context, pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
+	return plugin.DependencyStatus{State: plugin.DependencyStateMissing}, nil
 }
 
 func TestRegistry_RoutesRequirementByKind(t *testing.T) {
@@ -104,7 +104,7 @@ func TestRegistry_ConcurrentRequestsShareOneRun(t *testing.T) {
 		go func() {
 			defer finished.Done()
 			started.Done()
-			_, err := registry.Provision(t.Context(), req, func(pluginport.DependencyStatus) { heard[i].Add(1) })
+			_, err := registry.Provision(t.Context(), req, func(plugin.DependencyStatus) { heard[i].Add(1) })
 			if err != nil {
 				t.Error(err)
 			}
@@ -139,7 +139,7 @@ func TestDownloadVerifiesChecksumAndWritesToCachePath(t *testing.T) {
 	req := newModelRequirement(server.URL+"/w.bin", data)
 
 	var progressed atomic.Int32
-	resolved, err := provisioner.Provision(t.Context(), req, func(pluginport.DependencyStatus) { progressed.Add(1) })
+	resolved, err := provisioner.Provision(t.Context(), req, func(plugin.DependencyStatus) { progressed.Add(1) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestDownloadVerifiesChecksumAndWritesToCachePath(t *testing.T) {
 		t.Errorf("second provision = %+v, %v", again, err)
 	}
 	status, err := provisioner.Status(t.Context(), req)
-	if err != nil || status.State != pluginport.DependencyStateReady {
+	if err != nil || status.State != plugin.DependencyStateReady {
 		t.Errorf("status = %+v, %v", status, err)
 	}
 }
@@ -252,7 +252,7 @@ func TestDownloadWithChecksumMismatchKeepsFolderEmpty(t *testing.T) {
 	if statusErr != nil {
 		t.Fatal(statusErr)
 	}
-	if status.State != pluginport.DependencyStateMissing {
+	if status.State != plugin.DependencyStateMissing {
 		t.Errorf("state = %s, want missing", status.State)
 	}
 }
