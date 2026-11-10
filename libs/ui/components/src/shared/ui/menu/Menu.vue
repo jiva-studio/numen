@@ -203,6 +203,7 @@ defineExpose({ getElement: () => menu.value })
   --tallest: min(24rem, var(--room));
   --lift: var(--numen-lift-menu);
   --inset: 0.375rem;
+  --silence-pad: 0.375rem 0.5rem;
 
   box-sizing: border-box;
   position: fixed;
@@ -233,7 +234,7 @@ defineExpose({ getElement: () => menu.value })
 
 .menu__silence {
   margin: 0;
-  padding: 0.375rem 0.5rem;
+  padding: var(--silence-pad);
   color: var(--numen-hushed);
 }
 </style>

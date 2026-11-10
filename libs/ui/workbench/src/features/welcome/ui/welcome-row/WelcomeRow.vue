@@ -39,11 +39,14 @@ defineSlots<{
 
 <style scoped>
 .welcome-page__row {
+  --gap: 0.75rem;
+  --pad: 0.3rem 0.6rem;
+
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--gap);
   inline-size: 100%;
-  padding: 0.3rem 0.6rem;
+  padding: var(--pad);
   border: 0;
   border-radius: var(--numen-radius);
   background: none;
@@ -55,19 +58,23 @@ defineSlots<{
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .welcome-page__icon {
+  --icon: 1rem;
+
   flex: none;
-  inline-size: 1rem;
-  block-size: 1rem;
+  inline-size: var(--icon);
+  block-size: var(--icon);
   stroke-width: 1.75;
   opacity: 0.75;
 }
 
 /* The name above the secondary line, next to the icon. */
 .welcome-page__named {
+  --gap: 0.05rem;
+
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 0.05rem;
+  gap: var(--gap);
   min-inline-size: 0;
 }
 

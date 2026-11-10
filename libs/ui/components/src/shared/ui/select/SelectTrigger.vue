@@ -58,7 +58,9 @@ defineExpose({
 /* One line, then an ellipsis. A model is named by a word and addressed by a
    line too long to read, and the name is what the line carries. */
 .select__reading {
-  padding-block: 0.125rem;
+  --lead: 0.125rem;
+
+  padding-block: var(--lead);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -67,8 +69,10 @@ defineExpose({
 
 /* Lucide draws on a 24 grid, and the stroke is given in those units. */
 .select__mark {
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  --mark: 0.875rem;
+
+  inline-size: var(--mark);
+  block-size: var(--mark);
   stroke-width: 1.875;
   color: var(--numen-hushed);
 }

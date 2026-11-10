@@ -47,16 +47,20 @@ defineEmits<{
 /* The mark, the name and the ways in stand together, and take a column of their
    own where the screen has two. */
 .welcome-page__lead {
+  --gap: 1.4rem;
+
   display: flex;
   flex-direction: column;
-  gap: 1.4rem;
+  gap: var(--gap);
 }
 
 .welcome-page__head {
+  --gap: 0.5rem;
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--gap);
 }
 
 .welcome-page__glyph {
@@ -68,20 +72,25 @@ defineEmits<{
 /* The name is set in the letters the mark is drawn in, which are a serif's.
    Nothing else in the window is, so the family is this screen's own. */
 .welcome-page__name {
+  --lean: 0.22em;
+  --tracking: 0.06em;
+
   margin: 0;
   /* The glyph above is italic and leans right, so the name is offset slightly
      left of center to align under it. */
-  margin-inline-end: 0.22em;
+  margin-inline-end: var(--lean);
   font-family: ui-serif, Georgia, 'Times New Roman', serif;
   font-size: var(--numen-display-size);
   font-weight: 400;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tracking);
 }
 
 .welcome-page__ways {
+  --gap: 0.1rem;
+
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: var(--gap);
   margin: 0;
   padding: 0;
   list-style: none;

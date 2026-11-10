@@ -74,8 +74,10 @@ const context = inject(LIST_CONTEXT)
 
 /* The name of a group, set as this product sets a label over what it names. */
 .searchable-list__heading {
+  --pad: 0.25rem 0.5rem;
+
   margin: 0;
-  padding: 0.25rem 0.5rem;
+  padding: var(--pad);
   font-size: var(--numen-text-1);
   font-weight: 600;
   letter-spacing: var(--numen-caps-tracking);
@@ -84,11 +86,14 @@ const context = inject(LIST_CONTEXT)
 }
 
 .searchable-list__option {
+  --gap: 0.5rem;
+  --pad: 0.375rem 0.5rem;
+
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.5rem;
+  gap: var(--gap);
+  padding: var(--pad);
   border-radius: var(--numen-radius-popup-item);
   cursor: default;
   user-select: none;
@@ -125,8 +130,10 @@ const context = inject(LIST_CONTEXT)
 }
 
 .searchable-list__mark {
+  --mark: 0.875rem;
+
   flex: none;
-  inline-size: 0.875rem;
-  block-size: 0.875rem;
+  inline-size: var(--mark);
+  block-size: var(--mark);
 }
 </style>

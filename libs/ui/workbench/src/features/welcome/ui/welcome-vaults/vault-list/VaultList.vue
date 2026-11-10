@@ -54,9 +54,11 @@ const getVaultKeys = (pos: number, vault: VaultRow): Keystroke | undefined => {
 
 <style scoped>
 .welcome-page__list {
+  --gap: 0.1rem;
+
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: var(--gap);
   margin: 0;
   padding: 0;
   list-style: none;

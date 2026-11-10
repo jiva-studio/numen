@@ -53,7 +53,9 @@ defineExpose({ element })
 /* Highlights the matched part of the name. It is drawn under text, so it
    is a tint with the text legible over it. */
 .actions__name [data-hit] {
-  border-radius: 0.125rem;
+  --corner: 0.125rem;
+
+  border-radius: var(--corner);
   background: var(--numen-highlight);
   font-weight: 600;
 }

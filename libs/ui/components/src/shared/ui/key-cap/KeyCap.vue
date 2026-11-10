@@ -52,14 +52,19 @@ const iconStyle = (icon: keyof typeof ICONS) => ({ '--fills': ICONS[icon].fills 
   /* How wide an icon filling the cap is drawn: the height of the letter beside
      it. */
   --cap-icon: 0.85em;
+  /* The clearance between the parts of a cap, its height and least width, and the
+     air at its sides. */
+  --cap-gap: 0.1em;
+  --cap-size: 1.6em;
+  --cap-pad: 0.45em;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.1em;
-  block-size: 1.6em;
-  min-inline-size: 1.6em;
-  padding-inline: 0.45em;
+  gap: var(--cap-gap);
+  block-size: var(--cap-size);
+  min-inline-size: var(--cap-size);
+  padding-inline: var(--cap-pad);
   border: var(--numen-stroke) solid color-mix(in oklab, var(--numen-raised), var(--numen-ink) 25%);
   border-radius: var(--cap-radius);
   background: var(--numen-raised);

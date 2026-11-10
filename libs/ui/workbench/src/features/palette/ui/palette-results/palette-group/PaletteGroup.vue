@@ -99,8 +99,10 @@ const rowId = (pos: number): string => optionId(props.uid, pos)
 
 /* The group's name is small print over what it names. */
 .palette__title {
+  --pad: 0.15rem 0.5rem;
+
   margin: 0;
-  padding: 0.15rem 0.5rem;
+  padding: var(--pad);
 }
 
 .palette__silence {
