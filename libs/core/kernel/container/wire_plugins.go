@@ -39,6 +39,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	agentcase "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
@@ -47,6 +48,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
@@ -228,25 +230,30 @@ func (c Config) InstallPluginVault(
 	return installPluginVault(c.plugins(), vaults, db, current, hooks)
 }
 
-// PluginHost is the plugin host as the capabilities the wiring and the use cases consume. lendPluginHost builds
-// every capability from one plugin host, and a pluginsWiring holds the one *PluginHost the container made: the
-// settings subscription is keyed by that pointer. SetStorage sets the folders
-// the plugins store files in and keeps the dependencies in the models folder the host names;
-// RefreshDependencies provisions them as the environment names them now.
+// PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from
+// the role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
+// made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
+// store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
+// provisions them as the environment names them now.
 type PluginHost struct {
 	pluginport.PluginActivator
+	pluginport.PluginRetrier
 	pluginport.PluginDiscoverer
+	pluginport.PluginLister
 	pluginport.PluginResolver
 	pluginport.PluginSettingDeclarer
 	pluginport.PluginEventEmitter
 	pluginport.SecretConfigurator
+	pluginport.ConfigWatcher
 	pluginport.SettingsPush
-	pluginport.SettingUpdater
+	pluginport.SettingChecker
 	pluginport.PersistHook
 	pluginport.PluginFailures
+	pluginport.PluginShutdown
 	pluginport.PluginBinding
 	pluginport.DependencyReporter
 	contenttypeport.ContentTypeTable
+	ApplySetting        settingsport.PluginSettingApplier
 	SetCompleter        func(completer hostendpoint.Completer)
 	SetPluginWork       func(work hostendpoint.WorkQueue)
 	SetPluginVault      func(vault *hostendpoint.VaultAccess)
@@ -259,40 +266,53 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
+// LendPluginHost lends the capabilities of host, a plugin host the caller made, to the container. The
+// tests of packages outside the container use it to run a window over a host they hold.
+func LendPluginHost(host *plugin.Host) *PluginHost {
+	return lendPluginHost(host)
+}
+
 func lendPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
-		PluginActivator:       host,
-		PluginDiscoverer:      host,
-		PluginResolver:        host,
-		PluginSettingDeclarer: host,
-		PluginEventEmitter:    host,
-		SecretConfigurator:    host,
-		SettingsPush:          host,
-		SettingUpdater:        host,
-		PersistHook:           host,
-		PluginFailures:        host,
-		PluginBinding:         host,
-		DependencyReporter:    host,
-		SetCompleter:          host.SetCompleter,
-		SetPluginWork:         host.SetPluginWork,
-		SetPluginVault:        host.SetPluginVault,
-		GetPluginVault:        host.GetPluginVault,
-		SetPluginTexts:        host.SetPluginTexts,
-		SetPluginSearch:       host.SetPluginSearch,
-		SetPluginWindow:       host.SetPluginWindow,
-		SetPluginVaultList:    host.SetPluginVaultList,
-		ContentTypeTable:      host,
-		SetStorage:            func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
-		RefreshDependencies:   func() { host.SetDependencies(GetDependencyRegistry("")) },
+		PluginActivator:       host.Activation,
+		PluginRetrier:         host.Activation,
+		PluginDiscoverer:      host.Discovery,
+		PluginLister:          host.Registry,
+		PluginResolver:        host.Registry,
+		PluginSettingDeclarer: host.Registry,
+		PluginEventEmitter:    host.Events,
+		SecretConfigurator:    host.Config,
+		ConfigWatcher:         host.Config,
+		SettingsPush:          host.Settings,
+		SettingChecker:        host.Settings,
+		PersistHook:           host.Settings,
+		PluginFailures:        host.Failures,
+		PluginShutdown:        host.Teardown,
+		PluginBinding:         host.Mode,
+		DependencyReporter:    host.Services,
+		ContentTypeTable:      host.ContentTypes,
+		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
+			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,
+		}).Execute,
+		SetCompleter:        host.Services.SetCompleter,
+		SetPluginWork:       host.Services.SetPluginWork,
+		SetPluginVault:      host.Services.SetPluginVault,
+		GetPluginVault:      host.Services.GetPluginVault,
+		SetPluginTexts:      host.Services.SetPluginTexts,
+		SetPluginSearch:     host.Services.SetPluginSearch,
+		SetPluginWindow:     host.Services.SetPluginWindow,
+		SetPluginVaultList:  host.Services.SetPluginVaultList,
+		SetStorage:          func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
+		RefreshDependencies: func() { host.Services.SetDependencies(GetDependencyRegistry("")) },
 	}
 }
 
 func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
-	host.SetStorageRoots(cacheRoot, dataRoot)
+	host.Storage.SetStorageRoots(cacheRoot, dataRoot)
 	// gomutants:disable-next-line
-	if models := host.GetModelsDir(); models != "" {
+	if models := host.Storage.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line
-		host.SetDependencies(GetDependencyRegistry(models))
+		host.Services.SetDependencies(GetDependencyRegistry(models))
 	}
 }
 
@@ -526,9 +546,9 @@ func NewPluginHost(target string, dirs ...string) *PluginHost {
 
 func openPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
-	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(GetDependencyRegistry(""))
-	if err := host.Discover(); err != nil {
+	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.Services.SetDependencies(GetDependencyRegistry(""))
+	if err := host.Discovery.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}
 	return host

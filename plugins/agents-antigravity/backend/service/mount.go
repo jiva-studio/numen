@@ -9,8 +9,7 @@ import (
 
 // Mount registers the plugin's services on s.
 func Mount(s *server.Server) error {
-	agent := new(agentServer)
-	agent.models = newModelCache(true)
+	agent := newAgentServer(true)
 	s.OnClose(agent.Close)
 	s.SetUpdateConfig(func(values map[string]string, _ server.Secrets) { agent.applyConfig(values) })
 	s.Register(agentrun.NewHandler(agent, agent, s.HandlerOptions()...))

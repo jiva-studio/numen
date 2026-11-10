@@ -24,7 +24,7 @@ func TestAPluginFileIsRefusedWithoutTheToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testsupport.CloseAfter(t, back)
+	testsupport.CloseAfter(t, loopbackCloser{back})
 	back.setPluginServices(plugins)
 
 	resp := fetch(t, http.DefaultClient, back.address+"/"+pluginFileSegment+"/v1/org.example.player/embed.html?size=1")

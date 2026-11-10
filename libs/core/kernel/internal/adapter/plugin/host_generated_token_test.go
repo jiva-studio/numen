@@ -59,15 +59,15 @@ func newTokenHost(t *testing.T) *Host {
 		t.Fatal(err)
 	}
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	return host
 }
 
 func loadTokenHost(host *Host, stored map[string]map[string]any, writes *tokenWrites) {
-	host.SetSettings(stored)
-	host.SetPersistHandler(writes.add)
+	host.Settings.SetSettings(stored)
+	host.Settings.SetPersistHandler(writes.add)
 }
 
 func TestLoadPersistsOneGeneratedTokenForAnEnabledPlugin(t *testing.T) {
@@ -90,7 +90,7 @@ func TestLoadPersistsOneGeneratedTokenForAnEnabledPlugin(t *testing.T) {
 			if !ok || !tokenPattern.MatchString(token) {
 				t.Fatalf("the written token is %#v, want 64 lowercase hex characters", got[0])
 			}
-			if inForce := host.GetPluginSettings(tokenPluginID)["token"]; inForce != token {
+			if inForce := host.Settings.GetPluginSettings(tokenPluginID)["token"]; inForce != token {
 				t.Errorf("the token in force is %#v, want the written %q", inForce, token)
 			}
 			second := writes.get(tokenPluginID, "secondToken")
@@ -117,7 +117,7 @@ func TestASecondLoadKeepsTheGeneratedToken(t *testing.T) {
 	if got := writes.get(tokenPluginID, "token"); len(got) != 1 {
 		t.Errorf("token was written %v after the second load, want only the first value", got)
 	}
-	if inForce := host.GetPluginSettings(tokenPluginID)["token"]; inForce != first[0] {
+	if inForce := host.Settings.GetPluginSettings(tokenPluginID)["token"]; inForce != first[0] {
 		t.Errorf("the token in force is %#v, want %#v", inForce, first[0])
 	}
 
@@ -127,7 +127,7 @@ func TestASecondLoadKeepsTheGeneratedToken(t *testing.T) {
 	if got := again.get(tokenPluginID, "token"); len(got) != 0 {
 		t.Errorf("a host started on the stored token wrote %v", got)
 	}
-	if inForce := restarted.GetPluginSettings(tokenPluginID)["token"]; inForce != first[0] {
+	if inForce := restarted.Settings.GetPluginSettings(tokenPluginID)["token"]; inForce != first[0] {
 		t.Errorf("the token in force after a restart is %#v, want %#v", inForce, first[0])
 	}
 }
@@ -144,7 +144,7 @@ func TestLoadKeepsATokenThePersonSet(t *testing.T) {
 	if got := writes.get(tokenPluginID, "secondToken"); len(got) != 0 {
 		t.Errorf("secondToken was written %v over the value the person set", got)
 	}
-	settings := host.GetPluginSettings(tokenPluginID)
+	settings := host.Settings.GetPluginSettings(tokenPluginID)
 	if settings["token"] != chosen || settings["secondToken"] != "my-own-phrase" {
 		t.Errorf("settings in force = %v, want the values the person set", settings)
 	}
@@ -158,7 +158,7 @@ func TestLoadGeneratesNoTokenForADisabledPlugin(t *testing.T) {
 	if got := writes.get(tokenPluginID, "token"); len(got) != 0 {
 		t.Errorf("a disabled plugin had its token written: %v", got)
 	}
-	if _, ok := host.GetPluginSettings(tokenPluginID)["token"]; ok {
-		t.Errorf("a disabled plugin holds a token: %v", host.GetPluginSettings(tokenPluginID))
+	if _, ok := host.Settings.GetPluginSettings(tokenPluginID)["token"]; ok {
+		t.Errorf("a disabled plugin holds a token: %v", host.Settings.GetPluginSettings(tokenPluginID))
 	}
 }

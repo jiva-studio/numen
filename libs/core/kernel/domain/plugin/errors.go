@@ -1,7 +1,11 @@
 // Package plugin holds the values, constants and sentinel errors of the plugin host.
 package plugin
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+	"io/fs"
+)
 
 var (
 	// ErrNoKey means the store holds no key under the name.
@@ -43,6 +47,8 @@ var (
 	// a passage that starts before the text or is empty, or too many passages. The error wraps it
 	// with the use case's message.
 	ErrInvalidFocus = errors.New("invalid focus target")
+	// ErrTabNotOpen is returned by ActivateTab for an id that no open tab has. It is also fs.ErrNotExist.
+	ErrTabNotOpen = fmt.Errorf("no open tab has that id: %w", fs.ErrNotExist)
 	// ErrTabNotShown is returned by ActivateTab when the window does not report the tab active
 	// within the bound of the call. The error wraps it with the id of the tab.
 	ErrTabNotShown = errors.New("the window did not show the tab in time")

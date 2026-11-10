@@ -7,12 +7,12 @@ import "testing"
 func TestAChangeOfTheProfileReachesARunningPlugin(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
 
-	host.SetPerformanceProfile(t.Context(), "eco")
+	host.Settings.SetPerformanceProfile(t.Context(), "eco")
 	if got := probe.last(t).GetValues()["host.performanceProfile"]; got != "eco" {
 		t.Errorf("profile = %q, want eco", got)
 	}
 
-	host.SetPerformanceProfile(t.Context(), "maximum")
+	host.Settings.SetPerformanceProfile(t.Context(), "maximum")
 	if got := probe.last(t).GetValues()["host.performanceProfile"]; got != "maximum" {
 		t.Errorf("profile = %q after the change, want maximum", got)
 	}
@@ -21,10 +21,10 @@ func TestAChangeOfTheProfileReachesARunningPlugin(t *testing.T) {
 // The same profile again calls no plugin.
 func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
-	host.SetPerformanceProfile(t.Context(), "eco")
+	host.Settings.SetPerformanceProfile(t.Context(), "eco")
 	calls := len(probe.calls)
 
-	host.SetPerformanceProfile(t.Context(), "eco")
+	host.Settings.SetPerformanceProfile(t.Context(), "eco")
 	if len(probe.calls) != calls {
 		t.Errorf("%d Configure calls, want %d", len(probe.calls), calls)
 	}
@@ -33,9 +33,9 @@ func TestTheSameProfileAgainConfiguresNoPlugin(t *testing.T) {
 // A plugin that starts later receives the profile in its first Configure call.
 func TestAPluginConfiguredLaterReceivesTheProfile(t *testing.T) {
 	host, probe := newSecretHost(t, nil)
-	host.performance = "eco"
+	host.Settings.performance = "eco"
 
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	if got := probe.last(t).GetValues()["host.performanceProfile"]; got != "eco" {

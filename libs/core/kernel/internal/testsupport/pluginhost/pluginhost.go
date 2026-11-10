@@ -16,9 +16,9 @@ import (
 // Open returns a plugin host for the target that has discovered the plugins in dirs.
 func Open(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
-	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(dependencies())
-	if err := host.Discover(); err != nil {
+	host.ContentTypes.SetContentTypeTable(sharedmimeinfo.Open())
+	host.Services.SetDependencies(dependencies())
+	if err := host.Discovery.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}
 	return host
@@ -33,4 +33,27 @@ func dependencies() *provision.Registry {
 		onnxruntime.NewONNXProvisioner(runtimeConfig),
 		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
 	)
+}
+
+// Roles presents the roles of a host as one value, for a test that gives a bridge the whole host.
+type Roles struct {
+	*plugin.Activation
+	*plugin.Registry
+	*plugin.Settings
+	*plugin.ConfigPush
+	*plugin.Failures
+	*plugin.Events
+	*plugin.Mode
+	*plugin.ContentTypes
+	*plugin.Discovery
+	*plugin.Services
+}
+
+// Join presents the roles of host as one value.
+func Join(host *plugin.Host) Roles {
+	return Roles{
+		Activation: host.Activation, Registry: host.Registry, Settings: host.Settings, ConfigPush: host.Config,
+		Failures: host.Failures, Events: host.Events, Mode: host.Mode, ContentTypes: host.ContentTypes,
+		Discovery: host.Discovery, Services: host.Services,
+	}
 }

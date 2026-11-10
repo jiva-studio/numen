@@ -12,6 +12,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/rpcerror"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/internal/adapter/environment"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
 
 func TestEmbeddingServerGetModel(t *testing.T) {
@@ -142,7 +144,7 @@ func TestEmbeddingServerDefaultModelIsPinned(t *testing.T) {
 }
 
 func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
-	t.Setenv(envMockML, "true")
+	t.Setenv("NUMEN_MOCK_ML", "true")
 	srv := newEmbeddingServer()
 
 	model, err := srv.GetModelInfo(t.Context())
@@ -165,18 +167,10 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 	}
 }
 
-func TestIndexShareReservesOnePassForQuestions(t *testing.T) {
-	for _, tc := range []struct{ passes, want int }{{1, 1}, {2, 1}, {4, 3}} {
-		if got := getIndexShare(tc.passes); got != tc.want {
-			t.Errorf("a model of %d passes gives the index %d, want %d", tc.passes, got, tc.want)
-		}
-	}
-}
-
 func TestRemoteProviderWithoutKeyDoesNotOpenLocalEmbedder(t *testing.T) {
 	srv := newEmbeddingServer()
 	hasOpenCall := false
-	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		hasOpenCall = true
 		return engine.MockEmbedder{}, nil
 	}
@@ -199,7 +193,7 @@ func TestLocalProviderWithRemoteModelNameUsesLocalDefault(t *testing.T) {
 	srv := newEmbeddingServer()
 	var activeInfo engine.ModelInfo
 	var activeLocal engine.LocalModel
-	srv.open = func(_ context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, info engine.ModelInfo, local engine.LocalModel) (loading.Embedder, error) {
 		activeInfo = info
 		activeLocal = local
 		return engine.MockEmbedder{}, nil
@@ -261,7 +255,7 @@ func TestUpdateConfigAppliesProfileOfSelectedModel(t *testing.T) {
 func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 	srv := newEmbeddingServer()
 	var openedInfo engine.ModelInfo
-	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, info engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		openedInfo = info
 		return engine.MockEmbedder{}, nil
 	}
@@ -275,7 +269,7 @@ func TestTheEmbedderOpensWithTheProfileOfTheLocalModel(t *testing.T) {
 }
 
 func TestTheMockModelReportsNoFloorHint(t *testing.T) {
-	t.Setenv(envMockML, "true")
+	t.Setenv("NUMEN_MOCK_ML", "true")
 	srv := newEmbeddingServer()
 	if srv.modelInfo.MinChunkLength != 40 {
 		t.Fatalf("initial mock MinChunkLength = %d, want 40", srv.modelInfo.MinChunkLength)
@@ -293,49 +287,17 @@ func TestTheMockModelReportsNoFloorHint(t *testing.T) {
 	}
 }
 
-func TestOpenMockModelHoldWaitAndContextCancel(t *testing.T) {
-	t.Setenv(envMockML, "true")
-	srv := newEmbeddingServer()
-	if srv.profiles == nil {
-		t.Fatal("mock server did not load profiles")
-	}
-
-	t.Setenv(envMockOpenHold, "0")
-	if _, err := srv.openMockModel(t.Context(), engine.ModelInfo{}, engine.LocalModel{}); err != nil {
-		t.Fatalf("openMockModel with 0ms hold failed: %v", err)
-	}
-
-	t.Setenv(envMockOpenHold, "bad")
-	if _, err := srv.openMockModel(t.Context(), engine.ModelInfo{}, engine.LocalModel{}); err != nil {
-		t.Fatalf("openMockModel with invalid hold failed: %v", err)
-	}
-
-	t.Setenv(envMockOpenHold, "1")
-	ctx1, cancel1 := context.WithCancel(t.Context())
-	cancel1()
-	if _, err := srv.openMockModel(ctx1, engine.ModelInfo{}, engine.LocalModel{}); !errors.Is(err, context.Canceled) {
-		t.Fatalf("openMockModel with 1ms hold and canceled ctx = %v, want Canceled", err)
-	}
-
-	t.Setenv(envMockOpenHold, "200")
-	ctx, cancel := context.WithCancel(t.Context())
-	cancel()
-	if _, err := srv.openMockModel(ctx, engine.ModelInfo{}, engine.LocalModel{}); !errors.Is(err, context.Canceled) {
-		t.Fatalf("openMockModel with canceled ctx = %v, want Canceled", err)
-	}
-}
-
 func TestUpdateConfigDefaultRemoteModelsAndProviderSelection(t *testing.T) {
 	srv := newEmbeddingServer()
 	srv.updateConfig(map[string]string{"provider": "openrouter"}, nil)
-	if srv.remoteModel != modelOpenRouterEmbedding3Small || srv.modelInfo.Name != modelOpenRouterEmbedding3Small {
-		t.Fatalf("openrouter default remoteModel = %q / %q, want %q", srv.remoteModel, srv.modelInfo.Name, modelOpenRouterEmbedding3Small)
+	if srv.remoteModel != "openai/text-embedding-3-small" || srv.modelInfo.Name != "openai/text-embedding-3-small" {
+		t.Fatalf("openrouter default remoteModel = %q / %q, want %q", srv.remoteModel, srv.modelInfo.Name, "openai/text-embedding-3-small")
 	}
 
 	srv2 := newEmbeddingServer()
 	srv2.updateConfig(map[string]string{"provider": "openai"}, nil)
-	if srv2.remoteModel != modelEmbedding3Small || srv2.modelInfo.Name != modelEmbedding3Small {
-		t.Fatalf("openai default remoteModel = %q / %q, want %q", srv2.remoteModel, srv2.modelInfo.Name, modelEmbedding3Small)
+	if srv2.remoteModel != "text-embedding-3-small" || srv2.modelInfo.Name != "text-embedding-3-small" {
+		t.Fatalf("openai default remoteModel = %q / %q, want %q", srv2.remoteModel, srv2.modelInfo.Name, "text-embedding-3-small")
 	}
 
 	srv3 := newEmbeddingServer()
@@ -408,10 +370,15 @@ func TestUpdateLocalModelHandlesMockProfilesErrAndClosingRetired(t *testing.T) {
 	}
 
 	closed := make(chan struct{})
-	srv3.embedder = stubEmbedder{onClose: func() { close(closed) }}
+	srv3.open = func(context.Context, engine.ModelInfo, engine.LocalModel) (loading.Embedder, error) {
+		return stubEmbedder{onClose: func() { close(closed) }}, nil
+	}
+	if _, err := srv3.getEmbedder(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 	srv3.updateLocalModelLocked(engine.DefaultModel)
 	<-closed
-	if srv3.embedder != nil || srv3.localKey == "error" {
+	if srv3.loader.IsLoaded() || srv3.localKey == "error" {
 		t.Fatalf("updateLocalModelLocked did not close retired embedder or update key: %q", srv3.localKey)
 	}
 }
@@ -430,8 +397,7 @@ func TestGetProfilesDirAndEnvOverrides(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_DIR", "/custom/dir")
 	t.Setenv("NUMEN_ONNX_RUNTIME", "/custom/libonnx.so")
 	t.Setenv("NUMEN_ONNX_THREADS", "6")
-	applyModelOverrides(&engine.ModelInfo{}, &local)
-	applyRuntimeEnv(&local)
+	applyLocalOverrides(&local, environment.GetOverrides())
 	if local.Dir != "/custom/dir" || local.Runtime != "/custom/libonnx.so" || local.Threads != 6 {
 		t.Fatalf("overrides = %+v", local)
 	}
@@ -439,53 +405,34 @@ func TestGetProfilesDirAndEnvOverrides(t *testing.T) {
 	local2 := engine.LocalModel{Threads: 4}
 	t.Setenv("NUMEN_ONNX_RUNTIME", "")
 	t.Setenv("NUMEN_ONNX_THREADS", "invalid")
-	applyRuntimeEnv(&local2)
+	applyLocalOverrides(&local2, environment.GetOverrides())
 	if local2.Runtime != "" || local2.Threads != 4 {
 		t.Fatalf("invalid threads changed local2 = %+v", local2)
 	}
 	t.Setenv("NUMEN_ONNX_THREADS", "0")
-	applyRuntimeEnv(&local2)
+	applyLocalOverrides(&local2, environment.GetOverrides())
 	if local2.Threads != 4 {
 		t.Fatalf("zero threads changed local2 = %+v", local2)
 	}
 	t.Setenv("NUMEN_ONNX_THREADS", "-2")
-	applyRuntimeEnv(&local2)
+	applyLocalOverrides(&local2, environment.GetOverrides())
 	if local2.Threads != 4 {
 		t.Fatalf("negative threads changed local2 = %+v", local2)
 	}
 	t.Setenv("NUMEN_ONNX_THREADS", "1")
-	applyRuntimeEnv(&local2)
+	applyLocalOverrides(&local2, environment.GetOverrides())
 	if local2.Threads != 1 {
 		t.Fatalf("1 thread = %d, want 1", local2.Threads)
 	}
 }
 
-func TestParsePositiveIntAndApplyDimensionEnvBoundaries(t *testing.T) {
-	if got := parsePositiveInt(""); got != 0 {
-		t.Fatalf("parsePositiveInt empty = %d", got)
-	}
-	if got := parsePositiveInt("0"); got != 0 {
-		t.Fatalf("parsePositiveInt 0 = %d", got)
-	}
-	if got := parsePositiveInt("-1"); got != 0 {
-		t.Fatalf("parsePositiveInt -1 = %d", got)
-	}
-	if got := parsePositiveInt("1"); got != 1 {
-		t.Fatalf("parsePositiveInt 1 = %d", got)
-	}
-	if got := parsePositiveInt("2147483647"); got != 2147483647 {
-		t.Fatalf("parsePositiveInt MaxInt32 = %d", got)
-	}
-	if got := parsePositiveInt("2147483648"); got != 0 {
-		t.Fatalf("parsePositiveInt MaxInt32+1 = %d", got)
-	}
-
+func TestDimensionOverridesOfTheEnvironmentReachTheModel(t *testing.T) {
 	info := engine.ModelInfo{Dimensions: 384, MaxTokens: 512}
 	t.Setenv("NUMEN_EMBEDDING_DIMENSIONS", "1")
 	t.Setenv("NUMEN_EMBEDDING_MAX_TOKENS", "1")
-	applyDimensionEnv(&info)
+	applyInfoOverrides(&info, environment.GetOverrides())
 	if info.Dimensions != 1 || info.MaxTokens != 1 {
-		t.Fatalf("applyDimensionEnv with 1 = %+v", info)
+		t.Fatalf("applyInfoOverrides with 1 = %+v", info)
 	}
 }
 
@@ -564,13 +511,13 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 
 	srv2 := newEmbeddingServer()
 	calls := 0
-	srv2.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv2.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				calls++
 				if calls == 1 {
 					srv2.mu.Lock()
-					srv2.embedder = nil
+					srv2.loader.ResetLocked()
 					srv2.mu.Unlock()
 					return nil, engine.ErrClosed
 				}
@@ -584,7 +531,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	}
 
 	srv3 := newEmbeddingServer()
-	srv3.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv3.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				return nil, errors.New("onnx crash")
@@ -597,7 +544,7 @@ func TestEmbedTextsBranchesAndRetriesOnClosed(t *testing.T) {
 	}
 
 	srv4 := newEmbeddingServer()
-	srv4.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (textEmbedder, error) {
+	srv4.open = func(_ context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
 		return funcEmbedder{
 			embed: func(_ context.Context, _ []string) ([][]float32, error) {
 				return [][]float32{{1}}, nil
@@ -650,7 +597,7 @@ func TestIsRemoteProviderAndGetService(t *testing.T) {
 	}
 }
 
-func TestEmbedRemoteTextsAndComputeServiceVector(t *testing.T) {
+func TestEmbedRemoteTexts(t *testing.T) {
 	var gotContentType string
 	mode := "ok"
 	remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -700,38 +647,10 @@ func TestEmbedRemoteTextsAndComputeServiceVector(t *testing.T) {
 	if rpcerror.GetCode(err) != rpcerror.Internal || !strings.Contains(err.Error(), "service text 0: status 500: server exploded") {
 		t.Fatalf("status500 err = %v", err)
 	}
-
-	mode = "badjson"
-	if _, err := computeServiceVector(t.Context(), "k", remote.URL, "m", "t"); err == nil {
-		t.Fatal("expected error on invalid json")
-	}
-
-	mode = "emptydata"
-	if _, err := computeServiceVector(t.Context(), "k", remote.URL, "m", "t"); err == nil || !strings.Contains(err.Error(), "no embedding returned") {
-		t.Fatalf("emptydata err = %v", err)
-	}
-
-	mode = "emptyvec"
-	if _, err := computeServiceVector(t.Context(), "k", remote.URL, "m", "t"); err == nil || !strings.Contains(err.Error(), "no embedding returned") {
-		t.Fatalf("emptyvec err = %v", err)
-	}
-
-	mode = "singlefloat"
-	if vec, err := computeServiceVector(t.Context(), "k", remote.URL, "m", "t"); err != nil || len(vec) != 1 || vec[0] != 0.42 {
-		t.Fatalf("singlefloat = %v, %v", vec, err)
-	}
-
-	if _, err := computeServiceVector(t.Context(), "k", "://bad-url", "m", "t"); err == nil {
-		t.Fatal("expected error on bad URL")
-	}
-
-	if _, err := computeServiceVector(t.Context(), "k", "http://127.0.0.1:1", "m", "t"); err == nil {
-		t.Fatal("expected error on unreachable host")
-	}
 }
 
 func TestMountRegistersCloseCallback(t *testing.T) {
-	t.Setenv(envMockML, "true")
+	t.Setenv("NUMEN_MOCK_ML", "true")
 	s := server.New(server.WithToken("token"))
 	if err := Mount(s); err != nil {
 		t.Fatalf("Mount: %v", err)

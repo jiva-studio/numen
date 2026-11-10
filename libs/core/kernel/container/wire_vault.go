@@ -562,19 +562,6 @@ func openFileText(c vaultWiring) *textversion.FileText {
 	return text
 }
 
-func setTextVersionListener(c vaultWiring, listener textdomain.VersionListener) {
-	if c.TextVersions != nil {
-		c.TextVersions.SetListener(listener)
-	}
-}
-
-func reportTextFilesChanged(c vaultWiring, ctx context.Context, v domain.Vault, paths []string) error {
-	if c.TextVersions == nil {
-		return nil
-	}
-	return c.TextVersions.ReportFilesChanged(ctx, v, paths)
-}
-
 func openPluginFile(c vaultWiring) *file.OpenPluginFile {
 	return file.NewOpenPluginFile(derivedfile.PluginStores{Options: vaultOptions(c)})
 }

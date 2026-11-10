@@ -42,7 +42,7 @@ func installationWith(t *testing.T, content string) (container.Config, string) {
 		t.Fatal(err)
 	}
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", plugins)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	path := filepath.Join(t.TempDir(), "numen.json")

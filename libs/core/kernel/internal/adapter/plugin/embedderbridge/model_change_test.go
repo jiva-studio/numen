@@ -2,6 +2,7 @@ package embedderbridge
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -62,15 +63,15 @@ func openConfigurable(t *testing.T) (*plugin.Host, *Embedder, *mockEmbeddingServ
 		}
 	}
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", root)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cmd := plugintest.StartSleepProcess(t)
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
 
-	bridge, err := Open(t.Context(), host)
+	bridge, err := Open(t.Context(), pluginhost.Join(host))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +97,7 @@ func TestAModelChangeAfterASettingOfThePluginIsAnnounced(t *testing.T) {
 	reads := mock.getModelCalls.Load()
 
 	mock.modelName.Store("another-model")
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -112,7 +113,7 @@ func TestAChangeOfTheMinimumChunkLengthIsAnnounced(t *testing.T) {
 	reads := mock.getModelCalls.Load()
 
 	mock.minChunk.Store(7)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "minChunkLength", 7); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "minChunkLength", 7); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -127,7 +128,7 @@ func TestNoModelChangeIsAnnouncedWhenASettingKeepsTheModel(t *testing.T) {
 	host, bridge, mock, announced := openConfigurable(t)
 	reads := mock.getModelCalls.Load()
 
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "provider", "local"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -142,12 +143,12 @@ func TestASettingOfAnotherPluginAnnouncesNothing(t *testing.T) {
 	host, bridge, mock, announced := openConfigurable(t)
 	reads := mock.getModelCalls.Load()
 
-	if err := host.UpdatePluginSetting(t.Context(), otherPluginID, "any", "value"); err != nil {
+	if err := updateSetting(t.Context(), host, otherPluginID, "any", "value"); err != nil {
 		t.Fatal(err)
 	}
 	// The plugin of the bridge is configured after the other one, with its model as it was. The
 	// read this causes ends after any read the first write caused.
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "provider", "local"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "provider", "local"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -170,7 +171,7 @@ func TestAChangeReadByGetModelFirstIsStillAnnounced(t *testing.T) {
 		t.Fatalf("GetModel reads %q", got)
 	}
 	reads := mock.getModelCalls.Load()
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -209,7 +210,7 @@ func TestAChangeOfTheChunkTokensAloneIsAnnounced(t *testing.T) {
 	reads := mock.getModelCalls.Load()
 
 	mock.chunkTokens.Store(128)
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 128); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 128); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)
@@ -227,7 +228,7 @@ func TestAnUnchangedChunkTokensAnnouncesNothing(t *testing.T) {
 	host, bridge, mock, announced := openConfigurable(t)
 	reads := mock.getModelCalls.Load()
 
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "chunkTokens", 256); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "chunkTokens", 256); err != nil {
 		t.Fatal(err)
 	}
 	settle(t, bridge, mock, reads)

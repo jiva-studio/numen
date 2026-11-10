@@ -7,7 +7,11 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
-	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/api"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/document"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/extract"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/clock"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/internal/adapter/pdfworkers"
 )
 
 // Mount registers the plugin's services on s, reporting text versions to the host the environment
@@ -33,27 +37,33 @@ func Mount(s *server.Server) error {
 }
 
 func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) error {
-	workers := newWorkers()
-	readers := func(id domain.VaultID) host.FileReader { return files.With(id) }
-	live := func(id domain.VaultID) LiveTexts { return texts.With(id) }
-	vaults := func(id domain.VaultID) vaultFiles { return files.With(id) }
-	versions := func(id domain.VaultID) host.TextVersions { return texts.With(id) }
-	folders := func(id domain.VaultID) host.StoreWriter { return store.With(id) }
-	return mount(s, readers, live, NewTextServer(vaults, versions, folders, queue, workers), workers)
+	workers := pdfworkers.New(clock.AfterFunc)
+	reader := document.NewReader(
+		func(id domain.VaultID) host.FileReader { return files.With(id) },
+		func(id domain.VaultID) document.LiveTexts { return texts.With(id) },
+		workers,
+	)
+	writer := extract.NewWriter(
+		func(id domain.VaultID) extract.Files { return files.With(id) },
+		func(id domain.VaultID) host.TextVersions { return texts.With(id) },
+		func(id domain.VaultID) host.StoreWriter { return store.With(id) },
+		queue, workers,
+	)
+	return mount(s, reader, writer)
 }
 
-func mount(s *server.Server, files func(domain.VaultID) host.FileReader, texts func(domain.VaultID) LiveTexts, provider *TextServer, workers *pdf.Workers) error {
-	if err := NewDocumentServer(files, texts, workers).Mount(s.NewAPI(APIService)); err != nil {
+func mount(s *server.Server, reader *document.Reader, writer *extract.Writer) error {
+	if err := NewDocumentServer(reader).Mount(s.NewAPI(api.Service)); err != nil {
 		return err
 	}
-	s.RegisterRoute(pagesPattern, NewPageServer(files, workers))
-	commands, err := newCommands(provider)
+	s.RegisterRoute(pagesPattern, NewPageServer(reader))
+	commands, err := newCommands(writer)
 	if err != nil {
 		return err
 	}
 	command.Mount(s, commands)
 	s.OnClose(func() error {
-		provider.Close()
+		writer.Close()
 		return nil
 	})
 	return nil
