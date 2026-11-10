@@ -28,6 +28,7 @@ import {
   type PluginEvents,
   type PluginRegistrations,
   type PluginSettings,
+  type PluginUi,
   type SlotViewRegistry,
   type SlotViewRegistration,
   type TabKindRegistration,
@@ -184,6 +185,46 @@ function mountDeclaredView(
     registry.mountView(capability, element, viewContext, requireMountAccess(capability, caller))
 }
 
+/** The plugin a context is made for, and how it keeps what the plugin registers. */
+interface PluginScope {
+  readonly plugin: { readonly pluginId: string; readonly manifest: Manifest | undefined }
+  readonly add: (one: Disposable) => Disposable
+}
+
+/** What the tab kinds, the views and the slot views of the plugins are kept in. */
+interface ShellRegistries {
+  readonly addView: (view: PluginView) => Disposable
+  readonly declaredViews: ViewRegistry
+  readonly slotViews: SlotViewRegistry
+}
+
+function createShellRegistrations(
+  scope: PluginScope,
+  registries: ShellRegistries,
+): PluginRegistrations {
+  const { plugin, add } = scope
+  const { addView, declaredViews, slotViews } = registries
+  return {
+    reader: UNUSED_REGISTRATIONS.reader,
+    command: UNUSED_REGISTRATIONS.command,
+    agentProvider: UNUSED_REGISTRATIONS.agentProvider,
+    settingsView: UNUSED_REGISTRATIONS.settingsView,
+    tabKind: (registration) => add(addView({ pluginId: plugin.pluginId, registration })),
+    view: (registration) =>
+      add(declaredViews.registerView(plugin.pluginId, registration, plugin.manifest?.permissions)),
+    slotView: (registration) => add(registerInSlots(slotViews, plugin, registration)),
+  }
+}
+
+function createShellMount(scope: PluginScope, declaredViews: ViewRegistry): PluginUi['mountView'] {
+  const { plugin, add } = scope
+  return (capability, element, viewContext) => {
+    const view = mountDeclaredView(declaredViews, plugin)(capability, element, viewContext)
+    add(view)
+    return view
+  }
+}
+
 /**
  * The host of the window, whose plugins are given the agent where the window has one, and the
  * vaults and the window the services hold when the plugin starts.
@@ -215,14 +256,7 @@ export function createShellHost(
       subscriptions.push(one)
       return one
     }
-    const register: PluginRegistrations = {
-      ...UNUSED_REGISTRATIONS,
-      tabKind: (registration) => add(addView({ pluginId, registration })),
-      view: (registration) =>
-        add(declaredViews.registerView(pluginId, registration, manifest?.permissions)),
-      slotView: (registration) =>
-        add(registerInSlots(slotViews, { pluginId, manifest }, registration)),
-    }
+    const scope: PluginScope = { plugin: { pluginId, manifest }, add }
     const context: PluginContext = {
       plugin: {
         id: pluginId,
@@ -232,7 +266,7 @@ export function createShellHost(
         openExternal: createExternalOpener((url) => openExternalUrl(url)),
         hasPermission: (permission) => manifest?.permissions.includes(permission) ?? false,
       },
-      register,
+      register: createShellRegistrations(scope, { addView, declaredViews, slotViews }),
       settings: UNUSED_SETTINGS,
       events: UNUSED_EVENTS,
       tabs: { close: (id) => closeTab(id) },
@@ -242,12 +276,7 @@ export function createShellHost(
         notices: createPluginNotices(notices, pluginId),
         ...(services.commands ? { commands: services.commands } : {}),
         ...(services.window ? { window: services.window } : {}),
-        mountView: (capability, element, viewContext) => {
-          const mount = mountDeclaredView(declaredViews, { pluginId, manifest })
-          const view = mount(capability, element, viewContext)
-          add(view)
-          return view
-        },
+        mountView: createShellMount(scope, declaredViews),
       },
       work: { ...(agent ? { agent: createPluginAgent(agent, { pluginId, manifest }) } : {}) },
     }

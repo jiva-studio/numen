@@ -316,7 +316,7 @@ export function createPluginContext(
       subscriptions,
       hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     },
-    register: createRegistrations(pluginId, host, guard, slotView),
+    register: createRegistrations(pluginId, host, { ...guard, slotView }),
     settings: createSettings(pluginId, host, add),
     events: createEvents(pluginId, host, { requirePerm, add }),
     tabs: createTabs(host),

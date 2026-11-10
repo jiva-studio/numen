@@ -69,20 +69,11 @@ export interface StartScope {
   readonly end: () => void
 }
 
-/** The scope of one start, which stops registering once `cancel` has run. */
-export function createStartScope(): StartScope {
-  let isEnded = false
-  let isCancelled = false
-  const startDisposables = new Set<Disposable>()
-  const subscriptionLists = new Set<Disposable[]>()
-  const keeper: Keeper = {
-    isCancelled: () => !isEnded && isCancelled,
-    keep: (value) => {
-      if (isEnded || !isDisposable(value)) return
-      if (keeper.isCancelled()) value.dispose()
-      else startDisposables.add(value)
-    },
-  }
+/** Wraps the parts of a context, and the services in them, with what the start keeps. */
+function createContextWrapper(
+  keeper: Keeper,
+  subscriptionLists: Set<Disposable[]>,
+): (context: PluginContext) => PluginContext {
   const services = new WeakMap<object, object>()
   const getService = (value: object): object => {
     const service = services.get(value) ?? wrapService(value, keeper)
@@ -121,6 +112,25 @@ export function createStartScope(): StartScope {
       },
     })
   }
+
+  return wrapContext
+}
+
+/** The scope of one start, which stops registering once `cancel` has run. */
+export function createStartScope(): StartScope {
+  let isEnded = false
+  let isCancelled = false
+  const startDisposables = new Set<Disposable>()
+  const subscriptionLists = new Set<Disposable[]>()
+  const keeper: Keeper = {
+    isCancelled: () => !isEnded && isCancelled,
+    keep: (value) => {
+      if (isEnded || !isDisposable(value)) return
+      if (keeper.isCancelled()) value.dispose()
+      else startDisposables.add(value)
+    },
+  }
+  const wrapContext = createContextWrapper(keeper, subscriptionLists)
 
   return {
     wrapContext,

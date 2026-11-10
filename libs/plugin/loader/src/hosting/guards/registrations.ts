@@ -27,13 +27,17 @@ export interface RegistrationGuard {
   readonly add: Track
 }
 
+/** The guard of the registrations, and how the views of the plugin are registered in the slots. */
+export interface RegistrationDeps extends RegistrationGuard {
+  readonly slotView: (registration: SlotViewRegistration) => Disposable
+}
+
 export function createRegistrations(
   pluginId: string,
   host: PluginContextHost,
-  guard: RegistrationGuard,
-  slotView: (registration: SlotViewRegistration) => Disposable,
+  deps: RegistrationDeps,
 ): PluginRegistrations {
-  const { target, add } = guard
+  const { target, add, slotView } = deps
   const permissions = target.manifest?.permissions ?? []
   return {
     reader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
