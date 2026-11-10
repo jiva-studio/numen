@@ -9,21 +9,19 @@ export interface WindowTask {
   readonly id: string
   readonly label: string
   readonly about: string
-  readonly completedCount: number
-  readonly total: number
+  readonly progress: { readonly done: number; readonly total: number }
   readonly error: string
-  readonly pluginId: string
-  readonly pluginName: string
+  readonly source: { readonly pluginId: string; readonly pluginName: string }
 }
 
 const toStatus = (task: WindowTask): PluginTaskStatus => ({
   id: task.id,
-  pluginId: task.pluginId,
-  pluginName: task.pluginName,
+  pluginId: task.source.pluginId,
+  pluginName: task.source.pluginName,
   title: task.label,
   about: task.about,
-  done: task.completedCount,
-  total: task.total,
+  done: task.progress.done,
+  total: task.progress.total,
   error: task.error,
 })
 
@@ -45,6 +43,6 @@ export const createPluginTasks = (
   tasks: Readonly<Ref<readonly WindowTask[]>>,
   pluginId: string,
 ): TaskHost => ({
-  watch: (handler) => watchTasks(tasks, (task) => task.pluginId === pluginId, handler),
-  watchAll: (handler) => watchTasks(tasks, (task) => task.pluginId !== '', handler),
+  watch: (handler) => watchTasks(tasks, (task) => task.source.pluginId === pluginId, handler),
+  watchAll: (handler) => watchTasks(tasks, (task) => task.source.pluginId !== '', handler),
 })

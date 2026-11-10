@@ -76,7 +76,7 @@ describe('the window a plugin is handed', () => {
     expect(deps.tabSync.syncPathFromTab).toHaveBeenCalledWith('plex:1', 'One.md', 'One')
 
     const { tabSync: _tabSync, ...unlinked } = deps
-    expect(createWorkspaceHost(unlinked).syncPath('plex:1', 'One.md')).toBe(false)
+    expect(createWorkspaceHost(unlinked).files.syncPath('plex:1', 'One.md')).toBe(false)
   })
 
   it('runs no command itself: a plugin runs one through the commands of its context', () => {
