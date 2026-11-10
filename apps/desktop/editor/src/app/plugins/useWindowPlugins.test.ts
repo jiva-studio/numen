@@ -141,7 +141,9 @@ describe('the settings and notices a plugin is given', () => {
 
   it('reads a setting of the plugin, and the default of its switch where none is written', () => {
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
-    const rest = { read: { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] } }
+    const rest = {
+      read: { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] },
+    }
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const ctx = pluginHost.createContext('md.numen.a')
 
@@ -153,7 +155,8 @@ describe('the settings and notices a plugin is given', () => {
   it('prefers the committed setting over an unconfirmed pending write', () => {
     const rest = {
       read: {
-        getCommittedSetting: (path: readonly string[]) => (path[1] === 'enabled' ? false : undefined),
+        getCommittedSetting: (path: readonly string[]) =>
+          path[1] === 'enabled' ? false : undefined,
         getSetting: () => true,
       },
     }
@@ -168,18 +171,18 @@ describe('the settings and notices a plugin is given', () => {
     const rest = {
       state: {
         plugins: ref([
-        {
-          id: 'md.numen.other',
-          readers: [{ id: 'document', extensions: ['.other'] }],
-        },
-        {
-          id: 'md.numen.pdf',
-          readers: [
-            { id: 'book', extensions: ['.epub'] },
-            { id: 'document', extensions: ['.pdf'] },
-          ],
-        },
-      ]),
+          {
+            id: 'md.numen.other',
+            readers: [{ id: 'document', extensions: ['.other'] }],
+          },
+          {
+            id: 'md.numen.pdf',
+            readers: [
+              { id: 'book', extensions: ['.epub'] },
+              { id: 'document', extensions: ['.pdf'] },
+            ],
+          },
+        ]),
       },
     }
     const { pluginHost } = createWith({
@@ -202,9 +205,9 @@ describe('the settings and notices a plugin is given', () => {
     const rest = {
       state: {
         plugins: ref([
-        { id: 'md.numen.tree', hasFrontend: true },
-        { id: 'md.numen.job', hasFrontend: false },
-      ]),
+          { id: 'md.numen.tree', hasFrontend: true },
+          { id: 'md.numen.job', hasFrontend: false },
+        ]),
       },
     }
     const { pluginHost } = createWith({
@@ -224,9 +227,9 @@ describe('the settings and notices a plugin is given', () => {
     const rest = {
       state: {
         plugins: ref([
-        { id: 'md.numen.tree', hasFrontend: true, hasBackend: false },
-        { id: 'md.numen.cards', hasFrontend: true, hasBackend: true },
-      ]),
+          { id: 'md.numen.tree', hasFrontend: true, hasBackend: false },
+          { id: 'md.numen.cards', hasFrontend: true, hasBackend: true },
+        ]),
       },
     }
     const reportCommandIssue = vi.fn()
@@ -251,7 +254,9 @@ describe('the settings and notices a plugin is given', () => {
   })
 
   it('lists the handlers of a shared command and runs one in its backend', async () => {
-    const rest = { state: { plugins: ref([{ id: 'md.numen.pages', hasFrontend: false, hasBackend: true }]) } }
+    const rest = {
+      state: { plugins: ref([{ id: 'md.numen.pages', hasFrontend: false, hasBackend: true }]) },
+    }
     const runBackendHandler = vi.fn(async () => undefined)
     const { pluginHost } = createWith({
       settingsHolder: { current: { rest } as never },
@@ -283,7 +288,9 @@ describe('the settings and notices a plugin is given', () => {
   })
 
   it('rejects a run awaited through the host with the error of a backend handler, and writes nothing', async () => {
-    const rest = { state: { plugins: ref([{ id: 'md.numen.ears', hasFrontend: false, hasBackend: true }]) } }
+    const rest = {
+      state: { plugins: ref([{ id: 'md.numen.ears', hasFrontend: false, hasBackend: true }]) },
+    }
     const writeMessage = vi.fn()
     const onError = vi.fn()
     const handlers = createBackendHandlers({
@@ -315,7 +322,9 @@ describe('the settings and notices a plugin is given', () => {
   })
 
   it('lists the items of a handler the core lists them for', async () => {
-    const rest = { state: { plugins: ref([{ id: 'md.numen.ocr', hasFrontend: false, hasBackend: true }]) } }
+    const rest = {
+      state: { plugins: ref([{ id: 'md.numen.ocr', hasFrontend: false, hasBackend: true }]) },
+    }
     const listBackendHandlerItems = vi.fn(async () => [{ id: 'v1', title: 'Recognition' }])
     const { pluginHost } = createWith({
       settingsHolder: { current: { rest } as never },
@@ -351,7 +360,9 @@ describe('the settings and notices a plugin is given', () => {
 
   it('calls the handler of a followed setting once per changed value', async () => {
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
-    const rest = { read: { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] } }
+    const rest = {
+      read: { getCommittedSetting: (path: readonly string[]) => settings.value[path[1] ?? ''] },
+    }
     const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
     const handler = vi.fn()
     pluginHost.createContext('md.numen.a').onSettingChange('fontSize', handler)

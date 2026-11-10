@@ -281,7 +281,10 @@ describe('findRowIcon', () => {
   it('resolves command and note icons when commands palette is open', () => {
     const commands = {
       palette: { open: ref(true) },
-      view: { findTabKind: (id: string) => (id === 'n1' ? 'sample' : null), findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined) },
+      view: {
+        findTabKind: (id: string) => (id === 'n1' ? 'sample' : null),
+        findCommandIcon: (id: string) => (id === 'custom-cmd' ? customIcon : undefined),
+      },
     } as unknown as Commands
     const search = {
       reads: { findTabKind: () => 'form', findHitFile: () => 'doc.pdf' },
