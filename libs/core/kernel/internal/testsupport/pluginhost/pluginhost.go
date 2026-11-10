@@ -34,26 +34,3 @@ func dependencies() *provision.Registry {
 		provision.NewFileProvisioner(provision.Config{Dir: runtimeConfig.Dir, Offline: onnxruntime.IsOffline(), Clock: clock.System{}}),
 	)
 }
-
-// Roles presents the roles of a host as one value, for a test that gives a bridge the whole host.
-type Roles struct {
-	*plugin.Activation
-	*plugin.Registry
-	*plugin.Settings
-	*plugin.ConfigPush
-	*plugin.Failures
-	*plugin.Events
-	*plugin.Mode
-	*plugin.ContentTypes
-	*plugin.Discovery
-	*plugin.Services
-}
-
-// Join presents the roles of host as one value.
-func Join(host *plugin.Host) Roles {
-	return Roles{
-		Activation: host.Activation, Registry: host.Registry, Settings: host.Settings, ConfigPush: host.Config,
-		Failures: host.Failures, Events: host.Events, Mode: host.Mode, ContentTypes: host.ContentTypes,
-		Discovery: host.Discovery, Services: host.Services,
-	}
-}

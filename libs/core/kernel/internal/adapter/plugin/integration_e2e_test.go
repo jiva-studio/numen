@@ -1,7 +1,6 @@
 package plugin_test
 
 import (
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,7 +33,7 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	bridge, err := embedderbridge.Open(ctx, pluginhost.Join(host))
+	bridge, err := embedderbridge.Open(ctx, host.Runtime())
 	if err != nil {
 		t.Fatalf("OpenEmbedderBridge with real binary failed: %v", err)
 	}

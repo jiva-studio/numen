@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"os"
 	"sync/atomic"
@@ -27,7 +28,7 @@ func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Activation.Release("org.example.sample")
-	return host, host.Registry.t.supervisors["org.example.sample"].GetExitSignal()
+	return host, supervisorOf(host, "org.example.sample").GetExitSignal()
 }
 
 func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
@@ -91,7 +92,7 @@ func TestADisabledPluginIsStopped(t *testing.T) {
 	}
 
 	waitForProcessExit(t, exited)
-	if state := host.Registry.t.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
+	if state := supervisorOf(host, "org.example.sample").GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -134,10 +135,10 @@ func TestSettingsLoadedAsDisabledDisableThePlugin(t *testing.T) {
 func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	host.Mode.SetSafeMode(true)
+	host.Teardown.SetSafeMode(true)
 
 	waitForProcessExit(t, exited)
-	if state := host.Registry.t.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
+	if state := supervisorOf(host, "org.example.sample").GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -147,7 +148,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.Registry.t.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}}
+		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}})
 	}
 	getReason := func(capability string) plugindomain.UnavailableReason {
 		t.Helper()
@@ -182,7 +183,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	host.Mode.SetSafeMode(true)
+	host.Teardown.SetSafeMode(true)
 	if got := getReason("org.example.widget"); got != plugindomain.Disabled {
 		t.Errorf("a capability in safe mode is %v, want disabled", got)
 	}
@@ -195,7 +196,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	host.Registry.t.plugins["md.numen.a"] = manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}}
+	setPlugin(host, "md.numen.a", manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}})
 	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +215,7 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.Registry.t.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}}
+		setPlugin(host, id, manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}})
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
@@ -271,7 +272,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	evicted := host.Teardown.evictTargets(canceled, []pluginTeardownTarget{{id: "p", pid: cmd.Process.Pid, sup: sup, endpoint: emptyEndpoint()}}, time.Millisecond)
+	evicted := host.Teardown.stopper.EvictTargets(canceled, []supervision.Target{{ID: "p", PID: cmd.Process.Pid, Sup: sup, Endpoint: supervision.NoEndpoint()}}, time.Millisecond)
 
 	if len(evicted) != 0 {
 		t.Fatalf("a failed eviction was counted: %v", evicted)

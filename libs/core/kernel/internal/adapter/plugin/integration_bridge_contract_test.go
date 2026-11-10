@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"reflect"
 	"strings"
@@ -122,7 +121,7 @@ func TestBridges_UninstalledPluginReturnsUnavailable(t *testing.T) {
 					t.Errorf("TeardownAll: %v", err)
 				}
 			}()
-			for _, problem := range listRefusalProblems(t.Context(), pluginhost.Join(host), tc.open, isNotInstalled) {
+			for _, problem := range listRefusalProblems(t.Context(), host.Runtime(), tc.open, isNotInstalled) {
 				t.Error(problem)
 			}
 		})

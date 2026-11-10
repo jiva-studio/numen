@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"io"
 	"os"
 	"testing"
@@ -56,12 +57,12 @@ func TestEnsureActive_KillsProcessAtActivationTimeout(t *testing.T) {
 	if err := cmd.Process.Signal(os.Kill); !errors.Is(err, os.ErrProcessDone) {
 		t.Fatalf("expected the silent process to be killed and reaped, got %v", err)
 	}
-	if state := host.Registry.t.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
+	if state := supervisorOf(host, "org.example.sample").GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
 
-func failLaunching(launches *int) Launcher {
+func failLaunching(launches *int) supervision.Launcher {
 	return func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		*launches++
 		return nil, nil, errors.New("exec format error")
@@ -116,7 +117,7 @@ func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if host.Registry.t.supervisors["org.example.sample"].Failure.IsFailed() {
+	if supervisorOf(host, "org.example.sample").Failure.IsFailed() {
 		t.Fatal("a canceled caller recorded a failed start")
 	}
 }

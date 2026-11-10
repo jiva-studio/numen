@@ -23,7 +23,7 @@ func TestADependencyCannotNameAVariableTheHostOwnsOrAMalformedOne(t *testing.T) 
 			}})
 			requirements := []manifest.DependencyRequirement{{ID: "model", Kind: manifest.DependencyKindModel}}
 
-			vars, err := host.Processes.getRuntimeVars(t.Context(), requirements)
+			vars, err := host.Processes.GetRuntimeVars(t.Context(), requirements)
 
 			if err == nil {
 				t.Errorf("getRuntimeVars accepted the variable name %q: %v", name, vars)

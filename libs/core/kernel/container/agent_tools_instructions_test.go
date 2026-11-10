@@ -11,7 +11,6 @@ import (
 	"time"
 
 	vaultapi "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 
 	"connectrpc.com/connect"
 
@@ -240,7 +239,7 @@ func TestReadingCatalogListsOnlyReadingToolsWithSentences(t *testing.T) {
 		}
 	})
 
-	specs := agenttoolsbridge.NewCatalog(pluginhost.Join(host), agenttoolsbridge.Server(v1.ToolServer_TOOL_SERVER_READING)).ListTools(t.Context(), mcpPlugin)
+	specs := agenttoolsbridge.NewCatalog(host.Runtime(), agenttoolsbridge.Server(v1.ToolServer_TOOL_SERVER_READING)).ListTools(t.Context(), mcpPlugin)
 
 	if len(specs) != 1 || specs[0].GetName() != "atlas_open" || !slices.Equal(specs[0].GetInstructions(), []string{atlasOpenSentence}) {
 		t.Errorf("the reading catalog lists %v, want atlas_open alone with its sentence", specs)

@@ -126,7 +126,7 @@ func TestListThemesListsNoThemeOfADisabledPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.PluginHost.Config.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	if names := listThemeNames(t, cfg); slices.Contains(names, name) {
 		t.Errorf("themes = %v, want no %s", names, name)
@@ -156,7 +156,7 @@ func TestAStoredThemeOfADisabledPluginFallsBackToTheDefault(t *testing.T) {
 	if err != nil || written.Msg.GetError() != "" {
 		t.Fatalf("written: %v %v", written, err)
 	}
-	cfg.PluginHost.Configuration.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
+	cfg.PluginHost.Config.SetSettings(map[string]map[string]any{themesPluginID: {"enabled": false}})
 
 	answer, err := service.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{}))
 

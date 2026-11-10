@@ -210,8 +210,7 @@ func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
 
 func emitPluginEvent(c pluginsWiring, event string) {
 	if c.PluginHost != nil {
-		var emitter pluginport.PluginEventEmitter = c.PluginHost.Runtime
-		emitter.EmitEvent(event)
+		c.PluginHost.Host.Events.EmitEvent(event)
 	}
 }
 
@@ -229,7 +228,7 @@ func openSecretLedger(c pluginsWiring) *settingsadapter.SecretLedger {
 func openSecrets(c pluginsWiring) *secret.Secrets {
 	var plugins pluginport.SecretPlugins = plugin.Absent{}
 	if c.PluginHost != nil {
-		plugins = c.PluginHost.Configuration
+		plugins = c.PluginHost.Host.Config
 	}
 	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, newSecretID, c.CredentialsPath, c.SecretGate)
 }
@@ -257,7 +256,7 @@ func setSecretSource(c pluginsWiring) {
 		return
 	}
 	ledger := openSecretLedger(c)
-	c.PluginHost.Configuration.SetSecretSource(plugindomain.SecretSource{
+	c.PluginHost.Host.Config.SetSecretSource(plugindomain.SecretSource{
 		List:  ledger.GetSecrets,
 		Prune: openSecrets(c).Prune.Execute,
 	})
@@ -280,7 +279,7 @@ func openChooseTabKind(c pluginsWiring) *tabkind.Choose {
 	if c.PluginHost == nil {
 		return nil
 	}
-	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Watch, getWhenConfig(c))
+	choose, err := tabkind.NewChoose(pluginmanifest.New(c.PluginHost.Runtime), c.PluginHost.Host.ContentTypes, getWhenConfig(c))
 	if err != nil {
 		pluginsHandleError(c, err)
 		return nil
@@ -296,7 +295,7 @@ func openVersionItems(c pluginsWiring) *textversion.VersionItems {
 	var runs pluginport.PluginCommandRuns = commandbridge.NoCommands{}
 	var types contenttypeport.ContentTypeTable = sharedmimeinfo.Open()
 	if c.PluginHost != nil && !c.SafeMode {
-		commands, runs, types = pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Watch
+		commands, runs, types = pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Host.ContentTypes
 	}
 	run := plugincommand.NewCommands(commands, runs, types, pluginsNewNoteReader(c), getWhenConfig(c)).Run
 	items, err := textversion.NewVersionItems(c.TextVersions, run, types)
@@ -313,7 +312,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
 		Plugins: pluginmanifest.New(c.PluginHost.Runtime), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
-		Notes: pluginsNewNoteReader(c), Types: c.PluginHost.Watch, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
+		Notes: pluginsNewNoteReader(c), Types: c.PluginHost.Host.ContentTypes, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }
 

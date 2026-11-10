@@ -49,16 +49,16 @@ func TestAFailedStartForAListenerIsReportedOnlyOnce(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	failure := errors.New("exec format error")
 
-	if host.Failures.markTargetResult("md.numen.sample", failure) {
+	if host.Failures.MarkTargetResult("md.numen.sample", failure) {
 		t.Error("the first failure was already reported")
 	}
-	if !host.Failures.markTargetResult("md.numen.sample", failure) {
+	if !host.Failures.MarkTargetResult("md.numen.sample", failure) {
 		t.Error("the second failure in a row was not recognized as reported")
 	}
-	if !host.Failures.markTargetResult("md.numen.sample", nil) {
+	if !host.Failures.MarkTargetResult("md.numen.sample", nil) {
 		t.Error("a start that succeeded did not see the failure before it")
 	}
-	if host.Failures.markTargetResult("md.numen.sample", failure) {
+	if host.Failures.MarkTargetResult("md.numen.sample", failure) {
 		t.Error("a failure after a success was counted as reported")
 	}
 }

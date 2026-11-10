@@ -13,22 +13,12 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/portproxy"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const listenerAddressHost = "127.0.0.1"
-
-var errListenerNotReported = errors.New("the ready line does not report the listener")
-
-func checkReportedListeners(m manifest.Manifest, reported map[string]int) error {
-	for _, declared := range m.Contributes.Listeners {
-		if _, ok := reported[declared.Name]; !ok {
-			return fmt.Errorf("listener %s: %w", declared.Name, errListenerNotReported)
-		}
-	}
-	return nil
-}
 
 var (
 	errListenerPortValue = errors.New("port setting is not a port from 1024 to 65535")
@@ -39,18 +29,26 @@ var (
 // Listeners binds the ports the plugins declare as listeners and forwards each connection to the
 // plugin, which it starts when a connection arrives.
 type Listeners struct {
-	t          *table
-	clock      machineport.Clock
-	errs       *errorSink
-	failures   *Failures
-	activation *Activation
+	registry  *Registry
+	mode      *Mode
+	sups      *supervision.Supervisors
+	activator pluginActivator
+	failures  *supervision.Failures
+	clock     machineport.Clock
+	report    func(error)
 
 	mu       sync.Mutex
 	bindings map[string]map[string]listenerBinding
 }
 
-func newListeners(t *table, clock machineport.Clock, errs *errorSink, failures *Failures) *Listeners {
-	return &Listeners{t: t, clock: clock, errs: errs, failures: failures, bindings: make(map[string]map[string]listenerBinding)}
+func newListeners(
+	registry *Registry, mode *Mode, sups *supervision.Supervisors, activator pluginActivator,
+	failures *supervision.Failures, clock machineport.Clock, report func(error),
+) *Listeners {
+	return &Listeners{
+		registry: registry, mode: mode, sups: sups, activator: activator, failures: failures, clock: clock, report: report,
+		bindings: make(map[string]map[string]listenerBinding),
+	}
 }
 
 // listenerBinding is a bound listener port and the proxy that forwards its connections.
@@ -59,13 +57,24 @@ type listenerBinding struct {
 	proxy *portproxy.Proxy
 }
 
-func (l *Listeners) getWantedPortsLocked(pluginID string) (map[string]int, error) {
-	p, ok := l.t.plugins[pluginID]
-	if !ok || l.t.isClosed || l.t.safeMode || !l.t.isPluginEnabledLocked(pluginID) {
+// getBindable returns the plugin and its settings where its listeners may bind a port: the host runs,
+// is not in safe mode and has the plugin enabled.
+func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[string]any, bool) {
+	v, done := l.registry.set.view()
+	defer done()
+	p, ok := v.get(pluginID)
+	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.isEnabled(pluginID) {
+		return manifest.Discovered{}, nil, false
+	}
+	return p, v.settings(pluginID), true
+}
+
+func (l *Listeners) getWantedPorts(pluginID string) (map[string]int, error) {
+	p, settings, ok := l.getBindable(pluginID)
+	if !ok {
 		return nil, nil
 	}
 	ports := make(map[string]int, len(p.Manifest.Contributes.Listeners))
-	settings := l.t.getPluginSettingsLocked(pluginID)
 	for _, declared := range p.Manifest.Contributes.Listeners {
 		if declared.PortSetting == "" {
 			ports[declared.Name] = declared.Port
@@ -102,10 +111,9 @@ func readPort(value any) (int, bool) {
 func (l *Listeners) checkPort(ctx context.Context, pluginID, key string, value any) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.t.mu.RLock()
-	p, ok := l.t.plugins[pluginID]
-	isBinding := ok && !l.t.isClosed && !l.t.safeMode && l.t.isPluginEnabledLocked(pluginID)
-	l.t.mu.RUnlock()
+	p, ok := l.registry.set.getKnown(pluginID)
+	_, _, isBindable := l.getBindable(pluginID)
+	isBinding := ok && isBindable
 	if !ok {
 		return nil
 	}
@@ -137,13 +145,11 @@ func (l *Listeners) syncAll(ctx context.Context) {
 	l.mu.Lock()
 	ids := slices.Collect(maps.Keys(l.bindings))
 	l.mu.Unlock()
-	l.t.mu.RLock()
-	for id := range l.t.plugins {
+	for _, id := range l.registry.set.listIDs() {
 		if !slices.Contains(ids, id) {
 			ids = append(ids, id)
 		}
 	}
-	l.t.mu.RUnlock()
 	slices.Sort(ids)
 	for _, id := range ids {
 		l.RefreshListeners(ctx, id)
@@ -154,7 +160,7 @@ func (l *Listeners) syncAll(ctx context.Context) {
 // already recorded as the failure of the plugin.
 func (l *Listeners) RefreshListeners(ctx context.Context, pluginID string) {
 	if err := l.SyncListeners(ctx, pluginID); err != nil && !errors.Is(err, errListenerBind) {
-		l.errs.report(err)
+		l.report(err)
 	}
 }
 
@@ -164,9 +170,7 @@ func (l *Listeners) SyncListeners(ctx context.Context, pluginID string) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.t.mu.RLock()
-	wantedPorts, err := l.getWantedPortsLocked(pluginID)
-	l.t.mu.RUnlock()
+	wantedPorts, err := l.getWantedPorts(pluginID)
 
 	current := l.bindings[pluginID]
 	if err == nil && isSamePorts(current, wantedPorts) {
@@ -223,7 +227,7 @@ func (l *Listeners) openChangedListeners(
 			continue
 		}
 		addr := net.JoinHostPort(listenerAddressHost, strconv.Itoa(port))
-		proxy, err := portproxy.Open(ctx, addr, l.createTarget(pluginID, name), l.errs.report)
+		proxy, err := portproxy.Open(ctx, addr, l.createTarget(pluginID, name), l.report)
 		if err != nil {
 			for _, proxy := range openedProxies {
 				l.closeListener(pluginID, proxy)
@@ -237,26 +241,21 @@ func (l *Listeners) openChangedListeners(
 }
 
 func (l *Listeners) failListenerBind(pluginID string, err error) {
-	l.t.mu.RLock()
-	sup, ok := l.t.supervisors[pluginID]
-	isFailed := ok && sup.Failure.IsFailed()
-	l.t.mu.RUnlock()
-	if isFailed {
+	sup, ok := l.sups.Get(pluginID)
+	if ok && sup.Failure.IsFailed() {
 		return
 	}
-	l.failures.recordActivationFailure(pluginID, err)
-	l.failures.deliver()
+	l.failures.RecordActivationFailure(pluginID, l.registry.set.getName(pluginID), err)
+	l.failures.Deliver()
 }
 
 func (l *Listeners) clearListenerFailure(pluginID string) {
-	l.t.mu.RLock()
-	sup, ok := l.t.supervisors[pluginID]
-	l.t.mu.RUnlock()
+	sup, ok := l.sups.Get(pluginID)
 	if !ok {
 		return
 	}
 	if cause := sup.Failure.GetCause(); cause != nil && errors.Is(cause, errListenerBind) {
-		l.failures.clear(pluginID, sup)
+		l.failures.Clear(pluginID, sup)
 	}
 }
 
@@ -269,7 +268,7 @@ func (l *Listeners) closeListenersLocked(pluginID string) {
 
 func (l *Listeners) closeListener(pluginID string, proxy *portproxy.Proxy) {
 	if err := proxy.Close(); err != nil {
-		l.errs.report(fmt.Errorf("close a listener of plugin %s: %w", pluginID, err))
+		l.report(fmt.Errorf("close a listener of plugin %s: %w", pluginID, err))
 	}
 }
 
@@ -283,8 +282,8 @@ func (l *Listeners) closeAll() {
 
 func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 	return func(ctx context.Context) (string, func(), error) {
-		endpoint, err := l.activation.EnsureActive(ctx, pluginID)
-		isReported := l.failures.markTargetResult(pluginID, err)
+		endpoint, err := l.activator.EnsureActive(ctx, pluginID)
+		isReported := l.failures.MarkTargetResult(pluginID, err)
 		if err != nil {
 			err = fmt.Errorf("activate plugin %s for listener %s: %w", pluginID, name, err)
 			if isReported {
@@ -293,23 +292,15 @@ func (l *Listeners) createTarget(pluginID, name string) portproxy.Target {
 			return "", nil, err
 		}
 		release := func() { l.releaseEndpoint(pluginID, endpoint) }
-		l.t.mu.RLock()
-		port, ok := l.t.listenerPorts[pluginID][name]
-		l.t.mu.RUnlock()
+		port, ok := l.sups.GetListenerPort(pluginID, name)
 		if !ok {
 			release()
-			return "", nil, fmt.Errorf("plugin %s listener %s: %w", pluginID, name, errListenerNotReported)
+			return "", nil, fmt.Errorf("plugin %s listener %s: %w", pluginID, name, supervision.ErrListenerNotReported)
 		}
 		return net.JoinHostPort(listenerAddressHost, strconv.Itoa(port)), release, nil
 	}
 }
 
 func (l *Listeners) releaseEndpoint(pluginID string, endpoint plugindomain.Endpoint) {
-	l.t.mu.RLock()
-	defer l.t.mu.RUnlock()
-	sup, ok := l.t.supervisors[pluginID]
-	if !ok || l.t.endpoints[pluginID].Token != endpoint.Token {
-		return
-	}
-	sup.Release(l.clock.Now())
+	l.sups.Release(pluginID, endpoint.Token, l.clock.Now())
 }

@@ -130,7 +130,7 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+	c.PluginHost.Host.Services.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		id := dependencyTaskPrefix + req.ID
 		switch status.State {
 		case plugindomain.DependencyStateReady:
@@ -192,7 +192,7 @@ func getPluginCatalog(c pluginsWiring) *catalog.Service {
 	}
 	config := c.PluginCatalog
 	config.Sources = append(
-		[]catalog.Source{localsource.New(slices.Clone(c.PluginDirs), localsource.SettingsFunc(c.PluginHost.Runtime.IsPluginEnabled))},
+		[]catalog.Source{localsource.New(slices.Clone(c.PluginDirs), localsource.SettingsFunc(c.PluginHost.Host.Registry.IsPluginEnabled))},
 		config.Sources...)
 	service, err := catalog.NewService(config)
 	if err != nil {
@@ -249,14 +249,14 @@ func pluginsResolvePlugin(c pluginsWiring, capability string) (*PluginHost, erro
 func setSafeMode(c pluginsWiring, enabled bool) pluginsWiring {
 	c.SafeMode = enabled
 	if c.PluginHost != nil {
-		c.PluginHost.Runtime.SetSafeMode(enabled)
+		c.PluginHost.Host.Teardown.SetSafeMode(enabled)
 	}
 	return c
 }
 
 func setPluginVaultPath(c pluginsWiring, path string) {
 	if c.PluginHost != nil {
-		c.PluginHost.Runtime.SetVaultPath(path)
+		c.PluginHost.Host.Mode.SetVaultPath(path)
 	}
 }
 
@@ -264,14 +264,14 @@ func stopPlugins(c pluginsWiring, ctx context.Context) error {
 	if c.PluginHost == nil {
 		return nil
 	}
-	return c.PluginHost.Watch.TeardownAll(ctx, pluginGracePeriod)
+	return c.PluginHost.Host.Teardown.TeardownAll(ctx, pluginGracePeriod)
 }
 
 func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	if c.PluginHost == nil {
 		return plugincommand.NewCommands(nil, nil, nil, nil, nil)
 	}
-	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Watch, pluginsNewNoteReader(c), getWhenConfig(c))
+	return plugincommand.NewCommands(pluginmanifest.New(c.PluginHost.Runtime), commandbridge.Open(c.PluginHost.Runtime), c.PluginHost.Host.ContentTypes, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
@@ -299,7 +299,7 @@ func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string
 		if c.PluginHost == nil {
 			return nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.NotInstalled}
 		}
-		return c.PluginHost.Runtime.RetryPlugin(ctx, pluginID)
+		return c.PluginHost.Host.Retry.RetryPlugin(ctx, pluginID)
 	}
 }
 
@@ -307,7 +307,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.Runtime.SetOnPluginFailed(func(failure plugindomain.Failure) {
+	c.PluginHost.Host.Failures.SetOnPluginFailed(func(failure plugindomain.Failure) {
 		tasks.Set(work.Task{
 			ID:         pluginFailureTaskPrefix + failure.PluginID,
 			Title:      "Plugin stopped",
@@ -317,7 +317,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 			PluginName: failure.Name,
 		})
 	})
-	c.PluginHost.Runtime.SetOnFailureCleared(func(pluginID string) {
+	c.PluginHost.Host.Failures.SetOnFailureCleared(func(pluginID string) {
 		tasks.Remove(pluginFailureTaskPrefix + pluginID)
 		signalPluginChanges(c)
 	})

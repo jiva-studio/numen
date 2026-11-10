@@ -61,7 +61,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Activation.Release("org.example.sample")
-	exited := host.Registry.t.supervisors["org.example.sample"].GetExitSignal()
+	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
 
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
@@ -92,7 +92,7 @@ func TestDiscover_ChangedManifestRestartsPlugin(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Activation.Release("org.example.sample")
-	exited := host.Registry.t.supervisors["org.example.sample"].GetExitSignal()
+	exited := supervisorOf(host, "org.example.sample").GetExitSignal()
 
 	manifestPath := filepath.Join(tmp, "sample", "manifest.json")
 	data, err := os.ReadFile(manifestPath)
@@ -178,7 +178,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
-	host.Registry.t.discovering.Lock()
+	host.Registry.discovering.Lock()
 
 	reply := make(chan error, 1)
 	calling := make(chan struct{})
@@ -190,7 +190,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 	<-calling
 	runtime.Gosched()
 
-	if host.Registry.t.discovering.TryRLock() {
+	if host.Registry.discovering.TryRLock() {
 		t.Fatal("the discovery lock is not held")
 	}
 	select {
@@ -198,7 +198,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 		t.Fatalf("EnsureActive answered while a discovery was in progress: %v", err)
 	default:
 	}
-	host.Registry.t.discovering.Unlock()
+	host.Registry.discovering.Unlock()
 	if err := <-reply; err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}

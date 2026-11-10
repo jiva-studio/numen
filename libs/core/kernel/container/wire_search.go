@@ -83,7 +83,7 @@ type searchWiring struct {
 func cutNotes(c searchWiring) chunking.CutNotes {
 	cutter := chunking.NewCutNotes(c.Chunks.Get())
 	if c.PluginHost != nil {
-		cutter.Profiles = c.PluginHost.Runtime.ResolveNoteProfile
+		cutter.Profiles = c.PluginHost.Host.Registry.ResolveNoteProfile
 	}
 	return cutter
 }

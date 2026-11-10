@@ -3,7 +3,6 @@ package embedderbridge
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -83,7 +82,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 
-	bridge, err := Open(t.Context(), pluginhost.Join(host))
+	bridge, err := Open(t.Context(), host.Runtime())
 	if err != nil {
 		t.Fatal(err)
 	}

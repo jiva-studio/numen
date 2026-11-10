@@ -3,7 +3,6 @@ package agentbridge
 import (
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"math"
 	"net/http"
@@ -209,7 +208,7 @@ func openTestBridge(t *testing.T, handler numenv1connect.AgentServiceHandler) *A
 		return cmd.Process, io.NopCloser(r), nil
 	})
 
-	bridge, err := OpenForPlugin(t.Context(), pluginhost.Join(host), "md.numen.agents.numen")
+	bridge, err := OpenForPlugin(t.Context(), host.Runtime(), "md.numen.agents.numen")
 	if err != nil {
 		t.Fatalf("OpenAgentBridgeForPlugin failed: %v", err)
 	}

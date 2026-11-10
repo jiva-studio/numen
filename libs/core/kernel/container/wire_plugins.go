@@ -8,16 +8,12 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -100,46 +96,16 @@ func InstallPluginVault(c Config,
 	return installPluginVault(plugins(c), vaults, db, current, hooks)
 }
 
-// PluginRuntime is what runs, finds and addresses the plugins.
-type PluginRuntime struct {
-	pluginport.PluginActivator
-	pluginport.PluginRetrier
-	pluginport.PluginDiscoverer
-	pluginport.PluginLister
-	pluginport.PluginResolver
-	pluginport.PluginEventEmitter
-	pluginport.PluginBinding
-	transport.ClientLookup
-	textport.TextPlugins
-	pluginport.PluginFailures
-	pluginport.ConfigWatcher
-}
-
-// PluginConfiguration is what carries the settings and the secrets to the plugins.
-type PluginConfiguration struct {
-	pluginport.PluginSettingDeclarer
-	pluginport.SecretConfigurator
-	pluginport.SettingsPush
-	pluginport.SettingChecker
-	pluginport.PersistHook
-}
-
-// PluginWatch is what ends the plugins, reports their dependencies and names the content types they give.
-type PluginWatch struct {
-	pluginport.PluginShutdown
-	pluginport.DependencyReporter
-	contenttypeport.ContentTypeTable
-}
-
-// PluginHost is the plugin host as the capabilities the wiring and the use cases consume, each taken from the
-// role of the host that does it. The settings subscription is keyed by the one *PluginHost the container
-// made. ApplySetting makes a plugin follow one setting that changed. SetStorage sets the folders the plugins
-// store files in and keeps the dependencies in the models folder the host names; RefreshDependencies
-// provisions them as the environment names them now.
+// PluginHost lends the roles of the plugin host to the wiring and the use cases: Host holds the roles, each
+// consumer takes the one it needs, Runtime is what the bridges to the plugins call through, and Config
+// hands the plugins the settings the user keeps. The settings subscription is keyed by the one
+// *PluginHost the container made. ApplySetting makes a plugin follow one setting that changed.
+// SetStorage sets the folders the plugins store files in and keeps the dependencies in the models
+// folder the host names; RefreshDependencies provisions them as the environment names them now.
 type PluginHost struct {
-	Runtime             PluginRuntime
-	Configuration       PluginConfiguration
-	Watch               PluginWatch
+	Host                *plugin.Host
+	Runtime             plugin.Runtime
+	Config              settingsport.PluginConfig
 	Endpoint            *hostendpoint.Services
 	ApplySetting        settingsport.PluginSettingApplier
 	SetStorage          func(cacheRoot, dataRoot string)
@@ -154,31 +120,9 @@ func AdaptPluginHost(host *plugin.Host) *PluginHost {
 
 func adaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
-		Runtime: PluginRuntime{
-			PluginActivator:    host.Activation,
-			PluginRetrier:      host.Activation,
-			PluginDiscoverer:   host.Discovery,
-			PluginLister:       host.Registry,
-			PluginResolver:     host.Registry,
-			PluginEventEmitter: host.Events,
-			PluginBinding:      host.Mode,
-			ClientLookup:       host.Activation.ClientLookup(),
-			TextPlugins:        host.Registry,
-			PluginFailures:     host.Failures,
-			ConfigWatcher:      host.Config,
-		},
-		Configuration: PluginConfiguration{
-			PluginSettingDeclarer: host.Registry,
-			SecretConfigurator:    host.Config,
-			SettingsPush:          host.Settings,
-			SettingChecker:        host.Settings,
-			PersistHook:           host.Settings,
-		},
-		Watch: PluginWatch{
-			PluginShutdown:     host.Teardown,
-			DependencyReporter: host.Services,
-			ContentTypeTable:   host.ContentTypes,
-		},
+		Host:     host,
+		Runtime:  host.Runtime(),
+		Config:   host.Settings,
 		Endpoint: lendHostEndpoint(host),
 		ApplySetting: settingsusecase.NewApplyPluginSetting(settingsusecase.ApplyPluginSettingDeps{
 			Values: host.Settings, Stopper: host.Teardown, Failures: host.Failures, Listeners: host.Listeners, Push: host.Config,

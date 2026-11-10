@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/supervision"
 	"slices"
 	"strings"
 	"testing"
@@ -77,7 +78,7 @@ func TestALaunchedPluginIsReportedTheRuntimeItDeclares(t *testing.T) {
 	catalog := newONNXCatalog()
 	host.Services.SetDependencies(catalog)
 
-	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t")
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +104,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 	}})
 	manifest := manifest.Manifest{Dependencies: []manifest.DependencyRequirement{{ID: "whisper", Kind: manifest.DependencyKindModel}}}
 
-	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), 5, "t")
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +123,7 @@ func TestAPluginThatDeclaresNoRuntimeProvisionsNothing(t *testing.T) {
 	catalog := newONNXCatalog()
 	host.Services.SetDependencies(catalog)
 
-	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", nil, 5, "t")
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", nil, host.Mode.GetVaultPath(), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +149,7 @@ func TestAPluginIsNotLaunchedWhenItsRuntimeFailsToProvision(t *testing.T) {
 	catalog.err = failure
 	host.Services.SetDependencies(catalog)
 
-	vars, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t")
+	vars, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t")
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), "md.numen.a") {
 		t.Fatalf("getLaunchVars() = %v, %v, want the failure with the plugin named", vars, err)
 	}
@@ -165,8 +166,8 @@ func TestAPluginIsNotLaunchedWhenNothingProvisionsItsRuntime(t *testing.T) {
 		}
 	})
 
-	if _, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
-		t.Fatalf("getLaunchVars() = %v, want ErrRuntimeUnavailable", err)
+	if _, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", newRuntimeRequirements("/plugins/a"), host.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {
+		t.Fatalf("getLaunchVars() = %v, want supervision.ErrRuntimeUnavailable", err)
 	}
 }
 
@@ -180,7 +181,7 @@ func TestAPluginIsNotLaunchedWithARuntimeTheHostDoesNotKnow(t *testing.T) {
 	host.Services.SetDependencies(newONNXCatalog())
 	unknown := []manifest.DependencyRequirement{{ID: "tensorrt", Kind: manifest.DependencyKindRuntime}}
 
-	if _, err := host.Processes.getLaunchVars(t.Context(), "md.numen.a", unknown, 5, "t"); !errors.Is(err, ErrRuntimeUnavailable) {
-		t.Fatalf("getLaunchVars() = %v, want ErrRuntimeUnavailable", err)
+	if _, err := host.Processes.GetLaunchVars(t.Context(), "md.numen.a", unknown, host.Mode.GetVaultPath(), 5, "t"); !errors.Is(err, supervision.ErrRuntimeUnavailable) {
+		t.Fatalf("getLaunchVars() = %v, want supervision.ErrRuntimeUnavailable", err)
 	}
 }

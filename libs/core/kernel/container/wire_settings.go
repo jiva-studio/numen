@@ -166,13 +166,13 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 		subscribe = feed(c).Subscribe
 	}
 	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Configuration, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
+		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost.Config, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
 		Subscribe: subscribe, Hosts: hosts, Setup: func() { setUpPluginHost(c) },
 	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
 func setUpPluginHost(c settingsWiring) {
-	c.PluginHost.Configuration.SetKeyStore(c.KeyStore)
+	c.PluginHost.Host.Config.SetKeyStore(c.KeyStore)
 	if c.Plugins != nil {
 		setSecretSource(c.Plugins())
 		setCompleter(c.Plugins())
@@ -183,7 +183,7 @@ func unsubscribeHost(c settingsWiring) {
 	if c.SubscribedHosts == nil || c.PluginHost == nil {
 		return
 	}
-	c.SubscribedHosts.Unsubscribe(c.PluginHost.Configuration)
+	c.SubscribedHosts.Unsubscribe(c.PluginHost.Config)
 }
 
 func notifyHost(c settingsWiring, batch []settingsdomain.Setting) {
@@ -228,7 +228,7 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 		if c.PluginHost == nil {
 			return nil, false
 		}
-		return c.PluginHost.Configuration.GetPluginSettingDeclarations(owner)
+		return c.PluginHost.Host.Registry.GetPluginSettingDeclarations(owner)
 	}
 }
 
@@ -331,7 +331,7 @@ func openRetryPlugin(_ settingsWiring, retrier func(context.Context, string) (*p
 func settingsStore(c settingsWiring) *settingsadapter.Store {
 	var secrets settingsadapter.SecretDeclarations
 	if c.PluginHost != nil {
-		secrets = c.PluginHost.Configuration
+		secrets = c.PluginHost.Host.Config
 	}
 	return settingsadapter.NewStore(c.SettingsFiles, func() (string, error) { return settingsSettingsFile(c) }, getDeclarations(c), getRegistries(c), secrets)
 }
@@ -357,7 +357,7 @@ func feed(c settingsWiring) settingevents.Feed {
 func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 	var plugins settingsport.PluginInfos
 	if c.PluginHost != nil {
-		plugins = c.PluginHost.Runtime
+		plugins = c.PluginHost.Host.Registry
 	}
 	var late settingsport.LatePrograms
 	if c.Programs != nil {
@@ -371,7 +371,7 @@ func listSettingValues(c settingsWiring) *settingsusecase.ListSettingValues {
 func settingsWriteSettings(c settingsWiring) *settingsusecase.WriteSettings {
 	var plugins settingsport.PluginSettings
 	if c.PluginHost != nil {
-		plugins = c.PluginHost.Configuration
+		plugins = c.PluginHost.Host.Settings
 	}
 	check := settingsusecase.NewCheckSettings(
 		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(getDeclarations(c), getRegistries(c)), plugins,
@@ -385,7 +385,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 		signal = c.PluginChanges.Signal
 	}
 	return settingsusecase.NewNotifyPlugins(settingsusecase.NotifyPluginsDeps{
-		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Configuration,
+		Codec: settingsadapter.JSONCodec{}, Apply: c.PluginHost.ApplySetting, Config: c.PluginHost.Config,
 		RefreshSecrets: func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
 		ResolveProfile: func(profile string) string { return resolveProfile(c, profile) }, Signal: signal,
 		Report: func(err error) { settingsHandleError(c, err) },
@@ -397,7 +397,7 @@ func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {
 		return err
 	}
 	defer c.SecretGate.Leave()
-	return c.PluginHost.Configuration.Refresh(ctx)
+	return c.PluginHost.Host.Config.Refresh(ctx)
 }
 
 func resolveProfile(c settingsWiring, profile string) string {

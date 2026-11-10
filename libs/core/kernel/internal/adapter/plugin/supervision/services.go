@@ -1,4 +1,4 @@
-package plugin
+package supervision
 
 import (
 	"context"
@@ -21,18 +21,24 @@ type HostEndpoint interface {
 	ClearPlugin(pluginID string)
 }
 
+// Closing says whether the host is shut down.
+type Closing interface {
+	IsClosed() bool
+}
+
 // Services holds what the host gives the plugins it launches: the endpoint they call the host
 // through and the provisioner of the dependencies they declare.
 type Services struct {
-	t *table
+	closing Closing
 
 	mu           sync.RWMutex
 	dependencies pluginport.DependencyRegistry
 	endpoint     HostEndpoint
 }
 
-func newServices(t *table) *Services {
-	return &Services{t: t}
+// NewServices returns services with nothing set; they open no endpoint once closing reports the host shut down.
+func NewServices(closing Closing) *Services {
+	return &Services{closing: closing}
 }
 
 // SetHostEndpoint sets the endpoint the plugins call the host through. The host opens it when the
@@ -69,9 +75,7 @@ func (s *Services) ObserveDependencies(observer func(manifest.DependencyRequirem
 // OpenHostEndpoint opens the endpoint unless the host is shut down, and returns its port, or 0 where
 // there is no endpoint or nothing to lend through it.
 func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
-	s.t.mu.RLock()
-	isClosed := s.t.isClosed
-	s.t.mu.RUnlock()
+	isClosed := s.closing.IsClosed()
 	s.mu.RLock()
 	endpoint := s.endpoint
 	s.mu.RUnlock()
@@ -84,7 +88,8 @@ func (s *Services) OpenHostEndpoint(ctx context.Context) (int, error) {
 	return endpoint.Open(ctx)
 }
 
-func (s *Services) closeHostEndpoint(ctx context.Context) error {
+// CloseHostEndpoint closes the endpoint if one is set.
+func (s *Services) CloseHostEndpoint(ctx context.Context) error {
 	s.mu.RLock()
 	endpoint := s.endpoint
 	s.mu.RUnlock()
@@ -94,7 +99,8 @@ func (s *Services) closeHostEndpoint(ctx context.Context) error {
 	return endpoint.Close(ctx)
 }
 
-func (s *Services) clearPlugin(pluginID string) {
+// ClearPlugin forgets what the endpoint holds for a plugin whose process ended.
+func (s *Services) ClearPlugin(pluginID string) {
 	s.mu.RLock()
 	endpoint := s.endpoint
 	s.mu.RUnlock()
