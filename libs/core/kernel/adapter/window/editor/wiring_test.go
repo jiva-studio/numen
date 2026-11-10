@@ -75,8 +75,6 @@ func (w wiring) openIndex(t *testing.T) *vaults.Index {
 	return db
 }
 
-// sources are the passes behind a vault, with the walk and the watch the test drives in place of the
-// ones an installation is bound to. Everything else is the installation's own.
 func (w wiring) sources(db *vaults.Index, readers vaultport.VaultReaders, watcher vaultport.VaultWatcher) Sources {
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
 	return Sources{

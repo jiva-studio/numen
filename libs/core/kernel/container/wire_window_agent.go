@@ -11,7 +11,6 @@ func (c Config) GetEditorAgent() agentport.Agent {
 	return c.plugins().GetToolProvider()
 }
 
-// mountAgent mounts the service that starts the tasks of the agent of the installation.
 func mountAgent(w *windowWiring) {
 	w.inst.Mount(editor.NewAgentRoute(w.inst.State, w.cfg.GetEditorAgent()))
 }

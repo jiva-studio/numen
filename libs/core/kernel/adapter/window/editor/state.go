@@ -80,7 +80,6 @@ type State struct {
 
 	Indexing IndexState
 
-	// Playing is the socket recordings are served over, and nothing until it is open.
 	Playing atomic.Pointer[Loopback]
 }
 

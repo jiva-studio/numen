@@ -10,11 +10,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// mountVault mounts the service that answers what the vault in the window is doing.
 func mountVault(w *windowWiring) { w.inst.Mount(editor.NewVaultRoute(w.inst.State)) }
 
-// getWindowSources are the passes behind a vault of the window, over this installation's walk and
-// watch, text versions, plugins and cache.
 func getWindowSources(cfg Config, db *Index) editor.Sources {
 	return editor.Sources{
 		ReadVault: func(

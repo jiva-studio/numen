@@ -122,8 +122,6 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	return inst, nil
 }
 
-// mountServices puts every service of the window on its installation. The file service comes
-// before the services that ask it which kind of tab a file opens in.
 func mountServices(w *windowWiring) {
 	mountVault(w)
 	mountWorkspace(w)

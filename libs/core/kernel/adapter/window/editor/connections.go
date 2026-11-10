@@ -9,19 +9,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
-
-func (h *NoteHandler) bindConnections(notes *note.Scenarios) {
-	h.getConnection = &notes.Connection
-	h.saveConnection = &notes.SaveConnection
-	h.removeSide = &notes.RemoveSide
-	h.removeConnection = &notes.RemoveConnection
-	h.join = &notes.Join
-	h.createInRelation = &notes.CreateInRelation
-	h.getBacklinks = &notes.Backlinks
-}
 
 // connectionFailure is why a connection write did not land, as the schema
 // carries it.

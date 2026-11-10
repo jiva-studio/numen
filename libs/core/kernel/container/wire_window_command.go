@@ -5,7 +5,6 @@ import (
 	editorcommand "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 )
 
-// mountCommand mounts the service that lists and runs the commands of the plugins.
 func mountCommand(w *windowWiring) {
 	var versions editorcommand.VersionItems
 	if menu := w.cfg.plugins().OpenVersionItems(); menu != nil {

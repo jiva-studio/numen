@@ -7,10 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 )
 
-// mountSearch mounts the search service. The window's search is the application's search. It is
-// built after the embedder is resolved; when the model could not be loaded, search uses words only.
-// The degraded state is reported as a task because a window opened from a desktop entry has no
-// terminal.
 func mountSearch(w *windowWiring) {
 	state := w.inst.State
 	handler := editorsearch.NewHandler(state)

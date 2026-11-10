@@ -2,7 +2,6 @@ package container
 
 import "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 
-// mountVaults mounts the service that lists and changes the vaults of the installation.
 func mountVaults(w *windowWiring) {
 	handler := editor.NewVaultsHandler(w.inst.State)
 	handler.SetScenarios(w.vaults)

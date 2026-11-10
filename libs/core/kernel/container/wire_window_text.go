@@ -5,8 +5,6 @@ import (
 	editortexts "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
 )
 
-// mountText mounts the service that reads the text of the files of the vault. Without text versions
-// it answers with none.
 func mountText(w *windowWiring) {
 	handler := editortexts.NewHandler(w.inst.State, nil)
 	if text := w.cfg.vault().OpenFileText(); text != nil {

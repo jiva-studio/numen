@@ -19,7 +19,6 @@ func (c Config) OpenWatchSettings() *settings.Watch {
 	return c.settings().OpenWatchSettings()
 }
 
-// mountSettings mounts the service that reads and writes the settings of the installation.
 func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	handler := editorsettings.NewHandler()

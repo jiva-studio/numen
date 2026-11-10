@@ -5,7 +5,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 )
 
-// mountNote mounts the service that reads, writes and connects the notes of the vault.
 func mountNote(w *windowWiring) {
 	state := w.inst.State
 	handler := editor.NewNoteHandler(state)
