@@ -24,7 +24,7 @@ func TestShowingATabThatIsNotOpenFails(t *testing.T) {
 	_, err := w.scenarios.ShowTab.Execute(t.Context(), "note:missing")
 
 	if !errors.Is(err, plugin.ErrTabNotOpen) {
-		t.Errorf("showing a tab that is not open returned %v, want %v", err, fs.ErrNotExist)
+		t.Errorf("showing a tab that is not open returned %v, want %v", err, plugin.ErrTabNotOpen)
 	}
 }
 
