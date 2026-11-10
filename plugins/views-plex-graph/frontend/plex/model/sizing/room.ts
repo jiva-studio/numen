@@ -9,7 +9,7 @@
 import { computed, onMounted, onScopeDispose, ref, type Ref, type ShallowRef } from 'vue'
 import { getWideBox } from './expansion'
 import { useTitleWidths, type PlexMetrics } from './measure'
-import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
+import { getNodeHeadings } from '../../lib/inside'
 import { resolveOptions, type PlexOptionsInput, type Size } from '../../lib/arrange'
 import type { PlacedNode } from '../../lib/node'
 import type { Viewport } from '@numen/ui'

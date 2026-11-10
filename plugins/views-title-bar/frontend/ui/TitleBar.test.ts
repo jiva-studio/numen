@@ -3,6 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
+import { getControlsRoom } from '../lib/frame'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
 
@@ -17,6 +18,8 @@ interface Options {
   listItems?: (command: string) => Promise<readonly CommandItem[]>
   reportError?: (error: unknown) => void
 }
+
+const WINDOWS_TRAIL = getControlsRoom('windows', false).trail
 
 const mounted: VueWrapper[] = []
 
@@ -292,7 +295,7 @@ describe('the entries that do not fit', () => {
   }
 
   const resize = async (wrapper: VueWrapper, room: number): Promise<void> => {
-    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_CONTROLS_WIDTH
+    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_TRAIL
     const entries = [{ contentRect: { width: slotWidth, height: 32 } } as ResizeObserverEntry]
     for (const tell of callbacks) tell(entries, {} as ResizeObserver)
     await settle(wrapper)
@@ -309,7 +312,7 @@ describe('the entries that do not fit', () => {
   ]
 
   const mountOverflowing = async (room: number, options: Options = {}): Promise<VueWrapper> => {
-    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_CONTROLS_WIDTH
+    slotWidth = TITLE_MIN_WIDTH + room + WINDOWS_TRAIL
     const wrapper = mountBar({ commands: FIVE, ...options })
     await resize(wrapper, room)
     return wrapper

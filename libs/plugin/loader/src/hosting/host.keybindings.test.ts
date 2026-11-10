@@ -5,7 +5,7 @@ import { createPluginHost } from './host'
 import { getTargetValues } from '../when/targetValues'
 import type { CommandDeclaration, PluginHostDeps } from './types'
 
-type Manifest = Parameters<ReturnType<typeof createPluginHost>['registerManifest']>[1]
+type Manifest = Parameters<ReturnType<typeof createPluginHost>['lifecycle']['registerManifest']>[1]
 
 const NOTE = {
   path: 'Tides.md',

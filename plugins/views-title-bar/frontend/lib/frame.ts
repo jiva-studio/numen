@@ -40,7 +40,7 @@ export function getControls(platform: AppInfo['platform'], buttons: ButtonsSetti
 }
 
 /** The width of the three window buttons the bar draws at its end in the Windows style, in pixels. */
-export const WINDOWS_CONTROLS_WIDTH = 132
+const WINDOWS_CONTROLS_WIDTH = 132
 
 /** The width of the three circles the bar draws at its start in the mac style, in pixels. */
 export const MAC_CIRCLES_WIDTH = 76

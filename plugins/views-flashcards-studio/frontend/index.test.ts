@@ -93,7 +93,7 @@ describe('flashcards-studio plugin', () => {
     const kind = ctx.getRegisteredTabKinds()[0]!
     const scope = effectScope()
     const state = scope.run(() => kind.open!('roots', 'tab-1')) as {
-      decks: { goToVaults: () => void }
+      actions: { goToVaults: () => void }
     }
 
     state.actions.goToVaults()

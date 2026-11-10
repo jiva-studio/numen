@@ -703,7 +703,7 @@ describe('a heading of a node chosen', () => {
   it('opens the note it remains in, and puts the keyboard on its line', () => {
     const one = tab('Root.md')
 
-    one.state.headings.openHeading(one.node('Root.md'), '12')
+    one.state.nodes.openHeading(one.node('Root.md'), '12')
 
     expect(one.opened).toStrictEqual([['Root.md', 'Root', 'current']])
     expect(one.entered).toStrictEqual([['Root.md', 12]])
@@ -712,7 +712,7 @@ describe('a heading of a node chosen', () => {
   it('opens the note the node remains for, the focus being another one', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.headings.openHeading(one.node('Child.md'), '7')
+    one.state.nodes.openHeading(one.node('Child.md'), '7')
 
     expect(one.opened).toStrictEqual([['Child.md', 'Child', 'current']])
     expect(one.entered).toStrictEqual([['Child.md', 7]])
@@ -721,7 +721,7 @@ describe('a heading of a node chosen', () => {
   it('remains the plex where it stood', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.headings.openHeading(one.node('Child.md'), '7')
+    one.state.nodes.openHeading(one.node('Child.md'), '7')
 
     expect(one.went).toStrictEqual([])
     expect(one.state.canvas.view.here.value).toBe('Root.md')
@@ -730,7 +730,7 @@ describe('a heading of a node chosen', () => {
   it('opens nothing for a heading naming no line, which is the one standing for the rest', () => {
     const one = tab('Root.md')
 
-    one.state.headings.openHeading(one.node('Root.md'), '')
+    one.state.nodes.openHeading(one.node('Root.md'), '')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
@@ -1241,11 +1241,11 @@ describe('quick-link popover from a node handle', () => {
     const { state, node, opened, entered } = tab('Focus.md', ['Child.md'])
     const focusId = node('Focus')
 
-    state.headings.openHeading(focusId, 'not-a-number')
+    state.nodes.openHeading(focusId, 'not-a-number')
     expect(entered).toEqual([])
     expect(opened).toEqual([])
 
-    state.headings.openHeading('nonexistent', '1')
+    state.nodes.openHeading('nonexistent', '1')
     expect(entered).toEqual([])
   })
 
@@ -1259,8 +1259,8 @@ describe('quick-link popover from a node handle', () => {
 describe('createPlexTab edge cases and helpers', () => {
   it('covers openHeading edge cases, dismissals and menu choices', async () => {
     const one = tab('Root.md', ['Child.md'])
-    one.state.headings.openHeading('unknown-node', '12')
-    one.state.headings.openHeading(one.node('Root.md'), 'not-a-number')
+    one.state.nodes.openHeading('unknown-node', '12')
+    one.state.nodes.openHeading(one.node('Root.md'), 'not-a-number')
 
     one.state.quickLink.openQuickLink({
       from: one.node('Root.md'),
@@ -1395,8 +1395,8 @@ describe('a node opened', () => {
   it('opens nothing for a heading whose name is not wholly a line number', () => {
     const one = tab('Root.md', ['Child.md'])
 
-    one.state.headings.openHeading(one.node('Child.md'), 'a12')
-    one.state.headings.openHeading(one.node('Child.md'), '12a')
+    one.state.nodes.openHeading(one.node('Child.md'), 'a12')
+    one.state.nodes.openHeading(one.node('Child.md'), '12a')
 
     expect(one.opened).toStrictEqual([])
     expect(one.entered).toStrictEqual([])
