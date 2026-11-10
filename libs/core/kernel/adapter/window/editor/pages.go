@@ -13,7 +13,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
 	notewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/note"
@@ -272,16 +271,3 @@ func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
 	return NewRoute(path, served, handler)
 }
 
-// NewCommandRoute is the route of the service that lists and runs the commands of plugins.
-func NewCommandRoute(state *State, handler *command.Handler) Route {
-	path, served := numenv1connect.NewCommandServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}
-
-// NewPluginRoute is the route of the service plugins are managed through, which this window does
-// not implement.
-func NewPluginRoute(state *State) Route {
-	handler := numenv1connect.UnimplementedPluginServiceHandler{}
-	path, served := numenv1connect.NewPluginServiceHandler(handler, state.CountQuestions())
-	return NewRoute(path, served, handler)
-}

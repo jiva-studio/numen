@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -48,7 +49,7 @@ func bindNotes(services *Services, db *vaults.Index) {
 	services.NoteCases.Types = query.NewGetTypes(db.NoteTypes())
 	services.NoteCases.Headings = query.NewGetHeadings(db.Headings())
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
-	services.NoteCases.Neighbourhood = &neighborhood
+	services.NoteCases.Neighborhood = &neighborhood
 	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
 	services.UseNotes()
 }
@@ -210,12 +211,12 @@ func openingWith(
 	line, isDone := api.state.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
-	made := wired.sources(db, readers, watcher)
-	worker := newIndexWorker(made.ReadVault, api.state, embedder, idleDuration, io.Discard)
+	made := wired.session(db, readers, watcher)
+	worker := newIndexWorker(wired.readVault(db), api.state, embedder, idleDuration, io.Discard)
 	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())
-	_, wait := startIndexing(ctx, made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
+	_, wait := startIndexing(ctx, made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(func() {
 		stop()
 		wait()
@@ -509,11 +510,11 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api.state.setVault(v)
 
 	out := &saying{}
-	made := wired.sources(db, readers, watcher)
-	worker := newIndexWorker(made.ReadVault, api.state, nil, quietPeriod, out)
+	made := wired.session(db, readers, watcher)
+	worker := newIndexWorker(wired.readVault(db), api.state, nil, quietPeriod, out)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	_, wait := startIndexing(ctx, made, api.state, indexJob{vault: v, rebuild: true, worker: worker, session: worker.NewSession(), out: out})
+	_, wait := startIndexing(ctx, made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: true, worker: worker, session: worker.NewSession(), out: out})
 	t.Cleanup(func() {
 		stop()
 		wait()

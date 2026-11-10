@@ -1387,9 +1387,9 @@ func TestANoteReturnsWhatItIsDividedInto(t *testing.T) {
 	}
 }
 
-// TestANeighbourhoodSaysWhichOfThreeEachNoteIs covers typed notes: the graph
+// TestANeighborhoodSaysWhichOfThreeEachNoteIs covers typed notes: the graph
 // renders each typed note as its type, and the response carries the type.
-func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
+func TestANeighborhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Ontology.md": "---\ntitle: Ontology\nlinks:\n  - to: Animals\n    role: child\n" +
 			"  - to: Animal\n    role: child\n---\n\nan animal is a note\n",
