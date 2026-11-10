@@ -21,7 +21,7 @@ type HostEndpoint interface {
 	ClearPlugin(pluginID string)
 }
 
-// Closing says whether the host is shut down.
+// Closing reports whether the host is shut down.
 type Closing interface {
 	IsClosed() bool
 }

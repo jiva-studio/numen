@@ -60,8 +60,8 @@ type listenerBinding struct {
 // getBindable returns the plugin and its settings where its listeners may bind a port: the host runs,
 // is not in safe mode and has the plugin enabled.
 func (l *Listeners) getBindable(pluginID string) (manifest.Discovered, map[string]any, bool) {
-	v, done := l.registry.set.view()
-	defer done()
+	v, release := l.registry.set.view()
+	defer release()
 	p, ok := v.get(pluginID)
 	if !ok || l.mode.IsClosed() || l.mode.IsSafeMode() || !v.isEnabled(pluginID) {
 		return manifest.Discovered{}, nil, false

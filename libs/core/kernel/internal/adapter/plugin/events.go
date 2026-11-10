@@ -48,8 +48,8 @@ func (e *Events) closeBus(ctx context.Context) error {
 }
 
 func (e *Events) listActivatedBy(event string) []string {
-	v, done := e.registry.set.view()
-	defer done()
+	v, release := e.registry.set.view()
+	defer release()
 	candidates := make([]string, 0)
 	for _, p := range v.enabled() {
 		if p.Manifest.IsActivatedBy(event) {

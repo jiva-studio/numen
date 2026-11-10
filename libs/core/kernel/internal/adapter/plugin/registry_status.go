@@ -18,8 +18,8 @@ type PluginStatus struct {
 
 // GetPluginStatus returns the status of the specified plugin.
 func (r *Registry) GetPluginStatus(pluginID string) (PluginStatus, bool) {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	if _, ok := v.get(pluginID); !ok {
 		return PluginStatus{}, false
 	}
@@ -46,8 +46,8 @@ func (r *Registry) getStatus(v setView, pluginID string) PluginStatus {
 
 // GetPluginStatuses returns statuses for all registered plugins, in the order of their ids.
 func (r *Registry) GetPluginStatuses() []PluginStatus {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	ordered := v.ordered()
 	statuses := make([]PluginStatus, 0, len(ordered)+len(r.set.problems))
 	for _, p := range ordered {
@@ -69,8 +69,8 @@ func (r *Registry) GetPluginStatuses() []PluginStatus {
 // GetPluginInfos returns specifications of all registered plugins and their settings schemas, in
 // the order of their ids.
 func (r *Registry) GetPluginInfos() []plugindomain.Info {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	enabled := v.enabled()
 	ordered := v.ordered()
 	result := make([]plugindomain.Info, 0, len(ordered))

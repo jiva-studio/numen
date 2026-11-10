@@ -57,7 +57,7 @@ func describe(t reflect.Type) string {
 }
 
 func TestThePluginsSeeTheShapesOfTheNotesLibraryTheyAreBuiltAgainst(t *testing.T) {
-	seen := map[string]reflect.Type{
+	shapes := map[string]reflect.Type{
 		"Vault":              reflect.TypeFor[domain.Vault](),
 		"VaultID":            reflect.TypeFor[domain.VaultID](),
 		"FileStat":           reflect.TypeFor[domain.FileStat](),
@@ -85,14 +85,14 @@ func TestThePluginsSeeTheShapesOfTheNotesLibraryTheyAreBuiltAgainst(t *testing.T
 		"VersionText":        reflect.TypeFor[domain.VersionText](),
 		"ByteRange":          reflect.TypeFor[domain.ByteRange](),
 	}
-	names := make([]string, 0, len(seen))
-	for name := range seen {
+	names := make([]string, 0, len(shapes))
+	for name := range shapes {
 		names = append(names, name)
 	}
 	slices.Sort(names)
 	var report strings.Builder
 	for _, name := range names {
-		got := describe(seen[name])
+		got := describe(shapes[name])
 		fmt.Fprintf(&report, "\t%q: %q,\n", name, got)
 		if want, ok := pinned[name]; !ok || want != got {
 			t.Errorf("%s is %s, the plugins are built against %q", name, got, want)

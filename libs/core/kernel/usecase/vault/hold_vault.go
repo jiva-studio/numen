@@ -22,9 +22,9 @@ type HoldVault struct {
 	clock machineport.Clock
 	hold  time.Duration
 
-	mu    sync.Mutex
-	held  map[string]hold
-	count int
+	mu     sync.Mutex
+	leases map[string]hold
+	count  int
 }
 
 type hold struct {
@@ -34,7 +34,7 @@ type hold struct {
 
 // NewHoldVault returns the use case over the locks of the vaults. A hold ends LockHold after it began.
 func NewHoldVault(locks vaultport.VaultLocks, clock machineport.Clock) *HoldVault {
-	return &HoldVault{locks: locks, clock: clock, hold: LockHold, held: map[string]hold{}}
+	return &HoldVault{locks: locks, clock: clock, hold: LockHold, leases: map[string]hold{}}
 }
 
 // WithHold returns the use case with holds that end after d.
@@ -53,7 +53,7 @@ func (u *HoldVault) Execute(ctx context.Context, v domain.Vault) (string, error)
 	u.mu.Lock()
 	u.count++
 	id := "lock-" + strconv.Itoa(u.count)
-	u.held[id] = hold{release: release, until: u.clock.Now().Add(u.hold)}
+	u.leases[id] = hold{release: release, until: u.clock.Now().Add(u.hold)}
 	u.mu.Unlock()
 	time.AfterFunc(u.hold, u.ReleaseExpired)
 	return id, nil
@@ -62,8 +62,8 @@ func (u *HoldVault) Execute(ctx context.Context, v domain.Vault) (string, error)
 // Release gives the writers back. A hold that has ended already is released and changes nothing.
 func (u *HoldVault) Release(id string) {
 	u.mu.Lock()
-	one, ok := u.held[id]
-	delete(u.held, id)
+	one, ok := u.leases[id]
+	delete(u.leases, id)
 	u.mu.Unlock()
 	if ok {
 		one.release()
@@ -75,10 +75,10 @@ func (u *HoldVault) ReleaseExpired() {
 	u.mu.Lock()
 	var ended []func()
 	now := u.clock.Now()
-	for id, one := range u.held {
+	for id, one := range u.leases {
 		if !one.until.After(now) {
 			ended = append(ended, one.release)
-			delete(u.held, id)
+			delete(u.leases, id)
 		}
 	}
 	u.mu.Unlock()

@@ -153,7 +153,7 @@ func (f *Failures) ForgetTargetReport(pluginID string) {
 	delete(f.reportedTargets, pluginID)
 }
 
-// MarkTargetResult records the result of starting a plugin for a listener and says whether a failure was reported before.
+// MarkTargetResult records the result of starting a plugin for a listener and returns whether a failure was reported before.
 func (f *Failures) MarkTargetResult(pluginID string, err error) (wasReported bool) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -13,26 +13,26 @@ import (
 
 type fakeLocks struct {
 	mu      sync.Mutex
-	held    int
+	count   int
 	maximum int
 }
 
 func (l *fakeLocks) Lock(_ context.Context, _ domain.Vault) (func(), error) {
 	l.mu.Lock()
-	l.held++
-	l.maximum = max(l.maximum, l.held)
+	l.count++
+	l.maximum = max(l.maximum, l.count)
 	l.mu.Unlock()
 	return func() {
 		l.mu.Lock()
-		l.held--
+		l.count--
 		l.mu.Unlock()
 	}, nil
 }
 
-func (l *fakeLocks) getHeld() int {
+func (l *fakeLocks) getCount() int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.held
+	return l.count
 }
 
 type steppedClock struct {
@@ -60,13 +60,13 @@ func TestAHoldIsReleasedByItsID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if locks.getHeld() != 1 {
-		t.Fatalf("held %d locks after the hold began, want 1", locks.getHeld())
+	if locks.getCount() != 1 {
+		t.Fatalf("count %d locks after the hold began, want 1", locks.getCount())
 	}
 	hold.Release(id)
 	hold.Release(id)
-	if locks.getHeld() != 0 {
-		t.Errorf("held %d locks after the release, want 0", locks.getHeld())
+	if locks.getCount() != 0 {
+		t.Errorf("count %d locks after the release, want 0", locks.getCount())
 	}
 }
 
@@ -80,12 +80,12 @@ func TestAHoldThatEndedIsReleasedWithoutTheHolder(t *testing.T) {
 	}
 	clock.advance(time.Hour - time.Second)
 	hold.ReleaseExpired()
-	if locks.getHeld() != 1 {
-		t.Fatalf("a hold with a second left was released: held %d", locks.getHeld())
+	if locks.getCount() != 1 {
+		t.Fatalf("a hold with a second left was released: count %d", locks.getCount())
 	}
 	clock.advance(time.Second)
 	hold.ReleaseExpired()
-	if locks.getHeld() != 0 {
-		t.Errorf("held %d locks after the hold ended, want 0", locks.getHeld())
+	if locks.getCount() != 0 {
+		t.Errorf("count %d locks after the hold ended, want 0", locks.getCount())
 	}
 }

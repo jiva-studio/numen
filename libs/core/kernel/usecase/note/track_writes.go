@@ -17,7 +17,7 @@ type WriteGate interface {
 	FinishWrite()
 }
 
-// IndexFollow tells whether the index followed a write and what a written note requires of it.
+// IndexFollow reports whether the index followed a write and what a written note requires of it.
 type IndexFollow interface {
 	// IsIndexOutdated reports whether err says the write reached the vault and the index did not follow.
 	IsIndexOutdated(err error) bool
@@ -61,8 +61,8 @@ func NewSaveProse(write *Write, gate WriteGate, follow IndexFollow) SaveProse {
 	return SaveProse{write: write, track: NewTrackWrites(gate, follow), follow: follow}
 }
 
-// Execute saves body to the note at path. A write that reached the vault answers with the file stat
-// the caller uses at its next save, and with whether the index did not follow.
+// Execute saves body to the note at path. A write that reached the vault returns the file stat
+// the caller uses at its next save, and whether the index did not follow.
 func (u SaveProse) Execute(
 	ctx context.Context, v domain.Vault, path, body string, baseline *edit.Baseline,
 ) (domain.FileStat, bool, error) {

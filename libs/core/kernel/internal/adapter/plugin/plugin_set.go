@@ -115,8 +115,8 @@ func (v setView) hasBackend(p manifest.Discovered) bool {
 }
 
 func (s *pluginSet) getKnown(pluginID string) (manifest.Discovered, bool) {
-	v, done := s.view()
-	defer done()
+	v, release := s.view()
+	defer release()
 	return v.get(pluginID)
 }
 
@@ -131,14 +131,14 @@ func (s *pluginSet) isRegistered(pluginID string) bool {
 }
 
 func (s *pluginSet) getPluginSettings(pluginID string) map[string]any {
-	v, done := s.view()
-	defer done()
+	v, release := s.view()
+	defer release()
 	return v.settings(pluginID)
 }
 
 func (s *pluginSet) getRequirementIDs(pluginID string) []string {
-	v, done := s.view()
-	defer done()
+	v, release := s.view()
+	defer release()
 	p, ok := v.get(pluginID)
 	if !ok {
 		return nil
@@ -151,14 +151,14 @@ func (s *pluginSet) getRequirementIDs(pluginID string) []string {
 }
 
 func (s *pluginSet) listEnabled() []manifest.Discovered {
-	v, done := s.view()
-	defer done()
+	v, release := s.view()
+	defer release()
 	return v.enabled()
 }
 
 func (s *pluginSet) listIDs() []string {
-	v, done := s.view()
-	defer done()
+	v, release := s.view()
+	defer release()
 	ids := make([]string, 0, len(s.plugins))
 	for _, p := range v.ordered() {
 		ids = append(ids, p.Manifest.ID)
@@ -180,8 +180,8 @@ func (s *pluginSet) isOnDisk(pluginID string) bool {
 
 // getLaunch returns what a start of the plugin needs to know of it.
 func (s *pluginSet) getLaunch(p manifest.Discovered) supervision.Launch {
-	v, done := s.view()
-	defer done()
+	v, release := s.view()
+	defer release()
 	launch := supervision.Launch{Plugin: p, BuiltIn: nil, Requirements: v.requirements(p), VaultPath: s.mode.GetVaultPath()}
 	if builtIn, ok := s.builtIns[p.Manifest.ID]; ok && !s.onDisk[p.Manifest.ID] {
 		launch.BuiltIn = &supervision.BuiltIn{Serve: builtIn.serve}

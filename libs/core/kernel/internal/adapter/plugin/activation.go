@@ -104,9 +104,9 @@ func (a *Activation) prepareSupervisor(pluginID string) (manifest.Discovered, *l
 	if !a.registry.IsPluginEnabled(pluginID) {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.Disabled}
 	}
-	v, done := a.registry.set.view()
+	v, release := a.registry.set.view()
 	hasBackend := v.hasBackend(p)
-	done()
+	release()
 	if !hasBackend {
 		return manifest.Discovered{}, nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.WithoutBackend}
 	}

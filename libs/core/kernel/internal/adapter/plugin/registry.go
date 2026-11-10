@@ -40,8 +40,8 @@ func newRegistry(
 
 // GetPlugins returns all discovered plugins registered with the host, in the order of their ids.
 func (r *Registry) GetPlugins() []manifest.Discovered {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	if r.mode.IsSafeMode() {
 		return nil
 	}
@@ -50,8 +50,8 @@ func (r *Registry) GetPlugins() []manifest.Discovered {
 
 // GetPlugin retrieves a single enabled plugin by its unique identifier.
 func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	if r.mode.IsSafeMode() {
 		return manifest.Discovered{}, false
 	}
@@ -64,8 +64,8 @@ func (r *Registry) GetPlugin(id string) (manifest.Discovered, bool) {
 
 // IsPluginEnabled reports whether the settings of the plugin leave it enabled.
 func (r *Registry) IsPluginEnabled(pluginID string) bool {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	return v.isEnabled(pluginID)
 }
 
@@ -74,8 +74,8 @@ func (r *Registry) IsPluginEnabled(pluginID string) bool {
 // plugin declares it and it is switched off or the host is in safe mode, NotInstalled when
 // none declares it.
 func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, error) {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 
 	isSafe := r.mode.IsSafeMode()
 	reason := plugindomain.NotInstalled
@@ -99,8 +99,8 @@ func (r *Registry) ResolveCapability(capability string) (manifest.Discovered, er
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
 func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	for _, p := range v.enabled() {
 		if p.Manifest.HasService(service) {
 			return p, true
@@ -113,8 +113,8 @@ func (r *Registry) ResolveService(service string) (manifest.Discovered, bool) {
 // defined by the enabled plugin with the lowest id among those declaring the
 // type.
 func (r *Registry) ResolveNoteProfile(noteType domain.NoteType) (domain.NoteProfile, bool) {
-	v, done := r.set.view()
-	defer done()
+	v, release := r.set.view()
+	defer release()
 	for _, p := range v.enabled() {
 		if declared, found := p.Manifest.GetNoteType(string(noteType)); found {
 			return declared.GetProfile(), true

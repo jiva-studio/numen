@@ -173,16 +173,16 @@ func (c *ConfigPush) listActiveDeclarations(pluginID string, values map[string]a
 // listDeclarations lists the secret declarations of the installed plugins, then of the plugins the host
 // knows that are not among them.
 func (c *ConfigPush) listDeclarations(installed []manifest.Discovered) []plugindomain.DeclarationKey {
-	v, done := c.registry.set.view()
-	defer done()
+	v, release := c.registry.set.view()
+	defer release()
 	var declarations []plugindomain.DeclarationKey
-	known := make(map[string]bool, len(installed))
+	installedIDs := make(map[string]bool, len(installed))
 	for _, p := range installed {
-		known[p.Manifest.ID] = true
+		installedIDs[p.Manifest.ID] = true
 		declarations = appendDeclarations(declarations, p)
 	}
 	for _, p := range v.ordered() {
-		if !known[p.Manifest.ID] {
+		if !installedIDs[p.Manifest.ID] {
 			declarations = appendDeclarations(declarations, p)
 		}
 	}
