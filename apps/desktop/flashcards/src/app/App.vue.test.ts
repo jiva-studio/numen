@@ -68,9 +68,8 @@ const VAULTS: readonly VaultRow[] = [
 ]
 
 const activateCards = (context: {
-  registerTabKind: (one: unknown) => void
-  registerView: (one: unknown) => void
-  closeTab?: (id: string) => void
+  register: { tabKind: (one: unknown) => void; view: (one: unknown) => void }
+  tabs: { close?: (id: string) => void }
 }) => {
   context.register.tabKind({
     kind: 'review',
@@ -221,9 +220,9 @@ describe('App', () => {
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
-                agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
-                subscriptions: { dispose: () => void }[]
-                registerTabKind: (one: unknown) => void
+                work: { agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> } }
+                plugin: { subscriptions: { dispose: () => void }[] }
+                register: { tabKind: (one: unknown) => void }
               }) => {
                 agentHost = ctx.work.agent
                 ctx.plugin.subscriptions.push({
