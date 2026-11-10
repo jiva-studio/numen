@@ -4,7 +4,7 @@
 import { computed, ref, watch, type Component, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { findTabKindIcon } from '../lib/icons'
-import { writeOpenTabs } from '../api/saved-tabs'
+import { writeOpenTabs as writeOpenTabsToCore } from '../api/saved-tabs'
 import type { OpenTabs, SavedTab, Tab } from '../lib/tab'
 import type { WindowTabs } from './windowTabs'
 
@@ -12,13 +12,35 @@ export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
   reportError: (error: unknown) => void
+  /** Where the open tabs are written; the core, unless a caller names another. */
+  writeOpenTabs?: (open: OpenTabs) => Promise<void>
 }
 
 /** The state a kind saved, as JSON, and empty where it saved none. */
 export const formatSavedState = (saved: unknown): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
-export function useOpenTabs({ windowTabs, isWriting = ref(true), reportError }: OpenTabsDeps) {
+/** The tab as the core is told of it. */
+function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
+  const one = windowTabs.tabs.getTab(id)
+  if (!one) return { id, kind: '', title, path: '', state: '' }
+  const openTab = one.kind.getOpenTab?.(one.state)
+  return {
+    id,
+    kind: one.kind.kind,
+    title,
+    path: openTab?.path ?? '',
+    state: formatSavedState(one.kind.getState?.(one.state)),
+    ...(openTab?.place ? { place: openTab.place } : {}),
+  }
+}
+
+export function useOpenTabs({
+  windowTabs,
+  isWriting = ref(true),
+  reportError,
+  writeOpenTabs = writeOpenTabsToCore,
+}: OpenTabsDeps) {
   /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
   const isTakingText = (id: string): boolean =>
     windowTabs.tabs.getTab(id)?.kind.receiveText !== undefined
@@ -33,18 +55,7 @@ export function useOpenTabs({ windowTabs, isWriting = ref(true), reportError }: 
 
   const getOpenTabs = (): OpenTabs => ({
     activeId: getActiveTabId(),
-    tabs: windowTabs.tabs.tabs.value.map(({ id, title }) => {
-      const one = windowTabs.tabs.getTab(id)
-      const openTab = one?.kind.getOpenTab?.(one.state)
-      return {
-        id,
-        kind: one?.kind.kind ?? '',
-        title,
-        path: openTab?.path ?? '',
-        state: formatSavedState(one && one.kind.getState?.(one.state)),
-        ...(openTab?.place ? { place: openTab.place } : {}),
-      }
-    }),
+    tabs: windowTabs.tabs.tabs.value.map(({ id, title }) => describeTab(windowTabs, id, title)),
   })
 
   const open = computed<OpenTabs>(() => getOpenTabs())

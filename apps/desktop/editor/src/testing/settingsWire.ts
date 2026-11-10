@@ -214,8 +214,6 @@ const answerSettings = (core: Partial<SettingsCore>): Answers => {
 
 const answerSecrets = (core: Partial<SettingsCore>): Answers => {
   const { createSecret, renameSecret, writeSecret, deleteSecret, deleteSecretGroup } = core
-  const { listSecretStates, moveSecret, renameSecretGroup } = core
-  const { allowPluginSecret, denyPluginSecret } = core
   const empty = {}
   return {
     ...(createSecret
@@ -257,6 +255,14 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
           },
         }
       : {}),
+  }
+}
+
+const answerSecretGroups = (core: Partial<SettingsCore>): Answers => {
+  const { listSecretStates, moveSecret, renameSecretGroup } = core
+  const { allowPluginSecret, denyPluginSecret } = core
+  const empty = {}
+  return {
     ...(listSecretStates
       ? {
           listSecretStates: async () => ({
@@ -345,5 +351,10 @@ export const installSettingsCore = (
   installCoreAnswers({
     pluginCatalog: { listCatalog: () => ({ entries: [], sourceErrors: [] }) },
     ...others,
-    settingsService: { ...answerSettings(core), ...answerSecrets(core), ...answerPlugins(core) },
+    settingsService: {
+      ...answerSettings(core),
+      ...answerSecrets(core),
+      ...answerSecretGroups(core),
+      ...answerPlugins(core),
+    },
   })

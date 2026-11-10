@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { Palette } from '@numen/workbench'
 import type { SlotCommand } from '@numen/plugin-loader'
@@ -9,18 +9,23 @@ import { runSupport } from '../model/palette/runSupport'
 import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
 import type { CommandDeps } from '../model/handlers/deps'
+import { commands as registry, registerCommand } from '../model/handlers/handlers'
 import type { CommandTarget } from '@/entities/command'
 import CommandPalette from './CommandPalette.vue'
-import type * as HandlersModule from '../model/handlers/handlers'
 
 const words = { ...windowWords, ...PALETTE_WORDS }
 
-const h = vi.hoisted(() => ({ runInvocation: vi.fn(() => Promise.resolve()) }))
+const COPY_PATH = 'app:file.copyPath'
+const copyPath = vi.fn()
 
-vi.mock('../model/handlers/handlers', async (importOriginal) => ({
-  ...(await importOriginal<typeof HandlersModule>()),
-  runInvocation: h.runInvocation,
-}))
+beforeEach(() => {
+  copyPath.mockClear()
+  registerCommand(COPY_PATH, copyPath)
+})
+
+afterEach(() => {
+  registry.clear()
+})
 
 const ATLAS = 'org.example.atlas'
 const SHOW: SlotCommand = {
@@ -111,7 +116,7 @@ async function mountField(
     props: {
       commands,
       search,
-      doing: {} as CommandDeps,
+      doing: { writeMessage: vi.fn() } as unknown as CommandDeps,
       getTarget: () => inFront,
       places: {},
       runChoice,
@@ -130,10 +135,6 @@ async function mountField(
   return { search, commands, runChoice, choose, rows, field }
 }
 
-beforeEach(() => {
-  h.runInvocation.mockClear()
-})
-
 describe('choosing an action of a row of the search', () => {
   it('runs the choice the search answers for every action of every row, and nothing else', async () => {
     const found = { names: [byName, heading], passages: [notePassage, bookPassage] }
@@ -151,7 +152,7 @@ describe('choosing an action of a row of the search', () => {
 
       expect(one.runChoice, `${item} ${action}`).toHaveBeenCalledExactlyOnceWith(expected)
     }
-    expect(h.runInvocation).not.toHaveBeenCalled()
+    expect(copyPath).not.toHaveBeenCalled()
   })
 
   it('runs the command that opens a document over its file for the action of a document', async () => {
@@ -188,7 +189,7 @@ describe('choosing an action of a row of the search', () => {
     await one.choose(row!.item, 'note')
 
     expect(one.runChoice).not.toHaveBeenCalled()
-    expect(h.runInvocation).not.toHaveBeenCalled()
+    expect(copyPath).not.toHaveBeenCalled()
   })
 })
 
@@ -210,7 +211,7 @@ describe('choosing an action that creates a note on a row of the search', () => 
         over: null,
         input: 'Entropy',
       })
-      expect(h.runInvocation).not.toHaveBeenCalled()
+      expect(copyPath).not.toHaveBeenCalled()
       expect(one.search.open.value).toBe(false)
     },
   )
@@ -222,9 +223,9 @@ describe('choosing a row of the commands', () => {
     one.search.setOpen(false)
     one.commands.palette.setOpen(true)
 
-    await one.choose('app:file.copyPath', 'app:file.copyPath')
+    await one.choose(COPY_PATH, COPY_PATH)
 
-    expect(h.runInvocation).toHaveBeenCalledTimes(1)
+    expect(copyPath).toHaveBeenCalledTimes(1)
     expect(one.runChoice).not.toHaveBeenCalled()
   })
 })

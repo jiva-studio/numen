@@ -89,10 +89,8 @@ function executeEffect(context: NoteStoreContext, id: string, effect: Effect): v
     case 'close':
       discardTab(context, id)
       return
-    case 'read':
-    case 'write':
-    case 'startTimer':
-    case 'cancelTimer':
+    default:
+      // The queue effects are carried out above.
       return
   }
 }

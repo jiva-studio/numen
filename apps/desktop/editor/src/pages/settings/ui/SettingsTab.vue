@@ -18,15 +18,6 @@ const props = defineProps<{ state: SettingsTabState }>()
 const initialPluginId = props.state.initialPluginId
 const selectedPluginId = ref<string | null>(initialPluginId?.value ?? null)
 
-watch(
-  () => initialPluginId?.value,
-  (newId) => {
-    if (newId !== undefined) {
-      selectedPluginId.value = newId
-    }
-  },
-)
-
 const plugins = computed<readonly PluginInfo[]>(
   () => props.state.installation.plugin.plugins?.value ?? [],
 )
@@ -45,6 +36,16 @@ const selectedPlugin = computed<PluginInfo | undefined>(() => {
   if (match) lastSelected = match
   return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
 })
+
+/* ---------------------------------- Hooks --------------------------------- */
+watch(
+  () => initialPluginId?.value,
+  (newId) => {
+    if (newId !== undefined) {
+      selectedPluginId.value = newId
+    }
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {

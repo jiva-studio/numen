@@ -203,17 +203,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
 
   return {
     state,
-    preview: {
-      sized: preview.display.sized,
-      /** Applies the theme of a row while the keyboard is on it. */
-      previewTheme: preview.keyboard.previewTheme,
-      /** Reads the tokens as the half of a row while the keyboard is on it. */
-      previewMode: preview.keyboard.previewMode,
-      /** Draws the window at the size of a row once the keyboard has rested on it. */
-      previewSize: preview.keyboard.previewSize,
-      /** Shows what the settings name again. */
-      restore: preview.restore,
-    },
+    preview,
     /** Reads the theme, the mode and the sizes the settings now name, and applies them. */
     reload: async () => {
       await loadAppearance()

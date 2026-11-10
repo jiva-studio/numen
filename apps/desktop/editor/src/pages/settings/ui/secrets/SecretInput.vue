@@ -7,12 +7,12 @@ import { useTemplateRef } from 'vue'
 
 const model = defineModel<string>({ default: '' })
 
-const input = useTemplateRef<HTMLInputElement>('input')
-
 defineExpose({
   focus: () => input.value?.focus(),
   select: () => input.value?.select(),
 })
+
+const input = useTemplateRef<HTMLInputElement>('input')
 </script>
 
 <template>

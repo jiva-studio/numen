@@ -7,11 +7,7 @@ import { findTabKindIcon } from '../lib/icons'
 import { parseSavedTabs, useOpenTabs } from './useOpenTabs'
 
 /** The write of the open tabs to the core, which is the edge of the entity. */
-const coreCalls = vi.hoisted(() => ({ writeOpenTabs: vi.fn<(open: unknown) => Promise<void>>() }))
-
-vi.mock('../api/saved-tabs', () => ({
-  writeOpenTabs: (open: unknown) => coreCalls.writeOpenTabs(open),
-}))
+const coreCalls = { writeOpenTabs: vi.fn<(open: unknown) => Promise<void>>() }
 
 beforeEach(() => {
   coreCalls.writeOpenTabs.mockReset()
@@ -61,7 +57,7 @@ const create = (
     },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
   return {
-    ...useOpenTabs({ windowTabs, isWriting, reportError: vi.fn() }),
+    ...useOpenTabs({ windowTabs, isWriting, reportError: vi.fn(), writeOpenTabs }),
     writeOpenTabs,
     tabs,
   }
@@ -220,7 +216,7 @@ describe('the open tabs', () => {
       },
     } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
 
-    useOpenTabs({ windowTabs, reportError: vi.fn() })
+    useOpenTabs({ windowTabs, reportError: vi.fn(), writeOpenTabs })
     expect(writeOpenTabs).toHaveBeenCalledTimes(1)
 
     tabs.value = [
@@ -258,6 +254,7 @@ describe('the open tabs', () => {
         tabs: { tabs: ref([]), getTab: () => undefined },
       },
       reportError: vi.fn(),
+      writeOpenTabs: coreCalls.writeOpenTabs,
     } as unknown as Parameters<typeof useOpenTabs>[0]
 
     expect(() => useOpenTabs(rejecting)).not.toThrow()

@@ -134,6 +134,37 @@ export function createNameItem(
       }
 }
 
+function createNotePassageHit(
+  one: Passage,
+  note: ReturnType<typeof createNoteActions>,
+): SearchHit {
+  return {
+    path: one.path,
+    title: one.title,
+    line: one.line,
+    start: one.start,
+    length: one.length,
+    actionIds: note.actionIds,
+    ...note.valuesOfHit,
+    type: one.type,
+    ...(one.tabKind ? { tabKind: one.tabKind } : {}),
+    selector: null,
+  }
+}
+
+function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): SearchHit {
+  return {
+    path: one.path,
+    title: one.title,
+    line: -1,
+    start: one.start,
+    length: one.length,
+    actionIds,
+    type: null,
+    selector: one.selector,
+  }
+}
+
 export function createPassageItem(
   group: string,
   one: Passage,
@@ -150,18 +181,12 @@ export function createPassageItem(
       detailAt: one.at,
       actions: one.isNote ? note.actions : document,
     },
-    hit: {
-      path: one.path,
-      title: one.title,
-      line: one.isNote ? one.line : -1,
-      start: one.start,
-      length: one.length,
-      actionIds: one.isNote ? note.actionIds : document.map((each) => each.id),
-      ...(one.isNote ? note.valuesOfHit : {}),
-      type: one.isNote ? one.type : null,
-      ...(one.isNote && one.tabKind ? { tabKind: one.tabKind } : {}),
-      selector: one.isNote ? null : one.selector,
-    },
+    hit: one.isNote
+      ? createNotePassageHit(one, note)
+      : createDocumentPassageHit(
+          one,
+          document.map((each) => each.id),
+        ),
   }
 }
 

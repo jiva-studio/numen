@@ -14,9 +14,9 @@ const emit = defineEmits<{
   (e: 'cancel'): void
 }>()
 
-const input = useTemplateRef<InstanceType<typeof SecretInput>>('input')
-
 defineExpose({ focus: () => input.value?.focus() })
+
+const input = useTemplateRef<InstanceType<typeof SecretInput>>('input')
 </script>
 
 <template>

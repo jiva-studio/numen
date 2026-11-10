@@ -53,7 +53,9 @@ const createRows = (deps: VersionCommandsDeps): readonly Command[] => [
 ]
 
 /** The commands over the text versions of a file. */
-export const createVersionCommands = (deps: VersionCommandsDeps): FeatureCommands => ({
-  commands: createRows(deps),
-  handlers: { [COMMAND.deleteText]: (invocation) => deleteText(invocation, deps) },
-})
+export const createVersionCommands = (deps: VersionCommandsDeps): FeatureCommands => {
+  const handlers: FeatureCommands['handlers'] = {
+    [COMMAND.deleteText]: (invocation) => deleteText(invocation, deps),
+  }
+  return { commands: createRows(deps), handlers }
+}
