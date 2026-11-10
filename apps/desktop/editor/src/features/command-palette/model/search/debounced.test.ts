@@ -3,8 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { SEARCH_DEBOUNCE_MS, useDebouncedSearch, useSearchResults } from './search'
-import { getUserAgent, listenWindowPointerAndEscape } from './lib/dom'
+import { SEARCH_DEBOUNCE_MS, useDebouncedSearch, useSearchResults } from './debounced'
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -240,27 +239,5 @@ describe('the answers to a search', () => {
     started.push(setQuery('q2'))
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
     expect(results.value).toStrictEqual([])
-  })
-})
-
-describe('dom helpers', () => {
-  it('reads navigator.userAgent and registers/removes pointerdown and keydown listeners', () => {
-    expect(getUserAgent()).toBe(navigator.userAgent)
-    expect(getUserAgent().length).toBeGreaterThan(0)
-
-    const onPointer = vi.fn()
-    const onKey = vi.fn()
-    const stop = listenWindowPointerAndEscape(onPointer, onKey)
-
-    window.dispatchEvent(new Event('pointerdown'))
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    expect(onPointer).toHaveBeenCalledTimes(1)
-    expect(onKey).toHaveBeenCalledTimes(1)
-
-    stop()
-    window.dispatchEvent(new Event('pointerdown'))
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
-    expect(onPointer).toHaveBeenCalledTimes(1)
-    expect(onKey).toHaveBeenCalledTimes(1)
   })
 })

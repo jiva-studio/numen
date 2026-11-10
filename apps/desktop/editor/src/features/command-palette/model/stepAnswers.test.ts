@@ -8,7 +8,7 @@ import { WORDS as words } from '@/shared/words'
 import { createAppCommands } from '@/testing/appCommands'
 import * as stepModule from '../lib/step/step'
 import { runSupport } from './palette/runSupport'
-import { useCommandPalette } from './palette/palette'
+import { createCommandPalette } from './palette/palette'
 import type { StepGroup } from '../types'
 import type { CommandTarget } from '@/entities/command'
 
@@ -31,7 +31,7 @@ const THEMES: readonly StepGroup[] = [
 
 const createPalette = () => {
   const showing = shallowRef('physics')
-  const commands = useCommandPalette({
+  const commands = createCommandPalette({
     core: {
       names: async () => [{ path: 'physics/Heat.md', title: 'Heat' }] as never,
       vaults: async () => ({
