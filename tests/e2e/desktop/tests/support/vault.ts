@@ -6,6 +6,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { expect, type APIRequestContext, type Locator, type Page } from 'playwright/test'
+import type { JsonObject, JsonValue } from './json.js'
 
 import os from 'node:os'
 
@@ -39,14 +40,14 @@ export const callRPC = async (
   request: APIRequestContext,
   method: string,
   data: object,
-): Promise<Record<string, unknown>> => {
+): Promise<JsonObject> => {
   const answer = await request.post(`/numen.v1.${method}`, {
     data,
     headers: { 'Content-Type': 'application/json' },
   })
   const text = await answer.text()
   if (!answer.ok()) throw new Error(`${method} answered ${answer.status()}: ${text}`)
-  return text ? (JSON.parse(text) as Record<string, unknown>) : {}
+  return text ? (JSON.parse(text) as JsonObject) : {}
 }
 
 /** One link a note is made with, as CreateNote takes it. */
@@ -268,7 +269,7 @@ export const removeVault = async (request: APIRequestContext, id: string): Promi
 export const writeSetting = async (
   request: APIRequestContext,
   keyPath: readonly string[],
-  value: unknown,
+  value: JsonValue | undefined,
 ): Promise<void> => {
   await callRPC(request, 'SettingsService/WriteSettings', {
     settings: [{ at: keyPath, value: JSON.stringify(value) }],
@@ -276,17 +277,17 @@ export const writeSetting = async (
 }
 
 /** Every setting in force, as the core answers them. */
-export const readSettings = async (request: APIRequestContext): Promise<Record<string, unknown>> =>
+export const readSettings = async (request: APIRequestContext): Promise<JsonObject> =>
   JSON.parse(
     String((await callRPC(request, 'SettingsService/GetSettings', {}))['written'] ?? '{}'),
-  ) as Record<string, unknown>
+  ) as JsonObject
 
 /** The values stored under an owner of numen.json: `app` or a plugin id. */
 export const readOwner = async (
   request: APIRequestContext,
   owner: string,
-): Promise<Record<string, unknown>> =>
-  ((await readSettings(request))[owner] ?? {}) as Record<string, unknown>
+): Promise<JsonObject> =>
+  ((await readSettings(request))[owner] ?? {}) as JsonObject
 
 /** Whether a note's title and the name of its file are kept as one name. */
 export const isSyncingTitles = async (request: APIRequestContext): Promise<boolean> =>

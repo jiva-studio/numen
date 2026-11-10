@@ -1,5 +1,6 @@
 /** A list of tasks the test reports to the window as fast as it likes. */
 import type { Page } from 'playwright/test'
+import type { JsonValue } from './json.js'
 
 /** The names of the wire fields of a task that count how far it has got. */
 const WIRE_COUNT = 'done'
@@ -14,7 +15,7 @@ export const feedTask = async (page: Page, id: string, every: number): Promise<v
   await page.addInitScript(
     ({ taskId, interval, count, total }) => {
       const encoder = new TextEncoder()
-      const frame = (message: unknown): Uint8Array => {
+      const frame = (message: JsonValue): Uint8Array => {
         const body = encoder.encode(JSON.stringify(message))
         const out = new Uint8Array(5 + body.length)
         new DataView(out.buffer).setUint32(1, body.length)

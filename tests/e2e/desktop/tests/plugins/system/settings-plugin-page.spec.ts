@@ -4,6 +4,7 @@ import { test, expect, type Page } from '../../support/test.js'
 import { observeFor } from '../../support/browser.js'
 import { openWorkspace, runCommand } from '../../support/workspace.js'
 import { readSettings } from '../../support/vault.js'
+import type { JsonValue } from '../../support/json.js'
 
 const FIRST = { id: 'md.numen.agents.antigravity', name: 'Antigravity Agent' }
 const SECOND = { id: 'md.numen.agents.claude', name: 'Claude Code Agent' }
@@ -25,7 +26,7 @@ declare global {
   }
 }
 
-const writeSetting = async (page: Page, path: string[], value: unknown): Promise<void> => {
+const writeSetting = async (page: Page, path: string[], value: JsonValue): Promise<void> => {
   const answer = await page.request.post('/numen.v1.SettingsService/WriteSettings', {
     data: { settings: [{ at: path, value: JSON.stringify(value) }] },
     headers: { 'Content-Type': 'application/json' },
