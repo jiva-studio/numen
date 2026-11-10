@@ -5,14 +5,13 @@
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
 import type { runSupport } from '@/features/command-palette'
 import type { useDeclaredCommands, CommandItemLists } from '@/features/plugin-commands'
-import type { Command } from '@/entities/command'
 import type { SettingsStore } from '@/entities/settings'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
-import type { useTabLinks } from '@/features/tab-linking'
+import type { TabReports, useTabLinks } from '@/features/tab-linking'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
-import type { createWindowSlots } from '../plugins/windowSlots'
+import type { WindowFacts } from '../plugins/windowFacts'
 import type { createPluginNotes } from '../plugins/pluginNotes'
-import type { PluginServices } from '../plugins/pluginServices'
+import type { PluginServicesStore } from '../plugins/pluginServices'
 import type { createPluginSupport } from '../plugins/pluginSupport'
 
 /** What the window is made of before its parts exist: the tabs, the plugins and the message log. */
@@ -31,7 +30,7 @@ export interface TabsCore {
   readonly windowId: string
   readonly windowTabs: WindowTabs
   readonly tabLinks: ReturnType<typeof useTabLinks>
-  readonly tabReports: { wait: () => Promise<void> }
+  readonly reports: TabReports
   readonly tabOpeners: ReturnType<typeof fileOpeners>
 }
 
@@ -43,9 +42,8 @@ export interface PluginsCore {
     readonly pluginHost: ReturnType<typeof createPluginSupport>['pluginHost']
     readonly pluginLoader: ReturnType<typeof createPluginSupport>['pluginLoader']
   }
-  readonly pluginServices: PluginServices
+  readonly pluginServices: PluginServicesStore
   readonly pluginNotices: ReturnType<typeof createNoticeQueue>
   readonly pluginNotes: ReturnType<typeof createPluginNotes>
-  readonly slotWindowValues: ReturnType<typeof createWindowSlots>['windowValues']
-  readonly appCommands: { current?: () => readonly Command[] }
+  readonly facts: WindowFacts
 }

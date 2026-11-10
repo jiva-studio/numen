@@ -244,7 +244,12 @@ describe('the page of a plugin', () => {
     })
     const wrapper = mount(PluginDetail, {
       attachTo: document.body,
-      props: { state: createSettingsState(installation), plugin },
+      props: {
+        settings: installation.settings,
+        manager: installation.plugin,
+        choices: installation.secrets,
+        plugin,
+      },
     })
     expect(root().querySelectorAll(SELECT)).toHaveLength(3)
     dispose(wrapper)

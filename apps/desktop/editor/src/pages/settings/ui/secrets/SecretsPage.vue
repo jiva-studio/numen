@@ -10,6 +10,7 @@ import {
   getFirstSecretName,
   getNewGroupName,
   getNextSecretName,
+  type PluginInfo,
   type Secret,
 } from '@/entities/settings'
 import {
@@ -18,7 +19,7 @@ import {
   type Declaration,
   type SecretSection as SectionData,
 } from '../../lib/secretSections'
-import type { SettingsTabState } from '../../types'
+import type { InstallationSecrets } from '../../types'
 import { useSecretDeletion } from '../../model/secretDeletion'
 import { useSecretDrafts } from '../../model/secretDrafts'
 import { WORDS as words } from '../../words'
@@ -26,36 +27,37 @@ import { ConfirmDialog } from '../confirm-dialog'
 import SecretSection from './SecretSection.vue'
 
 /* ----------------------------- Props & Emits ------------------------------ */
-const props = defineProps<{ state: SettingsTabState }>()
+const props = defineProps<{
+  secrets: InstallationSecrets
+  plugins: readonly PluginInfo[]
+}>()
 
 const emit = defineEmits<{
   (e: 'back'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const plugins = computed(() => installation.value.plugin.plugins.value)
-const credentialsPath = computed(() => installation.value.secrets.credentialsPath.value)
+const credentialsPath = computed(() => props.secrets.credentialsPath.value)
 const drafts = useSecretDrafts()
 /** The group whose name is edited as it appears. */
 const newGroup = ref('')
 const addGroupButton = useTemplateRef<InstanceType<typeof Button>>('addGroupButton')
 const sections = computed(() =>
   createPageSections(
-    installation.value.secrets.sections.value,
+    props.secrets.sections.value,
     drafts.emptyGroups.value,
-    installation.value.secrets.states.value,
+    props.secrets.states.value,
   ),
 )
 const groups = computed(() => sections.value.map((one) => one.group))
-const declarations = computed(() => getDeclarations(plugins.value))
+const declarations = computed(() => getDeclarations(props.plugins))
 const deletion = useSecretDeletion(
-  (id) => installation.value.secrets.edit.deleteSecret(id),
-  (group) => installation.value.secrets.edit.deleteSecretGroup(group),
-  () => plugins.value,
+  (id) => props.secrets.edit.deleteSecret(id),
+  (group) => props.secrets.edit.deleteSecretGroup(group),
+  () => props.plugins,
 )
 
-onMounted(() => installation.value.secrets.loadStates())
+onMounted(() => props.secrets.loadStates())
 
 /* -------------------------------- Handlers -------------------------------- */
 function onAdd(group: string): void {
@@ -69,8 +71,7 @@ function onAddGroup(): void {
 
 function onRenameGroup(section: SectionData, name: string): void {
   newGroup.value = ''
-  if (section.secrets.length > 0)
-    installation.value.secrets.edit.renameSecretGroup(section.group, name)
+  if (section.secrets.length > 0) props.secrets.edit.renameSecretGroup(section.group, name)
   else drafts.renameEmptyGroup(section.group, name)
 }
 
@@ -80,7 +81,7 @@ async function onCreate(
   value: string,
   draftId?: number,
 ): Promise<boolean> {
-  const id = await installation.value.secrets.edit.createSecret(group, name, value)
+  const id = await props.secrets.edit.createSecret(group, name, value)
   if (id === '') return false
   if (draftId !== undefined) drafts.discardDraft(draftId)
   drafts.removeEmptyGroup(group)
@@ -89,9 +90,8 @@ async function onCreate(
 
 function onToggle(secret: Secret, declaration: Declaration, isAllowed: boolean): void {
   const { pluginId, name, group } = declaration
-  if (isAllowed)
-    installation.value.secrets.access.allowPluginSecret(secret.id, pluginId, name, group)
-  else installation.value.secrets.access.denyPluginSecret(secret.id, pluginId, name, group)
+  if (isAllowed) props.secrets.access.allowPluginSecret(secret.id, pluginId, name, group)
+  else props.secrets.access.denyPluginSecret(secret.id, pluginId, name, group)
 }
 
 function onAskDelete(secret: Secret, opener: HTMLElement): void {
@@ -141,9 +141,9 @@ function getNamesInGroup(group: string): readonly string[] {
       @add="onAdd(section.group)"
       @rename-group="(name) => onRenameGroup(section, name)"
       @discard="drafts.discardDraft"
-      @move="(id, beforeId) => installation.secrets.edit.moveSecret(id, beforeId)"
-      @rename="(id, name) => installation.secrets.edit.renameSecret(id, name)"
-      @write="(id, value) => installation.secrets.edit.writeSecret(id, value)"
+      @move="(id, beforeId) => props.secrets.edit.moveSecret(id, beforeId)"
+      @rename="(id, name) => props.secrets.edit.renameSecret(id, name)"
+      @write="(id, value) => props.secrets.edit.writeSecret(id, value)"
       @delete="onAskDelete"
       @delete-group="(opener) => onAskDeleteGroup(section, opener)"
       @toggle="onToggle"

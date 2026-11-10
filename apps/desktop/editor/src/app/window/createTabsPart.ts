@@ -16,6 +16,7 @@ import {
 } from '@/entities/tab'
 import {
   createTabLinkSession,
+  createTabReports,
   getWindowReport,
   highlightWindow,
   useTabLinks,
@@ -32,16 +33,17 @@ import { focusWindow } from '@/entities/window'
 interface TabsCoreDeps {
   readonly writeMessage: WindowCore['writeMessage']
   readonly rest: SettingsStore
-  readonly pluginStarts: { current?: (pluginId: string) => boolean }
+  readonly isPluginStarting: (pluginId: string) => boolean
 }
 
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export function createTabsCore(deps: TabsCoreDeps): TabsCore {
-  const { writeMessage, rest, pluginStarts } = deps
-  /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
+  const { writeMessage, rest } = deps
   const windowTabs = createWindowTabs(
     { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
     {
-      isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
+      isPluginStarting: deps.isPluginStarting,
       enablePlugin: async (pluginId) => {
         await rest.write.writeSetting([pluginId, 'enabled'], true)
       },
@@ -50,19 +52,24 @@ export function createTabsCore(deps: TabsCoreDeps): TabsCore {
     },
   )
   const windowId = crypto.randomUUID()
+  const reports = createTabReports({
+    windowId,
+    getReport: () => getWindowReport(windowTabs, !isSecondaryWindow()),
+    wait,
+    onError: (error) =>
+      writeMessage(`The tab links were not written: ${formatError(error)}`, 'error'),
+  })
   // The core ignores a link to a tab it has no report of, so a link or unlink
-  // waits for the pending tab reports. The tab links session sets the wait.
-  const tabReports = { wait: (): Promise<void> => Promise.resolve() }
+  // waits for the pending tab reports.
   const tabLinks = useTabLinks({
-    write: (change) => tabReports.wait().then(() => writeTabLinks(windowId, change)),
+    write: (change) => reports.waitForReports().then(() => writeTabLinks(windowId, change)),
     onError: (error) => writeMessage(`The tabs were not linked: ${formatError(error)}`, 'error'),
   })
   const tabOpeners = fileOpeners({
     fileKinds: getFileKinds,
     reconcileTab: windowTabs.panes.reconcileTab,
   })
-  /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
-  return { windowTabs, windowId, tabReports, tabLinks, tabOpeners }
+  return { windowTabs, windowId, reports, tabLinks, tabOpeners }
 }
 
 export function createTabCloser(base: WindowCore) {
@@ -93,7 +100,6 @@ interface WindowTabLinksDeps {
 
 export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps) {
   const isMain = !isSecondaryWindow()
-  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
   const getReport = () => getWindowReport(base.tabs.windowTabs, isMain)
   const onError = (error: unknown) =>
     base.writeMessage(`The tab links were not written: ${formatError(error)}`, 'error')
@@ -107,7 +113,7 @@ export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps)
     setHighlighted: (isOn) => {
       deps.isHighlighted.value = isOn
     },
-    getReport,
+    reports: base.tabs.reports,
     wait,
     onError,
   })
@@ -120,7 +126,6 @@ export function createWindowTabLinks(base: WindowCore, deps: WindowTabLinksDeps)
     onError: (error) =>
       base.writeMessage(`The moved tab did not open: ${formatError(error)}`, 'error'),
   })
-  base.tabs.tabReports.wait = session.waitForReports
   watch(() => JSON.stringify(getReport()), session.reportTabs)
   // Hiding the page cancels the watch in the core; a page restored from the
   // back-forward cache watches again.

@@ -45,11 +45,25 @@ const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginVie
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
 }
 
-/** The commands, the vaults and the window the plugins read, filled once the window has made them. */
+/** The commands, the vaults and the window the plugins read, once the window has made them. */
 export interface ShellServices {
   commands?: CommandsHost
   vaults?: VaultsHost
   window?: WindowHost
+}
+
+/**
+ * The services a plugin is given, stored from the start of the window: the host reads them when a
+ * plugin asks, and the window provides them once it has made them.
+ */
+export function createShellServices() {
+  const stored = shallowRef<ShellServices>({})
+  return {
+    get: (): ShellServices => stored.value,
+    provide: (services: ShellServices): void => {
+      stored.value = { ...stored.value, ...services }
+    },
+  }
 }
 
 const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
@@ -75,7 +89,7 @@ function mountDeclaredView(
  */
 export function createShellHost(
   agent?: AgentHost,
-  services: ShellServices = {},
+  getServices: () => ShellServices = () => ({}),
   getPlatform: () => WindowPlatform = () => 'windows',
 ) {
   const views = shallowRef<readonly PluginView[]>([])
@@ -106,9 +120,9 @@ export function createShellHost(
     closeTab: (id) => closeTab(id),
     getSlots: () => windowSlots.slots,
     getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-    getCommands: () => services.commands,
-    getVaults: () => services.vaults,
-    getWindow: () => services.window,
+    getCommands: () => getServices().commands,
+    getVaults: () => getServices().vaults,
+    getWindow: () => getServices().window,
     getAgent: () => agent,
   })
 

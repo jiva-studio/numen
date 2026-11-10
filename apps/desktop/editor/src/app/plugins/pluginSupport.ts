@@ -8,11 +8,14 @@ import {
   createAppInfo,
   createPluginHost,
   createPluginLoader,
+  createPluginStatus,
+  isPluginEnabledValue,
   createPluginNotices,
   createPluginTasks,
   type CommandDeclaration,
   type PluginHostDeps,
   type PluginLoader,
+  type PluginStatus,
 } from '@numen/plugin-loader'
 import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
@@ -33,7 +36,8 @@ export interface PluginSupportDeps {
   readonly reportLoadError?: (pluginId: string, error: unknown) => void
   readonly resolveLink?: (from: string, address: string) => Promise<string>
   readonly writeNote?: (path: string, body: string) => Promise<void>
-  readonly services?: PluginServices
+  readonly status?: PluginStatus
+  readonly getServices?: () => PluginServices
   readonly notices?: NoticeQueue
   readonly getCommandDeclarations?: () => readonly CommandDeclaration[] | undefined
   readonly handlers?: Pick<
@@ -45,7 +49,7 @@ export interface PluginSupportDeps {
   readonly slots?: Pick<
     PluginHostDeps,
     | 'getSlotEntries'
-    | 'findSlotCommand'
+    | 'createSlotCommandFinder'
     | 'reportSlotIssue'
     | 'getSlotWhenValues'
     | 'getWindowValues'
@@ -53,16 +57,25 @@ export interface PluginSupportDeps {
   >
 }
 
+const getPluginSetting = (rest: SettingsStore, pluginId: string, key: string): unknown => {
+  // Stryker disable next-line StringLiteral: rest reads under the plugin id.
+  const value = rest.read.getCommittedSetting([pluginId, key])
+  if (value !== undefined) return value
+  return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
+}
+
+/** Where the plugins stand, as the settings say which are enabled. */
+export const createWindowPluginStatus = (rest: SettingsStore): PluginStatus =>
+  createPluginStatus({
+    isEnabled: (id) => isPluginEnabledValue(getPluginSetting(rest, id, 'enabled')),
+  })
+
 function createPluginSettingsAccessor(
   rest: SettingsStore,
   reportError: (pluginId: string, error: unknown) => void,
 ) {
-  const getSetting = (pluginId: string, key: string): unknown => {
-    // Stryker disable next-line StringLiteral: rest reads under the plugin id.
-    const value = rest.read.getCommittedSetting([pluginId, key])
-    if (value !== undefined) return value
-    return key === 'enabled' ? DEFAULT_PLUGIN_ENABLED : undefined
-  }
+  const getSetting = (pluginId: string, key: string): unknown =>
+    getPluginSetting(rest, pluginId, key)
 
   const onSettingChange = (
     pluginId: string,
@@ -79,31 +92,31 @@ function createPluginSettingsAccessor(
   return { getSetting, onSettingChange }
 }
 
-function createVaultServiceAccess(services: PluginServices | undefined) {
+function createVaultServiceAccess(getServices: (() => PluginServices) | undefined) {
   /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
   return {
-    getWorkspace: () => services?.workspace,
-    getNotes: () => services?.notes,
-    getRelations: () => services?.relations,
-    getFiles: () => services?.files,
-    getAgent: () => services?.agent,
-    getCommands: () => services?.commands,
-    getVaults: () => services?.vaults,
-    getWindow: () => services?.window,
+    getWorkspace: () => getServices?.().workspace,
+    getNotes: () => getServices?.().notes,
+    getRelations: () => getServices?.().relations,
+    getFiles: () => getServices?.().files,
+    getAgent: () => getServices?.().agent,
+    getCommands: () => getServices?.().commands,
+    getVaults: () => getServices?.().vaults,
+    getWindow: () => getServices?.().window,
   }
   /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
 }
 
-function createWindowServiceAccess(services: PluginServices | undefined) {
+function createWindowServiceAccess(getServices: (() => PluginServices) | undefined) {
   /* Stryker disable OptionalChaining,ArrowFunction,ObjectLiteral: host wiring forwards optional capabilities */
   return {
-    getBuffers: () => services?.buffers,
-    getNoteBuffer: () => services?.noteBuffer,
+    getBuffers: () => getServices?.().buffers,
+    getNoteBuffer: () => getServices?.().noteBuffer,
     getTasks: (pluginId: string) => {
-      const list = services?.taskList
+      const list = getServices?.().taskList
       return list ? createPluginTasks(list, pluginId) : undefined
     },
-    getBackgroundTasks: () => services?.backgroundTasks,
+    getBackgroundTasks: () => getServices?.().backgroundTasks,
   }
   /* Stryker restore OptionalChaining,ArrowFunction,ObjectLiteral */
 }
@@ -143,15 +156,15 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   }
 
   /* Stryker disable OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction: host and loader wiring forwards optional capabilities */
-  const loaderHolder: { current?: PluginLoader } = {}
+  const status = deps.status ?? createWindowPluginStatus(rest)
   const pluginHost = createPluginHost({
     ...getHostDeclarations(deps),
     hasPluginFrontend: (pluginId) =>
       rest.state.plugins.value.find((plugin) => plugin.id === pluginId)?.hasFrontend ?? true,
     hasPluginBackend: (pluginId) =>
       rest.state.plugins.value.find((plugin) => plugin.id === pluginId)?.hasBackend ?? true,
-    isPluginFailed: (pluginId) => loaderHolder.current?.getPluginFailure(pluginId) !== undefined,
-    waitForPlugin: (pluginId) => loaderHolder.current?.settlePlugin(pluginId) ?? Promise.resolve(),
+    isPluginFailed: (pluginId) => status.getPluginFailure(pluginId) !== undefined,
+    waitForPlugin: (pluginId) => status.settlePlugin(pluginId),
     app: createAppInfo({
       version: import.meta.env.VITE_NUMEN_VERSION,
       build: import.meta.env.VITE_NUMEN_BUILD,
@@ -183,8 +196,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     closeTabsForPlugin,
     ...(deps.readNote !== undefined ? { readNote: deps.readNote } : {}),
     ...(deps.writeNote !== undefined ? { writeNote: deps.writeNote } : {}),
-    ...createVaultServiceAccess(deps.services),
-    ...createWindowServiceAccess(deps.services),
+    ...createVaultServiceAccess(deps.getServices),
+    ...createWindowServiceAccess(deps.getServices),
     ...(deps.resolveLink !== undefined ? { resolveLink: deps.resolveLink } : {}),
     getTexts: (pluginId: string) => getPluginTexts(pluginId),
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
@@ -192,9 +205,9 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const reportLoadError = deps.reportLoadError ?? deps.reportError
   const pluginLoader = createPluginLoader({
     host: pluginHost,
+    status,
     ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
   })
-  loaderHolder.current = pluginLoader
   /* Stryker restore OptionalChaining,ConditionalExpression,EqualityOperator,LogicalOperator,ObjectLiteral,ArrowFunction */
 
   return { pluginHost, pluginLoader }
