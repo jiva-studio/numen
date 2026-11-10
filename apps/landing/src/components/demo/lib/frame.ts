@@ -1,6 +1,27 @@
 /**
- * The messages a player in a frame takes from the page holding it.
+ * The player at the top of a url tab: how tall it is drawn while a person drags its bar, and the
+ * messages a player in a frame takes from the page holding it.
  */
+
+/** The shortest the player is drawn, whatever the drag asks for. */
+export const LEAST = 120
+
+/** What is left for the rest of the page above and below the player. */
+const KEPT = 160
+
+/** The tallest the player is drawn in a window of this height. */
+export function getTallest(windowHeight: number): number {
+  return Math.max(LEAST, windowHeight - KEPT)
+}
+
+/**
+ * How tall the player stands, given how tall it was when the drag began, how
+ * far the pointer has come, and the room the window has.
+ */
+export function getDraggedHeight(was: number, distance: number, windowHeight: number): number {
+  return Math.min(getTallest(windowHeight), Math.max(LEAST, was + distance))
+}
+
 
 /** Where a message to a frame is addressed: the origin of its address. */
 export function getFrameOrigin(embed: string): string | null {

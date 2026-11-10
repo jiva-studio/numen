@@ -10,6 +10,10 @@ npm run build      # dist/
 npm run typecheck  # astro check
 ```
 
+## The demo window
+
+The window the page opens when "Try interactive demo" is pressed is `src/components/demo/`: `model/` holds its state (a vault in memory, the tabs, the file tree, the palette), `lib/` the pure functions and the sample content, and `ui/` the views. It reaches the libraries `@numen/ui` and `@numen/workbench` only. The views of the tabs (the plex, the note, the paper, the recording, the deck, the agent) are small components drawn for the page, not the plugins' own views, because an application may not import a plugin.
+
 ## The picture of the window
 
 The screenshots in `src/assets/` are taken from the stories that draw each

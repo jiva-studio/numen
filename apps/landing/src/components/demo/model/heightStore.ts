@@ -1,7 +1,7 @@
 /**
  * Where the height a person drew the player is kept between runs.
  */
-import { LEAST } from './height'
+import { LEAST } from '../lib/frame'
 
 /** Keeps one height, and gives it back. */
 export interface HeightStore {
