@@ -3,10 +3,10 @@ package container
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	settingswiring "github.com/jiva-studio/numen/libs/core/kernel/container/settings"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 )
 
@@ -61,11 +61,11 @@ func (c Config) Plugins() func() []pluginport.PluginInfo {
 
 // Models returns a function that lists the models each model setting accepts,
 // and the programs the agent setting accepts.
-func (c Config) Models() func() []settingsport.Model {
+func (c Config) Models() func() []settingsdomain.Model {
 	return c.modelsForProvider(c.AgentProvider())
 }
 
-func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsport.Model {
+func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []settingsdomain.Model {
 	c.agentProvider = provider
 	if c.getPrograms() == nil {
 		c.programs = &settingsadapter.ProgramList{}
@@ -74,7 +74,7 @@ func (c Config) modelsForProvider(provider agentport.AgentProvider) func() []set
 }
 
 // SubscribeSettingChanges starts listening to the settings that change. See settingsport.ChangeSubscriber.
-func (c Config) SubscribeSettingChanges() (<-chan []settingsport.Setting, func()) {
+func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func()) {
 	return c.settings().SubscribeSettingChanges()
 }
 
@@ -90,7 +90,7 @@ func (c Config) ReadSettings() func() (string, string, error) {
 
 // GetSettingsWriter patches specific settings paths in the configuration file. The readers of the
 // setting-changed event receive the settings whose value changed.
-func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
+func (c Config) GetSettingsWriter() func(entries []settingsdomain.Setting) error {
 	return c.settings().GetSettingsWriter()
 }
 

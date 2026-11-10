@@ -3,6 +3,7 @@ package assembly
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -19,7 +20,7 @@ type vaultSessionAssembly interface {
 	StartVault(
 		ctx context.Context, v domain.Vault, rebuild bool,
 		onSync func(paths, assets []string, reload bool),
-		handleError windowport.ErrorHandler,
+		handleError window.ErrorHandler,
 	) (
 		read func(ctx context.Context, during func()) (notes int, err error),
 		run func(ctx context.Context),

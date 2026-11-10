@@ -6,6 +6,7 @@ import (
 	"slices"
 	"testing"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
@@ -34,8 +35,8 @@ func listPathPlugins() []PluginInfo {
 // The picker shows the extensions the setting accepts, and the path chosen is written at the setting.
 func TestChoosePluginPathWritesTheSetting(t *testing.T) {
 	dialog := &pathDialog{path: "/home/a/letters.txt"}
-	var written []Setting
-	choose := NewChoosePluginPath(dialog, listPathPlugins, func(content []Setting) error {
+	var written []settingsdomain.Setting
+	choose := NewChoosePluginPath(dialog, listPathPlugins, func(content []settingsdomain.Setting) error {
 		written = content
 		return nil
 	})
@@ -53,7 +54,7 @@ func TestChoosePluginPathWritesTheSetting(t *testing.T) {
 
 // A closed picker writes nothing, and a setting that holds no path is not offered one.
 func TestChoosePluginPathWritesNothingWithoutAPath(t *testing.T) {
-	choose := NewChoosePluginPath(&pathDialog{}, listPathPlugins, func([]Setting) error {
+	choose := NewChoosePluginPath(&pathDialog{}, listPathPlugins, func([]settingsdomain.Setting) error {
 		t.Error("something was written")
 		return nil
 	})

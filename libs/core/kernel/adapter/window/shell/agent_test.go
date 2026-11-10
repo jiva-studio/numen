@@ -8,24 +8,25 @@ import (
 
 	"connectrpc.com/connect"
 
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 // answering is an agent that returns one fixed response to each task and
 // records the tasks and the ended conversations.
 type answering struct {
-	tasks chan agentport.Task
+	tasks chan agentdomain.Task
 	ended chan string
 }
 
-func (a *answering) StartRun(_ context.Context, task agentport.Task) (agentport.Run, error) {
+func (a *answering) StartRun(_ context.Context, task agentdomain.Task) (agentport.Run, error) {
 	a.tasks <- task
-	steps := make(chan agentport.Step, 2)
-	steps <- agentport.Step{Kind: domain.StepSay, Text: "an answer"}
-	steps <- agentport.Step{Kind: domain.StepStop, Detail: "done"}
+	steps := make(chan agentdomain.Step, 2)
+	steps <- agentdomain.Step{Kind: domain.StepSay, Text: "an answer"}
+	steps <- agentdomain.Step{Kind: domain.StepStop, Detail: "done"}
 	close(steps)
 	return answeringRun{steps: steps}, nil
 }
@@ -35,15 +36,15 @@ func (a *answering) EndConversation(_ context.Context, conversation string) erro
 	return nil
 }
 
-type answeringRun struct{ steps chan agentport.Step }
+type answeringRun struct{ steps chan agentdomain.Step }
 
-func (r answeringRun) GetSteps() <-chan agentport.Step { return r.steps }
-func (answeringRun) Stop() error                       { return nil }
+func (r answeringRun) GetSteps() <-chan agentdomain.Step { return r.steps }
+func (answeringRun) Stop() error                         { return nil }
 
 // The window answers AgentService with its own agent even where a plugin serves the service, runs
 // the task in the vault the question names, and ends the conversation there.
 func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
-	agent := &answering{tasks: make(chan agentport.Task, 1), ended: make(chan string, 1)}
+	agent := &answering{tasks: make(chan agentdomain.Task, 1), ended: make(chan string, 1)}
 	api := newAPI(t)
 	api.GetAgent = func() agentport.Agent { return agent }
 	api.PluginServices = &forwarding{serves: map[string]bool{

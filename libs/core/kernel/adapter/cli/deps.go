@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -13,7 +14,6 @@ import (
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
-	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 )
 
 // Locations are the paths a user may set for this installation, as typed. An
@@ -35,7 +35,7 @@ type Deps struct {
 
 	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
 
-	Search func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (Search, error)
+	Search func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (Search, error)
 
 	Links func(ctx context.Context) (Links, error)
 

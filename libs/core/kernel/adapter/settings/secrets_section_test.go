@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -77,7 +77,7 @@ func TestAWriteOfAnotherSettingKeepsTheSecretsSectionAsItWas(t *testing.T) {
 	path := write(t, `{`+validSecretsSection+`}`)
 	cfg := container.NewConfig(container.Config{SettingsPath: path})
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{
 		{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`},
 	})
 	if err != nil {
@@ -101,7 +101,7 @@ func TestAWriteAtTheSecretsSectionIsRejectedAndTheFileIsUnchanged(t *testing.T) 
 	cfg := container.NewConfig(container.Config{SettingsPath: path})
 
 	for _, target := range [][]string{{"secrets"}, {"secrets", "0", "allowed"}} {
-		err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: target, JSON: `[]`}})
+		err := cfg.GetSettingsWriter()([]settingsdomain.Setting{{Path: target, JSON: `[]`}})
 		if err == nil {
 			t.Errorf("a write at %v was accepted", target)
 		}

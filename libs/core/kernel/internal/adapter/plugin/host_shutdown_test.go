@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
@@ -152,7 +152,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		t.Helper()
 		_, err := host.ResolveCapability(capability)
 		var missing *pluginport.UnavailableError
-		if !errors.As(err, &missing) || !errors.Is(err, completionport.ErrUnavailable) || missing.Capability != capability {
+		if !errors.As(err, &missing) || !errors.Is(err, domain.ErrUnavailable) || missing.Capability != capability {
 			t.Fatalf("ResolveCapability(%q) = %v, want an UnavailableError for it", capability, err)
 		}
 		return missing.Reason

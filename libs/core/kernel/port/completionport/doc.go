@@ -1,2 +1,2 @@
-// Package completionport declares how a plugin requests text from a model and which agent responds.
+// Package completionport declares how a plugin requests text from a model.
 package completionport

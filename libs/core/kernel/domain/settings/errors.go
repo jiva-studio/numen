@@ -1,4 +1,4 @@
-// Package settings holds the sentinel errors of the settings.
+// Package settings holds the settings of this installation, the models they name and the errors that fail a write.
 package settings
 
 import "errors"

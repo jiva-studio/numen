@@ -26,6 +26,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -294,13 +295,13 @@ func vaultAndCards(t *testing.T, agent *toolAgent) (*plugin.Host, *toolPlugin, *
 	return host, vault, cards
 }
 
-func runToEnd(t *testing.T, agent agentport.Agent, task agentport.Task) []agentport.Step {
+func runToEnd(t *testing.T, agent agentport.Agent, task agentdomain.Task) []agentdomain.Step {
 	t.Helper()
 	run, err := agent.StartRun(t.Context(), task)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var steps []agentport.Step
+	var steps []agentdomain.Step
 	for step := range run.GetSteps() {
 		steps = append(steps, step)
 	}
@@ -322,7 +323,7 @@ func TestAnEditorRunCallsTheToolsOfThePluginsWithItsContext(t *testing.T) {
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
 	requestContext := map[string]string{cardKey: "c-7"}
-	steps := runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Context: requestContext})
+	steps := runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Context: requestContext})
 
 	if last := steps[len(steps)-1]; last.Kind != domain.StepStop || last.Detail != "done" {
 		t.Fatalf("the run stopped with %+v", last)
@@ -364,7 +365,7 @@ func TestASettingsAgentRunCallsTheToolsOfThePlugins(t *testing.T) {
 	host, _, cards := vaultAndCards(t, agent)
 	settingsAgent := openSettingsAgent(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
 
-	runToEnd(t, settingsAgent, agentport.Task{Question: "q", Context: map[string]string{cardKey: "c-9"}})
+	runToEnd(t, settingsAgent, agentdomain.Task{Question: "q", Context: map[string]string{cardKey: "c-9"}})
 
 	if results := agent.getResults(); !slices.Equal(results, []string{"card_current_get {} c-9"}) {
 		t.Errorf("the calls returned %v", results)
@@ -396,7 +397,7 @@ func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 	)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
 	if names := agent.getToolNames(); !slices.Equal(names, []string{"note_read"}) {
 		t.Errorf("the endpoint lists %v", names)
@@ -412,7 +413,7 @@ func TestARunWithNoToolPluginIsGivenNoEndpoint(t *testing.T) {
 	host := hostOver(t, agentAt(agent))
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
 	if request := agent.getRequests()[0]; request.GetToolsUrl() != "" || len(request.GetTools()) != 0 {
 		t.Errorf("the agent was given the tools at %q: %v", request.GetToolsUrl(), request.GetTools())
@@ -425,7 +426,7 @@ func TestTheEndpointClosesWhenTheRunStops(t *testing.T) {
 	host, _, _ := vaultAndCards(t, agent)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
 	request := agent.getRequests()[0]
 	if request.GetToolsUrl() == "" {
@@ -441,7 +442,7 @@ func TestToolsEndpoint_RejectsWrongToken(t *testing.T) {
 	agent := &toolAgent{}
 	host, _, _ := vaultAndCards(t, agent)
 	run, err := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil).GetAgent().
-		StartRun(t.Context(), agentport.Task{Question: "q", Agent: "alpha"})
+		StartRun(t.Context(), agentdomain.Task{Question: "q", Agent: "alpha"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -472,7 +473,7 @@ func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
 	host, _, cards := vaultAndCards(t, agent)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Vault: "v-garden"})
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Vault: "v-garden"})
 
 	if requests := cards.getRequests(); len(requests) != 1 || requests[0].GetVaultId() != "v-garden" {
 		t.Errorf("the plugin was called with %v", requests)
@@ -579,7 +580,7 @@ func TestAnInAppRunOfAnAgentPluginWithVaultReadListsNoReadWriteTool(t *testing.T
 	)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	steps := runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha"})
+	steps := runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha"})
 
 	request := agent.getRequests()[0]
 	if want := []string{"card_current_get", "note_read"}; !slices.Equal(request.GetTools(), want) {

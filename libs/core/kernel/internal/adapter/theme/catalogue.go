@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugintheme/themecontract"
 )
@@ -244,7 +245,7 @@ func (c Catalog) readPluginTheme(name string) (string, error) {
 		return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
 	}
 	text, err := c.plugins.ReadTheme(pluginID, themeID)
-	if errors.Is(err, themecontract.ErrNoTheme) {
+	if errors.Is(err, themedomain.ErrNoTheme) {
 		return "", fmt.Errorf("%s: %w", name, ErrNoTheme)
 	}
 	if err != nil {

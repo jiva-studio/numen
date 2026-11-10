@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 // The window requests its agent on every call, so a conversation started through one call ends on the
@@ -19,7 +19,7 @@ func TestEditorAgent_EndsConversationStartedInEarlierCall(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runTask(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
+	runTask(t, assembly.GetAgent(), agent.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
 	if err := assembly.GetAgent().EndConversation(t.Context(), "c-1"); err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestEditorSettingsShareAgentRouter(t *testing.T) {
 	}
 	listedBefore := len(one.getCommands())
 
-	runTask(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
+	runTask(t, assembly.GetAgent(), agent.Task{Question: "q", Agent: "alpha", Conversation: "c-1"})
 
 	if got := len(one.getCommands()); got != listedBefore {
 		t.Errorf("GetAgentPrograms called %d times after settings, want %d", got, listedBefore)
@@ -93,7 +93,7 @@ func TestEditorSettings_ReportsLatePrograms(t *testing.T) {
 	}
 }
 
-func listAgentProgramNames(models []settingsport.Model) []string {
+func listAgentProgramNames(models []settings.Model) []string {
 	var names []string
 	for _, one := range models {
 		if strings.Join(one.Path, ".") == "app.agent.use" {

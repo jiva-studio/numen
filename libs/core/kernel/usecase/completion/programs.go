@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	completiondomain "github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 const programsLimit = 8 * time.Second
@@ -39,10 +40,10 @@ func NewPrograms(provider agentport.AgentProvider, getAgent func() AgentSettings
 
 // GetProgram returns the program named. An empty name is the program the settings name under
 // agent.use, else the default of the plugins.
-func (p *Programs) GetProgram(ctx context.Context, name string) (agentport.AgentProgram, error) {
+func (p *Programs) GetProgram(ctx context.Context, name string) (agent.Program, error) {
 	target := p.getAgent()
 	if name == "" && !target.IsNamed {
-		return agentport.AgentProgram{}, fmt.Errorf("%w: the settings name no agent", completiondomain.ErrNoRoute)
+		return agent.Program{}, fmt.Errorf("%w: the settings name no agent", completiondomain.ErrNoRoute)
 	}
 	if name == "" {
 		name = target.Use
@@ -53,16 +54,16 @@ func (p *Programs) GetProgram(ctx context.Context, name string) (agentport.Agent
 	found, isFound := findProgram(programs, name)
 	switch {
 	case !isFound && listErr != nil:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: %w", completionport.ErrUnavailable, listErr)
+		return agent.Program{}, fmt.Errorf("%w: %w", domain.ErrUnavailable, listErr)
 	case !isFound:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: no plugin lists the program %q", completiondomain.ErrNoRoute, name)
+		return agent.Program{}, fmt.Errorf("%w: no plugin lists the program %q", completiondomain.ErrNoRoute, name)
 	case !found.IsInstalled:
-		return agentport.AgentProgram{}, fmt.Errorf("%w: the program %q is not installed", completiondomain.ErrNoRoute, found.Name)
+		return agent.Program{}, fmt.Errorf("%w: the program %q is not installed", completiondomain.ErrNoRoute, found.Name)
 	}
 	return found, nil
 }
 
-func findProgram(programs []agentport.AgentProgram, name string) (agentport.AgentProgram, bool) {
+func findProgram(programs []agent.Program, name string) (agent.Program, bool) {
 	if name == "" {
 		return agentport.GetDefaultProgram(programs)
 	}
@@ -71,12 +72,12 @@ func findProgram(programs []agentport.AgentProgram, name string) (agentport.Agen
 			return one, true
 		}
 	}
-	return agentport.AgentProgram{}, false
+	return agent.Program{}, false
 }
 
 // StartRun starts the task on the program it names, with the command line, the options and, where
 // the task names none, the model the settings give it.
-func (p *Programs) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+func (p *Programs) StartRun(ctx context.Context, task agent.Task) (agentport.Run, error) {
 	section := p.getAgent().GetProgram(task.Agent)
 	if task.Model == "" {
 		task.Model = section.Model
@@ -96,7 +97,7 @@ func NewSettingsAgent(programs *Programs) *SettingsAgent {
 }
 
 // StartRun starts the task on the program it names, else on the one the settings choose.
-func (a *SettingsAgent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+func (a *SettingsAgent) StartRun(ctx context.Context, task agent.Task) (agentport.Run, error) {
 	if task.Agent == "" {
 		program, err := a.programs.GetProgram(ctx, "")
 		if err != nil {

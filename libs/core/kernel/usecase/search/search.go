@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // defaultLimit is how many results a caller that names no number gets.
@@ -80,7 +80,7 @@ type Search struct {
 	embedder     embeddingport.Embedder
 	texts        textport.TextReaders
 	floorSource  FloorSource
-	errorHandler windowport.ErrorHandler
+	errorHandler window.ErrorHandler
 	cache        *QueryCache
 	extractors   int
 }
@@ -90,7 +90,7 @@ type Search struct {
 // not run and the word search answers alone, since the vector index is optional.
 // A nil `texts` means only notes return their text. `errorHandler` receives the
 // error of a search mode that could not answer; nil ignores such errors.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, errorHandler windowport.ErrorHandler) Search {
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, errorHandler window.ErrorHandler) Search {
 	if errorHandler == nil {
 		errorHandler = func(error) {}
 	}

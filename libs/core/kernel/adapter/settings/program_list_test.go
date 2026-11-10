@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 )
 
 // A read does not wait for a provider that is slow to list its programs: it returns the programs
@@ -14,9 +14,9 @@ func TestAReadDoesNotWaitForASlowListingOfPrograms(t *testing.T) {
 	var programs ProgramList
 	release := make(chan struct{})
 	notice := make(chan struct{})
-	slow := func() []agentport.AgentProgram {
+	slow := func() []agent.Program {
 		<-release
-		return []agentport.AgentProgram{{Name: "claude"}}
+		return []agent.Program{{Name: "claude"}}
 	}
 
 	first := programs.Get(20*time.Millisecond, slow, func() { close(notice) })
@@ -46,8 +46,8 @@ func TestAReadDoesNotWaitForASlowListingOfPrograms(t *testing.T) {
 func TestAReadReturnsTheProgramsOfAFastListing(t *testing.T) {
 	var programs ProgramList
 	isNotified := false
-	got := programs.Get(time.Second, func() []agentport.AgentProgram {
-		return []agentport.AgentProgram{{Name: "codex"}}
+	got := programs.Get(time.Second, func() []agent.Program {
+		return []agent.Program{{Name: "codex"}}
 	}, func() {
 		isNotified = true
 	})

@@ -10,13 +10,12 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // fakeSearchIndex is a test double of the search index: it returns the
@@ -45,7 +44,7 @@ func newVault(folder string) domain.Vault {
 func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(newVault(folder)),
-		Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) {
+		Search: func(context.Context, domain.Vault, window.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
 				Search: search.New(index, vaultreader.Readers{}, nil, nil, nil),
 				Words:  words,
@@ -80,7 +79,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) {
+			Search: func(context.Context, domain.Vault, window.ErrorHandler) (cli.Search, error) {
 				return cli.Search{}, errRefused
 			},
 		},
@@ -166,7 +165,7 @@ func TestAHalfThatCannotRunIsReportedInTheAdjacentAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Search
-	provided.Search = func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
+	provided.Search = func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
 		errorHandler(errRefused)
 		return open(ctx, v, errorHandler)
 	}

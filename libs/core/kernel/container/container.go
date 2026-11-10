@@ -16,6 +16,7 @@ import (
 	searchwiring "github.com/jiva-studio/numen/libs/core/kernel/container/search"
 	settingswiring "github.com/jiva-studio/numen/libs/core/kernel/container/settings"
 	vaultwiring "github.com/jiva-studio/numen/libs/core/kernel/container/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
@@ -25,7 +26,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -65,7 +65,7 @@ type Config struct {
 
 	SafeMode bool
 
-	ErrorHandler windowport.ErrorHandler
+	ErrorHandler window.ErrorHandler
 
 	Now machineport.Clock
 

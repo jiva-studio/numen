@@ -14,6 +14,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -46,7 +47,7 @@ func OpenForPlugin(ctx context.Context, host Host, pluginID string) (*Agent, err
 	}, nil
 }
 
-func newAskRequest(task agentport.Task) *v1.AskAgentRequest {
+func newAskRequest(task agent.Task) *v1.AskAgentRequest {
 	declarations := make([]*v1.ToolDeclaration, 0, len(task.ToolDeclarations))
 	for _, one := range task.ToolDeclarations {
 		declarations = append(declarations, &v1.ToolDeclaration{
@@ -81,7 +82,7 @@ func newAskRequest(task agentport.Task) *v1.AskAgentRequest {
 
 // StartRun starts execution of the given task through the agent plugin, at the endpoint it is at
 // now. The run holds its own reference on the plugin until it stops.
-func (b *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+func (b *Agent) StartRun(ctx context.Context, task agent.Task) (agentport.Run, error) {
 	req := connect.NewRequest(newAskRequest(task))
 
 	client, lease, err := b.service.Open(ctx)
@@ -98,7 +99,7 @@ func (b *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 	run := &pluginRun{
 		stream:  stream,
 		cancel:  cancel,
-		steps:   make(chan agentport.Step, 16),
+		steps:   make(chan agent.Step, 16),
 		onClose: lease.Close,
 	}
 	go run.readSteps(runCtx)
@@ -125,7 +126,7 @@ func (b *Agent) EndConversation(ctx context.Context, conversation string) (err e
 
 // GetPrograms lists the programs the plugin runs, with the models each offers. Commands are the
 // command lines the installation set, by program.
-func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) (programs []agentport.AgentProgram, err error) {
+func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) (programs []agent.Program, err error) {
 	request := make([]*v1.AgentProgramCommand, 0, len(commands))
 	for program, command := range commands {
 		request = append(request, &v1.AgentProgramCommand{Program: program, Command: command})
@@ -141,16 +142,16 @@ func (b *Agent) GetPrograms(ctx context.Context, commands map[string][]string) (
 		return nil, fmt.Errorf("rpc get agent programs: %w", err)
 	}
 
-	programs = make([]agentport.AgentProgram, 0, len(resp.Msg.GetPrograms()))
+	programs = make([]agent.Program, 0, len(resp.Msg.GetPrograms()))
 	for _, one := range resp.Msg.GetPrograms() {
-		models := make([]agentport.AgentModel, 0, len(one.GetModels()))
+		models := make([]agent.Model, 0, len(one.GetModels()))
 		for _, model := range one.GetModels() {
-			models = append(models, agentport.AgentModel{
+			models = append(models, agent.Model{
 				Name: model.GetName(), Title: model.GetTitle(), IsDefault: model.GetIsDefault(),
 				ReasoningLevels: newReasoningLevels(model.GetReasoningLevels()), DefaultReasoning: model.GetDefaultReasoning(),
 			})
 		}
-		programs = append(programs, agentport.AgentProgram{
+		programs = append(programs, agent.Program{
 			Provider:    b.pluginID,
 			Name:        one.GetName(),
 			Title:       one.GetTitle(),
@@ -227,12 +228,12 @@ func (b *Agent) Close() error {
 type pluginRun struct {
 	stream    *connect.ServerStreamForClient[v1.AskAgentResponse]
 	cancel    context.CancelFunc
-	steps     chan agentport.Step
+	steps     chan agent.Step
 	closeOnce sync.Once
 	onClose   func() error
 }
 
-func (r *pluginRun) GetSteps() <-chan agentport.Step {
+func (r *pluginRun) GetSteps() <-chan agent.Step {
 	return r.steps
 }
 
@@ -257,7 +258,7 @@ func (r *pluginRun) readSteps(ctx context.Context) {
 	defer func() {
 		if err := r.Stop(); err != nil {
 			select {
-			case r.steps <- agentport.Step{Kind: domain.StepStop, Detail: err.Error()}:
+			case r.steps <- agent.Step{Kind: domain.StepStop, Detail: err.Error()}:
 			default:
 			}
 		}
@@ -278,15 +279,15 @@ func (r *pluginRun) readSteps(ctx context.Context) {
 	if err := r.stream.Err(); err != nil && ctx.Err() == nil {
 		select {
 		case <-ctx.Done():
-		case r.steps <- agentport.Step{Kind: domain.StepStop, Detail: err.Error()}:
+		case r.steps <- agent.Step{Kind: domain.StepStop, Detail: err.Error()}:
 		}
 	}
 }
 
-func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
+func convertResponseStep(msg *v1.AskAgentResponse) agent.Step {
 	switch s := msg.GetStep().(type) {
 	case *v1.AskAgentResponse_Text:
-		return agentport.Step{
+		return agent.Step{
 			Kind: domain.StepSay,
 			Text: s.Text,
 		}
@@ -299,7 +300,7 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 				End:   int(tc.GetRange().GetEnd()),
 			}}
 		}
-		return agentport.Step{
+		return agent.Step{
 			Kind:  getStepKind(tc.GetKind()),
 			Call:  tc.GetCall(),
 			Tool:  tc.GetTool(),
@@ -311,16 +312,16 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 			},
 		}
 	case *v1.AskAgentResponse_ToolFinished:
-		return agentport.Step{
+		return agent.Step{
 			Kind: domain.StepToolDone,
 		}
 	case *v1.AskAgentResponse_ModelStarted:
-		return agentport.Step{
+		return agent.Step{
 			Kind: domain.StepModelStart,
 		}
 	case *v1.AskAgentResponse_EditProgress:
 		progress := s.EditProgress
-		return agentport.Step{
+		return agent.Step{
 			Kind:  domain.StepDraft,
 			Call:  progress.GetCall(),
 			Place: domain.Place{Path: progress.GetPath()},
@@ -328,12 +329,12 @@ func convertResponseStep(msg *v1.AskAgentResponse) agentport.Step {
 			Text:  progress.GetText(),
 		}
 	case *v1.AskAgentResponse_Stopped:
-		return agentport.Step{
+		return agent.Step{
 			Kind:   domain.StepStop,
 			Detail: s.Stopped,
 		}
 	default:
-		return agentport.Step{
+		return agent.Step{
 			Kind: domain.StepSay,
 		}
 	}
@@ -360,13 +361,13 @@ func getStepKind(kind string) domain.StepKind {
 	return domain.StepToolCall
 }
 
-func newReasoningLevels(reported []*v1.ReasoningLevel) []agentport.ReasoningLevel {
+func newReasoningLevels(reported []*v1.ReasoningLevel) []domain.ReasoningLevel {
 	if len(reported) == 0 {
 		return nil
 	}
-	levels := make([]agentport.ReasoningLevel, 0, len(reported))
+	levels := make([]domain.ReasoningLevel, 0, len(reported))
 	for _, one := range reported {
-		levels = append(levels, agentport.ReasoningLevel{Name: one.GetName(), Title: one.GetTitle()})
+		levels = append(levels, domain.ReasoningLevel{Name: one.GetName(), Title: one.GetTitle()})
 	}
 	return levels
 }

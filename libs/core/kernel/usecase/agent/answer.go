@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
@@ -14,6 +15,6 @@ type Starter = agentport.Starter
 // its own and has no access to the vault. An agent that cannot be started, stops
 // for its own reason or returns nothing fails with port.ErrUnavailable. A
 // context that ends stops the run and fails with the context's error.
-func Answer(ctx context.Context, agent Starter, task agentport.Task) (string, error) {
+func Answer(ctx context.Context, agent Starter, task agentdomain.Task) (string, error) {
 	return agentport.Answer(ctx, agent, task)
 }

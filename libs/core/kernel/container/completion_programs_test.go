@@ -9,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/completion"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
@@ -33,8 +34,8 @@ func serveCompletions(t *testing.T, host *plugin.Host, output string) (completio
 	return completer, path
 }
 
-func ask(text string) completionport.Question {
-	return completionport.Question{Messages: []completionport.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: text}}}
+func ask(text string) completion.Question {
+	return completion.Question{Messages: []completion.Message{{Role: "system", Text: "be brief"}, {Role: "user", Text: text}}}
 }
 
 // A query goes to the program the default names, as a task with no tool and no conversation, under
@@ -131,7 +132,7 @@ func TestAProviderThatCannotBeStartedIsUnavailable(t *testing.T) {
 	host := hostWith(t, map[string][]string{providerOne: {"ai.agent.provider"}}, nil)
 	completer, _ := serveCompletions(t, host, `{"app": {"ai": {"default": {"agent": "alpha"}}}}`)
 
-	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, completionport.ErrUnavailable) {
+	if _, err := completer.Complete(t.Context(), "md.test.asking", ask("why?")); !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("error = %v, want port.ErrUnavailable", err)
 	}
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugintheme/themecontract"
 )
@@ -31,15 +32,15 @@ func Open(host Host) Themes {
 }
 
 // ListThemes returns the themes of the enabled plugins, in the order of the plugin ids.
-func (t Themes) ListThemes() []themecontract.PluginTheme {
-	var themes []themecontract.PluginTheme
+func (t Themes) ListThemes() []theme.PluginTheme {
+	var themes []theme.PluginTheme
 	for _, info := range t.host.GetPluginInfos() {
 		plugin, isEnabled := t.host.GetPlugin(info.ID)
 		if !isEnabled {
 			continue
 		}
 		for _, declared := range plugin.Manifest.Contributes.Themes {
-			themes = append(themes, themecontract.PluginTheme{
+			themes = append(themes, theme.PluginTheme{
 				PluginID:   plugin.Manifest.ID,
 				ID:         declared.ID,
 				Name:       declared.Name,
@@ -55,7 +56,7 @@ func (t Themes) ListThemes() []themecontract.PluginTheme {
 func (t Themes) ReadTheme(pluginID, themeID string) (string, error) {
 	plugin, isEnabled := t.host.GetPlugin(pluginID)
 	if !isEnabled {
-		return "", themecontract.ErrNoTheme
+		return "", theme.ErrNoTheme
 	}
 	for _, declared := range plugin.Manifest.Contributes.Themes {
 		if declared.ID != themeID {
@@ -63,9 +64,9 @@ func (t Themes) ReadTheme(pluginID, themeID string) (string, error) {
 		}
 		text, err := manifestjson.ReadThemeFile(plugin.Dir, declared.File)
 		if errors.Is(err, fs.ErrNotExist) {
-			return "", themecontract.ErrNoTheme
+			return "", theme.ErrNoTheme
 		}
 		return text, err
 	}
-	return "", themecontract.ErrNoTheme
+	return "", theme.ErrNoTheme
 }

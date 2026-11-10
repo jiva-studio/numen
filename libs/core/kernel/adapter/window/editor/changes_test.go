@@ -16,6 +16,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
@@ -26,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -1024,8 +1024,8 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 
 // The levels of reasoning a model offers reach the window with the model.
 func TestTheLevelsOfAModelReachTheWindow(t *testing.T) {
-	got := editor.NewWireModels([]settings.Model{{
-		Name: "deep", ReasoningLevels: []settings.ReasoningLevel{{Name: "low", Title: "Low"}}, DefaultReasoning: "low",
+	got := editor.NewWireModels([]settingsdomain.Model{{
+		Name: "deep", ReasoningLevels: []domain.ReasoningLevel{{Name: "low", Title: "Low"}}, DefaultReasoning: "low",
 	}, {Name: "plain"}})
 
 	if levels := got[0].GetReasoningLevels(); len(levels) != 1 || levels[0].GetName() != "low" || levels[0].GetTitle() != "Low" ||

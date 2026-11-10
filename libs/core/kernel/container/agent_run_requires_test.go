@@ -7,7 +7,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 )
 
 func newAgentPlugin(agent *toolAgent, permissions ...string) testPlugin {
@@ -28,7 +28,7 @@ func runWrite(t *testing.T, agent *toolAgent, agentPermissions ...string) *toolP
 	)
 	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), nil, nil)
 
-	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "Shelve the atlas of rivers.", Agent: "alpha"})
+	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "Shelve the atlas of rivers.", Agent: "alpha"})
 	return served
 }
 

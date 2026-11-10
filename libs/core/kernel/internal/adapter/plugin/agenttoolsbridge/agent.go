@@ -12,6 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
 )
 
@@ -36,12 +37,12 @@ func NewAgent(agent agentport.Agent, host Host, server Server, callerID string) 
 // StartRun serves the tools the window allows and starts the run with their endpoint, their names
 // and their declarations, and appends the sentences of those tools to its instructions. A run with
 // no tool to call is started with no endpoint.
-func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+func (a *Agent) StartRun(ctx context.Context, task agentdomain.Task) (agentport.Run, error) {
 	listing, cancel := context.WithTimeout(ctx, listLimit)
 	available := a.plugins.listToolsFor(listing, a.server, a.callerID)
 	cancel()
 	if len(available) == 0 {
-		task.Tools, task.ToolDeclarations, task.Endpoint = nil, nil, agentport.ToolEndpoint{}
+		task.Tools, task.ToolDeclarations, task.Endpoint = nil, nil, agentdomain.ToolEndpoint{}
 		return a.agent.StartRun(ctx, task)
 	}
 
@@ -49,13 +50,13 @@ func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Ru
 	if err != nil {
 		return nil, err
 	}
-	task.Endpoint = agentport.ToolEndpoint{URL: served.url, Token: served.token}
+	task.Endpoint = agentdomain.ToolEndpoint{URL: served.url, Token: served.token}
 	task.Instructions = appendToolSentences(task.Instructions, available)
 	task.Tools = make([]string, 0, len(available))
-	task.ToolDeclarations = make([]agentport.ToolDeclaration, 0, len(available))
+	task.ToolDeclarations = make([]agentdomain.ToolDeclaration, 0, len(available))
 	for _, one := range available {
 		task.Tools = append(task.Tools, one.spec.GetName())
-		task.ToolDeclarations = append(task.ToolDeclarations, agentport.ToolDeclaration{
+		task.ToolDeclarations = append(task.ToolDeclarations, agentdomain.ToolDeclaration{
 			Name: one.spec.GetName(), Title: one.spec.GetTitle(), Kind: getStepKind(one.spec),
 		})
 	}

@@ -1,11 +1,13 @@
 package settings
 
+import settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+
 // Current is the settings file as JSON and at its current position, with the models and
 // plugins that go with the settings.
 type Current struct {
 	Written string
 	Path    string
-	Models  []Model
+	Models  []settingsdomain.Model
 	Plugins []PluginInfo
 	App     []PluginSetting
 }
@@ -13,14 +15,14 @@ type Current struct {
 // Get reads every setting, the models a setting can name, and the limits the
 type Get struct {
 	read    func() (content, path string, err error)
-	models  func() []Model
+	models  func() []settingsdomain.Model
 	plugins func() []PluginInfo
 	app     func() []PluginSetting
 }
 
 func NewGet(
 	read func() (content, path string, err error),
-	models func() []Model,
+	models func() []settingsdomain.Model,
 	plugins func() []PluginInfo,
 	app func() []PluginSetting,
 ) *Get {
@@ -37,7 +39,7 @@ func (u *Get) Execute() (Current, error) {
 	if err != nil {
 		return Current{}, err
 	}
-	var models []Model
+	var models []settingsdomain.Model
 	if u.models != nil {
 		models = u.models()
 	}

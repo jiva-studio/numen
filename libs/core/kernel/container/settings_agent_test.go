@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
@@ -24,7 +25,7 @@ func openSettingsAgent(t *testing.T, host *plugin.Host, content string) agentpor
 	return agent
 }
 
-func runTask(t *testing.T, agent agentport.Agent, task agentport.Task) {
+func runTask(t *testing.T, agent agentport.Agent, task agentdomain.Task) {
 	t.Helper()
 	run, err := agent.StartRun(t.Context(), task)
 	if err != nil {
@@ -41,7 +42,7 @@ func TestSettingsAgent_UnnamedProgramUsesSettingsProgram(t *testing.T) {
 	agent := openSettingsAgent(t, host,
 		`{"app": {"agent": {"use": "alpha", "alpha": {"command": ["/bin/alpha"], "model": "section-model"}}}}`)
 
-	runTask(t, agent, agentport.Task{Question: "q", Conversation: "c-1"})
+	runTask(t, agent, agentdomain.Task{Question: "q", Conversation: "c-1"})
 
 	requests := one.getRequested()
 	if len(requests) != 1 || len(two.getRequested()) != 0 {
@@ -65,7 +66,7 @@ func TestSettingsAgent_UnsetProgramUsesDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)
 	agent := openSettingsAgent(t, host, `{}`)
 
-	runTask(t, agent, agentport.Task{Question: "q"})
+	runTask(t, agent, agentdomain.Task{Question: "q"})
 
 	if requests := one.getRequested(); len(requests) != 1 || requests[0].GetAgent() != "alpha" {
 		t.Errorf("the default plugin was asked %v", requests)
@@ -77,7 +78,7 @@ func TestASettingsAgentTaskNamingAProgramGoesToIt(t *testing.T) {
 	host, one, two := twoProviders(t)
 	agent := openSettingsAgent(t, host, `{"app": {"agent": {"use": "alpha"}}}`)
 
-	runTask(t, agent, agentport.Task{Question: "q", Agent: "beta", Model: "asked-model"})
+	runTask(t, agent, agentdomain.Task{Question: "q", Agent: "beta", Model: "asked-model"})
 
 	if requests := two.getRequested(); len(requests) != 1 || len(one.getRequested()) != 0 ||
 		requests[0].GetAgent() != "beta" || requests[0].GetModel() != "asked-model" {
@@ -90,7 +91,7 @@ func TestSettingsAgent_RejectsTaskWhenAgentDisabled(t *testing.T) {
 	host, one, two := twoProviders(t)
 	agent := openSettingsAgent(t, host, `{"app": {"agent": {"use": ""}}}`)
 
-	if _, err := agent.StartRun(t.Context(), agentport.Task{Question: "q"}); err == nil {
+	if _, err := agent.StartRun(t.Context(), agentdomain.Task{Question: "q"}); err == nil {
 		t.Error("a task was taken with the agent turned off")
 	}
 	if len(one.getRequested())+len(two.getRequested()) != 0 {

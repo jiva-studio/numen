@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 // applyingHost records each setting the host applies.
@@ -26,7 +26,7 @@ func TestAPluginChangeIsReportedOnceTheHostAppliedTheSettings(t *testing.T) {
 	changes, stop := c.WatchPluginChanges()
 	defer stop()
 
-	c.settings().NotifyHost([]settingsport.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
+	c.settings().NotifyHost([]settingsdomain.Setting{{Path: []string{"org.example.scans", "isAutomatic"}, JSON: "true"}})
 
 	select {
 	case <-changes:

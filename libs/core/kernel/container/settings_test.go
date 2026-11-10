@@ -13,9 +13,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
 )
 
 func writeSettings(t *testing.T, output string) (Config, string) {
@@ -60,7 +60,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
   "something_this_build_knows_nothing_about": 7
 }`)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{
 		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err != nil {
@@ -92,7 +92,7 @@ func TestASettingSavedPreservesTheRestOfTheFileAlone(t *testing.T) {
 func TestSettingsSavedTogetherAllArrive(t *testing.T) {
 	cfg, path := writeSettings(t, `{}`)
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{
 		{Path: []string{"app", "agent", "use"}, JSON: `"claude"`},
 		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
@@ -237,7 +237,7 @@ func TestWritingAnotherSettingSendsNoProfile(t *testing.T) {
 	host := &profileHost{}
 	cfg.PluginHost = host
 
-	err := cfg.GetSettingsWriter()([]settingsport.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
+	err := cfg.GetSettingsWriter()([]settingsdomain.Setting{{Path: []string{"app", "appearance", "mode"}, JSON: `"dark"`}})
 	if err != nil {
 		t.Fatal(err)
 	}

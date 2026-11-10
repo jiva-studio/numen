@@ -10,7 +10,9 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
+	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 )
@@ -72,12 +74,12 @@ func (h *Handler) WriteSettings(
 	if h.Write == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
 	}
-	content := make([]setting.Setting, 0, len(r.Msg.GetSettings()))
+	content := make([]settingsdomain.Setting, 0, len(r.Msg.GetSettings()))
 	for _, one := range r.Msg.GetSettings() {
-		content = append(content, setting.Setting{Path: one.GetAt(), JSON: one.GetValue()})
+		content = append(content, settingsdomain.Setting{Path: one.GetAt(), JSON: one.GetValue()})
 	}
 	if err := h.Write.Execute(content); err != nil {
-		if errors.Is(err, setting.ErrNotASetting) {
+		if errors.Is(err, settingsdomain.ErrNotASetting) {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -86,7 +88,7 @@ func (h *Handler) WriteSettings(
 }
 
 // NewWireModels is the models as the wire carries them.
-func NewWireModels(target []setting.Model) []*v1.Model {
+func NewWireModels(target []settingsdomain.Model) []*v1.Model {
 	models := make([]*v1.Model, 0, len(target))
 	for _, one := range target {
 		models = append(models, &v1.Model{
@@ -106,15 +108,15 @@ func NewWireModels(target []setting.Model) []*v1.Model {
 
 // Presences is what a model's files are on this machine, as the wire carries
 // it.
-func GetPresences() map[setting.Presence]v1.Presence {
-	return map[setting.Presence]v1.Presence{
-		setting.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
-		setting.Present:        v1.Presence_PRESENCE_PRESENT,
-		setting.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
+func GetPresences() map[settingsdomain.Presence]v1.Presence {
+	return map[settingsdomain.Presence]v1.Presence{
+		settingsdomain.NothingToFetch: v1.Presence_PRESENCE_NOTHING_TO_FETCH,
+		settingsdomain.Present:        v1.Presence_PRESENCE_PRESENT,
+		settingsdomain.NotFetched:     v1.Presence_PRESENCE_NOT_FETCHED,
 	}
 }
 
-func newWireSettings(target []setting.Setting) []*v1.Setting {
+func newWireSettings(target []settingsdomain.Setting) []*v1.Setting {
 	content := make([]*v1.Setting, 0, len(target))
 	for _, one := range target {
 		content = append(content, &v1.Setting{At: one.Path, Value: one.JSON})
@@ -205,7 +207,7 @@ func (h *Handler) RetryPlugin(
 	return connect.NewResponse(reply), nil
 }
 
-func newWireReasoningLevels(target []setting.ReasoningLevel) []*v1.ReasoningLevel {
+func newWireReasoningLevels(target []domain.ReasoningLevel) []*v1.ReasoningLevel {
 	if len(target) == 0 {
 		return nil
 	}
@@ -277,8 +279,8 @@ func (h *Handler) ChoosePluginPath(
 	chosen, err := h.ChoosePath.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetKey())
 	reply := &v1.ChoosePluginPathResponse{Path: chosen.Path, IsChosen: chosen.IsChosen}
 	switch {
-	case errors.Is(err, setting.ErrNotASetting):
-		reply.Problem = strings.TrimPrefix(err.Error(), setting.ErrNotASetting.Error()+": ")
+	case errors.Is(err, settingsdomain.ErrNotASetting):
+		reply.Problem = strings.TrimPrefix(err.Error(), settingsdomain.ErrNotASetting.Error()+": ")
 	case errors.Is(err, setting.ErrNoPathSetting):
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	case err != nil:

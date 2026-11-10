@@ -6,9 +6,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 )
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {
@@ -34,7 +33,7 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 				return createScan(ctx, cfg, v, rebuild)
 			},
-			Search: func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
+			Search: func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
 				return createSearch(ctx, cfg, v, errorHandler)
 			},
 			Problems:       func(ctx context.Context) (cli.Problems, error) { return createProblems(ctx, cfg) },
@@ -112,7 +111,7 @@ func closeIfOpen(closeFn func() error) error {
 }
 
 func createSearch(
-	ctx context.Context, cfg container.Config, v domain.Vault, errorHandler windowport.ErrorHandler,
+	ctx context.Context, cfg container.Config, v domain.Vault, errorHandler window.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {

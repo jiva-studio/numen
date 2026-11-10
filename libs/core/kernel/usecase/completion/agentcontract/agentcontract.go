@@ -3,28 +3,23 @@ package agentcontract
 
 import (
 	"context"
+
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 )
 
 type (
 	Agent              = agentport.Agent
-	AgentModel         = agentport.AgentModel
-	AgentProgram       = agentport.AgentProgram
 	AgentProvider      = agentport.AgentProvider
 	CompletionPrograms = agentport.CompletionPrograms
-	ReasoningLevel     = agentport.ReasoningLevel
 	Run                = agentport.Run
 	Starter            = agentport.Starter
-	Step               = agentport.Step
-	Task               = agentport.Task
-	ToolDeclaration    = agentport.ToolDeclaration
-	ToolEndpoint       = agentport.ToolEndpoint
 )
 
-func Answer(ctx context.Context, agent agentport.Starter, task agentport.Task) (string, error) {
+func Answer(ctx context.Context, agent agentport.Starter, task agentdomain.Task) (string, error) {
 	return agentport.Answer(ctx, agent, task)
 }
 
-func GetDefaultProgram(programs []agentport.AgentProgram) (agentport.AgentProgram, bool) {
+func GetDefaultProgram(programs []agentdomain.Program) (agentdomain.Program, bool) {
 	return agentport.GetDefaultProgram(programs)
 }

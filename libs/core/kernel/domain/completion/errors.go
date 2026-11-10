@@ -1,4 +1,4 @@
-// Package completion holds the sentinel errors of the questions plugins send to a model.
+// Package completion holds the questions plugins send to a model and the errors that fail them.
 package completion
 
 import (

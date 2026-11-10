@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/completion"
+	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
 )
 
 // listingProvider is a provider whose listing waits for its context and records its deadline.
@@ -20,7 +21,7 @@ type listingProvider struct {
 	hasLimit bool
 }
 
-func (p *listingProvider) GetPrograms(ctx context.Context, _ map[string][]string) ([]agentport.AgentProgram, error) {
+func (p *listingProvider) GetPrograms(ctx context.Context, _ map[string][]string) ([]agent.Program, error) {
 	p.deadline, p.hasLimit = ctx.Deadline()
 	return nil, context.DeadlineExceeded
 }
@@ -34,7 +35,7 @@ func TestTheListingOfProgramsForAQuestionHasALimit(t *testing.T) {
 	before := testsupport.GetMachine().Now()
 	_, err := programs.GetProgram(t.Context(), "claude")
 
-	if !errors.Is(err, completionport.ErrUnavailable) {
+	if !errors.Is(err, domain.ErrUnavailable) {
 		t.Errorf("error = %v, want port.ErrUnavailable", err)
 	}
 	if !provider.hasLimit || provider.deadline.After(before.Add(programsLimit+time.Second)) {

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/settingsport"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 )
 
 func TestTheLockFileNextToTheSettingsFileIsNoEvent(t *testing.T) {
@@ -56,7 +56,7 @@ func TestAWriteThatDisablesAPluginReachesThePluginHost(t *testing.T) {
 	cfg, _, host := openInstallation(t, `{}`)
 	reader := listen(t, cfg)
 
-	if err := cfg.GetSettingsWriter()([]settingsport.Setting{
+	if err := cfg.GetSettingsWriter()([]settings.Setting{
 		{Path: []string{eventPlugin, "enabled"}, JSON: `false`},
 	}); err != nil {
 		t.Fatal(err)

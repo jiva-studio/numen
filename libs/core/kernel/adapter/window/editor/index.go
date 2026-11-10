@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/protocol"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
@@ -17,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -133,7 +133,7 @@ func startIndexing(ctx context.Context, made Assembly, state *State, job indexJo
 	return refresh, running.Wait
 }
 
-func newErrorReporter(state *State) windowport.ErrorHandler {
+func newErrorReporter(state *State) window.ErrorHandler {
 	return func(err error) {
 		if err == nil {
 			state.Error.Store("")

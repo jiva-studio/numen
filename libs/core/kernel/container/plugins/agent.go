@@ -7,6 +7,7 @@ import (
 	"time"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
@@ -32,11 +33,11 @@ func (c Config) AgentProvider() agentport.AgentProvider {
 const programsWait = time.Second
 
 // GetAgentPrograms lists the agent programs from provider, using the cached program list when set.
-func (c Config) GetAgentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentport.AgentProgram {
+func (c Config) GetAgentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	if provider == nil {
 		return nil
 	}
-	list := func() []agentport.AgentProgram {
+	list := func() []agentdomain.Program {
 		ctx, stop := context.WithTimeout(context.Background(), ProgramsLimit)
 		defer stop()
 		programs, err := provider.GetPrograms(ctx, target.GetCommands())
