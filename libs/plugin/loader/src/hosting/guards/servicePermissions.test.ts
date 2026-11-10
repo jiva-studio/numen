@@ -280,25 +280,15 @@ describe('the services of a plugin context', () => {
   })
 
   it('takes the async flag of a rule from the type of the member', () => {
-    const syncRule = SERVICE_RULES.work.agent.ask
-    const asyncRule = SERVICE_RULES.vault.notes.read
+    type SyncRule = typeof SERVICE_RULES.work.agent.ask
+    type AsyncRule = typeof SERVICE_RULES.vault.notes.read
+    type Fits<Rule, Member> = [Rule] extends [RulesOf<Member>[keyof Member]] ? true : false
 
-    // @ts-expect-error a member that returns a promise takes no sync rule: a refusal would throw
-    const promiseWithSync: RulesOf<{ read(): Promise<string> }> = { read: syncRule }
-    // @ts-expect-error a member that returns a promise or a value takes no sync rule
-    const eitherWithSync: RulesOf<{ read(): Promise<string> | string }> = { read: syncRule }
-    // @ts-expect-error a member that returns a value takes no async rule: a refusal would reject
-    const valueWithAsync: RulesOf<{ peek(): string }> = { peek: asyncRule }
-    const promiseWithAsync: RulesOf<{ read(): Promise<string> }> = { read: asyncRule }
-    const valueWithSync: RulesOf<{ peek(): string }> = { peek: syncRule }
-
-    expect([
-      promiseWithSync,
-      eitherWithSync,
-      valueWithAsync,
-      promiseWithAsync,
-      valueWithSync,
-    ]).toHaveLength(5)
+    expectTypeOf<Fits<SyncRule, { read(): Promise<string> }>>().toEqualTypeOf<false>()
+    expectTypeOf<Fits<SyncRule, { read(): Promise<string> | string }>>().toEqualTypeOf<false>()
+    expectTypeOf<Fits<AsyncRule, { peek(): string }>>().toEqualTypeOf<false>()
+    expectTypeOf<Fits<AsyncRule, { read(): Promise<string> }>>().toEqualTypeOf<true>()
+    expectTypeOf<Fits<SyncRule, { peek(): string }>>().toEqualTypeOf<true>()
   })
 
   it('rejects, and never throws, from every member whose type returns a promise', async () => {
