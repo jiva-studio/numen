@@ -149,7 +149,7 @@ func newChangeReporter(
 		} else {
 			triggers.RequestPaths(changePaths)
 		}
-		state.ChangeEvents.publish(change{paths: changePaths, shouldReload: reload})
+		state.ChangeEvents.publish(window.Change{Paths: changePaths, ShouldReload: reload})
 		checkTexts(changePaths)
 		worker.ClearSkips(changePaths)
 		if reload || len(assets) > 0 {

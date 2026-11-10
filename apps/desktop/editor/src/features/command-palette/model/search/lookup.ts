@@ -5,36 +5,10 @@ import type { PaletteItem } from '@numen/workbench'
 import type { Selector, SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { NoteType } from '@/entities/file'
 import { COMMAND, ROW } from '@/entities/command'
-import type { TextRange } from '@/shared/textRange'
+import type { NameMatch, Passage } from '../../lib/search/types'
 import type { Words } from './search'
 
-/**
- * One name that matched: a note title or an internal heading.
- */
-export interface NameMatch {
-  path: string
-  title: string
-  heading: string
-  line: number
-  at: readonly TextRange[]
-  type: NoteType
-  tabKind?: string
-}
-
-/** One passage: the text around a hit, and where it came from. */
-export interface Passage {
-  path: string
-  title: string
-  isNote: boolean
-  type: NoteType
-  tabKind?: string
-  selector: Selector | null
-  text: string
-  start: number
-  length: number
-  line: number
-  at: readonly TextRange[]
-}
+export type { NameMatch, Passage }
 
 /** The entries of the slot of a search result, over the note of a result, in the order drawn. */
 export interface SearchMenuDeps {

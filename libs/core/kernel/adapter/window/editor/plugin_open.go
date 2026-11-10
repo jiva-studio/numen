@@ -8,6 +8,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 )
 
 // errNoVaultSwitch is returned when the window build binds no vault switch.
@@ -42,7 +43,7 @@ func (o *Installation) OpenPluginVault(ctx context.Context, v domain.Vault) erro
 			o.State.Window.CancelFlush()
 		}
 		return fmt.Errorf("%s cannot be opened now: %w: %w", v.Name, domain.ErrUnavailable, context.Cause(ctx))
-	case errors.Is(err, errAnswerPending):
+	case errors.Is(err, window.ErrAnswerPending):
 		return plugin.ErrUnsavedChanges
 	}
 	return err

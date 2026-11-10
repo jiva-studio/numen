@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -107,7 +108,7 @@ func TestForget_RejectsOnlyVault(t *testing.T) {
 	index := &indexRows{}
 
 	err = vaults.NewUnregister(registry, registry, index).Execute(t.Context(), only)
-	if !errors.Is(err, vaults.ErrLastVault) {
+	if !errors.Is(err, vaultdomain.ErrLastVault) {
 		t.Fatalf("the last vault was answered %v", err)
 	}
 	recognized, err := registry.List()

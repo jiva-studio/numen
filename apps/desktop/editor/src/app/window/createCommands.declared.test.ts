@@ -9,7 +9,7 @@ const isOpen = ref(false)
 vi.mock('@/features/command-palette', () => ({
   runInvocation: vi.fn(),
   useSearch: () => ({ setOpen: vi.fn() }),
-  useCommandPalette: () => ({ open: isOpen }),
+  createCommandPalette: () => ({ open: isOpen }),
 }))
 vi.mock('../tabs/commandDeps', () => ({ createCommandDeps: () => ({}), createCommandNotes: () => ({}) }))
 

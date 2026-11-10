@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -305,7 +306,7 @@ func getMainWindowOptions(opened *editor.Installation) application.WebviewWindow
 	})
 }
 
-func getSecondaryWindowURL(tab editor.DetachedTab) string {
+func getSecondaryWindowURL(tab windowdomain.DetachedTab) string {
 	query := url.Values{"window": {"secondary"}}
 	if tab.ID != "" {
 		query.Set("id", tab.ID)
@@ -314,7 +315,7 @@ func getSecondaryWindowURL(tab editor.DetachedTab) string {
 }
 
 func makeSecondaryWindow(
-	app *application.App, opened *editor.Installation, tab editor.DetachedTab,
+	app *application.App, opened *editor.Installation, tab windowdomain.DetachedTab,
 ) *application.WebviewWindow {
 	return app.Window.NewWithOptions(getSecondaryWindowOptions(opened, tab))
 }
@@ -325,7 +326,7 @@ const (
 	secondaryWindowHeight = 860
 )
 
-func getSecondaryWindowOptions(opened *editor.Installation, tab editor.DetachedTab) application.WebviewWindowOptions {
+func getSecondaryWindowOptions(opened *editor.Installation, tab windowdomain.DetachedTab) application.WebviewWindowOptions {
 	opts := frame.Window(application.WebviewWindowOptions{
 		Title:          getWindowTitle(opened.GetCurrentVault(), opened.State.GetOpenTabs()),
 		Width:          secondaryWindowWidth,
@@ -374,7 +375,7 @@ func connectWindow(
 		return err
 	}
 
-	opened.State.DetachTab = func(_ context.Context, tab editor.DetachedTab) error {
+	opened.State.DetachTab = func(_ context.Context, tab windowdomain.DetachedTab) error {
 		hooks.tracker.addWindow()
 		secWindow := makeSecondaryWindow(app, opened, tab)
 		secSeen := visibility{

@@ -17,6 +17,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
+	windowvaults "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vaults"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/appearance"
@@ -117,7 +119,11 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 // pages and returns not found; a route a service owns answers a GET with a
 // method-not-allowed error.
 func TestHandler_MountsEveryVaultService(t *testing.T) {
-	handler := newBareServices().NewHandler(http.NotFoundHandler())
+	services := newBareServices()
+	vaultHandler := windowvault.NewHandler(services.state)
+	vaultPath, vaultServed := windowvault.NewRoute(vaultHandler, services.state.CountQuestions())
+	services.Extra = append(services.Extra, NewRoute(vaultPath, vaultServed, vaultHandler))
+	handler := services.NewHandler(http.NotFoundHandler())
 	for _, route := range []string{
 		numenv1connect.VaultServiceGetVaultStateProcedure,
 		numenv1connect.FileServiceListFilesProcedure,
@@ -146,7 +152,7 @@ func TestPluginServiceIsMounted(t *testing.T) {
 func TestAWindowBeingTakenAwayAnswersNothing(t *testing.T) {
 	services := newBareServices()
 	handler := services.NewHandler(http.NotFoundHandler())
-	questions, _ := numenv1connect.NewVaultServiceHandler(services.Vault)
+	questions := "/" + numenv1connect.VaultServiceName + "/"
 	request := []string{"", "/", "/index.html", questions + "Find"}
 
 	for _, path := range request {
@@ -361,15 +367,15 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	list := registry.NewList(b)
 	check := check.NewFolderCheck(vaultreader.Readers{})
 	api := newBareServices()
-	api.Vaults.list = &list
-	api.Vaults.folderCheck = &check
+	vaultsHandler := windowvaults.NewHandler(api.state, list, nil, check, nil, nil, nil)
+	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.CountQuestions())
+	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
 	handler := api.NewHandler(http.NotFoundHandler())
 
 	reply := make(chan struct{})
 	go func() {
 		defer close(reply)
-		path, _ := numenv1connect.NewVaultsServiceHandler(api.Vaults)
-		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, path+"ListVaults", strings.NewReader("{}"))
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, vaultsPath+"ListVaults", strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		handler.ServeHTTP(httptest.NewRecorder(), req)
 	}()

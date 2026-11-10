@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"math"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -17,12 +16,14 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowfocus"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
@@ -41,6 +42,28 @@ func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *fi
 		GetOpenTabs: state.GetOpenTabs,
 		ShowTab:     state.ShowTab,
 	}
+}
+
+// memoryTabs keeps the open tabs of each vault in memory.
+type memoryTabs map[domain.VaultID]domain.OpenTabs
+
+func (m memoryTabs) ReadOpenTabs(_ context.Context, v domain.Vault) (domain.OpenTabs, error) {
+	return m[v.ID], nil
+}
+
+func (m memoryTabs) WriteOpenTabs(_ context.Context, v domain.Vault, open domain.OpenTabs) error {
+	m[v.ID] = open
+	return nil
+}
+
+func newWorkspace(t *testing.T, state *State) *workspace.Handler {
+	t.Helper()
+	links, err := workspace.NewLinks()
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := memoryTabs{}
+	return workspace.NewHandler(state, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
 }
 
 func newBoundWindow(t *testing.T) (*State, pluginport.PluginWindow, <-chan domain.Place) {
@@ -97,7 +120,7 @@ func TestPluginWindowRejectsBadPassageOrMissingFile(t *testing.T) {
 
 func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 	state, window, _ := newBoundWindow(t)
-	api := &workspaceHandler{state: state}
+	api := newWorkspace(t, state)
 	atStart := 0.0
 
 	if _, err := api.WriteOpenTabs(t.Context(), connect.NewRequest(&v1.WriteOpenTabsRequest{
@@ -134,7 +157,7 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 // one subscriber of that stream receives.
 type activateFixture struct {
 	state  *State
-	api    *workspaceHandler
+	api    *workspace.Handler
 	window pluginport.PluginWindow
 	focus  <-chan *v1.WatchFocusResponse
 }
@@ -142,7 +165,7 @@ type activateFixture struct {
 func newActivateFixture(t *testing.T) activateFixture {
 	t.Helper()
 	state, window, _ := newBoundWindow(t)
-	api := &workspaceHandler{state: state}
+	api := newWorkspace(t, state)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(api))
 	server := httptest.NewServer(mux)
@@ -335,26 +358,5 @@ func TestPluginWindowActivateTabReturnsWhenTheContextEnds(t *testing.T) {
 	case <-results:
 	case <-time.After(time.Second):
 		t.Fatal("ActivateTab did not return within a second of the end of its context")
-	}
-}
-
-// The window receives the ranges as 32-bit offsets, so a range that does not fit is left out rather
-// than wrapped to another place.
-func TestFocusSentToWindowOmitsRangeBeyond32Bits(t *testing.T) {
-	got := convertByteRangesToWire([]domain.ByteRange{
-		{Start: 400, End: 480},
-		{Start: math.MaxInt32 - 5, End: math.MaxInt32 + 5},
-		{Start: math.MaxInt32 + 1, End: math.MaxInt32 + 9},
-		{Start: math.MaxInt32 - 10, End: math.MaxInt32},
-		{Start: 1500, End: 1580},
-	})
-
-	want := [][2]int32{{400, 480}, {math.MaxInt32 - 10, math.MaxInt32}, {1500, 1580}}
-	ranges := make([][2]int32, 0, len(got))
-	for _, one := range got {
-		ranges = append(ranges, [2]int32{one.GetStart(), one.GetEnd()})
-	}
-	if !reflect.DeepEqual(ranges, want) {
-		t.Errorf("the window is sent the ranges %v, want %v", ranges, want)
 	}
 }

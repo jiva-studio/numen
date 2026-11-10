@@ -10,7 +10,7 @@ import type { SlotCommand } from '@numen/plugin-loader'
 import { WORDS as words } from '@/shared/words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from './palette/runSupport'
-import { useCommandPalette } from './palette/palette'
+import { createCommandPalette } from './palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from './search/search'
 import type { CommandTarget } from '@/entities/command'
 
@@ -102,7 +102,7 @@ const searchFor = async (
 }
 
 const listCommands = (target: CommandTarget) => {
-  const commands = useCommandPalette(
+  const commands = createCommandPalette(
     { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
     words,
     () => target,

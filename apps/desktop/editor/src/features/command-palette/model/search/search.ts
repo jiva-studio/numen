@@ -5,7 +5,7 @@ import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/workbench'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
-import { useDebouncedSearch, type Wait } from '@/shared/search'
+import { useDebouncedSearch, type Wait } from './debounced'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
@@ -19,6 +19,7 @@ import {
   type SearchRow,
 } from './lookup'
 import type { TextRange } from '@/shared/textRange'
+import type { SearchDeps, SearchMode } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '@/entities/command'
 import { getEmptyGroupReason, GROUP_RESULT_LIMIT, type SearchGroup } from './score'
@@ -32,18 +33,8 @@ export type {
   SearchGroup,
   ResultChoice,
   SearchMenuDeps,
-}
-
-/**
- * How a text search is run. Each mode has its own ordering, and `hybrid`
- * combines all of them in one ranking.
- */
-export type SearchMode = 'hybrid' | 'words' | 'meaning' | 'names'
-
-/** The two queries the palette makes of the vault. */
-export interface SearchDeps {
-  names(query: string, limit: number): Promise<readonly NameMatch[]>
-  search(query: string, mode: SearchMode, limit: number): Promise<readonly Passage[]>
+  SearchDeps,
+  SearchMode,
 }
 
 /** The text a palette group shows when it is empty. */

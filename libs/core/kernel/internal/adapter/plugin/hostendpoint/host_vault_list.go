@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	vaultdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 )
 
@@ -23,15 +23,15 @@ var errNoVaultList = errors.New("this host has no list of vaults to change")
 
 func getVaultsErrorCode(err error) (v1.VaultsErrorCode, bool) {
 	switch {
-	case errors.Is(err, vaults.ErrUnreadable):
+	case errors.Is(err, vaultdomain.ErrUnreadable):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_UNREADABLE, true
-	case errors.Is(err, vaults.ErrCopy):
+	case errors.Is(err, vaultdomain.ErrCopy):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_COPY, true
 	case errors.Is(err, domain.ErrOverlaps):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_OVERLAPS, true
-	case errors.Is(err, vaults.ErrNameTaken):
+	case errors.Is(err, vaultdomain.ErrNameTaken):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_NAME_TAKEN, true
-	case errors.Is(err, vaults.ErrLastVault):
+	case errors.Is(err, vaultdomain.ErrLastVault):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_LAST_VAULT, true
 	case errors.Is(err, registry.ErrShowing):
 		return v1.VaultsErrorCode_VAULTS_ERROR_CODE_CURRENT, true

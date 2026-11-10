@@ -4,13 +4,19 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func mountVault(w *windowWiring) { w.inst.Mount(editor.NewVaultRoute(w.inst.State)) }
+func mountVault(w *windowWiring) {
+	state := w.inst.State
+	handler := windowvault.NewHandler(state)
+	path, served := windowvault.NewRoute(handler, state.CountQuestions())
+	w.inst.Mount(editor.NewRoute(path, served, handler))
+}
 
 func getReadVault(cfg Config, db *Index) editor.ReadVaultFunc {
 	return func(

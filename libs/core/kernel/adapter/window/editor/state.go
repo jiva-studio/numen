@@ -14,19 +14,15 @@ import (
 
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/broadcast"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/broadcast"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
-	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 )
 
 // State is the vault the window is looking at and what every handler of it
@@ -41,7 +37,7 @@ type State struct {
 
 	session atomic.Pointer[vaultSession]
 
-	ChangeEvents broadcaster[change]
+	ChangeEvents broadcaster[window.Change]
 
 	OpenVault func(context.Context, domain.Vault, *PluginOpen) error
 
@@ -61,11 +57,7 @@ type State struct {
 
 	NotifyOpenTabs func(domain.OpenTabs)
 
-	OpenTabsStore windowport.OpenTabsStore
-
-	DetachTab func(context.Context, DetachedTab) error
-
-	TabLinks *tablinks.Registry
+	DetachTab func(context.Context, window.DetachedTab) error
 
 	Writing inflight
 
@@ -99,19 +91,68 @@ func (s *State) GetCurrentVault() domain.Vault {
 	return domain.Vault{}
 }
 
-func (s *State) writeOpenTabs(ctx context.Context, open domain.OpenTabs) error {
-	if v := s.GetCurrentVault(); s.OpenTabsStore != nil && v.Path != "" {
-		return vaults.WriteOpenTabs(ctx, s.OpenTabsStore, v, open)
+// GetVaultState is what the window knows about the vault it shows: whether the first scan is done,
+// what stopped it, and how far the vault has been read for meaning.
+func (s *State) GetVaultState(ctx context.Context) window.VaultState {
+	showing := s.GetCurrentVault()
+	out := window.VaultState{
+		Vault:       showing,
+		IsReady:     s.Ready.Load(),
+		Error:       s.Error.Why(),
+		WatchError:  s.WatchError.Why(),
+		IsEmbedding: text(&s.Indexing.Model) != "",
 	}
-	return nil
+	// A count that cannot be taken leaves the pair at nothing, and the rest of
+	// the state is answered currently. A window standing on nothing holds no
+	// chunks and counts none.
+	if s.Indexing.Progress != nil && showing.ID != "" {
+		if target, embedded, err := indexing.GetProgress(ctx, s.Indexing.Progress, showing.ID, text(&s.Indexing.Recipe)); err == nil {
+			out.ChunkCount, out.EmbeddedCount = target, embedded
+		}
+	}
+	return out
 }
 
-func (s *State) readOpenTabs(ctx context.Context) (domain.OpenTabs, error) {
-	v := s.GetCurrentVault()
-	if s.OpenTabsStore == nil || v.Path == "" {
-		return domain.OpenTabs{}, nil
+// SubscribeChanges delivers each change of the vault until the returned function is called.
+func (s *State) SubscribeChanges() (<-chan window.Change, func()) { return s.ChangeEvents.subscribe() }
+
+// SubscribePlaces delivers each place the window is asked to show until the returned function is called.
+func (s *State) SubscribePlaces() (<-chan domain.Place, func()) { return s.Places.subscribe() }
+
+// SubscribeTabIDs delivers the id of each tab the window is asked to bring to the front until the
+// returned function is called.
+func (s *State) SubscribeTabIDs() (<-chan string, func()) { return s.TabIDs.subscribe() }
+
+// ReportOpenTabs keeps the tabs the window reported, wakes whoever waits for a report, and tells
+// the application.
+func (s *State) ReportOpenTabs(open domain.OpenTabs) {
+	s.openTabs.Store(&open)
+	s.openTabsReports.notify()
+	if s.NotifyOpenTabs != nil {
+		s.NotifyOpenTabs(open)
 	}
-	return vaults.ReadOpenTabs(ctx, s.OpenTabsStore, v)
+}
+
+// GetOpenTabs returns the open tabs as last reported by the window, or the
+// empty set when the window has not reported any.
+func (s *State) GetOpenTabs() domain.OpenTabs {
+	if open := s.openTabs.Load(); open != nil {
+		return *open
+	}
+	return domain.OpenTabs{}
+}
+
+// ShowVault shows another vault in the window, as a user switch.
+func (s *State) ShowVault(ctx context.Context, v domain.Vault) error {
+	return s.OpenVault(ctx, v, nil)
+}
+
+// CanOpenTabWindow is whether the application opens a window for a tab.
+func (s *State) CanOpenTabWindow() bool { return s.DetachTab != nil }
+
+// OpenTabWindow opens a window of its own for a tab.
+func (s *State) OpenTabWindow(ctx context.Context, tab window.DetachedTab) error {
+	return s.DetachTab(ctx, tab)
 }
 
 func (s *State) setVault(v domain.Vault) { s.vault.Store(&v) }
@@ -160,103 +201,25 @@ func text(v *atomic.Value) string {
 	return s
 }
 
-// vaultHandler answers what the vault in the window is doing: whether it has
-// been scanned, and what moved in it.
-type vaultHandler struct{ state *State }
-
-func (h *vaultHandler) GetVaultState(
-	ctx context.Context, _ *connect.Request[v1.GetVaultStateRequest],
-) (*connect.Response[v1.GetVaultStateResponse], error) {
-	showing := h.state.GetCurrentVault()
-	out := &v1.GetVaultStateResponse{
-		Id:   string(showing.ID),
-		Name: showing.Name,
-		Path: showing.Path,
-		Scan: &v1.Scan{
-			IsReady:    h.state.Ready.Load(),
-			Error:      h.state.Error.Why(),
-			WatchError: h.state.WatchError.Why(),
-		},
-		Coverage: &v1.IndexCoverage{IsEmbedding: text(&h.state.Indexing.Model) != ""},
-	}
-	// A count that cannot be taken leaves the pair at nothing, and the rest of
-	// the state is answered currently. A window standing on nothing holds no
-	// chunks and counts none.
-	if h.state.Indexing.Progress != nil && showing.ID != "" {
-		if target, embedded, err := indexing.GetProgress(ctx, h.state.Indexing.Progress, showing.ID, text(&h.state.Indexing.Recipe)); err == nil {
-			out.Coverage.ChunkCount, out.Coverage.EmbeddedCount = target, embedded
-		}
-	}
-	return connect.NewResponse(out), nil
-}
-
-// WatchVaultChanges streams vault changes until the caller disconnects.
-func (h *vaultHandler) WatchVaultChanges(
-	ctx context.Context,
-	_ *connect.Request[v1.WatchVaultChangesRequest],
-	out *connect.ServerStream[v1.WatchVaultChangesResponse],
-) error {
-	line, isDone := h.state.ChangeEvents.subscribe()
-	defer isDone()
-
-	// An initial empty message confirms the subscription. A stream that sends
-	// nothing until the vault changes is indistinguishable from one that never
-	// opened.
-	if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
-		return err
-	}
-
-	repeat := time.NewTicker(wire.Again)
-	defer repeat.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-repeat.C:
-			if err := out.Send(&v1.WatchVaultChangesResponse{}); err != nil {
-				return err
-			}
-		case what, open := <-line:
-			if !open {
-				return nil
-			}
-			if err := out.Send(newChangeResponse(what)); err != nil {
-				return err
-			}
-		}
-	}
-}
-
-func newChangeResponse(what change) *v1.WatchVaultChangesResponse {
-	renamedMoves := make([]*v1.Move, 0, len(what.renamed))
-	for _, went := range what.renamed {
-		renamedMoves = append(renamedMoves, &v1.Move{From: went.From, To: went.To})
-	}
-	return &v1.WatchVaultChangesResponse{
-		Paths: what.paths, Reload: what.shouldReload, Renamed: renamedMoves, VersionPaths: what.versionPaths,
-	}
-}
-
 // GetWindow returns the window handle for requesting place focus.
-func (s *State) GetWindow() windowport.Window { return view{s} }
+func (s *State) GetWindow() View { return View{state: s} }
 
-// view forwards window requests to the subscribed clients. A place requested
+// View forwards window requests to the subscribed clients. A place requested
 // while no client is subscribed is not shown.
-type view struct{ *State }
+type View struct{ state *State }
 
-func (v view) FocusPlace(_ context.Context, pos domain.Place) error {
-	v.Places.publish(pos)
+func (v View) FocusPlace(_ context.Context, pos domain.Place) error {
+	v.state.Places.publish(pos)
 	return nil
 }
 
-func (v view) ShowMove(_ context.Context, went domain.Move) error {
-	v.ChangeEvents.publish(change{renamed: []domain.Move{went}})
+func (v View) ShowMove(_ context.Context, went domain.Move) error {
+	v.state.ChangeEvents.publish(window.Change{Renamed: []domain.Move{went}})
 	return nil
 }
 
-func (v view) ShowEdit(_ context.Context, edit domain.Edit) error {
-	v.Edits.publish(edit)
+func (v View) ShowEdit(_ context.Context, edit domain.Edit) error {
+	v.state.Edits.publish(edit)
 	return nil
 }
 
@@ -278,19 +241,10 @@ func (w *inflight) open()                 { w.Inflight.Open() }
 
 var errClosing = broadcast.ErrClosing
 
-// change reports the changed file paths, notes and assets alike, or that the
-// vault must be reloaded.
-type change struct {
-	paths        []string
-	shouldReload bool
-	renamed      []domain.Move
-	versionPaths []string
-}
-
-func newChangeBroadcaster() broadcaster[change] {
-	return broadcaster[change]{
-		Broadcaster: broadcast.Broadcaster[change]{
-			Fallback: func(change) change { return change{shouldReload: true} },
+func newChangeBroadcaster() broadcaster[window.Change] {
+	return broadcaster[window.Change]{
+		Broadcaster: broadcast.Broadcaster[window.Change]{
+			Fallback: func(window.Change) window.Change { return window.Change{ShouldReload: true} },
 			Capacity: 8,
 		},
 	}
@@ -319,16 +273,8 @@ func newEditBroadcaster() broadcaster[domain.Edit] {
 	}
 }
 
-// DetachedTab is a tab to open in a window of its own. The new window reads
-// the tab by its id with ReadDetachedTab.
-type DetachedTab struct {
-	ID            string
-	X, Y          int
-	Width, Height int
-}
-
-func (v view) ActivateTab(_ context.Context, id string) error {
-	v.TabIDs.publish(id)
+func (v View) ActivateTab(_ context.Context, id string) error {
+	v.state.TabIDs.publish(id)
 	return nil
 }
 

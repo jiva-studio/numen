@@ -29,9 +29,9 @@ const h = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('../vault', () => ({ core: h.core }))
 vi.mock('@/features/command-palette', () => ({
   runSupport: () => ({ name: 'runs' }),
+  searchCore: { name: 'search' },
   registerCommand: () => () => undefined,
 }))
 vi.mock('./createCommands', () => ({

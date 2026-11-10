@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/tablinks"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
@@ -26,7 +26,6 @@ import (
 
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
-	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -73,7 +72,6 @@ type Setup struct {
 	ReadVault     ReadVaultFunc
 	CloseIndex    func() error
 	Progress      indexport.IndexProgress
-	OpenTabsStore windowport.OpenTabsStore
 	EmitEvent     func(event string)
 	IsRebuilding  bool
 	Closing       <-chan struct{}
@@ -84,18 +82,14 @@ var errNoVault = errors.New("the window has no vault")
 
 // NewInstallation makes the state of a window and the worker that indexes its
 // vaults. Nothing is served and no vault is open until Start.
-func NewInstallation(in Setup, session SessionSource) (*Installation, error) {
+func NewInstallation(in Setup, session SessionSource) *Installation {
 	if in.EmbedderError != nil {
 		writeDiagnostic(in.Tasks.Set, in.Out, "not embedding: %v\n", in.EmbedderError)
 		// Record indexing task failure when embedding provider initialization fails.
 		in.Tasks.Set(vaultreading.Task{ID: makingVectors, Title: "Indexing", Error: in.EmbedderError.Error()})
 	}
-	state, err := NewState(in.Tasks)
-	if err != nil {
-		return nil, err
-	}
+	state := NewState(in.Tasks)
 	state.EmitEvent = in.EmitEvent
-	state.OpenTabsStore = in.OpenTabsStore
 	state.SetIndexing(in.Progress, in.Embedder)
 	indexer := newIndexWorker(in.ReadVault, state, in.Embedder, quietPeriod, in.Out)
 	state.NotifyNoteWritten = indexer.WakeNotes
@@ -114,7 +108,7 @@ func NewInstallation(in Setup, session SessionSource) (*Installation, error) {
 		embedderError: in.EmbedderError,
 		stopEmbedder:  in.StopEmbedder,
 		isRebuilding:  in.IsRebuilding,
-	}, nil
+	}
 }
 
 // UseScenarios sets the use cases the window works its notes and its vaults
@@ -281,22 +275,17 @@ func (o *Installation) Report(messages []string) {
 }
 
 // NewState makes the state of a window that shows no vault.
-func NewState(tasks *run.Tasks) (*State, error) {
-	tabLinks, err := tablinks.NewRegistry(linkGrace, tablinks.ScheduleAfter)
-	if err != nil {
-		return nil, err
-	}
+func NewState(tasks *run.Tasks) *State {
 	state := &State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
 		TabIDs:       newTabIDBroadcaster(),
-		TabLinks:     tabLinks,
 		Edits:        newEditBroadcaster(),
 		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
 	}
 	// The editor is open on one vault, and answers which as itself.
 	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }
-	return state, nil
+	return state
 }
 
 // SetIndexing sets how far the vault has been read for meaning, and the model it is read under.
@@ -362,9 +351,9 @@ func (s *shutdownState) tryBegin() error {
 
 	switch {
 	case s.isClosing:
-		return errWindowClosing
+		return window.ErrClosing
 	case s.isBusy:
-		return errShutdownInProgress
+		return window.ErrFlushing
 	}
 	s.isBusy = true
 	return nil
@@ -376,9 +365,9 @@ func (s *shutdownState) tryBeginPluginOpen(ctx context.Context) (context.Context
 
 	switch {
 	case s.isClosing:
-		return nil, nil, nil, errWindowClosing
+		return nil, nil, nil, window.ErrClosing
 	case s.isBusy:
-		return nil, nil, nil, errShutdownInProgress
+		return nil, nil, nil, window.ErrFlushing
 	}
 	ctx, cancel := context.WithCancelCause(ctx)
 	open := &PluginOpen{cancel: cancel, end: make(chan struct{})}
@@ -424,13 +413,6 @@ func (s *shutdownState) end(closed bool) {
 	s.isClosing = closed
 }
 
-// errWindowClosing is the error for a vault requested in a closed window.
-var errWindowClosing = errors.New("this window is closing")
-
-// errShutdownInProgress is the error for a vault requested while a flush is
-// running.
-var errShutdownInProgress = errors.New("the window is flushing pending writes")
-
 // FlushPending has every page write what only it holds, then waits for the
 // writes already taken. Calling it again returns true immediately.
 // It returns false, with no write discarded, when a page holds work that needs
@@ -438,7 +420,7 @@ var errShutdownInProgress = errors.New("the window is flushing pending writes")
 // window stays, and the next close flushes again.
 func (o *Installation) FlushPending(ctx context.Context) bool {
 	switch err := o.shutdown.tryBegin(); {
-	case errors.Is(err, errWindowClosing):
+	case errors.Is(err, window.ErrClosing):
 		return true
 	case err != nil:
 		return false
@@ -499,7 +481,7 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
 	if direct := getDirectChildren(into, imported.Imported); len(direct) > 0 {
-		state.ChangeEvents.publish(change{paths: direct})
+		state.ChangeEvents.publish(window.Change{Paths: direct})
 	}
 	if err != nil {
 		pos.Error = err.Error()
