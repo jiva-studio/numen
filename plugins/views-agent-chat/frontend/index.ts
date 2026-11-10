@@ -14,8 +14,9 @@ export * from './types'
 export { WORDS } from './words'
 
 export function activate(context: PluginContext): void {
-  context.registerView({ capability: CONVERSATION, component: ConversationView })
-  const { workspace, agent } = context
+  context.register.view({ capability: CONVERSATION, component: ConversationView })
+  const { workspace } = context.ui
+  const { agent } = context.work
   if (!workspace) return
   if (!agent) {
     throw new Error('an agent chat requires a window and an agent')
@@ -24,8 +25,8 @@ export function activate(context: PluginContext): void {
     {
       workspace,
       agent,
-      ...(context.commands ? { commands: context.commands } : {}),
-      getReasoning: () => context.getSetting<string>('reasoning') ?? '',
+      ...(context.ui.commands ? { commands: context.ui.commands } : {}),
+      getReasoning: () => context.settings.get<string>('reasoning') ?? '',
     },
     (deps) =>
       useAgentConversation(
@@ -37,18 +38,18 @@ export function activate(context: PluginContext): void {
         deps,
       ),
   )
-  context.registerTabKind(chats.kind)
+  context.register.tabKind(chats.kind)
 
   /** A question about a note, posted to the conversation the user was last in. */
   const askAbout = (path: string): void => workspace.ask(`${path} — `)
 
-  context.registerCommand({
+  context.register.command({
     id: 'chat.open',
     handler: async (note) => {
-      await context.navigateTab?.(AGENT, note.path)
+      await context.tabs.navigate?.(AGENT, note.path)
     },
   })
-  context.registerCommand({
+  context.register.command({
     id: 'note.ask',
     handler: (note) => askAbout(note.path),
   })

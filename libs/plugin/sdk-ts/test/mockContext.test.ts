@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
-import type { PluginContext } from '../src/types'
+import type { PluginVault, PluginWork } from '../src/types'
 import { CONVERSATION } from '../src/views'
 
 describe('mock plugin context', () => {
   it('manages tab kind registrations', () => {
     const ctx = createMockPluginContext({ pluginId: 'tabs-plugin' })
-    const d = ctx.registerTabKind({
+    const d = ctx.register.tabKind({
       kind: 'custom-view',
       component: {},
       title: 'Custom View',
@@ -21,7 +21,7 @@ describe('mock plugin context', () => {
 
   it('manages settings view registrations', () => {
     const ctx = createMockPluginContext({ pluginId: 'settings-plugin' })
-    const d = ctx.registerSettingsView({ id: 'floor', component: {} })
+    const d = ctx.register.settingsView({ id: 'floor', component: {} })
 
     expect(ctx.getRegisteredSettingsViews()).toEqual([{ id: 'floor', component: {} }])
     d.dispose()
@@ -30,14 +30,14 @@ describe('mock plugin context', () => {
 
   it('removes settings views on dispose', () => {
     const ctx = createMockPluginContext()
-    ctx.registerSettingsView({ id: 'floor', component: {} })
+    ctx.register.settingsView({ id: 'floor', component: {} })
     ctx.dispose()
     expect(ctx.getRegisteredSettingsViews()).toHaveLength(0)
   })
 
   it('lists a slot view until it is disposed', () => {
     const ctx = createMockPluginContext({ pluginId: 'bar-plugin' })
-    const d = ctx.registerSlotView({ id: 'bar', component: {} })
+    const d = ctx.register.slotView({ id: 'bar', component: {} })
 
     expect(ctx.getRegisteredSlotViews()).toEqual([{ id: 'bar', component: {} }])
     d.dispose()
@@ -48,23 +48,28 @@ describe('mock plugin context', () => {
     const ctx = createMockPluginContext({
       app: { name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' },
     })
-    expect(ctx.app).toEqual({ name: 'numen', version: '2026.10.3', build: 42, platform: 'windows' })
-    expect(createMockPluginContext().app.platform).toBe('linux')
+    expect(ctx.plugin.app).toEqual({
+      name: 'numen',
+      version: '2026.10.3',
+      build: 42,
+      platform: 'windows',
+    })
+    expect(createMockPluginContext().plugin.app.platform).toBe('linux')
   })
 
   it('opens web addresses only', async () => {
     const ctx = createMockPluginContext()
 
-    expect(await ctx.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
-    expect((await ctx.openExternal('file:///etc/passwd')).ok).toBe(false)
-    expect((await ctx.openExternal('not an address')).ok).toBe(false)
+    expect(await ctx.plugin.openExternal('https://numen.md/')).toEqual({ ok: true, value: null })
+    expect((await ctx.plugin.openExternal('file:///etc/passwd')).ok).toBe(false)
+    expect((await ctx.plugin.openExternal('not an address')).ok).toBe(false)
     expect(ctx.getOpenedAddresses()).toEqual(['https://numen.md/'])
   })
 
   it('keeps a kind that says what its tabs hold, with the hooks it declares', async () => {
     const ctx = createMockPluginContext({ pluginId: 'graph-plugin' })
     const navigated: string[] = []
-    ctx.registerTabKind<{ here: string }>({
+    ctx.register.tabKind<{ here: string }>({
       kind: 'graph',
       component: {},
       open: (target) => ({ here: target }),
@@ -87,7 +92,7 @@ describe('mock plugin context', () => {
   it('handles command triggers and async handlers', async () => {
     const ctx = createMockPluginContext()
     let executed = false
-    ctx.registerCommand({
+    ctx.register.command({
       id: 'cmd.run',
       handler: async () => {
         executed = true
@@ -105,7 +110,7 @@ describe('mock plugin context', () => {
   it('gives a triggered command the item id and the values, empty by default', async () => {
     const ctx = createMockPluginContext()
     const handler = vi.fn()
-    ctx.registerCommand({ id: 'cmd.run', handler })
+    ctx.register.command({ id: 'cmd.run', handler })
 
     await ctx.triggerCommand('cmd.run', undefined, 'w2', { window: 'north' })
     await ctx.triggerCommand('cmd.run')
@@ -116,7 +121,7 @@ describe('mock plugin context', () => {
 
   it('manages agent provider registrations', () => {
     const ctx = createMockPluginContext()
-    const d = ctx.registerAgentProvider({
+    const d = ctx.register.agentProvider({
       id: 'custom-llm',
       name: 'Custom LLM',
       createAgent: () => ({}),
@@ -131,10 +136,10 @@ describe('mock plugin context', () => {
 
   it('keeps the views a plugin declares and the views it mounts', () => {
     const ctx = createMockPluginContext()
-    const declared = ctx.registerView({ capability: CONVERSATION, component: {} })
+    const declared = ctx.register.view({ capability: CONVERSATION, component: {} })
     const element = {} as HTMLElement
 
-    const view = ctx.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
+    const view = ctx.ui.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
     view.focus()
     view.dispose()
 
@@ -157,15 +162,15 @@ describe('mock plugin context', () => {
       initialSettings: { timeout: 30 },
     })
 
-    expect(ctx.getSetting('timeout')).toBe(30)
+    expect(ctx.settings.get('timeout')).toBe(30)
 
     let notifiedValue: unknown = null
-    const d = ctx.onSettingChange('timeout', (val) => {
+    const d = ctx.settings.onChange('timeout', (val) => {
       notifiedValue = val
     })
 
     ctx.setSetting('timeout', 60)
-    expect(ctx.getSetting('timeout')).toBe(60)
+    expect(ctx.settings.get('timeout')).toBe(60)
     expect(notifiedValue).toBe(60)
 
     d.dispose()
@@ -178,62 +183,62 @@ describe('mock plugin context', () => {
     let receivedVaultPath = ''
     let receivedSelectedPath = ''
 
-    const vaultSub = ctx.onVaultChange((event) => {
+    const vaultSub = ctx.events.onVaultChange((event) => {
       receivedVaultPath = event.vaultPath ?? ''
     })
-    const fileSub = ctx.onFileSelect((event) => {
+    const fileSub = ctx.events.onFileSelect((event) => {
       receivedSelectedPath = event.path
     })
 
-    ctx.emitVaultChange({ vaultPath: '/path/to/vault' })
+    ctx.events.emitVaultChange({ vaultPath: '/path/to/vault' })
     expect(receivedVaultPath).toBe('/path/to/vault')
 
-    ctx.emitFileSelect({ path: 'notes/test.md', title: 'test' })
+    ctx.events.emitFileSelect({ path: 'notes/test.md', title: 'test' })
     expect(receivedSelectedPath).toBe('notes/test.md')
 
     vaultSub.dispose()
     fileSub.dispose()
 
-    ctx.emitVaultChange({ vaultPath: '/other/vault' })
-    ctx.emitFileSelect({ path: 'other/note.md' })
+    ctx.events.emitVaultChange({ vaultPath: '/other/vault' })
+    ctx.events.emitFileSelect({ path: 'other/note.md' })
     expect(receivedVaultPath).toBe('/path/to/vault')
     expect(receivedSelectedPath).toBe('notes/test.md')
   })
 
   it('cleans up all subscriptions on dispose', () => {
     const ctx = createMockPluginContext()
-    ctx.registerCommand({ id: 'c1', handler: vi.fn() })
-    ctx.registerReader({ id: 'r1', component: {} })
+    ctx.register.command({ id: 'c1', handler: vi.fn() })
+    ctx.register.reader({ id: 'r1', component: {} })
 
-    expect(ctx.subscriptions.length).toBe(2)
+    expect(ctx.plugin.subscriptions.length).toBe(2)
     ctx.dispose()
-    expect(ctx.subscriptions.length).toBe(0)
+    expect(ctx.plugin.subscriptions.length).toBe(0)
   })
 
   it('opens tab through openTab method', async () => {
     const ctx = createMockPluginContext()
-    const result = await ctx.openTab?.('url', 'https://example.com')
+    const result = await ctx.tabs.open?.('url', 'https://example.com')
     expect(result).toBe('url:https://example.com')
   })
 
   it('passes over the agent it is given, and none where it is given none', () => {
-    const agent = { name: 'agent' } as unknown as NonNullable<PluginContext['agent']>
+    const agent = { name: 'agent' } as unknown as NonNullable<PluginWork['agent']>
 
-    expect(createMockPluginContext({ agent }).agent).toBe(agent)
-    expect(createMockPluginContext()).not.toHaveProperty('agent')
+    expect(createMockPluginContext({ agent }).work.agent).toBe(agent)
+    expect(createMockPluginContext().work).not.toHaveProperty('agent')
   })
 
   it('forwards the provided buffers and closeTab and omits them when not provided', () => {
     const buffers = { track: () => ({ dispose: vi.fn() }) } as unknown as NonNullable<
-      PluginContext['buffers']
+      PluginVault['buffers']
     >
     const closeTab = vi.fn()
 
     const ctx = createMockPluginContext({ buffers, closeTab })
 
-    expect(ctx.buffers).toBe(buffers)
-    expect(ctx.closeTab).toBe(closeTab)
-    expect(createMockPluginContext()).not.toHaveProperty('buffers')
-    expect(createMockPluginContext()).not.toHaveProperty('closeTab')
+    expect(ctx.vault.buffers).toBe(buffers)
+    expect(ctx.tabs.close).toBe(closeTab)
+    expect(createMockPluginContext().vault).not.toHaveProperty('buffers')
+    expect(createMockPluginContext().tabs).not.toHaveProperty('close')
   })
 })

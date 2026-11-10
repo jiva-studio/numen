@@ -17,13 +17,16 @@ function createRecordingContext(handed: Map<string, Disposable>): PluginContext 
     return one
   }
   return {
-    pluginId: HARBOR,
-    subscriptions: [],
-    commands: { getIds: () => [], watch: hand('commands.watch'), run: vi.fn() },
-    vaults: { watch: hand('vaults.watch') },
-    window: { watch: hand('window.watch') },
-    buffers: { track: hand('buffers.track'), addFlushHandler: hand('buffers.addFlushHandler') },
-    mountView: () => ({ focus: vi.fn(), ...hand('mountView')() }),
+    plugin: { id: HARBOR, subscriptions: [] },
+    vault: {
+      vaults: { watch: hand('vaults.watch') },
+      buffers: { track: hand('buffers.track'), addFlushHandler: hand('buffers.addFlushHandler') },
+    },
+    ui: {
+      commands: { getIds: () => [], watch: hand('commands.watch'), run: vi.fn() },
+      window: { watch: hand('window.watch') },
+      mountView: () => ({ focus: vi.fn(), ...hand('mountView')() }),
+    },
   } as unknown as PluginContext
 }
 
@@ -41,14 +44,14 @@ describe('a start cancelled at the limit', () => {
     const loader = createPluginLoader({ host })
     loader.registerPluginModule(HARBOR, async () => ({
       activate: async (context: PluginContext) => {
-        context.commands?.watch(() => undefined)
-        context.buffers?.track({} as never)
+        context.ui.commands?.watch(() => undefined)
+        context.vault.buffers?.track({} as never)
         await new Promise((resolve) => setTimeout(resolve, 30_000 + 1_000))
-        context.vaults?.watch(() => undefined)
-        context.window?.watch(() => undefined)
-        context.buffers?.addFlushHandler(async () => undefined)
-        context.mountView('conversation', {} as HTMLElement, {})
-        context.subscriptions.push(pushed)
+        context.vault.vaults?.watch(() => undefined)
+        context.ui.window?.watch(() => undefined)
+        context.vault.buffers?.addFlushHandler(async () => undefined)
+        context.ui.mountView('conversation', {} as HTMLElement, {})
+        context.plugin.subscriptions.push(pushed)
       },
     }))
 

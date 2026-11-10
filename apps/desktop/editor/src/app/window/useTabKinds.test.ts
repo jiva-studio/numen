@@ -226,16 +226,16 @@ describe('the services the window gives a plugin', () => {
     const { workspace } = window.services
 
     workspace?.ask('what is this?')
-    workspace?.setDraggedPaths(['a.md'])
-    workspace?.showError('the link was not written')
-    workspace?.getMessageWriter('form')('named a form')
+    workspace?.dragged.setPaths(['a.md'])
+    workspace?.messages.showError('the link was not written')
+    workspace?.messages.getWriter('form')('named a form')
 
     expect(deps.windowTabs.groups.sendText).toHaveBeenCalledWith('chat', 'what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
     expect(deps.log.getWriter).toHaveBeenCalledWith('form')
-    expect(workspace?.getToday()).toBe('2026-09-04')
-    expect(workspace?.openingPath.value).toBe('Root.md')
+    expect(workspace?.window.getToday()).toBe('2026-09-04')
+    expect(workspace?.window.openingPath.value).toBe('Root.md')
     expect(window.services.relations?.roles).toStrictEqual(['parent', 'child', 'jump'])
   })
 

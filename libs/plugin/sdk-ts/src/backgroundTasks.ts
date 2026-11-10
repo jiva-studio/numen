@@ -7,20 +7,37 @@ import type { Disposable } from './types'
 // BackgroundTaskState is how a task stands: running, being cancelled, ended in failure, or a notice.
 export type BackgroundTaskState = 'running' | 'cancelling' | 'failed' | 'notice'
 
+// BackgroundTaskProgress is how far a task has come. Both counts are zero for a task without a total, and
+// counting is empty where the task counts items one by one.
+export interface BackgroundTaskProgress {
+  readonly completedCount: number
+  readonly total: number
+  readonly counting: string
+}
+
+// BackgroundTaskAllowed is what the user may do with a task.
+export interface BackgroundTaskAllowed {
+  readonly cancel: boolean
+  readonly retry: boolean
+}
+
+// BackgroundTaskAction is the settings link of a failed task of a plugin; both fields are empty where
+// the task has none.
+export interface BackgroundTaskAction {
+  readonly label: string
+  readonly pluginId: string
+}
+
 // BackgroundTask is one piece of work the window lists.
 export interface BackgroundTask {
   readonly id: string
   readonly label: string
   readonly about: string
   readonly state: BackgroundTaskState
-  readonly done: number
-  readonly total: number
-  readonly counting: string
+  readonly progress: BackgroundTaskProgress
   readonly error: string
-  readonly canCancel: boolean
-  readonly canRetry: boolean
-  readonly actionLabel: string
-  readonly actionPluginId: string
+  readonly allowed: BackgroundTaskAllowed
+  readonly action: BackgroundTaskAction
 }
 
 // BackgroundTaskHost is the background work of the window.

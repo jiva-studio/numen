@@ -151,7 +151,7 @@ describe('the icons the window draws with', () => {
     ({ path, name: path, isFolder, isNote, type: 'note' }) as const
 
   it('are all the host offers: no commands over a row', () => {
-    expect(Object.keys(createIconHost({})).sort()).toStrictEqual(['getCommandIcon', 'getEntryIcon'])
+    expect(Object.keys(createIconHost({})).sort()).toStrictEqual(['getCommand', 'getEntry'])
   })
 
   it('draw a command with the icon the plugin that offers it gives it', () => {
@@ -160,16 +160,16 @@ describe('the icons the window draws with', () => {
       getPluginCommandIcon: (id) => (id === 'md.numen.x:a.b' ? icon : undefined),
     })
 
-    expect(host.getCommandIcon('md.numen.x:a.b')).toBe(icon)
-    expect(host.getCommandIcon('md.numen.y:a.b')).not.toBe(icon)
+    expect(host.getCommand('md.numen.x:a.b')).toBe(icon)
+    expect(host.getCommand('md.numen.y:a.b')).not.toBe(icon)
   })
 
   it('draw a command with the window’s icon, and an entry by what it is', () => {
     const host = createIconHost({})
 
-    expect(host.getCommandIcon(COMMAND.renameNote)).toBe(findIcon(COMMAND.renameNote))
-    expect(host.getCommandIcon('nothing at all')).toBeNull()
-    expect(host.getEntryIcon(entry('physics', true, true), false)).toBe(Folder)
-    expect(host.getEntryIcon(entry('physics', true, true), true)).toBe(FolderOpen)
+    expect(host.getCommand(COMMAND.renameNote)).toBe(findIcon(COMMAND.renameNote))
+    expect(host.getCommand('nothing at all')).toBeNull()
+    expect(host.getEntry(entry('physics', true, true), false)).toBe(Folder)
+    expect(host.getEntry(entry('physics', true, true), true)).toBe(FolderOpen)
   })
 })

@@ -9,8 +9,8 @@ describe('notes plugin lifecycle', () => {
     const registerReader = vi.fn()
     const registerTabKind = vi.fn()
     const context = {
-      registerReader,
-      registerTabKind,
+      register: { reader: registerReader, tabKind: registerTabKind },
+      vault: {},
     } as unknown as PluginContext
 
     activate(context)
@@ -33,9 +33,8 @@ describe('notes plugin lifecycle', () => {
   it('registers no command, since creating a note is a command of the editor', () => {
     const registerCommand = vi.fn()
     const context = {
-      registerReader: vi.fn(),
-      registerTabKind: vi.fn(),
-      registerCommand,
+      register: { reader: vi.fn(), tabKind: vi.fn(), command: registerCommand },
+      vault: {},
     } as unknown as PluginContext
 
     activate(context)
@@ -46,10 +45,8 @@ describe('notes plugin lifecycle', () => {
   it('registers the note-editor view where the host offers the notes of the vault', () => {
     const registerView = vi.fn()
     const context = {
-      registerReader: vi.fn(),
-      registerTabKind: vi.fn(),
-      registerView,
-      notes: { read: vi.fn(), write: vi.fn() },
+      register: { reader: vi.fn(), tabKind: vi.fn(), view: registerView },
+      vault: { notes: { read: vi.fn(), write: vi.fn() } },
     } as unknown as PluginContext
 
     activate(context)
@@ -71,16 +68,18 @@ describe('notes plugin lifecycle', () => {
     }
     const listeners = new Map<string, (value: unknown) => void>()
     const context = {
-      registerReader: vi.fn(),
-      registerTabKind: vi.fn(),
-      getSetting: (key: string) => settings[key],
-      onSettingChange: (key: string, handler: (value: unknown) => void) => {
-        listeners.set(key, handler)
-        return { dispose: () => listeners.delete(key) }
+      register: { reader: vi.fn(), tabKind: vi.fn() },
+      vault: {},
+      settings: {
+        get: (key: string) => settings[key],
+        onChange: (key: string, handler: (value: unknown) => void) => {
+          listeners.set(key, handler)
+          return { dispose: () => listeners.delete(key) }
+        },
       },
     } as unknown as PluginContext
 
-    expect(readMarkdownEditorPreferences(context.getSetting)).toStrictEqual({
+    expect(readMarkdownEditorPreferences(context.settings.get)).toStrictEqual({
       softWrap: false,
       lineNumbers: true,
     })

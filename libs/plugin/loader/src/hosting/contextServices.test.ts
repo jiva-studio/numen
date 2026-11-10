@@ -19,8 +19,8 @@ import type { PluginContextHost } from './types'
 
 const createServices = () => {
   const workspace = {
-    openFile: vi.fn(),
-    showError: vi.fn(),
+    files: { open: vi.fn() },
+    messages: { showError: vi.fn() },
   } as unknown as WorkspaceHost
   const notes = {
     getNeighbourhood: vi.fn(() => Promise.resolve({ path: 'Notes/Example.md' })),
@@ -87,21 +87,21 @@ const createContext = (permissions: readonly string[]) => {
 type Call = (context: PluginContext) => unknown
 
 const NOTE_WRITES: Record<string, Call> = {
-  createUntitledNote: (c) => c.notes!.createUntitledNote(),
-  write: (c) => c.notes!.write('a.md', 'Prose.'),
+  createUntitledNote: (c) => c.vault.notes!.createUntitledNote(),
+  write: (c) => c.vault.notes!.write('a.md', 'Prose.'),
 }
 
 const NOTE_READS: Record<string, Call> = {
-  getNeighbourhood: (c) => c.notes!.getNeighbourhood('Notes/Example.md'),
-  getHeadings: (c) => c.notes!.getHeadings(['Notes/Example.md']),
-  findNotes: (c) => c.notes!.findNotes('Example', 5),
-  read: (c) => c.notes!.read('Notes/Example.md'),
-  readProperties: (c) => c.notes!.readProperties('Notes/Example.md'),
+  getNeighbourhood: (c) => c.vault.notes!.getNeighbourhood('Notes/Example.md'),
+  getHeadings: (c) => c.vault.notes!.getHeadings(['Notes/Example.md']),
+  findNotes: (c) => c.vault.notes!.findNotes('Example', 5),
+  read: (c) => c.vault.notes!.read('Notes/Example.md'),
+  readProperties: (c) => c.vault.notes!.readProperties('Notes/Example.md'),
 }
 
 const RELATION_WRITES: Record<string, Call> = {
   saveConnection: (c) =>
-    c.relations!.saveConnection({
+    c.vault.relations!.saveConnection({
       first: 'a.md',
       second: 'b.md',
       role: 'child',
@@ -109,15 +109,15 @@ const RELATION_WRITES: Record<string, Call> = {
       firstSide: { label: '', marker: 'arrow', reason: '' },
       secondSide: null,
     }),
-  removeSide: (c) => c.relations!.removeSide('a.md', 'b.md'),
-  removeConnection: (c) => c.relations!.removeConnection('a.md', 'b.md'),
-  join: (c) => c.relations!.join('a.md', 'b.md', { role: 'child' }),
-  createRelated: (c) => c.relations!.createRelated({ from: 'a.md', role: 'child' }),
+  removeSide: (c) => c.vault.relations!.removeSide('a.md', 'b.md'),
+  removeConnection: (c) => c.vault.relations!.removeConnection('a.md', 'b.md'),
+  join: (c) => c.vault.relations!.join('a.md', 'b.md', { role: 'child' }),
+  createRelated: (c) => c.vault.relations!.createRelated({ from: 'a.md', role: 'child' }),
 }
 
 const RELATION_READS: Record<string, Call> = {
-  getConnection: (c) => c.relations!.getConnection('a.md', 'b.md'),
-  listBacklinks: (c) => c.relations!.listBacklinks('a.md'),
+  getConnection: (c) => c.vault.relations!.getConnection('a.md', 'b.md'),
+  listBacklinks: (c) => c.vault.relations!.listBacklinks('a.md'),
 }
 
 describe('the relationships a plugin writes', () => {
@@ -164,14 +164,14 @@ describe('the relationships a plugin writes', () => {
   it('pass the roles the window offers', () => {
     const { context } = createContext([])
 
-    expect(context.relations!.roles).toStrictEqual(['parent', 'child', 'jump'])
+    expect(context.vault.relations!.roles).toStrictEqual(['parent', 'child', 'jump'])
   })
 })
 
 const FILE_WRITES: Record<string, Call> = {
-  move: (c) => c.files!.move('a.md', 'b.md'),
-  createFolder: (c) => c.files!.createFolder('dir'),
-  createNote: (c) => c.files!.createNote('dir'),
+  move: (c) => c.vault.files!.move('a.md', 'b.md'),
+  createFolder: (c) => c.vault.files!.createFolder('dir'),
+  createNote: (c) => c.vault.files!.createNote('dir'),
 }
 
 describe('a note a plugin reads and writes', () => {
@@ -223,7 +223,7 @@ describe('a note a plugin reads and writes', () => {
   it('is read with vault:read and without vault:write', async () => {
     const { context, notes } = createContext(['vault:read'])
 
-    const note = await context.notes!.read('Notes/Example.md')
+    const note = await context.vault.notes!.read('Notes/Example.md')
 
     expect(note).toStrictEqual({ body: 'Example prose.' })
     expect(notes.read).toHaveBeenCalledWith('Notes/Example.md')
@@ -232,18 +232,18 @@ describe('a note a plugin reads and writes', () => {
   it('is written and not read with vault:write and without vault:read', async () => {
     const { context, notes } = createContext(['vault:write'])
 
-    await context.notes!.write('Notes/Example.md', 'New prose.')
+    await context.vault.notes!.write('Notes/Example.md', 'New prose.')
 
     expect(notes.write).toHaveBeenCalledWith('Notes/Example.md', 'New prose.')
-    await expect(context.notes!.read('Notes/Example.md')).rejects.toThrowError(
+    await expect(context.vault.notes!.read('Notes/Example.md')).rejects.toThrowError(
       'Plugin "md.numen.sample" lacks required permission "vault:read" for notes.read',
     )
   })
 })
 
 const BUFFER_WRITES: Record<string, Call> = {
-  track: (c) => c.buffers!.track({} as never),
-  addFlushHandler: (c) => c.buffers!.addFlushHandler(vi.fn(() => Promise.resolve())),
+  track: (c) => c.vault.buffers!.track({} as never),
+  addFlushHandler: (c) => c.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve())),
 }
 
 describe('the open files a plugin passes the window', () => {
@@ -269,7 +269,7 @@ describe('the open files a plugin passes the window', () => {
 
   it('are passed to the window the plugin runs in, and to none where the window made none', () => {
     const { context, buffers } = createContext(['vault:write'])
-    context.buffers!.track({} as never)
+    context.vault.buffers!.track({} as never)
 
     expect(buffers.track).toHaveBeenCalledOnce()
     expect(
@@ -287,10 +287,10 @@ describe('the registrations of a plugin in the open files', () => {
     vi.mocked(buffers.track).mockReturnValue({ dispose: released })
     vi.mocked(buffers.addFlushHandler).mockReturnValue({ dispose: released })
 
-    context.buffers!.track({} as never)
-    context.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
-    expect(context.subscriptions).toHaveLength(2)
-    for (const one of [...context.subscriptions]) one.dispose()
+    context.vault.buffers!.track({} as never)
+    context.vault.buffers!.addFlushHandler(vi.fn(() => Promise.resolve()))
+    expect(context.plugin.subscriptions).toHaveLength(2)
+    for (const one of [...context.plugin.subscriptions]) one.dispose()
 
     expect(released).toHaveBeenCalledTimes(2)
   })
@@ -320,7 +320,7 @@ describe('a file a plugin lists and writes', () => {
   it('is listed with vault:read and without vault:write', async () => {
     const { context, files } = createContext(['vault:read'])
 
-    await context.files!.list('Notes')
+    await context.vault.files!.list('Notes')
 
     expect(files.list).toHaveBeenCalledWith('Notes')
   })
@@ -331,7 +331,7 @@ describe('a file a plugin lists and writes', () => {
   ])('fails to be listed with %s', async (_, permissions) => {
     const { context, files } = createContext(permissions)
 
-    await expect(context.files!.list('Notes')).rejects.toThrowError(
+    await expect(context.vault.files!.list('Notes')).rejects.toThrowError(
       'Plugin "md.numen.sample" lacks required permission "vault:read" for files.list',
     )
     expect(files.list).not.toHaveBeenCalled()
@@ -350,7 +350,7 @@ describe('a command a plugin runs over the vault', () => {
   it.each(WRITES)('runs %s through the commands of the window with no permission', async (id) => {
     const { context, commands } = createContext([])
 
-    await context.commands!.run(id, target)
+    await context.ui.commands!.run(id, target)
 
     expect(commands.getRuns()).toStrictEqual([{ command: id, target, itemId: undefined }])
   })
@@ -358,28 +358,28 @@ describe('a command a plugin runs over the vault', () => {
   it('reads the commands of the window and their items with no permission', () => {
     const { context, commands } = createContext([])
     const handler = vi.fn()
-    context.commands!.watch(handler)
+    context.ui.commands!.watch(handler)
 
     commands.setIds(['app:vault.create'])
 
-    expect(context.commands!.getIds()).toStrictEqual(['app:vault.create'])
+    expect(context.ui.commands!.getIds()).toStrictEqual(['app:vault.create'])
     expect(handler).toHaveBeenLastCalledWith(['app:vault.create'])
   })
 
   it('opens a file and shows an error without vault:write', () => {
     const { context, workspace } = createContext([])
 
-    context.workspace!.openFile('a.md')
-    context.workspace!.showError('no')
+    context.ui.workspace!.files.open('a.md')
+    context.ui.workspace!.messages.showError('no')
 
-    expect(workspace.openFile).toHaveBeenCalledWith('a.md')
-    expect(workspace.showError).toHaveBeenCalledWith('no')
+    expect(workspace.files.open).toHaveBeenCalledWith('a.md')
+    expect(workspace.messages.showError).toHaveBeenCalledWith('no')
   })
 })
 
 const getAgent = (context: PluginContext): AgentHost => {
-  if (!context.agent) throw new Error('the context was handed no agent')
-  return context.agent
+  if (!context.work.agent) throw new Error('the context was handed no agent')
+  return context.work.agent
 }
 
 const ASKING: Record<string, [string, Call]> = {

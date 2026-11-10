@@ -171,11 +171,13 @@ describe('the links of a note tab of the note kind', () => {
           getHeadings: async () => new Map([['notes/Entropy.md', [{ text: 'Shannon formula' }]]]),
         }),
         getWorkspace: () => ({
-          openFile: (path: string, options?: { placement?: string }) =>
-            openCalls.push({
-              path,
-              ...(options?.placement ? { placement: options.placement } : {}),
-            }),
+          files: {
+            open: (path: string, options?: { placement?: string }) =>
+              openCalls.push({
+                path,
+                ...(options?.placement ? { placement: options.placement } : {}),
+              }),
+          },
         }),
         resolveLink: async (_from: string, address: string) =>
           address === 'name://Entropy' ? 'notes/Entropy.md' : '',

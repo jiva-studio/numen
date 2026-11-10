@@ -44,21 +44,20 @@ export function createHost({
     commands: [] as [string, CommandTarget | undefined][],
   }
 
-  const request: Pick<
-    WorkspaceHost,
-    'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask'
-  > = {
-    openFile: (path, options) => {
-      recorded.opened.push([path, options])
+  const request = {
+    files: {
+      open: (path: string, options?: OpenFileOptions) => {
+        recorded.opened.push([path, options])
+      },
+      openAt: (path: string, spans: readonly TextRange[]) => {
+        recorded.openedAt.push([path, spans])
+      },
     },
-    ask: (text) => {
+    ask: (text: string) => {
       recorded.questions.push(text)
     },
-    openFileAt: (path, spans) => {
-      recorded.openedAt.push([path, spans])
-    },
     getNoteInFocus: () => focus,
-    isReady: ref(true),
+    window: { isReady: ref(true) },
   }
   const workspace = request as WorkspaceHost
 

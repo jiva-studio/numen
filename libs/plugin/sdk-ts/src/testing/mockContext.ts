@@ -4,14 +4,25 @@ import type {
   CommandNote,
   CommandRegistration,
   Disposable,
-  FileSelectEvent,
   PluginContext,
+  PluginEvents,
+  PluginRegistrations,
+  PluginTabs,
+  PluginUi,
+  PluginVault,
+  PluginWork,
   ReaderRegistration,
   SettingsViewRegistration,
   SlotViewRegistration,
   TabKindRegistration,
+  FileSelectEvent,
   VaultChangeEvent,
 } from '../types'
+import type { AgentHost } from '../agent'
+import type { BufferHost } from '../buffers'
+import type { NoticeHost } from '../notices'
+import type { VaultTexts } from '../texts'
+import type { VaultFiles, VaultNotes, VaultRelations, WorkspaceHost } from '../workspace'
 import { asFailure, asValue, type Result } from '../result'
 import type { MountedView, ViewRegistration } from '../views'
 import type { DropRegistration } from '../drops'
@@ -37,13 +48,47 @@ export interface MockMountedView {
   focusCount: number
 }
 
-// MockPluginContext extends PluginContext with inspection and simulation methods.
-export interface MockPluginContext extends PluginContext {
+// MockPluginUi is the window part of a mock context, with the hosts a test sets and reads back.
+export interface MockPluginUi extends PluginUi {
   readonly commands: MockCommandsHost
   readonly slots: MockSlotHost
-  readonly vaults: MockVaultsHost
   readonly window: MockWindowHost
+}
+
+// MockPluginVault is the vault part of a mock context.
+export interface MockPluginVault extends PluginVault {
+  readonly vaults: MockVaultsHost
+}
+
+// MockPluginWork is the work part of a mock context.
+export interface MockPluginWork extends PluginWork {
   readonly backgroundTasks: MockBackgroundTaskHost
+}
+
+// MockContextInit is what a test gives a mock context: the services it hands the plugin and the settings it starts with.
+export interface MockContextInit {
+  readonly pluginId?: string
+  readonly target?: string
+  readonly app?: AppInfo
+  readonly initialSettings?: Record<string, unknown>
+  readonly workspace?: WorkspaceHost
+  readonly notes?: VaultNotes
+  readonly relations?: VaultRelations
+  readonly files?: VaultFiles
+  readonly agent?: AgentHost
+  readonly buffers?: BufferHost
+  readonly texts?: VaultTexts
+  readonly notices?: NoticeHost
+  readonly openTab?: PluginTabs['open']
+  readonly navigateTab?: PluginTabs['navigate']
+  readonly closeTab?: PluginTabs['close']
+}
+
+// MockPluginContext extends PluginContext with inspection and simulation methods.
+export interface MockPluginContext extends PluginContext {
+  readonly ui: MockPluginUi
+  readonly vault: MockPluginVault
+  readonly work: MockPluginWork
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredSettingsViews(): SettingsViewRegistration[]
   getRegisteredSlotViews(): SlotViewRegistration[]
@@ -118,36 +163,17 @@ function isWebAddress(url: string): boolean {
   }
 }
 
-const OPTIONAL_SERVICE_KEYS = [
-  'workspace',
-  'notes',
-  'relations',
-  'files',
-  'agent',
-  'buffers',
-  'texts',
-  'notices',
-  'closeTab',
-] as const
-
-function getOptionalServices(initialValues?: Partial<PluginContext>): Partial<PluginContext> {
-  if (!initialValues) return {}
-  const picked: Partial<PluginContext> = {}
-  for (const key of OPTIONAL_SERVICE_KEYS) {
-    if (initialValues[key] !== undefined) {
-      Object.assign(picked, { [key]: initialValues[key] })
-    }
+function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined }): T {
+  const picked: Partial<T> = {}
+  for (const key of Object.keys(parts) as (keyof T)[]) {
+    const value = parts[key]
+    if (value !== undefined) picked[key] = value
   }
-  return picked
+  return picked as T
 }
 
 // createMockPluginContext builds a controllable context for unit tests.
-export function createMockPluginContext(
-  initialValues?: Partial<PluginContext> & {
-    pluginId?: string
-    initialSettings?: Record<string, unknown>
-  },
-): MockPluginContext {
+export function createMockPluginContext(initialValues?: MockContextInit): MockPluginContext {
   const init = initialValues ?? {}
   const readers: ReaderRegistration[] = []
   const settingsViews: SettingsViewRegistration[] = []
@@ -165,86 +191,115 @@ export function createMockPluginContext(
   const fileSelectListeners = new Set<(event: FileSelectEvent) => void | Promise<void>>()
   const subscriptions: Disposable[] = []
 
+  const register: PluginRegistrations = {
+    reader: (registration) => registerInList(readers, registration, subscriptions),
+    settingsView: (registration) => registerInList(settingsViews, registration, subscriptions),
+    slotView: (registration) => registerInList(slotViews, registration, subscriptions),
+    tabKind: <State>(registration: TabKindRegistration<State>) =>
+      registerInList(tabKinds, registration, subscriptions),
+    command: (registration) => registerInList(commands, registration, subscriptions),
+    agentProvider: (registration) => registerInList(agentProviders, registration, subscriptions),
+    dropHandler: (registration) => registerInList(drops, registration, subscriptions),
+    view: (registration) => registerInList(views, registration, subscriptions),
+  }
+
+  const mountView = (
+    capability: string,
+    element: HTMLElement,
+    viewContext: unknown,
+  ): MountedView => {
+    const view: MockMountedView = {
+      capability,
+      element,
+      context: viewContext,
+      isDisposed: false,
+      focusCount: 0,
+    }
+    mounted.push(view)
+    return {
+      focus: () => {
+        view.focusCount++
+      },
+      dispose: () => {
+        view.isDisposed = true
+      },
+    }
+  }
+
+  const getSettingValue = <T = unknown>(key: string): T | undefined =>
+    settings.get(key) as T | undefined
+
+  const onSettingChange = <T = unknown>(key: string, handler: (value: T) => void): Disposable => {
+    let listeners = settingListeners.get(key)
+    if (!listeners) {
+      listeners = new Set()
+      settingListeners.set(key, listeners)
+    }
+    return addSetListener(listeners, handler as (val: unknown) => void, subscriptions)
+  }
+
+  const events: PluginEvents = {
+    onVaultChange: (handler) => addSetListener(vaultListeners, handler, subscriptions),
+    onFileSelect: (handler) => addSetListener(fileSelectListeners, handler, subscriptions),
+    emitVaultChange: (event) => {
+      for (const listener of vaultListeners) notifyListener(listener, event)
+    },
+    emitFileSelect: (event) => {
+      for (const listener of fileSelectListeners) notifyListener(listener, event)
+    },
+  }
+
+  const tabs: PluginTabs = {
+    open: (kind, path) => {
+      if (init.openTab) return init.openTab(kind, path)
+      return Promise.resolve(`${kind}:${path ?? ''}`)
+    },
+    navigate: (kind, path) => {
+      if (init.navigateTab) return init.navigateTab(kind, path)
+      return Promise.resolve(`${kind}:${path}`)
+    },
+    ...(init.closeTab ? { close: init.closeTab } : {}),
+  }
+
   const context: MockPluginContext = {
-    pluginId: init.pluginId ?? 'test.plugin',
-    target: init.target ?? 'desktop.editor',
-    subscriptions,
-    app: init.app ?? DEFAULT_APP,
-    ...getOptionalServices(init),
-    commands: createMockCommandsHost(),
-    slots: createMockSlotHost(),
-    vaults: createMockVaultsHost(),
-    window: createMockWindowHost(),
-    backgroundTasks: createMockBackgroundTaskHost(),
-
-    openExternal(url: string): Promise<Result<null>> {
-      if (!isWebAddress(url)) return Promise.resolve(asFailure(`not a web address: ${url}`))
-      openedAddresses.push(url)
-      return Promise.resolve(asValue(null))
+    plugin: {
+      id: init.pluginId ?? 'test.plugin',
+      target: init.target ?? 'desktop.editor',
+      subscriptions,
+      app: init.app ?? DEFAULT_APP,
+      openExternal(url: string): Promise<Result<null>> {
+        if (!isWebAddress(url)) return Promise.resolve(asFailure(`not a web address: ${url}`))
+        openedAddresses.push(url)
+        return Promise.resolve(asValue(null))
+      },
     },
-
-    registerReader(registration: ReaderRegistration): Disposable {
-      return registerInList(readers, registration, subscriptions)
+    register,
+    settings: { get: getSettingValue, onChange: onSettingChange },
+    events,
+    tabs,
+    vault: {
+      ...pickDefined<Omit<PluginVault, 'vaults'>>({
+        notes: init.notes,
+        relations: init.relations,
+        files: init.files,
+        texts: init.texts,
+        buffers: init.buffers,
+      }),
+      vaults: createMockVaultsHost(),
     },
-
-    registerSettingsView(registration: SettingsViewRegistration): Disposable {
-      return registerInList(settingsViews, registration, subscriptions)
+    ui: {
+      ...pickDefined<Pick<PluginUi, 'workspace' | 'notices'>>({
+        workspace: init.workspace,
+        notices: init.notices,
+      }),
+      commands: createMockCommandsHost(),
+      slots: createMockSlotHost(),
+      window: createMockWindowHost(),
+      mountView,
     },
-
-    registerSlotView(registration: SlotViewRegistration): Disposable {
-      return registerInList(slotViews, registration, subscriptions)
-    },
-
-    registerTabKind<State>(registration: TabKindRegistration<State>): Disposable {
-      return registerInList(tabKinds, registration, subscriptions)
-    },
-
-    registerCommand(registration: CommandRegistration): Disposable {
-      return registerInList(commands, registration, subscriptions)
-    },
-
-    registerAgentProvider(registration: AgentProviderRegistration): Disposable {
-      return registerInList(agentProviders, registration, subscriptions)
-    },
-
-    registerDropHandler(registration: DropRegistration): Disposable {
-      return registerInList(drops, registration, subscriptions)
-    },
-
-    registerView(registration: ViewRegistration): Disposable {
-      return registerInList(views, registration, subscriptions)
-    },
-
-    mountView(capability: string, element: HTMLElement, viewContext: unknown): MountedView {
-      const view: MockMountedView = {
-        capability,
-        element,
-        context: viewContext,
-        isDisposed: false,
-        focusCount: 0,
-      }
-      mounted.push(view)
-      return {
-        focus: () => {
-          view.focusCount++
-        },
-        dispose: () => {
-          view.isDisposed = true
-        },
-      }
-    },
-
-    getSetting<T = unknown>(key: string): T | undefined {
-      return settings.get(key) as T | undefined
-    },
-
-    onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable {
-      let listeners = settingListeners.get(key)
-      if (!listeners) {
-        listeners = new Set()
-        settingListeners.set(key, listeners)
-      }
-      return addSetListener(listeners, handler as (val: unknown) => void, subscriptions)
+    work: {
+      ...pickDefined<Pick<PluginWork, 'agent'>>({ agent: init.agent }),
+      backgroundTasks: createMockBackgroundTaskHost(),
     },
 
     setSetting<T = unknown>(key: string, value: T): void {
@@ -255,36 +310,6 @@ export function createMockPluginContext(
           listener(value)
         }
       }
-    },
-
-    onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable {
-      return addSetListener(vaultListeners, handler, subscriptions)
-    },
-
-    onFileSelect(handler: (event: FileSelectEvent) => void | Promise<void>): Disposable {
-      return addSetListener(fileSelectListeners, handler, subscriptions)
-    },
-
-    emitVaultChange(event: VaultChangeEvent): void {
-      for (const listener of vaultListeners) {
-        notifyListener(listener, event)
-      }
-    },
-
-    emitFileSelect(event: FileSelectEvent): void {
-      for (const listener of fileSelectListeners) {
-        notifyListener(listener, event)
-      }
-    },
-
-    openTab(kind: string, path?: string): Promise<string> | void {
-      if (init.openTab) return init.openTab(kind, path)
-      return Promise.resolve(`${kind}:${path ?? ''}`)
-    },
-
-    navigateTab(kind: string, path: string): Promise<string> | void {
-      if (init.navigateTab) return init.navigateTab(kind, path)
-      return Promise.resolve(`${kind}:${path}`)
     },
 
     getRegisteredReaders(): ReaderRegistration[] {

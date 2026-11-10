@@ -103,30 +103,37 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
   }
 
   const workspace: WorkspaceHost = {
-    isReady: ref(true),
-    openingPath: ref(''),
-    readOpeningPath: async () => '',
-    draggedPaths: ref([]),
-    setDraggedPaths: (paths) => {
-      recorded.dragged.push(paths)
+    window: {
+      isReady: ref(true),
+      openingPath: ref(''),
+      readOpeningPath: async () => '',
+      getToday: () => '2026-01-01',
     },
-    openFile: (path, options) => {
-      recorded.opened.push([path, options])
+    dragged: {
+      paths: ref([]),
+      setPaths: (paths) => {
+        recorded.dragged.push(paths)
+      },
     },
-    openFileAt: () => undefined,
+    files: {
+      open: (path, options) => {
+        recorded.opened.push([path, options])
+      },
+      openAt: () => undefined,
+      syncPath: (tabId, path, title) => {
+        recorded.synced.push([tabId, path, title])
+        return linked[tabId] ?? false
+      },
+    },
+    messages: {
+      showError: (text) => {
+        recorded.errors.push(text)
+      },
+      getWriter: () => () => undefined,
+    },
+    icons: { getCommand: () => null, getEntry: renderDeps.getEntryIcon },
     getNoteInFocus: () => ({ path: '', title: '' }),
-    syncPath: (tabId, path, title) => {
-      recorded.synced.push([tabId, path, title])
-      return linked[tabId] ?? false
-    },
     ask: () => undefined,
-    showError: (text) => {
-      recorded.errors.push(text)
-    },
-    getMessageWriter: () => () => undefined,
-    getToday: () => '2026-01-01',
-    getCommandIcon: () => null,
-    ...renderDeps,
   }
 
   const record = (what: string) => async (folder: string, name?: string) => {

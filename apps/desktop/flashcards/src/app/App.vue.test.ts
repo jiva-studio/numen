@@ -68,17 +68,16 @@ const VAULTS: readonly VaultRow[] = [
 ]
 
 const activateCards = (context: {
-  registerTabKind: (one: unknown) => void
-  registerView: (one: unknown) => void
-  closeTab?: (id: string) => void
+  register: { tabKind: (one: unknown) => void; view: (one: unknown) => void }
+  tabs: { close?: (id: string) => void }
 }) => {
-  context.registerTabKind({
+  context.register.tabKind({
     kind: 'review',
     component: defineComponent({
       props: { state: { type: Object, required: true } },
       setup: (props) => () => {
         const state = props.state as { vault: string; id: string }
-        return h('button', { class: 'review', onClick: () => context.closeTab?.(state.id) }, [
+        return h('button', { class: 'review', onClick: () => context.tabs.close?.(state.id) }, [
           `Review of ${state.vault}`,
         ])
       },
@@ -87,7 +86,7 @@ const activateCards = (context: {
     open: (vault: string, id: string) => ({ vault, id }),
     onKeyPress: (_: unknown, event: KeyboardEvent) => event.key === 'Escape',
   })
-  context.registerView({
+  context.register.view({
     capability: VAULT_SUMMARY,
     component: defineComponent({
       props: { context: { type: Object, required: true } },
@@ -221,17 +220,19 @@ describe('App', () => {
             }) as unknown as typeof fetch,
             dynamicImport: async () => ({
               activate: (ctx: {
-                agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
-                subscriptions: { dispose: () => void }[]
-                registerTabKind: (one: unknown) => void
+                work: {
+                  agent?: { resolveLinks: (text: string, vault: string) => Promise<unknown> }
+                }
+                plugin: { subscriptions: { dispose: () => void }[] }
+                register: { tabKind: (one: unknown) => void }
               }) => {
-                agentHost = ctx.agent
-                ctx.subscriptions.push({
+                agentHost = ctx.work.agent
+                ctx.plugin.subscriptions.push({
                   dispose: () => {
                     throw new Error('close failure')
                   },
                 })
-                ctx.registerTabKind({
+                ctx.register.tabKind({
                   kind: 'review',
                   component: {},
                   placement: { pane: 'main', order: 0 },
@@ -591,8 +592,7 @@ describe('the appearance palette', () => {
     await flushPromises()
     expect(
       shell?.notices.notices.value.some(
-        (one) =>
-          one.severity === 'error' && one.text === CORE_FAULT,
+        (one) => one.severity === 'error' && one.text === CORE_FAULT,
       ),
     ).toBe(true)
 
@@ -632,26 +632,26 @@ const createBarPlugin = (pluginId: string) => ({
     contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
   },
   activate: (context: PluginContext) => {
-    context.registerSlotView({
+    context.register.slotView({
       id: 'bar',
       component: defineComponent({
         setup: () => {
-          const vaults = shallowRef(context.vaults!.getState())
-          context.vaults!.watch((state) => (vaults.value = state))
+          const vaults = shallowRef(context.vault.vaults!.getState())
+          context.vault.vaults!.watch((state) => (vaults.value = state))
           return () =>
             h(
               'header',
               {
                 'data-title-bar': pluginId,
-                'data-maximized': String(context.window!.getState().isMaximized),
+                'data-maximized': String(context.ui.window!.getState().isMaximized),
               },
               [
-                h('span', { 'data-title': '' }, context.app.name),
+                h('span', { 'data-title': '' }, context.plugin.app.name),
                 h('span', { 'data-vault': '' }, vaults.value.current?.name ?? ''),
                 h('span', { 'data-vaults': '' }, vaults.value.vaults.map((one) => one.id).join()),
                 h('button', {
                   'data-switch': 'words',
-                  onClick: () => context.vaults!.switchTo('words'),
+                  onClick: () => context.vault.vaults!.switchTo('words'),
                 }),
               ],
             )

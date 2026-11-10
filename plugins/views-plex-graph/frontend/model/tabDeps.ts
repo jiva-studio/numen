@@ -39,28 +39,28 @@ export function createPlexTabDeps(
     },
     creatable: relations.roles,
     window: {
-      isReady: workspace.isReady,
-      openingPath: workspace.openingPath,
-      dragged: workspace.draggedPaths,
+      isReady: workspace.window.isReady,
+      openingPath: workspace.window.openingPath,
+      dragged: workspace.dragged.paths,
       openNote: (path, options) => {
         const title = options?.title ?? ''
-        if (options?.line === undefined && workspace.syncPath(id, path, title)) return
-        workspace.openFile(path, {
+        if (options?.line === undefined && workspace.files.syncPath(id, path, title)) return
+        workspace.files.open(path, {
           title,
           ...(options?.showing ? { placement: options.showing } : {}),
           ...(options?.line === undefined ? {} : { line: options.line }),
         })
       },
       onSelectPath: (path, title) => {
-        workspace.syncPath(id, path, title ?? '')
+        workspace.files.syncPath(id, path, title ?? '')
       },
       getNoteIcon: (tabKind) =>
-        workspace.getEntryIcon(
+        workspace.icons.getEntry(
           { path: '', name: '', isFolder: false, isNote: true, type: '', tabKind },
           false,
         ),
-      showMessage: (text) => workspace.showError(text),
-      readOpeningPath: () => workspace.readOpeningPath(),
+      showMessage: (text) => workspace.messages.showError(text),
+      readOpeningPath: () => workspace.window.readOpeningPath(),
     },
     menu: {
       getMenuEntries: (target) => slots?.getEntries(SLOT.plexGraphContext, target) ?? [],

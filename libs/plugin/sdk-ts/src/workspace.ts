@@ -165,32 +165,57 @@ export interface OpenFileOptions {
 // MessageWriter writes one message under a name of its own, replacing what that name wrote last.
 export type MessageWriter = (text: string, severity?: Severity) => void
 
-// WorkspaceHost is the window a plugin's tabs are drawn in.
-export interface WorkspaceHost {
+// WorkspaceWindow is the state of the window a plugin's tabs are drawn in.
+export interface WorkspaceWindow {
   readonly isReady: Readonly<Ref<boolean>>
   readonly openingPath: Readonly<Ref<string>>
   // The note the vault opens with, read from the vault again.
   readOpeningPath(): Promise<string>
-  readonly draggedPaths: Readonly<Ref<readonly string[]>>
-  setDraggedPaths(paths: readonly string[]): void
-  openFile(path: string, options?: OpenFileOptions): void
-  // A file opened with the runs of its text marked.
-  openFileAt(path: string, ranges: readonly TextRange[]): void
-  // The note the most recently active tool tab depends on; empty strings when none.
-  getNoteInFocus(): NoteRef
-  // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
-  syncPath(tabId: string, path: string, title?: string): boolean
-  // Sends a question to the agent and shows it to the user.
-  ask(text: string): void
-  showError(text: string): void
-  // A writer of messages under the name given.
-  getMessageWriter(name: string): MessageWriter
   // The current day, with the day boundary set to the configured start hour.
   getToday(): string
+}
+
+// WorkspaceDragged is the paths of the files dragged inside the window.
+export interface WorkspaceDragged {
+  readonly paths: Readonly<Ref<readonly string[]>>
+  setPaths(paths: readonly string[]): void
+}
+
+// WorkspaceFiles is how a plugin's tabs open the files of the vault.
+export interface WorkspaceFiles {
+  open(path: string, options?: OpenFileOptions): void
+  // A file opened with the runs of its text marked.
+  openAt(path: string, ranges: readonly TextRange[]): void
+  // The tabs linked to tab `tabId` move to the path. False where none is linked to it.
+  syncPath(tabId: string, path: string, title?: string): boolean
+}
+
+// WorkspaceMessages is what a plugin's tabs tell the user.
+export interface WorkspaceMessages {
+  showError(text: string): void
+  // A writer of messages under the name given.
+  getWriter(name: string): MessageWriter
+}
+
+// WorkspaceIcons is the icons the window draws.
+export interface WorkspaceIcons {
   // The icon the window draws a command with, and nothing for a command it draws none for.
-  getCommandIcon(id: string): Component | null
+  getCommand(id: string): Component | null
   // The icon the window draws an entry of the vault with: a folder open or shut, a note by its type.
-  getEntryIcon(entry: VaultEntry | null, isOpen: boolean): Component
+  getEntry(entry: VaultEntry | null, isOpen: boolean): Component
+}
+
+// WorkspaceHost is the window a plugin's tabs are drawn in.
+export interface WorkspaceHost {
+  readonly window: WorkspaceWindow
+  readonly dragged: WorkspaceDragged
+  readonly files: WorkspaceFiles
+  readonly messages: WorkspaceMessages
+  readonly icons: WorkspaceIcons
+  // The note the most recently active tool tab depends on; empty strings when none.
+  getNoteInFocus(): NoteRef
+  // Sends a question to the agent and shows it to the user.
+  ask(text: string): void
 }
 
 export interface VaultEntry {

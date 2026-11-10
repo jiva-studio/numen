@@ -8,7 +8,7 @@ describe('plugin lifecycle', () => {
     const plugin = definePlugin({
       activate(ctx) {
         activated = true
-        ctx.registerCommand({
+        ctx.register.command({
           id: 'test.hello',
           handler: vi.fn(),
         })
@@ -31,7 +31,7 @@ describe('plugin lifecycle', () => {
 
   it('unregisters components when disposed', () => {
     const ctx = createMockPluginContext()
-    const disposable = ctx.registerReader({
+    const disposable = ctx.register.reader({
       id: 'custom-viewer',
       component: {},
     })

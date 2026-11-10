@@ -36,7 +36,7 @@ describe('the items of a plugin command', () => {
   it('are the ones its registration gives for the target', async () => {
     const { host, context } = createHost()
     const listItems = vi.fn(() => WINDOWS)
-    context.registerCommand({ id: 'chart.move', handler: () => undefined, listItems })
+    context.register.command({ id: 'chart.move', handler: () => undefined, listItems })
 
     expect(await host.listCommandItems(`${TIDE}:chart.move`, TARGET)).toStrictEqual(WINDOWS)
     expect(listItems).toHaveBeenCalledWith(TARGET)
@@ -44,7 +44,7 @@ describe('the items of a plugin command', () => {
 
   it('are the ones a registration gives later, as a promise', async () => {
     const { host, context } = createHost()
-    context.registerCommand({
+    context.register.command({
       id: 'chart.move',
       handler: () => undefined,
       listItems: async () => WINDOWS,
@@ -55,7 +55,7 @@ describe('the items of a plugin command', () => {
 
   it('are none for a command without items, and for one no plugin registered', async () => {
     const { host, context } = createHost()
-    context.registerCommand({ id: 'chart.open', handler: () => undefined })
+    context.register.command({ id: 'chart.open', handler: () => undefined })
 
     expect(await host.listCommandItems(`${TIDE}:chart.open`, TARGET)).toStrictEqual([])
     expect(await host.listCommandItems(`${TIDE}:chart.share`, TARGET)).toStrictEqual([])
@@ -63,7 +63,7 @@ describe('the items of a plugin command', () => {
 
   it('are none when the registration fails to give them', async () => {
     const { host, context } = createHost()
-    context.registerCommand({
+    context.register.command({
       id: 'chart.move',
       handler: () => undefined,
       listItems: () => {
@@ -77,7 +77,7 @@ describe('the items of a plugin command', () => {
   it('reach the handler as its itemId, by the id of the item picked', async () => {
     const { host, context } = createHost()
     const handler = vi.fn()
-    context.registerCommand({ id: 'chart.move', handler, listItems: () => WINDOWS })
+    context.register.command({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
     await host.executeCommand(`${TIDE}:chart.move`, NOTE, { itemId: 'w2' })
 
@@ -86,8 +86,8 @@ describe('the items of a plugin command', () => {
 
   it('say whether a command offers choices', () => {
     const { host, context } = createHost()
-    context.registerCommand({ id: 'chart.move', handler: () => undefined, listItems: () => [] })
-    context.registerCommand({ id: 'chart.open', handler: () => undefined })
+    context.register.command({ id: 'chart.move', handler: () => undefined, listItems: () => [] })
+    context.register.command({ id: 'chart.open', handler: () => undefined })
 
     expect(host.hasCommandItems(`${TIDE}:chart.move`)).toBe(true)
     expect(host.hasCommandItems(`${TIDE}:chart.open`)).toBe(false)
@@ -96,7 +96,7 @@ describe('the items of a plugin command', () => {
   it('reach the handler with the values of the arguments by name, after the item id', async () => {
     const { host, context } = createHost()
     const handler = vi.fn()
-    context.registerCommand({ id: 'chart.move', handler, listItems: () => WINDOWS })
+    context.register.command({ id: 'chart.move', handler, listItems: () => WINDOWS })
 
     await host.executeCommand(`${TIDE}:chart.move`, NOTE, {
       itemId: 'w2',
@@ -109,7 +109,7 @@ describe('the items of a plugin command', () => {
   it('give the values to the handler of a run without an item id, awaited or not', async () => {
     const { host, context } = createHost()
     const handler = vi.fn()
-    context.registerCommand({ id: 'chart.open', handler })
+    context.register.command({ id: 'chart.open', handler })
 
     await host.executeCommand(`${TIDE}:chart.open`, NOTE, { values: { scale: '2' } })
     await host.executeCommand(`${TIDE}:chart.open`, NOTE, {
@@ -124,7 +124,7 @@ describe('the items of a plugin command', () => {
   it('give the handler an empty object when no values were given', async () => {
     const { host, context } = createHost()
     const handler = vi.fn()
-    context.registerCommand({ id: 'chart.open', handler })
+    context.register.command({ id: 'chart.open', handler })
 
     await host.executeCommand(`${TIDE}:chart.open`, NOTE)
 

@@ -28,8 +28,8 @@ describe('the vaults and the window of a plugin context', () => {
 
     const context = host.createContext('org.example.ledger', BAR)
 
-    expect(context.vaults).toBe(vaults)
-    expect(context.window).toBe(window)
+    expect(context.vault.vaults).toBe(vaults)
+    expect(context.ui.window).toBe(window)
   })
 
   it('are the same for every plugin of the window', () => {
@@ -40,10 +40,10 @@ describe('the vaults and the window of a plugin context', () => {
     const ledger = host.createContext('org.example.ledger', BAR)
     const tide = host.createContext('org.example.tide', TIDE)
 
-    expect(tide.vaults).toBe(vaults)
-    expect(ledger.vaults).toBe(vaults)
-    expect(tide.window).toBe(window)
-    expect(ledger.window).toBe(window)
+    expect(tide.vault.vaults).toBe(vaults)
+    expect(ledger.vault.vaults).toBe(vaults)
+    expect(tide.ui.window).toBe(window)
+    expect(ledger.ui.window).toBe(window)
   })
 
   it('are absent where the window gives none', () => {
@@ -51,7 +51,7 @@ describe('the vaults and the window of a plugin context', () => {
 
     const context = host.createContext('org.example.ledger', BAR)
 
-    expect(context.vaults).toBeUndefined()
-    expect(context.window).toBeUndefined()
+    expect(context.vault.vaults).toBeUndefined()
+    expect(context.ui.window).toBeUndefined()
   })
 })

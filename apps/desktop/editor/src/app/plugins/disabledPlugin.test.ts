@@ -54,7 +54,7 @@ const createWindow = () => {
   holder.activate = () => {
     support.pluginHost
       .createContext(PLUGIN_ID, manifest)
-      .registerTabKind<{ targetPath: string; saved?: unknown }>({
+      .register.tabKind<{ targetPath: string; saved?: unknown }>({
         kind: 'deck',
         component: DeckPane,
         title: 'Deck',

@@ -70,8 +70,8 @@ export interface PluginItemRegistration<T> {
 
 export function clearSubscriptions(ctx?: PluginContext): void {
   if (!ctx) return
-  while (ctx.subscriptions.length > 0) {
-    const sub = ctx.subscriptions.pop()
+  while (ctx.plugin.subscriptions.length > 0) {
+    const sub = ctx.plugin.subscriptions.pop()
     // Stryker disable next-line OptionalChaining: subscriptions only hold Disposable objects
     sub?.dispose()
   }

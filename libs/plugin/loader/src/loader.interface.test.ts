@@ -31,7 +31,7 @@ const MANIFESTS: Record<string, unknown> = {
 
 const createHost = () =>
   ({
-    createContext: (pluginId: string) => ({ pluginId }) as unknown as PluginContext,
+    createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
     disposePlugin: vi.fn<(pluginId: string) => void>(),
     disposeAll: vi.fn(),
   }) satisfies LoaderHost

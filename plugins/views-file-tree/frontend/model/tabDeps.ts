@@ -34,18 +34,18 @@ export function createFilesTabDeps(
   return {
     window: {
       openEntry: ({ path, name, isNote }) => {
-        if ((isNote || isNotePath(path)) && workspace.syncPath(id, path, getFileStem(name))) return
-        workspace.openFile(path, { title: name || path, placement: 'current' })
+        if ((isNote || isNotePath(path)) && workspace.files.syncPath(id, path, getFileStem(name))) return
+        workspace.files.open(path, { title: name || path, placement: 'current' })
       },
       onSelectPath: (path, state) => {
         const entry = state.list.queries.getEntryAt(path)
         if (entry && !entry.isFolder && (entry.isNote || isNotePath(path))) {
-          workspace.syncPath(id, path, getFileStem(entry.name))
+          workspace.files.syncPath(id, path, getFileStem(entry.name))
         }
       },
-      setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
-      showError: (text) => workspace.showError(text),
-      getEntryIcon: (entry, isOpen) => workspace.getEntryIcon(entry, isOpen),
+      setDraggedPaths: (paths) => workspace.dragged.setPaths(paths),
+      showError: (text) => workspace.messages.showError(text),
+      getEntryIcon: (entry, isOpen) => workspace.icons.getEntry(entry, isOpen),
     },
     menu: {
       getMenuEntries: (target) => slots?.getEntries(SLOT.fileTreeContext, target) ?? [],

@@ -324,7 +324,9 @@ function notifyCustomTabShown(state: unknown, id: string | undefined, deps?: Plu
   const s = state as { path?: string; at?: string; title?: unknown } | undefined
   const path = s?.path || s?.at
   if (path) {
-    deps.getWorkspace()?.syncPath(id, path, extractTitleValue((state as { title?: unknown }).title))
+    deps
+      .getWorkspace()
+      ?.files.syncPath(id, path, extractTitleValue((state as { title?: unknown }).title))
   }
 }
 

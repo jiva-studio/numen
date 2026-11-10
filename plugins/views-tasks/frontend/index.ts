@@ -31,7 +31,10 @@ export function createTasksView(host: BackgroundTaskHost | undefined) {
 }
 
 export const activate = (context: PluginContext): void => {
-  context.registerSlotView({ id: TASKS_VIEW, component: createTasksView(context.backgroundTasks) })
+  context.register.slotView({
+    id: TASKS_VIEW,
+    component: createTasksView(context.work.backgroundTasks),
+  })
 }
 
 export default definePlugin({
