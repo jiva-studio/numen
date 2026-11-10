@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -28,7 +27,7 @@ func runProblemsCommand(ctx context.Context, out io.Writer, deps Deps, args []st
 		named = append(named, domain.Check(name))
 	}
 
-	report, err := vault.NewStandardGetProblems(open.Problems).Execute(ctx, v, named...)
+	report, err := open.Problems.Execute(ctx, v, named...)
 	if err != nil {
 		return err
 	}
