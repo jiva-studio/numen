@@ -198,7 +198,7 @@ export function createCommands(options: CommandsDepsOptions) {
   const onKeyDown = createKeyHandler({
     windowTabs,
     pluginHost,
-    keybindings: declaredCommands?.contributions.keybindings,
+    declaredCommands,
     plugins: settings.state.plugins,
     palette,
     commands,

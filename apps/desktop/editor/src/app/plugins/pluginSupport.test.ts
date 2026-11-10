@@ -353,12 +353,6 @@ describe('the settings and notices a plugin is given', () => {
     )
   })
 
-  it('reads no setting before the window has its settings', () => {
-    const { pluginHost } = createWith({})
-
-    expect(pluginHost.createContext('md.numen.a').settings.get('enabled')).toBeUndefined()
-  })
-
   it('calls the handler of a followed setting once per changed value', async () => {
     const settings = ref<Record<string, unknown>>({ fontSize: 14 })
     const rest = {

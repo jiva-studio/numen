@@ -3,6 +3,7 @@
  * the manifests of the plugins declare, the palette model, the runner and the handler table. Only
  * the edge is a double: the navigation of a tab and the events the core is notified of.
  */
+import { ref } from 'vue'
 import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
@@ -161,7 +162,7 @@ export function createRealWindow(parts: RealWindowParts) {
       close: () => undefined,
       openFile: () => undefined,
     },
-    rest: {},
+    settings: { state: { plugins: ref([]) }, read: { getCommittedSetting: () => undefined } },
     writeMessage: (text: string) => messages.push(text),
     pluginHost,
     slots: pluginHost.slots,

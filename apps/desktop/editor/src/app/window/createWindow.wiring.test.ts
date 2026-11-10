@@ -303,7 +303,7 @@ beforeEach(() => {
       isPluginStarting: vi.fn((_pluginId: string) => false),
       close: vi.fn(async () => undefined),
     },
-    navigation: { travel: vi.fn(), leavePath: vi.fn() },
+    navigation: { travel: vi.fn(), leavePath: vi.fn(async () => undefined) },
     kinds: {
       dragged: ref([]),
       services: { workspace: { name: 'workspace' }, notes: { name: 'notes' } },

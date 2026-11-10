@@ -26,7 +26,7 @@ import { withValues, type Values } from './createCommandRunner'
 interface KeyHandlerParts {
   readonly windowTabs: WindowTabs
   readonly pluginHost: PluginHost | undefined
-  readonly keybindings: DeclaredCommands['contributions']['keybindings'] | undefined
+  readonly declaredCommands: DeclaredCommands | undefined
   readonly plugins: Ref<readonly unknown[]>
   readonly palette: ReturnType<typeof useSearch>
   readonly commands: ReturnType<typeof createCommandPalette>
@@ -64,7 +64,8 @@ export function createKeyHandler(parts: KeyHandlerParts): (event: KeyboardEvent)
     else runCommand(command, getTarget())
   }
 
-  if (pluginHost && parts.keybindings) syncKeybindings(pluginHost, parts.keybindings, parts.plugins)
+  const keybindings = parts.declaredCommands?.contributions.keybindings
+  if (pluginHost && keybindings) syncKeybindings(pluginHost, keybindings, parts.plugins)
 
   /** The one handler of keys: the tabs first, then the registry of the keybindings. */
   return (event: KeyboardEvent) => {

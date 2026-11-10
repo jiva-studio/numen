@@ -69,7 +69,7 @@ const createSettings = (
   const windowTabs = { groups: { handle } } as unknown as WindowTabs
   const onSizeChanged = vi.fn()
   const settings = useSettings({
-    rest: createSettingsStore(SETTINGS_WORDS, log.getWriter('configured')),
+    rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
     words: WORDS,
     log,
     windowTabs,

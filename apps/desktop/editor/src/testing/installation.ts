@@ -51,7 +51,7 @@ const pickOf = (source: object, keys: readonly string[]): object =>
 export const createInstallation = (overrides: InstallationOverrides = {}): Installation => ({
   settings: {
     getSetting: () => undefined,
-    getConfirmedSetting: () => undefined,
+    getConfirmedSetting: (path) => (overrides.getSetting ?? (() => undefined))(path),
     isPending: () => false,
     isRequested: () => false,
     getPlatform: () => '',
