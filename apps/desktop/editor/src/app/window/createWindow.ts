@@ -143,7 +143,7 @@ export const createWindow = () => {
       views: getPluginViews(base.pluginHost),
     },
     notices: {
-      failure: window.failure,
+      failure: window.health.failure,
       fileFlush: editing.fileFlush,
       getTitle: editing.getTitle,
     },

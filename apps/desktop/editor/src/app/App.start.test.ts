@@ -8,7 +8,7 @@ import { mountWindow } from '@/testing/window'
 
 const start = vi.hoisted(() => ({ isStarted: { value: false } }))
 
-vi.mock('../window/useAppBootstrap', async () => {
+vi.mock('./bootstrap/useAppBootstrap', async () => {
   const { ref } = await import('vue')
   const isStarted = ref(false)
   start.isStarted = isStarted

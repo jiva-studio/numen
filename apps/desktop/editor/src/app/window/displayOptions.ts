@@ -9,7 +9,7 @@ import type { TextRange } from '@/shared/textRange'
 import type { createCommands } from './createCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
-import type { useWindowDisplay } from './useWindowDisplay'
+import type { WindowDisplay } from '@/features/window-display'
 import type { useTabKinds } from './useTabKinds'
 
 export interface DisplayWiring {
@@ -62,7 +62,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
 export function createTargetResolver(
   windowTabs: WindowTabs,
   getVaults: () => ReturnType<typeof useVaults>,
-  window: ReturnType<typeof useWindowDisplay>,
+  window: WindowDisplay,
 ) {
   const getFront = () => {
     const front = windowTabs.handle.front()
@@ -80,7 +80,7 @@ export function createTargetResolver(
       title: on?.title ?? '',
       file,
       vault: getVaults().activeVault.value,
-      isReady: !window.failure.value,
+      isReady: !window.health.failure.value,
     }
   }
 }

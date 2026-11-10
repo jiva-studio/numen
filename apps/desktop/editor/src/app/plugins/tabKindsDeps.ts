@@ -5,7 +5,7 @@ import type { MessageLog } from '@/shared/notices/messages'
 import type { TabLinksState } from '@/features/tab-linking'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useSettings } from '../window/useSettings'
-import type { useWindowDisplay } from '../window/useWindowDisplay'
+import type { WindowDisplay } from '@/features/window-display'
 import type { PluginNotes } from './pluginNotes'
 
 export interface WindowKindsDeps {
@@ -16,7 +16,7 @@ export interface WindowKindsDeps {
   editing: ReturnType<typeof createNoteEditors>
   pluginNotes: PluginNotes
   settings: ReturnType<typeof useSettings>
-  window: ReturnType<typeof useWindowDisplay>
+  window: WindowDisplay
   getTarget: () => CommandTarget
   runCommand: (id: string, target: CommandTarget) => void
   commandDeps: () => CommandDeps

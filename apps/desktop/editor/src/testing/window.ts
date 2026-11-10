@@ -31,7 +31,7 @@ import {
 } from './answers'
 import { book, editor, reader } from './stubs'
 
-const App = (await import('@/app/shell/App.vue')).default
+const App = (await import('@/app/App.vue')).default
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 

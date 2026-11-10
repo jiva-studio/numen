@@ -41,7 +41,7 @@ import {
 import type { useSettings } from './useSettings'
 import type { useVaults } from './useVaults'
 import type { createWindowTabMoves } from './createTabsPart'
-import { createTargetResolver } from './useWindowDisplayOptions'
+import { createTargetResolver } from './displayOptions'
 import { useTabKinds } from './useTabKinds'
 
 interface WindowCommandsOptions {
@@ -113,7 +113,7 @@ function initFeatureCommands(
       windowTabs: base.windowTabs,
       travel: (path) => getKinds(ctx).travel(path),
       leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
-      getOpeningNote: () => window.opening.value,
+      getOpeningNote: () => window.opening.path.value,
       tabsHold: {
         pause: async () => getTabsHold(ctx).pause(),
         resume: () => getTabsHold(ctx).resume(),
@@ -224,7 +224,7 @@ function createBackgroundTasks(
   const noticeTasks = useNoticeTasks({
     log: base.log,
     plugins: base.pluginNotices,
-    window,
+    window: { lost: window.health.lost, unwatched: window.vault.unwatched, error: window.vault.error },
     settings,
   })
   return createBackgroundTaskHost({

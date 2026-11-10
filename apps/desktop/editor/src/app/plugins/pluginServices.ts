@@ -50,9 +50,8 @@ export interface WorkspaceHostDeps extends IconHostDeps {
   readonly getTarget: () => CommandTarget
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly window: {
-    readonly failure: Readonly<Ref<string>>
-    readonly opening: Readonly<Ref<string>>
-    readInitialNote(): Promise<string>
+    readonly health: { readonly failure: Readonly<Ref<string>> }
+    readonly opening: { readonly path: Readonly<Ref<string>>; read(): Promise<string> }
   }
   readonly dragged: ShallowRef<readonly string[]>
   readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt' | 'findFileIcon'>
@@ -67,9 +66,9 @@ export interface WorkspaceHostDeps extends IconHostDeps {
 export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
   const { window, dragged, tabOpeners, writeMessage } = deps
   return {
-    isReady: computed(() => !window.failure.value),
-    openingPath: window.opening,
-    readOpeningPath: () => window.readInitialNote(),
+    isReady: computed(() => !window.health.failure.value),
+    openingPath: window.opening.path,
+    readOpeningPath: () => window.opening.read(),
     draggedPaths: dragged,
     setDraggedPaths: (paths) => {
       dragged.value = paths
@@ -127,7 +126,7 @@ export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps
 /** What the agent a plugin's tabs ask is made from. */
 export interface AgentHostDeps {
   readonly port: AgentPort
-  readonly window: { readonly unreachable: Readonly<Ref<string>> }
+  readonly window: { readonly vault: { readonly unreachable: Readonly<Ref<string>> } }
   readonly settings: {
     readonly rest: Pick<
       ReturnType<typeof useSettings>['rest'],
@@ -141,7 +140,7 @@ export function createAgentHost({ port, window, settings }: AgentHostDeps): Agen
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
     resolveLinks: (text, vault) => resolveLinks('', text, vault),
-    getUnreachable: () => window.unreachable.value,
+    getUnreachable: () => window.vault.unreachable.value,
     getSetting: (path) => settings.rest.getSetting(path),
     writeSetting: (path, value) => settings.rest.writeSetting(path, value),
     getModelsAt: (path) => settings.rest.getModelsAt(path),

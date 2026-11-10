@@ -13,16 +13,16 @@ import { getFrontendPluginIds } from '../plugins/useWindowPlugins'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { WindowCore } from './createDisplayPart'
 import type { useSettings } from './useSettings'
-import { useAppBootstrap } from './useAppBootstrap'
+import { useAppBootstrap } from '../bootstrap/useAppBootstrap'
 import type { useVaults } from './useVaults'
-import type { useWindowDisplay } from './useWindowDisplay'
+import type { WindowDisplay } from '@/features/window-display'
 import { closeWindow, closeWindowWhenEmpty } from '@/entities/window'
 
 interface AppLifecycleDeps {
   vaultsModule: ReturnType<typeof useVaults>
   windowTabs: WindowTabs
   settings: ReturnType<typeof useSettings>
-  window: ReturnType<typeof useWindowDisplay>
+  window: WindowDisplay
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader: PluginLoader
   waitForDeclaredCommands: () => Promise<void>

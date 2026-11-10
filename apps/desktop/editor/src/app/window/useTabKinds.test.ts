@@ -67,7 +67,11 @@ const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } 
     },
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: { kinds: ['settings'] },
-    window: { failure: ref(''), opening: ref('Root.md'), readInitialNote: vi.fn() },
+    window: {
+      health: { failure: ref('') },
+      opening: { path: ref('Root.md'), read: vi.fn() },
+      vault: { unreachable: ref('') },
+    },
     core: {},
     getTarget: vi.fn(() => ({})),
     runCommand: vi.fn(),
