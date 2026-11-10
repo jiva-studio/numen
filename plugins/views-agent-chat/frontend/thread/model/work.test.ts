@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createWorkLine } from './work'
-import type { Turn } from '../lib/turn'
+import type { Turn } from '../../types'
 import type { SourceLocation } from '@numen/plugin-sdk'
 
 const PLACE: SourceLocation = { path: 'notes/a.md', range: { start: 2, end: 9 } }

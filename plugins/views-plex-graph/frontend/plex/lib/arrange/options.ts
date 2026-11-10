@@ -1,5 +1,6 @@
-import { RELATIONS, type PlexRelation } from '../relation'
+import { RELATIONS } from '../relation'
 import type { Size } from '@numen/ui'
+import type { PlexRelation } from '../../../types'
 
 export type Direction = 'up' | 'down' | 'left' | 'right'
 

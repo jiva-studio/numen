@@ -11,8 +11,8 @@ import {
   createWriteOpts,
   flushPromises,
 } from '../fixtures/writes'
-import type { Presets, PresetWriteResult } from '../types'
-import { WORDS as words } from '../words'
+import type { Presets, PresetWriteResult } from '../../lib/presets'
+import { WORDS as words } from '../lib/words'
 import { canCloseTab, createWriteFlight, flushWrites, requestWrite, sendWrite } from './flight'
 
 const requestInBackground = createBackgroundRequest(requestWrite)

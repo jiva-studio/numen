@@ -1,11 +1,11 @@
 import { definePlugin, type CommandNote, type PluginContext } from '@numen/plugin-sdk'
 import FilesTab from './ui/FilesTab.vue'
-import { createFilesKind, FILES } from './kind'
+import { createFilesKind, FILES } from './model/kind'
 import { createFileTree, ROOT } from './model/useFileTree'
 import type { FilesTabState } from './types'
 
 export { FilesTab }
-export { createFilesKind, FILES } from './kind'
+export { createFilesKind, FILES } from './model/kind'
 export { ROOT, createFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'
@@ -26,6 +26,7 @@ export function activate(context: PluginContext): void {
       ...(commands ? { commands } : {}),
     },
     () => createFileTree(files),
+    FilesTab,
   )
   context.register.tabKind(trees.kind)
   context.events.onVaultChange((event) => trees.refresh(event))

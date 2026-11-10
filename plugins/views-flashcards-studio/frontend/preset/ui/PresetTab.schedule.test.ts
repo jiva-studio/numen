@@ -4,14 +4,14 @@
  * A goal renders the settings it schedules by and no others, and a preset with
  * nothing to schedule reports that where the curve would be.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/wire/types'
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import PresetTab from './PresetTab.vue'
-import { NO_CURVE_POINT, STOP_REASONS, type Curve } from '../types'
+import { NO_CURVE_POINT, STOP_REASONS, type Curve } from '../../lib/presets'
 import { mountPresetTab, point, rows, createTab } from '../fixtures'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 
 describe('a preset that schedules nothing', () => {
   const STOPPING = STOP_REASONS.filter((one) => one !== StopReason.NOTHING)

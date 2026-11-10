@@ -60,3 +60,10 @@ export interface BookHandle {
   measure(): void
   handleKey(event: KeyboardEvent): boolean
 }
+
+/** One line of a book's contents: a name, and where it begins. */
+export interface ContentsEntry {
+  readonly title: string
+  readonly at: number
+  readonly level: number
+}

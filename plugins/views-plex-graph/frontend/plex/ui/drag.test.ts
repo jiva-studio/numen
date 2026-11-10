@@ -10,7 +10,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Plex from './Plex.vue'
 import { build } from '../fixtures/build'
-import type { PlexRelation } from '../lib/relation'
+import type { PlexRelation } from '../../types'
 
 const NEIGHBOURHOOD = build('A node', { parent: 1, child: 2, jump: 1 })
 
