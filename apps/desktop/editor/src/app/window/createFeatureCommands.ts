@@ -3,10 +3,7 @@
  * the handlers that carry them out.
  */
 import { runInBackground } from '@numen/ui'
-import {
-  createCommands as createPaletteCommands,
-  PALETTE_WORDS,
-} from '@/features/command-palette'
+import { createCommands as createPaletteCommands, PALETTE_WORDS } from '@/features/command-palette'
 import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
 import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
 import { createTabCommands, type TabCommandsDeps } from '@/features/tab-commands'

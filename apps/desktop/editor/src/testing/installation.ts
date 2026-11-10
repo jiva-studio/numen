@@ -23,14 +23,7 @@ const SETTINGS_KEYS = [
   'write',
   'file',
 ]
-const PLUGIN_KEYS = [
-  'plugins',
-  'app',
-  'catalog',
-  'retryPlugin',
-  'choosePath',
-  'getSettingsViews',
-]
+const PLUGIN_KEYS = ['plugins', 'app', 'catalog', 'retryPlugin', 'choosePath', 'getSettingsViews']
 const FILES_KEYS = ['getPluginData', 'deletePluginData', 'getReadme']
 const SECRETS_KEYS = ['sections', 'menus', 'states', 'loadStates', 'credentialsPath']
 const EDIT_KEYS = [

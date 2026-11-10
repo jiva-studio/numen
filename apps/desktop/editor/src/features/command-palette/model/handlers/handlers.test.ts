@@ -2,7 +2,13 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
 import { ReportedError } from '@numen/core-client'
-import { commands, registerCommand, type CommandDeps, type CommandInvocation, type CommandTarget } from '@/entities/command'
+import {
+  commands,
+  registerCommand,
+  type CommandDeps,
+  type CommandInvocation,
+  type CommandTarget,
+} from '@/entities/command'
 import { createInvocation } from '../../lib/entries/invocation'
 import { runSupport } from '../palette/runSupport'
 import { runInvocation } from './handlers'

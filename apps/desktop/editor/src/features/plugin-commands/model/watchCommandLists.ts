@@ -26,7 +26,10 @@ export function watchCommandLists(sources: CommandListSources, isOpen: Ref<boole
   watch(
     () =>
       plugins.value
-        .map((one) => `${one.id}:${one.isActive}:${getCommittedSetting([one.id, 'enabled']) !== false}`)
+        .map(
+          (one) =>
+            `${one.id}:${one.isActive}:${getCommittedSetting([one.id, 'enabled']) !== false}`,
+        )
         .join(),
     loadDeclared,
   )

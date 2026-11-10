@@ -17,6 +17,8 @@ export function createTabNavigation(deps: TabNavigationDeps) {
     },
     /** Every tab standing on a note moves to another note, and the tab sync records the path it shows. */
     leavePath: (from: string, to: string): Promise<void> =>
-      deps.windowTabs.tabs.navigateTabsAt(from, to, (tabId) => deps.tabSync.setShownPath(tabId, to)),
+      deps.windowTabs.tabs.navigateTabsAt(from, to, (tabId) =>
+        deps.tabSync.setShownPath(tabId, to),
+      ),
   }
 }
