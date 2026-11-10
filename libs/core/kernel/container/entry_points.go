@@ -1,12 +1,12 @@
 package container
 
 import (
-	"time"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"

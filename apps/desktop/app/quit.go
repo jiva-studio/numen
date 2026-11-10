@@ -2,9 +2,10 @@ package app
 
 import (
 	"context"
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"sync"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/container"
 )
 
 // visibility is the window going out of sight and returning to it. Hiding
