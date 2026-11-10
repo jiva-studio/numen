@@ -6,6 +6,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -18,9 +19,9 @@ type handlingPlugins struct{ declaredByTwoPlugins }
 
 func (handlingPlugins) ListHandlers() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:file.createText", Title: "Read the scan", When: "target.isFile"}},
-		{PluginID: "org.example.scans", Command: plugincommand.Command{ID: "app:link.downloadMedia", Title: "Download the reading", When: "version.kind == 'reading'"}},
-		{PluginID: "org.example.crash", Command: plugincommand.Command{ID: "app:file.createText", Title: "Crash"}},
+		{PluginID: "org.example.scans", Command: manifest.Command{ID: "app:file.createText", Title: "Read the scan", When: "target.isFile"}},
+		{PluginID: "org.example.scans", Command: manifest.Command{ID: "app:link.downloadMedia", Title: "Download the reading", When: "version.kind == 'reading'"}},
+		{PluginID: "org.example.crash", Command: manifest.Command{ID: "app:file.createText", Title: "Crash"}},
 	}
 }
 

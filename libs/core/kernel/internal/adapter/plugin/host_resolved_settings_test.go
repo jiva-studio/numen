@@ -8,7 +8,7 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func newResolvedHost(t *testing.T) *Host {
@@ -54,7 +54,7 @@ func findInfoSetting(t *testing.T, host *Host, key string) plugindomain.Setting 
 	return plugindomain.Setting{}
 }
 
-func listValues(options pluginport.PluginSettingOptions) []string {
+func listValues(options manifest.SettingOptions) []string {
 	var values []string
 	for _, one := range options {
 		values = append(values, one.Value)

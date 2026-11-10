@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -303,7 +302,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 
 func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 	catalog := newONNXCatalog()
-	catalog.resolved[pluginport.RuntimeONNX] = plugindomain.ResolvedDependency{ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider}}
+	catalog.resolved[plugindomain.RuntimeONNX] = plugindomain.ResolvedDependency{ID: plugindomain.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider}}
 	catalog.err = err
 	return catalog
 }
@@ -391,8 +390,8 @@ func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
 	})
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" uses protocol 2") {
-		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, pluginport.ErrUnsupportedProtocol)
+	if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" uses protocol 2") {
+		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, manifest.ErrUnsupportedProtocol)
 	}
 }
 
@@ -507,7 +506,7 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 	if err := host.CheckPluginPermission("org.example.sample", manifest.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
-	if err := host.CheckPluginPermission("org.example.sample", pluginport.PermissionVaultRead); err == nil {
+	if err := host.CheckPluginPermission("org.example.sample", manifest.PermissionVaultRead); err == nil {
 		t.Error("the permission of the copy that left is still granted")
 	}
 }
@@ -546,8 +545,8 @@ func TestAShutdownThatFailsOnAnUnactivatedBuiltInIsReported(t *testing.T) {
 
 	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
 
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) {
-		t.Fatalf("EnsureActive() = %v, want %v", err, pluginport.ErrUnsupportedProtocol)
+	if !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
 	}
 	select {
 	case got := <-reported:

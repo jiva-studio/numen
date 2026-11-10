@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -215,7 +214,7 @@ func (h *Host) shutdownBuiltIn(ctx context.Context, endpoint plugindomain.Endpoi
 	}
 }
 
-func (h *Host) exportRuntimeVars(ctx context.Context, requirements []pluginport.DependencyRequirement) ([]string, error) {
+func (h *Host) exportRuntimeVars(ctx context.Context, requirements []manifest.DependencyRequirement) ([]string, error) {
 	vars, err := h.getRuntimeVars(ctx, requirements)
 	if err != nil {
 		return nil, err

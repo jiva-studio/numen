@@ -13,7 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // ErrNoFolder is a dependency asked for where no folder is set to keep dependencies in.
@@ -55,11 +55,11 @@ func NewFileProvisioner(cfg Config) *FileProvisioner {
 
 // CanProvision reports whether the requirement names a file to fetch, or a
 // program or library the machine may already hold.
-func (p *FileProvisioner) CanProvision(req pluginport.DependencyRequirement) bool {
-	return req.SourceURL != "" || req.Kind == pluginport.DependencyKindBinary || req.Kind == pluginport.DependencyKindRuntime
+func (p *FileProvisioner) CanProvision(req manifest.DependencyRequirement) bool {
+	return req.SourceURL != "" || req.Kind == manifest.DependencyKindBinary || req.Kind == manifest.DependencyKindRuntime
 }
 
-func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, error) {
+func (p *FileProvisioner) getDir(req manifest.DependencyRequirement) (string, error) {
 	root := p.cfg.Dir
 	if root == "" {
 		return "", ErrNoFolder
@@ -68,7 +68,7 @@ func (p *FileProvisioner) getDir(req pluginport.DependencyRequirement) (string, 
 }
 
 // Status returns whether the machine or the folder holds the dependency.
-func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
+func (p *FileProvisioner) Status(_ context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
 	if found := p.cfg.Discovery.find(req); found != "" {
 		return readyStatus(req, filepath.Dir(found), found), nil
 	}
@@ -86,7 +86,7 @@ func (p *FileProvisioner) Status(_ context.Context, req pluginport.DependencyReq
 // folder, or the one it fetches. Processes provisioning the same dependency
 // take turns.
 func (p *FileProvisioner) Provision(
-	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus),
+	ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus),
 ) (_ plugin.ResolvedDependency, err error) {
 	if onProgress == nil {
 		onProgress = func(plugin.DependencyStatus) {}
@@ -147,7 +147,7 @@ func getPercent(done, total int64) float64 {
 	return float64(done) * 100 / float64(total)
 }
 
-func getFileName(req pluginport.DependencyRequirement) (string, error) {
+func getFileName(req manifest.DependencyRequirement) (string, error) {
 	name, err := pickFileName(req)
 	if err != nil {
 		return "", err
@@ -158,7 +158,7 @@ func getFileName(req pluginport.DependencyRequirement) (string, error) {
 	return name, nil
 }
 
-func pickFileName(req pluginport.DependencyRequirement) (string, error) {
+func pickFileName(req manifest.DependencyRequirement) (string, error) {
 	if named := req.Metadata["fileName"]; named != "" {
 		return cleanName(named), nil
 	}
@@ -172,7 +172,7 @@ func pickFileName(req pluginport.DependencyRequirement) (string, error) {
 	return cleanName(req.ID), nil
 }
 
-func readCached(req pluginport.DependencyRequirement, dir string) (plugin.ResolvedDependency, bool) {
+func readCached(req manifest.DependencyRequirement, dir string) (plugin.ResolvedDependency, bool) {
 	if !isReady(dir) {
 		return plugin.ResolvedDependency{}, false
 	}
@@ -187,12 +187,12 @@ func readCached(req pluginport.DependencyRequirement, dir string) (plugin.Resolv
 	return newResolved(req, dir, primary), true
 }
 
-func readyStatus(req pluginport.DependencyRequirement, root, primary string) plugin.DependencyStatus {
+func readyStatus(req manifest.DependencyRequirement, root, primary string) plugin.DependencyStatus {
 	resolved := newResolved(req, root, primary)
 	return plugin.DependencyStatus{ID: req.ID, State: plugin.DependencyStateReady, ProgressPercent: 100, Resolved: &resolved}
 }
 
-func newResolved(req pluginport.DependencyRequirement, root, primary string) plugin.ResolvedDependency {
+func newResolved(req manifest.DependencyRequirement, root, primary string) plugin.ResolvedDependency {
 	return plugin.ResolvedDependency{
 		ID: req.ID, RootPath: root, PrimaryPath: primary,
 		EnvVars:  map[string]string{GetEnvName(req): primary},
@@ -202,7 +202,7 @@ func newResolved(req pluginport.DependencyRequirement, root, primary string) plu
 
 // GetEnvName is the variable that holds the path of the dependency: the
 // requirement's envVar metadata, or NUMEN_DEPENDENCY_<ID>.
-func GetEnvName(req pluginport.DependencyRequirement) string {
+func GetEnvName(req manifest.DependencyRequirement) string {
 	if named := req.Metadata["envVar"]; named != "" {
 		return named
 	}

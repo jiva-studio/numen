@@ -20,7 +20,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -163,7 +162,7 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv
 
 func TestLinkEditsAreDeniedWithoutVaultWrite(t *testing.T) {
 	vault := newLinkingVault()
-	client := newLinksClient(t, vault, pluginport.PermissionVaultRead)
+	client := newLinksClient(t, vault, manifest.PermissionVaultRead)
 	ctx := t.Context()
 
 	_, addErr := client.AddLinks(ctx, connect.NewRequest(&v1.HostVaultServiceAddLinksRequest{Links: []*v1.HostLinkAddition{

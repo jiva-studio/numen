@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -146,7 +145,7 @@ func (h *Host) listOpenedExtensionsLocked(pluginID string) map[string][]string {
 	return out
 }
 
-func (h *Host) listReaderInfosLocked(manifest pluginport.PluginManifest) []plugindomain.ReaderInfo {
+func (h *Host) listReaderInfosLocked(manifest manifest.Manifest) []plugindomain.ReaderInfo {
 	if len(manifest.Contributes.Readers) == 0 {
 		return nil
 	}

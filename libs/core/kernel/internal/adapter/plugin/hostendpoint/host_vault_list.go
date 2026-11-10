@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -57,7 +58,7 @@ func getVaultsResult(err error) (code v1.VaultsErrorCode, detail string, callErr
 }
 
 func (e *vaultEndpoint) beginList(header http.Header) (pluginport.PluginVaultList, error) {
-	if _, err := e.endpoint.authorize(header.Get("Authorization"), pluginport.PermissionVaultManage); err != nil {
+	if _, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionVaultManage); err != nil {
 		return nil, err
 	}
 	list := e.endpoint.callers.GetPluginVaultList()

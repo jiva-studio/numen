@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // pathDialog answers every picker with its configured path, and records the request.
@@ -29,7 +29,7 @@ func (d *pathDialog) ChooseFile(_ context.Context, _, _ string, accept []string)
 func listPathPlugins() []plugin.Info {
 	return []plugin.Info{{ID: "a.b", Settings: []plugin.Setting{
 		{Key: "model", Type: "enum"},
-		{Key: "dictionary", Type: pluginport.SettingTypeFile, Accept: []string{".txt"}},
+		{Key: "dictionary", Type: manifest.SettingTypeFile, Accept: []string{".txt"}},
 	}}}
 }
 

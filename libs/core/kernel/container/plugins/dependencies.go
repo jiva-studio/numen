@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const dependencyTaskPrefix = "provision:"
@@ -44,7 +45,7 @@ func newPlaceholders() *provision.PlaceholderProvisioner {
 		dir = "numen-placeholder-dependencies"
 	}
 	return provision.NewPlaceholderProvisioner(dir, map[string]func(string) map[string]string{
-		pluginport.RuntimeONNX: func(primary string) map[string]string {
+		plugin.RuntimeONNX: func(primary string) map[string]string {
 			return map[string]string{onnxruntime.EnvLibrary: primary, onnxruntime.EnvProvider: "cpu"}
 		},
 	})
@@ -67,7 +68,7 @@ func (c Config) ReportDependencies(tasks *run.Tasks) {
 	if catalog == nil {
 		return
 	}
-	catalog.SetObserver(func(req pluginport.DependencyRequirement, status plugin.DependencyStatus) {
+	catalog.SetObserver(func(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
 		id := dependencyTaskPrefix + req.ID
 		switch status.State {
 		case plugin.DependencyStateReady:

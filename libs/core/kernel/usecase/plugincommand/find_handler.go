@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // ArgumentVersion is the argument a command with items is given: the id of the text version picked.
-const ArgumentVersion = pluginport.CommandArgumentVersion
+const ArgumentVersion = manifest.CommandArgumentVersion
 
 // SeveralHandlersError is a shared command run over a path where the handlers of several plugins hold
 // and none was picked.

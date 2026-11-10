@@ -4,14 +4,14 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	catalogmanifest "github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // manifestHost holds the plugins it is given, enabled or not, and counts the reads of its listing.
 type manifestHost struct {
-	plugins   []pluginport.DiscoveredPlugin
+	plugins   []catalogmanifest.Discovered
 	disabled  map[string]bool
 	infoReads int
 }
@@ -31,38 +31,38 @@ func (h *manifestHost) GetPluginInfos() []plugin.Info {
 	return infos
 }
 
-func (h *manifestHost) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
+func (h *manifestHost) GetPlugin(id string) (catalogmanifest.Discovered, bool) {
 	for _, one := range h.plugins {
 		if one.Manifest.ID == id && !h.disabled[id] {
 			return one, true
 		}
 	}
-	return pluginport.DiscoveredPlugin{}, false
+	return catalogmanifest.Discovered{}, false
 }
 
-func (h *manifestHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, error) {
-	return pluginport.DiscoveredPlugin{}, &plugin.UnavailableError{Reason: plugin.NotInstalled}
+func (h *manifestHost) ResolveCapability(string) (catalogmanifest.Discovered, error) {
+	return catalogmanifest.Discovered{}, &plugin.UnavailableError{Reason: plugin.NotInstalled}
 }
 
-func (h *manifestHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{}, false
+func (h *manifestHost) ResolveService(string) (catalogmanifest.Discovered, bool) {
+	return catalogmanifest.Discovered{}, false
 }
 
 func (h *manifestHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false
 }
 
-func declaring(id string, commands ...string) pluginport.DiscoveredPlugin {
-	manifest := pluginport.PluginManifest{ID: id}
+func declaring(id string, commands ...string) catalogmanifest.Discovered {
+	manifest := catalogmanifest.Manifest{ID: id}
 	for _, one := range commands {
-		manifest.Contributes.Commands = append(manifest.Contributes.Commands, pluginport.PluginCommand{ID: one, Title: one})
+		manifest.Contributes.Commands = append(manifest.Contributes.Commands, catalogmanifest.Command{ID: one, Title: one})
 	}
-	return pluginport.DiscoveredPlugin{Manifest: manifest}
+	return catalogmanifest.Discovered{Manifest: manifest}
 }
 
 func TestListCommands_ReadsManifestsWithoutStartingPlugins(t *testing.T) {
 	host := &manifestHost{
-		plugins: []pluginport.DiscoveredPlugin{
+		plugins: []catalogmanifest.Discovered{
 			declaring("md.numen.a", "first", "second"),
 			declaring("md.numen.b", "third"),
 			declaring("md.numen.c", "fourth"),

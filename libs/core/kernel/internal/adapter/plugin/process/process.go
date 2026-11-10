@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 var (
@@ -141,7 +141,7 @@ func isRuntimeEnv(goos, key string) bool {
 // with, followed by pluginVars. A plugin that declares the ONNX Runtime among
 // runtimes also gets the variables isRuntimeEnv names.
 func SanitizeEnvironment(environ []string, pluginVars []string, runtimes []string) []string {
-	hasONNX := slices.Contains(runtimes, pluginport.RuntimeONNX)
+	hasONNX := slices.Contains(runtimes, plugin.RuntimeONNX)
 	var env []string
 	for _, entry := range environ {
 		key, _, found := strings.Cut(entry, "=")

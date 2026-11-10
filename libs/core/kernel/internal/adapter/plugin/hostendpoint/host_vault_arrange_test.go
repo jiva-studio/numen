@@ -269,7 +269,7 @@ func callVaultChanges(t *testing.T, client numenv1connect.HostVaultServiceClient
 }
 
 func TestNoteChangesAreDeniedWithoutVaultWrite(t *testing.T) {
-	client, vault, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultRead)
+	client, vault, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultRead)
 
 	for call, err := range callNoteChanges(t, client) {
 		if !isDenied(err) {
@@ -300,7 +300,7 @@ func TestNoteChangesAreServedWithVaultWrite(t *testing.T) {
 
 func TestVaultListChangesAreDeniedWithOnlyVaultWrite(t *testing.T) {
 	list := newRecordingList()
-	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultRead, manifest.PermissionVaultWrite)
+	client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultRead, manifest.PermissionVaultWrite)
 
 	for call, err := range callVaultChanges(t, client) {
 		if !isDenied(err) {
@@ -314,7 +314,7 @@ func TestVaultListChangesAreDeniedWithOnlyVaultWrite(t *testing.T) {
 
 func TestVaultListChangesAreServedWithVaultManage(t *testing.T) {
 	list := newRecordingList()
-	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
 	errs := callVaultChanges(t, client)
 	for call, err := range errs {
@@ -343,7 +343,7 @@ func TestVaultChecksNeedVaultRead(t *testing.T) {
 		t.Errorf("the checks without vault:read returned %v, want permission denied", err)
 	}
 
-	client, vault, _ := newArrangeClient(t, nil, pluginport.PermissionVaultRead)
+	client, vault, _ := newArrangeClient(t, nil, manifest.PermissionVaultRead)
 	res, err := client.GetVaultProblems(t.Context(), connect.NewRequest(&v1.GetVaultProblemsRequest{Checks: []string{"ambiguous", "dangling"}}))
 	if err != nil {
 		t.Fatalf("the checks with vault:read returned %v", err)
@@ -464,7 +464,7 @@ func TestARemovalReturnsTheTrashPathAndAFolderAsNotANote(t *testing.T) {
 }
 
 func TestTheListOfVaultsMarksAMissingFolder(t *testing.T) {
-	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultRead)
+	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultRead)
 
 	res, err := client.ListHostVaults(t.Context(), connect.NewRequest(&v1.ListHostVaultsRequest{}))
 	if err != nil {
@@ -478,7 +478,7 @@ func TestTheListOfVaultsMarksAMissingFolder(t *testing.T) {
 }
 
 func TestNoteRefsHaveTheIdentifier(t *testing.T) {
-	client, _, _ := newArrangeClient(t, nil, pluginport.PermissionVaultRead)
+	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultRead)
 
 	res, err := client.GetNoteRefs(t.Context(), connect.NewRequest(&v1.GetNoteRefsRequest{Paths: []string{"Danube.md"}}))
 	if err != nil {
@@ -504,7 +504,7 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			list := newRecordingList()
 			list.err = fmt.Errorf("vault v2: %w", c.err)
-			client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+			client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 			ctx := t.Context()
 
 			added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
@@ -535,7 +535,7 @@ func TestRejectedVaultListChangesReturnTheErrorCodeAndTheCoreText(t *testing.T) 
 
 func TestOpenVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 	list := newRecordingList()
-	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
 	res, err := client.OpenVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceOpenVaultRequest{Id: "v9"}))
 	if err != nil {
@@ -554,7 +554,7 @@ func TestOpenVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 }
 
 func TestRemoveVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
-	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultManage)
 
 	res, err := client.RemoveVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceRemoveVaultRequest{Id: "v9"}))
 	if err != nil {
@@ -567,7 +567,7 @@ func TestRemoveVaultOfAnUnknownIdReturnsNotFoundWithTheDetail(t *testing.T) {
 }
 
 func TestVaultListChangesThatSucceedReturnNoDetail(t *testing.T) {
-	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultManage)
 	ctx := t.Context()
 
 	added, addErr := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
@@ -632,7 +632,7 @@ func TestRejectedRenameReturnsItsCodeInError(t *testing.T) {
 }
 
 func TestVaultListChangesReturnTheVaultAndTheFolder(t *testing.T) {
-	client, _, _ := newArrangeClient(t, newRecordingList(), pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, newRecordingList(), manifest.PermissionVaultManage)
 	ctx := t.Context()
 
 	added, err := client.AddVault(ctx, connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas", Name: "Seas"}))
@@ -659,7 +659,7 @@ func TestVaultListChangesReturnTheVaultAndTheFolder(t *testing.T) {
 }
 
 func TestVaultListChangesAreUnavailableWithoutAList(t *testing.T) {
-	client, _, _ := newArrangeClient(t, nil, pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, nil, manifest.PermissionVaultManage)
 
 	for call, err := range callVaultChanges(t, client) {
 		var failure *connect.Error
@@ -674,7 +674,7 @@ func TestOpenVaultReturnsAfterTheWindowShowsTheVault(t *testing.T) {
 	list.release = make(chan struct{})
 	release := sync.OnceFunc(func() { close(list.release) })
 	t.Cleanup(release)
-	client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+	client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()
 
@@ -877,7 +877,7 @@ func TestAddVaultOfARejectedFolderReturnsTheCoreMessage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			list := newRecordingList()
 			list.err = c.err
-			client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+			client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
 			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: "/vaults/Seas"}))
 			if err != nil {
@@ -903,7 +903,7 @@ func TestAddVaultOverlapReturnsOverlapsWithCoreTextAsDetail(t *testing.T) {
 		t.Run(root, func(t *testing.T) {
 			list := newRecordingList()
 			list.err = vaultList.CheckOverlap(root)
-			client, _, _ := newArrangeClient(t, list, pluginport.PermissionVaultManage)
+			client, _, _ := newArrangeClient(t, list, manifest.PermissionVaultManage)
 
 			res, err := client.AddVault(t.Context(), connect.NewRequest(&v1.HostVaultServiceAddVaultRequest{Root: root}))
 			if err != nil {

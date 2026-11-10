@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -144,7 +143,7 @@ func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx cont
 		return sleeper, plugintest.GetReadyOutput(port), nil
 	})
 	p := host.plugins[secretPluginID]
-	p.Manifest.Backend = pluginport.PluginBackend{Entrypoint: "bin/plugin"}
+	p.Manifest.Backend = manifest.Backend{Entrypoint: "bin/plugin"}
 	activating := lifecycle.New(testsupport.GetMachine())
 	activating.SetActivating()
 	if dormant {
@@ -164,9 +163,9 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(probe))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	host.plugins[pluginID] = manifest.Discovered{Manifest: pluginport.PluginManifest{
+	host.plugins[pluginID] = manifest.Discovered{Manifest: manifest.Manifest{
 		ID:      pluginID,
-		Secrets: []pluginport.SecretDeclaration{{Name: declared, Title: "API key"}},
+		Secrets: []manifest.SecretDeclaration{{Name: declared, Title: "API key"}},
 	}}
 	sup := lifecycle.New(testsupport.GetMachine())
 	sup.ActivateInProcess(testsupport.GetMachine().Now())

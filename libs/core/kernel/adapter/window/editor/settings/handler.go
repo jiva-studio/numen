@@ -11,6 +11,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -219,7 +220,7 @@ func newWireReasoningLevels(target []domain.ReasoningLevel) []*v1.ReasoningLevel
 	return levels
 }
 
-func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOption {
+func newWireOptions(target manifest.SettingOptions) []*v1.PluginSettingOption {
 	if len(target) == 0 {
 		return nil
 	}
@@ -230,11 +231,11 @@ func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOpti
 	return options
 }
 
-func newWireOption(one setting.PluginSettingOption) *v1.PluginSettingOption {
+func newWireOption(one manifest.SettingOption) *v1.PluginSettingOption {
 	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail, When: one.When}
 }
 
-func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingOptionsBy {
+func newWireOptionsBy(target *manifest.OptionsBy) *v1.PluginSettingOptionsBy {
 	if target == nil {
 		return nil
 	}
@@ -245,21 +246,21 @@ func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingO
 	return &v1.PluginSettingOptionsBy{Setting: target.Setting, Options: options}
 }
 
-func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingCondition {
+func newWireCondition(target *manifest.Condition) *v1.PluginSettingCondition {
 	if target == nil {
 		return nil
 	}
 	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
 }
 
-func newWireManifestCondition(target *setting.PluginSettingCondition) *v1.ManifestCondition {
+func newWireManifestCondition(target *manifest.Condition) *v1.ManifestCondition {
 	if target == nil {
 		return nil
 	}
 	return &v1.ManifestCondition{Setting: target.Setting, Is: target.Is}
 }
 
-func newWireSecrets(target []setting.SecretDeclaration) []*v1.SecretDeclaration {
+func newWireSecrets(target []manifest.SecretDeclaration) []*v1.SecretDeclaration {
 	secrets := make([]*v1.SecretDeclaration, 0, len(target))
 	for _, one := range target {
 		secrets = append(secrets, &v1.SecretDeclaration{
@@ -290,7 +291,7 @@ func (h *Handler) ChoosePluginPath(
 	return connect.NewResponse(reply), nil
 }
 
-func newWireSettingsViews(views []setting.PluginSettingsView) []*v1.PluginSettingsView {
+func newWireSettingsViews(views []manifest.SettingsView) []*v1.PluginSettingsView {
 	out := make([]*v1.PluginSettingsView, 0, len(views))
 	for _, one := range views {
 		out = append(out, &v1.PluginSettingsView{Id: one.ID, Title: one.Title})

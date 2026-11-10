@@ -3,13 +3,12 @@ package manifestlist
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestListKeybindings_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	host := &manifestHost{
-		plugins: []pluginport.DiscoveredPlugin{
+		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.atlas", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{Keybindings: []manifest.Keybinding{
 				{Key: "mod+shift+a", Command: "atlas.open"},
 				{Key: "a", Command: "atlas.open", When: "!window.isFieldFocused"},

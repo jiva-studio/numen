@@ -5,14 +5,13 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestListTriggers_ReadsTheTriggersOfTheEnabledPlugins(t *testing.T) {
 	added := manifest.Trigger{Event: manifest.EventFileAdded, Command: "app:file.createText", When: "target.isFile"}
 	host := &manifestHost{
-		plugins: []pluginport.DiscoveredPlugin{
+		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.scans", Contributes: manifest.Contributes{Triggers: []manifest.Trigger{added}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Contributes: manifest.Contributes{Triggers: []manifest.Trigger{added}}}},
 		},
@@ -27,7 +26,7 @@ func TestListTriggers_ReadsTheTriggersOfTheEnabledPlugins(t *testing.T) {
 }
 
 func TestListHandlers_CarriesTheArgumentsTheSharedCommandDeclares(t *testing.T) {
-	host := &manifestHost{plugins: []pluginport.DiscoveredPlugin{
+	host := &manifestHost{plugins: []manifest.Discovered{
 		{Manifest: manifest.Manifest{ID: "org.example.links", Contributes: manifest.Contributes{Handlers: []manifest.Handler{
 			{Command: "app:link.import", Title: "Import link"},
 		}}}},

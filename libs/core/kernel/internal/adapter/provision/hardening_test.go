@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestProvision_RejectsReservedFileNames(t *testing.T) {
@@ -49,7 +49,7 @@ func TestADiscoveredNameCannotLeaveTheSearchedFolders(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			provisioner := newTestProvisioner(t, true)
 			provisioner.cfg.Discovery = discovery{dirs: []string{bin}}
-			req := pluginport.DependencyRequirement{ID: "tool", Kind: pluginport.DependencyKindBinary, Metadata: map[string]string{"binary": name}}
+			req := manifest.DependencyRequirement{ID: "tool", Kind: manifest.DependencyKindBinary, Metadata: map[string]string{"binary": name}}
 
 			resolved, err := provisioner.Provision(t.Context(), req, nil)
 
@@ -89,8 +89,8 @@ func TestAMachineFileThatIsNotThePinnedBytesIsNotTheDependency(t *testing.T) {
 	}
 	provisioner := newTestProvisioner(t, true)
 	provisioner.cfg.Discovery = discovery{dirs: []string{bin}}
-	req := pluginport.DependencyRequirement{
-		ID: "ffmpeg", Kind: pluginport.DependencyKindBinary, SourceURL: "https://example.invalid/ffmpeg", ChecksumSHA256: sumOf([]byte("pinned")),
+	req := manifest.DependencyRequirement{
+		ID: "ffmpeg", Kind: manifest.DependencyKindBinary, SourceURL: "https://example.invalid/ffmpeg", ChecksumSHA256: sumOf([]byte("pinned")),
 	}
 
 	resolved, err := provisioner.Provision(t.Context(), req, nil)

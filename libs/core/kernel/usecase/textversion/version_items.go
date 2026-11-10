@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/when"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // VersionItems is the text versions of a vault file that the commands of the
@@ -22,7 +23,7 @@ type VersionItems struct {
 	versions   *Versions
 	run        CommandRun
 	types      contenttypeport.ContentTypeTable
-	conditions *pluginport.PluginConditions
+	conditions *when.Conditions
 }
 
 // NewVersionItems returns the version items of the vault files, run with run and using the table
@@ -31,7 +32,7 @@ func NewVersionItems(versions *Versions, run CommandRun, types contenttypeport.C
 	if versions == nil || run == nil || types == nil {
 		return nil, errors.New("version items: text versions, the run of commands and content type table are required")
 	}
-	return &VersionItems{versions: versions, run: run, types: types, conditions: pluginport.NewConditions()}, nil
+	return &VersionItems{versions: versions, run: run, types: types, conditions: when.NewConditions()}, nil
 }
 
 // CommandRun runs a command of a plugin checked against its declaration: its backend, its condition
@@ -60,11 +61,11 @@ type VersionItem struct {
 	CreateTime time.Time
 }
 
-func listVersionItems(condition pluginport.PluginCondition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
+func listVersionItems(condition when.Condition, target plugin.TargetValues, versions []domain.TextVersion, live domain.TextVersion, hasLive bool) []VersionItem {
 	var items []VersionItem
 	for _, version := range versions {
 		isLive := hasLive && version.GetID() == live.GetID()
-		if condition.Evaluate(target.WithVersion(string(version.Kind), isLive).Get()) == pluginport.ConditionTrue {
+		if condition.Evaluate(target.WithVersion(string(version.Kind), isLive).Get()) == when.True {
 			items = append(items, VersionItem{
 				Version: version.GetID(), Kind: string(version.Kind), IsLive: isLive,
 				PluginID: version.PluginID, CreateTime: version.CreateTime,
@@ -141,7 +142,7 @@ func (u *VersionItems) RunVersionItem(
 	}
 	return u.run.Execute(ctx, v, plugin.CommandCall{
 		PluginID: entry.PluginID, Command: entry.Command.ID, Path: path,
-		Arguments: map[string]string{pluginport.CommandArgumentVersion: string(version)},
+		Arguments: map[string]string{manifest.CommandArgumentVersion: string(version)},
 	})
 }
 

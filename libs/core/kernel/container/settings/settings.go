@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // AgentAt is the key of the agent section in the settings file.
@@ -198,7 +199,7 @@ func PrefixModels(owner string, models []settingsdomain.Model) []settingsdomain.
 
 // GetDeclarations returns the setting declarations for the app and plugins.
 func (c Config) GetDeclarations() settingsadapter.Declarations {
-	return func(owner string) ([]pluginport.PluginManifestSetting, bool) {
+	return func(owner string) ([]manifest.Setting, bool) {
 		if owner == settingsadapter.OwnerApp {
 			return settingsadapter.GetAppDeclaration(), true
 		}
@@ -223,7 +224,7 @@ func (c Config) GetRegistries() settingsadapter.Registries {
 }
 
 // ListRegistryOptions returns the options for the named registry when known.
-func (c Config) ListRegistryOptions(name string) (pluginport.PluginSettingOptions, bool) {
+func (c Config) ListRegistryOptions(name string) (manifest.SettingOptions, bool) {
 	if name != settingsadapter.RegistryThemes {
 		return nil, false
 	}
@@ -231,9 +232,9 @@ func (c Config) ListRegistryOptions(name string) (pluginport.PluginSettingOption
 	if err != nil {
 		c.handleError(err)
 	}
-	var options pluginport.PluginSettingOptions
+	var options manifest.SettingOptions
 	for _, one := range catalog.Themes() {
-		options = append(options, pluginport.PluginSettingOption{Value: one.Name, Title: one.Title})
+		options = append(options, manifest.SettingOption{Value: one.Name, Title: one.Title})
 	}
 	return options, true
 }

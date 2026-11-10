@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Registry routes a requirement to the first provisioner that handles it,
@@ -19,18 +20,18 @@ import (
 type Registry struct {
 	mu           sync.Mutex
 	provisioners []pluginport.DependencyProvisioner
-	requirements map[string]pluginport.DependencyRequirement
+	requirements map[string]manifest.DependencyRequirement
 	order        []string
 	last         map[string]plugin.DependencyStatus
 	flights      flightGroup
-	observer     func(pluginport.DependencyRequirement, plugin.DependencyStatus)
+	observer     func(manifest.DependencyRequirement, plugin.DependencyStatus)
 }
 
 // NewRegistry returns a Registry that routes to the provisioners in order.
 func NewRegistry(provisioners ...pluginport.DependencyProvisioner) *Registry {
 	return &Registry{
 		provisioners: provisioners,
-		requirements: make(map[string]pluginport.DependencyRequirement),
+		requirements: make(map[string]manifest.DependencyRequirement),
 		last:         make(map[string]plugin.DependencyStatus),
 	}
 }
@@ -43,7 +44,7 @@ func (r *Registry) Add(provisioner pluginport.DependencyProvisioner) {
 }
 
 // Observe reports a status to the observer, as a provisioning does.
-func (r *Registry) Observe(req pluginport.DependencyRequirement, status plugin.DependencyStatus) {
+func (r *Registry) Observe(req manifest.DependencyRequirement, status plugin.DependencyStatus) {
 	r.mu.Lock()
 	observer := r.observer
 	r.mu.Unlock()
@@ -54,19 +55,19 @@ func (r *Registry) Observe(req pluginport.DependencyRequirement, status plugin.D
 
 // SetObserver sets the observer that receives every status reached by any
 // provisioning. The observer is called from the goroutine that runs the provisioning.
-func (r *Registry) SetObserver(observer func(pluginport.DependencyRequirement, plugin.DependencyStatus)) {
+func (r *Registry) SetObserver(observer func(manifest.DependencyRequirement, plugin.DependencyStatus)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.observer = observer
 }
 
 // CanProvision reports whether a provisioner handles the requirement.
-func (r *Registry) CanProvision(req pluginport.DependencyRequirement) bool {
+func (r *Registry) CanProvision(req manifest.DependencyRequirement) bool {
 	_, ok := r.route(req)
 	return ok
 }
 
-func (r *Registry) route(req pluginport.DependencyRequirement) (pluginport.DependencyProvisioner, bool) {
+func (r *Registry) route(req manifest.DependencyRequirement) (pluginport.DependencyProvisioner, bool) {
 	r.mu.Lock()
 	provisioners := slices.Clone(r.provisioners)
 	r.mu.Unlock()
@@ -79,7 +80,7 @@ func (r *Registry) route(req pluginport.DependencyRequirement) (pluginport.Depen
 }
 
 // Register records the requirement under its id.
-func (r *Registry) Register(req pluginport.DependencyRequirement) {
+func (r *Registry) Register(req manifest.DependencyRequirement) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if _, ok := r.requirements[req.ID]; !ok {
@@ -89,7 +90,7 @@ func (r *Registry) Register(req pluginport.DependencyRequirement) {
 }
 
 // Lookup returns the registered requirement with the id.
-func (r *Registry) Lookup(id string) (pluginport.DependencyRequirement, bool) {
+func (r *Registry) Lookup(id string) (manifest.DependencyRequirement, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	req, ok := r.requirements[id]
@@ -99,7 +100,7 @@ func (r *Registry) Lookup(id string) (pluginport.DependencyRequirement, bool) {
 // Provision makes the dependency ready. Callers that request the same
 // requirement while a run is in progress share it and each receives its progress.
 func (r *Registry) Provision(
-	ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus),
+	ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus),
 ) (plugin.ResolvedDependency, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
@@ -112,7 +113,7 @@ func (r *Registry) Provision(
 }
 
 func (r *Registry) run(
-	ctx context.Context, provisioner pluginport.DependencyProvisioner, req pluginport.DependencyRequirement, report func(plugin.DependencyStatus),
+	ctx context.Context, provisioner pluginport.DependencyProvisioner, req manifest.DependencyRequirement, report func(plugin.DependencyStatus),
 ) (plugin.ResolvedDependency, error) {
 	note := func(status plugin.DependencyStatus) {
 		status.ID = req.ID
@@ -141,7 +142,7 @@ func (r *Registry) run(
 }
 
 // Status returns the status of the dependency without installing it.
-func (r *Registry) Status(ctx context.Context, req pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
+func (r *Registry) Status(ctx context.Context, req manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
 	provisioner, ok := r.route(req)
 	if !ok {
 		return plugin.DependencyStatus{}, fmt.Errorf("%w: %s %s", plugin.ErrNoProvisioner, req.Kind, req.ID)

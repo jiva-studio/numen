@@ -54,7 +54,7 @@ func checkBatch(paths []string) error {
 func (e *vaultEndpoint) GetVaultProblems(
 	ctx context.Context, req *connect.Request[v1.GetVaultProblemsRequest],
 ) (*connect.Response[v1.GetVaultProblemsResponse], error) {
-	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
+	_, vault, err := e.begin(req.Header(), manifest.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}

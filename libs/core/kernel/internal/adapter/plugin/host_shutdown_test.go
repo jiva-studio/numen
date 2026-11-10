@@ -14,8 +14,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
@@ -147,7 +147,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{"org.example.widget"}}}
+		host.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
 	getReason := func(capability string) plugindomain.UnavailableReason {
 		t.Helper()
@@ -195,7 +195,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	host.plugins["md.numen.a"] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
+	host.plugins["md.numen.a"] = manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
@@ -214,18 +214,18 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.plugins[id] = pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{pluginport.ActivationEventStartup}, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
+		host.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}}
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
-	host.SetLauncher(func(ctx context.Context, p pluginport.DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p manifest.Discovered, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "a.failing" {
 			return nil, nil, errors.New("exec format error")
 		}
 		return working(ctx, p, portNumber, token)
 	})
 
-	activated, err := host.TriggerEvent(t.Context(), pluginport.ActivationEventStartup)
+	activated, err := host.TriggerEvent(t.Context(), manifest.ActivationEventStartup)
 
 	if err == nil {
 		t.Fatal("expected the failing plugin to be reported")

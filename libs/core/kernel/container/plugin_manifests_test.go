@@ -18,8 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // modulesRoot is the directory the repository's modules sit in, and docsRoot is
@@ -34,7 +32,7 @@ const (
 type pluginManifest struct {
 	Dir string
 	Raw []byte
-	pluginport.PluginManifest
+	manifest.Manifest
 }
 
 func getPluginManifests(t *testing.T) []pluginManifest {
@@ -56,7 +54,7 @@ func getPluginManifests(t *testing.T) []pluginManifest {
 		if err != nil {
 			t.Fatalf("%s: %v", path, err)
 		}
-		manifests = append(manifests, pluginManifest{Dir: filepath.Dir(path), Raw: raw, PluginManifest: parsed})
+		manifests = append(manifests, pluginManifest{Dir: filepath.Dir(path), Raw: raw, Manifest: parsed})
 	}
 	return manifests
 }
@@ -102,12 +100,12 @@ func TestThePermissionsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no permissions: a rule checked against nothing")
 	}
-	valid := append(pluginport.PluginPermissions(), pluginport.PermissionNetworkAlias)
+	valid := append(manifest.PluginPermissions(), manifest.PermissionNetworkAlias)
 	for _, difference := range listPermissionDifferences(documented, valid) {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if err := (pluginport.PluginManifest{Permissions: []string{name}}).ValidatePermissions(); err != nil {
+		if err := (manifest.Manifest{Permissions: []string{name}}).ValidatePermissions(); err != nil {
 			t.Errorf("the validator refuses %s: %v", name, err)
 		}
 	}
@@ -193,16 +191,16 @@ func TestTheCapabilitiesTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no capabilities: a rule checked against nothing")
 	}
-	valid := pluginport.PluginCapabilities()
+	valid := manifest.PluginCapabilities()
 	for _, difference := range listDifferences(documented, valid, "capability") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
-		if hasIssue(pluginport.PluginManifest{Capabilities: []string{name}}, pluginport.ErrInvalidCapability) {
+		if hasIssue(manifest.Manifest{Capabilities: []string{name}}, manifest.ErrInvalidCapability) {
 			t.Errorf("the validator refuses %s", name)
 		}
 	}
-	if !hasIssue(pluginport.PluginManifest{Capabilities: []string{"not-a-capability"}}, pluginport.ErrInvalidCapability) {
+	if !hasIssue(manifest.Manifest{Capabilities: []string{"not-a-capability"}}, manifest.ErrInvalidCapability) {
 		t.Error("the validator accepts a capability no host resolves")
 	}
 }
@@ -216,30 +214,30 @@ func TestTheActivationEventsTheGuideListsAreTheValidators(t *testing.T) {
 	if len(documented) == 0 {
 		t.Fatal("the guide lists no activation events: a rule checked against nothing")
 	}
-	valid := pluginport.PluginActivationEvents()
+	valid := manifest.PluginActivationEvents()
 	for _, difference := range listDifferences(documented, valid, "activation event") {
 		t.Error(difference)
 	}
 	for _, name := range valid {
 		sample := strings.ReplaceAll(name, "<ext>", "pdf")
-		if hasIssue(pluginport.PluginManifest{ActivationEvents: []string{sample}}, pluginport.ErrInvalidActivationEvent) {
+		if hasIssue(manifest.Manifest{ActivationEvents: []string{sample}}, manifest.ErrInvalidActivationEvent) {
 			t.Errorf("the validator refuses %s", sample)
 		}
 	}
 	for _, invalid := range []string{"*", "onFile:", "onFile:*", "onCommand:run"} {
-		if !hasIssue(pluginport.PluginManifest{ActivationEvents: []string{invalid}}, pluginport.ErrInvalidActivationEvent) {
+		if !hasIssue(manifest.Manifest{ActivationEvents: []string{invalid}}, manifest.ErrInvalidActivationEvent) {
 			t.Errorf("the validator accepts %s", invalid)
 		}
 	}
 }
 
 func TestShippedPluginsDeclareNoWildcardActivationEvent(t *testing.T) {
-	byID := map[string]pluginport.PluginManifest{}
+	byID := map[string]manifest.Manifest{}
 	for _, one := range getPluginManifests(t) {
 		if slices.Contains(one.ActivationEvents, "*") {
 			t.Errorf("%s declares the wildcard activation event", one.ID)
 		}
-		byID[one.ID] = one.PluginManifest
+		byID[one.ID] = one.Manifest
 	}
 	for _, id := range []string{"md.numen.engines.embeddings", "md.numen.agents.mcp.server"} {
 		m, ok := byID[id]
@@ -254,12 +252,12 @@ func TestShippedPluginsDeclareNoWildcardActivationEvent(t *testing.T) {
 	if !ok {
 		t.Fatal("missing plugin md.numen.tools.search.relevance")
 	}
-	if !slices.Equal(relevance.ActivationEvents, []string{pluginport.ActivationEventVectorsReady}) {
+	if !slices.Equal(relevance.ActivationEvents, []string{manifest.ActivationEventVectorsReady}) {
 		t.Errorf("md.numen.tools.search.relevance activationEvents = %v, want [onVectorsReady]", relevance.ActivationEvents)
 	}
 }
 
-func hasIssue(m pluginport.PluginManifest, rule error) bool {
+func hasIssue(m manifest.Manifest, rule error) bool {
 	return slices.ContainsFunc(m.ListIssues(), func(issue error) bool { return errors.Is(issue, rule) })
 }
 
@@ -376,7 +374,7 @@ func isNamedIn(source, key string) bool {
 	return false
 }
 
-func isReadByCondition(manifest pluginport.PluginManifest, key string) bool {
+func isReadByCondition(manifest manifest.Manifest, key string) bool {
 	conditions := make([]string, 0, len(manifest.Contributes.Triggers)+len(manifest.Contributes.Handlers))
 	for _, one := range manifest.Contributes.Triggers {
 		conditions = append(conditions, one.When)
@@ -388,7 +386,7 @@ func isReadByCondition(manifest pluginport.PluginManifest, key string) bool {
 	return slices.ContainsFunc(conditions, func(condition string) bool { return strings.Contains(condition, name) })
 }
 
-func listUnreadSettings(manifest pluginport.PluginManifest, sources []string) []string {
+func listUnreadSettings(manifest manifest.Manifest, sources []string) []string {
 	var unread []string
 	for _, setting := range manifest.Settings {
 		if isReadByCondition(manifest, setting.Key) {
@@ -415,7 +413,7 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 			sources = append(sources, string(text))
 		}
 		declared += len(one.Settings)
-		for _, key := range listUnreadSettings(one.PluginManifest, sources) {
+		for _, key := range listUnreadSettings(one.Manifest, sources) {
 			t.Errorf("%s declares the setting %s and nothing it is compiled from reads it", one.Dir, key)
 		}
 	}
@@ -425,7 +423,7 @@ func TestEverySettingAPluginDeclaresIsReadByThePlugin(t *testing.T) {
 }
 
 func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
-	scans := pluginport.PluginManifest{Settings: []pluginport.PluginManifestSetting{
+	scans := manifest.Manifest{Settings: []manifest.Setting{
 		{Key: "language"}, {Key: "dpi"},
 	}}
 	if got := listUnreadSettings(scans, []string{`values["language"]`, "const dpi = 'dpi'"}); len(got) != 0 {
@@ -437,7 +435,7 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 	if got := listUnreadSettings(scans, []string{`languages := "dpis"`}); !slices.Equal(got, []string{"language", "dpi"}) {
 		t.Errorf("a key inside another word is found as read: %v", got)
 	}
-	triggered := pluginport.PluginManifest{ID: "org.example.scans", Settings: []pluginport.PluginManifestSetting{{Key: "isAutomatic"}}}
+	triggered := manifest.Manifest{ID: "org.example.scans", Settings: []manifest.Setting{{Key: "isAutomatic"}}}
 	triggered.Contributes.Triggers = []manifest.Trigger{{Event: "file.added", Command: "app:file.createText", When: "config.org.example.scans.isAutomatic == true"}}
 	if got := listUnreadSettings(triggered, nil); len(got) != 0 {
 		t.Errorf("a setting the condition of a trigger reads is found unread: %v", got)
@@ -447,7 +445,7 @@ func TestSettingRule_ReportsUnreadSettings(t *testing.T) {
 // The capabilities a manifest may declare are those the adapters of the core resolve a plugin by.
 func TestTheCapabilitiesAManifestMayDeclareAreTheOnesTheHostResolves(t *testing.T) {
 	want := []string{bridge.CapabilityAgentProvider, bridge.CapabilityEmbedding, bridge.CapabilityTools}
-	got := slices.Sorted(slices.Values(pluginport.PluginCapabilities()))
+	got := slices.Sorted(slices.Values(manifest.PluginCapabilities()))
 	if !slices.Equal(got, want) {
 		t.Errorf("PluginCapabilities = %v, want %v", got, want)
 	}

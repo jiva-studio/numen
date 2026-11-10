@@ -9,10 +9,9 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 var errNoTools = errors.New("the host offers plugins no tools")
@@ -33,7 +32,7 @@ type toolEndpoint struct {
 var _ numenv1connect.PluginToolServiceHandler = (*toolEndpoint)(nil)
 
 func (e *toolEndpoint) begin(header http.Header) (string, PluginTools, error) {
-	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), pluginport.PermissionVaultRead)
+	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), manifest.PermissionVaultRead)
 	if err != nil {
 		return "", nil, err
 	}

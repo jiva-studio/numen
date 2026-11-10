@@ -7,14 +7,14 @@ import (
 	"testing"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func newRouteHost(t *testing.T, plugin *httptest.Server) *servingHost {
 	t.Helper()
 	return &servingHost{
 		endpoints: map[string]plugindomain.Endpoint{"org.example.reader": endpointOf(t, plugin, "secret")},
-		manifests: map[string]pluginport.PluginManifest{"org.example.reader": {ID: "org.example.reader"}},
+		manifests: map[string]manifest.Manifest{"org.example.reader": {ID: "org.example.reader"}},
 	}
 }
 

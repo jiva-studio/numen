@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 var ErrActivationAborted = errors.New("plugin activation aborted")
@@ -66,7 +66,7 @@ func (s *Supervisor) IsActivationFailed() bool {
 // DescribeFailure returns a short UI label for why a plugin failed to start. The error itself is the detail.
 func DescribeFailure(cause error) string {
 	switch {
-	case errors.Is(cause, pluginport.ErrUnsupportedProtocol):
+	case errors.Is(cause, manifest.ErrUnsupportedProtocol):
 		return "Unsupported plugin protocol. Update the plugin or Numen"
 	case errors.Is(cause, transport.ErrHandshakeTimeout):
 		return "Timed out while starting"

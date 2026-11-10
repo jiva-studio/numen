@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func getSystemDirs() []string {
@@ -56,7 +56,7 @@ func getLoaderCachePrograms() []string {
 	return []string{"/sbin/ldconfig", "/usr/sbin/ldconfig", "/usr/bin/ldconfig", "/bin/ldconfig"}
 }
 
-func (d discovery) find(req pluginport.DependencyRequirement) string {
+func (d discovery) find(req manifest.DependencyRequirement) string {
 	found := d.locate(req)
 	if found == "" || req.ChecksumSHA256 == "" {
 		return found
@@ -67,8 +67,8 @@ func (d discovery) find(req pluginport.DependencyRequirement) string {
 	return found
 }
 
-func (d discovery) locate(req pluginport.DependencyRequirement) string {
-	if req.Kind != pluginport.DependencyKindBinary && req.Kind != pluginport.DependencyKindRuntime {
+func (d discovery) locate(req manifest.DependencyRequirement) string {
+	if req.Kind != manifest.DependencyKindBinary && req.Kind != manifest.DependencyKindRuntime {
 		return ""
 	}
 	name := req.ID
@@ -81,7 +81,7 @@ func (d discovery) locate(req pluginport.DependencyRequirement) string {
 	if found := findFile(d.dirs, getFileNames(name, req.Kind)); found != "" {
 		return found
 	}
-	if req.Kind == pluginport.DependencyKindRuntime && d.ldconfig != nil {
+	if req.Kind == manifest.DependencyKindRuntime && d.ldconfig != nil {
 		return findInLoaderCache(d.ldconfig(), name)
 	}
 	return ""
@@ -100,8 +100,8 @@ func hashFile(path string) (_ string, err error) {
 	return hex.EncodeToString(hasher.Sum(nil)), nil
 }
 
-func getFileNames(name string, kind pluginport.DependencyKind) []string {
-	if kind == pluginport.DependencyKindBinary {
+func getFileNames(name string, kind manifest.DependencyKind) []string {
+	if kind == manifest.DependencyKindBinary {
 		if runtime.GOOS == "windows" {
 			return []string{name + ".exe", name}
 		}

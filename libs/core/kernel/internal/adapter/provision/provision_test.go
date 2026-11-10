@@ -18,7 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func sumOf(data []byte) string {
@@ -34,22 +34,22 @@ func newTestProvisioner(t *testing.T, offline bool) *FileProvisioner {
 	})
 }
 
-func newModelRequirement(address string, data []byte) pluginport.DependencyRequirement {
-	return pluginport.DependencyRequirement{ID: "whisper", Kind: pluginport.DependencyKindModel, Version: "1", SourceURL: address, ChecksumSHA256: sumOf(data)}
+func newModelRequirement(address string, data []byte) manifest.DependencyRequirement {
+	return manifest.DependencyRequirement{ID: "whisper", Kind: manifest.DependencyKindModel, Version: "1", SourceURL: address, ChecksumSHA256: sumOf(data)}
 }
 
 type fakeProvisioner struct {
 	id    string
-	kind  pluginport.DependencyKind
+	kind  manifest.DependencyKind
 	calls atomic.Int32
 	gate  chan struct{}
 }
 
-func (f *fakeProvisioner) CanProvision(req pluginport.DependencyRequirement) bool {
+func (f *fakeProvisioner) CanProvision(req manifest.DependencyRequirement) bool {
 	return req.Kind == f.kind && (f.id == "" || req.ID == f.id)
 }
 
-func (f *fakeProvisioner) Provision(ctx context.Context, req pluginport.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
+func (f *fakeProvisioner) Provision(ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error) {
 	f.calls.Add(1)
 	onProgress(plugin.DependencyStatus{BytesDownloaded: 1, BytesTotal: 2})
 	if f.gate != nil {
@@ -63,37 +63,37 @@ func (f *fakeProvisioner) Provision(ctx context.Context, req pluginport.Dependen
 	return plugin.ResolvedDependency{ID: req.ID, PrimaryPath: "/p/" + req.ID}, nil
 }
 
-func (f *fakeProvisioner) Status(context.Context, pluginport.DependencyRequirement) (plugin.DependencyStatus, error) {
+func (f *fakeProvisioner) Status(context.Context, manifest.DependencyRequirement) (plugin.DependencyStatus, error) {
 	return plugin.DependencyStatus{State: plugin.DependencyStateMissing}, nil
 }
 
 func TestRegistry_RoutesRequirementByKind(t *testing.T) {
-	onnx := &fakeProvisioner{id: "onnxruntime", kind: pluginport.DependencyKindRuntime}
-	models := &fakeProvisioner{kind: pluginport.DependencyKindModel}
+	onnx := &fakeProvisioner{id: "onnxruntime", kind: manifest.DependencyKindRuntime}
+	models := &fakeProvisioner{kind: manifest.DependencyKindModel}
 	registry := NewRegistry(onnx, models)
 
-	if _, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "onnxruntime", Kind: pluginport.DependencyKindRuntime}, nil); err != nil {
+	if _, err := registry.Provision(t.Context(), manifest.DependencyRequirement{ID: "onnxruntime", Kind: manifest.DependencyKindRuntime}, nil); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}, nil); err != nil {
+	if _, err := registry.Provision(t.Context(), manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel}, nil); err != nil {
 		t.Fatal(err)
 	}
 	if onnx.calls.Load() != 1 || models.calls.Load() != 1 {
 		t.Errorf("onnx ran %d times and models %d, want one each", onnx.calls.Load(), models.calls.Load())
 	}
-	_, err := registry.Provision(t.Context(), pluginport.DependencyRequirement{ID: "d", Kind: pluginport.DependencyKindDataset}, nil)
+	_, err := registry.Provision(t.Context(), manifest.DependencyRequirement{ID: "d", Kind: manifest.DependencyKindDataset}, nil)
 	if !errors.Is(err, plugin.ErrNoProvisioner) {
 		t.Errorf("err = %v, want ErrNoProvisioner", err)
 	}
-	if registry.CanProvision(pluginport.DependencyRequirement{ID: "d", Kind: pluginport.DependencyKindDataset}) {
+	if registry.CanProvision(manifest.DependencyRequirement{ID: "d", Kind: manifest.DependencyKindDataset}) {
 		t.Error("the registry claims to provision a dataset nothing handles")
 	}
 }
 
 func TestRegistry_ConcurrentRequestsShareOneRun(t *testing.T) {
-	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
+	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
 	registry := NewRegistry(provisioner)
-	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel, Version: "1"}
+	req := manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel, Version: "1"}
 
 	const callers = 5
 	var heard [callers]atomic.Int32
@@ -274,7 +274,7 @@ func TestTheMachineIsSearchedBeforeTheNetwork(t *testing.T) {
 	provisioner := newTestProvisioner(t, true)
 	provisioner.cfg.Discovery = discovery{dirs: []string{bin}}
 
-	resolved, err := provisioner.Provision(t.Context(), pluginport.DependencyRequirement{ID: "ffmpeg", Kind: pluginport.DependencyKindBinary}, nil)
+	resolved, err := provisioner.Provision(t.Context(), manifest.DependencyRequirement{ID: "ffmpeg", Kind: manifest.DependencyKindBinary}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -347,9 +347,9 @@ func TestTheCacheFolderNamesKindIdVersionAndPlatform(t *testing.T) {
 }
 
 func TestARunContinuesWhenEveryCallerStopsWaiting(t *testing.T) {
-	provisioner := &fakeProvisioner{kind: pluginport.DependencyKindModel, gate: make(chan struct{})}
+	provisioner := &fakeProvisioner{kind: manifest.DependencyKindModel, gate: make(chan struct{})}
 	registry := NewRegistry(provisioner)
-	req := pluginport.DependencyRequirement{ID: "m", Kind: pluginport.DependencyKindModel}
+	req := manifest.DependencyRequirement{ID: "m", Kind: manifest.DependencyKindModel}
 	ctx, cancel := context.WithCancel(t.Context())
 	errs := make(chan error, 1)
 	go func() {

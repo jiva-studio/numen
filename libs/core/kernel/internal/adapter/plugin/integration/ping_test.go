@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -58,17 +57,17 @@ func TestAPluginThatUsesAnotherProtocolIsRefusedAndFailsAtOnce(t *testing.T) {
 			host.SetLauncher(launchAnsweringPing(t, tc.protocol, &procs))
 
 			_, err := host.EnsureActive(t.Context(), "org.example.sample")
-			if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, pluginport.ErrUnsupportedProtocol, tc.want)
+			if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("EnsureActive() = %v, want %v naming %q", err, manifest.ErrUnsupportedProtocol, tc.want)
 			}
-			if failedID != "org.example.sample" || reason != lifecycle.DescribeFailure(pluginport.ErrUnsupportedProtocol) {
+			if failedID != "org.example.sample" || reason != lifecycle.DescribeFailure(manifest.ErrUnsupportedProtocol) {
 				t.Fatalf("failure reported for %q with %q, want org.example.sample with the protocol reason", failedID, reason)
 			}
 			if err := procs[0].Signal(syscall.Signal(0)); !errors.Is(err, os.ErrProcessDone) {
 				t.Fatalf("signal the rejected process: %v, want %v", err, os.ErrProcessDone)
 			}
-			if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, pluginport.ErrUnsupportedProtocol) {
-				t.Fatalf("second EnsureActive() = %v, want a new start that fails with %v", err, pluginport.ErrUnsupportedProtocol)
+			if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, manifest.ErrUnsupportedProtocol) {
+				t.Fatalf("second EnsureActive() = %v, want a new start that fails with %v", err, manifest.ErrUnsupportedProtocol)
 			}
 			if len(procs) != 2 {
 				t.Fatalf("launched %d processes, want one for each use", len(procs))
@@ -94,11 +93,11 @@ func TestAPluginThatUsesTheHostsProtocolIsActivated(t *testing.T) {
 func TestCheckPluginProtocol_RejectsUnsupportedProtocol(t *testing.T) {
 	newer := manifest.ProtocolVersion + 1
 	endpoint := plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.ServePing(t, int32(newer)), Token: ""}
-	manifest := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
+	declared := manifest.Manifest{ID: "md.numen.newer", Protocol: newer}
 
-	err := transport.CheckPluginProtocol(t.Context(), manifest, endpoint)
-	if !errors.Is(err, pluginport.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host uses 1") {
-		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, pluginport.ErrUnsupportedProtocol)
+	err := transport.CheckPluginProtocol(t.Context(), declared, endpoint)
+	if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), "this host uses 1") {
+		t.Fatalf("checkPluginProtocol() = %v, want %v naming the host's protocol", err, manifest.ErrUnsupportedProtocol)
 	}
 }
 

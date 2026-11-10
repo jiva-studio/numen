@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
 	machineport "github.com/jiva-studio/numen/libs/core/kernel/usecase/file/machinecontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -193,7 +192,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 	defer s.mu.Unlock()
 	norm := make([]string, len(permissions))
 	for i, p := range permissions {
-		norm[i] = pluginport.NormalizePermission(p)
+		norm[i] = manifest.NormalizePermission(p)
 	}
 	s.permissions = norm
 }
@@ -202,7 +201,7 @@ func (s *Supervisor) SetPermissions(permissions []string) {
 func (s *Supervisor) HasPermission(permission string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return slices.Contains(s.permissions, pluginport.NormalizePermission(permission))
+	return slices.Contains(s.permissions, manifest.NormalizePermission(permission))
 }
 
 // CheckPermission returns an error if the supervised plugin lacks the requested permission.

@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	setting "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 func TestNewWirePluginInfos_CarriesTheIcon(t *testing.T) {
@@ -25,7 +25,7 @@ func TestNewWirePluginInfos_CarriesTheIcon(t *testing.T) {
 func TestNewWirePluginInfos_CarriesSettingsViews(t *testing.T) {
 	wire := NewWirePluginInfos([]plugin.Info{{
 		ID:            "a.b",
-		SettingsViews: []setting.PluginSettingsView{{ID: "floor", Title: "Search relevance"}},
+		SettingsViews: []manifest.SettingsView{{ID: "floor", Title: "Search relevance"}},
 	}})
 
 	got := wire[0].GetSettingsViews()
@@ -55,7 +55,7 @@ func TestNewWirePluginInfos_CarriesWhatTheCoreResolved(t *testing.T) {
 		Settings: []plugin.Setting{{
 			Key:           "model",
 			Type:          "enum",
-			ActiveOptions: setting.PluginSettingOptions{{Value: "big", Title: "Big"}},
+			ActiveOptions: manifest.SettingOptions{{Value: "big", Title: "Big"}},
 			IsShown:       true,
 			ValueJSON:     `"big"`,
 		}, {Key: "url", Type: "string"}},

@@ -588,7 +588,7 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	if got := readCode(t, anonymous); got != connect.CodeUnauthenticated {
 		t.Errorf("a call with no token is %v", got)
 	}
-	if !slices.Contains(hosted.checked, "md.numen.b "+pluginport.PermissionVaultRead) || !slices.Contains(hosted.checked, "md.numen.b "+manifest.PermissionVaultWrite) {
+	if !slices.Contains(hosted.checked, "md.numen.b "+manifest.PermissionVaultRead) || !slices.Contains(hosted.checked, "md.numen.b "+manifest.PermissionVaultWrite) {
 		t.Errorf("the permissions asked were %v", hosted.checked)
 	}
 }

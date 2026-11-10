@@ -5,18 +5,18 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 const pluginID = "md.numen.sample.speech"
 
-func declaredSettings(owner string) ([]pluginport.PluginManifestSetting, bool) {
+func declaredSettings(owner string) ([]manifest.Setting, bool) {
 	switch owner {
 	case settings.OwnerApp:
 		return settings.GetAppDeclaration(), true
 	case pluginID:
-		return []pluginport.PluginManifestSetting{
-			{Key: "model", Type: "enum", Title: "Model", Options: pluginport.PluginSettingOptions{{Value: "small"}, {Value: "large"}}},
+		return []manifest.Setting{
+			{Key: "model", Type: "enum", Title: "Model", Options: manifest.SettingOptions{{Value: "small"}, {Value: "large"}}},
 			{Key: "maxTokens", Type: "number", Title: "Tokens"},
 			{Key: "temperature", Type: "range", Title: "Temperature", Min: new(float64(0)), Max: new(float64(2))},
 			{Key: "label", Type: "string", Title: "Label"},

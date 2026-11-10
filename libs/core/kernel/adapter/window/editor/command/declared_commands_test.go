@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
@@ -24,10 +25,10 @@ func (declaredByTwoPlugins) ListHandlers() []plugin.CommandEntry { return nil }
 
 func (declaredByTwoPlugins) ListCommands() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "md.numen.tree", Command: plugincommand.Command{
+		{PluginID: "md.numen.tree", Command: manifest.Command{
 			ID: "tree.revealNote", Title: "Show note in file tree", Icon: "folder-open", When: "target.isNote",
 		}},
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{ID: "deck.create", Title: "Create deck"}},
+		{PluginID: "md.numen.cards", Command: manifest.Command{ID: "deck.create", Title: "Create deck"}},
 	}
 }
 

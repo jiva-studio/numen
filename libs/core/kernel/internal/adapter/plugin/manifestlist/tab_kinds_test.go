@@ -5,15 +5,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
-
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 func TestListTabKinds_ReadsTheManifestsOfEnabledPluginsInOrder(t *testing.T) {
 	deck := manifest.TabKind{Kind: "deck", Title: "Deck", Icon: "", When: "target.noteType == 'deck'", Rank: domain.RankDefault}
 	note := manifest.TabKind{Kind: "note", Title: "Note", Icon: "", When: "target.isNote", Rank: domain.RankAlternate}
 	host := &manifestHost{
-		plugins: []pluginport.DiscoveredPlugin{
+		plugins: []manifest.Discovered{
 			{Manifest: manifest.Manifest{ID: "org.example.cards", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.off", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{deck}}}},
 			{Manifest: manifest.Manifest{ID: "org.example.editor", Frontend: &manifest.Frontend{}, Contributes: manifest.Contributes{TabKinds: []manifest.TabKind{note}}}},

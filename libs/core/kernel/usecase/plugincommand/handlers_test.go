@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -15,7 +16,7 @@ type handlingPlugins struct{ mixedCommands }
 
 func (h *handlingPlugins) ListHandlers() []plugin.CommandEntry {
 	return []plugin.CommandEntry{
-		{PluginID: "md.numen.cards", Command: plugincommand.Command{
+		{PluginID: "md.numen.cards", Command: manifest.Command{
 			ID: "app:file.createText", Title: "Read the deck", When: "target.contentType == 'application/pdf'",
 		}},
 	}
