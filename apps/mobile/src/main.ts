@@ -15,6 +15,6 @@ import '@ionic/vue/css/structure.css'
 import '@ionic/vue/css/typography.css'
 import '@numen/ui/styles.css'
 
-import App from './App.vue'
+import App from './app/App.vue'
 
 createApp(App).use(IonicVue).mount('#app')

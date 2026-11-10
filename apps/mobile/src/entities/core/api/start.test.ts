@@ -3,7 +3,7 @@
  * address each client uses.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { startCore } from './core'
+import { startCore } from './start'
 
 const PORT = 41234
 
@@ -34,8 +34,8 @@ describe('reaching the core', () => {
     expect(core.port).toBe(PORT)
     expect(core.dir).toBe('/data/vault')
 
-    await expect(core.vault.getVaultState({})).rejects.toThrow()
-    await expect(core.notes.getOpeningNote({})).rejects.toThrow()
+    await expect(core.getVaultState()).rejects.toThrow()
+    await expect(core.getOpeningPath()).rejects.toThrow()
     expect(request).toEqual([
       `http://127.0.0.1:${PORT}/numen.v1.VaultService/GetVaultState`,
       `http://127.0.0.1:${PORT}/numen.v1.NoteService/GetOpeningNote`,

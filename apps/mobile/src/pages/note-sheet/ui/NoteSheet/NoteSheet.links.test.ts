@@ -8,8 +8,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import type { Core } from '@/entities/core'
 import NoteSheet from './NoteSheet.vue'
-import type { Core } from '../core'
 
 /** Every way a note writes an address, in one note. */
 const WRITTEN = [
@@ -23,7 +23,7 @@ const WRITTEN = [
 
 const createCore = (body: string) =>
   ({
-    notes: { readNote: vi.fn().mockResolvedValue({ body, at: undefined }) },
+    readNote: vi.fn().mockResolvedValue({ ok: true, value: { prose: body, stamp: null } }),
   }) as unknown as Core
 
 describe('a note read on the phone', () => {

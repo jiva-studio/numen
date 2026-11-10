@@ -10,9 +10,9 @@ import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import NoteSheet from './note/NoteSheet.vue'
-import { startCore } from './core'
-import type { Core } from './core'
+import { NoteSheet } from '@/pages/note-sheet'
+import { startCore } from '@/entities/core'
+import type { Core } from '@/entities/core'
 
 vi.mock('@capacitor/core', () => ({
   registerPlugin: () => ({ start: async () => ({ port: 45123, dir: '/data' }) }),
@@ -22,7 +22,7 @@ vi.mock('@capacitor/core', () => ({
 const PAGE = 'http://localhost'
 
 /** This module, on disk. The runner serves it, so its own address is one. */
-const rawHere = new URL('..', import.meta.url).pathname.replace(/^\/@fs/, '')
+const rawHere = new URL('../..', import.meta.url).pathname.replace(/^\/@fs/, '')
 const here =
   [rawHere, process.cwd(), join(process.cwd(), 'apps/mobile')].find((dir) =>
     existsSync(join(dir, 'index.html')),
@@ -122,7 +122,7 @@ describe('what the page asks for', () => {
     })
 
     const core = await startCore()
-    await expect(core.notes.getNeighbourhood({ path: 'Physics.md' })).rejects.toThrow()
+    await expect(core.readNote('Physics.md')).rejects.toThrow()
 
     expect(request).not.toStrictEqual([])
     for (const address of request) expect(isAllowed('connect-src', address)).toBe(true)
@@ -149,12 +149,13 @@ describe('what the page asks for', () => {
 describe('a picture written into a note', () => {
   it('stays plain text on the page, and the policy refuses its address', async () => {
     const core = {
-      notes: {
-        readNote: vi.fn().mockResolvedValue({
-          body: 'A note synced from elsewhere.\n\n![](https://evil.example/pixel.png)\n',
-          at: undefined,
-        }),
-      },
+      readNote: vi.fn().mockResolvedValue({
+        ok: true,
+        value: {
+          prose: 'A note synced from elsewhere.\n\n![](https://evil.example/pixel.png)\n',
+          stamp: null,
+        },
+      }),
     } as unknown as Core
 
     const sheet = mount(NoteSheet, { props: { core, path: 'Synced.md' }, attachTo: document.body })
