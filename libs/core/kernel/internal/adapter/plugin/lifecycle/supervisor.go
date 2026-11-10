@@ -107,7 +107,7 @@ func (s *Supervisor) FinishActivating() {
 	defer s.mu.Unlock()
 	s.state = StateActive
 	s.activationErr = nil
-	s.releaseActivatingLocked()
+	closeActivating(&s.activatingCh)
 }
 
 // SetDormant transitions the supervisor state to StateDormant and clears activation state.
@@ -120,13 +120,13 @@ func (s *Supervisor) SetDormant(err error) {
 	s.teardownBegun = false
 	s.activeRefCount = 0
 	s.activationErr = err
-	s.releaseActivatingLocked()
+	closeActivating(&s.activatingCh)
 }
 
-func (s *Supervisor) releaseActivatingLocked() {
-	if s.activatingCh != nil {
-		close(s.activatingCh)
-		s.activatingCh = nil
+func closeActivating(ch *chan struct{}) {
+	if *ch != nil {
+		close(*ch)
+		*ch = nil
 	}
 }
 
@@ -142,7 +142,7 @@ func (s *Supervisor) Attach(ctx context.Context, p *os.Process, now time.Time) e
 	s.state = StateActive
 	s.lastActiveTime = now
 	s.activationErr = nil
-	s.releaseActivatingLocked()
+	closeActivating(&s.activatingCh)
 	exitCh := make(chan struct{})
 	s.exitCh = exitCh
 
@@ -185,7 +185,7 @@ func (s *Supervisor) ActivateInProcess(now time.Time) {
 	s.activeRefCount = 1
 	s.lastActiveTime = now
 	s.activationErr = nil
-	s.releaseActivatingLocked()
+	closeActivating(&s.activatingCh)
 }
 
 func isRunning(s *Supervisor) bool {
@@ -277,7 +277,7 @@ func (s *Supervisor) Teardown(
 	}
 	s.state = StateDeactivating
 	s.teardownBegun = true
-	s.releaseActivatingLocked()
+	closeActivating(&s.activatingCh)
 	proc := s.process
 	exitCh := s.exitCh
 	if rpcShutdown == nil {
@@ -285,20 +285,20 @@ func (s *Supervisor) Teardown(
 	}
 	s.mu.Unlock()
 
-	if rpcShutdown != nil {
-		if err := rpcShutdown(ctx); err != nil {
-			// A plugin that cannot be asked to stop is killed without waiting out the grace period.
-			return s.killAndMarkDormant(proc, exitCh)
+	// A plugin that cannot be asked to stop is killed without waiting out the grace period.
+	if rpcShutdown == nil || rpcShutdown(ctx) == nil {
+		select {
+		case <-exitCh:
+			s.markDormant(proc)
+			return nil
+		case <-time.After(gracePeriod):
 		}
 	}
-
-	select {
-	case <-exitCh:
-		s.markDormant(proc)
-		return nil
-	case <-time.After(gracePeriod):
-		return s.killAndMarkDormant(proc, exitCh)
+	if err := kill(proc, exitCh); err != nil {
+		return err
 	}
+	s.markDormant(proc)
+	return nil
 }
 
 func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ctx context.Context) error) error {
@@ -317,7 +317,7 @@ func (s *Supervisor) teardownNilProcess(ctx context.Context, rpcShutdown func(ct
 	s.inProcess = false
 	s.teardownBegun = false
 	s.activeRefCount = 0
-	s.releaseActivatingLocked()
+	closeActivating(&s.activatingCh)
 	if rpcShutdown != nil {
 		shutdownErr = rpcShutdown(ctx)
 	}
@@ -336,7 +336,7 @@ func waitDeactivating(ctx context.Context, exitCh chan struct{}) error {
 	}
 }
 
-func (s *Supervisor) killAndMarkDormant(proc *os.Process, exitCh chan struct{}) error {
+func kill(proc *os.Process, exitCh chan struct{}) error {
 	if proc != nil {
 		if err := proc.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
 			return fmt.Errorf("kill plugin process %d: %w", proc.Pid, err)
@@ -345,7 +345,6 @@ func (s *Supervisor) killAndMarkDormant(proc *os.Process, exitCh chan struct{}) 
 	if exitCh != nil {
 		<-exitCh
 	}
-	s.markDormant(proc)
 	return nil
 }
 
@@ -359,7 +358,7 @@ func (s *Supervisor) markDormant(proc *os.Process) {
 		s.teardownBegun = false
 		s.activeRefCount = 0
 		s.activationErr = nil
-		s.releaseActivatingLocked()
+		closeActivating(&s.activatingCh)
 	}
 }
 
@@ -376,12 +375,4 @@ func (s *Supervisor) GetExitSignal() <-chan struct{} {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.exitCh
-}
-
-// BeginTeardown marks the supervisor as deactivating with its teardown under way.
-func (s *Supervisor) BeginTeardown() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.state = StateDeactivating
-	s.teardownBegun = true
 }

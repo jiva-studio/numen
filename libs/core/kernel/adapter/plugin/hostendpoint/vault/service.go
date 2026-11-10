@@ -106,5 +106,5 @@ func NewHandler(auth Authority, source Source, options ...connect.HandlerOption)
 	addUnary(r, numenv1connect.HostVaultServiceRenameVaultProcedure, "RenameVault", vaults.RenameVault)
 	addUnary(r, numenv1connect.HostVaultServiceRemoveVaultProcedure, "RemoveVault", vaults.RemoveVault)
 	addUnary(r, numenv1connect.HostVaultServiceOpenVaultProcedure, "OpenVault", vaults.OpenVault)
-	return numenv1connect.HostVaultServiceName + "/", r
+	return "/" + numenv1connect.HostVaultServiceName + "/", r
 }

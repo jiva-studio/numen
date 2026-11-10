@@ -251,7 +251,17 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	if err := sup.Attach(t.Context(), cmd.Process, testsupport.GetMachine().Now()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
-	sup.BeginTeardown()
+	release := make(chan struct{})
+	t.Cleanup(func() { close(release) })
+	go func() {
+		_ = sup.Teardown(context.WithoutCancel(t.Context()), time.Minute, func(context.Context) error {
+			<-release
+			return nil
+		})
+	}()
+	for sup.GetState() != lifecycle.StateDeactivating {
+		time.Sleep(time.Millisecond)
+	}
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
