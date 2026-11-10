@@ -11,6 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/version"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/appstate"
@@ -22,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
@@ -538,7 +538,7 @@ func setPluginTexts(c vaultWiring) {
 		c.PluginHost.SetPluginTexts(nil)
 		return
 	}
-	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.TextVersions))
+	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
 }
 
 func openPluginData(c vaultWiring) *textversion.PluginData {

@@ -46,7 +46,7 @@ func GetModelKey(path string) (string, error) {
 		return sum, nil
 	}
 	hash := sha256.New()
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if _, err := fmt.Fprintf(hash, "%s\n%d\n%d", filepath.Base(path), info.Size(), info.ModTime().UnixNano()); err != nil {
 		return "", err
 	}
@@ -55,7 +55,7 @@ func GetModelKey(path string) (string, error) {
 
 func readProvisionedSum(path string) (string, bool) {
 	raw, err := os.ReadFile(filepath.Join(filepath.Dir(path), readyName))
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return "", false
 	}

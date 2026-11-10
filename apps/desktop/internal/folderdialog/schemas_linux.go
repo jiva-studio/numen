@@ -55,7 +55,7 @@ func getSchemasDir(prefix string) string {
 		return pos
 	}
 	filed, err := filepath.Glob(filepath.Join(prefix, "share", "gsettings-schemas", "*", "glib-2.0", "schemas"))
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return ""
 	}

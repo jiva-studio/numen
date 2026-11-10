@@ -103,7 +103,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	}
 
 	var out strings.Builder
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := getFatalPage().Execute(&out, response); err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func getSettingsPath(cfg container.Config) string {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
 	path, err := settings.Path()
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return ""
 	}

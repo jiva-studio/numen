@@ -139,9 +139,9 @@ func TestExhaustructPatternRule_RejectsAPatternThatMatchesNoType(t *testing.T) {
 }
 
 // maxMutationDirectives is how many comments switch mutation testing off in the whole repository. Each
-// one accepts a mutant that no test kills, so the number only falls: a new one needs an old one removed
-// by a test that kills its mutant.
-const maxMutationDirectives = 848
+// one accepts a mutant that no test kills. The number is a ratchet: it may fall and never rise, so a new one
+// needs an old one removed by a test that kills its mutant.
+const maxMutationDirectives = 837
 
 var mutationDirective = regexp.MustCompile(`^//\s*gomutants:disable(-next-line)?(\s+[A-Z_]+(,[A-Z_]+)*)?\s+reason="((?:\\.|[^"\\])*)"`)
 

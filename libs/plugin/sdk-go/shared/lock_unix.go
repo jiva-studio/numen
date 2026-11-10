@@ -20,7 +20,7 @@ func lockFile(path string) (func() error, error) {
 			break
 		}
 	}
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return nil, errors.Join(err, file.Close())
 	}

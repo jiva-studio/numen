@@ -45,7 +45,7 @@ func readFlagPort() int {
 		return 0
 	}
 	port, err := strconv.Atoi(f.Value.String())
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return 0
 	}
@@ -54,7 +54,7 @@ func readFlagPort() int {
 
 func readEnvPort() int {
 	port, err := strconv.Atoi(os.Getenv("NUMEN_PLUGIN_PORT"))
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err != nil {
 		return 0
 	}
@@ -416,7 +416,7 @@ func waitForStop(
 }
 
 func serveHTTP(httpSrv *http.Server, listener net.Listener, errs chan<- error) {
-	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+	// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 	if err := httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		errs <- err
 	}

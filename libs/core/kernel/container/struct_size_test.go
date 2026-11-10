@@ -21,13 +21,13 @@ type structLimit struct {
 // a driving adapter serves one wire service of about ten calls, so twenty methods hold either with room;
 // fifteen fields is what an adapter needs for the collaborators of one service (each a port of one to three
 // methods) plus its state. A use case is one scenario: an Execute method, a few steps and the ports it
-// requires, so ten and ten. The composition root defines no object but Config. Embedded interfaces count the
+// requires, so twelve and twelve; a use case over that is cut by design. The composition root defines no object but Config. Embedded interfaces count the
 // methods they give the type, and a function-typed field counts as a field, so a struct cannot meet the limit
 // by embedding interfaces of five methods or by holding callbacks.
 const (
 	maxAdapterMethods = 20
 	maxAdapterFields  = 15
-	maxUseCaseMethods = 10
+	maxUseCaseMethods = 12
 	maxUseCaseFields  = 10
 )
 

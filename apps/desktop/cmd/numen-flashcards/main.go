@@ -54,7 +54,7 @@ func main() {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
 	cfg.ErrorHandler = func(err error) {
-		// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
+		// gomutants:disable-next-line reason="the error branch runs only when the call fails, and no test makes it fail"
 		if _, writeErr := fmt.Fprintln(out, appName+":", err); writeErr != nil {
 			return
 		}

@@ -27,7 +27,7 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint"
 )
 
 func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages) hostendpoint.WindowControl {
