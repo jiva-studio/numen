@@ -165,9 +165,8 @@ func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 // hides its name), an exported variable or constant set to a member of another package, or an exported
 // function whose whole body calls a function of another package of the repository with its own parameters
 // and has the same signature.
-// The rule rejects an alias of a type another package of the repository declares, an alias of an unnamed
-// interface, a variable, constant or function that only forwards a member of another package of the
-// repository (a function only when its signature is the callee's), and accepts an alias of a type of its own package or of a package outside the repository.
+// The rule accepts an alias of a type of its own package or of a package outside the repository, and a
+// function whose signature differs from the callee's.
 func TestReexportRule_RejectsAnAliasOfAnotherPackagesType(t *testing.T) {
 	dir := writeTreeFixture(t, map[string]string{
 		"port/port.go": `package port
