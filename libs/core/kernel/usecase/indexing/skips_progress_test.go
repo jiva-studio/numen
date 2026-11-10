@@ -18,7 +18,7 @@ type progressLog struct {
 }
 
 func (l *progressLog) ReportTask(pos work.Task) {
-	if pos.ID == MakingVectors {
+	if pos.ID == work.MakingVectors {
 		l.mu.Lock()
 		l.reports = append(l.reports, pos)
 		l.mu.Unlock()
@@ -70,7 +70,7 @@ func canceledPass(t *testing.T, openReading openFunc, events *progressLog, log *
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass never asked for the held note's vectors")
 	}
-	if !events.tasks.Cancel(MakingVectors) {
+	if !events.tasks.Cancel(work.MakingVectors) {
 		t.Fatal("the vector pass is not cancellable")
 	}
 	select {
@@ -100,7 +100,7 @@ func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading op
 	if last := counted[len(counted)-1]; last.Count != last.Total {
 		t.Errorf("the pass ended at %d of %d", last.Count, last.Total)
 	}
-	if pos := findTask(t, events.recorder, MakingVectors); pos != nil {
+	if pos := findTask(t, events.recorder, work.MakingVectors); pos != nil {
 		t.Errorf("the pass is still listed: %+v", *pos)
 	}
 
@@ -109,7 +109,7 @@ func testProgressOfAPassAfterACancelReachesItsTotal(t *testing.T, openReading op
 	if later := events.getReports(); len(later) != reports {
 		t.Errorf("a pass with only the canceled note left reported %+v", later[reports:])
 	}
-	if pos := findTask(t, events.recorder, MakingVectors); pos != nil {
+	if pos := findTask(t, events.recorder, work.MakingVectors); pos != nil {
 		t.Errorf("a pass with only the canceled note left is listed: %+v", *pos)
 	}
 }

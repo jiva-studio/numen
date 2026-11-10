@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
@@ -94,7 +95,7 @@ func testAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T, openReading openFun
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	if pos := findTask(t, events, MakingVectors); pos != nil {
+	if pos := findTask(t, events, work.MakingVectors); pos != nil {
 		t.Errorf("a pass without a listener is still being done: %+v", *pos)
 	}
 }

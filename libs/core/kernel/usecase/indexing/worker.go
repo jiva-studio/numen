@@ -14,14 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 )
 
-// What each pass is called in the list of what is being done. One name each, so
-// a pass that reports itself again replaces itself.
-const (
-	WalkingNotes  = work.WalkingNotes
-	IndexingTexts = work.IndexingTexts
-	MakingVectors = work.MakingVectors
-)
-
 const taskIndexingTexts = "Indexing file texts"
 
 // QuietPeriod is how long the vault has to have been still before the notes

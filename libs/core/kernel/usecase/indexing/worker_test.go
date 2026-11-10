@@ -152,7 +152,7 @@ func testAPassThatCouldNotEmbedStaysInTheList(t *testing.T, openReading openFunc
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	pos := findTask(t, events, MakingVectors)
+	pos := findTask(t, events, work.MakingVectors)
 	if pos == nil {
 		t.Fatal("the pass that could not embed took itself out of the list")
 	}
@@ -173,7 +173,7 @@ func testAPassThatEmbeddedPreservesTheList(t *testing.T, openReading openFunc) {
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	if pos := findTask(t, events, MakingVectors); pos != nil {
+	if pos := findTask(t, events, work.MakingVectors); pos != nil {
 		t.Errorf("a pass that embedded what was unembedded is still being done: %+v", *pos)
 	}
 }
@@ -222,7 +222,7 @@ func testIndexingNamesTheSourceItIsOn(t *testing.T, openReading openFunc) {
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
 
-	pos, target := watching.opening(MakingVectors)
+	pos, target := watching.opening(work.MakingVectors)
 	if !target {
 		t.Fatal("nothing was being indexed while a vector was asked for")
 	}
@@ -243,7 +243,7 @@ func testBooksThatCouldNotBeReadStayInTheList(t *testing.T, openReading openFunc
 
 	newPass(made, db, events, nil, "", v).indexTexts(t.Context(), false)
 
-	pos := findTask(t, events, IndexingTexts)
+	pos := findTask(t, events, work.IndexingTexts)
 	if pos == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}
@@ -303,7 +303,7 @@ func testIndexingIsNeverAWordWithNothingBelowIt(t *testing.T, openReading openFu
 
 	for _, list := range overVal.lists() {
 		for _, item := range list {
-			if item.ID != MakingVectors || item.Error != "" {
+			if item.ID != work.MakingVectors || item.Error != "" {
 				continue
 			}
 			if item.About == "" {
@@ -373,7 +373,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 		t.Error("the wake a recognition raised was taken and not put back")
 	}
 
-	if pos := findTask(t, events, MakingVectors); pos != nil && pos.Error != "" {
+	if pos := findTask(t, events, work.MakingVectors); pos != nil && pos.Error != "" {
 		t.Errorf("standing aside is shown as a failure: %q", pos.Error)
 	}
 
@@ -584,7 +584,7 @@ func testCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openF
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass never called the model")
 	}
-	if !events.tasks.Cancel(MakingVectors) {
+	if !events.tasks.Cancel(work.MakingVectors) {
 		t.Fatalf("the running vector pass is not cancellable: %+v", events.tasks.List())
 	}
 
@@ -601,7 +601,7 @@ func testCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T, openReading openF
 	case <-time.After(10 * time.Second):
 		t.Fatal("the pass did not return after its task was canceled")
 	}
-	if pos := findTask(t, events, MakingVectors); pos != nil {
+	if pos := findTask(t, events, work.MakingVectors); pos != nil {
 		t.Errorf("the canceled pass is still listed: %+v", *pos)
 	}
 }

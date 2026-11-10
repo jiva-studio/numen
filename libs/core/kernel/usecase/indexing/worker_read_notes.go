@@ -12,9 +12,9 @@ import (
 
 func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	events := p.worker.events
-	defer events.FinishTask(WalkingNotes)
+	defer events.FinishTask(work.WalkingNotes)
 
-	events.ReportTask(work.Task{ID: WalkingNotes, Title: "Indexing the vault"})
+	events.ReportTask(work.Task{ID: work.WalkingNotes, Title: "Indexing the vault"})
 	notes, err := read(ctx, nil)
 
 	switch {
@@ -52,7 +52,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	events := p.worker.events
 	making, err := p.worker.openReading(ctx, p.v, rebuild)
 	if err != nil {
-		events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
+		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return
 	}
 	texts, cancel := newTaskCancel(ctx)
@@ -63,7 +63,7 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 			current.set([]string{res.CurrentSource})
 		}
 		events.ReportTask(work.Task{
-			ID: IndexingTexts, Title: taskIndexingTexts, About: res.CurrentSource,
+			ID: work.IndexingTexts, Title: taskIndexingTexts, About: res.CurrentSource,
 			// Every file the walk found leaves this pass one of four ways, and all
 			// four count as done.
 			Count:  int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
@@ -72,14 +72,14 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 		})
 	}
 
-	events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, Cancel: cancel.request})
+	events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Cancel: cancel.request})
 	res, read := making.IndexTexts(texts, p.v)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
 			events.ReportTexts(p.v, res)
 		}
-		events.FinishTask(IndexingTexts)
+		events.FinishTask(work.IndexingTexts)
 	case errors.Is(read, context.Canceled):
 		// Stopped on request. The cut data is correct up to that point, and a
 		// source a person canceled is left uncut until it changes.
@@ -88,10 +88,10 @@ func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 				p.worker.skips.addTexts(path)
 			}
 		}
-		events.FinishTask(IndexingTexts)
+		events.FinishTask(work.IndexingTexts)
 	default:
 		// A failed pass stays in the task list until the user dismisses it.
-		events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: read.Error()})
+		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, Error: read.Error()})
 	}
 
 	p.embed(ctx)
@@ -103,7 +103,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	}
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(work.Task{ID: IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
+		events.ReportTask(work.Task{ID: work.IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
 	}
 
 	making, err := p.worker.openReading(ctx, v, false)
@@ -114,7 +114,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	switch err := making.CutOne(ctx, v, path); {
 	case err == nil:
 		// A cut that failed before this one is over.
-		events.FinishTask(IndexingTexts)
+		events.FinishTask(work.IndexingTexts)
 	case !errors.Is(err, context.Canceled):
 		failed(err)
 	}
@@ -127,7 +127,7 @@ func (p *pass) embed(ctx context.Context) {
 	}
 	plan := w.planVectors(ctx, p.v)
 	if !plan.hasPending {
-		w.events.FinishTask(MakingVectors)
+		w.events.FinishTask(work.MakingVectors)
 		p.reportVectorsReady(ctx)
 		return
 	}
@@ -205,7 +205,7 @@ func stopOnWake(ctx context.Context, wakes ...chan struct{}) (context.Context, f
 func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(work.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
+		events.ReportTask(work.Task{ID: work.MakingVectors, Title: "Indexing", Error: err.Error()})
 	}
 
 	making, err := p.worker.openReading(ctx, p.v, false)
@@ -221,7 +221,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	var current currentSources
 	making.OnVectorsProgress = func(res indexdomain.EmbedResult) {
 		current.set(getEmbeddingSources(res))
-		pos := work.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
+		pos := work.Task{ID: work.MakingVectors, Title: "Indexing", About: res.CurrentSource, Cancel: cancel.request}
 		if res.Embedded > 0 {
 			pos.Count, pos.Total = int64(res.Embedded), plan.getTotal(res)
 		}
@@ -231,7 +231,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 	switch res, err := making.MakeVectors(items, p.v); {
 	case err == nil:
 		p.worker.skips.setSkippedChunks(res.Skipped, plan.generation)
-		events.FinishTask(MakingVectors)
+		events.FinishTask(work.MakingVectors)
 		return true
 	case errors.Is(err, context.Canceled):
 		// The source a person canceled gets no vectors until it changes; the
@@ -241,7 +241,7 @@ func (p *pass) makeVectors(ctx, items context.Context, plan vectorPlan) bool {
 				p.worker.skips.addVectors(path)
 			}
 		}
-		events.FinishTask(MakingVectors)
+		events.FinishTask(work.MakingVectors)
 	default:
 		// A vault missing vectors is searched by its text alone.
 		failed(err)
