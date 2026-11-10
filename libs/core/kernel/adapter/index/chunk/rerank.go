@@ -4,12 +4,13 @@ import (
 	"cmp"
 	"context"
 	"fmt"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
 	"slices"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index/sqlwrite"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 )
 
 // coarseCandidates is how many chunks the coarse pass keeps for each answer

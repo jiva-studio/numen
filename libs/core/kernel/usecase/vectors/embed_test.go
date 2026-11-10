@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/indexfake"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 )
 
 // dimensions is the width of the model the tests embed with. One byte per
@@ -128,7 +128,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	}
 	for _, group := range index.Groups {
 		for _, v := range group {
-			if v.Kind != embedding.QuantisedInt8 {
+			if v.Kind != embedding.QuantizedInt8 {
 				t.Errorf("chunk %s was stored as %q", v.ChunkID, v.Kind)
 			}
 			if len(v.Value) != dimensions {
@@ -635,13 +635,13 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	embed := newEmbed(nil, index, index)
 	embed.OnProgress = log.add
 	res := &vaultreading.EmbedResult{}
-	track := newTracker(embed, 1, res, &sync.Mutex{})
+	track := newTracker(embed.OnProgress, 1, res, &sync.Mutex{})
 	activeID := track.enter([]string{inFlight})
 	track.publish(func(*vaultreading.EmbedResult) {})
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	err := embed.sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err := newProducer(embed).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 
 	if !errors.Is(err, context.Canceled) {
@@ -653,7 +653,7 @@ func TestACancelledSendWithdrawsItsBatchFromTheReport(t *testing.T) {
 	track.leave(activeID)
 
 	res.CurrentSource = finished
-	err = embed.sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
+	err = newProducer(embed).sendBatches(ctx, embedding.Model{Name: "m", Dimensions: dimensions},
 		[]domain.Passage{{Source: unsent}}, []string{"a passage of the book"}, track, make(chan preparedBatch))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("the send ended with %v, want context.Canceled", err)

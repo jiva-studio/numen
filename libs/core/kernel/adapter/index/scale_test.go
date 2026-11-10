@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 )
 
-func getQuantising() embedding.Model {
+func getQuantizing() embedding.Model {
 	return embedding.Model{
 		Name: "test", Dimensions: 1024, MaxTokens: 256, Pooling: "mean",
 		From: "local:library/model.onnx",
@@ -28,14 +28,14 @@ func atScale(t *testing.T, m embedding.Model, scale float64) string {
 }
 
 // TestAScaleThatMovedBuysTheVectorsAgain is the guarantee the recipe exists
-// for. A byte quantised at one scale means something else at another, and the
+// for. A byte quantized at one scale means something else at another, and the
 // index has nothing but the recipe to tell it so.
 func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()
 
-	before := atScale(t, getQuantising(), 0.3)
-	if before == getQuantising().Recipe() {
+	before := atScale(t, getQuantizing(), 0.3)
+	if before == getQuantizing().Recipe() {
 		t.Fatalf("two scales, one recipe: %s", before)
 	}
 
@@ -84,7 +84,7 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Fatalf("%d chunks need a vector under the scale they were made at, want none", len(atBefore))
 	}
 
-	afterSwitch, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, getQuantising().Recipe(), chunk.Cursor{}, 100)
+	afterSwitch, err := db.ChunkVectors().GetUnembeddedChunks(ctx, getFirst().ID, getQuantizing().Recipe(), chunk.Cursor{}, 100)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,13 +92,13 @@ func TestAScaleThatMovedBuysTheVectorsAgain(t *testing.T) {
 		t.Errorf("%d chunks are asked for again after the scale moved, want 2", len(afterSwitch))
 	}
 
-	retained, err := db.ChunkVectors().GetKeptVectors(ctx, getQuantising().Recipe(), hashes)
+	retained, err := db.ChunkVectors().GetKeptVectors(ctx, getQuantizing().Recipe(), hashes)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, hash := range hashes {
 		if _, target := retained[hex.EncodeToString(hash)]; target {
-			t.Errorf("a vector quantised at another scale is returned for %x", hash)
+			t.Errorf("a vector quantized at another scale is returned for %x", hash)
 		}
 	}
 }

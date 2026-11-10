@@ -14,11 +14,11 @@ import {
   asFailure,
   asValue,
 } from '@numen/core-client'
-import type { Neighbourhood, NoteResult, NoteRelation, WriteResult } from '../lib/note'
+import type { Neighborhood, NoteResult, NoteRelation, WriteResult } from '../lib/note'
 import { mapNoteType } from '@/shared/api/wire'
 import { mapConnection, type ConnectionWire } from './relationWords'
 
-interface NeighbourhoodWire {
+interface NeighborhoodWire {
   readonly focus?: { readonly path: string; readonly title: string } | undefined
   readonly focusType: string
   readonly focusTabKind?: string
@@ -79,9 +79,9 @@ export const mapWriteResult = (from: {
 }): WriteResult => (isStaleAnswer(from) ? asFailure('changed') : mapNoteResult(from))
 
 /**
- * A neighbourhood in the words the window uses.
+ * A neighborhood in the words the window uses.
  */
-export const mapNeighbourhood = (answer: NeighbourhoodWire): Neighbourhood => ({
+export const mapNeighborhood = (answer: NeighborhoodWire): Neighborhood => ({
   focus: { path: answer.focus?.path ?? '', title: answer.focus?.title ?? '' },
   focusType: mapNoteType(answer.focusType),
   ...(answer.focusTabKind ? { focusTabKind: answer.focusTabKind } : {}),

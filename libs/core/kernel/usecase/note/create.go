@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 	"github.com/jiva-studio/numen/libs/note/ulid"
 
@@ -21,8 +22,8 @@ import (
 // carry whole is written into the frontmatter, and nothing else writes that key.
 type Create struct {
 	writers vaultport.NoteWriters
-	names   NameQueries
-	index   IndexUpdater
+	names   edit.NameQueries
+	index   edit.IndexUpdater
 	now     machineport.Clock
 }
 
@@ -30,13 +31,13 @@ type Create struct {
 // is written into, the query for which names are taken, the index update for
 // the new file, and the clock.
 func NewCreate(
-	writers vaultport.NoteWriters, names NameQueries, index IndexUpdater, now machineport.Clock,
+	writers vaultport.NoteWriters, names edit.NameQueries, index edit.IndexUpdater, now machineport.Clock,
 ) Create {
 	return Create{writers: writers, names: names, index: index, now: now}
 }
 
 // WithIndex replaces the index function.
-func (u Create) WithIndex(index IndexUpdater) Create {
+func (u Create) WithIndex(index edit.IndexUpdater) Create {
 	u.index = index
 	return u
 }
@@ -86,7 +87,7 @@ func (u Create) Execute(ctx context.Context, v domain.Vault, in NewNote) (Create
 		return CreateResult{}, err
 	}
 
-	if err := CheckSize(path, len(content), MaxBytes); err != nil {
+	if err := edit.CheckSize(path, len(content), edit.MaxBytes); err != nil {
 		return CreateResult{}, err
 	}
 
@@ -146,7 +147,7 @@ func (u Create) updateIndex(ctx context.Context, v domain.Vault, paths ...string
 		return nil
 	}
 	// The files are written, so the index follows them even when the caller is canceled.
-	return WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
+	return edit.WrapIndexOutdated(u.index(context.WithoutCancel(ctx), v, paths), paths...)
 }
 
 func removePath(paths []string, path string) []string {

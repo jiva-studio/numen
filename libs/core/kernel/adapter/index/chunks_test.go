@@ -44,7 +44,7 @@ func getVectorForSeed(seed byte) []float32 {
 }
 
 func getPreciseBytes(v []float32) []byte {
-	q := vector.Bytes(vector.Normalise(v))
+	q := vector.Bytes(vector.Normalize(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)
@@ -1136,7 +1136,7 @@ func TestAVectorStaysWhileAnyChunkStillContainsItsText(t *testing.T) {
 // information: when the model and dimension match, the migrated vectors were
 // created by the model currently in use and are not recomputed.
 
-func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
+func saveRecognizedSource(t *testing.T, db *DB, vault domain.Vault, path, hash string) {
 	t.Helper()
 
 	if err := db.Chunks().SaveSource(t.Context(), vault.ID, chunk.Source{
@@ -1148,11 +1148,11 @@ func saveRecognisedSource(t *testing.T, db *DB, vault domain.Vault, path, hash s
 
 // What a scan sweeps is its own vault. A source read in another vault is that
 // vault's, and this answer holds none of it.
-func TestRecognisedStaysInsideItsVault(t *testing.T) {
+func TestRecognizedStaysInsideItsVault(t *testing.T) {
 	db := openDB(t)
 
-	saveRecognisedSource(t, db, getFirst(), "library/first.pdf", "hash-first")
-	saveRecognisedSource(t, db, getSecond(), "library/second.pdf", "hash-second")
+	saveRecognizedSource(t, db, getFirst(), "library/first.pdf", "hash-first")
+	saveRecognizedSource(t, db, getSecond(), "library/second.pdf", "hash-second")
 	book(t, db, getFirst(), "library/plain.epub", 1)
 
 	for _, c := range []struct {
@@ -1162,7 +1162,7 @@ func TestRecognisedStaysInsideItsVault(t *testing.T) {
 		{getFirst(), chunk.SourceText{Path: "library/first.pdf", Producer: "ocr", ContentHash: "hash-first"}},
 		{getSecond(), chunk.SourceText{Path: "library/second.pdf", Producer: "ocr", ContentHash: "hash-second"}},
 	} {
-		found, err := db.ChunkFiles().GetRecognisedSources(t.Context(), c.vault.ID, "book")
+		found, err := db.ChunkFiles().GetRecognizedSources(t.Context(), c.vault.ID, "book")
 		if err != nil {
 			t.Fatal(err)
 		}

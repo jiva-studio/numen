@@ -68,7 +68,9 @@ export function getSliceOf(file, sourceRoot) {
 
 /**
  * The shipped files of a window's `shared` layer that serve one slice only. A shared file's consumers are the
- * slices of the files outside `shared` that import it, and the consumers of the shared files that import it.
+ * slices of the files outside `shared` that import it, and the consumers of the shared files that import it. The `app`
+ * layer composes the slices and is not a consumer that makes a file shared: a file used by one slice and `app` serves
+ * that slice.
  *
  * @returns {{ findings: Array<{ file: string, line: number, symbol: string }>, read: number }}
  */
@@ -97,8 +99,10 @@ export function findSharedServingOneSlice(modules, sourceRoot) {
   const findings = [];
   const files = modules.map((one) => one.source).filter((file) => file.startsWith(shared) && !isNotShipped(file));
   for (const file of files) {
-    const slices = getConsumers(file, new Set([file]));
-    if (slices.size === 1) findings.push({ file, line: 1, symbol: `serves only ${[...slices][0]}; it belongs in that slice` });
+    const consumers = getConsumers(file, new Set([file]));
+    const slices = [...consumers].filter((one) => one !== "app");
+    if (slices.length === 1) findings.push({ file, line: 1, symbol: `serves only ${slices[0]}; it belongs in that slice` });
+    else if (slices.length === 0 && consumers.size === 1) findings.push({ file, line: 1, symbol: "serves only app; it belongs in that layer" });
   }
   return { findings, read: files.length };
 }

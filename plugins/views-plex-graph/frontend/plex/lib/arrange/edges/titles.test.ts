@@ -16,10 +16,10 @@ import {
 import { separateTitles } from './titles'
 import { runBoxes } from '../layout/boxes'
 import { build } from '../../../fixtures/build'
-import { neighbourhoods } from '../../../fixtures/neighbourhoods'
+import { neighborhoods } from '../../../fixtures/neighborhoods'
 import { getHeading, getLength, createPointOnCurve, type PlacedEdge } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
-import type { EdgeArrow, EdgeLabel, PlexNeighbourhood } from '../../../../types'
+import type { EdgeArrow, EdgeLabel, PlexNeighborhood } from '../../../../types'
 
 const perLetter = (width: number) => (label: string) => width * [...label].length
 
@@ -99,7 +99,7 @@ const boxAround = (node: PlacedNode): Box => ({
   maxY: node.y + node.height / 2,
 })
 
-const createOneLine = (label: string): PlexNeighbourhood => ({
+const createOneLine = (label: string): PlexNeighborhood => ({
   nodes: [
     { id: 'focus', title: 'Here', relation: 'focus' },
     { id: 'aside', title: 'Aside', relation: 'jump' },
@@ -173,7 +173,7 @@ describe('a title finds room on its line', () => {
     expect(resolved[0]!.titles[0]?.words).toBeUndefined()
   })
 
-  it('gives the same neighbourhood the same offsets twice over', () => {
+  it('gives the same neighborhood the same offsets twice over', () => {
     const crowd = build('A node', { parent: 2, child: 6, jump: 3, sibling: 2 })
     const once = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
     const again = arrangePlex(crowd, { options: { viewport: VIEWPORT }, ...measured })
@@ -252,7 +252,7 @@ describe('a title finds room on its line', () => {
   })
 
   it('keeps a title off the boxes its line crosses', () => {
-    const frame = arrangePlex(neighbourhoods.labelledRows, {
+    const frame = arrangePlex(neighborhoods.labelledRows, {
       options: { viewport: VIEWPORT },
       ...measured,
     })
@@ -267,11 +267,11 @@ describe('a title finds room on its line', () => {
   })
 
   it('cuts a title to the room its line has left, or writes none of it', () => {
-    const frame = arrangePlex(neighbourhoods.labelledRows, {
+    const frame = arrangePlex(neighborhoods.labelledRows, {
       options: { viewport: CROWDED },
       ...measured,
     })
-    const named = neighbourhoods.labelledRows.edges.filter((edge) => edge.labels?.[0]?.text)
+    const named = neighborhoods.labelledRows.edges.filter((edge) => edge.labels?.[0]?.text)
     const content = frame.edges.filter((edge) => edge.titles[0]?.words)
 
     // Some of them are there whole, and every one that is there is either the
@@ -287,7 +287,7 @@ describe('a title finds room on its line', () => {
   it('gives the line with the least room to spare its place first', () => {
     // Two lines crossing one band: the tight one takes the middle it needs,
     // and the roomy one goes round it.
-    const crossing = arrangePlex(neighbourhoods.labelledRows, {
+    const crossing = arrangePlex(neighborhoods.labelledRows, {
       options: { viewport: CROWDED },
       ...measured,
     })

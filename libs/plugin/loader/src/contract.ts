@@ -49,7 +49,7 @@ export type {
   LinkRole,
   MessageWriter,
   MountedView,
-  NoteNeighbourhood,
+  NoteNeighborhood,
   NoteRelation,
   NoteRef,
   NoticeHost,

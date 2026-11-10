@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 func TestATitleNoFileCanBeNamedAfterMakesNothing(t *testing.T) {
@@ -99,7 +100,7 @@ func TestATitleTheFilenameCarriesWritesNoTitleKey(t *testing.T) {
 func TestCreatingNeedsNoIndexToLeaveTheNoteSaved(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
-	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NamedPaths(), nil, testsupport.NewClock())
+	create := note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries.NamedPaths, nil, testsupport.NewClock())
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 	if err != nil {
@@ -115,7 +116,7 @@ func TestCreatingInAVaultThatWillNotOpenForWritingMakesNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)
 	writers := brokenWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, open: errDiskGone}
-	create := note.NewCreate(writers, c.db.NamedPaths(), c.index, testsupport.NewClock())
+	create := note.NewCreate(writers, c.db.NoteQueries.NamedPaths, c.index, testsupport.NewClock())
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 
@@ -135,7 +136,7 @@ func TestANoteMadeBeforeTheIndexFailsIsStillReported(t *testing.T) {
 
 	created, err := create.Execute(t.Context(), c.vault, note.NewNote{Title: "Heat"})
 
-	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, errDiskGone) {
+	if !errors.Is(err, edit.ErrIndexOutdated) || !errors.Is(err, errDiskGone) {
 		t.Errorf("want the index failure named as one, got %v", err)
 	}
 	if created.Path != "Heat.md" || created.ID == "" || created.Title != "Heat" {

@@ -87,7 +87,7 @@ func openChunkingConfig(t *testing.T, tokens int32) (container.Config, *plugin.H
 	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, plugintest.GetReadyOutput(port), nil
 	})
-	return container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), ServiceDir: ".numen"}), host, reporter
+	return container.NewConfig(container.Config{PluginHost: container.AdaptPluginHost(host), ServiceDir: ".numen"}), host, reporter
 }
 
 func openEmbedder(t *testing.T, cfg container.Config) {
@@ -247,7 +247,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 	if recipe == "" {
 		t.Fatal("a cut has no recipe")
 	}
-	if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
+	if err := db.Stores.Vaults.Register(t.Context(), v.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -262,7 +262,7 @@ func TestTheNotesUpdateIndexAndReadWholeVaultSaveAreRecordedAtTheSizeThePluginRe
 		t.Fatal(err)
 	}
 
-	other, err := db.SourceBacklog().GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{recipe}, 10)
+	other, err := db.Source.SourceBacklog.GetSourcesWithOtherRecipe(t.Context(), v.ID, domain.KindNote, []string{recipe}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

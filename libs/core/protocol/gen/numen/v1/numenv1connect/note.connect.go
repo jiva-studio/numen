@@ -6,7 +6,7 @@
 //
 // A note is addressed by the path it is filed under, which is what the vault
 // calls it. What is here is what a note holds and what it is joined to: its
-// prose, its headings, its neighbourhood, the addresses written in it, and
+// prose, its headings, its neighborhood, the addresses written in it, and
 // every way of writing one. Where a note sits among the vault's other files is
 // file.proto.
 package numenv1connect
@@ -43,9 +43,9 @@ const (
 	// NoteServiceGetOpeningNoteProcedure is the fully-qualified name of the NoteService's
 	// GetOpeningNote RPC.
 	NoteServiceGetOpeningNoteProcedure = "/numen.v1.NoteService/GetOpeningNote"
-	// NoteServiceGetNeighbourhoodProcedure is the fully-qualified name of the NoteService's
-	// GetNeighbourhood RPC.
-	NoteServiceGetNeighbourhoodProcedure = "/numen.v1.NoteService/GetNeighbourhood"
+	// NoteServiceGetNeighborhoodProcedure is the fully-qualified name of the NoteService's
+	// GetNeighborhood RPC.
+	NoteServiceGetNeighborhoodProcedure = "/numen.v1.NoteService/GetNeighborhood"
 	// NoteServiceResolveAddressesProcedure is the fully-qualified name of the NoteService's
 	// ResolveAddresses RPC.
 	NoteServiceResolveAddressesProcedure = "/numen.v1.NoteService/ResolveAddresses"
@@ -90,8 +90,8 @@ type NoteServiceClient interface {
 	// GetOpeningNote is the note to show when nothing else has been chosen. It
 	// answers with nothing until a scan has stored something.
 	GetOpeningNote(context.Context, *connect.Request[v1.GetOpeningNoteRequest]) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	// GetNeighbourhood is one note and everything joined to it.
-	GetNeighbourhood(context.Context, *connect.Request[v1.GetNeighbourhoodRequest]) (*connect.Response[v1.GetNeighbourhoodResponse], error)
+	// GetNeighborhood is one note and everything joined to it.
+	GetNeighborhood(context.Context, *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error)
 	// ResolveAddresses answers where addresses written in one note land.
 	ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error)
 	// ListHeadings is the headings of the vault's notes, grouped by the note they
@@ -164,10 +164,10 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(noteServiceMethods.ByName("GetOpeningNote")),
 			connect.WithClientOptions(opts...),
 		),
-		getNeighbourhood: connect.NewClient[v1.GetNeighbourhoodRequest, v1.GetNeighbourhoodResponse](
+		getNeighborhood: connect.NewClient[v1.GetNeighborhoodRequest, v1.GetNeighborhoodResponse](
 			httpClient,
-			baseURL+NoteServiceGetNeighbourhoodProcedure,
-			connect.WithSchema(noteServiceMethods.ByName("GetNeighbourhood")),
+			baseURL+NoteServiceGetNeighborhoodProcedure,
+			connect.WithSchema(noteServiceMethods.ByName("GetNeighborhood")),
 			connect.WithClientOptions(opts...),
 		),
 		resolveAddresses: connect.NewClient[v1.ResolveAddressesRequest, v1.ResolveAddressesResponse](
@@ -266,7 +266,7 @@ func NewNoteServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 // noteServiceClient implements NoteServiceClient.
 type noteServiceClient struct {
 	getOpeningNote    *connect.Client[v1.GetOpeningNoteRequest, v1.GetOpeningNoteResponse]
-	getNeighbourhood  *connect.Client[v1.GetNeighbourhoodRequest, v1.GetNeighbourhoodResponse]
+	getNeighborhood   *connect.Client[v1.GetNeighborhoodRequest, v1.GetNeighborhoodResponse]
 	resolveAddresses  *connect.Client[v1.ResolveAddressesRequest, v1.ResolveAddressesResponse]
 	listHeadings      *connect.Client[v1.ListHeadingsRequest, v1.ListHeadingsResponse]
 	readNote          *connect.Client[v1.ReadNoteRequest, v1.ReadNoteResponse]
@@ -289,9 +289,9 @@ func (c *noteServiceClient) GetOpeningNote(ctx context.Context, req *connect.Req
 	return c.getOpeningNote.CallUnary(ctx, req)
 }
 
-// GetNeighbourhood calls numen.v1.NoteService.GetNeighbourhood.
-func (c *noteServiceClient) GetNeighbourhood(ctx context.Context, req *connect.Request[v1.GetNeighbourhoodRequest]) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
-	return c.getNeighbourhood.CallUnary(ctx, req)
+// GetNeighborhood calls numen.v1.NoteService.GetNeighborhood.
+func (c *noteServiceClient) GetNeighborhood(ctx context.Context, req *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error) {
+	return c.getNeighborhood.CallUnary(ctx, req)
 }
 
 // ResolveAddresses calls numen.v1.NoteService.ResolveAddresses.
@@ -374,8 +374,8 @@ type NoteServiceHandler interface {
 	// GetOpeningNote is the note to show when nothing else has been chosen. It
 	// answers with nothing until a scan has stored something.
 	GetOpeningNote(context.Context, *connect.Request[v1.GetOpeningNoteRequest]) (*connect.Response[v1.GetOpeningNoteResponse], error)
-	// GetNeighbourhood is one note and everything joined to it.
-	GetNeighbourhood(context.Context, *connect.Request[v1.GetNeighbourhoodRequest]) (*connect.Response[v1.GetNeighbourhoodResponse], error)
+	// GetNeighborhood is one note and everything joined to it.
+	GetNeighborhood(context.Context, *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error)
 	// ResolveAddresses answers where addresses written in one note land.
 	ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error)
 	// ListHeadings is the headings of the vault's notes, grouped by the note they
@@ -444,10 +444,10 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(noteServiceMethods.ByName("GetOpeningNote")),
 		connect.WithHandlerOptions(opts...),
 	)
-	noteServiceGetNeighbourhoodHandler := connect.NewUnaryHandler(
-		NoteServiceGetNeighbourhoodProcedure,
-		svc.GetNeighbourhood,
-		connect.WithSchema(noteServiceMethods.ByName("GetNeighbourhood")),
+	noteServiceGetNeighborhoodHandler := connect.NewUnaryHandler(
+		NoteServiceGetNeighborhoodProcedure,
+		svc.GetNeighborhood,
+		connect.WithSchema(noteServiceMethods.ByName("GetNeighborhood")),
 		connect.WithHandlerOptions(opts...),
 	)
 	noteServiceResolveAddressesHandler := connect.NewUnaryHandler(
@@ -544,8 +544,8 @@ func NewNoteServiceHandler(svc NoteServiceHandler, opts ...connect.HandlerOption
 		switch r.URL.Path {
 		case NoteServiceGetOpeningNoteProcedure:
 			noteServiceGetOpeningNoteHandler.ServeHTTP(w, r)
-		case NoteServiceGetNeighbourhoodProcedure:
-			noteServiceGetNeighbourhoodHandler.ServeHTTP(w, r)
+		case NoteServiceGetNeighborhoodProcedure:
+			noteServiceGetNeighborhoodHandler.ServeHTTP(w, r)
 		case NoteServiceResolveAddressesProcedure:
 			noteServiceResolveAddressesHandler.ServeHTTP(w, r)
 		case NoteServiceListHeadingsProcedure:
@@ -589,8 +589,8 @@ func (UnimplementedNoteServiceHandler) GetOpeningNote(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.GetOpeningNote is not implemented"))
 }
 
-func (UnimplementedNoteServiceHandler) GetNeighbourhood(context.Context, *connect.Request[v1.GetNeighbourhoodRequest]) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.GetNeighbourhood is not implemented"))
+func (UnimplementedNoteServiceHandler) GetNeighborhood(context.Context, *connect.Request[v1.GetNeighborhoodRequest]) (*connect.Response[v1.GetNeighborhoodResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.NoteService.GetNeighborhood is not implemented"))
 }
 
 func (UnimplementedNoteServiceHandler) ResolveAddresses(context.Context, *connect.Request[v1.ResolveAddressesRequest]) (*connect.Response[v1.ResolveAddressesResponse], error) {

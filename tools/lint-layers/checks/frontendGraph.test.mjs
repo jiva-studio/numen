@@ -72,7 +72,7 @@ describe("the shared layer rule of windows", () => {
     assert.equal(getSliceOf(`${WINDOW}/main.ts`, WINDOW), "main.ts");
   });
 
-  it("fails a shared file one slice uses, directly or through other shared files, and passes one two slices use", () => {
+  it("fails a shared file one slice uses with or without the app layer, directly or through other shared files, and passes one two slices use", () => {
     const modules = [
       moduleOf(`${WINDOW}/features/tree/ui/Tree.vue`, {
         "@/shared/lib/icons": `${WINDOW}/shared/lib/icons.ts`,
@@ -80,11 +80,16 @@ describe("the shared layer rule of windows", () => {
       }),
       moduleOf(`${WINDOW}/features/tree/model/tree.ts`, { "@/shared/lib/icons": `${WINDOW}/shared/lib/icons.ts` }),
       moduleOf(`${WINDOW}/pages/home/ui/Home.vue`, { "@/shared/lib/format": `${WINDOW}/shared/lib/format.ts` }),
+      moduleOf(`${WINDOW}/pages/about/ui/About.vue`, { "@/shared/lib/format": `${WINDOW}/shared/lib/format.ts` }),
+      moduleOf(`${WINDOW}/pages/home/model/home.ts`, { "@/shared/lib/paths": `${WINDOW}/shared/lib/paths.ts` }),
+      moduleOf(`${WINDOW}/app/routes.ts`, { "@/shared/lib/paths": `${WINDOW}/shared/lib/paths.ts`, "@/shared/lib/boot": `${WINDOW}/shared/lib/boot.ts` }),
       moduleOf(`${WINDOW}/app/App.vue`, { "@/shared/lib/format": `${WINDOW}/shared/lib/format.ts` }),
       moduleOf(`${WINDOW}/app/app.test.ts`, { "@/shared/lib/icons": `${WINDOW}/shared/lib/icons.ts` }),
       moduleOf(`${WINDOW}/shared/lib/index.ts`, { "./ids": `${WINDOW}/shared/lib/ids.ts` }),
       moduleOf(`${WINDOW}/shared/lib/icons.ts`),
       moduleOf(`${WINDOW}/shared/lib/format.ts`),
+      moduleOf(`${WINDOW}/shared/lib/paths.ts`),
+      moduleOf(`${WINDOW}/shared/lib/boot.ts`),
       moduleOf(`${WINDOW}/shared/lib/ids.ts`),
     ];
     const { findings, read } = findSharedServingOneSlice(modules, WINDOW);
@@ -93,10 +98,12 @@ describe("the shared layer rule of windows", () => {
       [
         `${WINDOW}/shared/lib/index.ts serves only features/tree; it belongs in that slice`,
         `${WINDOW}/shared/lib/icons.ts serves only features/tree; it belongs in that slice`,
+        `${WINDOW}/shared/lib/paths.ts serves only pages/home; it belongs in that slice`,
+        `${WINDOW}/shared/lib/boot.ts serves only app; it belongs in that layer`,
         `${WINDOW}/shared/lib/ids.ts serves only features/tree; it belongs in that slice`,
       ],
     );
-    assert.equal(read, 4);
+    assert.equal(read, 6);
   });
 });
 

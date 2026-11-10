@@ -10,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -288,7 +289,7 @@ func TestAMoveThatFailsOtherwiseThanByAnOccupiedNameIsReported(t *testing.T) {
 	tr.writers.writer.move = func(string, string) error { return fs.ErrNotExist }
 
 	_, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
-	if !errors.Is(err, note.ErrNoNote) {
+	if !errors.Is(err, edit.ErrNoNote) {
 		t.Fatalf("want ErrNoNote, got %v", err)
 	}
 }
@@ -325,7 +326,7 @@ func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 	tr.levelErr = broken
 
 	got, err := tr.remove().Execute(t.Context(), domain.Vault{}, "Entropy.md")
-	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, broken) {
+	if !errors.Is(err, edit.ErrIndexOutdated) || !errors.Is(err, broken) {
 		t.Fatalf("want the index's error said as an outdated index, got %v", err)
 	}
 	if got.Trashed != ".trash/Entropy.md" || !slices.Equal(got.Dangling, []string{"Heat.md"}) {
@@ -333,7 +334,7 @@ func TestRemove_ReportsIndexFailureWithRemoval(t *testing.T) {
 	}
 
 	destroyed, err := tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")
-	if !errors.Is(err, note.ErrIndexOutdated) || !errors.Is(err, broken) {
+	if !errors.Is(err, edit.ErrIndexOutdated) || !errors.Is(err, broken) {
 		t.Fatalf("want the index's error said as an outdated index, got %v", err)
 	}
 	if !slices.Equal(destroyed.Dangling, []string{"Heat.md"}) {
@@ -393,7 +394,7 @@ func TestDestroyingReportsAFileThatCannotBeRemoved(t *testing.T) {
 	tr.writers.writer.remove = func(string) error { return fs.ErrNotExist }
 
 	got, err := tr.remove().Destroy(t.Context(), domain.Vault{}, "Entropy.md")
-	if !errors.Is(err, note.ErrNoNote) || got.Path != "Entropy.md" {
+	if !errors.Is(err, edit.ErrNoNote) || got.Path != "Entropy.md" {
 		t.Errorf("want ErrNoNote beside the path, got %+v and %v", got, err)
 	}
 	if len(*tr.updated) != 0 {

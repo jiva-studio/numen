@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 

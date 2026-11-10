@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -64,7 +64,7 @@ func newPass(
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
 		VectorCounts: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
-			return db.Progress().GetProgress(ctx, v.ID, recipe)
+			return db.Chunks.Progress.GetProgress(ctx, v.ID, recipe)
 		},
 		Events: events,
 		Quiet:  time.Hour,
@@ -78,10 +78,10 @@ func cut(t *testing.T, made reading, db *vault.Index, v domain.Vault) {
 
 	scan := vault.NewScan(
 		made.GetVaultReaders(),
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -354,7 +354,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	p.worker.read = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +381,7 @@ func testARecognitionStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	again := newPass(made, db, events, model.fakeEmbedder, model.GetModel().Recipe(), v)
 	again.embed(t.Context())
 
-	target, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err = db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -404,7 +404,7 @@ func testAChangeOfSourcesStopsTheVectorPass(t *testing.T, openReading openFunc) 
 	p.worker.sources = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -436,7 +436,7 @@ func testANoteSaveStopsTheVectorPass(t *testing.T, openReading openFunc) {
 	p.worker.notes = model.wake
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -497,9 +497,9 @@ func testVersionChangeEmbedsPendingVaultContent(t *testing.T, openReading openFu
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "books/scan.pdf")
 	<-p.worker.read
-	p.embedRecognised(t.Context())
+	p.embedRecognized(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -516,7 +516,7 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	cut(t, made, db, v)
-	unembedded, _, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	unembedded, _, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -527,9 +527,9 @@ func testVersionChangeOfANoteKeepsItsChunks(t *testing.T, openReading openFunc) 
 	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
 	p.session.ReportVersionsChanged(v, "Note.md")
 	<-p.worker.read
-	p.embedRecognised(t.Context())
+	p.embedRecognized(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
 	if err != nil {
 		t.Fatal(err)
 	}

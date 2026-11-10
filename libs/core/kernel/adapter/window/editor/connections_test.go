@@ -51,7 +51,7 @@ func TestAConnectionIsSavedWithAnArrowAndNoLabelAndReadBack(t *testing.T) {
 		t.Errorf("the connection read back as %v", got)
 	}
 
-	neighborhood, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+	neighborhood, err := f.client.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil || len(neighborhood.Msg.GetRelated()) != 1 || len(neighborhood.Msg.GetConnections()) != 1 {

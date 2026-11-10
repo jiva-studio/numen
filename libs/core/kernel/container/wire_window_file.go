@@ -11,8 +11,8 @@ func mountFile(w *windowWiring) {
 	readers := w.cfg.VaultReaders()
 	folders := filewindow.NewFolders(
 		editor.NewSession(state), state.Events,
-		file.NewGetFolderEntries(readers, w.db.NoteTypes()),
-		file.NewGetFileKinds(readers, w.db.NoteTypes()),
+		file.NewGetFolderEntries(readers, w.db.NoteQueries.NoteTypes),
+		file.NewGetFileKinds(readers, w.db.NoteQueries.NoteTypes),
 		w.cfg.OpenChooseTabKind(),
 		file.NewCreateFolder(folderWriters(w.cfg.vault())),
 	)

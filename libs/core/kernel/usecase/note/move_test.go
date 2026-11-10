@@ -13,11 +13,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -122,19 +122,19 @@ func (f failingWriter) Write(ctx context.Context, path string, content []byte, f
 // use the production implementation.
 type moveParts struct {
 	links    noteport.LinkQueries
-	names    note.NameQueries
+	names    edit.NameQueries
 	readers  vaultport.VaultReaders
 	writers  note.MoveWriting
-	index    note.IndexUpdater
+	index    edit.IndexUpdater
 	hasIndex bool
 }
 
 func (c changing) moveOf(p moveParts) note.Move {
 	if p.links == nil {
-		p.links = c.db.Links()
+		p.links = c.db.NoteQueries.Links
 	}
 	if p.names == nil {
-		p.names = c.db.NamedPaths()
+		p.names = c.db.NoteQueries.NamedPaths
 	}
 	if p.readers == nil {
 		p.readers = vaultreader.Readers{}
@@ -147,7 +147,7 @@ func (c changing) moveOf(p moveParts) note.Move {
 	}
 	return note.NewMove(note.MoveDeps{
 		Readers: p.readers, Writers: p.writers, Links: p.links, Names: p.names,
-		Sources: c.db.Sources(), Index: p.index, Now: testsupport.NewClock(),
+		Sources: c.db.Source.Sources, Index: p.index, Now: testsupport.NewClock(),
 	})
 }
 
@@ -190,7 +190,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 		"the links pointing at it cannot be read": {
 			from: "physics/Entropy.md",
 			parts: func(c changing) moveParts {
-				return moveParts{links: staleLinks{LinkQueries: c.db.Links(), backlinksErr: boom}}
+				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, backlinksErr: boom}}
 			},
 			want: boom,
 		},
@@ -206,7 +206,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 		"the note is not there": {
 			from:  "physics/Missing.md",
 			parts: func(changing) moveParts { return moveParts{} },
-			want:  note.ErrNoNote,
+			want:  edit.ErrNoNote,
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -290,7 +290,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		},
 		"the links of the note holding the link cannot be read": {
 			parts: func(c changing) moveParts {
-				return moveParts{links: staleLinks{LinkQueries: c.db.Links(), linksErr: boom}}
+				return moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, linksErr: boom}}
 			},
 			want: boom,
 		},
@@ -334,7 +334,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 			parts: func(changing) moveParts {
 				return moveParts{hasIndex: true, index: func(context.Context, domain.Vault, []string) error { return boom }}
 			},
-			want:       note.ErrIndexOutdated,
+			want:       edit.ErrIndexOutdated,
 			isRepaired: true,
 		},
 	} {
@@ -368,7 +368,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 // A link the note does not contain is neither repaired nor reported.
 func TestALinkTheNoteNoLongerContainsIsLeftOut(t *testing.T) {
 	c := openLinked(t)
-	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), isLinksEmpty: true}}
+	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, isLinksEmpty: true}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if err != nil {
@@ -479,7 +479,7 @@ func TestALinkTheNoteNoLongerContainsDoesNotStopTheNextRepair(t *testing.T) {
 		"physics/Cold.md":    "---\nlinks:\n  - to: physics/Entropy.md\n    role: parent\n---\n# Cold\n",
 		"physics/Heat.md":    heatLinkedToEntropy,
 	})
-	parts := moveParts{links: staleLinks{LinkQueries: c.db.Links(), emptyFor: "physics/Cold.md"}}
+	parts := moveParts{links: staleLinks{LinkQueries: c.db.NoteQueries.Links, emptyFor: "physics/Cold.md"}}
 
 	res, err := c.moveOf(parts).Execute(t.Context(), c.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if err != nil {
@@ -518,25 +518,6 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
 	}
 	if got := c.read(t, "physics/Heat.md"); got != inline {
 		t.Errorf("the note was written:\n%s", got)
-	}
-}
-
-// The collaborators of a move are replaced one at a time, and each is given
-// back as it was set.
-func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
-	c := openLinked(t)
-	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, opened: new(int)}
-	sources := sulking{SourceRepository: c.db.Sources()}
-
-	mover := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)
-	if mover.Readers() != vaultport.VaultReaders(readers) {
-		t.Error("the readers are not the ones set")
-	}
-	if mover.Writers() != note.MoveWriting(writers) {
-		t.Error("the writers are not the ones set")
-	}
-	if mover.Sources() != sourceport.SourceRepository(sources) {
-		t.Error("the sources are not the ones set")
 	}
 }
 

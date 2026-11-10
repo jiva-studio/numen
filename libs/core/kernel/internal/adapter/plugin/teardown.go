@@ -75,8 +75,9 @@ func (d *Teardown) StopPlugin(ctx context.Context, pluginID string) error {
 }
 
 func (d *Teardown) teardownTarget(ctx context.Context, target pluginTeardownTarget, gracePeriod time.Duration) error {
-	rpcShutdown := createRPCShutdown(target.endpoint, gracePeriod)
+	rpcShutdown := createRPCShutdown(target.endpoint, d.t.clients.Get(target.endpoint), gracePeriod)
 	err := target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
+	d.t.clients.Remove(target.endpoint.Token)
 	d.processes.closeStdin(target.id, target.pid)
 	d.services.clearPluginWork(target.id)
 	return err
@@ -84,6 +85,7 @@ func (d *Teardown) teardownTarget(ctx context.Context, target pluginTeardownTarg
 
 func (d *Teardown) dropEndpoint(pluginID string) {
 	d.t.mu.Lock()
+	d.t.clients.Remove(d.t.endpoints[pluginID].Token)
 	d.t.forgetEndpointLocked(pluginID)
 	d.t.mu.Unlock()
 	d.services.clearPluginWork(pluginID)

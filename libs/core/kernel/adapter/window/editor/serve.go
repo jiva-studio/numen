@@ -67,7 +67,7 @@ func (o *Installation) Mount(routes ...Route) { o.pages.routes = append(o.pages.
 // put together without a catalog serves none.
 func (o *Installation) SetThemes(themes numenv1connect.ThemeServiceHandler) { o.pages.themes = themes }
 
-// GetThemes is the themes the window offers, and nil for a window put together without a catalog.
+// GetThemes returns the themes the window offers.
 func (o *Installation) GetThemes() numenv1connect.ThemeServiceHandler { return o.pages.themes }
 
 // SetPlugins sets where the calls for the services plugins serve are forwarded,
@@ -156,9 +156,9 @@ const (
 	updatingIndex = "update index"
 )
 
-// SayTheme records a theme warning task, and takes the task out of the list for an empty message,
+// RecordThemeWarning records a theme warning task, and takes the task out of the list for an empty message,
 // which says the theme the settings name is found now.
-func (o *Installation) SayTheme(message string) {
+func (o *Installation) RecordThemeWarning(message string) {
 	if message == "" {
 		o.State.Window.RemoveTask(applyingTheme)
 		return

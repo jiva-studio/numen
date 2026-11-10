@@ -43,14 +43,14 @@ import (
 )
 
 func bindNotes(services *Services, db *vaults.Index) {
-	refs, links := db.NoteRefs(), db.Links()
-	neighborhood := query.NewShowNeighbourhood(links, refs)
-	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.OpeningNote())
-	services.NoteCases.Types = query.NewGetTypes(db.NoteTypes())
-	services.NoteCases.Headings = query.NewGetHeadings(db.Headings())
+	refs, links := db.NoteQueries.NoteRefs, db.NoteQueries.Links
+	neighborhood := query.NewShowNeighborhood(links, refs)
+	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.NoteQueries.OpeningNote)
+	services.NoteCases.Types = query.NewGetTypes(db.NoteQueries.NoteTypes)
+	services.NoteCases.Headings = query.NewGetHeadings(db.NoteQueries.Headings)
 	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
 	services.NoteCases.Neighborhood = &neighborhood
-	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
+	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NoteQueries.NamedPaths)
 	services.UseNotes()
 }
 
@@ -203,13 +203,13 @@ func openingWith(
 			t.Fatal(err)
 		}
 		api.state.Runtime.RecordModel(embedder.GetModel().String(), "")
-		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
+		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Chunks.Progress)
 	}
 	line, isDone := api.state.Notices.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
 	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
-		embedding: indexing.NewEmbedding(embedder, db.Progress()), idle: idleDuration, out: io.Discard,
+		embedding: indexing.NewEmbedding(embedder, db.Chunks.Progress), idle: idleDuration, out: io.Discard,
 	})
 	t.Cleanup(end)
 
@@ -268,7 +268,7 @@ func waitFor(t *testing.T, what string, is func() bool) {
 
 func titleOf(t *testing.T, db *vaults.Index, v domain.Vault, path string) string {
 	t.Helper()
-	found, err := db.NoteRefs().GetNotes(t.Context(), v.ID, []string{path})
+	found, err := db.NoteQueries.NoteRefs.GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

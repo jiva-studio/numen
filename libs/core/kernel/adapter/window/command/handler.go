@@ -28,6 +28,7 @@ type VaultProvider interface {
 type Handler struct {
 	vaults   VaultProvider
 	list     plugincommand.List
+	types    plugincommand.ContentTypes
 	run      plugincommand.Run
 	versions VersionItems
 }
@@ -35,7 +36,7 @@ type Handler struct {
 // NewHandler makes the handler over both scenarios, and the text versions a command with items runs
 // over; without them such a command lists and runs nothing.
 func NewHandler(vaults VaultProvider, commands plugincommand.Commands, versions VersionItems) *Handler {
-	return &Handler{vaults: vaults, list: commands.List, run: commands.Run, versions: versions}
+	return &Handler{vaults: vaults, list: commands.List, types: commands.ContentTypes, run: commands.Run, versions: versions}
 }
 
 // NewRoute is where CommandService is mounted, what the schema generated to answer it, and the
@@ -72,7 +73,7 @@ func (h *Handler) ListCommands(
 		})
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{
-		Commands: commands, Slots: slots, ContentTypeByExtension: h.list.ListContentTypes(), Handlers: handlers,
+		Commands: commands, Slots: slots, ContentTypeByExtension: h.types.Execute(), Handlers: handlers,
 		Keybindings: keybindings,
 	}), nil
 }

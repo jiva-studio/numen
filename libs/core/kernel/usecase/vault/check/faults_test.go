@@ -123,7 +123,7 @@ func TestEveryCheckIsNamedAndNothingElse(t *testing.T) {
 	if got := l.Names(); !slices.Equal(got, []domain.Check{"first", "second"}) {
 		t.Errorf("the names are %q, want both checks", got)
 	}
-	if got := l.Loud(); !slices.Equal(got, []domain.Check{"first"}) {
+	if got := l.GetDefaultNames(); !slices.Equal(got, []domain.Check{"first"}) {
 		t.Errorf("the checks that run unasked are %q, want the one", got)
 	}
 }

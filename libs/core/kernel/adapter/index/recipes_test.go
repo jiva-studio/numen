@@ -15,8 +15,8 @@ func TestForgettingTheVectorsOfEveryOtherRecipe(t *testing.T) {
 	db := openDB(t)
 	ctx := t.Context()
 
-	before := atScale(t, getQuantising(), 0.3)
-	now := getQuantising().Recipe()
+	before := atScale(t, getQuantizing(), 0.3)
+	now := getQuantizing().Recipe()
 
 	if err := db.Chunks().SaveSource(ctx, getFirst().ID, chunk.Source{
 		Path: "library/tale.epub", Kind: "book", Size: 1000, MTime: 1,

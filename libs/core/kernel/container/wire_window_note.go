@@ -14,14 +14,14 @@ func mountNote(w *windowWiring) {
 	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename)
 	outline := notewindow.NewOutline(
 		state, w.files.ListTabKinds,
-		query.NewGetOpeningNote(w.db.OpeningNote()),
-		query.NewGetTypes(w.db.NoteTypes()),
-		query.NewGetHeadings(w.db.Headings()),
+		query.NewGetOpeningNote(w.db.NoteQueries.OpeningNote),
+		query.NewGetTypes(w.db.NoteQueries.NoteTypes),
+		query.NewGetHeadings(w.db.NoteQueries.Headings),
 		&notes.Browse.Neighborhood,
 	)
 	links := notewindow.NewLinks(
 		session, addresses,
-		query.NewResolveLinks(w.db.Links()), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &notes.Refer.Backlinks,
+		query.NewResolveLinks(w.db.NoteQueries.Links), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &notes.Refer.Backlinks,
 	)
 	connections := notewindow.NewConnections(
 		session, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,

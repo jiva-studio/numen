@@ -74,7 +74,7 @@ func TestDeletePluginDataEmptiesTheFolderOfTheShownVault(t *testing.T) {
 	if got := ask(); got.GetFileCount() != 0 {
 		t.Fatalf("after the delete the folder holds %v", got)
 	}
-	listing, err := versions.ListVersions(t.Context(), domain.Vault(current), "talk.mp3", domain.HashContent([]byte("audio")))
+	listing, err := versions.Texts.ListVersions(t.Context(), domain.Vault(current), "talk.mp3", domain.HashContent([]byte("audio")))
 	if err != nil || len(listing.Versions) != 0 {
 		t.Fatalf("after the delete the recording has %+v (%v), want no version", listing, err)
 	}
@@ -89,7 +89,7 @@ func TestDeletePluginDataWithNoVaultShownIsRefused(t *testing.T) {
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("answered %v, want a refusal", err)
 	}
-	listing, err := versions.ListVersions(t.Context(), domain.Vault{ID: "v1"}, "talk.mp3", domain.HashContent([]byte("audio")))
+	listing, err := versions.Texts.ListVersions(t.Context(), domain.Vault{ID: "v1"}, "talk.mp3", domain.HashContent([]byte("audio")))
 	if err != nil || len(listing.Versions) != 1 {
 		t.Fatalf("the refused delete left %+v (%v), want the version", listing, err)
 	}

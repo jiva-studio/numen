@@ -50,7 +50,7 @@ export function createSheet(text: string, baseURL?: string): CSSStyleSheet | und
     sheet.replaceSync(text)
     return sheet
   } catch {
-    // Invalid CSS or unsupported constructor options resolve to undefined.
+    return undefined
   }
 }
 
@@ -71,7 +71,7 @@ export async function loadPluginStyle(
     const sheet = createSheet(await res.text(), new URL(url, document.baseURI).href)
     if (sheet && stylesRegistry.get(pluginId) === url) sheets.set(pluginId, sheet)
   } catch {
-    // The panes link the stylesheet instead.
+    sheets.delete(pluginId)
   }
 }
 

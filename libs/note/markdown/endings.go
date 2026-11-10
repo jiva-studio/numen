@@ -5,11 +5,11 @@ import (
 	"unicode/utf8"
 )
 
-// Normalise is text with every line break written as one \n.
+// Normalize is text with every line break written as one \n.
 //
 // It is the form clients receive and send back. An offset into a chunk is an
 // offset into the file, so the text passed to Parse is the current file.
-func Normalise(text string) string {
+func Normalize(text string) string {
 	// gomutants:disable-next-line BRANCH_IF reason="ReplaceAll on a string without carriage returns returns the same string"
 	if !strings.ContainsRune(text, '\r') {
 		return text

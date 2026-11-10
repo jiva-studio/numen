@@ -7,8 +7,7 @@
 import { shallowRef, watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-loader'
-import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import type { StepGroup } from '@/shared/steps'
+import type { Command, CommandTarget, RunSupport, StepGroup } from '@/entities/command'
 import { WORDS } from '@/shared/words'
 import { toRunTarget } from '../lib/runTarget'
 

@@ -22,11 +22,11 @@ func Bits(v []float32) []byte {
 	return out
 }
 
-// Coarse is the one bit per dimension of a vector that has been quantised. It
+// Coarse is the one bit per dimension of a vector that has been quantized. It
 // is read out of the bytes that are stored, so a vector bought and a vector
 // reclaimed from the index carry the same bits.
 //
-// A dimension that quantised to zero is stored as a zero bit.
+// A dimension that quantized to zero is stored as a zero bit.
 func Coarse(q []int8) []byte {
 	out := make([]byte, (len(q)+7)/8)
 	for i, x := range q {
@@ -39,7 +39,7 @@ func Coarse(q []int8) []byte {
 
 // Bytes keeps one byte per dimension, for the rerank, on the grid
 // port.Int8Scale sets. Values beyond what that scale covers are clamped, and a
-// clamped dimension is the one loss quantisation here can do that rounding
+// clamped dimension is the one loss quantization here can do that rounding
 // cannot undo.
 func Bytes(v []float32) []int8 {
 	out := make([]int8, len(v))
@@ -69,9 +69,9 @@ func Dimensions(stored []byte) []int8 {
 	return unsafe.Slice((*int8)(unsafe.Pointer(unsafe.SliceData(stored))), len(stored))
 }
 
-// Normalise scales a vector to unit length, in place, and returns it. A vector
+// Normalize scales a vector to unit length, in place, and returns it. A vector
 // of all zeros is returned unchanged: there is no direction to keep.
-func Normalise(v []float32) []float32 {
+func Normalize(v []float32) []float32 {
 	var sum float64
 	for _, x := range v {
 		sum += float64(x) * float64(x)

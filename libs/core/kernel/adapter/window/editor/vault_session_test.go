@@ -759,7 +759,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 
-	found, err := db.Passages().FindLexical(
+	found, err := db.Chunks.Passages.FindLexical(
 		t.Context(), installation.State.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
@@ -1033,7 +1033,7 @@ func TestVaultService_RejectsCallsWithoutActiveVault(t *testing.T) {
 			return err
 		},
 		"show what a note is joined to": func() error {
-			_, err := f.vault.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+			_, err := f.vault.GetNeighborhood(t.Context(), connect.NewRequest(&v1.GetNeighborhoodRequest{
 				Path: "One.md",
 			}))
 			return err

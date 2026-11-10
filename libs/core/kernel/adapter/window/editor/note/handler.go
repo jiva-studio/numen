@@ -107,7 +107,7 @@ type Outline struct {
 	getOpeningNote   *query.GetOpeningNote
 	getTypes         *query.GetTypes
 	getHeadings      *query.GetHeadings
-	showNeighborhood *query.ShowNeighbourhood
+	showNeighborhood *query.ShowNeighborhood
 }
 
 // NewOutline is the part of NoteService that answers what a note stands among. findTabKinds finds
@@ -116,7 +116,7 @@ func NewOutline(
 	window Vault,
 	findTabKinds func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error),
 	opening *query.GetOpeningNote, types *query.GetTypes, headings *query.GetHeadings,
-	neighborhood *query.ShowNeighbourhood,
+	neighborhood *query.ShowNeighborhood,
 ) *Outline {
 	return &Outline{
 		vault: window, findTabKinds: findTabKinds, getOpeningNote: opening, getTypes: types,

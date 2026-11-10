@@ -17,7 +17,7 @@ import (
 const dimensions = 1024
 
 func preciseBytes(v []float32) []byte {
-	q := vector.Bytes(vector.Normalise(v))
+	q := vector.Bytes(vector.Normalize(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

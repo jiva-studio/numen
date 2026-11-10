@@ -10,9 +10,9 @@ import (
 func mountSearch(w *windowWiring) {
 	state := w.inst.State
 	handler := windowsearch.NewHandler(state)
-	handler.GetNameMatches = search.NewGetNameMatches(w.db.NameMatches())
-	handler.GetTitles = query.NewGetTitles(w.db.NoteRefs())
-	handler.GetTypes = query.NewGetTypes(w.db.NoteTypes())
+	handler.GetNameMatches = search.NewGetNameMatches(w.db.NoteQueries.NameMatches)
+	handler.GetTitles = query.NewGetTitles(w.db.NoteQueries.NoteRefs)
+	handler.GetTypes = query.NewGetTypes(w.db.NoteQueries.NoteTypes)
 	handler.ListTabKinds = w.files.ListTabKinds
 	finds := w.cfg.NewSearch(w.db, w.asking, state.ReportWordsAlone)
 	handler.Finds = &finds

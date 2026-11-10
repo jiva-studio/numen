@@ -269,7 +269,7 @@ func (h *Changes) EmptyTrash(
 	return connect.NewResponse(&v1.EmptyTrashResponse{Undeleted: undeleted}), nil
 }
 
-func newMoveResult(moved note.MoveResult) *v1.MoveResult {
+func newMoveResult(moved domain.MoveResult) *v1.MoveResult {
 	return &v1.MoveResult{
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,

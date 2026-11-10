@@ -40,5 +40,5 @@ func (m Model) String() string {
 // rows. The quantization and scale come last: a changed scale gives every stored byte a new meaning.
 func (m Model) Recipe() string {
 	return fmt.Sprintf("%s|%s|%d|%d|%s|%s|%s@%g",
-		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, m.Handling, QuantisedInt8, Int8Scale)
+		m.From, m.Name, m.Dimensions, m.MaxTokens, m.Pooling, m.Handling, QuantizedInt8, Int8Scale)
 }

@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -116,6 +116,28 @@ type completedBatch struct {
 	id      uint64
 }
 
+// producer reads the chunks that lack vectors and cuts them into batches with the vectors already kept.
+type producer struct {
+	chunks          embeddingport.VectorQueries
+	vectors         embeddingport.VectorRepository
+	batchCharacters int
+	isSkipped       func(path, hash string) bool
+}
+
+func newProducer(u Embed) producer {
+	return producer{chunks: u.chunks, vectors: u.vectors, batchCharacters: u.BatchCharacters, isSkipped: u.IsSkipped}
+}
+
+// inferrer embeds the texts of the batches the producer cut.
+type inferrer struct {
+	embedder embeddingport.Embedder
+}
+
+// storer writes the vectors of the completed batches.
+type storer struct {
+	vectors embeddingport.VectorRepository
+}
+
 // Execute embeds the chunks of a vault that lack vectors, in batches, until none remain.
 func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.EmbedResult, err error) {
 	if u.Embedder == nil {
@@ -146,7 +168,7 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.Em
 
 	var mu sync.Mutex
 	workers := max(u.inferWorkers(), 1)
-	track := newTracker(u, workers, &res, &mu)
+	track := newTracker(u.OnProgress, workers, &res, &mu)
 	updateProgress := func(comp completedBatch) {
 		track.leave(comp.id)
 		track.publish(func(r *vaultreading.EmbedResult) {
@@ -162,14 +184,14 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (res vaultreading.Em
 
 	g.Go(func() error {
 		defer close(preparedChan)
-		return u.produceBatches(gctx, v, model, &source, track, preparedChan)
+		return newProducer(u).produceBatches(gctx, v, model, &source, track, preparedChan)
 	})
 	g.Go(func() error {
 		defer close(completedChan)
-		return u.inferBatches(gctx, workers, preparedChan, completedChan)
+		return inferrer{embedder: u.Embedder}.inferBatches(gctx, workers, preparedChan, completedChan)
 	})
 	g.Go(func() error {
-		return u.storeBatches(gctx, completedChan, updateProgress)
+		return storer{vectors: u.vectors}.storeBatches(gctx, completedChan, updateProgress)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -192,7 +214,7 @@ func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
 	return release, false, nil
 }
 
-func (u Embed) produceBatches(
+func (u producer) produceBatches(
 	ctx context.Context,
 	v domain.Vault,
 	model embedding.Model,
@@ -232,7 +254,7 @@ func (u Embed) produceBatches(
 	}
 }
 
-func (u Embed) sendBatches(
+func (u producer) sendBatches(
 	ctx context.Context,
 	model embedding.Model,
 	chunks []domain.Passage,
@@ -241,7 +263,7 @@ func (u Embed) sendBatches(
 	out chan<- preparedBatch,
 ) error {
 	pos := 0
-	for _, batch := range splitBatches(texts, u.BatchCharacters) {
+	for _, batch := range splitBatches(texts, u.batchCharacters) {
 		prep, err := u.prepareBatch(ctx, model, chunks[pos:pos+len(batch)], batch)
 		if err != nil {
 			return err
@@ -295,7 +317,7 @@ func sortBySource(chunks []domain.Passage, texts []string) {
 	}
 }
 
-func (u Embed) inferBatches(
+func (u inferrer) inferBatches(
 	ctx context.Context,
 	workers int,
 	in <-chan preparedBatch,
@@ -308,7 +330,7 @@ func (u Embed) inferBatches(
 	return g.Wait()
 }
 
-func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out chan<- completedBatch) error {
+func (u inferrer) runInferWorker(ctx context.Context, in <-chan preparedBatch, out chan<- completedBatch) error {
 	for {
 		select {
 		case <-ctx.Done():
@@ -330,7 +352,7 @@ func (u Embed) runInferWorker(ctx context.Context, in <-chan preparedBatch, out 
 	}
 }
 
-func (u Embed) storeBatches(
+func (u storer) storeBatches(
 	ctx context.Context,
 	in <-chan completedBatch,
 	updateProgress func(comp completedBatch),
@@ -351,7 +373,7 @@ func (u Embed) storeBatches(
 	}
 }
 
-func (u Embed) saveCompleted(ctx context.Context, comp completedBatch) error {
+func (u storer) saveCompleted(ctx context.Context, comp completedBatch) error {
 	if len(comp.vectors) == 0 {
 		return nil
 	}
@@ -361,7 +383,7 @@ func (u Embed) saveCompleted(ctx context.Context, comp completedBatch) error {
 	return nil
 }
 
-func (u Embed) read(
+func (u producer) read(
 	ctx context.Context,
 	source *extracted,
 	pending []domain.Passage,
@@ -374,7 +396,7 @@ func (u Embed) read(
 
 	isFirst := true
 	for _, p := range pending {
-		if u.IsSkipped != nil && u.IsSkipped(p.Source, p.ContentHash) {
+		if u.isSkipped != nil && u.isSkipped(p.Source, p.ContentHash) {
 			mu.Lock()
 			res.Skipped++
 			mu.Unlock()
@@ -406,7 +428,7 @@ func (u Embed) read(
 	return chunks, texts, nil
 }
 
-func (u Embed) prepareBatch(
+func (u producer) prepareBatch(
 	ctx context.Context,
 	model embedding.Model,
 	pending []domain.Passage,
@@ -458,7 +480,7 @@ func (u Embed) prepareBatch(
 			ChunkID: pending[i].ChunkID,
 			Hash:    hashes[i],
 			Model:   model,
-			Kind:    embedding.QuantisedInt8,
+			Kind:    embedding.QuantizedInt8,
 			Value:   value,
 			Coarse:  vector.Coarse(vector.Dimensions(value)),
 		}
@@ -484,7 +506,7 @@ type uniqueVector struct {
 	coarse []byte
 }
 
-func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBatch, error) {
+func (u inferrer) inferBatch(ctx context.Context, prep preparedBatch) (completedBatch, error) {
 	if len(prep.pending) == 0 {
 		return completedBatch{}, nil
 	}
@@ -500,7 +522,7 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 				ChunkID: prep.pending[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
-				Kind:    embedding.QuantisedInt8,
+				Kind:    embedding.QuantizedInt8,
 				Value:   unique[pos].value,
 				Coarse:  unique[pos].coarse,
 			}
@@ -513,12 +535,6 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 		reused:  prep.reusedCount,
 		id:      prep.id,
 	}, nil
-}
-
-func (u Embed) progress(res vaultreading.EmbedResult) {
-	if u.OnProgress != nil {
-		u.OnProgress(res)
-	}
 }
 
 func packVector(q []int8) []byte {
@@ -570,11 +586,11 @@ func (e *extracted) read(ctx context.Context, path, from string) (string, error)
 	return doc.Text, err
 }
 
-func (u Embed) embedAsking(ctx context.Context, prep preparedBatch) ([]uniqueVector, error) {
+func (u inferrer) embedAsking(ctx context.Context, prep preparedBatch) ([]uniqueVector, error) {
 	if len(prep.asking) == 0 {
 		return nil, nil
 	}
-	vectors, err := u.Embedder.Embed(ctx, prep.asking)
+	vectors, err := u.embedder.Embed(ctx, prep.asking)
 	if err != nil {
 		return nil, fmt.Errorf("embed %d chunks: %w", len(prep.asking), err)
 	}
@@ -586,10 +602,10 @@ func (u Embed) embedAsking(ctx context.Context, prep preparedBatch) ([]uniqueVec
 		if len(v) != prep.model.Dimensions {
 			return nil, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 		}
-		quantised := vector.Bytes(vector.Normalise(v))
+		quantized := vector.Bytes(vector.Normalize(v))
 		unique[i] = uniqueVector{
-			value:  packVector(quantised),
-			coarse: vector.Coarse(quantised),
+			value:  packVector(quantized),
+			coarse: vector.Coarse(quantized),
 		}
 	}
 	return unique, nil

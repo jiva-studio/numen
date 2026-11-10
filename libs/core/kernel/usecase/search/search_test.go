@@ -128,7 +128,7 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 }
 
 func precise(v []float32) []byte {
-	q := vector.Bytes(vector.Normalise(slices.Clone(v)))
+	q := vector.Bytes(vector.Normalize(slices.Clone(v)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

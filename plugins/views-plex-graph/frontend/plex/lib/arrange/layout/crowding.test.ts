@@ -10,7 +10,7 @@ import { RELATION_NAMES } from '../../relation'
 
 const { nodeSize, minWidth, gap, squeeze, margin } = DEFAULT_OPTIONS
 
-/** The neighbourhood on which a narrow window dropped relations. */
+/** The neighborhood on which a narrow window dropped relations. */
 const COUNTS = { parent: 1, child: 6, jump: 1, sibling: 2 }
 
 const findEscaped = (frame: PlexFrame, viewport: { width: number; height: number }) =>

@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 func indexNothing(context.Context, domain.Vault, []string) error { return nil }
@@ -35,7 +36,7 @@ func BenchmarkRead(b *testing.B) {
 				if err != nil {
 					b.Fatal(err)
 				}
-				if found.Outcome != note.Ok {
+				if found.Outcome != edit.Ok {
 					b.Fatalf("%s: %s", path, found.Outcome)
 				}
 			}

@@ -9,11 +9,11 @@ import { defineComponent, h } from 'vue'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind } from '../model/kind'
 import { createHost } from '../fixtures/host'
-import { createLine, viewOn, type NeighbourSpec } from '../fixtures'
+import { createLine, viewOn, type NeighborSpec } from '../fixtures'
 
 const createTab = (
   focus: string,
-  neighbours: readonly NeighbourSpec[],
+  neighbors: readonly NeighborSpec[],
   lines: readonly Connection[] = [],
 ) =>
   defineComponent({
@@ -21,7 +21,7 @@ const createTab = (
     setup() {
       const { kind } = createPlexKind(
         createHost({ opening: focus }).host,
-        () => viewOn(focus, neighbours, {}, lines).view,
+        () => viewOn(focus, neighbors, {}, lines).view,
         PlexGraphView,
       )
       const state = kind.open!(focus, 'plex:story')

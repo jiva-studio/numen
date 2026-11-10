@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -76,9 +77,9 @@ type wiring struct {
 
 func (f filing) wiring() wiring {
 	return wiring{
-		links:   f.db.Links(),
-		queries: f.db.SourcesUnder(),
-		sources: f.db.Sources(),
+		links:   f.db.NoteQueries.Links,
+		queries: f.db.Source.SourcesUnder,
+		sources: f.db.Source.Sources,
 		writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
 		index:   f.index,
 	}
@@ -87,7 +88,7 @@ func (f filing) wiring() wiring {
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: w.links, Names: f.db.NamedPaths(), Sources: f.db.Sources(), Index: w.index, Now: testsupport.NewClock(),
+		Links: w.links, Names: f.db.NoteQueries.NamedPaths, Sources: f.db.Source.Sources, Index: w.index, Now: testsupport.NewClock(),
 	})
 	notes.Sync = func() query.SyncTitleAndFilename { return true }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {
@@ -99,7 +100,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourceRecords(), f.db.SourceBacklog(), f.db.RemovalLookup(), testsupport.Texts{Readers: vaultreader.Readers{}})
+	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Source.Sources, f.db.Source.SourceRecords, f.db.Source.SourceBacklog, f.db.Source.RemovalLookup, testsupport.Texts{Readers: vaultreader.Readers{}})
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +161,7 @@ func TestMove_QueriesBacklinksForNotesInFolderOnly(t *testing.T) {
 	})
 	testsupport.WriteBook(t, f.vault.Path, "physics/A Book.epub")
 	f.recordBooks(t)
-	watched := &watchedLinks{LinkQueries: f.db.Links()}
+	watched := &watchedLinks{LinkQueries: f.db.NoteQueries.Links}
 	w := f.wiring()
 	w.links = watched
 
@@ -216,7 +217,7 @@ func TestAMoveThatCannotAskWhatPointsAtANoteMovesNothing(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the links cannot be read")
 	w := f.wiring()
-	w.links = &watchedLinks{LinkQueries: f.db.Links(), backlinksErr: cannot}
+	w.links = &watchedLinks{LinkQueries: f.db.NoteQueries.Links, backlinksErr: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Entropy.md")
 	if !errors.Is(err, cannot) {
@@ -253,7 +254,7 @@ func TestAMoveOfAPathThatContainsNothingIsNoNote(t *testing.T) {
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 
 	moved, err := f.move().Execute(t.Context(), f.vault, "physics/Missing.md", "archive/Missing.md")
-	if !errors.Is(err, note.ErrNoNote) {
+	if !errors.Is(err, edit.ErrNoNote) {
 		t.Fatalf("got %v", err)
 	}
 	if moved.IsMoved {
@@ -393,7 +394,7 @@ func TestANoteThatCannotBeSettledIsAnErrorAfterTheFileLanded(t *testing.T) {
 	})
 	cannot := errors.New("the links cannot be read")
 	w := f.wiring()
-	w.links = &watchedLinks{LinkQueries: f.db.Links(), linksErr: cannot}
+	w.links = &watchedLinks{LinkQueries: f.db.NoteQueries.Links, linksErr: cannot}
 
 	moved, err := f.moveOver(w).Execute(t.Context(), f.vault, "physics/Entropy.md", "archive/Thermodynamics.md")
 	if !errors.Is(err, cannot) {
@@ -409,7 +410,7 @@ func TestAMoveGivenAnotherIndexFilesThroughIt(t *testing.T) {
 	isolateHome(t)
 	f := openFiling(t, map[string]string{"physics/Entropy.md": "# Entropy\n"})
 	cannot := errors.New("the other index cannot be written")
-	other := unfiling{SourceRepository: f.db.Sources(), err: cannot}
+	other := unfiling{SourceRepository: f.db.Source.Sources, err: cannot}
 
 	provided := f.move().WithSources(other)
 	if _, ok := provided.Sources().(unfiling); !ok {

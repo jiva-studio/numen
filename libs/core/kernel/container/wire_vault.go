@@ -41,6 +41,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/picker"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
 // Registry opens the vault registry for this installation.
@@ -129,7 +130,7 @@ func (c Config) OpenIndex(ctx context.Context) (*vault.Index, error) {
 }
 
 // UpdateIndex updates the notes at the paths given up to date in the index.
-func (c Config) UpdateIndex(db *vault.Index) note.IndexUpdater {
+func (c Config) UpdateIndex(db *vault.Index) edit.IndexUpdater {
 	return updateIndex(c.vault(), db)
 }
 
@@ -140,7 +141,7 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 
 // Notes builds everything that acts on the notes of a vault, against this
 // installation's vault readers and writers.
-func (c Config) Notes(db *vault.Index, index note.IndexUpdater) note.Scenarios {
+func (c Config) Notes(db *vault.Index, index edit.IndexUpdater) note.Scenarios {
 	return vaultNotes(c.vault(), db, index)
 }
 
@@ -175,7 +176,7 @@ func (c Config) VaultOpenerWith(
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
 func (c Config) GetRefresh(db *vault.Index) vault.Refresh {
-	return makeRefresh(c, db, db.Notes())
+	return makeRefresh(c, db, db.Stores.Notes)
 }
 
 func makeRefresh(c Config, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
@@ -274,7 +275,7 @@ func vaultHandleError(c vaultWiring, err error) {
 
 func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, notes note.Move) vault.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
-	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
+	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Stores.Vaults)
 	erase := vault.NewErase(vaultIdentity(c), vaultTrash(c), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
 	return vault.Scenarios{
@@ -285,13 +286,13 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, n
 		},
 		Change: vault.Changing{
 			Add:        vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock),
-			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
+			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Stores.Vaults),
 			Remove:     vault.NewRemove(find, unregister, erase),
 			Unregister: unregister,
 			Erase:      erase,
 		},
 		Tree: vault.Tree{
-			Move:   vault.NewMove(vaultWriters(c), db.Links(), db.SourcesUnder(), db.Sources(), notes),
+			Move:   vault.NewMove(vaultWriters(c), db.NoteQueries.Links, db.Source.SourcesUnder, db.Source.Sources, notes),
 			Import: vault.NewImport(vaultWriters(c), getImportedFiles(c)),
 		},
 		RecordOpen: vault.NewRecordOpen(registry.Recorder),
@@ -347,48 +348,39 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 	}
 	queries := db.NoteQueries()
 	return vault.NewIndex(vault.IndexPorts{
-		Backend:       db,
-		Path:          path,
-		Vaults:        db.Vaults(),
-		Notes:         db.Notes(),
-		FileStats:     queries,
-		NameMatches:   queries,
-		Headings:      queries,
-		Summaries:     queries,
-		NoteTypes:     queries,
-		TypedPaths:    queries,
-		VaultHolds:    queries,
-		NoteRefs:      queries,
-		OpeningNote:   queries,
-		NamedPaths:    queries,
-		Passages:      db.ChunkSearch(),
-		Progress:      db.ChunkVectors(),
-		Stats:         db.ChunkVectors(),
-		Sources:       db.Sources(),
-		SourcesUnder:  db.Sources(),
-		RemovalLookup: db.Sources(),
-		SourceRecords: db.Sources(),
-		SourceBacklog: db.Sources(),
-		Vectors:       db.Sources(),
-		VectorQueries: db.Sources(),
-		Maintenance:   db.Maintenance(),
-		Links:         queries,
-		Problems:      db.NoteProblems(),
-		OpenTabs:      db.OpenTabs(),
-		TextVersions:  version.NewIndexVersions(db.TextVersions()),
-		SearchFloors:  db.SearchFloors(),
-		SearchSamples: db.SearchSamples(),
-		Nearest:       db.ChunkSearch(),
+		Closer: db,
+		File:   path,
+		Stores: vault.IndexStores{
+			Vaults: db.Vaults(), Notes: db.Notes(), OpenTabs: db.OpenTabs(), Maintenance: db.Maintenance(),
+		},
+		NoteQueries: vault.IndexNoteQueries{
+			FileStats: queries, NameMatches: queries, Headings: queries, Summaries: queries, NoteTypes: queries,
+			TypedPaths: queries, VaultHolds: queries, NoteRefs: queries, OpeningNote: queries, NamedPaths: queries,
+			Links: queries, Problems: db.NoteProblems(),
+		},
+		Chunks: vault.IndexChunks{
+			Passages: db.ChunkSearch(), Progress: db.ChunkVectors(), Stats: db.ChunkVectors(),
+			Index:   db,
+			Vectors: db.Sources(), VectorQueries: db.Sources(),
+		},
+		Source: vault.IndexSources{
+			Sources: db.Sources(), SourcesUnder: db.Sources(), RemovalLookup: db.Sources(),
+			SourceRecords: db.Sources(), SourceBacklog: db.Sources(),
+		},
+		Search: vault.IndexSearch{
+			Nearest: db.ChunkSearch(), SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
+		},
+		TextVersions: version.NewIndexVersions(db.TextVersions()),
 	}), nil
 }
 
-func updateIndex(c vaultWiring, db *vault.Index) note.IndexUpdater {
+func updateIndex(c vaultWiring, db *vault.Index) edit.IndexUpdater {
 	refresh := vault.NewRefresh(
 		vaultReaders(c),
-		db.Vaults(),
-		db.Notes(),
-		db.RemovalLookup(),
-		db.Sources(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.Source.RemovalLookup,
+		db.Source.Sources,
 		c.Clock,
 	)
 	refresh.Cut = c.CutNotes
@@ -407,9 +399,9 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 	return vaultwatch.Watcher{Options: vaultOptions(c), Hub: c.Watches.GetShared()}.File(ctx, path)
 }
 
-func vaultNotes(c vaultWiring, db *vault.Index, index note.IndexUpdater) note.Scenarios {
-	names, refs, links := db.NamedPaths(), db.NoteRefs(), db.Links()
-	sources, indexed := db.Sources(), db.SourcesUnder()
+func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Scenarios {
+	names, refs, links := db.NoteQueries.NamedPaths, db.NoteQueries.NoteRefs, db.NoteQueries.Links
+	sources, indexed := db.Source.Sources, db.Source.SourcesUnder
 	readers := vaultReaders(c)
 	writers := vaultWriters(c)
 	now := c.Clock
@@ -458,10 +450,10 @@ func vaultNotes(c vaultWiring, db *vault.Index, index note.IndexUpdater) note.Sc
 		},
 		Browse: note.Browsing{
 			Connection:     query.NewGetConnection(links),
-			Neighborhood:   query.NewShowNeighbourhood(links, refs),
+			Neighborhood:   query.NewShowNeighborhood(links, refs),
 			GetTitles:      query.NewGetTitles(refs),
 			GetTitle:       query.NewGetTitle(refs),
-			IsVaultIndexed: query.NewIsVaultIndexed(db.VaultHolds()),
+			IsVaultIndexed: query.NewIsVaultIndexed(db.NoteQueries.VaultHolds),
 		},
 	}
 }
@@ -487,22 +479,22 @@ func vaultOpenerWith(c vaultWiring,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(
 		walking,
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 	if c.SetNoteCut != nil {
 		c.SetNoteCut(&scan, db)
 	}
 	scan.Walks = db.Walks()
 
-	buffered := &bufferednotes.Repository{NoteRepository: db.Notes()}
+	buffered := &bufferednotes.Repository{NoteRepository: db.Stores.Notes}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))
 }
 
 func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(vaultReaders(c), db.Vaults(), notes, db.RemovalLookup(), db.Sources(), c.Clock)
+	refresh := vault.NewRefresh(vaultReaders(c), db.Stores.Vaults, notes, db.Source.RemovalLookup, db.Source.Sources, c.Clock)
 	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return refresh
@@ -513,7 +505,7 @@ func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, err
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = textbridge.NewPlugins(c.PluginHost)
 	}
-	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
+	return textversion.NewVersions(db.TextVersions, textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }
 
 func getTextReaders(c vaultWiring) textdomain.Readers {
@@ -523,7 +515,7 @@ func getTextReaders(c vaultWiring) textdomain.Readers {
 	if c.TextVersions == nil {
 		return nil
 	}
-	return c.TextVersions
+	return c.TextVersions.Texts
 }
 
 func setPluginTexts(c vaultWiring) {
@@ -534,7 +526,7 @@ func setPluginTexts(c vaultWiring) {
 		c.PluginHost.SetPluginTexts(nil)
 		return
 	}
-	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.TextVersions))
+	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.TextVersions.Texts))
 }
 
 func openPluginData(c vaultWiring) *textversion.PluginData {
@@ -577,7 +569,7 @@ func (c Config) OpenVaults(db *vault.Index, out io.Writer, label string) *vault.
 
 // SetShellNotes gives a shell the notes it answers about: whether a vault is indexed and what a link
 // resolves to. A write updates the index through updateIndex.
-func (c Config) SetShellNotes(api *shell.API, db *vault.Index, updateIndex note.IndexUpdater) {
+func (c Config) SetShellNotes(api *shell.API, db *vault.Index, updateIndex edit.IndexUpdater) {
 	notes := c.Notes(db, updateIndex)
 	api.IsVaultIndexed, api.ResolveLinks = notes.Browse.IsVaultIndexed, notes.Refer.ResolveLinks
 }

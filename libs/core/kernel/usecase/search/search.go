@@ -74,21 +74,19 @@ type QueryEmbedder interface {
 	Execute(ctx context.Context, queries []string) ([][]float32, error)
 }
 
-// Search answers a query within one vault, over everything the vault holds.
-//
-// One database holds every vault, so the vault is an argument of the search.
-// New sets every field. Without an embedder only the word search runs, and
-// vector-based results are absent.
+// Search answers a query within one vault. Without an embedder only the word search runs.
+// Floor gives the floor of a query that names none, under the recipe of the model that embeds it.
+// Extractors is how many sources are extracted at once; the default holds where it is not positive.
 type Search struct {
 	passages     sourceport.PassageQueries
 	readers      vaultport.VaultReaders
 	embedder     embeddingport.Embedder
 	queries      QueryEmbedder
 	texts        textdomain.Readers
-	floorSource  FloorSource
+	Floor        FloorSource
 	errorHandler window.ErrorHandler
 	cache        *QueryCache
-	extractors   int
+	Extractors   int
 }
 
 // New returns a search over one vault's index.
@@ -108,28 +106,8 @@ func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, tex
 		texts:        texts,
 		errorHandler: errorHandler,
 		cache:        NewQueryCache(defaultCacheCapacity),
+		Extractors:   defaultExtractors,
 	}
-}
-
-// WithExtractors returns a search that extracts up to n sources at once. Zero or
-// less is defaultExtractors.
-func (u Search) WithExtractors(n int) Search {
-	u.extractors = n
-	return u
-}
-
-// WithFloorSource returns a search whose floor for a query is the source's, under
-// the recipe of the model that embeds the query. It is consulted when the query
-// names no floor.
-func (u Search) WithFloorSource(source FloorSource) Search {
-	u.floorSource = source
-	return u
-}
-
-// WithCache returns a search that uses the query cache given.
-func (u Search) WithCache(cache *QueryCache) Search {
-	u.cache = cache
-	return u
 }
 
 // Execute runs the ways the parameters name, merges their rankings by rank,
@@ -279,8 +257,8 @@ func (u Search) getFloor(ctx context.Context, v domain.Vault, recipe string, p P
 	switch {
 	case p.Floor > 0:
 		return p.Floor
-	case u.floorSource != nil:
-		return u.floorSource(ctx, v, recipe)
+	case u.Floor != nil:
+		return u.Floor(ctx, v, recipe)
 	default:
 		return DefaultFloor
 	}
@@ -311,7 +289,7 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 		filled: make([]domain.Passage, len(found)), keep: make([]bool, len(found)),
 	}
 	g, gctx := errgroup.WithContext(ctx)
-	g.SetLimit(u.GetExtractors())
+	g.SetLimit(u.getExtractorLimit())
 	for _, source := range order {
 		if gctx.Err() != nil {
 			break
@@ -337,10 +315,9 @@ func (u Search) readForQuery(ctx context.Context, v domain.Vault, query string, 
 	return out, nil
 }
 
-// GetExtractors is how many sources a search extracts at once.
-func (u Search) GetExtractors() int {
-	if u.extractors > 0 {
-		return u.extractors
+func (u Search) getExtractorLimit() int {
+	if u.Extractors > 0 {
+		return u.Extractors
 	}
 	return defaultExtractors
 }

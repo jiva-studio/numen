@@ -27,7 +27,7 @@ func newChecks() *vault.GetProblems {
 	}})
 }
 
-func TestProblemsNamingNoCheckRunTheLoudOnes(t *testing.T) {
+func TestProblemsNamingNoCheckRunTheDefaultOnes(t *testing.T) {
 	report, err := newChecks().Execute(t.Context(), domain.Vault{})
 	if err != nil {
 		t.Fatal(err)

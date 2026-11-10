@@ -10,10 +10,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/note/domain"
+	"github.com/jiva-studio/numen/libs/note/edit"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
@@ -31,7 +34,7 @@ func (c changing) renameApart() note.Rename {
 
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
-	displayed, err := c.db.NoteRefs().GetNotes(t.Context(), c.vault.ID, []string{path})
+	displayed, err := c.db.NoteQueries.NoteRefs.GetNotes(t.Context(), c.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +335,11 @@ func TestRename_ReturnsMoveWhenFollowUpFails(t *testing.T) {
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
 	sulk := errors.New("the index would not have it")
-	rename := c.rename().WithSources(sulking{SourceRepository: c.db.Sources(), moveError: sulk})
+	rename := note.NewRename(note.NewMove(note.MoveDeps{
+		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
+		Links: c.db.NoteQueries.Links, Names: c.db.NoteQueries.NamedPaths,
+		Sources: sulking{SourceRepository: c.db.Source.Sources, moveError: sulk}, Index: c.index, Now: testsupport.NewClock(),
+	}))
 
 	renamed, err := rename.Execute(t.Context(), c.vault, "Old.md", "Entropy")
 	if !errors.Is(err, sulk) {
@@ -455,7 +462,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
 
-	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, note.ErrNoNote) {
+	if _, err := c.rename().Execute(t.Context(), c.vault, "Missing.md", "Entropy"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote for a note that is not there, got %v", err)
 	}
 
@@ -465,7 +472,7 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 	if err == nil {
 		t.Fatal("want the vault's own error")
 	}
-	if errors.Is(err, note.ErrNoNote) {
+	if errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("a vault that is not there was named as a missing note: %v", err)
 	}
 }
@@ -475,9 +482,9 @@ func TestOnlyAMissingNoteIsNamedAsOne(t *testing.T) {
 func TestRemovingReturnsWhenThereIsNoSuchNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Old.md": "# Old\n"})
-	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Links(), c.db.SourcesUnder(), c.index)
+	remove := note.NewRemove(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NoteQueries.Links, c.db.Source.SourcesUnder, c.index)
 
-	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, note.ErrNoNote) {
+	if _, err := remove.Execute(t.Context(), c.vault, "Missing.md"); !errors.Is(err, edit.ErrNoNote) {
 		t.Errorf("want ErrNoNote, got %v", err)
 	}
 }
@@ -505,7 +512,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.NamedPaths().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.NoteQueries.NamedPaths.GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}
