@@ -85,6 +85,7 @@ func TestDomainImportRule_RejectsEverythingButTheStandardLibraryTheNotesDomainTh
 		{module + "port/pluginport", true},
 		{module + "usecase/note", true},
 		{module + "adapter/index", true},
+		{module + "internal/adapter/themefiles", true},
 		{module + "internal/adapter/trash", true},
 		{module + "container", true},
 		{notesModule + "/edit", true},

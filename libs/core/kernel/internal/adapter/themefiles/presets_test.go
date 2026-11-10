@@ -1,4 +1,4 @@
-package theme_test
+package themefiles_test
 
 import (
 	"os"
@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -76,17 +75,10 @@ const presetsPlugin = "../../../../../../plugins/themes-presets"
 
 func readPresets(t *testing.T) map[string]string {
 	t.Helper()
-	catalog := createThemeFolder(t)
+	files := createThemeFolder(t)
 	texts := map[string]string{}
-	for _, one := range catalog.Themes() {
-		if one.Origin != theme.Preset {
-			continue
-		}
-		text, err := catalog.Text(one.Name)
-		if err != nil {
-			t.Fatal(err)
-		}
-		texts[one.Name] = text
+	for _, one := range files.ListPresets() {
+		texts[one.Title] = one.Text
 	}
 	declared, err := manifestjson.ReadFile(filepath.Join(presetsPlugin, manifest.FileName))
 	if err != nil {

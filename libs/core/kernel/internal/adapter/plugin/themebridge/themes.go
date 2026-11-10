@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugintheme/themecontract"
 )
 
 // Host provides the plugins and their manifests.
@@ -24,8 +23,6 @@ type Host interface {
 type Themes struct {
 	host Host
 }
-
-var _ themecontract.PluginThemes = Themes{host: nil}
 
 // Open makes the bridge to the plugins the host lists.
 func Open(host Host) Themes {

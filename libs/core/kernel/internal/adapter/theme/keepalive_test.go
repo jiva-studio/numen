@@ -14,7 +14,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -23,7 +23,7 @@ import (
 // editor reloads on a vault swap and leaves one watch behind each time. A failed
 // write is the only disconnect signal, so the stream writes.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
-	service := createFakeAppearances(t, theme.Appearance{}).service
+	service, _, _ := createService(t, themedomain.Appearance{})
 
 	entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 	route, handler := numenv1connect.NewThemeServiceHandler(service)
@@ -66,7 +66,7 @@ func isWatchingFolder() bool {
 	if err := pprof.Lookup("goroutine").WriteTo(&stacks, 2); err != nil {
 		return false
 	}
-	return strings.Contains(stacks.String(), "theme.Catalog.debounce")
+	return strings.Contains(stacks.String(), "themefiles.Files.debounce")
 }
 
 func wrapWithProcessContext(handler http.Handler, entered, returned chan<- struct{}) http.Handler {
