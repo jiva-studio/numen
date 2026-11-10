@@ -1,10 +1,10 @@
-package service
+// Package stream reads the output of a Claude Code run and reports it as the steps of an agent.
+package stream
 
 import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -22,15 +22,15 @@ const reportChunk = 200
 // previewInterval is the shortest time between two reports of a change being written.
 const previewInterval = 50 * time.Millisecond
 
-// timeSource gets the current time.
-type timeSource interface {
+// Clock gets the current time.
+type Clock interface {
 	Now() time.Time
 }
 
 type streamParser struct {
 	send         func(*agentrun.Response) error
 	words        map[string]toolcall.Declaration
-	clock        timeSource
+	clock        Clock
 	last         time.Time
 	record       func(string)
 	isStreaming  bool
@@ -56,85 +56,25 @@ func (p *streamParser) getReason() string {
 	return p.reason
 }
 
-type event struct {
-	Type    string          `json:"type"`
-	Subtype string          `json:"subtype"`
-	Session string          `json:"session_id"`
-	Message json.RawMessage `json:"message"`
-	Event   streamEvent     `json:"event"`
-	Result  string          `json:"result"`
-	IsError bool            `json:"is_error"`
-	Status  string          `json:"status"`
-
-	Servers *[]struct {
-		Name   string `json:"name"`
-		Status string `json:"status"`
-	} `json:"mcp_servers"`
-	ServerErrors []struct {
-		Name    string `json:"name"`
-		Message string `json:"message"`
-	} `json:"mcp_server_errors"`
+// Options are what the parser of a stream needs besides the stream and the way to send. Record is
+// told the session the program reports, and ExpectsVault makes the parser report a program that
+// started without the vault.
+type Options struct {
+	Words        map[string]toolcall.Declaration
+	Record       func(string)
+	Clock        Clock
+	ExpectsVault bool
 }
 
-func (e event) hasToolAnswer() bool {
-	var msg struct {
-		Content []struct {
-			Type string `json:"type"`
-		} `json:"content"`
-	}
-	if err := json.Unmarshal(e.Message, &msg); err != nil {
-		return false
-	}
-	for _, c := range msg.Content {
-		if c.Type == "tool_result" {
-			return true
-		}
-	}
-	return false
-}
-
-type streamEvent struct {
-	Type  string `json:"type"`
-	Delta struct {
-		Type    string `json:"type"`
-		Text    string `json:"text"`
-		Partial string `json:"partial_json"`
-	} `json:"delta"`
-	Block struct {
-		Type  string          `json:"type"`
-		Text  string          `json:"text"`
-		Name  string          `json:"name"`
-		ID    string          `json:"id"`
-		Input json.RawMessage `json:"input"`
-	} `json:"content_block"`
-}
-
-// streamOptions are what the parser of a stream needs besides the stream and the way to send.
-type streamOptions struct {
-	words        map[string]toolcall.Declaration
-	record       func(string)
-	clock        timeSource
-	expectsVault bool
-}
-
-func parseStreamWithClock(
-	ctx context.Context,
-	r io.Reader,
-	send func(*agentrun.Response) error,
-	words map[string]toolcall.Declaration,
-	record func(string),
-	clock timeSource,
-) string {
-	return parseStream(ctx, r, send, streamOptions{words: words, record: record, clock: clock, expectsVault: true})
-}
-
-func parseStream(ctx context.Context, r io.Reader, send func(*agentrun.Response) error, opts streamOptions) string {
+// Parse reads the output of the program line by line and sends each step it reports. It returns the
+// reason the run failed, or none, once the output ends or ctx is done.
+func Parse(ctx context.Context, r io.Reader, send func(*agentrun.Response) error, opts Options) string {
 	p := &streamParser{
 		send:         send,
-		words:        opts.words,
-		clock:        opts.clock,
-		record:       opts.record,
-		expectsVault: opts.expectsVault,
+		words:        opts.Words,
+		clock:        opts.Clock,
+		record:       opts.Record,
+		expectsVault: opts.ExpectsVault,
 		last:         time.Time{},
 		isStreaming:  false,
 		callID:       "",
@@ -328,57 +268,4 @@ func (p *streamParser) reportEdit() {
 			Text:  toolcall.ReadPartialField(args, words.Text),
 		},
 	}})
-}
-
-func getUnreachableReason(response event) string {
-	for _, skipped := range response.ServerErrors {
-		if skipped.Name == serverName {
-			return fmt.Sprintf("the agent was not given this vault: %s", skipped.Message)
-		}
-	}
-	if response.Servers == nil {
-		return ""
-	}
-	for _, server := range *response.Servers {
-		if server.Name != serverName {
-			continue
-		}
-		if server.Status == "failed" {
-			return "the agent could not reach this vault"
-		}
-		return ""
-	}
-	return "the agent was started without this vault"
-}
-
-func getResultError(response event) string {
-	if text := strings.TrimSpace(response.Result); text != "" && text != response.Subtype {
-		return text
-	}
-	if response.Subtype != "" {
-		return formatSubtype(response.Subtype)
-	}
-	return "the agent stopped without finishing"
-}
-
-func formatSubtype(subtype string) string {
-	switch subtype {
-	case "error_max_turns", "max_turns":
-		return "the agent reached the limit of steps without finishing"
-	case "error_context_length_exceeded", "error_context_length", "context_length_exceeded":
-		return "the conversation is too long for the model"
-	case "error_rate_limit", "rate_limit":
-		return "the rate limit was reached"
-	case "error_authentication", "error_auth", "authentication_error":
-		return "authentication with the model failed"
-	case "error_overloaded", "overloaded":
-		return "the model is overloaded"
-	case "error_interrupted", "error_canceled", "interrupted":
-		return "the agent was interrupted"
-	default:
-		if rest, ok := strings.CutPrefix(subtype, "error_"); ok {
-			return strings.ReplaceAll(rest, "_", " ")
-		}
-		return subtype
-	}
 }

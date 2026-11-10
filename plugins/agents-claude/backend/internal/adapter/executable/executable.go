@@ -1,4 +1,5 @@
-package service
+// Package executable finds the Claude Code program on the machine.
+package executable
 
 import (
 	"os"
@@ -10,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/agentrun"
 )
 
-func getClaudeSearchPlaces() []string {
+func getSearchPlaces() []string {
 	return []string{
 		"~/.local/bin/claude",
 		"~/.claude/local/claude",
@@ -28,13 +29,18 @@ func getClaudeSearchPlaces() []string {
 	}
 }
 
-func findClaude(customPath ...string) string {
-	return findClaudeIn(getClaudeSearchPlaces(), customPath...)
+// Finder looks for the program in the environment, on the path and in the places it is installed to.
+type Finder struct{}
+
+// Find returns the command of the program: the custom path when it is runnable, else the command the
+// environment names, else the program on the path, else a place it is installed to.
+func (Finder) Find(customPath string) string {
+	return findIn(getSearchPlaces(), customPath)
 }
 
-func findClaudeIn(places []string, customPath ...string) string {
-	if len(customPath) > 0 && agentrun.IsRunnable(customPath[0]) {
-		return customPath[0]
+func findIn(places []string, customPath string) string {
+	if customPath != "" && agentrun.IsRunnable(customPath) {
+		return customPath
 	}
 	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
 		return cmd

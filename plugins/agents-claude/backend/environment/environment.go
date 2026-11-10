@@ -1,4 +1,5 @@
-package service
+// Package environment prepares the variables a Claude Code program is started with.
+package environment
 
 import (
 	"slices"
@@ -19,7 +20,9 @@ func getDroppedEnvVars() []string {
 	}
 }
 
-func buildEnvironment(target []string) []string {
+// DropSession returns the entries of target without the variables that tie a program to the
+// Claude Code session that starts it.
+func DropSession(target []string) []string {
 	droppedEnvVars := getDroppedEnvVars()
 	out := make([]string, 0, len(target))
 	for _, entry := range target {
@@ -32,7 +35,8 @@ func buildEnvironment(target []string) []string {
 	return out
 }
 
-func getVariables(vars map[string]string) []string {
+// FromMap returns the variables of vars as name=value entries.
+func FromMap(vars map[string]string) []string {
 	out := make([]string, 0, len(vars))
 	for name, value := range vars {
 		out = append(out, name+"="+value)
