@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.agent.chat",
-  "version": "2026.11.11",
+  "version": "2026.11.10",
   "private": true,
   "type": "module",
   "description": "The agent chat tab plugin for Numen",

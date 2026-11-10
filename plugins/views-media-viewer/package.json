@@ -1,6 +1,6 @@
 {
   "name": "@numen/views.media.viewer",
-  "version": "2026.11.3",
+  "version": "2026.11.2",
   "private": true,
   "type": "module",
   "main": "./frontend/index.ts",
