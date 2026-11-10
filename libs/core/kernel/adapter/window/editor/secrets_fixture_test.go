@@ -27,7 +27,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginlend"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -282,7 +281,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, file, fileBody)
 	keys := &secretKeys{items: map[string]string{}}
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      pluginlend.Lend(host),
+		PluginHost:      container.LendPluginHost(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),

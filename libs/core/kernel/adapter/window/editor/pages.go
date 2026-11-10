@@ -32,7 +32,7 @@ var errShut = errors.New("this window is shut")
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // PluginServices is where the calls for the services plugins serve are forwarded.
-type PluginServices = interface {
+type PluginServices interface {
 	http.Handler
 	// Serves reports whether an enabled plugin serves the service the path names.
 	Serves(urlPath string) bool
