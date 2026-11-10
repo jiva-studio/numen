@@ -115,7 +115,7 @@ defineSlots<{
    tint and not a colour. */
 .palette__name [data-hit],
 .palette__detail [data-hit] {
-  border-radius: 2px;
+  border-radius: 0.125rem;
   background: var(--numen-highlight);
   font-weight: 600;
 }
