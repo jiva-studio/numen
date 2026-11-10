@@ -11,11 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/settingevents"
 )
 
-func newSource(t *testing.T, read func() (settingevents.Values, error)) settingevents.Source {
+func newSource(t *testing.T, read func() (settings.Values, error)) settingevents.Source {
 	t.Helper()
 	return settingevents.Source{
 		Read:    read,
-		Initial: func() settingevents.Values { return settingevents.Values{} },
+		Initial: func() settings.Values { return settings.Values{} },
 		Report:  func(error) {},
 		Path:    filepath.Join(t.TempDir(), "numen.json"),
 	}
@@ -33,13 +33,13 @@ func receive(t *testing.T, changes <-chan []settings.Setting) []settings.Setting
 }
 
 func TestRefreshDeliversOnlyTheSettingsWhoseValueDiffers(t *testing.T) {
-	values := settingevents.Values{"a\x00x": "1", "a\x00y": "2"}
+	values := settings.Values{"a\x00x": "1", "a\x00y": "2"}
 	events := settingevents.New()
-	changes, stop := events.Subscribe(newSource(t, func() (settingevents.Values, error) { return values, nil }))
+	changes, stop := events.Subscribe(newSource(t, func() (settings.Values, error) { return values, nil }))
 	defer stop()
 
-	next := settingevents.Values{"a\x00x": "1", "a\x00y": "3"}
-	events.Refresh(func() (settingevents.Values, error) { return next, nil })
+	next := settings.Values{"a\x00x": "1", "a\x00y": "3"}
+	events.Refresh(func() (settings.Values, error) { return next, nil })
 
 	batch := receive(t, changes)
 	if len(batch) != 1 || !slices.Equal(batch[0].Path, []string{"a", "y"}) || batch[0].JSON != "3" {
@@ -49,13 +49,13 @@ func TestRefreshDeliversOnlyTheSettingsWhoseValueDiffers(t *testing.T) {
 
 func TestRefreshAfterAReadFailureChangesNothing(t *testing.T) {
 	var reported []error
-	source := newSource(t, func() (settingevents.Values, error) { return settingevents.Values{"a\x00x": "1"}, nil })
+	source := newSource(t, func() (settings.Values, error) { return settings.Values{"a\x00x": "1"}, nil })
 	source.Report = func(err error) { reported = append(reported, err) }
 	events := settingevents.New()
 	changes, stop := events.Subscribe(source)
 	defer stop()
 
-	events.Refresh(func() (settingevents.Values, error) { return nil, errors.New("unreadable") })
+	events.Refresh(func() (settings.Values, error) { return nil, errors.New("unreadable") })
 
 	select {
 	case batch := <-changes:
@@ -69,7 +69,7 @@ func TestRefreshAfterAReadFailureChangesNothing(t *testing.T) {
 
 func TestAReaderThatLeftHasItsChannelClosed(t *testing.T) {
 	events := settingevents.New()
-	changes, stop := events.Subscribe(newSource(t, func() (settingevents.Values, error) { return settingevents.Values{}, nil }))
+	changes, stop := events.Subscribe(newSource(t, func() (settings.Values, error) { return settings.Values{}, nil }))
 
 	stop()
 	stop()
@@ -86,12 +86,12 @@ func TestAReaderThatLeftHasItsChannelClosed(t *testing.T) {
 
 func TestASettingWithNoValueIsReportedAsNull(t *testing.T) {
 	events := settingevents.New()
-	changes, stop := events.Subscribe(newSource(t, func() (settingevents.Values, error) {
-		return settingevents.Values{"a\x00x": "1"}, nil
+	changes, stop := events.Subscribe(newSource(t, func() (settings.Values, error) {
+		return settings.Values{"a\x00x": "1"}, nil
 	}))
 	defer stop()
 
-	events.Refresh(func() (settingevents.Values, error) { return settingevents.Values{}, nil })
+	events.Refresh(func() (settings.Values, error) { return settings.Values{}, nil })
 
 	batch := receive(t, changes)
 	if len(batch) != 1 || !slices.Equal(batch[0].Path, []string{"a", "x"}) || batch[0].JSON != "null" {

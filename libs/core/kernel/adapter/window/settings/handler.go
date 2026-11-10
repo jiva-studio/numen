@@ -32,8 +32,8 @@ type Handler struct {
 // use case set answers that the build serves no settings.
 type Values struct {
 	Get         *setting.Get
-	Write       *setting.Write
-	Watch       *setting.Watch
+	Write       *setting.WriteSettings
+	Watch       *setting.WatchSettingChanges
 	ChoosePath  *setting.ChoosePluginPath
 	ListSecrets *secret.List
 }

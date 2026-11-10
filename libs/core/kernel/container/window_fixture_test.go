@@ -27,7 +27,7 @@ func (e editorServices) GetAgent() agentport.Agent { return e.agent }
 
 func (e editorServices) OpenGetSettings() *settings.Get { return e.cfg.OpenGetSettings(e.provider) }
 
-func (e editorServices) OpenWatchSettings() *settings.Watch { return e.cfg.OpenWatchSettings() }
+func (e editorServices) OpenWatchSettings() *settings.WatchSettingChanges { return e.cfg.OpenWatchSettings() }
 
 // windowVaults is a configuration with the list of vaults and the cache a window works the vaults
 // of the plugins through.
