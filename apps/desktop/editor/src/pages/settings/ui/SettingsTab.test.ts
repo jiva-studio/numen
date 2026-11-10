@@ -14,6 +14,7 @@ import { Select, Switch } from '@numen/ui'
 
 import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
+import { createInstallation } from '@/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
@@ -111,27 +112,15 @@ const createTab = (
   app: readonly PluginSettingInfo[] = SHELL,
 ) => {
   const content: SettingEdit[] = []
-  const installation: Installation = {
+  const installation: Installation = createInstallation({
     getSetting: (path) => at(file, path),
     getModels: (path) => MODELS.filter((one) => one.namedAt.join('.') === path.join('.')),
     write: (response) => {
       content.push(...response)
     },
-    file: ref('/numen.json'),
-    createSecret: vi.fn(async () => 's00000001'),
-    renameSecret: vi.fn(),
-    writeSecret: vi.fn(),
-    deleteSecret: vi.fn(),
-    deleteSecretGroup: vi.fn(),
-    moveSecret: vi.fn(),
-    renameSecretGroup: vi.fn(),
-    allowPluginSecret: vi.fn(),
-    denyPluginSecret: vi.fn(),
-    retryPlugin: vi.fn(),
-    choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
     app: ref(app),
-  }
+  })
   const initialSearchQuery = ref('')
   const tab = mount(SettingsTab, {
     props: { state: { installation, initialSearchQuery } },

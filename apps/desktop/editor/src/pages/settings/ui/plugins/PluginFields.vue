@@ -24,7 +24,7 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation.settings)
 const {
   getEnumOptions,
   getEnumChoices,
@@ -36,11 +36,11 @@ const {
   () => props.plugin,
   readSetting,
   isKeyRequested,
-  () => props.state.installation.getPlatform?.() ?? '',
+  () => props.state.installation.settings.getPlatform?.() ?? '',
 )
 
 function isKeyRequested(key: string): boolean {
-  return installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
+  return installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false
 }
 
 /** Why a path setting did not accept the path last chosen, by key. */
@@ -55,7 +55,7 @@ function onSettingChange(key: string, value: unknown): void {
 async function onPathChoose(setting: PluginSettingInfo): Promise<void> {
   const pluginId = props.plugin.id
   const previous = getStringSetting(setting.key, setting.default)
-  const problem = await installation.value.choosePath(pluginId, setting.key)
+  const problem = await installation.value.plugin.choosePath(pluginId, setting.key)
   if (props.plugin.id !== pluginId) return
   pathProblems.value = { ...pathProblems.value, [setting.key]: problem }
   if (problem === '' && previous !== '' && hasManyPaths(setting)) {
@@ -75,7 +75,7 @@ function hasManyPaths(setting: PluginSettingInfo): boolean {
 }
 
 function readSetting(key: string): unknown {
-  return installation.value.getSetting([props.plugin.id, ...key.split('.')])
+  return installation.value.settings.getSetting([props.plugin.id, ...key.split('.')])
 }
 
 function getValue(key: string): unknown {

@@ -16,18 +16,18 @@ const props = defineProps<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation.settings)
 const views = computed(() =>
   getRegisteredViews(
     props.plugin.settingsViews ?? [],
-    installation.value.getSettingsViews?.(props.plugin.id) ?? new Map(),
+    installation.value.plugin.getSettingsViews?.(props.plugin.id) ?? new Map(),
   ),
 )
 const values = computed(() =>
   getSettingValues(
     props.plugin,
-    (key) => installation.value.getSetting([props.plugin.id, ...key.split('.')]),
-    (key) => installation.value.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
+    (key) => installation.value.settings.getSetting([props.plugin.id, ...key.split('.')]),
+    (key) => installation.value.settings.isRequested?.([props.plugin.id, ...key.split('.')]) ?? false,
   ),
 )
 

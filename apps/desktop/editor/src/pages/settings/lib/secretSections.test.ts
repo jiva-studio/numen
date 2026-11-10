@@ -36,7 +36,7 @@ describe('the sections of the page', () => {
   )
 
   it('keep the order the core gave and add the groups of the window after them', () => {
-    const sections = createPageSections(core.secretSections?.value ?? [], ['mine'], new Map())
+    const sections = createPageSections(core.sections?.value ?? [], ['mine'], new Map())
     expect(sections.map((one) => [one.group, one.isAsked, one.secrets.length])).toStrictEqual([
       ['openai', true, 0],
       ['openrouter', true, 1],
@@ -48,7 +48,7 @@ describe('the sections of the page', () => {
 
   it('get the state of each value, and none for a secret with no state', () => {
     const sections = createPageSections(
-      core.secretSections?.value ?? [],
+      core.sections?.value ?? [],
       [],
       new Map([['s1', true]]),
     )
@@ -62,7 +62,7 @@ describe('the sections of the page', () => {
 
   it('list a group of the window once, and not where the core has it', () => {
     const sections = createPageSections(
-      core.secretSections?.value ?? [],
+      core.sections?.value ?? [],
       ['alpha', 'new', 'new'],
       new Map(),
     )
@@ -81,7 +81,7 @@ describe('the menu of a declaration', () => {
     [plugin],
     [secret('s1', 'Work', 'openrouter'), secret('s2', 'Chat', 'openai'), secret('s3', 'Mine', 'x')],
   )
-  const sections = answer.secretSections?.value ?? []
+  const sections = answer.sections?.value ?? []
   const menus = [
     { pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter', secrets: [WORK, CHAT] },
   ]

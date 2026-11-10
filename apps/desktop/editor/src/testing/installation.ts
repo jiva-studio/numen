@@ -5,30 +5,86 @@ import type { Model, PluginInfo, Secret, SecretMenu, SecretSection } from '@/ent
 import type { Installation } from '@/pages/settings/types'
 import type { CatalogEntry } from '@/entities/plugin'
 
+/** What a test puts over the defaults of an installation, named without the group it belongs to. */
+export type InstallationOverrides = Partial<Installation['settings']> &
+  Partial<Installation['plugin']> &
+  Partial<Omit<Installation['secrets'], 'edit' | 'access'>> &
+  Partial<Installation['secrets']['edit']> &
+  Partial<Installation['secrets']['access']>
+
+const SETTINGS_KEYS = [
+  'getSetting',
+  'getConfirmedSetting',
+  'isPending',
+  'isRequested',
+  'getModels',
+  'getPlatform',
+  'write',
+  'file',
+]
+const PLUGIN_KEYS = [
+  'plugins',
+  'app',
+  'catalog',
+  'retryPlugin',
+  'choosePath',
+  'getPluginData',
+  'deletePluginData',
+  'getSettingsViews',
+]
+const SECRETS_KEYS = ['sections', 'menus', 'states', 'loadStates', 'credentialsPath']
+const EDIT_KEYS = [
+  'createSecret',
+  'renameSecret',
+  'writeSecret',
+  'deleteSecret',
+  'deleteSecretGroup',
+  'moveSecret',
+  'renameSecretGroup',
+]
+const ACCESS_KEYS = ['allowPluginSecret', 'denyPluginSecret']
+
+const pickOf = (source: object, keys: readonly string[]): object =>
+  Object.fromEntries(Object.entries(source).filter(([key]) => keys.includes(key)))
+
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
-export const createInstallation = (overrides: Partial<Installation> = {}): Installation => ({
-  getSetting: () => undefined,
-  getModels: () => [],
-  write: fn(),
-  secretSections: ref([]),
-  secretMenus: ref([]),
-  secretStates: ref(new Map()),
-  loadSecretStates: fn(() => Promise.resolve()),
-  credentialsPath: ref(''),
-  createSecret: fn(() => Promise.resolve('s00000001')),
-  renameSecret: fn(),
-  writeSecret: fn(),
-  deleteSecret: fn(),
-  deleteSecretGroup: fn(),
-  moveSecret: fn(),
-  renameSecretGroup: fn(),
-  allowPluginSecret: fn(),
-  denyPluginSecret: fn(),
-  retryPlugin: fn(),
-  choosePath: fn(() => Promise.resolve('')),
-  plugins: ref([]),
-  file: ref('/numen.json'),
-  ...overrides,
+export const createInstallation = (overrides: InstallationOverrides = {}): Installation => ({
+  settings: {
+    getSetting: () => undefined,
+    getModels: () => [],
+    write: fn(),
+    file: ref('/numen.json'),
+    ...pickOf(overrides, SETTINGS_KEYS),
+  },
+  plugin: {
+    retryPlugin: fn(),
+    choosePath: fn(() => Promise.resolve('')),
+    plugins: ref([]),
+    ...pickOf(overrides, PLUGIN_KEYS),
+  },
+  secrets: {
+    sections: ref([]),
+    menus: ref([]),
+    states: ref(new Map()),
+    loadStates: fn(() => Promise.resolve()),
+    credentialsPath: ref(''),
+    ...pickOf(overrides, SECRETS_KEYS),
+    edit: {
+      createSecret: fn(() => Promise.resolve('s00000001')),
+      renameSecret: fn(),
+      writeSecret: fn(),
+      deleteSecret: fn(),
+      deleteSecretGroup: fn(),
+      moveSecret: fn(),
+      renameSecretGroup: fn(),
+      ...pickOf(overrides, EDIT_KEYS),
+    },
+    access: {
+      allowPluginSecret: fn(),
+      denyPluginSecret: fn(),
+      ...pickOf(overrides, ACCESS_KEYS),
+    },
+  },
 })
 
 /**
@@ -39,7 +95,7 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
 export const createSecretAnswer = (
   plugins: readonly PluginInfo[],
   secrets: readonly Secret[],
-): Pick<Installation, 'secretSections' | 'secretMenus' | 'secretStates'> => {
+): Pick<Installation['secrets'], 'sections' | 'menus' | 'states'> => {
   const declarations = plugins.flatMap((plugin) =>
     plugin.secrets.map((one) => ({ pluginId: plugin.id, name: one.name, group: one.group })),
   )
@@ -62,9 +118,9 @@ export const createSecretAnswer = (
     ].flatMap((one) => one.secrets),
   }))
   return {
-    secretSections: ref(sections),
-    secretMenus: ref(menus),
-    secretStates: ref(new Map(secrets.map((one) => [one.id, one.hasValue ?? false]))),
+    sections: ref(sections),
+    menus: ref(menus),
+    states: ref(new Map(secrets.map((one) => [one.id, one.hasValue ?? false]))),
   }
 }
 

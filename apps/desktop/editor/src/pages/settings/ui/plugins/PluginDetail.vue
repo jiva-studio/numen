@@ -29,16 +29,16 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
-const fields = createSettingFields(() => props.state.installation)
+const fields = createSettingFields(() => props.state.installation.settings)
 
-const read = (key: string) => installation.value.getSetting([props.plugin.id, key])
+const read = (key: string) => installation.value.settings.getSetting([props.plugin.id, key])
 
 const managed = computed(
-  () => createManagedFromEntries([props.plugin], installation.value.catalog?.value ?? [])[0],
+  () => createManagedFromEntries([props.plugin], installation.value.plugin.catalog?.value ?? [])[0],
 )
 
 const readEnabled = (): unknown =>
-  (installation.value.getConfirmedSetting ?? installation.value.getSetting)([
+  (installation.value.settings.getConfirmedSetting ?? installation.value.settings.getSetting)([
     props.plugin.id,
     'enabled',
   ])
@@ -48,7 +48,7 @@ const isEnabled = computed<boolean>(() => {
 })
 
 const isPending = computed<boolean>(
-  () => installation.value.isPending?.([props.plugin.id, 'enabled']) ?? false,
+  () => installation.value.settings.isPending?.([props.plugin.id, 'enabled']) ?? false,
 )
 
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
@@ -69,12 +69,12 @@ function onToggleEnabled(isOn: boolean): void {
 }
 
 function onRetry(): void {
-  installation.value.retryPlugin(props.plugin.id)
+  installation.value.plugin.retryPlugin(props.plugin.id)
 }
 
 async function onDeleteData(): Promise<void> {
   const pluginId = props.plugin.id
-  const problem = (await installation.value.deletePluginData?.(pluginId)) ?? ''
+  const problem = (await installation.value.plugin.deletePluginData?.(pluginId)) ?? ''
   if (props.plugin.id !== pluginId) return
   deleteProblem.value = problem
   await readFileCount(pluginId)
@@ -85,7 +85,7 @@ async function readFileCount(pluginId: string): Promise<void> {
   const request = countReads.acquireRequest()
   let count: number
   try {
-    count = (await installation.value.getPluginData?.(pluginId)) ?? 0
+    count = (await installation.value.plugin.getPluginData?.(pluginId)) ?? 0
   } catch {
     count = 0
   }

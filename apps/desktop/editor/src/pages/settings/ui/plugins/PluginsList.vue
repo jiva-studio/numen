@@ -39,7 +39,7 @@ watch(searchQuery, (newQuery) => {
 })
 
 const managed = computed(() =>
-  createManagedFromEntries(props.plugins, props.state.installation.catalog?.value ?? []),
+  createManagedFromEntries(props.plugins, props.state.installation.plugin.catalog?.value ?? []),
 )
 
 const enabled = computed(() =>
@@ -52,12 +52,12 @@ function onSelectPlugin(pluginId: string): void {
 }
 
 function onTogglePlugin(pluginId: string, isEnabled: boolean): void {
-  props.state.installation.write([{ at: [pluginId, 'enabled'], value: write(isEnabled) }])
+  props.state.installation.settings.write([{ at: [pluginId, 'enabled'], value: write(isEnabled) }])
 }
 
 /* -------------------------------- Helpers --------------------------------- */
 function isPluginEnabled(pluginId: string): boolean {
-  const val = props.state.installation.getSetting([pluginId, 'enabled'])
+  const val = props.state.installation.settings.getSetting([pluginId, 'enabled'])
   return typeof val === 'boolean' ? val : true
 }
 </script>

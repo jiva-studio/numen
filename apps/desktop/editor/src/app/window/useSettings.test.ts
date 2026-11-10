@@ -309,11 +309,11 @@ describe('the settings tab', () => {
       const write = vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
       const edits = [{ at: ['app', 'performance', 'profile'], value: '"eco"' }]
 
-      await (installation.write(edits) as unknown as Promise<void>)
+      await (installation.settings.write(edits) as unknown as Promise<void>)
       vi.advanceTimersByTime(1500)
 
-      expect(installation.getSetting(['app', 'performance', 'profile'])).toBe('eco')
-      expect(installation.getModels(['indexing'])).toStrictEqual([model()])
+      expect(installation.settings.getSetting(['app', 'performance', 'profile'])).toBe('eco')
+      expect(installation.settings.getModels(['indexing'])).toStrictEqual([model()])
       expect(write).toHaveBeenCalledWith(edits)
       expect(startRest).toHaveBeenCalledTimes(0)
       settings.close()
@@ -327,26 +327,26 @@ describe('the settings tab', () => {
     const { settings, core, writerFns } = createSettings({ getSettingsViews })
     const { installation } = settings.configured.state
 
-    expect(installation.getSettingsViews).toBe(getSettingsViews)
-    expect(installation.catalog).toBeDefined()
+    expect(installation.plugin.getSettingsViews).toBe(getSettingsViews)
+    expect(installation.plugin.catalog).toBeDefined()
 
     vi.spyOn(settings.rest.read, 'getCommittedSetting').mockReturnValue('committed-val')
     vi.spyOn(settings.rest.read, 'isPending').mockReturnValue(true)
-    expect(installation.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
+    expect(installation.settings.getConfirmedSetting?.(['a', 'b'])).toBe('committed-val')
     expect(settings.rest.read.getCommittedSetting).toHaveBeenCalledWith(['a', 'b'])
-    expect(installation.isPending?.(['a', 'b'])).toBe(true)
+    expect(installation.settings.isPending?.(['a', 'b'])).toBe(true)
     expect(settings.rest.read.isPending).toHaveBeenCalledWith(['a', 'b'])
 
     const startSpy = vi.spyOn(settings.rest, 'start').mockResolvedValue()
-    await (installation.writeSecret('s0a1b2c3d', 'secret-val') as unknown as Promise<void>)
+    await (installation.secrets.edit.writeSecret('s0a1b2c3d', 'secret-val') as unknown as Promise<void>)
     expect(core.writeSecret).toHaveBeenCalledWith('s0a1b2c3d', 'secret-val')
     expect(startSpy).toHaveBeenCalledTimes(1)
 
-    await (installation.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
+    await (installation.secrets.edit.deleteSecret('s0a1b2c3d') as unknown as Promise<void>)
     expect(core.deleteSecret).toHaveBeenCalledWith('s0a1b2c3d')
     expect(startSpy).toHaveBeenCalledTimes(2)
 
-    await (installation.allowPluginSecret(
+    await (installation.secrets.access.allowPluginSecret(
       's0a1b2c3d',
       'plugin.ocr',
       'apiKey',
@@ -358,7 +358,7 @@ describe('the settings tab', () => {
       'apiKey',
       'openrouter',
     )
-    await (installation.denyPluginSecret(
+    await (installation.secrets.access.denyPluginSecret(
       's0a1b2c3d',
       'plugin.ocr',
       'apiKey',
@@ -399,18 +399,18 @@ describe('the settings tab', () => {
       },
     ]
     vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed to start')
-    await (installation.retryPlugin('plugin.ocr') as unknown as Promise<void>)
+    await (installation.plugin.retryPlugin('plugin.ocr') as unknown as Promise<void>)
     expect(core.retryPlugin).toHaveBeenCalledWith('plugin.ocr')
     expect(writerFns.plugins).toHaveBeenCalledWith('OCR Plugin stopped: failed to start', 'warning')
 
     vi.mocked(core.retryPlugin).mockResolvedValueOnce('Failed unknown')
-    await (installation.retryPlugin('unknown.id') as unknown as Promise<void>)
+    await (installation.plugin.retryPlugin('unknown.id') as unknown as Promise<void>)
     expect(writerFns.plugins).toHaveBeenCalledWith('unknown.id stopped: failed unknown', 'warning')
 
     vi.useFakeTimers()
     try {
       startSpy.mockClear()
-      await (installation.writeSecret('s0a1b2c3d', 'secret-val-2') as unknown as Promise<void>)
+      await (installation.secrets.edit.writeSecret('s0a1b2c3d', 'secret-val-2') as unknown as Promise<void>)
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
       expect(startSpy).toHaveBeenCalledTimes(1)
@@ -421,7 +421,7 @@ describe('the settings tab', () => {
         isChosen: true,
         problem: '',
       })
-      expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('')
+      expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe('')
       expect(startSpy).toHaveBeenCalledTimes(1)
       vi.advanceTimersByTime(1500)
       expect(startSpy).toHaveBeenCalledTimes(1)
@@ -431,7 +431,7 @@ describe('the settings tab', () => {
         isChosen: false,
         problem: 'cancelled',
       })
-      expect(await installation.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
+      expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe('cancelled')
       expect(startSpy).toHaveBeenCalledTimes(1)
       settings.close()
     } finally {
@@ -439,27 +439,27 @@ describe('the settings tab', () => {
     }
 
     vi.mocked(core.choosePluginPath).mockRejectedValueOnce(createLostConnection('dialog crashed'))
-    expect(await installation.choosePath('plugin.ocr', 'dir')).toBe(
+    expect(await installation.plugin.choosePath('plugin.ocr', 'dir')).toBe(
       'Numen is not responding; retrying',
     )
 
-    expect(await installation.getPluginData?.('plugin.ocr')).toBe(5)
+    expect(await installation.plugin.getPluginData?.('plugin.ocr')).toBe(5)
     expect(core.getPluginData).toHaveBeenCalledWith('plugin.ocr')
 
-    expect(await installation.deletePluginData?.('plugin.ocr')).toBe('')
+    expect(await installation.plugin.deletePluginData?.('plugin.ocr')).toBe('')
     expect(core.deletePluginData).toHaveBeenCalledWith('plugin.ocr')
 
     vi.mocked(core.deletePluginData).mockRejectedValueOnce(
       createLostConnection('permission denied'),
     )
-    expect(await installation.deletePluginData?.('plugin.ocr')).toBe(
+    expect(await installation.plugin.deletePluginData?.('plugin.ocr')).toBe(
       'Numen is not responding; retrying',
     )
 
     vi.spyOn(settings.rest.write, 'writeSettings').mockRejectedValueOnce(
       createLostConnection('write failed'),
     )
-    const failed = installation.write([
+    const failed = installation.settings.write([
       { at: ['app', 'performance', 'profile'], value: '"eco"' },
     ]) as unknown as Promise<void>
     await failed.catch(() => undefined)

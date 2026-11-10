@@ -231,7 +231,7 @@ describe('a setting that changes', () => {
     const { installation } = settings.configured.state
     const reads = vi.mocked(core.getSettings).mock.calls.length
 
-    await (installation.write([
+    await (installation.settings.write([
       { at: ['app', 'appearance', 'mode'], value: '"dark"' },
     ]) as unknown as Promise<void>)
     for (const second of [1.5, 3.5, 7, 11, 16, 20]) {

@@ -126,79 +126,89 @@ const PLUGINS: readonly PluginInfo[] = [
 const DONE: string[] = []
 
 const INSTALLATION: Installation = {
-  app: ref([
-    {
-      key: 'appearance.theme',
-      type: 'enum',
-      title: 'Theme',
-      description: 'The stylesheet the window is drawn with.',
-      default: 'preset:numen',
-      optionsFrom: 'themes',
-      preview: true,
-      activeOptions: [
-        { value: 'preset:numen', title: 'numen', detail: '' },
-        { value: 'preset:dracula', title: 'dracula', detail: '' },
-        { value: 'mine:sea', title: 'sea', detail: '' },
-      ],
-      isShown: true,
-      value: 'preset:numen',
+  settings: {
+    getSetting: () => undefined,
+    getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
+    write: (edits) => {
+      DONE.push(`write ${edits.length}`)
     },
-    {
-      key: 'appearance.textScale',
-      type: 'range',
-      title: 'Reading size',
-      description: 'Scale of note and book text. 1 is the default.',
-      default: 1,
-      min: 0.8,
-      max: 1.75,
-      step: 0.1,
-      preview: true,
-      isShown: true,
-      value: 1.25,
+    file: ref('/numen.json'),
+  },
+  plugin: {
+    app: ref([
+      {
+        key: 'appearance.theme',
+        type: 'enum',
+        title: 'Theme',
+        description: 'The stylesheet the window is drawn with.',
+        default: 'preset:numen',
+        optionsFrom: 'themes',
+        preview: true,
+        activeOptions: [
+          { value: 'preset:numen', title: 'numen', detail: '' },
+          { value: 'preset:dracula', title: 'dracula', detail: '' },
+          { value: 'mine:sea', title: 'sea', detail: '' },
+        ],
+        isShown: true,
+        value: 'preset:numen',
+      },
+      {
+        key: 'appearance.textScale',
+        type: 'range',
+        title: 'Reading size',
+        description: 'Scale of note and book text. 1 is the default.',
+        default: 1,
+        min: 0.8,
+        max: 1.75,
+        step: 0.1,
+        preview: true,
+        isShown: true,
+        value: 1.25,
+      },
+    ]),
+    retryPlugin: () => {
+      DONE.push('plugin retried')
     },
-  ]),
-  createSecret: async () => {
-    DONE.push('secret created')
-    return 's00000001'
+    choosePath: async () => {
+      DONE.push('path chosen')
+      return ''
+    },
+    plugins: ref(PLUGINS),
   },
-  renameSecret: () => {
-    DONE.push('secret renamed')
+  secrets: {
+    edit: {
+      createSecret: async () => {
+        DONE.push('secret created')
+        return 's00000001'
+      },
+      renameSecret: () => {
+        DONE.push('secret renamed')
+      },
+      writeSecret: () => {
+        DONE.push('secret written')
+      },
+      deleteSecret: () => {
+        DONE.push('secret deleted')
+      },
+      deleteSecretGroup: () => {
+        DONE.push('secret group deleted')
+      },
+      moveSecret: () => {
+        DONE.push('secret moved')
+      },
+      renameSecretGroup: () => {
+        DONE.push('secret group renamed')
+      },
+    },
+    access: {
+      allowPluginSecret: () => {
+        DONE.push('secret allowed')
+      },
+      denyPluginSecret: () => {
+        DONE.push('secret denied')
+      },
+    },
   },
-  writeSecret: () => {
-    DONE.push('secret written')
-  },
-  deleteSecretGroup: () => {
-    DONE.push('secret group deleted')
-  },
-  deleteSecret: () => {
-    DONE.push('secret deleted')
-  },
-  moveSecret: () => {
-    DONE.push('secret moved')
-  },
-  renameSecretGroup: () => {
-    DONE.push('secret group renamed')
-  },
-  allowPluginSecret: () => {
-    DONE.push('secret allowed')
-  },
-  denyPluginSecret: () => {
-    DONE.push('secret denied')
-  },
-  retryPlugin: () => {
-    DONE.push('plugin retried')
-  },
-  choosePath: async () => {
-    DONE.push('path chosen')
-    return ''
-  },
-  getSetting: () => undefined,
-  getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-  write: (edits) => {
-    DONE.push(`write ${edits.length}`)
-  },
-  file: ref('/numen.json'),
-  plugins: ref(PLUGINS),
 }
 
 /** The settings of the window and of every plugin installed, each reached from its row. */

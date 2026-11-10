@@ -516,7 +516,7 @@ describe('PluginDetail with settings that follow one another', () => {
       'test.linked': { dictionary: '/home/a/dicts/ru/letters.txt' },
     })
     const choosePath = vi.fn(async () => 'letters.onnx: wrong type of file, expected .txt')
-    installation.choosePath = choosePath
+    installation.plugin.choosePath = choosePath
     const row = findRow(wrapper, 'dictionary')!
     const label = row.find('[data-testid="setting-path"]')
     expect(label.text()).toBe('…/ru/letters.txt')
@@ -600,7 +600,7 @@ describe('PluginDetail with settings that follow one another', () => {
   const chooseSecondPath = async (multiple: boolean) => {
     const stored = { executablePath: '/opt/one' }
     const detail = createDetail(createPathPlugin(multiple), { 'test.paths': stored })
-    detail.installation.choosePath = vi.fn(async () => {
+    detail.installation.plugin.choosePath = vi.fn(async () => {
       stored.executablePath = '/opt/two'
       return ''
     })

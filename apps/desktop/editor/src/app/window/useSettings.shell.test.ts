@@ -80,7 +80,7 @@ describe('the settings of the shell in the settings tab', () => {
 
     await settings.rest.start()
 
-    expect(settings.configured.state.installation.app?.value).toMatchObject([
+    expect(settings.configured.state.installation.plugin.app?.value).toMatchObject([
       { key: 'appearance.interfaceScale', value: 1.4 },
     ])
   })
@@ -90,7 +90,7 @@ describe('the appearance of the window after a write of the settings of the shel
   it('shows the theme, the mode and the scales the file now holds', async () => {
     const { settings } = createWindow()
 
-    await (settings.configured.state.installation.write([
+    await (settings.configured.state.installation.settings.write([
       { at: ['app', 'appearance', 'theme'], value: '"plugin:md.example.themes/dusk"' },
     ]) as unknown as Promise<void>)
 
@@ -108,7 +108,7 @@ describe('the appearance of the window after a write of the settings of the shel
   it('stays as it is after a write of the settings of a plugin', async () => {
     const { settings, listThemes } = createWindow()
 
-    await (settings.configured.state.installation.write([
+    await (settings.configured.state.installation.settings.write([
       { at: ['md.example.themes', 'accent'], value: '"teal"' },
     ]) as unknown as Promise<void>)
 
