@@ -2,19 +2,19 @@
  * Frontend entrypoint of the notes plugin.
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
-import { createNoteEditorView } from './view/noteEditorView'
+import MarkdownNoteEditor from './ui/MarkdownNoteEditor.vue'
+import { createNoteEditorView } from './ui/noteEditorView'
 import {
   createWikilinkExtension,
   type WikilinkOption,
   type WikilinkOptions,
-} from './extensions/wikilinks'
-import { parseFrontmatter, type FrontmatterResult } from './frontmatter'
+} from './lib/wikilinks'
+import { parseFrontmatter, type FrontmatterResult } from './lib/frontmatter'
 import {
   bindMarkdownEditorPreferences,
   readMarkdownEditorPreferences,
   type MarkdownEditorPreferences,
-} from './preferences'
+} from './model/preferences'
 
 export {
   MarkdownNoteEditor,

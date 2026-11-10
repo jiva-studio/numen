@@ -1,14 +1,14 @@
 import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
-import { ConversationView } from './conversation'
-import { AGENT, createAgentKind } from './kind'
+import ConversationView from './ui/ConversationView.vue'
+import { AGENT, createAgentKind } from './model/kind'
 import { useAgentConversation } from './model/useAgentConversation'
 import { WORDS } from './words'
 
 export { AgentTab }
-export { AGENT, createAgentKind } from './kind'
-export { ConversationView } from './conversation'
+export { AGENT, createAgentKind } from './model/kind'
+export { ConversationView }
 export { useAgentConversation } from './model/useAgentConversation'
 export * from './types'
 export { WORDS } from './words'
@@ -37,6 +37,7 @@ export function activate(context: PluginContext): void {
         }),
         deps,
       ),
+    AgentTab,
   )
   context.register.tabKind(chats.kind)
 

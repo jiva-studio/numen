@@ -179,7 +179,7 @@ export default [
   },
   {
     files: ['frontend/**/*.{ts,vue}'],
-    ignores: ['**/*.test.ts', '**/*.stories.ts', 'frontend/{fixtures,testdata,testing}/**'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', 'frontend/**/{fixtures,testdata,testing}/**'],
     plugins: { boundaries },
     settings: {
       'import/resolver': { typescript: { alwaysTryTypes: true } },

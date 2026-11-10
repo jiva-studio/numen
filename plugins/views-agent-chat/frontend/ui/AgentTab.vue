@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
-import { Agent } from '../agent'
+import { Agent } from './Agent.vue'
 import type { AgentModelOption } from '../message-composer'
-import type { Turn } from '../thread'
+import type { Turn } from '../types'
 import { WORDS as words } from '../words'
 import type { AgentTabState } from '../model/useAgentConversation'
 

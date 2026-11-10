@@ -6,9 +6,9 @@
  * they are and what choosing one does are the caller's.
  */
 import { computed, ref, watch } from 'vue'
-import { PlexHeading } from './plex-heading'
 import type { NodeHeadings } from '../../lib/inside'
 import { getOpenHeadings, scrollBy, type Arrow } from '../../lib/open'
+import type { PlexHeading } from '../../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

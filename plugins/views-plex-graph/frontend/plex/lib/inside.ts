@@ -7,22 +7,13 @@
  */
 import type { PlexOptions, Size } from './arrange'
 import type { PlacedNode } from './node'
+import type { PlexHeading } from '../../types'
 
 /** How far in a heading is ever set, counted in levels. */
 const DEEPEST = 3
 
 /** The clearance around the headings, as a fraction of a heading's height. */
 const PAD = 0.25
-
-/**
- * One heading of a node, as the caller describes it. The identifier is opaque:
- * the plex has no way to ask what it addresses.
- */
-export interface PlexHeading {
-  readonly id: string
-  readonly text: string
-  readonly level: number
-}
 
 /** One heading where it hangs. */
 export interface HungHeading {
