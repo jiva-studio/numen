@@ -314,8 +314,8 @@ func (s *State) SetIndexing(progress indexport.IndexProgress, embedder embedding
 	}
 }
 
-// ReportWordsAlone records that the search runs on words only, with the reason. The window is told
-// as a task because one opened from a desktop entry has no terminal.
+// ReportWordsAlone records that the search runs on words only, with the reason. It is a task because
+// a window opened from a desktop entry has no terminal.
 func (s *State) ReportWordsAlone(err error) {
 	s.reportTask(vaultreading.Task{ID: wordsAlone, Title: "Search by words only", Error: err.Error()})
 }
