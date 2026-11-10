@@ -11,7 +11,7 @@ import { DESIGNED } from '@/entities/settings'
 import type { Appearance, Themes } from '@/entities/settings'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '../lib/head'
 import { createWindowAppearance } from './appearance'
-import { WORDS as words } from '@/shared/words'
+import { APPEARANCE_WORDS as words } from '../words'
 
 /** The theme the page was served with. */
 const SERVED = ':root { --numen-surface: #101014 }'

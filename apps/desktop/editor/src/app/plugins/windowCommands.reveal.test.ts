@@ -5,8 +5,13 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
-import { resolveChoice, createNameItem, type NameMatch } from '@/features/command-palette'
-import { WORDS } from '@/shared/words'
+import {
+  resolveChoice,
+  createNameItem,
+  PALETTE_WORDS,
+  type NameMatch,
+} from '@/features/command-palette'
+import { WORDS as windowWords } from '@/shared/words'
 import {
   createRealWindow,
   readManifest,
@@ -83,7 +88,7 @@ describe('the entries of a search result that show a note', () => {
       type: 'note',
     }
     const entries = one.pluginHost.slots.getEntries(SLOT.paletteSearchResult, REEF)
-    const row = createNameItem(found, WORDS, entries)
+    const row = createNameItem(found, { ...windowWords, ...PALETTE_WORDS }, entries)
     const actions = row.hit.actionIds.filter((id) => row.hit.actionCommands?.[id] === REVEAL)
     expect(actions).not.toStrictEqual([])
 
