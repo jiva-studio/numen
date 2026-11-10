@@ -8,13 +8,13 @@ import { mountWindow } from '@/testing/window'
 
 const start = vi.hoisted(() => ({ isStarted: { value: false } }))
 
-vi.mock('./bootstrap/useAppBootstrap', async () => {
+vi.mock('./bootstrap/createAppBootstrap', async () => {
   const { ref } = await import('vue')
   const isStarted = ref(false)
   start.isStarted = isStarted
   return {
     STEP_LIMIT_MS: 10_000,
-    useAppBootstrap: () => ({ failure: ref(''), isStarted, retry: vi.fn() }),
+    createAppBootstrap: () => ({ failure: ref(''), isStarted, retry: vi.fn() }),
   }
 })
 

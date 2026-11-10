@@ -104,7 +104,7 @@ func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 	t.Helper()
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", dirs...)
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
@@ -113,7 +113,7 @@ func newBuiltInHost(t *testing.T, dirs ...string) *Host {
 
 func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[string]string) (http.Handler, error)) {
 	t.Helper()
-	if err := host.RegisterBuiltIn(manifest, serve); err != nil {
+	if err := host.Discovery.RegisterBuiltIn(manifest, serve); err != nil {
 		t.Fatalf("RegisterBuiltIn: %v", err)
 	}
 }
@@ -135,7 +135,7 @@ func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
 	registerBuiltIn(t, host, newBuiltInManifest(secondBuiltInID), newBuiltInBackend().serve("second agent"))
 
 	for id, want := range map[string]string{firstBuiltInID: "first agent", secondBuiltInID: "second agent"} {
-		endpoint, err := host.EnsureActive(t.Context(), id)
+		endpoint, err := host.Activation.EnsureActive(t.Context(), id)
 		if err != nil {
 			t.Fatalf("EnsureActive(%s): %v", id, err)
 		}
@@ -153,7 +153,7 @@ func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
 
-	found, ok := host.FindPluginByCapability("ai.agent.provider")
+	found, ok := host.Registry.FindPluginByCapability("ai.agent.provider")
 	if !ok || found.Manifest.ID != firstBuiltInID {
 		t.Fatalf("FindPluginByCapability(agent) = %+v, %v", found, ok)
 	}
@@ -163,11 +163,11 @@ func TestABuiltInPluginIsFoundByItsCapability(t *testing.T) {
 // given names it to the host.
 func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	host := newBuiltInHost(t)
-	host.SetVaultPath("/vaults/example")
+	host.Mode.SetVaultPath("/vaults/example")
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
 
-	endpoint, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	endpoint, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
@@ -178,7 +178,7 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 	if vars["NUMEN_PLUGIN_TOKEN"] == "" || vars["NUMEN_PLUGIN_TOKEN"] != endpoint.Token {
 		t.Errorf("token %q, endpoint token %q", vars["NUMEN_PLUGIN_TOKEN"], endpoint.Token)
 	}
-	if id, ok := host.GetPluginIDByToken(endpoint.Token); !ok || id != firstBuiltInID {
+	if id, ok := host.Activation.GetPluginIDByToken(endpoint.Token); !ok || id != firstBuiltInID {
 		t.Errorf("GetPluginIDByToken = %q, %v", id, ok)
 	}
 }
@@ -186,13 +186,13 @@ func TestABuiltInPluginIsGivenItsOwnLaunchVariables(t *testing.T) {
 // Configure calls the built-in plugin's own lifecycle service with its settings and secrets.
 func TestABuiltInPluginIsConfiguredWithItsSettingsAndSecrets(t *testing.T) {
 	host := newBuiltInHost(t)
-	host.SetKeyStore(newKeys(map[string]string{"secret/s0a1b2c3d": fromKeychain}))
-	host.SetSecretSource(allowOne(firstBuiltInID))
-	host.SetSettings(map[string]map[string]any{firstBuiltInID: {"model": "large-model"}})
+	host.Config.SetKeyStore(newKeys(map[string]string{"secret/s0a1b2c3d": fromKeychain}))
+	host.Config.SetSecretSource(allowOne(firstBuiltInID))
+	host.Settings.SetSettings(map[string]map[string]any{firstBuiltInID: {"model": "large-model"}})
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
 
-	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 	call := backend.probe.last(t)
@@ -212,7 +212,7 @@ func TestABuiltInPluginWhoseBackendFailsIsNotActivated(t *testing.T) {
 		return nil, failure
 	})
 
-	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
@@ -224,19 +224,19 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 	serve := newBuiltInBackend().serve("first agent")
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), serve)
 
-	if err := host.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errBuiltInRegistered) {
+	if err := host.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errBuiltInRegistered) {
 		t.Errorf("second registration = %v, want errBuiltInRegistered", err)
 	}
 	other := NewHost(testsupport.GetMachine(), "mobile.reader")
 	t.Cleanup(func() {
-		if err := other.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := other.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
-	if err := other.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errNotForTarget) {
+	if err := other.Discovery.RegisterBuiltIn(newBuiltInManifest(firstBuiltInID), serve); !errors.Is(err, errNotForTarget) {
 		t.Errorf("registration for another target = %v, want errNotForTarget", err)
 	}
-	if err := host.RegisterBuiltIn([]byte(`{"id": "not a manifest"`), serve); err == nil {
+	if err := host.Discovery.RegisterBuiltIn([]byte(`{"id": "not a manifest"`), serve); err == nil {
 		t.Error("a manifest that does not parse is registered")
 	}
 }
@@ -246,16 +246,16 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	launched := make(chan string, 1)
-	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launched <- p.Manifest.ID
 		return nil, nil, errors.New("no process in this test")
 	})
 
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
 		t.Fatal("the launch that failed activated the plugin")
 	}
 	if got := <-launched; got != "org.example.sample" {
@@ -268,7 +268,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	manifest, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
@@ -276,22 +276,22 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in sample"))
-	if p, _ := host.GetPlugin("org.example.sample"); p.Dir == "" {
+	if p, _ := host.Registry.GetPlugin("org.example.sample"); p.Dir == "" {
 		t.Fatal("the copy on disk was replaced by the built-in")
 	}
 
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	p, ok := host.GetPlugin("org.example.sample")
+	p, ok := host.Registry.GetPlugin("org.example.sample")
 	if !ok || p.Dir != "" {
 		t.Fatalf("GetPlugin = %+v, %v; want the built-in", p, ok)
 	}
-	endpoint, err := host.EnsureActive(t.Context(), "org.example.sample")
+	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
@@ -313,11 +313,11 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	t.Setenv(process.EnvONNXRuntimeLib, "")
 	t.Setenv(process.EnvONNXProvider, "")
 	host := newBuiltInHost(t)
-	host.SetDependencies(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
+	host.Services.SetDependencies(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), backend.serve("first agent"))
 
-	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 	if got := os.Getenv(process.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
@@ -336,10 +336,10 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	t.Setenv(process.EnvONNXRuntimeLib, "")
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
-	host.SetDependencies(newFixedCatalog("", "", failure))
+	host.Services.SetDependencies(newFixedCatalog("", "", failure))
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID, "onnxruntime"), newBuiltInBackend().serve("first agent"))
 
-	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
@@ -352,12 +352,12 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), newBuiltInBackend().serve("first agent"))
-	p, _ := host.GetPlugin(firstBuiltInID)
-	host.mu.RLock()
-	sup := host.supervisors[firstBuiltInID]
-	host.mu.RUnlock()
+	p, _ := host.Registry.GetPlugin(firstBuiltInID)
+	host.Registry.t.mu.RLock()
+	sup := host.Registry.t.supervisors[firstBuiltInID]
+	host.Registry.t.mu.RUnlock()
 
-	endpoint, err := host.activatePlugin(t.Context(), p, sup)
+	endpoint, err := host.Processes.start(t.Context(), p, sup)
 
 	if !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("expected errActivationAborted, got %v", err)
@@ -389,7 +389,7 @@ func TestABuiltInPluginThatUsesAnotherProtocolIsRefused(t *testing.T) {
 		return mux, nil
 	})
 
-	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 	if !errors.Is(err, manifest.ErrUnsupportedProtocol) || !strings.Contains(err.Error(), firstBuiltInID+" uses protocol 2") {
 		t.Fatalf("EnsureActive() = %v, want %v naming the plugin", err, manifest.ErrUnsupportedProtocol)
 	}
@@ -462,12 +462,12 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	host := newBuiltInHost(t)
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
-	p, _ := host.GetPlugin(firstBuiltInID)
-	host.mu.RLock()
-	sup := host.supervisors[firstBuiltInID]
-	host.mu.RUnlock()
+	p, _ := host.Registry.GetPlugin(firstBuiltInID)
+	host.Registry.t.mu.RLock()
+	sup := host.Registry.t.supervisors[firstBuiltInID]
+	host.Registry.t.mu.RUnlock()
 
-	if _, err := host.activatePlugin(t.Context(), p, sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
+	if _, err := host.Processes.start(t.Context(), p, sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("activatePlugin = %v, want errActivationAborted", err)
 	}
 
@@ -483,7 +483,7 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	manifestJSON, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
@@ -499,14 +499,14 @@ func TestInProcess_RemovedBuiltInKeepsOwnPermissions(t *testing.T) {
 	if err := os.RemoveAll(filepath.Join(tmp, "sample")); err != nil {
 		t.Fatal(err)
 	}
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	if err := host.CheckPluginPermission("org.example.sample", manifest.PermissionVaultWrite); err != nil {
+	if err := host.Activation.CheckPluginPermission("org.example.sample", manifest.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
-	if err := host.CheckPluginPermission("org.example.sample", manifest.PermissionVaultRead); err == nil {
+	if err := host.Activation.CheckPluginPermission("org.example.sample", manifest.PermissionVaultRead); err == nil {
 		t.Error("the permission of the copy that left is still granted")
 	}
 }
@@ -516,7 +516,7 @@ func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 	tmp := t.TempDir()
 	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	manifest, err := os.ReadFile(filepath.Join(tmp, "sample", "manifest.json"))
@@ -525,7 +525,7 @@ func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 	}
 	registerBuiltIn(t, host, manifest, newBuiltInBackend().serve("built-in sample"))
 
-	endpoint, err := host.EnsureActive(t.Context(), "org.example.sample")
+	endpoint, err := host.Activation.EnsureActive(t.Context(), "org.example.sample")
 
 	if err == nil {
 		t.Fatalf("the copy on disk was served by the built-in: %+v", endpoint)
@@ -536,14 +536,14 @@ func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 func TestAShutdownThatFailsOnAnUnactivatedBuiltInIsReported(t *testing.T) {
 	host := newBuiltInHost(t)
 	reported := make(chan error, 4)
-	host.SetErrorHandler(func(err error) { reported <- err })
+	host.Failures.SetErrorHandler(func(err error) { reported <- err })
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {
 		mux := http.NewServeMux()
 		mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(newerProtocolLifecycle{}))
 		return mux, nil
 	})
 
-	_, err := host.EnsureActive(t.Context(), firstBuiltInID)
+	_, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID)
 
 	if !errors.Is(err, manifest.ErrUnsupportedProtocol) {
 		t.Fatalf("EnsureActive() = %v, want %v", err, manifest.ErrUnsupportedProtocol)
@@ -567,7 +567,7 @@ func TestABuiltInPluginIsNotGivenTheVariablesOfTheHostProcess(t *testing.T) {
 	backend := newBuiltInBackend()
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), backend.serve("first agent"))
 
-	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
 

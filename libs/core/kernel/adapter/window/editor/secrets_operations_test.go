@@ -303,7 +303,7 @@ func TestSecretsOfAGroupNoPluginAsksForRemainWhenItsLastPluginIsUninstalled(t *t
 	if err := os.RemoveAll(filepath.Join(w.pluginsd, "beta")); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.host.Discover(); err != nil {
+	if err := w.host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -322,7 +322,7 @@ func TestUninstallingAPluginRemovesItsPermissionsAndDisablingKeepsThem(t *testin
 	w.allow(t, one, alphaID, "apiKey", "openrouter")
 	w.allow(t, one, betaID, "apiKey", "openai")
 
-	if err := w.host.SetPluginEnabled(t.Context(), betaID, false); err != nil {
+	if err := setEnabled(t.Context(), w.host, betaID, false); err != nil {
 		t.Fatal(err)
 	}
 	if got := allowedOf(w.find(t, one)); len(got) != 2 {
@@ -332,7 +332,7 @@ func TestUninstallingAPluginRemovesItsPermissionsAndDisablingKeepsThem(t *testin
 	if err := os.RemoveAll(filepath.Join(w.pluginsd, "beta")); err != nil {
 		t.Fatal(err)
 	}
-	if err := w.host.Discover(); err != nil {
+	if err := w.host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	if got := allowedOf(w.find(t, one)); !slices.Equal(got, []string{permission(alphaID, "apiKey", "openrouter")}) {
@@ -356,7 +356,7 @@ func TestAnUpdateThatDropsADeclarationRemovesOnlyThePermissionsOfThatDeclaration
 		t.Fatal("the fixture manifest has no orgId declaration to drop")
 	}
 	writeFile(t, filepath.Join(w.pluginsd, "alpha", "manifest.json"), strings.Replace(updated, `"1.0.0"`, `"1.1.0"`, 1))
-	if err := w.host.Discover(); err != nil {
+	if err := w.host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 

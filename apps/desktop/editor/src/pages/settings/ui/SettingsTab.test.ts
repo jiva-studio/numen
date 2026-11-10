@@ -14,7 +14,7 @@ import { Select, Switch } from '@numen/ui'
 
 import type { Model, PluginInfo, PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
-import { createInstallation } from '@/testing/installation'
+import { createInstallation, createSettingsState } from '@/testing/installation'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
 import { WORDS as words } from '../words'
@@ -123,7 +123,7 @@ const createTab = (
   })
   const initialSearchQuery = ref('')
   const tab = mount(SettingsTab, {
-    props: { state: { installation, initialSearchQuery } },
+    props: { state: createSettingsState(installation, { initialSearchQuery }) },
     attachTo: document.body,
   })
   mountedWrappers.push(tab)

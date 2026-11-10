@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 )
 
 // visibility is the window going out of sight and returning to it. Hiding
@@ -92,7 +92,7 @@ func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 
 // quitBound is how long the window waits for a page that does not respond to
 // write the work only it holds. A vault being changed waits for the same bound.
-const quitBound = editor.FlushTimeout
+const quitBound = windowsession.FlushTimeout
 
 // vaultFlush flushes the vault, whichever way the window is requested to close.
 //

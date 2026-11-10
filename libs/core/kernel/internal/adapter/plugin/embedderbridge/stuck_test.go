@@ -3,6 +3,7 @@ package embedderbridge
 import (
 	"context"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -66,7 +67,7 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	cmd := exec.CommandContext(t.Context(), "sleep", "30")
@@ -78,11 +79,11 @@ func TestTheModelReadDoesNotWaitForAStuckPlugin(t *testing.T) {
 		plugintest.ReapProcess(t, cmd.Process)
 	}()
 	port := plugintest.GetPort(t, server)
-	host.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, _ manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return cmd.Process, io.NopCloser(strings.NewReader(fmt.Sprintf("NUMEN_READY port=%d\n", port))), nil
 	})
 
-	bridge, err := Open(t.Context(), host)
+	bridge, err := Open(t.Context(), pluginhost.Join(host))
 	if err != nil {
 		t.Fatal(err)
 	}

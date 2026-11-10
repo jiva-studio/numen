@@ -45,7 +45,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	plugintest.CreateTestPluginTree(t, tmp)
 	writeSecondPlugin(t, tmp)
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", tmp)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
@@ -61,7 +61,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 		}
 	})
 	stuck := make(chan struct{})
-	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "org.example.sample" {
 			close(stuck)
 			return cmd.Process, silent, nil
@@ -73,7 +73,7 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 	var stuckErr error
 	go func() {
 		defer close(stuckDone)
-		_, stuckErr = host.EnsureActive(t.Context(), "org.example.sample")
+		_, stuckErr = host.Activation.EnsureActive(t.Context(), "org.example.sample")
 	}()
 	select {
 	case <-stuck:
@@ -83,9 +83,9 @@ func TestAnotherPluginStartsWhileAPluginIsNotReady(t *testing.T) {
 
 	reply := make(chan error, 1)
 	go func() {
-		_, err := host.EnsureActive(t.Context(), "org.example.second")
-		host.GetPluginInfos()
-		host.GetPluginStatuses()
+		_, err := host.Activation.EnsureActive(t.Context(), "org.example.second")
+		host.Registry.GetPluginInfos()
+		host.Registry.GetPluginStatuses()
 		reply <- err
 	}()
 	select {

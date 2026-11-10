@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginhost"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -23,14 +24,14 @@ func newRepositoryHandler(b *testing.B) *command.Handler {
 	b.Helper()
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", repositoryPlugins)
 	b.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(b.Context()), 0); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(b.Context()), 0); err != nil {
 			b.Error(err)
 		}
 	})
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		b.Fatal(err)
 	}
-	commands := plugincommand.NewCommands(manifestlist.Open(host), commandbridge.Open(host), host, nil, nil)
+	commands := plugincommand.NewCommands(manifestlist.Open(pluginhost.Join(host)), commandbridge.Open(pluginhost.Join(host)), pluginhost.Join(host), nil, nil)
 	return command.NewHandler(shownVault{}, commands, &versionItems{})
 }
 

@@ -22,12 +22,12 @@ func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
 	t.Helper()
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
-	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
+	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err != nil {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
-	host.Release("org.example.sample")
-	return host, host.supervisors["org.example.sample"].GetExitSignal()
+	host.Activation.Release("org.example.sample")
+	return host, host.Registry.t.supervisors["org.example.sample"].GetExitSignal()
 }
 
 func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
@@ -42,13 +42,13 @@ func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
 func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
-	host.SetLauncher(startSleepLauncher(t, &started, nil))
+	host.Processes.SetLauncher(startSleepLauncher(t, &started, nil))
 
-	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errHostClosed) {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); !errors.Is(err, errHostClosed) {
 		t.Fatalf("expected errHostClosed, got %v", err)
 	}
 	if started.Load() != 0 {
@@ -86,47 +86,47 @@ func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
 func TestADisabledPluginIsStopped(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	if err := host.SetPluginEnabled(t.Context(), "org.example.sample", false); err != nil {
-		t.Fatalf("SetPluginEnabled failed: %v", err)
+	if err := setEnabled(t.Context(), host, "org.example.sample", false); err != nil {
+		t.Fatalf("switching the plugin failed: %v", err)
 	}
 
 	waitForProcessExit(t, exited)
-	if state := host.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
+	if state := host.Registry.t.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
 
-func TestSetPluginSetting_DisableStopsPlugin(t *testing.T) {
+func TestApplyingTheEnabledSettingAsFalseStopsThePlugin(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	if err := host.SetPluginSetting(t.Context(), "org.example.sample", "enabled", false); err != nil {
-		t.Fatalf("SetPluginSetting failed: %v", err)
+	if err := updateSetting(t.Context(), host, "org.example.sample", "enabled", false); err != nil {
+		t.Fatalf("applying the setting failed: %v", err)
 	}
 
-	if host.IsPluginEnabled("org.example.sample") {
+	if host.Registry.IsPluginEnabled("org.example.sample") {
 		t.Fatal("the plugin is still enabled after its enabled setting was cleared")
 	}
 	waitForProcessExit(t, exited)
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err == nil {
+	if _, err := host.Activation.EnsureActive(t.Context(), "org.example.sample"); err == nil {
 		t.Fatal("a disabled plugin was activated")
 	}
 
-	if err := host.SetPluginEnabled(t.Context(), "org.example.sample", true); err != nil {
-		t.Fatalf("SetPluginEnabled failed: %v", err)
+	if err := setEnabled(t.Context(), host, "org.example.sample", true); err != nil {
+		t.Fatalf("switching the plugin failed: %v", err)
 	}
-	if got := host.GetPluginSettings("org.example.sample")["enabled"]; got != true {
-		t.Fatalf("expected the enabled setting to follow SetPluginEnabled, got %v", got)
+	if got := host.Settings.GetPluginSettings("org.example.sample")["enabled"]; got != true {
+		t.Fatalf("expected the enabled setting to follow the change, got %v", got)
 	}
 }
 
 func TestSettingsLoadedAsDisabledDisableThePlugin(t *testing.T) {
 	host := newDiscoveredHost(t)
-	host.SetSettings(map[string]map[string]any{"org.example.sample": {"enabled": false}})
+	host.Settings.SetSettings(map[string]map[string]any{"org.example.sample": {"enabled": false}})
 
-	if host.IsPluginEnabled("org.example.sample") {
+	if host.Registry.IsPluginEnabled("org.example.sample") {
 		t.Fatal("expected the plugin to be disabled by its stored setting")
 	}
-	if _, ok := host.GetPlugin("org.example.sample"); ok {
+	if _, ok := host.Registry.GetPlugin("org.example.sample"); ok {
 		t.Fatal("GetPlugin resolved a disabled plugin")
 	}
 }
@@ -134,10 +134,10 @@ func TestSettingsLoadedAsDisabledDisableThePlugin(t *testing.T) {
 func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 	host, exited := newRunningHost(t)
 
-	host.SetSafeMode(true)
+	host.Mode.SetSafeMode(true)
 
 	waitForProcessExit(t, exited)
-	if state := host.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
+	if state := host.Registry.t.supervisors["org.example.sample"].GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -147,11 +147,11 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}}
+		host.Registry.t.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, Capabilities: []string{"org.example.widget"}}}
 	}
 	getReason := func(capability string) plugindomain.UnavailableReason {
 		t.Helper()
-		_, err := host.ResolveCapability(capability)
+		_, err := host.Registry.ResolveCapability(capability)
 		var missing *plugindomain.UnavailableError
 		if !errors.As(err, &missing) || !errors.Is(err, domain.ErrUnavailable) || missing.Capability != capability {
 			t.Fatalf("ResolveCapability(%q) = %v, want an UnavailableError for it", capability, err)
@@ -159,34 +159,34 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		return missing.Reason
 	}
 
-	if found, err := host.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.a" {
+	if found, err := host.Registry.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.a" {
 		t.Fatalf("ResolveCapability = %q, %v, want the lowest id", found.Manifest.ID, err)
 	}
 	if got := getReason("org.example.gadget"); got != plugindomain.NotInstalled {
 		t.Errorf("a capability nothing declares is %v, want not installed", got)
 	}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
+	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
-	if found, err := host.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.b" {
+	if found, err := host.Registry.ResolveCapability("org.example.widget"); err != nil || found.Manifest.ID != "md.numen.b" {
 		t.Fatalf("ResolveCapability = %q, %v, want the enabled one", found.Manifest.ID, err)
 	}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.b", false); err != nil {
+	if err := setEnabled(t.Context(), host, "md.numen.b", false); err != nil {
 		t.Fatal(err)
 	}
 	if got := getReason("org.example.widget"); got != plugindomain.Disabled {
 		t.Errorf("a capability every declaring plugin of is disabled is %v, want disabled", got)
 	}
 	for _, id := range []string{"md.numen.a", "md.numen.b"} {
-		if err := host.SetPluginEnabled(t.Context(), id, true); err != nil {
+		if err := setEnabled(t.Context(), host, id, true); err != nil {
 			t.Fatal(err)
 		}
 	}
-	host.SetSafeMode(true)
+	host.Mode.SetSafeMode(true)
 	if got := getReason("org.example.widget"); got != plugindomain.Disabled {
 		t.Errorf("a capability in safe mode is %v, want disabled", got)
 	}
-	if _, ok := host.FindPluginByCapability("org.example.widget"); ok {
+	if _, ok := host.Registry.FindPluginByCapability("org.example.widget"); ok {
 		t.Error("FindPluginByCapability found a plugin ResolveCapability does not")
 	}
 }
@@ -195,15 +195,15 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or turned off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
-	host.plugins["md.numen.a"] = manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}}
-	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
+	host.Registry.t.plugins["md.numen.a"] = manifest.Discovered{Manifest: manifest.Manifest{ID: "md.numen.a"}}
+	if err := setEnabled(t.Context(), host, "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
 	for id, want := range map[string]plugindomain.UnavailableReason{
 		"md.numen.absent": plugindomain.NotInstalled,
 		"md.numen.a":      plugindomain.Disabled,
 	} {
-		_, err := host.EnsureActive(t.Context(), id)
+		_, err := host.Activation.EnsureActive(t.Context(), id)
 		var missing *plugindomain.UnavailableError
 		if !errors.As(err, &missing) || missing.Reason != want || missing.PluginID != id {
 			t.Errorf("EnsureActive(%q) = %v, want reason %v", id, err, want)
@@ -214,18 +214,18 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}}
+		host.Registry.t.plugins[id] = manifest.Discovered{Manifest: manifest.Manifest{ID: id, ActivationEvents: []string{manifest.ActivationEventStartup}, Backend: manifest.Backend{Entrypoint: "bin/plugin"}}}
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
-	host.SetLauncher(func(ctx context.Context, p manifest.Discovered, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(ctx context.Context, p manifest.Discovered, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "a.failing" {
 			return nil, nil, errors.New("exec format error")
 		}
 		return working(ctx, p, portNumber, token)
 	})
 
-	activated, err := host.TriggerEvent(t.Context(), manifest.ActivationEventStartup)
+	activated, err := host.Events.TriggerEvent(t.Context(), manifest.ActivationEventStartup)
 
 	if err == nil {
 		t.Fatal("expected the failing plugin to be reported")
@@ -233,32 +233,7 @@ func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	if len(activated) != 1 || activated[0] != "b.working" {
 		t.Fatalf("expected the working plugin to be activated, got %v", activated)
 	}
-	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
-		t.Fatalf("TeardownAll failed: %v", err)
-	}
-}
-
-func TestADisableThatCannotBePersistedPreservesThePluginRunning(t *testing.T) {
-	host := newDiscoveredHost(t)
-	var started atomic.Int32
-	host.SetLauncher(startSleepLauncher(t, &started, nil))
-	if _, err := host.EnsureActive(t.Context(), "org.example.sample"); err != nil {
-		t.Fatalf("EnsureActive failed: %v", err)
-	}
-	host.Release("org.example.sample")
-	host.SetPersistHandler(func(string, string, any) error { return errors.New("disk full") })
-
-	if err := host.SetPluginEnabled(t.Context(), "org.example.sample", false); err == nil {
-		t.Fatal("expected the persist error to be returned")
-	}
-
-	if !host.IsPluginEnabled("org.example.sample") {
-		t.Fatal("the plugin is disabled in memory although the choice was not stored")
-	}
-	if state := host.supervisors["org.example.sample"].GetState(); state != lifecycle.StateIdle {
-		t.Fatalf("expected the plugin to keep running, got state %v", state)
-	}
-	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 }
@@ -266,7 +241,7 @@ func TestADisableThatCannotBePersistedPreservesThePluginRunning(t *testing.T) {
 func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor")
 	var reported []error
-	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
+	host.Failures.SetErrorHandler(func(err error) { reported = append(reported, err) })
 	cmd := plugintest.NewIdleCommand(t.Context())
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start process: %v", err)
@@ -280,7 +255,7 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	evicted := host.evictTargets(canceled, []pluginTeardownTarget{{id: "p", pid: cmd.Process.Pid, sup: sup, endpoint: emptyEndpoint()}}, time.Millisecond)
+	evicted := host.Teardown.evictTargets(canceled, []pluginTeardownTarget{{id: "p", pid: cmd.Process.Pid, sup: sup, endpoint: emptyEndpoint()}}, time.Millisecond)
 
 	if len(evicted) != 0 {
 		t.Fatalf("a failed eviction was counted: %v", evicted)

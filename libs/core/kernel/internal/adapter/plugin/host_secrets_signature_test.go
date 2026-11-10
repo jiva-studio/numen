@@ -22,8 +22,8 @@ func (c *countedKeys) GetKey(ctx context.Context, name string) (string, error) {
 func TestCheckingTheListOfSecretsDoesNotReadTheKeyStore(t *testing.T) {
 	store := &countedKeys{keys: newKeys(map[string]string{"secret/" + secretID: fromKeychain})}
 	host, _ := newSecretHost(t, store)
-	host.SetSecretSource(allowOne(secretPluginID))
-	if err := host.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
+	host.Config.SetSecretSource(allowOne(secretPluginID))
+	if err := host.Config.NotifyPluginConfig(t.Context(), secretPluginID); err != nil {
 		t.Fatal(err)
 	}
 	readsBefore := store.reads.Load()
@@ -31,7 +31,7 @@ func TestCheckingTheListOfSecretsDoesNotReadTheKeyStore(t *testing.T) {
 		t.Fatal("the Configure call carried no value")
 	}
 
-	if err := host.Refresh(t.Context()); err != nil {
+	if err := host.Config.Refresh(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	if got := store.reads.Load(); got != readsBefore {

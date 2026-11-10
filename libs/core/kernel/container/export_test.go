@@ -2,7 +2,6 @@ package container
 
 import (
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 )
 
@@ -19,6 +18,3 @@ func DefaultSettings() settingsadapter.File { return defaultSettings() }
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return settingsThemes(c.settings(), say)
 }
-
-// LendPluginHost lends the capabilities of host.
-func LendPluginHost(host *plugin.Host) *PluginHost { return lendPluginHost(host) }
