@@ -7,7 +7,6 @@ package container
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
@@ -30,6 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
@@ -90,7 +90,7 @@ type Resources struct {
 	secretGate      *secret.Gate
 	pluginChanges   *pluginchanges.Signals
 	programs        *settingsadapter.ProgramList
-	subscribedHosts sync.Map
+	subscribedHosts settingsusecase.HostSubscriptions
 }
 
 // NewResources returns the resources of one container.

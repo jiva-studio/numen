@@ -3,26 +3,16 @@ package settingevents
 import (
 	"maps"
 	"slices"
-	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 )
 
-// Values is the value in force of every declared setting as JSON, by its path joined with
-// JoinPath. A setting with neither a stored value nor a default is left out.
-type Values map[string]string
-
-const pathSeparator = "\x00"
-
-// JoinPath is the key of a setting in Values.
-func JoinPath(path []string) string { return strings.Join(path, pathSeparator) }
-
 // Source is where the events come from.
 type Source struct {
-	Read    func() (Values, error)
-	Initial func() Values
+	Read    func() (settings.Values, error)
+	Initial func() settings.Values
 	Report  func(error)
 	Hub     *watchhub.Hub
 	Path    string
@@ -33,7 +23,7 @@ type Source struct {
 type Events struct {
 	mu          sync.Mutex
 	subscribers map[*subscriber]struct{}
-	values      Values
+	values      settings.Values
 	source      Source
 	stop        func()
 }
@@ -97,7 +87,7 @@ func (e *Events) refreshAfterSave() {
 
 // Refresh reads the values in force and delivers every setting that differs from what the readers
 // were last told, as one batch. A file that cannot be read changes nothing.
-func (e *Events) Refresh(read func() (Values, error)) {
+func (e *Events) Refresh(read func() (settings.Values, error)) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	if e.values == nil {
@@ -115,7 +105,7 @@ func (e *Events) Refresh(read func() (Values, error)) {
 			after = removed
 		}
 		if before, wasSet := e.values[key]; before != after || wasSet != isSet {
-			batch = append(batch, settings.Setting{Path: strings.Split(key, pathSeparator), JSON: after})
+			batch = append(batch, settings.Setting{Path: settings.SplitPath(key), JSON: after})
 		}
 	}
 	e.values = now
@@ -129,7 +119,7 @@ func (e *Events) Refresh(read func() (Values, error)) {
 // removed is the value of a setting that no longer holds one: the null that resets a setting.
 const removed = "null"
 
-func merge(first, second Values) map[string]struct{} {
+func merge(first, second settings.Values) map[string]struct{} {
 	keys := make(map[string]struct{}, len(first)+len(second))
 	for key := range first {
 		keys[key] = struct{}{}

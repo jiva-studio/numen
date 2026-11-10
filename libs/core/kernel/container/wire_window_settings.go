@@ -15,7 +15,7 @@ func (c Config) OpenGetSettings(provider agentport.AgentProvider) *settings.Get 
 }
 
 // OpenWatchSettings builds the use case that reports each setting that changes.
-func (c Config) OpenWatchSettings() *settings.Watch {
+func (c Config) OpenWatchSettings() *settings.WatchSettingChanges {
 	return c.settings().OpenWatchSettings()
 }
 

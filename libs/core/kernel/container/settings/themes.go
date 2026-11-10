@@ -1,16 +1,11 @@
 package settings
 
 import (
-	"encoding/json"
-	"fmt"
-	"strings"
-
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 )
 
@@ -20,7 +15,11 @@ import (
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	files, err := c.openThemeFiles()
 	sources := c.getThemeSources(files)
-	store := settingsadapter.NewAppearanceStore(c.readAppearance, c.writeAppearance, say)
+	store := settingsadapter.NewAppearanceStore(
+		settingsusecase.NewReadAppearance(c.store()).Execute,
+		settingsusecase.NewWriteAppearance(c.writeSettings()).Execute,
+		say,
+	)
 	scales := themeusecase.NewScales(c.InterfaceScale, c.TextScale)
 	interfaceScale, textScale := settingsadapter.GetInterfaceScaleBounds(), settingsadapter.GetTextScaleBounds()
 	return theme.NewService(
@@ -59,54 +58,4 @@ func (c Config) openThemeFiles() (themefiles.Files, error) {
 		return themefiles.OpenAt(folder, c.Watches)
 	}
 	return themefiles.Open(c.Watches)
-}
-
-func (c Config) readAppearance() (themedomain.Appearance, error) {
-	path, err := c.SettingsFile()
-	if err != nil {
-		return themedomain.Appearance{}, err
-	}
-	activeSettings, err := c.GetSettingsAt(path)
-	if err != nil {
-		return themedomain.Appearance{}, err
-	}
-	return themedomain.Appearance{
-		ThemeName:      activeSettings.Appearance.Theme,
-		Mode:           settingsadapter.Mode(activeSettings.Appearance.Mode),
-		InterfaceScale: activeSettings.Appearance.InterfaceScale,
-		TextScale:      activeSettings.Appearance.TextScale,
-	}, nil
-}
-
-func (c Config) writeAppearance(selected themedomain.Appearance) error {
-	appearance := func(key string) []string { return []string{settingsadapter.OwnerApp, "appearance", key} }
-	values := []struct {
-		path  []string
-		value any
-	}{
-		{appearance("theme"), selected.ThemeName},
-		{appearance("mode"), settingsadapter.GetModeName(selected.Mode)},
-	}
-	if selected.InterfaceScale > 0 {
-		values = append(values, struct {
-			path  []string
-			value any
-		}{appearance("interfaceScale"), selected.InterfaceScale})
-	}
-	if selected.TextScale > 0 {
-		values = append(values, struct {
-			path  []string
-			value any
-		}{appearance("textScale"), selected.TextScale})
-	}
-
-	writing := make([]settingsdomain.Setting, 0, len(values))
-	for _, one := range values {
-		encoded, err := json.Marshal(one.value)
-		if err != nil {
-			return fmt.Errorf("%s: %w", strings.Join(one.path, "."), err)
-		}
-		writing = append(writing, settingsdomain.Setting{Path: one.path, JSON: string(encoded)})
-	}
-	return c.WriteSettings(writing)
 }
