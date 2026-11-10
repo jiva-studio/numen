@@ -90,8 +90,8 @@ func (c Config) GetProblems(problems problemport.ProblemQueries) *vault.GetProbl
 }
 
 // GetSummary builds the vault summary query use case.
-func (c Config) GetSummary(queries noteport.NoteQueries) *registry.GetSummary {
-	return c.vault().GetSummary(queries)
+func (c Config) GetSummary(summaries noteport.VaultSummaries) *registry.GetSummary {
+	return c.vault().GetSummary(summaries)
 }
 
 // PickFolder builds the folder picker use case when a dialog is provided.
@@ -116,24 +116,18 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 
 // Notes builds everything that acts on the notes of a vault, against this
 // installation's vault readers and writers.
-func (c Config) Notes(
-	queries noteport.NoteQueries,
-	links noteport.LinkQueries,
-	sources sourceport.SourceRepository,
-	indexed sourceport.SourceQueries,
-	index note.IndexUpdater,
-) note.Scenarios {
-	return c.vault().Notes(queries, links, sources, indexed, index)
+func (c Config) Notes(db *Index, index note.IndexUpdater) note.Scenarios {
+	return c.vault().Notes(db, index)
 }
 
 // FocusNote builds the use case that shows a note in the window.
-func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *query.FocusNote {
-	return c.vault().FocusNote(queries, view)
+func (c Config) FocusNote(refs noteport.NoteRefs, view windowport.Window) *query.FocusNote {
+	return c.vault().FocusNote(refs, view)
 }
 
 // GetNamedPaths builds the note named paths query use case.
-func (c Config) GetNamedPaths(queries noteport.NoteQueries) *query.GetNamedPaths {
-	return c.vault().GetNamedPaths(queries)
+func (c Config) GetNamedPaths(names noteport.NamedPaths) *query.GetNamedPaths {
+	return c.vault().GetNamedPaths(names)
 }
 
 // Read builds the vault file reader use case.

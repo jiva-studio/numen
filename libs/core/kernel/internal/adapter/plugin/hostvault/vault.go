@@ -29,9 +29,12 @@ type Vault struct {
 	Current     func() (domain.Vault, bool)
 	Readers     vaultport.VaultReaders
 	Writers     vaultport.VaultWriters
-	Notes       noteport.NoteQueries
+	Notes       noteRefs
+	Types       noteTypes
+	NamedPaths  namedPaths
+	TypedPaths  typedPaths
 	Links       noteport.LinkQueries
-	Connections noteport.ConnectionOperations
+	Connections Connections
 	Problems    problemport.ProblemQueries
 	Arranger    Arranger
 	Stores      pluginport.PluginStores
@@ -253,7 +256,7 @@ func (a Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain.
 	if err != nil {
 		return nil, err
 	}
-	return a.Notes.GetTypes(ctx, v.ID, paths)
+	return a.Types.GetTypes(ctx, v.ID, paths)
 }
 
 func (a Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error) {
@@ -261,7 +264,7 @@ func (a Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error)
 	if err != nil {
 		return nil, err
 	}
-	return a.Notes.GetNamedPaths(ctx, v.ID, name)
+	return a.NamedPaths.GetNamedPaths(ctx, v.ID, name)
 }
 
 func (a Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
@@ -269,7 +272,7 @@ func (a Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]
 	if err != nil {
 		return nil, err
 	}
-	return a.Notes.GetPathsOfType(ctx, v.ID, noteType)
+	return a.TypedPaths.GetPathsOfType(ctx, v.ID, noteType)
 }
 
 func (a Vault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
@@ -341,63 +344,63 @@ func (a Vault) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, err
 	return a.Watcher.WatchVault(ctx, v)
 }
 
-func (a Vault) openConnections() (domain.Vault, noteport.ConnectionOperations, error) {
+func (a Vault) openConnections(isMissing bool) (domain.Vault, error) {
 	v, err := a.open()
 	if err != nil {
-		return domain.Vault{}, nil, err
+		return domain.Vault{}, err
 	}
-	if a.Connections == nil {
-		return domain.Vault{}, nil, ErrNoConnections
+	if isMissing {
+		return domain.Vault{}, ErrNoConnections
 	}
-	return v, a.Connections, nil
+	return v, nil
 }
 
 func (a Vault) GetConnection(ctx context.Context, first, second, kind string) (domain.Connection, error) {
-	v, ops, err := a.openConnections()
+	v, err := a.openConnections(a.Connections.Reader == nil)
 	if err != nil {
 		return domain.Connection{}, err
 	}
-	return ops.GetConnection(ctx, v, first, second, kind)
+	return a.Connections.Reader.GetConnection(ctx, v, first, second, kind)
 }
 
 func (a Vault) SaveConnection(ctx context.Context, c domain.Connection) error {
-	v, ops, err := a.openConnections()
+	v, err := a.openConnections(a.Connections.Writer == nil)
 	if err != nil {
 		return err
 	}
-	return a.notifyAfterWrite(ops.SaveConnection(ctx, v, c))
+	return a.notifyAfterWrite(a.Connections.Writer.SaveConnection(ctx, v, c))
 }
 
 func (a Vault) RemoveSide(ctx context.Context, from, to, kind string) error {
-	v, ops, err := a.openConnections()
+	v, err := a.openConnections(a.Connections.Writer == nil)
 	if err != nil {
 		return err
 	}
-	return a.notifyAfterWrite(ops.RemoveSide(ctx, v, from, to, kind))
+	return a.notifyAfterWrite(a.Connections.Writer.RemoveSide(ctx, v, from, to, kind))
 }
 
 func (a Vault) RemoveConnection(ctx context.Context, first, second, kind string) error {
-	v, ops, err := a.openConnections()
+	v, err := a.openConnections(a.Connections.Writer == nil)
 	if err != nil {
 		return err
 	}
-	return a.notifyAfterWrite(ops.RemoveConnection(ctx, v, first, second, kind))
+	return a.notifyAfterWrite(a.Connections.Writer.RemoveConnection(ctx, v, first, second, kind))
 }
 
 func (a Vault) Join(ctx context.Context, from, to string, side domain.Side) error {
-	v, ops, err := a.openConnections()
+	v, err := a.openConnections(a.Connections.Joiner == nil)
 	if err != nil {
 		return err
 	}
-	return a.notifyAfterWrite(ops.Join(ctx, v, from, to, side))
+	return a.notifyAfterWrite(a.Connections.Joiner.Join(ctx, v, from, to, side))
 }
 
 func (a Vault) CreateInRelation(ctx context.Context, in domain.RelatedNote) (string, error) {
-	v, ops, err := a.openConnections()
+	v, err := a.openConnections(a.Connections.Creator == nil)
 	if err != nil {
 		return "", err
 	}
-	path, err := ops.CreateInRelation(ctx, v, in)
+	path, err := a.Connections.Creator.CreateInRelation(ctx, v, in)
 	if path != "" {
 		a.notifyFileWritten()
 	}

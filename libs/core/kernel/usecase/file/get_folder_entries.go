@@ -13,10 +13,10 @@ import (
 // Only the failure to list the folder wraps its cause.
 type GetFolderEntries struct {
 	readers vaultport.VaultReaders
-	queries noteport.NoteQueries
+	queries noteport.NoteTypes
 }
 
-func NewGetFolderEntries(readers vaultport.VaultReaders, queries noteport.NoteQueries) *GetFolderEntries {
+func NewGetFolderEntries(readers vaultport.VaultReaders, queries noteport.NoteTypes) *GetFolderEntries {
 	return &GetFolderEntries{readers: readers, queries: queries}
 }
 

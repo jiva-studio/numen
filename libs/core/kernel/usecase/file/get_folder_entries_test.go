@@ -11,13 +11,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
 // typed is the index, answering what each note is from a fixed table.
 type typed struct {
-	noteport.NoteQueries
 	types     map[string]domain.NoteType
 	err       error
 	requested [][]string

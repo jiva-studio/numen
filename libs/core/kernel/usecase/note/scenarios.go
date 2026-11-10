@@ -65,53 +65,72 @@ func (n Scenarios) ShowEdits(view windowport.Window) Scenarios {
 	return n
 }
 
-// Connections is the set of use cases that read and write the relationships
-// between notes, as one value a surface can be handed.
-type Connections struct {
-	get      query.GetConnection
-	save     SaveConnection
-	side     RemoveSide
-	remove   RemoveConnection
-	join     Join
-	create   CreateInRelation
-	backlink query.GetBacklinks
+// ConnectionReader reads one relationship between two notes.
+type ConnectionReader struct {
+	get query.GetConnection
 }
 
-var _ noteport.ConnectionOperations = Connections{}
-
-// NewConnections groups the connection use cases of a set of scenarios.
-func NewConnections(n Scenarios) Connections {
-	return Connections{
-		get: n.Connection, save: n.SaveConnection, side: n.RemoveSide, remove: n.RemoveConnection,
-		join: n.Join, create: n.CreateInRelation, backlink: n.Backlinks,
-	}
+// ConnectionWriter saves and removes relationships between notes.
+type ConnectionWriter struct {
+	save   SaveConnection
+	side   RemoveSide
+	remove RemoveConnection
 }
 
-func (c Connections) GetConnection(ctx context.Context, v domain.Vault, a, b, kind string) (domain.Connection, error) {
+// ConnectionJoiner joins two notes on one side of a relationship.
+type ConnectionJoiner struct {
+	join Join
+}
+
+// RelatedNoteCreator creates a note joined to an existing one.
+type RelatedNoteCreator struct {
+	create CreateInRelation
+}
+
+var (
+	_ noteport.ConnectionReader   = ConnectionReader{}
+	_ noteport.ConnectionWriter   = ConnectionWriter{}
+	_ noteport.ConnectionJoiner   = ConnectionJoiner{}
+	_ noteport.RelatedNoteCreator = RelatedNoteCreator{}
+)
+
+// NewConnectionReader takes the use case of a set of scenarios that reads a connection.
+func NewConnectionReader(n Scenarios) ConnectionReader { return ConnectionReader{get: n.Connection} }
+
+// NewConnectionWriter takes the use cases of a set of scenarios that write connections.
+func NewConnectionWriter(n Scenarios) ConnectionWriter {
+	return ConnectionWriter{save: n.SaveConnection, side: n.RemoveSide, remove: n.RemoveConnection}
+}
+
+// NewConnectionJoiner takes the use case of a set of scenarios that joins two notes.
+func NewConnectionJoiner(n Scenarios) ConnectionJoiner { return ConnectionJoiner{join: n.Join} }
+
+// NewRelatedNoteCreator takes the use case of a set of scenarios that creates a related note.
+func NewRelatedNoteCreator(n Scenarios) RelatedNoteCreator {
+	return RelatedNoteCreator{create: n.CreateInRelation}
+}
+
+func (c ConnectionReader) GetConnection(ctx context.Context, v domain.Vault, a, b, kind string) (domain.Connection, error) {
 	return c.get.Execute(ctx, v, a, b, kind)
 }
 
-func (c Connections) SaveConnection(ctx context.Context, v domain.Vault, conn domain.Connection) error {
+func (c ConnectionWriter) SaveConnection(ctx context.Context, v domain.Vault, conn domain.Connection) error {
 	return c.save.Execute(ctx, v, conn)
 }
 
-func (c Connections) RemoveSide(ctx context.Context, v domain.Vault, from, to, kind string) error {
+func (c ConnectionWriter) RemoveSide(ctx context.Context, v domain.Vault, from, to, kind string) error {
 	return c.side.Execute(ctx, v, from, to, kind)
 }
 
-func (c Connections) RemoveConnection(ctx context.Context, v domain.Vault, a, b, kind string) error {
+func (c ConnectionWriter) RemoveConnection(ctx context.Context, v domain.Vault, a, b, kind string) error {
 	return c.remove.Execute(ctx, v, a, b, kind)
 }
 
-func (c Connections) Join(ctx context.Context, v domain.Vault, from, to string, side domain.Side) error {
+func (c ConnectionJoiner) Join(ctx context.Context, v domain.Vault, from, to string, side domain.Side) error {
 	return c.join.Execute(ctx, v, from, to, side)
 }
 
-func (c Connections) CreateInRelation(ctx context.Context, v domain.Vault, in domain.RelatedNote) (string, error) {
+func (c RelatedNoteCreator) CreateInRelation(ctx context.Context, v domain.Vault, in domain.RelatedNote) (string, error) {
 	made, err := c.create.Execute(ctx, v, in)
 	return made.Path, err
-}
-
-func (c Connections) GetBacklinks(ctx context.Context, v domain.Vault, path string) ([]domain.Backlink, error) {
-	return c.backlink.Execute(ctx, v, path)
 }

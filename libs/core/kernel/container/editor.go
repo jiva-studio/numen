@@ -8,13 +8,14 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
@@ -48,16 +49,27 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
 	provider := cfg.AgentProvider()
 	return EditorAssembly{
-		PluginDirFn:        cfg.GetPluginDir,
-		EmitEventFn:        cfg.plugins().EmitPluginEvent,
-		RegistryVal:        registry,
-		VaultReadersFn:     cfg.VaultReaders,
-		VaultWritersFn:     cfg.VaultWriters,
-		VaultIdentityFn:    cfg.VaultIdentity,
-		OpenTabsStoreFn:    func() windowport.OpenTabsStore { return db.OpenTabs() },
-		ClockFn:            cfg.Clock,
-		NoteQueriesFn:      func() noteport.NoteQueries { return db.Queries() },
-		LinkQueriesFn:      func() noteport.LinkQueries { return db.Links() },
+		PluginDirFn:          cfg.GetPluginDir,
+		EmitEventFn:          cfg.plugins().EmitPluginEvent,
+		RegistryVal:          registry,
+		VaultReadersFn:       cfg.VaultReaders,
+		VaultWritersFn:       cfg.VaultWriters,
+		VaultIdentityFn:      cfg.VaultIdentity,
+		OpenTabsStoreFn:      func() windowport.OpenTabsStore { return db.OpenTabs() },
+		ClockFn:              cfg.Clock,
+		OpenGetOpeningNoteFn: func() *query.GetOpeningNote { return query.NewGetOpeningNote(db.OpeningNote()) },
+		OpenGetTypesFn:       func() *query.GetTypes { return query.NewGetTypes(db.NoteTypes()) },
+		OpenGetHeadingsFn:    func() *query.GetHeadings { return query.NewGetHeadings(db.Headings()) },
+		OpenResolveLinksFn:   func() *query.ResolveLinks { return query.NewResolveLinks(db.Links()) },
+		OpenGetTitlesFn:      func() query.GetTitles { return query.NewGetTitles(db.NoteRefs()) },
+		OpenGetNameMatchesFn: func() *search.GetNameMatches { return search.NewGetNameMatches(db.NameMatches()) },
+		OpenGetFolderEntriesFn: func(readers vaultport.VaultReaders) *file.GetFolderEntries {
+			return file.NewGetFolderEntries(readers, db.NoteTypes())
+		},
+		OpenGetFileKindsFn: func(readers vaultport.VaultReaders) *file.GetFileKinds {
+			return file.NewGetFileKinds(readers, db.NoteTypes())
+		},
+		OpenFocusNoteFn:    func(view windowport.Window) *query.FocusNote { return cfg.FocusNote(db.NoteRefs(), view) },
 		ProblemQueriesFn:   func() problemport.ProblemQueries { return db.Problems() },
 		IndexProgressFn:    func() indexport.IndexProgress { return db.Progress() },
 		SourceRepositoryFn: func() sourceport.SourceRepository { return db.Sources() },
@@ -82,7 +94,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 			cfg.SetPluginSearch(db, embedder, handleError)
 		},
 		OpenNotesFn: func(index note.IndexUpdater) note.Scenarios {
-			return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), index)
+			return cfg.Notes(db, index)
 		},
 		OpenVaultsFn: func(moves note.Move) vault.Scenarios {
 			return cfg.Vaults(registry, db, moves)

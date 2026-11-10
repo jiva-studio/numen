@@ -56,7 +56,7 @@ func TestLoad(t *testing.T) {
 		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 

@@ -53,7 +53,7 @@ func TestNotesAreSavedInGroups(t *testing.T) {
 		vaultreader.Readers{},
 		db.Vaults(),
 		content,
-		db.Queries(),
+		db.FileStats(),
 		&countedMeasurements{},
 	)
 	res, err := scan.Execute(t.Context(), v)
@@ -105,7 +105,7 @@ func TestScanWrites_LongNoteClosesBatchEarly(t *testing.T) {
 		vaultreader.Readers{},
 		db.Vaults(),
 		content,
-		db.Queries(),
+		db.FileStats(),
 		&countedMeasurements{},
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
@@ -133,7 +133,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 		vaultreader.Readers{},
 		db.Vaults(),
 		&groupedWrites{fail: writeErr},
-		db.Queries(),
+		db.FileStats(),
 		&countedMeasurements{},
 	)
 	res, err := scan.Execute(t.Context(), v)
@@ -157,7 +157,7 @@ func TestTheIndexIsMeasuredWhenItChanges(t *testing.T) {
 		readers,
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		measured,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {

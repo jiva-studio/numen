@@ -10,10 +10,10 @@ import (
 
 // IsVaultIndexed reports whether the index already contains a vault.
 type IsVaultIndexed struct {
-	queries noteport.NoteQueries
+	queries noteport.VaultHolds
 }
 
-func NewIsVaultIndexed(queries noteport.NoteQueries) *IsVaultIndexed {
+func NewIsVaultIndexed(queries noteport.VaultHolds) *IsVaultIndexed {
 	return &IsVaultIndexed{queries: queries}
 }
 

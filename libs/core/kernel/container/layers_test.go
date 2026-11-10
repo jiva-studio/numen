@@ -593,7 +593,7 @@ var _, _ vaultport.VaultWriter = (*Writer)(nil), (*Writer)(nil)
 var storePort vaultport.IndexClaim
 
 func mount() {
-	var _ noteport.NoteQueries = (*sound)(nil)
+	var _ noteport.NoteRefs = (*sound)(nil)
 	var agentPort agentport.Agent
 	_, _ = storePort, agentPort
 }
@@ -601,7 +601,7 @@ func mount() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"VaultReader", "VaultWriter", "NoteQueries"}
+	want := []string{"VaultReader", "VaultWriter", "NoteRefs"}
 	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
@@ -723,7 +723,7 @@ func TestPortMethodRule_ReportsUncalledMethods(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range []string{"NoteQueries.GetNotes"} {
+	for _, one := range []string{"NoteRefs.GetNotes"} {
 		if !slices.Contains(uncalled, one) {
 			t.Errorf("nothing outside calls %s and the rule does not refuse it", one)
 		}

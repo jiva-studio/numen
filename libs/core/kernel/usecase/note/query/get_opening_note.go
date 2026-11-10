@@ -10,10 +10,10 @@ import (
 
 // GetOpeningNote finds the note to show when nothing else has been chosen.
 type GetOpeningNote struct {
-	queries noteport.NoteQueries
+	queries noteport.OpeningNote
 }
 
-func NewGetOpeningNote(queries noteport.NoteQueries) *GetOpeningNote {
+func NewGetOpeningNote(queries noteport.OpeningNote) *GetOpeningNote {
 	return &GetOpeningNote{queries: queries}
 }
 

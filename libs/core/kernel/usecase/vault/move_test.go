@@ -59,7 +59,7 @@ func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 func (f filing) newMove(preserved query.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(note.MoveDeps{
 		Readers: f.readers, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: f.db.Links(), Names: f.db.Queries(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
+		Links: f.db.Links(), Names: f.db.NamedPaths(), Sources: f.db.Sources(), Index: f.index, Now: testsupport.NewClock(),
 	})
 	notes.Sync = func() query.SyncTitleAndFilename { return preserved }
 	notes.Drawing = func(_ context.Context, went domain.Move) error {

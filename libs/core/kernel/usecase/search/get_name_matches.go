@@ -10,10 +10,10 @@ import (
 
 // GetNameMatches finds the names in a vault that match the words typed: a note's own title and the headings inside notes.
 type GetNameMatches struct {
-	queries noteport.NoteQueries
+	queries noteport.NameMatches
 }
 
-func NewGetNameMatches(queries noteport.NoteQueries) *GetNameMatches {
+func NewGetNameMatches(queries noteport.NameMatches) *GetNameMatches {
 	return &GetNameMatches{queries: queries}
 }
 

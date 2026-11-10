@@ -121,12 +121,12 @@ func TestDrivingCallRule_RejectsPortFieldCalls(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "call.go", `package p
 
 type Notes struct {
-	Queries noteport.NoteQueries
+	Queries noteport.NoteRefs
 	Links   *noteport.LinkQueries
 	Find    usecase.Find
 }
 
-func read(a *API, queries noteport.NoteQueries) {
+func read(a *API, queries noteport.NoteRefs) {
 	a.Notes.Queries.GetTypes()
 	a.Notes.Links.Resolve()
 	a.Notes.Find.Execute()

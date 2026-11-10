@@ -10,14 +10,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/note/domain"
-
-	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
 // carrying is the index as this window uses it: it reports which vaults it
 // holds.
 type carrying struct {
-	noteport.NoteQueries
 	targetVault map[domain.VaultID]bool
 }
 

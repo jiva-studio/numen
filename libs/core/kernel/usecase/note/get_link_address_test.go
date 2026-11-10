@@ -11,7 +11,7 @@ func TestGetLinkAddressWritesTheNameOfTheNote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 
-	got, err := query.NewGetLinkAddress(c.db.Queries()).Execute(t.Context(), c.vault, "Heat.md")
+	got, err := query.NewGetLinkAddress(c.db.NamedPaths()).Execute(t.Context(), c.vault, "Heat.md")
 	if err != nil {
 		t.Fatal(err)
 	}

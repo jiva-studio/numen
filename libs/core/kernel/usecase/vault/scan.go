@@ -22,7 +22,7 @@ type Scan struct {
 	readers     vaultport.VaultReaders
 	vaults      vaultport.VaultRepository
 	notes       noteport.NoteRepository
-	indexedVal  FileStatQueries
+	indexedVal  noteport.FileStats
 	maintenance indexport.IndexMaintenance
 
 	Cut chunking.CutNotes
@@ -47,7 +47,7 @@ func NewScan(
 	readers vaultport.VaultReaders,
 	vaults vaultport.VaultRepository,
 	notes noteport.NoteRepository,
-	queries FileStatQueries,
+	queries noteport.FileStats,
 	maintenance indexport.IndexMaintenance,
 ) Scan {
 	return Scan{
@@ -62,14 +62,6 @@ func (u Scan) ScanWithProgress(ctx context.Context, v domain.Vault, onProgress f
 		u.OnProgress = onProgress
 	}
 	return u.Execute(ctx, v)
-}
-
-// FileStatQueries is the single query a scan makes of the index. It exposes
-// which files have changed and nothing about notes.
-type FileStatQueries interface {
-	// GetFileStats is what the index believes about each file, keyed by path,
-	// so a scan can decide what to reparse without reading anything.
-	GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error)
 }
 
 // Execute traverses the vault once.

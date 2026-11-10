@@ -31,7 +31,7 @@ func (c changing) renameApart() note.Rename {
 
 func (c changing) title(t *testing.T, path string) string {
 	t.Helper()
-	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{path})
+	displayed, err := c.db.NoteRefs().GetNotes(t.Context(), c.vault.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -505,7 +505,7 @@ func TestARenamedNoteIsFoundByItsNewName(t *testing.T) {
 				t.Errorf("the vault shows the note as %q", got)
 			}
 
-			found, err := c.db.Queries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+			found, err := c.db.NamedPaths().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 			if err != nil {
 				t.Fatal(err)
 			}

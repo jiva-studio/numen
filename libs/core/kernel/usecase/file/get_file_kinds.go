@@ -18,10 +18,10 @@ import (
 // entry carries its path and kind.
 type GetFileKinds struct {
 	readers vaultport.VaultReaders
-	queries noteport.NoteQueries
+	queries noteport.NoteTypes
 }
 
-func NewGetFileKinds(readers vaultport.VaultReaders, queries noteport.NoteQueries) *GetFileKinds {
+func NewGetFileKinds(readers vaultport.VaultReaders, queries noteport.NoteTypes) *GetFileKinds {
 	return &GetFileKinds{readers: readers, queries: queries}
 }
 

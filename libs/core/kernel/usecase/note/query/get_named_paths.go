@@ -10,10 +10,10 @@ import (
 
 // GetNamedPaths returns the notes that a link's name resolves to.
 type GetNamedPaths struct {
-	queries noteport.NoteQueries
+	queries noteport.NamedPaths
 }
 
-func NewGetNamedPaths(queries noteport.NoteQueries) *GetNamedPaths {
+func NewGetNamedPaths(queries noteport.NamedPaths) *GetNamedPaths {
 	return &GetNamedPaths{queries: queries}
 }
 

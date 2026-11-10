@@ -975,12 +975,12 @@ func TestANoteMadeIsInTheIndexBeforeTheAnswerReachesBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	found, err := f.installation.Queries().GetNotes(t.Context(), f.installation.GetCurrentVault().ID, []string{"Entropy.md"})
+	found, err := f.installation.Notes().GetTitles.Execute(t.Context(), f.installation.GetCurrentVault(), []string{"Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if found["Entropy.md"].Title != "Entropy" {
-		t.Errorf("the index answers %q for a note that was just made", found["Entropy.md"].Title)
+	if len(found.Notes) != 1 || found.Notes[0].Title != "Entropy" {
+		t.Errorf("the index answers %v for a note that was just made", found.Notes)
 	}
 }
 

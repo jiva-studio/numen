@@ -6,30 +6,59 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-type noteHeadingQueries interface {
+// FileStats reads what the index recorded of each file of a vault, keyed by
+// path, so a scan can decide what to reparse without reading anything.
+type FileStats interface {
 	GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error)
+}
+
+// NameMatches finds notes by a part of their name.
+type NameMatches interface {
 	GetNameMatches(ctx context.Context, vaultID domain.VaultID, query string, limit int) ([]domain.NameMatch, error)
+}
+
+// Headings reads the headings of notes.
+type Headings interface {
 	GetHeadings(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string][]domain.Heading, error)
+}
+
+// VaultSummaries counts what the index holds of one vault.
+type VaultSummaries interface {
 	GetSummary(ctx context.Context, vaultID domain.VaultID) (domain.VaultSummary, error)
 }
 
-type noteTypeQueries interface {
+// NoteTypes reads the type of notes.
+type NoteTypes interface {
 	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
+}
+
+// TypedPaths lists the notes of one type.
+type TypedPaths interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
+}
+
+// VaultHolds checks the index for any note of a vault.
+type VaultHolds interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
 
-// NoteQueries answers questions about notes in shapes that are not notes.
-type NoteQueries interface {
-	noteHeadingQueries
-	noteTypeQueries
+// NoteRefs reads what is needed to display notes. A path that matches no note
+// is absent from the result.
+type NoteRefs interface {
 	GetNotes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteRef, error)
+}
+
+// OpeningNote finds the note a vault opens on, if it has one.
+type OpeningNote interface {
 	GetOpeningNote(ctx context.Context, vaultID domain.VaultID) (domain.NoteRef, bool, error)
+}
+
+// NamedPaths finds the paths of the notes that share one name.
+type NamedPaths interface {
 	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 }
 
-// LinkQueries answers what points where. It is separate from NoteQueries
-// because a use case about links has no business being handed a search.
+// LinkQueries answers what points where.
 type LinkQueries interface {
 	GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error)

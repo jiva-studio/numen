@@ -9,7 +9,7 @@ import (
 )
 
 func getNoteTypes(
-	ctx context.Context, queries noteport.NoteQueries, v domain.Vault, entries []domain.Entry,
+	ctx context.Context, queries noteport.NoteTypes, v domain.Vault, entries []domain.Entry,
 ) (map[string]domain.NoteType, error) {
 	paths := make([]string, 0, len(entries))
 	for _, entry := range entries {

@@ -29,7 +29,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
@@ -264,7 +264,7 @@ func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {

@@ -16,11 +16,11 @@ import (
 func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, path string) {
 	t.Helper()
 	for range 200 {
-		displayed, err := opened.Queries().GetNotes(t.Context(), v.ID, []string{path})
+		titles, err := opened.Notes().GetTitles.Execute(t.Context(), v, []string{path})
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, target := displayed[path]; target {
+		if len(titles.Missing) == 0 {
 			return
 		}
 		time.Sleep(10 * time.Millisecond)

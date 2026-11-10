@@ -67,7 +67,7 @@ func makeConfig(out io.Writer) container.Config {
 }
 
 func makeNotes(cfg container.Config, db *container.Index, vaults *container.OpenVaults) container.Notes {
-	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex)
+	return cfg.Notes(db, vaults.UpdateIndex)
 }
 
 func run(cfg container.Config, debug debugOptions) error {

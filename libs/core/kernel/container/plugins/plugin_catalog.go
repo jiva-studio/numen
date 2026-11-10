@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
@@ -41,7 +40,7 @@ type Config struct {
 	GetSettingsOrDefaults func() settingsadapter.File
 	RefreshSettingEvents  func()
 	MakeRefresh           func(*vault.Index, noteport.NoteRepository) vault.Refresh
-	BuildNotes            func(noteport.NoteQueries, noteport.LinkQueries, sourceport.SourceRepository, sourceport.SourceQueries, note.IndexUpdater) note.Scenarios
+	BuildNotes            func(*vault.Index, note.IndexUpdater) note.Scenarios
 	Moves                 func(context.Context) (<-chan struct{}, error)
 	PluginChanges         *pluginchanges.Signals
 	TextVersions          *textversion.Versions

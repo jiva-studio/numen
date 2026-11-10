@@ -159,7 +159,7 @@ func (r recipeless) Save(ctx context.Context, v domain.VaultID, notes []domain.N
 func TestNotesWithoutARecordedChunkingAreChunkedOnceWhenTheSizeIsKnown(t *testing.T) {
 	t.Parallel()
 	v, db := newOrchardVault(t), openIndex(t)
-	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.Queries(), db.Maintenance())
+	old := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), recipeless{db.Notes()}, db.FileStats(), db.Maintenance())
 	old.Walks = db.Walks()
 	old.Cut = query.NewCutNotes(512)
 	runScan(t, old, v)
@@ -185,7 +185,7 @@ func TestRechunkedNotesAreCountedAndSavedInGroupsLikeChangedFiles(t *testing.T) 
 	runScan(t, scanAt(db, 256), v)
 
 	content := &groupedWrites{}
-	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.Queries(), db.Maintenance())
+	scan := vaults.NewScan(vaultreader.Readers{}, db.Vaults(), content, db.FileStats(), db.Maintenance())
 	scan.Walks = db.Walks()
 	scan.Cut = query.NewCutNotes(512)
 	scan.ShouldRecut = true

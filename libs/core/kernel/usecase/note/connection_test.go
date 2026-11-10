@@ -22,7 +22,7 @@ const (
 )
 
 func (c changing) addresses() *query.GetLinkAddress {
-	return query.NewGetLinkAddress(c.db.Queries())
+	return query.NewGetLinkAddress(c.db.NamedPaths())
 }
 
 func (c changing) saveConnection() note.SaveConnection {
@@ -520,7 +520,7 @@ func TestTheNeighbourhoodCarriesTheMarkerOfEachRecord(t *testing.T) {
 		"Entropy.md": "---\ntitle: Entropy\nlinks:\n  - to: Heat\n    role: jump\n---\n# Entropy\n",
 	})
 
-	got, err := query.NewShowNeighbourhood(db.Links(), db.Queries()).Execute(t.Context(), v, "Heat.md")
+	got, err := query.NewShowNeighbourhood(db.Links(), db.NoteRefs()).Execute(t.Context(), v, "Heat.md")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -29,7 +29,16 @@ type IndexPorts struct {
 	Path          string
 	Vaults        vaultport.VaultRepository
 	Notes         noteport.NoteRepository
-	Queries       noteport.NoteQueries
+	FileStats     noteport.FileStats
+	NameMatches   noteport.NameMatches
+	Headings      noteport.Headings
+	Summaries     noteport.VaultSummaries
+	NoteTypes     noteport.NoteTypes
+	TypedPaths    noteport.TypedPaths
+	VaultHolds    noteport.VaultHolds
+	NoteRefs      noteport.NoteRefs
+	OpeningNote   noteport.OpeningNote
+	NamedPaths    noteport.NamedPaths
 	Passages      sourceport.PassageQueries
 	Progress      indexport.IndexProgress
 	Stats         indexport.IndexStats
@@ -88,7 +97,16 @@ func (i *Index) Compact(ctx context.Context) error { return i.ports.Backend.Comp
 
 func (i *Index) Vaults() vaultport.VaultRepository          { return i.ports.Vaults }
 func (i *Index) Notes() noteport.NoteRepository             { return i.ports.Notes }
-func (i *Index) Queries() noteport.NoteQueries              { return i.ports.Queries }
+func (i *Index) FileStats() noteport.FileStats              { return i.ports.FileStats }
+func (i *Index) NameMatches() noteport.NameMatches          { return i.ports.NameMatches }
+func (i *Index) Headings() noteport.Headings                { return i.ports.Headings }
+func (i *Index) Summaries() noteport.VaultSummaries         { return i.ports.Summaries }
+func (i *Index) NoteTypes() noteport.NoteTypes              { return i.ports.NoteTypes }
+func (i *Index) TypedPaths() noteport.TypedPaths            { return i.ports.TypedPaths }
+func (i *Index) VaultHolds() noteport.VaultHolds            { return i.ports.VaultHolds }
+func (i *Index) NoteRefs() noteport.NoteRefs                { return i.ports.NoteRefs }
+func (i *Index) OpeningNote() noteport.OpeningNote          { return i.ports.OpeningNote }
+func (i *Index) NamedPaths() noteport.NamedPaths            { return i.ports.NamedPaths }
 func (i *Index) Passages() sourceport.PassageQueries        { return i.ports.Passages }
 func (i *Index) Progress() indexport.IndexProgress          { return i.ports.Progress }
 func (i *Index) Stats() indexport.IndexStats                { return i.ports.Stats }

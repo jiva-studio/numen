@@ -113,7 +113,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 	stopErr := errors.New("the notes cannot be taken out")
-	notes := vaults.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.Queries(), db.Maintenance())
+	notes := vaults.NewScan(readers, db.Vaults(), notRemoving{NoteRepository: db.Notes(), err: stopErr}, db.FileStats(), db.Maintenance())
 	notes.Walks = db.Walks()
 	making := vaults.NewReadWholeVault(
 		notes,

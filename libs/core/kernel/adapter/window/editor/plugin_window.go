@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
@@ -27,12 +26,12 @@ type pluginWindow struct {
 }
 
 // NewPluginWindow returns a PluginWindow over the window state: it focuses a note through the
-// queries and a file of the vault through the readers, and returns the tabs the window last reported.
-func NewPluginWindow(state *State, queries noteport.NoteQueries, readers vaultport.VaultReaders) pluginport.PluginWindow {
+// use case given and a file of the vault through the readers, and returns the tabs the window last reported.
+func NewPluginWindow(state *State, focusNote *query.FocusNote, readers vaultport.VaultReaders) pluginport.PluginWindow {
 	view := state.GetWindow()
 	return pluginWindow{
 		state:         state,
-		focusNote:     query.NewFocusNote(queries, view),
+		focusNote:     focusNote,
 		focusPassages: file.NewFocusPassages(readers, view),
 	}
 }

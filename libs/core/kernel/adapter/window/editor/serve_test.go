@@ -46,16 +46,16 @@ import (
 )
 
 func bindNotes(services *Services, db *container.Index) {
-	queries, links := db.Queries(), db.Links()
-	neighborhood := query.NewShowNeighbourhood(links, queries)
-	services.Note.getOpeningNote = query.NewGetOpeningNote(queries)
-	services.Note.getTypes = query.NewGetTypes(queries)
-	services.Note.getHeadings = query.NewGetHeadings(queries)
+	refs, links := db.NoteRefs(), db.Links()
+	neighborhood := query.NewShowNeighbourhood(links, refs)
+	services.Note.getOpeningNote = query.NewGetOpeningNote(db.OpeningNote())
+	services.Note.getTypes = query.NewGetTypes(db.NoteTypes())
+	services.Note.getHeadings = query.NewGetHeadings(db.Headings())
 	services.Note.resolveLinks = query.NewResolveLinks(links)
 	services.Note.showNeighbourhood = &neighborhood
-	services.Note.getLinkAddress = query.NewGetLinkAddress(queries)
-	services.Search.GetNameMatches = search.NewGetNameMatches(queries)
-	services.Search.GetTitles = query.NewGetTitles(queries)
+	services.Note.getLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
+	services.Search.GetNameMatches = search.NewGetNameMatches(db.NameMatches())
+	services.Search.GetTitles = query.NewGetTitles(refs)
 	services.Search.GetTypes = services.Note.getTypes
 }
 
@@ -285,7 +285,7 @@ func waitFor(t *testing.T, what string, is func() bool) {
 
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
-	found, err := db.Queries().GetNotes(t.Context(), v.ID, []string{path})
+	found, err := db.NoteRefs().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

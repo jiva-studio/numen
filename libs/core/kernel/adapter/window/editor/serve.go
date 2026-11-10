@@ -29,9 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/markdown"
 
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
-	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
@@ -167,10 +165,9 @@ func (o *Installation) Close() error {
 	return errors.Join(playingErr, o.stopEmbedder(), o.made.CloseIndex())
 }
 
-// Queries returns the window's index cache as a port; Problems, Passages and
+// Problems returns the window's index cache as a port; Passages and
 // SourcesKnown do the same. Other components working the same vault in this
 // process, including agent tools, read the same index.
-func (o *Installation) Queries() noteport.NoteQueries        { return o.made.GetNoteQueries() }
 func (o *Installation) Problems() problemport.ProblemQueries { return o.made.GetProblemQueries() }
 func (o *Installation) Passages() sourceport.PassageQueries  { return o.made.GetPassageQueries() }
 func (o *Installation) SourcesKnown() sourceport.SourceQueries {
@@ -277,15 +274,15 @@ func createWindow(
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
 	services.readFiles(readers, made.OpenPluginFile(), made.GetMediaType())
-	services.Note.getOpeningNote = query.NewGetOpeningNote(made.GetNoteQueries())
-	services.Note.getTypes = query.NewGetTypes(made.GetNoteQueries())
-	services.Note.getHeadings = query.NewGetHeadings(made.GetNoteQueries())
-	services.Note.resolveLinks = query.NewResolveLinks(made.GetLinkQueries())
-	services.Search.GetNameMatches = search.NewGetNameMatches(made.GetNoteQueries())
-	services.Search.GetTitles = query.NewGetTitles(made.GetNoteQueries())
+	services.Note.getOpeningNote = made.OpenGetOpeningNote()
+	services.Note.getTypes = made.OpenGetTypes()
+	services.Note.getHeadings = made.OpenGetHeadings()
+	services.Note.resolveLinks = made.OpenResolveLinks()
+	services.Search.GetNameMatches = made.OpenGetNameMatches()
+	services.Search.GetTitles = made.OpenGetTitles()
 	services.Search.GetTypes = services.Note.getTypes
-	services.File.getFolderEntries = file.NewGetFolderEntries(readers, made.GetNoteQueries())
-	services.File.getFileKinds = file.NewGetFileKinds(readers, made.GetNoteQueries())
+	services.File.getFolderEntries = made.OpenGetFolderEntries(readers)
+	services.File.getFileKinds = made.OpenGetFileKinds(readers)
 	services.File.chooseTabKind = made.OpenChooseTabKind()
 	services.Note.findTabKinds = services.File.listTabKinds
 	services.Search.ListTabKinds = services.File.listTabKinds

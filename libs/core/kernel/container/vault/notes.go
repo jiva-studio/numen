@@ -2,11 +2,11 @@ package vault
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	vaultusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 // Notes builds everything that acts on the notes of a vault, against this
@@ -14,13 +14,9 @@ import (
 //
 // index brings what a write touched up to date before it answers, so a caller
 // that writes a note and immediately searches for it finds it.
-func (c Config) Notes(
-	queries noteport.NoteQueries,
-	links noteport.LinkQueries,
-	sources sourceport.SourceRepository,
-	indexed sourceport.SourceQueries,
-	index note.IndexUpdater,
-) note.Scenarios {
+func (c Config) Notes(db *vaultusecase.Index, index note.IndexUpdater) note.Scenarios {
+	names, refs, links := db.NamedPaths(), db.NoteRefs(), db.Links()
+	sources, indexed := db.Sources(), db.SourcesKnown()
 	readers := c.VaultReaders()
 	writers := c.VaultWriters()
 	now := c.Clock
@@ -28,15 +24,15 @@ func (c Config) Notes(
 	// One note.Move settles every note that traveled, whether a rename sent it
 	// or a move did.
 	mover := note.NewMove(note.MoveDeps{
-		Readers: readers, Writers: writers, Links: links, Names: queries,
+		Readers: readers, Writers: writers, Links: links, Names: names,
 		Sources: sources, Index: index, Now: now,
 	})
 	mover.Sync = c.SyncSetting
 
 	linking := note.NewEditLinks(readers, writers, index, now)
 	remove := note.NewRemove(writers, links, indexed, index)
-	addresses := query.NewGetLinkAddress(queries)
-	create := note.NewCreate(writers, queries, index, now)
+	addresses := query.NewGetLinkAddress(names)
+	create := note.NewCreate(writers, names, index, now)
 
 	return note.Scenarios{
 		Read:       note.NewRead(readers),
@@ -59,25 +55,25 @@ func (c Config) Notes(
 		Links:        query.NewShowLinks(links),
 		Connection:   query.NewGetConnection(links),
 		Backlinks:    query.NewGetBacklinks(links),
-		Neighborhood: query.NewShowNeighbourhood(links, queries),
+		Neighborhood: query.NewShowNeighbourhood(links, refs),
 		ResolveLinks: query.NewResolveLinks(links),
 
-		GetTitles:      query.NewGetTitles(queries),
-		GetTitle:       query.NewGetTitle(queries),
-		IsVaultIndexed: query.NewIsVaultIndexed(queries),
+		GetTitles:      query.NewGetTitles(refs),
+		GetTitle:       query.NewGetTitle(refs),
+		IsVaultIndexed: query.NewIsVaultIndexed(db.VaultHolds()),
 		GetLinkAddress: addresses,
 		RemoveNote:     note.NewRemoveNote(remove, readers),
 	}
 }
 
 // FocusNote builds the use case that shows a note in the window.
-func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *query.FocusNote {
-	return query.NewFocusNote(queries, view)
+func (c Config) FocusNote(refs noteport.NoteRefs, view windowport.Window) *query.FocusNote {
+	return query.NewFocusNote(refs, view)
 }
 
 // GetNamedPaths builds the note named paths query use case.
-func (Config) GetNamedPaths(queries noteport.NoteQueries) *query.GetNamedPaths {
-	return query.NewGetNamedPaths(queries)
+func (Config) GetNamedPaths(names noteport.NamedPaths) *query.GetNamedPaths {
+	return query.NewGetNamedPaths(names)
 }
 
 // Read builds the vault file reader use case.

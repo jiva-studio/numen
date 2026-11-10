@@ -71,7 +71,7 @@ func (c Config) Scan(db *vault.Index) vault.Scan {
 		c.VaultReaders,
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 	c.SetNoteCut(&scan, db)
