@@ -7,6 +7,7 @@ import (
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
@@ -18,7 +19,7 @@ func mountVault(w *windowWiring) {
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
-func getReadVault(cfg Config, db *Index) editor.ReadVaultFunc {
+func getReadVault(cfg Config, db *vault.Index) editor.ReadVaultFunc {
 	return func(
 		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
 	) (vault.ReadWholeVault, error) {
@@ -28,16 +29,18 @@ func getReadVault(cfg Config, db *Index) editor.ReadVaultFunc {
 	}
 }
 
-func getWindowSession(cfg Config, db *Index) editor.SessionSource {
+func getWindowSession(cfg Config, db *vault.Index) editor.SessionSource {
 	return editor.SessionSource{
 		StartVault:             cfg.startVault(db),
-		SetTextVersionListener: cfg.vault().SetTextVersionListener,
-		ReportTextFilesChanged: cfg.vault().ReportTextFilesChanged,
-		GetRefresh:             func() vault.Refresh { return cfg.GetRefresh(db) },
+		SetTextVersionListener: func(listener textport.VersionListener) { setTextVersionListener(cfg.vault(), listener) },
+		ReportTextFilesChanged: func(ctx context.Context, v domain.Vault, paths []string) error {
+			return reportTextFilesChanged(cfg.vault(), ctx, v, paths)
+		},
+		GetRefresh: func() vault.Refresh { return cfg.GetRefresh(db) },
 	}
 }
 
-func (c Config) startVault(db *Index) editor.StartVaultFunc {
+func (c Config) startVault(db *vault.Index) editor.StartVaultFunc {
 	return func(
 		ctx context.Context, v domain.Vault, rebuild bool,
 		notified func(paths, assets []string, reload bool),

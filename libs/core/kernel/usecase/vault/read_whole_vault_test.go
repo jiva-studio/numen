@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
@@ -264,7 +263,7 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	return c.VaultReaders.Open(v)
 }
 
-func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) vaultreading.ReadWholeVault {
+func newWholeVaultRead(readers vaultport.VaultReaders, db *vaults.Index) vaultreading.ReadWholeVault {
 	return vaults.NewReadWholeVault(
 		scanner(readers, db),
 		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),

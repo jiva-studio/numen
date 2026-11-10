@@ -18,7 +18,7 @@ func (c Config) OpenCLIVaults() (cli.Vaults, error) {
 	if err != nil {
 		return cli.Vaults{}, err
 	}
-	unregister := func(db *Index) vault.Unregister {
+	unregister := func(db *vault.Index) vault.Unregister {
 		return vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
 	}
 	return cli.Vaults{

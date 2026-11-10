@@ -21,6 +21,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 )
 
 type benchEmbedder struct {
@@ -83,7 +84,7 @@ func generateDeterministicVector(text string, dims int) []float32 {
 
 type benchCorpus struct {
 	vault      domain.Vault
-	db         *container.Index
+	db         *vaults.Index
 	searchMock search.Search
 	mockModel  embeddingport.Embedder
 	passages   sourceport.PassageQueries

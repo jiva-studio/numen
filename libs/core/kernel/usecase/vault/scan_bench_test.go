@@ -24,7 +24,7 @@ import (
 //
 //	go test ./usecase/vault/ -run XXX -bench . -benchtime 1x
 
-func openIndexFor(b *testing.B) *container.Index {
+func openIndexFor(b *testing.B) *vaults.Index {
 	b.Helper()
 	db, err := container.NewConfig(container.Config{
 		IndexPath: filepath.Join(b.TempDir(), "index.db"),
@@ -36,7 +36,7 @@ func openIndexFor(b *testing.B) *container.Index {
 	return db
 }
 
-func scanFor(db *container.Index) vaults.Scan {
+func scanFor(db *vaults.Index) vaults.Scan {
 	return vaults.NewScan(
 		vaultreader.Readers{},
 		db.Vaults(),

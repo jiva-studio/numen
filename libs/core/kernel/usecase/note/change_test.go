@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
@@ -25,7 +24,7 @@ import (
 // changing is a vault that can be both queried and written to, with the index
 // kept current as a real caller would keep it.
 type changing struct {
-	db    *container.Index
+	db    *vaults.Index
 	vault domain.Vault
 	index func(ctx context.Context, v domain.Vault, paths []string) error
 }

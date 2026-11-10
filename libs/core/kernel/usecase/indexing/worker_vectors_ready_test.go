@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -20,9 +19,9 @@ func (l *readyLog) report(_ context.Context, v domain.Vault) {
 	l.vaults = append(l.vaults, v.ID)
 }
 
-func readyPass(t *testing.T, model embeddingport.Embedder, log *readyLog) *pass {
+func readyPass(t *testing.T, openReading openFunc, model embeddingport.Embedder, log *readyLog) *pass {
 	t.Helper()
-	made, db := readingfixture.Open(t)
+	made, db := openReading(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -33,9 +32,10 @@ func readyPass(t *testing.T, model embeddingport.Embedder, log *readyLog) *pass 
 	return p
 }
 
-func TestAPassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady(t *testing.T) {
+func testAPassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady(t *testing.T, openReading openFunc) {
+	t.Helper()
 	log := &readyLog{}
-	p := readyPass(t, &fakeEmbedder{dims: 64}, log)
+	p := readyPass(t, openReading, &fakeEmbedder{dims: 64}, log)
 
 	p.embed(t.Context())
 
@@ -44,9 +44,10 @@ func TestAPassThatEmbeddedEverythingTellsThatTheVectorsOfItsVaultAreReady(t *tes
 	}
 }
 
-func TestAPassWithNothingPendingTellsAgain(t *testing.T) {
+func testAPassWithNothingPendingTellsAgain(t *testing.T, openReading openFunc) {
+	t.Helper()
 	log := &readyLog{}
-	p := readyPass(t, &fakeEmbedder{dims: 64}, log)
+	p := readyPass(t, openReading, &fakeEmbedder{dims: 64}, log)
 
 	p.embed(t.Context())
 	p.embed(t.Context())
@@ -56,9 +57,10 @@ func TestAPassWithNothingPendingTellsAgain(t *testing.T) {
 	}
 }
 
-func TestAPassThatCouldNotEmbedTellsNothing(t *testing.T) {
+func testAPassThatCouldNotEmbedTellsNothing(t *testing.T, openReading openFunc) {
+	t.Helper()
 	log := &readyLog{}
-	p := readyPass(t, &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}, log)
+	p := readyPass(t, openReading, &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}, log)
 
 	p.embed(t.Context())
 
@@ -67,9 +69,10 @@ func TestAPassThatCouldNotEmbedTellsNothing(t *testing.T) {
 	}
 }
 
-func TestAPassThatWasStoppedTellsNothing(t *testing.T) {
+func testAPassThatWasStoppedTellsNothing(t *testing.T, openReading openFunc) {
+	t.Helper()
 	log := &readyLog{}
-	p := readyPass(t, &fakeEmbedder{dims: 64}, log)
+	p := readyPass(t, openReading, &fakeEmbedder{dims: 64}, log)
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
@@ -80,8 +83,9 @@ func TestAPassThatWasStoppedTellsNothing(t *testing.T) {
 	}
 }
 
-func TestAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T) {
-	made, db := readingfixture.Open(t)
+func testAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T, openReading openFunc) {
+	t.Helper()
+	made, db := openReading(t)
 	model := &fakeEmbedder{dims: 64}
 	fit(t, db, model)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})

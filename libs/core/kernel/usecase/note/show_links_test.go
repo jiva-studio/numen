@@ -16,7 +16,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 )
 
-func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, domain.Vault) {
+func newIndexedVault(t *testing.T, notes map[string]string) (*vaults.Index, domain.Vault) {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db, err := container.NewConfig(container.Config{IndexPath: indexfile.Path(t)}).OpenIndex(t.Context())
@@ -38,7 +38,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 	return db, v
 }
 
-func links(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
+func links(t *testing.T, db *vaults.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
 	c, err := query.NewShowLinks(db.Links()).Execute(t.Context(), v, path)
 	if err != nil {
@@ -258,7 +258,7 @@ func TestShowLinks_UnconnectedVaultLinkIsNotResolvedOrBroken(t *testing.T) {
 	}
 }
 
-func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
+func addVault(t *testing.T, db *vaults.Index, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
@@ -427,7 +427,7 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 	}
 }
 
-func getSingleLink(t *testing.T, db *container.Index, v domain.Vault, path string) query.NoteLinks {
+func getSingleLink(t *testing.T, db *vaults.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
 	c := links(t, db, v, path)
 	if len(c.Links) != 1 {

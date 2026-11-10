@@ -11,7 +11,7 @@ import (
 // GetEditorAgent is the agent the editor window starts its tasks on: the programs of the plugins
 // with the agent provider capability, with the tools of the host.
 func (c Config) GetEditorAgent() agentport.Agent {
-	return c.plugins().GetToolProvider()
+	return getToolProvider(c.plugins())
 }
 
 func mountAgent(w *windowWiring) {

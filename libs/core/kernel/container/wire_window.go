@@ -22,7 +22,7 @@ type UnknownVaultError = registry.UnknownError
 type windowWiring struct {
 	cfg    Config
 	ports  registry.Ports
-	db     *Index
+	db     *vault.Index
 	notes  *note.Scenarios
 	vaults *vault.Scenarios
 
@@ -49,7 +49,7 @@ func (c Config) OpenWindow(ctx context.Context, named string, out io.Writer) (*e
 // OpenWindowOver is OpenWindow over a registry and a cache already open, for a caller that opened
 // them itself. The window closes the cache.
 func (c Config) OpenWindowOver(
-	ctx context.Context, ports registry.Ports, db *Index, named string, out io.Writer,
+	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
 ) (*editor.Installation, error) {
 	return c.OpenWindowWith(ctx, ports, db, named, out, nil)
 }
@@ -57,7 +57,7 @@ func (c Config) OpenWindowOver(
 // OpenWindowWith is OpenWindowOver with the walk of the vault put through wrap, for a caller
 // that holds one back or drives it. A nil wrap leaves it as it is.
 func (c Config) OpenWindowWith(
-	ctx context.Context, ports registry.Ports, db *Index, named string, out io.Writer,
+	ctx context.Context, ports registry.Ports, db *vault.Index, named string, out io.Writer,
 	wrap func(editor.StartVaultFunc) editor.StartVaultFunc,
 ) (*editor.Installation, error) {
 	w := &windowWiring{cfg: c, ports: ports, db: db, wrap: wrap}
@@ -100,7 +100,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 		ReadVault:     getReadVault(w.cfg, w.db),
 		CloseIndex:    w.db.Close,
 		Progress:      w.db.Progress(),
-		EmitEvent:     w.cfg.plugins().EmitPluginEvent,
+		EmitEvent:     func(event string) { emitPluginEvent(w.cfg.plugins(), event) },
 		IsRebuilding:  w.cfg.ShouldRebuildIndex,
 		Closing:       ctx.Done(),
 	}, session)

@@ -7,7 +7,7 @@ import (
 
 func mountCommand(w *windowWiring) {
 	var versions command.VersionItems
-	if menu := w.cfg.plugins().OpenVersionItems(); menu != nil {
+	if menu := openVersionItems(w.cfg.plugins()); menu != nil {
 		versions = menu
 	}
 	handler := command.NewHandler(w.inst.State, w.cfg.GetPluginCommands(), versions)
