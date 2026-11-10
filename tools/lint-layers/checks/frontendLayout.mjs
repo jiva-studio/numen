@@ -38,7 +38,7 @@ export const FLAT_ROOTS = [
   { root: "libs/core/client/src", areas: ["errors", "services", "settings"], scope: "libs" },
   { root: "libs/plugin/loader/src", areas: ["hosting", "keybindings", "loading", "slot-views", "slots", "when"], scope: "libs" },
   { root: "libs/plugin/manager/src", areas: [], scope: "libs" },
-  { root: "libs/plugin/sdk-ts/src", areas: ["commands", "errors", "slots"], scope: "libs" },
+  { root: "libs/plugin/sdk-ts/src", areas: ["commands", "errors", "slots", "stream"], scope: "libs" },
 ];
 
 /** The folder and file names directly below a directory, from the tracked paths. */
