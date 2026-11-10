@@ -1,0 +1,84 @@
+/* --------------------------------- Tokens --------------------------------- */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --on-accent: #ffffff;
+  --ink: #2c241d;
+  --forest: #382c22;
+  --deep: #241c16;
+  --lime: #eba042;
+  --lime-shadow: #b86f1b;
+  --btn-border: #c47920;
+  --btn-ink: #1b1510;
+  --cream: #f3ebdc;
+  --paper: #faf4e8;
+  --card-bg: #fffbf2;
+  --sage: #ede2cf;
+  --rust: #b5522f;
+  --gold: #d4943a;
+  --muted: #6e6254;
+  --border: #e2d7c5;
+  --border-strong: #cbbda6;
+  --offset-shadow: 0.4rem 0.4rem #dfd4c0;
+  --offset-shadow-dark: 0.4rem 0.4rem #16110d;
+  --header-bg: #faf4e8f2;
+  --header-border: #e0d5c1;
+  --hero-ring-border: #2c241d1c;
+  --hero-ring-1: #2c241d09;
+  --hero-ring-2: #2c241d05;
+  --suite-active-bg: #efe1c8;
+  --suite-active-border: #c47920;
+  --suite-active-title: #9e4220;
+  --suite-active-text: #463a2f;
+  --on-forest-muted: #d8cab9;
+  --titlebar-muted: #d0c2b2;
+  --problem-bg: #362a21;
+  --problem-cell-bg: #423429;
+  --problem-cell-border: #5c493a;
+  --on-deep-muted: #c4b5a3;
+  --footer-border: #3a2e25;
+  --footer-muted: #ad9f8f;
+  --font-body: 'Nunito Sans Variable', sans-serif;
+  --font-display: 'Nunito Sans Variable', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --on-accent: #ffffff;
+  --ink: #ece0cd;
+  --forest: #332920;
+  --deep: #120f0d;
+  --lime: #eba042;
+  --lime-shadow: #9e5d14;
+  --btn-border: #b86f1b;
+  --btn-ink: #161311;
+  --cream: #1c1815;
+  --paper: #161311;
+  --card-bg: #25201b;
+  --sage: #201b17;
+  --rust: #e8836b;
+  --gold: #e9a23b;
+  --muted: #a89c8e;
+  --border: #373029;
+  --border-strong: #4c4238;
+  --offset-shadow: 0.4rem 0.4rem #0b0908;
+  --offset-shadow-dark: 0.4rem 0.4rem #0b0908;
+  --header-bg: #161311f2;
+  --header-border: #332c25;
+  --hero-ring-border: #ece0cd14;
+  --hero-ring-1: #ece0cd06;
+  --hero-ring-2: #ece0cd04;
+  --suite-active-bg: #33281e;
+  --suite-active-border: #b86f1b;
+  --suite-active-title: #eba042;
+  --suite-active-text: #dfd2c0;
+  --on-forest-muted: #d4c6b6;
+  --titlebar-muted: #c7b8a7;
+  --problem-bg: #211b16;
+  --problem-cell-bg: #2b231d;
+  --problem-cell-border: #463a30;
+  --on-deep-muted: #b5a796;
+  --footer-border: #2c251f;
+  --footer-muted: #9c8f80;
+}
