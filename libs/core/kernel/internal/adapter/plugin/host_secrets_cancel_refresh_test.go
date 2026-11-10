@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"testing"
 	"time"
 
@@ -48,7 +49,7 @@ func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T
 			case <-ctx.waitSignal:
 			case err := <-result:
 				t.Fatalf("the call returned %v without waiting for its context", err)
-			case <-time.After(3 * time.Second):
+			case <-time.After(delivery.ConfigureTimeout):
 				t.Fatal("the call does not wait for the end of its context")
 			}
 			cancel()
@@ -57,7 +58,7 @@ func TestACallCancelledWhileItWaitsForTheLockReturnsAndSendsNothing(t *testing.T
 				if !errors.Is(err, context.Canceled) {
 					t.Errorf("the call returned %v, want the context error", err)
 				}
-			case <-time.After(3 * time.Second):
+			case <-time.After(delivery.ConfigureTimeout):
 				t.Fatal("the call still waits for the lock after its context ended")
 			}
 
@@ -104,7 +105,7 @@ func TestACallCancelledBeforeItStartsReturnsAndSendsNothing(t *testing.T) {
 					if !errors.Is(err, context.Canceled) {
 						t.Errorf("the call returned %v, want the context error", err)
 					}
-				case <-time.After(3 * time.Second):
+				case <-time.After(delivery.ConfigureTimeout):
 					t.Fatal("the call still waits for the lock after its context ended")
 				}
 
@@ -150,7 +151,7 @@ func TestAnActivationCancelledWhileItWaitsForTheLockSendsNothingAndTheNextRefres
 		if !errors.Is(err, context.Canceled) {
 			t.Errorf("the activation returned %v, want the context error", err)
 		}
-	case <-time.After(3 * time.Second):
+	case <-time.After(delivery.ConfigureTimeout):
 		t.Fatal("the activation still waits for the lock after its context ended")
 	}
 	if c.host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID) {

@@ -3,6 +3,7 @@ package plugin
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -377,12 +378,12 @@ func TestHungConfigureTimesOutOnce(t *testing.T) {
 	select {
 	case early := <-result:
 		t.Fatalf("the operation returned %v before the Configure timeout", early)
-	case <-time.After(configureCallTimeout / 2):
+	case <-time.After(delivery.ConfigureTimeout / 2):
 	}
 	var err error
 	select {
 	case err = <-result:
-	case <-time.After(configureCallTimeout + 2*time.Second):
+	case <-time.After(delivery.ConfigureTimeout + 2*time.Second):
 		t.Fatal("the operation waits longer than the Configure timeout")
 	}
 	if len(entered) != 1 {
@@ -406,7 +407,7 @@ func TestHungConfigureTimesOutOnce(t *testing.T) {
 			if err != nil {
 				t.Errorf("%s returned %v", name, err)
 			}
-		case <-time.After(configureCallTimeout / 2):
+		case <-time.After(delivery.ConfigureTimeout / 2):
 			t.Fatalf("%s waits for the plugin that did not answer", name)
 		}
 	}
@@ -426,7 +427,7 @@ func TestNotifyingAHungPluginWaitsForTheTimeoutOnce(t *testing.T) {
 	var err error
 	select {
 	case err = <-result:
-	case <-time.After(configureCallTimeout + 2*time.Second):
+	case <-time.After(delivery.ConfigureTimeout + 2*time.Second):
 		t.Fatal("the call waits longer than the Configure timeout")
 	}
 	if err == nil || !strings.Contains(err.Error(), secretPluginID) || !strings.Contains(err.Error(), "timed out") {
@@ -468,7 +469,7 @@ func TestConfigureCallbackDoesNotDeadlockRefresh(t *testing.T) {
 		if err != nil {
 			t.Errorf("the round returned %v", err)
 		}
-	case <-time.After(configureCallTimeout + 2*time.Second):
+	case <-time.After(delivery.ConfigureTimeout + 2*time.Second):
 		t.Fatal("the round is stuck behind a handler that called back")
 	}
 	if err := <-nested; !errors.Is(err, context.DeadlineExceeded) {

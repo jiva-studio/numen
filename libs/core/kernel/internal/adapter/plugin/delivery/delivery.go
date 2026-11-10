@@ -18,7 +18,8 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-const configureCallTimeout = 3 * time.Second
+// ConfigureTimeout bounds one Configure call to a plugin.
+const ConfigureTimeout = 3 * time.Second
 
 // Snapshot is what a Configure call to one plugin is made of, read while the table of plugins is locked.
 type Snapshot struct {
@@ -34,7 +35,6 @@ type Snapshot struct {
 
 // Host is what the delivery asks the plugin host for.
 type Host struct {
-	// GetSnapshot reads the snapshot of a plugin, and reports whether the plugin is running.
 	GetSnapshot   func(pluginID string) (Snapshot, bool, error)
 	ListPluginIDs func() []string
 	ReportError   func(err error)
@@ -208,7 +208,7 @@ func sendConfigure(ctx context.Context, snapshot Snapshot, entries []*v1.Configu
 		Values:            snapshot.Values,
 		Secrets:           entries,
 	})
-	callCtx, cancel := context.WithTimeout(ctx, configureCallTimeout)
+	callCtx, cancel := context.WithTimeout(ctx, ConfigureTimeout)
 	defer cancel()
 	_, err := client.Configure(callCtx, req)
 	if err == nil {
