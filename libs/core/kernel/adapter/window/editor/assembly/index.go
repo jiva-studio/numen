@@ -17,17 +17,23 @@ import (
 )
 
 type indexNoteAssembly interface {
+	GetProblemQueries() problemport.ProblemQueries
+	GetIndexProgress() indexport.IndexProgress
+}
+
+type noteLookupAssembly interface {
 	OpenGetOpeningNote() *query.GetOpeningNote
 	OpenGetTypes() *query.GetTypes
 	OpenGetHeadings() *query.GetHeadings
-	OpenResolveLinks() *query.ResolveLinks
 	OpenGetTitles() query.GetTitles
 	OpenGetNameMatches() *search.GetNameMatches
+}
+
+type noteViewAssembly interface {
+	OpenResolveLinks() *query.ResolveLinks
 	OpenGetFolderEntries(readers vaultport.VaultReaders) *file.GetFolderEntries
 	OpenGetFileKinds(readers vaultport.VaultReaders) *file.GetFileKinds
 	OpenFocusNote(view windowport.Window) *query.FocusNote
-	GetProblemQueries() problemport.ProblemQueries
-	GetIndexProgress() indexport.IndexProgress
 }
 
 type indexSourceAssembly interface {
@@ -47,6 +53,8 @@ type indexTextAssembly interface {
 // IndexAssembly provides the cache and index queries of an installation to this window.
 type IndexAssembly interface {
 	indexNoteAssembly
+	noteLookupAssembly
+	noteViewAssembly
 	indexSourceAssembly
 	indexTextAssembly
 	CloseIndex() error
