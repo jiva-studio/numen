@@ -21,6 +21,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/answer"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/catalog"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/endpoint"
 	"github.com/jiva-studio/numen/plugins/agents-numen/backend/internal/adapter/chatapi"
@@ -191,11 +192,11 @@ func (f *fakeChat) getRequests() []sentRequest {
 func newCallReply(id, tool, args string) conversation.Message {
 	call := conversation.ToolCall{ID: id, Type: "function"}
 	call.Function.Name, call.Function.Arguments = tool, args
-	return message{Role: "assistant", ToolCalls: []conversation.ToolCall{call}}
+	return conversation.Message{Role: "assistant", ToolCalls: []conversation.ToolCall{call}}
 }
 
 func newTextReply(text string) conversation.Message {
-	return message{Role: "assistant", Content: new(text)}
+	return conversation.Message{Role: "assistant", Content: new(text)}
 }
 
 // fakeVault is a tool server with two tools, behind the token, that keeps the arguments of every
@@ -468,7 +469,7 @@ func TestTheProgramIsInstalledWhileTheChatAPIListsItsModels(t *testing.T) {
 		t.Fatal(err)
 	}
 	program := res[0]
-	if program.Name != ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 2 {
+	if program.Name != catalog.ProgramName || !program.IsInstalled || !program.LimitsTools || len(program.Models) != 2 {
 		t.Fatalf("the program is %+v", program)
 	}
 	if program.Models[0].IsDefault || !program.Models[1].IsDefault || program.Models[1].Title != "M1" {
