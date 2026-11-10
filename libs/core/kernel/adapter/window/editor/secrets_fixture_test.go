@@ -449,6 +449,6 @@ func applySettings(t *testing.T, cfg container.Config) container.Config {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(cfg.UnsubscribeHost)
+	t.Cleanup(func() { container.UnsubscribeHost(cfg) })
 	return cfg
 }

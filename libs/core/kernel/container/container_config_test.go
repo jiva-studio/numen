@@ -62,10 +62,10 @@ func TestReadSettings_InvalidJSONReturnsPath(t *testing.T) {
 func TestWithNoFolderForSettingsNothingIsReadOrSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	if _, response, err := readSettings((NewConfig(Config{})).settings())(); err == nil || response != "" {
+	if _, response, err := readSettings(settingsOf((NewConfig(Config{}))))(); err == nil || response != "" {
 		t.Errorf("settings were read from %q: %v", response, err)
 	}
-	err := getSettingsWriter(NewConfig(Config{}).settings())([]settings.Setting{
+	err := getSettingsWriter(settingsOf(NewConfig(Config{})))([]settings.Setting{
 		{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`},
 	})
 	if err == nil {
@@ -81,7 +81,7 @@ func TestSettingsFile_DefaultsToUserConfigDir(t *testing.T) {
 	}
 	want = filepath.Join(want, "numen", "numen.json")
 
-	got, err := settingsSettingsFile(NewConfig(Config{}).settings())
+	got, err := settingsSettingsFile(settingsOf(NewConfig(Config{})))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestSettingsFile_FollowsRegistryDirectory(t *testing.T) {
 	isolate(t)
 	registry := filepath.Join(t.TempDir(), "registry.json")
 
-	got, err := settingsSettingsFile(NewConfig(Config{RegistryPath: registry}).settings())
+	got, err := settingsSettingsFile(settingsOf(NewConfig(Config{RegistryPath: registry})))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := resolveIndexPath(NewConfig(Config{IndexPath: named}).vault())
+	got, err := resolveIndexPath(vaultOf(NewConfig(Config{IndexPath: named})))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,11 +145,11 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := resolveIndexPath(NewConfig(Config{IndexPath: filepath.Join(file, "index.db")}).vault())
+	got, err := resolveIndexPath(vaultOf(NewConfig(Config{IndexPath: filepath.Join(file, "index.db")})))
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
-	if _, err := openIndex((NewConfig(Config{IndexPath: filepath.Join(file, "index.db")})).vault(), t.Context()); err == nil {
+	if _, err := openIndex(vaultOf((NewConfig(Config{IndexPath: filepath.Join(file, "index.db")}))), t.Context()); err == nil {
 		t.Error("an index was opened where its folder cannot be made")
 	}
 }
@@ -168,7 +168,7 @@ func TestHandleError_CallsConfiguredHandler(t *testing.T) {
 func TestWithNoFolderForSettingsTheFileIsNotSaved(t *testing.T) {
 	isolateWithNoHome(t)
 
-	err := getSettingsWriter(NewConfig(Config{}).settings())([]settings.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`}})
+	err := getSettingsWriter(settingsOf(NewConfig(Config{})))([]settings.Setting{{Path: []string{"app", "agent", "claude", "model"}, JSON: `"opus"`}})
 	if err == nil || !strings.Contains(err.Error(), "HOME") {
 		t.Errorf("got %v", err)
 	}
@@ -221,10 +221,10 @@ func TestRegistry_UsesConfiguredPathElseConfigDir(t *testing.T) {
 
 func TestEveryFolderOfTheMachineIsGivenAnIdentityAndATrash(t *testing.T) {
 	isolate(t)
-	if vaultIdentity((NewConfig(Config{})).vault()) == nil {
+	if vaultIdentity(vaultOf((NewConfig(Config{})))) == nil {
 		t.Error("folders are given no identity")
 	}
-	if vaultTrash((NewConfig(Config{})).vault()) == nil {
+	if vaultTrash(vaultOf((NewConfig(Config{})))) == nil {
 		t.Error("what is deleted has nowhere to go")
 	}
 }

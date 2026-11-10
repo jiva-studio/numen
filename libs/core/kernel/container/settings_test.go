@@ -198,7 +198,7 @@ func TestGetSettingsOrDefaults_FallsBackToDefaultsWhenUnreadable(t *testing.T) {
 
 	t.Setenv("HOME", "")
 	t.Setenv("XDG_CONFIG_HOME", "")
-	if got := settingsGetSettingsOrDefaults((NewConfig(Config{})).settings()); !reflect.DeepEqual(got, DefaultSettings()) {
+	if got := settingsGetSettingsOrDefaults(settingsOf((NewConfig(Config{})))); !reflect.DeepEqual(got, DefaultSettings()) {
 		t.Errorf("a machine with nowhere for settings gave %+v", got)
 	}
 }

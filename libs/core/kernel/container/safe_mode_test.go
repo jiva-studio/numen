@@ -122,7 +122,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if !safe.SafeMode {
 		t.Error("safe mode was not set")
 	}
-	if !embedderReady(cfg.SetSafeMode(false).search()) {
+	if !embedderReady(searchOf(cfg.SetSafeMode(false))) {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

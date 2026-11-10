@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func OpenCLIVaults(c Config) (cli.Vaults, error) {
+func openCLIVaults(c Config) (cli.Vaults, error) {
 	ports, err := c.Registry()
 	if err != nil {
 		return cli.Vaults{}, err
@@ -50,7 +50,7 @@ func OpenCLIVaults(c Config) (cli.Vaults, error) {
 	}, nil
 }
 
-func OpenCLILinks(c Config, ctx context.Context) (cli.Links, error) {
+func openCLILinks(c Config, ctx context.Context) (cli.Links, error) {
 	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return cli.Links{}, err
@@ -59,7 +59,7 @@ func OpenCLILinks(c Config, ctx context.Context) (cli.Links, error) {
 	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
 }
 
-func OpenCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+func openCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 	indexing := c
 	indexing.ShouldRebuildIndex = rebuild
 	db, err := openIndex(vaultOf(indexing), ctx)
@@ -87,7 +87,7 @@ func OpenCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (c
 	}, nil
 }
 
-func OpenCLISearch(c Config,
+func openCLISearch(c Config,
 	ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := openIndex(vaultOf(c), ctx)
@@ -108,7 +108,7 @@ func OpenCLISearch(c Config,
 	}, nil
 }
 
-func OpenCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
+func openCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
 	db, err := openIndex(vaultOf(c), ctx)
 	if err != nil {
 		return cli.Problems{}, err
@@ -116,7 +116,7 @@ func OpenCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
 	return cli.Problems{Problems: getProblems(vaultOf(c), db.Problems()), Close: db.Close}, nil
 }
 
-func GetCLIPluginCommands(c Config) cli.PluginCommands {
+func getCLIPluginCommands(c Config) cli.PluginCommands {
 	return cli.PluginCommands{List: getPluginCommands(plugins(c)).List, Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) { return openPluginCommands(c, ctx, v) }}
 }
 
@@ -130,4 +130,21 @@ func closeIfOpen(closeFn func() error) error {
 // GetVaultList builds the use case that lists the vaults of the registry given.
 func GetVaultList(c Config, ports registry.Ports) registry.List {
 	return registry.NewList(ports.Vaults)
+}
+
+// OpenCLI returns what the command line calls to reach the vaults, the scan, the search, the links, the
+// problems and the plugin commands of the installation c describes.
+func OpenCLI(c Config) cli.Deps {
+	return cli.Deps{
+		Vaults: func() (cli.Vaults, error) { return openCLIVaults(c) },
+		Links:  func(ctx context.Context) (cli.Links, error) { return openCLILinks(c, ctx) },
+		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+			return openCLIScan(c, ctx, v, rebuild)
+		},
+		Search: func(ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler) (cli.Search, error) {
+			return openCLISearch(c, ctx, v, errorHandler)
+		},
+		Problems:       func(ctx context.Context) (cli.Problems, error) { return openCLIProblems(c, ctx) },
+		PluginCommands: func() cli.PluginCommands { return getCLIPluginCommands(c) },
+	}
 }

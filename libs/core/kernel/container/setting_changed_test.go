@@ -96,7 +96,7 @@ func openInstallation(t *testing.T, body string) (container.Config, string, *rec
 	lent.ApplySetting, lent.SettingsPush = host.applySetting, host
 	cfg := container.NewConfig(container.Config{SettingsPath: path, PluginHost: lent})
 	cfg = cfg.SetSettings(container.DefaultSettings())
-	t.Cleanup(cfg.UnsubscribeHost)
+	t.Cleanup(func() { container.UnsubscribeHost(cfg) })
 	return cfg, path, host
 }
 
