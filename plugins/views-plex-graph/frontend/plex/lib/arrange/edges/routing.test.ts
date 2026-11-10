@@ -545,7 +545,10 @@ describe('the run of a line between two boxes', () => {
   })
 
   it('holds the leaving direction for a fraction of the gap between the gates', () => {
-    const half = { ...edgeRouting, curvature: 0.5, minReach: 0 }
+    const half = {
+      ...edgeRouting,
+      tuning: { ...edgeRouting.tuning, curvature: 0.5, minReach: 0 },
+    }
     const edge = route(box('a', 'child', 0, 0), box('b', 'child', 0, 200), half)
 
     // The gates are 160 apart, so each control is offset 80 from its gate.

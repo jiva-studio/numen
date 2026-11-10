@@ -59,7 +59,7 @@ export function separateTitles(
       depth: getDepth(routing.labelType) + 2 * apart,
       shift: title.shift,
     })
-    const ends = (edge.arrows?.length ? routing.arrowClearance : 0) / metrics.arc
+    const ends = (edge.arrows?.length ? routing.tuning.arrowClearance : 0) / metrics.arc
     const open = clearSpans(boxAt, [...boxes, ...titleBoxes], { ends, step: STEP / metrics.arc })
     const clear = edge.titles.length > 1 ? clipToHalf(open, title.anchor) : open
 

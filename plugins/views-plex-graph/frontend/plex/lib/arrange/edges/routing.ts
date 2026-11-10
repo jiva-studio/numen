@@ -18,7 +18,8 @@ import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
 /** `auto` means take the axis from the geometry. */
 export type Axis = 'vertical' | 'horizontal' | 'auto'
 
-export interface Routing extends RoutingOptions {
+export interface Routing {
+  readonly tuning: RoutingOptions
   readonly getAxis: (node: { relation: PlexNodeRelation }) => Axis
   readonly labelWidth?: ((label: string) => number) | undefined
   readonly labelType: LabelType
@@ -41,7 +42,7 @@ export function createRouting(
   labelType: LabelType = NO_TYPE,
 ): Routing {
   return {
-    ...options.routing,
+    tuning: options.routing,
     labelWidth: measureLabel,
     labelType,
     getAxis: (node) => {
@@ -233,7 +234,7 @@ function straightBetween(
   const secondGate = getEdgeAnchor(second, isVertical ? 'top' : 'left')
 
   const span = isVertical ? secondGate.y - firstGate.y : secondGate.x - firstGate.x
-  const reach = Math.max(routing.minReach, Math.abs(span) * routing.curvature)
+  const reach = Math.max(routing.tuning.minReach, Math.abs(span) * routing.tuning.curvature)
 
   return {
     fromPoint: firstGate,
@@ -257,7 +258,7 @@ function bowBetween(
   const side = isNegative ? negative : positive
   const firstGate = getEdgeAnchor(first, side)
   const secondGate = getEdgeAnchor(second, side)
-  const reach = isNegative ? -routing.minRun : routing.minRun
+  const reach = isNegative ? -routing.tuning.minRun : routing.tuning.minRun
   const getBowControl = (gate: Position): Position =>
     isColumn ? { x: gate.x + reach, y: gate.y } : { x: gate.x, y: gate.y + reach }
   return {
@@ -275,8 +276,8 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
     from.relation !== 'focus' &&
     to.relation !== 'focus' &&
     run >= 0 &&
-    run < routing.minRun &&
-    getRun(from, to, !isVertical) < routing.minRun
+    run < routing.tuning.minRun &&
+    getRun(from, to, !isVertical) < routing.tuning.minRun
 
   const fromFirst = isVertical ? from.y <= to.y : from.x <= to.x
   const [first, second] = fromFirst ? [from, to] : [to, from]
@@ -291,8 +292,8 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
 function createTitles(edge: PlexEdge, curve: EdgeCurve, routing: Routing): EdgeTitle[] {
   const labels = (edge.labels ?? []).filter((label) => label.text)
-  const room =
-    (getLength(curve) - (edge.arrows?.length ? 2 * routing.arrowClearance : 0)) / labels.length
+  const clearance = edge.arrows?.length ? 2 * routing.tuning.arrowClearance : 0
+  const room = (getLength(curve) - clearance) / labels.length
   const { labelWidth } = routing
   const places = getLabelPlaces(labels)
   return labels.map((label, index) => {
@@ -330,8 +331,8 @@ export function routeEdge(
   if (!from || !to || from === to) return null
 
   const routingOptions =
-    'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
-  const opacity = 'curvature' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
+    'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const opacity = 'tuning' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
   const curve = curveBetween(from, to, routingOptions)
 
@@ -355,9 +356,9 @@ export function routeEdges(
   routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
   const routingOptions =
-    'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+    'tuning' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
-    'curvature' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
+    'tuning' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
 
   return edges
     .map((edge) => routeEdge(edge, byId, { routing: routingOptions, opacity: getOpacity(edge) }))

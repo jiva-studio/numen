@@ -43,7 +43,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
   const { buffers, closeTab, writeMessage = () => undefined } = options
   const reportFailure = (error: unknown): void => writeMessage(formatErrorMessage(error), 'error')
   const vaultAnswers = createDeckAnswers()
-  const store = createDeckNoteStore(cards, vaultAnswers)
+  const store = openNotes(createDeckNotePort(cards, vaultAnswers))
   buffers.track(store)
   const readItem = createDeckReader(store, vaultAnswers.getProblems)
   const wiring = useDeckScheduleSync(cards, presets, store)
@@ -89,11 +89,11 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
   }
 }
 
-function createDeckNoteStore(
+function createDeckNotePort(
   cards: Cards,
   vaultAnswers: ReturnType<typeof createDeckAnswers>,
-): ReturnType<typeof openNotes> {
-  return openNotes({
+): Parameters<typeof openNotes>[0] {
+  return {
     read: async (path) => {
       const answer = await cards.readDeck(path)
       if (!answer.ok) {
@@ -137,7 +137,7 @@ function createDeckNoteStore(
       if (!answer.ok) return asFailure(answer.error.code)
       return asValue({ body: '', at: answer.value.at })
     },
-  })
+  }
 }
 
 interface DeckTabStateFactoryDeps {

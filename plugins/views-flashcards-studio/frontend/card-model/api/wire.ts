@@ -22,7 +22,8 @@ export interface VaultAnswer {
 
 export const NOTHING: VaultAnswer = { problems: [], reading: null, writing: null, at: '' }
 
-function createCardModelState() {
+/** What the vault answered per file, and the titles of the open files. */
+export function createCardModelState() {
   const fileAnswers = new Map<string, VaultAnswer>()
   const titles = new Map<string, string>()
 
@@ -74,6 +75,8 @@ function createCardModelState() {
     movePaths,
   }
 }
+
+export type CardModelState = ReturnType<typeof createCardModelState>
 
 interface RenameOptions {
   currentAt: string
@@ -135,8 +138,11 @@ function createCardModelReader(
 }
 
 // Messages are dropped when the caller supplies no writer.
-export function createCardModelWire(cards: Cards, say: MessageWriter = () => undefined) {
-  const state = createCardModelState()
+export function createCardModelWire(
+  cards: Cards,
+  state: CardModelState,
+  say: MessageWriter = () => undefined,
+) {
   const { fileAnswers, titles } = state
 
   const readItem = createCardModelReader(cards, fileAnswers, titles)
@@ -176,7 +182,6 @@ export function createCardModelWire(cards: Cards, say: MessageWriter = () => und
     )
 
   return {
-    ...state,
     read: readItem,
     write,
     renameField,

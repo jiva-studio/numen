@@ -16,7 +16,7 @@ import type {
 } from '../../cards'
 import { WORDS as words } from '../../cards'
 import { ERRORS } from '../../cards/wire/errors'
-import { createCardModelWire, NOTHING } from './wire'
+import { createCardModelState, createCardModelWire, NOTHING } from './wire'
 
 const cardModel = (overrides: Partial<VaultCardModel> = {}): VaultCardModel => ({
   path: 'Word.md',
@@ -51,9 +51,13 @@ const vault = () => ({
 
 const createWire = (cards: ReturnType<typeof vault>) => {
   const messages: { text: string; how: string | undefined }[] = []
-  const wire = createCardModelWire(cards as unknown as Cards, (text, how) => {
-    messages.push({ text, how })
-  })
+  const state = createCardModelState()
+  const wire = {
+    ...state,
+    ...createCardModelWire(cards as unknown as Cards, state, (text, how) => {
+      messages.push({ text, how })
+    }),
+  }
   return { wire, messages }
 }
 
@@ -301,7 +305,7 @@ describe('renaming a field', () => {
   it('writes no message at all where the wire was given nowhere to write one', async () => {
     const cards = vault()
     cards.renameField.mockResolvedValue(asFailure('unreadable'))
-    const wire = createCardModelWire(cards as unknown as Cards)
+    const wire = createCardModelWire(cards as unknown as Cards, createCardModelState())
 
     await expect(
       wire.renameField('Word.md', { from: 'Front', to: 'Template' }, vi.fn()),
