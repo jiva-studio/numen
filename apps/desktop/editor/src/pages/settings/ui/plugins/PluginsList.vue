@@ -26,6 +26,13 @@ const emit = defineEmits<{
 /* --------------------------------- State ---------------------------------- */
 const searchQuery = ref(props.query)
 
+const managed = computed(() => createManagedFromEntries(props.plugins, props.catalog))
+
+const enabled = computed(() =>
+  Object.fromEntries(props.plugins.map((one) => [one.id, isPluginEnabled(one.id)])),
+)
+
+/* --------------------------------- Hooks ---------------------------------- */
 watch(
   () => props.query,
   (newQuery) => {
@@ -36,12 +43,6 @@ watch(
 watch(searchQuery, (newQuery) => {
   if (props.query !== newQuery) emit('update:query', newQuery)
 })
-
-const managed = computed(() => createManagedFromEntries(props.plugins, props.catalog))
-
-const enabled = computed(() =>
-  Object.fromEntries(props.plugins.map((one) => [one.id, isPluginEnabled(one.id)])),
-)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {

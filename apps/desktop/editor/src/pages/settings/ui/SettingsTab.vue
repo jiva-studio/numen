@@ -19,13 +19,6 @@ const initialPluginId = props.state.initialPluginId
 const initialSearchQuery = props.state.initialSearchQuery
 const selectedPluginId = ref<string | null>(initialPluginId.value)
 
-watch(
-  () => initialPluginId.value,
-  (newId) => {
-    selectedPluginId.value = newId
-  },
-)
-
 const installation = props.state.installation
 const plugins = computed<readonly PluginInfo[]>(() => installation.plugin.plugins.value)
 const uninstalled = computed(() =>
@@ -43,6 +36,14 @@ const selectedPlugin = computed<PluginInfo | undefined>(() => {
   if (match) lastSelected = match
   return match ?? (lastSelected?.id === selectedPluginId.value ? lastSelected : undefined)
 })
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(
+  () => initialPluginId.value,
+  (newId) => {
+    selectedPluginId.value = newId
+  },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSelectPlugin(pluginId: string): void {
