@@ -4,10 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { COMMAND_ERROR_CODE } from '@numen/core-client'
-import { createWhenReader } from '@numen/plugin-loader'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import {
-  isOverTarget,
   listDeclaredCommands,
   listDeclaredItemLists,
   runDeclaredCommand,
@@ -210,14 +208,6 @@ describe('the commands the plugins declare', () => {
     } = await listDeclaredCommands()
 
     expect(one).toStrictEqual(proofread)
-  })
-
-  it('run over a target where their condition reads one', () => {
-    const reader = createWhenReader()
-
-    expect(isOverTarget(convert, reader)).toBe(true)
-    expect(isOverTarget({ when: 'window.isVaultReady' }, reader)).toBe(false)
-    expect(isOverTarget({}, reader)).toBe(false)
   })
 })
 

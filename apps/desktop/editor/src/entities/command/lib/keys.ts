@@ -35,7 +35,7 @@ const hasSameValues = (a: Values, b: Values): boolean => {
  * The keys of the first keybinding of the application for the command with these values, as drawn
  * for the current platform, or undefined for a command without one.
  */
-export const findChordKeys = (
+const findChordKeys = (
   command: string,
   agent: string,
   values: Values = {},

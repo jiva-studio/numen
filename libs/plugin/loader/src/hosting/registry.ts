@@ -36,12 +36,12 @@ export interface RegisteredCommand {
   reg: CommandRegistration
 }
 
-export interface RegisteredAgentProvider {
+interface RegisteredAgentProvider {
   pluginId: string
   reg: AgentProviderRegistration
 }
 
-export interface RegisteredSettingsView {
+interface RegisteredSettingsView {
   pluginId: string
   reg: SettingsViewRegistration
 }
@@ -69,11 +69,11 @@ export interface PluginItemRegistration<T> {
   readonly getContext?: () => PluginContext | undefined
 }
 
-export function clearSubscriptions(ctx?: PluginContext): void {
+function clearSubscriptions(ctx?: PluginContext): void {
   if (ctx) disposeSubscriptions(ctx.plugin.subscriptions)
 }
 
-export function cleanupMapItems(
+function cleanupMapItems(
   items: Map<string, { pluginId: string; cleanup: () => void }>,
   pluginId: string,
 ): void {
@@ -83,10 +83,7 @@ export function cleanupMapItems(
 }
 
 // Stryker disable all: agentProviders cleanup is internal state for future host provider lookup
-export function cleanupProviderItems(
-  items: Map<string, { pluginId: string }>,
-  pluginId: string,
-): void {
+function cleanupProviderItems(items: Map<string, { pluginId: string }>, pluginId: string): void {
   for (const [id, item] of items) {
     if (item.pluginId === pluginId) items.delete(id)
   }

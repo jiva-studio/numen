@@ -2,9 +2,14 @@
  * Which tab edits the file at a path.
  */
 import { describe, expect, it } from 'vitest'
-import { createNoteLookup, findEditorTabAt } from './editorTabs'
+import { createNoteLookup } from './editorTabs'
 
-type WindowTabs = Parameters<typeof findEditorTabAt>[0]
+type WindowTabs = Parameters<typeof createNoteLookup>[1]
+
+const findEditorTabAt = (windowTabs: WindowTabs, path: string): string | null =>
+  createNoteLookup({ reached: { getTabAt: () => null }, getTitle: () => '' }, windowTabs).getTabAt(
+    path,
+  )
 
 const createWindowTabs = (
   tabs: Record<

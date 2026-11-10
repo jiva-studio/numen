@@ -1,5 +1,5 @@
 /** One heading of a note: the line it is on, its text and its level. */
-export interface NoteHeading {
+interface NoteHeading {
   readonly line: number
   readonly text: string
   readonly level: number

@@ -4,14 +4,25 @@
  */
 import { commands, type CommandDeps, type CommandInvocation } from '@/entities/command'
 import { describe, expect, it, vi } from 'vitest'
-import { createWhenReader } from '@numen/plugin-loader'
-import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
+import type { DeclaredCommand, listDeclaredCommands } from '@/entities/plugin'
 import { getNamedIcon } from '@/shared/ui/icons'
-import {
-  createDeclaredPaletteCommands,
-  getPaletteId,
-  useDeclaredCommands,
-} from './declaredCommands'
+import { getPaletteId, useDeclaredCommands } from './declaredCommands'
+
+type DeclaredList = Awaited<ReturnType<typeof listDeclaredCommands>>
+type DeclaredCommandsDeps = NonNullable<Parameters<typeof useDeclaredCommands>[0]>
+
+const createPaletteCommands = async (
+  declared: readonly DeclaredCommand[],
+  contentTypes: Readonly<Record<string, string>> = {},
+  deps: DeclaredCommandsDeps = {},
+) => {
+  const commands = useDeclaredCommands({
+    list: async () => ({ commands: declared, slots: [], contentTypes }),
+    ...deps,
+  })
+  await commands.load()
+  return commands.paletteCommands.value
+}
 
 const createSample: DeclaredCommand = {
   pluginId: 'org.example.sample',
@@ -48,8 +59,8 @@ const runInvocation = (invocation: CommandInvocation, on: CommandDeps) =>
   commands.get(invocation.id)?.(invocation, on)
 
 describe('a declared command in the palette', () => {
-  it('asks for its required arguments, one step each, and leaves the optional ones out', () => {
-    const [sample] = createDeclaredPaletteCommands([createSample])
+  it('asks for its required arguments, one step each, and leaves the optional ones out', async () => {
+    const [sample] = await createPaletteCommands([createSample])
 
     expect(sample?.id).toBe('org.example.sample:sample.create')
     expect(sample?.group).toBe('window')
@@ -58,8 +69,8 @@ describe('a declared command in the palette', () => {
     expect(sample?.prompts).toStrictEqual([{ name: 'title', title: 'Title', isRequired: true }])
   })
 
-  it('asks nothing when every itemId is optional', () => {
-    const [one] = createDeclaredPaletteCommands([
+  it('asks nothing when every itemId is optional', async () => {
+    const [one] = await createPaletteCommands([
       { ...createSample, arguments: [{ name: 'folder', title: 'Folder', isRequired: false }] },
     ])
 
@@ -67,11 +78,10 @@ describe('a declared command in the palette', () => {
     expect(one?.prompts).toBeUndefined()
   })
 
-  it('over files is offered over a file of the content type its condition names alone', () => {
-    const [one] = createDeclaredPaletteCommands([convert], {
-      getContentTypes: () => ({ pdf: 'application/pdf', epub: 'application/epub+zip' }),
-      getConfig: () => ({}),
-      whenReader: createWhenReader(),
+  it('over files is offered over a file of the content type its condition names alone', async () => {
+    const [one] = await createPaletteCommands([convert], {
+      pdf: 'application/pdf',
+      epub: 'application/epub+zip',
     })
     const runs = { canRun: () => true, cannotRun: vi.fn() }
 
@@ -109,7 +119,7 @@ describe('a declared command with items', () => {
 
   it('asks for one of its items, which it lists over the file of the target', async () => {
     const listItems = vi.fn(async () => [{ id: 'org.example.ears/ears', title: 'transcript' }])
-    const [one] = createDeclaredPaletteCommands([proofread], undefined, listItems)
+    const [one] = await createPaletteCommands([proofread], {}, { listItems })
 
     expect(one?.input).toBe('items')
     expect(one?.isAvailable(front('talks/a.mp3'), { canRun: () => true, cannotRun: vi.fn() })).toBe(

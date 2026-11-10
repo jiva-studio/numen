@@ -9,7 +9,7 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
-import { SettingsTab } from '@/pages/settings'
+import SettingsTab from '../ui/SettingsTab.vue'
 import { createTestTabs } from '@/testing/tabs'
 import {
   createSettingsStore,

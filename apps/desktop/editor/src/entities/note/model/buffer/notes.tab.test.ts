@@ -8,7 +8,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   isDirty,
-  getMarkOf,
   openTab,
   getState,
   transitionTab,
@@ -985,41 +984,6 @@ describe('a note that is no longer there', () => {
     })
     expect(getState(read.tab)).toBe('clean')
     expect(read.tab.editorText).toBe('theirs')
-  })
-})
-
-describe('the word a tab carries alongside its title', () => {
-  it('is nothing while the note is being read', () => {
-    expect(getMarkOf('loading')).toBeUndefined()
-  })
-
-  it('is nothing when the text on screen is the text of the file', () => {
-    expect(getMarkOf('clean')).toBeUndefined()
-  })
-
-  it('is unsaved while there is something to write', () => {
-    expect(getMarkOf('unsaved')).toBe('unsaved')
-  })
-
-  it('is unsaved while the write is on its way', () => {
-    expect(getMarkOf('saving')).toBe('unsaved')
-  })
-
-  it('is stale while the file has moved past what the tab read', () => {
-    expect(getMarkOf('stale')).toBe('stale')
-  })
-
-  it('is stuck when the note can be neither read nor written', () => {
-    expect(getMarkOf('stuck')).toBe('stuck')
-  })
-
-  it('is a different word for each of the three things a tab carries', () => {
-    const words: (string | undefined)[] = [
-      getMarkOf('stuck'),
-      getMarkOf('stale'),
-      getMarkOf('unsaved'),
-    ]
-    expect(new Set(words).size).toBe(3)
   })
 })
 

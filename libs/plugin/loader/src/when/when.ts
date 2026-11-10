@@ -29,7 +29,7 @@ export interface WhenSettings {
 export type WhenValues = Readonly<Record<string, unknown>> & { readonly config?: WhenSettings }
 
 /** The value of a condition over values that may leave variables out: unknown where its value depends on one of them. */
-export type WhenResult = 'true' | 'false' | 'unknown'
+type WhenResult = 'true' | 'false' | 'unknown'
 
 /** A condition read once and evaluated over the values of many places. */
 export interface WhenCondition {

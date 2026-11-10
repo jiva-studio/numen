@@ -8,8 +8,12 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { requests, cards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
-import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 import { SETTINGS_WORDS, type PluginSettingInfo } from '@/entities/settings'
+
+const MARKER = 'data-appearance'
+const IS_MODE = 'mode'
+const IS_THEME = 'theme'
+const IS_SIZES = 'sizes'
 
 /** What the core declares for the settings of the shell that the palette offers. */
 const SHELL: readonly PluginSettingInfo[] = [

@@ -51,7 +51,7 @@ export interface MoveResult {
 export type Movement = Result<MoveResult | null, ErrorCode>
 
 /** A file or folder in the trash, and the notes whose links no longer lead anywhere. */
-export interface RemovedNote {
+interface RemovedNote {
   readonly trashed: string
   readonly dangling: readonly string[]
 }

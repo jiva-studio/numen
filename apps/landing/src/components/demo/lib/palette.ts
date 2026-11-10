@@ -23,7 +23,7 @@ export const NAMING_COMMAND: Readonly<Record<NamingRole, string>> = {
 export const KEYBOARD = 'Macintosh'
 
 /** The runs of `title` that `word` matches, ignoring case. */
-export function getMarks(title: string, word: string): TextRange[] {
+function getMarks(title: string, word: string): TextRange[] {
   const query = word.trim().toLowerCase()
   if (!query) return []
   const spans: TextRange[] = []

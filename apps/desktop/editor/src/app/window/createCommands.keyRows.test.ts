@@ -1,7 +1,7 @@
 /** A key the application holds is drawn on a row of the palette that carries it out. */
 import { describe, expect, it } from 'vitest'
 import { APP_KEYBINDINGS } from '@numen/plugin-loader'
-import { findChordKeys } from '@/entities/command'
+import { createRowKeys } from '@/entities/command'
 import { createAppCommands } from '@/testing/appCommands'
 
 const APPLE = 'MacIntel'
@@ -18,7 +18,7 @@ describe('every key the application holds', () => {
     const commands = createAppCommands(APPLE)
     for (const one of appKeys) {
       const row = commands.find((command) => command.id === one.command)
-      expect(row?.keys).toEqual(findChordKeys(one.command, APPLE))
+      expect(row?.keys).toEqual(createRowKeys(one.command, APPLE).keys)
     }
   })
 })

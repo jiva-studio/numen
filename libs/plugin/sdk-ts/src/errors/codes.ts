@@ -20,7 +20,7 @@ const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> =
 const UNREACHABLE = 'vault unreachable'
 
 /** The message for one error code. */
-export const getErrorWords = (code: ErrorCode): string =>
+const getErrorWords = (code: ErrorCode): string =>
   code === 'unreachable' ? UNREACHABLE : formatErrorCodeMessage(PROTO_BY_CODE[code])
 
 /** The message for a relationship operation that did not land. */

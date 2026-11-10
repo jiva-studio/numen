@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { createPluginInfo, createSecretAnswer } from '@/testing/installation'
+import { WORDS } from '../words'
 import {
   createPageSections,
   getMenuSecrets,
   getSectionDeclarations,
   getDeclarations,
-  getReaderNames,
+  getDeletionText,
   hasGroupSecrets,
   type Declaration,
 } from './secretSections'
@@ -114,8 +115,9 @@ describe('the readers of a secret', () => {
       ...secret('s1', 'Work', 'openrouter'),
       allowed: [{ pluginId: 'md.numen.sample', name: 'apiKey', group: 'openrouter' }],
     }
-    expect(getReaderNames(allowed, [plugin])).toStrictEqual(['Sample'])
-    expect(getReaderNames(allowed, [])).toStrictEqual(['md.numen.sample'])
+    const target = { kind: 'secret', secret: allowed } as const
+    expect(getDeletionText(target, [plugin])).toBe(WORDS.secretDeleteAsking('Work', ['Sample']))
+    expect(getDeletionText(target, [])).toBe(WORDS.secretDeleteAsking('Work', ['md.numen.sample']))
   })
 })
 

@@ -8,10 +8,10 @@
 import { shallowRef, type Ref } from 'vue'
 import type { Severity, MessageWriter } from '@numen/plugin-loader'
 
-export type { Severity, MessageWriter }
+export type { MessageWriter }
 
 /** One message the window holds. */
-export interface WindowMessage {
+interface WindowMessage {
   readonly id: string
   readonly name: string
   readonly severity: Severity

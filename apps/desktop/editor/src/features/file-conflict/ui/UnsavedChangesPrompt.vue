@@ -9,7 +9,7 @@ import { Button } from '@numen/ui'
 import type { ConflictPrompt } from '../model/flush'
 
 /** The labels shown for the unsaved notes. */
-export interface UnsavedChangesWords {
+interface UnsavedChangesWords {
   readonly going: string
   readonly keep: string
   readonly take: string

@@ -2,11 +2,11 @@
  * A search run while the user types: a pause after the last keystroke, and only
  * the response to the latest query is used.
  */
-import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
+import { getCurrentScope, onScopeDispose } from 'vue'
 import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@numen/ui'
 
 /** The delay after a keystroke before the search runs. */
-export const SEARCH_DEBOUNCE_MS = 120
+const SEARCH_DEBOUNCE_MS = 120
 
 /** Resolves after the given milliseconds. */
 export type Wait = (ms: number) => Promise<unknown>
@@ -46,38 +46,4 @@ export function useDebouncedSearch(options: DebouncedSearchOptions = {}) {
   }
 
   return { search, ask: search, cancel: guard.cancel, drop: guard.cancel }
-}
-
-/** The results of a search run while the user types, and whether one is in progress. */
-export function useSearchResults<T>(
-  search: (query: string) => Promise<readonly T[]>,
-  options: DebouncedSearchOptions = {},
-) {
-  const results = shallowRef<readonly T[]>([])
-  const isLoading = ref(false)
-  const debounced = useDebouncedSearch(options)
-
-  const setQuery = (text: string): Promise<void> =>
-    debounced.search(text, {
-      blank: () => {
-        results.value = []
-        isLoading.value = false
-      },
-      pending: () => {
-        isLoading.value = true
-      },
-      run: async (query, mine) => {
-        try {
-          const found = await search(query)
-          if (mine.isCurrent) results.value = found
-        } catch {
-          // A failed search yields no results, and typing continues.
-          if (mine.isCurrent) results.value = []
-        } finally {
-          if (mine.isCurrent) isLoading.value = false
-        }
-      },
-    })
-
-  return { results, isLoading, setQuery }
 }

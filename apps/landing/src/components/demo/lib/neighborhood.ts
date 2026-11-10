@@ -25,13 +25,13 @@ export type EdgeLabels = Readonly<Record<string, string>>
 /** The most siblings that are drawn. */
 const MOST_SIBLINGS = 2
 
-export const getParentsOf = (notes: Notes, path: string): readonly string[] =>
+const getParentsOf = (notes: Notes, path: string): readonly string[] =>
   notes[path]?.parents ?? []
 
-export const getChildrenOf = (notes: Notes, path: string): string[] =>
+const getChildrenOf = (notes: Notes, path: string): string[] =>
   Object.keys(notes).filter((other) => getParentsOf(notes, other).includes(path))
 
-export function getJumpsOf(notes: Notes, path: string): string[] {
+function getJumpsOf(notes: Notes, path: string): string[] {
   const mine = notes[path]?.jumps ?? []
   const theirs = Object.keys(notes).filter((other) => (notes[other]?.jumps ?? []).includes(path))
   return [...new Set([...mine, ...theirs])]

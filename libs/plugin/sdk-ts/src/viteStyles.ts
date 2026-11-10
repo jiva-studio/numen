@@ -30,7 +30,7 @@ function getVueScanContent(source: string): string {
 }
 
 /** The candidates Tailwind finds in the templates and scripts of these files. */
-export function getCandidates(files: readonly string[]): string[] {
+function getCandidates(files: readonly string[]): string[] {
   const scanner = new Scanner({})
   return scanner.scanFiles(
     files.map((file) => {
@@ -45,7 +45,7 @@ export function getCandidates(files: readonly string[]): string[] {
 }
 
 /** The utilities of these candidates, built with the theme of `@numen/ui`. */
-export async function getUtilityCss(candidates: readonly string[]): Promise<string> {
+async function getUtilityCss(candidates: readonly string[]): Promise<string> {
   const compiler = await compile(`@import ${JSON.stringify(THEME)};`, {
     base: dirname(THEME),
     onDependency: () => undefined,
@@ -54,7 +54,7 @@ export async function getUtilityCss(candidates: readonly string[]): Promise<stri
 }
 
 /** Every class a selector of the stylesheet names. */
-export function getDefinedClasses(css: string): Set<string> {
+function getDefinedClasses(css: string): Set<string> {
   const classes = new Set<string>()
   postcss.parse(css).walkRules((rule) => {
     for (const [, escaped = ''] of rule.selector.matchAll(
@@ -138,7 +138,7 @@ function getPropClasses(prop: TemplateProp): string[] {
 }
 
 /** Every literal class name the template of a single-file component names. */
-export function getTemplateClasses(source: string): string[] {
+function getTemplateClasses(source: string): string[] {
   const ast = parseSfc(source).descriptor.template?.ast as TemplateNode | undefined
   const classes: string[] = []
   const visit = (node: TemplateNode) => {
@@ -150,7 +150,7 @@ export function getTemplateClasses(source: string): string[] {
 }
 
 /** The names among these classes that the theme of `@numen/ui` builds a utility for. */
-export async function getUtilityClasses(classes: readonly string[]): Promise<Set<string>> {
+async function getUtilityClasses(classes: readonly string[]): Promise<Set<string>> {
   const baseClasses = getDefinedClasses(await getUtilityCss([]))
   const utilityClasses = getDefinedClasses(await getUtilityCss(classes))
   return new Set(classes.filter((name) => utilityClasses.has(name) && !baseClasses.has(name)))
@@ -161,7 +161,7 @@ export async function getUtilityClasses(classes: readonly string[]): Promise<Set
  * Tailwind builds nothing for is a name the plugin's own rules or its tests select by, and is
  * left to them.
  */
-export async function getUndefinedUtilities(
+async function getUndefinedUtilities(
   files: readonly string[],
   stylesheets: readonly string[],
 ): Promise<Map<string, string[]>> {

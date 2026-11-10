@@ -71,21 +71,6 @@ export const getState = (tab: Tab): State => {
   return 'clean'
 }
 
-/**
- * The mark a tab carries beside its title.
- */
-const MARKS: Record<State, string | undefined> = {
-  stuck: 'stuck',
-  gone: 'gone',
-  stale: 'stale',
-  unsaved: 'unsaved',
-  saving: 'unsaved',
-  loading: undefined,
-  clean: undefined,
-}
-
-export const getMarkOf = (state: State): string | undefined => MARKS[state]
-
 /** What a read answers. */
 export type ReadResult =
   | { readonly kind: 'body'; readonly body: string; readonly at: string }

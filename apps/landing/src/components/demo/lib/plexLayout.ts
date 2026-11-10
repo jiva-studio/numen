@@ -27,7 +27,7 @@ export interface PlexNode {
  * A curve from the note it leaves to the note its arrow points at. `labelPath` is the same curve drawn from
  * left to right, which the label is written along so that it reads upright.
  */
-export interface PlexEdge {
+interface PlexEdge {
   readonly id: string
   readonly path: string
   readonly labelPath: string

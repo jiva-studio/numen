@@ -13,7 +13,6 @@ vi.mock('./bootstrap/createAppBootstrap', async () => {
   const isStarted = ref(false)
   start.isStarted = isStarted
   return {
-    STEP_LIMIT_MS: 10_000,
     createAppBootstrap: () => ({ failure: ref(''), isStarted, retry: vi.fn() }),
   }
 })

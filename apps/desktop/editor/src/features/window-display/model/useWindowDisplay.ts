@@ -20,7 +20,7 @@ import { askVaultState, isVaultSwapped, useDisplayVault } from './useDisplayVaul
  * window's concern; nothing here depends on the contents of a tab.
  */
 /** What the window passes for reading a vault, alongside the vault itself. */
-export interface DisplayOptions {
+interface DisplayOptions {
   wait?(this: void, ms: number): Promise<unknown>
   /**
    * Receives vault change notifications, and is awaited. A change carrying no
@@ -57,7 +57,10 @@ interface StartDisplayDeps {
   isOpen: () => boolean
 }
 
-function startStreams(streams: ReturnType<typeof createWindowStreams>, health: DisplayHealth): void {
+function startStreams(
+  streams: ReturnType<typeof createWindowStreams>,
+  health: DisplayHealth,
+): void {
   const onError = (error: unknown) => {
     health.failure.value = formatError(error)
   }

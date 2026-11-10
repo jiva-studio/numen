@@ -8,14 +8,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { COMMAND, ROW } from '@/entities/command'
-import {
-  useSearch,
-  type SearchDeps,
-  type NameMatch,
-  type Passage,
-  type SearchMode,
-  type Words,
-} from './search'
+import { useSearch, type SearchDeps, type NameMatch, type Passage, type Words } from './search'
+import type { SearchMode } from '../../lib/search/types'
 import { createDeferred, type Deferred } from '@/testing/deferred'
 
 function rethrow(error: unknown): never {

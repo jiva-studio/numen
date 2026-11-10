@@ -1,7 +1,7 @@
 /** When a command is available over the target the window hands the palette: its when condition. */
 import { describe, expect, it } from 'vitest'
 import { getPaletteValues } from './paletteValues'
-import { createAvailabilityCheck } from './availability'
+import { withWhen } from './availability'
 import type { CommandTarget } from './command'
 
 const chosenDocument = (override: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -62,7 +62,7 @@ describe('the values of the palette', () => {
 })
 
 describe('a command over a file that was chosen as a result', () => {
-  const isAvailable = createAvailabilityCheck('target.isFile && !window.isTabOpen')
+  const isAvailable = withWhen('target.isFile && !window.isTabOpen').isAvailable
 
   it('is available over a document chosen from the search', () => {
     expect(isAvailable(chosenDocument())).toBe(true)
@@ -89,6 +89,6 @@ describe('a command over a file that was chosen as a result', () => {
 
 describe('a command without a condition', () => {
   it('is always available', () => {
-    expect(createAvailabilityCheck('')(chosenDocument({ isReady: false, file: '' }))).toBe(true)
+    expect(withWhen('').isAvailable(chosenDocument({ isReady: false, file: '' }))).toBe(true)
   })
 })

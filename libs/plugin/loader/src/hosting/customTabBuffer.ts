@@ -37,7 +37,7 @@ export interface BufferedNoteOptions {
 }
 
 /** One note a wikilink can name, as the editor offers it. */
-export interface LinkChoice {
+interface LinkChoice {
   readonly title: string
   readonly type: 'note'
 }

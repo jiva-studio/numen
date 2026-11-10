@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createApi, parseEvents } from './api'
+import { createApi } from './api'
 
 const createFetch =
   (respond: (url: string, init: RequestInit) => Response): typeof fetch =>
@@ -94,14 +94,5 @@ describe('createApi', () => {
     const last = await iterator.next()
 
     expect(last).toEqual({ done: true, value: { code: 'unavailable', message: 'stopped' } })
-  })
-})
-
-describe('parseEvents', () => {
-  it('keeps an incomplete event as the rest', () => {
-    expect(parseEvents('data: {"a":1}\n\ndata: {"b"')).toEqual({
-      events: [{ name: 'message', data: '{"a":1}' }],
-      rest: 'data: {"b"',
-    })
   })
 })

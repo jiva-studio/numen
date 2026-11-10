@@ -31,15 +31,23 @@ import {
 } from '@numen/plugin-sdk'
 import { createPluginContext } from '../context'
 import { disposeSubscriptions } from './subscriptions'
-import { Rule, SERVICE_RULES } from './servicePermissions'
+import { SERVICE_RULES } from './servicePermissions'
 import type { ContextVaultHost, ContextWindowHost, PluginContextHost } from '../types'
 
+interface Rule {
+  readonly permissions: readonly string[]
+  readonly isAsync: boolean
+  readonly reason: string
+}
+
 type Tree = { [key: string]: Rule | Tree }
+
+const isRule = (value: Rule | Tree): value is Rule => Array.isArray((value as Rule).permissions)
 
 function createFake(rules: Tree): Record<string, unknown> {
   const fake: Record<string, unknown> = {}
   for (const [key, rule] of Object.entries(rules)) {
-    fake[key] = rule instanceof Rule ? vi.fn(() => Promise.resolve([])) : createFake(rule)
+    fake[key] = isRule(rule) ? vi.fn(() => Promise.resolve([])) : createFake(rule)
   }
   return fake
 }
@@ -51,7 +59,7 @@ interface Leaf {
 
 function listLeaves(rules: Tree, path: readonly string[] = []): Leaf[] {
   return Object.entries(rules).flatMap(([key, rule]) =>
-    rule instanceof Rule ? [{ path: [...path, key], rule }] : listLeaves(rule, [...path, key]),
+    isRule(rule) ? [{ path: [...path, key], rule }] : listLeaves(rule, [...path, key]),
   )
 }
 

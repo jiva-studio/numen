@@ -25,7 +25,7 @@ import { formatNames, joinAll } from '../lib/voice'
 import { NOTE_WORDS, type NoteWords } from '../words'
 
 /** Where a command takes the window. */
-export interface NoteNavigator {
+interface NoteNavigator {
   /** Shows a note in the plugin that displays notes. */
   travel(path: string): Promise<void>
   /** Every tab standing on a note moves to another one. */

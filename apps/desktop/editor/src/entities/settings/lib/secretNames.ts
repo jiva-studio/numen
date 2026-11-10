@@ -38,7 +38,7 @@ export function getNewGroupName(groups: readonly string[]): string {
 }
 
 /** What a secret grants to a plugin: the plugin, the name it declares and the group it asks for. */
-export interface PermissionKey {
+interface PermissionKey {
   readonly pluginId: string
   readonly name: string
   readonly group: string
@@ -52,7 +52,7 @@ export function isAllowed(secret: Secret, key: PermissionKey): boolean {
 }
 
 /** The place a secret is moved to: the secret, and the one it goes before, or none for the end. */
-export interface MoveTarget {
+interface MoveTarget {
   readonly id: string
   readonly beforeId: string
 }

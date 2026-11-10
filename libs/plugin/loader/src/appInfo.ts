@@ -16,7 +16,7 @@ export interface AppInfoSource {
 }
 
 /** The build number a text holds; 0 where it holds none. */
-export function parseBuildNumber(text: string | undefined): number {
+function parseBuildNumber(text: string | undefined): number {
   // Stryker disable next-line StringLiteral: any non-numeric fallback parses to NaN and returns 0
   const value = Number.parseInt(text ?? '', 10)
   // Stryker disable next-line EqualityOperator: 0 maps to 0 under both > 0 and >= 0

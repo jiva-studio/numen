@@ -53,7 +53,7 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
  * stylesheet the plugin's manifest names. A component that fails is replaced by
  * the plugin's failure.
  */
-export function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
+function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
   const component = resolvePluginComponent(rawComponent)
   return defineComponent({
     // Stryker disable next-line StringLiteral: Vue component debug name

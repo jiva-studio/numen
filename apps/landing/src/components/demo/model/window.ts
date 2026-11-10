@@ -135,5 +135,3 @@ export function createDemoWindow() {
     actions: { writeBody, openTurnSource, activateTab, choosePalette, followLink },
   }
 }
-
-export type DemoWindow = ReturnType<typeof createDemoWindow>

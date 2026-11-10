@@ -14,7 +14,7 @@ import type { TextRange } from '@/shared/lib/textRange'
 /** Where a file opens: in the current pane or in a split. */
 export type FilePlacement = 'current' | 'split'
 
-export interface OpenPlacement {
+interface OpenPlacement {
   where?: FilePlacement | undefined
   line?: number | undefined
   selector?: Selector | undefined
@@ -24,11 +24,7 @@ export interface OpenPlacement {
  * Opens a file in one editor. `line` is a position inside the file; its
  * interpretation belongs to the editor.
  */
-export type FileOpener = (
-  path: string,
-  title: string,
-  options?: FilePlacement | OpenPlacement,
-) => void
+type FileOpener = (path: string, title: string, options?: FilePlacement | OpenPlacement) => void
 
 import type { SourceReader } from '../lib/kinds'
 export type { SourceReader }

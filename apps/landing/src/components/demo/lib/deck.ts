@@ -4,7 +4,7 @@ export interface CardModel {
   readonly fields: readonly string[]
 }
 
-export interface DeckField {
+interface DeckField {
   readonly field: string
   readonly text: string
 }

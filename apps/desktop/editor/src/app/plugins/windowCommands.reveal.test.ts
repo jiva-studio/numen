@@ -5,12 +5,12 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { SLOT, type CommandTarget as RunTarget, type SlotItem } from '@numen/plugin-loader'
+import { PALETTE_WORDS } from '@/features/command-palette'
 import {
-  resolveChoice,
   createNameItem,
-  PALETTE_WORDS,
+  resolveChoice,
   type NameMatch,
-} from '@/features/command-palette'
+} from '@/features/command-palette/model/search/lookup'
 import { WORDS as windowWords } from '@/shared/ui/words'
 import {
   createRealWindow,
@@ -48,7 +48,11 @@ beforeEach(() => {
 
 describe('the keys that show a note', () => {
   it('are declared by the manifests with the kind of the tab', () => {
-    expect(getRevealKeys().map((one) => one.values?.['kind']).sort()).toStrictEqual(['files', 'plex'])
+    expect(
+      getRevealKeys()
+        .map((one) => one.values?.['kind'])
+        .sort(),
+    ).toStrictEqual(['files', 'plex'])
   })
 
   it.each([
@@ -60,7 +64,9 @@ describe('the keys that show a note', () => {
 
     one.used.onKeyDown(event)
 
-    await vi.waitFor(() => expect(one.navigateTab).toHaveBeenCalledExactlyOnceWith(kind, 'Tides.md'))
+    await vi.waitFor(() =>
+      expect(one.navigateTab).toHaveBeenCalledExactlyOnceWith(kind, 'Tides.md'),
+    )
     expect(event.defaultPrevented).toBe(true)
     expect(one.messages.filter((text) => text !== '')).toStrictEqual([])
   })
@@ -115,7 +121,13 @@ describe('the entries of a context menu that show a note', () => {
       runCommandToEnd: one.used.pluginRuns.runCommandToEnd,
       listItems: async () => [],
       runWithItem: async () => undefined,
-      getTarget: () => ({ ...REEF, kind: null, file: 'Reef.md', vault: { id: 'sea', name: 'Sea' }, isReady: true }),
+      getTarget: () => ({
+        ...REEF,
+        kind: null,
+        file: 'Reef.md',
+        vault: { id: 'sea', name: 'Sea' },
+        isReady: true,
+      }),
     })
     const item = getRevealItems(one.pluginHost.slots.getEntries(slot, REEF)).find(
       (entry) => entry.values?.['kind'] === kind,

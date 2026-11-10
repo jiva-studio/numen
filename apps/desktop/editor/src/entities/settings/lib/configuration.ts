@@ -5,17 +5,15 @@
 import type { PluginInfo, PluginSettingInfo } from '@numen/plugin-manager'
 export type {
   PluginInfo,
-  PluginReader,
   SecretDeclaration,
   PluginSettingCondition,
   PluginSettingInfo,
   PluginSettingOption,
-  PluginSettingOptionsBy,
   PluginSettingsViewInfo,
 } from '@numen/plugin-manager'
 
 /** One declaration of a plugin that may read a secret. */
-export interface DeclarationKey {
+interface DeclarationKey {
   readonly pluginId: string
   readonly name: string
   readonly group: string

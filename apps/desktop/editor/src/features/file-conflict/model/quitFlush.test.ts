@@ -9,7 +9,9 @@ import { asFailure, asValue } from '@numen/core-client'
 
 import { openNotes } from '@/entities/note'
 import { answerNotes, type NoteAnswer } from '@/testing/noteCore'
-import { createFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
+import { createFileFlush, type Conflict, type FlushDeps } from './flush'
+
+type FlushResult = NonNullable<Parameters<FlushDeps['reportFlush']>[1]>
 
 function rethrow(error: unknown): never {
   throw error

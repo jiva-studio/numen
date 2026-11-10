@@ -12,7 +12,7 @@ import { WORDS } from '@/shared/ui/words'
 import { toRunTarget } from '../lib/runTarget'
 
 /** The lists of the steps of the commands the window offers besides the plugin commands. */
-export interface WindowLists {
+interface WindowLists {
   getStepGroups(command: string, typed: string): readonly StepGroup[]
   previewItem(command: string, item: string): void
 }

@@ -15,13 +15,13 @@ import {
 import { theme } from '@/shared/api/clients'
 
 import type { Bounds, Mode, Scales, Theme } from '../lib/appearance'
-export type { Bounds, Mode, Scales, Theme }
+export type { Mode, Scales }
 
 /** The two multipliers the window is drawn at. One is as designed. */
 export type Sizes = Scales<number>
 
 /** How far each of the two goes. */
-export type Ranges = Scales<Bounds>
+type Ranges = Scales<Bounds>
 
 /** Every available theme, and the theme and sizes the settings apply to the window. */
 export interface Appearance {

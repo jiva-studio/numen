@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { IS_MODE, IS_SIZES, IS_THEME, MARKER, addAfter, getStyleElements } from './head'
+import { IS_SIZES, addAfter, getStyleElements } from './head'
+
+const MARKER = 'data-appearance'
+const IS_MODE = 'mode'
+const IS_THEME = 'theme'
 
 const createSheet = () => document.implementation.createHTMLDocument('numen')
 

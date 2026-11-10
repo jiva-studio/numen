@@ -92,7 +92,7 @@ export interface DeclaredKeybinding {
 }
 
 /** What the core lists of the enabled plugins: the commands they declare and where they place them. */
-export interface DeclaredList {
+interface DeclaredList {
   readonly commands: readonly DeclaredCommand[]
   readonly slots: readonly DeclaredSlot[]
   readonly contentTypes?: Readonly<Record<string, string>>
@@ -126,7 +126,7 @@ export interface DeclaredCommandRun {
  * The outcome of a run: the plugin's message and the file to open after the run,
  * either of them empty, or the reason the run failed.
  */
-export type DeclaredCommandOutcome =
+type DeclaredCommandOutcome =
   | { ok: true; value: { readonly message: string; readonly openedPath: string } }
   | { ok: false; error: string }
 
@@ -287,10 +287,7 @@ export async function listDeclaredItemLists(
 }
 
 /** Whether the condition of the command reads its target, so a run of it names the path it is over. */
-export function isOverTarget(
-  command: Pick<DeclaredCommand, 'when'>,
-  whenReader: WhenReader,
-): boolean {
+function isOverTarget(command: Pick<DeclaredCommand, 'when'>, whenReader: WhenReader): boolean {
   return (
     whenReader.getCondition(command.when)?.names.some((name) => name.startsWith('target.')) ?? false
   )

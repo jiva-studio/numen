@@ -5,7 +5,6 @@ import type { Result } from '@/shared/lib/result'
 import type { NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
 import type { NoteContents } from '../../lib/note'
-export type { NoteContents }
 
 /**
  * What a read returned: the contents, or the code of why there are none.

@@ -10,7 +10,8 @@ import {
 } from '@/testing/installation'
 import type { CatalogEntry } from '@/entities/plugin'
 import type { Installation } from '../../types'
-import { getSettingAt as at, type PluginInfo, type SettingEdit } from '@/entities/settings'
+import { getSettingAt as at } from '@/entities/settings/lib/settingAt'
+import type { PluginInfo, SettingEdit } from '@/entities/settings'
 import { pick } from '@/testing/pick'
 
 const createList = (

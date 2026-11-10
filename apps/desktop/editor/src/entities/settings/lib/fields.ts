@@ -6,13 +6,13 @@ import type { Model, SettingEdit } from './configuration'
 import { write } from './write'
 
 /** Where the settings stand, and where a change to them goes. */
-export interface SettingSource {
+interface SettingSource {
   getSetting(path: readonly string[]): unknown
   getModels(path: readonly string[]): readonly Model[]
   write(content: readonly SettingEdit[]): void
 }
 
-export interface SettingFields {
+interface SettingFields {
   /** The text at a setting, and nothing for any other value. */
   getString(path: readonly string[]): string
   /** Whether a setting is on. */

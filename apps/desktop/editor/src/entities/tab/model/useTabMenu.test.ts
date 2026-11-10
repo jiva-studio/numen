@@ -11,7 +11,7 @@ import {
   type SlotItem,
   type CommandTarget as RunTarget,
 } from '@numen/plugin-loader'
-import { getTabFileTarget, useTabMenu, useWindowTabMenu, type NoteKind } from './useTabMenu'
+import { useTabMenu, type NoteKind } from './useTabMenu'
 
 const ATLAS = 'org.example.atlas'
 const Pin = defineComponent({ name: 'PinIcon', setup: () => () => h('svg') })
@@ -94,43 +94,6 @@ const setup = (entries: readonly SlotItem[] = ENTRIES) => {
 }
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
-
-describe('the target the entries of the menu of a tab run over', () => {
-  const getTab = (id: string) =>
-    id === 'none'
-      ? undefined
-      : {
-          state: id,
-          kind: {
-            getTarget: (state: unknown) =>
-              state === 'book'
-                ? { path: '', file: 'books/Atlas.pdf', title: 'Atlas' }
-                : { path: 'Reef.md', file: '', title: 'Reef' },
-          },
-        }
-  const windowTabs = { tabs: { tabs: { value: [] }, getTab } } as never
-
-  it('is the tab and the file it shows, or the note where it shows no file', () => {
-    expect(getTabFileTarget(windowTabs, 'book')).toStrictEqual({
-      path: 'books/Atlas.pdf',
-      title: 'Atlas',
-      isFolder: false,
-      others: [],
-      tab: 'book',
-    })
-    expect(getTabFileTarget(windowTabs, 'note').path).toBe('Reef.md')
-  })
-
-  it('is the tab alone for a tab the window does not hold', () => {
-    expect(getTabFileTarget(windowTabs, 'none')).toStrictEqual({
-      path: '',
-      title: '',
-      isFolder: false,
-      others: [],
-      tab: 'none',
-    })
-  })
-})
 
 describe('the menu of a tab', () => {
   it('is drawn nowhere until it is requested on a tab', () => {
@@ -417,33 +380,5 @@ describe('an entry of the menu of a tab that offers items', () => {
       ['window-a', true],
       ['window-a', false],
     ])
-  })
-})
-
-describe('a command of the menu of a tab of the window that fails', () => {
-  it('is reported once, with the error of its run', async () => {
-    const reportError = vi.fn()
-    const failure = new Error('the window is gone')
-    const menu = useWindowTabMenu({
-      moveCommand: 'app:tab.moveToWindow',
-      windowTabs: { tabs: { tabs: { value: [] }, getTab: () => undefined } } as never,
-      slots: createSlots(ENTRIES),
-      commands: {
-        getIds: () => [],
-        watch: () => ({ dispose: () => undefined }),
-        listItems: async () => [],
-        run: async () => {
-          throw failure
-        },
-      },
-      reportError,
-    })
-    menu.open('reef', { x: 4, y: 8 })
-    await settle()
-
-    menu.choose('reef', DETACH.key)
-    await settle()
-
-    expect(reportError).toHaveBeenCalledExactlyOnceWith(failure)
   })
 })

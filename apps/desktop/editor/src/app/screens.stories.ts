@@ -9,9 +9,11 @@ import { WorkspaceLayout, pane } from '@numen/workbench'
 import type { Tab, Workspace } from '@numen/workbench'
 import { ref, type Component } from 'vue'
 
-import { SettingsTab, type Installation } from '@/pages/settings'
+import SettingsTab from '@/pages/settings/ui/SettingsTab.vue'
+import type { Installation } from '@/pages/settings/types'
 import type { Model, PluginInfo } from '@/entities/settings'
-import { findTabKindIcon, SETTINGS } from '@/entities/tab'
+import { findTabKindIcon } from '@/entities/tab/lib/icons'
+import { SETTINGS } from '@/entities/tab'
 import { createInstallation, createSettingsState } from '@/testing/installation'
 
 /** Every tab this file draws, under the identity the window opens it at. */

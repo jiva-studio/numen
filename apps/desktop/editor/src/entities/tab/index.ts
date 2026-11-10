@@ -1,9 +1,8 @@
 /** The tabs a window keeps: what kinds there are, what opens one, and what each is called. */
-export { findTabKindIcon } from './lib/icons'
 export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
-export type { FileOpener, FileOpeners, OpenPlacement } from './model/openers'
-export type { OpenTabs, Tab } from './lib/tab'
+export type { FileOpeners } from './model/openers'
+export type { Tab } from './lib/tab'
 export type { Writable } from './lib/writable'
 export type {
   LinkableTab,
@@ -26,8 +25,8 @@ export type { WindowTabs } from './model/windowTabs'
 export { formatSavedState, parseSavedTab, parseSavedTabs, useOpenTabs } from './model/useOpenTabs'
 export { createTabSync } from './model/useTabSync'
 export { createTabNavigation } from './model/tabNavigation'
-export { useWindowTabMenu } from './model/useTabMenu'
-export { createWorkspace, generateId, NOTE, SETTINGS } from './lib/workspace'
+export { useWindowTabMenu } from './model/useWindowTabMenu'
+export { NOTE, SETTINGS } from './lib/workspace'
 export { readOpenTabs } from './api/saved-tabs'
 export { default as RestoreFailedPane } from './ui/RestoreFailedPane.vue'
 export { default as UnavailablePane } from './ui/UnavailablePane.vue'

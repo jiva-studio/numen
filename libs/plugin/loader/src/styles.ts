@@ -32,7 +32,7 @@ export function clearPluginStyles(): void {
 }
 
 /** Whether this engine can build a stylesheet from text and let a document or shadow root adopt it. */
-export function canConstructSheets(): boolean {
+function canConstructSheets(): boolean {
   return (
     typeof CSSStyleSheet !== 'undefined' &&
     typeof CSSStyleSheet.prototype.replaceSync === 'function' &&

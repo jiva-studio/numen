@@ -69,7 +69,7 @@ export interface InstallationPlugin {
 }
 
 /** What a plugin keeps and serves as files. */
-export interface InstallationPluginFiles {
+interface InstallationPluginFiles {
   /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
   getPluginData(pluginId: string): Promise<number>
   /**
@@ -85,7 +85,7 @@ export interface InstallationPluginFiles {
  * The secrets, each a name in a group with the plugin declarations that may read it. A value
  * is entered once and is never read back. Each call reads the settings again.
  */
-export interface InstallationSecrets {
+interface InstallationSecrets {
   readonly sections: Readonly<Ref<readonly SecretSection[]>>
   readonly menus: Readonly<Ref<readonly SecretMenu[]>>
   readonly states: Readonly<Ref<ReadonlyMap<string, boolean>>>

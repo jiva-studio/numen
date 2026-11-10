@@ -6,7 +6,9 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CommandTarget } from '@/entities/command'
 import type { LinkableTab, TabLinkGroup } from '@/entities/tab'
 import { invoke } from '@/testing/invocation'
-import { createTabCommands, type TabLinks } from './commands'
+import { createTabCommands, type TabCommandsDeps } from './commands'
+
+type TabLinks = TabCommandsDeps['tabLinks']
 
 const GROUP: TabLinkGroup = { id: 'g', colorIndex: 0, tabs: ['reef', 'plex'], path: '', title: '' }
 
