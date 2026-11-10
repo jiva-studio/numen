@@ -15,7 +15,7 @@ const READING = [0.8, 1, 1.25, 1.5, 1.75]
 const sizes = (among: readonly number[]) =>
   among.map((size) => ({ value: String(size), title: `${size}×` }))
 
-const selected = (target: unknown, among: readonly number[]) =>
+const selected = (target: string | number | undefined, among: readonly number[]) =>
   among.includes(Number(target)) ? String(Number(target)) : '1'
 
 export const toolbar = {
