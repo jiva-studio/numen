@@ -24,7 +24,6 @@ export interface VaultListPopup {
 }
 
 export interface VaultList {
-  /** Whether the title has a vault to name and to list. */
   readonly hasVaults: ComputedRef<boolean>
   readonly isListOpen: ComputedRef<boolean>
   readonly popup: ComputedRef<VaultListPopup>

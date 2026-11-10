@@ -538,12 +538,10 @@ func TestRecogniseErrorAndCancelPaths(t *testing.T) {
 	}
 }
 
-// foldersOf gives the folder given for every vault.
 func foldersOf(folder Folder) func(domain.VaultID) Folder {
 	return func(domain.VaultID) Folder { return folder }
 }
 
-// versionsOf gives the text versions given for every vault.
 func versionsOf(texts host.TextVersions) func(domain.VaultID) host.TextVersions {
 	return func(domain.VaultID) host.TextVersions { return texts }
 }

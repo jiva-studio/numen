@@ -387,7 +387,6 @@ func TestAnEventBeforeTheAppIsMountedIsIgnored(t *testing.T) {
 	}
 }
 
-// searchOf gives the calls on the search of the vault with an identity.
 func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
 	return func(id domain.VaultID) relevance.Search {
 		on := search.With(id)
@@ -395,7 +394,6 @@ func searchOf(search *hosttest.Search) func(domain.VaultID) relevance.Search {
 	}
 }
 
-// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the vault.
 func foldersOf(vault *hosttest.Vault) func(domain.VaultID) relevance.Folder {
 	return func(id domain.VaultID) relevance.Folder { return vault.Store().With(id) }
 }

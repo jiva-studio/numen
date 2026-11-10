@@ -108,12 +108,10 @@ func (t textsOfVault) PutVersion(ctx context.Context, params host.TextPut) (doma
 	return t.TextVersions.PutVersion(ctx, params)
 }
 
-// textsOf gives the text versions of the vault with an identity, rejecting a version of a missing file.
 func (s *scene) textsOf(id domain.VaultID) host.TextVersions {
 	return textsOfVault{TextVersions: s.texts.With(id), vault: s.vault.With(id)}
 }
 
-// foldersOf gives the plugin folder in the store of the vault with an identity, seen from the store.
 func foldersOf(store *hosttest.Store) func(domain.VaultID) recognition.Folder {
 	return func(id domain.VaultID) recognition.Folder { return store.With(id) }
 }

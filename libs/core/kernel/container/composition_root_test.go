@@ -9,8 +9,6 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-// getRootSubpackages returns each package below the composition root, at its first file, and whether the
-// root itself was among the packages.
 func getRootSubpackages(pkgs []*packages.Package, rootPath string) ([]finding, bool) {
 	var found []finding
 	isRootRead := false

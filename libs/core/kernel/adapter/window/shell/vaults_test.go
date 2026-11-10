@@ -8,9 +8,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/note/domain"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
 func newVaultsClient(t *testing.T, api *API) numenv1connect.VaultsServiceClient {

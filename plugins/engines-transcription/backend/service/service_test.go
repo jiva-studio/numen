@@ -98,18 +98,14 @@ func (r heardRecording) GetSegments(_ context.Context, from, count int) ([]engin
 
 func (heardRecording) Close() error { return nil }
 
-// scene is the plugin over a vault, its store, its texts and the queue, all in memory.
-// storesOf gives the plugin folder in the store of the vault with an identity, seen from the store.
 func storesOf(store *hosttest.Store) func(domain.VaultID) Folder {
 	return func(id domain.VaultID) Folder { return store.With(id) }
 }
 
-// foldersOf gives the folder given for every vault.
 func foldersOf(folder Folder) func(domain.VaultID) Folder {
 	return func(domain.VaultID) Folder { return folder }
 }
 
-// textsOf gives the text versions of the vault with an identity.
 func textsOf(texts *hosttest.Texts) func(domain.VaultID) host.TextVersions {
 	return func(id domain.VaultID) host.TextVersions { return texts.With(id) }
 }

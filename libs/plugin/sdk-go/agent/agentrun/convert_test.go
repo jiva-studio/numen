@@ -6,9 +6,9 @@ import (
 
 	"google.golang.org/protobuf/reflect/protoreflect"
 
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/agent/toolcall"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
 func getOmittedFields() map[protoreflect.FullName]bool {

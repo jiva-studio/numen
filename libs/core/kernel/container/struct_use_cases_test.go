@@ -14,8 +14,6 @@ import (
 // maxUseCasesInStruct is the most use cases one struct holds as fields.
 const maxUseCasesInStruct = 5
 
-// isUseCaseType reports whether a type, or the type a pointer points to, is declared in a package
-// under usecase/.
 func isUseCaseType(t types.Type) bool {
 	if pointer, ok := types.Unalias(t).(*types.Pointer); ok {
 		t = pointer.Elem()
@@ -33,8 +31,6 @@ type structUseCaseCount struct {
 	useCases int
 }
 
-// getCrowdedStructs returns every named struct of the packages' non-generated files that has more than
-// limit fields of a use case type, an embedded field included.
 func getCrowdedStructs(pkgs []*packages.Package, limit int) ([]finding, structUseCaseCount) {
 	var found []finding
 	var count structUseCaseCount

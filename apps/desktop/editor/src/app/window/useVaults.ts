@@ -7,12 +7,11 @@ import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { VaultRef } from '@/entities/command'
 import type { WORDS } from '@/shared/words'
-import type { VaultCore } from '../vault'
+import { getVaultList } from './vaultList'
 
 type Words = typeof WORDS
 
 export interface VaultsDeps {
-  core: VaultCore
   words: Words
   log: MessageLog
   chunks: Ref<number>
@@ -20,7 +19,7 @@ export interface VaultsDeps {
   isEmbedding: Ref<boolean>
 }
 
-export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: VaultsDeps) {
+export function useVaults({ words, log, chunks, embedded, isEmbedding }: VaultsDeps) {
   const reload = () => globalThis.location.reload()
   const items = ref<VaultList>({ vaults: [], showing: '' })
 
@@ -46,7 +45,7 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
 
   const loadVaults = async () => {
     try {
-      items.value = await core.vaults()
+      items.value = await getVaultList()
     } catch {
       // The layout the window opens with is the one the list's answer decides.
       unlisted(words.unlistedVaults, 'error')

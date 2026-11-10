@@ -3,7 +3,6 @@
  * screen lists them, the vault the window shows, and the switch to another one.
  */
 import { computed, watch, type Ref } from 'vue'
-import { formatErrorMessage } from '@numen/core-client'
 import type { VaultsHost, VaultsState } from '@numen/plugin-loader'
 import {
   ANSWER_WORDS,
@@ -13,6 +12,7 @@ import {
 } from '@/features/command-palette'
 import type { CommandTarget, VaultRef } from '@/entities/command'
 import type { VaultList } from '@/entities/vault'
+import { formatError } from '@/shared/api/errors'
 import { COMMAND } from '@/shared/commandIds'
 
 interface WindowVaultsDeps {
@@ -56,7 +56,7 @@ export function createEditorVaults(window: {
         ANSWER_WORDS,
       ).then(
         () => undefined,
-        (error: unknown) => commandDeps.writeMessage(formatErrorMessage(error), 'error'),
+        (error: unknown) => commandDeps.writeMessage(formatError(error), 'error'),
       ),
   })
 }

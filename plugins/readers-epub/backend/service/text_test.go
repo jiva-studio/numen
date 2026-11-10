@@ -17,17 +17,14 @@ import (
 
 const pluginID = "md.numen.readers.epub"
 
-// filesOf gives the files of the vault with an identity, seen from the vault.
 func filesOf(vault *hosttest.Vault) func(domain.VaultID) vaultFiles {
 	return func(id domain.VaultID) vaultFiles { return vault.With(id) }
 }
 
-// textsOf gives the text versions of the vault with an identity.
 func textsOf(texts *hosttest.Texts) func(domain.VaultID) host.TextVersions {
 	return func(id domain.VaultID) host.TextVersions { return texts.With(id) }
 }
 
-// storeOf gives the plugin folder in the store of the vault with an identity, seen from the vault.
 func storeOf(vault *hosttest.Vault) func(domain.VaultID) host.StoreWriter {
 	return func(id domain.VaultID) host.StoreWriter { return vault.Store().With(id) }
 }

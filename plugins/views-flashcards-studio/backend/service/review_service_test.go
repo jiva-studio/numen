@@ -455,7 +455,6 @@ func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
 	}
 }
 
-// vaults gives the ports' calls on the vault with an identity; the empty identity is u itself.
 func (u unreadable) vaults() func(domain.VaultID) hostports.Vault {
 	return func(id domain.VaultID) hostports.Vault {
 		on := u.With(id)

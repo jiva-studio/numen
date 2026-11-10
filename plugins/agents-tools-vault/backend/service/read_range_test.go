@@ -351,7 +351,6 @@ func TestLibraryReadOfAPageFailsWhenTheHostReturnsTheSameCursorTwice(t *testing.
 	}
 }
 
-// vaults gives the calls on the vault with an identity, all through r.
 func (r rangeVault) vaults() func(domain.VaultID) service.Vault {
 	return func(id domain.VaultID) service.Vault {
 		on := r.With(id)

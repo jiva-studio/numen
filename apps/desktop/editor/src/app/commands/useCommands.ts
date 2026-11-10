@@ -41,6 +41,7 @@ import type { useWindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
+import { getVaultList } from '../window/vaultList'
 
 type Words = typeof WORDS
 
@@ -245,7 +246,16 @@ function useWindowCommandPalette(
   listExtras: () => readonly Command[],
 ) {
   const { core, words, getTarget, knows, runs } = options
-  return useCommandPalette(core, words, getTarget, knows, lists, runs, undefined, listExtras)
+  return useCommandPalette(
+    { ...core, vaults: getVaultList },
+    words,
+    getTarget,
+    knows,
+    lists,
+    runs,
+    undefined,
+    listExtras,
+  )
 }
 
 export function useCommands(options: CommandsDepsOptions) {

@@ -5,6 +5,12 @@ import { formatError } from '@/shared/api/errors'
 import { computed } from 'vue'
 import type { PluginHost, SlotHost } from '@numen/plugin-loader'
 import { runDeclaredHandler } from '@/entities/plugin'
+import { cancelTask } from '@/entities/window'
+import {
+  createBackgroundTaskHost,
+  resolveTaskAction,
+  useNoticeTasks,
+} from '@/features/background-tasks'
 import type { useWindowTabs } from '@/entities/tab'
 import type { NoteLookup, runSupport } from '@/features/command-palette'
 import type { Command, CommandTarget } from '@/entities/command'
@@ -19,9 +25,6 @@ import { getPaletteId, type useDeclaredCommands } from '../commands/declaredComm
 import { createCommandNoteReader } from '../commands/usePluginCommands'
 import { useCommands } from '../commands/useCommands'
 import { createVersionCommands } from '../commands/versionCommands'
-import { createBackgroundTaskHost } from '../shell/backgroundTasks'
-import { resolveTaskAction } from '../shell/taskActions'
-import { useNoticeTasks } from '../shell/useNoticeTasks'
 import { createNoteLookup } from '../tabs/editorTabs'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import {
@@ -197,7 +200,7 @@ function createBackgroundTasks(
   })
   return createBackgroundTaskHost({
     tasks: computed(() => [...window.tasks.value, ...noticeTasks.value]),
-    cancelTask: (id) => core.cancelTask(id),
+    cancelTask,
     reportCancelError: (error) =>
       base.writeMessage(`The task was not cancelled: ${formatError(error)}`, 'error'),
     resolveAction: resolveTaskAction,

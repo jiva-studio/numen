@@ -33,7 +33,6 @@ func sortFindings(found []finding) []finding {
 	return slices.Compact(found)
 }
 
-// listProductionPackages returns the variant of each package that holds its non-test files only.
 func listProductionPackages(pkgs []*packages.Package) []*packages.Package {
 	var found []*packages.Package
 	for _, pkg := range pkgs {
@@ -44,8 +43,6 @@ func listProductionPackages(pkgs []*packages.Package) []*packages.Package {
 	return found
 }
 
-// getModulePackages returns the production packages of the workspace module in the directory under the
-// repository root.
 func getModulePackages(t *testing.T, workspace workspacePackages, rel string) []*packages.Package {
 	t.Helper()
 	dir, err := filepath.Abs(filepath.Join(repoRootDir, rel))
@@ -61,7 +58,6 @@ func getModulePackages(t *testing.T, workspace workspacePackages, rel string) []
 	return listProductionPackages(pkgs)
 }
 
-// writeTreeFixture writes a module named fixture whose files may lie in folders.
 func writeTreeFixture(t *testing.T, files map[string]string) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -78,7 +74,6 @@ func writeTreeFixture(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// loadFixture loads every package of a fixture module and fails on a fixture that does not compile.
 func loadFixture(t *testing.T, dir string) []*packages.Package {
 	t.Helper()
 	pkgs := loadPackages(t, dir, []string{"GOWORK=off"}, "./...")
@@ -90,7 +85,6 @@ func loadFixture(t *testing.T, dir string) []*packages.Package {
 	return listProductionPackages(pkgs)
 }
 
-// formatFindings writes each finding as the base name of its file, its line and its name, for a fixture.
 func formatFindings(found []finding) []string {
 	lines := make([]string, len(found))
 	for i, one := range found {

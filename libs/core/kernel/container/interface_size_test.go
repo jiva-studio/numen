@@ -19,8 +19,6 @@ import (
 // structureConfigName is the golangci-lint configuration of the production-only rules, interfacebloat among them.
 const structureConfigName = ".golangci-structure.yml"
 
-// readInterfaceMax returns the interfacebloat maximum of a golangci-lint configuration, and whether the
-// configuration enables interfacebloat at all.
 func readInterfaceMax(path string) (int, bool, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -48,8 +46,6 @@ func readInterfaceMax(path string) (int, bool, error) {
 	return *config.Linters.Settings.Interfacebloat.Max, true, nil
 }
 
-// findStructureConfig returns the structure configuration nearest to a module, in its directory or the
-// closest one above it inside the repository.
 func findStructureConfig(dir, root string) (string, error) {
 	for current := dir; ; current = filepath.Dir(current) {
 		path := filepath.Join(current, structureConfigName)
@@ -70,8 +66,6 @@ type interfaceCount struct {
 	composed   int
 }
 
-// getBloatedInterfaces returns every named interface of the packages' non-generated files whose full method
-// set, embedded interfaces included, has more than limit methods.
 func getBloatedInterfaces(pkgs []*packages.Package, limit int) ([]finding, interfaceCount) {
 	var found []finding
 	var count interfaceCount
@@ -108,8 +102,6 @@ func getBloatedInterfaces(pkgs []*packages.Package, limit int) ([]finding, inter
 	return sortFindings(found), count
 }
 
-// isInterfaceSizeScope reports whether a module, by its directory under the repository root, is one whose
-// interfaces the size rule counts: the kernel, the notes library, the plugin SDK, the applications and the plugins.
 func isInterfaceSizeScope(rel string) bool {
 	return slices.ContainsFunc([]string{"libs/core/kernel", "libs/note", "libs/plugin/sdk-go", "apps", "plugins"}, func(root string) bool {
 		return isWithin(filepath.ToSlash(rel), root)

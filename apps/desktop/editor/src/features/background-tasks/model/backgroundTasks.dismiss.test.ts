@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import type { BackgroundTask } from '@numen/plugin-loader'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 import { createBackgroundTaskHost } from './backgroundTasks'
 
 const failed: Task = {

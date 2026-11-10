@@ -128,7 +128,6 @@ export function initWindowServices(
   settingsHolder.current = settings
 
   ctx.vaults = useVaults({
-    core,
     words,
     log: base.log,
     chunks: window.chunks,

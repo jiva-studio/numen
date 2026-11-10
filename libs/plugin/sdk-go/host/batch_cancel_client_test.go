@@ -9,9 +9,9 @@ import (
 
 	"connectrpc.com/connect"
 
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/hostcall"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 )
 
 // cancelledArranging is a host whose batches were canceled after the first note: the first entry
