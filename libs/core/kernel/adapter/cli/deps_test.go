@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/index"
@@ -127,7 +128,7 @@ func (p vaultParts) build() cli.Vaults {
 		Add:        vaults.NewAdd(p.identity, p.ports.Vaults, p.ports.Lookup, p.ports.Saver, p.now),
 		Known:      registry.NewGetKnownVaults(p.ports.Vaults, p.ports.Last, p.readers),
 		RecordOpen: vaults.NewRecordOpen(p.ports.Recorder),
-		Now:        p.now.Now,
+		Now:        clockOf(p.now),
 		OpenRename: func(ctx context.Context) (cli.Renaming, error) {
 			rows, closeRows, err := p.rows(ctx)
 			if err != nil {
@@ -237,4 +238,11 @@ func TestACommandRunsOnValuesAlone(t *testing.T) {
 			t.Errorf("links did not say %q:\n%s", want, out.String())
 		}
 	}
+}
+
+func clockOf(clock machineport.Clock) func() time.Time {
+	if clock == nil {
+		return nil
+	}
+	return clock.Now
 }

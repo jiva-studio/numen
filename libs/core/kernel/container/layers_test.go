@@ -623,13 +623,39 @@ func mount() {
 	}
 }
 
-// schema is the generated messages. An adapter that accepts and returns them
-// serves something outside the core, whether over the wire or to another adapter,
-// which makes it a driving adapter.
-//
-// The handler interface it satisfies does not show this: an adapter never names
-// the interface it implements, so only the messages identify it.
-const schema = wire + "/gen/numen/v1"
+// schema is the generated connect package. An adapter that names one of its handler types serves
+// something outside the core, whether over the wire or to another adapter, which makes it a driving
+// adapter. An adapter that only builds its messages or clients calls out and is driven.
+const schema = wire + "/gen/numen/v1/numenv1connect"
+
+// namesHandler reports whether the file names a handler type or handler constructor of the generated
+// connect package.
+func namesHandler(file *ast.File) bool {
+	name := ""
+	for _, one := range file.Imports {
+		if to, err := strconv.Unquote(one.Path.Value); err == nil && to == schema {
+			name = "numenv1connect"
+			if one.Name != nil {
+				name = one.Name.Name
+			}
+		}
+	}
+	if name == "" {
+		return false
+	}
+	found := false
+	ast.Inspect(file, func(node ast.Node) bool {
+		pos, is := node.(*ast.SelectorExpr)
+		if !is {
+			return true
+		}
+		if from, is := pos.X.(*ast.Ident); is && from.Name == name && strings.HasSuffix(pos.Sel.Name, "Handler") {
+			found = true
+		}
+		return true
+	})
+	return found
+}
 
 // TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
 // generated protocol handlers are declared as driving adapters.
@@ -644,19 +670,16 @@ func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 		if strings.HasSuffix(path, "_test.go") || !isAdapter(pkg) && !isShared(pkg) {
 			return nil
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+		file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 		if err != nil {
 			return err
 		}
-		for _, one := range file.Imports {
-			to, err := strconv.Unquote(one.Path.Value)
-			if err != nil || to != schema {
-				continue
-			}
-			found++
-			if !isDriving(pkg) && !isPluginClient(pkg) {
-				wrong = append(wrong, family(pkg)+" serves the schema and is named driven")
-			}
+		if !namesHandler(file) {
+			return nil
+		}
+		found++
+		if !isDriving(pkg) {
+			wrong = append(wrong, family(pkg)+" serves the schema and is named driven")
 		}
 		return nil
 	})
@@ -1662,6 +1685,25 @@ func isDriving(pkg string) bool {
 	return isAmong(slices.Collect(maps.Keys(getDriving())), pkg)
 }
 
-func isPluginClient(pkg string) bool {
-	return isAmong([]string{"internal/adapter/plugin"}, pkg) && !isDriving(pkg)
+// The rule counts a package that names a handler type or constructor of the connect package, and
+// lets through one that only builds messages or calls a client.
+func TestHandlerRule_SeparatesServingFromCalling(t *testing.T) {
+	for _, tc := range []struct {
+		what, body string
+		isServing  bool
+	}{
+		{"a handler constructor", `numenv1connect.NewNoteServiceHandler(h)`, true},
+		{"a handler type", `var _ numenv1connect.NoteServiceHandler`, true},
+		{"a client constructor", `numenv1connect.NewNoteServiceClient(nil, "")`, false},
+		{"a service name", `_ = numenv1connect.NoteServiceName`, false},
+	} {
+		source := "package p\n\nimport \"" + schema + "\"\n\nfunc f(h any) {\n\t" + tc.body + "\n}\n"
+		file, err := parser.ParseFile(token.NewFileSet(), "p.go", source, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := namesHandler(file); got != tc.isServing {
+			t.Errorf("%s: serving is %v, want %v", tc.what, got, tc.isServing)
+		}
+	}
 }

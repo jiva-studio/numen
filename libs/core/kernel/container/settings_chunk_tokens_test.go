@@ -1,4 +1,4 @@
-package settings_test
+package container_test
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ func TestTheSettingsFileHasNoIndexingSection(t *testing.T) {
 
 func TestAFirstRunWritesNoIndexingSection(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
-	if _, err := openAt(path); err != nil {
+	if _, err := openSettingsAt(path); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -43,8 +43,8 @@ func TestAFirstRunWritesNoIndexingSection(t *testing.T) {
 }
 
 func TestAFileWithTheOldIndexingKeyLoadsAndSetsNoChunkSize(t *testing.T) {
-	path := write(t, `{"indexing":{"embedding":{"max_tokens":128}}}`)
-	cfg, err := openAt(path)
+	path := writeSettingsFile(t, `{"indexing":{"embedding":{"max_tokens":128}}}`)
+	cfg, err := openSettingsAt(path)
 	if err != nil {
 		t.Fatalf("a file with the old key was refused: %v", err)
 	}

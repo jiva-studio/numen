@@ -66,11 +66,10 @@ func run(cfg container.Config, debug debugOptions) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	selected, err := cfg.Settings()
+	cfg, _, err := cfg.ApplySettings()
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetSettings(selected)
 	if err := debug.registerVault(cfg); err != nil {
 		return err
 	}
@@ -111,11 +110,11 @@ func run(cfg container.Config, debug debugOptions) error {
 	defer target.Run()
 
 	followChanges(ctx, cfg, api)
-	api.Themes = themes.Load(cfg.Themes, func(response string) {
+	themes.Report(cfg.SetShellThemes(api, func(response string) {
 		if response != "" {
 			fmt.Fprintln(os.Stderr, "themes:", response)
 		}
-	}, os.Stderr)
+	}), os.Stderr)
 
 	pages, err := shell.Pages()
 	if err != nil {

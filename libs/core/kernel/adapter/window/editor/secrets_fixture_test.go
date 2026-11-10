@@ -20,15 +20,15 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginlend"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
@@ -282,18 +282,14 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, file, fileBody)
 	keys := &secretKeys{items: map[string]string{}}
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      container.LendPluginHost(host),
+		PluginHost:      pluginlend.Lend(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath:    filepath.Join(configDir, "vaults.json"),
 		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
 	})
-	loaded, err := cfg.Settings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg = applySettings(t, cfg, loaded)
+	cfg = applySettings(t, cfg)
 
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
@@ -448,9 +444,12 @@ func ids(secrets []*v1.Secret) []string {
 	return list
 }
 
-func applySettings(t *testing.T, cfg container.Config, loaded settings.File) container.Config {
+func applySettings(t *testing.T, cfg container.Config) container.Config {
 	t.Helper()
-	cfg = cfg.SetSettings(loaded)
+	cfg, _, err := cfg.ApplySettings()
+	if err != nil {
+		t.Fatal(err)
+	}
 	t.Cleanup(cfg.UnsubscribeHost)
 	return cfg
 }

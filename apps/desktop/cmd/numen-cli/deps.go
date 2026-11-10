@@ -12,8 +12,8 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 	cfg.RegistryPath = where.Registry
 	cfg.ServiceDir = where.ServiceDir
 	cfg = cfg.SetSafeMode(where.SafeMode)
-	if selected, err := cfg.Settings(); err == nil {
-		cfg = cfg.SetSettings(selected)
+	if applied, _, err := cfg.ApplySettings(); err == nil {
+		cfg = applied
 	}
 	return cfg
 }

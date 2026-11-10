@@ -228,7 +228,7 @@ func (c Config) InstallPluginVault(
 	return installPluginVault(c.plugins(), vaults, db, current, hooks)
 }
 
-// PluginHost is the plugin host as the capabilities the wiring and the use cases consume. LendPluginHost builds
+// PluginHost is the plugin host as the capabilities the wiring and the use cases consume. lendPluginHost builds
 // every capability from one plugin host, and a pluginsWiring holds the one *PluginHost the container made: the
 // settings subscription is keyed by that pointer. SetStorage sets the folders
 // the plugins store files in and keeps the dependencies in the models folder the host names;
@@ -259,8 +259,8 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-// LendPluginHost lends the capabilities of host.
-func LendPluginHost(host *plugin.Host) *PluginHost {
+// lendPluginHost lends the capabilities of host.
+func lendPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		PluginActivator:       host,
 		PluginDiscoverer:      host,
@@ -284,7 +284,7 @@ func LendPluginHost(host *plugin.Host) *PluginHost {
 		SetPluginVaultList:    host.SetPluginVaultList,
 		ContentTypeTable:      host,
 		SetStorage:            func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
-		RefreshDependencies:   func() { host.SetDependencies(newDependencies("")) },
+		RefreshDependencies:   func() { host.SetDependencies(GetDependencyRegistry("")) },
 	}
 }
 
@@ -293,7 +293,7 @@ func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
 	// gomutants:disable-next-line
 	if models := host.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line
-		host.SetDependencies(newDependencies(models))
+		host.SetDependencies(GetDependencyRegistry(models))
 	}
 }
 
@@ -407,7 +407,9 @@ const dependencyTaskPrefix = "provision:"
 // envMockML names the variable that runs the plugins on mock models.
 const envMockML = "NUMEN_MOCK_ML"
 
-func newDependencies(defaultDir string) pluginport.DependencyRegistry {
+// GetDependencyRegistry returns the registry of the dependencies the plugins provision, in the folder
+// given unless the environment names another.
+func GetDependencyRegistry(defaultDir string) pluginport.DependencyRegistry {
 	if os.Getenv(envMockML) == "true" {
 		return provision.NewRegistry(newPlaceholders())
 	}
@@ -520,13 +522,13 @@ const pluginFailureTaskPrefix = "plugin-failed:"
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *PluginHost {
-	return LendPluginHost(openPluginHost(target, dirs...))
+	return lendPluginHost(openPluginHost(target, dirs...))
 }
 
 func openPluginHost(target string, dirs ...string) *plugin.Host {
 	host := plugin.NewHost(clock.System{}, target, dirs...)
 	host.SetContentTypeTable(sharedmimeinfo.Open())
-	host.SetDependencies(newDependencies(""))
+	host.SetDependencies(GetDependencyRegistry(""))
 	if err := host.Discover(); err != nil {
 		fmt.Fprintf(os.Stderr, "numen: discover plugins: %v\n", err)
 	}

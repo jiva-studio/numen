@@ -149,7 +149,7 @@ func openIndex(t *testing.T, path string) error {
 
 func read(t *testing.T, path string) error {
 	t.Helper()
-	target := container.DefaultSettings()
+	target := settings.DefaultFile()
 	err := settings.NewFiles().OpenAt(path, &target)
 	if err == nil {
 		t.Fatalf("%s was read as settings", path)

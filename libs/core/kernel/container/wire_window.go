@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -156,5 +157,5 @@ func mountServices(w *windowWiring) error {
 
 // GetWindowView returns the window as the core asks it to show a place, a move, an edit or a tab.
 func GetWindowView(inst *editor.Installation) windowport.Window {
-	return GetWindowView(inst)
+	return windowview.View{Notices: inst.State}
 }

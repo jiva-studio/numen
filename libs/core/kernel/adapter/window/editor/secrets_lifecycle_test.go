@@ -21,8 +21,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/pluginlend"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -74,18 +75,14 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      container.LendPluginHost(host),
+		PluginHost:      pluginlend.Lend(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath:    filepath.Join(configDir, "vaults.json"),
 		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
 	})
-	loaded, err := cfg.Settings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg = applySettings(t, cfg, loaded)
+	cfg = applySettings(t, cfg)
 
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
@@ -145,18 +142,14 @@ func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.K
 	})
 	configDir := t.TempDir()
 	cfg := container.NewConfig(container.Config{
-		PluginHost:      container.LendPluginHost(host),
+		PluginHost:      pluginlend.Lend(host),
 		KeyStore:        keys,
 		SettingsPath:    file,
 		IndexPath:       filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath:    filepath.Join(configDir, "vaults.json"),
 		PluginCachePath: filepath.Join(t.TempDir(), "plugins"),
 	})
-	loaded, err := cfg.Settings()
-	if err != nil {
-		t.Fatal(err)
-	}
-	applySettings(t, cfg, loaded)
+	applySettings(t, cfg)
 	return host
 }
 

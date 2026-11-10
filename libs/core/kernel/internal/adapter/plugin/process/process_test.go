@@ -2,14 +2,15 @@ package process
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/security"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 )
 
 func TestEnvironmentSanitization(t *testing.T) {

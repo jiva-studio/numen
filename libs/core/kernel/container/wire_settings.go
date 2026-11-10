@@ -7,6 +7,8 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/shell"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -27,9 +29,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
-// Settings reads the settings file. An unconfigured installation returns the
-// default settings.
-func (c Config) Settings() (settingsadapter.File, error) {
+func (c Config) readSettingsFile() (settingsadapter.File, error) {
 	return settingsSettings(c.settings())
 }
 
@@ -41,9 +41,17 @@ func (c Config) getSettingsOrDefaults() settingsadapter.File {
 	return settingsGetSettingsOrDefaults(c.settings())
 }
 
-// SetSettings returns the configuration with the values of a settings file
-// applied. Both entry points use it.
-func (c Config) SetSettings(s settingsadapter.File) Config {
+// ApplySettings reads the settings file and returns the configuration with its values applied, and
+// the notices that reading it raised. An unconfigured installation applies the default settings.
+func (c Config) ApplySettings() (Config, []string, error) {
+	selected, err := c.readSettingsFile()
+	if err != nil {
+		return c, nil, err
+	}
+	return c.applySettingsFile(selected), selected.Notices, nil
+}
+
+func (c Config) applySettingsFile(s settingsadapter.File) Config {
 	c.Hardware, c.ResolvedCompute = resolveCompute(c.settings(), s)
 	configurePluginHost(c.settings(), s)
 	return c
@@ -94,10 +102,19 @@ func (c Config) settingsFile() (string, error) {
 	return settingsSettingsFile(c.settings())
 }
 
-// Themes provides the themes the window can use: the catalog of themes, and
-// the settings file that stores the selection.
-func (c Config) Themes(say func(string)) (*theme.Service, error) {
-	return settingsThemes(c.settings(), say)
+// SetThemes gives the window the themes it can use: the catalog of themes, and the settings file that
+// stores the selection. The window keeps the themes the binary ships when the answer is a fault.
+func (c Config) SetThemes(inst *editor.Installation, say func(string)) error {
+	service, err := settingsThemes(c.settings(), say)
+	inst.SetThemes(service)
+	return err
+}
+
+// SetShellThemes gives the shell the themes it can use, as SetThemes does the window.
+func (c Config) SetShellThemes(api *shell.API, say func(string)) error {
+	service, err := settingsThemes(c.settings(), say)
+	api.Themes = service
+	return err
 }
 
 // UnsubscribeHost stops the plugin host from receiving setting changes. It returns after the batch
@@ -133,8 +150,7 @@ type settingsWiring struct {
 	SetCompleter              func()
 }
 
-// DefaultSettings returns the settings of an unconfigured installation.
-func DefaultSettings() settingsadapter.File {
+func defaultSettings() settingsadapter.File {
 	return settingsadapter.DefaultFile()
 }
 
@@ -156,7 +172,7 @@ func settingsGetSettingsOrDefaults(c settingsWiring) settingsadapter.File {
 			return target
 		}
 	}
-	return DefaultSettings()
+	return defaultSettings()
 }
 
 func readCheckedSettings(c settingsWiring) (settingsadapter.File, error) {

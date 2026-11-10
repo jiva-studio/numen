@@ -2,8 +2,6 @@ package plugin
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +9,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/plugintest"
 )
 
 func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {

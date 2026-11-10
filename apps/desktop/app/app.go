@@ -164,11 +164,10 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
-	selected, err := cfg.Settings()
+	cfg, notices, err := cfg.ApplySettings()
 	if err != nil {
 		return err
 	}
-	cfg = cfg.SetSettings(selected)
 	applyMemoryLimit(cfg.ResolvedCompute.MemoryLimitMB, debug.SetMemoryLimit, os.LookupEnv)
 	cfg.InterfaceScale, cfg.TextScale = scaleFlags.interfaceScale, scaleFlags.textScale
 
@@ -177,9 +176,9 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	installation.SetThemes(themes.Load(cfg.Themes, installation.SayTheme, os.Stdout))
+	themes.Report(cfg.SetThemes(installation, installation.SayTheme), os.Stdout)
 
-	installation.Report(selected.Notices)
+	installation.Report(notices)
 
 	going := &vaultFlush{flush: installation.FlushPending}
 	shutdownSeq := shutdown.NewSequence(

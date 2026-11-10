@@ -1,4 +1,4 @@
-package settings_test
+package container_test
 
 import (
 	"encoding/json"
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func write(t *testing.T, body string) string {
+func writeSettingsFile(t *testing.T, body string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
 	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
@@ -30,17 +30,17 @@ func write(t *testing.T, body string) string {
 	return path
 }
 
-func openAt(path string) (settings.File, error) {
+func openSettingsAt(path string) (settings.File, error) {
 	return container.NewConfig(container.Config{SettingsPath: path}).Settings()
 }
 
-func newDocument() *settings.File {
+func newSettingsDocument() *settings.File {
 	target := container.DefaultSettings()
 	return &target
 }
 
 func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
-	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
+	cfg, err := openSettingsAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +63,7 @@ func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 // The appearance settings are four fields of one section; a file that sets one
 // of them leaves the others at their defaults.
 func TestOpen_PartialAppearanceKeepsDefaults(t *testing.T) {
-	cfg, err := openAt(write(t, `{"app":{"appearance":{"textScale":1.5}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"appearance":{"textScale":1.5}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -84,7 +84,7 @@ func TestASizeOutsideWhatItGoesToIsReadAndNotApplied(t *testing.T) {
 		`{"app":{"appearance":{"textScale":1.9}}}`:      "textScale",
 		`{"app":{"appearance":{"textScale":0}}}`:        "textScale",
 	} {
-		cfg, err := openAt(write(t, body))
+		cfg, err := openSettingsAt(writeSettingsFile(t, body))
 		if err != nil {
 			t.Errorf("%s was refused: %v", body, err)
 			continue
@@ -92,14 +92,14 @@ func TestASizeOutsideWhatItGoesToIsReadAndNotApplied(t *testing.T) {
 		if got, _ := cfg.GetValue("app", "appearance", key); got != 1.0 {
 			t.Errorf("%s: %s in force is %v, want the default", body, key, got)
 		}
-		if !hasNotice(cfg.Notices, "appearance."+key) {
+		if !hasSettingsNotice(cfg.Notices, "appearance."+key) {
 			t.Errorf("%s: the notices are %q", body, cfg.Notices)
 		}
 	}
 }
 
 func TestASizeAtEitherEndIsTaken(t *testing.T) {
-	cfg, err := openAt(write(t, `{"app":{"appearance":{"interfaceScale":0.8,"textScale":1.75}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"appearance":{"interfaceScale":0.8,"textScale":1.75}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +113,7 @@ func TestASizeAtEitherEndIsTaken(t *testing.T) {
 func TestAFileNamingNoSizeIsGeneratedAtWhatTheDesktopAsksFor(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "1.5")
 	for _, body := range []string{`{}`, `{"app":{"appearance":{"textScale":1.25}}}`} {
-		cfg, err := openAt(write(t, body))
+		cfg, err := openSettingsAt(writeSettingsFile(t, body))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,7 +129,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 	for body, scale := range map[string]float64{
 		`{"app":{"appearance":{"interfaceScale":1.25}}}`: 1.25,
 	} {
-		cfg, err := openAt(write(t, body))
+		cfg, err := openSettingsAt(writeSettingsFile(t, body))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +142,7 @@ func TestWhatTheDesktopAsksForIsNotReadOverTheFile(t *testing.T) {
 // A number the setting does not accept is not one it is seeded with.
 func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 	t.Setenv("GDK_DPI_SCALE", "3")
-	cfg, err := openAt(write(t, `{}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +152,7 @@ func TestADesktopScaleOutsideWhatTheSizeGoesToIsNotTaken(t *testing.T) {
 }
 
 func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
-	cfg, err := openAt(write(t, `{"app":{"appearance":{"mode":"dark","theme":"mine:dracula"}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"appearance":{"mode":"dark","theme":"mine:dracula"}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +165,7 @@ func TestAWindowAppliesTheThemeTheFileNames(t *testing.T) {
 // containing the application's active settings.
 func TestAnUnconfiguredInstallationWritesItsSettingsDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen", "numen.json")
-	cfg, err := openAt(path)
+	cfg, err := openSettingsAt(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +188,7 @@ func TestAnUnconfiguredInstallationWritesItsSettingsDown(t *testing.T) {
 }
 
 func TestOneSettingIsAValidFile(t *testing.T) {
-	cfg, err := openAt(write(t, `{"app":{"appearance":{"interfaceScale":1.5}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"appearance":{"interfaceScale":1.5}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -216,7 +216,7 @@ func TestNoEnvironmentVariableProducesTheServiceAKey(t *testing.T) {
 		t.Setenv(name, value)
 	}
 
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"indexing":{"embedding":{
 		"indexing":{"use":"service","service":{"name":"a-model","key_env":"MY_OWN_KEY"}},
 		"query":{"use":"service","service":{"name":"a-model","key_env":"OPENROUTER_API_KEY"}}}}}`))
 	if err != nil {
@@ -237,7 +237,7 @@ func TestNoEnvironmentVariableProducesTheServiceAKey(t *testing.T) {
 }
 
 func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-secret"}}}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"indexing":{"embedding":{"indexing":{"service":{"key":"sk-secret"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +251,7 @@ func TestWritingTheSettingsBackDoesNotCarryTheKey(t *testing.T) {
 }
 
 func TestBrokenJSONIsAnError(t *testing.T) {
-	if _, err := openAt(write(t, `{"app":{"appearance":`)); err == nil {
+	if _, err := openSettingsAt(writeSettingsFile(t, `{"app":{"appearance":`)); err == nil {
 		t.Error("want an error")
 	}
 }
@@ -271,7 +271,7 @@ func TestThereIsOneFileAndItIsNamedForWhatItIs(t *testing.T) {
 // A section is kept whether it is the one in use or not, so trying another agent
 // for an afternoon does not cost the settings of the one before.
 func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
-	cfg, err := openAt(write(t, `{"app":{"agent":{"use":"","claude":{"model":"opus"}}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"agent":{"use":"","claude":{"model":"opus"}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func TestASectionSurvivesNotBeingTheOneInUse(t *testing.T) {
 // An installation the folders looked in do not cover names the command line
 // itself, and it is started as written.
 func TestTheCommandLineCanBeNamed(t *testing.T) {
-	cfg, err := openAt(write(t, `{"app":{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}}`))
+	cfg, err := openSettingsAt(writeSettingsFile(t, `{"app":{"agent":{"claude":{"command":["/opt/claude/bin/claude"]}}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -322,9 +322,9 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) 
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join(t.TempDir(), "numen.json")
 			if c.wasWritten {
-				path = write(t, c.file)
+				path = writeSettingsFile(t, c.file)
 			}
-			cfg, err := openAt(path)
+			cfg, err := openSettingsAt(path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -339,7 +339,7 @@ func TestATitleAndAFilenameAreOneNameUntilTheFileReturnsOtherwise(t *testing.T) 
 // user can turn off is visible in the file.
 func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if _, err := openAt(path); err != nil {
+	if _, err := openSettingsAt(path); err != nil {
 		t.Fatal(err)
 	}
 	raw, err := os.ReadFile(path)
@@ -349,4 +349,17 @@ func TestAnUntouchedInstallationWritesTheNamingDown(t *testing.T) {
 	if !strings.Contains(string(raw), `"syncTitleAndFilename": true`) {
 		t.Errorf("the naming is not in the file it wrote:\n%s", raw)
 	}
+}
+
+func hasSettingsNotice(notices []string, words ...string) bool {
+	for _, notice := range notices {
+		found := true
+		for _, word := range words {
+			found = found && strings.Contains(notice, word)
+		}
+		if found {
+			return true
+		}
+	}
+	return false
 }
