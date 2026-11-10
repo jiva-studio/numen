@@ -40,7 +40,7 @@ func putTranscript(t *testing.T, db *vault.Index, v domain.Vault, words string) 
 		Path: talkPath, PluginID: transcriber, Key: "talk", Kind: "transcript", File: "talk.jsonl",
 		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 5, 1, 8, 0, 0, 0, time.UTC),
 	}
-	repo, err := db.TextVersions().OpenVersionWriter(v)
+	repo, err := db.TextVersions.OpenVersionWriter(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestRebuildingTheIndexKeepsTheTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, err := versions.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	listing, err := versions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +163,7 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	readIntoIndex(t, cfg, db, v)
 
 	const renamed = "talks/Heron talk.mp3"
-	move := vault.NewMove(fileMovers(vaultOf(cfg)), db.Links(), db.SourcesUnder(), db.Sources(), note.Move{})
+	move := vault.NewMove(fileMovers(vaultOf(cfg)), db.NoteQueries.Links, db.Source.SourcesUnder, db.Source.Sources, note.Move{})
 	if _, err := move.Execute(t.Context(), v, talkPath, renamed); err != nil {
 		t.Fatal(err)
 	}
@@ -172,14 +172,14 @@ func TestRenamingAFileKeepsItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, err := versions.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	listing, err := versions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(listing.Versions) != 1 || listing.Live != version.GetID() || listing.Versions[0].Path != renamed {
 		t.Fatalf("after the rename the talk has %+v, want its transcript live at the new path", listing)
 	}
-	if old, err := versions.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw)); err != nil || len(old.Versions) != 0 {
+	if old, err := versions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw)); err != nil || len(old.Versions) != 0 {
 		t.Fatalf("the old path still has %+v (%v)", old, err)
 	}
 }
@@ -205,7 +205,7 @@ func newTalkIndex(t *testing.T) (Config, *vault.Index, domain.Vault, domain.Text
 
 func refreshPaths(t *testing.T, cfg Config, db *vault.Index, v domain.Vault, paths ...string) {
 	t.Helper()
-	if _, err := makeRefresh(cfg, db, db.Notes()).Execute(t.Context(), v, paths); err != nil {
+	if _, err := makeRefresh(cfg, db, db.Stores.Notes).Execute(t.Context(), v, paths); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -224,7 +224,7 @@ func TestRenamingAFileOnDiskMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 
 	refreshPaths(t, cfg, db, v, talkPath)
 
-	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -302,7 +302,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		Path: talkPath, PluginID: other, Key: "notes", Kind: "subtitles", File: "notes.jsonl",
 		InputHash: domain.HashContent(raw), TextHash: hash, CreateTime: time.Date(2026, 4, 1, 8, 0, 0, 0, time.UTC),
 	}
-	repo, err := db.TextVersions().OpenVersionWriter(v)
+	repo, err := db.TextVersions.OpenVersionWriter(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +326,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(v.Path, ".numen", other, "notes.jsonl")); err != nil {
 		t.Fatalf("the other plugin's file is gone: %v", err)
 	}
-	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
+	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, talkPath, domain.HashContent(raw))
 	if err != nil || len(listing.Versions) != 1 || listing.Live != subtitles.GetID() {
 		t.Fatalf("after the delete the talk has %+v (%v), want the other plugin's version alone and live", listing, err)
 	}
@@ -381,7 +381,7 @@ func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	listing, err := cfg.TextVersions.Texts.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
 	if err != nil {
 		t.Fatal(err)
 	}

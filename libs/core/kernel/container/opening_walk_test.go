@@ -141,7 +141,7 @@ func TestAFolderCannotBeOpenedAsAnIndex(t *testing.T) {
 func TestAnIndexAnswersEveryPortItNames(t *testing.T) {
 	_, db, _ := openVault(t, getNote())
 
-	if db.Vectors() == nil || db.VectorQueries() == nil || db.Sources() == nil || db.RemovalLookup() == nil {
+	if db.Chunks.Vectors == nil || db.Chunks.VectorQueries == nil || db.Source.Sources == nil || db.Source.RemovalLookup == nil {
 		t.Error("a port of the index answers nothing")
 	}
 }
@@ -153,7 +153,7 @@ func TestAnIndexReturnsWhereItsFileIsAndAnswersItsPorts(t *testing.T) {
 	if db.Path() != cfg.IndexPath {
 		t.Errorf("the index is at %q, not %q", db.Path(), cfg.IndexPath)
 	}
-	if db.Notes() == nil || db.Progress() == nil || db.Links() == nil || db.Problems() == nil {
+	if db.Stores.Notes == nil || db.Chunks.Progress == nil || db.NoteQueries.Links == nil || db.NoteQueries.Problems == nil {
 		t.Error("a port of the index answers nothing")
 	}
 }

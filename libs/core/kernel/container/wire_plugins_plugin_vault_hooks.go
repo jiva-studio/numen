@@ -40,7 +40,7 @@ type PluginVaultHooks struct {
 }
 
 func hasReaders(notes note.Scenarios) bool {
-	return notes.Place.Move.Readers() != nil
+	return notes.Place.Move.IsConfigured()
 }
 
 func getNoteChanges(notes note.Scenarios) hostvault.NoteChanges {
@@ -79,7 +79,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	if err != nil {
 		return nil, err
 	}
-	refresh := c.MakeRefresh(db, db.Notes())
+	refresh := c.MakeRefresh(db, db.Stores.Notes)
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
@@ -93,7 +93,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	}
 	arranger := hostvault.Arranger{
 		Notes:  getNoteChanges(scenarios),
-		Checks: getProblemChecks(vault.NewStandardGetProblems(db.Problems())),
+		Checks: getProblemChecks(vault.NewStandardGetProblems(db.NoteQueries.Problems)),
 	}
 	if hasReaders(hooks.Notes) {
 		arranger.Window, arranger.WindowVault = getNoteChanges(hooks.Notes), current
@@ -106,13 +106,13 @@ func pluginsOpenPluginVault(c pluginsWiring,
 		RangeReader: file.Read{Readers: c.VaultReaders},
 		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
 		LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
-		Notes:       db.NoteRefs(),
-		Types:       db.NoteTypes(),
-		NamedPaths:  db.NamedPaths(),
-		TypedPaths:  db.TypedPaths(),
-		Links:       db.Links(),
+		Notes:       db.NoteQueries.NoteRefs,
+		Types:       db.NoteQueries.NoteTypes,
+		NamedPaths:  db.NoteQueries.NamedPaths,
+		TypedPaths:  db.NoteQueries.TypedPaths,
+		Links:       db.NoteQueries.Links,
 		Connections: connections,
-		Problems:    db.Problems(),
+		Problems:    db.NoteQueries.Problems,
 		Arranger:    arranger,
 		StoreReaders: func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error) {
 			return stores.Open(v, pluginID)
@@ -155,7 +155,7 @@ func findVault(registry vaultregistry.Ports) func(id domain.VaultID) (domain.Vau
 
 func getIndexState(db *vault.Index) func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
 	return func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
-		has, err := db.VaultHolds().Has(ctx, v.ID)
+		has, err := db.NoteQueries.VaultHolds.Has(ctx, v.ID)
 		if err != nil {
 			return plugindomain.IndexState{}, err
 		}
@@ -303,7 +303,7 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 	}
 	return trigger.NewTriggers(trigger.TriggersDeps{
 		Plugins: manifestlist.Open(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
-		Notes: pluginsNewNoteReader(c), Types: c.PluginHost, Versions: c.TextVersions, Config: getWhenConfig(c),
+		Notes: pluginsNewNoteReader(c), Types: c.PluginHost, Versions: c.TextVersions.Texts, Config: getWhenConfig(c),
 	})
 }
 

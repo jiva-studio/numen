@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	indexdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/index"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -57,9 +57,9 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	var order []string
 	notes := scanner(readers, db)
 	notes.OnProgress = func(indexdomain.ScanResult) { order = append(order, "notes") }
-	books := filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers})
+	books := filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: readers})
 	books.OnProgress = func(indexdomain.IndexResult) { order = append(order, "books") }
-	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	embed := vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Embedder = pointing{}
 	embed.OnProgress = func(indexdomain.EmbedResult) { order = append(order, "vectors") }
 	making := indexing.NewReadWholeVault(notes, books, embed)
@@ -91,8 +91,8 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 
 	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
-	books := filetext.NewIndex(counted, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: counted})
-	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	books := filetext.NewIndex(counted, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: counted})
+	embed := vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors)
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v)
@@ -115,8 +115,8 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	}
 
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(refusing{}, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: refusing{}})
-	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	books := filetext.NewIndex(refusing{}, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: refusing{}})
+	embed := vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Embedder = unwilling{}
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
@@ -146,9 +146,9 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 
 	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: timedOut{limit: limitCtx}})
+	books := filetext.NewIndex(timedOut{limit: limitCtx}, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: timedOut{limit: limitCtx}})
 	counted := &counting{VaultReaders: readers}
-	embed := vectors.NewEmbed(counted, db.VectorQueries(), db.Vectors())
+	embed := vectors.NewEmbed(counted, db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Embedder = unwilling{}
 	making := indexing.NewReadWholeVault(notes, books, embed)
 
@@ -267,7 +267,7 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 func newWholeVaultRead(readers vaultport.VaultReaders, db *vaults.Index) indexing.ReadWholeVault {
 	return indexing.NewReadWholeVault(
 		scanner(readers, db),
-		filetext.NewIndex(readers, db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), testsupport.Texts{Readers: readers}),
-		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
+		filetext.NewIndex(readers, db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, testsupport.Texts{Readers: readers}),
+		vectors.NewEmbed(readers, db.Chunks.VectorQueries, db.Chunks.Vectors),
 	)
 }

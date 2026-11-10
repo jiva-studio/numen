@@ -18,7 +18,7 @@ func openCLIVaults(c Config) (cli.Vaults, error) {
 		return cli.Vaults{}, err
 	}
 	unregister := func(db *vault.Index) vault.Unregister {
-		return vault.NewUnregister(ports.Vaults, ports.Remover, db.Vaults())
+		return vault.NewUnregister(ports.Vaults, ports.Remover, db.Stores.Vaults)
 	}
 	return cli.Vaults{
 		Find:       registry.NewFind(ports.Lookup),
@@ -31,7 +31,7 @@ func openCLIVaults(c Config) (cli.Vaults, error) {
 			if err != nil {
 				return cli.Renaming{}, err
 			}
-			return cli.Renaming{Rename: vault.NewRename(ports.Vaults, ports.Saver, db.Vaults()), Close: db.Close}, nil
+			return cli.Renaming{Rename: vault.NewRename(ports.Vaults, ports.Saver, db.Stores.Vaults), Close: db.Close}, nil
 		},
 		OpenUnregister: func(ctx context.Context) (cli.Unregistering, error) {
 			db, err := openIndex(vaultOf(c), ctx)
@@ -79,7 +79,7 @@ func openCLIScan(c Config, ctx context.Context, v domain.Vault, rebuild bool) (c
 	return cli.Scan{
 		Read: read,
 		Summary: func(ctx context.Context) (domain.VaultSummary, error) {
-			return db.Summaries().GetSummary(ctx, v.ID)
+			return db.NoteQueries.Summaries.GetSummary(ctx, v.ID)
 		},
 		Unembedded: why,
 		Close: func() error {
@@ -114,7 +114,7 @@ func openCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
 	if err != nil {
 		return cli.Problems{}, err
 	}
-	return cli.Problems{Problems: getProblems(vaultOf(c), db.Problems()), Close: db.Close}, nil
+	return cli.Problems{Problems: getProblems(vaultOf(c), db.NoteQueries.Problems), Close: db.Close}, nil
 }
 
 func getCLIPluginCommands(c Config) cli.PluginCommands {

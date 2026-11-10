@@ -59,8 +59,8 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 	return vault.NewIndex(vault.IndexPorts{
 		Backend:       db,
 		Path:          path,
-		Vaults:        db.Vaults(),
-		Notes:         db.Notes(),
+		Vaults:        db.Stores.Vaults,
+		Notes:         db.Stores.Notes,
 		FileStats:     queries,
 		NameMatches:   queries,
 		Headings:      queries,
@@ -74,20 +74,20 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 		Passages:      db.ChunkQueries(),
 		Progress:      db.ChunkQueries(),
 		Stats:         db.ChunkQueries(),
-		Sources:       db.Sources(),
-		SourcesUnder:  db.Sources(),
-		RemovalLookup: db.Sources(),
-		SourceRecords: db.Sources(),
-		SourceBacklog: db.Sources(),
-		Vectors:       db.Sources(),
-		VectorQueries: db.Sources(),
-		Maintenance:   db.Maintenance(),
+		Sources:       db.Source.Sources,
+		SourcesUnder:  db.Source.Sources,
+		RemovalLookup: db.Source.Sources,
+		SourceRecords: db.Source.Sources,
+		SourceBacklog: db.Source.Sources,
+		Vectors:       db.Source.Sources,
+		VectorQueries: db.Source.Sources,
+		Maintenance:   db.Stores.Maintenance,
 		Links:         queries,
 		Problems:      queries,
-		OpenTabs:      db.OpenTabs(),
-		TextVersions:  version.NewIndexVersions(db.TextVersions()),
-		SearchFloors:  db.SearchFloors(),
-		SearchSamples: db.SearchSamples(),
+		OpenTabs:      db.Stores.OpenTabs,
+		TextVersions:  version.NewIndexVersions(db.TextVersions),
+		SearchFloors:  db.Search.SearchFloors,
+		SearchSamples: db.Search.SearchSamples,
 		Nearest:       db.ChunkQueries(),
 	}), nil
 }
@@ -95,13 +95,13 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 func updateIndex(c vaultWiring, db *vault.Index) edit.IndexUpdater {
 	refresh := vault.NewRefresh(
 		vaultReaders(c),
-		db.Vaults(),
-		db.Notes(),
-		db.RemovalLookup(),
-		db.Sources(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.Source.RemovalLookup,
+		db.Source.Sources,
 		c.Clock,
 	)
-	refresh.FollowRenames = filetext.NewFollowRenames(db.RemovalLookup(), db.Sources())
+	refresh.FollowRenames = filetext.NewFollowRenames(db.Source.RemovalLookup, db.Source.Sources)
 	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return func(ctx context.Context, v domain.Vault, paths []string) error {
@@ -119,8 +119,8 @@ func vaultMoves(c vaultWiring, ctx context.Context) (<-chan struct{}, error) {
 }
 
 func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Scenarios {
-	names, refs, links := db.NamedPaths(), db.NoteRefs(), db.Links()
-	sources, indexed := db.Sources(), db.SourcesUnder()
+	names, refs, links := db.NoteQueries.NamedPaths, db.NoteQueries.NoteRefs, db.NoteQueries.Links
+	sources, indexed := db.Source.Sources, db.Source.SourcesUnder
 	readers := vaultReaders(c)
 	writers := vaultWriters(c)
 	now := c.Clock
@@ -172,7 +172,7 @@ func vaultNotes(c vaultWiring, db *vault.Index, index edit.IndexUpdater) note.Sc
 			Neighborhood:   query.NewShowNeighbourhood(links, refs),
 			GetTitles:      query.NewGetTitles(refs),
 			GetTitle:       query.NewGetTitle(refs),
-			IsVaultIndexed: query.NewIsVaultIndexed(db.VaultHolds()),
+			IsVaultIndexed: query.NewIsVaultIndexed(db.NoteQueries.VaultHolds),
 		},
 	}
 }
@@ -198,23 +198,23 @@ func vaultOpenerWith(c vaultWiring,
 ) *vault.VaultOpener {
 	scan := vault.NewScan(
 		walking,
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 	if c.SetNoteCut != nil {
 		c.SetNoteCut(&scan, db)
 	}
 	scan.Walks = db.Walks()
 
-	buffered := &indexnote.Buffered{NoteRepository: db.Notes()}
+	buffered := &indexnote.Buffered{NoteRepository: db.Stores.Notes}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, vaultMakeRefresh(c, db, buffered))
 }
 
 func vaultMakeRefresh(c vaultWiring, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(vaultReaders(c), db.Vaults(), notes, db.RemovalLookup(), db.Sources(), c.Clock)
-	refresh.FollowRenames = filetext.NewFollowRenames(db.RemovalLookup(), db.Sources())
+	refresh := vault.NewRefresh(vaultReaders(c), db.Stores.Vaults, notes, db.Source.RemovalLookup, db.Source.Sources, c.Clock)
+	refresh.FollowRenames = filetext.NewFollowRenames(db.Source.RemovalLookup, db.Source.Sources)
 	refresh.Cut = c.CutNotes
 	refresh.Ledger = db.Ledger()
 	return refresh
@@ -225,7 +225,7 @@ func newTextVersions(c vaultWiring, db *vault.Index) (*textversion.Versions, err
 	if c.PluginHost != nil && !c.SafeMode {
 		plugins = textbridge.NewPlugins(c.PluginHost)
 	}
-	return textversion.NewVersions(db.TextVersions(), textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
+	return textversion.NewVersions(db.TextVersions, textfiles.Stores{Options: vaultOptions(c)}, plugins, vaultReaders(c), note.NewReadFrontmatter(vaultReaders(c)), c.Clock)
 }
 
 func getTextReaders(c vaultWiring) textdomain.Readers {

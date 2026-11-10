@@ -17,22 +17,26 @@ function createDeps(extra: Partial<PluginHostDeps> = {}): PluginHostDeps {
   }
 }
 
-const BAR = createMockManifest('org.example.ledger', { name: 'Ledger', version: '1' })
+const BAR = createMockManifest('org.example.ledger', {
+  name: 'Ledger',
+  version: '1',
+  permissions: ['vault:read'],
+})
 const TIDE = createMockManifest('org.example.tide', { name: 'Tide', version: '1' })
 
 describe('the vaults and the window of a plugin context', () => {
-  it('are the ones the window gives, whatever the permissions of the plugin', () => {
+  it('reach the ones the window gives, for the plugin that holds vault:read', () => {
     const vaults = createMockVaultsHost()
     const window = createMockWindowHost()
     const host = createPluginHost(createDeps({ getVaults: () => vaults, getWindow: () => window }))
 
     const context = host.createContext('org.example.ledger', BAR)
 
-    expect(context.vault.vaults).toBe(vaults)
-    expect(context.ui.window).toBe(window)
+    expect(context.vault.vaults?.getState()).toStrictEqual(vaults.getState())
+    expect(context.ui.window?.getState()).toStrictEqual(window.getState())
   })
 
-  it('are the same for every plugin of the window', () => {
+  it('are the same for every plugin of the window, the vaults only for one that holds vault:read', () => {
     const vaults = createMockVaultsHost()
     const window = createMockWindowHost()
     const host = createPluginHost(createDeps({ getVaults: () => vaults, getWindow: () => window }))
@@ -40,10 +44,10 @@ describe('the vaults and the window of a plugin context', () => {
     const ledger = host.createContext('org.example.ledger', BAR)
     const tide = host.createContext('org.example.tide', TIDE)
 
-    expect(tide.vault.vaults).toBe(vaults)
-    expect(ledger.vault.vaults).toBe(vaults)
-    expect(tide.ui.window).toBe(window)
-    expect(ledger.ui.window).toBe(window)
+    expect(ledger.vault.vaults?.getState()).toStrictEqual(vaults.getState())
+    expect(() => tide.vault.vaults?.getState()).toThrowError('vault:read')
+    expect(tide.ui.window?.getState()).toStrictEqual(window.getState())
+    expect(ledger.ui.window?.getState()).toStrictEqual(window.getState())
   })
 
   it('are absent where the window gives none', () => {

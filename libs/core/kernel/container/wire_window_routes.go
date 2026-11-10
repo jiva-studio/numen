@@ -39,7 +39,7 @@ import (
 func mountCatalog(w *windowWiring) {
 	if plugins := getPluginCatalog(plugins(w.cfg)); plugins != nil {
 		handler := windowcatalog.NewHandler(plugins)
-		path, served := windowcatalog.NewRoute(handler, w.inst.State.CountQuestions())
+		path, served := windowcatalog.NewRoute(handler, w.inst.State.Gate.CountQuestions())
 		w.inst.Mount(editor.NewRoute(path, served, handler))
 	}
 }
@@ -57,7 +57,7 @@ func mountCommand(w *windowWiring) {
 		versions = menu
 	}
 	handler := command.NewHandler(w.inst.State, getPluginCommands(plugins(w.cfg)), versions)
-	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.CountQuestions(), handler)))
+	w.inst.Mount(editor.NewRoute(command.NewRoute(w.inst.State.Gate.CountQuestions(), handler)))
 }
 
 func mountText(w *windowWiring) {
@@ -65,7 +65,7 @@ func mountText(w *windowWiring) {
 	if text := openFileText(vaultOf(w.cfg)); text != nil {
 		handler = windowtext.NewHandler(w.inst.State, text)
 	}
-	path, served := windowtext.NewRoute(handler, w.inst.State.CountQuestions())
+	path, served := windowtext.NewRoute(handler, w.inst.State.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -79,21 +79,21 @@ func mountVaults(w *windowWiring) {
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetFolderChooser(picker.NewChooseFolder(dialog))
 	})
-	path, served := vaults.NewRoute(handler, state.CountQuestions())
+	path, served := vaults.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountSearch(w *windowWiring) {
 	state := w.inst.State
 	handler := windowsearch.NewHandler(state)
-	handler.GetNameMatches = search.NewGetNameMatches(w.db.NameMatches())
-	handler.GetTitles = query.NewGetTitles(w.db.NoteRefs())
-	handler.GetTypes = query.NewGetTypes(w.db.NoteTypes())
+	handler.GetNameMatches = search.NewGetNameMatches(w.db.NoteQueries.NameMatches)
+	handler.GetTitles = query.NewGetTitles(w.db.NoteQueries.NoteRefs)
+	handler.GetTypes = query.NewGetTypes(w.db.NoteQueries.NoteTypes)
 	handler.ListTabKinds = w.files.ListTabKinds
 	finds := newSearch(searchOf(w.cfg), w.db, w.asking, state.ReportWordsAlone)
 	handler.Finds = &finds
 	setPluginSearch(searchOf(w.cfg), w.db, w.embedder, state.ReportFloorError)
-	path, served := windowsearch.NewRoute(handler, state.CountQuestions())
+	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -101,13 +101,13 @@ func mountFile(w *windowWiring) {
 	state := w.inst.State
 	readers := vaultReaders(vaultOf(w.cfg))
 	folders := filewindow.NewFolders(
-		state, state,
-		file.NewGetFolderEntries(readers, w.db.NoteTypes()),
-		file.NewGetFileKinds(readers, w.db.NoteTypes()),
+		editor.NewSession(state), state.Events,
+		file.NewGetFolderEntries(readers, w.db.NoteQueries.NoteTypes),
+		file.NewGetFileKinds(readers, w.db.NoteQueries.NoteTypes),
 		openChooseTabKind(plugins(w.cfg)),
 		file.NewCreateFolder(folderWriters(vaultOf(w.cfg))),
 	)
-	changes := filewindow.NewChanges(state, state, state, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)
+	changes := filewindow.NewChanges(editor.NewSession(state), state.Writes, state.Notices, &w.vaults.Tree.Move, &w.notes.Place.Remove, &w.notes.Place.EmptyTrash)
 	handler := filewindow.NewHandler(folders, changes)
 	w.files = handler
 	w.server = editor.NewFileServer(
@@ -118,7 +118,7 @@ func mountFile(w *windowWiring) {
 
 func mountWindowState(w *windowWiring) {
 	state := w.inst.State
-	path, served := windowstate.NewRoute(state.Window, state.CountQuestions())
+	path, served := windowstate.NewRoute(state.Window, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, state.Window))
 }
 
@@ -128,11 +128,11 @@ func mountWorkspace(w *windowWiring) error {
 	if err != nil {
 		return err
 	}
-	store := w.db.OpenTabs()
+	store := w.db.Stores.OpenTabs
 	handler := workspace.NewHandler(
-		state, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
+		state, state.Notices, state, vault.NewWriteOpenTabs(store), vault.NewReadOpenTabs(store), links,
 	)
-	path, served := workspace.NewRoute(handler, state.CountQuestions())
+	path, served := workspace.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 	return nil
 }
@@ -141,22 +141,23 @@ func mountNote(w *windowWiring) {
 	state := w.inst.State
 	notes := w.notes
 	addresses := notewindow.NewAddresses(state, notes.Refer.GetLinkAddress)
-	prose := notewindow.NewProse(state, addresses, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename)
+	session := editor.NewSession(state)
+	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename)
 	outline := notewindow.NewOutline(
 		state, w.files.ListTabKinds,
-		query.NewGetOpeningNote(w.db.OpeningNote()),
-		query.NewGetTypes(w.db.NoteTypes()),
-		query.NewGetHeadings(w.db.Headings()),
+		query.NewGetOpeningNote(w.db.NoteQueries.OpeningNote),
+		query.NewGetTypes(w.db.NoteQueries.NoteTypes),
+		query.NewGetHeadings(w.db.NoteQueries.Headings),
 		&notes.Browse.Neighborhood,
 	)
 	links := notewindow.NewLinks(
-		state, addresses,
-		query.NewResolveLinks(w.db.Links()), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &notes.Refer.Backlinks,
+		session, addresses,
+		query.NewResolveLinks(w.db.NoteQueries.Links), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &notes.Refer.Backlinks,
 	)
 	connections := notewindow.NewConnections(
-		state, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
+		session, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
-	handler := notewindow.NewHandler(state, prose, outline, links, connections)
+	handler := notewindow.NewHandler(state.Notices, prose, outline, links, connections)
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
 }
 
@@ -171,7 +172,7 @@ func mountAgent(w *windowWiring) {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}
-	path, served := windowagent.NewRoute(handler, state.CountQuestions())
+	path, served := windowagent.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -210,13 +211,13 @@ func mountSettings(w *windowWiring) {
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.ChoosePath = openChoosePluginPath(settingsOf(w.cfg), dialog)
 	})
-	path, served := windowsettings.NewRoute(handler, state.CountQuestions())
+	path, served := windowsettings.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(getPluginServices(plugins(w.cfg)), func(id string) (string, bool) { return getPluginDir(plugins(w.cfg), id) })
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
+	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
 // SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file
@@ -227,7 +228,7 @@ func SetEditorPluginWindow(c Config, db *vault.Index, opened *editor.Installatio
 	focusPassages := file.NewFocusPassages(vaultReaders(vaultOf(c)), view)
 	setPluginWindow(plugins(c), windowsession.NewPluginWindow(
 		&opened.State.Runtime,
-		vaultFocusNote(vaultOf(c), db.NoteRefs(), view),
+		vaultFocusNote(vaultOf(c), db.NoteQueries.NoteRefs, view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),
@@ -249,8 +250,8 @@ func SetEditorPluginVaultList(c Config, opened *editor.Installation) {
 
 func mountVault(w *windowWiring) {
 	state := w.inst.State
-	handler := windowvault.NewHandler(state)
-	path, served := windowvault.NewRoute(handler, state.CountQuestions())
+	handler := windowvault.NewHandler(state, state.Notices)
+	path, served := windowvault.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 
@@ -273,10 +274,10 @@ func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Em
 				return 0, 0, indexing.ErrNoProgress
 			}
 			name, recipe := embedding.Describe()
-			state.RecordModel(name, recipe)
+			state.Runtime.RecordModel(name, recipe)
 			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		VectorsReady: state.EmitVectorsReady,
+		VectorsReady: state.Events.EmitVectorsReady,
 		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
 		Quiet:        indexing.QuietPeriod,
 		After:        time.After,
@@ -297,7 +298,7 @@ func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession 
 
 func getTextVersions(c Config) windowsession.TextVersions {
 	if versions := vaultOf(c).TextVersions; versions != nil {
-		return versions
+		return versions.Changes
 	}
 	return nil
 }

@@ -1,7 +1,6 @@
 package editor
 
 import (
-	"context"
 	"embed"
 	"errors"
 	"net/http"
@@ -10,8 +9,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-
-	"connectrpc.com/connect"
 
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
 	mediawindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/media"
@@ -88,7 +85,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", s.getPolicy(played))
 		// A window being taken away answers nothing.
-		if s.state.isClosed() {
+		if s.state.Gate.isClosed() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
@@ -124,7 +121,7 @@ func (s pageSet) newRoutes(named []string) []Route {
 	// the window together, so a build put together without a catalog serves
 	// none.
 	if s.themes != nil {
-		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.state.CountQuestions())
+		path, handler := numenv1connect.NewThemeServiceHandler(s.themes, s.state.Gate.CountQuestions())
 		if themed := NewRoute(path, handler, s.themes); isServed(named, themed) {
 			routes = append(routes, themed)
 		}
@@ -135,40 +132,24 @@ func (s pageSet) newRoutes(named []string) []Route {
 func (s pageSet) serveAdjacent(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
-		if !s.state.questions.begin() {
+		if !s.state.Gate.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		defer s.state.questions.finish()
+		defer s.state.Gate.questions.finish()
 		s.servePluginRoute(w, r, isWhole)
 	case isWhole && strings.HasPrefix(r.URL.Path, assetsRoute):
-		if !s.state.questions.begin() {
+		if !s.state.Gate.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
-		defer s.state.questions.finish()
+		defer s.state.Gate.questions.finish()
 		s.serveAsset(w, r)
 	case slices.Contains(wire.GetOpenedAt(), r.URL.Path):
 		wire.WritePage(w, r, pages, s.themes, files)
 	default:
 		files.ServeHTTP(w, r)
 	}
-}
-
-// CountQuestions counts each call to a service among the questions the window
-// is answering, and refuses it once the window is shut.
-func (s *State) CountQuestions() connect.HandlerOption {
-	return connect.WithInterceptors(connect.UnaryInterceptorFunc(
-		func(next connect.UnaryFunc) connect.UnaryFunc {
-			return func(ctx context.Context, r connect.AnyRequest) (connect.AnyResponse, error) {
-				if !s.questions.begin() {
-					return nil, connect.NewError(connect.CodeUnavailable, errShut)
-				}
-				defer s.questions.finish()
-				return next(ctx, r)
-			}
-		},
-	))
 }
 
 // assetsRoute is the path prefix where the bytes of vault files are served.
@@ -201,7 +182,7 @@ func (s pageSet) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescap
 	if err != nil {
 		return false
 	}
-	defer closeAndReport(s.state.reportTask, file)
+	defer closeAndReport(s.state.Window.AddTask, file)
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 	return true
 }
@@ -255,18 +236,18 @@ func (s pageSet) setRequestVault(r *http.Request) {
 
 // NewNoteRoute is the route of the notes service.
 func NewNoteRoute(state *State, handler *notewindow.Handler) Route {
-	path, served := numenv1connect.NewNoteServiceHandler(handler, state.CountQuestions())
+	path, served := numenv1connect.NewNoteServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
 }
 
 // NewFileRoute is the route of the files service.
 func NewFileRoute(state *State, handler *filewindow.Handler) Route {
-	path, served := numenv1connect.NewFileServiceHandler(handler, state.CountQuestions())
+	path, served := numenv1connect.NewFileServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
 }
 
 // NewMediaRoute is the route of the service that tells where a media file is played from.
 func NewMediaRoute(state *State, handler *mediawindow.Handler) Route {
-	path, served := numenv1connect.NewMediaServiceHandler(handler, state.CountQuestions())
+	path, served := numenv1connect.NewMediaServiceHandler(handler, state.Gate.CountQuestions())
 	return NewRoute(path, served, handler)
 }

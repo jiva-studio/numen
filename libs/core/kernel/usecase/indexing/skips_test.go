@@ -80,7 +80,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 
 	v := testsupport.NewVault(t, map[string]string{"Held.md": noteWith(getHeldWords(), 200)})
 	cut(t, made, db, v)
-	heldChunks, _, err := db.Progress().GetProgress(t.Context(), v.ID, recipe)
+	heldChunks, _, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	cut(t, made, db, v)
 	p.embed(t.Context())
 
-	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, recipe)
+	target, embedded, err := db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func testCancelledNoteIsSkippedUntilItChanges(t *testing.T, openReading openFunc
 	cut(t, made, db, v)
 	p.embed(t.Context())
 
-	target, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, recipe)
+	target, embedded, err = db.Chunks.Progress.GetProgress(t.Context(), v.ID, recipe)
 	if err != nil {
 		t.Fatal(err)
 	}

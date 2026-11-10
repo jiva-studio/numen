@@ -27,10 +27,10 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*vaults.Index, doma
 
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -40,7 +40,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*vaults.Index, doma
 
 func links(t *testing.T, db *vaults.Index, v domain.Vault, path string) query.NoteLinks {
 	t.Helper()
-	c, err := query.NewShowLinks(db.Links()).Execute(t.Context(), v, path)
+	c, err := query.NewShowLinks(db.NoteQueries.Links).Execute(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,10 +262,10 @@ func addVault(t *testing.T, db *vaults.Index, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := vaults.NewScan(
 		vaultreader.Readers{},
-		db.Vaults(),
-		db.Notes(),
-		db.FileStats(),
-		db.Maintenance(),
+		db.Stores.Vaults,
+		db.Stores.Notes,
+		db.NoteQueries.FileStats,
+		db.Stores.Maintenance,
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -414,8 +414,8 @@ func TestShowLinks_LinkQueryFailureIsError(t *testing.T) {
 		with failingLinks
 		want error
 	}{
-		{"outgoing", failingLinks{LinkQueries: db.Links(), links: errOutgoing}, errOutgoing},
-		{"incoming", failingLinks{LinkQueries: db.Links(), backlinks: errIncoming}, errIncoming},
+		{"outgoing", failingLinks{LinkQueries: db.NoteQueries.Links, links: errOutgoing}, errOutgoing},
+		{"incoming", failingLinks{LinkQueries: db.NoteQueries.Links, backlinks: errIncoming}, errIncoming},
 	} {
 		got, err := query.NewShowLinks(tc.with).Execute(t.Context(), v, "source.md")
 		if !errors.Is(err, tc.want) {

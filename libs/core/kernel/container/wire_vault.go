@@ -87,7 +87,7 @@ func VaultOpener(c Config, db *vault.Index) *vault.VaultOpener {
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
 func GetRefresh(c Config, db *vault.Index) vault.Refresh {
-	return makeRefresh(c, db, db.Notes())
+	return makeRefresh(c, db, db.Stores.Notes)
 }
 
 func makeRefresh(c Config, db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
@@ -186,7 +186,7 @@ func vaultHandleError(c vaultWiring, err error) {
 
 func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, notes note.Move) vault.Scenarios {
 	// Erase is Unregister and a folder that goes, so the two hold one Unregister.
-	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Vaults())
+	unregister := vault.NewUnregister(registry.Vaults, registry.Remover, db.Stores.Vaults)
 	erase := vault.NewErase(vaultIdentity(c), vaultTrash(c), unregister)
 	find := vaultregistry.NewFind(registry.Lookup)
 	return vault.Scenarios{
@@ -197,13 +197,13 @@ func vaultVaults(c vaultWiring, registry vaultregistry.Ports, db *vault.Index, n
 		},
 		Change: vault.Changing{
 			Add:        vault.NewAdd(vaultIdentity(c), registry.Vaults, registry.Lookup, registry.Saver, c.Clock),
-			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Vaults()),
+			Rename:     vault.NewRename(registry.Vaults, registry.Saver, db.Stores.Vaults),
 			Remove:     vault.NewRemove(find, unregister, erase),
 			Unregister: unregister,
 			Erase:      erase,
 		},
 		Tree: vault.Tree{
-			Move:   vault.NewMove(vaultWriters(c), db.Links(), db.SourcesUnder(), db.Sources(), notes),
+			Move:   vault.NewMove(vaultWriters(c), db.NoteQueries.Links, db.Source.SourcesUnder, db.Source.Sources, notes),
 			Import: vault.NewImport(vaultWriters(c), getImportedFiles(c)),
 		},
 		RecordOpen: vault.NewRecordOpen(registry.Recorder),

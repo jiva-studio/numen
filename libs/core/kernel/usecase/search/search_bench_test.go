@@ -112,7 +112,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 	}
 	testsupport.CloseAfter(b, db)
 
-	if err := db.Vaults().Register(ctx, v.ID); err != nil {
+	if err := db.Stores.Vaults.Register(ctx, v.ID); err != nil {
 		b.Fatal(err)
 	}
 	if err := db.VectorIndex().FitVectors(ctx, model.Dimensions, model.Recipe()); err != nil {
@@ -135,7 +135,7 @@ func newBenchCorpus(b *testing.B, notes int) *benchCorpus {
 
 	searchMock := container.NewSearch(cfg, db, mock, nil)
 
-	passages := db.Passages()
+	passages := db.Chunks.Passages
 	candidates, err := passages.FindLexical(ctx, v.ID, source.LexicalQuery{Text: "entropy thermodynamics", Kinds: nil, Limit: 20})
 	if err != nil {
 		b.Fatal(err)

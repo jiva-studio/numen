@@ -23,7 +23,7 @@ const racyWindow = 2 * time.Second
 // file; otherwise the file is hashed from a stream and recorded with the stat.
 // A file the vault ignores has no index row and is hashed without a record.
 // The record is a cache: a hash that cannot be recorded is returned all the same.
-func (u *Versions) GetContentHash(ctx context.Context, v domain.Vault, path string) (string, error) {
+func (u *Texts) GetContentHash(ctx context.Context, v domain.Vault, path string) (string, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return "", err

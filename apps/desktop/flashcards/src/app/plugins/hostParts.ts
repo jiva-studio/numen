@@ -1,16 +1,12 @@
 /**
  * The parts of the shell host that hold no plugin: the one tab of the window, the kind in front,
- * the slots of the manifests and the registrations the window has no slot for.
+ * the slots of the manifests.
  */
 import { computed, effectScope, shallowRef, type EffectScope, type ShallowRef } from 'vue'
 import {
   createSlotRegistry,
   readManifestSlotEntries,
-  type Disposable,
   type Manifest,
-  type PluginEvents,
-  type PluginRegistrations,
-  type PluginSettings,
   type SlotViewRegistry,
   type TabKindRegistration,
 } from '@numen/plugin-loader'
@@ -30,9 +26,6 @@ export interface WindowTab {
   readonly state: unknown
   readonly scope: EffectScope
 }
-
-// The disposable of a subscription that holds no resource.
-export const NOTHING: Disposable = { dispose: () => undefined }
 
 export function createWindowTab(front: () => PluginView | null) {
   const tab = shallowRef<WindowTab | null>(null)
@@ -77,28 +70,6 @@ export function createFrontView(views: Readonly<ShallowRef<readonly PluginView[]
     return mainViews[0] ?? null
   })
 }
-
-/** The settings of a plugin, which the window has none of. */
-export const UNUSED_SETTINGS: PluginSettings = {
-  get: () => undefined,
-  onChange: () => NOTHING,
-}
-
-/** The events of a plugin, none of which the window raises or listens to. */
-export const UNUSED_EVENTS: PluginEvents = {
-  onVaultChange: () => NOTHING,
-  onFileSelect: () => NOTHING,
-  emitVaultChange: () => undefined,
-  emitFileSelect: () => undefined,
-}
-
-/** The registrations the window has no slot for. */
-export const UNUSED_REGISTRATIONS = {
-  reader: () => NOTHING,
-  command: () => NOTHING,
-  agentProvider: () => NOTHING,
-  settingsView: () => NOTHING,
-} satisfies Partial<PluginRegistrations>
 
 export function createWindowSlots(slotViews: SlotViewRegistry) {
   const manifests = shallowRef<ReadonlyMap<string, Manifest>>(new Map())

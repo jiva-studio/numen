@@ -29,15 +29,19 @@ var (
 	ErrUnknownCommand = errors.New("no enabled plugin declares that command")
 	// ErrBadArguments is arguments or a file that do not meet the declaration.
 	ErrBadArguments = errors.New("the arguments do not meet the command")
+	// ErrUnavailable is a plugin that cannot be started or reached, or an installation with no plugin
+	// host.
+	ErrUnavailable = domain.ErrUnavailable
 )
 
-// Commands is both scenarios over the commands the plugins declare.
+// Commands is the scenarios over the commands the plugins declare.
 type Commands struct {
-	List List
-	Run  Run
+	List         List
+	ContentTypes ContentTypes
+	Run          Run
 }
 
-// NewCommands makes both scenarios over the commands and the backends that run them, which may be nothing, the table that gives a
+// NewCommands makes the scenarios over the commands and the backends that run them, which may be nothing, the table that gives a
 // file its type, the reader of the type and properties of a note, and the settings a condition reads as
 // config; without settings a condition over config is undecided and holds.
 func NewCommands(
@@ -46,15 +50,15 @@ func NewCommands(
 ) Commands {
 	conditions := when.NewConditions()
 	return Commands{
-		List: List{commands: commands, types: types, conditions: conditions},
-		Run:  Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions},
+		List:         List{commands: commands, conditions: conditions},
+		ContentTypes: ContentTypes{types: types},
+		Run:          Run{commands: commands, runs: runs, types: types, notes: notes, config: config, conditions: conditions},
 	}
 }
 
 // List lists the commands the enabled plugins declare.
 type List struct {
 	commands   pluginport.PluginCommands
-	types      contenttypeport.ContentTypeTable
 	conditions *when.Conditions
 }
 
@@ -152,7 +156,7 @@ type Run struct {
 // ErrBadArguments, saying what is wrong, and nothing is run.
 func (u Run) Execute(ctx context.Context, v domain.Vault, call plugin.CommandCall) (plugin.CommandResult, error) {
 	if u.commands == nil || u.runs == nil {
-		return plugin.CommandResult{}, domain.ErrUnavailable
+		return plugin.CommandResult{}, ErrUnavailable
 	}
 	var entries []plugin.CommandEntry
 	if manifest.IsSharedCommand(call.Command) {
@@ -215,7 +219,7 @@ func (u Run) checkPath(ctx context.Context, v domain.Vault, declared manifest.Co
 
 func checkArguments(declared manifest.Command, call plugin.CommandCall, hasItems bool) error {
 	for _, name := range slices.Sorted(maps.Keys(call.Arguments)) {
-		if name == manifest.CommandArgumentVersion && hasItems {
+		if name == ArgumentVersion && hasItems {
 			continue
 		}
 		argument, isDeclared := declared.GetArgument(name)
@@ -279,18 +283,6 @@ func (u Run) readNote(
 	return target.WithNote(noteType, properties), nil
 }
 
-// ListContentTypes returns the content type of each registered extension, lowercase and without the dot.
-func (u List) ListContentTypes() map[string]string {
-	out := map[string]string{}
-	if u.types == nil {
-		return out
-	}
-	for _, extension := range u.types.ListExtensions(domain.AnyContentType) {
-		out[extension] = string(u.types.GetContentType("file." + extension))
-	}
-	return out
-}
-
 // HasItems reports whether the command offers one item per text version of a file: its condition
 // names version.*. A condition that cannot be read counts as having items, so it is listed nowhere.
 func (u List) HasItems(command manifest.Command) bool {
@@ -307,4 +299,24 @@ func hasItems(conditions *when.Conditions, command manifest.Command) bool {
 func (u List) HasTargetVariable(command manifest.Command) bool {
 	condition, err := u.conditions.Parse(command.When)
 	return err == nil && (condition.HasTargetVariable() || condition.HasItems())
+}
+
+// IsSharedCommand reports whether the full id is a shared command, which the handlers of plugins run.
+func IsSharedCommand(id string) bool { return manifest.IsSharedCommand(id) }
+
+// ContentTypes lists the content type of each file extension the table registers.
+type ContentTypes struct {
+	types contenttypeport.ContentTypeTable
+}
+
+// Execute returns the content type of each registered extension, lowercase and without the dot.
+func (u ContentTypes) Execute() map[string]string {
+	out := map[string]string{}
+	if u.types == nil {
+		return out
+	}
+	for _, extension := range u.types.ListExtensions(domain.AnyContentType) {
+		out[extension] = string(u.types.GetContentType("file." + extension))
+	}
+	return out
 }

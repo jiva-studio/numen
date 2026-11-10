@@ -73,7 +73,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Vaults().Register(t.Context(), v.ID); err != nil {
+	if err := db.Stores.Vaults.Register(t.Context(), v.ID); err != nil {
 		t.Fatal(err)
 	}
 
@@ -83,11 +83,11 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 		Title:    "Cut",
 		Body:     body,
 	}
-	if err := db.Notes().Save(t.Context(), v.ID, target.CutNotes().Execute([]domain.Note{n})); err != nil {
+	if err := db.Stores.Notes.Save(t.Context(), v.ID, target.CutNotes().Execute([]domain.Note{n})); err != nil {
 		t.Fatal(err)
 	}
 
-	unembedded, _, err := db.VectorQueries().GetUnembeddedChunks(t.Context(), v.ID, wide{384}.GetModel(), "", 1000)
+	unembedded, _, err := db.Chunks.VectorQueries.GetUnembeddedChunks(t.Context(), v.ID, wide{384}.GetModel(), "", 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
