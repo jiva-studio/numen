@@ -482,7 +482,8 @@ export function verifyPluginFrontendSlices() {
   requireMatches('plugin frontend files', listShippedFrontendFiles(files).length, MINIMUM_FRONTEND_FILES)
   failOnFindings('A plugin frontend breaks its shape', findPluginSliceShapeViolations(files))
   const refused = lintPlantedFrontend(PLANTED_SLICE_FRONTEND)
-  if (JSON.stringify(refused) !== JSON.stringify(PLANTED_SLICE_REFUSALS)) {
+  const sorted = (lines) => JSON.stringify(Object.entries(lines).sort(([a], [b]) => a.localeCompare(b)))
+  if (sorted(refused) !== sorted(PLANTED_SLICE_REFUSALS)) {
     throw new Error(
       `the slice rule of plugins/.example/eslint.config.js refused ${JSON.stringify(refused)} in the planted frontend, expected ${JSON.stringify(PLANTED_SLICE_REFUSALS)}`,
     )
