@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
-import { createEmitter } from '@/shared/lib/emitter'
+import { createEmitter } from './createEmitter'
 import type { PathRename } from '@/shared/paths'
 import { createDisplayOptions, type DisplayWiring } from './displayOptions'
 

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createEmitter } from './emitter'
+import { createEmitter } from './createEmitter'
 
 describe('an emitter', () => {
   it('calls every listener with the emitted value', () => {

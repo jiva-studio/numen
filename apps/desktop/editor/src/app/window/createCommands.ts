@@ -48,7 +48,7 @@ import { getVaultList } from './vaultList'
 type Words = typeof WORDS
 
 import type { SettingsStore } from '@/entities/settings'
-import { createEmitter } from '@/shared/lib/emitter'
+import { createEmitter } from './createEmitter'
 
 export interface CommandsDepsOptions {
   core: SearchDeps
