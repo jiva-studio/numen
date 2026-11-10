@@ -5,20 +5,35 @@ import (
 	"strings"
 
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/note/domain"
 	"github.com/jiva-studio/numen/libs/note/edit"
 )
 
+// WriteGate admits the writes a window waits for before it closes.
+type WriteGate interface {
+	// BeginWrite registers a write and reports false once the window is closing, when nothing may be written.
+	BeginWrite() bool
+	// FinishWrite ends a write that BeginWrite registered.
+	FinishWrite()
+}
+
+// IndexFollow tells whether the index followed a write and what a written note requires of it.
+type IndexFollow interface {
+	// IsIndexOutdated reports whether err says the write reached the vault and the index did not follow.
+	IsIndexOutdated(err error) bool
+	// NoteWritten tells the embedder that a note holds new prose.
+	NoteWritten()
+}
+
 // TrackWrites runs a write of a window so that the window waits for it before it closes, and tells
 // whether the index followed it.
 type TrackWrites struct {
-	gate   windowport.WriteGate
-	follow windowport.IndexFollow
+	gate   WriteGate
+	follow IndexFollow
 }
 
 // NewTrackWrites returns the use case over the gate of the window and the index.
-func NewTrackWrites(gate windowport.WriteGate, follow windowport.IndexFollow) TrackWrites {
+func NewTrackWrites(gate WriteGate, follow IndexFollow) TrackWrites {
 	return TrackWrites{gate: gate, follow: follow}
 }
 
@@ -36,13 +51,13 @@ func (u TrackWrites) Execute(ctx context.Context, write func(ctx context.Context
 // SaveProse saves the prose the user wrote into a note as a write of the window, and tells the embedder
 // that the note holds new prose.
 type SaveProse struct {
-	write  Write
+	write  *Write
 	track  TrackWrites
-	follow windowport.IndexFollow
+	follow IndexFollow
 }
 
 // NewSaveProse returns the use case over the writer of notes.
-func NewSaveProse(write Write, gate windowport.WriteGate, follow windowport.IndexFollow) SaveProse {
+func NewSaveProse(write *Write, gate WriteGate, follow IndexFollow) SaveProse {
 	return SaveProse{write: write, track: NewTrackWrites(gate, follow), follow: follow}
 }
 
@@ -67,12 +82,12 @@ func (u SaveProse) Execute(
 
 // CreateNote creates a note as a write of the window. A blank title makes an untitled note.
 type CreateNote struct {
-	create Create
+	create *Create
 	track  TrackWrites
 }
 
 // NewCreateNote returns the use case over the creator of notes.
-func NewCreateNote(create Create, gate windowport.WriteGate, follow windowport.IndexFollow) CreateNote {
+func NewCreateNote(create *Create, gate WriteGate, follow IndexFollow) CreateNote {
 	return CreateNote{create: create, track: NewTrackWrites(gate, follow)}
 }
 

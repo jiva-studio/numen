@@ -16,6 +16,7 @@ type Vault struct {
 	Connections Connections
 	Arranger    Arranger
 	Stores      Stores
+	Locks       vault.Locks
 }
 
 // Access returns the capabilities of the vault the way hostendpoint serves them.
@@ -32,5 +33,6 @@ func (v Vault) Access() *vault.Access {
 	return &vault.Access{
 		Notes: lookups, Links: lookups, Files: files, Writer: files, Arranger: arranger, LinkEditor: arranger,
 		Connections: connections, Related: connections, Watch: &session, Switch: &session, Stores: stores, Cache: stores,
+		Locks: v.Locks,
 	}
 }

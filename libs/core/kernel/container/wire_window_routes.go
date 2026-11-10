@@ -143,7 +143,7 @@ func mountNote(w *windowWiring) {
 	notes := w.notes
 	addresses := notewindow.NewAddresses(state, notes.Refer.GetLinkAddress)
 	session := editor.NewSession(state)
-	save, create := note.NewSaveProse(notes.Edit.Write, session, session), note.NewCreateNote(notes.Edit.Create, session, session)
+	save, create := note.NewSaveProse(&notes.Edit.Write, session, session), note.NewCreateNote(&notes.Edit.Create, session, session)
 	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &save, &create, &notes.Place.Rename)
 	outline := notewindow.NewOutline(
 		state, w.files.ListTabKinds,

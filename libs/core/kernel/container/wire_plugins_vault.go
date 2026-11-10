@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
 	"io/fs"
 
 	pluginvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/plugin/hostendpoint/vault"
@@ -59,10 +60,6 @@ func openNoteWriter(c pluginsWiring, v domain.Vault) (hostvault.NoteWriter, erro
 	return writer, nil
 }
 
-func lockVault(c pluginsWiring, ctx context.Context, v domain.Vault) (func(), error) {
-	return c.VaultLocks.Lock(ctx, v)
-}
-
 func installPluginVault(c pluginsWiring,
 	registry vaultregistry.Ports, db *vault.Index, current func() (domain.Vault, bool), hooks PluginVaultHooks,
 ) error {
@@ -103,6 +100,7 @@ func pluginsOpenPluginVault(c pluginsWiring,
 	}
 	stores := derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}}
 	vaults := hostvault.Vault{
+		Locks: vault.NewHoldVault(c.VaultLocks, clock.System{}),
 		Session: hostvault.Session{
 			Current:    current,
 			Vaults:     registry.Vaults.List,
@@ -116,7 +114,6 @@ func pluginsOpenPluginVault(c pluginsWiring,
 			ReadFile:    file.NewReadFile(c.VaultReaders),
 			RangeReader: file.Read{Readers: c.VaultReaders},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return openNoteWriter(c, v) },
-			LockVault:   func(ctx context.Context, v domain.Vault) (func(), error) { return lockVault(c, ctx, v) },
 			Index:       index,
 		},
 		Lookups: hostvault.Lookups{

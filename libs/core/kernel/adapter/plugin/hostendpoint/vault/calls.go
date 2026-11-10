@@ -1,10 +1,12 @@
 package vault
 
 import (
+	"context"
 	"net/http"
 
 	"connectrpc.com/connect"
 
+	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -53,4 +55,26 @@ func (c *calls) begin(header http.Header, permission string) (string, *Access, e
 		return "", nil, err
 	}
 	return pluginID, access, nil
+}
+
+func serve[Q, R any](
+	ctx context.Context, c *calls, req *connect.Request[Q], permission string,
+	withCode func(code v1.HostVaultErrorCode) *R, work func(access *Access) (*R, error),
+) (*connect.Response[R], error) {
+	_, access, err := c.begin(req.Header(), permission)
+	if err != nil {
+		return nil, err
+	}
+	if access == nil {
+		return connect.NewResponse(withCode(noVault)), nil
+	}
+	out, err := work(access)
+	if err == nil {
+		return connect.NewResponse(out), nil
+	}
+	code, failure := answer(ctx, err)
+	if failure != nil {
+		return nil, failure
+	}
+	return connect.NewResponse(withCode(code)), nil
 }

@@ -112,7 +112,6 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 			ReadFile:    file.NewReadFile(readers),
 			RangeReader: file.Read{Readers: readers},
 			OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
-			LockVault:   writers.Lock,
 			Index: func(_ context.Context, _ domain.Vault, paths []string) error {
 				d.mu.Lock()
 				defer d.mu.Unlock()
@@ -121,6 +120,7 @@ func (d *diskVaults) access(t *testing.T) hostvault.Vault {
 			},
 		},
 		Stores: hostvault.Stores{Cache: appstate.PluginCachesAt(t.TempDir())},
+		Locks:  vaults.NewHoldVault(writers, testsupport.GetMachine()),
 	}
 }
 
