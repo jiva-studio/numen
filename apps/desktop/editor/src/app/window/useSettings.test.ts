@@ -97,7 +97,7 @@ const SHELL_DECLARATION: readonly PluginSettingInfo[] = [
     value: 'preset:numen',
   },
   {
-    key: 'appearance.state.mode',
+    key: 'appearance.mode',
     type: 'enum',
     title: 'Light or dark',
     description: '',
@@ -216,7 +216,7 @@ describe('the settings as they are put together', () => {
     }
   })
 
-  it('notifies onSizeChanged when appearance.preview.sized changes', async () => {
+  it('notifies onSizeChanged when appearance.sized changes', async () => {
     const { settings, onSizeChanged } = createSettings()
     settings.appearance.state.settings.value = { interfaceScale: 110, textScale: 105 }
     await Promise.resolve()
@@ -241,7 +241,7 @@ describe('the lists the palette offers for a setting', () => {
 
     expect(ids).toStrictEqual([
       'setting:app:appearance.theme',
-      'setting:app:appearance.state.mode',
+      'setting:app:appearance.mode',
       'setting:app:appearance.interfaceScale',
       'setting:app:appearance.textScale',
       'setting:app:naming.syncTitleAndFilename',

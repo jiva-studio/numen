@@ -5,7 +5,7 @@ import { findChordKeys } from '@/entities/command'
 import { createAppCommands } from '@/testing/appCommands'
 
 const APPLE = 'MacIntel'
-const OPENS_A_PALETTE = ['app:vault.search', 'app:commands.palette.open']
+const OPENS_A_PALETTE = ['app:vault.search', 'app:commands.open']
 const appKeys = APP_KEYBINDINGS.filter((one) => !OPENS_A_PALETTE.includes(one.command))
 
 describe('every key the application holds', () => {
