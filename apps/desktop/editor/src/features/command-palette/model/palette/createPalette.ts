@@ -74,7 +74,7 @@ function createPaletteCommands(session: PaletteSession) {
   return { startCommand, getObjection }
 }
 
-export function usePalette(session: PaletteSession, view: ReturnType<typeof usePaletteView>) {
+export function createPalette(session: PaletteSession, view: ReturnType<typeof usePaletteView>) {
   const { state, steps, on, previewItem, setOpen, searchNames } = session
   const { startCommand, getObjection } = createPaletteCommands(session)
 

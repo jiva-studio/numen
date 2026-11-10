@@ -6,12 +6,12 @@
  * rendered as it is.
  */
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import type { Wait } from '../../lib/search/debounced'
+import type { Wait } from '../search/debounced'
 import type { CommandsDeps, NoteLookup, PaletteLists } from '../../types'
 import type { Words } from '../../words'
 import { createPaletteSession, type CommandPaletteDeps } from './session'
-import { usePalette } from './usePalette'
-import { usePaletteNavigation } from './usePaletteNavigation'
+import { createPalette } from './createPalette'
+import { createPaletteNavigation } from './createPaletteNavigation'
 import { usePaletteView } from './usePaletteView'
 
 type PaletteArgs =
@@ -46,9 +46,9 @@ function parsePaletteDeps(args: PaletteArgs): CommandPaletteDeps {
 
 export function createCommandPalette(...args: PaletteArgs) {
   const session = createPaletteSession(parsePaletteDeps(args))
-  const navigation = usePaletteNavigation(session)
+  const navigation = createPaletteNavigation(session)
   const view = usePaletteView(session)
-  const palette = usePalette(session, view)
+  const palette = createPalette(session, view)
 
   return {
     open: palette.open,

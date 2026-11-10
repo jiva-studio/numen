@@ -246,7 +246,7 @@ export function createCommandRunner(parts: CommandRunnerParts) {
   }
 }
 
-function useWindowCommandPalette(
+function createWindowCommandPalette(
   options: CommandsDepsOptions,
   lists: PaletteLists,
   listExtras: () => readonly Command[],
@@ -283,7 +283,7 @@ export function createCommands(options: CommandsDepsOptions) {
   const items = createPaletteItems(options, getCommandNote, () => commandDeps)
   const { lists, resetWhenClosed, removeEmptyCommands } = createItemLists(items, options)
   const listExtras = () => removeEmptyCommands(listExtraCommands(options, getPaletteEntries()))
-  const commands = useWindowCommandPalette(options, lists, listExtras)
+  const commands = createWindowCommandPalette(options, lists, listExtras)
 
   watchCommandLists({ ...options, plugins: options.rest.plugins }, commands.open)
   resetWhenClosed(commands.open)

@@ -3,7 +3,7 @@
  */
 import type { PaletteSession } from './session'
 
-export function usePaletteNavigation(session: PaletteSession) {
+export function createPaletteNavigation(session: PaletteSession) {
   const { steps } = session
   return {
     crumb: steps.crumb,
