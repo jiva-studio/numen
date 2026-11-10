@@ -19,7 +19,7 @@ import (
 func openTaskStream(t *testing.T, tasks *run.Tasks) *connect.ServerStreamForClient[v1.WatchTasksResponse] {
 	t.Helper()
 
-	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
+	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Name: Editor, Tasks: tasks})
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewServer(mux)
@@ -77,7 +77,7 @@ func TestTasksStream_RepeatsUnchangedSnapshot(t *testing.T) {
 // list.
 func TestTasksStream_RejectsOtherWindowName(t *testing.T) {
 	route, handler := numenv1connect.NewWindowServiceHandler(
-		&Window{Named: "another", Tasking: run.NewTasks()},
+		&Window{Name: "another", Tasks: run.NewTasks()},
 	)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
@@ -127,7 +127,7 @@ func TestCancelTaskCancelsTheTaskByID(t *testing.T) {
 	tasks.Set(work.Task{ID: "indexing", Title: "Indexing", Cancel: cancel})
 	tasks.Set(work.Task{ID: "plugin:md.example.engine:one", Title: "Reading"})
 
-	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Named: Editor, Tasking: tasks})
+	route, handler := numenv1connect.NewWindowServiceHandler(&Window{Name: Editor, Tasks: tasks})
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewServer(mux)

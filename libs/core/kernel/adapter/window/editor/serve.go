@@ -226,9 +226,9 @@ const (
 	updatingIndex = "update index"
 )
 
-// SayTheme records a theme warning task, and takes the task out of the list for an empty message,
+// RecordThemeWarning records a theme warning task, and takes the task out of the list for an empty message,
 // which says the theme the settings name is found now.
-func (o *Installation) SayTheme(message string) {
+func (o *Installation) RecordThemeWarning(message string) {
 	if message == "" {
 		o.State.finishTask(applyingTheme)
 		return
@@ -255,7 +255,7 @@ func NewState(tasks *run.Tasks) *State {
 		Places:       newPlaceBroadcaster(),
 		TabIDs:       newTabIDBroadcaster(),
 		Edits:        newEditBroadcaster(),
-		Window:       &wire.Window{Named: wire.Editor, Tasking: tasks},
+		Window:       &wire.Window{Name: wire.Editor, Tasks: tasks},
 	}
 	// The editor is open on one vault, and answers which as itself.
 	state.Window.Vault = func() string { return string(state.GetCurrentVault().ID) }

@@ -49,7 +49,7 @@ func installationWith(t *testing.T, content string) (container.Config, string) {
 	if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return container.NewConfig(container.Config{PluginHost: container.LendPluginHost(host), SettingsPath: path}), path
+	return container.NewConfig(container.Config{PluginHost: container.LdaptPluginHost(host), SettingsPath: path}), path
 }
 
 func countNotices(notices []string, words ...string) int {

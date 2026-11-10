@@ -105,14 +105,14 @@ func (f *CardModelFile) AddTemplate(template CardTemplate) error {
 
 func formatTemplate(template CardTemplate) string {
 	blocks := []string{headingLine(2, template.Name)}
-	if lead := trimBlankLines(markdown.Normalise(template.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalize(template.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, side := range []struct{ heading, text string }{
 		{frontHeading, template.Front},
 		{backHeading, template.Back},
 	} {
-		text := trimBlankLines(markdown.Normalise(side.text))
+		text := trimBlankLines(markdown.Normalize(side.text))
 		if text == "" {
 			continue
 		}

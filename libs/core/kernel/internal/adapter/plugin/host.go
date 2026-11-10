@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"maps"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -63,6 +64,7 @@ type Host struct {
 	plugins                map[string]manifest.Discovered
 	supervisors            map[string]*lifecycle.Supervisor
 	endpoints              map[string]plugindomain.Endpoint
+	clients                *transport.Clients
 	launcher               Launcher
 	safeMode               bool
 	vaultPath              string
@@ -121,6 +123,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		plugins:                make(map[string]manifest.Discovered),
 		supervisors:            make(map[string]*lifecycle.Supervisor),
 		endpoints:              make(map[string]plugindomain.Endpoint),
+		clients:                transport.NewClients(),
 		launcher:               nil,
 		safeMode:               false,
 		vaultPath:              "",
@@ -458,7 +461,7 @@ func (h *Host) TriggerEvent(ctx context.Context, event string) ([]string, error)
 			errs = append(errs, fmt.Errorf("activate plugin %s on %s: %w", id, event, err))
 			continue
 		}
-		deliverErr := transport.DeliverPluginEvent(ctx, endpoint, event)
+		deliverErr := transport.DeliverPluginEvent(ctx, h.clients.Get(endpoint), endpoint, event)
 		h.Release(id)
 		activated = append(activated, id)
 		if deliverErr != nil {
@@ -525,6 +528,9 @@ func (h *Host) dropEndpointOfStoppedPlugin(pluginID string) {
 }
 
 func (h *Host) forgetEndpointLocked(pluginID string) {
+	if endpoint, ok := h.endpoints[pluginID]; ok {
+		h.clients.Remove(endpoint.Token)
+	}
 	delete(h.endpoints, pluginID)
 	delete(h.listenerPorts, pluginID)
 }
@@ -747,12 +753,13 @@ func (h *Host) startPluginProcess(ctx context.Context, p manifest.Discovered, su
 	}()
 
 	endpoint := plugindomain.Endpoint{
-		Host:      "127.0.0.1",
-		Port:      handshake.Port,
-		Token:     token,
-		Transport: transport.NewNetworkTransport(),
+		Host:  "127.0.0.1",
+		Port:  handshake.Port,
+		Token: token,
 	}
-	if err := transport.CheckPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
+	h.clients.Add(token, transport.NewNetworkTransport())
+	if err := transport.CheckPluginProtocol(ctx, h.clients.Get(endpoint), p.Manifest, endpoint); err != nil {
+		h.clients.Remove(token)
 		h.cleanupAbortedProcess(proc, stdout, p.Manifest.ID)
 		return emptyEndpoint(), err
 	}
@@ -1037,7 +1044,7 @@ func (h *Host) closeAllStdins() error {
 }
 
 func (h *Host) createRPCShutdown(endpoint plugindomain.Endpoint, gracePeriod time.Duration) func(context.Context) error {
-	if endpoint.Host == "" && endpoint.Port == 0 && endpoint.Transport == nil {
+	if endpoint.Host == "" && endpoint.Port == 0 {
 		return nil
 	}
 	return func(ctx context.Context) error {
@@ -1049,7 +1056,7 @@ func (h *Host) createRPCShutdown(endpoint plugindomain.Endpoint, gracePeriod tim
 		defer cancel()
 
 		client := numenv1connect.NewPluginLifecycleServiceClient(
-			transport.EndpointClient(endpoint),
+			h.clients.Get(endpoint),
 			transport.GetBaseURL(endpoint),
 			connect.WithInterceptors(transport.AuthInterceptor(endpoint.Token)),
 		)
@@ -1501,7 +1508,7 @@ func emptyEndpoint() plugindomain.Endpoint {
 }
 
 func isEmptyEndpoint(e plugindomain.Endpoint) bool {
-	return e.Host == "" && e.Port == 0 && e.Transport == nil
+	return e.Host == "" && e.Port == 0
 }
 
 // IsPluginSuspended reports whether the last start of the plugin failed, which holds it suspended until
@@ -1608,4 +1615,9 @@ func (h *Host) SetPerformanceProfile(ctx context.Context, profile string) {
 			h.reportError(fmt.Errorf("push the performance profile to plugin %s: %w", id, err))
 		}
 	}
+}
+
+// GetClient returns the HTTP client for calls to the plugin process the endpoint belongs to.
+func (h *Host) GetClient(endpoint plugindomain.Endpoint) *http.Client {
+	return h.clients.Get(endpoint)
 }

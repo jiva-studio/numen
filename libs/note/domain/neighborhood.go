@@ -55,8 +55,8 @@ type Neighborhood struct {
 	Connections []Connection
 }
 
-// AddNeighbour adds a note under its relation. The focus is not related to itself.
-func (n *Neighborhood) AddNeighbour(note NoteRef, neighbor Neighbor) {
+// AddNeighbor adds a note under its relation. The focus is not related to itself.
+func (n *Neighborhood) AddNeighbor(note NoteRef, neighbor Neighbor) {
 	if note.Path == n.Focus.Path {
 		return
 	}

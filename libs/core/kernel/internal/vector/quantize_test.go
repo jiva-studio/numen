@@ -33,7 +33,7 @@ func TestBitsKeepTheSign(t *testing.T) {
 	}
 }
 
-func TestCoarseKeepsTheSignOfAQuantisedVector(t *testing.T) {
+func TestCoarseKeepsTheSignOfAQuantizedVector(t *testing.T) {
 	for _, c := range []struct {
 		name string
 		in   []int8
@@ -101,11 +101,11 @@ func TestDimensionsReadEveryStoredByteBack(t *testing.T) {
 	}
 }
 
-// The same vector quantises to the same bytes in a run over any other data.
+// The same vector quantizes to the same bytes in a run over any other data.
 // This is the property that keeps a vector stored today comparable with one
 // stored after a book in another language is added.
-func TestQuantisationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
-	unit := vector.Normalise([]float32{0.1, -0.4, 0.02, 0.9, -0.01, 0.3, 0.0, -0.7})
+func TestQuantizationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
+	unit := vector.Normalize([]float32{0.1, -0.4, 0.02, 0.9, -0.01, 0.3, 0.0, -0.7})
 
 	first := vector.Bytes(unit)
 	firstBits := vector.Bits(unit)
@@ -132,15 +132,15 @@ func TestQuantisationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
 	}
 }
 
-func TestNormaliseProducesUnitLength(t *testing.T) {
-	got := vector.Normalise([]float32{3, 4})
+func TestNormalizeProducesUnitLength(t *testing.T) {
+	got := vector.Normalize([]float32{3, 4})
 	if !slices.Equal(got, []float32{0.6, 0.8}) {
 		t.Errorf("got %v", got)
 	}
 }
 
-func TestNormaliseKeepsAllZeros(t *testing.T) {
-	if got := vector.Normalise([]float32{0, 0}); !slices.Equal(got, []float32{0, 0}) {
+func TestNormalizeKeepsAllZeros(t *testing.T) {
+	if got := vector.Normalize([]float32{0, 0}); !slices.Equal(got, []float32{0, 0}) {
 		t.Errorf("got %v", got)
 	}
 }
@@ -174,24 +174,24 @@ func TestSimilarityIsTheAngleBetweenTwoVectors(t *testing.T) {
 }
 
 func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
-	// A stored vector is the query's own, quantised. The angle between them is
-	// what the quantisation cost, and it is small enough for a floor to be set
+	// A stored vector is the query's own, quantized. The angle between them is
+	// what the quantization cost, and it is small enough for a floor to be set
 	// in the same units either side of it.
 	random := rand.New(rand.NewPCG(7, 11))
 	v := make([]float32, 1024)
 	for i := range v {
 		v[i] = random.Float32()*2 - 1
 	}
-	vector.Normalise(v)
+	vector.Normalize(v)
 
-	quantised := vector.Bytes(v)
-	raw := make([]byte, len(quantised))
-	for i, q := range quantised {
+	quantized := vector.Bytes(v)
+	raw := make([]byte, len(quantized))
+	for i, q := range quantized {
 		raw[i] = byte(q)
 	}
 	got := vector.SimilarityBytes(v, raw)
 	if got < 0.999 {
-		t.Errorf("a vector against its own quantisation is at %v", got)
+		t.Errorf("a vector against its own quantization is at %v", got)
 	}
 }
 
@@ -323,12 +323,12 @@ func TestSimilarityIsTheSameOnEveryArchitecture(t *testing.T) {
 		query[i] = float32(values.NormFloat64())
 		passage[i] = float32(values.NormFloat64())
 	}
-	quantised := vector.Bytes(vector.Normalise(passage))
-	raw := make([]byte, len(quantised))
-	for i, q := range quantised {
+	quantized := vector.Bytes(vector.Normalize(passage))
+	raw := make([]byte, len(quantized))
+	for i, q := range quantized {
 		raw[i] = byte(q)
 	}
-	got := vector.SimilarityBytes(vector.Normalise(query), raw)
+	got := vector.SimilarityBytes(vector.Normalize(query), raw)
 	if bits := math.Float64bits(got); bits != 0xbfa4bfceeef9c364 {
 		t.Errorf("the similarity is %v, bits %#x", got, bits)
 	}

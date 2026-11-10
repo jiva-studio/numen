@@ -83,7 +83,7 @@ func TestLeaseReportsContention(t *testing.T) {
 		t.Fatal("signaled work behind the turn while none is queued")
 	default:
 	}
-	next, _ := enqueueAfter(t, t.Context(), work, "recogniser", true)
+	next, _ := enqueueAfter(t, t.Context(), work, "recognizer", true)
 	select {
 	case <-contended:
 	case <-time.After(time.Second):
@@ -96,7 +96,7 @@ func TestLeaseReportsContention(t *testing.T) {
 	default:
 		t.Fatal("a released turn is not over")
 	}
-	receiveLease(t, next, "recogniser").Release()
+	receiveLease(t, next, "recognizer").Release()
 }
 
 func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
@@ -107,7 +107,7 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 		ID: "a.mp3", Title: "Transcribing", About: "a.mp3", Done: 3, Total: 10,
 		Unit: plugin.TaskUnitSeconds, IsUserStarted: true,
 	})
-	work.ReportTask("recogniser", plugin.Task{ID: "a.mp3", Title: "Recognizing", Error: "no models"})
+	work.ReportTask("recognizer", plugin.Task{ID: "a.mp3", Title: "Recognizing", Error: "no models"})
 
 	got := tasks.List()
 	if len(got) != 2 {
@@ -127,7 +127,7 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 	work.FinishTask("transcriber", "a.mp3")
 	got = tasks.List()
 	if len(got) != 1 || got[0].Title != "Recognizing" {
-		t.Fatalf("after finishing, got %+v, want only the recogniser's task", got)
+		t.Fatalf("after finishing, got %+v, want only the recognizer's task", got)
 	}
 }
 
@@ -138,14 +138,14 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 
 	work.ReportTask("transcriber", plugin.Task{ID: "a", Title: "Transcribing"})
 	work.ReportTask("transcriber", plugin.Task{ID: "b", Title: "Transcribing", Error: "failed"})
-	work.ReportTask("recogniser", plugin.Task{ID: "a", Title: "Recognizing"})
+	work.ReportTask("recognizer", plugin.Task{ID: "a", Title: "Recognizing"})
 
 	held, err := work.EnqueueWork(t.Context(), "transcriber", false, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	_, cleared := enqueueAfter(t, t.Context(), work, "transcriber", true)
-	other, _ := enqueueAfter(t, t.Context(), work, "recogniser", false)
+	other, _ := enqueueAfter(t, t.Context(), work, "recognizer", false)
 
 	work.ClearPlugin("transcriber")
 
@@ -162,11 +162,11 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	default:
 		t.Fatal("the stopped plugin's turn is not over")
 	}
-	receiveLease(t, other, "recogniser").Release()
+	receiveLease(t, other, "recognizer").Release()
 
 	got := tasks.List()
-	if len(got) != 1 || got[0].ID != "plugin:recogniser:a" {
-		t.Fatalf("got %+v, want only the recogniser's task", got)
+	if len(got) != 1 || got[0].ID != "plugin:recognizer:a" {
+		t.Fatalf("got %+v, want only the recognizer's task", got)
 	}
 }
 

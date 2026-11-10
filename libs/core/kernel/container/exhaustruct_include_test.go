@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"testing"
 
 	"golang.org/x/tools/go/packages"
@@ -38,14 +39,7 @@ func getUnmatchedPatterns(patterns, names []string) []string {
 	var unmatched []string
 	for _, pattern := range patterns {
 		expression := regexp.MustCompile(pattern)
-		matched := false
-		for _, name := range names {
-			if expression.MatchString(name) {
-				matched = true
-				break
-			}
-		}
-		if !matched {
+		if !slices.ContainsFunc(names, expression.MatchString) {
 			unmatched = append(unmatched, pattern)
 		}
 	}

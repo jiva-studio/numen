@@ -580,12 +580,12 @@ func (q *Queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, pat
 	return found, true, nil
 }
 
-// GetRecognisedSources returns, by path, the sources of one kind whose text a
+// GetRecognizedSources returns, by path, the sources of one kind whose text a
 // producer created and not read from the file's own bytes.
 // A scan uses it to find sources whose files are gone: the store is a folder
 // the user may empty.
 // search results.
-func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultID, kind string) (_ []SourceText, err error) {
+func (q *Queries) GetRecognizedSources(ctx context.Context, vaultID domain.VaultID, kind string) (_ []SourceText, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -593,7 +593,7 @@ func (q *Queries) GetRecognisedSources(ctx context.Context, vaultID domain.Vault
 	if err != nil {
 		return nil, err
 	}
-	rows, err := q.db.QueryContext(ctx, recognisedSQL, vault, kind)
+	rows, err := q.db.QueryContext(ctx, recognizedSQL, vault, kind)
 	if err != nil {
 		return nil, fmt.Errorf("what a model made the text of: %w", err)
 	}

@@ -60,7 +60,7 @@ func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	}
 	size, err := data.GetPluginData(t.Context(), s.vault, ocr)
 	if err != nil || size.FileCount != 1 || size.ByteCount == 0 {
-		t.Fatalf("the recogniser's folder holds %+v (%v), want one file", size, err)
+		t.Fatalf("the recognizer's folder holds %+v (%v), want one file", size, err)
 	}
 
 	if err := data.DeletePluginData(t.Context(), s.vault, ocr); err != nil {
@@ -68,7 +68,7 @@ func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	}
 
 	if size, err := data.GetPluginData(t.Context(), s.vault, ocr); err != nil || size.FileCount != 0 {
-		t.Fatalf("after the delete the recogniser's folder holds %+v (%v)", size, err)
+		t.Fatalf("after the delete the recognizer's folder holds %+v (%v)", size, err)
 	}
 	listing, err := s.versions.ListVersions(t.Context(), s.vault, scanPath, s.getContentHash())
 	if err != nil {

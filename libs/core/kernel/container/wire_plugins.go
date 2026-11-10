@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"time"
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/work"
@@ -143,7 +143,7 @@ func (c Config) openPluginWork(db *vault.Index, v domain.Vault) (Config, *run.Pl
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows.
-func (c Config) GetPluginServices() PluginServices {
+func (c Config) GetPluginServices() editor.PluginServices {
 	return getPluginServices(c.plugins())
 }
 
@@ -229,7 +229,7 @@ func (c Config) InstallPluginVault(
 	return installPluginVault(c.plugins(), vaults, db, current, hooks)
 }
 
-// PluginHost is the plugin host as the capabilities the wiring and the use cases consume. lendPluginHost builds
+// PluginHost is the plugin host as the capabilities the wiring and the use cases consume. ldaptPluginHost builds
 // every capability from one plugin host, and a pluginsWiring holds the one *PluginHost the container made: the
 // settings subscription is keyed by that pointer. SetStorage sets the folders
 // the plugins store files in and keeps the dependencies in the models folder the host names;
@@ -260,7 +260,7 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-func lendPluginHost(host *plugin.Host) *PluginHost {
+func ldaptPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		PluginActivator:       host,
 		PluginDiscoverer:      host,
@@ -522,7 +522,7 @@ const pluginFailureTaskPrefix = "plugin-failed:"
 // The host provisions the dependencies the plugins declare; the ONNX Runtime runs on the
 // provider NUMEN_ONNX_PROVIDER names (auto when unset).
 func NewPluginHost(target string, dirs ...string) *PluginHost {
-	return lendPluginHost(openPluginHost(target, dirs...))
+	return ldaptPluginHost(openPluginHost(target, dirs...))
 }
 
 func openPluginHost(target string, dirs ...string) *plugin.Host {
@@ -576,20 +576,7 @@ func getPluginCommands(c pluginsWiring) plugincommand.Commands {
 	return plugincommand.NewCommands(manifestlist.Open(c.PluginHost), commandbridge.Open(c.PluginHost), c.PluginHost, pluginsNewNoteReader(c), getWhenConfig(c))
 }
 
-// PluginServices is where a window forwards the calls it receives for the services plugins serve.
-type PluginServices = interface {
-	http.Handler
-	// Serves reports whether an enabled plugin serves the service the path names.
-	Serves(urlPath string) bool
-	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
-	ServeRoute(w http.ResponseWriter, r *http.Request)
-	// ListFrameOrigins lists the origins the pages of every enabled plugin frame.
-	ListFrameOrigins() []string
-	// GetFrameOrigins lists the origins the pages of one enabled plugin frame.
-	GetFrameOrigins(pluginID string) []string
-}
-
-func getPluginServices(c pluginsWiring) PluginServices {
+func getPluginServices(c pluginsWiring) editor.PluginServices {
 	if c.PluginHost == nil {
 		return servicebridge.NoServices{}
 	}

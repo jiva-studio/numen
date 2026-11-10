@@ -176,7 +176,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	themes.Report(cfg.SetThemes(installation, installation.SayTheme), os.Stdout)
+	themes.Report(cfg.SetThemes(installation, installation.RecordThemeWarning), os.Stdout)
 
 	installation.Report(notices)
 

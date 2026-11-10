@@ -264,7 +264,7 @@ func TestACopiedVaultIsRefusedInsteadOfIndexed(t *testing.T) {
 	}
 }
 
-func TestAMovedVaultIsRecognisedInsteadOfRefused(t *testing.T) {
+func TestAMovedVaultIsRecognizedInsteadOfRefused(t *testing.T) {
 	// Identity does not depend on the path, so a folder can move; the registry
 	// must update to match.
 	s := newSession(t)

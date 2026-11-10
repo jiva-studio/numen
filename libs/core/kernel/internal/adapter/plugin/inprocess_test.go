@@ -118,9 +118,9 @@ func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[s
 	}
 }
 
-func getAgentPrompt(t *testing.T, endpoint plugindomain.Endpoint) string {
+func getAgentPrompt(t *testing.T, host *Host, endpoint plugindomain.Endpoint) string {
 	t.Helper()
-	client := numenv1connect.NewAgentServiceClient(transport.EndpointClient(endpoint), transport.GetBaseURL(endpoint))
+	client := numenv1connect.NewAgentServiceClient(host.GetClient(endpoint), transport.GetBaseURL(endpoint))
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatalf("GetAgentTools: %v", err)
@@ -139,10 +139,10 @@ func TestEachBuiltInPluginAnswersFromItsOwnHandler(t *testing.T) {
 		if err != nil {
 			t.Fatalf("EnsureActive(%s): %v", id, err)
 		}
-		if endpoint.Port != 0 || endpoint.Transport == nil {
+		if endpoint.Port != 0 || endpoint.Host != "inprocess" {
 			t.Fatalf("%s is not served in-process: %+v", id, endpoint)
 		}
-		if got := getAgentPrompt(t, endpoint); got != want {
+		if got := getAgentPrompt(t, host, endpoint); got != want {
 			t.Errorf("%s answered %q, want %q", id, got, want)
 		}
 	}
@@ -295,7 +295,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	if got := getAgentPrompt(t, endpoint); got != "built-in sample" {
+	if got := getAgentPrompt(t, host, endpoint); got != "built-in sample" {
 		t.Fatalf("answered %q", got)
 	}
 }

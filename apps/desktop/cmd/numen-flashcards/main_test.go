@@ -199,7 +199,7 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")
 	}
-	if api.Window.Named != platform.TargetFlashcards {
-		t.Errorf("the window answers as %q", api.Window.Named)
+	if api.Window.Name != platform.TargetFlashcards {
+		t.Errorf("the window answers as %q", api.Window.Name)
 	}
 }

@@ -45,7 +45,7 @@ import (
 
 func bindNotes(services *Services, db *vaults.Index) {
 	refs, links := db.NoteRefs(), db.Links()
-	neighborhood := query.NewShowNeighbourhood(links, refs)
+	neighborhood := query.NewShowNeighborhood(links, refs)
 	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.OpeningNote())
 	services.NoteCases.Types = query.NewGetTypes(db.NoteTypes())
 	services.NoteCases.Headings = query.NewGetHeadings(db.Headings())
@@ -505,7 +505,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
-		Window:       &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()},
+		Window:       &wire.Window{Name: wire.Editor, Tasks: run.NewTasks()},
 	})
 	bindNotes(api, db)
 	api.state.setVault(v)
@@ -588,7 +588,7 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	for name, open := range streams {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+			state := &State{Window: &wire.Window{Name: wire.Editor, Tasks: run.NewTasks()}}
 			services := createServices(state)
 
 			entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
@@ -874,7 +874,7 @@ func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Reque
 }
 
 func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
-	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+	state := &State{Window: &wire.Window{Name: wire.Editor, Tasks: run.NewTasks()}}
 	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
@@ -977,7 +977,7 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 
 func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
 	plugins := &routedPlugins{}
-	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+	state := &State{Window: &wire.Window{Name: wire.Editor, Tasks: run.NewTasks()}}
 	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	services.PluginServices = plugins

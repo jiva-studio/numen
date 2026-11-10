@@ -20,5 +20,5 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	return settingsThemes(c.settings(), say)
 }
 
-// LendPluginHost lends the capabilities of host.
-func LendPluginHost(host *plugin.Host) *PluginHost { return lendPluginHost(host) }
+// LdaptPluginHost lends the capabilities of host.
+func LdaptPluginHost(host *plugin.Host) *PluginHost { return ldaptPluginHost(host) }

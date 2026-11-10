@@ -284,7 +284,7 @@ func isCallerFailure(ctx context.Context, err error) bool {
 
 func (d *secretDelivery) sendConfigure(ctx context.Context, snapshot configSnapshot, entries []*v1.ConfigureSecrets) (bool, error) {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
-		transport.EndpointClient(snapshot.endpoint),
+		transport.GetClient(d.host, snapshot.endpoint),
 		transport.GetBaseURL(snapshot.endpoint),
 		connect.WithInterceptors(transport.AuthInterceptor(snapshot.endpoint.Token)),
 	)

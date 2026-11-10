@@ -118,8 +118,8 @@ func list(names []domain.Check) string {
 	return strings.Join(as, ", ")
 }
 
-// Loud is the name of every check that runs when none is named.
-func (c Checks) Loud() []domain.Check {
+// GetDefaultNames is the name of every check that runs when none is named.
+func (c Checks) GetDefaultNames() []domain.Check {
 	var out []domain.Check
 	for _, check := range c.getDefaultCheckers() {
 		out = append(out, check.Name())

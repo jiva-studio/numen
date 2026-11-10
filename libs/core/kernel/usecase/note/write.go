@@ -76,8 +76,8 @@ func (u Write) Execute(
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		// A note rewritten whole is rendered as the changed range, so an
 		// observer sees the change and not the whole note.
-		was := markdown.Normalise(doc.Body())
-		pos, insert := markdown.Diff(was, markdown.Normalise(body))
+		was := markdown.Normalize(doc.Body())
+		pos, insert := markdown.Diff(was, markdown.Normalize(body))
 		// watching should see change.
 		if err := doc.SetBody(body); err != nil {
 			return err

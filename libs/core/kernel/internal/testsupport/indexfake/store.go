@@ -272,7 +272,7 @@ func (s *Store) GetSourceText(_ context.Context, vaultID domain.VaultID, path st
 	}, true, nil
 }
 
-func (s *Store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]source.Text, error) {
+func (s *Store) GetRecognizedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]source.Text, error) {
 	var out []source.Text
 	for path, src := range s.Sources[vaultID] {
 		if src.FileStat.Kind == kind && src.Producer != "" {

@@ -133,7 +133,7 @@ func TestANoteWhoseFrontmatterCannotBeReadIsRefused(t *testing.T) {
 // The prose returned to the caller has one line-break style. The file keeps
 // its own: a chunk's offsets are byte offsets into it, so the bytes the index is
 // built from are the bytes on disk.
-func TestAReadNormalisesTheProseAndPreservesTheFileAlone(t *testing.T) {
+func TestAReadNormalizesTheProseAndPreservesTheFileAlone(t *testing.T) {
 	t.Parallel()
 	raw := "---\r\nid: 01J8F3K2M9QRSTVWXYZ012\r\n---\r\n# Entropy\r\n\r\nA measure of disorder.\r\n"
 	u, v := openNoteRead(t, map[string]string{"Entropy.md": raw})

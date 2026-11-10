@@ -84,7 +84,7 @@ func (f *DeckFile) Deck(ref domain.FileStat) Deck {
 func (f *DeckFile) Whole(
 	cardModels map[string]CardModel, createID func() cardid.ID,
 ) ([]CardID, error) {
-	body, provided := Whole(markdown.Normalise(f.doc.Body()), cardModels, createID)
+	body, provided := Whole(markdown.Normalize(f.doc.Body()), cardModels, createID)
 	if err := f.doc.SetBody(body); err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ func (f *DeckFile) SetValue(card cardid.ID, field, value string) error {
 		}
 	}
 	block := headingLine(FieldLevel, oneLine(field))
-	if text := trimBlankLines(markdown.Normalise(value)); text != "" {
+	if text := trimBlankLines(markdown.Normalize(value)); text != "" {
 		block += "\n\n" + text
 	}
 	return f.doc.SpliceBody(span.end, span.end, insert(body, span.end, block))
@@ -251,7 +251,7 @@ func (f *DeckFile) RemoveSection(index int) error {
 func (f *DeckFile) AddSection(s Section) error {
 	body := []byte(f.doc.Body())
 	blocks := []string{headingLine(SectionLevel, oneLine(s.Name))}
-	if lead := trimBlankLines(markdown.Normalise(s.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalize(s.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	pos := len(body)
@@ -286,12 +286,12 @@ func cardBlock(card Card) string {
 	if card.CardModelLink != "" {
 		blocks = append(blocks, "[["+card.CardModelLink+"]]")
 	}
-	if lead := trimBlankLines(markdown.Normalise(card.Preamble)); lead != "" {
+	if lead := trimBlankLines(markdown.Normalize(card.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
 	for _, v := range card.Values {
 		blocks = append(blocks, headingLine(FieldLevel, oneLine(v.Field)))
-		if text := trimBlankLines(markdown.Normalise(v.Text)); text != "" {
+		if text := trimBlankLines(markdown.Normalize(v.Text)); text != "" {
 			blocks = append(blocks, text)
 		}
 	}

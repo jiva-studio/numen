@@ -170,7 +170,7 @@ func (h *Handler) WatchFocus(
 	tabIDs, stopTabIDs := h.window.SubscribeTabIDs()
 	defer stopTabIDs()
 
-	repeat := time.NewTicker(wire.Again)
+	repeat := time.NewTicker(wire.ResendInterval)
 	defer repeat.Stop()
 
 	for {

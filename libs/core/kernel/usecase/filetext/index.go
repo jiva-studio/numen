@@ -7,7 +7,7 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/chunking"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	sourcedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/source"
@@ -132,7 +132,7 @@ func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain
 }
 
 func (u Index) readNoteStats(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
-	sources, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	sources, err := u.records.GetRecognizedSources(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
@@ -277,15 +277,28 @@ func (u Index) moveRenamed(ctx context.Context, v domain.Vault, on openVault, re
 		return nil, nil
 	}
 	slices.Sort(added)
-	sources, err := FindRemovedSources(ctx, u.lookup, v.ID, removed)
+	sources, err := sourcedomain.FindRemoved(removed,
+		func(path string) ([]domain.FileStat, error) { return u.lookup.GetSourcesUnder(ctx, v.ID, path) },
+		func(path string) (sourcedomain.Text, bool, error) { return u.lookup.GetSourceText(ctx, v.ID, path) })
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	moved, err := MoveRenamedSources(ctx, u.sources, on.files, v.ID, sources, added)
+	moved, err := sourcedomain.MoveRenamed(sources, added,
+		func(path string) (domain.FileStat, error) { return on.files.StatFile(ctx, path) },
+		func(path string) (string, error) { return getContentHash(ctx, on.files, path) },
+		func(from, to string) error { return u.sources.MoveSources(ctx, v.ID, from, to) })
 	if err != nil {
 		return nil, fmt.Errorf("move: %w", err)
 	}
 	return moved, nil
+}
+
+func getContentHash(ctx context.Context, reader vaultport.VaultReader, path string) (string, error) {
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return "", err
+	}
+	return domain.HashContent(raw), nil
 }
 
 func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string {
@@ -305,7 +318,7 @@ func (u Index) dropOutdatedText(
 	notePaths []string,
 	res *vaultreading.IndexResult,
 ) ([]string, error) {
-	cut, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindFile)
+	cut, err := u.records.GetRecognizedSources(ctx, v.ID, domain.KindFile)
 	if err != nil {
 		return notePaths, fmt.Errorf("read index: %w", err)
 	}
@@ -317,7 +330,7 @@ func (u Index) dropOutdatedText(
 			return notePaths, err
 		}
 	}
-	notes, err := u.records.GetRecognisedSources(ctx, v.ID, domain.KindNote)
+	notes, err := u.records.GetRecognizedSources(ctx, v.ID, domain.KindNote)
 	if err != nil {
 		return notePaths, fmt.Errorf("read index: %w", err)
 	}

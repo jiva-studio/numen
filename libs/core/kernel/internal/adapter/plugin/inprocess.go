@@ -73,9 +73,6 @@ type InProcessTransport struct {
 	handler http.Handler
 }
 
-// RoundTripTransport marks InProcessTransport as satisfying plugin.Transport.
-func (t *InProcessTransport) RoundTripTransport() {}
-
 // NewInProcessTransport wraps an HTTP handler in an in-memory round tripper.
 func NewInProcessTransport(handler http.Handler) *InProcessTransport {
 	return &InProcessTransport{handler: handler}
@@ -183,12 +180,13 @@ func (h *Host) startBuiltIn(ctx context.Context, p manifest.Discovered, builtIn 
 	}
 
 	endpoint := plugindomain.Endpoint{
-		Host:      "inprocess",
-		Port:      0,
-		Token:     token,
-		Transport: NewInProcessTransport(handler),
+		Host:  "inprocess",
+		Port:  0,
+		Token: token,
 	}
-	if err := transport.CheckPluginProtocol(ctx, p.Manifest, endpoint); err != nil {
+	h.clients.Add(token, NewInProcessTransport(handler))
+	if err := transport.CheckPluginProtocol(ctx, h.clients.Get(endpoint), p.Manifest, endpoint); err != nil {
+		h.clients.Remove(token)
 		h.shutdownBuiltIn(ctx, endpoint)
 		return emptyEndpoint(), err
 	}

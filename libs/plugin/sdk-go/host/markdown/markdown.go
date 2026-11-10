@@ -32,6 +32,6 @@ func Create(identifier, body string) []byte { return notesmarkdown.Create(identi
 
 func IsFrontmatterStart(text string) bool { return notesmarkdown.IsFrontmatterStart(text) }
 
-func Normalise(text string) string { return notesmarkdown.Normalise(text) }
+func Normalize(text string) string { return notesmarkdown.Normalize(text) }
 
 func WikilinksIn(line string) []notesmarkdown.Wikilink { return notesmarkdown.WikilinksIn(line) }
