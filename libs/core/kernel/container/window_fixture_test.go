@@ -2,8 +2,8 @@ package container_test
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
@@ -45,6 +45,9 @@ func (w windowVaults) OpenNotes(index note.IndexUpdater) note.Scenarios {
 
 func (w windowVaults) OpenPluginVault(
 	current func() (domain.Vault, bool), hooks container.PluginVaultHooks,
-) (pluginport.PluginVault, error) {
-	return w.cfg.OpenPluginVault(w.registry, w.db, current, hooks)
+) (*hostendpoint.VaultAccess, error) {
+	if err := w.cfg.InstallPluginVault(w.registry, w.db, current, hooks); err != nil {
+		return nil, err
+	}
+	return w.cfg.PluginHost.GetPluginVault(), nil
 }

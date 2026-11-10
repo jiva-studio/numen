@@ -82,8 +82,8 @@ func openToolsOfHost(t *testing.T, host *plugin.Host) numenv1connect.PluginToolS
 			t.Error(err)
 		}
 	})
-	host.SetPluginVault(shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}})
-	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host)
+	host.SetPluginVault(&hostendpoint.VaultAccess{VaultSwitch: shownVault{vault: domain.Vault{ID: "v-orchard", Name: "Orchard"}}})
+	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host.GetEndpointCallers())
 	if err != nil {
 		t.Fatal(err)
 	}

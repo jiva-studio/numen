@@ -20,7 +20,12 @@ type PluginStores struct {
 
 // Open opens the folder of the plugin. A plugin's identity always holds a dot, so its folder is
 // never one of the store's own areas.
-func (p PluginStores) Open(v domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+func (p PluginStores) Open(v domain.Vault, pluginID string) (pluginport.PluginStoreReader, error) {
+	return p.openFolder(v, pluginID)
+}
+
+// OpenWriter opens the folder of the plugin to change its files.
+func (p PluginStores) OpenWriter(v domain.Vault, pluginID string) (PluginFolder, error) {
 	return p.openFolder(v, pluginID)
 }
 
@@ -33,31 +38,31 @@ func (p PluginStores) DeleteFolder(ctx context.Context, v domain.Vault, pluginID
 	return folder.store.RemoveAll(ctx, folder.folder)
 }
 
-func (p PluginStores) openFolder(v domain.Vault, pluginID string) (pluginFolder, error) {
+func (p PluginStores) openFolder(v domain.Vault, pluginID string) (PluginFolder, error) {
 	if !strings.Contains(pluginID, ".") || strings.HasPrefix(pluginID, ".") || strings.ContainsAny(pluginID, `/\`) {
-		return pluginFolder{}, fmt.Errorf("%q is not the identity of a plugin: %w", pluginID, vaultconfig.ErrOutside)
+		return PluginFolder{}, fmt.Errorf("%q is not the identity of a plugin: %w", pluginID, vaultconfig.ErrOutside)
 	}
 	store, err := OpenDerived(v.Path, p.Options, pluginID)
 	if err != nil {
-		return pluginFolder{}, err
+		return PluginFolder{}, err
 	}
-	return pluginFolder{store: store, folder: pluginID}, nil
+	return PluginFolder{store: store, folder: pluginID}, nil
 }
 
-// pluginFolder is one plugin's folder of a vault's store, whose files are named without it.
-type pluginFolder struct {
+// PluginFolder is one plugin's folder of a vault's store, whose files are named without it.
+type PluginFolder struct {
 	store  *DerivedStore
 	folder string
 }
 
-func (f pluginFolder) getKey(name string) (string, error) {
+func (f PluginFolder) getKey(name string) (string, error) {
 	if name == "" || strings.ContainsAny(name, `/\`) || strings.HasPrefix(name, ".") {
 		return "", fmt.Errorf("%q is not a file of the folder: %w", name, vaultconfig.ErrOutside)
 	}
 	return f.folder + "/" + name, nil
 }
 
-func (f pluginFolder) Read(ctx context.Context, name string) ([]byte, error) {
+func (f PluginFolder) Read(ctx context.Context, name string) ([]byte, error) {
 	key, err := f.getKey(name)
 	if err != nil {
 		return nil, err
@@ -65,7 +70,7 @@ func (f pluginFolder) Read(ctx context.Context, name string) ([]byte, error) {
 	return f.store.Read(ctx, key)
 }
 
-func (f pluginFolder) Append(ctx context.Context, name string, content []byte) error {
+func (f PluginFolder) Append(ctx context.Context, name string, content []byte) error {
 	key, err := f.getKey(name)
 	if err != nil {
 		return err
@@ -73,7 +78,7 @@ func (f pluginFolder) Append(ctx context.Context, name string, content []byte) e
 	return f.store.Append(ctx, key, content)
 }
 
-func (f pluginFolder) List(ctx context.Context) ([]plugin.StoreFile, error) {
+func (f PluginFolder) List(ctx context.Context) ([]plugin.StoreFile, error) {
 	found, err := f.store.List(ctx, f.folder)
 	if err != nil {
 		return nil, err
@@ -85,7 +90,7 @@ func (f pluginFolder) List(ctx context.Context) ([]plugin.StoreFile, error) {
 	return out, nil
 }
 
-func (f pluginFolder) Write(ctx context.Context, name string, content []byte) error {
+func (f PluginFolder) Write(ctx context.Context, name string, content []byte) error {
 	key, err := f.getKey(name)
 	if err != nil {
 		return err
@@ -93,7 +98,7 @@ func (f pluginFolder) Write(ctx context.Context, name string, content []byte) er
 	return f.store.Write(ctx, key, content)
 }
 
-func (f pluginFolder) Delete(ctx context.Context, name string) error {
+func (f PluginFolder) Delete(ctx context.Context, name string) error {
 	key, err := f.getKey(name)
 	if err != nil {
 		return err
@@ -101,7 +106,7 @@ func (f pluginFolder) Delete(ctx context.Context, name string) error {
 	return f.store.Remove(ctx, key)
 }
 
-func (f pluginFolder) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
+func (f PluginFolder) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
 	key, err := f.getKey(name)
 	if err != nil {
 		return nil, 0, err
@@ -109,7 +114,7 @@ func (f pluginFolder) Open(ctx context.Context, name string) (io.ReadSeekCloser,
 	return f.store.Open(ctx, key)
 }
 
-func (f pluginFolder) Rename(ctx context.Context, from, to string) error {
+func (f PluginFolder) Rename(ctx context.Context, from, to string) error {
 	source, err := f.getKey(from)
 	if err != nil {
 		return err

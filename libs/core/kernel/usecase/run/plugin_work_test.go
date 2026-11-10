@@ -9,14 +9,13 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 func enqueueAfter(
 	t *testing.T, ctx context.Context, work *PluginWork, pluginID string, isUserStarted bool,
-) (<-chan pluginport.Lease, <-chan error) {
+) (<-chan *Lease, <-chan error) {
 	t.Helper()
-	turns := make(chan pluginport.Lease, 1)
+	turns := make(chan *Lease, 1)
 	errs := make(chan error, 1)
 	queued := make(chan struct{})
 	go func() {
@@ -37,7 +36,7 @@ func enqueueAfter(
 	return turns, errs
 }
 
-func receiveLease(t *testing.T, turns <-chan pluginport.Lease, pluginID string) pluginport.Lease {
+func receiveLease(t *testing.T, turns <-chan *Lease, pluginID string) *Lease {
 	t.Helper()
 	select {
 	case turn := <-turns:

@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 )
 
 // dependencyStreamBuffer is how many statuses a streaming caller may lag behind.
@@ -21,7 +20,8 @@ const dependencyStreamBuffer = 32
 // Dependencies is what the host provisions the dependencies of the plugins with, and answers their
 // questions about them.
 type Dependencies interface {
-	pluginport.DependencyLookup
+	GetStatus(ctx context.Context, id string) (plugin.DependencyStatus, error)
+	List(ctx context.Context) ([]plugin.DependencyStatus, error)
 	CanProvision(req manifest.DependencyRequirement) bool
 	Provision(ctx context.Context, req manifest.DependencyRequirement, onProgress func(plugin.DependencyStatus)) (plugin.ResolvedDependency, error)
 }
@@ -39,7 +39,7 @@ func (e *dependencyEndpoint) begin(header http.Header) (Dependencies, error) {
 	if _, err := e.endpoint.authenticate(header.Get("Authorization")); err != nil {
 		return nil, err
 	}
-	catalog := e.endpoint.callers.GetDependencies()
+	catalog := e.endpoint.callers.Dependencies.GetDependencies()
 	if catalog == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errNoDependencies)
 	}

@@ -21,13 +21,13 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 )
 
 // immediateBound is how long a call that must not wait for a page's FlushTimeout may take.
 const immediateBound = editor.FlushTimeout / 2
 
-func newPluginVaultList(o *editor.Installation) pluginport.PluginVaultList {
+func newPluginVaultList(o *editor.Installation) hostendpoint.VaultList {
 	scenarios := o.Vaults()
 	return windowvaults.List{
 		Add:  func(root, name string) (domain.Vault, error) { return scenarios.Add.Execute(root, name) },
@@ -127,7 +127,7 @@ func (f *showing) startPromptingPage(
 	return page
 }
 
-func callOpenVault(ctx context.Context, list pluginport.PluginVaultList, id domain.VaultID) <-chan error {
+func callOpenVault(ctx context.Context, list hostendpoint.VaultList, id domain.VaultID) <-chan error {
 	result := make(chan error, 1)
 	go func() { result <- list.OpenVault(ctx, id) }()
 	return result

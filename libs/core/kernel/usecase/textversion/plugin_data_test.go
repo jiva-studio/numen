@@ -16,7 +16,7 @@ import (
 // folderStores is the plugin folders of memoryFiles, each a plugin store.
 type folderStores struct{ files *memoryFiles }
 
-func (s folderStores) Open(_ domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+func (s folderStores) Open(_ domain.Vault, pluginID string) (pluginport.PluginStoreReader, error) {
 	return folderStore{files: s.files, pluginID: pluginID}, nil
 }
 
@@ -32,7 +32,7 @@ func (s folderStores) DeleteFolder(_ context.Context, _ domain.Vault, pluginID s
 }
 
 type folderStore struct {
-	pluginport.PluginStore
+	pluginport.PluginStoreReader
 	files    *memoryFiles
 	pluginID string
 }

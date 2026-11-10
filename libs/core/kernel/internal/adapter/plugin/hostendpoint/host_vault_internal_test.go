@@ -53,8 +53,8 @@ func newBrokenClient(t *testing.T) (numenv1connect.HostVaultServiceClient, *fake
 	t.Helper()
 	vault := newFakeNoteVault()
 	hostCallers := newCallers(nil)
-	hostCallers.vault = brokenVault{vault}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: []string{manifest.PermissionVaultWrite}}}
+	hostCallers.vault = vaultOf(brokenVault{vault})
+	endpoint := &Endpoint{callers: hostCallers.over(nil, manifest.PermissionVaultWrite)}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

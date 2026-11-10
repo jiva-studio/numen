@@ -1,8 +1,9 @@
-package hostendpoint
+package hostendpoint_test
 
 import (
+	"context"
+	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -15,10 +16,42 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 )
+
+// readerIdentity knows the one plugin that reads and grants it every permission.
+type readerIdentity struct{}
+
+func (readerIdentity) GetPluginIDByToken(token string) (string, bool) {
+	return "md.numen.a", token == "token-a"
+}
+
+func (readerIdentity) CheckPluginPermission(string, string) error { return nil }
+
+type shownVault struct{ access *hostendpoint.VaultAccess }
+
+func (s shownVault) GetPluginVault() *hostendpoint.VaultAccess { return s.access }
+
+func openReadEndpoint(t *testing.T, access *hostendpoint.VaultAccess) numenv1connect.HostVaultServiceClient {
+	t.Helper()
+	endpoint, err := hostendpoint.Open(t.Context(), hostendpoint.Address, hostendpoint.Callers{
+		Identity: readerIdentity{}, Vault: shownVault{access: access},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := endpoint.Close(context.WithoutCancel(t.Context())); err != nil {
+			t.Error(err)
+		}
+	})
+	url := fmt.Sprintf("http://127.0.0.1:%d", endpoint.GetPort())
+	return numenv1connect.NewHostVaultServiceClient(http.DefaultClient, url, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+}
 
 func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 	t.Helper()
@@ -29,19 +62,16 @@ func newDiskReadClient(t *testing.T) numenv1connect.HostVaultServiceClient {
 		"sonar.bin":       "ab\xff\xfecd",
 		"notes/Danube.md": "# Danube\n",
 	})
-	hostCallers := newCallers(nil)
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
-	hostCallers.vault = hostvault.Vault{
-		Current:    func() (domain.Vault, bool) { return v, true },
-		Readers:    vaultreader.Readers{},
-		OpenWriter: func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
-		LockVault:  writers.Lock,
-	}
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(&Endpoint{callers: hostCallers})))
-	server := httptest.NewServer(mux)
-	t.Cleanup(server.Close)
-	return numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	readers := vaultreader.Readers{}
+	return openReadEndpoint(t, hostvault.Vault{
+		Current:     func() (domain.Vault, bool) { return v, true },
+		Stat:        file.NewStatFile(readers),
+		ReadFile:    file.NewReadFile(readers),
+		RangeReader: file.Read{Readers: readers},
+		OpenWriter:  func(v domain.Vault) (hostvault.NoteWriter, error) { return writers.Open(v) },
+		LockVault:   writers.Lock,
+	}.Access())
 }
 
 func readFileRange(t *testing.T, client numenv1connect.HostVaultServiceClient, path string, start, length int64) *v1.ReadFileResponse {
@@ -122,12 +152,7 @@ func TestReadFileWithoutALengthReturnsTheWholeFileAsBytes(t *testing.T) {
 }
 
 func TestRangedReadFileWithoutAVaultReturnsNoVault(t *testing.T) {
-	hostCallers := newCallers(nil)
-	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(&Endpoint{callers: hostCallers})))
-	server := httptest.NewServer(mux)
-	t.Cleanup(server.Close)
-	client := numenv1connect.NewHostVaultServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor("token-a")))
+	client := openReadEndpoint(t, nil)
 
 	got := readFileRange(t, client, "Rivers.txt", 0, 10)
 

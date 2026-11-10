@@ -9,23 +9,51 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/searchpolicy"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vector"
-	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
-	searchpolicyport "github.com/jiva-studio/numen/libs/core/kernel/usecase/search/searchpolicycontract"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
-	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
-// Search is pluginport.PluginSearch over the index of the installation and the model that fills it.
+// Embedder is the model that fills the index.
+type Embedder interface {
+	// GetModel is the identity every vector this embedder returns belongs to.
+	GetModel() embedding.Model
+}
+
+// Samples reads the small chunks of a vault that carry a vector.
+type Samples interface {
+	// ListSmallChunkVectors returns at most `limit` small chunks of the vault that carry a
+	// vector under the recipe.
+	ListSmallChunkVectors(ctx context.Context, v domain.Vault, recipe string, limit int) ([]searchpolicy.Passage, error)
+}
+
+// Nearest reads the similarity of the best passage of a vault to a vector.
+type Nearest interface {
+	// GetBestSimilarity returns the cosine similarity of the passage of the vault nearest the query
+	// vector under the recipe, and zero where there is none.
+	GetBestSimilarity(ctx context.Context, vaultID domain.VaultID, recipe string, query []float32) (float64, error)
+}
+
+// Progress reads how far a vault is embedded.
+type Progress interface {
+	// GetProgress returns how many of the vault's chunks can have a vector, and how many of those
+	// have one for the named model.
+	GetProgress(ctx context.Context, vaultID domain.VaultID, model string) (held, embedded int64, err error)
+}
+
+// Search lends the search index and the search floors of the vaults to the plugins, over the index of
+// the installation and the model that fills it. It implements the capabilities of
+// hostendpoint.SearchAccess.
 type Search struct {
-	Embedder embeddingport.Embedder
+	Embedder Embedder
 	Queries  *vectorscase.EmbedQueries
-	Samples  searchpolicyport.Samples
-	Nearest  searchpolicyport.Nearest
-	Progress indexport.IndexProgress
+	Samples  Samples
+	Nearest  Nearest
+	Progress Progress
 	Stats    *Stats
 	Policy   search.FloorPolicy
 	Passages *search.SearchPassages
@@ -225,4 +253,9 @@ func convertSource(source search.FloorSourceKind) plugin.FloorSource {
 	default:
 		return plugin.FloorDefault
 	}
+}
+
+// Access returns the capabilities of the search the way hostendpoint serves them.
+func (s Search) Access() *hostendpoint.SearchAccess {
+	return &hostendpoint.SearchAccess{SearchIndex: s, PassageSearch: s, SearchFloors: s}
 }

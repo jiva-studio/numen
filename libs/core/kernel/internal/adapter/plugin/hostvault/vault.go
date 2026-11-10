@@ -12,17 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 
-	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
-	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
+	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
-
-var ErrNoVault = errors.New("the host is showing no vault")
-
-// ErrNoConnections is returned when the host was built without the operations on
-// connections.
-var ErrNoConnections = errors.New("the host has no operations on connections")
 
 // NoteWriter writes and creates the notes of one vault.
 type NoteWriter interface {
@@ -30,29 +23,56 @@ type NoteWriter interface {
 	Create(ctx context.Context, path string, content []byte) error
 }
 
-// Vault is port.PluginVault over the ports of the installation.
+type linkQueries interface {
+	GetLinks(ctx context.Context, vaultID domain.VaultID, from string) ([]domain.ResolvedLink, error)
+	GetBacklinks(ctx context.Context, vaultID domain.VaultID, to string) ([]domain.ResolvedLink, error)
+	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, targets []string) (map[string]domain.ResolvedLink, error)
+}
+
+type problemQueries interface {
+	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
+}
+
+type pluginCache interface {
+	Read(ctx context.Context, pluginID string, vaultID domain.VaultID, name string) ([]byte, bool, error)
+	Write(ctx context.Context, pluginID string, vaultID domain.VaultID, name string, content []byte) error
+}
+
+// Vault is the open vault as the host exposes it to a plugin, over the use cases and the queries of
+// the installation. It implements every capability of hostendpoint.VaultAccess.
 type Vault struct {
-	Current     func() (domain.Vault, bool)
-	Readers     vaultport.VaultReaders
-	OpenWriter  func(v domain.Vault) (NoteWriter, error)
-	LockVault   func(ctx context.Context, v domain.Vault) (func(), error)
-	Notes       noteRefs
-	Types       noteTypes
-	NamedPaths  namedPaths
-	TypedPaths  typedPaths
-	Links       noteport.LinkQueries
-	Connections Connections
-	Problems    problemport.ProblemQueries
-	Arranger    Arranger
-	Stores      pluginport.PluginStores
-	Cache       pluginport.PluginCache
-	Watcher     vaultport.VaultWatcher
-	Vaults      func() ([]domain.Vault, error)
-	Find        func(id domain.VaultID) (domain.Vault, error)
-	IndexState  func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
-	Moved       func(ctx context.Context) (<-chan struct{}, error)
-	Written     func()
-	Index       func(ctx context.Context, v domain.Vault, paths []string) error
+	Current      func() (domain.Vault, bool)
+	Stat         *file.StatFile
+	ReadFile     *file.ReadFile
+	RangeReader  file.Read
+	OpenWriter   func(v domain.Vault) (NoteWriter, error)
+	LockVault    func(ctx context.Context, v domain.Vault) (func(), error)
+	Notes        noteRefs
+	Types        noteTypes
+	NamedPaths   namedPaths
+	TypedPaths   typedPaths
+	Links        linkQueries
+	Connections  Connections
+	Problems     problemQueries
+	Arranger     Arranger
+	StoreReaders func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error)
+	StoreWriters func(v domain.Vault, pluginID string) (hostendpoint.StoreWriter, error)
+	Cache        pluginCache
+	Watcher      *vaults.WatchChanges
+	Vaults       func() ([]domain.Vault, error)
+	Find         func(id domain.VaultID) (domain.Vault, error)
+	IndexState   func(ctx context.Context, v domain.Vault) (plugin.IndexState, error)
+	Moved        func(ctx context.Context) (<-chan struct{}, error)
+	Written      func()
+	Index        func(ctx context.Context, v domain.Vault, paths []string) error
+}
+
+// Access returns the capabilities of the vault the way hostendpoint serves them.
+func (a Vault) Access() *hostendpoint.VaultAccess {
+	return &hostendpoint.VaultAccess{
+		NoteLookup: a, LinkLookup: a, FileReader: a, FileWriter: a, Arranger: a, LinkEditor: a,
+		Connections: a, RelatedNotes: a, VaultWatch: a, VaultSwitch: a, StoreOpener: a, CacheStore: a,
+	}
 }
 
 func (a Vault) GetVault() (domain.Vault, bool) {
@@ -72,14 +92,14 @@ func (a Vault) GetVaults() ([]domain.Vault, error) {
 	return nil, nil
 }
 
-func (a Vault) With(id domain.VaultID) (pluginport.PluginVault, error) {
+func (a Vault) With(id domain.VaultID) (*hostendpoint.VaultAccess, error) {
 	found, err := a.find(id)
 	if err != nil {
 		return nil, err
 	}
 	linked := a
 	linked.Current = func() (domain.Vault, bool) { return found, true }
-	return linked, nil
+	return linked.Access(), nil
 }
 
 func (a Vault) find(id domain.VaultID) (domain.Vault, error) {
@@ -113,17 +133,9 @@ func (a Vault) WatchMoves(ctx context.Context) (<-chan struct{}, error) {
 func (a Vault) open() (domain.Vault, error) {
 	v, showing := a.GetVault()
 	if !showing {
-		return domain.Vault{}, ErrNoVault
+		return domain.Vault{}, plugin.ErrNoVault
 	}
 	return v, nil
-}
-
-func (a Vault) openReader() (vaultport.VaultReader, error) {
-	v, err := a.open()
-	if err != nil {
-		return nil, err
-	}
-	return a.Readers.Open(v)
 }
 
 func (a Vault) openWriter() (NoteWriter, error) {
@@ -135,27 +147,19 @@ func (a Vault) openWriter() (NoteWriter, error) {
 }
 
 func (a Vault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
-	reader, err := a.openReader()
+	v, err := a.open()
 	if err != nil {
 		return domain.FileStat{}, err
 	}
-	return reader.StatFile(ctx, path)
+	return a.Stat.Execute(ctx, v, path)
 }
 
 func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
-	reader, err := a.openReader()
+	v, err := a.open()
 	if err != nil {
 		return nil, domain.FileStat{}, err
 	}
-	pos, err := reader.StatFile(ctx, path)
-	if err != nil {
-		return nil, domain.FileStat{}, err
-	}
-	content, err := reader.Read(ctx, path)
-	if err != nil {
-		return nil, domain.FileStat{}, err
-	}
-	return content, pos, nil
+	return a.ReadFile.Execute(ctx, v, path)
 }
 
 // ReadRange reads the range through the read of usecase/file, with the file stat taken before the
@@ -165,11 +169,7 @@ func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (p
 	if err != nil {
 		return plugin.FileRange{}, err
 	}
-	reader, err := a.Readers.Open(v)
-	if err != nil {
-		return plugin.FileRange{}, err
-	}
-	pos, err := reader.StatFile(ctx, path)
+	pos, err := a.Stat.Execute(ctx, v, path)
 	if errors.Is(err, vaultport.ErrNotANote) {
 		return plugin.FileRange{}, fmt.Errorf("%s is not a file in the vault: %w", path, fs.ErrNotExist)
 	}
@@ -179,7 +179,7 @@ func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (p
 	if length <= 0 || length > file.MostRead {
 		length = file.MostRead
 	}
-	result, err := file.Read{Readers: a.Readers}.Execute(ctx, v, path, start, length)
+	result, err := a.RangeReader.Execute(ctx, v, path, start, length)
 	if err != nil {
 		return plugin.FileRange{}, err
 	}
@@ -193,7 +193,7 @@ func (a Vault) ReadRange(ctx context.Context, path string, start, length int) (p
 	return plugin.FileRange{}, fmt.Errorf("%s is %s: %w", path, result.Outcome, fs.ErrNotExist)
 }
 
-func (a Vault) Write(
+func (a Vault) WriteFile(
 	ctx context.Context, path string, content []byte, baseline domain.FileStat,
 ) (domain.FileStat, error) {
 	writer, err := a.openWriter()
@@ -216,7 +216,7 @@ func (a Vault) notifyFileWritten() {
 	}
 }
 
-func (a Vault) Create(ctx context.Context, path string, content []byte) error {
+func (a Vault) CreateFile(ctx context.Context, path string, content []byte) error {
 	writer, err := a.openWriter()
 	if err != nil {
 		return err
@@ -316,12 +316,20 @@ func (a Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, err
 	return a.Problems.GetParseProblems(ctx, v.ID)
 }
 
-func (a Vault) OpenStore(pluginID string) (pluginport.PluginStore, error) {
+func (a Vault) OpenStore(pluginID string) (hostendpoint.StoreReader, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
 	}
-	return a.Stores.Open(v, pluginID)
+	return a.StoreReaders(v, pluginID)
+}
+
+func (a Vault) OpenStoreWriter(pluginID string) (hostendpoint.StoreWriter, error) {
+	v, err := a.open()
+	if err != nil {
+		return nil, err
+	}
+	return a.StoreWriters(v, pluginID)
 }
 
 func (a Vault) ReadCache(ctx context.Context, pluginID, name string) ([]byte, bool, error) {
@@ -348,7 +356,7 @@ func (a Vault) Watch(ctx context.Context) (<-chan []string, <-chan struct{}, err
 	if a.Watcher == nil {
 		return nil, nil, fmt.Errorf("watch %s: %w", v.ID, domain.ErrUnavailable)
 	}
-	return a.Watcher.WatchVault(ctx, v)
+	return a.Watcher.Execute(ctx, v)
 }
 
 func (a Vault) openConnections(isMissing bool) (domain.Vault, error) {
@@ -357,7 +365,7 @@ func (a Vault) openConnections(isMissing bool) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	if isMissing {
-		return domain.Vault{}, ErrNoConnections
+		return domain.Vault{}, plugin.ErrNoConnections
 	}
 	return v, nil
 }

@@ -88,10 +88,8 @@ type PluginFailures interface {
 	TeardownAll(ctx context.Context, gracePeriod time.Duration) error
 }
 
-// PluginBinding gives the host the mode, the vault and the work the plugins run under.
+// PluginBinding gives the host the mode and the vault path the plugins run under.
 type PluginBinding interface {
 	SetSafeMode(enabled bool)
-	SetPluginVault(vault PluginVault)
-	SetPluginWork(work PluginWork)
 	SetVaultPath(path string)
 }

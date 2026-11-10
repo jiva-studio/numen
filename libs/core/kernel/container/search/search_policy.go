@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostsearch"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	searchusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vectorscase "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors"
@@ -23,8 +22,7 @@ func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder
 	if c.PluginHost == nil {
 		return
 	}
-	var host pluginport.PluginSearchHost = c.PluginHost
-	host.SetPluginSearch(hostsearch.Search{
+	c.PluginHost.SetPluginSearch(hostsearch.Search{
 		Embedder: embedder,
 		Queries:  NewEmbedQueries(embedder),
 		Samples:  db.SearchSamples(),
@@ -33,7 +31,7 @@ func (c Config) SetPluginSearch(db *vault.Index, embedder embeddingport.Embedder
 		Stats:    hostsearch.NewStats(db.Stats(), c.Clock),
 		Policy:   c.NewFloorPolicy(db, embedder, errorHandler),
 		Passages: searchusecase.NewSearchPassages(c.NewSearch(db, embedder, errorHandler)),
-	})
+	}.Access())
 }
 
 // NewEmbedQueries makes the vectors of queries with the embedder, as queries where its model tells a

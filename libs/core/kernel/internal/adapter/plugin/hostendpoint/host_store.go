@@ -11,8 +11,7 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
@@ -25,12 +24,17 @@ type storeEndpoint struct {
 
 var _ numenv1connect.HostStoreServiceHandler = (*storeEndpoint)(nil)
 
-func (e *storeEndpoint) open(ctx context.Context, header http.Header) (pluginport.PluginStore, v1.HostStoreErrorCode, error) {
+func (e *storeEndpoint) begin(header http.Header) (*VaultAccess, string, error) {
 	pluginID, err := e.endpoint.authenticate(header.Get("Authorization"))
 	if err != nil {
-		return nil, 0, err
+		return nil, "", err
 	}
 	vault, err := e.endpoint.getVault(header)
+	return vault, pluginID, err
+}
+
+func (e *storeEndpoint) openReader(ctx context.Context, header http.Header) (StoreReader, v1.HostStoreErrorCode, error) {
+	vault, pluginID, err := e.begin(header)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -38,6 +42,22 @@ func (e *storeEndpoint) open(ctx context.Context, header http.Header) (pluginpor
 		return nil, noStoreVault, nil
 	}
 	store, err := vault.OpenStore(pluginID)
+	if err != nil {
+		code, err := answerStore(ctx, err)
+		return nil, code, err
+	}
+	return store, 0, nil
+}
+
+func (e *storeEndpoint) openWriter(ctx context.Context, header http.Header) (StoreWriter, v1.HostStoreErrorCode, error) {
+	vault, pluginID, err := e.begin(header)
+	if err != nil {
+		return nil, 0, err
+	}
+	if vault == nil {
+		return nil, noStoreVault, nil
+	}
+	store, err := vault.OpenStoreWriter(pluginID)
 	if err != nil {
 		code, err := answerStore(ctx, err)
 		return nil, code, err
@@ -53,7 +73,7 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 		return 0, connect.NewError(connect.CodeCanceled, ctxErr)
 	}
 	switch {
-	case errors.Is(err, hostvault.ErrNoVault):
+	case errors.Is(err, plugin.ErrNoVault):
 		return noStoreVault, nil
 	case errors.Is(err, vaultport.ErrLockedByAnother):
 		return v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_LOCKED_BY_ANOTHER, nil
@@ -68,7 +88,7 @@ func answerStore(ctx context.Context, err error) (v1.HostStoreErrorCode, error) 
 func (e *storeEndpoint) ReadStoreFile(
 	ctx context.Context, req *connect.Request[v1.ReadStoreFileRequest],
 ) (*connect.Response[v1.ReadStoreFileResponse], error) {
-	store, code, err := e.open(ctx, req.Header())
+	store, code, err := e.openReader(ctx, req.Header())
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.ReadStoreFileResponse{Error: code}), err
 	}
@@ -83,7 +103,7 @@ func (e *storeEndpoint) ReadStoreFile(
 func (e *storeEndpoint) AppendStoreFile(
 	ctx context.Context, req *connect.Request[v1.AppendStoreFileRequest],
 ) (*connect.Response[v1.AppendStoreFileResponse], error) {
-	store, code, err := e.open(ctx, req.Header())
+	store, code, err := e.openWriter(ctx, req.Header())
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.AppendStoreFileResponse{Error: code}), err
 	}
@@ -94,7 +114,7 @@ func (e *storeEndpoint) AppendStoreFile(
 func (e *storeEndpoint) ListStoreFiles(
 	ctx context.Context, req *connect.Request[v1.ListStoreFilesRequest],
 ) (*connect.Response[v1.ListStoreFilesResponse], error) {
-	store, code, err := e.open(ctx, req.Header())
+	store, code, err := e.openReader(ctx, req.Header())
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.ListStoreFilesResponse{Error: code}), err
 	}
@@ -113,7 +133,7 @@ func (e *storeEndpoint) ListStoreFiles(
 func (e *storeEndpoint) WriteStoreFile(
 	ctx context.Context, req *connect.Request[v1.WriteStoreFileRequest],
 ) (*connect.Response[v1.WriteStoreFileResponse], error) {
-	store, code, err := e.open(ctx, req.Header())
+	store, code, err := e.openWriter(ctx, req.Header())
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.WriteStoreFileResponse{Error: code}), err
 	}
@@ -124,7 +144,7 @@ func (e *storeEndpoint) WriteStoreFile(
 func (e *storeEndpoint) DeleteStoreFile(
 	ctx context.Context, req *connect.Request[v1.DeleteStoreFileRequest],
 ) (*connect.Response[v1.DeleteStoreFileResponse], error) {
-	store, code, err := e.open(ctx, req.Header())
+	store, code, err := e.openWriter(ctx, req.Header())
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.DeleteStoreFileResponse{Error: code}), err
 	}
@@ -135,7 +155,7 @@ func (e *storeEndpoint) DeleteStoreFile(
 func (e *storeEndpoint) RenameStoreFile(
 	ctx context.Context, req *connect.Request[v1.RenameStoreFileRequest],
 ) (*connect.Response[v1.RenameStoreFileResponse], error) {
-	store, code, err := e.open(ctx, req.Header())
+	store, code, err := e.openWriter(ctx, req.Header())
 	if err != nil || store == nil {
 		return connect.NewResponse(&v1.RenameStoreFileResponse{Error: code}), err
 	}

@@ -15,18 +15,17 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 const pluginID = "md.numen.a"
 
-func openPluginStore(t *testing.T) (pluginport.PluginStore, string) {
+func openPluginStore(t *testing.T) (derivedfile.PluginFolder, string) {
 	t.Helper()
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, testsupport.GetEpoch()); err != nil {
 		t.Fatal(err)
 	}
-	store, err := derivedfile.PluginStores{}.Open(domain.Vault{ID: "v", Path: root}, pluginID)
+	store, err := derivedfile.PluginStores{}.OpenWriter(domain.Vault{ID: "v", Path: root}, pluginID)
 	if err != nil {
 		t.Fatal(err)
 	}

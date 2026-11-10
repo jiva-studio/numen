@@ -82,7 +82,7 @@ func (m *memoryTexts) ReadText(ctx context.Context, v domain.Vault, path string,
 
 func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostTextServiceClient {
 	t.Helper()
-	endpoint := &Endpoint{callers: fakeCallers}
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	server := httptest.NewServer(mux)
@@ -93,7 +93,7 @@ func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1conn
 func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	ctx := t.Context()
 	fakeCallers := newCallers(nil)
-	fakeCallers.vault = newMemoryVault(nil)
+	fakeCallers.vault = vaultOf(newMemoryVault(nil))
 	fakeCallers.texts = newMemoryTexts()
 	client := newTextClient(t, fakeCallers, "token-a")
 
@@ -145,7 +145,7 @@ func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 
 func TestHostText_InvalidVersionReturnsErrorCode(t *testing.T) {
 	fakeCallers := newCallers(nil)
-	fakeCallers.vault = newMemoryVault(nil)
+	fakeCallers.vault = vaultOf(newMemoryVault(nil))
 	fakeCallers.texts = newMemoryTexts()
 	res, err := newTextClient(t, fakeCallers, "token-a").PutTextVersion(t.Context(), connect.NewRequest(&v1.PutTextVersionRequest{Path: "a.pdf", Key: "k"}))
 	if err != nil {
@@ -197,7 +197,7 @@ func TestTextCallsUseVaultFromHeader(t *testing.T) {
 		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
 	}
 	fakeCallers := newCallers(nil)
-	fakeCallers.vault = physics
+	fakeCallers.vault = vaultOf(physics)
 	texts := newMemoryTexts()
 	fakeCallers.texts = texts
 	client := newTextClient(t, fakeCallers, "token-a")

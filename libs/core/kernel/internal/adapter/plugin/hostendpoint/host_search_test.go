@@ -17,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
 
 // recordingSearch answers the search calls with fixed values and records the vault and the arguments
@@ -79,7 +78,7 @@ func (s *recordingSearch) SetSearchFloor(_ context.Context, v domain.Vault, _ st
 
 func newSearchClient(t *testing.T, fakeCallers *callers, token string) numenv1connect.HostSearchServiceClient {
 	t.Helper()
-	endpoint := &Endpoint{callers: fakeCallers}
+	endpoint := &Endpoint{callers: fakeCallers.asCallers()}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostSearchServiceHandler(&searchEndpoint{endpoint: endpoint}))
 	server := httptest.NewServer(mux)
@@ -87,10 +86,10 @@ func newSearchClient(t *testing.T, fakeCallers *callers, token string) numenv1co
 	return numenv1connect.NewHostSearchServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
-func newSearchCallers(search pluginport.PluginSearch) *callers {
+func newSearchCallers(search any) *callers {
 	fakeCallers := newCallers(nil)
-	fakeCallers.vault = newMemoryVault(nil)
-	fakeCallers.search = search
+	fakeCallers.vault = vaultOf(newMemoryVault(nil))
+	fakeCallers.search = searchOf(search)
 	return fakeCallers
 }
 
@@ -177,8 +176,8 @@ func TestHostSearchNamesTheVaultOfTheHeaderAndRefusesAnUnknownOne(t *testing.T) 
 		"v2": {vault: &domain.Vault{ID: "v2", Name: "Chemistry", Path: "/vaults/Chemistry"}},
 	}
 	fakeCallers := newCallers(nil)
-	fakeCallers.vault = physics
-	fakeCallers.search = search
+	fakeCallers.vault = vaultOf(physics)
+	fakeCallers.search = searchOf(search)
 	client := newSearchClient(t, fakeCallers, "token-a")
 
 	named := connect.NewRequest(&v1.SampleSimilaritiesRequest{Recipe: "r"})
@@ -212,14 +211,14 @@ func TestHostSearchAnswersACodeForWhatItCannotServe(t *testing.T) {
 	ctx := t.Context()
 
 	noVault := newCallers(nil)
-	noVault.search = &recordingSearch{}
+	noVault.search = searchOf(&recordingSearch{})
 	state, err := newSearchClient(t, noVault, "token-a").GetEmbeddingState(ctx, connect.NewRequest(&v1.GetEmbeddingStateRequest{}))
 	if err != nil || state.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_VAULT {
 		t.Errorf("a host showing no vault answered %v (%v)", state.Msg, err)
 	}
 
 	noSearch := newCallers(nil)
-	noSearch.vault = newMemoryVault(nil)
+	noSearch.vault = vaultOf(newMemoryVault(nil))
 	embedded, err := newSearchClient(t, noSearch, "token-a").EmbedTexts(ctx, connect.NewRequest(&v1.EmbedTextsRequest{Texts: []string{"a"}}))
 	if err != nil || embedded.Msg.GetError() != v1.HostSearchErrorCode_HOST_SEARCH_ERROR_CODE_NO_MODEL {
 		t.Errorf("a host with no search answered %v (%v)", embedded.Msg, err)

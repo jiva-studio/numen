@@ -8,7 +8,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 )
 
@@ -20,7 +19,7 @@ type workingHost struct {
 	host    *Host
 	process *os.Process
 	tasks   *run.Tasks
-	lease   pluginport.Lease
+	lease   *run.Lease
 }
 
 func newWorkingHost(t *testing.T) workingHost {

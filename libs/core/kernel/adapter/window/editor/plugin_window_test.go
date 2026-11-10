@@ -26,10 +26,10 @@ import (
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 )
 
-func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages) pluginport.PluginWindow {
+func newPluginWindow(state *State, focusNote *query.FocusNote, focusPassages *file.FocusPassages) hostendpoint.WindowControl {
 	return windowfocus.Window{
 		GetVault: state.GetCurrentVault,
 		Note:     focusNote.Execute,
@@ -63,7 +63,7 @@ func newWorkspace(t *testing.T, state *State) *workspace.Handler {
 	return workspace.NewHandler(state, state, vaults.NewWriteOpenTabs(store), vaults.NewReadOpenTabs(store), links)
 }
 
-func newBoundWindow(t *testing.T) (*State, pluginport.PluginWindow, <-chan domain.Place) {
+func newBoundWindow(t *testing.T) (*State, hostendpoint.WindowControl, <-chan domain.Place) {
 	t.Helper()
 	state := &State{Places: newPlaceBroadcaster()}
 	state.setVault(testsupport.NewVault(t, map[string]string{
@@ -155,7 +155,7 @@ func TestPluginWindowReadsTheTabsWithThePlaceEachReaderReported(t *testing.T) {
 type activateFixture struct {
 	state  *State
 	api    *workspace.Handler
-	window pluginport.PluginWindow
+	window hostendpoint.WindowControl
 	focus  <-chan *v1.WatchFocusResponse
 }
 

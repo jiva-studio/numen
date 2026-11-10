@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -29,7 +28,7 @@ var _ numenv1connect.HostSearchServiceHandler = (*searchEndpoint)(nil)
 // searchCall is an authorized search call: the search index and the vault it works. Search is nil
 // where the host has no search index.
 type searchCall struct {
-	search   pluginport.PluginSearch
+	search   *SearchAccess
 	vault    domain.Vault
 	hasVault bool
 }
@@ -38,7 +37,7 @@ func (e *searchEndpoint) begin(header http.Header, permission string, needsVault
 	if _, err := e.endpoint.authorize(header.Get("Authorization"), permission); err != nil {
 		return searchCall{}, err
 	}
-	call := searchCall{search: e.endpoint.callers.GetPluginSearch()}
+	call := searchCall{search: e.endpoint.callers.Search.GetPluginSearch()}
 	if call.search == nil || !needsVault {
 		return call, nil
 	}

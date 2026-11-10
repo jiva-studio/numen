@@ -64,7 +64,7 @@ func TestResolveAddress_RejectsAMissingVaultFile(t *testing.T) {
 // storedFiles are the files of the plugins' stores of every vault, by plugin id and then by name.
 type storedFiles map[string]map[string][]byte
 
-func (s storedFiles) Open(_ domain.Vault, pluginID string) (pluginport.PluginStore, error) {
+func (s storedFiles) Open(_ domain.Vault, pluginID string) (pluginport.PluginStoreReader, error) {
 	return storedFolder{files: s[pluginID]}, nil
 }
 
@@ -72,7 +72,7 @@ func (storedFiles) DeleteFolder(context.Context, domain.Vault, string) error { r
 
 // storedFolder is one plugin's folder, of which a file is opened and nothing else.
 type storedFolder struct {
-	pluginport.PluginStore
+	pluginport.PluginStoreReader
 	files map[string][]byte
 }
 

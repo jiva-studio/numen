@@ -256,7 +256,7 @@ func openInstallation(
 		current := opened.GetCurrentVault()
 		return current, current.Path != ""
 	}
-	shared, err := cfg.OpenPluginVault(registry, db, getShownVault, container.PluginVaultHooks{
+	err = cfg.InstallPluginVault(registry, db, getShownVault, container.PluginVaultHooks{
 		Written: func() {
 			if wake := opened.State.NotifyNoteWritten; wake != nil {
 				wake()
@@ -267,7 +267,6 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	cfg.SetPluginVault(shared)
 	cfg.SetEditorPluginVaultList(opened)
 	cfg.SetPluginTexts()
 	cfg.SetEditorPluginWindow(db, opened)

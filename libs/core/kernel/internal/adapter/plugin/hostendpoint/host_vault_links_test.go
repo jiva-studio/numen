@@ -150,9 +150,9 @@ func newLinksClient(t *testing.T, vault *linkingVault, granted ...string) numenv
 	t.Helper()
 	hostCallers := newCallers(nil)
 	if vault != nil {
-		hostCallers.vault = vault
+		hostCallers.vault = vaultOf(vault)
 	}
-	endpoint := &Endpoint{callers: vaultListCallers{callers: hostCallers, granted: granted}}
+	endpoint := &Endpoint{callers: hostCallers.over(nil, granted...)}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
 	server := httptest.NewServer(mux)

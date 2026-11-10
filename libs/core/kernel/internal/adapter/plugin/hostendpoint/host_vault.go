@@ -19,9 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostvault"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
 )
 
@@ -49,7 +47,7 @@ func newVaultEndpoint(endpoint *Endpoint) *vaultEndpoint {
 
 var _ numenv1connect.HostVaultServiceHandler = (*vaultEndpoint)(nil)
 
-func (e *vaultEndpoint) begin(header http.Header, permission string) (string, pluginport.PluginVault, error) {
+func (e *vaultEndpoint) begin(header http.Header, permission string) (string, *VaultAccess, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
 		return "", nil, err
@@ -61,8 +59,8 @@ func (e *vaultEndpoint) begin(header http.Header, permission string) (string, pl
 	return pluginID, vault, nil
 }
 
-func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) {
-	vault := e.callers.GetPluginVault()
+func (e *Endpoint) getVault(header http.Header) (*VaultAccess, error) {
+	vault := e.callers.Vault.GetPluginVault()
 	named := header.Get(vaultHeader)
 	if vault == nil || named == "" {
 		return vault, nil
@@ -116,7 +114,7 @@ type errorEntry struct {
 
 func getErrorEntries() []errorEntry {
 	return []errorEntry{
-		{hostvault.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
+		{plugin.ErrNoVault, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT},
 		{vaultport.ErrOutside, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE_VAULT},
 		{vaultport.ErrStale, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_CONFLICT},
 		{vaultport.ErrAlreadyExists, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_ALREADY_EXISTS},
@@ -226,7 +224,7 @@ func (e *vaultEndpoint) ListHostVaults(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	list := e.endpoint.callers.GetPluginVaultList()
+	list := e.endpoint.callers.Window.GetPluginVaultList()
 	out := make([]*v1.HostVaultInfo, 0, len(recognized))
 	for _, one := range recognized {
 		out = append(out, &v1.HostVaultInfo{Id: string(one.ID), Name: one.Name, Path: one.Path, IsMissing: list != nil && list.IsMissing(one)})
@@ -269,7 +267,7 @@ func (e *vaultEndpoint) WatchMoves(
 		return err
 	}
 	if vault == nil {
-		return connect.NewError(connect.CodeFailedPrecondition, hostvault.ErrNoVault)
+		return connect.NewError(connect.CodeFailedPrecondition, plugin.ErrNoVault)
 	}
 	moves, err := vault.WatchMoves(ctx)
 	if err != nil {
@@ -342,7 +340,7 @@ func (e *vaultEndpoint) WriteFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: noVault}), nil
 	}
-	pos, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
+	pos, err := vault.WriteFile(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: code}), err
@@ -360,7 +358,7 @@ func (e *vaultEndpoint) CreateFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.CreateFileResponse{Error: noVault}), nil
 	}
-	code, err := answer(ctx, vault.Create(ctx, req.Msg.GetPath(), req.Msg.GetContent()))
+	code, err := answer(ctx, vault.CreateFile(ctx, req.Msg.GetPath(), req.Msg.GetContent()))
 	return connect.NewResponse(&v1.CreateFileResponse{Error: code}), err
 }
 
@@ -629,11 +627,11 @@ func (e *vaultEndpoint) WatchVault(
 		return err
 	}
 	if vault == nil {
-		return connect.NewError(connect.CodeFailedPrecondition, hostvault.ErrNoVault)
+		return connect.NewError(connect.CodeFailedPrecondition, plugin.ErrNoVault)
 	}
 	watched, showing := vault.GetVault()
 	if !showing {
-		return connect.NewError(connect.CodeFailedPrecondition, hostvault.ErrNoVault)
+		return connect.NewError(connect.CodeFailedPrecondition, plugin.ErrNoVault)
 	}
 	changes, missing, err := vault.Watch(ctx)
 	if err != nil {
@@ -646,7 +644,7 @@ func (e *vaultEndpoint) WatchVault(
 }
 
 func followVault(
-	ctx context.Context, vault pluginport.PluginVault, watched domain.Vault,
+	ctx context.Context, vault *VaultAccess, watched domain.Vault,
 	changes <-chan []string, lostChan <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
 	poll := time.NewTicker(vaultWatchPoll)
@@ -672,7 +670,7 @@ func followVault(
 	}
 }
 
-func serveFileRange(ctx context.Context, vault pluginport.PluginVault, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
+func serveFileRange(ctx context.Context, vault FileReader, req *v1.ReadFileRequest) (*connect.Response[v1.ReadFileResponse], error) {
 	if req.GetStart() < 0 || req.GetLength() < 0 {
 		return nil, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("invalid range of %s: start %d and length %d must be >= 0", req.GetPath(), req.GetStart(), req.GetLength()))

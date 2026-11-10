@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 )
 
 // windowIndex is the index updater of a window's note use cases, which records the paths it is given.
@@ -39,7 +39,7 @@ func openWindowScenarios(assembly windowVaults) (container.PluginVaultHooks, *wi
 	return container.PluginVaultHooks{Notes: scenarios}, index
 }
 
-func statFile(t *testing.T, shared pluginport.PluginVault, path string) domain.FileStat {
+func statFile(t *testing.T, shared *hostendpoint.VaultAccess, path string) domain.FileStat {
 	t.Helper()
 	stat, err := shared.StatFile(t.Context(), path)
 	if err != nil {

@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/process"
-	completionport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/completioncontract"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -32,55 +30,55 @@ func (h *Host) GetPluginIDByToken(token string) (string, bool) {
 	return pluginID, found
 }
 
-func (h *Host) SetPluginVault(vault pluginport.PluginVault) {
+func (h *Host) SetPluginVault(vault *hostendpoint.VaultAccess) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.vault = vault
 }
 
-func (h *Host) GetPluginVault() pluginport.PluginVault {
+func (h *Host) GetPluginVault() *hostendpoint.VaultAccess {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.vault
 }
 
 // SetPluginTexts is the text versions the plugins work through the host.
-func (h *Host) SetPluginTexts(texts pluginport.PluginTexts) {
+func (h *Host) SetPluginTexts(texts hostendpoint.TextVersions) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.texts = texts
 }
 
 // GetPluginTexts is the text versions the plugins work, or nil.
-func (h *Host) GetPluginTexts() pluginport.PluginTexts {
+func (h *Host) GetPluginTexts() hostendpoint.TextVersions {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.texts
 }
 
 // SetPluginWindow sets the window exposed to plugins. Nil means none.
-func (h *Host) SetPluginWindow(window pluginport.PluginWindow) {
+func (h *Host) SetPluginWindow(window hostendpoint.WindowControl) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.window = window
 }
 
 // GetPluginWindow returns the window exposed to plugins, or nil.
-func (h *Host) GetPluginWindow() pluginport.PluginWindow {
+func (h *Host) GetPluginWindow() hostendpoint.WindowControl {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.window
 }
 
 // SetPluginVaultList sets the list of vaults exposed to plugins. Nil means none.
-func (h *Host) SetPluginVaultList(list pluginport.PluginVaultList) {
+func (h *Host) SetPluginVaultList(list hostendpoint.VaultList) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.vaultList = list
 }
 
 // GetPluginVaultList returns the list of vaults exposed to plugins, or nil.
-func (h *Host) GetPluginVaultList() pluginport.PluginVaultList {
+func (h *Host) GetPluginVaultList() hostendpoint.VaultList {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.vaultList
@@ -88,30 +86,37 @@ func (h *Host) GetPluginVaultList() pluginport.PluginVaultList {
 
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
-func (h *Host) SetCompleter(completer completionport.Completer) {
+func (h *Host) SetCompleter(completer hostendpoint.Completer) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.completer = completer
 }
 
-func (h *Host) GetCompleter() completionport.Completer {
+func (h *Host) GetCompleter() hostendpoint.Completer {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.completer
 }
 
 // SetPluginSearch is the search index and the search floor the plugins work through the host.
-func (h *Host) SetPluginSearch(search pluginport.PluginSearch) {
+func (h *Host) SetPluginSearch(search *hostendpoint.SearchAccess) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.search = search
 }
 
 // GetPluginSearch is the search index the plugins work, or nil.
-func (h *Host) GetPluginSearch() pluginport.PluginSearch {
+func (h *Host) GetPluginSearch() *hostendpoint.SearchAccess {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.search
+}
+
+// GetEndpointCallers is what the host lends the endpoint plugins call it through.
+func (h *Host) GetEndpointCallers() hostendpoint.Callers {
+	return hostendpoint.Callers{
+		Identity: h, Leases: h, Completion: h, Vault: h, Texts: h, Search: h, Window: h, Work: h, Dependencies: h, Tools: h,
+	}
 }
 
 func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
@@ -123,7 +128,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil && h.search == nil) || h.isClosed {
 		return 0, nil
 	}
-	endpoint, err := hostendpoint.Open(ctx, h.hostAddress, h)
+	endpoint, err := hostendpoint.Open(ctx, h.hostAddress, h.GetEndpointCallers())
 	if err != nil {
 		return 0, err
 	}
@@ -193,13 +198,13 @@ func (h *Host) HasEndpoint(pluginID string) bool {
 }
 
 // SetPluginWork sets the queue and the list of tasks the plugins use.
-func (h *Host) SetPluginWork(work pluginport.PluginWork) {
+func (h *Host) SetPluginWork(work hostendpoint.WorkQueue) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.work = work
 }
 
-func (h *Host) GetPluginWork() pluginport.PluginWork {
+func (h *Host) GetPluginWork() hostendpoint.WorkQueue {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.work

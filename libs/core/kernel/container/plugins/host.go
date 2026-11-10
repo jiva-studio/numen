@@ -2,7 +2,7 @@ package plugins
 
 import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/completionport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 )
@@ -24,13 +24,16 @@ type Host struct {
 	pluginport.PersistHook
 	pluginport.PluginFailures
 	pluginport.PluginBinding
-	pluginport.PluginTextHost
-	pluginport.PluginSearchHost
-	pluginport.PluginWindowHost
-	pluginport.PluginVaultListHost
 	pluginport.DependencyReporter
-	completionport.CompleterHost
 	contenttypeport.ContentTypeTable
+	SetCompleter        func(completer hostendpoint.Completer)
+	SetPluginWork       func(work hostendpoint.WorkQueue)
+	SetPluginVault      func(vault *hostendpoint.VaultAccess)
+	GetPluginVault      func() *hostendpoint.VaultAccess
+	SetPluginTexts      func(texts hostendpoint.TextVersions)
+	SetPluginSearch     func(search *hostendpoint.SearchAccess)
+	SetPluginWindow     func(window hostendpoint.WindowControl)
+	SetPluginVaultList  func(list hostendpoint.VaultList)
 	SetStorage          func(cacheRoot, dataRoot string)
 	RefreshDependencies func()
 }
@@ -49,12 +52,15 @@ func NewHost(host *plugin.Host) *Host {
 		PersistHook:           host,
 		PluginFailures:        host,
 		PluginBinding:         host,
-		PluginTextHost:        host,
-		PluginSearchHost:      host,
-		PluginWindowHost:      host,
-		PluginVaultListHost:   host,
 		DependencyReporter:    host,
-		CompleterHost:         host,
+		SetCompleter:          host.SetCompleter,
+		SetPluginWork:         host.SetPluginWork,
+		SetPluginVault:        host.SetPluginVault,
+		GetPluginVault:        host.GetPluginVault,
+		SetPluginTexts:        host.SetPluginTexts,
+		SetPluginSearch:       host.SetPluginSearch,
+		SetPluginWindow:       host.SetPluginWindow,
+		SetPluginVaultList:    host.SetPluginVaultList,
 		ContentTypeTable:      host,
 		SetStorage:            func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
 		RefreshDependencies:   func() { host.SetDependencies(NewDependenciesIn("")) },

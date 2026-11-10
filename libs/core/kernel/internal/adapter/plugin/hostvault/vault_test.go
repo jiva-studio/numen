@@ -14,7 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
@@ -28,12 +30,19 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 	v := testsupport.NewVault(t, files)
 	writers := vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}
 	return Vault{
-		Current:    func() (domain.Vault, bool) { return v, true },
-		Readers:    vaultreader.Readers{},
-		OpenWriter: func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
-		LockVault:  writers.Lock,
-		Stores:     derivedfile.PluginStores{},
-		Cache:      appstate.PluginCachesAt(t.TempDir()),
+		Current:     func() (domain.Vault, bool) { return v, true },
+		Stat:        file.NewStatFile(vaultreader.Readers{}),
+		ReadFile:    file.NewReadFile(vaultreader.Readers{}),
+		RangeReader: file.Read{Readers: vaultreader.Readers{}},
+		OpenWriter:  func(v domain.Vault) (NoteWriter, error) { return writers.Open(v) },
+		LockVault:   writers.Lock,
+		StoreReaders: func(v domain.Vault, pluginID string) (hostendpoint.StoreReader, error) {
+			return derivedfile.PluginStores{}.Open(v, pluginID)
+		},
+		StoreWriters: func(v domain.Vault, pluginID string) (hostendpoint.StoreWriter, error) {
+			return derivedfile.PluginStores{}.OpenWriter(v, pluginID)
+		},
+		Cache: appstate.PluginCachesAt(t.TempDir()),
 	}, v
 }
 
@@ -72,7 +81,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = access.Write(t.Context(), "samples/A.md", []byte("mine"), pos)
+	_, err = access.WriteFile(t.Context(), "samples/A.md", []byte("mine"), pos)
 
 	if !errors.Is(err, vaultport.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)
@@ -84,7 +93,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := access.Write(t.Context(), "samples/A.md", []byte("mine"), now); err != nil {
+	if _, err := access.WriteFile(t.Context(), "samples/A.md", []byte("mine"), now); err != nil {
 		t.Errorf("a write over what was read was %v", err)
 	}
 	if writeCount != 1 || !slices.Equal(indexed, []string{"samples/A.md"}) {
@@ -102,13 +111,13 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 		return nil
 	}
 
-	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); err != nil {
+	if err := access.CreateFile(t.Context(), "samples/B.md", []byte("b")); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {
 		t.Errorf("a created file indexed %v", indexed)
 	}
-	if err := access.Create(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vault.ErrAlreadyExists) {
+	if err := access.CreateFile(t.Context(), "samples/B.md", []byte("b")); !errors.Is(err, vault.ErrAlreadyExists) {
 		t.Errorf("a file made over one was %v", err)
 	}
 	if !slices.Equal(indexed, []string{"samples/B.md"}) {
@@ -123,7 +132,11 @@ func TestVaultAccess_CreateFileAndLockWriters(t *testing.T) {
 
 func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 	access, v := diskVault(t, nil)
-	store, err := access.OpenStore("md.numen.a")
+	store, err := access.OpenStoreWriter("md.numen.a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader, err := access.OpenStore("md.numen.a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +145,7 @@ func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
 		t.Fatal(err)
 	}
 	on, err := os.ReadFile(filepath.Join(v.Path, ".numen", "md.numen.a", "one.log"))
-	items, listErr := store.List(t.Context())
+	items, listErr := reader.List(t.Context())
 
 	if err != nil || string(on) != "one\n" {
 		t.Errorf("the folder holds %q (%v)", on, err)
@@ -176,18 +189,18 @@ func TestVault_NoCurrentVaultReturnsErrNoVault(t *testing.T) {
 	access := Vault{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }}
 
 	_, _, readErr := access.Read(t.Context(), "a.md")
-	_, writeErr := access.Write(t.Context(), "a.md", nil, domain.FileStat{})
+	_, writeErr := access.WriteFile(t.Context(), "a.md", nil, domain.FileStat{})
 	_, lockErr := access.Lock(t.Context())
 	_, notesErr := access.GetNotes(t.Context(), nil)
 	_, openErr := access.OpenStore("md.numen.a")
 	_, _, watchErr := access.Watch(t.Context())
 
 	for name, err := range map[string]error{"read": readErr, "write": writeErr, "lock": lockErr, "notes": notesErr, "store": openErr, "watch": watchErr} {
-		if !errors.Is(err, ErrNoVault) {
+		if !errors.Is(err, plugin.ErrNoVault) {
 			t.Errorf("%s was %v", name, err)
 		}
 	}
-	if err := access.Scan(t.Context(), []string{"a.md"}); !errors.Is(err, ErrNoVault) {
+	if err := access.Scan(t.Context(), []string{"a.md"}); !errors.Is(err, plugin.ErrNoVault) {
 		t.Errorf("a scan was %v", err)
 	}
 }
