@@ -153,34 +153,30 @@ func TestAVaultWithNoModelOpensAnyway(t *testing.T) {
 	}
 }
 
-// gatedWalk is a vault start whose first walk of the notes starts when release is
-// closed.
-type gatedWalk struct {
-	editor.VaultStarting
 
-	release <-chan struct{}
-}
-
-func (g gatedWalk) StartVault(
-	ctx context.Context, v domain.Vault, rebuild bool,
-	notified func(paths, assets []string, reload bool),
-	handleError windowdomain.ErrorHandler,
-) (
-	read func(ctx context.Context, during func()) (notes int, err error),
-	run func(ctx context.Context),
-	refresh vaults.Refresh,
-	unwatched error,
-) {
-	walk, run, refresh, unwatched := g.VaultStarting.StartVault(ctx, v, rebuild, notified, handleError)
-	read = func(ctx context.Context, during func()) (int, error) {
-		select {
-		case <-g.release:
-			return walk(ctx, during)
-		case <-ctx.Done():
-			return 0, ctx.Err()
+// gateWalk holds the first walk of the notes of a vault start until release is closed.
+func gateWalk(start editor.StartVaultFunc, release <-chan struct{}) editor.StartVaultFunc {
+	return func(
+		ctx context.Context, v domain.Vault, rebuild bool,
+		notified func(paths, assets []string, reload bool),
+		handleError windowdomain.ErrorHandler,
+	) (
+		read func(ctx context.Context, during func()) (notes int, err error),
+		run func(ctx context.Context),
+		refresh vaults.Refresh,
+		unwatched error,
+	) {
+		walk, run, refresh, unwatched := start(ctx, v, rebuild, notified, handleError)
+		read = func(ctx context.Context, during func()) (int, error) {
+			select {
+			case <-release:
+				return walk(ctx, during)
+			case <-ctx.Done():
+				return 0, ctx.Err()
+			}
 		}
+		return read, run, refresh, unwatched
 	}
-	return read, run, refresh, unwatched
 }
 
 // Reading a vault is work, and work is one entry in the list of operations. A
@@ -202,7 +198,7 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 		t.Fatal(err)
 	}
 	installation, err := cfg.OpenWindowWith(t.Context(), ports, db, "", os.Stderr, func(sources editor.Sources) editor.Sources {
-		sources.Starting = gatedWalk{VaultStarting: sources.Starting, release: release}
+		sources.StartVault = gateWalk(sources.StartVault, release)
 		return sources
 	})
 	if err != nil {

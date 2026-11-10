@@ -6,7 +6,7 @@ import (
 )
 
 // mountNote mounts the service that reads, writes and connects the notes of the vault.
-func (w *windowWiring) mountNote() {
+func mountNote(w *windowWiring) {
 	state := w.inst.State
 	handler := editor.NewNoteHandler(state)
 	handler.SetQueries(

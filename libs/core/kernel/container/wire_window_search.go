@@ -11,7 +11,7 @@ import (
 // built after the embedder is resolved; when the model could not be loaded, search uses words only.
 // The degraded state is reported as a task because a window opened from a desktop entry has no
 // terminal.
-func (w *windowWiring) mountSearch() {
+func mountSearch(w *windowWiring) {
 	state := w.inst.State
 	handler := editorsearch.NewHandler(state)
 	handler.GetNameMatches = search.NewGetNameMatches(w.db.NameMatches())

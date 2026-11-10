@@ -15,59 +15,45 @@ import (
 	embeddingport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vectors/embeddingcontract"
 )
 
-// Sources are what the passes behind a vault run over. The composition root
-// makes them from the installation's adapters.
+// ReadVaultFunc reads a whole vault into the index.
+type ReadVaultFunc func(
+	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+) (vaultreading.ReadWholeVault, error)
+
+// StartVaultFunc starts the walk and the watch of one vault.
+type StartVaultFunc func(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError window.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vaults.Refresh,
+	unwatched error,
+)
+
+// Sources are what the passes behind a vault run over. The composition root makes them from the
+// installation's adapters.
 type Sources struct {
-	Reading  VaultReading
-	Starting VaultStarting
-	Texts    TextVersions
-	Plugins  PluginWork
-	Index    IndexHandle
-}
+	ReadVault  ReadVaultFunc
+	StartVault StartVaultFunc
 
-// VaultReading reads a whole vault into the index.
-type VaultReading interface {
-	ReadWholeVault(
-		ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-	) (vaultreading.ReadWholeVault, error)
-}
-
-// VaultStarting starts the walk and the watch of one vault.
-type VaultStarting interface {
-	StartVault(
-		ctx context.Context, v domain.Vault, rebuild bool,
-		notified func(paths, assets []string, reload bool),
-		handleError window.ErrorHandler,
-	) (
-		read func(ctx context.Context, during func()) (notes int, err error),
-		run func(ctx context.Context),
-		refresh vaults.Refresh,
-		unwatched error,
-	)
-}
-
-// TextVersions is how the window follows the text versions of the vault it shows.
-type TextVersions interface {
-	SetTextVersionListener(listener textport.VersionListener)
+	// SetTextVersionListener sets who is told of each change of the text versions.
+	SetTextVersionListener func(listener textport.VersionListener)
 	// ReportTextFilesChanged reports to the text version listener each changed file of the vault whose
 	// live text version changed.
-	ReportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error
-}
+	ReportTextFilesChanged func(ctx context.Context, v domain.Vault, paths []string) error
 
-// PluginWork is what the plugins run over the files of a vault.
-type PluginWork interface {
 	// OpenTriggers is the triggers of the enabled plugins over the files of a vault, nil where the
 	// installation runs no plugins.
-	OpenTriggers() *trigger.Triggers
+	OpenTriggers func() *trigger.Triggers
 	// WatchPluginChanges reports each time the host applied settings, which enables, disables and
 	// configures plugins, or forgot the failure of a plugin. The returned function stops the reports.
-	WatchPluginChanges() (<-chan struct{}, func())
-}
+	WatchPluginChanges func() (<-chan struct{}, func())
 
-// IndexHandle is the installation's cache, open for as long as the window is.
-type IndexHandle interface {
-	GetRefresh() vaults.Refresh
-	CloseIndex() error
-	GetProblemQueries() problemport.ProblemQueries
-	GetPassageQueries() sourceport.PassageQueries
+	// The installation's cache, open for as long as the window is.
+	GetRefresh        func() vaults.Refresh
+	CloseIndex        func() error
+	GetProblemQueries func() problemport.ProblemQueries
+	GetPassageQueries func() sourceport.PassageQueries
 }

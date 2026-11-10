@@ -44,15 +44,15 @@ type PluginServices = interface {
 // Route is one service this build answers: where its calls arrive, and what
 // answers them.
 type Route struct {
-	Path    string
-	Handler http.Handler
+	path    string
+	handler http.Handler
 	service any
 }
 
 // NewRoute is the route of a service of the schema. Handler is what the schema
 // generated for the service, and service is the handler it answers through.
 func NewRoute(path string, handler http.Handler, service any) Route {
-	return Route{Path: path, Handler: handler, service: service}
+	return Route{path: path, handler: handler, service: service}
 }
 
 // pageSet is what answers the requests that reach a window: the routes of its
@@ -97,8 +97,8 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 			return
 		}
 		for _, one := range routes {
-			if strings.HasPrefix(r.URL.Path, one.Path) {
-				one.Handler.ServeHTTP(w, r)
+			if strings.HasPrefix(r.URL.Path, one.path) {
+				one.handler.ServeHTTP(w, r)
 				return
 			}
 		}
@@ -107,7 +107,7 @@ func (s pageSet) newHandler(files http.Handler, named ...string) http.Handler {
 }
 
 func isServed(named []string, route Route) bool {
-	return len(named) == 0 || slices.Contains(named, strings.Trim(route.Path, "/"))
+	return len(named) == 0 || slices.Contains(named, strings.Trim(route.path, "/"))
 }
 
 func (s pageSet) newRoutes(named []string) []Route {

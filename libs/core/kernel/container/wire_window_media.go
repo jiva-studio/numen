@@ -6,7 +6,7 @@ import (
 )
 
 // mountMedia mounts the service that tells where a media file is played from.
-func (w *windowWiring) mountMedia() {
+func mountMedia(w *windowWiring) {
 	state := w.inst.State
 	resolve := file.NewResolveAddress(file.NewStatFile(w.cfg.VaultReaders()), w.cfg.vault().OpenPluginFile())
 	handler := editor.NewMediaHandler(state, resolve, w.cfg.vault().GetMediaType())

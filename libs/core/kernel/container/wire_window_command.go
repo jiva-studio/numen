@@ -6,7 +6,7 @@ import (
 )
 
 // mountCommand mounts the service that lists and runs the commands of the plugins.
-func (w *windowWiring) mountCommand() {
+func mountCommand(w *windowWiring) {
 	var versions editorcommand.VersionItems
 	if menu := w.cfg.plugins().OpenVersionItems(); menu != nil {
 		versions = menu

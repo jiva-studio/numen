@@ -7,7 +7,7 @@ import (
 
 // mountFile mounts the service that lists, makes, moves and removes the files of the vault, and
 // makes the server that reads a file over the loopback socket.
-func (w *windowWiring) mountFile() {
+func mountFile(w *windowWiring) {
 	state := w.inst.State
 	readers := w.cfg.VaultReaders()
 	handler := editor.NewFileHandler(state)

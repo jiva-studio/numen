@@ -20,7 +20,7 @@ func (c Config) OpenWatchSettings() *settings.Watch {
 }
 
 // mountSettings mounts the service that reads and writes the settings of the installation.
-func (w *windowWiring) mountSettings() {
+func mountSettings(w *windowWiring) {
 	state := w.inst.State
 	handler := editorsettings.NewHandler()
 	handler.Get = w.cfg.OpenGetSettings(w.cfg.AgentProvider())

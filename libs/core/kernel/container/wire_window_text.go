@@ -7,7 +7,7 @@ import (
 
 // mountText mounts the service that reads the text of the files of the vault. Without text versions
 // it answers with none.
-func (w *windowWiring) mountText() {
+func mountText(w *windowWiring) {
 	handler := editortexts.NewHandler(w.inst.State, nil)
 	if text := w.cfg.vault().OpenFileText(); text != nil {
 		handler = editortexts.NewHandler(w.inst.State, text)

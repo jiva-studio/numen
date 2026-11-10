@@ -21,7 +21,7 @@ func (l *readyLog) report(_ context.Context, v domain.Vault) {
 
 func readyPass(t *testing.T, model embeddingport.Embedder, log *readyLog) *pass {
 	t.Helper()
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -80,7 +80,7 @@ func TestAPassThatWasStoppedTellsNothing(t *testing.T) {
 }
 
 func TestAWorkerWithoutAListenerEmbedsAsBefore(t *testing.T) {
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	model := &fakeEmbedder{dims: 64}
 	fit(t, db, model)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})

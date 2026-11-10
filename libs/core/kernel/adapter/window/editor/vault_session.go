@@ -130,7 +130,7 @@ func (o *Installation) buildSession(ctx context.Context, v domain.Vault, rebuild
 	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := o.indexer.NewSession()
-	o.sources.Texts.SetTextVersionListener(newVersionChangeReporter(o.State, indexed))
+	o.sources.SetTextVersionListener(newVersionChangeReporter(o.State, indexed))
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.

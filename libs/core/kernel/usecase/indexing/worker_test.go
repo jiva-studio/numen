@@ -5,22 +5,15 @@ import (
 	"errors"
 	"hash/fnv"
 	"math/rand/v2"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	searchwiring "github.com/jiva-studio/numen/libs/core/kernel/container/search"
-	vaultwiring "github.com/jiva-studio/numen/libs/core/kernel/container/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport/readingfixture"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -63,46 +56,8 @@ func findTask(t *testing.T, r *recorder, id string) *vaultreading.Task {
 	return nil
 }
 
-// installation is the parts of an installation that read a vault into a cache. The composition root
-// cannot be imported here: it imports the window, which imports this package.
-type installation struct {
-	vaults vaultwiring.Config
-	search searchwiring.Config
-	db     *vault.Index
-}
-
-func reading(t *testing.T) (installation, *vault.Index) {
-	t.Helper()
-
-	timer := clock.System{}
-	readers := vaultreader.Readers{}
-	search := searchwiring.Config{Chunks: &note.ChunkTokens{}, Clock: timer, VaultReaders: readers}
-	cfg := vaultwiring.Config{
-		IndexPath:  filepath.Join(t.TempDir(), "index.db"),
-		Clock:      timer,
-		VaultLocks: vaultwriter.NewLocks(),
-		Watches:    vaultwatch.NewHub(),
-		CutNotes:   search.CutNotes(),
-		SetNoteCut: search.SetNoteCut,
-	}
-	db, err := cfg.OpenIndex(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	testsupport.CloseAfter(t, db)
-	return installation{vaults: cfg, search: search, db: db}, db
-}
-
-func (i installation) ReadWholeVault(
-	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
-) (vaultreading.ReadWholeVault, error) {
-	request := i.search
-	request.ShouldRebuildIndex = rebuild
-	return request.ReadWholeVault(ctx, i.db, embedder, v, i.vaults.MakeRefresh(i.db, i.db.Notes()))
-}
-
 func newPass(
-	made installation, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
+	made readingfixture.Reading, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
 ) *pass {
 	worker := NewWorker(Config{
@@ -118,11 +73,11 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-func cut(t *testing.T, made installation, db *vault.Index, v domain.Vault) {
+func cut(t *testing.T, made readingfixture.Reading, db *vault.Index, v domain.Vault) {
 	t.Helper()
 
 	scan := vault.NewScan(
-		made.vaults.VaultReaders(),
+		made.GetVaultReaders(),
 		db.Vaults(),
 		db.Notes(),
 		db.FileStats(),
@@ -188,7 +143,7 @@ func (*sulking) Concurrency() int { return 1 }
 // A model that is there and not answering leaves the pass in the list under the
 func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 	model := &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -209,7 +164,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 // A completed pass does not leave its entry in the task list.
 func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -260,7 +215,7 @@ func (p *peeking) opening(id string) (vaultreading.Task, bool) {
 func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	events := newRecorder()
 	watching := &peeking{fakeEmbedder: &fakeEmbedder{dims: 64}, tasks: events.tasks}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, watching)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -280,7 +235,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // A library that would not be read is a vault searching less than it holds, and
 // the pass is left standing under what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
 	events := newRecorder()
 	// The index queried for pending vectors is closed, so the query fails.
@@ -340,7 +295,7 @@ func (o *overheard) lists() [][]vaultreading.Task {
 func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -395,7 +350,7 @@ func (*nudging) Concurrency() int { return 1 }
 func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -447,7 +402,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -481,7 +436,7 @@ func TestAChangeOfSourcesStopsTheVectorPass(t *testing.T) {
 func TestANoteSaveStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
 	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -544,7 +499,7 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 // embeds the vault's pending vectors.
 func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -568,7 +523,7 @@ func TestVersionChange_EmbedsPendingVaultContent(t *testing.T) {
 // keeps the chunks the note was cut into.
 func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
 	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})
@@ -625,7 +580,7 @@ func TestCancellingTheVectorTaskEndsTheEmbedCall(t *testing.T) {
 		started:      make(chan struct{}, 1),
 		stopped:      make(chan error, 1),
 	}
-	made, db := reading(t)
+	made, db := readingfixture.Open(t)
 	fit(t, db, model)
 
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(getBefore(), 200)})

@@ -93,7 +93,7 @@ func NewInstallation(in Setup, sources Sources) (*Installation, error) {
 	state.EmitEvent = in.EmitEvent
 	state.OpenTabsStore = in.OpenTabsStore
 	state.SetIndexing(in.Progress, in.Embedder)
-	indexer := newIndexWorker(sources.Reading, state, in.Embedder, quietPeriod, in.Out)
+	indexer := newIndexWorker(sources.ReadVault, state, in.Embedder, quietPeriod, in.Out)
 	state.NotifyNoteWritten = indexer.WakeNotes
 
 	return &Installation{
@@ -187,19 +187,19 @@ func (o *Installation) Close() error {
 	playingErr := o.State.Playing.Load().Close()
 	// The embedder goes after the work that uses it and before the database,
 	// which is the order they depend on each other in.
-	return errors.Join(playingErr, o.stopEmbedder(), o.sources.Index.CloseIndex())
+	return errors.Join(playingErr, o.stopEmbedder(), o.sources.CloseIndex())
 }
 
 // Problems returns the window's index cache as a port; Passages does the same.
 // Other components working the same vault in this process, including agent
 // tools, read the same index.
 func (o *Installation) Problems() problemport.ProblemQueries {
-	return o.sources.Index.GetProblemQueries()
+	return o.sources.GetProblemQueries()
 }
 
 // Passages is the window's index cache as a port, as Problems is.
 func (o *Installation) Passages() sourceport.PassageQueries {
-	return o.sources.Index.GetPassageQueries()
+	return o.sources.GetPassageQueries()
 }
 
 // GetCurrentVault is the vault the window has open.
@@ -232,7 +232,7 @@ func (o *Installation) Refresh() vaults.Refresh {
 	if on := o.State.session.Load(); on != nil {
 		return on.refresh
 	}
-	return o.sources.Index.GetRefresh()
+	return o.sources.GetRefresh()
 }
 
 // UpdateIndex brings the notes at the paths up to date in the index.

@@ -7,7 +7,7 @@ import (
 
 // mountPlugin sets where the calls for the services plugins serve are forwarded, and mounts the
 // plugin service, which this window does not implement.
-func (w *windowWiring) mountPlugin() {
+func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
 	w.inst.Mount(editor.NewPluginRoute(w.inst.State))
 }

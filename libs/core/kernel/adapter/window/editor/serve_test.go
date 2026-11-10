@@ -215,7 +215,7 @@ func openingWith(
 	t.Cleanup(isDone)
 
 	made := wired.sources(db, readers, watcher)
-	worker := newIndexWorker(made.Reading, api.state, embedder, idleDuration, io.Discard)
+	worker := newIndexWorker(made.ReadVault, api.state, embedder, idleDuration, io.Discard)
 	api.state.NotifyNoteWritten = worker.WakeNotes
 
 	ctx, stop := context.WithCancel(t.Context())
@@ -514,7 +514,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 
 	out := &saying{}
 	made := wired.sources(db, readers, watcher)
-	worker := newIndexWorker(made.Reading, api.state, nil, quietPeriod, out)
+	worker := newIndexWorker(made.ReadVault, api.state, nil, quietPeriod, out)
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
 	_, wait := startIndexing(ctx, made, api.state, indexJob{vault: v, rebuild: true, worker: worker, session: worker.NewSession(), out: out})

@@ -79,7 +79,18 @@ func (w wiring) openIndex(t *testing.T) *vaults.Index {
 // ones an installation is bound to. Everything else is the installation's own.
 func (w wiring) sources(db *vaults.Index, readers vaultport.VaultReaders, watcher vaultport.VaultWatcher) Sources {
 	passes := testPasses{wiring: w, db: db, readers: readers, watcher: watcher}
-	return Sources{Reading: passes, Starting: passes, Texts: noTexts{}, Plugins: noPlugins{}, Index: passes}
+	return Sources{
+		ReadVault:              passes.ReadWholeVault,
+		StartVault:             passes.StartVault,
+		SetTextVersionListener: func(textport.VersionListener) {},
+		ReportTextFilesChanged: func(context.Context, domain.Vault, []string) error { return nil },
+		OpenTriggers:           func() *trigger.Triggers { return nil },
+		WatchPluginChanges:     func() (<-chan struct{}, func()) { return nil, func() {} },
+		GetRefresh:             passes.GetRefresh,
+		CloseIndex:             passes.CloseIndex,
+		GetProblemQueries:      passes.GetProblemQueries,
+		GetPassageQueries:      passes.GetPassageQueries,
+	}
 }
 
 type testPasses struct {
@@ -125,20 +136,6 @@ func (p testPasses) CloseIndex() error { return p.db.Close() }
 func (p testPasses) GetProblemQueries() problemport.ProblemQueries { return p.db.Problems() }
 
 func (p testPasses) GetPassageQueries() sourceport.PassageQueries { return p.db.Passages() }
-
-// noTexts is an installation with no text versions.
-type noTexts struct{}
-
-func (noTexts) SetTextVersionListener(textport.VersionListener) {}
-
-func (noTexts) ReportTextFilesChanged(context.Context, domain.Vault, []string) error { return nil }
-
-// noPlugins is an installation that runs no plugins.
-type noPlugins struct{}
-
-func (noPlugins) OpenTriggers() *trigger.Triggers { return nil }
-
-func (noPlugins) WatchPluginChanges() (<-chan struct{}, func()) { return nil, func() {} }
 
 // themeConfig is where the themes and the settings of an installation are kept.
 type themeConfig struct {

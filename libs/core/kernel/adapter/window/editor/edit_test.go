@@ -361,7 +361,7 @@ func TestEditLoad(t *testing.T) {
 
 	startTime := testsupport.GetMachine().Now()
 	made := wired.sources(db, wired.vaults.VaultReaders(), wired.vaults.VaultWatcher())
-	worker := newIndexWorker(made.Reading, api.state, nil, time.Hour, io.Discard)
+	worker := newIndexWorker(made.ReadVault, api.state, nil, time.Hour, io.Discard)
 	_, wait := startIndexing(t.Context(), made, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
 	t.Cleanup(wait)
 	for !api.state.Ready.Load() && api.state.Error.Why() == "" {

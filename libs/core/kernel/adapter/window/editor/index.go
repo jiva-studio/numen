@@ -51,10 +51,10 @@ func (e indexEvents) ReportTexts(v domain.Vault, res vaultreading.IndexResult) {
 var errNoProgress = errors.New("index progress is unknown")
 
 func newIndexWorker(
-	reading VaultReading, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
+	reading ReadVaultFunc, state *State, embedder embeddingport.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
-		Reading:  reading.ReadWholeVault,
+		Reading:  reading,
 		Embedder: embedder,
 		VectorCounts: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
 			if state.Indexing.Progress == nil {
@@ -97,11 +97,11 @@ func startIndexing(ctx context.Context, sources Sources, state *State, job index
 
 	triggerPasses := newTriggerPasses()
 	checkTexts := func(paths []string) {
-		if err := sources.Texts.ReportTextFilesChanged(ctx, v, paths); err != nil {
+		if err := sources.ReportTextFilesChanged(ctx, v, paths); err != nil {
 			writeDiagnostic(state.reportTask, out, "check the text versions of %s: %v\n", v.Name, err)
 		}
 	}
-	read, run, refresh, unwatched := sources.Starting.StartVault(
+	read, run, refresh, unwatched := sources.StartVault(
 		ctx, v, rebuild, newChangeReporter(state, worker, triggerPasses, checkTexts), newErrorReporter(state))
 	if unwatched != nil {
 		writeDiagnostic(state.reportTask, out, "not watching %s: %v\n", v.Name, unwatched)
@@ -115,9 +115,9 @@ func startIndexing(ctx context.Context, sources Sources, state *State, job index
 		session.Run(ctx, v, rebuild, read)
 	})
 
-	if triggers := sources.Plugins.OpenTriggers(); triggers != nil {
+	if triggers := sources.OpenTriggers(); triggers != nil {
 		running.Go(func() {
-			changes, stop := sources.Plugins.WatchPluginChanges()
+			changes, stop := sources.WatchPluginChanges()
 			defer stop()
 			runTriggers(ctx, triggers, v, triggerPasses, changes, func(err error) {
 				writeDiagnostic(state.reportTask, out, "run the triggers of %s: %v\n", v.Name, err)
