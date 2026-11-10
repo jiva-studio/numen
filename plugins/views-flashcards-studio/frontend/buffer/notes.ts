@@ -73,6 +73,24 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     timers.set(id, timer)
   }
 
+  function finishWrite(tab: BufferTab, body: string, at: string | undefined): void {
+    // An edit made while the write was in flight stays unsaved, with its own flush scheduled.
+    if (tab.state === 'saving') tab.state = 'clean'
+    tab.error = null
+    tab.keepOverride = false
+    tab.filePath = at ?? tab.filePath
+    tab.baseline = { prose: body, stat: at ?? '' }
+  }
+
+  function failWrite(tab: BufferTab, code: string): void {
+    if (code === 'changed') {
+      tab.state = 'stale'
+      return
+    }
+    tab.state = 'error'
+    tab.error = convertErrorCode(code)
+  }
+
   async function writeTab(id: string): Promise<void> {
     const tab = tabs.get(id)
     if (!tab || tab.state !== 'unsaved') return
@@ -83,25 +101,10 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     try {
       const res = await notes.write(tab.path, body, observed)
       if (!tabs.has(id)) return
-      if (res.ok) {
-        // An edit made while the write was in flight stays unsaved, with its own flush scheduled.
-        if (tab.state === 'saving') tab.state = 'clean'
-        tab.error = null
-        tab.keepOverride = false
-        tab.filePath = res.value.at ?? tab.filePath
-        tab.baseline = { prose: body, stat: res.value.at ?? '' }
-      } else {
-        if (res.error === 'changed') {
-          tab.state = 'stale'
-        } else {
-          tab.state = 'error'
-          tab.error = convertErrorCode(res.error)
-        }
-      }
+      if (res.ok) finishWrite(tab, body, res.value.at)
+      else failWrite(tab, res.error)
     } catch {
-      if (!tabs.has(id)) return
-      tab.state = 'error'
-      tab.error = 'unreachable'
+      if (tabs.has(id)) markUnreachable(id)
     }
   }
 
