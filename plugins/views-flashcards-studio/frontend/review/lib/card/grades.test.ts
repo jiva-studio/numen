@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Rating } from '../../../api/types.js'
+import { Rating } from '../../../lib/wire/types'
 
 import { GRADE_LABELS, grades, RATING_BY_GRADE } from './grades'
 

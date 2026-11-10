@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../../lib/wire/types'
 import { DEFAULTS, NO_BOUNDS, type Presets } from '../../../lib/presets'
 import { openNotes } from '../buffer/notes'
 import { useDeckScheduleSync } from './useDeckScheduleSync'

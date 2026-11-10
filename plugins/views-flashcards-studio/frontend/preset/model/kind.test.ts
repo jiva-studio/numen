@@ -9,7 +9,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
-import { StopReason } from '../api/types.js'
+import { StopReason } from '../../lib/wire/types'
 import { getGoalValue, findNearest } from '../lib/curve'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { getGoalFields, getGoalField, type Field } from '../lib/fields'

@@ -5,7 +5,7 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/wire/types'
 import { DEFAULT_SETTINGS, formatSettings } from '../../lib/wire/settings'
 import type { SettingsMessage } from '../../lib/wire/settings'
 

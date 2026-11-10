@@ -1,5 +1,5 @@
 // Stryker disable StringLiteral: interface copy
-import type { StopReason } from '../api/types.js'
+import type { StopReason } from '../../lib/wire/types'
 import { getErrorWords } from '../../lib/wire/errors'
 import { formatStopReasonMessage } from '../../lib/wire/stop'
 /** Interface copy of the preset tab: the control, its settings, and error messages. */

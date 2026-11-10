@@ -3,7 +3,7 @@
  * the shapes the schema holds.
  */
 import { describe, expect, it } from 'vitest'
-import type { Deck as DeckMessage } from '../../api/types.js'
+import type { Deck as DeckMessage } from '../lib/wire/types'
 import type { VaultCard } from '../types'
 import { deserializeDeck, serializeCardToWire } from './serialize'
 

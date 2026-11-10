@@ -4,7 +4,7 @@
  * The window is absent: the tab's data is fabricated, and every action the tab
  * requested is recorded in order.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/wire/types'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'

@@ -4,7 +4,7 @@
  * browser can verify: the layout of the columns, the readout under the knob, the
  * bubble above it and the numbers along the axis.
  */
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../lib/wire/types'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'

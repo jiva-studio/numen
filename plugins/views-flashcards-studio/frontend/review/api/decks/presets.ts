@@ -1,5 +1,5 @@
 /** What the application answers about the preset one deck is scheduled by. */
-import { StopReason } from '../../../../api/types.js'
+import { StopReason } from '../../../lib/wire/types'
 import { asFailure, asValue, type Result } from '@numen/plugin-sdk'
 import { formatErrorCodeMessage } from '../../../lib/wire/errors'
 import { parseSettings } from '../../../lib/wire/settings'

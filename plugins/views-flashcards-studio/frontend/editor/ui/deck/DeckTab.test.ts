@@ -8,7 +8,7 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { StopReason } from '../../api/types.js'
+import { StopReason } from '../../../lib/wire/types'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import type { Preset } from '../../../lib/presets'
 import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../../lib/presets'

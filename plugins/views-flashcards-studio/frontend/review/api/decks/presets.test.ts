@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { Goal, StopReason } from '../../../../api/types.js'
+import { Goal, StopReason } from '../../../lib/wire/types'
 import { DEFAULT_SETTINGS, formatSettings } from '../../../lib/wire/settings'
 import type { SettingsMessage } from '../../../lib/wire/settings'
 
