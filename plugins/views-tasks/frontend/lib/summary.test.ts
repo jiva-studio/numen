@@ -38,7 +38,12 @@ describe('summarizeTasks', () => {
       createTask({ id: 'a', state: 'running', progress: { completedCount: 1, total: 4 } }),
       createTask({ id: 'b', state: 'running', progress: { completedCount: 3, total: 4 } }),
       createTask({ id: 'c', state: 'running' }),
-      createTask({ id: 'd', state: 'failed', progress: { completedCount: 0, total: 10 }, error: 'stopped' }),
+      createTask({
+        id: 'd',
+        state: 'failed',
+        progress: { completedCount: 0, total: 10 },
+        error: 'stopped',
+      }),
     ])
 
     expect(summary.progress).toBe(50)
@@ -57,7 +62,9 @@ describe('getProgress', () => {
   })
 
   it('is undefined for a task without a total', () => {
-    expect(getProgress(createTask({ id: 'a', progress: { completedCount: 0, total: 0 } }))).toBeUndefined()
+    expect(
+      getProgress(createTask({ id: 'a', progress: { completedCount: 0, total: 0 } })),
+    ).toBeUndefined()
   })
 })
 

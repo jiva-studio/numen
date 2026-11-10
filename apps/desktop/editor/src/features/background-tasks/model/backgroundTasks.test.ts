@@ -58,7 +58,9 @@ describe('the tasks of the window as background tasks', () => {
   })
 
   it('counts nothing for a task without a total', () => {
-    expect(first({ ...base, progress: { ...base.progress, completedCount: 3, total: 0 } })).toMatchObject({
+    expect(
+      first({ ...base, progress: { ...base.progress, completedCount: 3, total: 0 } }),
+    ).toMatchObject({
       progress: { completedCount: 0, total: 0 },
     })
   })
