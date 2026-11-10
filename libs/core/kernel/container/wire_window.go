@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	filewindow "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -103,10 +102,10 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	}
 	embedding := indexing.NewEmbedding(embedder, w.db.Progress())
 	state := editor.NewState(tasks)
-	state.EmitEvent = func(event string) { emitPluginEvent(w.cfg.plugins(), event) }
+	state.Events.Emit = func(event string) { emitPluginEvent(w.cfg.plugins(), event) }
 	state.SetIndexing(embedding)
 	indexer := newIndexWorker(w, state, embedding, out)
-	state.NotifyNoteWritten = indexer.WakeNotes
+	state.Writes.NotifyNoteWritten = indexer.WakeNotes
 
 	// A note saved by the user is refreshed in the index before the save returns,
 	// so the vault reflects its content without waiting for the watcher.
@@ -128,7 +127,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 	}
 	session := windowsession.NewScenarios(&state.Runtime, windowsession.Deps{
 		Window: windowsession.WindowPorts{
-			Pages: state.Window, Writes: &state.Writing, Tasks: state.Window, Changes: &state.ChangeEvents, TabFront: &state.TabIDs,
+			Pages: state.Window, Writes: state.Writes, Tasks: state.Window, Changes: &state.Notices.ChangeEvents, TabFront: &state.Notices.TabIDs,
 		},
 		Vault: windowsession.VaultPorts{
 			Identity: vault.NewCheckIdentity(w.cfg.VaultIdentity()), Recorded: moves.RecordOpen, Passes: passes,
@@ -138,7 +137,7 @@ func openWindow(ctx context.Context, w *windowWiring, named string, out io.Write
 			Wake: indexer, NewSession: newIndexSession(indexer), Triggers: w.cfg.getTriggerSource(), Model: embedding,
 		},
 		Shutdown: windowsession.ShutdownPorts{
-			Door: state,
+			Door: state.Gate,
 			Closers: []windowsession.Closer{
 				windowsession.CloseFunc(state.ClosePlaying),
 				windowsession.CloseFunc(func(context.Context) error { return closeEmbedder() }),
@@ -189,5 +188,5 @@ func GetWindowView(inst *editor.Installation) windowport.Window {
 }
 
 func windowView(state *editor.State) windowport.Window {
-	return windowview.View{Notices: state}
+	return state.Notices
 }

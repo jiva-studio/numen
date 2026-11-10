@@ -109,7 +109,7 @@ Load the placement skill of each area the diff touches ([`nm-place-core`](../../
 A green gate proves only what the checks look at. Read the checks the diff relies on: the tests under `libs/core/kernel/container`, `tools/lint-layers`, the ESLint configurations and `.golangci*.yml`. A check is sound when:
 
 - no exemption, allow-list, named path or name list narrows what it covers;
-- each threshold equals the value the rules state, not just above the largest current object, so that the code is held to the rule and not to its present size;
+- each threshold is the value the rules state, not a value just above the largest current object, so the code is held to the rule and not to its present size;
 - it asserts that it found something to check, so a scan of an empty set or of a folder it does not walk fails;
 - it decides by structure (syntax tree, import graph, type information) and covers every package, test files and generated files included, as the rules say.
 

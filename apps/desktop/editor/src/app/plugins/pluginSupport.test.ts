@@ -52,7 +52,10 @@ describe('closing the tabs of a plugin', () => {
   it('replaces the tabs of the kinds the plugin registered with placeholders', async () => {
     const { windowTabs, support } = createSupport()
     support.pluginHost
-      .createContext('md.numen.a')
+      .createContext(
+        'md.numen.a',
+        createMockManifest('md.numen.a', { name: 'md.numen.a', permissions: ['vault:read'] }),
+      )
       .register.tabKind({ kind: 'a-kind', component: null, title: 'A' })
     const id = await windowTabs.tabs.createTab('a-kind', 'x')
     windowTabs.panes.show(id)
@@ -80,7 +83,10 @@ describe('closing the tabs of a plugin', () => {
   it('keeps the tabs of another plugin', async () => {
     const { windowTabs, support } = createSupport()
     support.pluginHost
-      .createContext('md.numen.b')
+      .createContext(
+        'md.numen.b',
+        createMockManifest('md.numen.b', { name: 'md.numen.b', permissions: ['vault:read'] }),
+      )
       .register.tabKind({ kind: 'b-kind', component: null, title: 'B' })
     const id = await windowTabs.tabs.createTab('b-kind', 'x')
 
@@ -91,7 +97,10 @@ describe('closing the tabs of a plugin', () => {
 })
 
 /** A plugin that adds one tab kind to the window. */
-const manifest: Manifest = createMockManifest('md.numen.sample.chat', { name: 'Chat' })
+const manifest: Manifest = createMockManifest('md.numen.sample.chat', {
+  name: 'Chat',
+  permissions: ['vault:read'],
+})
 
 const activate = (context: PluginContext) => {
   context.register.tabKind({ kind: 'chat', component: null, title: 'Chat' })
@@ -447,7 +456,10 @@ describe('the plugins the window loads', () => {
       },
     })
 
-    const ctx = pluginHost.createContext('md.numen.a')
+    const ctx = pluginHost.createContext(
+      'md.numen.a',
+      createMockManifest('md.numen.a', { name: 'A', permissions: ['vault:read'] }),
+    )
     const icon = { name: 'CustomIcon' }
     ctx.register.tabKind({
       kind: 'sample' as never,

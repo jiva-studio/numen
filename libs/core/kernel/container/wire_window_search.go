@@ -17,6 +17,6 @@ func mountSearch(w *windowWiring) {
 	finds := w.cfg.NewSearch(w.db, w.asking, state.ReportWordsAlone)
 	handler.Finds = &finds
 	w.cfg.SetPluginSearch(w.db, w.embedder, state.ReportFloorError)
-	path, served := windowsearch.NewRoute(handler, state.CountQuestions())
+	path, served := windowsearch.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
