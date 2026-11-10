@@ -18,6 +18,7 @@ const otherSlice = { element: { type: 'slice' }, file: { categories: 'public' } 
 const own = (types) => ({ element: { type: types, captured: sameSlice } })
 const slicePolicies = [
   { allow: { to: { module: { origin: ['external', 'core'] } } } },
+  { from: { file: { categories: 'root-shared' } }, allow: { to: sharedFiles } },
   {
     from: { file: { categories: 'root-index' } },
     allow: {

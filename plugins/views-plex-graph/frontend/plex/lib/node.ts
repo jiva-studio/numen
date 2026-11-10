@@ -1,5 +1,5 @@
 import type { Position, Size } from '@numen/ui'
-import type { PlexNode, PlexNodeRelation } from '../../types'
+import type { PlexNode } from '../../types'
 
 export type { Position }
 

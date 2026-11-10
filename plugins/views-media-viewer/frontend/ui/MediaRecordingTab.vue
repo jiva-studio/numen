@@ -6,7 +6,7 @@
 import MediaRecordingActions from './MediaRecordingActions.vue'
 import MediaRecordingMeter from './MediaRecordingMeter.vue'
 import MediaRecordingPreview from './MediaRecordingPreview.vue'
-import { useMediaRecording } from '../model/useMediaRecording'
+import { useMediaRecording } from './useMediaRecording'
 
 /* --------------------------------- Props ---------------------------------- */
 

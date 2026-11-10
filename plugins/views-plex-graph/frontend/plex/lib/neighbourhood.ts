@@ -1,4 +1,4 @@
-import type { PlexEdge, PlexNeighbourhood, PlexNode } from '../../types'
+import type { PlexNeighbourhood, PlexNode } from '../../types'
 
 /**
  * Check the two invariants and return the focus. Throws: a neighbourhood that

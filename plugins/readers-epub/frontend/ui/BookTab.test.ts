@@ -3,7 +3,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, nextTick, reactive, ref, shallowRef } from 'vue'
+import { h, nextTick, reactive, ref, shallowRef } from 'vue'
 import BookTab from './BookTab.vue'
 import type { TextRange } from '../types'
 
@@ -45,15 +45,15 @@ vi.mock('../model/useBookReader', () => ({
 }))
 
 vi.mock('./BookContent.vue', () => ({
-  default: defineComponent({ setup: () => () => h('div', { class: 'book-content-stub' }) }),
+  default: () => h('div', { class: 'book-content-stub' }),
 }))
 
 vi.mock('./book-contents', () => ({
-  BookListing: defineComponent({ setup: () => () => h('nav') }),
+  BookListing: () => h('nav'),
 }))
 
 vi.mock('@numen/ui', () => ({
-  LoadingIndicator: defineComponent({ setup: () => () => h('span') }),
+  LoadingIndicator: () => h('span'),
 }))
 
 const RANGES: readonly TextRange[] = [
