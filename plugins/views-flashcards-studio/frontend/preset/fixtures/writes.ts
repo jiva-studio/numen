@@ -14,7 +14,6 @@ export const createGate = () => {
   return { promise: reply, open }
 }
 
-/** Stands in for a vault call the tests of the writes never make. */
 const rejectUnused = (): never => {
   throw new Error('unused vault call')
 }

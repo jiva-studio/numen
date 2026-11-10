@@ -28,7 +28,6 @@ export const clampShares = (load: Load, within: Bounds | undefined): Load => {
 
 type MutableSettings = { -readonly [field in keyof Settings]: Settings[field] }
 
-/** Copies one field of the settings. */
 const copyField = <Field extends keyof Settings>(
   target: MutableSettings,
   field: Field,
