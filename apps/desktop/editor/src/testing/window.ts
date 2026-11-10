@@ -134,7 +134,6 @@ const getWindowParts = (window: VueWrapper): WindowParts => {
 const getPaletteField = (): HTMLInputElement | null =>
   document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 
-/** Types into the field of the palette step that waits for text. */
 const typeInPalette = async (text: string): Promise<void> => {
   const into = getPaletteField()
   if (!into) return
@@ -143,7 +142,6 @@ const typeInPalette = async (text: string): Promise<void> => {
   await settle()
 }
 
-/** Presses Enter in the field of the palette step. */
 const submitPalette = async (): Promise<void> => {
   getPaletteField()?.dispatchEvent(
     new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),

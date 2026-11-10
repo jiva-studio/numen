@@ -8,7 +8,7 @@ import type { Agent } from '../model/agent'
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{ agent: Agent }>()
 
-const emit = defineEmits<{ openModels: [at: { x: number; y: number }] }>()
+const emit = defineEmits<{ 'open-models': [at: { x: number; y: number }] }>()
 
 /* --------------------------------- State ---------------------------------- */
 const selector = useTemplateRef<HTMLElement>('selector')
@@ -16,7 +16,7 @@ const selector = useTemplateRef<HTMLElement>('selector')
 /* -------------------------------- Handlers -------------------------------- */
 function onOpenSelector() {
   const box = measureRect(selector.value)
-  if (box) emit('openModels', { x: box.left, y: box.bottom })
+  if (box) emit('open-models', { x: box.left, y: box.bottom })
 }
 
 function onSend() {

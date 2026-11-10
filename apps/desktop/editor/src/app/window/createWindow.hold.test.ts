@@ -38,7 +38,7 @@ const openOtherVault = async (window: Window): Promise<void> => {
 }
 
 describe('the window leaving its vault', () => {
-  it('has savedCount the open tabs as they are when the core is asked to open the other vault', async () => {
+  it('saves the open tabs as they are when the core is asked to open the other vault', async () => {
     const window = await mountWindow()
     const open = getTabs(window).length
     closeFrontTab()
