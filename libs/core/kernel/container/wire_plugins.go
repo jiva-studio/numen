@@ -164,11 +164,11 @@ func (c Config) openPluginCache() (pluginport.PluginCache, error) {
 	return openPluginCache(c.plugins())
 }
 
-func (c Config) getPluginDir(id string) (string, bool) {
+func (c Config) GetPluginDir(id string) (string, bool) {
 	return getPluginDir(c.plugins(), id)
 }
 
-func (c Config) getFrontendPluginIDs() []string {
+func (c Config) GetFrontendPluginIDs() []string {
 	return getFrontendPluginIDs(c.plugins())
 }
 

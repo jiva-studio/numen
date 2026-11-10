@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (c Config) openCLIVaults() (cli.Vaults, error) {
+func (c Config) OpenCLIVaults() (cli.Vaults, error) {
 	ports, err := c.Registry()
 	if err != nil {
 		return cli.Vaults{}, err
@@ -50,7 +50,7 @@ func (c Config) openCLIVaults() (cli.Vaults, error) {
 	}, nil
 }
 
-func (c Config) openCLILinks(ctx context.Context) (cli.Links, error) {
+func (c Config) OpenCLILinks(ctx context.Context) (cli.Links, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return cli.Links{}, err
@@ -59,7 +59,7 @@ func (c Config) openCLILinks(ctx context.Context) (cli.Links, error) {
 	return cli.Links{Show: notes.Refer.Links, Close: db.Close}, nil
 }
 
-func (c Config) openCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
+func (c Config) OpenCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 	indexing := c
 	indexing.ShouldRebuildIndex = rebuild
 	db, err := indexing.OpenIndex(ctx)
@@ -87,7 +87,7 @@ func (c Config) openCLIScan(ctx context.Context, v domain.Vault, rebuild bool) (
 	}, nil
 }
 
-func (c Config) openCLISearch(
+func (c Config) OpenCLISearch(
 	ctx context.Context, v domain.Vault, errorHandler window.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := c.OpenIndex(ctx)
@@ -108,7 +108,7 @@ func (c Config) openCLISearch(
 	}, nil
 }
 
-func (c Config) openCLIProblems(ctx context.Context) (cli.Problems, error) {
+func (c Config) OpenCLIProblems(ctx context.Context) (cli.Problems, error) {
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return cli.Problems{}, err
@@ -116,7 +116,7 @@ func (c Config) openCLIProblems(ctx context.Context) (cli.Problems, error) {
 	return cli.Problems{Problems: c.GetProblems(db.Problems()), Close: db.Close}, nil
 }
 
-func (c Config) getCLIPluginCommands() cli.PluginCommands {
+func (c Config) GetCLIPluginCommands() cli.PluginCommands {
 	return cli.PluginCommands{List: c.getPluginCommands().List, Open: c.openPluginCommands}
 }
 

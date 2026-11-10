@@ -67,8 +67,6 @@ func (c Config) SubscribeSettingChanges() (<-chan []settingsdomain.Setting, func
 	return c.subscribeSettingChanges()
 }
 
-func (c Config) UnsubscribeHost() { c.unsubscribeHost() }
-
 func (c Config) VaultOpenerWith(db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher) *vault.VaultOpener {
 	return c.vaultOpenerWith(db, walking, watcher)
 }

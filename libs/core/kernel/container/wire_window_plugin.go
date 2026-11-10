@@ -12,7 +12,7 @@ import (
 )
 
 func mountPlugin(w *windowWiring) {
-	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.getPluginDir)
+	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
 	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
 }
 

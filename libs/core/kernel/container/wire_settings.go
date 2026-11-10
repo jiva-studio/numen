@@ -112,7 +112,7 @@ func (c Config) SetShellThemes(api *shell.API, say func(string)) error {
 	return err
 }
 
-func (c Config) unsubscribeHost() {
+func (c Config) UnsubscribeHost() {
 	unsubscribeHost(c.settings())
 }
 
