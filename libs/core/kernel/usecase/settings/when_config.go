@@ -1,41 +1,39 @@
-// Package whenconfig builds the config variable of when conditions from the settings the plugin host
-// resolved, the values and defaults it holds as JSON.
-package whenconfig
+package settings
 
 import (
 	"encoding/json"
 	"strings"
 
-	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 )
 
-// Settings reads the resolved settings of the application and of the plugins.
-type Settings struct {
-	App     func() []plugindomain.Setting
-	Plugins func() []plugindomain.Info
+// WhenConfig reads the resolved settings of the application and of the plugins.
+type WhenConfig struct {
+	App     func() []plugin.Setting
+	Plugins func() []plugin.Info
 }
 
-// GetWhenConfig returns the config of the settings App and Plugins give; see New.
-func (s Settings) GetWhenConfig() map[string]any {
-	var app []plugindomain.Setting
+// GetWhenConfig returns the config of the settings App and Plugins give; see BuildWhenConfig.
+func (s WhenConfig) GetWhenConfig() map[string]any {
+	var app []plugin.Setting
 	if s.App != nil {
 		app = s.App()
 	}
-	var plugins []plugindomain.Info
+	var plugins []plugin.Info
 	if s.Plugins != nil {
 		plugins = s.Plugins()
 	}
-	return New(app, plugins)
+	return BuildWhenConfig(app, plugins)
 }
 
 // configAppOwner is the owner of the settings of the application in config.
 const configAppOwner = "app"
 
-// New builds the config of when conditions from resolved settings: a setting of the
+// BuildWhenConfig builds the config of when conditions from resolved settings: a setting of the
 // application at config.app.<key>, and one of a plugin at config.<plugin id split at its dots>.<key>,
 // the key split at its dots too. A setting holds its value, or its default where no value is set; a
 // setting with neither is left out.
-func New(app []plugindomain.Setting, plugins []plugindomain.Info) map[string]any {
+func BuildWhenConfig(app []plugin.Setting, plugins []plugin.Info) map[string]any {
 	config := map[string]any{}
 	addSettings(config, []string{configAppOwner}, app)
 	for _, plugin := range plugins {
@@ -44,7 +42,7 @@ func New(app []plugindomain.Setting, plugins []plugindomain.Info) map[string]any
 	return config
 }
 
-func addSettings(config map[string]any, owner []string, settings []plugindomain.Setting) {
+func addSettings(config map[string]any, owner []string, settings []plugin.Setting) {
 	for _, one := range settings {
 		text := one.ValueJSON
 		if text == "" {

@@ -31,10 +31,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/manifestlist"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/servicebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/textbridge"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/pluginchanges"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/pluginchanges"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/whenconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/contenttypeport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
@@ -45,6 +44,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
+	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
@@ -952,7 +952,7 @@ func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
 }
 
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
-	settings := whenconfig.Settings{App: c.ListAppSettings}
+	settings := settingsusecase.WhenConfig{App: c.ListAppSettings}
 	if c.PluginHost != nil {
 		settings.Plugins = c.PluginHost.GetPluginInfos
 	}
