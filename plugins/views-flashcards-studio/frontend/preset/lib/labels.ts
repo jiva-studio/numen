@@ -1,5 +1,5 @@
 // Stryker disable StringLiteral: interface copy
-import type { BudgetUnit, Goal, Rule } from '../types'
+import type { BudgetUnit, Goal, Rule } from '../../lib/presets'
 import type { Field } from './fields'
 
 /** What each of the three goals is offered as: the value it steers. */

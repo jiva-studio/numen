@@ -8,7 +8,7 @@ import {
 import { openNote } from '../../support/vault.js'
 
 test.describe('Vault Navigation and Quick Open Palette', () => {
-  test('shows the note picked in Go to note in the plex with the command Show in plex', async ({
+  test('shows the note picked in Go to note in the plex with the command Open plex graph', async ({
     page,
   }) => {
     await openWorkspace(page)
@@ -20,7 +20,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     await page.keyboard.press('Enter')
     await expect.poll(() => readActivePath(page.request)).toMatch(/Entropy\.md$/)
 
-    await runPaletteCommand(page, 'Show in plex', 'Show in plex')
+    await runPaletteCommand(page, 'Open plex graph', 'Open plex graph')
 
     await expect(getGraph(page).getByRole('img', { name: 'Entropy, focus' })).toBeAttached()
     await expect(

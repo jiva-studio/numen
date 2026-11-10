@@ -1,7 +1,7 @@
 /**
  * Pure projections of a floor state into the words and numbers the panel draws.
  */
-import { SLIDER_MAX, SLIDER_MIN, WORDS } from '../words'
+import { SLIDER_MAX, SLIDER_MIN, WORDS } from '../lib/words'
 import { FLOOR_SOURCE } from './codes'
 import type { FloorSource } from '../api/relevance'
 import type { FloorCalibration, FloorState } from './types'

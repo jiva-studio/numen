@@ -9,6 +9,8 @@
 import { win } from '@numen/ui'
 import { onScopeDispose, ref } from 'vue'
 
+import type { PlexDestination } from '../../../types'
+
 /**
  * Where an opened node is shown, declared once. The modifier that selects the
  * destination and the caller's behavior are derived from this table.
@@ -20,10 +22,7 @@ export interface DestinationDescriptor {
 export const DESTINATIONS = {
   current: { hasModifier: false },
   split: { hasModifier: true },
-} as const satisfies Record<string, DestinationDescriptor>
-
-/** Where an opened node is shown: in the current pane, or in an adjacent split. */
-export type PlexDestination = keyof typeof DESTINATIONS
+} as const satisfies Record<PlexDestination, DestinationDescriptor>
 
 export const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestination[]
 

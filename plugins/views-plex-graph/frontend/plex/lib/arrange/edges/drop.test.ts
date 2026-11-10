@@ -5,7 +5,7 @@ import { getDropRelation, findNode, resolveDrop, getRelationTowards } from './dr
 import { DEFAULT_OPTIONS, resolveOptions } from '../options'
 import { build } from '../../../fixtures/build'
 import type { PlexFrame } from '../../frame'
-import type { PlexRelation } from '../../relation'
+import type { PlexRelation } from '../../../../types'
 
 const ALLOWED: readonly PlexRelation[] = ['parent', 'child', 'jump']
 

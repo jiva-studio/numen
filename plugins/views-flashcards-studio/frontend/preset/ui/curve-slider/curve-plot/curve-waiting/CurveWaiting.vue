@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { LoadingIndicator } from '@numen/ui'
-import { WORDS as words } from '../../../../words'
+import { WORDS as words } from '../../../../lib/words'
 </script>
 
 <template>

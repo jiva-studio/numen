@@ -1,19 +1,7 @@
-import {
-  getArrow,
-  getHeading,
-  getLength,
-  type EdgeCurve,
-  type EdgeHeading,
-  type EdgeLabel,
-  type EdgeSide,
-  type EdgeTitle,
-  type LabelType,
-  type PlacedEdge,
-  type PlexEdge,
-} from '../../edge'
+import { getArrow, getHeading, getLength, type EdgeCurve, type EdgeHeading, type EdgeSide, type EdgeTitle, type LabelType, type PlacedEdge } from '../../edge'
 import type { PlacedNode, Position } from '../../node'
-import type { PlexNodeRelation } from '../../relation'
 import { isVertical, type PlexOptions, type RoutingOptions } from '../options'
+import type { EdgeLabel, PlexEdge, PlexNodeRelation } from '../../../../types'
 
 /** `auto` means take the axis from the geometry. */
 export type Axis = 'vertical' | 'horizontal' | 'auto'

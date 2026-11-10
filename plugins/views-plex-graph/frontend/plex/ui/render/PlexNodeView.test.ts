@@ -10,10 +10,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import PlexNodeView from './PlexNodeView.vue'
 import { DEFAULT_BEHAVIOUR } from '../../model/behaviour'
 import { EXPANSION_DURATION, type WideBox } from '../../model/sizing/expansion'
-import { getNodeHeadings, type PlexHeading } from '../../lib/inside'
+import { getNodeHeadings } from '../../lib/inside'
 import { stubClock } from '../../../fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
-import type { PlexNodeRelation } from '../../lib/relation'
+import type { PlexHeading, PlexNodeRelation } from '../../../types'
 
 const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',

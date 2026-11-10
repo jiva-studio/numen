@@ -1,0 +1,269 @@
+/**
+ * The flashcards window in its resting state: the decks a vault has due today,
+ * and one card being answered.
+ *
+ * Nothing here waits on a vault. It is the screen a screenshot of the window is
+ * taken from, so every piece renders in its settled state.
+ */
+import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { dayAfter, getDayName } from '../../lib/day'
+import type { Tally as HeatmapTally } from '../lib/heatmap/heatmap'
+import { h, type VNode } from 'vue'
+import Decks from './decks/Decks.vue'
+import Session from './session/Session.vue'
+import type { Preset, Settings } from '../lib/decks/types'
+import type { ReviewCard } from '../lib/card/cards'
+import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '../lib/vault/types'
+
+const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
+
+/**
+ * The day this window is rendered on. The grid of weeks ends at the current
+ * week, so the date of the screenshot determines the grid.
+ */
+const TODAY = getDayName(new Date())
+
+const tally = (answers: number, recalls: number): HeatmapTally => ({
+  reviewed: answers,
+  again: Math.round(answers * 0.12),
+  hard: Math.round(answers * 0.18),
+  good: Math.round(answers * 0.52),
+  easy:
+    answers - Math.round(answers * 0.12) - Math.round(answers * 0.18) - Math.round(answers * 0.52),
+  tested: Math.round(answers * 0.8),
+  recalled: recalls,
+})
+
+const scatter = (index: number, salt: number): number => {
+  let x = Math.imul(index + salt * 7919 + 1, 2654435761)
+  x ^= x >>> 15
+  x = Math.imul(x, 2246822519)
+  x ^= x >>> 13
+  return ((x >>> 0) % 100_000) / 100_000
+}
+
+/**
+ * A year of answering: most days worked, with a fortnight gap, so the
+ * grid reads as a real year and not as a pattern.
+ */
+const DAYS = new Map<string, HeatmapTally>(
+  Array.from({ length: 371 }, (_, back) => back)
+    .filter((back) => scatter(back, 1) > 0.22 && !(back > 40 && back < 54))
+    .map((back) => {
+      // A quiet day and a long one, and the middle far commoner than either.
+      const how = scatter(back, 2)
+      const reply = Math.round(14 + how * how * 150)
+      return [dayBefore(TODAY, back), tally(reply, Math.round(reply * 0.86))]
+    }),
+)
+
+/** What falls on each day still to come, which is what the grid draws ahead. */
+const DUE = new Map<string, number>(
+  Array.from({ length: 34 }, (_, ahead) => [
+    dayBefore(TODAY, -ahead - 1),
+    Math.round(18 + scatter(ahead, 3) * 92),
+  ]),
+)
+
+/** The budget that closes a day, in the words a preset writes the key in. */
+const BY_MINUTES: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
+const BY_CARDS: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
+
+const settings = (overrides: Partial<Settings> = {}): Settings => ({
+  goal: 'minutes',
+  byDate: '',
+  minutesADay: 25,
+  newADay: 12,
+  reviewsADay: 140,
+  retention: 0.9,
+  load: {},
+  hasEvenLoad: true,
+  ...overrides,
+})
+
+const preset = (overrides: Partial<Preset> = {}): Preset => ({
+  path: '',
+  name: '',
+  settings: settings(),
+  decks: [],
+  named: 0,
+  reviewCards: 0,
+  cards: 0,
+  budget: { new: 12, reviews: 140, minutes: 25 },
+  closes: BY_MINUTES,
+  reviewed: 0,
+  reviewedNew: 0,
+  reviewedReviews: 0,
+  took: 0,
+  paused: '',
+  wrong: '',
+  ...overrides,
+})
+
+const SANSKRIT = preset({
+  path: 'Sanskrit.md',
+  name: 'Sanskrit',
+  decks: [
+    'Sanskrit/Roots.md',
+    'Sanskrit/Declensions.md',
+    'Sanskrit/Sandhi.md',
+    'Sanskrit/Compounds.md',
+    'Sanskrit/Metre.md',
+    'Sanskrit/Verbs.md',
+    'Sanskrit/Vocabulary.md',
+  ],
+  named: 7,
+  reviewCards: 2_174,
+  cards: 61,
+  reviewed: 79,
+  reviewedNew: 11,
+  reviewedReviews: 68,
+  took: 14,
+})
+
+const ANATOMY = preset({
+  path: 'Anatomy.md',
+  name: 'Anatomy',
+  settings: settings({ goal: 'date', byDate: dayBefore(TODAY, -76) }),
+  decks: [
+    'Anatomy/Bones.md',
+    'Anatomy/Muscles.md',
+    'Anatomy/Nerves.md',
+    'Anatomy/Vessels.md',
+    'Anatomy/Joints.md',
+    'Anatomy/Organs.md',
+  ],
+  named: 6,
+  reviewCards: 1_304,
+  cards: 22,
+  budget: { new: 20, reviews: 90, minutes: 0 },
+  closes: BY_CARDS,
+  reviewed: 96,
+  reviewedNew: 20,
+  reviewedReviews: 76,
+  took: 21,
+})
+
+const PRESETS: readonly Preset[] = [SANSKRIT, ANATOMY]
+
+const deck = (path: string, overrides: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
+  deck: path,
+  reviewCards: 400,
+  due: 0,
+  new: 0,
+  learned: 0,
+  unbegun: 0,
+  ...overrides,
+})
+
+const DECKS: readonly DeckCardsDue[] = [
+  deck('Sanskrit/Roots.md', { reviewCards: 520, due: 34, new: 6, learned: 361 }),
+  deck('Sanskrit/Declensions.md', { reviewCards: 448, due: 21, new: 0, learned: 302 }),
+  deck('Sanskrit/Sandhi.md', { reviewCards: 272, due: 0, new: 0, learned: 249 }),
+  deck('Anatomy/Bones.md', { reviewCards: 336, due: 14, new: 8, learned: 188 }),
+  deck('Anatomy/Muscles.md', { reviewCards: 268, due: 0, new: 0, learned: 141, unbegun: 12 }),
+  deck('Anatomy/Nerves.md', { reviewCards: 214, due: 19, new: 4, learned: 96 }),
+  deck('Sanskrit/Compounds.md', { reviewCards: 186, due: 8, new: 0, learned: 121 }),
+  deck('Sanskrit/Metre.md', { reviewCards: 96, due: 0, new: 6, learned: 41 }),
+  deck('Anatomy/Vessels.md', { reviewCards: 158, due: 11, new: 0, learned: 83 }),
+  deck('Sanskrit/Verbs.md', { reviewCards: 240, due: 18, new: 0, learned: 152 }),
+  deck('Sanskrit/Vocabulary.md', { reviewCards: 412, due: 27, new: 0, learned: 268 }),
+  deck('Anatomy/Joints.md', { reviewCards: 132, due: 9, new: 0, learned: 71 }),
+  deck('Anatomy/Organs.md', { reviewCards: 196, due: 0, new: 5, learned: 88 }),
+]
+
+const VAULT: VaultCardsDue = {
+  identity: { vault: 'v1', name: 'Studies', path: '/home/you/Studies' },
+  isCounted: true,
+  totals: { reviewCards: 3_478, due: 161, new: 29 },
+  decks: DECKS,
+  presets: [],
+  isIndexing: false,
+  unread: '',
+}
+
+/** The preset that schedules each deck, shown under the deck name in the list. */
+const BY_DECK = new Map<string, Preset>(
+  PRESETS.flatMap((one) => one.decks.map((path) => [path, one] as const)),
+)
+
+/** One review card, as the session puts it. */
+const CARD: ReviewCard = {
+  address: {
+    deck: 'Sanskrit/Roots.md',
+    section: 'Verbs of going',
+    cardId: 'k7m2xq9fzp',
+    template: 'Recognise',
+  },
+  heading: 'gam',
+  front:
+    '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',
+  back:
+    '<p><strong>Meaning:</strong> to go, to move</p>\n' +
+    '<p><strong>Class:</strong> 1, thematic</p>\n' +
+    '<p><strong>Present:</strong> <em>gacchati</em>, from the reduplicated stem</p>\n' +
+    '<p><strong>Perfect:</strong> <em>jagāma</em></p>\n' +
+    '<p><strong>Aorist:</strong> <em>agamat</em></p>\n' +
+    '<p>The root is written up in <a href="Sanskrit/Roots.md">Roots</a>, ' +
+    'beside the other verbs of going.</p>',
+  isNew: false,
+  ahead: { again: 60, hard: 4 * 86_400, good: 11 * 86_400, easy: 26 * 86_400 },
+}
+
+const frame = (screen: VNode) => ({
+  setup: () => () =>
+    h(
+      'main',
+      {
+        style: {
+          display: 'flex',
+          flexDirection: 'column',
+          blockSize: '100vh',
+          padding: 'var(--numen-inset-wide)',
+          gap: 'var(--numen-inset)',
+          fontFamily: 'var(--numen-font-sans)',
+          fontSize: 'var(--numen-font-size)',
+          lineHeight: 'var(--numen-line-height)',
+        },
+      },
+      [screen],
+    ),
+})
+
+const meta: Meta = {
+  title: 'Flash Cards/Window',
+  parameters: { layout: 'fullscreen' },
+}
+
+export default meta
+type Story = StoryObj
+
+/** What the vault has due today: the goals, the days answered, and the decks. */
+export const CardsDue: Story = {
+  render: () =>
+    frame(
+      h(Decks, {
+        vault: VAULT,
+        days: DAYS,
+        due: DUE,
+        presets: PRESETS,
+        byDeck: BY_DECK,
+        hasPresets: true,
+        today: TODAY,
+      }),
+    ),
+}
+
+/** One card, answered: the four ways of saying it, and where each leaves it. */
+export const Reviewing: Story = {
+  render: () =>
+    frame(
+      h(Session, {
+        card: CARD,
+        isShown: true,
+        left: 161,
+        canTakeBack: true,
+        at: 'here',
+      }),
+    ),
+}

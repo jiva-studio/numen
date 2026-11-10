@@ -352,7 +352,7 @@ describe('a tab kind component', () => {
         ],
       }),
     )
-    const bareCtx = bareHost.createContext('bare')
+    const bareCtx = bareHost.createContext('bare', READ_WRITE)
     expect(bareCtx.plugin.app).toEqual({
       name: 'numen',
       version: '0.0.0-dev',

@@ -8,7 +8,7 @@
 import { doc, hasDocument } from '@numen/ui'
 import { computed, onScopeDispose, shallowRef, type Ref } from 'vue'
 import type { LabelType } from '../../lib/edge'
-import type { PlexNode } from '../../lib/node'
+import type { PlexNode } from '../../../types'
 
 /** The width a node's box needs, padding included. */
 export type Measure = (node: PlexNode) => number

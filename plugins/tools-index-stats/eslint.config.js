@@ -2,9 +2,73 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import pluginVue from 'eslint-plugin-vue'
 import prettier from 'eslint-config-prettier'
+import boundaries from 'eslint-plugin-boundaries'
 import numen from './numen-rules.mjs'
 
 const contract = ['plugin-sdk', 'ui']
+
+// The shape of a frontend: `index.ts`, `words.ts` and `types.ts` at its root; slices, each a folder
+// `<slice>/` of `index.ts` and the segments `ui`, `model`, `api`, `lib`; and, at the root, the parts the
+// slices share and the entry composes: `api` and `lib` are reached by the slices, `ui` and `model` compose
+// them. A slice is reached only through its `index.ts` and reaches no sibling slice.
+const sameSlice = { slice: '{{ from.element.captured.slice }}' }
+const sharedFiles = { file: { categories: 'root-shared' } }
+const sharedParts = { element: { type: ['api', 'lib'] } }
+const otherSlice = { element: { type: 'slice' }, file: { categories: 'public' } }
+const own = (types) => ({ element: { type: types, captured: sameSlice } })
+const slicePolicies = [
+  { allow: { to: { module: { origin: ['external', 'core'] } } } },
+  { from: { file: { categories: 'root-shared' } }, allow: { to: sharedFiles } },
+  {
+    from: { file: { categories: 'root-index' } },
+    allow: {
+      to: [sharedFiles, sharedParts, otherSlice, { element: { type: ['ui', 'model'] } }],
+    },
+  },
+  {
+    from: { element: { type: 'ui' } },
+    allow: {
+      to: [sharedFiles, sharedParts, otherSlice, { element: { type: ['ui', 'model'] } }],
+    },
+  },
+  {
+    from: { element: { type: 'model' } },
+    allow: { to: [sharedFiles, sharedParts, otherSlice, { element: { type: 'model' } }] },
+  },
+  {
+    from: { element: { type: 'api' } },
+    allow: { to: [sharedFiles, sharedParts] },
+  },
+  { from: { element: { type: 'lib' } }, allow: { to: [sharedFiles, { element: { type: 'lib' } }] } },
+  {
+    from: { element: { type: 'slice-ui' } },
+    allow: {
+      to: [sharedFiles, sharedParts, own(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])],
+    },
+  },
+  {
+    from: { element: { type: 'slice-model' } },
+    allow: { to: [sharedFiles, sharedParts, own(['slice-model', 'slice-api', 'slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice-api' } },
+    allow: { to: [sharedFiles, sharedParts, own(['slice-api', 'slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice-lib' } },
+    allow: { to: [sharedFiles, { element: { type: 'lib' } }, own(['slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice' } },
+    allow: {
+      to: [
+        sharedFiles,
+        sharedParts,
+        own(['slice-ui', 'slice-model', 'slice-api', 'slice-lib', 'slice']),
+      ],
+    },
+  },
+]
 
 export default [
   {
@@ -107,6 +171,34 @@ export default [
           message: 'a reader who asks for less motion is answered in CSS',
         },
       ],
+    },
+  },
+  {
+    files: ['frontend/**/*.{ts,vue}'],
+    ignores: ['**/*.test.ts', '**/*.stories.ts', 'frontend/**/{fixtures,testdata,testing}/**'],
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': [
+        { type: 'ui', pattern: 'frontend/ui' },
+        { type: 'model', pattern: 'frontend/model' },
+        { type: 'api', pattern: 'frontend/api' },
+        { type: 'lib', pattern: 'frontend/lib' },
+        { type: 'slice-ui', pattern: 'frontend/*/ui', capture: ['slice'] },
+        { type: 'slice-model', pattern: 'frontend/*/model', capture: ['slice'] },
+        { type: 'slice-api', pattern: 'frontend/*/api', capture: ['slice'] },
+        { type: 'slice-lib', pattern: 'frontend/*/lib', capture: ['slice'] },
+        { type: 'slice', pattern: 'frontend/*', capture: ['slice'] },
+      ],
+      'boundaries/files': [
+        { category: 'root-index', pattern: 'frontend/index.ts' },
+        { category: 'root-shared', pattern: 'frontend/{words,types}.ts' },
+        { category: 'public', pattern: 'frontend/*/index.ts' },
+      ],
+    },
+    rules: {
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies: slicePolicies }],
     },
   },
   {
