@@ -11,9 +11,10 @@ import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 import { RATING_BY_GRADE } from '../../lib/card/grades'
-import type { Rating } from '../../../lib/wire/types'
+import type { Rating, UndoReviewResponse } from '../../../lib/wire/types'
 import type { ReviewCard, Intervals } from '../../lib/card/cards'
 import type { Grade } from '../../lib/card/grades'
+import type { Caught } from '@numen/plugin-sdk'
 
 /** What a session requests of the application, and nothing more. */
 export interface SessionClient {
@@ -30,7 +31,7 @@ export interface SessionClient {
     rating: Rating
     durationMs: number
   }): Promise<{ answer: string }>
-  undoReview(params: { vault: string; run: string; answer: string }): Promise<unknown>
+  undoReview(params: { vault: string; run: string; answer: string }): Promise<UndoReviewResponse>
 }
 
 /** What opening a session returns. */
@@ -60,7 +61,7 @@ export interface Report {
 /** What a session is built over: the application client, and the error reporter. */
 export interface SessionDeps {
   cards: SessionClient
-  reportError(why: unknown): void
+  reportError(why: Caught): void
   /** The current time in milliseconds. The time a card is on screen is measured with it. */
   now?(): number
 }
@@ -92,7 +93,7 @@ function useSessionCards() {
 
 async function openSession(deps: {
   cards: SessionClient
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
   id: string
   deck: string
   preset?: string
@@ -116,7 +117,7 @@ async function openSession(deps: {
 
 async function submitAnswer(deps: {
   cards: SessionClient
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
   vault: string
   run: string
   card: ReviewCard
@@ -141,7 +142,7 @@ async function submitAnswer(deps: {
 
 async function revertAnswer(deps: {
   cards: SessionClient
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
   vault: string
   run: string
   answer: string
@@ -157,7 +158,7 @@ async function revertAnswer(deps: {
 
 function createAnswerActions(deps: {
   cardsClient: SessionClient
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
   now: () => number
   vault: Ref<string>
   run: Ref<string>
@@ -218,7 +219,7 @@ function createAnswerActions(deps: {
 
 function createSessionOpener(deps: {
   cardsClient: SessionClient
-  reportError: (why: unknown) => void
+  reportError: (why: Caught) => void
   now: () => number
   cards: ReturnType<typeof useSessionCards>
   vault: Ref<string>

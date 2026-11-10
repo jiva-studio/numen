@@ -6,6 +6,7 @@ import {
   type AgentHost,
   type CommandsHost,
   type WorkspaceHost,
+  type Caught,
 } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 
@@ -40,7 +41,7 @@ export function createAgentTabDeps({
       openSettings: () => {
         commands
           ?.run(OPEN_SETTINGS)
-          .catch((error: unknown) => workspace.messages.showError(formatErrorMessage(error)))
+          .catch((error: Caught) => workspace.messages.showError(formatErrorMessage(error)))
       },
     },
   }

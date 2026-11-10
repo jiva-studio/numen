@@ -1,5 +1,6 @@
 import { getNow } from '@numen/ui'
 import { computed, onUnmounted, ref } from 'vue'
+import type { Caught } from '@numen/plugin-sdk'
 
 export type RecordingStatus = 'idle' | 'recording' | 'paused' | 'stopped'
 export type RecordAction = 'start' | 'pause' | 'resume' | 'stop' | 'reset'
@@ -110,7 +111,7 @@ export function useMediaRecording(emit: MediaRecordingEmit) {
       elapsedMs.value = 0
       startTimer()
       emit('record-start')
-    } catch (err: unknown) {
+    } catch (err: Caught) {
       errorMessage.value = err instanceof Error ? err.message : 'Could not access microphone'
       status.value = 'idle'
     }
@@ -161,7 +162,7 @@ export function useMediaRecording(emit: MediaRecordingEmit) {
 
   function onRecordAction(action: RecordAction) {
     if (action === 'start') {
-      onStartRecording().catch((err: unknown) => {
+      onStartRecording().catch((err: Caught) => {
         errorMessage.value = err instanceof Error ? err.message : 'Could not access microphone'
       })
     } else if (action === 'pause') {

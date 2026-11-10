@@ -2,7 +2,7 @@
  * A fake window hosting a files tab, the files of a vault behind it, and the entries of the slot
  * the tab draws its menu from, for tests. Every request the tab makes is recorded in call order.
  */
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, ref, type Component } from 'vue'
 import {
   NOTE_TYPE,
   SLOT,
@@ -26,7 +26,7 @@ const Icon = defineComponent({ name: 'DrawnIcon', setup: () => () => h('svg') })
 
 const Sketch = () => h('em', 'sketch')
 
-const command = (pluginId: string, id: string, title: string, icon?: unknown): SlotCommand => ({
+const command = (pluginId: string, id: string, title: string, icon?: Component): SlotCommand => ({
   kind: 'command',
   key: `${pluginId}/command/${id}`,
   pluginId,

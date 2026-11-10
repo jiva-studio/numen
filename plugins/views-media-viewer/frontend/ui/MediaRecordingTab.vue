@@ -3,6 +3,7 @@
  * Media recording tab: microphone capture, live level visualization,
  * recording timer, and preview playback.
  */
+import type { NoteTabState } from '@numen/plugin-sdk'
 import MediaRecordingActions from './MediaRecordingActions.vue'
 import MediaRecordingMeter from './MediaRecordingMeter.vue'
 import MediaRecordingPreview from './MediaRecordingPreview.vue'
@@ -15,7 +16,7 @@ const props = withDefaults(
     at?: string
     path?: string
     title?: string
-    state?: Record<string, unknown>
+    state?: Partial<NoteTabState>
   }>(),
   {
     at: '',

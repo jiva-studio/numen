@@ -5,6 +5,7 @@ import { SLIDER_MAX, SLIDER_MIN, WORDS } from '../lib/words'
 import { FLOOR_SOURCE } from './codes'
 import type { FloorSource } from '../api/relevance'
 import type { FloorCalibration, FloorState } from './types'
+import type { Caught } from '@numen/plugin-sdk'
 
 export function formatFloor(value: number): string {
   return value.toFixed(2)
@@ -79,6 +80,6 @@ export function describeProbe(bestSimilarity: number, doesPass: boolean): string
   return `Best match ${formatFloor(bestSimilarity)} — ${verdict}`
 }
 
-export function getErrorMessage(error: unknown): string {
+export function getErrorMessage(error: Caught): string {
   return error instanceof Error ? error.message : String(error)
 }

@@ -3,7 +3,7 @@
  * build of the application and offers its download.
  */
 import { defineComponent, h } from 'vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, type PluginContext, type Caught } from '@numen/plugin-sdk'
 import { updater, type UpdateApi } from './api/wire'
 import { createUpdates, type Timer, type Updates } from './model/updates'
 import UpdateIndicator from './ui/UpdateIndicator.vue'
@@ -22,8 +22,8 @@ export interface UpdateParts {
 }
 
 const browserTimer: Timer = {
-  set: (run, delayMs) => setTimeout(run, delayMs),
-  clear: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>),
+  set: (run, delayMs) => window.setTimeout(run, delayMs),
+  clear: (handle) => window.clearTimeout(handle),
 }
 
 const browserParts: UpdateParts = { api: updater, timer: browserTimer }
@@ -52,7 +52,7 @@ function showFailure(
     (result) => {
       if (!result.ok) context.ui.notices.show(result.error, 'error')
     },
-    (error: unknown) => context.ui.notices.show(String(error), 'error'),
+    (error: Caught) => context.ui.notices.show(String(error), 'error'),
   )
 }
 

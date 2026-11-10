@@ -3,6 +3,7 @@
  * The curve itself, and the knob dragged along it. It is the slider the user
  * operates, so it handles the pointer and the keys.
  */
+import type { ComponentPublicInstance } from 'vue'
 import {
   PLOT_BOTTOM,
   GRIDLINES,
@@ -30,15 +31,15 @@ const { isDated, bounds, knob: knobAnnotation } = annotations
 const { min: least, max: most } = bounds
 const { value } = knobAnnotation
 const { setChart, onPointerDown, onPointerMove, onPointerUp, onKeyDown, onKeyUp } = interactions
+
+function onSetChart(element: Element | ComponentPublicInstance | null) {
+  setChart(element instanceof SVGSVGElement ? element : null)
+}
 </script>
 
 <template>
   <svg
-    :ref="
-      (el: unknown) => {
-        setChart(el as SVGSVGElement | null)
-      }
-    "
+    :ref="onSetChart"
     class="curve-slider__picture"
     data-control="picture"
     role="slider"

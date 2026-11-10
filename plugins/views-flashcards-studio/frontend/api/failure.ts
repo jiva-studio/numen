@@ -1,7 +1,7 @@
 /**
  * The failure of an API method, and the sentence it is reported as.
  */
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type Caught } from '@numen/plugin-sdk'
 import type { ApiError } from '@numen/plugin-sdk'
 
 /** A method that failed: the code of the API error and the text the backend gave. */
@@ -37,7 +37,7 @@ const CODE_WORDS: Readonly<Record<string, string>> = {
 const UNEXPECTED = 'internal error'
 
 /** The words of a caught failure; the SDK words any failure that is not an API failure. */
-export const formatFailureMessage = (failure: unknown): string => {
+export const formatFailureMessage = (failure: Caught): string => {
   if (!(failure instanceof ApiFailure)) return formatErrorMessage(failure)
   if (failure.code === CANCELED.code) return ''
   const message = failure.message.trim()

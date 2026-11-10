@@ -82,7 +82,7 @@ function getIcon(id: string): Component | undefined {
     :title="tooltip ?? label"
     @click="onToggle"
   >
-    <component :is="icon as Component" v-if="icon" :size="14" aria-hidden="true" />
+    <component :is="icon" v-if="icon" :size="14" aria-hidden="true" />
     <template v-if="!icon || !isItemList">{{ label }}</template>
     <ChevronUp :size="12" aria-hidden="true" />
   </button>

@@ -13,6 +13,7 @@ import type {
   PathRename,
   PluginContext,
   VaultRelations,
+  Caught,
 } from '@numen/plugin-sdk'
 
 /** What a note is: a note, or a type a plugin declares. */
@@ -191,7 +192,7 @@ export interface PlexHeadingsState {
 
 /** Shows the failure of an operation that runs in the background. */
 export interface PlexFailureReporter {
-  reportFailure(error: unknown): void
+  reportFailure(error: Caught): void
 }
 
 export interface PlexNodeActions {

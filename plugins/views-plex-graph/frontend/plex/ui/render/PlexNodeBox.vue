@@ -17,7 +17,7 @@ const props = defineProps<{
 
 defineSlots<{
   /** What is drawn beside this node's title. */
-  icon?(props: { node: PlacedNode }): unknown
+  icon?(props: { node: PlacedNode }): VNode[]
 }>()
 
 const slots = useSlots()

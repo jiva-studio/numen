@@ -1,6 +1,7 @@
 /**
  * Props and events of the plex.
  */
+import type { VNode } from 'vue'
 import type { MenuTrigger, Viewport } from '@numen/ui'
 import type { Placement, PlexOptionsInput } from '../lib/arrange'
 import type { PlacedNode, Position } from '../lib/node'
@@ -70,7 +71,7 @@ export interface PlexEvents {
 
 export interface PlexSlots {
   /** What is drawn beside a node's title. A node with none is drawn narrower. */
-  icon?(props: { node: PlacedNode }): unknown
+  icon?(props: { node: PlacedNode }): VNode[]
   /** Content for the neighbors that did not fit, supplied by the caller. */
-  overflow?(props: { overflow: readonly [PlexRelation, number][] }): unknown
+  overflow?(props: { overflow: readonly [PlexRelation, number][] }): VNode[]
 }

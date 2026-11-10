@@ -4,7 +4,7 @@
  * player while there is no media, and whether its text can be created.
  */
 import { computed, ref, shallowRef } from 'vue'
-import { formatErrorMessage } from '@numen/plugin-sdk'
+import { formatErrorMessage, type Caught } from '@numen/plugin-sdk'
 import { findCueAt, getText } from '../lib/cues'
 import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'
@@ -104,7 +104,7 @@ export function useTranscript(
   const firstRead = readRecording()
 
   /** Shows the failure of an operation that ran in the background. */
-  const reportFailure = (err: unknown) => {
+  const reportFailure = (err: Caught) => {
     if (isOpen) error.value = formatErrorMessage(err)
   }
 

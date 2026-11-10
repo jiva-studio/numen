@@ -3,7 +3,7 @@
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { ContentsEntry } from '../types'
-import { formatErrorMessage, type TextRange } from '@numen/plugin-sdk'
+import { formatErrorMessage, type TextRange, type Caught } from '@numen/plugin-sdk'
 import type { MessageWriter } from './useBookDocument'
 import { getContents, getDocumentAtOffset, getPageNumber } from '../lib/pagination'
 import { books as servedBooks } from '../api/wire'
@@ -246,7 +246,7 @@ export function useBookReader(
     isOpen = false
   })
 
-  const reportFailure = (error: unknown) => writeMessage(formatErrorMessage(error), 'error')
+  const reportFailure = (error: Caught) => writeMessage(formatErrorMessage(error), 'error')
 
   const reader = {
     path,

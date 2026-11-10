@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue'
 
-import { formatErrorMessage, type AgentPort, type TextLink } from '@numen/plugin-sdk'
+import { formatErrorMessage, type AgentPort, type TextLink, type Caught } from '@numen/plugin-sdk'
 import { createCardAgentPort } from '../api/session/agent'
 import { getDeckNeighbourhood } from '../api/session/notes'
 import { useAgentPanel } from './session/panel'
@@ -43,7 +43,7 @@ export const usePanels = (deps: PanelsDeps) => {
    * Moves the strip to a position. A panel opened this way is opened and not
    * only displayed: its content is fetched and started when the panel is opened.
    */
-  const reportFailure = (why: unknown): void => deps.showNotice(formatErrorMessage(why))
+  const reportFailure = (why: Caught): void => deps.showNotice(formatErrorMessage(why))
 
   const moveTo = (where: PanelPlace) => {
     if (where === 'before') notesPanel.actions.openPanel().catch(reportFailure)

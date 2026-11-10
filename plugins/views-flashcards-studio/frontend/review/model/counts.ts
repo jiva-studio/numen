@@ -12,9 +12,10 @@ import { createFollower } from '@numen/ui'
 
 import { cards } from '../api/clients'
 import { useReviewCounter } from './vault/counts'
+import type { Caught } from '@numen/plugin-sdk'
 
 export interface VaultCountsDeps {
-  readonly reportError: (why: unknown) => void
+  readonly reportError: (why: Caught) => void
 }
 
 export function createVaultCounts(deps: VaultCountsDeps) {
