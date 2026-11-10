@@ -8,7 +8,7 @@
 // Stryker disable StringLiteral: interface copy
 import { keyChord } from '@numen/ui'
 import { commandKeyChord } from '@numen/workbench'
-import { ERRORS } from '@numen/core-client'
+import { ERRORS } from './api/errors'
 
 export { ERRORS }
 
