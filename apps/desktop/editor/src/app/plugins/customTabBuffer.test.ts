@@ -250,7 +250,7 @@ describe('note tab restored from the saved path', () => {
           kind: 'note',
           component: blank,
           title: 'Note',
-        }).getOpenTab?.(first.state) ?? { path: '' }
+        }).address?.getOpenTab?.(first.state) ?? { path: '' }
       ).path
       expect(saved).toBe(path)
 

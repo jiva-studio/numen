@@ -8,6 +8,8 @@ import { Menu, type Position } from '@numen/ui'
 import { PLEX_MENU } from '../lib/menus'
 import { PLEX_HEIGHT, PLEX_WIDTH, type PlexLayout, type PlexNode } from '../lib/plexLayout'
 import { getCommandIcon } from './icons'
+import PlexArrow from './PlexArrow.vue'
+import PlexEdgeView from './PlexEdgeView.vue'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{ layout: PlexLayout }>()
@@ -41,19 +43,9 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
 <template>
   <div class="plex">
     <svg class="plex__canvas" :viewBox="`0 0 ${PLEX_WIDTH} ${PLEX_HEIGHT}`" role="img" aria-label="Plex">
-      <defs>
-        <marker id="plex-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-          <path class="plex__arrow" d="M 0 0 L 10 5 L 0 10 z" />
-        </marker>
-      </defs>
+      <PlexArrow />
 
-      <g v-for="(edge, index) in layout.edges" :key="edge.id">
-        <path class="plex__edge" :d="edge.path" marker-end="url(#plex-arrow)" />
-        <path :id="getLabelId(index)" class="plex__guide" :d="edge.labelPath" />
-        <text v-if="edge.label" class="plex__label" text-anchor="middle" dy="-3">
-          <textPath :href="`#${getLabelId(index)}`" startOffset="50%">{{ edge.label }}</textPath>
-        </text>
-      </g>
+      <PlexEdgeView v-for="(edge, index) in layout.edges" :key="edge.id" :edge="edge" :label-id="getLabelId(index)" />
 
       <g
         v-for="node in layout.nodes"
@@ -92,32 +84,6 @@ const getBoxY = (node: PlexNode): number => node.y - node.height / 2
   font-family: var(--numen-font-sans);
   user-select: none;
   -webkit-user-select: none;
-}
-
-.plex__edge {
-  fill: none;
-  stroke: var(--numen-edge);
-  stroke-width: var(--numen-edge-width);
-  stroke-linecap: round;
-}
-
-.plex__guide {
-  fill: none;
-  stroke: none;
-}
-
-.plex__arrow {
-  fill: var(--numen-edge);
-}
-
-.plex__label {
-  fill: var(--numen-edge-label);
-  font-size: var(--numen-edge-label-size);
-  stroke: var(--numen-surface);
-  stroke-width: var(--numen-edge-label-halo);
-  stroke-linejoin: round;
-  paint-order: stroke;
-  pointer-events: none;
 }
 
 .plex__node {

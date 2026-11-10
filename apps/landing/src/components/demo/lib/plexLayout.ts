@@ -27,7 +27,7 @@ export interface PlexNode {
  * A curve from the note it leaves to the note its arrow points at. `labelPath` is the same curve drawn from
  * left to right, which the label is written along so that it reads upright.
  */
-interface PlexEdge {
+export interface PlexEdge {
   readonly id: string
   readonly path: string
   readonly labelPath: string
@@ -61,7 +61,7 @@ function getWidth(text: string, isFocus: boolean): number {
 
 function createNode(path: string, title: string, relation: PlexNode['relation'], at: { x: number; y: number }): PlexNode {
   const text = getText(title)
-  return { path, text, relation, ...at, width: getWidth(text, relation === 'focus'), height: NODE_HEIGHT }
+  return { path, text, relation, x: at.x, y: at.y, width: getWidth(text, relation === 'focus'), height: NODE_HEIGHT }
 }
 
 const spread = (count: number, spacing: number, middle: number): number[] =>

@@ -11,6 +11,8 @@ import {
   outside,
   requests,
   settle,
+  submitPalette,
+  typeInPalette,
 } from '@/testing/window'
 
 type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
@@ -47,7 +49,10 @@ describe('a note created by a command of the window', () => {
     const window = await mountWindowWithPalette()
     const { palette } = getWindowParts(window)
 
-    palette.runCommand(COMMAND.createNote, palette.getTarget(), 'Entropy')
+    palette.runCommand(COMMAND.createNote, palette.getTarget())
+    await settle()
+    await typeInPalette('Entropy')
+    await submitPalette()
 
     await vi.waitFor(() => expect(readSavedPaths()).toContain('Entropy.md'))
     expect(requests.made).toStrictEqual(['Entropy'])
@@ -66,23 +71,6 @@ describe('a note renamed', () => {
   })
 
   describe('under a step of the palette that waits for its name', () => {
-    const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
-
-    const typeName = async (text: string) => {
-      const into = field()
-      if (!into) return
-      into.value = text
-      into.dispatchEvent(new Event('input'))
-      await settle()
-    }
-
-    const submit = async () => {
-      field()?.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
-      )
-      await settle()
-    }
-
     const askForNewName = (window: Window) => {
       const { palette } = getWindowParts(window)
       palette.runCommand(COMMAND.renameNote, {
@@ -98,8 +86,8 @@ describe('a note renamed', () => {
       await settle()
 
       await renameNote(ENTROPY, HEAT)
-      await typeName('Kelvin')
-      await submit()
+      await typeInPalette('Kelvin')
+      await submitPalette()
 
       expect(requests.renamed).toStrictEqual([`${HEAT} Kelvin`])
     })

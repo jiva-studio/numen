@@ -64,7 +64,7 @@ export function createTabKinds(deps: WindowKindsDeps) {
         (one) =>
           one?.kind.display?.isTool &&
           one.kind.address?.navigate !== undefined &&
-          one.kind.address?.getTarget !== undefined,
+          one.kind.address.getTarget !== undefined,
       )
     const target = last?.kind.address?.getTarget?.(last.state)
     return { path: target?.path ?? '', title: target?.title ?? '' }

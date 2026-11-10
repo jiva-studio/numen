@@ -122,8 +122,34 @@ const nodeInPlex = (window: VueWrapper): string => {
   return state.picture.value?.nodes[0]?.id ?? ''
 }
 
-const getWindowParts = (window: VueWrapper): ReturnType<typeof createWindow> =>
-  (window.vm as unknown as { parts: ReturnType<typeof createWindow> }).parts
+type WindowParts = ReturnType<typeof createWindow>
+
+const hasWindowParts = (vm: object): vm is { parts: WindowParts } => 'parts' in vm
+
+const getWindowParts = (window: VueWrapper): WindowParts => {
+  if (!hasWindowParts(window.vm)) throw new Error('The mounted window has no parts')
+  return window.vm.parts
+}
+
+const getPaletteField = (): HTMLInputElement | null =>
+  document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
+
+/** Types into the field of the palette step that waits for text. */
+const typeInPalette = async (text: string): Promise<void> => {
+  const into = getPaletteField()
+  if (!into) return
+  into.value = text
+  into.dispatchEvent(new Event('input'))
+  await settle()
+}
+
+/** Presses Enter in the field of the palette step. */
+const submitPalette = async (): Promise<void> => {
+  getPaletteField()?.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+  )
+  await settle()
+}
 
 const getLayout = (window: VueWrapper): Workspace =>
   window.findComponent(WorkspaceLayout).props('modelValue')
@@ -139,6 +165,8 @@ export {
   cards,
   changed,
   getWindowParts,
+  submitPalette,
+  typeInPalette,
   maker,
   DEBOUNCE,
   mountWindow,
