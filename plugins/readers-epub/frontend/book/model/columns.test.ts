@@ -3,7 +3,7 @@
  * the columns are set with, and how tall a column is once the text is drawn.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defineComponent, shallowRef } from 'vue'
 
 import { useBookColumns } from './columns'
@@ -97,33 +97,28 @@ describe('how tall a column is once the text is drawn', () => {
   /** The box the columns stand in, and the text set in it. */
   const createText = (lineHeight: string, paragraph?: string): HTMLElement => {
     const text = document.createElement('div')
-    text.style.lineHeight = lineHeight
+    text.setAttribute('style', `line-height: ${lineHeight}`)
     if (paragraph) {
       const run = document.createElement('p')
-      run.style.lineHeight = paragraph
+      run.setAttribute('style', `line-height: ${paragraph}`)
       text.append(run)
     }
     return text
   }
 
-  const readItem = (box: HTMLElement, text: HTMLElement): string => {
-    const setProperty = vi.spyOn(CSSStyleDeclaration.prototype, 'setProperty')
+  const readItem = (box: HTMLElement, text: HTMLElement): number =>
     setUp(800, 600).readColumns(box, text)
-    const paper = setProperty.mock.calls.find(([name]) => name === '--book-paper')?.[1] ?? ''
-    setProperty.mockRestore()
-    return paper
-  }
 
   it('is the whole lines of a paragraph that fit the box', () => {
-    expect(readItem(createArea(800, 100), createText('10px', '30px'))).toBe('90px')
+    expect(readItem(createArea(800, 100), createText('10px', '30px'))).toBe(90)
   })
 
   it('is the whole lines of the text itself where it holds no paragraph', () => {
-    expect(readItem(createArea(800, 100), createText('30px'))).toBe('90px')
+    expect(readItem(createArea(800, 100), createText('30px'))).toBe(90)
   })
 
   it('is the height of the box where the lines have no height to be read', () => {
-    expect(readItem(createArea(800, 100), createText('normal'))).toBe('100px')
+    expect(readItem(createArea(800, 100), createText('normal'))).toBe(100)
   })
 
   it('keeps the single-column width at the box width when only the first column has text', () => {
