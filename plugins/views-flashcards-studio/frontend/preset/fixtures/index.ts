@@ -4,21 +4,14 @@
  * The window is absent: the tab's data is fabricated, and every action the tab
  * requested is recorded in order.
  */
-import { StopReason } from '../../api/presets.js'
+import { StopReason } from '../../lib/wire/types'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import PresetTab from '../ui/PresetTab.vue'
-import {
-  DEFAULTS,
-  type Curve,
-  type Point,
-  type PresetCounts,
-  type Settings,
-  type SettingsBounds,
-  type PresetTabState,
-} from '../types'
+import { DEFAULTS, type Curve, type Point, type PresetCounts, type Settings, type SettingsBounds } from '../../lib/presets'
+import type { PresetTabState } from '../model/types'
 
 /**
  * The range of each setting, as the application returns it on a read. A test

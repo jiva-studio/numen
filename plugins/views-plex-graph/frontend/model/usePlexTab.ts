@@ -3,7 +3,6 @@
  */
 import { computed, watch, type Component } from 'vue'
 import type { MenuItem } from '@numen/ui'
-import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import {
   formatErrorMessage,
   getFileName,
@@ -28,6 +27,9 @@ import type {
   PlexView,
   PathRename,
   NoteType,
+  PlexNeighbourhood,
+  PlexRelation,
+  PlexDestination,
 } from '../types'
 import { useLinkInspector } from './useLinkInspector'
 import { useQuickLink } from './useQuickLink'

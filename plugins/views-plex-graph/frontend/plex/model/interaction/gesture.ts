@@ -8,7 +8,7 @@ import { resolveDrop, getRelationWithoutDirection, type Drop } from '../../lib/a
 import type { PlexOptions } from '../../lib/arrange'
 import type { PlexFrame } from '../../lib/frame'
 import type { Position } from '../../lib/node'
-import type { PlexRelation } from '../../lib/relation'
+import type { PlexRelation } from '../../../types'
 
 export interface Gesture {
   readonly from: Ref<string | null>

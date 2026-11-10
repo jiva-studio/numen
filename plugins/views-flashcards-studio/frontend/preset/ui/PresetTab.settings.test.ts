@@ -13,9 +13,12 @@ import goalSource from './preset-goal/PresetGoal.vue?raw'
 import rowsSource from './preset-settings/PresetSettings.vue?raw'
 import sliderSource from './curve-slider/CurveSlider.vue?raw'
 import tilesSource from './curve-slider/CurveTiles.vue?raw'
-import { NO_BOUNDS, type Field, type PresetTabState, type SettingValue } from '../types'
+import { NO_BOUNDS } from '../../lib/presets'
 import { BOUNDS, mountPresetTab, rows, createTab } from '../fixtures'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
+import type { PresetTabState } from '../model/types'
+import type { Field } from '../lib/fields'
+import type { SettingValue } from '../lib/settings'
 
 describe('the settings under the control', () => {
   it('draws a row for each, with what it is alongside it', () => {

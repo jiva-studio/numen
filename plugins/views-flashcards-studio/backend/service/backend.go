@@ -51,7 +51,7 @@ func New(cfg Config) *Backend {
 
 func (b *Backend) build(dayStart func() time.Duration) *scenarios.Scenarios {
 	return scenarios.New(scenarios.Inputs{
-		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Links: b.ports.Links,
+		Readers: b.ports.Readers, Writers: b.ports.Writers, Notes: b.ports.Notes, Types: b.ports.Notes, CardModels: b.ports.Notes, Links: b.ports.Links,
 		Problems: b.ports.Problems, Logs: b.ports.Logs, Schedules: b.ports.Schedules,
 		Index: func(ctx context.Context, v domain.Vault, paths []string) error {
 			return b.vaults(v.ID).Index.Scan(ctx, paths)

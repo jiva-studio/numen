@@ -3,9 +3,8 @@
  * cue's span in seconds in the segment's selector `t`.
  */
 import type { LiveText, TextSegment, VaultTexts } from '@numen/plugin-sdk'
-import type { Cue } from '../lib/cues'
 import { getSelectorSpan } from '../lib/place'
-import type { Recordings, TextRange } from '../types'
+import type { Recordings, TextRange, Cue } from '../types'
 
 /** The cues of a live text: its segments that name a span of the recording. */
 export const getCues = (segments: readonly TextSegment[]): readonly Cue[] =>

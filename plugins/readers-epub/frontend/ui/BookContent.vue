@@ -1,0 +1,85 @@
+<script setup lang="ts">
+import { useTemplateRef } from 'vue'
+import { Book } from '../book'
+import { ListTree } from '@lucide/vue'
+import type { BookHandle } from '../types'
+import type { BookContentProps } from './BookContent.types'
+import { WORDS as words } from '../words'
+
+/* ----------------------------- Props & Emits ------------------------------ */
+const props = defineProps<BookContentProps>()
+
+const emit = defineEmits<{
+  move: [offset: number]
+  follow: [path: string]
+  'toggle-listing': []
+}>()
+
+defineExpose({
+  measure,
+  handleKey: forwardKey,
+  focusWay,
+})
+
+/* --------------------------------- State ---------------------------------- */
+const book = useTemplateRef<BookHandle>('book')
+const way = useTemplateRef<HTMLElement>('way')
+
+/* -------------------------------- Handlers -------------------------------- */
+function onMove(offset: number) {
+  emit('move', offset)
+}
+
+function onFollow(targetPath: string) {
+  emit('follow', targetPath)
+}
+
+function onToggleListing() {
+  emit('toggle-listing')
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+function measure() {
+  book.value?.measure()
+}
+
+function forwardKey(event: KeyboardEvent): boolean {
+  return book.value?.handleKey(event) ?? false
+}
+
+function focusWay() {
+  way.value?.focus()
+}
+</script>
+
+<template>
+  <Book
+    ref="book"
+    :markup="props.markup"
+    :path="props.path"
+    :span="props.documentSpan"
+    :book="props.bookSpan"
+    :at="props.offset"
+    :target="props.target"
+    :highlights="props.highlights"
+    :other-highlights="props.otherHighlights"
+    :chapter="props.chapter"
+    :words="words"
+    @move="onMove"
+    @follow="onFollow"
+  >
+    <template #way>
+      <button
+        ref="way"
+        type="button"
+        class="book-tab__list"
+        :aria-label="props.isListingOpen ? words.hideContents : words.showContents"
+        :aria-pressed="props.isListingOpen"
+        :aria-expanded="props.isListingOpen"
+        @click="onToggleListing"
+      >
+        <ListTree class="size-4" aria-hidden="true" />
+      </button>
+    </template>
+  </Book>
+</template>

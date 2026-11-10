@@ -8,7 +8,7 @@ import (
 
 func (s *scene) listTargetVersions(t *testing.T) []plugin.TargetVersion {
 	t.Helper()
-	got, err := s.versions.ListTargetVersions(t.Context(), s.vault, scanPath)
+	got, err := s.versions.Texts.ListTargetVersions(t.Context(), s.vault, scanPath)
 	if err != nil {
 		t.Fatal(err)
 	}

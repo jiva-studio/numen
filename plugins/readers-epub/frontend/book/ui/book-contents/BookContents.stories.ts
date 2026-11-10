@@ -11,7 +11,7 @@ import type { Decorator, Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { ref } from 'vue'
 import BookContents from './BookContents.vue'
-import type { ContentsEntry } from './contents'
+import type { ContentsEntry } from '../../../types'
 
 const meta = {
   title: 'Reading/BookContents',

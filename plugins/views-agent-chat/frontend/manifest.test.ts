@@ -11,8 +11,8 @@ const { permissions, targets } = JSON.parse(
 ) as { permissions: readonly string[]; targets: readonly string[] }
 
 describe('the manifest', () => {
-  it('declares vault:read, which asking the agent needs', () => {
-    expect(permissions).toStrictEqual(['vault:read'])
+  it('declares vault:read and vault:write, which asking the agent, which writes the vault, needs', () => {
+    expect(permissions).toStrictEqual(['vault:read', 'vault:write'])
   })
 
   it('is loaded by the editor and by the flashcards window, whose review mounts its conversation', () => {

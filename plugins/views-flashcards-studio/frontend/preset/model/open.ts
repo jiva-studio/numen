@@ -1,25 +1,19 @@
 /**
  * Tab state and coordinator for an open flashcard preset.
  */
-import { StopReason } from '../../api/presets.js'
+import { StopReason } from '../../lib/wire/types'
 import { ref, shallowRef, type Ref } from 'vue'
 import { formatErrorMessage, type MessageWriter } from '@numen/plugin-sdk'
-import {
-  DEFAULTS,
-  type Field,
-  type Goal,
-  type Presets,
-  type PresetTabState,
-  type Settings,
-  type SettingsBounds,
-  type SettingValue,
-} from '../types'
+import { DEFAULTS, type Goal, type Presets, type Settings, type SettingsBounds } from '../../lib/presets'
 import { produceSchedule } from '../lib/curve'
 import { getShapeKey, getGoalField } from '../lib/fields'
-import { WORDS as words } from '../words'
+import { WORDS as words } from '../lib/words'
 import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { createCurveState, updateCurves, type CurveState } from './curves'
 import { canCloseTab, createWriteQueue, requestWrite, type WriteQueue } from './writeQueue'
+import type { PresetTabState } from './types'
+import type { Field } from '../lib/fields'
+import type { SettingValue } from '../lib/settings'
 
 /** State held by one open preset tab. */
 export interface OpenPreset {

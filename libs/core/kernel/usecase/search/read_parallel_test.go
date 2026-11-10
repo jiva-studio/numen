@@ -96,7 +96,7 @@ func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 
 	run := func(extractors int) []domain.Passage {
 		vault := newConcurrentVault(content)
-		u := Search{readers: concurrentReaders{vault}, extractors: extractors}
+		u := Search{readers: concurrentReaders{vault}, Extractors: extractors}
 		out, err := u.read(t.Context(), domain.Vault{ID: "v"}, found)
 		if err != nil {
 			t.Fatal(err)
@@ -116,11 +116,11 @@ func TestRead_ReturnsSourcesInRankOrderAtAnyConcurrency(t *testing.T) {
 	for _, extractors := range []int{2, defaultExtractors, 16, 100} {
 		got := run(extractors)
 		if len(got) != len(want) {
-			t.Fatalf("%d extractors: %d passages, want %d", extractors, len(got), len(want))
+			t.Fatalf("%d Extractors: %d passages, want %d", extractors, len(got), len(want))
 		}
 		for i := range want {
 			if got[i] != want[i] {
-				t.Fatalf("%d extractors: passage %d is %+v, want %+v", extractors, i, got[i], want[i])
+				t.Fatalf("%d Extractors: passage %d is %+v, want %+v", extractors, i, got[i], want[i])
 			}
 		}
 	}
@@ -131,7 +131,7 @@ func TestReadNeverContainsMoreDecodedSourcesThanItHasExtractors(t *testing.T) {
 	for _, extractors := range []int{1, 3, defaultExtractors} {
 		vault := newConcurrentVault(content)
 		vault.hold = 2 * time.Millisecond
-		u := Search{readers: concurrentReaders{vault}, extractors: extractors}
+		u := Search{readers: concurrentReaders{vault}, Extractors: extractors}
 
 		if _, err := u.read(t.Context(), domain.Vault{ID: "v"}, found); err != nil {
 			t.Fatal(err)

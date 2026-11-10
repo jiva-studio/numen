@@ -5,13 +5,13 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/plugin-sdk'
-import { findCueAt, getText, type Cue } from '../lib/cues'
+import { findCueAt, getText } from '../lib/cues'
 import { useTranscriptDraft } from './draft'
 import { useTranscriptLines } from './lines'
 import { usePlayback } from './playback'
 import { createMediaTypeProbe, player, type MediaTypeProbe, type Player } from './player'
 import { recordings as servedRecordings } from '../api/wire'
-import type { Recordings, TextRange } from '../types'
+import type { Recordings, TextRange, Cue } from '../types'
 import { WORDS } from '../words'
 
 export type TranscriptState = ReturnType<typeof useTranscript>

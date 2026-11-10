@@ -83,7 +83,7 @@ func (l *Lister) getListing(ctx context.Context, agent agents.Agent) acp.Listing
 	key := agent.Program + "\x00" + strings.Join(agent.Command, "\x00")
 	// A failed load leaves the last listing of the cache, or none, and the agent is listed with it.
 	listing, _, err := l.models.Get(ctx, key, func(ctx context.Context) (acp.Listing, error) {
-		return l.readListing(ctx, agent)
+		return l.ReadListing(ctx, agent)
 	})
 	if err != nil {
 		return listing
@@ -91,7 +91,9 @@ func (l *Lister) getListing(ctx context.Context, agent agents.Agent) acp.Listing
 	return listing
 }
 
-func (l *Lister) readListing(ctx context.Context, agent agents.Agent) (listing acp.Listing, err error) {
+// ReadListing opens a session with the agent and reads the models it reports. A session that fails to close
+// fails the read.
+func (l *Lister) ReadListing(ctx context.Context, agent agents.Agent) (listing acp.Listing, err error) {
 	asking, stop := context.WithTimeout(ctx, listLimit)
 	defer stop()
 	session, err := acp.Open(asking, l.launcher, agent, acp.Tools{URL: "", Token: "", Names: nil})

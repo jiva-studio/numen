@@ -71,38 +71,29 @@ func (w readingParts) OpenIndex(ctx context.Context) (*vault.Index, error) {
 	}
 	queries := db.NoteQueries()
 	return vault.NewIndex(vault.IndexPorts{
-		Backend:       db,
-		Path:          w.indexPath,
-		Vaults:        db.Vaults(),
-		Notes:         db.Notes(),
-		FileStats:     queries,
-		NameMatches:   queries,
-		Headings:      queries,
-		Summaries:     queries,
-		NoteTypes:     queries,
-		TypedPaths:    queries,
-		VaultHolds:    queries,
-		NoteRefs:      queries,
-		OpeningNote:   queries,
-		NamedPaths:    queries,
-		Passages:      db.ChunkQueries(),
-		Progress:      db.ChunkQueries(),
-		Stats:         db.ChunkQueries(),
-		Sources:       db.Sources(),
-		SourcesUnder:  db.Sources(),
-		RemovalLookup: db.Sources(),
-		SourceRecords: db.Sources(),
-		SourceBacklog: db.Sources(),
-		Vectors:       db.Sources(),
-		VectorQueries: db.Sources(),
-		Maintenance:   db.Maintenance(),
-		Links:         queries,
-		Problems:      queries,
-		OpenTabs:      db.OpenTabs(),
-		TextVersions:  version.NewIndexVersions(db.TextVersions()),
-		SearchFloors:  db.SearchFloors(),
-		SearchSamples: db.SearchSamples(),
-		Nearest:       db.ChunkQueries(),
+		Closer: db,
+		File:   w.indexPath,
+		Stores: vault.IndexStores{
+			Vaults: db.Vaults(), Notes: db.Notes(), OpenTabs: db.OpenTabs(), Maintenance: db.Maintenance(),
+		},
+		NoteQueries: vault.IndexNoteQueries{
+			FileStats: queries, NameMatches: queries, Headings: queries, Summaries: queries, NoteTypes: queries,
+			TypedPaths: queries, VaultHolds: queries, NoteRefs: queries, OpeningNote: queries, NamedPaths: queries,
+			Links: queries, Problems: queries,
+		},
+		Chunks: vault.IndexChunks{
+			Passages: db.ChunkQueries(), Progress: db.ChunkQueries(), Stats: db.ChunkQueries(),
+			Index:   db,
+			Vectors: db.Sources(), VectorQueries: db.Sources(),
+		},
+		Source: vault.IndexSources{
+			Sources: db.Sources(), SourcesUnder: db.Sources(), RemovalLookup: db.Sources(),
+			SourceRecords: db.Sources(), SourceBacklog: db.Sources(),
+		},
+		Search: vault.IndexSearch{
+			Nearest: db.ChunkQueries(), SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
+		},
+		TextVersions: version.NewIndexVersions(db.TextVersions()),
 	}), nil
 }
 
@@ -123,12 +114,12 @@ func (w readingParts) setNoteCut(scan *vault.Scan, db *vault.Index) {
 	scan.ShouldRecut = w.chunks.Get() > 0
 	scan.GetOtherRecipePaths = func(ctx context.Context, v domain.VaultID, recipe string) ([]string, error) {
 		recipes := []string{recipe, filetext.Index{Sizes: scan.Cut.Sizes}.Recipe()}
-		return db.SourceBacklog().GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
+		return db.Source.SourceBacklog.GetSourcesWithOtherRecipe(ctx, v, domain.KindNote, recipes, math.MaxInt32)
 	}
 }
 
 func (w readingParts) scan(db *vault.Index, rebuild bool) vault.Scan {
-	scan := vault.NewScan(w.GetVaultReaders(), db.Vaults(), db.Notes(), db.FileStats(), db.Maintenance())
+	scan := vault.NewScan(w.GetVaultReaders(), db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
 	scan.ShouldRebuildIndex = rebuild
@@ -137,11 +128,11 @@ func (w readingParts) scan(db *vault.Index, rebuild bool) vault.Scan {
 
 // GetRefresh brings named notes up to date in the index, over the notes of the cache.
 func (w readingParts) GetRefresh(db *vault.Index) vault.Refresh {
-	return w.makeRefresh(db, db.Notes())
+	return w.makeRefresh(db, db.Stores.Notes)
 }
 
 func (w readingParts) makeRefresh(db *vault.Index, notes noteport.NoteRepository) vault.Refresh {
-	refresh := vault.NewRefresh(w.GetVaultReaders(), db.Vaults(), notes, db.RemovalLookup(), db.Sources(), clock.System{})
+	refresh := vault.NewRefresh(w.GetVaultReaders(), db.Stores.Vaults, notes, db.Source.RemovalLookup, db.Source.Sources, clock.System{})
 	refresh.Cut = w.cutNotes()
 	refresh.Ledger = db.Ledger()
 	return refresh
@@ -151,10 +142,10 @@ func (w readingParts) makeRefresh(db *vault.Index, notes noteport.NoteRepository
 func (w readingParts) OpenVaultWith(
 	db *vault.Index, walking vaultport.VaultReaders, watcher vaultport.VaultWatcher,
 ) *vault.VaultOpener {
-	scan := vault.NewScan(walking, db.Vaults(), db.Notes(), db.FileStats(), db.Maintenance())
+	scan := vault.NewScan(walking, db.Stores.Vaults, db.Stores.Notes, db.NoteQueries.FileStats, db.Stores.Maintenance)
 	w.setNoteCut(&scan, db)
 	scan.Walks = db.Walks()
-	buffered := &bufferednotes.Repository{NoteRepository: db.Notes()}
+	buffered := &bufferednotes.Repository{NoteRepository: db.Stores.Notes}
 	return vault.ConfigureVaultOpener(watcher, scan, buffered, w.makeRefresh(db, buffered))
 }
 
@@ -170,7 +161,7 @@ func (w readingParts) ReadWholeVault(
 	if _, err := w.GetVaultReaders().Open(v); err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	texts := filetext.NewIndex(w.GetVaultReaders(), db.Sources(), db.SourceRecords(), db.SourceBacklog(), db.RemovalLookup(), w.texts)
+	texts := filetext.NewIndex(w.GetVaultReaders(), db.Source.Sources, db.Source.SourceRecords, db.Source.SourceBacklog, db.Source.RemovalLookup, w.texts)
 	cutter := w.cutNotes()
 	texts.Sizes = cutter.Sizes
 	texts.Legibility = cutter.Legibility
@@ -191,7 +182,7 @@ func (w readingParts) ReadWholeVault(
 	if err != nil {
 		return indexing.ReadWholeVault{}, err
 	}
-	embed := vectors.NewEmbed(w.GetVaultReaders(), db.VectorQueries(), db.Vectors())
+	embed := vectors.NewEmbed(w.GetVaultReaders(), db.Chunks.VectorQueries, db.Chunks.Vectors)
 	embed.Claim = store.NewIndexClaim(derivedCoreFolder + "/indexing")
 	embed.Texts = w.texts
 	embed.Embedder = embedder

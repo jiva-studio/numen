@@ -1,12 +1,9 @@
 /**
  * The JSON fixtures in `testdata/api` are the messages of the contract between the backend and this
- * frontend. Each is checked against the interfaces of the type files of this folder and sent through the client.
+ * frontend. Each is checked against the interfaces of `types.ts` and sent through the client.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import commonSource from './common.ts?raw'
-import cardsSource from './cards.ts?raw'
-import presetsSource from './presets.ts?raw'
-import reviewSource from './review.ts?raw'
+import typesSource from '../lib/wire/types.ts?raw'
 import stopSource from '../lib/stop.ts?raw'
 
 const fixtureFiles = import.meta.glob('../../testdata/api/*.json', {
@@ -50,9 +47,7 @@ const parseTypes = (source: string) => {
   return { interfaces, enums }
 }
 
-const { interfaces, enums } = parseTypes(
-  commonSource + cardsSource + presetsSource + reviewSource + stopSource,
-)
+const { interfaces, enums } = parseTypes(typesSource + stopSource)
 
 const check = (value: unknown, typeName: string, path: string, isRequest: boolean): string[] => {
   if (typeName === 'string') return typeof value === 'string' ? [] : [`${path}: not a string`]

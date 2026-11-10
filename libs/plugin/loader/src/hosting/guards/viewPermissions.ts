@@ -10,7 +10,7 @@ type ViewKind = typeof CONVERSATION | typeof NOTE_EDITOR | typeof VAULT_SUMMARY
  */
 const VIEW_PERMISSIONS = new Map<string, readonly string[]>([
   [CONVERSATION, []],
-  [NOTE_EDITOR, ['vault:read']],
+  [NOTE_EDITOR, ['vault:read', 'vault:write']],
   [VAULT_SUMMARY, []],
 ] satisfies [ViewKind, readonly string[]][])
 

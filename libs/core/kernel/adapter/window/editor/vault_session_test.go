@@ -23,7 +23,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/windowview"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
@@ -760,7 +759,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 		t.Fatalf("the save failed: %v", rejected)
 	}
 
-	found, err := db.Passages().FindLexical(
+	found, err := db.Chunks.Passages.FindLexical(
 		t.Context(), installation.GetCurrentVault().ID, source.LexicalQuery{Text: "tetragrammaton", Kinds: []domain.SourceKind{domain.KindNote}, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
@@ -955,7 +954,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 			case <-asking.Done():
 				return
 			case <-time.After(20 * time.Millisecond):
-				if err := (windowview.View{Notices: f.installation.State}).FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
+				if err := f.installation.State.Notices.FocusPlace(asking, domain.Place{Path: "Somewhere.md"}); err != nil && asking.Err() == nil {
 					t.Error(err)
 				}
 			}

@@ -13,7 +13,7 @@ import (
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
+	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
 // SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file
@@ -24,7 +24,7 @@ func (c Config) SetEditorPluginWindow(db *vault.Index, opened *editor.Installati
 	focusPassages := file.NewFocusPassages(c.VaultReaders(), view)
 	c.SetPluginWindow(windowsession.NewPluginWindow(
 		&opened.State.Runtime,
-		c.FocusNote(db.NoteRefs(), view),
+		c.FocusNote(db.NoteQueries.NoteRefs, view),
 		windowsession.PassagesFocusFunc(func(ctx context.Context, v domain.Vault, path string, passages []domain.ByteRange) error {
 			return focusPassages.Execute(ctx, v, file.FocusPassagesInput{Path: path, Passages: passages})
 		}),

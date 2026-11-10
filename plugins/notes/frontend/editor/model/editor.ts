@@ -27,7 +27,7 @@ import {
   tabSizeCompartment,
   wrapCompartment,
 } from '../lib/setup'
-import { loadLanguage } from '../config/languages'
+import { loadLanguage } from '../lib/config/languages'
 import { addressOpener, addressResolver, saveHandler } from '../lib/outside'
 import { replace } from '../lib/change/replace'
 

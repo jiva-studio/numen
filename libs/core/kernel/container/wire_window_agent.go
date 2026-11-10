@@ -25,7 +25,7 @@ func mountAgent(w *windowWiring) {
 		handler.Start = agent.NewStartTask(taking)
 		handler.End = agent.NewEndConversation(taking)
 	}
-	path, served := windowagent.NewRoute(handler, state.CountQuestions())
+	path, served := windowagent.NewRoute(handler, state.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }
 

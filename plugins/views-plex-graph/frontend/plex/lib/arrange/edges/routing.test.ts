@@ -15,18 +15,9 @@ import {
   createRouting,
 } from './routing'
 import { neighbourhoods } from '../../../fixtures/neighbourhoods'
-import {
-  ARROW_LENGTH,
-  getArrow,
-  getHeading,
-  getLength,
-  createPointOnCurve,
-  type EdgeArrow,
-  type PlexEdge,
-} from '../../edge'
-import type { PlexNeighbourhood } from '../../neighbourhood'
+import { ARROW_LENGTH, getArrow, getHeading, getLength, createPointOnCurve } from '../../edge'
 import type { PlacedNode } from '../../node'
-import type { PlexNodeRelation } from '../../relation'
+import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNodeRelation } from '../../../../types'
 
 /** The ink of the label font, as the window measures it. */
 const TYPE = { ascent: 9, descent: 3, xHeight: 6 }

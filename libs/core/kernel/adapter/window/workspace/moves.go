@@ -7,7 +7,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/workspace/tablinks"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
 )
 
 // ReadDetachedTab returns the tab of a pending detach, with the state its kind
@@ -16,7 +16,7 @@ func (h *Handler) ReadDetachedTab(
 	_ context.Context, r *connect.Request[v1.ReadDetachedTabRequest],
 ) (*connect.Response[v1.ReadDetachedTabResponse], error) {
 	out := &v1.ReadDetachedTabResponse{}
-	if tab, moveID, ok := h.links.ReadDetached(r.Msg.GetWindowId(), r.Msg.GetTabId()); ok {
+	if tab, moveID, ok := h.links.Transfers.ReadDetached(r.Msg.GetWindowId(), r.Msg.GetTabId()); ok {
 		out.Tab = convertSavedTabToWire(tab)
 		out.MoveId = moveID
 	}
@@ -33,10 +33,10 @@ func (h *Handler) MoveTab(
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoWindowID)
 	}
 	tab := convertSavedTabFromWire(r.Msg.GetTab())
-	result := h.links.Move(r.Msg.GetWindowId(), r.Msg.GetTargetWindowId(), tab)
+	result := h.links.Transfers.Move(r.Msg.GetWindowId(), r.Msg.GetTargetWindowId(), tab)
 	select {
 	case <-ctx.Done():
-		h.links.CancelMove(tab.ID, result)
+		h.links.Transfers.CancelMove(tab.ID, result)
 		return nil, connect.NewError(connect.CodeCanceled, ctx.Err())
 	case outcome := <-result:
 		return connect.NewResponse(&v1.MoveTabResponse{Error: convertMoveErrorToWire(outcome)}), nil
@@ -47,7 +47,7 @@ func (h *Handler) MoveTab(
 func (h *Handler) AcceptTabMove(
 	_ context.Context, r *connect.Request[v1.AcceptTabMoveRequest],
 ) (*connect.Response[v1.AcceptTabMoveResponse], error) {
-	outcome := h.links.Accept(r.Msg.GetWindowId(), r.Msg.GetTabId(), r.Msg.GetMoveId())
+	outcome := h.links.Transfers.Accept(r.Msg.GetWindowId(), r.Msg.GetTabId(), r.Msg.GetMoveId())
 	return connect.NewResponse(&v1.AcceptTabMoveResponse{Error: convertMoveErrorToWire(outcome)}), nil
 }
 
@@ -55,27 +55,27 @@ func (h *Handler) AcceptTabMove(
 func (h *Handler) HighlightWindow(
 	_ context.Context, r *connect.Request[v1.HighlightWindowRequest],
 ) (*connect.Response[v1.HighlightWindowResponse], error) {
-	h.links.Highlight(r.Msg.GetWindowId(), r.Msg.GetIsOn())
+	h.links.Windows.Highlight(r.Msg.GetWindowId(), r.Msg.GetIsOn())
 	return connect.NewResponse(&v1.HighlightWindowResponse{}), nil
 }
 
-func convertMoveErrorToWire(outcome tablinks.MoveError) v1.TabMoveErrorCode {
+func convertMoveErrorToWire(outcome tablink.MoveError) v1.TabMoveErrorCode {
 	switch outcome {
-	case tablinks.MoveErrorWindowClosed:
+	case tablink.MoveErrorWindowClosed:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_WINDOW_CLOSED
-	case tablinks.MoveErrorTimeout:
+	case tablink.MoveErrorTimeout:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_TIMEOUT
-	case tablinks.MoveErrorNotOwner:
+	case tablink.MoveErrorNotOwner:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_NOT_OWNER
-	case tablinks.MoveErrorCancelled:
+	case tablink.MoveErrorCancelled:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_CANCELED
 	default:
 		return v1.TabMoveErrorCode_TAB_MOVE_ERROR_CODE_UNSPECIFIED
 	}
 }
 
-func convertSavedTabFromWire(tab *v1.Tab) tablinks.SavedTab {
-	return tablinks.SavedTab{
+func convertSavedTabFromWire(tab *v1.Tab) tablink.SavedTab {
+	return tablink.SavedTab{
 		ID:    tab.GetId(),
 		Kind:  tab.GetKind(),
 		Path:  tab.GetPath(),
@@ -84,6 +84,6 @@ func convertSavedTabFromWire(tab *v1.Tab) tablinks.SavedTab {
 	}
 }
 
-func convertSavedTabToWire(tab tablinks.SavedTab) *v1.Tab {
+func convertSavedTabToWire(tab tablink.SavedTab) *v1.Tab {
 	return &v1.Tab{Id: tab.ID, Kind: tab.Kind, Path: tab.Path, Title: tab.Title, State: tab.State}
 }

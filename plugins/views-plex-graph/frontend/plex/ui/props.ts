@@ -3,14 +3,12 @@
  */
 import type { MenuTrigger, Viewport } from '@numen/ui'
 import type { Placement, PlexOptionsInput } from '../lib/arrange'
-import type { PlexHeading } from '../lib/inside'
-import type { PlexNeighbourhood } from '../lib/neighbourhood'
 import type { PlacedNode, Position } from '../lib/node'
-import type { PlexRelation } from '../lib/relation'
 import type { PlexPending } from './render/props'
 import type { ReachStrategy } from '../model/interaction/reachStrategy'
-import type { PlexDestination, ShowStrategy } from '../model/interaction/destination'
+import type { ShowStrategy } from '../model/interaction/destination'
 import type { Clock } from '../model/transition'
+import type { PlexHeading, PlexNeighbourhood, PlexRelation, PlexDestination } from '../../types'
 
 export interface PlexProps {
   neighbourhood: PlexNeighbourhood

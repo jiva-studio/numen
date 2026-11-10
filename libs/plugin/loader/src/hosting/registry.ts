@@ -16,6 +16,7 @@ import type {
 import type { Manifest } from '@numen/core-client'
 import type { SlotViewRegistry } from '../slot-views/slotViews'
 import type { PluginListener } from './events'
+import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginHostDeps } from './types'
 
 export interface RegisteredReader {
@@ -69,12 +70,7 @@ export interface PluginItemRegistration<T> {
 }
 
 export function clearSubscriptions(ctx?: PluginContext): void {
-  if (!ctx) return
-  while (ctx.plugin.subscriptions.length > 0) {
-    const sub = ctx.plugin.subscriptions.pop()
-    // Stryker disable next-line OptionalChaining: subscriptions only hold Disposable objects
-    sub?.dispose()
-  }
+  if (ctx) disposeSubscriptions(ctx.plugin.subscriptions)
 }
 
 export function cleanupMapItems(

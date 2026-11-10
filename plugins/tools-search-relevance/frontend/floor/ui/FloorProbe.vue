@@ -6,7 +6,7 @@ import { computed, ref } from 'vue'
 import { Button } from '@numen/ui'
 import type { FloorProbeResult } from '../model/types'
 import { describeProbe } from '../model/present'
-import { WORDS } from '../words'
+import { WORDS } from '../lib/words'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

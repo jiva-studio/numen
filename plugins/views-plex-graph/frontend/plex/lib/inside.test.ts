@@ -4,13 +4,10 @@
  */
 import { describe, expect, it } from 'vitest'
 import { easeOut } from './arrange'
-import {
-  getNodeHeadings as baseGetNodeHeadings,
-  type HeadingsDeps,
-  type PlexHeading,
-} from './inside'
+import { getNodeHeadings as baseGetNodeHeadings, type HeadingsDeps } from './inside'
 import { getFurthest, getOpenHeadings, scrollBy } from './open'
 import type { PlacedNode } from './node'
+import type { PlexHeading } from '../../types'
 
 const NODE: PlacedNode = {
   id: 'a',
