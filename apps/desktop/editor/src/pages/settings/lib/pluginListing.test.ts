@@ -26,8 +26,8 @@ describe('createPluginListing', () => {
   })
 
   it('marks only an available entry as offered', () => {
-    const offered = createCatalogEntry('a', { isAvailable: true })
-    expect(createPluginListing(offered).isAvailable).toBe(true)
+    const entry = createCatalogEntry('a', { isAvailable: true })
+    expect(createPluginListing(entry).isAvailable).toBe(true)
     expect(createPluginListing(createCatalogEntry('b')).isAvailable).toBe(false)
   })
 })

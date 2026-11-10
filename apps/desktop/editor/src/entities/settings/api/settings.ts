@@ -201,7 +201,6 @@ export async function* watchSettings(signal: AbortSignal): AsyncGenerator<readon
 interface ChosenPath {
   readonly path: string
   readonly isChosen: boolean
-  /** Why the setting does not accept the path; empty when the path was written. */
   readonly problem: string
 }
 

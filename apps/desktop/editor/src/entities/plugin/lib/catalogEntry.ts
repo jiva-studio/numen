@@ -1,17 +1,16 @@
 /**
- * One plugin as the catalog knows it, in the words the window uses.
+ * One plugin as the catalog knows it, in the words the window uses. The category is the one the
+ * plugin declares, else the one its source gives, and empty where neither does. `isAvailable` holds
+ * where a source offers the plugin and it is not installed.
  */
 export interface CatalogEntry {
   readonly id: string
   readonly name: string
   readonly version: string
   readonly description: string
-  /** The category the plugin declares, else the one its source gives; empty where neither does. */
   readonly category: string
   readonly feature: string
-  /** The kinds of tab the plugin provides. */
   readonly tabKinds: readonly string[]
-  /** Whether a source offers the plugin and it is not installed. */
   readonly isAvailable: boolean
 }
 

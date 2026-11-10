@@ -30,7 +30,6 @@ const toWireCondition = (when: PluginSettingCondition) => ({
   is: [...when.is],
 })
 
-/** The options of a declared setting as the core sends them. */
 const toWireOptions = (setting: PluginSettingInfo) => ({
   optionsFrom: setting.optionsFrom ?? '',
   options: (setting.options ?? []).map(toWireOption),
@@ -51,7 +50,6 @@ const toWireOptions = (setting: PluginSettingInfo) => ({
   ...(setting.when ? { when: toWireCondition(setting.when) } : {}),
 })
 
-/** The bounds of a declared setting, where it has them. */
 const toWireBounds = (setting: PluginSettingInfo) => ({
   ...(setting.min !== undefined ? { min: setting.min } : {}),
   ...(setting.max !== undefined ? { max: setting.max } : {}),
@@ -144,15 +142,15 @@ const toWireMenus = (menus: readonly SecretMenu[] = []) =>
     secretIds: menu.secrets.map((one) => one.id),
   }))
 
-const toWireConfiguration = (configuration: Configuration) => ({
-  written: configuration.written,
-  path: configuration.path,
-  models: configuration.models.map(toWireModel),
-  plugins: (configuration.plugins ?? []).map(toWirePlugin),
-  app: (configuration.app ?? []).map(toWireSetting),
-  secretSections: toWireSections(configuration.secretSections),
-  secretMenus: toWireMenus(configuration.secretMenus),
-  credentialsPath: configuration.credentialsPath ?? '',
+const toWireConfiguration = (answer: Configuration) => ({
+  written: answer.written,
+  path: answer.path,
+  models: answer.models.map(toWireModel),
+  plugins: (answer.plugins ?? []).map(toWirePlugin),
+  app: (answer.app ?? []).map(toWireSetting),
+  secretSections: toWireSections(answer.secretSections),
+  secretMenus: toWireMenus(answer.secretMenus),
+  credentialsPath: answer.credentialsPath ?? '',
 })
 
 /** What the core does with the settings, in the window's types. A call left out is unanswered. */
@@ -218,7 +216,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
   const { createSecret, renameSecret, writeSecret, deleteSecret, deleteSecretGroup } = core
   const { listSecretStates, moveSecret, renameSecretGroup } = core
   const { allowPluginSecret, denyPluginSecret } = core
-  const done = {}
+  const empty = {}
   return {
     ...(createSecret
       ? {
@@ -231,7 +229,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           renameSecret: async (r: { id: string; name: string }) => {
             await renameSecret(r.id, r.name)
-            return done
+            return empty
           },
         }
       : {}),
@@ -239,7 +237,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           writeSecret: async (r: { id: string; value: string }) => {
             await writeSecret(r.id, r.value)
-            return done
+            return empty
           },
         }
       : {}),
@@ -247,7 +245,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           deleteSecret: async (r: { id: string }) => {
             await deleteSecret(r.id)
-            return done
+            return empty
           },
         }
       : {}),
@@ -255,7 +253,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           deleteSecretGroup: async (r: { group: string }) => {
             await deleteSecretGroup(r.group)
-            return done
+            return empty
           },
         }
       : {}),
@@ -270,7 +268,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           moveSecret: async (r: { id: string; beforeId: string }) => {
             await moveSecret(r.id, r.beforeId)
-            return done
+            return empty
           },
         }
       : {}),
@@ -278,7 +276,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           renameSecretGroup: async (r: { group: string; name: string }) => {
             await renameSecretGroup(r.group, r.name)
-            return done
+            return empty
           },
         }
       : {}),
@@ -286,7 +284,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           allowPluginSecret: async (r: Declaration) => {
             await allowPluginSecret(r.secretId, r.pluginId, r.name, r.group)
-            return done
+            return empty
           },
         }
       : {}),
@@ -294,7 +292,7 @@ const answerSecrets = (core: Partial<SettingsCore>): Answers => {
       ? {
           denyPluginSecret: async (r: Declaration) => {
             await denyPluginSecret(r.secretId, r.pluginId, r.name, r.group)
-            return done
+            return empty
           },
         }
       : {}),

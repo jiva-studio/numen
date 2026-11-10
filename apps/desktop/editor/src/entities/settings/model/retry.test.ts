@@ -14,7 +14,6 @@ afterEach(() => {
   restore = undefined
 })
 
-/** A core that answers a retry with why the plugin failed again, or rejects it with `rejection`. */
 const createRetry = (answer: { failure: string } | { rejection: string }) => {
   const calls: string[] = []
   restore = installCoreAnswers({

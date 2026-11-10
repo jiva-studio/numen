@@ -15,9 +15,8 @@ const words = {
   unreadSettings: 'The settings could not be read.',
 }
 
-/** What the core answers to a read of the settings, over the fields a test leaves out. */
-const answerWith = (written: string, rest: Record<string, unknown> = {}) => ({
-  written,
+const answerWith = (text: string, rest: Record<string, unknown> = {}) => ({
+  written: text,
   path: '/numen.json',
   models: [],
   plugins: [],
@@ -111,11 +110,11 @@ describe('what remains at a setting', () => {
   })
 
   /** A store over a vault with one plugin whose `autoRun` setting defaults to true. */
-  const createPluginStore = (written: string) => {
+  const createPluginStore = (text: string) => {
     restore = installCoreAnswers({
       settingsService: {
         getSettings: () =>
-          answerWith(written, {
+          answerWith(text, {
             plugins: [
               {
                 id: 'my.plugin',
@@ -351,10 +350,10 @@ describe('the settings of the shell', () => {
     max: 1.75,
   }
 
-  /** A store over a vault that declares the shell setting and holds `written`. */
-  const createShellStore = (written: string) => {
+  /** A store over a vault that declares the shell setting and holds `text`. */
+  const createShellStore = (text: string) => {
     restore = installCoreAnswers({
-      settingsService: { getSettings: () => answerWith(written, { app: [TEXT_SCALE] }) },
+      settingsService: { getSettings: () => answerWith(text, { app: [TEXT_SCALE] }) },
     })
     return createSettingsStore(words, vi.fn())
   }

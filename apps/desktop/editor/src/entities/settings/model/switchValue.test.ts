@@ -7,7 +7,6 @@ import { createSettingsStore } from './store'
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const AT = ['p', 'enabled'] as const
 
-/** What the core answers to a read of the settings. */
 const answerWith = (written: string) => ({
   written,
   path: '/f',
@@ -100,7 +99,6 @@ const createHeldVault = (isEnabled: boolean) => {
   return { reads, writes, isActive: () => isActive }
 }
 
-/** Starts a read of the settings and waits until the core has been asked for it. */
 const startRead = async (
   store: ReturnType<typeof createSettingsStore>,
   vault: ReturnType<typeof createHeldVault>,
