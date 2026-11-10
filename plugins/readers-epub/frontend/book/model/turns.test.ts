@@ -21,10 +21,9 @@ const MARKS: readonly Mark[] = [
   { at: 300, x: 3000 },
 ]
 
-const paperWithStyle = () => {
+/** Replaces the style of `element` by a stub and returns the list of what is written to it. */
+const recordStyle = (element: HTMLElement, translate = ''): string[] => {
   const writes: string[] = []
-  const paper = document.createElement('div')
-  let translate = ''
   const style = {
     get translate() {
       return translate
@@ -37,7 +36,13 @@ const paperWithStyle = () => {
       writes.push(`transition [${value}]`)
     },
   }
-  Object.defineProperty(paper, 'style', { value: style })
+  Object.defineProperty(element, 'style', { value: style })
+  return writes
+}
+
+const paperWithStyle = () => {
+  const paper = document.createElement('div')
+  const writes = recordStyle(paper)
   return { paper, writes }
 }
 
@@ -311,54 +316,54 @@ describe('a spread entered from the adjacent document', () => {
   const createLeaving = (translate: string, target = Number.parseFloat(translate)) => {
     const holder = document.createElement('div')
     const copy = document.createElement('div')
-    copy.style.translate = translate
+    const copyWrites = recordStyle(copy, translate)
     holder.append(copy)
     const leaving: LeavingSpread = { copy, target, remove: vi.fn(() => copy.remove()) }
-    return { holder, leaving }
+    return { holder, leaving, copyWrites }
   }
 
   it('starts one spread past the far edge and moves the copy out after a forward turn', () => {
     const { turns, writes } = setUp()
-    const { holder, leaving } = createLeaving('-5000px 0')
+    const { holder, leaving, copyWrites } = createLeaving('-5000px 0')
 
     turns.moves.enterSpread(0, 'next', leaving)
 
     expect(turns.position.standing.value).toBe(0)
     expect(writes).toStrictEqual(['translate 1000px 0', 'translate 0px 0'])
-    expect(leaving.copy.style.translate).toBe('-6000px 0')
+    expect(copyWrites).toStrictEqual(['translate -5000px 0', 'translate -6000px 0'])
     expect(leaving.remove).toHaveBeenCalledOnce()
     expect(holder.children).toHaveLength(0)
   })
 
   it('starts one spread on the near side after a backward turn', () => {
     const { turns, writes } = setUp()
-    const { leaving } = createLeaving('0px 0')
+    const { leaving, copyWrites } = createLeaving('0px 0')
 
     turns.moves.enterSpread(3, 'back', leaving)
 
     expect(turns.position.standing.value).toBe(3)
     expect(writes).toStrictEqual(['translate -4000px 0', 'translate -3000px 0'])
-    expect(leaving.copy.style.translate).toBe('1000px 0')
+    expect(copyWrites).toStrictEqual(['translate 0px 0', 'translate 1000px 0'])
   })
 
   it('carries a copy taken during a forward turn one spread past where that turn went', () => {
     const { turns, writes } = setUp()
-    const { leaving } = createLeaving('-2600px 0', -3000)
+    const { leaving, copyWrites } = createLeaving('-2600px 0', -3000)
 
     turns.moves.enterSpread(0, 'next', leaving)
 
     expect(writes).toStrictEqual(['translate 1400px 0', 'translate 0px 0'])
-    expect(leaving.copy.style.translate).toBe('-4000px 0')
+    expect(copyWrites).toStrictEqual(['translate -2600px 0', 'translate -4000px 0'])
   })
 
   it('carries a copy taken during a backward turn one spread past where that turn went', () => {
     const { turns, writes } = setUp()
-    const { leaving } = createLeaving('-1400px 0', -1000)
+    const { leaving, copyWrites } = createLeaving('-1400px 0', -1000)
 
     turns.moves.enterSpread(3, 'back', leaving)
 
     expect(writes).toStrictEqual(['translate -4400px 0', 'translate -3000px 0'])
-    expect(leaving.copy.style.translate).toBe('0px 0')
+    expect(copyWrites).toStrictEqual(['translate -1400px 0', 'translate 0px 0'])
   })
 
   it('removes the copy without a drawn document', () => {
@@ -394,14 +399,14 @@ describe('the place a turn goes to', () => {
     vi.spyOn(window, 'getComputedStyle').mockReturnValue({
       getPropertyValue: () => '200ms',
     } as unknown as CSSStyleDeclaration)
-    const { turns, paper } = setUp()
+    const { turns, paper, writes } = setUp()
     turns.moves.stand(0, 'auto')
 
     turns.moves.stand(2, 'smooth')
     now += 20
     queue.shift()?.(now)
 
-    expect(Number.parseFloat(paper.style.translate)).toBeGreaterThan(-2000)
+    expect(Number.parseFloat(writes.at(-1)?.replace('translate ', '') ?? '')).toBeGreaterThan(-2000)
     expect(getTurnTarget(paper)).toBe(-2000)
     vi.restoreAllMocks()
   })

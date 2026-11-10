@@ -189,11 +189,15 @@ describe('how wide a box is drawn', () => {
       element: Element,
       pseudo?: string | null,
     ) => {
-      const declared = (element as HTMLElement).style?.getPropertyValue('font-size') ?? ''
-      if (!declared.startsWith('var(--numen')) return engine(element, pseudo)
+      // The box the measurer holds is hidden from assistive technology; its label word is the second child.
+      const isBox = element.getAttribute('aria-hidden') === 'true'
+      const isLabel =
+        element.parentElement?.getAttribute('aria-hidden') === 'true' &&
+        element.previousElementSibling !== null
+      if (!isBox && !isLabel) return engine(element, pseudo)
 
       return {
-        fontSize: `${declared.includes('edge-label') ? theme.label : theme.size}px`,
+        fontSize: `${isLabel ? theme.label : theme.size}px`,
         fontFamily: 'Test Sans',
         paddingInlineStart: `${theme.padding}px`,
         columnGap: `${theme.gap}px`,

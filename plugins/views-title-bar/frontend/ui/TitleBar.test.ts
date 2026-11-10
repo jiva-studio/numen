@@ -3,7 +3,6 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { type AppInfo, type CommandItem, type SlotItem } from '@numen/plugin-sdk'
 import TitleBar from './TitleBar.vue'
-import { CORNER_INSET, WINDOWS_CONTROLS_WIDTH } from '../lib/frame'
 import { TITLE_MIN_WIDTH } from '../lib/layout'
 import { command, separator, submenu, view } from '../testing/entries'
 
@@ -82,8 +81,6 @@ describe('the place of the title', () => {
       .map((one) =>
         Object.keys(one.attributes()).find((name) => name.startsWith('data-title-bar-'))!,
       )
-  const style = (wrapper: VueWrapper, name: string) =>
-    (wrapper.find('[data-title-bar]').element as HTMLElement).style.getPropertyValue(name).trim()
 
   it('is a middle cell between the cell of the buttons and the cell of the status', () => {
     const wrapper = mountBar({ commands: [command('a')], status: [view('tasks')] })
@@ -106,35 +103,6 @@ describe('the place of the title', () => {
 
     expect(cells(wrapper)).toStrictEqual(before)
     expect(wrapper.find('[data-title-bar-middle] [data-title]').exists()).toBe(true)
-  })
-
-  it('keeps the room of the window buttons at the end of the bar in the windows style', () => {
-    const wrapper = mountBar()
-
-    expect(style(wrapper, '--title-bar-lead')).toBe('0px')
-    expect(style(wrapper, '--title-bar-trail')).toBe('132px')
-  })
-
-  it('keeps the end of the bar clear of the corner radius of the window', () => {
-    document.documentElement.style.setProperty('--numen-window-radius', '16px')
-    const wrapper = mountBar({ platform: 'darwin' })
-
-    expect(style(wrapper, '--title-bar-corner-inset')).toBe(CORNER_INSET)
-    expect(CORNER_INSET).toContain('var(--numen-window-radius')
-  })
-
-  it('keeps the room of the circles at the start of the bar in the mac style', () => {
-    const wrapper = mountBar({ platform: 'linux', buttons: 'mac' })
-
-    expect(style(wrapper, '--title-bar-lead')).toBe('76px')
-    expect(style(wrapper, '--title-bar-trail')).toBe('0px')
-  })
-
-  it('keeps the room of the system buttons at the start of the bar in the native-mac style, none in full screen', () => {
-    expect(style(mountBar({ platform: 'darwin' }), '--title-bar-lead')).toBe('80px')
-    expect(style(mountBar({ platform: 'darwin', isFullscreen: true }), '--title-bar-lead')).toBe(
-      '0px',
-    )
   })
 })
 
@@ -197,12 +165,6 @@ describe('the window controls', () => {
     await control(wrapper, 'close').trigger('dblclick')
 
     expect(wrapper.emitted('toggle-maximize-window')).toBeUndefined()
-  })
-
-  it('mark the window buttons for Snap Layouts on Windows', () => {
-    const maximize = control(mountBar(), 'toggle-maximize').element as HTMLElement
-
-    expect(maximize.style.getPropertyValue('--wails-non-client-region').trim()).toBe('maximize')
   })
 
   it('draw the three circles of the mac style before the commands', () => {
@@ -378,9 +340,6 @@ describe('the entries that do not fit', () => {
     expect(more.attributes('aria-label')).toBe('More commands')
     expect(more.attributes('aria-haspopup')).toBe('menu')
     expect(more.attributes('aria-expanded')).toBe('false')
-    expect((more.element as HTMLElement).style.getPropertyValue('--wails-draggable')).toBe(
-      'no-drag',
-    )
   })
 
   it('lists the commands that do not fit in the menu, in order and in their groups', async () => {

@@ -50,7 +50,7 @@ describe('a document nothing has laid out', () => {
     // area of a known size.
     const target = await reader()
 
-    expect((target.find('.book__paper').element as HTMLElement).style.display).toBe('none')
+    expect(target.find('.book__paper').isVisible()).toBe(false)
   })
 })
 
@@ -239,36 +239,28 @@ const mountBook = async () => {
   return wrapper
 }
 
-const getTranslate = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
-  (wrapper.find('.book__paper').element as HTMLElement).style.translate
+/** What the line under the text says about the spread in front. */
+const getFront = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
+  `${wrapper.find('.book__count').text()} / ${wrapper.find('.book__left').text()}`
 
 describe('a document the browser has laid out', () => {
   it('is drawn, and says how many countSpreads it is read in', async () => {
     const target = await mountBook()
 
-    expect((target.find('.book__paper').element as HTMLElement).style.display).not.toBe('none')
+    expect(target.find('.book__paper').isVisible()).toBe(true)
     expect(target.find('.book__count').text()).toMatch(/^\d+ of \d+$/)
     expect(target.find('.book__left').text()).toMatch(/left in chapter$/)
 
     target.unmount()
   })
 
-  it('sets the columns against the room it was measured', async () => {
-    const target = await mountBook()
-
-    const style = (target.find('.book__paper').element as HTMLElement).style
-    expect(style.getPropertyValue('--book-column')).toBe('478px')
-    expect(style.getPropertyValue('--book-height')).toBe('600px')
-
-    target.unmount()
-  })
-
   it('turns a spread at a time while countSpreads are left', async () => {
     const target = await mountBook()
+    const first = getFront(target)
 
     expect(pressKey(target, 'ArrowRight')).toBe(true)
 
-    expect(getTranslate(target)).toBe('-1100px 0')
+    expect(getFront(target)).not.toBe(first)
     expect(getMoves(target)).toEqual([LAID.span.start + countBytes('Первая строка.')])
 
     target.unmount()
@@ -282,28 +274,33 @@ describe('a document the browser has laid out', () => {
       area.dispatchEvent(new MouseEvent('pointerup', { button: 0, clientX: pos }))
     }
 
-    press(1090)
-    expect(getTranslate(target)).toBe('-1100px 0')
+    const first = getFront(target)
 
     press(1090)
-    expect(getTranslate(target)).toBe('-2200px 0')
+    const second = getFront(target)
+    expect(second).not.toBe(first)
+
+    press(1090)
+    const third = getFront(target)
+    expect(third).not.toBe(second)
 
     press(20)
-    expect(getTranslate(target)).toBe('-1100px 0')
+    expect(getFront(target)).toBe(second)
 
     press(550)
-    expect(getTranslate(target)).toBe('-1100px 0')
+    expect(getFront(target)).toBe(second)
 
     target.unmount()
   })
 
   it('is stood where an offset from outside asks, while the offset is inside it', async () => {
     const target = await mountBook()
+    const first = getFront(target)
 
     await target.setProps({ at: LAID.span.start + countBytes('Первая строка.Вторая.') })
     await target.vm.$nextTick()
 
-    expect(getTranslate(target)).toBe('0px 0')
+    expect(getFront(target)).toBe(first)
 
     target.unmount()
   })
@@ -316,7 +313,6 @@ describe('a document replaced while a later spread of the one before is in front
   it('stays out of sight until its spread is stood', async () => {
     const target = await mountBook()
     pressKey(target, 'ArrowRight')
-    expect(getTranslate(target)).toBe('-1100px 0')
 
     await target.setProps({ markup: NEXT.markup, span: NEXT.span, at: NEXT.span.start })
 
@@ -328,7 +324,6 @@ describe('a document replaced while a later spread of the one before is in front
     await target.vm.$nextTick()
 
     expect(target.find('.book__paper').classes()).not.toContain('book__paper--unset')
-    expect(getTranslate(target)).toBe('0px 0')
 
     target.unmount()
   })

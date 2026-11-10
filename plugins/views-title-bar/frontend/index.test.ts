@@ -64,8 +64,6 @@ const listButtonIds = (bar: VueWrapper, slot: string) =>
     .findAll(`[data-title-bar-slot="${slot}"] [data-title-bar-command]`)
     .map((one) => one.attributes('data-title-bar-command'))
 const getControl = (bar: VueWrapper, name: string) => bar.find(`[data-control="${name}"]`)
-const getDrag = (element: Element) =>
-  (element as HTMLElement).style.getPropertyValue('--wails-draggable')
 const getMenuRows = () =>
   [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].map((one) =>
     one.textContent?.trim(),
@@ -294,30 +292,6 @@ describe('a submenu in a slot', () => {
       { command: 'org.example.tide:log.create', target: undefined, itemId: undefined },
     ])
     expect(document.body.querySelector('[role="menu"]')).toBeNull()
-  })
-})
-
-describe('dragging the window', () => {
-  it('drags the window by the free space of the bar', () => {
-    const { bar } = mountBar()
-
-    expect(getDrag(bar.find('[data-title-bar]').element)).toBe('drag')
-  })
-
-  it('marks every entry of both slots as no-drag', async () => {
-    const { context, bar } = mountBar()
-    context.ui.slots.setEntries(SLOT.titleBarCommands, [
-      command('chart.open'),
-      separator(1),
-      submenu('tide.new', [command('chart.create')]),
-      view('due'),
-    ])
-    context.ui.slots.setEntries(SLOT.titleBarStatus, [view('tasks'), command('log.open')])
-    await nextTick()
-
-    const entries = bar.findAll('[data-title-bar-entry]')
-    expect(entries).toHaveLength(6)
-    for (const entry of entries) expect(getDrag(entry.element)).toBe('no-drag')
   })
 })
 

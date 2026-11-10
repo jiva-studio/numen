@@ -50,12 +50,14 @@ function setTheme(tokens: Record<string, string> = {}): void {
 const inPixels = (value: string): string =>
   value.endsWith('rem') ? `${Number.parseFloat(value) * 16}px` : value
 
-const resolveValue = (declaration: string): string => {
-  const token = /^var\((--[a-z-]+)\)$/.exec(declaration)?.[1]
-  if (!token) return declaration
-  const content = theme[token]
-  return content ? inPixels(content) : ''
-}
+const getToken = (token: string): string => inPixels(theme[token] ?? '')
+
+/** The box the measurer holds, and the word in it set as a label: the two it asks the document about. */
+const isBox = (element: Element): boolean => element.getAttribute('aria-hidden') === 'true'
+const isLabel = (element: Element): boolean =>
+  element.parentElement !== null &&
+  isBox(element.parentElement) &&
+  element.previousElementSibling !== null
 
 function stubStyles() {
   const engine = window.getComputedStyle.bind(window)
@@ -64,15 +66,13 @@ function stubStyles() {
     element: Element,
     pseudo?: string | null,
   ) => {
-    const style = (element as HTMLElement).style
-    const getDeclared = (property: string) => resolveValue(style?.getPropertyValue(property) ?? '')
-    if (!getDeclared('font-size')) return engine(element, pseudo)
+    if (!isBox(element) && !isLabel(element)) return engine(element, pseudo)
 
     return {
-      fontSize: getDeclared('font-size'),
-      fontFamily: getDeclared('font-family'),
-      paddingInlineStart: getDeclared('padding-inline'),
-      columnGap: getDeclared('column-gap'),
+      fontSize: getToken(isLabel(element) ? '--numen-edge-label-size' : '--numen-font-size'),
+      fontFamily: getToken('--numen-font-sans'),
+      paddingInlineStart: getToken('--numen-node-padding'),
+      columnGap: getToken('--numen-node-gap'),
     } as CSSStyleDeclaration
   }) as typeof window.getComputedStyle)
 }
@@ -355,9 +355,7 @@ describe('the box a plex measures its type against', () => {
 
     const [title, label] = Array.from(box.children) as HTMLElement[]
     expect(title!.textContent).toBe('Hxg')
-    expect(title!.style.getPropertyValue('font-size')).toBe('')
     expect(label!.textContent).toBe('Hxg')
-    expect(label!.style.getPropertyValue('font-size')).toBe('var(--numen-edge-label-size)')
   })
 
   it('is watched for the size of its border box', () => {

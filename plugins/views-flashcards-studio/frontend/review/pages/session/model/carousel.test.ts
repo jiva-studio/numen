@@ -44,11 +44,18 @@ const createStrip = (
   Object.defineProperty(window_, 'clientWidth', { value: 600 })
   const moves: { to: number; smoothing: string }[] = []
   let scrollLeftValue = 0
+  let smoothing = ''
+  Object.defineProperty(window_.style, 'scrollBehavior', {
+    get: () => smoothing,
+    set: (to: string) => {
+      smoothing = to
+    },
+  })
   Object.defineProperty(window_, 'scrollLeft', {
     get: () => scrollLeftValue,
     set: (to: number) => {
       scrollLeftValue = to
-      moves.push({ to, smoothing: window_.style.scrollBehavior })
+      moves.push({ to, smoothing })
     },
   })
   const capture = vi.fn()
@@ -105,6 +112,7 @@ const createStrip = (
     windowRef,
     currentPlace: displayedItems,
     moves,
+    getSmoothing: () => smoothing,
     capture,
     errors,
     scrollTo,
@@ -116,11 +124,11 @@ describe('where the strip remains', () => {
   // A window opening on a card puts the card there: one seen sliding into place
   // looks like it is leaving.
   it('is put on its stop as it opens, with the smoothing off and back on after', () => {
-    const { window_, moves } = createStrip('after')
+    const { window_, moves, getSmoothing } = createStrip('after')
 
     expect(window_.scrollLeft).toBe(440)
     expect(moves).toEqual([{ to: 440, smoothing: 'auto' }])
-    expect(window_.style.scrollBehavior).toBe('')
+    expect(getSmoothing()).toBe('')
   })
 
   it('remains every stop at the start while there is no card to read them off', () => {

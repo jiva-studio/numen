@@ -3,7 +3,7 @@
  * the columns are set with, and how tall a column is once the text is drawn.
  */
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, shallowRef } from 'vue'
 
 import { useBookColumns } from './columns'
@@ -107,8 +107,9 @@ describe('how tall a column is once the text is drawn', () => {
   }
 
   const readItem = (box: HTMLElement, text: HTMLElement): string => {
+    const setProperty = vi.spyOn(text.style, 'setProperty')
     setUp(800, 600).readColumns(box, text)
-    return text.style.getPropertyValue('--book-paper')
+    return setProperty.mock.calls.find(([name]) => name === '--book-paper')?.[1] ?? ''
   }
 
   it('is the whole lines of a paragraph that fit the box', () => {
