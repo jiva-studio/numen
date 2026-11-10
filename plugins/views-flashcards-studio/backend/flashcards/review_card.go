@@ -33,6 +33,13 @@ type ReviewCard struct {
 // before the answer and the back shown after it, as HTML.
 func (s ReviewCard) Lay() (front, back string) { return format.Lay(s.reviewCard, s.card) }
 
+// reviewCardNotes is what listing review cards asks the index: whether it holds the vault, and
+// which notes are decks or presets.
+type reviewCardNotes interface {
+	ports.IndexQueries
+	ports.TypePathQueries
+}
+
 // ListReviewCards returns every review card a vault holds, read from its files.
 //
 // It writes nothing. A card without a card id cannot be answered and is
@@ -40,7 +47,7 @@ func (s ReviewCard) Lay() (front, back string) { return format.Lay(s.reviewCard,
 // any review card is requested.
 type ListReviewCards struct {
 	readers  ports.VaultReaders
-	notes    ports.NoteQueries
+	notes    reviewCardNotes
 	links    ports.LinkQueries
 	cache    *reviewCardCache
 	Cores    int
@@ -52,7 +59,7 @@ type ListReviewCards struct {
 // which notes are decks, and the resolver for the wikilink by which a card names
 // its card model.
 func NewListReviewCards(
-	readers ports.VaultReaders, notes ports.NoteQueries, links ports.LinkQueries,
+	readers ports.VaultReaders, notes reviewCardNotes, links ports.LinkQueries,
 ) ListReviewCards {
 	return ListReviewCards{readers: readers, notes: notes, links: links, cache: newCardCache(), Cores: 0, MaxCards: 0}
 }

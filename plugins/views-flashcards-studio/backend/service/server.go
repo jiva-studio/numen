@@ -78,7 +78,10 @@ const ServiceName = "md.numen.views.flashcards.studio"
 // Mount registers the API, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
 	// gomutants:disable-next-line BRANCH_IF reason="Static service and method names are always valid."
-	if err := mountAPI(s.NewAPI(ServiceName), b.Cards(), b.Presets(), b.Review()); err != nil {
+	if err := mountAPI(
+		s.NewAPI(ServiceName), b.CardModels(), b.Decks(), b.PresetReads(), b.PresetWrites(),
+		b.ReviewSessions(), b.ReviewWatches(), b.ReviewStats(),
+	); err != nil {
 		return err
 	}
 	registry, err := b.Tools()
@@ -112,12 +115,6 @@ type DecksAPI interface {
 	WriteDeck(ctx context.Context, req *api.WriteDeckRequest) (*api.WriteDeckResponse, error)
 }
 
-// CardsAPI answers the decks and card models of a vault.
-type CardsAPI interface {
-	CardModelsAPI
-	DecksAPI
-}
-
 // PresetReadAPI answers the reads of the presets that decks are scheduled by.
 type PresetReadAPI interface {
 	GetDeckPreset(ctx context.Context, req *api.GetDeckPresetRequest) (*api.GetDeckPresetResponse, error)
@@ -131,12 +128,6 @@ type PresetWriteAPI interface {
 	CreatePreset(ctx context.Context, req *api.CreatePresetRequest) (*api.CreatePresetResponse, error)
 	WritePreset(ctx context.Context, req *api.WritePresetRequest) (*api.WritePresetResponse, error)
 	ScheduleDeck(ctx context.Context, req *api.ScheduleDeckRequest) (*api.ScheduleDeckResponse, error)
-}
-
-// PresetsAPI answers the presets that decks are scheduled by.
-type PresetsAPI interface {
-	PresetReadAPI
-	PresetWriteAPI
 }
 
 // ReviewSessionAPI answers the sessions and the answers of a review.
@@ -159,39 +150,35 @@ type ReviewStatsAPI interface {
 	GetVaultDeckPreset(ctx context.Context, req *api.GetVaultDeckPresetRequest) (*api.GetVaultDeckPresetResponse, error)
 }
 
-// ReviewAPI answers the review window: the counts, the sessions and the answers.
-type ReviewAPI interface {
-	ReviewSessionAPI
-	ReviewWatchAPI
-	ReviewStatsAPI
-}
+func mountAPI(
+	a *server.API, models CardModelsAPI, decks DecksAPI, presetReads PresetReadAPI, presetWrites PresetWriteAPI,
+	sessions ReviewSessionAPI, watches ReviewWatchAPI, stats ReviewStatsAPI,
+) error {
+	handle(a, "ListCardModels", models.ListCardModels)
+	handle(a, "CreateCardModel", models.CreateCardModel)
+	handle(a, "ReadCardModel", models.ReadCardModel)
+	handle(a, "WriteCardModel", models.WriteCardModel)
+	handle(a, "RenameCardModelField", models.RenameCardModelField)
+	handle(a, "CreateDeck", decks.CreateDeck)
+	handle(a, "ReadDeck", decks.ReadDeck)
+	handle(a, "WriteDeck", decks.WriteDeck)
 
-func mountAPI(a *server.API, cardsAPI CardsAPI, presetsAPI PresetsAPI, reviewAPI ReviewAPI) error {
-	handle(a, "ListCardModels", cardsAPI.ListCardModels)
-	handle(a, "CreateCardModel", cardsAPI.CreateCardModel)
-	handle(a, "ReadCardModel", cardsAPI.ReadCardModel)
-	handle(a, "WriteCardModel", cardsAPI.WriteCardModel)
-	handle(a, "RenameCardModelField", cardsAPI.RenameCardModelField)
-	handle(a, "CreateDeck", cardsAPI.CreateDeck)
-	handle(a, "ReadDeck", cardsAPI.ReadDeck)
-	handle(a, "WriteDeck", cardsAPI.WriteDeck)
+	handle(a, "GetDeckPreset", presetReads.GetDeckPreset)
+	handle(a, "ListPresets", presetReads.ListPresets)
+	handle(a, "CreatePreset", presetWrites.CreatePreset)
+	handle(a, "ScheduleDeck", presetWrites.ScheduleDeck)
+	handle(a, "ReadPreset", presetReads.ReadPreset)
+	handle(a, "WritePreset", presetWrites.WritePreset)
+	handle(a, "ComputeCurve", presetReads.ComputeCurve)
 
-	handle(a, "GetDeckPreset", presetsAPI.GetDeckPreset)
-	handle(a, "ListPresets", presetsAPI.ListPresets)
-	handle(a, "CreatePreset", presetsAPI.CreatePreset)
-	handle(a, "ScheduleDeck", presetsAPI.ScheduleDeck)
-	handle(a, "ReadPreset", presetsAPI.ReadPreset)
-	handle(a, "WritePreset", presetsAPI.WritePreset)
-	handle(a, "ComputeCurve", presetsAPI.ComputeCurve)
-
-	stream(a, "WatchCardsDue", reviewAPI.WatchCardsDue)
-	handle(a, "StartSession", reviewAPI.StartSession)
-	handle(a, "RecordReview", reviewAPI.RecordReview)
-	handle(a, "UndoReview", reviewAPI.UndoReview)
-	stream(a, "WatchReloads", reviewAPI.WatchReloads)
-	handle(a, "ListReviewDays", reviewAPI.ListReviewDays)
-	handle(a, "GetDeckNeighbourhood", reviewAPI.GetDeckNeighbourhood)
-	handle(a, "GetVaultDeckPreset", reviewAPI.GetVaultDeckPreset)
+	stream(a, "WatchCardsDue", watches.WatchCardsDue)
+	handle(a, "StartSession", sessions.StartSession)
+	handle(a, "RecordReview", sessions.RecordReview)
+	handle(a, "UndoReview", sessions.UndoReview)
+	stream(a, "WatchReloads", watches.WatchReloads)
+	handle(a, "ListReviewDays", stats.ListReviewDays)
+	handle(a, "GetDeckNeighbourhood", stats.GetDeckNeighbourhood)
+	handle(a, "GetVaultDeckPreset", stats.GetVaultDeckPreset)
 	return a.Err()
 }
 
@@ -223,14 +210,26 @@ func stream[Req, Res any](
 	})
 }
 
-// Cards returns the API of the decks and card models.
-func (b *Backend) Cards() CardsAPI { return &cardsHandler{Backend: b} }
+// CardModels returns the API of the card models.
+func (b *Backend) CardModels() CardModelsAPI { return &cardsHandler{Backend: b} }
 
-// Presets returns the API of the presets.
-func (b *Backend) Presets() PresetsAPI { return &presetsHandler{Backend: b} }
+// Decks returns the API of the decks.
+func (b *Backend) Decks() DecksAPI { return &cardsHandler{Backend: b} }
 
-// Review returns the API of the review window.
-func (b *Backend) Review() ReviewAPI { return &reviewHandler{Backend: b} }
+// PresetReads returns the API of the reads of the presets.
+func (b *Backend) PresetReads() PresetReadAPI { return &presetsHandler{Backend: b} }
+
+// PresetWrites returns the API of the writes of the presets.
+func (b *Backend) PresetWrites() PresetWriteAPI { return &presetsHandler{Backend: b} }
+
+// ReviewSessions returns the API of the sessions and the answers of a review.
+func (b *Backend) ReviewSessions() ReviewSessionAPI { return &reviewHandler{Backend: b} }
+
+// ReviewWatches returns the API of the streams of the review window.
+func (b *Backend) ReviewWatches() ReviewWatchAPI { return &reviewHandler{Backend: b} }
+
+// ReviewStats returns the API of the counts and the presets of the review window.
+func (b *Backend) ReviewStats() ReviewStatsAPI { return &reviewHandler{Backend: b} }
 
 // vaultsOf gives the ports' calls on the vault of the client with an identity; the empty identity is the
 // vault the host shows.

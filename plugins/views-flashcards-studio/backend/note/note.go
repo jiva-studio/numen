@@ -62,7 +62,7 @@ func WrapIndexOutdated(err error, paths ...string) error {
 func CheckSize(path string, size, limit int) error { return edit.CheckSize(path, size, limit) }
 
 // GetAddress is how a note known by path is written into a link.
-func GetAddress(ctx context.Context, names ports.NoteQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
+func GetAddress(ctx context.Context, names ports.NameQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
 	return edit.GetAddress(ctx, names, vaultID, path)
 }
 

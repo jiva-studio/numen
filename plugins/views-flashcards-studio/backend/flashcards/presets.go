@@ -34,6 +34,14 @@ type PresetContents struct {
 	FileStat   domain.FileStat
 }
 
+// presetNotes is what the presets ask the index: which notes are presets, what they are called, and
+// what a link to one is written by.
+type presetNotes interface {
+	ports.TypePathQueries
+	ports.NoteRefQueries
+	ports.NameQueries
+}
+
 // Presets is how each deck of a vault is scheduled.
 //
 // A deck names its preset with an entry of its `links:` block carrying
@@ -43,7 +51,7 @@ type Presets struct {
 	readers  ports.VaultReaders
 	writers  ports.VaultWriters
 	links    ports.LinkQueries
-	notes    ports.NoteQueries
+	notes    presetNotes
 	Problems ports.ProblemQueries
 	index    note.IndexUpdater
 	day      review.Day
@@ -57,7 +65,7 @@ func NewPresets(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	links ports.LinkQueries,
-	notes ports.NoteQueries,
+	notes presetNotes,
 	index note.IndexUpdater,
 	now ports.Clock,
 ) Presets {
