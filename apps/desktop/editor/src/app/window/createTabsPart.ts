@@ -5,21 +5,42 @@ import { formatError } from '@/shared/api/errors'
 import { watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getTabPaneRect } from '@numen/workbench'
-import { pluginCatalog } from '@/shared/api/clients'
 import { getFileKinds } from '@/entities/file'
-import { fileOpeners, useWindowTabs } from '@/entities/tab'
+import {
+  acceptTabMove,
+  cancelTabLinksWatch,
+  createWindowTabs,
+  detachTab,
+  fileOpeners,
+  highlightWindow,
+  moveTab,
+  type MovedTab,
+  RestoreFailedPane,
+  UnavailablePane,
+  useOpenTabs,
+  watchTabLinks,
+  writeTabLinks,
+} from '@/entities/tab'
 import { useTabLinks } from '@/features/tab-linking'
-import { core } from '../vault'
 import { createCommandNotes } from '../commands/commandDeps'
-import type { MovedTab } from '@/entities/tab'
 import { createTabCommands } from '../tabs/tabCommands'
 import { createTabLinkSession, getWindowReport } from '../tabs/tabLinkSession'
 import { createMovedTabOpener, createTabMover } from '../tabs/tabMove'
-import { useOpenTabs } from '../tabs/useOpenTabs'
 import type { WindowCore, WindowServices } from './createDisplayPart'
 import { isSecondaryWindow } from './createLifecyclePart'
 import type { useSettings } from './useSettings'
 import { focusWindow } from '@/entities/window'
+
+/** The calls of the core that the tab links, the tab moves and the tab reports make. */
+const core = {
+  acceptTabMove,
+  cancelTabLinksWatch,
+  detachTab,
+  highlightWindow,
+  moveTab,
+  watchTabLinks,
+  writeTabLinks,
+}
 
 interface TabsCoreDeps {
   readonly writeMessage: WindowCore['writeMessage']
@@ -30,15 +51,17 @@ interface TabsCoreDeps {
 export function createTabsCore(deps: TabsCoreDeps) {
   const { writeMessage, settingsHolder, pluginStarts } = deps
   /* Stryker disable OptionalChaining,ObjectLiteral,StringLiteral,Regex: window core wiring delegates to mocked collaborators in unit tests */
-  const windowTabs = useWindowTabs({
-    catalog: pluginCatalog,
-    isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
-    enablePlugin: async (pluginId) => {
-      await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
+  const windowTabs = createWindowTabs(
+    { unavailable: UnavailablePane, restoreFailed: RestoreFailedPane },
+    {
+      isPluginStarting: (pluginId) => pluginStarts.current?.(pluginId) ?? true,
+      enablePlugin: async (pluginId) => {
+        await settingsHolder.current?.rest.writeSetting([pluginId, 'enabled'], true)
+      },
+      openPlugin: (pluginId) =>
+        globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
     },
-    openPlugin: (pluginId) =>
-      globalThis.dispatchEvent(new CustomEvent('numen:open-settings', { detail: { pluginId } })),
-  })
+  )
   const windowId = crypto.randomUUID()
   // The core ignores a link to a tab it has no report of, so a link or unlink
   // waits for the pending tab reports. The tab links session sets the wait.
@@ -182,7 +205,6 @@ export function createWindowTabCommands(
 
 export const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>
   useOpenTabs({
-    core,
     windowTabs: base.windowTabs,
     isWriting,
     reportError: (error) =>

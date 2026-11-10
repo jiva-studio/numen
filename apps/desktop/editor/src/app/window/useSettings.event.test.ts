@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
-import { useWindowTabs } from '@/entities/tab'
+import { createTestTabs } from '@/testing/tabs'
 import type { SettingEdit } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -68,7 +68,7 @@ const create = () => {
   } as unknown as SettingsCore
   restoreCore = installSettingsCore(core, { theme: THEME })
   const log = { getWriter: () => vi.fn() } as unknown as MessageLog
-  const windowTabs = useWindowTabs()
+  const windowTabs = createTestTabs()
   const settings = useSettings({
     words: WORDS,
     log,

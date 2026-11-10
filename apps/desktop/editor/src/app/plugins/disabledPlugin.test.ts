@@ -2,16 +2,13 @@
  * A plugin that is disabled leaves its tabs as placeholders that read the catalog; enabling it
  * from the placeholder returns the tab with the state the plugin saved.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
-import { CATALOG_STATE, type Manifest } from '@numen/core-client'
-import {
-  createMockCatalogEntry,
-  createMockPluginCatalog,
-  createMockManifest,
-} from '@numen/core-client/testing'
-import { useWindowTabs } from '@/entities/tab'
+import { CATALOG_STATE, type CatalogEntry, type Manifest } from '@numen/core-client'
+import { createMockCatalogEntry, createMockManifest } from '@numen/core-client/testing'
+import { answerTabKinds } from '@/testing/tabCatalog'
+import { createTestTabs } from '@/testing/tabs'
 import { createPluginSupport } from './useWindowPlugins'
 
 const PLUGIN_ID = 'sample.decks'
@@ -29,11 +26,15 @@ const entryOf = (state: typeof CATALOG_STATE.INSTALLED | typeof CATALOG_STATE.DI
   })
 
 const createWindow = () => {
-  const catalog = createMockPluginCatalog([entryOf(CATALOG_STATE.INSTALLED)])
+  const entries = [entryOf(CATALOG_STATE.INSTALLED)]
+  const lookups = answerTabKinds(entries)
+  const catalog = {
+    setEntries: (next: CatalogEntry[]) => entries.splice(0, entries.length, ...next),
+    getAskedKinds: () => lookups,
+  }
   const enabled: string[] = []
   const holder: { activate?: () => void } = {}
-  const windowTabs = useWindowTabs({
-    catalog,
+  const windowTabs = createTestTabs({
     enablePlugin: (pluginId) => {
       enabled.push(pluginId)
       catalog.setEntries([entryOf(CATALOG_STATE.INSTALLED)])
@@ -80,7 +81,7 @@ describe('a disabled plugin', () => {
     expect(placeholder?.kind.pane).not.toBe(DeckPane)
 
     const pane = mount(placeholder?.kind.pane ?? DeckPane, { props: { state: placeholder?.state } })
-    await flushPromises()
+    await vi.waitFor(() => expect(pane.text()).toContain('Plugin disabled'))
 
     expect(pane.text()).toContain('Plugin disabled')
     expect(pane.text()).toContain('The plugin for flashcard decks is disabled.')

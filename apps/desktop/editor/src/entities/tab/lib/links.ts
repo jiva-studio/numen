@@ -37,6 +37,10 @@ export interface TabLinksSnapshot {
   readonly windows: readonly TabWindow[]
 }
 
+/** Link or unlink change written to the core. */
+export type TabLinksChange =
+  { readonly link: { readonly source: TabId; readonly target: TabId } } | { readonly unlink: TabId }
+
 /** Why a move of a tab to another window did not complete. */
 export type TabMoveError = 'window-closed' | 'timeout' | 'not-owner' | 'cancelled'
 

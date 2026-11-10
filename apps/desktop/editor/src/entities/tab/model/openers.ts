@@ -30,7 +30,7 @@ export type FileOpener = (
   options?: FilePlacement | OpenPlacement,
 ) => void
 
-import type { SourceReader } from '@/shared/model/tabKinds'
+import type { SourceReader } from '../lib/kinds'
 export type { SourceReader }
 
 /** The vault queries the window uses to open a file. */

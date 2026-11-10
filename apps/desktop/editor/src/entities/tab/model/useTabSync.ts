@@ -6,12 +6,15 @@
  * carries the path of each group, and a window moves its tabs that missed a
  * sync to it.
  */
-import type { useWindowTabs, TabId, TabLinkGroup, TabPathSync } from '@/entities/tab'
-import type { TabLinksState } from '@/features/tab-linking'
+import type { TabId, TabLinkGroup, TabPathSync } from '../lib/links'
+import type { WindowTabs } from './windowTabs'
 
 export interface TabSyncDeps {
-  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab'>
-  tabLinks: Pick<TabLinksState, 'getGroupOf' | 'groups'>
+  windowTabs: Pick<WindowTabs, 'getTab'>
+  tabLinks: {
+    getGroupOf(this: void, tabId: TabId): TabLinkGroup | null
+    readonly groups: ReadonlyMap<string, TabLinkGroup>
+  }
   sendSync: (sync: { sourceTabId: string; path: string; title: string }) => Promise<void>
   onError: (error: unknown) => void
 }

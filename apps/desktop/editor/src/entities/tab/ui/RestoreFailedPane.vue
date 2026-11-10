@@ -4,7 +4,7 @@
  * open as usual.
  */
 import { TriangleAlert } from '@lucide/vue'
-import type { RestoreFailedState } from './restoreFailed'
+import type { RestoreFailedState } from '../model/restoreFailed'
 
 defineProps<{
   state: RestoreFailedState

@@ -1,7 +1,7 @@
 import { formatErrorMessage } from '@numen/core-client'
 import type { VaultChangeEvent } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import type { fileOpeners, useWindowTabs } from '@/entities/tab'
+import type { fileOpeners, WindowTabs } from '@/entities/tab'
 import type { CommandTarget } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { PathRename } from '@/shared/paths'
@@ -10,14 +10,14 @@ import type { useCommands } from '../commands/useCommands'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useVaults } from './useVaults'
 import type { useWindowDisplay } from './useWindowDisplay'
-import type { useWindowKinds } from './useWindowKinds'
+import type { useTabKinds } from './useTabKinds'
 
 export interface DisplayWiring {
   editing: ReturnType<typeof createNoteEditors>
   getCommands: () => ReturnType<typeof useCommands>
-  getKinds: () => ReturnType<typeof useWindowKinds>
+  getKinds: () => ReturnType<typeof useTabKinds>
   tabOpeners: ReturnType<typeof fileOpeners>
-  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'handle'>
+  windowTabs: Pick<WindowTabs, 'handle'>
   getVaults: () => ReturnType<typeof useVaults>
   notifyPlugins: (event: VaultChangeEvent) => void
   writeMessage: MessageWriter
@@ -60,7 +60,7 @@ export function createDisplayOptions(deps: DisplayWiring) {
 }
 
 export function createTargetResolver(
-  windowTabs: ReturnType<typeof useWindowTabs>,
+  windowTabs: WindowTabs,
   getVaults: () => ReturnType<typeof useVaults>,
   window: ReturnType<typeof useWindowDisplay>,
 ) {

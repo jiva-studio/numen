@@ -1,32 +1,51 @@
 /**
- * The tab entity's part of the vault mock: the saved tabs, tab links and moves between windows.
+ * What the core answers about the tabs of the window: the saved tabs, the tab links and the
+ * moves between windows. The answers go through the router transport.
  */
+import { TAB_MOVE_ERROR_CODE } from '@numen/core-client'
+import type { CoreAnswers } from '@numen/core-client/testing'
+import type { Tab } from '@/entities/tab'
 import { requests } from '../requests'
 import { mockVaultState, pendingStream } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
-import type { Tab } from '@/entities/tab'
 
-export const tabCoreMock = {
-  writeOpenTabs: (open: { tabs: readonly Tab[]; activeId: string }) => {
-    requests.openTabs.push(open)
-    return Promise.resolve()
+const toWire = ({
+  id,
+  kind,
+  path,
+  title,
+  state,
+}: Pick<Tab, 'id' | 'kind' | 'path' | 'title' | 'state'>) => ({
+  id,
+  kind,
+  path,
+  title,
+  state,
+})
+
+export const tabAnswers = {
+  workspace: {
+    writeOpenTabs: (request) => {
+      requests.openTabs.push({ tabs: request.tabs.map(toWire), activeId: request.activeId })
+      return {}
+    },
+    readOpenTabs: () => ({
+      tabs: mockVaultState.savedTabs.tabs.map(toWire),
+      activeId: mockVaultState.savedTabs.activeId,
+    }),
+    detachTab: () => {
+      if (mockVaultState.detachError) throw new Error(mockVaultState.detachError)
+      return { error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }
+    },
+    watchTabLinks: pendingStream,
+    cancelWatchTabLinks: () => ({}),
+    writeTabLinks: () => ({}),
+    syncTabPath: () => ({}),
+    readDetachedTab: (request) => {
+      const tab = mockVaultState.detachedTab
+      return tab?.id === request.tabId ? { tab: toWire(tab), moveId: 'move-1' } : {}
+    },
+    moveTab: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
+    acceptTabMove: () => ({ error: TAB_MOVE_ERROR_CODE.UNSPECIFIED }),
+    highlightWindow: () => ({}),
   },
-  readOpenTabs: () => Promise.resolve(mockVaultState.savedTabs),
-  detachTab: () =>
-    mockVaultState.detachError
-      ? Promise.reject(new Error(mockVaultState.detachError))
-      : Promise.resolve({ ok: true as const, value: undefined }),
-  watchTabLinks: pendingStream,
-  cancelTabLinksWatch: () => Promise.resolve(),
-  writeTabLinks: () => Promise.resolve(),
-  syncTabPath: () => Promise.resolve(),
-  readDetachedTab: (_windowId: string, tabId: string) =>
-    Promise.resolve(
-      mockVaultState.detachedTab?.id === tabId
-        ? { tab: mockVaultState.detachedTab, moveId: 'move-1' }
-        : null,
-    ),
-  moveTab: () => Promise.resolve({ ok: true, value: undefined }),
-  acceptTabMove: () => Promise.resolve({ ok: true, value: undefined }),
-  highlightWindow: () => Promise.resolve(),
-} satisfies Partial<VaultCore>
+} satisfies CoreAnswers

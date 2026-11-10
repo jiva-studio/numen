@@ -9,9 +9,9 @@ import { effectScope, onScopeDispose } from 'vue'
 import { openTab, getPanes, paneById } from '@numen/workbench'
 import type { Workspace } from '@numen/workbench'
 import type { FileKind } from '@/shared/model/fileTypes'
-import type { AnyTabKind, WindowHandle } from './kinds'
+import type { AnyTabKind, WindowHandle } from '../lib/kinds'
 import { fileOpeners } from './openers'
-import { useWindowTabs } from './windowTabs'
+import { createTestTabs } from '@/testing/tabs'
 
 function rethrow(error: unknown): never {
   throw error
@@ -42,7 +42,7 @@ const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: b
 }
 
 const notifiedCalls = (declared: readonly ((handle: WindowHandle) => AnyTabKind)[]) => {
-  const window = useWindowTabs()
+  const window = createTestTabs()
   window.registerKinds(declared.map((one) => one(window.handle)))
   return window
 }
@@ -843,7 +843,7 @@ describe('a tab created without being shown', () => {
 
 describe('the registration of a kind', () => {
   it('is removed by its own disposer', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const dispose = window.registerKind(kind().one)
 
     dispose()
@@ -853,7 +853,7 @@ describe('the registration of a kind', () => {
   })
 
   it('is kept when the disposer of a registration it replaced runs late', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const first = kind().one
     const second = kind().one
     const disposeFirst = window.registerKind(first)
@@ -866,7 +866,7 @@ describe('the registration of a kind', () => {
   })
 
   it('names the plugin of the kind of a tab', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKind({ ...kind().one, kind: 'reader:x', pluginId: 'md.numen.x' })
 
     const id = await window.createTab('reader:x', 'a.x')
@@ -877,7 +877,7 @@ describe('the registration of a kind', () => {
 
 describe('a tab of a kind that is not registered', () => {
   it('opens on a restore without throwing and lists itself under the missing kind', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
 
     const id = await window.createTab('reader:viewer', '/a.bin')
 
@@ -886,7 +886,7 @@ describe('a tab of a kind that is not registered', () => {
   })
 
   it('does not stop the kind being registered and opened later', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const missing = await window.createTab('thing', 'a')
     const thing = kind()
     window.registerKind(thing.one)
@@ -907,7 +907,7 @@ describe('the identity a kind is given as its tab opens', () => {
         return { targetPath, title: targetPath }
       },
     })
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([thing.one])
 
     const id = await window.openTabOfKind('thing', 'Note.md')
@@ -923,7 +923,7 @@ describe('the identity a kind is given as its tab opens', () => {
         return { targetPath, title: targetPath }
       },
     })
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([thing.one])
 
     const id = await window.openTabOfKind('thing', 'Note.md', 'thing:4f1c')
@@ -936,7 +936,7 @@ describe('the identity a kind is given as its tab opens', () => {
 
 describe('the kinds the window holds', () => {
   it('are the ones registered, and a kind removed is no longer listed', () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const release = window.registerKind(kind().one)
 
     expect(window.hasKind('thing')).toBe(true)
@@ -945,7 +945,7 @@ describe('the kinds the window holds', () => {
     expect(window.hasKind('thing')).toBe(false)
   })
   it('finds the first registered that answers, and none where none does', () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKind(kind().one)
     window.registerKind(kind({ kind: 'chat', receiveText: vi.fn() }).one)
 
@@ -959,7 +959,7 @@ describe('a window opened with nothing to restore', () => {
     kind({ kind: name, placement: { pane, order } }).one
 
   it('opens one tab of every placed kind, in the pane and the order each declares', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([
       placedTab('files', 'aside', 1),
       kind({ kind: 'unplaced' }).one,
@@ -984,7 +984,7 @@ describe('a window opened with nothing to restore', () => {
   })
 
   it('keeps a tab the person opened before the placed tabs were laid out, in front', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([
       {
         ...placedTab('plex', 'main', 0),
@@ -1011,7 +1011,7 @@ describe('a window opened with nothing to restore', () => {
   })
 
   it('gives the whole window to the aside kinds where no kind is placed in the main pane', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([placedTab('agent', 'aside', 0)])
 
     await window.openPlacedTabs(() => {
@@ -1027,7 +1027,7 @@ describe('a placed kind whose tab fails to open', () => {
   it('is notified, left out of the layout, and releases what it started', async () => {
     const failure = new Error('the plugin is gone')
     const stoppedTabs: string[] = []
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([
       kind({ kind: 'agent', placement: { pane: 'aside', order: 0 } }).one,
       kind({
@@ -1067,7 +1067,7 @@ describe('a tab of a kind moved to a path', () => {
   it('is the one the person was last in, put in front', async () => {
     navigations.length = 0
     const one = walker()
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([one.one, kind().one])
     const zero = await window.openTabOfKind('walker', 'Zero.md')
     const first = await window.openTabOfKind('walker', 'One.md')
@@ -1089,7 +1089,7 @@ describe('a tab of a kind moved to a path', () => {
   })
 
   it('is a new one opened there where the window holds none', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([walker().one])
 
     const id = await window.navigateTab('walker', 'Wanted.md')
@@ -1100,7 +1100,7 @@ describe('a tab of a kind moved to a path', () => {
 
 describe('the tabs standing on a path that went', () => {
   it('move to another, every one of a kind that navigates, and no other', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const receivedQueries: string[] = []
     const fixed = kind({
       kind: 'fixed',
@@ -1142,7 +1142,7 @@ describe('text put to the tabs of a kind', () => {
     })
 
   it('switches to the tab the person was last in, which is put in front', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([listener().one, kind().one])
     const zero = await window.openTabOfKind('listener')
     const first = await window.openTabOfKind('listener')
@@ -1161,7 +1161,7 @@ describe('text put to the tabs of a kind', () => {
   })
 
   it('opens a tab to take it where the window holds none', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([listener().one, kind().one])
     const otherId = await window.openTabOfKind('thing')
 
@@ -1173,7 +1173,7 @@ describe('text put to the tabs of a kind', () => {
   })
 
   it('is left unheard by a tab of a kind that takes no text', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([kind().one])
     const id = await window.openTabOfKind('thing')
 
@@ -1223,7 +1223,7 @@ const pagedKind = (pluginId = 'viewer.plugin'): AnyTabKind => ({
 
 describe('the tabs the core kept', () => {
   it('open again under their ids with the state their kind saved, the front one in front', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const disposedIds: string[] = []
     window.registerKind({
       ...pagedKind(),
@@ -1273,7 +1273,7 @@ describe('the tabs the core kept', () => {
   })
 
   it('open as placeholders that keep the saved state where no plugin registers the kind', () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
 
     window.restoreTabs(
       [
@@ -1297,7 +1297,7 @@ describe('the tabs the core kept', () => {
 
 describe('the tabs of a plugin that stops', () => {
   it('turn into placeholders that keep the state, and back once the kind is registered again', () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const disposed: string[] = []
     const destroyed: string[] = []
     const closed: string[] = []
@@ -1360,7 +1360,7 @@ describe('the tabs of a plugin that stops', () => {
   })
 
   it('leaves the tabs of other plugins as they are', () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKind(pagedKind('other.plugin'))
     window.restoreTabs([{ id: 'paged:a.bin', kind: 'paged', path: 'a.bin' }], '')
 
@@ -1372,7 +1372,7 @@ describe('the tabs of a plugin that stops', () => {
 
 describe('a saved tab whose kind fails to open it', () => {
   it('opens as a placeholder that keeps the saved state, and the other tabs open as usual', () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     const disposedOnFail: string[] = []
     window.registerKind({
       ...pagedKind(),
@@ -1425,7 +1425,7 @@ describe('a saved tab whose kind fails to open it', () => {
 
 describe('openSavedTab', () => {
   it('opens the tab with its id and saved state as the active tab', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKind(pagedKind())
     await window.openTabOfKind('paged', 'existing.bin')
 
@@ -1436,7 +1436,7 @@ describe('openSavedTab', () => {
   })
 
   it('activates an open tab with the same id without opening it again', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKind(pagedKind())
     const id = await window.openTabOfKind('paged', 'a.bin')
     ;(window.getTabStateIn(id, 'paged') as { page: number }).page = 7

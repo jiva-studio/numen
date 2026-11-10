@@ -1,8 +1,8 @@
 /** The window handle a kind receives, activating tabs by id. */
 import { describe, expect, it } from 'vitest'
 import { getPanes } from '@numen/workbench'
-import type { AnyTabKind } from './kinds'
-import { useWindowTabs } from './windowTabs'
+import type { AnyTabKind } from '../lib/kinds'
+import { createTestTabs } from '@/testing/tabs'
 
 const thing: AnyTabKind = {
   kind: 'thing',
@@ -13,7 +13,7 @@ const thing: AnyTabKind = {
 
 describe('the show of the window handle', () => {
   it('activates an open tab', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([thing])
     const first = await window.openTabOfKind('thing', 'Heron.md')
     await window.openTabOfKind('thing', 'Reed.md')
@@ -24,7 +24,7 @@ describe('the show of the window handle', () => {
   })
 
   it('changes nothing for an id of no open tab', async () => {
-    const window = useWindowTabs()
+    const window = createTestTabs()
     window.registerKinds([thing])
     await window.openTabOfKind('thing', 'Heron.md')
     const before = window.layout.value

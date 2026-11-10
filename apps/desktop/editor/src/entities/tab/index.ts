@@ -2,13 +2,14 @@
 export { findTabKindIcon } from './lib/icons'
 export { createFileCreators } from './model/makers'
 export { fileOpeners } from './model/openers'
-export type { FileOpener, FileOpeners, OpenPlacement, SourceReader } from './model/openers'
+export type { FileOpener, FileOpeners, OpenPlacement } from './model/openers'
 export type { OpenTabs, Tab } from './lib/tab'
 export type {
   LinkableTab,
   MovedTab,
   TabId,
   TabLinkGroup,
+  TabLinksChange,
   TabLinksEvent,
   TabLinksSnapshot,
   TabMoveError,
@@ -16,7 +17,24 @@ export type {
   TabWindow,
   WindowTabsReport,
 } from './lib/links'
-export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './model/kinds'
-export { useWindowTabs } from './model/windowTabs'
-export type { SavedTab } from './model/windowTabs'
+export * from './lib/kinds'
+export { createWindowTabs } from './model/windowTabs'
+export type { WindowTabs } from './model/windowTabs'
+export { formatSavedState, parseSavedTab, parseSavedTabs, useOpenTabs } from './model/useOpenTabs'
+export { createTabSync } from './model/useTabSync'
+export { useWindowTabMenu } from './model/useTabMenu'
 export { createWorkspace, generateId, NOTE, SETTINGS } from './lib/workspace'
+export { readOpenTabs } from './api/saved-tabs'
+export {
+  acceptTabMove,
+  cancelTabLinksWatch,
+  detachTab,
+  highlightWindow,
+  moveTab,
+  readDetachedTab,
+  syncTabPath,
+  watchTabLinks,
+  writeTabLinks,
+} from './api/tabLinks'
+export { default as RestoreFailedPane } from './ui/RestoreFailedPane.vue'
+export { default as UnavailablePane } from './ui/UnavailablePane.vue'

@@ -4,14 +4,12 @@
  */
 import { formatError } from '@/shared/api/errors'
 import type { createNoticeQueue, useWindowFrame } from '@numen/workbench'
-import { core } from '../vault'
 import type { runSupport } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
-import type { fileOpeners, useWindowTabs } from '@/entities/tab'
+import { createTabSync, syncTabPath, type fileOpeners, type WindowTabs } from '@/entities/tab'
 import type { createMessageLog, MessageWriter } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
 import type { useTabLinks } from '@/features/tab-linking'
-import { createTabSync } from '../tabs/useTabSync'
 import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
@@ -23,7 +21,7 @@ import type { useDeclaredCommands } from '../commands/declaredCommands'
 import type { CommandItemLists } from '../commands/commandItemLists'
 import { useWindowDisplay } from './useWindowDisplay'
 import { createDisplayOptions } from './useWindowDisplayOptions'
-import type { useWindowKinds } from './useWindowKinds'
+import type { useTabKinds } from './useTabKinds'
 import type { createWindowSlots } from './windowSlots'
 import type { createPluginNotes } from '../plugins/pluginNotes'
 import type { PluginServices } from '../plugins/pluginServices'
@@ -35,7 +33,7 @@ export interface WindowCore {
   readonly log: ReturnType<typeof createMessageLog>
   readonly writeMessage: MessageWriter
   readonly windowId: string
-  readonly windowTabs: ReturnType<typeof useWindowTabs>
+  readonly windowTabs: WindowTabs
   readonly tabLinks: ReturnType<typeof useTabLinks>
   readonly tabReports: { wait: () => Promise<void> }
   readonly tabOpeners: ReturnType<typeof fileOpeners>
@@ -53,7 +51,7 @@ export interface WindowCore {
 
 export interface WindowContext {
   commands?: ReturnType<typeof useCommands>
-  kinds?: ReturnType<typeof useWindowKinds>
+  kinds?: ReturnType<typeof useTabKinds>
   vaults?: ReturnType<typeof useVaults>
   tabsHold?: TabsHold
   tabCommands?: TabCommands
@@ -98,7 +96,7 @@ export function initWindowServices(
   const tabSync = createTabSync({
     windowTabs: base.windowTabs,
     tabLinks: base.tabLinks,
-    sendSync: (sync) => core.syncTabPath(sync),
+    sendSync: syncTabPath,
     onError: (error) => base.writeMessage(formatError(error), 'error'),
   })
 

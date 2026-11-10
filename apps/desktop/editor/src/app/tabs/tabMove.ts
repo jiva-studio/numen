@@ -2,12 +2,20 @@
  * Sends a tab with its saved state to another open window or a new window, and opens a tab
  * sent from another window.
  */
-import { formatErrorMessage, type Result } from '@numen/core-client'
-import type { Tab, useWindowTabs, MovedTab, TabMoveError } from '@/entities/tab'
+import { formatError } from '@/shared/api/errors'
+import type { Result } from '@/shared/lib/result'
+import {
+  formatSavedState,
+  parseSavedTab,
+  type MovedTab,
+  type Tab,
+  type TabMoveError,
+  type WindowTabs,
+  type detachTab,
+  type moveTab,
+} from '@/entities/tab'
 import type { Notes } from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { VaultPort } from '../ports/vault'
-import { formatSavedState, parseSavedTab } from './useOpenTabs'
 
 type Point = { readonly x: number; readonly y: number }
 
@@ -32,9 +40,9 @@ export const ACCEPT_ATTEMPTS = 3
 export const ACCEPT_RETRY_MS = 1000
 
 export interface TabMoverDeps {
-  readonly core: Pick<VaultPort, 'detachTab' | 'moveTab'>
+  readonly core: { readonly detachTab: typeof detachTab; readonly moveTab: typeof moveTab }
   readonly windowId: string
-  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab' | 'tabs'>
+  readonly windowTabs: Pick<WindowTabs, 'getTab' | 'tabs'>
   readonly notes: Pick<Notes, 'asking' | 'flushPending'>
   readonly closeTab: (id: string) => boolean
   readonly writeMessage: MessageWriter
@@ -76,7 +84,7 @@ export function createTabMover(deps: TabMoverDeps) {
       if (!result.ok) deps.writeMessage(`${failure}: ${MOVE_ERRORS[result.error]}`, 'error')
       else if (!deps.closeTab(id)) deps.writeMessage(STILL_OPEN_MESSAGE, 'error')
     } catch (error) {
-      deps.writeMessage(`${failure}: ${formatErrorMessage(error)}`, 'error')
+      deps.writeMessage(`${failure}: ${formatError(error)}`, 'error')
     }
   }
 
@@ -116,7 +124,7 @@ export function createTabMover(deps: TabMoverDeps) {
 }
 
 export interface MovedTabOpenerDeps {
-  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'getTab' | 'openSavedTab'>
+  readonly windowTabs: Pick<WindowTabs, 'getTab' | 'openSavedTab'>
   readonly closeTab: (id: string) => void
   readonly acceptMove: (tabId: string, moveId: string) => Promise<Result<void, TabMoveError>>
   readonly focusWindow: () => Promise<void>

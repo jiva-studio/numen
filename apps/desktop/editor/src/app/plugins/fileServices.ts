@@ -5,7 +5,7 @@
 import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
 import { getKnownErrorCode, asFailure } from '@numen/core-client'
-import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
+import { createFileCreators, type FileOpeners, type WindowTabs } from '@/entities/tab'
 import { listFiles, type CreateResult } from '@/entities/file'
 import {
   ANSWER_WORDS,
@@ -33,7 +33,7 @@ export interface FileCreatorRegistry {
 /** The window operations needed to create a file. */
 export interface FileMakersDeps {
   readonly tabOpeners: FileOpeners
-  readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
+  readonly windowTabs: Pick<WindowTabs, 'createFileOfKind'>
   readonly writeMessage: MessageWriter
   readonly creators?: Record<string, FileCreatorFn>
 }

@@ -10,7 +10,7 @@ import { THEME_MODE, type ThemeModeCode } from '@numen/core-client'
 import { createLostConnection } from '@numen/core-client/testing'
 import { Select, Slider } from '@numen/ui'
 import { SettingsTab } from '@/pages/settings'
-import { useWindowTabs } from '@/entities/tab'
+import { createTestTabs } from '@/testing/tabs'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -173,7 +173,7 @@ const create = (timing: Timing) => {
   const settings = useSettings({
     words: WORDS,
     log,
-    windowTabs: useWindowTabs(),
+    windowTabs: createTestTabs(),
     onSizeChanged: vi.fn(),
   })
   const page = mount(SettingsTab, {

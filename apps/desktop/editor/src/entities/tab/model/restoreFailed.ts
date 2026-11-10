@@ -1,5 +1,5 @@
-import RestoreFailedPane from './RestoreFailedPane.vue'
-import type { AnyTabKind } from './kinds'
+import type { Component } from 'vue'
+import type { AnyTabKind } from '../lib/kinds'
 
 /** What a tab holds in place of a saved tab that could not be restored. */
 export interface RestoreFailedState {
@@ -11,9 +11,11 @@ export interface RestoreFailedState {
 
 /**
  * The tab kind substituted for a saved tab whose own kind failed to open it. It keeps the kind,
- * the path and the saved state, so the next window start tries the tab again.
+ * the path and the saved state, so the next window start tries the tab again. `pane` draws the
+ * placeholder.
  */
 export const createRestoreFailedKind = (
+  pane: Component,
   kind: string,
   title: string | undefined,
   error: unknown,
@@ -29,6 +31,6 @@ export const createRestoreFailedKind = (
     title || (state as RestoreFailedState).targetPath.split('/').pop() || kind,
   getOpenTab: (state: unknown) => ({ path: (state as RestoreFailedState).targetPath }),
   getState: (state: unknown) => (state as RestoreFailedState).saved,
-  pane: RestoreFailedPane,
+  pane,
   identity: (targetPath: string) => targetPath,
 })

@@ -11,6 +11,7 @@ import { fileAnswers } from './mocks/file'
 import { noteAnswers } from './mocks/note'
 import { vaultAnswers } from './mocks/vault'
 import { settingsAnswers } from './mocks/settings'
+import { tabAnswers } from './mocks/tab'
 import { readWindowTasks, windowAnswers } from './mocks/window'
 import { mergeAnswers } from './mergeAnswers'
 import { mount, type VueWrapper } from '@vue/test-utils'
@@ -46,7 +47,14 @@ let restoreCore: () => void = () => undefined
 
 beforeEach(() => {
   restoreCore = installCoreAnswers(
-    mergeAnswers(vaultAnswers, windowAnswers, settingsAnswers, noteAnswers, fileAnswers),
+    mergeAnswers(
+      vaultAnswers,
+      windowAnswers,
+      settingsAnswers,
+      noteAnswers,
+      fileAnswers,
+      tabAnswers,
+    ),
   )
 })
 

@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { answerCore } from '@/testing/coreAnswers'
-import { useWindowKinds } from './useWindowKinds'
+import { useTabKinds } from './useTabKinds'
 
 type MockSeen = {
   writeMessage: unknown
@@ -74,8 +74,8 @@ const create = ({ graph, hasChat = true }: { graph?: Graph; hasChat?: boolean } 
     core: {},
     getTarget: vi.fn(() => ({})),
     runCommand: vi.fn(),
-  } as unknown as Parameters<typeof useWindowKinds>[0]
-  return { deps, writer, window: useWindowKinds(deps) }
+  } as unknown as Parameters<typeof useTabKinds>[0]
+  return { deps, writer, window: useTabKinds(deps) }
 }
 
 beforeEach(() => {

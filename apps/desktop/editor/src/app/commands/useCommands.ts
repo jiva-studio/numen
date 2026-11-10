@@ -37,7 +37,7 @@ import type { TabsHold } from './leaveVault'
 import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 import type { WORDS } from '@/shared/words'
 import type { NoteCreator } from '@/entities/note'
 import { getFileKinds } from '@/entities/file'
@@ -53,7 +53,7 @@ export interface CommandsDepsOptions {
   core: VaultCore
   words: Words
   log: MessageLog
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
   getTarget: () => CommandTarget
   knows: NoteLookup
   paletteLists: PaletteLists

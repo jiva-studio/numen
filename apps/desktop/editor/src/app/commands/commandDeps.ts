@@ -6,14 +6,14 @@ import type { VaultCore } from '../vault'
 import type { CommandDeps, Notes, VaultWriter } from '@/features/command-palette'
 import type { RunSupport, VaultRef } from '@/entities/command'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 import { renameNote, type NoteCreator } from '@/entities/note'
 import { createFolder, emptyTrash, listFiles, moveFile, removeFile } from '@/entities/file'
 import type { Model, SettingEdit } from '@/entities/settings'
 
 export interface CommandDepsOptions {
   core: VaultCore
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
   making: NoteCreator
   setVaultName: (vault: VaultRef) => void
   reload: () => void
@@ -78,10 +78,7 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
   }
 }
 
-function tabMatchesPath(
-  windowTab: ReturnType<ReturnType<typeof useWindowTabs>['getTab']>,
-  path: string,
-): boolean {
+function tabMatchesPath(windowTab: ReturnType<WindowTabs['getTab']>, path: string): boolean {
   if (!windowTab) return false
   const openPath = windowTab.kind.getOpenTab?.(windowTab.state).path
   if (openPath === path) return true
@@ -89,10 +86,7 @@ function tabMatchesPath(
   return target?.file === path || target?.path === path
 }
 
-function findActiveTabAt(
-  windowTabs: ReturnType<typeof useWindowTabs>,
-  path: string,
-): string | null {
+function findActiveTabAt(windowTabs: WindowTabs, path: string): string | null {
   if (!path) return null
   for (const tab of windowTabs.tabs.value) {
     if (tabMatchesPath(windowTabs.getTab(tab.id), path)) return tab.id
@@ -104,10 +98,7 @@ function findActiveTabAt(
  * The open files a command can access: those held by the note editors, and those
  * a tab kind serves.
  */
-export function createCommandNotes(
-  reached: Notes,
-  windowTabs: ReturnType<typeof useWindowTabs>,
-): Notes {
+export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Notes {
   const getTab = (id: string) => windowTabs.getTab(id)
   return {
     ...reached,

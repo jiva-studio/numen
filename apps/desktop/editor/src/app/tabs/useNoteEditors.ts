@@ -9,12 +9,12 @@ import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
 import { createNotes, type Store } from '@/features/command-palette'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { FileOpeners } from '@/entities/tab'
-import type { useWindowTabs } from '@/entities/tab'
+import type { WindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
   log: MessageLog
   tabOpeners: FileOpeners
-  windowTabs: ReturnType<typeof useWindowTabs>
+  windowTabs: WindowTabs
 }
 
 function createNullChanges() {
@@ -26,7 +26,7 @@ function createNullChanges() {
   }
 }
 
-function createNoted(windowTabs: ReturnType<typeof useWindowTabs>) {
+function createNoted(windowTabs: WindowTabs) {
   return {
     measureAll: () => {
       for (const tab of windowTabs.tabs.value) {
@@ -45,7 +45,7 @@ function createNoted(windowTabs: ReturnType<typeof useWindowTabs>) {
 
 function createNotedStore(
   notes: ReturnType<typeof openNotes>,
-  windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'tabs'>,
+  windowTabs: Pick<WindowTabs, 'tabs'>,
   reportError: (error: unknown) => void,
 ): Store {
   return {
