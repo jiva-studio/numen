@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
 
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/presetwire"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/clock"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
@@ -82,11 +82,11 @@ func getFirstMorning() time.Time {
 func setNow(handler *API, now time.Time) {
 	pos := clock.NewFake(now)
 	handler.now = pos
-	handler.scenarios().day = getReviewDay()
-	handler.scenarios().flash.Record = flashcards.NewRecord(pos)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithDay(getReviewDay()).WithNow(pos)
-	handler.scenarios().flash.Session = handler.scenarios().flash.Session.WithDay(getReviewDay()).WithNow(pos)
-	handler.scenarios().flash.GetReviewDays = handler.scenarios().flash.GetReviewDays.WithDay(getReviewDay()).WithNow(pos)
+	handler.scenarios().Day = getReviewDay()
+	handler.scenarios().Flash.Record = flashcards.NewRecord(pos)
+	handler.scenarios().Flash.CardsDue = handler.scenarios().Flash.CardsDue.WithDay(getReviewDay()).WithNow(pos)
+	handler.scenarios().Flash.Session = handler.scenarios().Flash.Session.WithDay(getReviewDay()).WithNow(pos)
+	handler.scenarios().Flash.GetReviewDays = handler.scenarios().Flash.GetReviewDays.WithDay(getReviewDay()).WithNow(pos)
 }
 
 func runDays(t *testing.T, handler *API, v domain.Vault, days int) {
@@ -151,7 +151,7 @@ func countSessionCards(due *api.VaultCardsDue, decks []string) int {
 
 func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
-	found, err := handler.scenarios().flash.Presets.Read(t.Context(), v, path)
+	found, err := handler.scenarios().Flash.Presets.Read(t.Context(), v, path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func readPresetConfig(t *testing.T, handler *API, v domain.Vault, path string) r
 
 func writePreset(t *testing.T, handler *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
-	if _, err := handler.scenarios().flash.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
+	if _, err := handler.scenarios().Flash.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -176,10 +176,10 @@ func getCurve(t *testing.T, handler *API, v domain.Vault, path string, p review.
 
 func curves(handler *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
-		handler.scenarios().flash.Schedules.ReviewCards(),
-		handler.scenarios().flash.Schedules,
-		handler.scenarios().flash.Presets,
-		handler.scenarios().day,
+		handler.scenarios().Flash.Schedules.ReviewCards(),
+		handler.scenarios().Flash.Schedules,
+		handler.scenarios().Flash.Presets,
+		handler.scenarios().Day,
 		handler.now,
 	)
 	c.Cores = runtime.GOMAXPROCS(0)

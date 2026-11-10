@@ -161,7 +161,7 @@ func TestWatchCardsDue_MissingPageDuringCountEndsStream(t *testing.T) {
 
 	target := make(chan struct{})
 	defer close(target)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
+	handler.scenarios().Flash.CardsDue = handler.scenarios().Flash.CardsDue.WithReviewCards(handler.scenarios().Flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, handler, breaking{
@@ -201,7 +201,7 @@ func TestWatchCardsDue_ListWaitRestartsAfterEachCount(t *testing.T) {
 	front(t, handler)
 
 	first, second := make(chan struct{}), make(chan struct{})
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(gated{
+	handler.scenarios().Flash.CardsDue = handler.scenarios().Flash.CardsDue.WithReviewCards(handler.scenarios().Flash.CardsDue.ReviewCards().WithReaders(gated{
 		until:   map[domain.VaultID]<-chan struct{}{target[0].ID: first, target[1].ID: second},
 		entered: make(chan domain.VaultID, 16),
 	}))
@@ -251,7 +251,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(
+	handler.scenarios().Flash.CardsDue = handler.scenarios().Flash.CardsDue.WithReviewCards(handler.scenarios().Flash.CardsDue.ReviewCards().WithReaders(
 		gated{until: gates, entered: entered}))
 	openAll := sync.OnceFunc(func() { close(until) })
 	t.Cleanup(openAll)
@@ -305,7 +305,7 @@ func TestWatchCardsDue_EndsAfterRunningCountsFinish(t *testing.T) {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(
+	handler.scenarios().Flash.CardsDue = handler.scenarios().Flash.CardsDue.WithReviewCards(handler.scenarios().Flash.CardsDue.ReviewCards().WithReaders(
 		gated{until: gates, entered: entered}))
 	openAll := sync.OnceFunc(func() { close(until) })
 	t.Cleanup(openAll)
@@ -388,7 +388,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 
 	target := make(chan struct{})
 	defer close(target)
-	handler.scenarios().flash.CardsDue = handler.scenarios().flash.CardsDue.WithReviewCards(handler.scenarios().flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
+	handler.scenarios().Flash.CardsDue = handler.scenarios().Flash.CardsDue.WithReviewCards(handler.scenarios().Flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
 
 	stream, err := newFlashcardsClient(t, handler).WatchCardsDue(
 		t.Context(), &api.WatchCardsDueRequest{})

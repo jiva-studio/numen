@@ -8,22 +8,20 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
-	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/edit"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/server"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/api"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardcommands"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/hostports"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/adapter/rpc"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
-	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/cardwire"
 )
 
 type faultyVault struct {
@@ -115,7 +113,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 		{3, 3},
 	} {
 		b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock(), Cores: tc.cores})
-		if got := b.scenarios().flash.ReviewCards.Cores; got != tc.want {
+		if got := b.scenarios().Flash.ReviewCards.Cores; got != tc.want {
 			t.Fatalf("Cores=%d: expected %d, got %d", tc.cores, tc.want, got)
 		}
 		if got := runtime.GOMAXPROCS(0); got != 2 {
@@ -167,46 +165,7 @@ func TestBackendCoresAndVaultHelpers(t *testing.T) {
 	}
 }
 
-func TestCardsLimitsErrorCodesAndCreateCardNote(t *testing.T) {
-	if got := getCardModelLimit(0); got != cardwire.MaxCardModels {
-		t.Fatalf("expected %d for 0, got %d", cardwire.MaxCardModels, got)
-	}
-	if got := getCardModelLimit(-1); got != cardwire.MaxCardModels {
-		t.Fatalf("expected %d for -1, got %d", cardwire.MaxCardModels, got)
-	}
-	if got := getCardModelLimit(1); got != 1 {
-		t.Fatalf("expected 1, got %d", got)
-	}
-	if got := getCardModelLimit(cardwire.MaxCardModels); got != cardwire.MaxCardModels {
-		t.Fatalf("expected %d, got %d", cardwire.MaxCardModels, got)
-	}
-	if got := getCardModelLimit(cardwire.MaxCardModels + 1); got != cardwire.MaxCardModels {
-		t.Fatalf("expected %d for MaxCardModels+1, got %d", cardwire.MaxCardModels, got)
-	}
-
-	if code, ok := errorCodeOfDeck(note.TooLarge, format.TypeDeck); !ok || code != api.ErrorCodeDeckTooLarge {
-		t.Fatalf("unexpected errorCodeOfDeck(TooLarge): %v, %v", code, ok)
-	}
-	if code, ok := errorCodeOfDeck(note.Ok, format.TypeDeck); ok || code != api.ErrorCodeUnspecified {
-		t.Fatalf("unexpected errorCodeOfDeck(Ok, TypeDeck): %v, %v", code, ok)
-	}
-	if code, ok := errorCodeOfDeck(note.Ok, format.TypeCardModel); !ok || code != api.ErrorCodeNotADeck {
-		t.Fatalf("unexpected errorCodeOfDeck(Ok, TypeCardModel): %v, %v", code, ok)
-	}
-	if code, ok := errorCodeOfDeck(note.Missing, format.TypeCardModel); !ok || code != api.ErrorCodeNotFound {
-		t.Fatalf("unexpected errorCodeOfDeck(Missing, TypeCardModel): %v, %v", code, ok)
-	}
-
-	if code, ok := errorCodeOfCardModel(note.Ok, format.TypeCardModel); ok || code != api.ErrorCodeUnspecified {
-		t.Fatalf("unexpected errorCodeOfCardModel(Ok, TypeCardModel): %v, %v", code, ok)
-	}
-	if code, ok := errorCodeOfCardModel(note.Ok, format.TypeDeck); !ok || code != api.ErrorCodeNotACardModel {
-		t.Fatalf("unexpected errorCodeOfCardModel(Ok, TypeDeck): %v, %v", code, ok)
-	}
-	if code, ok := errorCodeOfCardModel(note.Missing, format.TypeDeck); !ok || code != api.ErrorCodeNotFound {
-		t.Fatalf("unexpected errorCodeOfCardModel(Missing, TypeDeck): %v, %v", code, ok)
-	}
-
+func TestCreateCardNoteReadsTheEndOfTheScenario(t *testing.T) {
 	env := vaulttest.New(t, map[string]string{})
 	b := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()})
 	ctx := t.Context()
@@ -500,7 +459,7 @@ func TestCardsAndPresetsHandlersErrorPaths(t *testing.T) {
 	})
 }
 
-func TestCommandsErrorCodesAndFileStatHelpers(t *testing.T) {
+func TestACommandWithNoVaultOpenFails(t *testing.T) {
 	env := vaulttest.New(t, map[string]string{})
 	env.Host.Hide()
 	cmds, err := New(Config{Vaults: vaulttest.Vaults(env.Host), Store: vaulttest.Folders(env.Host), Now: vaulttest.NewClock()}).Commands()
@@ -508,64 +467,14 @@ func TestCommandsErrorCodesAndFileStatHelpers(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := cmds.RunCommand(t.Context(), command.Request{
-		Command: commandCreateDeck, Arguments: command.Arguments{argumentTitle: "D"},
+		Command: cardcommands.CreateDeck, Arguments: command.Arguments{cardcommands.ArgumentTitle: "D"},
 	}); codeOf(err) != server.CodeFailedPrecondition {
 		t.Fatalf("expected CodeFailedPrecondition from command with no vault, got %v", err)
-	}
-
-	if got := describeCreateError(api.ErrorCodeInvalidName); got != "a note cannot be called that" {
-		t.Fatalf("unexpected invalid name error: %q", got)
-	}
-	if got := describeCreateError(api.ErrorCodeNotFound); got != "the file could not be made: notFound" {
-		t.Fatalf("unexpected missing error: %q", got)
-	}
-	if got := describeCreateError(api.ErrorCode("CUSTOM")); got != "the file could not be made: CUSTOM" {
-		t.Fatalf("unexpected custom error: %q", got)
-	}
-
-	if code, ok := convertOutcomeToErrorCode(edit.Ok); ok || code != api.ErrorCodeUnspecified {
-		t.Fatalf("unexpected convertOutcomeToErrorCode(Ok): %v, %v", code, ok)
-	}
-	if code, ok := convertOutcomeToErrorCode(edit.ReadOutcome("unknown")); ok || code != api.ErrorCodeUnspecified {
-		t.Fatalf("unexpected convertOutcomeToErrorCode(unknown): %v, %v", code, ok)
-	}
-	if code, ok := getErrorCode(errors.New("unmapped")); ok || code != api.ErrorCodeUnspecified {
-		t.Fatalf("unexpected getErrorCode(unmapped): %v, %v", code, ok)
-	}
-	if isIndexOutdated(nil) || !isIndexOutdated(edit.ErrIndexOutdated) {
-		t.Fatal("unexpected isIndexOutdated results")
-	}
-
-	if got := stamp(time.Time{}); got != 0 {
-		t.Fatalf("expected 0 for zero time stamp, got %d", got)
-	}
-	if got := stamp(time.Unix(0, 789)); got != 789 {
-		t.Fatalf("expected 789 for stamp, got %d", got)
-	}
-	if !instant(0).IsZero() {
-		t.Fatalf("expected zero time for instant(0), got %v", instant(0))
-	}
-	if got := instant(-1).UnixNano(); got != -1 {
-		t.Fatalf("expected -1 for instant(-1), got %d", got)
-	}
-	if got := instant(1).UnixNano(); got != 1 {
-		t.Fatalf("expected 1 for instant(1), got %d", got)
-	}
-	if got := writeFileStat(domain.FileStat{}); got != nil {
-		t.Fatalf("expected nil for zero FileStat, got %+v", got)
-	}
-	if got := readFileStat(nil); got != (domain.FileStat{}) {
-		t.Fatalf("expected zero FileStat for nil, got %+v", got)
 	}
 }
 
 func TestReviewInternalPaths(t *testing.T) {
 	ctx := t.Context()
-
-	s := &sessions{}
-	if _, err := s.getRun("v1", "r1"); !errors.Is(err, ErrNoRun) {
-		t.Fatalf("expected ErrNoRun, got %v", err)
-	}
 
 	env := vaulttest.New(t, getDeck())
 	bEnsureErr := New(Config{
@@ -643,13 +552,6 @@ func TestReviewInternalPaths(t *testing.T) {
 	}); codeOf(err) != server.CodeUnavailable {
 		t.Fatalf("expected CodeUnavailable when move.Err != nil, got %v", err)
 	}
-
-	if got := parseRating(api.RatingUnspecified); got != 0 {
-		t.Fatalf("expected 0 for RatingUnspecified, got %v", got)
-	}
-	if got := parseRating(api.Rating("unknown")); got != 0 {
-		t.Fatalf("expected 0 for unknown rating, got %v", got)
-	}
 }
 
 func TestMountAndAllEndpoints(t *testing.T) {
@@ -658,13 +560,9 @@ func TestMountAndAllEndpoints(t *testing.T) {
 
 	const tok = "test-mount-token"
 	if _, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, func(s *server.Server) error {
-		cards, presets, review := &cardsHandler{Backend: b}, &presetsHandler{Backend: b}, &reviewHandler{Backend: b}
-		return mountAPI(s.NewAPI(""), apiHandlers{
-			Models: cards, Decks: cards, PresetReads: presets, PresetWrites: presets,
-			Sessions: review, Watches: review, Stats: review,
-		})
+		return rpc.Mount(s.NewAPI(""), b.Handlers())
 	}); err == nil {
-		t.Fatal("expected mountAPI with invalid service name to return error")
+		t.Fatal("expected rpc.Mount with invalid service name to return error")
 	}
 
 	handler, err := server.NewLinkedHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": tok}, b.Mount)

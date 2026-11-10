@@ -9,9 +9,9 @@ func TestRequestSizesAreReadFromTheCamelCaseKeys(t *testing.T) {
 	}, nil)
 
 	got := s.getConfig()
-	if got.batchSize != 7 || got.inFlight != 3 || got.maxEditDistance != 0.45 {
+	if got.run.BatchSize != 7 || got.run.InFlight != 3 || got.run.MaxEditDistance != 0.45 {
 		t.Errorf("batch size %d, in flight %d, max edit distance %v; want 7, 3 and 0.45",
-			got.batchSize, got.inFlight, got.maxEditDistance)
+			got.run.BatchSize, got.run.InFlight, got.run.MaxEditDistance)
 	}
 }
 
