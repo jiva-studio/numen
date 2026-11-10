@@ -12,18 +12,12 @@ import { StopReason } from '../../lib/stop'
 import { asValue } from '@numen/plugin-sdk'
 import { dayAfter } from '../../lib/day'
 
-import { usePresetTab } from '../kind'
-import {
-  DEFAULTS,
-  NO_BOUNDS,
-  type Curve,
-  type Point,
-  type Presets,
-  type PresetTabState,
-  type Settings,
-} from '../types'
+import { usePresetTab } from '../model/kind'
+import { DEFAULTS, NO_BOUNDS, type Curve, type Point, type Presets, type Settings } from '../../lib/presets'
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
+import PresetTab from '../ui/PresetTab.vue'
+import type { PresetTabState } from '../model/types'
 
 const DAY = '2026-09-04'
 
@@ -95,6 +89,7 @@ const openPresetTab = async (settings: Partial<Settings>, answer?: Curve) => {
     curve: async () => answer ?? new Promise<Curve>(() => undefined),
   }
   const kind = usePresetTab({
+    component: PresetTab,
     core,
     buffers: createMockBufferHost(),
     closeTab: () => undefined,

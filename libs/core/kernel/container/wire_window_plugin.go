@@ -13,7 +13,7 @@ import (
 
 func mountPlugin(w *windowWiring) {
 	w.inst.SetPlugins(w.cfg.GetPluginServices(), w.cfg.GetPluginDir)
-	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.CountQuestions())))
+	w.inst.Mount(editor.NewRoute(windowplugin.NewRoute(w.inst.State.Gate.CountQuestions())))
 }
 
 // SetEditorPluginWindow gives the plugins the window: it focuses a note and the passages of a file

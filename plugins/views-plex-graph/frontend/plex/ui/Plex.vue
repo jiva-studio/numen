@@ -14,9 +14,10 @@ import { DEFAULT_BEHAVIOUR, type PlexBehaviour } from '../model/behaviour'
 import { useFreeSpace } from '../model/sizing/room'
 import { usePlexTransition } from '../model/transition'
 import { browserViewport } from '@numen/ui'
-import { formatCount, getRelationName, type PlexRelation } from '../lib/relation'
+import { formatCount, getRelationName } from '../lib/relation'
 import { usePlexDrag } from '../model/interaction/drag'
 import { usePlexGesture } from '../model/interaction/gesture'
+import type { PlexRelation } from '../../types'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(defineProps<PlexProps>(), {

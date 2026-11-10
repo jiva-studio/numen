@@ -8,9 +8,10 @@ import (
 
 func mountNote(w *windowWiring) {
 	state := w.inst.State
+	session := editor.NewSession(state)
 	notes := w.notes
 	addresses := notewindow.NewAddresses(state, notes.Refer.GetLinkAddress)
-	prose := notewindow.NewProse(state, addresses, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename)
+	prose := notewindow.NewProse(session, addresses, &notes.Edit.Read, &notes.Edit.Write, &notes.Edit.Create, &notes.Place.Rename)
 	outline := notewindow.NewOutline(
 		state, w.files.ListTabKinds,
 		query.NewGetOpeningNote(w.db.NoteQueries.OpeningNote),
@@ -19,12 +20,12 @@ func mountNote(w *windowWiring) {
 		&notes.Browse.Neighborhood,
 	)
 	links := notewindow.NewLinks(
-		state, addresses,
+		session, addresses,
 		query.NewResolveLinks(w.db.NoteQueries.Links), &notes.Edit.Linking, &notes.Connect.CreateInRelation, &notes.Refer.Backlinks,
 	)
 	connections := notewindow.NewConnections(
-		state, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
+		session, &notes.Browse.Connection, &notes.Connect.SaveConnection, &notes.Connect.RemoveSide, &notes.Connect.RemoveConnection, &notes.Connect.Join,
 	)
-	handler := notewindow.NewHandler(state, prose, outline, links, connections)
+	handler := notewindow.NewHandler(state.Notices, prose, outline, links, connections)
 	w.inst.Mount(editor.NewNoteRoute(state, handler))
 }

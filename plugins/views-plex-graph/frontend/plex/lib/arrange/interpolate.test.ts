@@ -6,7 +6,7 @@ import { easeOut } from './math'
 import { MIDDLE } from './edges/routing'
 import { ARROW_LENGTH, getHeading, getLength, createPointOnCurve } from '../edge'
 import type { PlexFrame } from '../frame'
-import type { PlexNeighbourhood } from '../neighbourhood'
+import type { PlexNeighbourhood } from '../../../types'
 
 /** Focus on `focus`, with two children and one parent. */
 const before: PlexNeighbourhood = {

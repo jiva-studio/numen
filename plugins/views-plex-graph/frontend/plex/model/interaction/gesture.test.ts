@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getPosition, usePlexGesture } from './gesture'
 import { arrangePlex, DEFAULT_OPTIONS, type Drop } from '../../lib/arrange'
 import { build } from '../../fixtures/build'
-import type { PlexRelation } from '../../lib/relation'
+import type { PlexRelation } from '../../../types'
 
 const frame = arrangePlex(build('A node', { parent: 1, child: 2, jump: 1 }))
 const AVAILABLE_RELATIONS: readonly PlexRelation[] = ['parent', 'child', 'jump']

@@ -629,6 +629,7 @@ const createBarPlugin = (pluginId: string) => ({
     name: 'Bar',
     version: '1.0.0',
     frontend: {},
+    permissions: ['vault:read', 'vault:write', 'vault:manage'],
     contributes: { slots: [{ slot: 'titleBar', view: 'bar' }] },
   },
   activate: (context: PluginContext) => {

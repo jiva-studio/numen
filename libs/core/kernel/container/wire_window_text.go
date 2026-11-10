@@ -10,6 +10,6 @@ func mountText(w *windowWiring) {
 	if text := openFileText(w.cfg.vault()); text != nil {
 		handler = windowtext.NewHandler(w.inst.State, text)
 	}
-	path, served := windowtext.NewRoute(handler, w.inst.State.CountQuestions())
+	path, served := windowtext.NewRoute(handler, w.inst.State.Gate.CountQuestions())
 	w.inst.Mount(editor.NewRoute(path, served, handler))
 }

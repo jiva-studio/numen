@@ -3,15 +3,7 @@
  * is arithmetic over the settings alone.
  */
 import { dayAfter, daysBetween } from '../../lib/day'
-import {
-  DEFAULTS,
-  NO_CURVE_POINT,
-  type Curve,
-  type CurvePoint,
-  type Point,
-  type Settings,
-  type SettingsBounds,
-} from '../types'
+import { DEFAULTS, NO_CURVE_POINT, type Curve, type CurvePoint, type Point, type Settings, type SettingsBounds } from '../../lib/presets'
 import { getGoalValue, findNearest } from './curve'
 
 /** How many places the line drawn in the answer's place is worked out at. */

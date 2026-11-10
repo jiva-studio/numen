@@ -1,26 +1,5 @@
+import type { EdgeArrow, PlexEdge } from '../../types'
 import type { Position } from './node'
-
-/** The end of a line an arrowhead is drawn at, pointing out of the line there. */
-export type EdgeArrow = 'from' | 'to'
-
-/**
- * Words set along an edge. A line with one label carries it in the middle, on
- * the line, its letters across it. With two whose records both have a head,
- * each is set near the end its head is at, on its own side, and reads toward that end. Otherwise
- * the first, written in the `from` note, is set near the `from` end and reads from `from` to `to`,
- * and the second, written in the `to` note, is set near the `to` end on the other side and reads back.
- */
-export interface EdgeLabel {
-  readonly text: string
-  readonly end?: EdgeArrow
-}
-
-export interface PlexEdge {
-  readonly from: string
-  readonly to: string
-  readonly labels?: readonly EdgeLabel[]
-  readonly arrows?: readonly EdgeArrow[]
-}
 
 /**
  * The line itself, as a cubic curve. Two control points, because both tangents
