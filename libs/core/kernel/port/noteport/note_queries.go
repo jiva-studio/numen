@@ -37,7 +37,7 @@ type TypedPaths interface {
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// VaultHolds tells whether the index holds any note of a vault.
+// VaultHolds checks the index for any note of a vault.
 type VaultHolds interface {
 	Has(ctx context.Context, vaultID domain.VaultID) (bool, error)
 }
