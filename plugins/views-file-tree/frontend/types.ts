@@ -86,8 +86,6 @@ export interface FilesTabDeps {
 
 /** What a tree shows, as values that change. */
 export interface FileTreeState {
-  readonly rows: Ref<readonly ListingRow[]>
-  readonly openRows: Ref<readonly string[]>
   readonly selectedPaths: Ref<readonly string[]>
   readonly errorMessage: Ref<string>
   readonly isLoaded: Ref<boolean>
@@ -95,33 +93,36 @@ export interface FileTreeState {
 
 /** What a tree answers about the folders it has loaded. */
 export interface FileTreeQueries {
+  readonly rows: Ref<readonly ListingRow[]>
+  readonly openRows: Ref<readonly string[]>
   getEntriesInFolder(folder: string): readonly Entry[]
   isFolderOpen(folder: string): boolean
   getEntryAt(path: string): Entry | null
 }
 
-/** The operations that open, close and select folders and rows. */
-export interface FileTreeNavigation {
-  loadFolder(folder: string): Promise<void>
+/** The operations that open and close folders. */
+export interface FileTreeFolders {
   openFolder(folder: string): Promise<void>
   closeFolder(folder: string): void
   toggleFolder(folder: string): Promise<void>
-  selectPaths(paths: readonly string[]): void
-  revealPath(path: string): Promise<void>
 }
 
-/** The operations that bring the tree in line with the vault, and end it. */
+/** The operations that bring the tree in line with the vault. */
 export interface FileTreeSync {
+  loadFolder(folder: string): Promise<void>
   refresh(): Promise<void>
   refreshChanged(paths?: readonly string[], renamed?: readonly PathRename[]): Promise<void>
-  close(): void
 }
 
 export interface FileTree {
   readonly state: FileTreeState
   readonly queries: FileTreeQueries
-  readonly navigation: FileTreeNavigation
+  readonly folders: FileTreeFolders
   readonly sync: FileTreeSync
+  selectPaths(paths: readonly string[]): void
+  revealPath(path: string): Promise<void>
+  /** Ends the tree: nothing it was loading is kept, and the folders open are the root. */
+  close(): void
 }
 
 /** The operations over the rows of the tree. */

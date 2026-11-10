@@ -68,8 +68,8 @@ const mountFiles = async (open: readonly string[] = []) => {
       },
     },
   })
-  await list.navigation.openFolder(ROOT)
-  for (const folderPath of open) await list.navigation.openFolder(folderPath)
+  await list.folders.openFolder(ROOT)
+  for (const folderPath of open) await list.folders.openFolder(folderPath)
   const window = mount(FilesTab, { props: { state: tab } })
   await settle()
   return { recorded: isDone, list, tab, window }
@@ -213,7 +213,7 @@ describe('the menu on a row', () => {
 
   const openMenu = async (path: string | null, selection: readonly string[] = []) => {
     const mounted = await mountFiles()
-    if (selection.length) mounted.list.navigation.selectPaths(selection)
+    if (selection.length) mounted.list.selectPaths(selection)
     mounted.window.findComponent(Tree).vm.$emit('menu', path, { x: 4, y: 8 })
     await settle()
     return mounted
@@ -311,7 +311,7 @@ describe('a folder that could not be read', () => {
         dropData: async () => [],
       },
     })
-    await list.navigation.openFolder(ROOT)
+    await list.folders.openFolder(ROOT)
 
     const window = mount(FilesTab, { props: { state: tab } })
     await settle()
@@ -372,7 +372,7 @@ describe('the empty message of the tab', () => {
 
   it('is absent while the first listing is still loading', async () => {
     const { tree, window } = mountOver(() => new Promise(() => undefined))
-    tree.navigation.openFolder(ROOT).catch(() => undefined)
+    tree.folders.openFolder(ROOT).catch(() => undefined)
     await settle()
 
     expect(window.text()).not.toContain('No files in this vault')
@@ -381,7 +381,7 @@ describe('the empty message of the tab', () => {
   it('shows the entries once the first listing is returned', async () => {
     let resolve: (entries: readonly Entry[]) => void = () => undefined
     const { tree, window } = mountOver(() => new Promise((isDone) => (resolve = isDone)))
-    const opening = tree.navigation.openFolder(ROOT)
+    const opening = tree.folders.openFolder(ROOT)
     resolve([file('Entropy.md')])
     await opening
     await settle()
@@ -392,7 +392,7 @@ describe('the empty message of the tab', () => {
 
   it('shows once the first listing is returned with no entries', async () => {
     const { tree, window } = mountOver(async () => [])
-    await tree.navigation.openFolder(ROOT)
+    await tree.folders.openFolder(ROOT)
     await settle()
 
     expect(window.text()).toContain('No files in this vault')

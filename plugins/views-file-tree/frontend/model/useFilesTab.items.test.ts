@@ -70,7 +70,7 @@ const setUp = async (answer: () => Promise<readonly CommandItem[]>) => {
       dropData: async () => [],
     },
   })
-  await list.navigation.openFolder(ROOT)
+  await list.folders.openFolder(ROOT)
   one.menu.open({ path: 'Scan.pdf', at: { x: 0, y: 0 } })
   const answerChoices = async () => {
     release?.()

@@ -183,13 +183,13 @@ describe('view-file-tree plugin', () => {
     activate(ctx)
     const state = ctx.getRegisteredTabKinds()[0]!.open!('', 'files') as FilesTabState
     await settle()
-    expect(state.list.state.rows.value.map((row) => row.entry.path)).toStrictEqual(['A.md'])
+    expect(state.list.queries.rows.value.map((row) => row.entry.path)).toStrictEqual(['A.md'])
 
     folders[''] = [note('B.md')]
     ctx.events.emitVaultChange({ paths: [], renamed: [{ from: 'A.md', to: 'B.md' }] })
     await settle()
 
-    expect(state.list.state.rows.value.map((row) => row.entry.path)).toStrictEqual(['B.md'])
+    expect(state.list.queries.rows.value.map((row) => row.entry.path)).toStrictEqual(['B.md'])
   })
 
   it('draws the menu of a row from the entries of its slot, and runs their commands', async () => {

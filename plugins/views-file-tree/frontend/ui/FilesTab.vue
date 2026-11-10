@@ -24,7 +24,7 @@ const dropTarget = computed<RowMarker>(() => ({
   getAttributeValue: (row: string | null) => props.state.transfer.getFolderFor(row),
 }))
 
-const rows = computed(() => getRows(props.state.list.state.rows.value))
+const rows = computed(() => getRows(props.state.list.queries.rows.value))
 
 /** The row whose name is in a field, which the tree opens and closes itself. */
 const renamingPath = computed({
@@ -126,7 +126,7 @@ function getItemIcon(id: string): Component | null {
       v-model:renaming-path="renamingPath"
       class="files__tree"
       :rows="rows"
-      :open="props.state.list.state.openRows.value"
+      :open="props.state.list.queries.openRows.value"
       :selected="props.state.list.state.selectedPaths.value"
       :name="words.tree"
       :counted="words.dragging"

@@ -34,8 +34,8 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
       const deps = createFilesTabDeps(host, id)
       const state = useFilesTab(createTree(), deps)
       tabs.set(id, state)
-      state.list.navigation.openFolder(ROOT).catch(state.reportFailure)
-      if (targetPath) state.list.navigation.revealPath(targetPath).catch(state.reportFailure)
+      state.list.folders.openFolder(ROOT).catch(state.reportFailure)
+      if (targetPath) state.list.revealPath(targetPath).catch(state.reportFailure)
       watch(state.list.state.selectedPaths, (paths) => {
         const path = paths[0]
         if (path) deps.window.onSelectPath?.(path, state)
@@ -51,13 +51,13 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
     },
     getTitle: () => words.files,
     onClose: (state, id) => {
-      state.list.sync.close()
+      state.list.close()
       tabs.delete(id)
       if (menuTab === state) menuTab = null
       return true
     },
     navigate: async (state, path) => {
-      if (path) await state.list.navigation.revealPath(path)
+      if (path) await state.list.revealPath(path)
     },
   }
 

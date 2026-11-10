@@ -56,8 +56,8 @@ const createFilesTab = (open: readonly string[]): FilesTabState => {
   })
 
   const openFolders = async () => {
-    await list.navigation.openFolder(ROOT)
-    for (const folderPath of open) await list.navigation.openFolder(folderPath)
+    await list.folders.openFolder(ROOT)
+    for (const folderPath of open) await list.folders.openFolder(folderPath)
   }
   openFolders().catch(state.reportFailure)
 
