@@ -19,18 +19,28 @@ export interface SearchMenuDeps {
  * no line at all.
  */
 export interface SearchHit {
+  spot: HitSpot
+  offer: HitOffer
+  type: NoteType | null
+  tabKind?: string
+  selector: Selector | null
+}
+
+/** Where a hit is: its file, the title shown for it, and the line and the span of the text found. */
+interface HitSpot {
   path: string
   title: string
   line: number
   start: number
   length: number
-  actionIds: readonly string[]
-  type: NoteType | null
-  tabKind?: string
-  selector: Selector | null
+}
+
+/** The actions a hit offers, and what each of them runs. */
+interface HitOffer {
+  ids: readonly string[]
   creationIds?: readonly string[]
-  actionValues?: Readonly<Record<string, Readonly<Record<string, string>>>>
-  actionCommands?: Readonly<Record<string, string>>
+  values?: Readonly<Record<string, Readonly<Record<string, string>>>>
+  commands?: Readonly<Record<string, string>>
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -46,8 +56,7 @@ function createNoteActions(
   entries: readonly SlotItem[],
 ): {
   actions: readonly PaletteAction[]
-  actionIds: readonly string[]
-  valuesOfHit: Pick<SearchHit, 'actionValues' | 'actionCommands'>
+  offer: HitOffer
 } {
   const commands = entries
     .filter((one) => one.kind === 'command')
@@ -60,11 +69,11 @@ function createNoteActions(
   const otherIds = commands.filter(({ one, id }) => id !== one.command)
   return {
     actions,
-    actionIds: actions.map((one) => one.id),
-    valuesOfHit: {
-      ...(withValues.length > 0 ? { actionValues: Object.fromEntries(withValues) } : {}),
+    offer: {
+      ids: actions.map((one) => one.id),
+      ...(withValues.length > 0 ? { values: Object.fromEntries(withValues) } : {}),
       ...(otherIds.length > 0
-        ? { actionCommands: Object.fromEntries(otherIds.map(({ one, id }) => [id, one.command])) }
+        ? { commands: Object.fromEntries(otherIds.map(({ one, id }) => [id, one.command])) }
         : {}),
     },
   }
@@ -100,13 +109,8 @@ export function createNameItem(
           actions: atHeading.actions,
         },
         hit: {
-          path: one.path,
-          title: one.title,
-          line: one.line,
-          start: 0,
-          length: 0,
-          actionIds: atHeading.actionIds,
-          ...atHeading.valuesOfHit,
+          spot: { path: one.path, title: one.title, line: one.line, start: 0, length: 0 },
+          offer: atHeading.offer,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -120,13 +124,8 @@ export function createNameItem(
           actions: byName.actions,
         },
         hit: {
-          path: one.path,
-          title: one.title,
-          line: -1,
-          start: 0,
-          length: 0,
-          actionIds: byName.actionIds,
-          ...byName.valuesOfHit,
+          spot: { path: one.path, title: one.title, line: -1, start: 0, length: 0 },
+          offer: byName.offer,
           type: one.type,
           ...(one.tabKind ? { tabKind: one.tabKind } : {}),
           selector: null,
@@ -139,13 +138,8 @@ function createNotePassageHit(
   note: ReturnType<typeof createNoteActions>,
 ): SearchHit {
   return {
-    path: one.path,
-    title: one.title,
-    line: one.line,
-    start: one.start,
-    length: one.length,
-    actionIds: note.actionIds,
-    ...note.valuesOfHit,
+    spot: { path: one.path, title: one.title, line: one.line, start: one.start, length: one.length },
+    offer: note.offer,
     type: one.type,
     ...(one.tabKind ? { tabKind: one.tabKind } : {}),
     selector: null,
@@ -154,12 +148,8 @@ function createNotePassageHit(
 
 function createDocumentPassageHit(one: Passage, actionIds: readonly string[]): SearchHit {
   return {
-    path: one.path,
-    title: one.title,
-    line: -1,
-    start: one.start,
-    length: one.length,
-    actionIds,
+    spot: { path: one.path, title: one.title, line: -1, start: one.start, length: one.length },
+    offer: { ids: actionIds },
     type: null,
     selector: one.selector,
   }
@@ -205,11 +195,12 @@ export interface ResultChoice {
 }
 
 function resolveNoteChoice(result: SearchHit, action: string): ResultChoice {
-  const place = { path: result.path, file: result.path, title: result.title }
-  const values = result.actionValues?.[action]
+  const { path, title, line } = result.spot
+  const place = { path, file: path, title }
+  const values = result.offer.values?.[action]
   return {
-    command: result.actionCommands?.[action] ?? action,
-    over: result.line >= 0 ? { ...place, line: result.line } : place,
+    command: result.offer.commands?.[action] ?? action,
+    over: line >= 0 ? { ...place, line } : place,
     input: '',
     ...(values ? { values } : {}),
   }
@@ -225,8 +216,8 @@ export function resolveChoice(
   action: string,
   typed = '',
 ): ResultChoice | null {
-  if (!result || !result.actionIds.includes(action)) return null
-  if (result.creationIds?.includes(action)) {
+  if (!result || !result.offer.ids.includes(action)) return null
+  if (result.offer.creationIds?.includes(action)) {
     return {
       command: action,
       over: null,
@@ -235,7 +226,7 @@ export function resolveChoice(
   }
   if (result.type === null) {
     if (action !== ROW.openDocument) return null
-    const place = { path: '', file: result.path, title: result.title }
+    const place = { path: '', file: result.spot.path, title: result.spot.title }
     return {
       command: action,
       over: result.selector ? { ...place, selector: result.selector } : place,

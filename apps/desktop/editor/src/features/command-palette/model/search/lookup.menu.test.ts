@@ -93,7 +93,7 @@ describe('a note found by its title', () => {
   it('lets the hit accept the entries and opening the note', () => {
     const row = createNameItem(createName(), WORDS, ENTRIES)
 
-    expect(row.hit.actionIds).toStrictEqual([openId, showId, otherId])
+    expect(row.hit.offer.ids).toStrictEqual([openId, showId, otherId])
   })
 
   it('offers opening the note first whatever group the first entry is in', () => {
@@ -139,7 +139,7 @@ describe('a heading found by its name', () => {
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
-    expect(row.hit.actionIds).toStrictEqual([openId, showId, otherId])
+    expect(row.hit.offer.ids).toStrictEqual([openId, showId, otherId])
   })
 })
 
@@ -152,7 +152,7 @@ describe('a passage found in a note', () => {
       { id: showId, text: 'Show note in plex' },
       { id: otherId, text: 'Another' },
     ])
-    expect(row.hit.actionIds).toStrictEqual([openId, showId, otherId])
+    expect(row.hit.offer.ids).toStrictEqual([openId, showId, otherId])
   })
 })
 
@@ -166,24 +166,28 @@ describe('a passage found in a file that is no note', () => {
     )
 
     expect(row.item.actions).toStrictEqual([{ id: ROW.openDocument, text: 'Open the document' }])
-    expect(row.hit.actionIds).toStrictEqual([ROW.openDocument])
+    expect(row.hit.offer.ids).toStrictEqual([ROW.openDocument])
   })
 })
 
 describe('the command an action of a result runs', () => {
-  const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
-    path: 'reef/Coral.md',
-    title: 'Coral',
-    line: 3,
-    start: 12,
-    length: 4,
-    actionIds: [openId, showId, otherId],
-    type: 'sample',
-    selector: null,
-    ...overrides,
+  /** The fields of a hit, flat: the spot it stands at, the ids of its actions, its type and selector. */
+  type HitFields = Partial<SearchHit['spot']> &
+    Partial<Pick<SearchHit, 'type' | 'selector'>> & { actionIds?: readonly string[] }
+
+  const createHit = ({
+    actionIds = [openId, showId, otherId],
+    type = 'sample',
+    selector = null,
+    ...spot
+  }: HitFields = {}): SearchHit => ({
+    spot: { path: 'reef/Coral.md', title: 'Coral', line: 3, start: 12, length: 4, ...spot },
+    offer: { ids: actionIds },
+    type,
+    selector,
   })
 
-  const createDocument = (overrides: Partial<SearchHit> = {}): SearchHit =>
+  const createDocument = (overrides: HitFields = {}): SearchHit =>
     createHit({
       path: 'library/a.bin',
       title: '',
@@ -285,6 +289,6 @@ describe('an entry that holds values', () => {
   it('leaves the hit without values where no entry holds any', () => {
     const row = createNameItem(createName(), WORDS, ENTRIES)
 
-    expect(row.hit).not.toHaveProperty('actionValues')
+    expect(row.hit.offer).not.toHaveProperty('values')
   })
 })

@@ -89,13 +89,13 @@ describe('the entries of a search result that show a note', () => {
     }
     const entries = one.pluginHost.slots.getEntries(SLOT.paletteSearchResult, REEF)
     const row = createNameItem(found, { ...windowWords, ...PALETTE_WORDS }, entries)
-    const actions = row.hit.actionIds.filter((id) => row.hit.actionCommands?.[id] === REVEAL)
+    const actions = row.hit.offer.ids.filter((id) => row.hit.offer.commands?.[id] === REVEAL)
     expect(actions).not.toStrictEqual([])
 
     for (const action of actions) {
       const choice = resolveChoice(row.hit, action)
       if (choice) one.used.runChoice(choice)
-      const kind = row.hit.actionValues?.[action]?.['kind']
+      const kind = row.hit.offer.values?.[action]?.['kind']
       await vi.waitFor(() => expect(one.navigateTab).toHaveBeenCalledWith(kind, 'Reef.md'))
     }
     expect(one.navigateTab).toHaveBeenCalledTimes(actions.length)

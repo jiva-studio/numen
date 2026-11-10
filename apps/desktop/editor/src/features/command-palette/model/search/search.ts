@@ -170,7 +170,7 @@ function appendCreateNoteActions(
   const hitsById = new Map(
     [...base.hitsById].map(([id, hit]) => [
       id,
-      { ...hit, actionIds: [...hit.actionIds, ...ids], creationIds: ids },
+      { ...hit, offer: { ...hit.offer, ids: [...hit.offer.ids, ...ids], creationIds: ids } },
     ]),
   )
   return { groups, hitsById }
@@ -255,7 +255,7 @@ function createHitReaders(getHits: () => ReadonlyMap<string, SearchHit>) {
 
   const findHitFile = (item: string): string | null => {
     const searchHit = getHits().get(item)
-    return searchHit && searchHit.type === null ? searchHit.path : null
+    return searchHit && searchHit.type === null ? searchHit.spot.path : null
   }
 
   return { findTabKind, findHitFile }
