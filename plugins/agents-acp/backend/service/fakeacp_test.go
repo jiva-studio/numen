@@ -1,6 +1,4 @@
-// Package fakeacp is a fake ACP agent: the test binary runs as an agent program when it is started
-// with the argument fake-acp. The package holds the helpers that start it and read what it recorded.
-package fakeacp
+package service
 
 import (
 	"bufio"
@@ -15,9 +13,9 @@ import (
 	"time"
 )
 
-// Main runs the test binary as a fake ACP agent when it is started as one, and the tests of m
-// otherwise. A test package calls it from TestMain.
-func Main(m *testing.M) {
+// TestMain runs the test binary as a fake ACP agent when it is started as one, and the tests of m
+// otherwise.
+func TestMain(m *testing.M) {
 	if len(os.Args) > 1 && os.Args[1] == "fake-acp" {
 		time.AfterFunc(4*time.Second, func() { os.Exit(0) })
 		os.Exit(runFakeACPAgent(os.Args[2:], os.Stdin, os.Stdout))
@@ -32,17 +30,17 @@ func Main(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// Start returns the command line that runs the fake agent with the behavior, and the path of the
+// startFake returns the command line that runs the fake agent with the behavior, and the path of the
 // file the agent records the messages it reads in.
-func Start(t *testing.T, behavior string) (command []string, record string) {
+func startFake(t *testing.T, behavior string) (command []string, record string) {
 	t.Helper()
 	record = filepath.Join(t.TempDir(), "record")
 	return []string{os.Args[0], "fake-acp", behavior, record}, record
 }
 
-// ReadRecord returns the messages the agent recorded by method; the replies of the client are under
+// readRecord returns the messages the agent recorded by method; the replies of the client are under
 // the key reply.
-func ReadRecord(t *testing.T, record string) map[string][]map[string]any {
+func readRecord(t *testing.T, record string) map[string][]map[string]any {
 	t.Helper()
 	raw, err := os.ReadFile(record)
 	if err != nil {
@@ -252,8 +250,8 @@ func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
 	a.read()
 }
 
-// GetField returns the value of key in a JSON object, and fails the test when it is not a T.
-func GetField[T any](t *testing.T, object any, key string) T {
+// getField returns the value of key in a JSON object, and fails the test when it is not a T.
+func getField[T any](t *testing.T, object any, key string) T {
 	t.Helper()
 	var zero T
 	fields, ok := object.(map[string]any)

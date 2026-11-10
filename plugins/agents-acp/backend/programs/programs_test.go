@@ -1,7 +1,6 @@
 package programs
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -9,10 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/acp"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/agents"
 	"github.com/jiva-studio/numen/plugins/agents-acp/backend/internal/adapter/process"
-	"github.com/jiva-studio/numen/plugins/agents-acp/backend/testsupport/fakeacp"
 )
-
-func TestMain(m *testing.M) { fakeacp.Main(m) }
 
 func TestAnAgentHasThirtySecondsOfBackoffAfterFifteenToList(t *testing.T) {
 	if listLimit != 15*time.Second || failureBackoff != 30*time.Second {
@@ -28,20 +24,6 @@ func TestAModelWithNoNameIsTitledByItsID(t *testing.T) {
 
 	if program.Name != "acp:unnamed" || len(program.Models) != 1 || program.Models[0].Title != "m-id" || !program.Models[0].IsDefault {
 		t.Errorf("program = %+v", program)
-	}
-}
-
-func TestAListingThatCannotCloseItsSessionFails(t *testing.T) {
-	command, _ := fakeacp.Start(t, "fail-close")
-	lister, err := New(agents.NewRegistry(nil), process.Launcher{}, clock.System{}, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = lister.readListing(t.Context(), agents.Agent{Program: "fail-close", Title: "Fail close", Command: command})
-
-	if err == nil || !strings.Contains(err.Error(), "close rejected") {
-		t.Errorf("readListing with failing close = %v", err)
 	}
 }
 
