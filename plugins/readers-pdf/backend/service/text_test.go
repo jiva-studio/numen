@@ -314,7 +314,7 @@ func TestGetHighlightsPlacesNothingWithoutLiveVersion(t *testing.T) {
 }
 
 func newDocumentServer(server *TextServer, texts *hosttest.Texts) *DocumentServer {
-	return NewDocumentServer(func(id domain.VaultID) host.FileReader { return server.vaults(id) }, func(id domain.VaultID) liveTexts { return texts.With(id) }, server.workers)
+	return NewDocumentServer(func(id domain.VaultID) host.FileReader { return server.vaults(id) }, func(id domain.VaultID) LiveTexts { return texts.With(id) }, server.workers)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {

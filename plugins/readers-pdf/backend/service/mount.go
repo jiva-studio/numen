@@ -36,14 +36,14 @@ func Mount(s *server.Server) error {
 func mountClients(s *server.Server, files *host.Client, texts *host.TextClient, store *host.StoreClient, queue host.Queue) error {
 	workers := newWorkers()
 	readers := func(id domain.VaultID) host.FileReader { return files.With(id) }
-	live := func(id domain.VaultID) liveTexts { return texts.With(id) }
+	live := func(id domain.VaultID) LiveTexts { return texts.With(id) }
 	vaults := func(id domain.VaultID) vaultFiles { return files.With(id) }
 	versions := func(id domain.VaultID) host.TextVersions { return texts.With(id) }
 	folders := func(id domain.VaultID) host.StoreWriter { return store.With(id) }
 	return mount(s, readers, live, NewTextServer(vaults, versions, folders, queue, workers), workers)
 }
 
-func mount(s *server.Server, files func(domain.VaultID) host.FileReader, texts func(domain.VaultID) liveTexts, provider *TextServer, workers *pdf.Workers) error {
+func mount(s *server.Server, files func(domain.VaultID) host.FileReader, texts func(domain.VaultID) LiveTexts, provider *TextServer, workers *pdf.Workers) error {
 	if err := NewDocumentServer(files, texts, workers).Mount(s.NewAPI(APIService)); err != nil {
 		return err
 	}

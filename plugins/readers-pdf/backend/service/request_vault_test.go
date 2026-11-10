@@ -68,7 +68,7 @@ func postAPI(t *testing.T, documents *DocumentServer, method, vault, body string
 
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, func(id domain.VaultID) liveTexts { return v.texts.With(id) }, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, func(id domain.VaultID) LiveTexts { return v.texts.With(id) }, newTestWorkers(t))
 	var res GetHighlightsResponse
 
 	code := postAPI(t, documents, "GetHighlights", "Chemistry", `{"path":"tiny.pdf","ranges":[{"start":0,"end":4}]}`, &res)
@@ -83,7 +83,7 @@ func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 
 func TestGetDocumentOpensTheFileOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
-	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, func(id domain.VaultID) liveTexts { return v.texts.With(id) }, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return v.current.With(id) }, func(id domain.VaultID) LiveTexts { return v.texts.With(id) }, newTestWorkers(t))
 	var res GetDocumentResponse
 
 	code := postAPI(t, documents, "GetDocument", "Chemistry", `{"path":"tiny.pdf"}`, &res)

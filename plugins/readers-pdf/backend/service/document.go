@@ -22,7 +22,7 @@ import (
 // header names.
 type DocumentServer struct {
 	vaults  func(domain.VaultID) host.FileReader
-	texts   func(domain.VaultID) liveTexts
+	texts   func(domain.VaultID) LiveTexts
 	workers *pdf.Workers
 }
 
@@ -50,15 +50,15 @@ func newWorkers() *pdf.Workers {
 	return workers
 }
 
-// liveTexts reads the live text version of a file.
-type liveTexts interface {
+// LiveTexts reads the live text version of a file.
+type LiveTexts interface {
 	ListVersions(ctx context.Context, path string) (host.TextListing, error)
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error)
 }
 
 // NewDocumentServer returns a DocumentServer that reads files from vaults on the workers, and text
 // versions from texts.
-func NewDocumentServer(vaults func(domain.VaultID) host.FileReader, texts func(domain.VaultID) liveTexts, workers *pdf.Workers) *DocumentServer {
+func NewDocumentServer(vaults func(domain.VaultID) host.FileReader, texts func(domain.VaultID) LiveTexts, workers *pdf.Workers) *DocumentServer {
 	return &DocumentServer{vaults: vaults, texts: texts, workers: workers}
 }
 
@@ -140,7 +140,7 @@ func (s *DocumentServer) GetHighlights(ctx context.Context, req GetHighlightsReq
 	return out, nil
 }
 
-func readLiveText(ctx context.Context, texts liveTexts, path string, end int) (domain.VersionText, error) {
+func readLiveText(ctx context.Context, texts LiveTexts, path string, end int) (domain.VersionText, error) {
 	listing, err := texts.ListVersions(ctx, path)
 	if errors.Is(err, host.ErrNotExist) {
 		return domain.VersionText{Text: ""}, nil

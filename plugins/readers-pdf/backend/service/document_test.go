@@ -23,7 +23,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
 	writeFile(t, outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return files.With(id) }, func(domain.VaultID) liveTexts { return hosttest.NewTexts("vault", pluginID) }, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return files.With(id) }, func(domain.VaultID) LiveTexts { return hosttest.NewTexts("vault", pluginID) }, newTestWorkers(t))
 	ctx := t.Context()
 
 	// 1. GetDocument outside vault -> PermissionDenied
@@ -74,7 +74,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 
 func TestDocumentServerEmptyPath(t *testing.T) {
 	vault := hosttest.New("vault")
-	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, func(domain.VaultID) liveTexts { return hosttest.NewTexts("vault", pluginID) }, newTestWorkers(t))
+	documents := NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, func(domain.VaultID) LiveTexts { return hosttest.NewTexts("vault", pluginID) }, newTestWorkers(t))
 	ctx := t.Context()
 
 	// 1. GetDocument with empty path

@@ -18,7 +18,8 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	outsideDir := t.TempDir()
 	outsidePath := filepath.Join(outsideDir, "outside.pdf")
 	vault := hosttest.New("vault")
-	documents := service.NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, hosttest.NewTexts("vault", "md.numen.readers.pdf"), pdf.NewWorkers())
+	texts := hosttest.NewTexts("vault", "md.numen.readers.pdf")
+	documents := service.NewDocumentServer(func(id domain.VaultID) host.FileReader { return vault.With(id) }, func(id domain.VaultID) service.LiveTexts { return texts.With(id) }, pdf.NewWorkers())
 
 	_, err := documents.GetDocument(t.Context(), service.GetDocumentRequest{Path: outsidePath})
 	assertDenied(t, err, "GetDocument outside the vault")
