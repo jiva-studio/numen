@@ -23,7 +23,6 @@ import {
   type AgentHost,
   type Disposable,
   type PluginContext,
-  type SlotViewRegistry,
   type CommandsHost,
   type VaultsHost,
   type WindowHost,
