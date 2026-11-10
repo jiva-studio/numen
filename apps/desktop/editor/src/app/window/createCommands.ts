@@ -65,7 +65,6 @@ export interface CommandsDepsOptions {
     getCommands: () => readonly Command[]
     choose: (command: string, item: string) => Promise<void>
   }
-  /** The plugins of the installation and the settings that switch them on. */
   settings: Pick<SettingsStore, 'read' | 'state'>
   writeMessage: MessageWriter
   pluginHost?: PluginHost | undefined

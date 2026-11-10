@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createEmitter } from './emitter'
 
 describe('an emitter', () => {
-  it('hands a value to every listener subscribed', () => {
+  it('calls every listener with the emitted value', () => {
     const emitter = createEmitter<string>()
     const first = vi.fn()
     const second = vi.fn()
@@ -15,7 +15,7 @@ describe('an emitter', () => {
     expect(second).toHaveBeenCalledExactlyOnceWith('Coral.md')
   })
 
-  it('reaches nobody before a listener subscribes, and nobody after it stops', () => {
+  it('calls a listener only between its subscription and its stop', () => {
     const emitter = createEmitter<number>()
     const listener = vi.fn()
     emitter.emit(1)

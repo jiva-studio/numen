@@ -70,12 +70,12 @@ describe('a change of the vault', () => {
 describe('the renames of a change of the vault', () => {
   it('are handed to whatever listens to them', () => {
     const { wiring } = createWiring(() => Promise.resolve())
-    const heard = vi.fn()
-    wiring.renames.subscribe(heard)
+    const received = vi.fn()
+    wiring.renames.subscribe(received)
 
     createDisplayOptions(wiring).onVaultChanged(['b.md'], [{ from: 'a.md', to: 'b.md' }])
 
-    expect(heard).toHaveBeenCalledExactlyOnceWith([{ from: 'a.md', to: 'b.md' }])
+    expect(received).toHaveBeenCalledExactlyOnceWith([{ from: 'a.md', to: 'b.md' }])
   })
 })
 

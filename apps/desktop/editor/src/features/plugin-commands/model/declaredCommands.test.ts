@@ -44,7 +44,6 @@ const front = (file: string, isReady = true) => ({
   isReady,
 })
 
-/** Carries a command out through the handler registered for its id. */
 const runInvocation = (invocation: CommandInvocation, on: CommandDeps) =>
   commands.get(invocation.id)?.(invocation, on)
 

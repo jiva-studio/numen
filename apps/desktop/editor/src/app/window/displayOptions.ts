@@ -14,7 +14,6 @@ import type { WindowDisplay } from '@/features/window-display'
 export interface DisplayWiring {
   editing: ReturnType<typeof createNoteEditors>
   navigation: ReturnType<typeof createTabNavigation>
-  /** Receives the renames of a change of the vault, for whatever keeps paths of its own. */
   renames: Emitter<readonly PathRename[]>
   tabOpeners: ReturnType<typeof fileOpeners>
   windowTabs: Pick<WindowTabs, 'groups'>

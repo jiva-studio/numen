@@ -14,7 +14,6 @@ export interface VaultRef {
 }
 
 export interface VaultsDeps {
-  /** Every vault the installation holds, and which of them this window shows. */
   listVaults: () => Promise<VaultList>
   log: MessageLog
   chunks: Ref<number>

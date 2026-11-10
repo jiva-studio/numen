@@ -1,4 +1,4 @@
-/** The commands the enabled plugins declare: how the palette lists and runs them, and where they sit in the slots. */
+/** The commands the enabled plugins declare, their rows in the palette and their entries in the slots. */
 export { createCommandItems } from './lib/commandItems'
 export { getNamedTarget, toRunTarget } from './lib/runTarget'
 export { createBackendHandlers } from './model/backendHandlers'
