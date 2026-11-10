@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +27,7 @@ type secretHost struct {
 	getConfigSnapshot func(pluginID string) (configSnapshot, bool, error)
 	listPluginIDs     func() []string
 	reportError       func(err error)
+	getClient         func(endpoint plugindomain.Endpoint) *http.Client
 }
 
 type secretDelivery struct {
@@ -284,7 +286,7 @@ func isCallerFailure(ctx context.Context, err error) bool {
 
 func (d *secretDelivery) sendConfigure(ctx context.Context, snapshot configSnapshot, entries []*v1.ConfigureSecrets) (bool, error) {
 	client := numenv1connect.NewPluginLifecycleServiceClient(
-		transport.GetClient(d.host, snapshot.endpoint),
+		d.host.getClient(snapshot.endpoint),
 		transport.GetBaseURL(snapshot.endpoint),
 		connect.WithInterceptors(transport.AuthInterceptor(snapshot.endpoint.Token)),
 	)

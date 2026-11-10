@@ -8,15 +8,34 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/vaultreading"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/indexport"
 )
+
+// NoteScanner scans the notes of a vault.
+type NoteScanner interface {
+	ScanWithProgress(ctx context.Context, v domain.Vault, onProgress func(vaultreading.ScanResult)) (vaultreading.ScanResult, error)
+}
+
+// TextIndexer indexes the file texts of a vault.
+type TextIndexer interface {
+	IndexWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(vaultreading.IndexResult), isSkipped func(path string) bool,
+	) (vaultreading.IndexResult, error)
+	IndexOne(ctx context.Context, v domain.Vault, path string) (vaultreading.IndexResult, error)
+}
+
+// VectorEmbedder embeds the chunks of a vault.
+type VectorEmbedder interface {
+	EmbedWithProgress(
+		ctx context.Context, v domain.Vault, onProgress func(vaultreading.EmbedResult), isSkipped func(path, hash string) bool,
+	) (vaultreading.EmbedResult, error)
+}
 
 // ReadWholeVault makes a vault answer: its notes are read, the text versions of
 // its other files are cut, and what was cut is given its vectors.
 type ReadWholeVault struct {
-	notes   indexport.NoteScanner
-	texts   indexport.TextIndexer
-	vectors indexport.VectorEmbedder
+	notes   NoteScanner
+	texts   TextIndexer
+	vectors VectorEmbedder
 
 	OnNotesProgress func(vaultreading.ScanResult)
 
@@ -30,7 +49,7 @@ type ReadWholeVault struct {
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
 // walked, the file texts cut, and the vectors made.
-func NewReadWholeVault(notes indexport.NoteScanner, texts indexport.TextIndexer, vectors indexport.VectorEmbedder) ReadWholeVault {
+func NewReadWholeVault(notes NoteScanner, texts TextIndexer, vectors VectorEmbedder) ReadWholeVault {
 	return ReadWholeVault{notes: notes, texts: texts, vectors: vectors}
 }
 

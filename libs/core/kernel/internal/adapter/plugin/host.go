@@ -159,6 +159,7 @@ func NewHost(clock machineport.Clock, target string, dirs ...string) *Host {
 		getConfigSnapshot: h.getConfigSnapshot,
 		listPluginIDs:     h.listPluginIDs,
 		reportError:       h.reportError,
+		getClient:         h.GetClient,
 	})
 	h.bus = eventbus.New(h, clock, 50*time.Millisecond, 250*time.Millisecond)
 	h.startEvictLoop()
