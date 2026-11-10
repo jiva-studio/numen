@@ -44,7 +44,7 @@ func getLayerGroup(rel string, helpers map[string]string) (group string, ok bool
 }
 
 func listProductionDirs(root string) ([]string, error) {
-	seen := map[string]bool{}
+	withSource := map[string]bool{}
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -60,12 +60,12 @@ func listProductionDirs(root string) ([]string, error) {
 			if relErr != nil {
 				return relErr
 			}
-			seen[filepath.ToSlash(rel)] = true
+			withSource[filepath.ToSlash(rel)] = true
 		}
 		return nil
 	})
-	dirs := make([]string, 0, len(seen))
-	for dir := range seen {
+	dirs := make([]string, 0, len(withSource))
+	for dir := range withSource {
 		dirs = append(dirs, dir)
 	}
 	slices.Sort(dirs)
@@ -107,8 +107,8 @@ func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
 	}
 }
 
-// A package outside every group fails, a package in a helper entry passes, and a layer folder that is
-// only the prefix of another (adapter and adapterlib) does not take its neighbor.
+// A package outside every group fails, a package in a helper entry passes, and adapter and adapterlib are
+// separate groups although one name is the prefix of the other.
 func TestScanRule_RejectsAPackageOutsideEveryGroup(t *testing.T) {
 	helpers := map[string]string{"internal/csp": "policy string"}
 	got := getUnplacedPackages([]string{

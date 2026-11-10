@@ -186,7 +186,7 @@ func getUnexplainedDirectives(directives []string) []string {
 	return found
 }
 
-func TestMutationDirectivesGiveAReasonAndStayUnderTheCap(t *testing.T) {
+func TestMutationDirectiveRule_RejectsMissingReasonsAndTooManyDirectives(t *testing.T) {
 	root, err := filepath.Abs(repoRootDir)
 	if err != nil {
 		t.Fatal(err)
