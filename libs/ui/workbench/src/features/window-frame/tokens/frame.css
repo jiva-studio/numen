@@ -3,7 +3,7 @@
  * `apps/desktop/internal/frame`.
  */
 :root {
-  --numen-title-bar-height: calc(2rem / var(--numen-interface-scale, 1));
+  --numen-title-bar-height: calc(2rem / var(--numen-interface-scale));
 }
 
 /*
