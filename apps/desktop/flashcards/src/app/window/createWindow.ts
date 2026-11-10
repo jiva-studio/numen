@@ -19,8 +19,8 @@ import { useAppearance } from '@/features/appearance'
 import { useExternalLinks } from '@/features/external-links'
 import { useWindowTasks } from '@/features/window-tasks'
 import { formatError } from '@/shared/api/errors'
-import { WINDOW_SOURCE } from '@/shared/lib/window'
-import { createShellHost, type ShellServices } from '../plugins/host'
+import { WINDOW_SOURCE } from '@/shared/config/window'
+import { createShellHost, createShellServices, type ShellServices } from '../plugins/host'
 import { createWindowCommands } from '../plugins/windowCommands'
 import { createWindowKeys } from '../plugins/windowKeys'
 import { createWindowVaults } from '../plugins/windowVaults'
@@ -31,15 +31,14 @@ export interface WindowDeps {
   readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
 }
 
-function fillServices(
-  services: ShellServices,
+function createServices(
   window: Pick<ReturnType<typeof createShellHost>, 'tab' | 'openTab' | 'notices'> & {
     readonly vaults: ReturnType<typeof useVaults>['vaults']
     readonly frame: WindowFrame
   },
-): void {
+): ShellServices {
   const { tab, notices, frame } = window
-  Object.assign(services, {
+  return {
     commands: createWindowCommands(),
     vaults: createWindowVaults({
       list: window.vaults,
@@ -49,16 +48,16 @@ function fillServices(
     window: createWindowHost(frame, (error) =>
       notices.show(WINDOW_SOURCE, formatError(error), 'error'),
     ),
-  })
+  }
 }
 
 export function createWindow(deps: WindowDeps = {}) {
   const windowAgent = createWindowAgent()
-  const services: ShellServices = {}
+  const services = createShellServices()
   const frame = useWindowFrame()
   const { host, front, tab, openTab, notices, mountView, titleBarView } = createShellHost(
     windowAgent.agent,
-    services,
+    services.get,
     () => frame.platform.value,
   )
   const loader = createPluginLoader({
@@ -69,7 +68,7 @@ export function createWindow(deps: WindowDeps = {}) {
   const isLoading = ref(true)
   const listError = ref('')
   const { vaults, isListing } = useVaults((text) => notices.show(WINDOW_SOURCE, text, 'error'))
-  fillServices(services, { vaults, tab, openTab, notices, frame })
+  services.provide(createServices({ vaults, tab, openTab, notices, frame }))
   const onKeyDown = createWindowKeys({
     getTab: () => tab.value,
     getVaults: () => (front.value ? vaults.value : []),
@@ -93,7 +92,7 @@ export function createWindow(deps: WindowDeps = {}) {
   onMounted(async () => {
     window.addEventListener('keydown', onKeyDown)
     startTimer = setTimeout(onStarted, INTERFACE_WAIT_MS)
-    runInBackground(loader.status.waitForInterface().then(onStarted), () => undefined)
+    runInBackground(loader.waitForInterface().then(onStarted), () => undefined)
     try {
       await loader.trackPlugins((await listPlugins()).map((one) => one.id))
       await loader.start()
@@ -116,7 +115,7 @@ export function createWindow(deps: WindowDeps = {}) {
   /** Why the window draws no view: the plugins could not be listed, or each one failed to start. */
   const failures = computed<readonly string[]>(() => [
     ...(listError.value ? [listError.value] : []),
-    ...loader.status.getFailedPlugins().map((one) => `${one.id}: ${one.error}`),
+    ...loader.getFailedPlugins().map((one) => `${one.id}: ${one.error}`),
   ])
 
   usePluginStyles(() => (front.value ? [front.value] : []))

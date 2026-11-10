@@ -4,8 +4,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLostConnection } from '@numen/core-client/testing'
-import { COMMAND, commands as commandRegistry } from '@/entities/command'
-import { createInvocation } from '@/features/command-palette'
+import { getNamedIcon } from '@/shared/icons'
 import { answerCore } from '@/testing/coreAnswers'
 import { ref } from 'vue'
 import { createWindow } from './createWindow'
@@ -14,7 +13,6 @@ import type * as WindowModule from '@/entities/window'
 import type * as TabModule from '@/entities/tab'
 import type * as TabLinkingModule from '@/features/tab-linking'
 import type * as TabMoveModule from '@/features/tab-move'
-import type * as HotkeysModule from '@/features/hotkeys'
 
 /** What each part was made with, and what it was made as. */
 const h = vi.hoisted(() => ({
@@ -31,11 +29,35 @@ const h = vi.hoisted(() => ({
   },
 }))
 
+vi.mock('@/features/command-palette', () => ({
+  PALETTE_WORDS: {},
+  runSupport: () => ({ name: 'runs' }),
+  searchCore: { name: 'search' },
+  registerCommand: () => () => undefined,
+}))
+vi.mock('./createCommands', () => ({
+  createCommands: (args: unknown) => {
+    h.args.commands = args
+    return h.f.commands
+  },
+}))
+vi.mock('./createFeatureCommands', () => ({
+  createFeatureDeps: (args: unknown) => {
+    h.args.featureWindow = args
+    return {}
+  },
+  collectFeatureCommands: () => ({ commands: [{ id: 'app:vault.create' }], handlers: {} }),
+  registerFeatureCommands: () => undefined,
+}))
 vi.mock('@/features/tab-linking', async (importOriginal) => ({
   ...(await importOriginal<typeof TabLinkingModule>()),
   useTabLinks: (args: unknown) => {
     h.args.tabLinks = args
     return h.f.tabLinks
+  },
+  createTabReports: (args: unknown) => {
+    h.args.tabReports = args
+    return h.f.tabReports
   },
   createTabLinkSession: (args: unknown) => {
     h.args.tabLinkSession = args
@@ -58,9 +80,10 @@ vi.mock('@/features/tab-move', async (importOriginal) => ({
     return h.f.openMovedTab
   },
 }))
-vi.mock('@/shared/model/notices/messages', () => ({ createMessageLog: () => h.f.log }))
+vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', async (importOriginal) => ({
   ...(await importOriginal<typeof TabModule>()),
+  createWorkspace: vi.fn(),
   fileOpeners: (args: unknown) => {
     h.args.openers = args
     return h.f.tabOpeners
@@ -104,6 +127,12 @@ vi.mock('@/features/window-display', () => ({
     return h.f.display
   },
 }))
+vi.mock('./createTabKinds', () => ({
+  createTabKinds: (args: unknown) => {
+    h.args.kinds = args
+    return h.f.kinds
+  },
+}))
 vi.mock('@/features/background-tasks', async (original) => ({
   ...(await original<typeof BackgroundTasksModule>()),
   useNoticeTasks: (args: unknown) => {
@@ -115,10 +144,7 @@ vi.mock('@/features/background-tasks', async (original) => ({
     return { name: 'backgroundTasks' }
   },
 }))
-vi.mock('@/features/hotkeys', async (original) => ({
-  ...(await original<typeof HotkeysModule>()),
-  useAppHotkeys: vi.fn(),
-}))
+vi.mock('@/features/hotkeys', () => ({ useAppHotkeys: vi.fn() }))
 vi.mock('@/entities/window', async (original) => ({
   ...(await original<typeof WindowModule>()),
   cancelTask: (id: string) => h.core.cancelTask(id),
@@ -129,6 +155,7 @@ vi.mock('@/entities/window', async (original) => ({
   },
 }))
 vi.mock('../plugins/pluginSupport', () => ({
+  createWindowPluginStatus: () => h.f.status,
   createPluginSupport: (args: unknown) => {
     h.args.plugins = args
     return { pluginHost: h.f.pluginHost, pluginLoader: h.f.pluginLoader }
@@ -164,13 +191,19 @@ beforeEach(() => {
     writer,
     log: { getWriter: vi.fn(() => writer) },
     tabLinks: { name: 'tabLinks' },
+    status: { isPluginStarting: vi.fn((_pluginId: string) => false) },
+    tabReports: {
+      reportTabs: vi.fn(),
+      waitForReports: vi.fn(async () => undefined),
+      stop: vi.fn(),
+      resume: vi.fn(),
+    },
     tabLinkSession: {
       start: vi.fn(async () => undefined),
       close: vi.fn(),
       reportTabs: vi.fn(),
       reopen: vi.fn(async () => undefined),
       acceptMove: vi.fn(),
-      waitForReports: vi.fn(async () => undefined),
     },
     windowReport: ref<unknown>({ tabs: [], window: {} }),
     tabMover: {
@@ -194,7 +227,7 @@ beforeEach(() => {
         ),
         openTabOfKind: vi.fn(),
       },
-      groups: { handle: { front: () => front.value }, registerKinds: vi.fn() },
+      groups: { handle: { front: () => front.value } },
       restored: {
         openSavedTab: vi.fn(),
         restoreTabs: vi.fn(),
@@ -229,12 +262,8 @@ beforeEach(() => {
     settings: {
       kept: {},
       nesting: {},
-      kinds: [],
-      paletteLists: { getStepGroups: vi.fn(() => []), previewItem: vi.fn() },
-      settingPalette: { getCommands: () => [], choose: vi.fn(async () => undefined) },
       rest: {
         state: { plugins: ref([{ id: 'p1', name: 'Plugin One' }]) },
-        read: { getCommittedSetting: vi.fn(() => undefined) },
         write: { writeSetting: vi.fn(async () => undefined) },
       },
       configured: { openSettings: vi.fn() },
@@ -252,40 +281,46 @@ beforeEach(() => {
       listed: {},
     },
     openTabs: { getTabIcon: vi.fn(), pause: vi.fn(async () => undefined), resume: vi.fn() },
+    commands: {
+      commands: { navigation: { applyRenames: vi.fn() } },
+      runCommand: vi.fn(),
+      pluginRuns: {
+        runCommandToEnd: vi.fn(async () => undefined),
+        items: {
+          hasCommandItems: () => false,
+          listCommandItems: async () => [],
+          runWithItem: async () => undefined,
+        },
+      },
+      commandDeps: { name: 'commandDeps' },
+      palette: {},
+      onKeyDown: vi.fn(),
+      pluginWays: ref([]),
+    },
     pluginHost: {
       notifyVaultChange: vi.fn(),
-      keybindings: {
-        getKeyFor: vi.fn(() => undefined),
-        registerKeybindings: vi.fn(),
-        unregisterKeybindings: vi.fn(),
-      },
-      commands: {
-        hasCommand: vi.fn(() => false),
-        handlers: { isSharedCommand: vi.fn(() => false) },
-        executeCommand: vi.fn(async () => undefined),
-        handleShortcut: vi.fn(() => false),
-        hasCommandItems: vi.fn(() => false),
-        listCommandItems: vi.fn(async () => []),
-        getPaletteCommands: vi.fn(() => [
-          { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
-        ]),
-      },
-      registered: { getRegisteredSettingsViews: vi.fn(() => ['view-1']) },
-      slotViews: { getSlotView: vi.fn(() => ref(null)) },
+      hasCommandItems: vi.fn(() => false),
+      getPaletteCommands: vi.fn(() => [
+        { id: 'org.example.sample:share.run', title: 'Share', icon: 'share' },
+      ]),
+      getRegisteredSettingsViews: vi.fn(() => ['view-1']),
+      getSlotView: vi.fn(() => ref(null)),
     },
     pluginLoader: {
       trackPlugins: vi.fn(async () => undefined),
       start: vi.fn(async () => undefined),
-      status: {
-        waitForInterface: vi.fn(async () => undefined),
-        waitForTabPlugins: vi.fn(async () => undefined),
-        isPluginStarting: vi.fn((_pluginId: string) => false),
-      },
+      waitForInterface: vi.fn(async () => undefined),
+      waitForTabPlugins: vi.fn(async () => undefined),
       close: vi.fn(async () => undefined),
     },
     navigation: { travel: vi.fn(), leavePath: vi.fn(async () => undefined) },
+    kinds: {
+      dragged: ref([]),
+      services: { workspace: { name: 'workspace' }, notes: { name: 'notes' } },
+      made: {},
+      destinations: {},
+    },
   }
-  answerCore({})
 })
 
 describe('what the window answers about the tab in front', () => {
@@ -341,9 +376,10 @@ describe('the parts of the window', () => {
     createWindow()
 
     expect(h.f.log.getWriter).toHaveBeenCalledWith('command')
+    expect(h.args.commands.writeMessage).toBe(h.f.writer)
   })
 
-  it('receive the paths that changed, in every editor and in the plugins', async () => {
+  it('receive the paths that changed, in every editor and in the commands', async () => {
     createWindow()
     const paths = ['a.md']
     const renamedItems = new Map([['a.md', 'b.md']])
@@ -351,6 +387,7 @@ describe('the parts of the window', () => {
     await h.args.display.onVaultChanged(paths, renamedItems)
 
     expect(h.f.editing.notes.applyPathChanges).toHaveBeenCalledWith(paths, renamedItems)
+    expect(h.f.commands.commands.navigation.applyRenames).toHaveBeenCalledWith(renamedItems)
     expect(h.f.pluginHost.notifyVaultChange).toHaveBeenCalledWith({ paths, renamed: renamedItems })
   })
 
@@ -382,27 +419,90 @@ describe('the parts of the window', () => {
     vi.unstubAllGlobals()
   })
 
-  it('detach a tab through the mover when the command of the tab runs', async () => {
-    const window = createWindow()
-    const target = { ...window.palette.getTarget(), tab: 't1' }
+  it('hand the kinds the commands dependencies as they stand', () => {
+    createWindow()
 
-    const run = commandRegistry.get(COMMAND.detachTab)
-    await run?.(createInvocation(COMMAND.detachTab, target), window.palette.commandDeps)
-
-    expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
+    expect(h.args.kinds.commandDeps()).toBe(h.f.commands.commandDeps)
   })
 
-  it('move a tab to a window through the mover when the command of the tab runs', async () => {
-    const window = createWindow()
-    const target = { ...window.palette.getTarget(), tab: 't1' }
+  it('hand the kinds what the commands declare of the plugins', async () => {
+    createWindow()
 
-    const run = commandRegistry.get(COMMAND.moveTabToWindow)
-    await run?.(
-      createInvocation(COMMAND.moveTabToWindow, target, 'window-b'),
-      window.palette.commandDeps,
+    expect(h.args.kinds.getPluginCommandIcon('org.example.sample:share.run')).toBe(
+      getNamedIcon('share'),
     )
+    expect(h.args.kinds.getPluginCommandIcon('org.example.sample:none.run')).toBeUndefined()
+  })
 
+  it('hand the commands the tab navigation', () => {
+    createWindow()
+
+    h.args.featureWindow.travel('a.md')
+    h.args.featureWindow.leavePath('a.md', 'b.md')
+    expect(h.f.navigation.travel).toHaveBeenCalledWith('a.md')
+    expect(h.f.navigation.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
+    expect(h.args.featureWindow.getOpeningNote()).toBe('opening')
+  })
+
+  it('hand the tab commands the moves and the links of the window', () => {
+    const window = createWindow()
+    const { tabs } = h.args.featureWindow
+
+    tabs.detach('t1')
+    tabs.move('t1', 'window-b')
+    expect(h.f.tabMover.detachTabInPlace).toHaveBeenCalledWith('t1')
     expect(h.f.tabMover.moveTab).toHaveBeenCalledWith('t1', 'window-b')
+    expect(tabs.windowId).toBe(window.tabs.moves.windowId)
+    expect(tabs.tabLinks).toBe(h.f.tabLinks)
+  })
+})
+
+describe('what the window knows of a note', () => {
+  it('is the tab it is open in', () => {
+    h.f.editing.reached.getTabAt.mockReturnValue('t9')
+    createWindow()
+
+    expect(h.args.commands.knows.getTabAt('a.md')).toBe('t9')
+    expect(h.f.editing.reached.getTabAt).toHaveBeenCalledWith('a.md')
+  })
+
+  it('is its title from the tab it is open in', () => {
+    h.f.editing.reached.getTabAt.mockReturnValue('t9')
+    createWindow()
+
+    expect(h.args.commands.knows.getTitle('a.md')).toBe('a title')
+    expect(h.f.editing.getTitle).toHaveBeenCalledWith('t9')
+  })
+
+  it('is no title where it is open in no tab', () => {
+    createWindow()
+
+    expect(h.args.commands.knows.getTitle('a.md')).toBe('')
+  })
+
+  describe('in a tab of a kind that edits files', () => {
+    const stand = () => {
+      h.f.windowTabs.tabs.tabs.value = [{ id: 'sample:a', title: 'Animals' }]
+      h.f.windowTabs.tabs.getTab.mockReturnValue({
+        state: { path: 'a.md' },
+        kind: { flushPending: () => Promise.resolve(), getOpenTab: () => ({ path: 'a.md' }) },
+      })
+    }
+
+    it('is the tab it is open in', () => {
+      stand()
+      createWindow()
+
+      expect(h.args.commands.knows.getTabAt('a.md')).toBe('sample:a')
+    })
+
+    it('is its title from that tab', () => {
+      stand()
+      h.f.editing.getTitle.mockReturnValue('')
+      createWindow()
+
+      expect(h.args.commands.knows.getTitle('a.md')).toBe('Animals')
+    })
   })
 })
 
@@ -558,31 +658,19 @@ describe('the services a plugin is given', () => {
   it('are the ones the kinds made, the window task list, the background tasks, the commands with those over a tab, the vaults and the window', () => {
     createWindow()
 
-    const { taskList, backgroundTasks, commands, vaults, window, ...made } = h.args.plugins.services
-    expect(Object.keys(made).sort()).toStrictEqual([
-      'agent',
-      'buffers',
-      'files',
-      'noteBuffer',
-      'notes',
-      'relations',
-      'workspace',
-    ])
-    expect(made.noteBuffer).toBe(h.f.editing.notes)
+    const { taskList, backgroundTasks, commands, vaults, window, ...made } =
+      h.args.plugins.getServices()
+    expect(made).toStrictEqual(h.f.kinds.services)
     expect(taskList).toBe(h.f.display.tasks)
     expect(vaults?.getState()).toBeDefined()
-    expect(commands?.getIds()).toStrictEqual(
-      expect.arrayContaining([COMMAND.createVault, 'org.example.sample:share.run']),
-    )
+    expect(commands?.getIds()).toStrictEqual(['app:vault.create', 'org.example.sample:share.run'])
     expect(window?.getState()).toStrictEqual({ isMaximized: false, isFullscreen: false })
     expect(backgroundTasks).toStrictEqual({ name: 'backgroundTasks' })
   })
 
-  it('lets a tab wait while the plugin loader says its own plugin is starting', () => {
+  it('lets a tab wait while the plugin status says its own plugin is starting', () => {
     createWindow()
-    h.f.pluginLoader.status.isPluginStarting.mockImplementation(
-      (pluginId: string) => pluginId === 'p1',
-    )
+    h.f.status.isPluginStarting.mockImplementation((pluginId: string) => pluginId === 'p1')
 
     expect(h.args.windowTabs.isPluginStarting('p1')).toBe(true)
     expect(h.args.windowTabs.isPluginStarting('p2')).toBe(false)
@@ -660,6 +748,19 @@ describe('the services a plugin is given', () => {
     expect(h.f.editing.noted.measureAll).toHaveBeenCalledOnce()
     expect(h.args.settings.getSettingsViews('p1')).toEqual(['view-1'])
 
+    // createTabKinds callbacks
+    const target = window.palette.getTarget()
+    h.args.kinds.runCommand('cmd-1', target)
+    expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-1', target)
+    expect(h.args.kinds).not.toHaveProperty('getContextMenuItems')
+    expect(h.args.kinds).not.toHaveProperty('getFileMenuItems')
+
+    // tabsHold callbacks
+    await h.args.featureWindow.tabsHold.pause()
+    expect(h.f.openTabs.pause).toHaveBeenCalledOnce()
+    h.args.featureWindow.tabsHold.resume()
+    expect(h.f.openTabs.resume).toHaveBeenCalledOnce()
+
     // background tasks & noticeTasks
     expect(h.args.noticeTasks.window).toStrictEqual({
       lost: h.f.display.health.lost,
@@ -678,7 +779,9 @@ describe('the services a plugin is given', () => {
     expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1')
 
     // Returned window methods
-    window.openSettings('p1', 'ocr')
+    window.palette.runCommand('cmd-2', target)
+    expect(h.f.commands.runCommand).toHaveBeenCalledWith('cmd-2', target)
+    window.settings.openSettings('p1', 'ocr')
     expect(h.f.settings.configured.openSettings).toHaveBeenCalledWith('p1', 'ocr')
 
     h.f.windowTabs.restored.openPlacedTabs.mockImplementationOnce(
@@ -779,7 +882,7 @@ describe('the services a plugin is given', () => {
 describe('tab links wiring', () => {
   it('writes a link after the pending tab reports', async () => {
     let finishReports: () => void = () => undefined
-    h.f.tabLinkSession.waitForReports.mockImplementationOnce(
+    h.f.tabReports.waitForReports.mockImplementationOnce(
       () => new Promise<undefined>((resolve) => (finishReports = () => resolve(undefined))),
     )
     createWindow()
@@ -832,7 +935,7 @@ describe('tab links wiring', () => {
 
     h.f.windowReport.value = { tabs: [], window: { isMain: true, tabCount: 1 } }
     await vi.waitFor(() => expect(h.f.tabLinkSession.reportTabs).toHaveBeenCalledOnce())
-    expect(h.args.tabLinkSession.getReport()).toStrictEqual(h.f.windowReport.value)
+    expect(h.args.tabReports.getReport()).toStrictEqual(h.f.windowReport.value)
   })
 
   it('reports an error when the core rejects a link', () => {
@@ -856,7 +959,7 @@ describe('tab links wiring', () => {
       const tabPluginsSettled = new Promise<undefined>((resolve) => {
         settleTabPlugins = () => resolve(undefined)
       })
-      h.f.pluginLoader.status.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
+      h.f.pluginLoader.waitForTabPlugins.mockImplementation(() => tabPluginsSettled)
       h.f.pluginLoader.start.mockImplementationOnce(() => new Promise<undefined>(() => undefined))
       h.f.windowTabs.restored.openPlacedTabs.mockClear()
       h.args.bootstrap.startPlugins().catch(() => undefined)

@@ -3,8 +3,8 @@ import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
 import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-loader'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
-import { TARGET } from '@/shared/lib/window'
-import { createShellHost } from './host'
+import { TARGET } from '@/shared/config/window'
+import { createShellHost, createShellServices } from './host'
 import { createWindowCommands } from './windowCommands'
 
 const NOTHING = { dispose: () => undefined }
@@ -39,7 +39,11 @@ describe('createShellHost', () => {
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
     })
     let platform: 'windows' | 'darwin' = 'windows'
-    const { host } = createShellHost(undefined, {}, () => platform)
+    const { host } = createShellHost(
+      undefined,
+      () => ({}),
+      () => platform,
+    )
     const context = host.createContext('md.numen.example', withVault('md.numen.example'))
     vi.unstubAllGlobals()
 
@@ -113,7 +117,7 @@ describe('createShellHost', () => {
       vaults: createMockVaultsHost(),
       window: createMockWindowHost(),
     }
-    const { host } = createShellHost(undefined, services)
+    const { host } = createShellHost(undefined, () => services)
 
     const bar = host.createContext('org.example.ledger', withVault('org.example.ledger'))
     const cards = host.createContext('md.numen.cards', withVault('md.numen.cards'))
@@ -125,12 +129,12 @@ describe('createShellHost', () => {
   })
 
   it('gives a plugin the vaults and the window the window offers after the host was made', () => {
-    const services: Parameters<typeof createShellHost>[1] = {}
-    const { host } = createShellHost(undefined, services)
+    const services = createShellServices()
+    const { host } = createShellHost(undefined, services.get)
     const vaults = createMockVaultsHost()
     const window = createMockWindowHost()
 
-    Object.assign(services, { vaults, window })
+    services.provide({ vaults, window })
 
     const ledger = host.createContext('org.example.ledger', withVault('org.example.ledger'))
     expect(ledger.vault.vaults?.getState()).toStrictEqual(vaults.getState())
@@ -141,7 +145,7 @@ describe('createShellHost', () => {
   it('refuses the vaults to a plugin without vault:read and switching to one without vault:manage', async () => {
     const vaults = createMockVaultsHost()
     const switchTo = vi.spyOn(vaults, 'switchTo')
-    const { host } = createShellHost(undefined, { vaults })
+    const { host } = createShellHost(undefined, () => ({ vaults }))
     const noGrants = host.createContext(
       'org.example.bare',
       createMockManifest('org.example.bare', { name: 'Bare' }),

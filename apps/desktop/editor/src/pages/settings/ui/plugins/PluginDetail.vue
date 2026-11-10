@@ -12,44 +12,43 @@ import { PluginDetail as PluginDetailView } from '@numen/plugin-manager'
 import { createManagedFromEntries } from '../../lib/pluginListing'
 import { createRequestGuard, runInBackground } from '@numen/ui'
 import PluginFields from './PluginFields.vue'
-import type { SettingsTabState } from '../../types'
+import type { InstallationPlugin, InstallationSettings, SecretChoices } from '../../types'
 import type { PluginInfo } from '@/entities/settings'
 import { createPluginSettings } from '../../model/createPluginSettings'
 import { hasPluginSettings } from '../../lib/pluginSettings'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  state: SettingsTabState
+  settings: InstallationSettings
+  manager: InstallationPlugin
+  choices: SecretChoices
   plugin: PluginInfo
 }>()
 
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'open-secrets'): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
-const settings = createPluginSettings(
-  () => props.state.installation.settings,
+const pluginSettings = createPluginSettings(
+  () => props.settings,
   () => props.plugin.id,
 )
 
-const read = (key: string) => installation.value.settings.getSetting([props.plugin.id, key])
+const read = (key: string) => props.settings.getSetting([props.plugin.id, key])
 
 const managed = computed(
-  () => createManagedFromEntries([props.plugin], installation.value.plugin.catalog.value)[0],
+  () => createManagedFromEntries([props.plugin], props.manager.catalog.value)[0],
 )
 
-const readEnabled = (): unknown =>
-  installation.value.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
+const readEnabled = (): unknown => props.settings.getConfirmedSetting([props.plugin.id, 'enabled'])
 const isEnabled = computed<boolean>(() => {
   const value = readEnabled()
   return typeof value === 'boolean' ? value : true
 })
 
-const isPending = computed<boolean>(() =>
-  installation.value.settings.isPending([props.plugin.id, 'enabled']),
-)
+const isPending = computed<boolean>(() => props.settings.isPending([props.plugin.id, 'enabled']))
 
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
 /** How many files the plugin keeps in the shown vault; zero hides the delete action. */
@@ -79,16 +78,16 @@ function onBack(): void {
 }
 
 function onToggleEnabled(isOn: boolean): void {
-  settings.set('enabled', isOn)
+  pluginSettings.set('enabled', isOn)
 }
 
 function onRetry(): void {
-  installation.value.plugin.retryPlugin(props.plugin.id)
+  props.manager.retryPlugin(props.plugin.id)
 }
 
 async function onDeleteData(): Promise<void> {
   const pluginId = props.plugin.id
-  const problem = await installation.value.plugin.files.deletePluginData(pluginId)
+  const problem = await props.manager.files.deletePluginData(pluginId)
   if (props.plugin.id !== pluginId) return
   deleteProblem.value = problem
   await readFileCount(pluginId)
@@ -99,7 +98,7 @@ async function readFileCount(pluginId: string): Promise<void> {
   const request = countReads.acquireRequest()
   let count: number
   try {
-    count = await installation.value.plugin.files.getPluginData(pluginId)
+    count = await props.manager.files.getPluginData(pluginId)
   } catch {
     count = 0
   }
@@ -108,7 +107,7 @@ async function readFileCount(pluginId: string): Promise<void> {
 
 async function readReadme(pluginId: string): Promise<void> {
   const request = readmeReads.acquireRequest()
-  const text = await installation.value.plugin.files.getReadme(pluginId)
+  const text = await props.manager.files.getReadme(pluginId)
   if (request.isCurrent) readmeText.value = text
 }
 </script>
@@ -130,7 +129,14 @@ async function readReadme(pluginId: string): Promise<void> {
     @delete-data="onDeleteData"
   >
     <template #settings>
-      <PluginFields v-if="hasSettings" :state="props.state" :plugin="props.plugin" />
+      <PluginFields
+        v-if="hasSettings"
+        :settings="props.settings"
+        :host="props.manager"
+        :choices="props.choices"
+        :plugin="props.plugin"
+        @open-secrets="emit('open-secrets')"
+      />
     </template>
   </PluginDetailView>
 </template>

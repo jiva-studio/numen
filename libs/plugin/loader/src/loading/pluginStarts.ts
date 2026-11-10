@@ -11,7 +11,6 @@ export interface PluginStartsDeps {
   readonly isEnabled: (id: string) => boolean
   readonly activePlugins: { readonly value: ReadonlyMap<string, unknown> }
   readonly failures: { readonly value: ReadonlyMap<string, string> }
-  readonly hasTabKinds: (id: string) => Promise<boolean>
 }
 
 export function createPluginStarts(deps: PluginStartsDeps) {
@@ -43,14 +42,6 @@ export function createPluginStarts(deps: PluginStartsDeps) {
     isPluginStarting: (id: string): boolean => {
       if (!deps.isRunning.value) return true
       return deps.listPlugins().includes(id) && deps.isEnabled(id) && !isSettled(id)
-    },
-    /** Settles once every enabled plugin with a kind of tab has started or failed. */
-    waitForTabPlugins: async (): Promise<void> => {
-      const ids = deps.listPlugins().filter((id) => deps.isEnabled(id))
-      const withTabs = await Promise.all(
-        ids.map(async (id) => ((await deps.hasTabKinds(id)) ? [id] : [])),
-      )
-      await Promise.all(withTabs.flat().map(settlePlugin))
     },
   }
 }

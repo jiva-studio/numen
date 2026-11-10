@@ -189,7 +189,7 @@ describe('a setting that changes', () => {
         registerEditor: vi.fn(() => () => undefined),
       } as never,
       rest: settings.rest,
-      services: {} as never,
+      getServices: () => ({}),
     })
     await settings.start()
     const handler = vi.fn()
@@ -213,7 +213,7 @@ describe('a setting that changes', () => {
         registerEditor: vi.fn(() => () => undefined),
       } as never,
       rest: settings.rest,
-      services: {} as never,
+      getServices: () => ({}),
     })
     await settings.start()
     const handler = vi.fn()

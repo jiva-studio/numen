@@ -26,10 +26,10 @@ const createSupport = () => {
       registerEditor: vi.fn(() => () => undefined),
     } as never,
     rest: createSettingsStore(SETTINGS_WORDS, vi.fn()),
-    services: {
+    getServices: () => ({
       workspace: { getNoteInFocus: () => ({ path: '', title: '' }) } as unknown as WorkspaceHost,
       agent: { finish: () => Promise.resolve(), getModelsAt: () => [] } as unknown as AgentHost,
-    },
+    }),
   })
   return { windowTabs, support }
 }
@@ -446,7 +446,7 @@ describe('the plugins the window loads', () => {
       readNote,
       writeNote,
       resolveLink,
-      services: {
+      getServices: () => ({
         workspace,
         notes,
         relations,
@@ -455,7 +455,7 @@ describe('the plugins the window loads', () => {
         buffers,
         noteBuffer,
         taskList,
-      },
+      }),
     })
 
     const ctx = pluginHost.lifecycle.createContext(

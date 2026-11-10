@@ -106,13 +106,14 @@ const createHost = (parts: RealWindowParts): PluginHost => {
     openTab: () => Promise.resolve('tab-1'),
     getSlotWhenValues: getValues,
     getSlotEntries: () => entries,
-    findSlotCommand: createSlotCommandFinder({
-      getPluginCommands: () => [],
-      getDeclaredCommands: () => [],
-      getEditorCommands: () => createAppCommands(),
-      getWhenValues: getValues,
-      whenReader,
-    }),
+    createSlotCommandFinder: () =>
+      createSlotCommandFinder({
+        getPluginCommands: () => [],
+        getDeclaredCommands: () => [],
+        getEditorCommands: () => createAppCommands(),
+        getWhenValues: getValues,
+        whenReader,
+      }),
   })
   for (const manifest of parts.manifests) {
     host.keybindings.registerKeybindings(manifest.id, manifest.contributes.keybindings ?? [])

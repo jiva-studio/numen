@@ -1,7 +1,7 @@
 /**
  * The window and the notes of the vault, as a plugin's tabs are given them.
  */
-import { computed, type Ref, type ShallowRef } from 'vue'
+import { computed, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type {
   AgentHost,
   AgentPort,
@@ -45,6 +45,22 @@ export interface PluginServices {
   taskList?: Readonly<Ref<readonly Task[]>>
   backgroundTasks?: BackgroundTaskHost
 }
+
+/**
+ * The services a plugin is given, stored from the start of the window: the plugin host reads them when
+ * a plugin asks, and the parts of the window that make them provide them once they exist.
+ */
+export function createPluginServices() {
+  const stored = shallowRef<PluginServices>({})
+  return {
+    get: (): PluginServices => stored.value,
+    provide: (services: PluginServices): void => {
+      stored.value = { ...stored.value, ...services }
+    },
+  }
+}
+
+export type PluginServicesStore = ReturnType<typeof createPluginServices>
 
 /** What the window hands a plugin's tabs. */
 export interface WorkspaceHostDeps extends IconHostDeps {

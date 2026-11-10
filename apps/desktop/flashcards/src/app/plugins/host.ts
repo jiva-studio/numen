@@ -29,9 +29,14 @@ import {
 import { createNoticeQueue } from '@numen/workbench'
 import { openExternalUrl } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
-import { TARGET } from '@/shared/lib/window'
+import { TARGET } from '@/shared/config/window'
 
-import { createFrontView, createWindowSlots, createWindowTab, type PluginView } from './hostParts'
+import {
+  createFrontView,
+  createWindowSlots,
+  createWindowTab,
+  type PluginView,
+} from './hostParts'
 
 export type { PluginView, WindowTab } from './hostParts'
 
@@ -40,11 +45,25 @@ const addPluginView = (views: ShallowRef<readonly PluginView[]>, view: PluginVie
   return { dispose: () => (views.value = views.value.filter((one) => one !== view)) }
 }
 
-/** The commands, the vaults and the window the plugins read, filled once the window has made them. */
+/** The commands, the vaults and the window the plugins read, once the window has made them. */
 export interface ShellServices {
   commands?: CommandsHost
   vaults?: VaultsHost
   window?: WindowHost
+}
+
+/**
+ * The services a plugin is given, stored from the start of the window: the host reads them when a
+ * plugin asks, and the window provides them once it has made them.
+ */
+export function createShellServices() {
+  const stored = shallowRef<ShellServices>({})
+  return {
+    get: (): ShellServices => stored.value,
+    provide: (services: ShellServices): void => {
+      stored.value = { ...stored.value, ...services }
+    },
+  }
 }
 
 const createWindowAppInfo = (getPlatform: () => WindowPlatform) =>
@@ -70,7 +89,7 @@ function mountDeclaredView(
  */
 export function createShellHost(
   agent?: AgentHost,
-  services: ShellServices = {},
+  getServices: () => ShellServices = () => ({}),
   getPlatform: () => WindowPlatform = () => 'windows',
 ) {
   const views = shallowRef<readonly PluginView[]>([])
@@ -88,31 +107,23 @@ export function createShellHost(
   const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
   const contextHost = createIdleContextHost({
-    info: {
-      app: createWindowAppInfo(getPlatform),
-      target: TARGET,
-      openExternal: (url) => openExternalUrl(url),
-    },
-    registration: {
-      registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
-    },
-    views: {
-      registerView: (pluginId, registration, permissions) =>
-        declaredViews.registerView(pluginId, registration, permissions),
-      registerSlotView: (pluginId, slot, registration) =>
-        slotViews.registerSlotView(pluginId, slot, registration),
-      mountView: (capability, element, viewContext, access) =>
-        declaredViews.mountView(capability, element, viewContext, access),
-    },
-    tabs: { closeTab: (id) => closeTab(id) },
-    vault: { getVaults: () => services.vaults },
-    window: {
-      getSlots: () => windowSlots.slots,
-      getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-      getCommands: () => services.commands,
-      getWindow: () => services.window,
-      getAgent: () => agent,
-    },
+    app: createWindowAppInfo(getPlatform),
+    target: TARGET,
+    openExternal: (url) => openExternalUrl(url),
+    registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
+    registerView: (pluginId, registration, permissions) =>
+      declaredViews.registerView(pluginId, registration, permissions),
+    registerSlotView: (pluginId, slot, registration) =>
+      slotViews.registerSlotView(pluginId, slot, registration),
+    mountView: (capability, element, viewContext, access) =>
+      declaredViews.mountView(capability, element, viewContext, access),
+    closeTab: (id) => closeTab(id),
+    getSlots: () => windowSlots.slots,
+    getNotices: (pluginId) => createPluginNotices(notices, pluginId),
+    getCommands: () => getServices().commands,
+    getVaults: () => getServices().vaults,
+    getWindow: () => getServices().window,
+    getAgent: () => agent,
   })
 
   const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {

@@ -86,6 +86,17 @@ export interface PluginPaletteCommand {
 
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
 
+/** What a slot's command finder reads of the commands the plugins registered with the host. */
+export interface HostCommandReads {
+  readonly getPluginCommands: () => readonly PluginPaletteCommand[]
+  readonly hasPluginItems: (command: string) => boolean
+}
+
+export type SlotCommandFinder = (
+  command: string,
+  target: CommandTarget | undefined,
+) => SlotCommandLook | undefined
+
 export interface PluginHostDeps {
   readonly getContentTypes?: () => Readonly<Record<string, string>>
   readonly getWindowValues?: () => WhenValues
@@ -149,10 +160,7 @@ export interface PluginHostDeps {
   readonly getNotices?: (pluginId: string) => NoticeHost
   readonly getTasks?: (pluginId: string) => TaskHost | undefined
   readonly getSlotEntries?: () => readonly DeclaredSlotEntry[] | undefined
-  readonly findSlotCommand?: (
-    command: string,
-    target: CommandTarget | undefined,
-  ) => SlotCommandLook | undefined
+  readonly createSlotCommandFinder?: (own: HostCommandReads) => SlotCommandFinder
   readonly getSlotWhenValues?: (target: CommandTarget | undefined) => WhenValues
   readonly reportSlotIssue?: (
     pluginId: string,

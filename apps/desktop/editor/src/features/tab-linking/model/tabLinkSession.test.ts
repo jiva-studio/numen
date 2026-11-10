@@ -3,9 +3,13 @@ import { computed } from 'vue'
 import { createLostConnection } from '@numen/core-client/testing'
 import { answerCore } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
-import { createTabLinkSession, getWindowReport, type TabLinkSessionDeps } from './tabLinkSession'
-
-const REPORT_RETRY_MS = 2000
+import {
+  createTabLinkSession,
+  getLinkableTabs,
+  getWindowReport,
+  type TabLinkSessionDeps,
+} from './tabLinkSession'
+import { createTabReports, REPORT_RETRY_MS } from './tabReports'
 
 const SNAPSHOT = {
   groups: [
@@ -107,7 +111,15 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       },
     },
   })
+  const wait = vi.fn((_ms: number) => Promise.resolve())
+  const onError = vi.fn()
   const deps = {
+    reports: createTabReports({
+      windowId: 'window-a',
+      getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
+      wait,
+      onError,
+    }),
     acceptTabMove: core.acceptTabMove,
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
@@ -115,9 +127,8 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
     applyGroupPaths: vi.fn(),
     openMovedTab: vi.fn(),
     setHighlighted: vi.fn(),
-    getReport: () => ({ tabs: getOpenTabs(), window: WINDOW }),
-    wait: vi.fn((_ms: number) => Promise.resolve()),
-    onError: vi.fn(),
+    wait,
+    onError,
   } satisfies TabLinkSessionDeps
   return { deps, core, signals, session: createTabLinkSession(deps) }
 }
@@ -188,6 +199,29 @@ describe('createTabLinkSession', () => {
     expect(core.watchTabLinks).toHaveBeenCalledOnce()
     session.close()
     await stream
+  })
+})
+
+describe('getLinkableTabs', () => {
+  it('returns the tabs whose kind supports navigate, with kind and title', () => {
+    const kinds: Record<string, { kind: string; navigate?: () => void }> = {
+      'plex:1': { kind: 'plex', navigate: () => undefined },
+      'agent:1': { kind: 'agent' },
+    }
+    const windowTabs = {
+      tabs: {
+        tabs: computed(() => [
+          { id: 'agent:1', title: 'Agent' },
+          { id: 'plex:1', title: 'Orbits' },
+          { id: 'gone:1', title: 'Gone' },
+        ]),
+        getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
+      },
+    } as unknown as Parameters<typeof getLinkableTabs>[0]
+
+    expect(getLinkableTabs(windowTabs)).toStrictEqual([
+      { id: 'plex:1', kind: 'plex', title: 'Orbits' },
+    ])
   })
 })
 
@@ -421,7 +455,6 @@ describe('getWindowReport', () => {
         tabs: computed(() => [
           { id: 'agent:1', title: 'Agent' },
           { id: 'plex:1', title: 'Orbits' },
-          { id: 'gone:1', title: 'Gone' },
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
@@ -430,7 +463,7 @@ describe('getWindowReport', () => {
 
     expect(getWindowReport(windowTabs, false)).toStrictEqual({
       tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }],
-      window: { isMain: false, activeTitle: 'Agent', activeKind: 'agent', tabCount: 3 },
+      window: { isMain: false, activeTitle: 'Agent', activeKind: 'agent', tabCount: 2 },
     })
   })
 
