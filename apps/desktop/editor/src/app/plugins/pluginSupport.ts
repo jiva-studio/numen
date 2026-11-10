@@ -50,7 +50,7 @@ export interface PluginSupportDeps {
   readonly slots?: Pick<
     PluginHostDeps,
     | 'getSlotEntries'
-    | 'findSlotCommand'
+    | 'createSlotCommandFinder'
     | 'reportSlotIssue'
     | 'getSlotWhenValues'
     | 'getWindowValues'
