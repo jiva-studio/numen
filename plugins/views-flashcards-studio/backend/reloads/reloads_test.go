@@ -55,14 +55,14 @@ func TestWatchSignalsNothingChangedWhenIdle(t *testing.T) {
 
 func TestWatchIsUnavailableWhenTheMovesCannotBeFollowed(t *testing.T) {
 	err := reloads.Watch(t.Context(), moves{err: errors.New("watch boom")}, nil, func() {}, func(bool) error { return nil })
-	if _, ok := errors.AsType[*reloads.UnavailableError](err); !ok {
+	if !errors.As(err, new(*reloads.UnavailableError)) {
 		t.Fatalf("expected an UnavailableError, got %v", err)
 	}
 
 	channel := make(chan host.Move, 1)
 	channel <- host.Move{Err: errors.New("move boom")}
 	err = reloads.Watch(t.Context(), moves{channel: channel}, nil, func() {}, func(bool) error { return nil })
-	if _, ok := errors.AsType[*reloads.UnavailableError](err); !ok {
+	if !errors.As(err, new(*reloads.UnavailableError)) {
 		t.Fatalf("expected an UnavailableError for a failed move, got %v", err)
 	}
 }
