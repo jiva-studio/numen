@@ -16,37 +16,35 @@
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
+        "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
-        "src/**/*.{ts,vue,mdx,css}",
-        ".storybook/**/*.{ts,js}",
-        "!**/*.test.ts"
-      ],
-      "vitest": false
+        "src/**/*.{ts,vue,mdx,css}!",
+        ".storybook/**/*.{ts,js}"
+      ]
     },
     "libs/ui/workbench": {
       "entry": [
         "src/index.ts!",
         "src/**/*.stories.ts",
+        "src/**/*.test.ts",
         ".storybook/**/*.{ts,js}"
       ],
       "project": [
-        "src/**/*.{ts,vue,mdx,css}",
-        ".storybook/**/*.{ts,js}",
-        "!**/*.test.ts"
-      ],
-      "vitest": false
+        "src/**/*.{ts,vue,mdx,css}!",
+        ".storybook/**/*.{ts,js}"
+      ]
     },
     "libs/core/protocol": {
       "entry": [
-        "index.ts",
-        "capabilities.ts",
-        "src/numen/v1/*_pb.ts",
-        "tools/*.mjs"
+        "index.ts!",
+        "capabilities.ts!",
+        "src/numen/v1/*_pb.ts!",
+        "tools/*.mjs!"
       ],
       "project": [
-        "**/*.{ts,mjs}"
+        "**/*.{ts,mjs}!"
       ],
       "ignoreBinaries": [
         "buf"
@@ -56,78 +54,82 @@
       ]
     },
     "libs/core/client": {
-      "project": [
-        "src/**/*.ts",
-        "!**/*.test.ts"
+      "entry": [
+        "src/**/*.test.ts"
       ],
-      "vitest": false
+      "project": [
+        "src/**/*.ts!"
+      ]
     },
     "libs/plugin/loader": {
-      "project": [
-        "src/**/*.ts",
-        "!**/*.test.ts"
+      "entry": [
+        "src/**/*.test.ts"
       ],
-      "vitest": false
+      "project": [
+        "src/**/*.ts!"
+      ]
     },
     "libs/plugin/manager": {
-      "project": [
-        "src/**/*.{ts,vue}",
-        "!**/*.test.ts"
+      "entry": [
+        "src/**/*.test.ts"
       ],
-      "vitest": false
+      "project": [
+        "src/**/*.{ts,vue}!"
+      ]
     },
     "libs/plugin/sdk-ts": {
       "entry": [
+        "src/**/*.test.ts",
+        "test/**/*.test.ts",
         "stories/vitest.config.ts",
         "stories/.storybook/**/*.{ts,js}"
       ],
       "project": [
-        "src/**/*.{ts,vue}",
+        "src/**/*.{ts,vue}!",
         "test/**/*.ts",
-        "stories/**/*.{ts,js}",
-        "!**/*.test.ts"
-      ],
-      "vitest": false
+        "stories/**/*.{ts,js}"
+      ]
     },
     "apps/desktop/editor": {
       "entry": [
         "src/**/*.stories.ts",
-        ".storybook/**/*.{ts,js}"
+        "src/**/*.test.ts",
+        ".storybook/**/*.{ts,js}",
+        "src/main.ts!"
       ],
       "project": [
-        "src/**/*.{ts,vue}",
-        ".storybook/**/*.{ts,js}",
-        "!**/*.test.ts"
-      ],
-      "vitest": false
+        "src/**/*.{ts,vue}!",
+        ".storybook/**/*.{ts,js}"
+      ]
     },
     "apps/desktop/flashcards": {
-      "project": [
-        "src/**/*.{ts,vue}",
-        "!**/*.test.ts"
+      "entry": [
+        "src/**/*.test.ts",
+        "src/main.ts!"
       ],
-      "vitest": false
+      "project": [
+        "src/**/*.{ts,vue}!"
+      ]
     },
     "apps/mobile": {
       "entry": [
-        "src/main.ts"
+        "src/main.ts!",
+        "src/**/*.test.ts"
       ],
       "project": [
-        "src/**/*.{ts,vue}",
-        "!**/*.test.ts"
+        "src/**/*.{ts,vue}!"
       ],
       "ignoreDependencies": [
         "vue-router"
-      ],
-      "vitest": false
+      ]
     },
     "apps/docs": {
       "entry": [
-        "tools/*.mjs"
+        "tools/*.mjs!"
       ],
       "project": [
-        "src/**/*.{ts,astro,vue}",
-        "tools/**/*.mjs"
+        "src/**/*.{ts,astro,vue}!",
+        "tools/**/*.mjs!"
       ],
       "ignoreDependencies": [
         "@fontsource-variable/newsreader",
@@ -137,11 +139,11 @@
     },
     "apps/landing": {
       "entry": [
-        "tools/*.mjs"
+        "tools/*.mjs!"
       ],
       "project": [
-        "src/**/*.{ts,astro,vue}",
-        "tools/**/*.mjs"
+        "src/**/*.{ts,astro,vue}!",
+        "tools/**/*.mjs!"
       ],
       "paths": {
         "@editor-features/*": [
@@ -179,14 +181,13 @@
     },
     "plugins/*": {
       "entry": [
-        "frontend/index.ts",
-        "frontend/**/*.stories.ts"
+        "frontend/index.ts!",
+        "frontend/**/*.stories.ts",
+        "frontend/**/*.test.ts"
       ],
       "project": [
-        "frontend/**/*.{ts,vue}",
-        "!**/*.test.ts"
-      ],
-      "vitest": false
+        "frontend/**/*.{ts,vue}!"
+      ]
     }
   }
 }
