@@ -16,7 +16,8 @@ describe('a plugin whose module is read after the start limit', () => {
     vi.useFakeTimers()
     const activate = vi.fn()
     const host = {
-      createContext: (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+      createContext: (pluginId: string) =>
+        ({ plugin: { id: pluginId } }) as unknown as PluginContext,
       disposePlugin: vi.fn<(pluginId: string) => void>(),
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,
@@ -51,7 +52,10 @@ describe('a plugin that started within the limit', () => {
     let context: PluginContext | undefined
     const host = {
       createContext: (pluginId: string) =>
-        ({ plugin: { id: pluginId }, register: { command: registerCommand } }) as unknown as PluginContext,
+        ({
+          plugin: { id: pluginId },
+          register: { command: registerCommand },
+        }) as unknown as PluginContext,
       disposePlugin: vi.fn<(pluginId: string) => void>(),
       disposeAll: vi.fn(),
       getSetting: <T>() => undefined as T,

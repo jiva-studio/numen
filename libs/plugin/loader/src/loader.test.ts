@@ -329,7 +329,9 @@ describe('createPluginLoader', () => {
 
 describe('createPluginLoader catalog manifests', () => {
   it('passes the registered manifest to the context of a plugin', async () => {
-    const createContext = vi.fn((pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext)
+    const createContext = vi.fn(
+      (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+    )
     const host = {
       createContext,
       disposePlugin: vi.fn(),
@@ -353,7 +355,9 @@ describe('createPluginLoader failures, order and toggles', () => {
   function createHost(settings: Record<string, unknown> = {}) {
     const listeners = new Map<string, (value: unknown) => void | Promise<void>>()
     const host = {
-      createContext: vi.fn((pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext),
+      createContext: vi.fn(
+        (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+      ),
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
       getSetting: vi.fn((id: string, key: string) => settings[`${id}.${key}`]),
@@ -933,7 +937,9 @@ describe('getLifecycleHooks and resolveModule', () => {
 describe('createPluginLoader failure state', () => {
   it('keeps the failure of a plugin that never activated when it is deactivated', async () => {
     const host = {
-      createContext: vi.fn((pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext),
+      createContext: vi.fn(
+        (pluginId: string) => ({ plugin: { id: pluginId } }) as unknown as PluginContext,
+      ),
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
     } as unknown as LoaderHost
