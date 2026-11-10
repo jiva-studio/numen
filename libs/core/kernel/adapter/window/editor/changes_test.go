@@ -16,12 +16,13 @@ import (
 
 	"connectrpc.com/connect"
 
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	windowsearch "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
+	windowsettings "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
@@ -79,7 +80,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, editor.ServicesOf(installation))
+	mountQuestionsServices(mux, installation)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -226,12 +227,13 @@ func newQuestionsClient(client connect.HTTPClient, pos string) questions {
 	}
 }
 
-func mountQuestionsServices(mux *http.ServeMux, services *editor.Services) {
+func mountQuestionsServices(mux *http.ServeMux, installation *editor.Installation) {
+	services := editor.ServicesOf(installation)
 	mux.Handle(numenv1connect.NewVaultServiceHandler(services.Vault))
 	mux.Handle(numenv1connect.NewWorkspaceServiceHandler(services.Workspace))
 	mux.Handle(numenv1connect.NewFileServiceHandler(services.File))
 	mux.Handle(numenv1connect.NewNoteServiceHandler(services.Note))
-	mux.Handle(numenv1connect.NewSearchServiceHandler(services.Search))
+	mux.Handle(numenv1connect.NewSearchServiceHandler(editor.HandlerOf[*windowsearch.Handler](installation)))
 }
 
 // going is one vault with everything a window has behind it, and a client
@@ -330,10 +332,10 @@ func opening(t *testing.T, hold *held, notes map[string]string, sync query.SyncT
 	)
 	editor.ServicesOf(installation).SetNoteWrite(&writing)
 
-	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.ServicesOf(installation).Settings)
+	turning, settings := numenv1connect.NewSettingsServiceHandler(editor.HandlerOf[*windowsettings.Handler](installation))
 	rendered, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, editor.ServicesOf(installation))
+	mountQuestionsServices(mux, installation)
 	mux.Handle(turning, settings)
 	mux.Handle(rendered, itself)
 	server := httptest.NewUnstartedServer(mux)
@@ -1021,21 +1023,6 @@ func TestSettingsSavedTogetherLeaveTheFileAloneWhereOneIsRefused(t *testing.T) {
 	}
 	if strings.Contains(response.Msg.GetWritten(), `"model":"opus"`) {
 		t.Errorf("the settings read out as %s", response.Msg.GetWritten())
-	}
-}
-
-// The levels of reasoning a model offers reach the window with the model.
-func TestTheLevelsOfAModelReachTheWindow(t *testing.T) {
-	got := editor.NewWireModels([]settingsdomain.Model{{
-		Name: "deep", ReasoningLevels: []domain.ReasoningLevel{{Name: "low", Title: "Low"}}, DefaultReasoning: "low",
-	}, {Name: "plain"}})
-
-	if levels := got[0].GetReasoningLevels(); len(levels) != 1 || levels[0].GetName() != "low" || levels[0].GetTitle() != "Low" ||
-		got[0].GetDefaultReasoning() != "low" {
-		t.Errorf("the model is %v", got[0])
-	}
-	if len(got[1].GetReasoningLevels()) != 0 {
-		t.Errorf("a model offering none is %v", got[1])
 	}
 }
 

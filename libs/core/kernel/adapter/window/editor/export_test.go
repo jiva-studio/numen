@@ -3,18 +3,18 @@ package editor
 import (
 	"net/http"
 
+	"connectrpc.com/connect"
+
+	windowagent "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/command"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/search"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor/texts"
-	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/search"
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/settings"
+	windowtext "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
 	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
@@ -30,13 +30,9 @@ type Services struct {
 	Workspace *workspaceHandler
 	File      *FileHandler
 	Note      *NoteHandler
-	Search    *search.Handler
 	Vaults    *VaultsHandler
-	Settings  *settings.Handler
-	Agent     *wire.AgentHandler
 	Command   *command.Handler
 	Media     *MediaHandler
-	Text      *texts.Handler
 
 	Themes numenv1connect.ThemeServiceHandler
 
@@ -44,7 +40,7 @@ type Services struct {
 
 	Plugin numenv1connect.PluginServiceHandler
 
-	Catalog numenv1connect.CatalogServiceHandler
+	Mounted []Route
 
 	getPluginDir func(id string) (string, bool)
 
@@ -58,16 +54,47 @@ func createServices(state *State) *Services {
 		Workspace: &workspaceHandler{state: state},
 		File:      NewFileHandler(state),
 		Note:      NewNoteHandler(state),
-		Search:    search.NewHandler(state),
 		Vaults:    NewVaultsHandler(state),
-		Settings:  settings.NewHandler(),
-		Agent:     newAgentHandler(state),
 		Command:   command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil), nil),
 		Media:     NewMediaHandler(state, nil, nil),
-		Text:      texts.NewHandler(state, nil),
 		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
 		server:    NewFileServer(state, nil, nil, nil, nil),
+		Mounted: []Route{
+			RouteOf(state, search.NewHandler(state), search.NewRoute),
+			RouteOf(state, &settings.Handler{}, settings.NewRoute),
+			RouteOf(state, &windowagent.Handler{}, windowagent.NewRoute),
+			RouteOf(state, windowtext.NewHandler(state, nil), windowtext.NewRoute),
+		},
 	}
+}
+
+// RouteOf is the route of a handler built by its own package: the path it serves and the handler
+// that serves it come from build, counted the way the container counts them.
+func RouteOf[H any](state *State, handler H, build func(H, ...connect.HandlerOption) (string, http.Handler)) Route {
+	path, served := build(handler, state.CountQuestions())
+	return NewRoute(path, served, handler)
+}
+
+// Mount puts the route in the place of the one served at its path, or beside them.
+func (s *Services) Mount(route Route) {
+	for i, one := range s.Mounted {
+		if one.path == route.path {
+			s.Mounted[i] = route
+			return
+		}
+	}
+	s.Mounted = append(s.Mounted, route)
+}
+
+// HandlerOf is the handler of the type the installation mounted.
+func HandlerOf[T any](o *Installation) T {
+	for _, one := range o.pages.routes {
+		if handler, ok := one.service.(T); ok {
+			return handler
+		}
+	}
+	var none T
+	return none
 }
 
 // NewHandler is the handler of the pages with these services in front of them.
@@ -86,28 +113,17 @@ func (s *Services) pages() pageSet {
 	routes = append(routes, NewRoute(path, served, s.File))
 	path, served = numenv1connect.NewNoteServiceHandler(s.Note, counted)
 	routes = append(routes, NewRoute(path, served, s.Note))
-	path, served = numenv1connect.NewSearchServiceHandler(s.Search, counted)
-	routes = append(routes, NewRoute(path, served, s.Search))
 	path, served = numenv1connect.NewVaultsServiceHandler(s.Vaults, counted)
 	routes = append(routes, NewRoute(path, served, s.Vaults))
-	path, served = numenv1connect.NewSettingsServiceHandler(s.Settings, counted)
-	routes = append(routes, NewRoute(path, served, s.Settings))
 	path, served = numenv1connect.NewWindowServiceHandler(s.state.Window, counted)
 	routes = append(routes, NewRoute(path, served, s.state.Window))
 	path, served = numenv1connect.NewMediaServiceHandler(s.Media, counted)
 	routes = append(routes, NewRoute(path, served, s.Media))
-	path, served = numenv1connect.NewAgentServiceHandler(s.Agent, counted)
-	routes = append(routes, NewRoute(path, served, s.Agent))
 	path, served = numenv1connect.NewCommandServiceHandler(s.Command, counted)
 	routes = append(routes, NewRoute(path, served, s.Command))
-	path, served = numenv1connect.NewTextServiceHandler(s.Text, counted)
-	routes = append(routes, NewRoute(path, served, s.Text))
 	path, served = numenv1connect.NewPluginServiceHandler(s.Plugin, counted)
 	routes = append(routes, NewRoute(path, served, s.Plugin))
-	if s.Catalog != nil {
-		path, served = numenv1connect.NewCatalogServiceHandler(s.Catalog, counted)
-		routes = append(routes, NewRoute(path, served, s.Catalog))
-	}
+	routes = append(routes, s.Mounted...)
 	return pageSet{state: s.state, routes: routes, themes: s.Themes, plugins: s.PluginServices, pluginDir: s.getPluginDir}
 }
 
@@ -134,12 +150,8 @@ func ServicesOf(o *Installation) *Services {
 			services.File = handler
 		case *NoteHandler:
 			services.Note = handler
-		case *search.Handler:
-			services.Search = handler
 		case *VaultsHandler:
 			services.Vaults = handler
-		case *settings.Handler:
-			services.Settings = handler
 		case *MediaHandler:
 			services.Media = handler
 		}
@@ -159,6 +171,3 @@ func (s *Services) SetFileMove(move *vaults.Move)  { s.File.move = move }
 func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
 
 func (s *Services) SetTabKindChoice(choose *tabkind.Choose) { s.File.chooseTabKind = choose }
-
-// NewWireModels is the models as the wire carries them.
-func NewWireModels(target []settingsdomain.Model) []*v1.Model { return settings.NewWireModels(target) }

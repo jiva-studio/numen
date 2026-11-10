@@ -11,9 +11,9 @@ import (
 
 func getWalked() map[protoreflect.FullName]string {
 	return map[protoreflect.FullName]string{
-		"numen.v1.CatalogErrorCode":       "adapter/window/editor/plugincatalog: written by newWireErrorCode",
-		"numen.v1.CatalogIncompatibility": "adapter/window/editor/plugincatalog: written by newWireIncompatibility",
-		"numen.v1.CatalogState":           "adapter/window/editor/plugincatalog: written by newWireState",
+		"numen.v1.CatalogErrorCode":       "adapter/window/catalog: written by newWireErrorCode",
+		"numen.v1.CatalogIncompatibility": "adapter/window/catalog: written by newWireIncompatibility",
+		"numen.v1.CatalogState":           "adapter/window/catalog: written by newWireState",
 		"numen.v1.CommandErrorCode":       "internal/adapter/plugin/commandbridge: read by RunCommand",
 		"numen.v1.CompletionErrorCode":    "plugin/sdk-go/ai: read by readRefusal",
 		"numen.v1.ErrorCode":              "adapter/window/editor: worded by note errors",

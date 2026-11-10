@@ -1,4 +1,4 @@
-package texts
+package text
 
 import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"

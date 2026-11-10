@@ -5,6 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 )
 
@@ -23,7 +24,7 @@ func TestFileTextReadsTheLiveTextAndRecordsAnEdit(t *testing.T) {
 		t.Fatalf("live text %q (%v, %v)", live.Text, ok, err)
 	}
 
-	edit, err := text.CreateEdit(t.Context(), s.vault, textversion.TextEdit{
+	edit, err := text.CreateEdit(t.Context(), s.vault, textdomain.Edit{
 		PluginID: player, Path: scanPath, Source: live.Version().GetID(), Segments: []domain.TextSegment{{Text: "layer the "}},
 	})
 	if err != nil {
