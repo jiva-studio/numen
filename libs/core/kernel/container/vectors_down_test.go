@@ -12,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
@@ -57,8 +58,8 @@ func newDownEmbeddingHost(t *testing.T) *downEmbeddingHost {
 }
 
 // lend is the plugin host the container holds, made of the capabilities the fake answers.
-func (h *downEmbeddingHost) lend() *container.PluginHost {
-	return &container.PluginHost{PluginResolver: h, PluginActivator: h}
+func (h *downEmbeddingHost) lend() *pluginswiring.Host {
+	return &pluginswiring.Host{PluginResolver: h, PluginActivator: h}
 }
 
 // A plugin that does not answer names no model, and a vault read without a

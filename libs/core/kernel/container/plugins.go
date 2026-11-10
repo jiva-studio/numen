@@ -7,7 +7,7 @@ import (
 	pluginswiring "github.com/jiva-studio/numen/libs/core/kernel/container/plugins"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
+
 	"github.com/jiva-studio/numen/libs/core/kernel/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
@@ -26,15 +26,12 @@ const programsLimit = pluginswiring.ProgramsLimit
 // PluginVaultHooks is what a window adds to the vault it lets the plugins work.
 type PluginVaultHooks = pluginswiring.PluginVaultHooks
 
-// PluginHost is the capabilities of the plugin host the configuration holds.
-type PluginHost = pluginswiring.Host
-
 // NewPluginHost creates and initializes a plugin host for the specified target and search directories.
-func NewPluginHost(target string, dirs ...string) *PluginHost {
+func NewPluginHost(target string, dirs ...string) *pluginswiring.Host {
 	return pluginswiring.NewPluginHost(target, dirs...)
 }
 
-func newDependencies(defaultDir string) *provision.Registry {
+func newDependencies(defaultDir string) plugin.Dependencies {
 	return pluginswiring.NewDependenciesIn(defaultDir)
 }
 
@@ -49,7 +46,7 @@ func (c Config) GetPluginCatalog() *catalog.Service {
 	return c.plugins().GetPluginCatalog()
 }
 
-func (c Config) resolvePlugin(capability string) (*PluginHost, error) {
+func (c Config) resolvePlugin(capability string) (*pluginswiring.Host, error) {
 	return c.plugins().ResolvePlugin(capability)
 }
 
@@ -228,6 +225,6 @@ func (c Config) InstallPluginVault(
 }
 
 // LendPluginHost is the capabilities of host, as the configuration holds them.
-func LendPluginHost(host *plugin.Host) *PluginHost {
+func LendPluginHost(host *plugin.Host) *pluginswiring.Host {
 	return pluginswiring.NewHost(host)
 }

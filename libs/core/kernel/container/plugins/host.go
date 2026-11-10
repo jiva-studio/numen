@@ -29,7 +29,11 @@ type Host struct {
 	pluginport.DependencyReporter
 	completionport.CompleterHost
 	contenttypeport.ContentTypeTable
-	host *plugin.Host
+	// SetStorage sets the folders the plugins store files in, and keeps the dependencies in the models
+	// folder the host names, where it names one.
+	SetStorage func(cacheRoot, dataRoot string)
+	// RefreshDependencies provisions the dependencies as the environment names them now.
+	RefreshDependencies func()
 }
 
 // NewHost lends the capabilities of host.
@@ -53,22 +57,16 @@ func NewHost(host *plugin.Host) *Host {
 		DependencyReporter:    host,
 		CompleterHost:         host,
 		ContentTypeTable:      host,
-		host:                  host,
+		SetStorage:            func(cacheRoot, dataRoot string) { setStorage(host, cacheRoot, dataRoot) },
+		RefreshDependencies:   func() { host.SetDependencies(NewDependenciesIn("")) },
 	}
 }
 
-// SetStorage sets the folders the plugins store files in, and keeps the dependencies in the models
-// folder the host names, where it names one.
-func (h *Host) SetStorage(cacheRoot, dataRoot string) {
-	h.host.SetStorageRoots(cacheRoot, dataRoot)
+func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
+	host.SetStorageRoots(cacheRoot, dataRoot)
 	// gomutants:disable-next-line
-	if models := h.host.GetModelsDir(); models != "" {
+	if models := host.GetModelsDir(); models != "" {
 		// gomutants:disable-next-line
-		h.host.SetDependencies(NewDependenciesIn(models))
+		host.SetDependencies(NewDependenciesIn(models))
 	}
-}
-
-// RefreshDependencies provisions the dependencies as the environment names them now.
-func (h *Host) RefreshDependencies() {
-	h.host.SetDependencies(NewDependenciesIn(""))
 }

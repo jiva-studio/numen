@@ -17,6 +17,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/provision"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 )
 
@@ -27,7 +28,7 @@ func TestAProvisioningIsATaskUntilItIsReady(t *testing.T) {
 			t.Error(err)
 		}
 	})
-	registry := newDependencies("")
+	registry := provision.NewRegistry()
 	host.SetDependencies(registry)
 	tasks := run.NewTasks()
 	NewConfig(Config{PluginHost: LendPluginHost(host)}).ReportDependencies(tasks)
