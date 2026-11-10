@@ -183,7 +183,7 @@ func TestMoveFailingOnCancelReturnsNoteErrorAndRestNotAttempted(t *testing.T) {
 }
 
 func TestMoveBeforeCancelReturnsThatNoteAsMoved(t *testing.T) {
-	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
+	endpoint, _, _ := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.MoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceMoveNotesRequest{
 		Paths: getCancelledBatch(), Folder: "Archive",
@@ -271,7 +271,7 @@ func TestRemovalFailingOnCancelReturnsErrorAndRestNotAttempted(t *testing.T) {
 }
 
 func TestRemovalTrashedBeforeCancelReturnsThatNoteAsRemoved(t *testing.T) {
-	endpoint, _, ctx := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
+	endpoint, _, _ := newCancellingEndpoint(t, 2, changeThenCancelAndFail)
 
 	res, err := endpoint.RemoveNotes(t.Context(), authorizeAsA(connect.NewRequest(&v1.HostVaultServiceRemoveNotesRequest{
 		Paths: getCancelledBatch(),

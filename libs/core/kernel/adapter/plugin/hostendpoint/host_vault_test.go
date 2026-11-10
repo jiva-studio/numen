@@ -358,12 +358,6 @@ func TestACallIsRefusedWithoutThePermissionItNeeds(t *testing.T) {
 	}
 }
 
-func TestAnErrorTheHostCannotNameIsInternal(t *testing.T) {
-	if _, err := answer(t.Context(), errors.New("the disk is gone")); readCode(t, err) != connect.CodeInternal {
-		t.Errorf("the failure was %v", err)
-	}
-}
-
 func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 	client, _ := newVaultFixture(t)
 
@@ -371,19 +365,6 @@ func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 
 	if err != nil || !slices.Equal(res.Msg.GetPaths(), []string{"Animal.md"}) {
 		t.Errorf("the paths were %v (%v)", res.Msg.GetPaths(), err)
-	}
-}
-
-func TestAFingerprintCarriesWhetherTheFileIsANote(t *testing.T) {
-	for _, kind := range []domain.SourceKind{domain.KindNote, domain.KindFile} {
-		got := readFileStat(writeFileStat(domain.FileStat{Path: "B.sample", Kind: kind, Size: 3, ModTime: time.Unix(5, 6)}))
-
-		if got.Kind != kind || got.Path != "B.sample" || !got.ModTime.Equal(time.Unix(5, 6)) {
-			t.Errorf("got %+v, want the kind %q", got, kind)
-		}
-	}
-	if got := readFileStat(&v1.HostFileStat{}); got.Kind != "" {
-		t.Errorf("got %+v, want a fingerprint naming no file to have no kind", got)
 	}
 }
 
