@@ -1,4 +1,4 @@
-package service
+package numbered
 
 import (
 	"strconv"
@@ -26,7 +26,7 @@ func getListedWords(t *testing.T, about string) string {
 
 // A digest reports how the speech opens and which of its words recur.
 func TestADigestReturnsWhatTheRecordingContains(t *testing.T) {
-	about := describeSpeech(makeLines(
+	about := DescribeSpeech(makeLines(
 		"The assembly at Mithila heard Ganaka.",
 		"The teacher listened. Then Ganaka spoke of Mithila",
 		"as a city nobody had named before him.",
@@ -42,7 +42,7 @@ func TestADigestReturnsWhatTheRecordingContains(t *testing.T) {
 
 // A word that occurs once is not a recurring word.
 func TestADigestListsOnlyWhatRecurs(t *testing.T) {
-	about := describeSpeech(makeLines("The teacher named Ganaka once.", "Nothing else was said of him."))
+	about := DescribeSpeech(makeLines("The teacher named Ganaka once.", "Nothing else was said of him."))
 	if response := getListedWords(t, about); response != "" {
 		t.Errorf("the digest lists %q", response)
 	}
@@ -51,7 +51,7 @@ func TestADigestListsOnlyWhatRecurs(t *testing.T) {
 // A word capitalised only where a sentence opens is a sentence's first word and not
 // a name, however often it occurs.
 func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
-	about := describeSpeech(makeLines("Ganaka spoke. Ganaka listened. Ganaka left."))
+	about := DescribeSpeech(makeLines("Ganaka spoke. Ganaka listened. Ganaka left."))
 	if response := getListedWords(t, about); response != "" {
 		t.Errorf("the digest lists %q", response)
 	}
@@ -59,7 +59,7 @@ func TestAWordOpeningEverySentenceIsNotAName(t *testing.T) {
 
 // An abbreviation does not end a sentence, so the name following it is a name.
 func TestANamePriorAShorteningIsStillAName(t *testing.T) {
-	about := describeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left."))
+	about := DescribeSpeech(makeLines("Mr. Ganaka arrived. Mr. Ganaka left."))
 	if response := getListedWords(t, about); response != "Ganaka" {
 		t.Errorf("the digest lists %q", response)
 	}
@@ -67,7 +67,7 @@ func TestANamePriorAShorteningIsStillAName(t *testing.T) {
 
 // A speaker talking about himself is not a recording full of one name.
 func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
-	about := describeSpeech(makeLines(
+	about := DescribeSpeech(makeLines(
 		"So I was saying that I think Ganaka is here.",
 		"And I told him that I would go. I'm sure I've said so.",
 	))
@@ -83,7 +83,7 @@ func TestTheOpeningIsSplitShort(t *testing.T) {
 	for item := range 200 {
 		response = append(response, "word"+strconv.Itoa(item))
 	}
-	about := describeSpeech(makeLines(strings.Join(response, " ")))
+	about := DescribeSpeech(makeLines(strings.Join(response, " ")))
 
 	if !strings.Contains(about, "word0 word1 ") || strings.Contains(about, "word199") {
 		t.Errorf("the digest says %q", about)
@@ -95,10 +95,10 @@ func TestTheOpeningIsSplitShort(t *testing.T) {
 
 // A transcript saying nothing is described as nothing.
 func TestATranscriptSayingNothingIsDescribedAsNothing(t *testing.T) {
-	if about := describeSpeech(makeLines("", "")); about != "" {
+	if about := DescribeSpeech(makeLines("", "")); about != "" {
 		t.Errorf("the digest says %q", about)
 	}
-	if about := describeSpeech(nil); about != "" {
+	if about := DescribeSpeech(nil); about != "" {
 		t.Errorf("the digest says %q", about)
 	}
 }

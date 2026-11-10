@@ -1,33 +1,35 @@
-package service
+package reply
 
 import (
 	"sort"
 	"strings"
+
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
 )
 
-// answer is what the model's reply to one batch came to: the corrections the
+// Answer is what the model's reply to one batch came to: the corrections the
 // gates accepted, the line each run reaching past the batch begins on, and
 // whether the reply was an answer at all.
-type answer struct {
-	batch    Batch
-	lines    []Line
-	reaching []int
-	isAnswer bool
+type Answer struct {
+	Batch    numbered.Batch
+	Lines    []numbered.Line
+	Reaching []int
+	IsAnswer bool
 }
 
-func readAnswer(batch Batch, reply string, maxDistance float64) answer {
+func ReadAnswer(batch numbered.Batch, reply string, maxDistance float64) Answer {
 	fixed, past, ok := GetFixedLines(batch, reply, maxDistance)
 	if !ok {
-		return answer{batch: batch, lines: nil, reaching: nil, isAnswer: false}
+		return Answer{Batch: batch, Lines: nil, Reaching: nil, IsAnswer: false}
 	}
-	out := answer{batch: batch, lines: fixed, reaching: nil, isAnswer: true}
+	out := Answer{Batch: batch, Lines: fixed, Reaching: nil, IsAnswer: true}
 	if past {
-		out.reaching = getReachingRuns(batch, reply)
+		out.Reaching = getReachingRuns(batch, reply)
 	}
 	return out
 }
 
-func getReachingRuns(batch Batch, reply string) []int {
+func getReachingRuns(batch numbered.Batch, reply string) []int {
 	var starts []int
 	for _, row := range splitRows(reply) {
 		if pos, through, _, _, ok := readRow(row); ok && through > batch.Last() {
@@ -37,22 +39,22 @@ func getReachingRuns(batch Batch, reply string) []int {
 	return starts
 }
 
-func gatherAnswers(answers []answer) (map[int]Line, []int) {
+func GatherAnswers(answers []Answer) (map[int]numbered.Line, []int) {
 	collector := gathering{
-		lines: make(map[int]Line),
+		lines: make(map[int]numbered.Line),
 		owner: make(map[int]int),
 		best:  make(map[int]int),
 	}
 	var past []int
 	for _, one := range answers {
-		if !one.isAnswer {
+		if !one.IsAnswer {
 			continue
 		}
-		if len(one.reaching) > 0 {
-			past = append(past, one.batch.Number)
+		if len(one.Reaching) > 0 {
+			past = append(past, one.Batch.Number)
 		}
-		after := countRemainingLines(one.batch.Lines)
-		for _, line := range one.lines {
+		after := countRemainingLines(one.Batch.Lines)
+		for _, line := range one.Lines {
 			collector.keep(line, after)
 		}
 	}
@@ -61,12 +63,12 @@ func gatherAnswers(answers []answer) (map[int]Line, []int) {
 
 // gathering is the corrections kept so far.
 type gathering struct {
-	lines map[int]Line
+	lines map[int]numbered.Line
 	owner map[int]int
 	best  map[int]int
 }
 
-func (g *gathering) keep(line Line, after map[int]int) {
+func (g *gathering) keep(line numbered.Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
 	for pos := first; pos <= last; pos++ {
 		if status, observed := g.best[pos]; observed && after[pos] < status {
@@ -93,7 +95,7 @@ func (g *gathering) evict(first int) {
 	delete(g.lines, first)
 }
 
-func countRemainingLines(lines []Line) map[int]int {
+func countRemainingLines(lines []numbered.Line) map[int]int {
 	remaining := make(map[int]int, len(lines))
 	for i, line := range lines {
 		remaining[line.Number] = len(lines) - 1 - i
@@ -101,8 +103,8 @@ func countRemainingLines(lines []Line) map[int]int {
 	return remaining
 }
 
-func sortLines(lines map[int]Line) []Line {
-	out := make([]Line, 0, len(lines))
+func SortLines(lines map[int]numbered.Line) []numbered.Line {
+	out := make([]numbered.Line, 0, len(lines))
 	for _, line := range lines {
 		out = append(out, line)
 	}

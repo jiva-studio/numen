@@ -1,4 +1,4 @@
-package service
+package numbered
 
 import (
 	"strings"
@@ -14,7 +14,7 @@ const (
 	recurs = 2
 )
 
-func describeSpeech(lines []Line) string {
+func DescribeSpeech(lines []Line) string {
 	var response []string
 	for _, line := range lines {
 		response = append(response, strings.Fields(line.Text)...)

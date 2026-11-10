@@ -1,16 +1,17 @@
-package service
+package proofread
 
 import (
 	"context"
 	"sort"
-)
 
-// askModel returns the model's reply to a prompt under an instruction.
-type askModel func(ctx context.Context, instruction, prompt string) (string, error)
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/reply"
+)
 
 // textResult is what proofreading a request came to.
 type textResult struct {
-	corrections []Line
+	corrections []numbered.Line
 	uncorrected int
 	next        int
 	isDone      bool
@@ -18,23 +19,23 @@ type textResult struct {
 
 func getScanDistance(maxDistance float64) float64 {
 	if maxDistance <= 0 {
-		return MaxEditDistance
+		return reply.MaxEditDistance
 	}
 	return maxDistance
 }
 
-func proofreadScan(ctx context.Context, ask askModel, pages []Batch, maxDistance float64) (textResult, error) {
-	answers, err := askBatches(ctx, ask, scanInstruction, pages, getScanDistance(maxDistance))
+func proofreadScan(ctx context.Context, ask AskModel, pages []numbered.Batch, maxDistance float64) (textResult, error) {
+	answers, err := askBatches(ctx, ask, prompt.ScanInstruction, pages, getScanDistance(maxDistance))
 	if err != nil {
 		return textResult{}, err
 	}
 	var out textResult
-	var lines []Line
+	var lines []numbered.Line
 	for _, one := range answers {
-		if !one.isAnswer {
+		if !one.IsAnswer {
 			out.uncorrected++
 		}
-		lines = append(lines, one.lines...)
+		lines = append(lines, one.Lines...)
 	}
 	sort.SliceStable(lines, func(i, j int) bool { return lines[i].Number < lines[j].Number })
 	out.corrections = lines
@@ -49,10 +50,10 @@ type batchShape struct {
 }
 
 func proofreadSpeech(
-	ctx context.Context, ask askModel, lines []Line, shape batchShape, from, limit int,
+	ctx context.Context, ask AskModel, lines []numbered.Line, shape batchShape, from, limit int,
 ) (textResult, error) {
 	size, overlap := shape.size, shape.overlap
-	cues := getSpokenLines(lines)
+	cues := numbered.GetSpokenLines(lines)
 	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
 	if pos >= len(cues) {
 		return textResult{corrections: nil, uncorrected: 0, next: from, isDone: true}, nil
@@ -63,25 +64,25 @@ func proofreadSpeech(
 	}
 	window := cues[pos:end:end]
 
-	about := describeSpeech(cues)
+	about := numbered.DescribeSpeech(cues)
 
-	main := setContext(speechBatches(window, size, overlap), about)
-	answers, err := askBatches(ctx, ask, speechInstruction, main, 0)
+	main := setContext(numbered.SpeechBatches(window, size, overlap), about)
+	answers, err := askBatches(ctx, ask, prompt.SpeechInstruction, main, 0)
 	if err != nil {
 		return textResult{}, err
 	}
-	_, past := gatherAnswers(answers)
-	batchedContext := setContext(cutBatches(window, size, overlap, past), about)
-	more, err := askBatches(ctx, ask, speechInstruction, batchedContext, 0)
+	_, past := reply.GatherAnswers(answers)
+	batchedContext := setContext(numbered.CutBatches(window, size, overlap, past), about)
+	more, err := askBatches(ctx, ask, prompt.SpeechInstruction, batchedContext, 0)
 	if err != nil {
 		return textResult{}, err
 	}
 	answers = append(answers, more...)
 
-	placed, _ := gatherAnswers(answers)
-	out := textResult{corrections: sortLines(placed), uncorrected: 0, next: 0, isDone: false}
+	placed, _ := reply.GatherAnswers(answers)
+	out := textResult{corrections: reply.SortLines(placed), uncorrected: 0, next: 0, isDone: false}
 	for _, one := range answers {
-		if !one.isAnswer {
+		if !one.IsAnswer {
 			out.uncorrected++
 		}
 	}
@@ -92,10 +93,10 @@ func proofreadSpeech(
 	}
 	resume := max(end-max(overlap, 0), pos+1)
 	for _, one := range answers {
-		if one.batch.Last() != window[len(window)-1].Number {
+		if one.Batch.Last() != window[len(window)-1].Number {
 			continue
 		}
-		for _, start := range one.reaching {
+		for _, start := range one.Reaching {
 			resume = min(resume, max(getLineIndex(cues, start), pos+1))
 		}
 	}
@@ -103,25 +104,25 @@ func proofreadSpeech(
 	return out, nil
 }
 
-func getLineIndex(lines []Line, number int) int {
+func getLineIndex(lines []numbered.Line, number int) int {
 	return sort.Search(len(lines), func(i int) bool { return lines[i].Number >= number })
 }
 
 func askBatches(
-	ctx context.Context, ask askModel, instruction string, batches []Batch, maxDistance float64,
-) ([]answer, error) {
-	out := make([]answer, 0, len(batches))
+	ctx context.Context, ask AskModel, instruction string, batches []numbered.Batch, maxDistance float64,
+) ([]reply.Answer, error) {
+	out := make([]reply.Answer, 0, len(batches))
 	for _, batch := range batches {
-		reply, err := ask(ctx, instruction, buildPrompt(batch))
+		text, err := ask(ctx, instruction, prompt.BuildPrompt(batch))
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, readAnswer(batch, reply, maxDistance))
+		out = append(out, reply.ReadAnswer(batch, text, maxDistance))
 	}
 	return out, nil
 }
 
-func setContext(batches []Batch, about string) []Batch {
+func setContext(batches []numbered.Batch, about string) []numbered.Batch {
 	for item := range batches {
 		batches[item].Context = about
 	}

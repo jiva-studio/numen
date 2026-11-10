@@ -1,4 +1,4 @@
-package service
+package numbered
 
 // Line is one numbered run of words. Last is the final line number of a run put
 // together, and Number or zero marks a line standing alone.
@@ -35,3 +35,11 @@ const (
 	Opens  = "⟦"
 	Closes = "⟧"
 )
+
+// GetLastNumber is the number of the final line the line covers.
+func (l Line) GetLastNumber() int {
+	if l.IsJoined() {
+		return l.Last
+	}
+	return l.Number
+}

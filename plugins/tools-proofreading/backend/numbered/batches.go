@@ -1,10 +1,10 @@
-package service
+package numbered
 
-func speechBatches(all []Line, size, overlap int) []Batch {
+func SpeechBatches(all []Line, size, overlap int) []Batch {
 	if size <= 0 {
 		return nil
 	}
-	lines := getSpokenLines(all)
+	lines := GetSpokenLines(all)
 	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	for start := 0; start < len(lines); start += step {
@@ -17,13 +17,13 @@ func speechBatches(all []Line, size, overlap int) []Batch {
 	return out
 }
 
-func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
-	batches := speechBatches(all, size, overlap)
+func CutBatches(all []Line, size, overlap int, cuts []int) []Batch {
+	batches := SpeechBatches(all, size, overlap)
 	if size < 2 || len(batches) < 2 {
 		return nil
 	}
 
-	lines := getSpokenLines(all)
+	lines := GetSpokenLines(all)
 	step := size - getSharedLines(size, overlap)
 	var out []Batch
 	reach := -1
@@ -49,7 +49,7 @@ func cutBatches(all []Line, size, overlap int, cuts []int) []Batch {
 	return out
 }
 
-func getSpokenLines(all []Line) []Line {
+func GetSpokenLines(all []Line) []Line {
 	var out []Line
 	for _, line := range all {
 		if line.Text == "" {

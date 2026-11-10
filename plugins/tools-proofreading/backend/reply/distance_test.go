@@ -1,6 +1,10 @@
-package service
+package reply
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+)
 
 // A line of speech, and the words a proofreader answers with.
 const (
@@ -8,8 +12,8 @@ const (
 	asCorrected = "Shura Maheshvasa Vikranta Uttamauja Yudhamanyu Yuyudhana Drupada Maharatha."
 )
 
-func oneLine(text string) Batch {
-	return Batch{Number: 1, Lines: []Line{{Number: 7, Text: text}}}
+func oneLine(text string) numbered.Batch {
+	return numbered.Batch{Number: 1, Lines: []numbered.Line{{Number: 7, Text: text}}}
 }
 
 // right.

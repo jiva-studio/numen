@@ -1,14 +1,17 @@
-package service
+package proofread
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"path"
-	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/segments"
 )
 
 var (
@@ -39,11 +42,13 @@ type Result struct {
 type Proofreading struct {
 	host      Host
 	kinds     map[domain.TextKind]bool
-	ask       askModel
-	getConfig func() proofreadingConfig
+	ask       AskModel
+	getConfig func() Config
 }
 
-func newProofreading(h Host, kinds map[domain.TextKind]bool, ask askModel, getConfig func() proofreadingConfig) *Proofreading {
+// New returns a proofreading of the kinds given, which asks ask and reads its sizes from getConfig on
+// every run.
+func New(h Host, kinds map[domain.TextKind]bool, ask AskModel, getConfig func() Config) *Proofreading {
 	return &Proofreading{host: h, kinds: kinds, ask: ask, getConfig: getConfig}
 }
 
@@ -74,7 +79,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err != nil {
 		return Result{}, err
 	}
-	parts, err := readParts(ctx, texts, source)
+	parts, err := ReadParts(ctx, texts, source)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s of %s: %w", source.GetID(), req.Path, err)
 	}
@@ -85,7 +90,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	}
 	defer func() { err = errors.Join(err, turn.Release()) }()
 
-	lines := readLines(parts)
+	lines := segments.ReadLines(parts)
 	task.TotalCount, task.CompletedCount = int64(len(lines)), 0
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
@@ -94,14 +99,14 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err != nil {
 		return Result{}, err
 	}
-	corrected := applyCorrections(parts, corrections)
+	corrected := segments.ApplyCorrections(parts, corrections)
 
 	key := getVersionKey(source.GetID())
 	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
 		return Result{}, err
 	}
 	version, err := texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: key, Source: source.GetID(), Kind: proofreadingKind,
+		Path: req.Path, Key: key, Source: source.GetID(), Kind: ProofreadingKind,
 		InputHash: source.TextHash, File: getFileName(key),
 	})
 	if err != nil {
@@ -133,7 +138,8 @@ func (p *Proofreading) findSource(ctx context.Context, texts Texts, filePath str
 	return domain.TextVersion{}, fmt.Errorf("%s of %s: %w", id, filePath, host.ErrNotExist)
 }
 
-func readParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]domain.TextSegment, error) {
+// ReadParts reads every segment of the version, page by page.
+func ReadParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]domain.TextSegment, error) {
 	var parts []domain.TextSegment
 	for cursor := ""; ; {
 		page, err := texts.ReadText(ctx, version.Path, version.GetID(), cursor)
@@ -149,20 +155,20 @@ func readParts(ctx context.Context, texts Texts, version domain.TextVersion) ([]
 }
 
 func (p *Proofreading) correct(
-	ctx context.Context, parts []domain.TextSegment, lines []Line, task *host.Task,
-) ([]Line, int, error) {
-	if isTimed(parts) {
+	ctx context.Context, parts []domain.TextSegment, lines []numbered.Line, task *host.Task,
+) ([]numbered.Line, int, error) {
+	if segments.IsTimed(parts) {
 		return p.correctSpeech(ctx, lines, task)
 	}
-	return p.correctScan(ctx, readPages(parts, lines), task)
+	return p.correctScan(ctx, segments.ReadPages(parts, lines), task)
 }
 
-func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *host.Task) ([]Line, int, error) {
+func (p *Proofreading) correctSpeech(ctx context.Context, lines []numbered.Line, task *host.Task) ([]numbered.Line, int, error) {
 	cfg := p.getConfig()
-	var out []Line
+	var out []numbered.Line
 	uncorrected := 0
 	for from := 1; ; {
-		result, err := proofreadSpeech(ctx, p.ask, lines, batchShape{size: cfg.batchSize, overlap: cfg.overlap}, from, cfg.inFlight*cfg.batchSize)
+		result, err := proofreadSpeech(ctx, p.ask, lines, batchShape{size: cfg.BatchSize, overlap: cfg.Overlap}, from, cfg.InFlight*cfg.BatchSize)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -171,7 +177,7 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 		for _, line := range result.corrections {
 			if result.isDone || line.Number < result.next {
 				out = append(out, line)
-				next = max(next, getLastLine(line)+1)
+				next = max(next, line.GetLastNumber()+1)
 			}
 		}
 		task.CompletedCount = int64(min(next-1, len(lines)))
@@ -185,12 +191,12 @@ func (p *Proofreading) correctSpeech(ctx context.Context, lines []Line, task *ho
 	}
 }
 
-func (p *Proofreading) correctScan(ctx context.Context, pages []Batch, task *host.Task) ([]Line, int, error) {
+func (p *Proofreading) correctScan(ctx context.Context, pages []numbered.Batch, task *host.Task) ([]numbered.Line, int, error) {
 	cfg := p.getConfig()
-	var out []Line
+	var out []numbered.Line
 	uncorrected := 0
 	for _, page := range pages {
-		result, err := proofreadScan(ctx, p.ask, []Batch{page}, cfg.maxEditDistance)
+		result, err := proofreadScan(ctx, p.ask, []numbered.Batch{page}, cfg.MaxEditDistance)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -204,42 +210,12 @@ func (p *Proofreading) correctScan(ctx context.Context, pages []Batch, task *hos
 	return out, uncorrected, nil
 }
 
-func getLastLine(line Line) int {
-	if line.IsJoined() {
-		return line.Last
-	}
-	return line.Number
+// keyPrefix starts the key of every version the plugin makes.
+const keyPrefix = "proofread-"
+
+func getVersionKey(source domain.TextVersionID) string {
+	sum := sha256.Sum256([]byte(source))
+	return keyPrefix + hex.EncodeToString(sum[:8])
 }
 
-func readLines(parts []domain.TextSegment) []Line {
-	lines := make([]Line, len(parts))
-	for i, part := range parts {
-		lines[i] = Line{Number: i + 1, Last: 0, Text: strings.TrimSpace(part.Text)}
-	}
-	return lines
-}
-
-func readPages(parts []domain.TextSegment, lines []Line) []Batch {
-	var out []Batch
-	for _, line := range lines {
-		selector, err := readSegmentSelector(parts[line.Number-1].Selector)
-		if err != nil {
-			// A selector that does not parse names no page.
-			selector = segmentSelector{T: nil, Page: 0, CFI: "", Boxes: nil}
-		}
-		page := selector.Page
-		if len(out) == 0 || out[len(out)-1].Number != page {
-			out = append(out, Batch{Number: page, Lines: nil, IsJoinable: false, Context: ""})
-		}
-		out[len(out)-1].Lines = append(out[len(out)-1].Lines, line)
-	}
-	return out
-}
-
-func isTimed(parts []domain.TextSegment) bool {
-	if len(parts) == 0 {
-		return false
-	}
-	selector, err := readSegmentSelector(parts[0].Selector)
-	return err == nil && len(selector.T) == 2
-}
+func getFileName(key string) string { return key + ".jsonl" }

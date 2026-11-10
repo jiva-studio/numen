@@ -1,4 +1,4 @@
-package service
+package proofread
 
 import (
 	"errors"
@@ -8,19 +8,21 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/segments"
 )
 
 func TestGetProofreadKindsAcceptsEveryKind(t *testing.T) {
-	got := slices.Sorted(maps.Keys(getProofreadKinds()))
+	got := slices.Sorted(maps.Keys(GetProofreadKinds()))
 	want := []domain.TextKind{"*"}
 	if !slices.Equal(got, want) {
 		t.Errorf("kinds %v, want %v", got, want)
 	}
 }
 
-func encodeSelector(t *testing.T, selector segmentSelector) domain.Selector {
+func encodeSelector(t *testing.T, selector segments.Selector) domain.Selector {
 	t.Helper()
-	encoded, err := selector.encode()
+	encoded, err := selector.Encode()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +32,7 @@ func encodeSelector(t *testing.T, selector segmentSelector) domain.Selector {
 func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	s := newScene(t)
 	s.run.kinds = map[domain.TextKind]bool{"subtitle": true}
-	cue := encodeSelector(t, segmentSelector{T: []float64{0, 1}})
+	cue := encodeSelector(t, segments.Selector{T: []float64{0, 1}})
 	subtitle := s.hold(t, speechID, talkPath, "subtitle", "subtitle", "the recording", []domain.TextSegment{
 		{Text: "a flywheel spinnig\n", Selector: cue},
 	})
@@ -47,10 +49,10 @@ func TestProofreadReadsTheKindsItIsGiven(t *testing.T) {
 	}
 
 	parts, live := s.readLive(t, talkPath)
-	if live.Kind != proofreadingKind || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
+	if live.Kind != ProofreadingKind || len(parts) != 1 || parts[0].Text != "a flywheel spinning\n" {
 		t.Errorf("the live version %+v reads %+v", live, parts)
 	}
-	if instruction := s.model.questions[0].GetMessages()[0].GetText(); instruction != speechInstruction {
+	if instruction := s.model.instructions[0]; instruction != prompt.SpeechInstruction {
 		t.Errorf("timed text was not asked about as speech: %q", instruction)
 	}
 }

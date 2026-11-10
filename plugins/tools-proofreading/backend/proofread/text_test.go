@@ -1,4 +1,4 @@
-package service
+package proofread
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/prompt"
 )
 
 // model is a model whose reply is computed from the prompt by its script, and
@@ -15,11 +18,15 @@ type model struct {
 	script       func(prompt string) string
 	instructions []string
 	prompts      []string
+	failure      error
 }
 
 func (m *model) ask(_ context.Context, instruction, prompt string) (string, error) {
 	m.instructions = append(m.instructions, instruction)
 	m.prompts = append(m.prompts, prompt)
+	if m.failure != nil {
+		return "", m.failure
+	}
 	return m.script(prompt), nil
 }
 
@@ -27,10 +34,10 @@ func newReplyModel(reply string) *model {
 	return &model{script: func(string) string { return reply }}
 }
 
-func twoPages() []Batch {
-	return []Batch{
-		{Number: 3, Lines: []Line{{Number: 10, Text: "the cta sat"}, {Number: 11, Text: "on the mat"}}},
-		{Number: 4, Lines: []Line{{Number: 12, Text: "the dgo ran"}}},
+func twoPages() []numbered.Batch {
+	return []numbered.Batch{
+		{Number: 3, Lines: []numbered.Line{{Number: 10, Text: "the cta sat"}, {Number: 11, Text: "on the mat"}}},
+		{Number: 4, Lines: []numbered.Line{{Number: 12, Text: "the dgo ran"}}},
 	}
 }
 
@@ -46,14 +53,14 @@ func TestProofreadScan_PromptsPerPageAndOrdersCorrections(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []Line{{Number: 10, Last: 10, Text: "the cat sat"}, {Number: 12, Last: 12, Text: "the dog ran"}}
+	want := []numbered.Line{{Number: 10, Last: 10, Text: "the cat sat"}, {Number: 12, Last: 12, Text: "the dog ran"}}
 	if !reflect.DeepEqual(got.corrections, want) {
 		t.Errorf("corrections %v, want %v", got.corrections, want)
 	}
 	if got.uncorrected != 0 || !got.isDone {
 		t.Errorf("result %+v", got)
 	}
-	if len(m.prompts) != 2 || m.instructions[0] != scanInstruction {
+	if len(m.prompts) != 2 || m.instructions[0] != prompt.ScanInstruction {
 		t.Errorf("asked %d times under %q", len(m.prompts), m.instructions)
 	}
 }
@@ -77,7 +84,7 @@ func TestAScanFailureEndsTheRun(t *testing.T) {
 }
 
 func TestProofreadScan_AppliesEditLimit(t *testing.T) {
-	pages := []Batch{{Number: 1, Lines: []Line{{Number: 1, Text: "abcdefghij"}}}}
+	pages := []numbered.Batch{{Number: 1, Lines: []numbered.Line{{Number: 1, Text: "abcdefghij"}}}}
 	reply := newReplyModel("1|abcdeXYZ")
 
 	got, err := proofreadScan(t.Context(), reply.ask, pages, 0)
@@ -96,10 +103,10 @@ func TestProofreadScan_AppliesEditLimit(t *testing.T) {
 	}
 }
 
-func speech(count int) []Line {
-	out := make([]Line, count)
+func speech(count int) []numbered.Line {
+	out := make([]numbered.Line, count)
 	for item := range out {
-		out[item] = Line{Number: item, Text: "word " + strconv.Itoa(item)}
+		out[item] = numbered.Line{Number: item, Text: "word " + strconv.Itoa(item)}
 	}
 	return out
 }
@@ -113,7 +120,7 @@ func TestProofreadSpeech_UsesSpeechInstruction(t *testing.T) {
 	if !got.isDone || got.next != 3 || got.uncorrected != 0 {
 		t.Errorf("result %+v", got)
 	}
-	if len(m.prompts) != 1 || m.instructions[0] != speechInstruction {
+	if len(m.prompts) != 1 || m.instructions[0] != prompt.SpeechInstruction {
 		t.Fatalf("asked %d times under %q", len(m.prompts), m.instructions)
 	}
 	if !strings.HasPrefix(m.prompts[0], "The speech opens: word 0 word 1 word 2\n\n") {
@@ -176,7 +183,7 @@ func TestProofreadSpeech_RetriesSplitBatchForSpanningRun(t *testing.T) {
 
 func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 	m := &model{script: func(prompt string) string {
-		if strings.Contains(prompt, Opens+"7"+Closes) {
+		if strings.Contains(prompt, numbered.Opens+"7"+numbered.Closes) {
 			return "6-9|a sentence reaching past the window"
 		}
 		return ""
@@ -191,13 +198,13 @@ func TestProofreadSpeech_RetriesWindowForSpanningRun(t *testing.T) {
 }
 
 func TestProofreadSpeech_ReturnsCorrectionsInLineOrder(t *testing.T) {
-	lines := []Line{{Number: 0, Text: "we should go. And then"}, {Number: 1, Text: "the next day he left."}, {Number: 2, Text: "the end"}}
+	lines := []numbered.Line{{Number: 0, Text: "we should go. And then"}, {Number: 1, Text: "the next day he left."}, {Number: 2, Text: "the end"}}
 	m := newReplyModel("0-1|We should go. And then the next day he left.\n2|The end")
 	got, err := proofreadSpeech(t.Context(), m.ask, lines, batchShape{size: 10, overlap: 0}, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []Line{
+	want := []numbered.Line{
 		{Number: 0, Last: 1, Text: "We should go. And then the next day he left."},
 		{Number: 2, Last: 2, Text: "The end"},
 	}

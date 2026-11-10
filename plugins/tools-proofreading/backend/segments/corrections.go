@@ -1,25 +1,16 @@
-package service
+package segments
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/host/domain"
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
 )
 
-// keyPrefix starts the key of every version the plugin makes.
-const keyPrefix = "proofread-"
-
-func getVersionKey(source domain.TextVersionID) string {
-	sum := sha256.Sum256([]byte(source))
-	return keyPrefix + hex.EncodeToString(sum[:8])
-}
-
-func getFileName(key string) string { return key + ".jsonl" }
-
-func applyCorrections(parts []domain.TextSegment, corrections []Line) []domain.TextSegment {
-	byLine := make(map[int]Line, len(corrections))
+// ApplyCorrections puts the corrected lines in the place of the segments they cover. A line that
+// joins a run makes one segment that takes the selector of the whole run.
+func ApplyCorrections(parts []domain.TextSegment, corrections []numbered.Line) []domain.TextSegment {
+	byLine := make(map[int]numbered.Line, len(corrections))
 	for _, line := range corrections {
 		byLine[line.Number] = line
 	}
@@ -30,7 +21,7 @@ func applyCorrections(parts []domain.TextSegment, corrections []Line) []domain.T
 			out = append(out, parts[i])
 			continue
 		}
-		last := min(getLastLine(line), len(parts)) - 1
+		last := min(line.GetLastNumber(), len(parts)) - 1
 		first, end := parts[i], parts[last]
 		part := domain.TextSegment{
 			Text:     getLeadingSpace(first.Text) + line.Text + getTrailingSpace(end.Text),
@@ -55,13 +46,13 @@ func getTrailingSpace(text string) string {
 }
 
 func joinSelectors(run []domain.TextSegment) domain.Selector {
-	first, err := readSegmentSelector(run[0].Selector)
+	first, err := ReadSelector(run[0].Selector)
 	if err != nil {
 		return run[0].Selector
 	}
-	joined := segmentSelector{T: nil, Page: first.Page, CFI: first.CFI, Boxes: nil}
+	joined := Selector{T: nil, Page: first.Page, CFI: first.CFI, Boxes: nil}
 	for _, one := range run {
-		selector, err := readSegmentSelector(one.Selector)
+		selector, err := ReadSelector(one.Selector)
 		if err != nil {
 			continue
 		}

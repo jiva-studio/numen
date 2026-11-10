@@ -1,10 +1,11 @@
-package service
+package reply
 
 import (
 	"strconv"
 	"strings"
 	"unicode"
 
+	"github.com/jiva-studio/numen/plugins/tools-proofreading/backend/numbered"
 	"golang.org/x/text/unicode/norm"
 )
 
@@ -13,14 +14,14 @@ const MaxEditDistance = 0.30
 
 // GetFixedLines parses and validates correction lines from a model reply against a batch.
 // Returns validated lines, hasOverflow if a line range extends beyond the batch, and ok indicating overall validity.
-func GetFixedLines(batch Batch, reply string, maxDistance float64) (lines []Line, hasOverflow, ok bool) {
-	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
+func GetFixedLines(batch numbered.Batch, reply string, maxDistance float64) (lines []numbered.Line, hasOverflow, ok bool) {
+	if strings.Contains(reply, numbered.Opens) || strings.Contains(reply, numbered.Closes) {
 		return nil, false, false
 	}
 	return buildFixedLines(batch, reply, maxDistance, indexBatchLines(batch))
 }
 
-func indexBatchLines(batch Batch) map[int]string {
+func indexBatchLines(batch numbered.Batch) map[int]string {
 	read := make(map[int]string, len(batch.Lines))
 	for _, line := range batch.Lines {
 		read[line.Number] = line.Text
@@ -28,8 +29,8 @@ func indexBatchLines(batch Batch) map[int]string {
 	return read
 }
 
-func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[int]string) ([]Line, bool, bool) {
-	var out []Line
+func buildFixedLines(batch numbered.Batch, reply string, maxDistance float64, read map[int]string) ([]numbered.Line, bool, bool) {
+	var out []numbered.Line
 	hasOverflow := false
 	claimedLines := make(map[int]bool, len(batch.Lines))
 	for _, row := range splitRows(reply) {
@@ -48,31 +49,31 @@ func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[in
 	return out, hasOverflow, true
 }
 
-func processRow(row string, batch Batch, read map[int]string, claimedLines map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
+func processRow(row string, batch numbered.Batch, read map[int]string, claimedLines map[int]bool, maxDistance float64) (line numbered.Line, keep, reaches, ok bool) {
 	startLine, endLine, text, barred, numbers := readRow(row)
 	if !numbers {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if endLine > startLine && !batch.IsJoinable {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	was, reaches, matchOk := matchLines(read, startLine, endLine, batch.Last())
 	if !matchOk {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if reaches {
-		return Line{Number: 0, Last: 0, Text: ""}, false, true, true
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, true, true
 	}
 	if !claimLines(claimedLines, startLine, endLine) {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if !isValidRow(row, was, text, barred) {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, false
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, false, false
 	}
 	if !canKeepCorrection(was, text, startLine, endLine, maxDistance) {
-		return Line{Number: 0, Last: 0, Text: ""}, false, false, true
+		return numbered.Line{Number: 0, Last: 0, Text: ""}, false, false, true
 	}
-	return Line{Number: startLine, Last: endLine, Text: text}, true, false, true
+	return numbered.Line{Number: startLine, Last: endLine, Text: text}, true, false, true
 }
 
 func matchLines(read map[int]string, startLine, endLine, last int) (joined string, reaches, ok bool) {

@@ -1,17 +1,16 @@
-package service
+package numbered
 
 import (
 	"reflect"
 	"slices"
 	"strconv"
-	"strings"
 	"testing"
 )
 
 func TestSpeechIsSplitIntoBatchesOfSize(t *testing.T) {
 	cues := makeLines("one", "two", "three", "four", "five")
 
-	batches := speechBatches(cues, 2, 0)
+	batches := SpeechBatches(cues, 2, 0)
 	if len(batches) != 3 {
 		t.Fatalf("%d batches, want five cues two at a time", len(batches))
 	}
@@ -60,7 +59,7 @@ func TestSharingNothingSplitsSpeechAsItAlwaysWas(t *testing.T) {
 				}
 				want[len(want)-1] = append(want[len(want)-1], pos)
 			}
-			got := numbers(speechBatches(cues, size, overlap))
+			got := numbers(SpeechBatches(cues, size, overlap))
 			if !reflect.DeepEqual(got, want) {
 				t.Errorf("size %d sharing %d gave %v, want %v", size, overlap, got, want)
 			}
@@ -69,7 +68,7 @@ func TestSharingNothingSplitsSpeechAsItAlwaysWas(t *testing.T) {
 }
 
 func TestABatchOpensOnTheLastLinesOfTheOneBefore(t *testing.T) {
-	got := numbers(speechBatches(makeTranscript(7), 4, 2))
+	got := numbers(SpeechBatches(makeTranscript(7), 4, 2))
 	want := [][]int{{0, 1, 2, 3}, {2, 3, 4, 5}, {4, 5, 6}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("batches %v, want %v", got, want)
@@ -78,7 +77,7 @@ func TestABatchOpensOnTheLastLinesOfTheOneBefore(t *testing.T) {
 
 func TestSharingAsMuchAsABatchContainsStillWalksTheTranscript(t *testing.T) {
 	for _, overlap := range []int{3, 4, 9} {
-		got := numbers(speechBatches(makeTranscript(5), 3, overlap))
+		got := numbers(SpeechBatches(makeTranscript(5), 3, overlap))
 		want := [][]int{{0, 1, 2}, {1, 2, 3}, {2, 3, 4}}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("sharing %d gave %v, want %v", overlap, got, want)
@@ -91,7 +90,7 @@ func TestEveryLineIsInABatchHoweverSpeechIsSplit(t *testing.T) {
 		for size := 1; size <= 6; size++ {
 			for overlap := -2; overlap <= 8; overlap++ {
 				cues := makeTranscript(count)
-				batches := speechBatches(cues, size, overlap)
+				batches := SpeechBatches(cues, size, overlap)
 
 				observed := make(map[int]bool, count)
 				for i, batch := range batches {
@@ -134,7 +133,7 @@ func TestEveryLineIsInABatchHoweverSpeechIsSplit(t *testing.T) {
 
 func TestOneLineOfSpeechIsOneBatch(t *testing.T) {
 	for _, overlap := range []int{0, 1, 5} {
-		got := numbers(speechBatches(makeTranscript(1), 3, overlap))
+		got := numbers(SpeechBatches(makeTranscript(1), 3, overlap))
 		if !reflect.DeepEqual(got, [][]int{{0}}) {
 			t.Errorf("sharing %d gave %v, want the one line", overlap, got)
 		}
@@ -143,17 +142,17 @@ func TestOneLineOfSpeechIsOneBatch(t *testing.T) {
 
 func TestSpeechOfNoLinesIsNoBatches(t *testing.T) {
 	for _, overlap := range []int{0, 2, 7} {
-		if batches := speechBatches(nil, 3, overlap); batches != nil {
+		if batches := SpeechBatches(nil, 3, overlap); batches != nil {
 			t.Errorf("sharing %d gave back %v", overlap, batches)
 		}
-		if batches := speechBatches(makeLines(""), 3, overlap); batches != nil {
+		if batches := SpeechBatches(makeLines(""), 3, overlap); batches != nil {
 			t.Errorf("sharing %d over silence gave back %v", overlap, batches)
 		}
 	}
 }
 
 func TestACueSayingNothingCarriesNoLine(t *testing.T) {
-	batches := speechBatches(makeLines("one", "", "two"), 8, 0)
+	batches := SpeechBatches(makeLines("one", "", "two"), 8, 0)
 	if len(batches) != 1 {
 		t.Fatalf("%d batches, want one", len(batches))
 	}
@@ -166,51 +165,8 @@ func TestACueSayingNothingCarriesNoLine(t *testing.T) {
 }
 
 func TestABatchOfNoLinesContainsNothing(t *testing.T) {
-	if batches := speechBatches(makeLines("one"), 0, 0); batches != nil {
+	if batches := SpeechBatches(makeLines("one"), 0, 0); batches != nil {
 		t.Errorf("a size of nothing gave back %v", batches)
-	}
-}
-
-// The two instructions ask for different corrections: one is about what a
-// machine read, the other about what it heard.
-func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
-	if scanInstruction == speechInstruction {
-		t.Fatal("a scan and speech are proofread with the same instruction")
-	}
-	for _, word := range []string{"read off the pages", "diacritics"} {
-		if !strings.Contains(scanInstruction, word) {
-			t.Errorf("the scan instruction does not mention %q", word)
-		}
-		if strings.Contains(speechInstruction, word) {
-			t.Errorf("the speech instruction mentions %q", word)
-		}
-	}
-	for _, word := range []string{"heard in a recording", "sounds like it", "capitalisation", "hesitation", "summarize"} {
-		if !strings.Contains(speechInstruction, word) {
-			t.Errorf("the speech instruction does not mention %q", word)
-		}
-	}
-	// Both are answered the same way.
-	for _, one := range []string{scanInstruction, speechInstruction} {
-		for _, word := range []string{
-			"12|the corrected line",
-			"A line you would leave alone is a line you do not answer with.",
-			Opens,
-			Closes,
-		} {
-			if !strings.Contains(one, word) {
-				t.Errorf("an instruction does not say %q", word)
-			}
-		}
-	}
-
-	// A page's printed lines keep the positions they were printed at. A sentence broken
-	// across lines of speech is answered for as one line.
-	if !strings.Contains(scanInstruction, "Nothing moves from one line to\n  another") {
-		t.Error("the scan instruction lets a word move between lines")
-	}
-	if !strings.Contains(speechInstruction, "12-14|the corrected sentence") {
-		t.Error("the speech instruction does not say how a broken sentence is answered for")
 	}
 }
 
@@ -226,12 +182,12 @@ func cuts(batches int) []int {
 // is numbered on from the batches the transcript was cut into.
 func TestASeamContainsTheLinesOnBothSidesOfASplit(t *testing.T) {
 	cues := makeTranscript(8)
-	batches := speechBatches(cues, 4, 1)
+	batches := SpeechBatches(cues, 4, 1)
 	if got := numbers(batches); !reflect.DeepEqual(got, [][]int{{0, 1, 2, 3}, {3, 4, 5, 6}, {6, 7}}) {
 		t.Fatalf("batches %v", got)
 	}
 
-	batchesAcrossCuts := cutBatches(cues, 4, 1, cuts(len(batches)))
+	batchesAcrossCuts := CutBatches(cues, 4, 1, cuts(len(batches)))
 	if got := numbers(batchesAcrossCuts); !reflect.DeepEqual(got, [][]int{{1, 2, 3, 4}, {4, 5, 6, 7}}) {
 		t.Errorf("batchesAcrossCuts %v, want a window over each of the two cuts", got)
 	}
@@ -249,20 +205,20 @@ func TestASeamContainsTheLinesOnBothSidesOfASplit(t *testing.T) {
 // the last batch is no cut at all.
 func TestSplitBatches_BuildsOnlyRequestedBatches(t *testing.T) {
 	cues := makeTranscript(8)
-	if got := numbers(cutBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
+	if got := numbers(CutBatches(cues, 4, 1, []int{1})); !reflect.DeepEqual(got, [][]int{{4, 5, 6, 7}}) {
 		t.Errorf("batchesAcrossCuts %v, want the window over the second cut", got)
 	}
-	if batchesAcrossCuts := cutBatches(cues, 4, 1, nil); batchesAcrossCuts != nil {
+	if batchesAcrossCuts := CutBatches(cues, 4, 1, nil); batchesAcrossCuts != nil {
 		t.Errorf("no cuts gave back %v", batchesAcrossCuts)
 	}
-	if batchesAcrossCuts := cutBatches(cues, 4, 1, []int{2, 9, -1}); batchesAcrossCuts != nil {
+	if batchesAcrossCuts := CutBatches(cues, 4, 1, []int{2, 9, -1}); batchesAcrossCuts != nil {
 		t.Errorf("cuts after the last batch gave back %v", batchesAcrossCuts)
 	}
 }
 
 func TestATranscriptOfOneBatchHasNoSeams(t *testing.T) {
 	for _, count := range []int{0, 1, 2, 3, 4} {
-		if batchesAcrossCuts := cutBatches(makeTranscript(count), 4, 1, cuts(4)); batchesAcrossCuts != nil {
+		if batchesAcrossCuts := CutBatches(makeTranscript(count), 4, 1, cuts(4)); batchesAcrossCuts != nil {
 			t.Errorf("%d lines gave back %v", count, batchesAcrossCuts)
 		}
 	}
@@ -270,7 +226,7 @@ func TestATranscriptOfOneBatchHasNoSeams(t *testing.T) {
 
 // A batch of one line has no space for a line on either side of a cut.
 func TestABatchOfOneLineHasNoSeams(t *testing.T) {
-	if batchesAcrossCuts := cutBatches(makeTranscript(6), 1, 0, cuts(6)); batchesAcrossCuts != nil {
+	if batchesAcrossCuts := CutBatches(makeTranscript(6), 1, 0, cuts(6)); batchesAcrossCuts != nil {
 		t.Errorf("gave back %v", batchesAcrossCuts)
 	}
 }
@@ -295,8 +251,8 @@ func TestASentenceCrossingASplitExistsWholeInASeam(t *testing.T) {
 		for size := 2; size <= 8; size++ {
 			for overlap := range size {
 				cues := makeTranscript(count)
-				batches := speechBatches(cues, size, overlap)
-				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(batches)))
+				batches := SpeechBatches(cues, size, overlap)
+				batchesAcrossCuts := CutBatches(cues, size, overlap, cuts(len(batches)))
 
 				for pos := range count {
 					for throughIdx := pos; throughIdx <= min(pos+size/2-1, count-1); throughIdx++ {
@@ -325,7 +281,7 @@ func TestEachSeamReachesFurtherThanTheOneBefore(t *testing.T) {
 		for size := 2; size <= 8; size++ {
 			for overlap := range size {
 				cues := makeTranscript(count)
-				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(speechBatches(cues, size, overlap))))
+				batchesAcrossCuts := CutBatches(cues, size, overlap, cuts(len(SpeechBatches(cues, size, overlap))))
 				for i, atCut := range batchesAcrossCuts {
 					if len(atCut.Lines) == 0 {
 						t.Fatalf("%d lines by %d sharing %d: batch over a cut %d holds nothing", count, size, overlap, i)
