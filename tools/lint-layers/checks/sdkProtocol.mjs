@@ -228,10 +228,14 @@ export function verifySdkTypesEncapsulateProtocol() {
     options: readCompilerOptions(packageDir),
     rootDir: REPO_ROOT,
   });
-  requireMatches("entries of the SDK exports", entries, 2);
-  requireMatches("exported declarations of the SDK entries", exported, 100);
-  requireMatches("source files of the SDK program", ownFiles, 15);
-  requireMatches("source files of the schema reached from the SDK program", protocolFiles, 1);
+  // 4 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("entries of the SDK exports", entries, 3);
+  // 229 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("exported declarations of the SDK entries", exported, 217);
+  // 40 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("source files of the SDK program", ownFiles, 38);
+  // 23 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("source files of the schema reached from the SDK program", protocolFiles, 21);
   failOnFindings("An entry of the plugin SDK exposes declarations of the schema package", findings);
 }
 

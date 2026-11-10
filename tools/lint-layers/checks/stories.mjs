@@ -196,14 +196,17 @@ function getReport() {
 
 export function verifyEveryPublicComponentHasStory() {
   const all = getReport();
-  requireMatches("Public components", all.reduce((sum, one) => sum + one.components, 0), 10);
-  requireMatches("Story files", all.reduce((sum, one) => sum + one.stories, 0), 20);
+  // 19 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Public components", all.reduce((sum, one) => sum + one.components, 0), 18);
+  // 23 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Story files", all.reduce((sum, one) => sum + one.stories, 0), 21);
   failOnFindings("A public component is rendered by no story", all.flatMap((one) => one.unstoried));
 }
 
 export function verifyEveryEmittingComponentHasPlayStory() {
   const all = getReport();
-  requireMatches("Public components that declare events", all.reduce((sum, one) => sum + one.emitting, 0), 10);
+  // 13 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Public components that declare events", all.reduce((sum, one) => sum + one.emitting, 0), 12);
   failOnFindings("A public component that declares events has no story with a play function", all.flatMap((one) => one.unplayed));
 }
 

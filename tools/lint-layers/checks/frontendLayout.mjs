@@ -132,7 +132,8 @@ export function verifyFlatFrontendRoots() {
 export function verifyPluginFrontendRoots() {
   const files = listTracked(["plugins"]);
   const roots = listPluginRoots(files);
-  requireMatches("Plugin frontends", roots.length, 1);
+  // 15 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Plugin frontends", roots.length, 14);
   failOnFindings("A plugin frontend folder is neither a slice nor a segment", roots.flatMap((one) => findUnplacedFolders(files, one)));
 }
 

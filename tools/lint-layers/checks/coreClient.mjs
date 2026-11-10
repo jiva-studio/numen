@@ -49,7 +49,8 @@ export function findProtocolDeclarations(manifests, allowed = PROTOCOL_USERS) {
 /** Only the plugin SDK and the core client declare the schema; every other package reaches the core through one of them. */
 export function verifyProtocolDeclaredOnlyByClients() {
   const manifests = readManifests(["apps", "libs", "plugins", "tools"]);
-  requireMatches("packages read for the schema boundary", manifests.length, 15);
+  // 35 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("packages read for the schema boundary", manifests.length, 33);
   requireMatches(
     "declarations of the schema by the SDK and the core client",
     manifests.filter(({ manifest }) => PROTOCOL_USERS.includes(manifest.name) && DEPENDENCY_FIELDS.some((field) => PROTOCOL in (manifest[field] ?? {}))).length,
@@ -100,7 +101,8 @@ export function findCoreClientPublishViolations(manifests) {
 /** The core client is never published: it is private, and nothing plugins rely on is or brings it. */
 export function verifyCoreClientIsPrivate() {
   const manifests = readManifests(["apps", "libs", "plugins", "tools", "tests"]);
-  requireMatches("packages read for the publish boundary", manifests.length, 15);
+  // 36 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("packages read for the publish boundary", manifests.length, 34);
   failOnFindings("The core client is public or plugins rely on it", findCoreClientPublishViolations(manifests));
 }
 

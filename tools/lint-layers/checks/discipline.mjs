@@ -85,8 +85,10 @@ export function verifyPluginIsolation() {
   for (const { file, text } of sources) {
     if (/^plugins\/[^/]+\/package\.json$/.test(file)) packageNames.set(getPluginCapture(file), JSON.parse(text).name);
   }
-  requireMatches("plugins read", new Set(sources.map(({ file }) => getPluginCapture(file))).size, 2);
-  requireMatches("plugin sources read", sources.length, 100);
+  // 30 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("plugins read", new Set(sources.map(({ file }) => getPluginCapture(file))).size, 28);
+  // 2353 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("plugin sources read", sources.length, 2235);
   failOnFindings("A plugin names another plugin", findPluginCrossings(sources, packageNames));
 }
 
@@ -98,7 +100,8 @@ export function findPluginSchemas(files) {
 export function verifyPluginsHoldNoSchema() {
   const listed = runTool("git", ["ls-files", "-z", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
   const files = (listed.stdout || "").split("\0").filter(Boolean);
-  requireMatches("plugin files read", files.length, 100);
+  // 2353 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("plugin files read", files.length, 2235);
   failOnFindings("A plugin declares its own schema", findPluginSchemas(files));
 }
 
@@ -323,8 +326,10 @@ export function findStrykerFindings(sources, cap = STRYKER_DISABLE_CAP) {
 export function verifyNoSuppressions() {
   const sources = readTrackedSources(["."], (file) => SUPPRESSION_FILES.test(file) && !file.includes("node_modules/"));
   const styles = readTrackedSources(["."], (file) => STYLE_FILES.test(file) && !file.includes("node_modules/"));
-  requireMatches("sources read for suppressions", sources.length, 500);
-  requireMatches("stylesheets and components read for stylelint suppressions", styles.length, 150);
+  // 5322 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("sources read for suppressions", sources.length, 5056);
+  // 295 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("stylesheets and components read for stylelint suppressions", styles.length, 280);
   const stylelint = findStylelintSuppressions(styles);
   const stryker = findStrykerDisables(sources);
   console.log(`(stylelint suppressions: ${stylelint.length}, Stryker disable in shipped code: ${stryker.length} of ${STRYKER_DISABLE_CAP})`);
@@ -362,8 +367,10 @@ export function findUnassignedPaths(files) {
 export function verifyEveryPathHasALayer() {
   const listed = runTool("git", ["ls-files", "-z"], { cwd: REPO_ROOT, encoding: "utf8", maxBuffer: 1 << 28 });
   const files = (listed.stdout || "").split("\0").filter(Boolean);
-  requireMatches("tracked files read", files.length, 1000);
-  requireMatches("plugin manifests read", files.filter((file) => /^plugins\/[^/]+\/manifest\.json$/.test(file)).length, 2);
+  // 6238 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("tracked files read", files.length, 5926);
+  // 28 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("plugin manifests read", files.filter((file) => /^plugins\/[^/]+\/manifest\.json$/.test(file)).length, 26);
   failOnFindings("Paths that no layer owns", findUnassignedPaths(files));
 }
 
@@ -390,7 +397,8 @@ export function verifyWorkspaceListsEveryModule() {
     .filter(Boolean)
     .map((file) => path.posix.dirname(file))
     .filter((dir) => dir !== ".");
-  requireMatches("go.mod files read", moduleDirs.length, 10);
+  // 32 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("go.mod files read", moduleDirs.length, 30);
   failOnFindings("go.work disagrees with the modules", findWorkspaceGaps(fs.readFileSync(path.join(REPO_ROOT, "go.work"), "utf8"), moduleDirs));
 }
 
@@ -477,7 +485,8 @@ const PROJECT_JSON_OR_TS = /(\/manifest\.json|\/testdata\/api\/[^/]+\.json|\.(ts
 
 export function verifyJsonKeysAreCamelCase() {
   const sources = readTrackedSources(LAYER_ROOTS, (file) => PROJECT_JSON_OR_TS.test(file) && !file.includes("node_modules/"));
-  requireMatches("manifests and TypeScript sources read for JSON keys", sources.length, 500);
+  // 2378 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("manifests and TypeScript sources read for JSON keys", sources.length, 2259);
   failOnFindings("Non-camelCase JSON keys", findNonCamelCaseJsonKeys(sources));
 }
 

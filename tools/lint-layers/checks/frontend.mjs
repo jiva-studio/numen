@@ -20,7 +20,8 @@ export function findTsPackagesWithoutEslint(dirs, hasConfig = (dir) => fs.exists
 
 export function verifyAllTsPackagesHaveEslint() {
   const dirs = listTsPackages();
-  requireMatches("TypeScript packages read", dirs.length, 8);
+  // 12 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("TypeScript packages read", dirs.length, 11);
   failOnFindings("TypeScript package missing eslint.config.js", findTsPackagesWithoutEslint(dirs));
 }
 

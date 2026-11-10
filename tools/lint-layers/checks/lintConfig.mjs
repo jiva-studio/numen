@@ -140,7 +140,9 @@ function readResolvedRules(dir, file) {
 }
 
 /** The smallest number of linted packages the repository has; fewer means discovery broke. */
-const MINIMUM_PACKAGES = 16;
+// 30 linted packages and 60 probed files on the tree when the floors were set; each floor is that count less 5%.
+const MINIMUM_PACKAGES = 28;
+const MINIMUM_PROBES = 57;
 
 /** Every package with an ESLint config resolves the strict rule set on a source file and a test file. */
 export function verifyStrictLintRules() {
@@ -165,7 +167,7 @@ export function verifyStrictLintRules() {
       }
     }
   }
-  requireMatches("Probed files", probed, MINIMUM_PACKAGES);
+  requireMatches("Probed files", probed, MINIMUM_PROBES);
   failOnFindings("Package lint configuration lacks the strict rule set", findings);
 }
 

@@ -5,7 +5,8 @@ import { runTool } from "../../shared/tools.mjs";
 import { REPO_ROOT, failOnFindings, requireMatches } from "./helpers.mjs";
 
 /** The smallest number of TypeScript configurations the repository has; fewer means discovery broke. */
-const MINIMUM_CONFIGS = 20;
+// 31 configurations on the tree when the floor was set; the floor is that count less 5%.
+const MINIMUM_CONFIGS = 29;
 
 /**
  * The `exclude` entries of a TypeScript configuration, each with its line, read from its JSON syntax tree.

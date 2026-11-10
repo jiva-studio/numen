@@ -128,7 +128,8 @@ export function verifyPluginsUseMainEntry() {
     named += literals.length
     files.push({ file, literals })
   }
-  requireMatches('plugin references to the plugin packages', named, 100)
+  // 310 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches('plugin references to the plugin packages', named, 294)
   failOnFindings(
     'A plugin reaches past the main entry of @numen/plugin-sdk or @numen/ui',
     findPluginEntryViolations(files, exportsByPackage),

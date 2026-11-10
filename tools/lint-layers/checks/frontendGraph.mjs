@@ -130,15 +130,18 @@ function getGraph() {
 
 export function verifyNoComponentBelowUi() {
   const { findings, read } = findComponentsBelowUi(getGraph());
-  requireMatches("Components cruised", read, 200);
+  // 249 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Components cruised", read, 236);
   failOnFindings("A component lies in a lib, api or model segment", findings);
 }
 
 export function verifyCoreClientOnlyInApi() {
   const roots = listWindows(REPO_ROOT);
+  // 3 on the tree when the floor was set; the floor is that count less 5%.
   requireMatches("Windows", roots.length, 2);
   const importing = getGraph().filter((one) => (one.dependencies ?? []).some((dep) => dep.module === CORE_CLIENT || dep.module.startsWith(`${CORE_CLIENT}/`)));
-  requireMatches("Files importing @numen/core-client", importing.length, 2);
+  // 123 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Files importing @numen/core-client", importing.length, 116);
   failOnFindings("A window imports @numen/core-client outside an api segment and its entry", findCoreClientOutsideApi(getGraph(), roots));
 }
 
@@ -150,7 +153,8 @@ export function verifySharedServesSeveralSlices() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Shared files of the windows", read, 5);
+  // 15 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Shared files of the windows", read, 14);
   failOnFindings("A shared file serves one slice", findings);
 }
 
@@ -202,7 +206,8 @@ export function verifyAppIsComposition() {
     findings.push(...one.findings);
     read += one.read;
   }
-  requireMatches("Source files of the app layers", read, 10);
+  // 44 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("Source files of the app layers", read, 41);
   failOnFindings("The app layer of a window holds more than composition", findings);
 }
 

@@ -266,7 +266,8 @@ export function readModuleGraph(root, config = CRUISE_CONFIG) {
 
 export function verifyDependencyGraph() {
   const { findings, cruised } = findDependencyViolations(REPO_ROOT)
-  requireMatches('modules cruised', cruised, 1000)
+  // 2362 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches('modules cruised', cruised, 2243)
   failOnFindings('dependency-cruiser rejects an import', findings)
 }
 

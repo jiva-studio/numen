@@ -186,8 +186,10 @@ export function readPackages() {
 
 export function verifyPackageMatrix() {
   const packages = readPackages();
-  requireMatches("TypeScript libraries read", packages.length, 5);
-  requireMatches("first-party declarations of TypeScript libraries", packages.reduce((total, one) => total + one.declared.length, 0), 5);
+  // 7 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("TypeScript libraries read", packages.length, 6);
+  // 8 on the tree when the floor was set; the floor is that count less 5%.
+  requireMatches("first-party declarations of TypeScript libraries", packages.reduce((total, one) => total + one.declared.length, 0), 7);
   failOnFindings("A TypeScript library is outside the package matrix or reaches a library it may not", findPackageViolations(packages));
 }
 
