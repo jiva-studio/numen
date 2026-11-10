@@ -232,12 +232,12 @@ export interface ContextViewHost {
     registration: DeclaredViewRegistration,
     permissions?: readonly string[],
   ) => Disposable
-  readonly mountView: (
+  mountView(
     capability: string,
     element: HTMLElement,
     context: object,
     access: MountAccess,
-  ) => MountedView
+  ): MountedView
   readonly registerDropHandler: (pluginId: string, registration: DropRegistration) => Disposable
   readonly drops: DropHost
 }

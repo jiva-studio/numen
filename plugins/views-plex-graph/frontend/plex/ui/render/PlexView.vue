@@ -44,7 +44,8 @@ const svg = useTemplateRef<SVGSVGElement>('svg')
 
 const views = new Map<string, { focus: () => void }>()
 const { getRef: holdNode } = createRefRegistry<string>((id, view) => {
-  if (view && 'focus' in view && typeof view.focus === 'function') views.set(id, { focus: () => view.focus() })
+  const focus = view ? Reflect.get(view, 'focus') : undefined
+  if (view && typeof focus === 'function') views.set(id, { focus: () => focus.call(view) })
   else views.delete(id)
 })
 

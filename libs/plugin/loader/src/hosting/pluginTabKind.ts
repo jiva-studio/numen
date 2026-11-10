@@ -74,11 +74,6 @@ export function pickDeclaredHooks<State extends object>(
   })
 }
 
-/**
- * The pane of a declared kind: its component, given the tab's state, beside the
- * stylesheet the plugin's manifest names. A component that fails is replaced by
- * the plugin's failure.
- */
 function createDeclaredPane(
   pluginId: string,
   rawComponent: PluginComponentSource | null,

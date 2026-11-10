@@ -3,6 +3,7 @@
  * application and of the plugins the store holds, a preview applies to the appearance of the window,
  * and a write of the appearance reads it again.
  */
+import type { JsonValue } from '@/shared/api/json'
 import { MODES, type Mode, type createSettingsStore } from '@/entities/settings'
 import { APP_OWNER } from '../lib/settingsConfig'
 import { INTERFACE_SCALE, TEXT_SCALE } from '../lib/appearanceValues'
@@ -20,7 +21,7 @@ const isScale = (key: string | undefined): key is typeof INTERFACE_SCALE | typeo
 function previewAppearance(
   keyboard: ReturnType<typeof createWindowAppearance>['preview']['keyboard'],
   key: string | undefined,
-  value: unknown,
+  value: JsonValue,
 ): void {
   if (key === 'theme' && typeof value === 'string') keyboard.previewTheme(value)
   else if (key === 'mode' && isMode(value)) keyboard.previewMode(value)
