@@ -1,7 +1,7 @@
 /**
  * Resolves action links for failed background tasks.
  */
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 import { WORDS as words } from '@/shared/words'
 
 const NON_CONFIGURABLE_KEYWORDS: readonly string[] = [

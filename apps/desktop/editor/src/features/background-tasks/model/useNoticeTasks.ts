@@ -4,19 +4,21 @@
  * The window draws no notices of its own. A notice at warning or error level becomes a failed task in
  * the status bar's list, titled with its text; an information notice is dropped.
  */
-import { computed, type ComputedRef } from 'vue'
+import { computed, type ComputedRef, type Ref } from 'vue'
 import type { Notice, NoticeQueue } from '@numen/workbench'
 import type { MessageLog } from '@/shared/notices/messages'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 import { WORDS as words } from '@/shared/words'
-import type { useWindowDisplay } from '../window/useWindowDisplay'
-import type { useSettings } from '../window/useSettings'
 
 export interface NoticeTasksDeps {
   log: MessageLog
   plugins: NoticeQueue
-  window: ReturnType<typeof useWindowDisplay>
-  settings: ReturnType<typeof useSettings>
+  window: {
+    readonly lost: Readonly<Ref<string>>
+    readonly unwatched: Readonly<Ref<string>>
+    readonly error: Readonly<Ref<string>>
+  }
+  settings: { readonly appearance: { readonly lost: Readonly<Ref<string>> } }
 }
 
 const createFailedTask = (id: string, text: string, about = ''): Task => ({

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { isConfigurableError, resolveTaskAction } from './taskActions'
-import type { Task } from '@/shared/notices/task'
+import type { Task } from '@/entities/window'
 
 const failed: Task = {
   id: 'task',

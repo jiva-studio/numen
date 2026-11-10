@@ -4,7 +4,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FLUSH_RESULT, TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { createLostConnection, installCoreHandlers } from '@numen/core-client/testing'
-import { windowSessionCore } from './windowSession'
+import { cancelTask, watchTasks } from './tasks'
+import { reportFlush, watchQuit } from './quit'
+import { watchFocus } from './focus'
+import { getShownVault } from './shownVault'
 
 const request = {
   reportFlush: vi.fn(),
@@ -12,6 +15,7 @@ const request = {
   watchTasks: vi.fn(),
   cancelTask: vi.fn(),
   watchQuit: vi.fn(),
+  getCurrentVault: vi.fn(),
 }
 
 let restore: () => void
@@ -27,7 +31,7 @@ afterEach(() => {
 
 describe('a flush reported', () => {
   it('says nothing was left where the window had nothing unsaved', async () => {
-    await windowSessionCore.reportFlush('token-1')
+    await reportFlush('token-1')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -37,7 +41,7 @@ describe('a flush reported', () => {
   })
 
   it('says what the window wrote', async () => {
-    await windowSessionCore.reportFlush('token-1', 'written')
+    await reportFlush('token-1', 'written')
 
     expect(request.reportFlush.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -53,15 +57,26 @@ const readAll = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
   return readItem
 }
 
+describe('the vault the window shows', () => {
+  it('is the vault the core names for this window', async () => {
+    request.getCurrentVault.mockResolvedValue({ vault: 'physics' })
+
+    expect(await getShownVault()).toBe('physics')
+    expect(request.getCurrentVault.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
+  })
+})
+
 describe('the streams a window follows', () => {
   const signal = new AbortController().signal
 
   it('follows the focus', async () => {
     request.watchFocus.mockImplementation(async function* () {
-      yield {}
+      yield { path: 'Heat.md', ranges: [{ start: 4, end: 9 }], tabId: 'note:1' }
     })
 
-    expect(await readAll(windowSessionCore.watchFocus(signal))).toHaveLength(1)
+    expect(await readAll(watchFocus(signal))).toStrictEqual([
+      { path: 'Heat.md', ranges: [{ start: 4, end: 9 }], tabId: 'note:1' },
+    ])
   })
 
   it('releases the focus on the signal', async () => {
@@ -73,7 +88,7 @@ describe('the streams a window follows', () => {
     })
     const controller = new AbortController()
 
-    const readTask = readAll(windowSessionCore.watchFocus(controller.signal))
+    const readTask = readAll(watchFocus(controller.signal))
     await vi.waitFor(() => expect(requestSignal).toBeDefined())
     controller.abort()
 
@@ -83,10 +98,10 @@ describe('the streams a window follows', () => {
 
   it('follows a quit requested of this window', async () => {
     request.watchQuit.mockImplementation(async function* () {
-      yield {}
+      yield { token: 'token-9', flush: true }
     })
 
-    expect(await readAll(windowSessionCore.watchQuit(signal))).toHaveLength(1)
+    expect(await readAll(watchQuit(signal))).toStrictEqual([{ token: 'token-9', flush: true }])
     expect(request.watchQuit.mock.lastCall?.[0]).toMatchObject({ window: 'editor' })
   })
 
@@ -126,7 +141,7 @@ describe('the streams a window follows', () => {
       }
     })
 
-    expect(await readAll(windowSessionCore.watchTasks(signal))).toStrictEqual([
+    expect(await readAll(watchTasks(signal))).toStrictEqual([
       [
         {
           id: 'scan',
@@ -164,7 +179,7 @@ describe('the streams a window follows', () => {
   it('asks the core of this window to cancel a task by its id', async () => {
     request.cancelTask.mockResolvedValue({})
 
-    await windowSessionCore.cancelTask('making the vectors')
+    await cancelTask('making the vectors')
 
     expect(request.cancelTask.mock.lastCall?.[0]).toMatchObject({
       window: 'editor',
@@ -175,7 +190,7 @@ describe('the streams a window follows', () => {
   it('rejects when the core does not cancel the task', async () => {
     request.cancelTask.mockRejectedValue(createLostConnection('not found'))
 
-    await expect(windowSessionCore.cancelTask('gone')).rejects.toThrow('not found')
+    await expect(cancelTask('gone')).rejects.toThrow('not found')
   })
 })
 

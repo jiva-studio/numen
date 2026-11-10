@@ -128,7 +128,7 @@ const window = (
       },
     },
     vaults: {
-      list: async () => ({ vaults: [createVault('physics', 'Physics')], showing: 'physics' }),
+      list: async () => [createVault('physics', 'Physics')],
       choose: async (title) => {
         isDone.push(`choose ${title}`)
         return answers.chose ?? '/vaults/Heat'
