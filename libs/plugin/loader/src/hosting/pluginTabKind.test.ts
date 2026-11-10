@@ -12,7 +12,7 @@ import {
 } from '../styles'
 import {
   createDeclaredPane,
-  createDeclaredTabKind,
+  getDeclaredTabKind,
   isDeclaredTabKind,
   pickDeclaredHooks,
   type DeclaredTabKindRegistration,
@@ -49,7 +49,7 @@ describe('a registration that says what its tabs hold', () => {
   })
 
   it('opens its tabs itself, under the identity the window gives them', () => {
-    const kind = createDeclaredTabKind('md.numen.sample', declare())
+    const kind = getDeclaredTabKind('md.numen.sample', declare())
 
     expect(kind.open('Graph.md', 'target: 1')).toEqual({
       at: 'Graph.md',
@@ -62,10 +62,10 @@ describe('a registration that says what its tabs hold', () => {
 
   it('is called what it calls a tab, and its title where it calls it nothing', () => {
     const getTitle = (state: Held) => state.title
-    const named = createDeclaredTabKind('p', declare({ getTitle }))
-    const plainKind = createDeclaredTabKind('p', declare())
+    const named = getDeclaredTabKind('p', declare({ getTitle }))
+    const plainKind = getDeclaredTabKind('p', declare())
     const { title: _title, ...untitled } = declare()
-    const bareKind = createDeclaredTabKind('p', untitled)
+    const bareKind = getDeclaredTabKind('p', untitled)
 
     expect(named.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Focus')
     expect(plainKind.getTitle?.({ at: '', id: '', title: 'Focus' })).toBe('Held')
@@ -76,7 +76,7 @@ describe('a registration that says what its tabs hold', () => {
     const navigate = vi.fn()
     const receiveText = vi.fn()
     const placement = { pane: 'main', order: 0 } as const
-    const kind = createDeclaredTabKind(
+    const kind = getDeclaredTabKind(
       'p',
       declare({ navigate, receiveText, isTool: true, placement }),
     )
@@ -216,7 +216,7 @@ describe('a declared kind registered through a plugin context', () => {
       isTool: true,
     })
 
-    const [kind] = registered as ReturnType<typeof createDeclaredTabKind>[]
+    const [kind] = registered as ReturnType<typeof getDeclaredTabKind>[]
     expect(kind?.isTool).toBe(true)
     expect(kind?.open('A.md', 'target: 1')).toEqual({ at: 'A.md', id: 'target: 1', title: 'T' })
     sub.dispose()

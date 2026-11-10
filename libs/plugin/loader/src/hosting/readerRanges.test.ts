@@ -4,14 +4,14 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import type { TextRange } from '@numen/plugin-sdk'
-import { createReaderTabKind } from './customTabKind'
+import { getReaderTabKind } from './customTabKind'
 import { createPluginHost } from './host'
 import type { SourceReader } from './tabKinds'
 import type { PluginHostDeps } from './types'
 
 describe('the ranges of a reader tab', () => {
   it('are none on a tab just opened', () => {
-    const kind = createReaderTabKind('sample.plugin', { id: 'reader:bin', component: null })
+    const kind = getReaderTabKind('sample.plugin', { id: 'reader:bin', component: null })
 
     const state = kind.open('library/Birds.bin', 'tab-1') as { ranges?: unknown }
 

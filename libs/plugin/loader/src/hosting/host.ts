@@ -185,46 +185,53 @@ function createHostContextBridge(
     ...createSettingBridge(deps),
     ...createEventBridge(deps, registry),
     ...createTabBridge(deps),
-    ...createServiceBridge(deps),
+    ...createVaultServiceBridge(deps),
+    ...createWindowServiceBridge(deps),
   }
 }
 
-function createServiceBridge(
+/** The services that read and write the vault. */
+function createVaultServiceBridge(
+  deps: PluginHostDeps,
+): Pick<
+  PluginContextHost,
+  'getNotes' | 'getRelations' | 'getFiles' | 'getTexts' | 'getBuffers' | 'getVaults'
+> {
+  return {
+    getNotes: () => deps.getNotes?.(),
+    getRelations: () => deps.getRelations?.(),
+    getFiles: () => deps.getFiles?.(),
+    getTexts: (pluginId) => deps.getTexts?.(pluginId),
+    getBuffers: () => deps.getBuffers?.(),
+    getVaults: () => deps.getVaults?.(),
+  }
+}
+
+/** The services of the window itself: its workspace, commands, notices and tasks, and the agent. */
+function createWindowServiceBridge(
   deps: PluginHostDeps,
 ): Pick<
   PluginContextHost,
   | 'getWorkspace'
-  | 'getNotes'
-  | 'getRelations'
-  | 'getFiles'
   | 'getAgent'
   | 'getCommands'
-  | 'getVaults'
   | 'getWindow'
-  | 'getBuffers'
   | 'getNotices'
   | 'getTasks'
   | 'getBackgroundTasks'
-  | 'getTexts'
 > {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
-    getNotes: () => deps.getNotes?.(),
-    getRelations: () => deps.getRelations?.(),
-    getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
     getCommands: () => deps.getCommands?.(),
-    getVaults: () => deps.getVaults?.(),
     getWindow: () => deps.getWindow?.(),
-    getBuffers: () => deps.getBuffers?.(),
     getNotices: (pluginId) => deps.getNotices?.(pluginId),
     getTasks: (pluginId) => deps.getTasks?.(pluginId),
     getBackgroundTasks: () => deps.getBackgroundTasks?.(),
-    getTexts: (pluginId) => deps.getTexts?.(pluginId),
   }
 }
 
-function createHostRegistry(): HostRegistry {
+function getHostRegistry(): HostRegistry {
   return {
     readers: new Map(),
     tabKinds: new Map(),
@@ -320,7 +327,7 @@ function createContextApi(
 export function createPluginHost(windowDeps: PluginHostDeps) {
   const whenReader = windowDeps.whenReader ?? createWhenReader()
   const deps = { ...windowDeps, whenReader }
-  const registry = createHostRegistry()
+  const registry = getHostRegistry()
   const slotViews = createSlotViewRegistry(
     deps.reportViewIssue ? { reportIssue: deps.reportViewIssue } : {},
   )

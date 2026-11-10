@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { effectScope } from 'vue'
 import { openNotes as openNotesOn } from '@/entities/note'
-import { createCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
+import { getCustomTabKind, type PluginHostDeps } from '@numen/plugin-loader'
 import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
 
 const statFile = (body: string): string => `1 1 at:${body}`
@@ -51,7 +51,7 @@ function openNoteTab(path: string) {
   const { core, files } = createFiles()
   files.set(path, 'The tide turns at noon.')
   const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
-  const kind = createCustomTabKind(
+  const kind = getCustomTabKind(
     'md.numen.notes',
     { kind: 'note', component: null, title: 'Note' },
     { getNoteBuffer: () => notes } as unknown as PluginHostDeps,
@@ -158,7 +158,7 @@ describe('the links of a note tab of the note kind', () => {
     const { core, files } = createFiles()
     files.set('notes/Tide.md', 'See [[Entropy]].')
     const notes = openNotes(core, { limits: { quiet: 1, bound: 5 } })
-    const kind = createCustomTabKind(
+    const kind = getCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: null, title: 'Note' },
       {
@@ -245,7 +245,7 @@ describe('note tab restored from the saved path', () => {
       await first.notes.flush()
       await wait()
       const saved = (
-        createCustomTabKind('md.numen.notes', {
+        getCustomTabKind('md.numen.notes', {
           kind: 'note',
           component: null,
           title: 'Note',

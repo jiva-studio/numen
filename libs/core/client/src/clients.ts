@@ -38,7 +38,7 @@ import { keepaliveTransport, transport } from './transport'
 
 export const createVaultClient = (customTransport: Transport = transport) =>
   createClient(VaultService, customTransport)
-export const createNoteClient = (customTransport: Transport = transport) =>
+export const getNoteClient = (customTransport: Transport = transport) =>
   createClient(NoteService, customTransport)
 
 export const vault = createVaultClient()
@@ -47,7 +47,7 @@ export const workspace = createClient(WorkspaceService, transport)
 /** The workspace client for a request that must complete after the page unloads. */
 export const keepaliveWorkspace = createClient(WorkspaceService, keepaliveTransport)
 export const files = createClient(FileService, transport)
-export const notes = createNoteClient()
+export const notes = getNoteClient()
 export const search = createClient(SearchService, transport)
 export const vaultsService = createClient(VaultsService, transport)
 export const settingsService = createClient(SettingsService, transport)

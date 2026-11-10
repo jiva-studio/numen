@@ -51,7 +51,7 @@ export interface Task {
  * What stopped the work is the card title: it is the sentence the user acts on,
  * and a card displays only its first words.
  */
-export const createNotice = (task: Task): Notice => {
+export const getTaskNotice = (task: Task): Notice => {
   const error = task.error
   const completed = task.done
   const total = task.total

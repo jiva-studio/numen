@@ -127,7 +127,7 @@ const getReaderOpenTab = (state: unknown): OpenTab => {
   return s?.reported ? { path, place: { ...s.reported } } : { path }
 }
 
-export function createReaderTabKind(
+export function getReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
   getContext?: () => PluginContext | undefined,
@@ -330,7 +330,7 @@ function notifyCustomTabShown(state: unknown, id: string | undefined, deps?: Plu
   }
 }
 
-export function createCustomTabKind(
+export function getCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
   deps?: PluginHostDeps & {
