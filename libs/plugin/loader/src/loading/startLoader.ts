@@ -1,6 +1,7 @@
 /**
  * The start of the plugins of a window: those of the window slots first, then every other one.
  */
+import type { PluginModule } from '../module'
 import { startInterfacePlugins } from './interfaceStart'
 import { INTERFACE_WAIT_MS } from './limits'
 import { createStartLimit, type StartLimit } from './startLimit'
@@ -9,7 +10,7 @@ export interface StartLoaderDeps {
   readonly pluginIds: readonly string[]
   readonly listen: (id: string) => void
   readonly isEnabled: (id: string) => boolean
-  readonly load: (id: string) => Promise<unknown>
+  readonly load: (id: string) => Promise<PluginModule | undefined>
   readonly isInterface: (id: string) => Promise<boolean>
   readonly onInterfaceStarted: () => void
 }
@@ -19,10 +20,10 @@ export interface StartLoaderDeps {
  * reports. `limit` is the start limit of the plugin, which runs from the moment the read began.
  */
 type Loaded = { readonly limit: StartLimit } & (
-  { readonly isRead: true; readonly module: unknown } | { readonly isRead: false }
+  { readonly isRead: true; readonly module: PluginModule | undefined } | { readonly isRead: false }
 )
 
-type Activate = (id: string, module?: unknown, limit?: StartLimit) => Promise<boolean>
+type Activate = (id: string, module?: PluginModule, limit?: StartLimit) => Promise<boolean>
 
 const startPlugin = async (activate: Activate, id: string, one: Loaded): Promise<void> => {
   if (one.isRead && one.module === undefined) {
@@ -58,7 +59,7 @@ const readPlugin = (deps: StartLoaderDeps, id: string): Promise<Loaded> => {
 async function startInOrder(deps: StartLoaderDeps, activate: Activate, ids: readonly string[]) {
   const loading = new Map<string, Promise<Loaded>>(ids.map((id) => [id, readPlugin(deps, id)]))
   // Stryker disable next-line ArrayDeclaration: Promise.all ignores resolved non-promise items when return value is unused
-  const running: Promise<unknown>[] = []
+  const running: Promise<void>[] = []
   for (const pluginId of ids) {
     const load = loading.get(pluginId) as Promise<Loaded>
     const outcome = await readWithin(load)

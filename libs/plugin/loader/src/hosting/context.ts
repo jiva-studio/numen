@@ -42,35 +42,30 @@ function createBuffers(buffers: BufferHost, add: Track): BufferHost {
   }
 }
 
-/** The target the editor activates its plugins in. */
-const EDITOR_TARGET = 'desktop.editor'
-
 function createSettings(pluginId: string, host: PluginContextHost, add: Track): PluginSettings {
   return {
-    get: <T extends JsonValue = JsonValue>(key: string) => host.getSetting<T>(pluginId, key),
+    get: <T extends JsonValue = JsonValue>(key: string) => host.settings.getSetting<T>(pluginId, key),
     onChange: <T extends JsonValue = JsonValue>(key: string, h: (v: T) => void) =>
-      add(host.onSettingChange<T>(pluginId, key, h)),
+      add(host.settings.onSettingChange<T>(pluginId, key, h)),
   }
 }
 
 function createEvents(pluginId: string, host: PluginContextHost, add: Track): PluginEvents {
   return {
     onVaultChange: (h: (e: VaultChangeEvent) => void | Promise<void>) =>
-      add(host.onVaultChange(pluginId, h)),
+      add(host.events.onVaultChange(pluginId, h)),
     onFileSelect: (h: (e: FileSelectEvent) => void | Promise<void>) =>
-      add(host.onFileSelect(pluginId, h)),
-    emitVaultChange: (e: VaultChangeEvent) => host.emitVaultChange(pluginId, e),
-    emitFileSelect: (e: FileSelectEvent) => host.emitFileSelect(pluginId, e),
+      add(host.events.onFileSelect(pluginId, h)),
+    emitVaultChange: (e: VaultChangeEvent) => host.events.emitVaultChange(pluginId, e),
+    emitFileSelect: (e: FileSelectEvent) => host.events.emitFileSelect(pluginId, e),
   }
 }
 
 function createTabs(host: PluginContextHost): PluginTabs {
   return {
-    open: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
-    navigate: (kind: string, targetPath: string) => host.navigateTab?.(kind, targetPath),
-    close: (id: string) => {
-      host.closeTab?.(id)
-    },
+    open: (kind: string, targetPath?: string) => host.tabs.openTab(kind, targetPath),
+    navigate: (kind: string, targetPath: string) => host.tabs.navigateTab(kind, targetPath),
+    close: (id: string) => host.tabs.closeTab(id),
   }
 }
 
@@ -84,36 +79,39 @@ function pickDefined<T extends object>(parts: { [K in keyof T]: T[K] | undefined
 }
 
 function createVault(pluginId: string, host: PluginContextHost, add: Track): PluginVault {
-  const buffers = host.getBuffers?.()
+  const { vault } = host
+  const buffers = vault.getBuffers()
   return pickDefined<PluginVault>({
-    notes: host.getNotes?.(),
-    relations: host.getRelations?.(),
-    files: host.getFiles?.(),
-    texts: host.getTexts?.(pluginId),
+    notes: vault.getNotes(),
+    relations: vault.getRelations(),
+    files: vault.getFiles(),
+    texts: vault.getTexts(pluginId),
     buffers: buffers && createBuffers(buffers, add),
-    vaults: host.getVaults?.(),
+    vaults: vault.getVaults(),
   })
 }
 
 function createUi(pluginId: string, host: PluginContextHost): Omit<PluginUi, 'mountView'> {
+  const { ui } = host
   return {
     ...pickDefined<Omit<PluginUi, 'mountView' | 'slots' | 'notices'>>({
-      workspace: host.getWorkspace?.(),
-      window: host.getWindow?.(),
-      commands: host.getCommands?.(),
-      drops: host.drops,
+      workspace: ui.getWorkspace(),
+      window: ui.getWindow(),
+      commands: ui.getCommands(),
+      drops: ui.drops,
     }),
-    slots: host.getSlots(),
-    notices: host.getNotices(pluginId),
+    slots: ui.getSlots(),
+    notices: ui.getNotices(pluginId),
   }
 }
 
 function createWork(pluginId: string, host: PluginContextHost): PluginWork {
-  const agent = host.getAgent?.()
+  const { work } = host
+  const agent = work.getAgent()
   return pickDefined<PluginWork>({
     agent: agent && limitAgentSettings(agent),
-    tasks: host.getTasks?.(pluginId),
-    backgroundTasks: host.getBackgroundTasks?.(),
+    tasks: work.getTasks(pluginId),
+    backgroundTasks: work.getBackgroundTasks(),
   })
 }
 
@@ -142,7 +140,7 @@ export function createPluginContext(
   return {
     plugin: {
       id: pluginId,
-      target: host.target ?? EDITOR_TARGET,
+      target: host.target,
       app: host.app,
       openExternal: createExternalOpener(host.openExternal),
       subscriptions: subscriptions.view,

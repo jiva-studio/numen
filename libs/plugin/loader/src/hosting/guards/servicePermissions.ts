@@ -5,6 +5,7 @@
  * added to the SDK fails the typecheck until it states its permission or why it needs none.
  */
 import type {
+  Caught,
   PluginEvents,
   PluginRegistrations,
   PluginSettings,
@@ -14,6 +15,9 @@ import type {
   PluginWork,
 } from '@numen/plugin-sdk'
 import type { RequirePermission } from './permission'
+
+/** What a member of a service holds: the guard passes members on without knowing their type. */
+type Value = object | string | number | bigint | boolean | symbol | null | undefined | void
 
 const READ = 'vault:read'
 const WRITE = 'vault:write'
@@ -41,9 +45,9 @@ function requireNothing(reason: string): Rule {
 }
 
 type Leaf =
-  | ((...args: never[]) => unknown)
-  | readonly unknown[]
-  | { readonly value: unknown }
+  | ((...args: never[]) => Value)
+  | readonly Value[]
+  | { readonly value: Value }
   | string
   | number
   | boolean
@@ -208,7 +212,7 @@ export const SERVICE_RULES: RulesOf<GuardedParts> = {
   },
 }
 
-type Members = Record<string, unknown>
+type Members = Record<string, Value>
 
 /** What a refusal needs: the check of the permissions, and the path of the service for the message. */
 export interface Guard {
@@ -220,7 +224,7 @@ function requireAll(
   rule: Rule,
   operation: string,
   check: RequirePermission,
-): { readonly error: unknown } | undefined {
+): { readonly error: Caught } | undefined {
   try {
     for (const permission of rule.permissions) check(permission, operation)
   } catch (error) {
@@ -239,10 +243,10 @@ function guardMember(
   if (typeof service[key] === 'function') {
     return {
       enumerable: true,
-      value: (...args: unknown[]) => {
+      value: (...args: never[]) => {
         const failure = requireAll(rule, operation, check)
         if (failure === undefined)
-          return Reflect.apply(service[key] as () => unknown, service, args)
+          return Reflect.apply(service[key] as () => Value, service, args)
         if (rule.isAsync) return Promise.reject(failure.error)
         throw failure.error
       },
@@ -266,7 +270,7 @@ function guardMember(
 export function guardService<S extends object>(service: S, rules: RulesOf<S>, guard: Guard): S {
   const source = service as Members
   const guarded: Members = {}
-  for (const [key, rule] of Object.entries(rules as unknown as Record<string, Rule | object>)) {
+  for (const [key, rule] of Object.entries(rules)) {
     const member = source[key]
     if (member === undefined) continue
     const operation = guard.path === undefined ? key : `${guard.path}.${key}`

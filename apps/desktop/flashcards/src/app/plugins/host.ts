@@ -110,20 +110,24 @@ export function createShellHost(
     app: createWindowAppInfo(getPlatform),
     target: TARGET,
     openExternal: (url) => openExternalUrl(url),
-    registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
-    registerView: (pluginId, registration, permissions) =>
-      declaredViews.registerView(pluginId, registration, permissions),
-    registerSlotView: (pluginId, slot, registration) =>
-      slotViews.registerSlotView(pluginId, slot, registration),
-    mountView: (capability, element, viewContext, access) =>
-      declaredViews.mountView(capability, element, viewContext, access),
-    closeTab: (id) => closeTab(id),
-    getSlots: () => windowSlots.slots,
-    getNotices: (pluginId) => createPluginNotices(notices, pluginId),
-    getCommands: () => getServices().commands,
-    getVaults: () => getServices().vaults,
-    getWindow: () => getServices().window,
-    getAgent: () => agent,
+    registrations: {
+      registerTabKind: (pluginId, registration) => addView({ pluginId, registration }),
+      registerView: (pluginId, registration, permissions) =>
+        declaredViews.registerView(pluginId, registration, permissions),
+      registerSlotView: (pluginId, slot, registration) =>
+        slotViews.registerSlotView(pluginId, slot, registration),
+      mountView: (capability, element, viewContext, access) =>
+        declaredViews.mountView(capability, element, viewContext, access),
+    },
+    tabs: { closeTab: (id) => closeTab(id) },
+    ui: {
+      getSlots: () => windowSlots.slots,
+      getNotices: (pluginId) => createPluginNotices(notices, pluginId),
+      getCommands: () => getServices().commands,
+      getWindow: () => getServices().window,
+    },
+    vault: { getVaults: () => getServices().vaults },
+    work: { getAgent: () => agent },
   })
 
   const createContext = (pluginId: string, manifest?: Manifest): PluginContext => {

@@ -115,10 +115,10 @@ describe('a registration replaced under the same id', () => {
 
   it('disposes orphan entries across all registries on disposeAll', () => {
     const host = createPluginHost(createDeps())
-    host.contextHost.registerReader('orphan.reader', { id: 'r1', component: STUB_COMPONENT })
-    host.contextHost.registerTabKind('orphan.tab', { kind: 't1', component: STUB_COMPONENT })
-    host.contextHost.registerCommand('orphan.cmd', { id: 'c1', handler: vi.fn() })
-    host.contextHost.registerSettingsView('orphan.settings', { id: 's1', component: {} })
+    host.contextHost.registrations.registerReader('orphan.reader', { id: 'r1', component: STUB_COMPONENT })
+    host.contextHost.registrations.registerTabKind('orphan.tab', { kind: 't1', component: STUB_COMPONENT })
+    host.contextHost.registrations.registerCommand('orphan.cmd', { id: 'c1', handler: vi.fn() })
+    host.contextHost.registrations.registerSettingsView('orphan.settings', { id: 's1', component: {} })
 
     expect(host.getRegisteredReaders()).toHaveLength(1)
     expect(host.getRegisteredTabKinds()).toHaveLength(1)

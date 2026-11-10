@@ -15,18 +15,25 @@ import {
   CelScalar,
   type CelType,
 } from '@bufbuild/cel'
-import { asFailure, asValue, WHEN_VARIABLES, type Result } from '@numen/plugin-sdk'
+import {
+  asFailure,
+  asValue,
+  WHEN_VARIABLES,
+  type JsonObject,
+  type JsonValue,
+  type Result,
+} from '@numen/plugin-sdk'
 
 /** The settings by their dotted keys, nested: config.editor.lineNumbers reads `{ editor: { lineNumbers } }`. */
-export interface WhenSettings {
-  readonly [key: string]: unknown
-}
+export type WhenSettings = JsonObject
 
 /**
  * The values of a place, by the qualified names of the variables, such as `target.isNote`, and
  * `config` for the settings. A variable the values do not give is false, or empty for a string.
  */
-export type WhenValues = Readonly<Record<string, unknown>> & { readonly config?: WhenSettings }
+export type WhenValues = Readonly<Record<string, JsonValue | undefined>> & {
+  readonly config?: WhenSettings
+}
 
 /** The value of a condition over values that may leave variables out: unknown where its value depends on one of them. */
 export type WhenResult = 'true' | 'false' | 'unknown'
@@ -55,11 +62,11 @@ const ENVIRONMENT = celEnv({
 
 const DECLARED = new Set<string>(WHEN_VARIABLES.map((one) => one.name))
 
-const getDefault = (type: string): unknown => {
+const getDefault = (type: string): JsonValue => {
   if (type === 'bool') return false
   if (type === 'string') return ''
   if (type === 'list') return []
-  return new Map()
+  return {}
 }
 
 type Expr = ReturnType<typeof parse>['expr'] | undefined
@@ -93,10 +100,12 @@ const CHILDREN: {
   comprehensionExpr: (value) => [value.iterRange],
 }
 
+type ReadChildren = (value: NonNullable<ExprKind['value']>) => Expr[]
+
 const getChildren = (expr: Expr): Expr[] => {
   const kind = expr?.exprKind
   if (!kind?.case) return []
-  return (CHILDREN[kind.case] as (value: unknown) => Expr[])(kind.value)
+  return (CHILDREN[kind.case] as ReadChildren)(kind.value)
 }
 
 /** The variables of the type map, whose keys a condition selects: `config` and `target.properties`. */
@@ -116,9 +125,12 @@ function collectNames(expr: Expr, names: Set<string>): void {
   }
 }
 
-function toCelMap(value: unknown): unknown {
+/** A value as the evaluator reads it: a JSON object is a map. */
+type CelValue = string | number | boolean | null | readonly CelValue[] | ReadonlyMap<string, CelValue>
+
+function toCelMap(value: JsonValue): CelValue {
   if (Array.isArray(value)) return value.map(toCelMap)
-  if (value === null || typeof value !== 'object' || value instanceof Map) return value
+  if (value === null || typeof value !== 'object') return value
   return new Map(Object.entries(value).map(([key, one]) => [key, toCelMap(one)]))
 }
 
@@ -138,9 +150,9 @@ export function parseWhen(text: string): Result<WhenCondition, string> {
   }
   const found = new Set<string>()
   collectNames(parsed.expr, found)
-  const unknown = [...found].filter((name) => !DECLARED.has(name))
-  if (unknown.length > 0)
-    return asFailure(`"${text}" reads ${unknown.join(', ')}, which is no variable of when`)
+  const undeclared = [...found].filter((name) => !DECLARED.has(name))
+  if (undeclared.length > 0)
+    return asFailure(`"${text}" reads ${undeclared.join(', ')}, which is no variable of when`)
   const names = [...found].sort()
   const run = plan(ENVIRONMENT, parsed)
   return asValue({

@@ -13,20 +13,13 @@ import {
   type VaultRelations,
   type WorkspaceHost,
 } from '@numen/plugin-sdk'
-import {
-  createMockCommandsHost,
-  createMockNoticeHost,
-  createMockSlotHost,
-} from '@numen/plugin-sdk/testing'
+import { createMockCommandsHost } from '@numen/plugin-sdk/testing'
 import { createPluginContext } from './context'
 import { disposeSubscriptions } from './guards/subscriptions'
 import type { PluginContextHost } from './types'
+import { createTestContextHost } from '../testing/contextHost'
 
-const createEmptyHost = (): PluginContextHost =>
-  ({
-    getNotices: () => createMockNoticeHost(),
-    getSlots: () => createMockSlotHost(),
-  }) as unknown as PluginContextHost
+const createEmptyHost = (): PluginContextHost => createTestContextHost()
 
 const createServices = () => {
   const workspace = {
@@ -72,17 +65,16 @@ const createServices = () => {
     addFlushHandler: vi.fn(() => ({ dispose: vi.fn() })),
   } as unknown as BufferHost
   const commands = createMockCommandsHost()
-  const host = {
-    getAgent: () => agent,
-    getBuffers: () => buffers,
-    getWorkspace: () => workspace,
-    getNotes: () => notes,
-    getRelations: () => relations,
-    getFiles: () => files,
-    getCommands: () => commands,
-    getNotices: () => createMockNoticeHost(),
-    getSlots: () => createMockSlotHost(),
-  } as unknown as PluginContextHost
+  const host = createTestContextHost({
+    work: { getAgent: () => agent },
+    vault: {
+      getBuffers: () => buffers,
+      getNotes: () => notes,
+      getRelations: () => relations,
+      getFiles: () => files,
+    },
+    ui: { getWorkspace: () => workspace, getCommands: () => commands },
+  })
   return { host, workspace, notes, relations, files, agent, buffers, commands }
 }
 

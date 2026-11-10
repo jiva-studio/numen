@@ -3,7 +3,7 @@
  * and the shadow root that contains it.
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
-import type { PluginContext } from '@numen/plugin-sdk'
+import type { PluginContext, Unvalidated } from '@numen/plugin-sdk'
 import { createSheet, getPluginStyle } from '../styles'
 
 type AsyncComponentRegistration = {
@@ -11,13 +11,20 @@ type AsyncComponentRegistration = {
   loader: () => Promise<Component>
 }
 
+/** A component as a plugin registers it, or the ES module that exports it as `default`. */
+export type PluginComponentSource = Component | { readonly default: Component }
+
 function isAsyncComponent(
-  comp: unknown,
+  comp: Unvalidated,
 ): comp is (() => Promise<Component>) | AsyncComponentRegistration {
   if (typeof comp !== 'function') {
     return (
-      (comp as { type?: unknown }).type === 'async' &&
-      typeof (comp as { loader?: unknown }).loader === 'function'
+      typeof comp === 'object' &&
+      comp !== null &&
+      'type' in comp &&
+      comp.type === 'async' &&
+      'loader' in comp &&
+      typeof comp.loader === 'function'
     )
   }
   return !(
@@ -25,11 +32,16 @@ function isAsyncComponent(
     'render' in comp ||
     'props' in comp ||
     '__name' in comp ||
-    ((comp as { length?: number }).length ?? 0) > 0
+    comp.length > 0
   )
 }
 
-export function resolvePluginComponent(rawComponent: unknown): Component | null {
+/**
+ * The component a registration names. A plugin bundle hands it over as the component, as a module
+ * that exports it as `default`, or as a loader that resolves to it; none of these is typed alike, so
+ * the shape is checked here.
+ */
+export function parsePluginComponent(rawComponent: Unvalidated): Component | null {
   if (!rawComponent) return null
   const comp =
     typeof rawComponent === 'object' && 'default' in rawComponent
@@ -42,7 +54,8 @@ export function resolvePluginComponent(rawComponent: unknown): Component | null 
   return comp as Component
 }
 
-export function extractTitleValue(title: unknown): string {
+/** The text of a title that a tab state keeps as a string or as a ref, and nothing for any other value. */
+export function parseTitle(title: Unvalidated): string {
   if (typeof title === 'string') return title
   if (typeof title === 'object' && title !== null && 'value' in title) {
     return String(title.value)
@@ -60,10 +73,11 @@ export function stripMarkdownExtension(filename: string): string {
   return filename.replace(/\.md$/, '')
 }
 
-export function extractStatePath(state: unknown): string {
+/** The path a tab state names as `path`, `file` or `at`; the state is the plugin's own, so its shape is checked. */
+export function parseStatePath(state: Unvalidated): string {
   if (typeof state !== 'object' || state === null) return ''
-  const s = state as Record<string, unknown>
-  const val = s.path ?? s.file ?? s.at
+  const read = (key: 'path' | 'file' | 'at') => (key in state ? Reflect.get(state, key) : undefined)
+  const val = read('path') ?? read('file') ?? read('at')
   return typeof val === 'string' ? val : ''
 }
 
@@ -154,7 +168,7 @@ export function renderFallback(pluginId: string, error: Error) {
 export interface PaneContentDeps {
   readonly pluginId: string
   readonly component: Component | null
-  readonly state: unknown
+  readonly state: object
   readonly shadowRoot: ShadowRoot | null
   readonly containerClass: string
   readonly context?: PluginContext | undefined
@@ -163,12 +177,10 @@ export interface PaneContentDeps {
 
 export function renderPaneContent(deps: PaneContentDeps) {
   if (!deps.component) return null
-  const stateObj =
-    typeof deps.state === 'object' && deps.state !== null
-      ? (deps.state as Record<string, unknown>)
-      : {}
-  const { title: _title, ...restState } = stateObj
-  const path = extractStatePath(deps.state)
+  const restState = Object.fromEntries(
+    Object.entries(deps.state).filter(([key]) => key !== 'title'),
+  )
+  const path = parseStatePath(deps.state)
   const child = h(deps.component, {
     ...restState,
     ...(path ? { path, filePath: path, file: path } : {}),

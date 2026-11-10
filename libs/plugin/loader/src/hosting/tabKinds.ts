@@ -1,7 +1,7 @@
 /** A tab kind: the state its tabs hold, and the operations a kind may request from the window. */
 import type { Component } from 'vue'
 import type { Result } from '@numen/core-client'
-import type { Selector, TabPlace, TabPlacement, TextRange } from '@numen/plugin-sdk'
+import type { JsonValue, Selector, TabPlace, TabPlacement, TextRange } from '@numen/plugin-sdk'
 
 /**
  * Opens a file in its reader, at the location the selector names, with the ranges of its text
@@ -41,12 +41,12 @@ export interface TabKind<TabState, K extends string = string> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and release with the tab.
    */
-  open(targetPath: string, id: string, saved?: unknown): TabState
+  open(targetPath: string, id: string, saved?: JsonValue): TabState
   /**
    * The JSON value kept with the tab across restarts and passed back to open
    * as `saved`. A kind that declares none opens its tabs again on their path.
    */
-  getState?(state: TabState): unknown
+  getState?(state: TabState): JsonValue | undefined
   /** The title of the tab, derived from its current state. */
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -69,7 +69,7 @@ export interface TabKind<TabState, K extends string = string> {
    */
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** The target of a command issued against one of its tabs. */
-  getTarget?(this: void, state: TabState): TabTarget
+  getTarget?(state: TabState): TabTarget
   getOpenTab?(state: TabState): OpenTab
   /**
    * The tab releases what it held. False keeps it on screen: its contents
@@ -85,7 +85,7 @@ export interface TabKind<TabState, K extends string = string> {
    * The tab moves to a path a tab linked to it moved to. A kind that declares
    * it can be linked.
    */
-  navigate?(this: void, state: TabState, path: string, title: string): void | Promise<void>
+  navigate?(state: TabState, path: string, title: string): void | Promise<void>
   readonly isTool?: boolean
   isAsking?(state: TabState): boolean
   /** Writes what the tab holds out to its file; answers once nothing is on its way. */
@@ -100,4 +100,4 @@ export interface TabKind<TabState, K extends string = string> {
  * A kind as the window stores it. The state of its tabs is private to the kind,
  * and the window passes it back to the kind unchanged.
  */
-export type AnyTabKind = TabKind<unknown>
+export type AnyTabKind = TabKind<object>

@@ -214,68 +214,111 @@ export interface NoteBuffer {
   getErrorMessage(id: string): string
 }
 
-export interface PluginContextHost {
-  registerReader(pluginId: string, registration: ReaderRegistration): Disposable
-  registerSettingsView(pluginId: string, registration: SettingsViewRegistration): Disposable
-  registerSlotView(
-    this: void,
+/** What a plugin registers into the window, and the views it mounts; the window keeps what is registered. */
+export interface RegistrationPort {
+  readonly registerReader: (pluginId: string, registration: ReaderRegistration) => Disposable
+  readonly registerSettingsView: (
+    pluginId: string,
+    registration: SettingsViewRegistration,
+  ) => Disposable
+  readonly registerSlotView: (
     pluginId: string,
     slot: string,
     registration: SlotViewRegistration,
-  ): Disposable
-  readonly app: AppInfo
-  readonly target?: string
-  openExternal(this: void, url: string): Promise<void>
-  registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
-  registerCommand(pluginId: string, registration: CommandRegistration): Disposable
-  registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
-  registerView(
+  ) => Disposable
+  readonly registerTabKind: (pluginId: string, registration: TabKindRegistration) => Disposable
+  readonly registerCommand: (pluginId: string, registration: CommandRegistration) => Disposable
+  readonly registerAgentProvider: (
+    pluginId: string,
+    registration: AgentProviderRegistration,
+  ) => Disposable
+  readonly registerView: (
     pluginId: string,
     registration: DeclaredViewRegistration,
     permissions?: readonly string[],
-  ): Disposable
-  mountView(
+  ) => Disposable
+  readonly registerDropHandler: (pluginId: string, registration: DropRegistration) => Disposable
+  readonly mountView: (
     capability: string,
     element: HTMLElement,
     context: object,
     access: MountAccess,
-  ): MountedView
-  registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
-  readonly drops: DropHost
-  getSetting<T extends JsonValue = JsonValue>(this: void, pluginId: string, key: string): T | undefined
-  onSettingChange<T extends JsonValue = JsonValue>(
-    this: void,
+  ) => MountedView
+}
+
+/** The settings of the plugins as the window holds them. */
+export interface SettingsPort {
+  readonly getSetting: <T extends JsonValue = JsonValue>(
+    pluginId: string,
+    key: string,
+  ) => T | undefined
+  readonly onSettingChange: <T extends JsonValue = JsonValue>(
     pluginId: string,
     key: string,
     handler: (value: T) => void | Promise<void>,
-  ): Disposable
-  onVaultChange(
+  ) => Disposable
+}
+
+/** The events of the vault and the file selection, which plugins listen to and raise. */
+export interface EventPort {
+  readonly onVaultChange: (
     pluginId: string,
     handler: (event: VaultChangeEvent) => void | Promise<void>,
-  ): Disposable
-  onFileSelect(
+  ) => Disposable
+  readonly onFileSelect: (
     pluginId: string,
     handler: (event: FileSelectEvent) => void | Promise<void>,
-  ): Disposable
-  emitVaultChange(pluginId: string, event: VaultChangeEvent): void
-  emitFileSelect(pluginId: string, event: FileSelectEvent): void
-  openTab?(kind: string, at?: string): Promise<string>
-  navigateTab?(kind: string, path: string): Promise<string> | undefined
-  closeTab?(id: string): void
-  getWorkspace?(): WorkspaceHost | undefined
-  getNotes?(): VaultNotes | undefined
-  getRelations?(): VaultRelations | undefined
-  getFiles?(): VaultFiles | undefined
-  getAgent?(): AgentHost | undefined
-  getCommands?(): CommandsHost | undefined
-  getVaults?(): VaultsHost | undefined
-  getWindow?(): WindowHost | undefined
-  getBuffers?(): BufferHost | undefined
-  getNotices(pluginId: string): NoticeHost
-  getTasks?(pluginId: string): TaskHost | undefined
-  getBackgroundTasks?(): BackgroundTaskHost | undefined
-  getTexts?(pluginId: string): VaultTexts | undefined
-  getSlots(): SlotHost
+  ) => Disposable
+  readonly emitVaultChange: (pluginId: string, event: VaultChangeEvent) => void
+  readonly emitFileSelect: (pluginId: string, event: FileSelectEvent) => void
+}
+
+/** The tabs of the window. A window without tabs answers no id. */
+export interface TabsPort {
+  readonly openTab: (kind: string, at?: string) => Promise<string> | undefined
+  readonly navigateTab: (kind: string, path: string) => Promise<string> | undefined
+  readonly closeTab: (id: string) => void
+}
+
+/** What the window offers of the vault; a service the window lacks answers undefined. */
+export interface VaultPort {
+  readonly getNotes: () => VaultNotes | undefined
+  readonly getRelations: () => VaultRelations | undefined
+  readonly getFiles: () => VaultFiles | undefined
+  readonly getTexts: (pluginId: string) => VaultTexts | undefined
+  readonly getBuffers: () => BufferHost | undefined
+  readonly getVaults: () => VaultsHost | undefined
+}
+
+/** What the window offers of its interface; a service the window lacks answers undefined. */
+export interface UiPort {
+  readonly getWorkspace: () => WorkspaceHost | undefined
+  readonly getWindow: () => WindowHost | undefined
+  readonly getCommands: () => CommandsHost | undefined
+  readonly getSlots: () => SlotHost
+  readonly getNotices: (pluginId: string) => NoticeHost
+  readonly drops: DropHost
+}
+
+/** The agent and the background work of the window; a service the window lacks answers undefined. */
+export interface WorkPort {
+  readonly getAgent: () => AgentHost | undefined
+  readonly getTasks: (pluginId: string) => TaskHost | undefined
+  readonly getBackgroundTasks: () => BackgroundTaskHost | undefined
+}
+
+/** What a window gives `createPluginContext` to build the context of a plugin, in groups of services. */
+export interface PluginContextHost {
+  readonly app: AppInfo
+  readonly target: string
+  readonly openExternal: (url: string) => Promise<void>
+  readonly registrations: RegistrationPort
+  readonly settings: SettingsPort
+  readonly events: EventPort
+  readonly tabs: TabsPort
+  readonly vault: VaultPort
+  readonly ui: UiPort
+  readonly work: WorkPort
 }
 
 /** What the host runs with: the deps of the window, with the one reader of its conditions. */

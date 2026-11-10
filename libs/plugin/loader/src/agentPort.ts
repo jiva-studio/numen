@@ -28,9 +28,9 @@ interface WireAgentResponse {
     | { readonly case: 'text'; readonly value: string }
     | { readonly case: 'toolCall'; readonly value: WireToolCall }
     | { readonly case: 'stopped'; readonly value: string }
-    | { readonly case: 'toolFinished'; readonly value?: unknown }
-    | { readonly case: 'modelStarted'; readonly value?: unknown }
-    | { readonly case: 'editProgress'; readonly value?: unknown }
+    | { readonly case: 'toolFinished'; readonly value?: object | undefined }
+    | { readonly case: 'modelStarted'; readonly value?: object | undefined }
+    | { readonly case: 'editProgress'; readonly value?: object | undefined }
     | { readonly case: undefined; readonly value?: undefined }
 }
 
@@ -57,7 +57,7 @@ export interface AgentClient {
     },
     options: { signal: AbortSignal },
   ): AsyncIterable<WireAgentResponse>
-  finishConversation(request: { conversation: string }): Promise<unknown>
+  finishConversation(request: { conversation: string }): Promise<object>
 }
 
 type AgentRequest = Parameters<AgentClient['askAgent']>[0]

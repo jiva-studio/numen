@@ -40,15 +40,15 @@ export function createRegistrations(
   const { target, add, slotView } = deps
   const permissions = target.manifest?.permissions ?? []
   return {
-    reader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
-    settingsView: (reg: SettingsViewRegistration) => add(host.registerSettingsView(pluginId, reg)),
+    reader: (reg: ReaderRegistration) => add(host.registrations.registerReader(pluginId, reg)),
+    settingsView: (reg: SettingsViewRegistration) => add(host.registrations.registerSettingsView(pluginId, reg)),
     slotView,
-    tabKind: <State extends object>(reg: TabKindRegistration<State>) => add(host.registerTabKind(pluginId, reg)),
-    command: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
+    tabKind: <State extends object>(reg: TabKindRegistration<State>) => add(host.registrations.registerTabKind(pluginId, reg)),
+    command: (reg: CommandRegistration) => add(host.registrations.registerCommand(pluginId, reg)),
     agentProvider: (reg: AgentProviderRegistration) =>
-      add(host.registerAgentProvider(pluginId, reg)),
-    view: (reg: ViewRegistration) => add(host.registerView(pluginId, reg, permissions)),
-    dropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
+      add(host.registrations.registerAgentProvider(pluginId, reg)),
+    view: (reg: ViewRegistration) => add(host.registrations.registerView(pluginId, reg, permissions)),
+    dropHandler: (reg: DropRegistration) => add(host.registrations.registerDropHandler(pluginId, reg)),
   }
 }
 
@@ -60,7 +60,7 @@ export function createMountView(
   const { target, add } = guard
   return (capability, element, context) => {
     const access = requireMountAccess(capability, target)
-    const view = host.mountView(capability, element, context, access)
+    const view = host.registrations.mountView(capability, element, context, access)
     return { focus: () => view.focus(), ...add(view) }
   }
 }

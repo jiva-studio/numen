@@ -3,13 +3,14 @@
  * plugin is active, has failed, or has passed PLUGIN_START_LIMIT_MS, which counts as failed.
  */
 import { watch } from 'vue'
+import type { ActivePluginEntry } from './activation'
 import { PLUGIN_START_LIMIT_MS } from './limits'
 
 export interface PluginStartsDeps {
   readonly isRunning: { readonly value: boolean }
   readonly listPlugins: () => readonly string[]
   readonly isEnabled: (id: string) => boolean
-  readonly activePlugins: { readonly value: ReadonlyMap<string, unknown> }
+  readonly activePlugins: { readonly value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { readonly value: ReadonlyMap<string, string> }
 }
 

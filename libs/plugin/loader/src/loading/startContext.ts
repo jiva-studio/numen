@@ -13,7 +13,10 @@ const isRegistration = (group: string | symbol, key: string | symbol): boolean =
 
 const EMPTY: Disposable = { dispose: () => undefined }
 
-const isDisposable = (value: unknown): value is Disposable =>
+/** Whatever a member of a service holds: the proxies pass members on without knowing their type. */
+type Member = object | string | number | bigint | boolean | symbol | null | undefined
+
+const isDisposable = (value: Member): value is Disposable =>
   typeof value === 'object' &&
   value !== null &&
   typeof (value as Partial<Disposable>).dispose === 'function'
@@ -23,12 +26,12 @@ const isReplaceable = (target: object, key: string | symbol): boolean => {
   return descriptor === undefined || descriptor.configurable || descriptor.writable === true
 }
 
-type Call = (...args: unknown[]) => unknown
+type Call = (...args: never[]) => Member
 
 /** What the start keeps, and how it treats what it is handed. */
 interface Keeper {
   readonly isCancelled: () => boolean
-  readonly keep: (value: unknown) => void
+  readonly keep: (value: Member) => void
 }
 
 const wrapCall =
@@ -42,7 +45,7 @@ const wrapCall =
 function wrapService(service: object, keeper: Keeper): object {
   return new Proxy(service, {
     get(target, key) {
-      const value: unknown = Reflect.get(target, key)
+      const value: Member = Reflect.get(target, key)
       if (typeof value !== 'function' || !isReplaceable(target, key)) return value
       return wrapCall(value as Call, target, keeper)
     },
@@ -83,13 +86,13 @@ function createContextWrapper(
   const wrapGroup = (name: string | symbol, group: object): object =>
     new Proxy(group, {
       get(target, key) {
-        const value: unknown = Reflect.get(target, key)
+        const value: Member = Reflect.get(target, key)
         if (!isReplaceable(target, key)) return value
         if (key === 'subscriptions' && Array.isArray(value)) return wrapSubscriptions(value, keeper)
         if (typeof value === 'function') {
           const call = wrapCall(value as Call, target, keeper)
           if (!isRegistration(name, key)) return call
-          return (...args: unknown[]): unknown => (keeper.isCancelled() ? EMPTY : call(...args))
+          return (...args: never[]): Member => (keeper.isCancelled() ? EMPTY : call(...args))
         }
         if (typeof value !== 'object' || value === null || Array.isArray(value)) return value
         return getService(value)
@@ -103,7 +106,7 @@ function createContextWrapper(
     }
     return new Proxy(context, {
       get(target, key) {
-        const value: unknown = Reflect.get(target, key)
+        const value: Member = Reflect.get(target, key)
         if (typeof value !== 'object' || value === null || !isReplaceable(target, key)) return value
         const group = groups.get(value) ?? wrapGroup(key, value)
         groups.set(value, group)

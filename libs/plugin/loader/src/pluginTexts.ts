@@ -7,12 +7,21 @@ import {
   type TextSegmentMessage,
   type TextVersionMessage,
 } from '@numen/core-client'
-import type { LiveText, Selector, TextSegment, TextVersion, VaultTexts } from '@numen/plugin-sdk'
+import type {
+  JsonValue,
+  LiveText,
+  Selector,
+  TextSegment,
+  TextVersion,
+  VaultTexts,
+} from '@numen/plugin-sdk'
 
 const readSelector = (raw: string): Selector | undefined => {
   try {
-    const parsed: unknown = JSON.parse(raw)
-    return typeof parsed === 'object' && parsed !== null ? (parsed as Selector) : undefined
+    const parsed: JsonValue = JSON.parse(raw)
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+      ? parsed
+      : undefined
   } catch {
     return undefined
   }

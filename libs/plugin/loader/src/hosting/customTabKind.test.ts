@@ -8,13 +8,13 @@ import {
   adoptHostStyles,
   attachPluginRoot,
   extractFilename,
-  extractStatePath,
-  extractTitleValue,
+  parseStatePath,
+  parseTitle,
   PANE_HOST_STYLE,
   PANE_LAYOUT_STYLE,
   renderFallback,
   renderPaneContent,
-  resolvePluginComponent,
+  parsePluginComponent,
   stripMarkdownExtension,
 } from './pluginView'
 import type { NoteBuffer } from './types'
@@ -465,19 +465,20 @@ describe('createCustomTabKind (notes)', () => {
   it('covers reader and custom tab kind edge cases, action collisions, and in-flight navigation', async () => {
     const measure = vi.fn()
     const focusTab = vi.fn()
-    const handleKeyPress = vi.fn((e: KeyboardEvent) => e.key === 'Enter')
 
     const prefixedReader = createReaderTabKind('p', {
       id: 'reader:pdf',
       component: STUB_COMPONENT,
     })
     expect(prefixedReader.kind).toBe('reader:pdf')
-    expect(prefixedReader.getTitle!(undefined)).toBe('')
-    expect(prefixedReader.getTarget!(undefined)).toStrictEqual({ title: '' })
-    expect(prefixedReader.getOpenTab!(undefined)).toStrictEqual({ path: '' })
-    expect(prefixedReader.getOpenTab!({ path: 'a.pdf' })).toStrictEqual({ path: 'a.pdf' })
+    const emptyReaderTab = prefixedReader.open('', 't0')
+    expect(prefixedReader.getTitle!(emptyReaderTab)).toBe('')
+    expect(prefixedReader.getTarget!(emptyReaderTab)).toStrictEqual({ file: '', path: '', title: '' })
+    expect(prefixedReader.getOpenTab!(emptyReaderTab)).toStrictEqual({ path: '' })
+    const readerTab = prefixedReader.open('a.pdf', 't1')
+    expect(prefixedReader.getOpenTab!(readerTab)).toStrictEqual({ path: 'a.pdf' })
     expect(prefixedReader.identity!('a.pdf')).toBe('a.pdf')
-    expect(prefixedReader.getState!(undefined)).toBeUndefined()
+    expect(prefixedReader.getState!(readerTab)).toBeUndefined()
 
     const middleReader = createReaderTabKind('p', {
       id: 'my-reader:2',
@@ -485,24 +486,17 @@ describe('createCustomTabKind (notes)', () => {
       title: 'Fallback Reader',
     })
     expect(middleReader.kind).toBe('reader:my-reader:2')
-    expect(middleReader.getTitle!({ path: '' })).toBe('Fallback Reader')
+    expect(middleReader.getTitle!(middleReader.open('', 't'))).toBe('Fallback Reader')
     expect(
       (middleReader.open('a.pdf', 't', ['array']) as { selector: unknown }).selector,
     ).toBeNull()
     expect((middleReader.open('a.pdf', 't', 'str') as { selector: unknown }).selector).toBeNull()
 
-    prefixedReader.onShow!(undefined, 't1')
-    prefixedReader.onShow!({}, 't1')
-    prefixedReader.onShow!({ measure, focusTab }, 't1')
+    prefixedReader.onShow!(readerTab, 't1')
+    readerTab.attachReader({ measure, focus: focusTab })
+    prefixedReader.onShow!(readerTab, 't1')
     expect(measure).toHaveBeenCalledTimes(1)
     expect(focusTab).toHaveBeenCalledTimes(1)
-
-    const enterEv = new KeyboardEvent('keydown', { key: 'Enter' })
-    const escEv = new KeyboardEvent('keydown', { key: 'Escape' })
-    expect(prefixedReader.onKeyPress!(undefined, enterEv)).toBe(false)
-    expect(prefixedReader.onKeyPress!({}, enterEv)).toBe(false)
-    expect(prefixedReader.onKeyPress!({ handleKeyPress }, enterEv)).toBe(true)
-    expect(prefixedReader.onKeyPress!({ handleKeyPress }, escEv)).toBe(false)
 
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
@@ -885,40 +879,40 @@ describe('createBufferedNoteState', () => {
 
 describe('pluginView helpers and stylesheet adoption', () => {
   it('resolves sync, async, and functional components and extracts paths/titles', () => {
-    expect(resolvePluginComponent(null)).toBeNull()
-    expect(resolvePluginComponent(undefined)).toBeNull()
-    expect(resolvePluginComponent({ default: null })).toBeNull()
-    expect(resolvePluginComponent({ default: undefined })).toBeNull()
-    expect(resolvePluginComponent('div')).toBe('div')
+    expect(parsePluginComponent(null)).toBeNull()
+    expect(parsePluginComponent(undefined)).toBeNull()
+    expect(parsePluginComponent({ default: null })).toBeNull()
+    expect(parsePluginComponent({ default: undefined })).toBeNull()
+    expect(parsePluginComponent('div')).toBe('div')
 
     const syncComp = { name: 'Sync', setup: () => () => null }
-    expect(resolvePluginComponent(syncComp)).toBe(syncComp)
-    expect(resolvePluginComponent({ default: syncComp })).toBe(syncComp)
+    expect(parsePluginComponent(syncComp)).toBe(syncComp)
+    expect(parsePluginComponent({ default: syncComp })).toBe(syncComp)
 
     const objWithLoaderOnly = { loader: () => Promise.resolve(syncComp) }
-    expect(resolvePluginComponent(objWithLoaderOnly)).toBe(objWithLoaderOnly)
+    expect(parsePluginComponent(objWithLoaderOnly)).toBe(objWithLoaderOnly)
 
     const fnWithSetup = Object.assign(() => null, { setup: () => null })
     const fnWithRender = Object.assign(() => null, { render: () => null })
     const fnWithProps = Object.assign(() => null, { props: ['a'] })
     const fnWithName = Object.assign(() => null, { __name: 'Named' })
     const fnWithArity = (props: unknown) => props
-    expect(resolvePluginComponent(fnWithSetup)).toBe(fnWithSetup)
-    expect(resolvePluginComponent(fnWithRender)).toBe(fnWithRender)
-    expect(resolvePluginComponent(fnWithProps)).toBe(fnWithProps)
-    expect(resolvePluginComponent(fnWithName)).toBe(fnWithName)
-    expect(resolvePluginComponent(fnWithArity)).toBe(fnWithArity)
+    expect(parsePluginComponent(fnWithSetup)).toBe(fnWithSetup)
+    expect(parsePluginComponent(fnWithRender)).toBe(fnWithRender)
+    expect(parsePluginComponent(fnWithProps)).toBe(fnWithProps)
+    expect(parsePluginComponent(fnWithName)).toBe(fnWithName)
+    expect(parsePluginComponent(fnWithArity)).toBe(fnWithArity)
 
     const asyncObj = { type: 'async', loader: () => Promise.resolve(syncComp) }
-    expect(resolvePluginComponent(asyncObj)).not.toBe(asyncObj)
+    expect(parsePluginComponent(asyncObj)).not.toBe(asyncObj)
 
     const nonLoaderAsync = { type: 'async', loader: 'invalid' }
-    expect(resolvePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
+    expect(parsePluginComponent(nonLoaderAsync)).toBe(nonLoaderAsync)
 
-    expect(extractTitleValue('Plain')).toBe('Plain')
-    expect(extractTitleValue({ value: 'RefVal' })).toBe('RefVal')
-    expect(extractTitleValue(null)).toBe('')
-    expect(extractTitleValue(42)).toBe('')
+    expect(parseTitle('Plain')).toBe('Plain')
+    expect(parseTitle({ value: 'RefVal' })).toBe('RefVal')
+    expect(parseTitle(null)).toBe('')
+    expect(parseTitle(42)).toBe('')
 
     expect(extractFilename(undefined)).toBe('')
     expect(extractFilename('')).toBe('')
@@ -927,13 +921,13 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(stripMarkdownExtension('note.md')).toBe('note')
     expect(stripMarkdownExtension('note.md.bak')).toBe('note.md.bak')
 
-    expect(extractStatePath(null)).toBe('')
-    expect(extractStatePath('str')).toBe('')
-    expect(extractStatePath(Object.assign(() => null, { path: 'fn.md' }))).toBe('')
-    expect(extractStatePath({ path: 123 })).toBe('')
-    expect(extractStatePath({ path: 'a.md' })).toBe('a.md')
-    expect(extractStatePath({ file: 'b.md' })).toBe('b.md')
-    expect(extractStatePath({ at: 'c.md' })).toBe('c.md')
+    expect(parseStatePath(null)).toBe('')
+    expect(parseStatePath('str')).toBe('')
+    expect(parseStatePath(Object.assign(() => null, { path: 'fn.md' }))).toBe('')
+    expect(parseStatePath({ path: 123 })).toBe('')
+    expect(parseStatePath({ path: 'a.md' })).toBe('a.md')
+    expect(parseStatePath({ file: 'b.md' })).toBe('b.md')
+    expect(parseStatePath({ at: 'c.md' })).toBe('c.md')
   })
 
   it('copies and adopts host stylesheets or falls back to cloning head nodes', () => {
@@ -1143,7 +1137,7 @@ describe('pluginView helpers and stylesheet adoption', () => {
         return () => h('span', 'hi')
       },
     })
-    const SingleArgWrapper = createPluginPaneWrapper(CountingComp)
+    const SingleArgWrapper = createPluginPaneWrapper('plugin', CountingComp)
     const mountedSingle = mount(SingleArgWrapper, { props: { state: 'primitive' } })
     await mountedSingle.vm.$nextTick()
     expect(singleCompSetups).toBe(1)

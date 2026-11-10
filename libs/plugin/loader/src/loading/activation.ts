@@ -2,11 +2,13 @@
  * One start of a plugin frontend: its module is read and activated with a context of its own within
  * the start limit, and a start that fails or passes the limit takes back what it registered.
  */
+import type { Caught } from '@numen/plugin-sdk'
 import type { LoaderHost } from '../host'
 import {
   getLifecycleHooks,
   removePluginStyles,
   resolveModule,
+  type PluginModule,
   type ResolveModuleContext,
 } from '../module'
 import { PLUGIN_START_LIMIT_MS } from './limits'
@@ -22,11 +24,11 @@ export interface ActivateContext extends ResolveModuleContext {
   readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
-  readonly reportError: (pluginId: string, error: unknown) => void
+  readonly reportError: (pluginId: string, error: Caught) => void
   readonly starts: Map<string, number>
 }
 
-function getFailureMessage(error: unknown): string {
+function getFailureMessage(error: Caught): string {
   return error instanceof Error ? error.message : `the plugin threw a ${typeof error}, not an Error`
 }
 
@@ -47,7 +49,7 @@ type StartOutcome = boolean | 'expired'
 
 /** One start of a plugin: its module, its number, its limit and what it registers. */
 interface EntryStart {
-  readonly module: unknown
+  readonly module: PluginModule | undefined
   readonly number: number
   readonly limit: StartLimit
   readonly scope: StartScope
@@ -56,7 +58,7 @@ interface EntryStart {
 async function activateModule(
   ctx: ActivateContext,
   pluginId: string,
-  start: EntryStart & { readonly resolved: unknown },
+  start: EntryStart & { readonly resolved: PluginModule },
 ): Promise<StartOutcome> {
   const { host, activePlugins } = ctx
   const isLatest = (): boolean => ctx.starts.get(pluginId) === start.number
@@ -111,7 +113,7 @@ async function startEntry(
 export async function activateEntry(
   ctx: ActivateContext,
   pluginId: string,
-  begun: { readonly module?: unknown; readonly limit?: StartLimit | undefined },
+  begun: { readonly module?: PluginModule | undefined; readonly limit?: StartLimit | undefined },
 ): Promise<boolean> {
   const limit = begun.limit ?? createStartLimit()
   if (ctx.activePlugins.value.has(pluginId)) {

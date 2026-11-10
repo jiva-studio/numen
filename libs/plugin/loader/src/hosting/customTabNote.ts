@@ -3,8 +3,9 @@
  */
 import type { Ref } from 'vue'
 import type { PluginHostDeps } from './types'
+import type { Caught } from '@numen/plugin-sdk'
 
-const getErrorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err))
+const getErrorMessage = (err: Caught): string => (err instanceof Error ? err.message : String(err))
 
 /**
  * A write error is shown until a newer write succeeds, and the failure of a write
@@ -61,7 +62,7 @@ const finishRead = (targetPath: string, result: NoteRead, state: NoteReadState):
   if (!state.hasEdited()) applyRead(targetPath, result, state)
 }
 
-const failRead = (err: unknown, state: NoteReadState): void => {
+const failRead = (err: Caught, state: NoteReadState): void => {
   state.isLoading.value = false
   state.errorMessage.value = getErrorMessage(err)
 }

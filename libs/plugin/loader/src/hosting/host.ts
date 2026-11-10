@@ -39,21 +39,26 @@ import {
   setStarting,
   type HostRegistry,
 } from './registry'
-import type { PluginContextHost, PluginHostDeps } from './types'
-import { createServiceBridge } from './bridge/services'
+import type {
+  EventPort,
+  PluginContextHost,
+  PluginHostDeps,
+  RegistrationPort,
+  SettingsPort,
+  TabsPort,
+} from './types'
+import { createUiBridge, createVaultBridge, createWorkBridge } from './bridge/services'
 
 export { createPluginPaneWrapper }
 
-type EventBridge = Pick<
-  PluginContextHost,
-  'onVaultChange' | 'onFileSelect' | 'emitVaultChange' | 'emitFileSelect'
->
+/** The target the editor activates its plugins in. */
+const EDITOR_TARGET = 'desktop.editor'
 
 function getSettingsViewKey(pluginId: string, viewId: string): string {
   return `${pluginId}:${viewId}`
 }
 
-function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventBridge {
+function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventPort {
   return {
     onVaultChange: (pluginId, handler) =>
       addListener(registry.vaultListeners, { pluginId, handler }),
@@ -64,8 +69,8 @@ function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventB
 }
 
 /** The registrations a plugin makes into the host's own registry. */
-type RegistrationBridge = Pick<
-  PluginContextHost,
+type OwnRegistrations = Pick<
+  RegistrationPort,
   | 'registerReader'
   | 'registerTabKind'
   | 'registerCommand'
@@ -73,10 +78,7 @@ type RegistrationBridge = Pick<
   | 'registerAgentProvider'
 >
 
-function createRegistrationBridge(
-  deps: PluginHostDeps,
-  registry: HostRegistry,
-): RegistrationBridge {
+function createOwnRegistrations(deps: PluginHostDeps, registry: HostRegistry): OwnRegistrations {
   return {
     registerReader: (pluginId, registration) =>
       registerReaderEntry(deps, registry.readers, {
@@ -119,9 +121,7 @@ function createRegistrationBridge(
   }
 }
 
-function createSettingBridge(
-  deps: PluginHostDeps,
-): Pick<PluginContextHost, 'getSetting' | 'onSettingChange'> {
+function createSettingBridge(deps: PluginHostDeps): SettingsPort {
   return {
     getSetting: <T extends JsonValue = JsonValue>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
@@ -143,28 +143,26 @@ function createSettingBridge(
   }
 }
 
-type SharedBridge = 'registerSlotView' | 'registerView' | 'mountView'
-
-function createSharedBridge(
+function createRegistrationBridge(
+  deps: PluginHostDeps,
+  registry: HostRegistry,
   shared: SharedRegistries,
-): Pick<PluginContextHost, SharedBridge | 'registerDropHandler' | 'drops'> {
+): RegistrationPort {
   const { views, drops, slotViews } = shared
   return {
+    ...createOwnRegistrations(deps, registry),
     registerSlotView: slotViews.registerSlotView,
     registerView: views.registerView,
     mountView: views.mountView,
     registerDropHandler: drops.registerDropHandler,
-    drops: { canDrop: drops.canDrop, drop: drops.drop },
   }
 }
 
-function createTabBridge(
-  deps: PluginHostDeps,
-): Pick<PluginContextHost, 'openTab' | 'navigateTab' | 'closeTab'> {
+function createTabBridge(deps: PluginHostDeps): TabsPort {
   return {
-    openTab: (kind: string, target?: string) => deps.openTab(kind, target),
-    navigateTab: (kind: string, target: string) => deps.navigateTab?.(kind, target),
-    closeTab: (id: string) => deps.closeTab?.(id),
+    openTab: (kind, target) => deps.openTab(kind, target),
+    navigateTab: (kind, target) => deps.navigateTab?.(kind, target),
+    closeTab: (id) => deps.closeTab?.(id),
   }
 }
 
@@ -183,17 +181,21 @@ function createHostContextBridge(
 ): PluginContextHost {
   return {
     app: deps.app ?? createAppInfo({ getPlatform: () => 'linux' }),
+    target: EDITOR_TARGET,
     openExternal: (url) =>
       deps.openExternal
         ? deps.openExternal(url)
         : Promise.reject(new ReportedError('This window cannot open web links')),
-    ...createRegistrationBridge(deps, registry),
-    ...createSharedBridge(shared),
-    ...createSettingBridge(deps),
-    ...createEventBridge(deps, registry),
-    ...createTabBridge(deps),
-    ...createServiceBridge(deps),
-    getSlots: () => shared.slots,
+    registrations: createRegistrationBridge(deps, registry, shared),
+    settings: createSettingBridge(deps),
+    events: createEventBridge(deps, registry),
+    tabs: createTabBridge(deps),
+    vault: createVaultBridge(deps),
+    ui: createUiBridge(deps, {
+      slots: shared.slots,
+      drops: { canDrop: shared.drops.canDrop, drop: shared.drops.drop },
+    }),
+    work: createWorkBridge(deps),
   }
 }
 
@@ -329,8 +331,8 @@ export function createPluginHost(windowDeps: PluginHostDeps) {
     /** The key of a command as declared, such as `mod+p`, for a hint; undefined where none is bound. */
     getKeyFor: keybindings.getKeyFor,
     ...createRegisteredApi(registry),
-    getSetting: contextHost.getSetting,
-    onSettingChange: contextHost.onSettingChange,
+    getSetting: contextHost.settings.getSetting,
+    onSettingChange: contextHost.settings.onSettingChange,
     /** A change to the vault, delivered to every plugin that subscribed to vault changes. */
     notifyVaultChange: (event: VaultChangeEvent): void =>
       notifyListeners(registry.vaultListeners, event, deps),

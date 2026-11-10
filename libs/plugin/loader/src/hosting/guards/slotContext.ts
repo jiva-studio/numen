@@ -18,7 +18,7 @@ export function createSlotViewRegistration(
   const { pluginId, manifest } = plugin
   return (reg) => {
     const registrations = getDeclaredSlots(pluginId, manifest, reg.id).map((slot) =>
-      host.registerSlotView(pluginId, slot, reg),
+      host.registrations.registerSlotView(pluginId, slot, reg),
     )
     return add({ dispose: () => registrations.forEach((one) => one.dispose()) })
   }
