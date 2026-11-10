@@ -252,14 +252,9 @@ export default [
     },
   },
   {
-    files: ['**/*.test.ts', '**/*.stories.ts', '**/*.spec.ts', 'stories/.storybook/**', '**/testing/**'],
-    plugins: { numen },
-    rules: { 'numen/no-style-declaration-read': 'error' },
-  },
-  {
     files: ['**/*.test.ts'],
     plugins: { numen },
-    rules: { 'numen/no-mock-of-subject-slice': 'error' },
+    rules: { 'numen/no-style-declaration-read': 'error', 'numen/no-mock-of-subject-slice': 'error' },
   },
   {
     files: ['**/*.test.ts', '**/*.stories.ts', 'stories/.storybook/**'],
