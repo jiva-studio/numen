@@ -4,7 +4,7 @@
 import type { AgentModel, TextLink, TextRange } from '@numen/plugin-sdk'
 import type { LinkPiece } from '@numen/ui'
 
-/** Who speaks a turn of a conversation. */
+/** The voice of a turn of a conversation. */
 export type Voice = 'prompt' | 'response' | 'doing'
 
 /** How far along a turn is. Defaults to settled. */
