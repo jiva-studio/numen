@@ -22,7 +22,6 @@ interface MockVaultState {
   types: Record<string, string>
   embedded: number
   listable: boolean
-  /** Whether the core refuses to open another vault. */
   isOpenRefused: boolean
   writeError: string
   app: readonly PluginSettingInfo[]

@@ -18,11 +18,9 @@ type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
 const ENTROPY = 'physics/Entropy.md'
 const HEAT = 'physics/Heat.md'
 
-/** The paths of the tabs as the core last kept them. */
 const readSavedPaths = (): readonly string[] =>
   requests.openTabs.at(-1)?.tabs.map((one) => one.path) ?? []
 
-/** The core asks the window to show a note with no text marked, which opens it. */
 const showNote = async (path: string): Promise<void> => {
   outside.ask({ path, start: 0, length: 0 })
   await vi.waitFor(() => expect(readSavedPaths()).toContain(path))
@@ -57,7 +55,7 @@ describe('a note created by a command of the window', () => {
 })
 
 describe('a note renamed', () => {
-  it('is followed by the tab that stands on it', async () => {
+  it('moves the tab that holds it', async () => {
     await mountWindowWithPalette()
     await showNote(ENTROPY)
 

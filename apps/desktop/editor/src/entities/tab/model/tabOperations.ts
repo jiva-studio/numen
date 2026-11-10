@@ -14,7 +14,6 @@ import { getTabPath, omitEntry, openInScope, showTab, type TabStore } from './ta
 
 const generatePaneId = () => crypto.randomUUID()
 
-/** A tab released as the window or its plugin goes: the kind's destroy hook, or its close hook where it has none. */
 const destroyTab = (one: WindowTab, id: string): void => {
   const events = one.kind.events
   if (events?.onDestroy) events.onDestroy(one.state, id)

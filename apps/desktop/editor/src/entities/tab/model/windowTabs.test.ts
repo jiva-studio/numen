@@ -44,7 +44,6 @@ const PART_OF_HOOK: Readonly<Record<keyof Hooks, 'display' | 'events' | 'address
   createFile: 'address',
 }
 
-/** Puts the hooks a test writes flat into the part of the kind each belongs to. */
 const groupHooks = (hooks: Partial<Hooks>) => {
   const parts: Record<string, Record<string, unknown>> = { display: {}, events: {}, address: {} }
   for (const [name, hook] of Object.entries(hooks)) {

@@ -31,7 +31,6 @@ type JsonValue =
   | readonly JsonValue[]
   | { readonly [key: string]: JsonValue }
 
-/** What the text parses to as JSON, and nothing where it is not JSON. */
 function parseJson(text: string): JsonValue | undefined {
   try {
     return JSON.parse(text)

@@ -18,7 +18,6 @@ interface WindowActionDeps {
   readonly palette: Palette
   readonly commands: ReturnType<typeof createCommands>
   readonly links: TabLinks
-  /** Moves the tabs linked to a tab to a path; false where none is linked. */
   readonly sync: (tab: string, path: string) => boolean
 }
 

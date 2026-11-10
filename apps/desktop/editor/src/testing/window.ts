@@ -122,7 +122,6 @@ const nodeInPlex = (window: VueWrapper): string => {
   return state.picture.value?.nodes[0]?.id ?? ''
 }
 
-/** The window the mounted app composed: its palette, tabs and plugins. */
 const getWindowParts = (window: VueWrapper): ReturnType<typeof createWindow> =>
   (window.vm as unknown as { parts: ReturnType<typeof createWindow> }).parts
 

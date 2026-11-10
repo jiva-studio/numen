@@ -32,7 +32,7 @@ export interface OpenTab {
   readonly place?: TabPlace
 }
 
-/** How a kind sits in the window and shows its tabs: icon, place, mark, and the tab coming into view. */
+/** How a kind is drawn in the window: icon, place, mark, and the tab coming into view. */
 export interface TabKindDisplay<TabState> {
   /** The tab became visible, so its content can be measured. */
   onShow?(state: TabState, id: string): void
@@ -43,7 +43,7 @@ export interface TabKindDisplay<TabState> {
   readonly isTool?: boolean
 }
 
-/** What a kind is told by the window and the user: closing, text and key presses. */
+/** What a kind receives from the window and the user: closing, text and key presses. */
 export interface TabKindEvents<TabState> {
   /**
    * The tab releases what it held. False keeps it on screen: its contents

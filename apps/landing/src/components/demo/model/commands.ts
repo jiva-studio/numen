@@ -32,7 +32,6 @@ function getNamingRole(command: string): NamingRole | null {
   return (found?.[0] as NamingRole | undefined) ?? null
 }
 
-/** Takes a note out of the vault, closes its tabs, and moves the plex off it. */
 function removeNote({ vault, layout, plex }: CommandDeps, path: string) {
   if (!vault.edit.removeNote(path)) return
   for (const [tabId, tabPath] of Object.entries(layout.state.notePaths)) {

@@ -10,7 +10,6 @@ interface HeldBar {
   was: number
 }
 
-/** The element inside the root that stands for the tab pane: the nearest one that is a size container. */
 function findPane(root: HTMLElement | null): HTMLElement | null {
   for (let at = root?.parentElement ?? null; at; at = at.parentElement) {
     if (getComputedStyle(at).containerType.split(' ').includes('size')) return at

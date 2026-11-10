@@ -24,14 +24,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-/** The keystroke that closes the tab in front, which changes the open tabs. */
 const closeFrontTab = (): void => {
   globalThis.dispatchEvent(
     new KeyboardEvent('keydown', { key: 'W', ctrlKey: true, shiftKey: true, cancelable: true }),
   )
 }
 
-/** The command that opens another vault, run as the palette runs it once a vault is chosen. */
 const openOtherVault = async (window: Window): Promise<void> => {
   const { palette } = getWindowParts(window)
   const target = { ...palette.getTarget(), vault: { id: 'heat', name: 'Heat' } }
@@ -40,7 +38,7 @@ const openOtherVault = async (window: Window): Promise<void> => {
 }
 
 describe('the window leaving its vault', () => {
-  it('has written the open tabs as they are when the core is asked to open the other vault', async () => {
+  it('has savedCount the open tabs as they are when the core is asked to open the other vault', async () => {
     const window = await mountWindow()
     const open = getTabs(window).length
     closeFrontTab()
@@ -54,23 +52,23 @@ describe('the window leaving its vault', () => {
   it('writes no tabs once the other vault is open', async () => {
     const window = await mountWindow()
     await openOtherVault(window)
-    const written = requests.openTabs.length
+    const savedCount = requests.openTabs.length
 
     closeFrontTab()
     await settle()
 
-    expect(requests.openTabs).toHaveLength(written)
+    expect(requests.openTabs).toHaveLength(savedCount)
   })
 
   it('writes the tabs again where the core refuses the other vault', async () => {
     vaultState.isOpenRefused = true
     const window = await mountWindow()
     await openOtherVault(window)
-    const written = requests.openTabs.length
+    const savedCount = requests.openTabs.length
 
     closeFrontTab()
     await settle()
 
-    expect(requests.openTabs.length).toBeGreaterThan(written)
+    expect(requests.openTabs.length).toBeGreaterThan(savedCount)
   })
 })

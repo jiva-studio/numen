@@ -8,7 +8,6 @@ interface Shelf {
   files?: readonly { name: string; url: string; size: number }[]
 }
 
-/** The release manifest; null where it cannot be fetched, as offline, and the static links stay. */
 async function fetchShelf(): Promise<Shelf | null> {
   try {
     const base = getShelfBase(import.meta.env.PUBLIC_NUMEN_DOWNLOADS_BASE)

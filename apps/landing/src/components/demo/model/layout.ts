@@ -88,7 +88,6 @@ function findContentPaneId(workspace: Workspace): string | null {
   return getPanes(workspace.root).find(isContentPane)?.id ?? null
 }
 
-/** The workspace with a tab shown in the pane of the content, beside it or, where there is none, below the map. */
 function getShownWorkspace(
   workspace: Workspace,
   tabId: string,
