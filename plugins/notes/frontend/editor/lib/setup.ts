@@ -211,14 +211,26 @@ export const prose = (): Extension => markdown({ extensions: GFM, codeLanguages:
 /** One whole document of code: how it reads, and the face it is set in. */
 export const code = (support: Extension): Extension => [support, monospaced]
 
+/** How the text is laid out: wrapping, line numbers and the width of a tab. */
+const getLayout = (settings: Settings): Extension[] => [
+  wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
+  lineNumbersCompartment.of(getLineNumbersExtension(settings.lineNumbers ?? false)),
+  tabSizeCompartment.of(getTabSizeExtension(settings.tabSize ?? 2)),
+]
+
+/** What assistive technology is told about the editor. */
+const getAccessibility = (settings: Settings): Extension =>
+  EditorView.contentAttributes.of({
+    'aria-label': settings.name ?? 'Editor',
+    ...(settings.describedBy ? { 'aria-describedby': settings.describedBy } : {}),
+  })
+
 export const setup = (settings: Settings = {}): Extension => [
   history(),
   drawSelection(),
   rectangularSelection(),
   bracketMatching({ renderMatch: renderBracketMatch }),
-  wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
-  lineNumbersCompartment.of(getLineNumbersExtension(settings.lineNumbers ?? false)),
-  tabSizeCompartment.of(getTabSizeExtension(settings.tabSize ?? 2)),
+  ...getLayout(settings),
   tabCapture,
   restoreTabCapture,
   keymap.of([saveKeyBinding, escapeKeyBinding, ...defaultKeymap, ...historyKeymap, tabKeyBinding]),
@@ -226,10 +238,7 @@ export const setup = (settings: Settings = {}): Extension => [
   syntaxHighlighting(highlighting),
   theme,
   placeholder(settings.placeholder ?? ''),
-  EditorView.contentAttributes.of({
-    'aria-label': settings.name ?? 'Editor',
-    ...(settings.describedBy ? { 'aria-describedby': settings.describedBy } : {}),
-  }),
+  getAccessibility(settings),
   changeMarks,
   createPacePlugin(),
   previewCompartment.of(preview(settings.isLivePreview ?? true)),

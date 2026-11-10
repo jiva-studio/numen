@@ -51,6 +51,20 @@ const emit = defineEmits<{
   change: [value: string]
 }>()
 
+defineExpose({
+  focus: () => editorRef.value?.focus?.() ?? false,
+  measure: () => editorRef.value?.measure?.(),
+  reveal: (line: number) => editorRef.value?.reveal?.(line) ?? false,
+  get isDirty() {
+    return isDirty.value
+  },
+  get frontmatter() {
+    return frontmatter.value
+  },
+  getContent: () => docContent.value,
+  setContent,
+})
+
 /* --------------------------------- State ---------------------------------- */
 const editorRef = useTemplateRef<EditorHandle>('editorRef')
 const isDismissed = ref(false)
@@ -65,10 +79,6 @@ const {
   onSave,
   setContent,
 } = useMarkdownDocument(props, emit, editorRef)
-
-watch(displayErrorMessage, () => {
-  isDismissed.value = false
-})
 
 /** The completion of wikilinks over the notes the host offers, unless the caller passes extensions. */
 const editorExtensions = computed(() => {
@@ -85,6 +95,11 @@ const DEFAULT_TAB_SIZE = 2
 const softWrap = computed(() => props.softWrap ?? editorPreferences.softWrap)
 const lineNumbers = computed(() => props.lineNumbers ?? editorPreferences.lineNumbers)
 const tabSize = computed(() => props.tabSize ?? DEFAULT_TAB_SIZE)
+
+/* --------------------------------- Hooks ---------------------------------- */
+watch(displayErrorMessage, () => {
+  isDismissed.value = false
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onKeep() {
@@ -106,16 +121,6 @@ function onOpen(url: string) {
   const follow = props.state?.['followLink']
   if (typeof follow === 'function') follow(url)
 }
-
-defineExpose({
-  focus: () => editorRef.value?.focus?.() ?? false,
-  measure: () => editorRef.value?.measure?.(),
-  reveal: (line: number) => editorRef.value?.reveal?.(line) ?? false,
-  isDirty,
-  frontmatter,
-  getContent: () => docContent.value,
-  setContent,
-})
 </script>
 
 <template>

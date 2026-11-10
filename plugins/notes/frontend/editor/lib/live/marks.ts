@@ -208,12 +208,7 @@ class MarkBuilder {
     return true
   }
 
-  enter(node: SyntaxNodeRef): boolean {
-    const asBlock = this.takeBlock(node)
-    if (asBlock !== null) return asBlock
-    if (this.blocks) return BLOCK_CONTAINERS.has(node.name)
-    if (LINK_NODES.has(node.name) && isWithin(this.links, node.from, node.to)) return false
-
+  takeText(node: SyntaxNodeRef): boolean {
     return (
       this.takeLine(node) ??
       this.takeWidget(node) ??
@@ -223,6 +218,15 @@ class MarkBuilder {
       this.takeInline(node) ??
       true
     )
+  }
+
+  enter(node: SyntaxNodeRef): boolean {
+    const asBlock = this.takeBlock(node)
+    if (asBlock !== null) return asBlock
+    if (this.blocks) return BLOCK_CONTAINERS.has(node.name)
+    if (LINK_NODES.has(node.name) && isWithin(this.links, node.from, node.to)) return false
+
+    return this.takeText(node)
   }
 }
 

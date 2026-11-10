@@ -6,11 +6,7 @@ import { GFM } from '@lezer/markdown'
 import { LANGUAGES } from '../../config/languages'
 import { wholeLines } from './live'
 import { blockMarks } from './marks'
-
-vi.mock('./marks', async (importOriginal) => {
-  const original = await importOriginal<typeof import('./marks')>()
-  return { ...original, blockMarks: vi.fn(original.blockMarks) }
-})
+import { Rule } from './widgets'
 
 const TABLE = '| a | b |\n|---|---|\n| 1 | 2 |'
 const OTHER = '| c | d |\n|---|---|\n| 3 | 4 |'
@@ -52,13 +48,22 @@ const apply = (state: EditorState, changes?: ChangeSpec, caret?: number) =>
     ...(caret === undefined ? {} : { selection: { anchor: caret } }),
   }).state
 
-const calls = () => vi.mocked(blockMarks).mock.calls.length
+/** The rule widgets the state holds: a rule is drawn again exactly when its widget is made again. */
+const getRules = (state: EditorState) => {
+  const rules: unknown[] = []
+  state.field(wholeLines).marks.between(0, state.doc.length, (_from, _to, mark) => {
+    if (mark.spec.widget instanceof Rule) rules.push(mark.spec.widget)
+  })
+  return rules
+}
+
+const isRedrawn = (before: readonly unknown[], after: readonly unknown[]) =>
+  before.length > 0 && !before.some((rule) => after.includes(rule))
 
 // The parser reparses an edit within a time budget read from Date.now, and a tree left partial
 // changes the tables found. A clock that does not move gives it all the time it needs.
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
-  vi.mocked(blockMarks).mockClear()
 })
 
 afterEach(() => {
@@ -70,19 +75,21 @@ describe('the marks of whole lines', () => {
 
   it('are not drawn again for typing in a paragraph away from every table', () => {
     const state = create(doc, 3)
-    const before = calls()
+    const before = getRules(state)
     const next = apply(state, { from: 3, insert: 'xyz' })
-    expect(calls()).toBe(before)
+    expect(before.length).toBeGreaterThan(0)
+    expect(getRules(next)).toHaveLength(before.length)
+    expect(getRules(next).every((rule, index) => rule === before[index])).toBe(true)
     expectRebuiltEqual(next)
   })
 
   it('are drawn again when the parser leaves the tables after an edit unparsed', () => {
     const state = create(doc, 3)
-    const before = calls()
+    const before = getRules(state)
     let now = 0
     vi.spyOn(Date, 'now').mockImplementation(() => (now += 1000))
-    apply(state, { from: 3, insert: 'xyz' })
-    expect(calls()).toBe(before + 1)
+    const next = apply(state, { from: 3, insert: 'xyz' })
+    expect(isRedrawn(before, getRules(next))).toBe(true)
   })
 
   it('keep the position of a table that typing above it has moved', () => {
@@ -132,18 +139,18 @@ describe('the marks of whole lines', () => {
     ['a fence opened above a table', (s: EditorState) => apply(s, { from: 0, insert: '```\n' })],
   ])('are drawn again for %s, as a whole rebuild draws them', (_name, edit) => {
     const state = create(doc, 3)
-    const before = calls()
+    const before = getRules(state)
     const next = edit(state)
-    expect(calls()).toBeGreaterThan(before)
+    expect(isRedrawn(before, getRules(next))).toBe(true)
     expectRebuiltEqual(next)
   })
 
   it('are drawn again when a caret leaves a table', () => {
     const inside = create(doc, doc.indexOf('| 1 |') + 2)
     expectRebuiltEqual(inside)
-    const before = calls()
+    const before = getRules(inside)
     const next = apply(inside, undefined, 1)
-    expect(calls()).toBeGreaterThan(before)
+    expect(isRedrawn(before, getRules(next))).toBe(true)
     expectRebuiltEqual(next)
     expect(describeMarks(next, 'field').length).toBeGreaterThan(
       describeMarks(inside, 'field').length,
