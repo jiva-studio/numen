@@ -45,6 +45,7 @@ export { createPluginNotices, type NoticeList, type NoticeListTask } from './plu
 export { createPluginTasks, type WindowTask } from './pluginTasks'
 export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './hosting/host'
 export { createPluginAgent } from './hosting/guards/agentGuard'
+export { requireMountAccess } from './hosting/guards/viewPermissions'
 export { createPluginContext } from './hosting/context'
 export { createCustomTabKind } from './hosting/customTabKind'
 export type {

@@ -2,28 +2,22 @@
  * Host implementation of PluginContext conforming to @numen/plugin-sdk.
  */
 import type {
-  AgentProviderRegistration,
   BufferHost,
-  CommandRegistration,
   Disposable,
-  DropRegistration,
   FileSelectEvent,
   PluginContext,
-  ReaderRegistration,
-  SettingsViewRegistration,
-  TabKindRegistration,
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
   VaultRelations,
   VaultTexts,
-  ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { Manifest } from '@numen/core-client'
 import { createExternalOpener } from '../externalOpener'
 import { guardAgent } from './guards/agentGuard'
 import { checkPermission, type PermissionTarget } from './guards/permission'
+import { createRegistrations, type RequirePermission, type Track } from './guards/registrations'
 import { createSlotContext } from './slotContext'
 import type { PluginContextHost } from './types'
 
@@ -211,28 +205,6 @@ function guardServices(
 /** The target the editor activates its plugins in. */
 const EDITOR_TARGET = 'desktop.editor'
 
-type Track = (disposable: Disposable) => Disposable
-type RequirePermission = (permission: string, operation: string) => void
-
-function createRegistrations(pluginId: string, host: PluginContextHost, add: Track) {
-  return {
-    registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
-    registerSettingsView: (reg: SettingsViewRegistration) =>
-      add(host.registerSettingsView(pluginId, reg)),
-    registerTabKind: <State>(reg: TabKindRegistration<State>) =>
-      add(host.registerTabKind(pluginId, reg)),
-    registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
-    registerAgentProvider: (reg: AgentProviderRegistration) =>
-      add(host.registerAgentProvider(pluginId, reg)),
-    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
-    mountView: (capability: string, element: HTMLElement, context: unknown) => {
-      const view = host.mountView(capability, element, context)
-      return { focus: () => view.focus(), ...add(view) }
-    },
-    registerDropHandler: (reg: DropRegistration) => add(host.registerDropHandler(pluginId, reg)),
-  }
-}
-
 /** What the events of a plugin are tracked and guarded with. */
 interface EventGuard {
   readonly requirePerm: RequirePermission
@@ -301,7 +273,7 @@ export function createPluginContext(
     ...guardServices(host, requirePerm, add),
     ...createWindowServices(pluginId, host, requirePerm),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
-    ...createRegistrations(pluginId, host, add),
+    ...createRegistrations(pluginId, host, { target, add }),
     ...createSlotContext(
       { pluginId, manifest: manifest && 'contributes' in manifest ? manifest : undefined },
       host,

@@ -40,6 +40,7 @@ import type { DeclaredSlotEntry, SlotCommandLook } from '../slots/slotRegistry'
 import type { WhenValues } from '../when/when'
 import type { WhenReader } from '../when/whenReader'
 import type { Component } from 'vue'
+import type { MountAccess } from '../views'
 
 export type {
   AgentProviderRegistration,
@@ -217,8 +218,17 @@ export interface PluginContextHost {
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
-  registerView(pluginId: string, registration: ViewRegistration): Disposable
-  mountView(capability: string, element: HTMLElement, context: unknown): MountedView
+  registerView(
+    pluginId: string,
+    registration: ViewRegistration,
+    permissions?: readonly string[],
+  ): Disposable
+  mountView(
+    capability: string,
+    element: HTMLElement,
+    context: unknown,
+    access: MountAccess,
+  ): MountedView
   registerDropHandler(pluginId: string, registration: DropRegistration): Disposable
   readonly drops: DropHost
   getSetting<T = unknown>(this: void, pluginId: string, key: string): T | undefined
