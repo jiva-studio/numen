@@ -252,15 +252,15 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 		t.Fatalf("attach: %v", err)
 	}
 	release := make(chan struct{})
-	stopped := make(chan error, 1)
+	teardownResult := make(chan error, 1)
 	t.Cleanup(func() {
 		close(release)
-		if err := <-stopped; err != nil {
+		if err := <-teardownResult; err != nil {
 			t.Error(err)
 		}
 	})
 	go func() {
-		stopped <- sup.Teardown(context.WithoutCancel(t.Context()), 100*time.Millisecond, func(context.Context) error {
+		teardownResult <- sup.Teardown(context.WithoutCancel(t.Context()), 100*time.Millisecond, func(context.Context) error {
 			<-release
 			return nil
 		})
