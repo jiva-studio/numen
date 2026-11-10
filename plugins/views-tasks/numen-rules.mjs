@@ -242,5 +242,117 @@ export default {
         }
       },
     },
+
+    'max-composable-return-properties': {
+      meta: {
+        type: 'problem',
+        docs: {
+          description:
+            'Enforce maximum number of properties returned from a composable (use*) or a model/app factory (create*) to avoid God-composables',
+        },
+        messages: {
+          tooManyReturnedProperties:
+            '"{{name}}" returns {{count}} properties (max: {{max}}). Decompose into smaller focused composables or factories, or group the result into named parts.',
+          spreadInReturn:
+            '"{{name}}" spreads an object into what it returns, which hides how many properties it returns. Name each property.',
+        },
+        schema: [
+          {
+            type: 'object',
+            properties: {
+              max: { type: 'integer', minimum: 1 },
+            },
+            additionalProperties: false,
+          },
+        ],
+      },
+      create(context) {
+        const max = context.options[0]?.max ?? 8
+
+        // A use* function is checked everywhere; a create* factory only in model/ and app/ folders.
+        const isFactoryFolder = /(^|[\\/])(model|app)[\\/]/.test(context.filename ?? '')
+        function isChecked(name) {
+          return /^use[A-Z]/.test(name) || (isFactoryFolder && /^create[A-Z]/.test(name))
+        }
+
+        // The object literal a returned expression is: the literal itself, or the literal a returned
+        // identifier is declared with.
+        function getReturnedObject(argument) {
+          if (argument?.type === 'ObjectExpression') return argument
+          if (argument?.type !== 'Identifier') return null
+          for (let scope = context.sourceCode.getScope(argument); scope; scope = scope.upper) {
+            const variable = scope.set.get(argument.name)
+            if (!variable) continue
+            const declarator = variable.defs[0]?.node
+            return declarator?.type === 'VariableDeclarator' && declarator.init?.type === 'ObjectExpression'
+              ? declarator.init
+              : null
+          }
+          return null
+        }
+
+        function checkReturnObject(argument, fnName) {
+          if (!fnName || !isChecked(fnName)) return
+          const node = getReturnedObject(argument)
+          if (!node) return
+          let count = 0
+          for (const prop of node.properties) {
+            if (prop.type === 'Property') {
+              count++
+            } else if (prop.type === 'SpreadElement') {
+              context.report({ node: prop, messageId: 'spreadInReturn', data: { name: fnName } })
+            }
+          }
+          if (count > max) {
+            context.report({
+              node,
+              messageId: 'tooManyReturnedProperties',
+              data: { name: fnName, count, max },
+            })
+          }
+        }
+
+        return {
+          'FunctionDeclaration:exit'(node) {
+            const fnName = node.id?.name
+            if (!fnName || !isChecked(fnName)) return
+            const body = node.body
+            if (!body || body.type !== 'BlockStatement') return
+            for (const stmt of body.body) {
+              if (
+                stmt.type === 'ReturnStatement' &&
+                stmt.argument
+              ) {
+                checkReturnObject(stmt.argument, fnName)
+              }
+            }
+          },
+
+          'VariableDeclarator:exit'(node) {
+            const fnName = node.id?.name
+            if (!fnName || !isChecked(fnName)) return
+            const init = node.init
+            if (!init) return
+            if (
+              init.type === 'ArrowFunctionExpression' ||
+              init.type === 'FunctionExpression'
+            ) {
+              if (init.body.type === 'ObjectExpression') {
+                checkReturnObject(init.body, fnName)
+              } else if (init.body.type === 'BlockStatement') {
+                for (const stmt of init.body.body) {
+                  if (
+                    stmt.type === 'ReturnStatement' &&
+                    stmt.argument
+                  ) {
+                    checkReturnObject(stmt.argument, fnName)
+                  }
+                }
+              }
+            }
+          },
+        }
+      },
+    },
   },
 }
