@@ -9,8 +9,16 @@ export type SettingValue =
   | number
   | boolean
   | null
-  | readonly SettingValue[]
-  | { readonly [key: string]: SettingValue }
+  | SettingList
+  | SettingObject
+
+/** The list a setting value holds. */
+export interface SettingList extends ReadonlyArray<SettingValue> {}
+
+/** The object a setting value holds. */
+export interface SettingObject {
+  readonly [key: string]: SettingValue
+}
 
 /** Declarative setting value types exposed by a plugin. */
 export type PluginSettingType = 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'file'
