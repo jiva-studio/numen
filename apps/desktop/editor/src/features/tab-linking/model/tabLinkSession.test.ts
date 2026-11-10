@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { computed } from 'vue'
+import { createLostConnection } from '@numen/core-client/testing'
+import { answerCore } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
 import {
   createTabLinkSession,
@@ -39,8 +41,35 @@ const MOVED_TAB = {
   moveId: 'move-1',
 }
 
+const FAILURE = createLostConnection('the core is gone')
+const isFailure = expect.objectContaining({
+  message: expect.stringContaining('the core is gone'),
+})
+
+const toWire = (event: TabLinksEvent) => {
+  if (event.links) {
+    const { groups, tabs, windows } = event.links
+    return {
+      event: {
+        case: 'links' as const,
+        value: {
+          groups: groups.map(({ tabs: tabIds, ...rest }) => ({ ...rest, tabIds: [...tabIds] })),
+          tabs: [...tabs],
+          windows: [...windows],
+        },
+      },
+    }
+  }
+  if (event.sync) return { event: { case: 'sync' as const, value: event.sync } }
+  if (event.movedTab) return { event: { case: 'movedTab' as const, value: event.movedTab } }
+  if (event.isHighlighted !== undefined) {
+    return { event: { case: 'highlight' as const, value: { isOn: event.isHighlighted } } }
+  }
+  return { event: { case: undefined } }
+}
+
 async function* createStream(events: readonly TabLinksEvent[], signal: AbortSignal) {
-  yield* events
+  yield* events.map(toWire)
   if (!signal.aborted) await new Promise((resolve) => signal.addEventListener('abort', resolve))
 }
 
@@ -52,13 +81,38 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
       return createStream(events, signal)
     }),
     cancelTabLinksWatch: vi.fn((_windowId: string) => Promise.resolve()),
-    writeTabLinks: vi.fn((_windowId: string, _change: unknown) => Promise.resolve()),
+    writeTabLinks: vi.fn((_report: { windowId: string; tabs?: unknown; window?: unknown }) =>
+      Promise.resolve(),
+    ),
     acceptTabMove: vi.fn((_windowId: string, _tabId: string, _moveId: string) =>
       Promise.resolve({ ok: true as const, value: undefined }),
     ),
   }
+  answerCore({
+    workspace: {
+      watchTabLinks: (request, context) => core.watchTabLinks(request.windowId, context.signal),
+      cancelWatchTabLinks: async (request) => {
+        await core.cancelTabLinksWatch(request.windowId)
+        return {}
+      },
+      writeTabLinks: async ({ windowId, change }) => {
+        const report = change.case === 'tabs' ? change.value : undefined
+        await core.writeTabLinks({
+          windowId,
+          tabs: report?.tabs.map(({ id, kind, title }) => ({ id, kind, title })),
+          window: report?.window && {
+            isMain: report.window.isMain,
+            activeTitle: report.window.activeTitle,
+            activeKind: report.window.activeKind,
+            tabCount: report.window.tabCount,
+          },
+        })
+        return {}
+      },
+    },
+  })
   const deps = {
-    core,
+    acceptTabMove: core.acceptTabMove,
     windowId: 'window-a',
     tabLinks: { applySnapshot: vi.fn() },
     applySync: vi.fn(),
@@ -72,6 +126,8 @@ const setup = (events: readonly TabLinksEvent[], getOpenTabs = () => OPEN_TABS) 
   return { deps, core, signals, session: createTabLinkSession(deps) }
 }
 
+const REPORT = { windowId: 'window-a', tabs: OPEN_TABS, window: WINDOW }
+
 describe('createTabLinkSession', () => {
   it('applies snapshots and syncs, and reports the open tabs when the stream opens', async () => {
     const { deps, core, session } = setup([{ links: SNAPSHOT }, {}, { sync: SYNC }])
@@ -81,10 +137,7 @@ describe('createTabLinkSession', () => {
     await vi.waitFor(() => expect(deps.applySync).toHaveBeenCalledWith(SYNC))
     expect(core.watchTabLinks).toHaveBeenCalledWith('window-a', expect.any(AbortSignal))
     expect(deps.tabLinks.applySnapshot).toHaveBeenCalledExactlyOnceWith(SNAPSHOT)
-    expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith('window-a', {
-      tabs: OPEN_TABS,
-      window: WINDOW,
-    })
+    expect(core.writeTabLinks).toHaveBeenCalledExactlyOnceWith(REPORT)
     session.close()
     await stream
   })
@@ -92,7 +145,7 @@ describe('createTabLinkSession', () => {
   it('reports the open tabs again when the stream reopens', async () => {
     const { core, session } = setup([{ links: SNAPSHOT }])
     core.watchTabLinks.mockImplementationOnce(async function* () {
-      yield { links: SNAPSHOT }
+      yield toWire({ links: SNAPSHOT })
     })
 
     const stream = session.start()
@@ -118,12 +171,11 @@ describe('createTabLinkSession', () => {
 
   it('reports an error when the core rejects the tab report', async () => {
     const { deps, core, session } = setup([])
-    const failure = new Error('the core is gone')
-    core.writeTabLinks.mockRejectedValueOnce(failure)
+    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
 
     session.reportTabs()
 
-    await vi.waitFor(() => expect(deps.onError).toHaveBeenCalledWith(failure))
+    await vi.waitFor(() => expect(deps.onError).toHaveBeenCalledWith(isFailure))
   })
 
   it('keeps the stream open when applySync throws', async () => {
@@ -181,9 +233,14 @@ describe('reportTabs', () => {
     finishFirst()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
-    expect(core.writeTabLinks.mock.calls.map(([, change]) => change)).toStrictEqual([
-      { tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }], window: WINDOW },
+    expect(core.writeTabLinks.mock.calls.map(([report]) => report)).toStrictEqual([
       {
+        windowId: 'window-a',
+        tabs: [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }],
+        window: WINDOW,
+      },
+      {
+        windowId: 'window-a',
         tabs: [
           { id: 'plex:1', kind: 'plex', title: 'Orbits' },
           { id: 'plex:2', kind: 'plex', title: 'Tides' },
@@ -196,14 +253,13 @@ describe('reportTabs', () => {
 
   it('sends later reports after a failed one', async () => {
     const { deps, core, session } = setup([])
-    const failure = new Error('the core is gone')
-    core.writeTabLinks.mockRejectedValueOnce(failure)
+    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
 
     session.reportTabs()
     session.reportTabs()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
-    expect(deps.onError).toHaveBeenCalledExactlyOnceWith(failure)
+    expect(deps.onError).toHaveBeenCalledExactlyOnceWith(isFailure)
   })
 })
 
@@ -222,22 +278,19 @@ describe('a snapshot', () => {
 describe('a failed tab report', () => {
   it('is sent again after the retry delay', async () => {
     const { deps, core, session } = setup([])
-    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
 
     session.reportTabs()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
     expect(deps.wait).toHaveBeenCalledWith(REPORT_RETRY_MS)
-    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([
-      'window-a',
-      { tabs: OPEN_TABS, window: WINDOW },
-    ])
+    expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([REPORT])
   })
 
   it('is replaced by a newer report made during the retry delay', async () => {
     const tabs = [{ id: 'plex:1', kind: 'plex', title: 'Orbits' }]
     const { deps, core, session } = setup([], () => [...tabs])
-    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
     let endDelay = (): void => undefined
     deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
 
@@ -248,7 +301,8 @@ describe('a failed tab report', () => {
     endDelay()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
-    expect(core.writeTabLinks.mock.calls[1]?.[1]).toStrictEqual({
+    expect(core.writeTabLinks.mock.calls[1]?.[0]).toStrictEqual({
+      windowId: 'window-a',
       tabs: [
         { id: 'plex:1', kind: 'plex', title: 'Orbits' },
         { id: 'plex:2', kind: 'plex', title: 'Tides' },
@@ -259,7 +313,7 @@ describe('a failed tab report', () => {
 
   it('is not sent again after close', async () => {
     const { deps, core, session } = setup([])
-    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
     let endDelay = (): void => undefined
     deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
 
@@ -353,7 +407,7 @@ describe('stream events for this window', () => {
 
   it('sends AcceptTabMove after a failed report is sent again', async () => {
     const { deps, core, session } = setup([])
-    core.writeTabLinks.mockRejectedValueOnce(new Error('the core is gone'))
+    core.writeTabLinks.mockRejectedValueOnce(FAILURE)
     let endDelay = (): void => undefined
     deps.wait.mockImplementationOnce(() => new Promise<void>((resolve) => (endDelay = resolve)))
 
@@ -372,7 +426,7 @@ describe('stream events for this window', () => {
 
   it('sends later tab reports when AcceptTabMove fails', async () => {
     const { core, session } = setup([])
-    core.acceptTabMove.mockRejectedValueOnce(new Error('the core is gone'))
+    core.acceptTabMove.mockRejectedValueOnce(FAILURE)
 
     await expect(session.acceptMove('plex:2', 'move-1')).rejects.toThrow('the core is gone')
     session.reportTabs()

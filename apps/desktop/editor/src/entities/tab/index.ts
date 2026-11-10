@@ -18,6 +18,8 @@ export type {
   WindowTabsReport,
 } from './lib/links'
 export * from './lib/kinds'
+export { getAllTabs, getEligibleTabs } from './lib/eligibility'
+export { getWindowName } from './lib/windowName'
 export { createWindowTabs } from './model/windowTabs'
 export type { WindowTabs } from './model/windowTabs'
 export { formatSavedState, parseSavedTab, parseSavedTabs, useOpenTabs } from './model/useOpenTabs'
@@ -25,16 +27,5 @@ export { createTabSync } from './model/useTabSync'
 export { useWindowTabMenu } from './model/useTabMenu'
 export { createWorkspace, generateId, NOTE, SETTINGS } from './lib/workspace'
 export { readOpenTabs } from './api/saved-tabs'
-export {
-  acceptTabMove,
-  cancelTabLinksWatch,
-  detachTab,
-  highlightWindow,
-  moveTab,
-  readDetachedTab,
-  syncTabPath,
-  watchTabLinks,
-  writeTabLinks,
-} from './api/tabLinks'
 export { default as RestoreFailedPane } from './ui/RestoreFailedPane.vue'
 export { default as UnavailablePane } from './ui/UnavailablePane.vue'

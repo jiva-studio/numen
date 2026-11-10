@@ -1,8 +1,15 @@
 /**
  * Which tabs can be linked, and which of them a given tab can be linked to.
  */
-import type { EligibleLinkTab } from '../types'
-import type { LinkableTab, TabId, TabLinkGroup } from '@/entities/tab'
+import type { LinkableTab, TabId, TabLinkGroup } from './links'
+
+/** A tab a link may end at, with the kind it shows and whether it is linked already. */
+export interface EligibleLinkTab {
+  readonly id: TabId
+  readonly title: string
+  readonly kind: string
+  readonly isLinked: boolean
+}
 
 /** What the eligibility is read from. */
 export interface EligibilityInput {

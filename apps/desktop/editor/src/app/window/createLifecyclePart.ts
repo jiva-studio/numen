@@ -6,13 +6,8 @@ import { formatError } from '@/shared/api/errors'
 import type { Ref } from 'vue'
 import type { PluginLoader } from '@numen/plugin-loader'
 import { runInBackground } from '@numen/ui'
-import {
-  parseSavedTabs,
-  readDetachedTab,
-  readOpenTabs,
-  type MovedTab,
-  type WindowTabs,
-} from '@/entities/tab'
+import { parseSavedTabs, readOpenTabs, type MovedTab, type WindowTabs } from '@/entities/tab'
+import { readDetachedTab } from '@/features/tab-move'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { getFrontendPluginIds } from '../plugins/useWindowPlugins'
 import type { createNoteEditors } from '../tabs/useNoteEditors'

@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CommandTarget } from '@/entities/command'
 import type { LinkableTab, TabLinkGroup } from '@/entities/tab'
 import { invoke } from '@/testing/invocation'
-import { createTabCommands, type TabLinks, type TabListing } from './commands'
+import { createTabCommands, type TabLinks } from './commands'
 
 const GROUP: TabLinkGroup = { id: 'g', colorIndex: 0, tabs: ['reef', 'plex'], path: '', title: '' }
 
@@ -16,9 +16,10 @@ const MOVE = 'app:tab.moveToWindow'
 const LINK = 'app:tab.link'
 
 const ELSEWHERE: LinkableTab = { id: 'dock', title: 'Dock', kind: 'note', windowId: 'main' }
+const UNTITLED: LinkableTab = { id: 'quay', title: '', kind: 'files', windowId: 'main' }
 
 const createLinks = (groups: Record<string, TabLinkGroup> = {}) => ({
-  tabs: [ELSEWHERE],
+  tabs: [ELSEWHERE, UNTITLED],
   windows: [
     { id: 'main', isMain: true, activeTitle: 'Atlas', activeKind: 'note', tabCount: 3 },
     { id: 'here', isMain: false, activeTitle: 'Reef', activeKind: 'note', tabCount: 1 },
@@ -29,44 +30,31 @@ const createLinks = (groups: Record<string, TabLinkGroup> = {}) => ({
   unlinkTab: vi.fn<TabLinks['unlinkTab']>(),
 })
 
-const createListing = (eligible: ReturnType<TabListing['getEligibleTabs']> = []) => ({
-  getAllTabs: vi.fn<TabListing['getAllTabs']>((own, linkable) => [
-    ...own,
-    ...linkable.map((one) => ({ id: one.id, title: one.title })),
-  ]),
-  getEligibleTabs: vi.fn<TabListing['getEligibleTabs']>(() => eligible),
-  getWindowName: (window: { activeTitle: string; tabCount: number }) =>
-    `${window.activeTitle || 'Empty'} of ${window.tabCount}`,
-})
-
 const setup = (
   options: {
     groups?: Record<string, TabLinkGroup>
     isAsking?: boolean
-    eligible?: ReturnType<TabListing['getEligibleTabs']>
   } = {},
 ) => {
   const tabLinks = createLinks(options.groups)
-  const listing = createListing(options.eligible)
   const detach = vi.fn()
   const move = vi.fn()
   const set = createTabCommands({
     tabLinks,
-    listing,
     getTabs: () => [
       { id: 'reef', title: 'Reef' },
       { id: 'plex', title: 'Plex' },
       { id: 'chat', title: 'Chat' },
     ],
     getKind: (tab) =>
-      tab === 'chat' ? 'agent' : ['dock', 'lost'].includes(tab) ? undefined : 'note',
+      tab === 'chat' ? 'agent' : ['dock', 'quay', 'lost'].includes(tab) ? undefined : 'note',
     isLinkable: (tab) => tab !== 'chat',
     windowId: 'here',
     isAsking: () => options.isAsking ?? false,
     detach,
     move,
   })
-  return { set, tabLinks, listing, detach, move }
+  return { set, tabLinks, detach, move }
 }
 
 const createTabTarget = (tab: string): CommandTarget => ({
@@ -92,39 +80,36 @@ describe('the commands of a tab', () => {
     expect(Object.keys(set.handlers).sort()).toStrictEqual([DETACH, LINK, MOVE, UNLINK].sort())
   })
 
-  it('offer moving to every other window, named by the listing', () => {
+  it('offer moving to every other window, named by its active tab and the tabs besides it', () => {
     const { set } = setup()
     const move = set.commands.find((one) => one.id === MOVE)!
 
     expect(move.listItems?.(createTabTarget('reef'))).toStrictEqual([
-      { id: 'main', title: 'Atlas of 3' },
-      { id: 'side', title: 'Empty of 0' },
+      { id: 'main', title: 'Atlas (+2)' },
+      { id: 'side', title: 'Empty window' },
     ])
   })
 
-  it('offer linking with the tabs the listing finds eligible, named by title or else by kind', () => {
-    const { set, listing } = setup({
-      eligible: [
-        { id: 'plex', title: 'Plex', kind: 'note' },
-        { id: 'dock', title: '', kind: 'note' },
-      ],
-    })
+  it('offer linking with the other linkable tabs of every window, named by title or else by kind', () => {
+    const { set } = setup()
     const link = set.commands.find((one) => one.id === LINK)!
 
     expect(link.listItems?.(createTabTarget('reef'))).toStrictEqual([
       { id: 'plex', title: 'Plex' },
-      { id: 'dock', title: 'note' },
+      { id: 'dock', title: 'Dock' },
+      { id: 'quay', title: 'files' },
     ])
-    const input = listing.getEligibleTabs.mock.lastCall![0]
-    expect(input.from).toBe('reef')
-    expect(input.tabs.map((one) => one.id)).toStrictEqual(['reef', 'plex', 'chat', 'dock'])
-    expect([input.getKind('chat'), input.getKind('dock'), input.getKind('lost')]).toStrictEqual([
-      'agent',
-      'note',
-      undefined,
+  })
+
+  it('offer no tab of the group the tab is in, and none from a tab that cannot be linked', async () => {
+    const { set } = setup({ groups: { reef: GROUP, plex: GROUP } })
+    const link = set.commands.find((one) => one.id === LINK)!
+
+    expect((await link.listItems?.(createTabTarget('reef')))?.map((one) => one.id)).toStrictEqual([
+      'dock',
+      'quay',
     ])
-    expect([input.isLinkable('reef'), input.isLinkable('chat')]).toStrictEqual([true, false])
-    expect([input.isLinkable('dock'), input.isLinkable('lost')]).toStrictEqual([true, false])
+    expect(await link.listItems?.(createTabTarget('chat'))).toStrictEqual([])
   })
 
   it('are available over a tab only, unlink over a linked tab, and none while the tab asks', () => {

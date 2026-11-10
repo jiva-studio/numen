@@ -24,10 +24,3 @@ export interface TabLinksState {
   /** Replaces the groups and tabs with a snapshot from the core. */
   applySnapshot(snapshot: TabLinksSnapshot): void
 }
-
-export interface EligibleLinkTab {
-  readonly id: TabId
-  readonly title: string
-  readonly kind: string
-  readonly isLinked: boolean
-}
