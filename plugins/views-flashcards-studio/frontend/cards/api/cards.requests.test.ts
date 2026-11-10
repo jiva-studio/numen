@@ -6,10 +6,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/plugin-sdk'
 import { ErrorCode } from '../../api/types.js'
-import { cardsService } from './clients'
+import { cardsService } from '../../api/client'
 import { cards } from './cards'
 
-vi.mock('./clients', () => ({
+vi.mock('../../api/client', async (original) => ({
+  ...(await original<typeof import('../../api/client')>()),
   cardsService: {
     createDeck: vi.fn(),
     readDeck: vi.fn(),

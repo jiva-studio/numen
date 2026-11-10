@@ -24,8 +24,9 @@ const wire = vi.hoisted(() => {
   }
 })
 
-vi.mock('../shared/clients', () => ({
-  cards: {
+vi.mock('../../api/client', async (original) => ({
+  ...(await original<typeof import('../../api/client')>()),
+  reviewService: {
     watchCardsDue: async function* (_: unknown, call?: { signal?: AbortSignal }) {
       if (call?.signal) wire.taken.push(call.signal)
       wire.countsOpened += 1

@@ -75,9 +75,9 @@ const VAULT = {
   isIndexing: false,
 }
 
-vi.mock('../shared/clients', async (original) => ({
-  ...(await original<typeof import('../shared/clients')>()),
-  cards: {
+vi.mock('../../api/client', async (original) => ({
+  ...(await original<typeof import('../../api/client')>()),
+  reviewService: {
     watchCardsDue: async function* (_: unknown, how?: { signal?: AbortSignal }) {
       const signal = how?.signal ?? new AbortController().signal
       wire.counts.push(signal)
