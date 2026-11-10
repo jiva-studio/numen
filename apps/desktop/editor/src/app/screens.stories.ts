@@ -126,18 +126,6 @@ const PLUGINS: readonly PluginInfo[] = [
 /** The actions the settings requested; a screenshot requests none. */
 const DONE: string[] = []
 
-const DEFAULTS = createInstallation()
-
-const SHELL_SETTINGS: Installation['settings'] = {
-    ...DEFAULTS.settings,
-    getSetting: () => undefined,
-    getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
-    write: (edits) => {
-      DONE.push(`write ${edits.length}`)
-    },
-    file: ref('/numen.json'),
-}
-
 const APP_SETTINGS: Installation['plugin']['app'] = ref([
       {
         key: 'appearance.theme',
@@ -170,60 +158,51 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
       },
 ])
 
-const SHELL_PLUGIN: Installation['plugin'] = {
-    ...DEFAULTS.plugin,
-    app: APP_SETTINGS,
-    retryPlugin: () => {
-      DONE.push('plugin retried')
-    },
-    choosePath: async () => {
-      DONE.push('path chosen')
-      return ''
-    },
-    plugins: ref<readonly PluginInfo[]>(PLUGINS),
-}
 
-const SHELL_SECRETS: Installation['secrets'] = {
-    ...DEFAULTS.secrets,
-    edit: {
-      createSecret: async () => {
-        DONE.push('secret created')
-        return 's00000001'
-      },
-      renameSecret: () => {
-        DONE.push('secret renamed')
-      },
-      writeSecret: () => {
-        DONE.push('secret written')
-      },
-      deleteSecret: () => {
-        DONE.push('secret deleted')
-      },
-      deleteSecretGroup: () => {
-        DONE.push('secret group deleted')
-      },
-      moveSecret: () => {
-        DONE.push('secret moved')
-      },
-      renameSecretGroup: () => {
-        DONE.push('secret group renamed')
-      },
-    },
-    access: {
-      allowPluginSecret: () => {
-        DONE.push('secret allowed')
-      },
-      denyPluginSecret: () => {
-        DONE.push('secret denied')
-      },
-    },
-}
-
-const INSTALLATION: Installation = {
-  settings: SHELL_SETTINGS,
-  plugin: SHELL_PLUGIN,
-  secrets: SHELL_SECRETS,
-}
+const INSTALLATION: Installation = createInstallation({
+  getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
+  write: (edits) => {
+    DONE.push(`write ${edits.length}`)
+  },
+  file: ref('/numen.json'),
+  app: APP_SETTINGS,
+  retryPlugin: () => {
+    DONE.push('plugin retried')
+  },
+  choosePath: async () => {
+    DONE.push('path chosen')
+    return ''
+  },
+  plugins: ref<readonly PluginInfo[]>(PLUGINS),
+  createSecret: async () => {
+    DONE.push('secret created')
+    return 's00000001'
+  },
+  renameSecret: () => {
+    DONE.push('secret renamed')
+  },
+  writeSecret: () => {
+    DONE.push('secret written')
+  },
+  deleteSecret: () => {
+    DONE.push('secret deleted')
+  },
+  deleteSecretGroup: () => {
+    DONE.push('secret group deleted')
+  },
+  moveSecret: () => {
+    DONE.push('secret moved')
+  },
+  renameSecretGroup: () => {
+    DONE.push('secret group renamed')
+  },
+  allowPluginSecret: () => {
+    DONE.push('secret allowed')
+  },
+  denyPluginSecret: () => {
+    DONE.push('secret denied')
+  },
+})
 
 /** The settings of the window and of every plugin installed, each reached from its row. */
 export const Settings: Story = {
