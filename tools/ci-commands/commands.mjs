@@ -78,7 +78,10 @@ const findWordsObject = (sourceFile) => {
   for (const statement of sourceFile.statements) {
     if (!ts.isVariableStatement(statement)) continue
     for (const declaration of statement.declarationList.declarations) {
-      if (ts.isIdentifier(declaration.name) && declaration.name.text === 'WORDS') {
+      if (
+        ts.isIdentifier(declaration.name) &&
+        (declaration.name.text === 'WORDS' || declaration.name.text === 'PALETTE_WORDS')
+      ) {
         const initializer = unwrapExpression(declaration.initializer)
         if (initializer && ts.isObjectLiteralExpression(initializer)) return initializer
       }

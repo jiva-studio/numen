@@ -69,8 +69,24 @@ const refuse = (error) => {
   throw error
 }
 
-/** What one entry of the window's words says. */
-const said = (whole, name) => readWords(whole, name, UI).catch(refuse)
+const said = async (sources, name) => {
+  let unread
+  for (const whole of sources) {
+    try {
+      return await readWords(whole, name, UI)
+    } catch (error) {
+      if (!(error instanceof ReadError)) throw error
+      unread = error
+    }
+  }
+  return refuse(unread)
+}
+
+/** The sources of the words the palette draws: the window's own and the palette's. */
+const readWordSources = async () => [
+  await read(UI, 'words.ts'),
+  await read(EDITOR, 'features/command-palette/words.ts'),
+]
 
 const readPlugins = () => getPluginCommands(TARGET).catch(refuse)
 
@@ -147,7 +163,7 @@ const chordOf = ({ letter, shift, alt }) => {
 }
 
 const keyboard = async () => {
-  const words = await read(UI, 'words.ts')
+  const words = await readWordSources()
   const ids = await readCommandIds()
   const declared = await readCommands(ids)
   const search = getCommandId(ids, 'searchVault')
@@ -286,7 +302,7 @@ const getSharedRows = (plugins) => {
 
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
-  const words = await read(UI, 'words.ts')
+  const words = await readWordSources()
   const ids = await readCommandIds()
   const table = readKeybindings()
 
