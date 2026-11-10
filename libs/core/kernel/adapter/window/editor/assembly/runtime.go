@@ -64,7 +64,6 @@ type Runtime[H, V any] struct {
 	ProblemQueriesFn         func() problemport.ProblemQueries
 	IndexProgressFn          func() indexport.IndexProgress
 	SourceRepositoryFn       func() sourceport.SourceRepository
-	SourceQueriesFn          func() sourceport.SourceQueries
 	PassageQueriesFn         func() sourceport.PassageQueries
 	CloseIndexFn             func() error
 	OpenGetSettingsFn        func() *settings.Get
@@ -131,7 +130,6 @@ func (e Runtime[H, V]) GetIndexProgress() indexport.IndexProgress     { return e
 func (e Runtime[H, V]) GetSourceRepository() sourceport.SourceRepository {
 	return e.SourceRepositoryFn()
 }
-func (e Runtime[H, V]) GetSourceQueries() sourceport.SourceQueries   { return e.SourceQueriesFn() }
 func (e Runtime[H, V]) GetPassageQueries() sourceport.PassageQueries { return e.PassageQueriesFn() }
 func (e Runtime[H, V]) CloseIndex() error                            { return e.CloseIndexFn() }
 func (e Runtime[H, V]) OpenGetSettings() *settings.Get               { return e.OpenGetSettingsFn() }

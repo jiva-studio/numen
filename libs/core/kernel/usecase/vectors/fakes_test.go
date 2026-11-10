@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
 )
 
@@ -88,8 +87,8 @@ func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries
 }
 
 func newExtract(
-	readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries,
+	readers vaultport.VaultReaders, index *indexfake.Store,
 ) filetext.Index {
-	extract := filetext.NewIndex(readers, sources, queries, bookTexts{readers: readers})
+	extract := filetext.NewIndex(readers, index, index, index, index, bookTexts{readers: readers})
 	return extract
 }

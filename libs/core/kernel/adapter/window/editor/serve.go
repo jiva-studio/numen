@@ -161,14 +161,11 @@ func (o *Installation) Close() error {
 	return errors.Join(playingErr, o.stopEmbedder(), o.made.CloseIndex())
 }
 
-// Problems returns the window's index cache as a port; Passages and
-// SourcesKnown do the same. Other components working the same vault in this
-// process, including agent tools, read the same index.
+// Problems returns the window's index cache as a port; Passages does the same.
+// Other components working the same vault in this process, including agent
+// tools, read the same index.
 func (o *Installation) Problems() problemport.ProblemQueries { return o.made.GetProblemQueries() }
 func (o *Installation) Passages() sourceport.PassageQueries  { return o.made.GetPassageQueries() }
-func (o *Installation) SourcesKnown() sourceport.SourceQueries {
-	return o.made.GetSourceQueries()
-}
 
 // GetCurrentVault is the vault the window has open.
 func (o *Installation) GetCurrentVault() domain.Vault { return o.State.GetCurrentVault() }

@@ -18,6 +18,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/source"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
 )
 
 // Store is the index, in memory, answering every question the way the index
@@ -388,3 +389,10 @@ func (s *Store) GetSmallChunks(vaultID domain.VaultID) []Chunk {
 	}
 	return out
 }
+
+var (
+	_ sourceport.SourcesUnder  = (*Store)(nil)
+	_ sourceport.RemovalLookup = (*Store)(nil)
+	_ sourceport.SourceKnown   = (*Store)(nil)
+	_ sourceport.SourceBacklog = (*Store)(nil)
+)

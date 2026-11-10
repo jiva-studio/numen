@@ -12,7 +12,7 @@ import (
 
 // FindRemovedSources is the sources other than notes the index holds at and
 // under the paths, with the content hash each was read with.
-func FindRemovedSources(ctx context.Context, queries sourceport.SourceQueries, vaultID domain.VaultID, paths []string) ([]source.Text, error) {
+func FindRemovedSources(ctx context.Context, queries sourceport.RemovalLookup, vaultID domain.VaultID, paths []string) ([]source.Text, error) {
 	return vaultreading.FindRemovedSources(ctx, queries, vaultID, paths)
 }
 

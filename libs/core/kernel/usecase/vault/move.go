@@ -27,7 +27,7 @@ type NoteMover interface {
 type Move struct {
 	movers  vaultport.FileMovers
 	links   noteport.LinkQueries
-	queries sourceport.SourceQueries
+	queries sourceport.SourcesUnder
 	sources sourceport.SourceRepository
 	notes   NoteMover
 }
@@ -39,7 +39,7 @@ type Move struct {
 func NewMove(
 	movers vaultport.FileMovers,
 	links noteport.LinkQueries,
-	queries sourceport.SourceQueries,
+	queries sourceport.SourcesUnder,
 	sources sourceport.SourceRepository,
 	notes NoteMover,
 ) Move {
