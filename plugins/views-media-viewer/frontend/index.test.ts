@@ -75,7 +75,8 @@ describe('media-viewer plugin', () => {
         return { dispose: () => undefined }
       }),
     }
-    activate(Object.assign(context, { tasks }))
+    Object.assign(context.work, { tasks })
+    activate(context)
     const changes: boolean[] = []
 
     const stop = recordings.watchWork('talks/a.mp3', (isWorking) => changes.push(isWorking))

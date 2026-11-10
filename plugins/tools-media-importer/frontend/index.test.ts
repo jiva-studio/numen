@@ -40,7 +40,7 @@ describe('addresses a drop could not make notes for', () => {
     const errors: string[] = []
     const ctx = createMockPluginContext({
       pluginId: 'md.numen.tools.media.importer',
-      workspace: { showError: (text: string) => errors.push(text) } as never,
+      workspace: { messages: { showError: (text: string) => errors.push(text) } } as never,
     })
     activate(ctx, async () => ({ ok: true, value: { paths: ['links/a.md'], failed } }))
     const paths = await ctx.getRegisteredDropHandlers()[0]?.drop('links', {
