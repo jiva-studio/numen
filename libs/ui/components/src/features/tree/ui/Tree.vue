@@ -2,7 +2,7 @@
 import { computed, useTemplateRef } from 'vue'
 import { flatten, getMarkOf, type RowId } from '../lib/row'
 import { useRowDrag } from '../model/drag'
-import { createTreeGestures } from '../model/gestures'
+import { createTreeGestures, createTreeRenaming } from '../model/gestures'
 import { useTreeLayout } from '../model/layout'
 import { useDrawnRows } from '../model/rows'
 import { useRowSelection } from '../model/selection'
@@ -81,7 +81,6 @@ const { into, before, draggedIds, label, at: dropTarget } = drag
 const gestures = createTreeGestures({
   getShownRows: () => visibleRows.value,
   getSelected: () => props.selected,
-  renamingPath,
   rows,
   selection,
   drag,
@@ -92,10 +91,16 @@ const gestures = createTreeGestures({
   },
   emit,
 })
-const { onContextMenu, onRowContextMenu } = gestures.menu
-const { onRowFocus, onRowPointerDown, onRowClick, onRowDoubleClick } = gestures.row
-const { onRename, onAbandon, onFieldBlur } = gestures.rename
-const { onKeyDown } = gestures
+const {
+  onContextMenu,
+  onRowContextMenu,
+  onRowFocus,
+  onRowPointerDown,
+  onRowClick,
+  onRowDoubleClick,
+  onKeyDown,
+} = gestures
+const { onRename, onAbandon, onFieldBlur } = createTreeRenaming(renamingPath, rows, emit)
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowHeight(): number {

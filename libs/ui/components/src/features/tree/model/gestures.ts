@@ -24,7 +24,6 @@ export interface TreeGesturesEmit {
 export interface TreeGesturesOptions {
   readonly getShownRows: () => readonly ShownRow[]
   readonly getSelected: () => readonly RowId[]
-  readonly renamingPath: Ref<RowId | null>
   readonly rows: DrawnRowsState
   readonly selection: RowSelectionState
   readonly drag: RowDragState
@@ -34,21 +33,12 @@ export interface TreeGesturesOptions {
 
 /** Event handlers for tree pointer and keyboard gestures. */
 export interface TreeGesturesState {
-  readonly menu: {
-    readonly onContextMenu: (event: MouseEvent) => void
-    readonly onRowContextMenu: (row: ShownRow, event: MouseEvent) => void
-  }
-  readonly row: {
-    readonly onRowFocus: (row: RowId) => void
-    readonly onRowPointerDown: (row: RowId, event: PointerEvent) => void
-    readonly onRowClick: (row: ShownRow) => void
-    readonly onRowDoubleClick: (row: ShownRow) => void
-  }
-  readonly rename: {
-    readonly onRename: (row: RowId, name: string) => void
-    readonly onAbandon: (row: RowId) => void
-    readonly onFieldBlur: () => void
-  }
+  readonly onContextMenu: (event: MouseEvent) => void
+  readonly onRowContextMenu: (row: ShownRow, event: MouseEvent) => void
+  readonly onRowFocus: (row: RowId) => void
+  readonly onRowPointerDown: (row: RowId, event: PointerEvent) => void
+  readonly onRowClick: (row: ShownRow) => void
+  readonly onRowDoubleClick: (row: ShownRow) => void
   readonly onKeyDown: (event: KeyboardEvent) => void
 }
 
@@ -56,7 +46,8 @@ function focusInBackground(rows: DrawnRowsState, row: RowId | null): void {
   runInBackground(rows.focusRow(row), reportFailure)
 }
 
-function createTreeRenaming(
+/** Creates the handlers that end the rename of a row. */
+export function createTreeRenaming(
   renamingPath: Ref<RowId | null>,
   rows: DrawnRowsState,
   emit: TreeGesturesEmit,
@@ -141,7 +132,7 @@ function createTreeKeyboard(options: TreeGesturesOptions, helpers: TreeKeyboardH
 
 /** Creates pointer, keyboard, and rename event handlers for a tree. */
 export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesState {
-  const { getSelected, renamingPath, rows, selection, drag, emit } = options
+  const { getSelected, rows, selection, drag, emit } = options
 
   function toggleRow(row: ShownRow): void {
     if (row.isOpen) emit('close', row.id)
@@ -194,13 +185,15 @@ export function createTreeGestures(options: TreeGesturesOptions): TreeGesturesSt
     activateRow(row)
   }
 
-  const { onRename, onAbandon, onFieldBlur } = createTreeRenaming(renamingPath, rows, emit)
   const { onKeyDown } = createTreeKeyboard(options, { activateRow, requestMenu })
 
   return {
-    menu: { onContextMenu, onRowContextMenu },
-    row: { onRowFocus, onRowPointerDown, onRowClick, onRowDoubleClick },
-    rename: { onRename, onAbandon, onFieldBlur },
+    onContextMenu,
+    onRowContextMenu,
+    onRowFocus,
+    onRowPointerDown,
+    onRowClick,
+    onRowDoubleClick,
     onKeyDown,
   }
 }

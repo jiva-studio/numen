@@ -23,7 +23,7 @@ export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'
 /** What a count counts, and how a notice about it reads. */
 export type { TallyUnit, Severity } from './features/notices'
 
-export { createNotice } from './features/notices'
+export { getTaskNotice } from './features/notices'
 /** One list of notices for a window, given by the parts it hosts. */
 export { createNoticeQueue, type NoticeQueue } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'

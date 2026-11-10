@@ -85,7 +85,7 @@ export function createDeclaredPane(pluginId: string, rawComponent: unknown): Com
 }
 
 /** The kind a plugin declared whole, as the window keeps it. */
-export function createDeclaredTabKind(
+export function getDeclaredTabKind(
   pluginId: string,
   registration: DeclaredTabKindRegistration,
 ): AnyTabKind {

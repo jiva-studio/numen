@@ -48,7 +48,7 @@ export { createPluginHost, createPluginPaneWrapper, type PluginHost } from './ho
 export { createPluginAgent } from './hosting/guards/agentGuard'
 export { requireMountAccess } from './hosting/guards/viewPermissions'
 export { createPluginContext } from './hosting/context'
-export { createCustomTabKind } from './hosting/customTabKind'
+export { getCustomTabKind } from './hosting/customTabKind'
 export type {
   NoteBuffer,
   PluginContextHost,

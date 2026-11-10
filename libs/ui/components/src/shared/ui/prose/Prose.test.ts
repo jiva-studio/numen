@@ -5,22 +5,11 @@
  * and passes its target, so it needs no knowledge of a scheme.
  */
 import { mount } from '@vue/test-utils'
+import MarkdownIt from 'markdown-it'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Prose from './Prose.vue'
-import type * as RenderModule from './render'
 
-const { renderSpy } = vi.hoisted(() => ({ renderSpy: vi.fn() }))
-
-vi.mock('./render', async (importOriginal) => {
-  const original = await importOriginal<typeof RenderModule>()
-  return {
-    ...original,
-    render: (...args: Parameters<typeof original.render>) => {
-      renderSpy(args[0])
-      return original.render(...args)
-    },
-  }
-})
+const parseSpy = vi.spyOn(MarkdownIt.prototype, 'parse')
 
 const prose = (text: string) => mount(Prose, { props: { text } })
 
@@ -121,7 +110,7 @@ describe('prose pressed anywhere else', () => {
 })
 
 describe('prose handed the same addresses again', () => {
-  beforeEach(() => renderSpy.mockClear())
+  beforeEach(() => parseSpy.mockClear())
 
   it('is not drawn again while the unresolved addresses have the same members', async () => {
     const wrapper = mount(Prose, {
@@ -130,11 +119,11 @@ describe('prose handed the same addresses again', () => {
         unresolved: ['https://example.com/nowhere'],
       },
     })
-    renderSpy.mockClear()
+    parseSpy.mockClear()
 
     await wrapper.setProps({ unresolved: ['https://example.com/nowhere'] })
 
-    expect(renderSpy).not.toHaveBeenCalled()
+    expect(parseSpy).not.toHaveBeenCalled()
   })
 
   it('is drawn again when the unresolved addresses change', async () => {
@@ -142,21 +131,21 @@ describe('prose handed the same addresses again', () => {
       props: { text: 'See [nowhere](https://example.com/nowhere).', unresolved: [] },
     })
     expect(wrapper.find('a').attributes('data-reaches')).toBeUndefined()
-    renderSpy.mockClear()
+    parseSpy.mockClear()
 
     await wrapper.setProps({ unresolved: ['https://example.com/nowhere'] })
 
-    expect(renderSpy).toHaveBeenCalledTimes(1)
+    expect(parseSpy).toHaveBeenCalledTimes(1)
     expect(wrapper.find('a').attributes('data-reaches')).toBeDefined()
   })
 
   it('is not drawn again while the links are the same', async () => {
     const link = { raw: '[[A]]', href: 'x://A', text: 'A' }
     const wrapper = mount(Prose, { props: { text: 'See [[A]].', links: [link] } })
-    renderSpy.mockClear()
+    parseSpy.mockClear()
 
     await wrapper.setProps({ links: [{ ...link }] })
 
-    expect(renderSpy).not.toHaveBeenCalled()
+    expect(parseSpy).not.toHaveBeenCalled()
   })
 })

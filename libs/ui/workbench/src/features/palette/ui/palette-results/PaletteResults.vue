@@ -42,15 +42,15 @@ defineSlots<{
   icon(props: { id: string }): unknown
 }>()
 
+defineExpose({ reveal })
+
 /** The rendered groups, each with its rows. */
 const groupRefs = useTemplateRef<PaletteGroupHandle[]>('group')
 
-const reveal = async (item: string): Promise<void> => {
+async function reveal(item: string): Promise<void> {
   await nextTick()
   for (const group of groupRefs.value ?? []) group.reveal(item)
 }
-
-defineExpose({ reveal })
 </script>
 
 <template>

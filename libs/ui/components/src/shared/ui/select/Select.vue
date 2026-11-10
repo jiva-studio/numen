@@ -30,6 +30,14 @@ const props = withDefaults(defineProps<SelectProps>(), {
 /** Which choice is in force, by the identifier the caller gave it. */
 const model = defineModel<string>({ default: '' })
 
+defineExpose({
+  /** The element itself, for a caller that has to reach past these props. */
+  get element() {
+    return element.value
+  },
+  focus: (how?: FocusOptions) => element.value?.focus(how),
+})
+
 /* ---------------------------------- State --------------------------------- */
 const items = computed<readonly MenuItem[]>(() =>
   props.choices.map((one) => ({
@@ -65,12 +73,6 @@ const element = computed(() => trigger.value?.element ?? null)
  * nothing while they are not drawn at all.
  */
 const menuAnchor = ref<{ at: Position; wide: number } | null>(null)
-
-defineExpose({
-  /** The element itself, for a caller that has to reach past these props. */
-  element,
-  focus: (how?: FocusOptions) => element.value?.focus(how),
-})
 
 /* -------------------------------- Handlers -------------------------------- */
 const onOpenChoices = () => {

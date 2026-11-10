@@ -9,10 +9,14 @@ defineProps<{
   isCurrent: boolean
 }>()
 
-/** The row itself, which the panel brings into sight. */
-const element = useTemplateRef<HTMLElement>('element')
+defineExpose({
+  /** The row itself, which the panel brings into sight. */
+  get element() {
+    return element.value
+  },
+})
 
-defineExpose({ element })
+const element = useTemplateRef<HTMLElement>('element')
 </script>
 
 <template>

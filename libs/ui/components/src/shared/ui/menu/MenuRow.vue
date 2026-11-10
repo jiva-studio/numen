@@ -33,13 +33,15 @@ defineSlots<{
   default(): unknown
 }>()
 
+defineExpose({ focus, getElement: () => row.value })
+
 /* --------------------------------- State ---------------------------------- */
 const row = useTemplateRef<HTMLElement>('row')
 
 /* -------------------------------- Helpers --------------------------------- */
-const focus = (options?: FocusOptions): void => row.value?.focus(options)
-
-defineExpose({ focus, getElement: () => row.value })
+function focus(options?: FocusOptions): void {
+  row.value?.focus(options)
+}
 </script>
 
 <template>

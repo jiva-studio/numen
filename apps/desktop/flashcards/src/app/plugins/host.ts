@@ -247,6 +247,7 @@ export function createShellHost(
 
   const front = createFrontView(views)
   const { tab, openTab, closeTab } = createWindowTab(() => front.value)
+  const pluginTabs = { close: (id?: string) => closeTab(id) }
 
   const addView = (view: PluginView): Disposable => addPluginView(views, view)
 
@@ -269,7 +270,7 @@ export function createShellHost(
       register: createShellRegistrations(scope, { addView, declaredViews, slotViews }),
       settings: UNUSED_SETTINGS,
       events: UNUSED_EVENTS,
-      tabs: { close: (id) => closeTab(id) },
+      tabs: pluginTabs,
       vault: { ...(services.vaults ? { vaults: services.vaults } : {}) },
       ui: {
         slots: windowSlots.slots,

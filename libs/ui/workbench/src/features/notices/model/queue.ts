@@ -3,7 +3,7 @@
  * the part that gave it, as one list for the corner to draw.
  */
 import { computed, shallowRef, type ComputedRef } from 'vue'
-import { createNotice, type Notice, type Task } from '../lib/notice'
+import { getTaskNotice, type Notice, type Task } from '../lib/notice'
 import type { Severity } from '../lib/tally'
 
 /** The notices of every source, and what changes them. */
@@ -55,7 +55,7 @@ export function createNoticeQueue(): NoticeQueue {
     else
       next.set(
         source,
-        tasks.map((task) => createNotice({ ...task, id: `${source}:${task.id}` })),
+        tasks.map((task) => getTaskNotice({ ...task, id: `${source}:${task.id}` })),
       )
     work.value = next
   }

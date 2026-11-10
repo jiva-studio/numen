@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import { flatten, type Row } from '../lib/row'
 import type { RowDragState } from './drag'
-import { createTreeGestures, type TreeGesturesEmit } from './gestures'
+import { createTreeGestures, createTreeRenaming, type TreeGesturesEmit } from './gestures'
 import { useDrawnRows } from './rows'
 import { useRowSelection } from './selection'
 import type { Position } from '@/shared/lib/math/geometry'
@@ -39,14 +39,14 @@ const create = (
   const gestures = createTreeGestures({
     getShownRows: () => visibleRows,
     getSelected: () => [],
-    renamingPath,
     rows,
     selection,
     drag,
     getMenuAt,
     emit,
   })
-  return { gestures, notified: notifiedCalls, rows, selection }
+  const renaming = createTreeRenaming(renamingPath, rows, emit)
+  return { gestures, renaming, notified: notifiedCalls, rows, selection }
 }
 
 describe('ContextMenu key when getMenuAt returns null', () => {
@@ -96,20 +96,20 @@ describe('menu keys when getMenuAt returns a position', () => {
 describe('renaming handlers', () => {
   it('clears renamingPath on blur, rename, or abandon and restores row focus', async () => {
     const renamingPath = ref<string | null>('pages')
-    const { gestures, notified, rows } = create(renamingPath)
+    const { gestures, renaming, notified, rows } = create(renamingPath)
     const focusSpy = vi.spyOn(rows, 'focusRow')
 
-    gestures.rename.onFieldBlur()
+    renaming.onFieldBlur()
     expect(renamingPath.value).toBeNull()
 
     renamingPath.value = 'pages'
-    gestures.rename.onRename('pages', 'Renamed')
+    renaming.onRename('pages', 'Renamed')
     expect(renamingPath.value).toBeNull()
     expect(notified).toStrictEqual([['rename', 'pages', 'Renamed']])
     expect(focusSpy).toHaveBeenCalledWith('pages')
 
     renamingPath.value = 'pages'
-    gestures.rename.onAbandon('pages')
+    renaming.onAbandon('pages')
     expect(renamingPath.value).toBeNull()
     expect(focusSpy).toHaveBeenCalledTimes(2)
 

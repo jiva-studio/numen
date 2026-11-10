@@ -17,12 +17,17 @@ defineProps<PaletteFieldProps>()
 
 const searchQuery = defineModel<string>({ required: true })
 
+defineExpose({ focus, select })
+
 const field = useTemplateRef<HTMLInputElement>('field')
 
-const focus = (): void => field.value?.focus()
-const select = (): void => field.value?.select()
+function focus(): void {
+  field.value?.focus()
+}
 
-defineExpose({ focus, select })
+function select(): void {
+  field.value?.select()
+}
 </script>
 
 <template>

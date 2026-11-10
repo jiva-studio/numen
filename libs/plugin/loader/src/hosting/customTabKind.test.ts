@@ -3,7 +3,7 @@ import { defineComponent, effectScope, h, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { clearPluginStyles, loadPluginStyle, registerPluginStyle } from '../styles'
 import { createBufferedNoteState } from './customTabBuffer'
-import { createCustomTabKind, createPluginPaneWrapper, createReaderTabKind } from './customTabKind'
+import { getCustomTabKind, createPluginPaneWrapper, getReaderTabKind } from './customTabKind'
 import {
   adoptHostStyles,
   attachPluginRoot,
@@ -78,9 +78,9 @@ describe('createPluginPaneWrapper', () => {
   })
 })
 
-describe('createReaderTabKind', () => {
+describe('getReaderTabKind', () => {
   it('computes dynamic title and book target for epub reader', () => {
-    const readerKind = createReaderTabKind('md.numen.readers.epub', {
+    const readerKind = getReaderTabKind('md.numen.readers.epub', {
       id: 'reader-epub',
       component: null,
       title: 'EPUB Reader',
@@ -122,9 +122,9 @@ describe('createReaderTabKind', () => {
   })
 })
 
-describe('createCustomTabKind', () => {
+describe('getCustomTabKind', () => {
   it('computes note title and note target', () => {
-    const customKind = createCustomTabKind('md.numen.notes', {
+    const customKind = getCustomTabKind('md.numen.notes', {
       kind: 'note',
       component: null,
       title: 'Markdown Note',
@@ -167,7 +167,7 @@ describe('createCustomTabKind', () => {
 
   it('populates note body from readNote dependency', async () => {
     let savedBody = ''
-    const customKind = createCustomTabKind(
+    const customKind = getCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -203,7 +203,7 @@ describe('createCustomTabKind', () => {
   })
 })
 
-describe('createCustomTabKind (loading)', () => {
+describe('getCustomTabKind (loading)', () => {
   const registration = { kind: 'note', component: null, title: 'Markdown Note' }
   const createHost = (readNote?: (path: string) => Promise<string | undefined>) => ({
     registerKind: () => vi.fn(),
@@ -212,7 +212,7 @@ describe('createCustomTabKind (loading)', () => {
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
-    createCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
+    getCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
       'notes/test.md',
       'tab',
     ) as { isLoading: { value: boolean } }
@@ -240,7 +240,7 @@ describe('createCustomTabKind (loading)', () => {
   })
 })
 
-describe('createCustomTabKind (failed writes)', () => {
+describe('getCustomTabKind (failed writes)', () => {
   const host = (writeNote: (path: string, body: string) => Promise<void>) => ({
     registerKind: () => vi.fn(),
     registerExtensionReader: () => vi.fn(),
@@ -248,7 +248,7 @@ describe('createCustomTabKind (failed writes)', () => {
     writeNote,
   })
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
-    createCustomTabKind(
+    getCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: null, title: 'Markdown Note' },
       host(writeNote),
@@ -304,9 +304,9 @@ describe('createCustomTabKind (failed writes)', () => {
   })
 })
 
-describe('createReaderTabKind (place)', () => {
+describe('getReaderTabKind (place)', () => {
   it('opens at the place saved before a restart and saves the place the reader shows', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
 
     const state = kind.open('a.bin', 'tab', { page: 4 }) as {
       selector: unknown
@@ -320,7 +320,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('opens a new tab at no place and saves none', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
 
     const state = kind.open('a.bin', 'tab')
 
@@ -329,7 +329,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('reports to the open tabs the last place the reader reports', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
     const state = kind.open('library/Wading Birds.pdf', 'tab') as {
       reportPlace: (place: unknown) => void
     }
@@ -344,7 +344,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('leaves the place out of the open tab while the reader has reported none', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
 
     const state = kind.open('library/Wading Birds.pdf', 'tab', { page: 4 })
 
@@ -352,7 +352,7 @@ describe('createReaderTabKind (place)', () => {
   })
 
   it('keeps the place it saves for a restart apart from the place it reports', () => {
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
     const state = kind.open('talks/Heron Talk.mp3', 'tab') as {
       savePlace: (place: unknown) => void
       reportPlace: (place: unknown) => void
@@ -371,14 +371,14 @@ describe('createReaderTabKind (place)', () => {
 
   it('carries the icon the reader registers', () => {
     const icon = { name: 'Icon' }
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null, icon })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: null, icon })
 
     expect(kind.icon).toBe(icon)
   })
 
   it('omits title from top-level VNode props so it never leaks as a native HTML tooltip', () => {
     const FakeReader = { name: 'FakeReader', render: () => null }
-    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: FakeReader })
+    const kind = getReaderTabKind('viewer-plugin', { id: 'viewer', component: FakeReader })
     const state = kind.open('audio/730707BG.LON.mp3', 'tab')
     const nodes = renderPaneContent({
       pluginId: 'viewer-plugin',
@@ -408,12 +408,12 @@ describe('createReaderTabKind (place)', () => {
   })
 })
 
-describe('createCustomTabKind (actions)', () => {
+describe('getCustomTabKind (actions)', () => {
   it('binds extensible action handlers from registration and host deps', () => {
     const customAction = vi.fn()
     const hostAction = vi.fn()
 
-    const kind = createCustomTabKind(
+    const kind = getCustomTabKind(
       'sample-plugin',
       {
         kind: 'sample',
@@ -446,7 +446,7 @@ describe('createCustomTabKind (actions)', () => {
   it('prevents action names from overwriting tab-state fields', () => {
     const collidingAction = vi.fn()
 
-    const kind = createCustomTabKind(
+    const kind = getCustomTabKind(
       'sample-plugin',
       {
         kind: 'sample',
@@ -475,7 +475,7 @@ describe('createCustomTabKind (actions)', () => {
   it('navigates note tab in place and syncs path when shown', async () => {
     const syncPath = vi.fn(() => true)
     const writeCalls: Array<{ path: string; body: string }> = []
-    const kind = createCustomTabKind(
+    const kind = getCustomTabKind(
       'md.numen.notes',
       {
         kind: 'note',
@@ -528,7 +528,7 @@ describe('createCustomTabKind (actions)', () => {
     const focusTab = vi.fn()
     const handleKeyPress = vi.fn((e: KeyboardEvent) => e.key === 'Enter')
 
-    const prefixedReader = createReaderTabKind('p', {
+    const prefixedReader = getReaderTabKind('p', {
       id: 'reader:pdf',
       component: null,
     })
@@ -540,7 +540,7 @@ describe('createCustomTabKind (actions)', () => {
     expect(prefixedReader.identity!('a.pdf')).toBe('a.pdf')
     expect(prefixedReader.getState!(undefined)).toBeUndefined()
 
-    const middleReader = createReaderTabKind('p', {
+    const middleReader = getReaderTabKind('p', {
       id: 'my-reader:2',
       component: null,
       title: 'Fallback Reader',
@@ -572,7 +572,7 @@ describe('createCustomTabKind (actions)', () => {
     const syncPath = vi.fn()
     let resolveFirstRead: ((val: string) => void) | undefined
 
-    const kindWithDispatch = createCustomTabKind(
+    const kindWithDispatch = getCustomTabKind(
       'p',
       {
         kind: 'custom',
@@ -605,7 +605,7 @@ describe('createCustomTabKind (actions)', () => {
 
     // Save while loading & unedited is ignored
     const writeNote = vi.fn(async () => undefined)
-    const kindSaveGuard = createCustomTabKind(
+    const kindSaveGuard = getCustomTabKind(
       'p',
       { kind: 'note', component: null, actions: { dispatch: regDoWork } },
       {
@@ -675,9 +675,9 @@ describe('createCustomTabKind (actions)', () => {
     expect(m2).toHaveBeenCalledTimes(1)
     expect(syncPath).not.toHaveBeenCalled()
 
-    const kindNoDeps = createCustomTabKind('p', { kind: 'custom', component: null })
+    const kindNoDeps = getCustomTabKind('p', { kind: 'custom', component: null })
     expect(() => kindNoDeps.onShow!({ path: 'notes/a.md' }, 't1')).not.toThrow()
-    const kindUndefWorkspace = createCustomTabKind(
+    const kindUndefWorkspace = getCustomTabKind(
       'p',
       { kind: 'custom', component: null },
       {
@@ -750,7 +750,7 @@ describe('createBufferedNoteState', () => {
       addr === 'missing' ? '' : `notes/${addr}.md`,
     )
 
-    const customKind = createCustomTabKind(
+    const customKind = getCustomTabKind(
       'md.numen.notes',
       { kind: 'note', component: null, title: 'Note' },
       {
@@ -861,7 +861,7 @@ describe('createBufferedNoteState', () => {
 
     // Non-note custom tab kind does not open note buffer even when getNoteBuffer is provided
     vi.mocked(buffer.open).mockClear()
-    const nonNoteWithBuffer = createCustomTabKind(
+    const nonNoteWithBuffer = getCustomTabKind(
       'p',
       { kind: 'custom-other', component: null },
       {

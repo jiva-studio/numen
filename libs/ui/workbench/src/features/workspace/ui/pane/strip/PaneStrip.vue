@@ -28,6 +28,8 @@ defineSlots<{
   mark(props: { id: TabId; mark: string }): unknown
 }>()
 
+defineExpose({ reach })
+
 /* ---------------------------------- State --------------------------------- */
 const workspace = inject(WORKSPACE_CONTEXT)
 
@@ -72,8 +74,6 @@ const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 function reach(tab: TabId): void {
   drawnTabs.get(tab)?.focus()
 }
-
-defineExpose({ reach })
 </script>
 
 <template>

@@ -17,13 +17,15 @@ const props = defineProps<{
   class?: HTMLAttributes['class']
 }>()
 
-/* ---------------------------------- State --------------------------------- */
-const element = useTemplateRef<HTMLButtonElement>('element')
-
 defineExpose({
   /** The button itself. */
-  element,
+  get element() {
+    return element.value
+  },
 })
+
+/* ---------------------------------- State --------------------------------- */
+const element = useTemplateRef<HTMLButtonElement>('element')
 </script>
 
 <template>
