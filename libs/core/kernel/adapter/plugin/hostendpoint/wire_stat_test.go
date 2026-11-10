@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// writeFileStat and readFileStat are the wire form of a file stat as the tests state it.
 func writeFileStat(f domain.FileStat) *v1.HostFileStat {
 	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }

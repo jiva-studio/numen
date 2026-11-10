@@ -30,11 +30,10 @@ const (
 	StateDeactivating
 )
 
-// Supervisor monitors and controls the execution lifecycle of a single plugin process.
+// Supervisor monitors and controls the execution lifecycle of a single plugin process. Failure keeps why
+// the last start failed, and Permissions what the manifest of the plugin lets it do.
 type Supervisor struct {
-	// Failure is why the last start of the plugin failed.
-	Failure StartFailure
-	// Permissions is what the manifest of the plugin lets it do.
+	Failure     StartFailure
 	Permissions Permissions
 
 	mu             sync.Mutex

@@ -335,10 +335,9 @@ func TestAddLinksCancelledAfterTheFirstNoteReturnsRestAsNotAttempted(t *testing.
 	}
 }
 
-// serveVaultCalls serves the vault calls of the callers, with ctx as the context every call is
-// served under, so that a test ends the call from inside the vault the way a stopped plugin does.
 func serveVaultCalls(t *testing.T, ctx context.Context, callers Callers) numenv1connect.HostVaultServiceClient {
 	t.Helper()
+	// Every call is served under ctx, so that a test ends the call from inside the vault the way a stopped plugin does.
 	mux := http.NewServeMux()
 	mux.Handle(vaultapi.NewHandler(&Endpoint{callers: callers}, vaultSource{callers: callers}))
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

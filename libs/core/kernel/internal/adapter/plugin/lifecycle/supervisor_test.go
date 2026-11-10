@@ -52,7 +52,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 
 	threshold := 50 * time.Millisecond
 	if sup.BeginDeactivation(threshold, now) {
-		t.Fatal("a plugin that was released just now began deactivating")
+		t.Fatal("BeginDeactivation took a plugin that was just released")
 	}
 
 	sup.Acquire(now.Add(70 * time.Millisecond))
@@ -60,7 +60,7 @@ func TestSupervisorLifecycleAndIdleTracking(t *testing.T) {
 		t.Fatalf("expected StateActive after re-acquire, got %v", sup.GetState())
 	}
 	if sup.BeginDeactivation(threshold, now.Add(200*time.Millisecond)) {
-		t.Fatal("a plugin held by a consumer began deactivating")
+		t.Fatal("BeginDeactivation took a plugin that has a consumer")
 	}
 
 	testsupport.Kill(t, cmd)

@@ -5,8 +5,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 )
 
-// lendEndpoint wires the endpoint the way the container does: the services it lends, the callers it
-// asks, and the server the host opens when a plugin launches. It returns the services and the callers.
 func lendEndpoint(host *Host, address string) (*hostendpoint.Services, hostendpoint.Callers) {
 	services := hostendpoint.NewServices()
 	callers := hostendpoint.Callers{

@@ -296,8 +296,6 @@ func lendPluginHost(host *plugin.Host) *PluginHost {
 	}
 }
 
-// lendHostEndpoint makes the endpoint the plugins call the host through, and gives it to the host. The
-// returned services are what the endpoint lends.
 func lendHostEndpoint(host *plugin.Host) *hostendpoint.Services {
 	services := hostendpoint.NewServices()
 	host.Services.SetHostEndpoint(hostendpoint.NewServer(hostendpoint.Address, hostendpoint.Callers{
