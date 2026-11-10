@@ -1,13 +1,13 @@
-package service
+package diff
 
 import (
 	"strings"
 	"testing"
 )
 
-func TestCreateUnifiedDiffIdentical(t *testing.T) {
+func TestCreateUnifiedIdentical(t *testing.T) {
 	content := "line 1\nline 2\nline 3"
-	diffText, additions, deletions := CreateUnifiedDiff("notes/test.md", content, content)
+	diffText, additions, deletions := CreateUnified("notes/test.md", content, content)
 	if diffText != "" {
 		t.Errorf("diffText = %q, want empty", diffText)
 	}
@@ -16,9 +16,9 @@ func TestCreateUnifiedDiffIdentical(t *testing.T) {
 	}
 }
 
-func TestCreateUnifiedDiffNewFile(t *testing.T) {
+func TestCreateUnifiedNewFile(t *testing.T) {
 	proposed := "line 1\nline 2\nline 3"
-	diffText, additions, deletions := CreateUnifiedDiff("notes/test.md", "", proposed)
+	diffText, additions, deletions := CreateUnified("notes/test.md", "", proposed)
 	if additions != 3 {
 		t.Errorf("additions = %d, want 3", additions)
 	}
@@ -33,9 +33,9 @@ func TestCreateUnifiedDiffNewFile(t *testing.T) {
 	}
 }
 
-func TestCreateUnifiedDiffDeletedFile(t *testing.T) {
+func TestCreateUnifiedDeletedFile(t *testing.T) {
 	original := "line 1\nline 2"
-	diffText, additions, deletions := CreateUnifiedDiff("notes/test.md", original, "")
+	diffText, additions, deletions := CreateUnified("notes/test.md", original, "")
 	if additions != 0 {
 		t.Errorf("additions = %d, want 0", additions)
 	}
@@ -47,10 +47,10 @@ func TestCreateUnifiedDiffDeletedFile(t *testing.T) {
 	}
 }
 
-func TestCreateUnifiedDiffModifications(t *testing.T) {
+func TestCreateUnifiedModifications(t *testing.T) {
 	original := "apple\nbanana\ncherry\ndate"
 	proposed := "apple\nblueberry\ncherry\nfig\ngrape"
-	diffText, additions, deletions := CreateUnifiedDiff("notes/fruits.md", original, proposed)
+	diffText, additions, deletions := CreateUnified("notes/fruits.md", original, proposed)
 
 	if additions != 3 { // blueberry, fig, grape
 		t.Errorf("additions = %d, want 3", additions)
@@ -79,32 +79,32 @@ func TestCreateUnifiedDiffModifications(t *testing.T) {
 	}
 }
 
-func TestCreateUnifiedDiffNormalizedEquivalent(t *testing.T) {
-	diffText, additions, deletions := CreateUnifiedDiff("notes/test.md", "line 1\r\nline 2\n", "line 1\nline 2")
+func TestCreateUnifiedNormalizedEquivalent(t *testing.T) {
+	diffText, additions, deletions := CreateUnified("notes/test.md", "line 1\r\nline 2\n", "line 1\nline 2")
 	if diffText != "" || additions != 0 || deletions != 0 {
 		t.Errorf("got (%q, %d, %d), want (\"\", 0, 0)", diffText, additions, deletions)
 	}
 }
 
-func TestCreateUnifiedDiffInsertAtStartAndDeleteAtStart(t *testing.T) {
-	diffInsert, addIns, delIns := CreateUnifiedDiff("notes/a.md", "a\nb\nc", "x\na\nb\nc")
+func TestCreateUnifiedInsertAtStartAndDeleteAtStart(t *testing.T) {
+	diffInsert, addIns, delIns := CreateUnified("notes/a.md", "a\nb\nc", "x\na\nb\nc")
 	wantInsert := "--- a/notes/a.md\n+++ b/notes/a.md\n@@ -1,3 +1,4 @@\n+x\n a\n b\n c\n"
 	if diffInsert != wantInsert || addIns != 1 || delIns != 0 {
 		t.Errorf("insert at start = (%q, +%d, -%d), want (%q, +1, -0)", diffInsert, addIns, delIns, wantInsert)
 	}
 
-	diffDelete, addDel, delDel := CreateUnifiedDiff("notes/a.md", "x\na\nb\nc", "a\nb\nc")
+	diffDelete, addDel, delDel := CreateUnified("notes/a.md", "x\na\nb\nc", "a\nb\nc")
 	wantDelete := "--- a/notes/a.md\n+++ b/notes/a.md\n@@ -1,4 +1,3 @@\n-x\n a\n b\n c\n"
 	if diffDelete != wantDelete || addDel != 0 || delDel != 1 {
 		t.Errorf("delete at start = (%q, +%d, -%d), want (%q, +0, -1)", diffDelete, addDel, delDel, wantDelete)
 	}
 }
 
-func TestCreateUnifiedDiffContextAndMultiHunkBoundaries(t *testing.T) {
+func TestCreateUnifiedContextAndMultiHunkBoundaries(t *testing.T) {
 	// Single change in the middle of 11 lines: 3 leading context lines and 3 trailing context lines.
 	origSingle := "1\n2\n3\n4\n5\nold\n7\n8\n9\n10\n11"
 	propSingle := "1\n2\n3\n4\n5\nnew\n7\n8\n9\n10\n11"
-	diffSingle, addS, delS := CreateUnifiedDiff("f.md", origSingle, propSingle)
+	diffSingle, addS, delS := CreateUnified("f.md", origSingle, propSingle)
 	wantSingle := "--- a/f.md\n+++ b/f.md\n@@ -3,7 +3,7 @@\n 3\n 4\n 5\n-old\n+new\n 7\n 8\n 9\n"
 	if diffSingle != wantSingle || addS != 1 || delS != 1 {
 		t.Errorf("single hunk =\n%s\nwant:\n%s", diffSingle, wantSingle)
@@ -113,7 +113,7 @@ func TestCreateUnifiedDiffContextAndMultiHunkBoundaries(t *testing.T) {
 	// 4 equal lines between two changes: merges into a single hunk.
 	orig4 := "old1\n1\n2\n3\n4\nold2"
 	prop4 := "new1\n1\n2\n3\n4\nnew2"
-	diff4, _, _ := CreateUnifiedDiff("f.md", orig4, prop4)
+	diff4, _, _ := CreateUnified("f.md", orig4, prop4)
 	want4 := "--- a/f.md\n+++ b/f.md\n@@ -1,6 +1,6 @@\n-old1\n+new1\n 1\n 2\n 3\n 4\n-old2\n+new2\n"
 	if diff4 != want4 {
 		t.Errorf("4 equal lines =\n%s\nwant:\n%s", diff4, want4)
@@ -122,7 +122,7 @@ func TestCreateUnifiedDiffContextAndMultiHunkBoundaries(t *testing.T) {
 	// 7 equal lines between two changes: still merges into a single hunk under lookahead.
 	orig7 := "old1\n1\n2\n3\n4\n5\n6\n7\nold2"
 	prop7 := "new1\n1\n2\n3\n4\n5\n6\n7\nnew2"
-	diff7, _, _ := CreateUnifiedDiff("f.md", orig7, prop7)
+	diff7, _, _ := CreateUnified("f.md", orig7, prop7)
 	want7 := "--- a/f.md\n+++ b/f.md\n@@ -1,9 +1,9 @@\n-old1\n+new1\n 1\n 2\n 3\n 4\n 5\n 6\n 7\n-old2\n+new2\n"
 	if diff7 != want7 {
 		t.Errorf("7 equal lines =\n%s\nwant:\n%s", diff7, want7)
@@ -131,7 +131,7 @@ func TestCreateUnifiedDiffContextAndMultiHunkBoundaries(t *testing.T) {
 	// 8 equal lines between two changes: splits into two hunks with 3 trailing and 3 leading context lines.
 	orig8 := "old1\n1\n2\n3\n4\n5\n6\n7\n8\nold2\nt1\nt2\nt3\nt4"
 	prop8 := "new1\n1\n2\n3\n4\n5\n6\n7\n8\nnew2\nt1\nt2\nt3\nt4"
-	diff8, add8, del8 := CreateUnifiedDiff("f.md", orig8, prop8)
+	diff8, add8, del8 := CreateUnified("f.md", orig8, prop8)
 	want8 := "--- a/f.md\n+++ b/f.md\n" +
 		"@@ -1,4 +1,4 @@\n-old1\n+new1\n 1\n 2\n 3\n" +
 		"@@ -7,7 +7,7 @@\n 6\n 7\n 8\n-old2\n+new2\n t1\n t2\n t3\n"
@@ -174,7 +174,7 @@ func TestBuildLcsTableAndHunkCollectorInvariants(t *testing.T) {
 	}
 }
 
-func TestCountDiffChanges(t *testing.T) {
+func TestCountChanges(t *testing.T) {
 	diff := `--- a/file.md
 +++ b/file.md
 @@ -1,3 +1,3 @@
@@ -183,7 +183,7 @@ func TestCountDiffChanges(t *testing.T) {
 +new line
 +another line
  line 3`
-	additions, deletions := CountDiffChanges(diff)
+	additions, deletions := CountChanges(diff)
 	if additions != 2 {
 		t.Errorf("additions = %d, want 2", additions)
 	}
