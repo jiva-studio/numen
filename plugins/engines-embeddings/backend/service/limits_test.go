@@ -9,39 +9,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin/sdk-go/performance"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/limits"
+	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/loading"
 )
-
-func TestTheProfileSetsThreadsBatchAndPriorityOnEveryMachine(t *testing.T) {
-	table := []struct {
-		profile performance.Profile
-		cpus    int
-		want    runLimits
-	}{
-		{performance.Eco, 2, runLimits{threads: 1, batchTexts: 2, nice: 19}},
-		{performance.Eco, 16, runLimits{threads: 1, batchTexts: 2, nice: 19}},
-		{performance.Balanced, 2, runLimits{threads: 1, batchTexts: 4, nice: 10}},
-		{performance.Balanced, 4, runLimits{threads: 1, batchTexts: 4, nice: 10}},
-		{performance.Balanced, 8, runLimits{threads: 2, batchTexts: 4, nice: 10}},
-		{performance.Balanced, 16, runLimits{threads: 4, batchTexts: 4, nice: 10}},
-		{performance.Maximum, 2, runLimits{threads: 1, batchTexts: 8, nice: 0}},
-		{performance.Maximum, 4, runLimits{threads: 2, batchTexts: 8, nice: 0}},
-		{performance.Maximum, 8, runLimits{threads: 4, batchTexts: 8, nice: 0}},
-		{performance.Maximum, 16, runLimits{threads: 8, batchTexts: 8, nice: 0}},
-	}
-	for _, c := range table {
-		if got := getRunLimits(c.profile, c.cpus); got != c.want {
-			t.Errorf("%s on %d cores: %+v, want %+v", c.profile, c.cpus, got, c.want)
-		}
-	}
-}
-
-func TestDefaultProfileUsesAtMostQuarterOfCores(t *testing.T) {
-	for _, cpus := range []int{4, 8, 12, 16, 32} {
-		if got := getRunLimits(performance.Read(nil), cpus).threads; got*4 > cpus {
-			t.Errorf("%d threads on %d cores", got, cpus)
-		}
-	}
-}
 
 // openRecord is what the server opened a model with, and the models it closed.
 type openRecord struct {
@@ -67,7 +37,7 @@ func newRecordedServer(t *testing.T) (*embeddingServer, *openRecord) {
 	t.Helper()
 	srv := newEmbeddingServer()
 	record := &openRecord{}
-	srv.open = func(_ context.Context, _ engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
+	srv.open = func(_ context.Context, _ engine.ModelInfo, local engine.LocalModel) (loading.Embedder, error) {
 		record.mu.Lock()
 		defer record.mu.Unlock()
 		record.opened = append(record.opened, local)
@@ -94,8 +64,8 @@ func TestTheModelOpensWithTheThreadsOfTheProfile(t *testing.T) {
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := record.opened[0]; got.Threads != 1 || got.BatchTexts != ecoBatchTexts {
-		t.Errorf("opened with %d threads and batches of %d, want 1 and %d", got.Threads, got.BatchTexts, ecoBatchTexts)
+	if got := record.opened[0]; got.Threads != 1 || got.BatchTexts != limits.EcoBatchTexts {
+		t.Errorf("opened with %d threads and batches of %d, want 1 and %d", got.Threads, got.BatchTexts, limits.EcoBatchTexts)
 	}
 	if last := record.nices[len(record.nices)-1]; last != 19 {
 		t.Errorf("the niceness is %d, want 19", last)
@@ -120,8 +90,8 @@ func TestAChangeOfTheProfileReachesTheRunningModel(t *testing.T) {
 		t.Fatalf("%d models opened, want 2", record.openedCount())
 	}
 	second := record.opened[1]
-	if second.Threads != 1 || second.BatchTexts != ecoBatchTexts || first.BatchTexts != engine.GetDefaultBatchTexts() {
-		t.Errorf("opened %d threads and %d texts after %d texts, want 1 thread and %d texts", second.Threads, second.BatchTexts, first.BatchTexts, ecoBatchTexts)
+	if second.Threads != 1 || second.BatchTexts != limits.EcoBatchTexts || first.BatchTexts != engine.GetDefaultBatchTexts() {
+		t.Errorf("opened %d threads and %d texts after %d texts, want 1 thread and %d texts", second.Threads, second.BatchTexts, first.BatchTexts, limits.EcoBatchTexts)
 	}
 	if record.nices[len(record.nices)-1] != 19 {
 		t.Errorf("the niceness after the change is %v", record.nices)
@@ -184,31 +154,56 @@ func TestApplyProfileHandlesInitialDefaultMockAndOpeningRetirement(t *testing.T)
 	if _, err := srv.EmbedTexts(t.Context(), embedding.RoleDocument, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
+	srv.mu.Lock()
 	srv.isProfileSet = false
 	srv.applyProfileLocked(performance.Eco)
-	if srv.embedder == nil {
+	isLoaded := srv.loader.IsLoaded()
+	srv.mu.Unlock()
+	if !isLoaded {
 		t.Fatal("embedder was retired when limits did not change")
 	}
 
-	canceled := false
-	srv.opening = &modelOpening{
-		ready:  make(chan struct{}),
-		cancel: func() { canceled = true },
+	srv.mu.Lock()
+	srv.loader.ResetLocked()
+	srv.mu.Unlock()
+	isOpening, canceled, release := make(chan struct{}), make(chan struct{}), make(chan struct{})
+	t.Cleanup(func() { close(release) })
+	var once sync.Once
+	srv.open = func(ctx context.Context, _ engine.ModelInfo, _ engine.LocalModel) (loading.Embedder, error) {
+		isFirst := false
+		once.Do(func() { isFirst = true; close(isOpening) })
+		if isFirst {
+			<-ctx.Done()
+			close(canceled)
+			return nil, ctx.Err()
+		}
+		<-release
+		return recordedEmbedder{record: record}, nil
 	}
+	ended := make(chan error, 1)
+	go func() { _, err := srv.getEmbedder(t.Context()); ended <- err }()
+	<-isOpening
+
+	srv.mu.Lock()
 	srv.isProfileSet = false
 	srv.applyProfileLocked(performance.Eco)
-	if canceled || srv.opening == nil {
+	isOpeningAfterSameLimits := srv.loader.IsOpening()
+	srv.applyProfileLocked(performance.Maximum)
+	isOpeningAfterNewLimits := srv.loader.IsOpening()
+	srv.mu.Unlock()
+	if !isOpeningAfterSameLimits {
 		t.Fatal("opening was retired when limits did not change")
 	}
-
-	srv.applyProfileLocked(performance.Maximum)
-	if !canceled || srv.opening != nil {
+	if isOpeningAfterNewLimits {
 		t.Fatal("opening was not retired when limits changed")
 	}
+	<-canceled
 
 	runtime.GOMAXPROCS(4)
+	srv.mu.Lock()
 	srv.isMock = true
 	srv.applyProfileLocked(performance.Eco)
+	srv.mu.Unlock()
 	if got := runtime.GOMAXPROCS(0); got != 4 {
 		t.Fatalf("mock profile changed GOMAXPROCS to %d, want 4", got)
 	}

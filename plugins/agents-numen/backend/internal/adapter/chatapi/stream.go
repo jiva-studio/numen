@@ -1,4 +1,4 @@
-package service
+package chatapi
 
 import (
 	"bufio"
@@ -10,23 +10,59 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/conversation"
+	"github.com/jiva-studio/numen/plugins/agents-numen/backend/settings"
 )
 
-// maxStreamedCalls is the highest index plus one a streamed tool call may have.
-const maxStreamedCalls = 128
+// MaxStreamedCalls is the highest index plus one a streamed tool call may have.
+const MaxStreamedCalls = 128
 
-var (
-	// errStreamRejected is a streaming request the chat API answered 400 Bad Request or 422
-	// Unprocessable Entity.
-	errStreamRejected = errors.New("the chat API rejected a streaming request")
-	errStreamEnded    = errors.New("the chat API's stream ended before the reply did")
-)
+// ErrStreamEnded is a stream that ended before the reply did.
+var ErrStreamEnded = errors.New("the chat API's stream ended before the reply did")
 
 // streamedReply is a message as far as its pieces have arrived.
 type streamedReply struct {
 	text     strings.Builder
-	calls    []toolCall
+	calls    []conversation.ToolCall
 	finished string
+}
+
+type streamedToolPiece struct {
+	Index    int                       `json:"index"`
+	ID       string                    `json:"id"`
+	Type     string                    `json:"type"`
+	Function conversation.CallFunction `json:"function"`
+}
+
+// Stream asks for the next message of the conversation and passes its text to emit as it arrives.
+// A chat API that answers 400 Bad Request or 422 Unprocessable Entity to a streaming request gives
+// an error that wraps conversation.ErrStreamRejected.
+func (c *Client) Stream(
+	ctx context.Context, cfg settings.Settings, turn conversation.Turn, emit func(string) error,
+) (reply conversation.Reply, err error) {
+	if err := checkKey(cfg); err != nil {
+		return conversation.Reply{}, err
+	}
+	body, err := json.Marshal(newChatRequest(cfg, turn, true))
+	if err != nil {
+		return conversation.Reply{}, fmt.Errorf("marshal chat request: %w", err)
+	}
+	resp, err := c.open(ctx, cfg, http.MethodPost, "/chat/completions", body)
+	if err != nil {
+		return conversation.Reply{}, err
+	}
+	defer func() { err = errors.Join(err, resp.Body.Close()) }()
+
+	if resp.StatusCode != http.StatusOK {
+		return conversation.Reply{}, readStreamStatusError(resp)
+	}
+
+	reader := bufio.NewReader(resp.Body)
+	if isWholeReply(reader) {
+		return readWholeStreamReply(reader, emit)
+	}
+	return readStream(reader, emit)
 }
 
 func readStreamStatusError(resp *http.Response) error {
@@ -36,56 +72,26 @@ func readStreamStatusError(resp *http.Response) error {
 	}
 	reqErr := newStatusError(resp, answer)
 	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusUnprocessableEntity {
-		return fmt.Errorf("%w: %w", errStreamRejected, reqErr)
+		return fmt.Errorf("%w: %w", conversation.ErrStreamRejected, reqErr)
 	}
 	return reqErr
 }
 
-func readWholeStreamReply(reader io.Reader, emit func(string) error) (message, string, error) {
+func readWholeStreamReply(reader io.Reader, emit func(string) error) (conversation.Reply, error) {
 	answer, err := io.ReadAll(reader)
 	if err != nil {
-		return message{}, "", fmt.Errorf("read chat response: %w", err)
+		return conversation.Reply{}, fmt.Errorf("read chat response: %w", err)
 	}
-	reply, finished, err := readReply(answer)
+	reply, err := readReply(answer)
 	if err != nil {
-		return message{}, "", err
+		return conversation.Reply{}, err
 	}
-	if text := reply.Content; text != nil && *text != "" {
+	if text := reply.Message.Content; text != nil && *text != "" {
 		if err := emit(*text); err != nil {
-			return message{}, "", err
+			return conversation.Reply{}, err
 		}
 	}
-	return reply, finished, nil
-}
-
-func (c chat) stream(
-	ctx context.Context, model string, effort effort, messages []message, tools []functionTool, emit func(string) error,
-) (reply message, reason string, err error) {
-	if err := c.checkKey(); err != nil {
-		return message{}, "", err
-	}
-	req := newChatRequest(model, effort, messages, tools, true)
-	req.Temperature = c.temperature
-	req.MaxTokens = c.maxTokens
-	body, err := json.Marshal(req)
-	if err != nil {
-		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
-	}
-	resp, err := c.open(ctx, http.MethodPost, "/chat/completions", body)
-	if err != nil {
-		return message{}, "", err
-	}
-	defer func() { err = errors.Join(err, resp.Body.Close()) }()
-
-	if resp.StatusCode != http.StatusOK {
-		return message{}, "", readStreamStatusError(resp)
-	}
-
-	reader := bufio.NewReader(resp.Body)
-	if isWholeReply(reader) {
-		return readWholeStreamReply(reader, emit)
-	}
-	return readStream(reader, emit)
+	return reply, nil
 }
 
 func isWholeReply(reader *bufio.Reader) bool {
@@ -114,11 +120,11 @@ func appendStreamData(data *bytes.Buffer, line []byte) {
 	}
 }
 
-func (r *streamedReply) finish() (message, string, error) {
+func (r *streamedReply) finish() (conversation.Reply, error) {
 	if r.finished == "" {
-		return message{}, "", errStreamEnded
+		return conversation.Reply{}, ErrStreamEnded
 	}
-	return r.getMessage(), r.finished, nil
+	return conversation.Reply{Message: r.getMessage(), FinishReason: r.finished}, nil
 }
 
 func (r *streamedReply) flush(data *bytes.Buffer, emit func(string) error) (bool, error) {
@@ -129,7 +135,7 @@ func (r *streamedReply) flush(data *bytes.Buffer, emit func(string) error) (bool
 	return r.add(data.Bytes(), emit)
 }
 
-func readStream(reader *bufio.Reader, emit func(string) error) (message, string, error) {
+func readStream(reader *bufio.Reader, emit func(string) error) (conversation.Reply, error) {
 	var reply streamedReply
 	var data bytes.Buffer
 	for {
@@ -139,7 +145,7 @@ func readStream(reader *bufio.Reader, emit func(string) error) (message, string,
 		if len(line) == 0 || readErr != nil {
 			isDone, err := reply.flush(&data, emit)
 			if err != nil {
-				return message{}, "", err
+				return conversation.Reply{}, err
 			}
 			if isDone {
 				return reply.finish()
@@ -149,31 +155,20 @@ func readStream(reader *bufio.Reader, emit func(string) error) (message, string,
 			return reply.finish()
 		}
 		if readErr != nil {
-			return message{}, "", fmt.Errorf("read chat stream: %w", readErr)
+			return conversation.Reply{}, fmt.Errorf("read chat stream: %w", readErr)
 		}
 	}
 }
 
-type streamedToolPiece struct {
-	Index    int    `json:"index"`
-	ID       string `json:"id"`
-	Type     string `json:"type"`
-	Function struct {
-		Name      string `json:"name"`
-		Arguments string `json:"arguments"`
-	} `json:"function"`
-}
-
 func (r *streamedReply) mergeToolCalls(pieces []streamedToolPiece) error {
 	for _, piece := range pieces {
-		if piece.Index < 0 || piece.Index >= maxStreamedCalls {
+		if piece.Index < 0 || piece.Index >= MaxStreamedCalls {
 			return fmt.Errorf("the chat API streamed a tool call at index %d", piece.Index)
 		}
 		for len(r.calls) <= piece.Index {
-			r.calls = append(r.calls, toolCall{ID: "", Type: "function", Function: struct {
-				Name      string `json:"name"`
-				Arguments string `json:"arguments"`
-			}{Name: "", Arguments: ""}})
+			r.calls = append(r.calls, conversation.ToolCall{
+				ID: "", Type: "function", Function: conversation.CallFunction{Name: "", Arguments: ""},
+			})
 		}
 		call := &r.calls[piece.Index]
 		if call.ID == "" {
@@ -226,8 +221,8 @@ func (r *streamedReply) add(data []byte, emit func(string) error) (bool, error) 
 	return false, nil
 }
 
-func (r *streamedReply) getMessage() message {
-	reply := message{Role: "assistant", Content: nil, ToolCalls: nil, ToolCallID: ""}
+func (r *streamedReply) getMessage() conversation.Message {
+	reply := conversation.Message{Role: "assistant", Content: nil, ToolCalls: nil, ToolCallID: ""}
 	if r.text.Len() > 0 {
 		reply.Content = new(r.text.String())
 	}
