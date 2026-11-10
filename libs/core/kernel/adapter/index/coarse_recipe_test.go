@@ -14,7 +14,7 @@ func saveSeededVectorsUnder(t *testing.T, db *DB, vault domain.Vault, recipe str
 	t.Helper()
 	ctx := t.Context()
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, recipe, chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault.ID, recipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestAChunkTheNewRecipeContainsNoVectorForGetsNoCoarseRow(t *testing.T) {
 	if rows := len(storedBits(t, db)); rows != 0 {
 		t.Errorf("%d coarse rows hold another recipe's bits", rows)
 	}
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), getFirst().ID, otherRecipe, chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), getFirst().ID, otherRecipe, chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}

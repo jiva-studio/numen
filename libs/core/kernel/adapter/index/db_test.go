@@ -189,7 +189,7 @@ func embedAtWidth(t *testing.T, db *DB, vault domain.Vault, dims int) {
 		t.Fatal(err)
 	}
 
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(ctx, vault.ID, narrowRecipe(dims), chunk.Cursor{}, 10)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(ctx, vault.ID, narrowRecipe(dims), chunk.Cursor{}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}

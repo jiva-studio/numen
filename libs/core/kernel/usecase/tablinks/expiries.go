@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/tablink"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/tablinkport"
 )
 
 // MoveTimeout is how long a move waits for the target window to accept the tab.
@@ -15,19 +14,19 @@ const MoveTimeout = 10 * time.Second
 type expiries struct {
 	state    *state
 	grace    time.Duration
-	schedule tablinkport.Schedule
+	schedule Schedule
 }
 
 func (e *expiries) scheduleWindowRemoval(windowID string) {
 	pending := &expiry{}
-	e.state.presence.removals[windowID] = pending
+	e.state.roster.presence.removals[windowID] = pending
 	pending.cancel = e.schedule(e.grace, func() { e.expireWindow(windowID, pending) })
 }
 
 func (e *expiries) cancelWindowRemoval(windowID string) {
-	if pending, ok := e.state.presence.removals[windowID]; ok {
+	if pending, ok := e.state.roster.presence.removals[windowID]; ok {
 		pending.cancel()
-		delete(e.state.presence.removals, windowID)
+		delete(e.state.roster.presence.removals, windowID)
 	}
 }
 
@@ -35,15 +34,15 @@ func (e *expiries) expireWindow(windowID string, pending *expiry) {
 	s := e.state
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.presence.removals[windowID] != pending {
+	if s.roster.presence.removals[windowID] != pending {
 		return
 	}
-	delete(s.presence.removals, windowID)
+	delete(s.roster.presence.removals, windowID)
 	s.removeWindow(windowID)
 }
 
 func (e *expiries) keepAcceptingWindow(windowID string) {
-	p := e.state.presence
+	p := e.state.roster.presence
 	if p.hasWatch(windowID) {
 		return
 	}

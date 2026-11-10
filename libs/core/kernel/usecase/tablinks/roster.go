@@ -16,15 +16,17 @@ type roster struct {
 	windowOrder []string
 	claims      map[string][]tablink.Tab
 	groups      *groupSet
+	presence    *presence
 }
 
 func newRoster() *roster {
 	return &roster{
-		tabs:    map[string]tablink.Tab{},
-		windows: map[string][]string{},
-		info:    map[string]tablink.Window{},
-		claims:  map[string][]tablink.Tab{},
-		groups:  &groupSet{},
+		tabs:     map[string]tablink.Tab{},
+		windows:  map[string][]string{},
+		info:     map[string]tablink.Window{},
+		claims:   map[string][]tablink.Tab{},
+		groups:   &groupSet{},
+		presence: newPresence(),
 	}
 }
 

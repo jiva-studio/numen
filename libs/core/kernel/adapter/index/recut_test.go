@@ -77,7 +77,7 @@ type embedder struct{ seed byte }
 
 func (e embedder) run(t *testing.T, db *DB, vault domain.Vault) int {
 	t.Helper()
-	unembedded, err := db.ChunkQueries().GetUnembeddedChunks(t.Context(), vault.ID, "model", chunk.Cursor{}, 1000)
+	unembedded, err := db.ChunkVectors().GetUnembeddedChunks(t.Context(), vault.ID, "model", chunk.Cursor{}, 1000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,7 +235,7 @@ func TestAChunkThatMovedInTheFileKeepsItsVector(t *testing.T) {
 
 	// Every chunk is read from where its text is now.
 	for _, row := range append(was, enclosing) {
-		p, found, err := db.ChunkQueries().Passage(ctx, getFirst().ID, row)
+		p, found, err := db.ChunkFiles().Passage(ctx, getFirst().ID, row)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -475,7 +475,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 		t.Errorf("%d full-text rows name a chunk that is gone", got)
 	}
 
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: opening, Kinds: nil, Limit: 10})
+	found, err := db.ChunkSearch().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: opening, Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -487,7 +487,7 @@ func TestTheFullTextRowSurvivesWithTheChunk(t *testing.T) {
 			t.Errorf("%s answered for a word of %s", p.Source, n.FileStat.Path)
 		}
 	}
-	typed, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
+	typed, err := db.ChunkSearch().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "wordzz", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -589,7 +589,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	n := parseNote("notes/Entropy.md", body)
 	save(t, db, getFirst(), n)
 
-	found, err := db.ChunkQueries().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Sectiona", Kinds: nil, Limit: 10})
+	found, err := db.ChunkSearch().FindLexical(ctx, getFirst().ID, sourcedomain.LexicalQuery{Text: "Sectiona", Kinds: nil, Limit: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -598,7 +598,7 @@ func TestANoteWithSectionsIsFoundByWordsInItsSections(t *testing.T) {
 	}
 	// The enclosing chunk is the note: it begins at the first word of the body and
 	// ends at the last.
-	p, ok, err := db.ChunkQueries().Passage(ctx, getFirst().ID, largeChunk(t, db, getFirst(), n.FileStat.Path))
+	p, ok, err := db.ChunkFiles().Passage(ctx, getFirst().ID, largeChunk(t, db, getFirst(), n.FileStat.Path))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -747,7 +747,7 @@ func checkVaultsAnswerOnlyForThemselves(t *testing.T, db *DB) {
 		{getSecond(), "quasar", true},
 		{getFirst(), "quasar", false},
 	} {
-		found, err := db.ChunkQueries().FindLexical(t.Context(), ask.vault.ID, sourcedomain.LexicalQuery{Text: ask.word, Kinds: nil, Limit: 10})
+		found, err := db.ChunkSearch().FindLexical(t.Context(), ask.vault.ID, sourcedomain.LexicalQuery{Text: ask.word, Kinds: nil, Limit: 10})
 		if err != nil {
 			t.Fatal(err)
 		}

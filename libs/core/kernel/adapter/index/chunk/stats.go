@@ -11,7 +11,7 @@ import (
 
 // GetIndexCounts returns the chunks, vectors and sources of a vault, and the sources by extension.
 // A vault the index does not know has none.
-func (q *Queries) GetIndexCounts(ctx context.Context, vaultID domain.VaultID, recipe string) (_ index.Counts, err error) {
+func (q *Vectors) GetIndexCounts(ctx context.Context, vaultID domain.VaultID, recipe string) (_ index.Counts, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return index.Counts{}, nil
@@ -34,7 +34,7 @@ func (q *Queries) GetIndexCounts(ctx context.Context, vaultID domain.VaultID, re
 	return counts, nil
 }
 
-func (q *Queries) getExtensions(ctx context.Context, vault int64) (_ []index.ExtensionCount, err error) {
+func (q *Vectors) getExtensions(ctx context.Context, vault int64) (_ []index.ExtensionCount, err error) {
 	rows, err := q.db.QueryContext(ctx, extensionsSQL, vault, vault, q.minimum.Get())
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (q *Queries) getExtensions(ctx context.Context, vault int64) (_ []index.Ext
 }
 
 // GetIndexSizes returns the size of the database and of the tables that hold vectors.
-func (q *Queries) GetIndexSizes(ctx context.Context) (index.Sizes, error) {
+func (q *Vectors) GetIndexSizes(ctx context.Context) (index.Sizes, error) {
 	ctx, err := sqlwrite.Uninterrupted(ctx)
 	if err != nil {
 		return index.Sizes{}, err

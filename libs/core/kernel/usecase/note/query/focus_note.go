@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/vaultport"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/windowport"
 )
 
 // ErrNoNotePath is returned by a focus with no path.
@@ -19,10 +18,15 @@ var ErrNoNotePath = errors.New("note path is empty")
 // FocusNote sets the focused note.
 type FocusNote struct {
 	queries noteport.NoteRefs
-	view    windowport.Window
+	view    PlaceFocus
 }
 
-func NewFocusNote(queries noteport.NoteRefs, view windowport.Window) *FocusNote {
+// PlaceFocus asks the window to show a place.
+type PlaceFocus interface {
+	FocusPlace(ctx context.Context, pos domain.Place) error
+}
+
+func NewFocusNote(queries noteport.NoteRefs, view PlaceFocus) *FocusNote {
 	return &FocusNote{queries: queries, view: view}
 }
 
