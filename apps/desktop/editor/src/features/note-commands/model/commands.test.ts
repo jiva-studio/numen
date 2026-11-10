@@ -59,7 +59,9 @@ const createWindow = (answers: Answers = {}) => {
         }
       },
       createRelatedNote: (request: { from: string; role: number; title: string }) => {
-        const role = Object.entries(NOTE_ROLE).find(([, code]) => code === request.role)?.[0]?.toLowerCase()
+        const role = Object.entries(NOTE_ROLE)
+          .find(([, code]) => code === request.role)?.[0]
+          ?.toLowerCase()
         actions.push(`createRelated ${request.title} ${request.from} ${role}`)
         return answers.isMade === false
           ? { isNameExhausted: true }
@@ -94,7 +96,9 @@ const createWindow = (answers: Answers = {}) => {
         actions.push(`close ${id}`)
       },
       openFile: (path: string, title: string, placement: string, place?: object) => {
-        actions.push(`openFile ${path} ${title} ${placement}${place ? ` ${JSON.stringify(place)}` : ''}`)
+        actions.push(
+          `openFile ${path} ${title} ${placement}${place ? ` ${JSON.stringify(place)}` : ''}`,
+        )
       },
     },
     navigator: {
@@ -220,9 +224,7 @@ describe('a note put in front of the person', () => {
 
     await one.carry(invoke('app:file.open', front({ title: '' })))
 
-    expect(one.actions).toStrictEqual([
-      'openFile physics/Ontology.md physics/Ontology.md current',
-    ])
+    expect(one.actions).toStrictEqual(['openFile physics/Ontology.md physics/Ontology.md current'])
   })
 })
 

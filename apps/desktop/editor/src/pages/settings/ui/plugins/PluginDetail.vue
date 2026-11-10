@@ -47,8 +47,8 @@ const isEnabled = computed<boolean>(() => {
   return typeof value === 'boolean' ? value : true
 })
 
-const isPending = computed<boolean>(
-  () => installation.value.settings.isPending([props.plugin.id, 'enabled']),
+const isPending = computed<boolean>(() =>
+  installation.value.settings.isPending([props.plugin.id, 'enabled']),
 )
 
 const hasSettings = computed(() => hasPluginSettings(props.plugin, read))
@@ -85,7 +85,7 @@ async function readFileCount(pluginId: string): Promise<void> {
   const request = countReads.acquireRequest()
   let count: number
   try {
-    count = (await installation.value.plugin.getPluginData(pluginId))
+    count = await installation.value.plugin.getPluginData(pluginId)
   } catch {
     count = 0
   }

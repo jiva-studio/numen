@@ -9,7 +9,12 @@ import { getServiceInfo } from '@numen/core-client'
 import { mount } from '@vue/test-utils'
 import PluginDetail from './PluginDetail.vue'
 import SettingsTab from '../SettingsTab.vue'
-import { createInstallation, createPluginInfo, createSecretAnswer, createSettingsState } from '@/testing/installation'
+import {
+  createInstallation,
+  createPluginInfo,
+  createSecretAnswer,
+  createSettingsState,
+} from '@/testing/installation'
 import {
   click,
   dispose,

@@ -67,7 +67,14 @@ const createWindow = () => {
   const windowTabs = {
     groups: { handle: { openTab: vi.fn(async () => ''), openTabAdjacent: vi.fn(async () => '') } },
   } as unknown as WindowTabs
-  const settings = useSettings({ words: WORDS, log, windowTabs, onSizeChanged: vi.fn(), getSettingsViews: () => new Map(), getPlatform: () => 'linux' })
+  const settings = useSettings({
+    words: WORDS,
+    log,
+    windowTabs,
+    onSizeChanged: vi.fn(),
+    getSettingsViews: () => new Map(),
+    getPlatform: () => 'linux',
+  })
   vi.spyOn(settings.rest, 'start').mockResolvedValue()
   vi.spyOn(settings.rest.write, 'writeSettings').mockResolvedValue()
   return { settings, listThemes }

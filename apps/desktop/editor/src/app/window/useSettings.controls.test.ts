@@ -179,7 +179,9 @@ const create = (timing: Timing) => {
     getPlatform: () => 'linux',
   })
   const page = mount(SettingsTab, {
-    props: { state: { ...settings.configured.state, initialPluginId: ref<string | null>('system') } },
+    props: {
+      state: { ...settings.configured.state, initialPluginId: ref<string | null>('system') },
+    },
     attachTo: document.body,
   })
   return { settings, page }
