@@ -259,7 +259,6 @@ type PluginHost struct {
 	RefreshDependencies func()
 }
 
-// lendPluginHost lends the capabilities of host.
 func lendPluginHost(host *plugin.Host) *PluginHost {
 	return &PluginHost{
 		PluginActivator:       host,
