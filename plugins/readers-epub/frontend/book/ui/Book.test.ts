@@ -239,7 +239,6 @@ const mountBook = async () => {
   return wrapper
 }
 
-/** What the line under the text says about the spread in front. */
 const getFront = (wrapper: Awaited<ReturnType<typeof mountBook>>): string =>
   `${wrapper.find('.book__count').text()} / ${wrapper.find('.book__left').text()}`
 

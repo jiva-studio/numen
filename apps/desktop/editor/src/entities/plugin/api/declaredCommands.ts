@@ -286,7 +286,6 @@ export async function listDeclaredItemLists(
   }))
 }
 
-/** Whether the condition of the command reads its target, so a run of it names the path it is over. */
 function isOverTarget(command: Pick<DeclaredCommand, 'when'>, whenReader: WhenReader): boolean {
   return (
     whenReader.getCondition(command.when)?.names.some((name) => name.startsWith('target.')) ?? false

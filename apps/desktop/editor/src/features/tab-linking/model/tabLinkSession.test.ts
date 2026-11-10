@@ -5,11 +5,10 @@ import { answerCore } from '@/testing/coreAnswers'
 import type { TabLinksEvent } from '@/entities/tab'
 import {
   createTabLinkSession,
-  getLinkableTabs,
   getWindowReport,
   type TabLinkSessionDeps,
 } from './tabLinkSession'
-import { createTabReports, REPORT_RETRY_MS } from './tabReports'
+import { createTabReports } from './tabReports'
 
 const SNAPSHOT = {
   groups: [
@@ -202,7 +201,7 @@ describe('createTabLinkSession', () => {
   })
 })
 
-describe('getLinkableTabs', () => {
+describe('getWindowReport', () => {
   it('returns the tabs whose kind supports navigate, with kind and title', () => {
     const kinds: Record<string, { kind: string; navigate?: () => void }> = {
       'plex:1': { kind: 'plex', navigate: () => undefined },
@@ -217,9 +216,10 @@ describe('getLinkableTabs', () => {
         ]),
         getTab: (id: string) => (kinds[id] ? { kind: kinds[id], state: null } : null),
       },
-    } as unknown as Parameters<typeof getLinkableTabs>[0]
+      groups: { handle: { front: () => null } },
+    } as unknown as Parameters<typeof getWindowReport>[0]
 
-    expect(getLinkableTabs(windowTabs)).toStrictEqual([
+    expect(getWindowReport(windowTabs, true).tabs).toStrictEqual([
       { id: 'plex:1', kind: 'plex', title: 'Orbits' },
     ])
   })
@@ -292,7 +292,7 @@ describe('a failed tab report', () => {
     session.reportTabs()
 
     await vi.waitFor(() => expect(core.writeTabLinks).toHaveBeenCalledTimes(2))
-    expect(deps.wait).toHaveBeenCalledWith(REPORT_RETRY_MS)
+    expect(deps.wait).toHaveBeenCalledWith(2000)
     expect(core.writeTabLinks.mock.calls[1]).toStrictEqual([REPORT])
   })
 

@@ -104,7 +104,6 @@ function createHost(fakes: Record<string, Record<string, unknown>>): PluginConte
   } as unknown as PluginContextHost
 }
 
-/** The host with services of its own in place of some of those it was made with. */
 function withServices(
   host: PluginContextHost,
   services: { vault?: ContextVaultHost; window?: ContextWindowHost },

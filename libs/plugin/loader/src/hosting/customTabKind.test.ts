@@ -12,8 +12,8 @@ import {
   renderPaneContent,
   resolvePluginComponent,
   stripMarkdownExtension,
-} from './pluginView'
-import { adoptHostStyles, extractStatePath, PANE_LAYOUT_STYLE } from './paneHost'
+} from './pane/pluginView'
+import { adoptHostStyles, extractStatePath, PANE_LAYOUT_STYLE } from './pane/paneHost'
 import type { NoteBuffer } from './types'
 
 describe('createPluginPaneWrapper', () => {

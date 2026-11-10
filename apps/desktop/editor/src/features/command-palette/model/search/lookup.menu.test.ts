@@ -171,7 +171,7 @@ describe('a passage found in a file that is no note', () => {
 })
 
 describe('the command an action of a result runs', () => {
-  /** The fields of a hit, flat: the spot it stands at, the ids of its actions, its type and selector. */
+  /** The fields of a hit, flat: where it is found, the ids of its actions, its type and selector. */
   type HitFields = Partial<SearchHit['spot']> &
     Partial<Pick<SearchHit, 'type' | 'selector'>> & { actionIds?: readonly string[] }
 

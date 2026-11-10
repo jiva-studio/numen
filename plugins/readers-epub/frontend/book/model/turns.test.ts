@@ -21,7 +21,6 @@ const MARKS: readonly Mark[] = [
   { at: 300, x: 3000 },
 ]
 
-/** Replaces the style of `element` by a stub and returns the list of what is written to it. */
 const recordStyle = (element: HTMLElement, translate = ''): string[] => {
   const writes: string[] = []
   const style = {

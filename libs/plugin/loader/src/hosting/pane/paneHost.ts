@@ -2,7 +2,7 @@
  * What a pane of a plugin view takes from the window: the path its state names, its layout, and the
  * stylesheets of the window.
  */
-import { createSheet } from '../styles'
+import { createSheet } from '../../styles'
 
 export function extractStatePath(state: unknown): string {
   if (typeof state !== 'object' || state === null) return ''

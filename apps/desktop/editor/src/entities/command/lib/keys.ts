@@ -31,10 +31,6 @@ const hasSameValues = (a: Values, b: Values): boolean => {
   return names.length === Object.keys(b).length && names.every((name) => a[name] === b[name])
 }
 
-/**
- * The keys of the first keybinding of the application for the command with these values, as drawn
- * for the current platform, or undefined for a command without one.
- */
 const findChordKeys = (
   command: string,
   agent: string,

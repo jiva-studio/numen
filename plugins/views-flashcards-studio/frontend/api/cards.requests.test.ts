@@ -42,10 +42,8 @@ const cardModelMessage = {
   problems: [],
 }
 
-/** Makes the service answer a method with the reply. */
 const answer = (method: string, reply: unknown) => wire.replies.set(method, reply)
 
-/** The request the window sent to a method. */
 const requestOf = (method: string) => wire.call.mock.calls.find((sent) => sent[0] === method)?.[1]
 
 beforeEach(() => {

@@ -6,7 +6,7 @@
  * a file that changed with nothing unsaved is shown at once, and a renamed file is followed.
  */
 import { computed, onScopeDispose, shallowReactive, watch } from 'vue'
-import { extractFilename, stripMarkdownExtension } from './pluginView'
+import { extractFilename, stripMarkdownExtension } from './pane/pluginView'
 import type { NoteBuffer, PluginHostDeps } from './types'
 
 /** The tab kind whose tabs hold a note of the vault. */

@@ -48,7 +48,6 @@ const apply = (state: EditorState, changes?: ChangeSpec, caret?: number) =>
     ...(caret === undefined ? {} : { selection: { anchor: caret } }),
   }).state
 
-/** The rule widgets the state holds: a rule is drawn again exactly when its widget is made again. */
 const getRules = (state: EditorState) => {
   const rules: unknown[] = []
   state.field(wholeLines).marks.between(0, state.doc.length, (_from, _to, mark) => {

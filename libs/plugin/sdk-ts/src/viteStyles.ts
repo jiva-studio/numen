@@ -29,7 +29,6 @@ function getVueScanContent(source: string): string {
     .join('\n')
 }
 
-/** The candidates Tailwind finds in the templates and scripts of these files. */
 function getCandidates(files: readonly string[]): string[] {
   const scanner = new Scanner({})
   return scanner.scanFiles(
@@ -44,7 +43,6 @@ function getCandidates(files: readonly string[]): string[] {
   )
 }
 
-/** The utilities of these candidates, built with the theme of `@numen/ui`. */
 async function getUtilityCss(candidates: readonly string[]): Promise<string> {
   const compiler = await compile(`@import ${JSON.stringify(THEME)};`, {
     base: dirname(THEME),
@@ -53,7 +51,6 @@ async function getUtilityCss(candidates: readonly string[]): Promise<string> {
   return getNormalCss(compiler.build([...candidates]))
 }
 
-/** Every class a selector of the stylesheet names. */
 function getDefinedClasses(css: string): Set<string> {
   const classes = new Set<string>()
   postcss.parse(css).walkRules((rule) => {
@@ -137,7 +134,6 @@ function getPropClasses(prop: TemplateProp): string[] {
   return []
 }
 
-/** Every literal class name the template of a single-file component names. */
 function getTemplateClasses(source: string): string[] {
   const ast = parseSfc(source).descriptor.template?.ast as TemplateNode | undefined
   const classes: string[] = []
@@ -149,18 +145,12 @@ function getTemplateClasses(source: string): string[] {
   return classes.filter(Boolean)
 }
 
-/** The names among these classes that the theme of `@numen/ui` builds a utility for. */
 async function getUtilityClasses(classes: readonly string[]): Promise<Set<string>> {
   const baseClasses = getDefinedClasses(await getUtilityCss([]))
   const utilityClasses = getDefinedClasses(await getUtilityCss(classes))
   return new Set(classes.filter((name) => utilityClasses.has(name) && !baseClasses.has(name)))
 }
 
-/**
- * The utilities the templates of these files name that no stylesheet defines, by file. A class
- * Tailwind builds nothing for is a name the plugin's own rules or its tests select by, and is
- * left to them.
- */
 async function getUndefinedUtilities(
   files: readonly string[],
   stylesheets: readonly string[],

@@ -5,7 +5,7 @@ import { createManagedFromEntries } from './pluginListing'
 
 describe('the listing of a catalog entry', () => {
   it('reads the lowercase category, the feature and the tab kinds of an entry', () => {
-    const [listed] = createManagedFromEntries(
+    const [result] = createManagedFromEntries(
       [createMockPluginInfo('notes', 'notes')],
       [
         createCatalogEntry('notes', {
@@ -16,7 +16,7 @@ describe('the listing of a catalog entry', () => {
       ],
     )
 
-    expect(listed).toMatchObject({
+    expect(result).toMatchObject({
       id: 'notes',
       category: 'editors',
       feature: 'Markdown notes',
@@ -24,13 +24,13 @@ describe('the listing of a catalog entry', () => {
     })
   })
 
-  it('marks only an available entry as offered', () => {
-    const offered = createManagedFromEntries(
+  it('marks only an available entry as available', () => {
+    const available = createManagedFromEntries(
       [],
       [createCatalogEntry('a', { isAvailable: true }), createCatalogEntry('b')],
     )
 
-    expect(offered.map((one) => one.id)).toStrictEqual(['a'])
+    expect(available.map((one) => one.id)).toStrictEqual(['a'])
   })
 })
 

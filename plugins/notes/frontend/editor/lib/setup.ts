@@ -211,14 +211,12 @@ export const prose = (): Extension => markdown({ extensions: GFM, codeLanguages:
 /** One whole document of code: how it reads, and the face it is set in. */
 export const code = (support: Extension): Extension => [support, monospaced]
 
-/** How the text is laid out: wrapping, line numbers and the width of a tab. */
 const getLayout = (settings: Settings): Extension[] => [
   wrapCompartment.of(getWrapExtension(settings.softWrap ?? true)),
   lineNumbersCompartment.of(getLineNumbersExtension(settings.lineNumbers ?? false)),
   tabSizeCompartment.of(getTabSizeExtension(settings.tabSize ?? 2)),
 ]
 
-/** What assistive technology is told about the editor. */
 const getAccessibility = (settings: Settings): Extension =>
   EditorView.contentAttributes.of({
     'aria-label': settings.name ?? 'Editor',

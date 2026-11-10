@@ -19,7 +19,6 @@ const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> =
 /** The message shown when the vault did not respond at all. */
 const UNREACHABLE = 'vault unreachable'
 
-/** The message for one error code. */
 const getErrorWords = (code: ErrorCode): string =>
   code === 'unreachable' ? UNREACHABLE : formatErrorCodeMessage(PROTO_BY_CODE[code])
 

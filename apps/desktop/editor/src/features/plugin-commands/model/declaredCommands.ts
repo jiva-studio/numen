@@ -58,7 +58,7 @@ export const getPaletteId = (command: DeclaredCommand): string =>
  * The palette's commands for the declared ones, each offered where its when condition holds over
  * what is in front, while the vault accepts operations, and grouped by what the condition reads.
  */
-export function createDeclaredPaletteCommands(
+function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
   context: WindowWhenContext = createEmptyWhenContext(),
   listItems: ListItems = listItemsOfOne,

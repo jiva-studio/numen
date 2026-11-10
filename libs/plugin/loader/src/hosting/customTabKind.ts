@@ -33,7 +33,7 @@ import {
   renderWrapper,
   resolvePluginComponent,
   stripMarkdownExtension,
-} from './pluginView'
+} from './pane/pluginView'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
 import { pickDeclaredHooks } from './pluginTabKind'

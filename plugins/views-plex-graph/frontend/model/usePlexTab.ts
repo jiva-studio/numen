@@ -30,7 +30,6 @@ export type {
   QuickLinkRequest,
 }
 
-/** The picture of the neighborhood, drawn once the window is ready, and what the canvas shows around it. */
 function usePlexPicture(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeof createNodeIdMap>) {
   const picture = computed<PlexNeighborhood | null>(() => {
     const neighborhood = view.neighborhood.value
@@ -68,7 +67,6 @@ function usePlexPicture(view: PlexView, deps: PlexTabDeps, map: ReturnType<typeo
   return { view, picture, empty, dragged, creatable: deps.creatable }
 }
 
-/** The types and tab kinds of the notes the neighborhood holds, and the paths of the nodes drawn. */
 function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap>) {
   const types = computed<ReadonlyMap<string, NoteType>>(() => {
     const neighborhood = view.neighborhood.value
@@ -84,7 +82,7 @@ function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap
 
   const getTabKind = (node: string): string | undefined => tabKinds.value.get(map.getNodePath(node))
 
-  const drawn = computed<readonly string[]>(() => {
+  const shownPaths = computed<readonly string[]>(() => {
     const neighborhood = view.neighborhood.value
     if (!neighborhood) return []
     const paths = [neighborhood.focus.path]
@@ -92,7 +90,7 @@ function usePlexNoteKinds(view: PlexView, map: ReturnType<typeof createNodeIdMap
     return paths.filter(Boolean)
   })
 
-  return { types, getType, getTabKind, drawn }
+  return { types, getType, getTabKind, shownPaths }
 }
 
 function createPlexNodeActions(options: {
@@ -250,7 +248,7 @@ function usePlexMenu(options: {
   const getMenuIcon = (id: string): Component | null =>
     (nodeMenu.getIcon(id) as Component | undefined) ?? null
 
-  /** The icon a node is drawn with, and nothing for an ordinary note. */
+  /** The icon a node is shownPaths with, and nothing for an ordinary note. */
   const getNodeIcon = (node: string): Component | null => {
     const tabKind = getTabKind(node)
     return tabKind === undefined ? null : deps.window.getNoteIcon(tabKind)
@@ -269,11 +267,11 @@ function getPlexNodeName(neighborhood: PlexView['neighborhood']['value'], path: 
 export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
   const map = createNodeIdMap()
   const canvas = usePlexPicture(view, deps, map)
-  const { types, getType, getTabKind, drawn } = usePlexNoteKinds(view, map)
+  const { types, getType, getTabKind, shownPaths } = usePlexNoteKinds(view, map)
 
   const getName = (path: string): string => getPlexNodeName(view.neighborhood.value, path)
   const quickLink = useQuickLink(view, deps, map)
-  const headings = usePlexHeadings(drawn, types, deps, map)
+  const headings = usePlexHeadings(shownPaths, types, deps, map)
   const inspector = useLinkInspector(
     view,
     { editor: deps.editor, showMessage: deps.window.showMessage },

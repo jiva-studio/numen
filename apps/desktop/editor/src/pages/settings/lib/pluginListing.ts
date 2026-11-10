@@ -10,7 +10,6 @@ import {
 } from '@numen/plugin-manager'
 import type { CatalogEntry } from '@/entities/plugin'
 
-/** The listing of one catalog entry: its category in lowercase and whether a source offers it. */
 const createPluginListing = (entry: CatalogEntry): PluginListing => ({
   id: entry.id,
   name: entry.name,

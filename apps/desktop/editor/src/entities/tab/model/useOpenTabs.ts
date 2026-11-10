@@ -12,7 +12,6 @@ export interface OpenTabsDeps {
   windowTabs: WindowTabs
   isWriting?: Readonly<Ref<boolean>>
   reportError: (error: unknown) => void
-  /** Where the open tabs are written; the core, unless a caller names another. */
   writeOpenTabs?: (open: OpenTabs) => Promise<void>
 }
 
@@ -20,7 +19,6 @@ export interface OpenTabsDeps {
 export const formatSavedState = (saved: unknown): string =>
   saved === undefined ? '' : JSON.stringify(saved)
 
-/** The tab as the core is told of it. */
 function describeTab(windowTabs: WindowTabs, id: string, title: string): Tab {
   const one = windowTabs.tabs.getTab(id)
   if (!one) return { id, kind: '', title, path: '', state: '' }

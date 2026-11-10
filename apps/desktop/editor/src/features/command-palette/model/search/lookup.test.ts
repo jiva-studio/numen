@@ -57,7 +57,7 @@ const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
   ...overrides,
 })
 
-/** The fields of a hit, flat: the spot it stands at, the ids of its actions, its type and selector. */
+/** The fields of a hit, flat: where it is found, the ids of its actions, its type and selector. */
 type HitFields = Partial<SearchHit['spot']> &
   Partial<Pick<SearchHit, 'type' | 'selector'>> & { actionIds?: readonly string[] }
 

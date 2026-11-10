@@ -15,7 +15,6 @@ export interface AppInfoSource {
   readonly getPlatform: () => AppInfo['platform']
 }
 
-/** The build number a text holds; 0 where it holds none. */
 function parseBuildNumber(text: string | undefined): number {
   // Stryker disable next-line StringLiteral: any non-numeric fallback parses to NaN and returns 0
   const value = Number.parseInt(text ?? '', 10)

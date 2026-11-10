@@ -4,7 +4,7 @@
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { getPluginStyle } from '../styles'
+import { getPluginStyle } from '../../styles'
 import { adoptHostStyles, extractStatePath, PANE_HOST_STYLE, PANE_LAYOUT_STYLE } from './paneHost'
 
 type AsyncComponentRegistration = {

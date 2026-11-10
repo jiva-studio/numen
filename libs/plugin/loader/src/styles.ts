@@ -31,7 +31,6 @@ export function clearPluginStyles(): void {
   sheets.clear()
 }
 
-/** Whether this engine can build a stylesheet from text and let a document or shadow root adopt it. */
 function canConstructSheets(): boolean {
   return (
     typeof CSSStyleSheet !== 'undefined' &&

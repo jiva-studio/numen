@@ -52,7 +52,6 @@ const inPixels = (value: string): string =>
 
 const getToken = (token: string): string => inPixels(theme[token] ?? '')
 
-/** The box the measurer holds, and the word in it set as a label: the two it asks the document about. */
 const isBox = (element: Element): boolean => element.getAttribute('aria-hidden') === 'true'
 const isLabel = (element: Element): boolean =>
   element.parentElement !== null &&

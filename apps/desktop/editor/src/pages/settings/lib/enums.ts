@@ -24,10 +24,6 @@ export interface EnumFields {
   getSecretsAfter(this: void, settingKey: string): readonly SecretDeclaration[]
 }
 
-/**
- * Converts plugin setting options into select choices, preserving option detail. An option that
- * is not offered is a disabled choice.
- */
 function toSelectChoices(
   options: readonly PluginSettingOption[],
   isAvailable: (option: PluginSettingOption) => boolean = () => true,
@@ -55,7 +51,6 @@ export function getValueInForce(
   return read(setting.key) ?? setting.default
 }
 
-/** Whether the core found the condition of a setting to hold. Without an answer it is shown. */
 const isSettingShown = (setting: PluginSettingInfo): boolean => setting.isShown !== false
 
 /** Whether the condition of a secret holds under the values in force of the settings it reads. */

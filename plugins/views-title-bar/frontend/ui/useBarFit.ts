@@ -20,7 +20,6 @@ export const getFitKey = (prefix: string, entry: SlotItem): string => `${prefix}
 const ENTRY = '[data-title-bar-entry]'
 const MORE = '[data-title-bar-more]'
 
-/** The widths of the entries drawn in the area, or null where none differs from the previous ones. */
 function readEntryWidths(
   area: HTMLElement,
   previous: ReadonlyMap<string, number>,

@@ -49,7 +49,6 @@ export interface OwnServerOptions {
   readonly settings?: string
 }
 
-/** The folders of one run: its vault copy, its home, its config, and the folder the app keeps its settings in. */
 const createRunFolders = () => {
   // The core refuses to run a plugin from the temporary folder, so the run's folders are kept under the e2e folder.
   const parent = path.join(e2eRoot, 'test-results')
@@ -69,7 +68,6 @@ const createRunFolders = () => {
   return { root, vault, home, config, settings }
 }
 
-/** Puts the files of the installed plugins, and the settings file where the scenario gives one, in the settings folder. */
 const writeServerFiles = (
   settings: string,
   installed: readonly InstalledPlugin[],

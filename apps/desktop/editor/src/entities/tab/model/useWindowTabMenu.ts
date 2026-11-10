@@ -18,7 +18,6 @@ interface WindowTabMenuDeps {
   reportError?(this: void, error: unknown): void
 }
 
-/** The tab of the window and the file it shows, as the commands of its menu run over them. */
 const getTabFileTarget = (windowTabs: WindowTabMenuDeps['windowTabs'], id: string): RunTarget => {
   const tab = windowTabs.tabs.getTab(id)
   const on = tab ? tab.kind.getTarget?.(tab.state) : undefined

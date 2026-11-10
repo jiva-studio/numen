@@ -73,13 +73,13 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
     timers.set(id, timer)
   }
 
-  function finishWrite(tab: BufferTab, body: string, at: string | undefined): void {
+  function finishWrite(tab: BufferTab, body: string, path: string | undefined): void {
     // An edit made while the write was in flight stays unsaved, with its own flush scheduled.
     if (tab.state === 'saving') tab.state = 'clean'
     tab.error = null
     tab.keepOverride = false
-    tab.filePath = at ?? tab.filePath
-    tab.baseline = { prose: body, stat: at ?? '' }
+    tab.filePath = path ?? tab.filePath
+    tab.baseline = { prose: body, stat: path ?? '' }
   }
 
   function failWrite(tab: BufferTab, code: string): void {

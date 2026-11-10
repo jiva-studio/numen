@@ -7,7 +7,7 @@
 import { getOrigin } from './transport'
 import { asFailure, asValue } from './result'
 import type { Result } from './result'
-import { parseEvents } from './events'
+import { parseEvents } from './stream/events'
 
 /** Why a method failed: a code such as `not_found` and the text the backend gave. */
 export interface ApiError {

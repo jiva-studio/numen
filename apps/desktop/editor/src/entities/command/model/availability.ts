@@ -6,10 +6,6 @@ import { parseWhen } from '@numen/plugin-loader'
 import { getPaletteValues } from './paletteValues'
 import type { CommandTarget } from './command'
 
-/**
- * The availability of a command of the application by its condition, read once. Its conditions read
- * the window and whether the target is a note or a file, not content types or settings.
- */
 function createAvailabilityCheck(when: string): (target: CommandTarget) => boolean {
   const parsed = parseWhen(when)
   if (!parsed.ok) throw new Error(parsed.error)

@@ -181,7 +181,6 @@ function createTabPluginsWait(status: PluginStatus, activation: Activation) {
   }
 }
 
-/** Where each plugin of the window stands: active, failed, or still starting. */
 function createLoaderStatus(
   status: PluginStatus,
   activation: Activation,

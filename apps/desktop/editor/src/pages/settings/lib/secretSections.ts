@@ -73,7 +73,6 @@ export function getSectionDeclarations(
   )
 }
 
-/** The names of the plugins that may read the secret, each once, in the order of the permissions. */
 function getReaderNames(secret: Secret, plugins: readonly PluginInfo[]): readonly string[] {
   const ids = [...new Set(secret.allowed.map((one) => one.pluginId))]
   return ids.map((id) => plugins.find((one) => one.id === id)?.name ?? id)

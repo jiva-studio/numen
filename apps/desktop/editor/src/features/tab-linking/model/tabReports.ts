@@ -7,7 +7,7 @@ import type { WindowTabsReport } from '@/entities/tab'
 import { writeTabLinks } from '../api/tab-links'
 
 /** How long a failed tab report waits before it is sent again. */
-export const REPORT_RETRY_MS = 2000
+const REPORT_RETRY_MS = 2000
 
 export interface TabReportsDeps {
   readonly windowId: string

@@ -178,7 +178,6 @@ function createHostContextBridge(
   }
 }
 
-/** The services that read and write the vault. */
 function createVaultServiceBridge(deps: PluginHostDeps): ContextVaultHost {
   return {
     getNotes: () => deps.getNotes?.(),
@@ -190,7 +189,6 @@ function createVaultServiceBridge(deps: PluginHostDeps): ContextVaultHost {
   }
 }
 
-/** The services of the window itself: its workspace, commands, notices and tasks, slots and agent. */
 function createWindowServiceBridge(
   deps: PluginHostDeps,
   getSlots: () => SlotHost,
@@ -262,7 +260,6 @@ interface LifecycleParts {
   readonly entries: EntryParts
 }
 
-/** What the loader requires of the host: the contexts of the plugins and their disposal. */
 function createLifecycleApi({ registry, contextHost, keybindings, entries }: LifecycleParts) {
   return {
     createContext: (pluginId: string, manifest?: Manifest): PluginContext => {

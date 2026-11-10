@@ -42,7 +42,6 @@ export function getFrameOrigin(embed: string): string | null {
   }
 }
 
-/** The message that plays a frame from a moment, in milliseconds. */
 function createSeekMessage(ms: number): string {
   return JSON.stringify({ event: 'command', func: 'seekTo', args: [ms / 1000, true] })
 }

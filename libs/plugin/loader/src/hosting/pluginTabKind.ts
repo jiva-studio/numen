@@ -6,7 +6,7 @@ import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Compone
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from './tabKinds'
 import { adoptPluginStyle, getPluginStyle } from '../styles'
-import { renderFallback, resolvePluginComponent } from './pluginView'
+import { renderFallback, resolvePluginComponent } from './pane/pluginView'
 
 /** A registration that declares the content of its tabs. */
 export type DeclaredTabKindRegistration = TabKindRegistration & {
@@ -48,11 +48,6 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
   return hooks
 }
 
-/**
- * The pane of a declared kind: its component, given the tab's state, beside the
- * stylesheet the plugin's manifest names. A component that fails is replaced by
- * the plugin's failure.
- */
 function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
   const component = resolvePluginComponent(rawComponent)
   return defineComponent({
