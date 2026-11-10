@@ -56,7 +56,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     reportFailure,
   })
 
-  const kind = createDeckKind({
+  const { kind } = createDeckKind({
     store,
     vaultAnswers,
     createDeck: cards.createDeck,

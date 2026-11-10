@@ -96,7 +96,7 @@ describe('flashcards-studio plugin', () => {
       decks: { goToVaults: () => void }
     }
 
-    state.decks.goToVaults()
+    state.actions.goToVaults()
 
     expect(closeTab).toHaveBeenCalledExactlyOnceWith('tab-1')
     scope.stop()

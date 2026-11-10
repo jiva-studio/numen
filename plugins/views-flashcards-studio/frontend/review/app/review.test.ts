@@ -204,7 +204,7 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
 
 const openSession = async () => {
   const result = await openReview()
-  await result.review.decks.start('decks/Suffixes.md')
+  await result.review.actions.start('decks/Suffixes.md')
   return result.review
 }
 
@@ -263,14 +263,14 @@ describe('a person who sat down and returned to the decks', () => {
     const { review } = await openReview()
     const asOpened = shot(review)
 
-    await review.decks.start('decks/Suffixes.md')
-    review.session.toggleAgent()
-    review.session.toggleNotes()
+    await review.actions.start('decks/Suffixes.md')
+    review.session.panels.toggleAgent()
+    review.session.panels.toggleNotes()
     review.session.state.actions.show()
     await settle()
     await settle()
 
-    await review.session.leave()
+    await review.actions.leave()
     await settle()
     await settle()
 
@@ -279,15 +279,15 @@ describe('a person who sat down and returned to the decks', () => {
 
   it('was holding something on the way', async () => {
     const review = await openSession()
-    review.session.toggleAgent()
-    review.session.toggleNotes()
+    review.session.panels.toggleAgent()
+    review.session.panels.toggleNotes()
     await settle()
 
     expect(review.on.value).toBe('session')
     expect(review.session.state.queue.card.value?.address.cardId).toBe('mark-1')
     expect(review.decks.reviewDays.streak.value).toBe(4)
-    expect(review.session.agentPanel.about.value).not.toBeNull()
-    expect(review.session.notesPanel.content.notes.value).toHaveLength(1)
+    expect(review.session.panels.agentPanel.about.value).not.toBeNull()
+    expect(review.session.panels.notesPanel.content.notes.value).toHaveLength(1)
   })
 })
 
@@ -335,7 +335,7 @@ describe('a review opened on a vault', () => {
     const { review } = await openReview()
     const counted = wire.counts.length
 
-    review.decks.goToVaults()
+    review.actions.goToVaults()
     await settle()
 
     expect(goToVaults).toHaveBeenCalledOnce()
@@ -363,14 +363,14 @@ describe('a deck written underneath the review', () => {
 describe('a review closed by the window', () => {
   it('releases the session it was in', async () => {
     const review = await openSession()
-    review.session.toggleAgent()
-    expect(review.session.agentPanel.about.value).not.toBeNull()
+    review.session.panels.toggleAgent()
+    expect(review.session.panels.agentPanel.about.value).not.toBeNull()
 
     for (const close of closers.splice(0)) close()
 
     expect(review.on.value).toBe('decks')
     expect(review.session.state.queue.card.value).toBeNull()
-    expect(review.session.agentPanel.about.value).toBeNull()
+    expect(review.session.panels.agentPanel.about.value).toBeNull()
   })
 })
 
@@ -407,7 +407,7 @@ describe('a session sat down to', () => {
     const { review } = await openReview()
     await settle()
 
-    await review.decks.startPreset('presets/Daily.md')
+    await review.actions.startPreset('presets/Daily.md')
 
     expect(review.on.value).toBe('session')
     expect(wire.requestedSessions).toEqual([
@@ -421,7 +421,7 @@ describe('a session sat down to', () => {
     const { review } = await openReview()
     await settle()
 
-    await review.decks.startPreset('presets/Daily.md')
+    await review.actions.startPreset('presets/Daily.md')
 
     expect(review.on.value).toBe('decks')
     expect(notices.getShown().map((one) => one.severity)).toEqual(['error'])
@@ -429,14 +429,14 @@ describe('a session sat down to', () => {
 
   it('ends the conversation with the card it was about', async () => {
     const review = await openSession()
-    review.session.toggleAgent()
-    expect(review.session.agentPanel.about.value).not.toBeNull()
+    review.session.panels.toggleAgent()
+    expect(review.session.panels.agentPanel.about.value).not.toBeNull()
 
     review.session.state.actions.show()
-    await review.session.recordReview('good')
+    await review.actions.recordReview('good')
 
-    expect(review.session.agentPanel.about.value).toBeNull()
-    expect(review.session.agentPanel.open.value).toBe(false)
+    expect(review.session.panels.agentPanel.about.value).toBeNull()
+    expect(review.session.panels.agentPanel.open.value).toBe(false)
   })
 
   it('is left alone by a deck written underneath it', async () => {
@@ -463,7 +463,7 @@ describe('a session sat down to', () => {
 
   it('reads the notes of the vault it is on', async () => {
     const review = await openSession()
-    review.session.toggleNotes()
+    review.session.panels.toggleNotes()
     await settle()
 
     expect(wire.requestedNotes).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
@@ -472,9 +472,9 @@ describe('a session sat down to', () => {
   it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
     agent.setUnreachable('no model is set up')
     const review = await openSession()
-    review.session.toggleAgent()
+    review.session.panels.toggleAgent()
 
-    expect(review.session.agentPanel.open.value).toBe(false)
+    expect(review.session.panels.agentPanel.open.value).toBe(false)
     expect(notices.getShown()).toMatchObject([{ text: 'no model is set up', severity: 'warning' }])
   })
 })
@@ -501,8 +501,8 @@ describe('the keys of the review', () => {
   it('scroll nothing, and break nothing, while no reading is drawn', async () => {
     const { review } = await openReview({ isPageDrawn: false })
     await settle()
-    await review.decks.start('decks/Suffixes.md')
-    review.session.toggleNotes()
+    await review.actions.start('decks/Suffixes.md')
+    review.session.panels.toggleNotes()
     await settle()
     const faults: unknown[] = []
     const onFault = (event: ErrorEvent) => faults.push(event.error)
@@ -517,7 +517,7 @@ describe('the keys of the review', () => {
 
   it('scroll the reading with the space bar while it is up', async () => {
     const review = await openSession()
-    review.session.toggleNotes()
+    review.session.panels.toggleNotes()
     await settle()
 
     await press(review, ' ')

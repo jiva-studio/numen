@@ -21,7 +21,7 @@ const props = defineProps<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { on, vaultCount, decks, session, notesPage } = props.state
+const { on, vaultCount, decks, session, actions, notesPage } = props.state
 provide(MOUNT_VIEW, props.state.mountView)
 
 /** The status shown while the decks wait on the vault's count. */
@@ -48,9 +48,9 @@ function onNotesPage(page: unknown) {
         :by-deck="decks.schedules.byDeck.value"
         :has-presets="decks.schedules.known.value"
         :today="decks.today.value"
-        @start="decks.start"
-        @start-preset="decks.startPreset"
-        @back="decks.goToVaults"
+        @start="actions.start"
+        @start-preset="actions.startPreset"
+        @back="actions.goToVaults"
       />
 
       <!-- The decks are drawn from the vault's count, which may still be on its way. -->
@@ -63,7 +63,7 @@ function onNotesPage(page: unknown) {
     <SessionSummary
       v-else-if="session.state.progress.isOver.value"
       :done="session.state.progress.completedCount.value"
-      @leave="session.leave"
+      @leave="actions.leave"
     />
 
     <Session
@@ -72,20 +72,20 @@ function onNotesPage(page: unknown) {
       :is-shown="session.state.queue.isAnswerShown.value"
       :left="session.state.progress.left.value"
       :can-take-back="session.state.queue.answers.value.length > 0"
-      :at="session.at.value"
-      @update:at="session.moveTo"
+      :at="session.panels.at.value"
+      @update:at="session.panels.moveTo"
       @show="session.state.actions.show"
-      @answer="session.recordReview"
+      @answer="actions.recordReview"
       @take-back="session.state.actions.takeBack"
-      @leave="session.leave"
-      @ask="session.toggleAgent"
-      @read="session.toggleNotes"
+      @leave="actions.leave"
+      @ask="session.panels.toggleAgent"
+      @read="session.panels.toggleNotes"
     >
       <template #reading>
-        <NotesPanel :ref="onNotesPage" :panel="session.notesPanel" />
+        <NotesPanel :ref="onNotesPage" :panel="session.panels.notesPanel" />
       </template>
       <template #panel>
-        <AgentPanel :panel="session.agentPanel" />
+        <AgentPanel :panel="session.panels.agentPanel" />
       </template>
     </Session>
   </div>

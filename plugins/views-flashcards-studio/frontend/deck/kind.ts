@@ -82,5 +82,5 @@ export function createDeckKind({
     createFile: (folder, name) => createDeck(name, folder),
   }
 
-  return kind
+  return { kind }
 }

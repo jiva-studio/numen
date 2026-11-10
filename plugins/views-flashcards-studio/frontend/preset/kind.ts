@@ -82,12 +82,12 @@ interface KindDeps {
   flush: (state: PresetTabState) => Promise<void>
 }
 
-function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
+function createPresetKind(deps: KindDeps): { kind: TabKindRegistration<PresetTabState> } {
   const { context, open, titles, bounds, core, today, states, flush } = deps
   const getTitle = (path: string): string =>
     titles.get(path) || getFileName(path) || words.newPreset
 
-  return {
+  const kind: TabKindRegistration<PresetTabState> = {
     kind: PRESET,
     component: PresetTab,
     icon: Gauge,
@@ -114,6 +114,7 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
     flushPending: (one) => flush(one),
     createFile: (folder, name) => core.createPreset(name, folder),
   }
+  return { kind }
 }
 
 /**
@@ -165,7 +166,7 @@ export function usePresetTab(deps: PresetTabDeps) {
     if (one) await flushOne(one)
   }
 
-  const kind = createPresetKind({
+  const { kind } = createPresetKind({
     context,
     open,
     titles,

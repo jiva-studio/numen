@@ -69,6 +69,7 @@ function useSessionCards() {
   const cardIndex = ref(0)
   const isAnswerShown = ref(false)
   const answers = ref<string[]>([])
+  const writing = ref(false)
 
   const card = computed<ReviewCard | null>(() => request.value[cardIndex.value] ?? null)
   const remaining = computed(() => request.value.length - cardIndex.value)
@@ -83,7 +84,7 @@ function useSessionCards() {
   }
 
   return {
-    queue: { cardList: request, cardIndex, answers, card, isAnswerShown },
+    queue: { cardList: request, cardIndex, answers, card, isAnswerShown, writing },
     progress: { left: remaining, isOver, completedCount: isDone },
     reset,
   }
@@ -256,60 +257,57 @@ function createSessionOpener(deps: {
   return { start, forget }
 }
 
-export function useReviewSession(deps: SessionDeps) {
-  const now = deps.now ?? (() => getNow())
-  const vault = ref('')
-  const run = ref('')
-  const writing = ref(false)
-  let displayedAt = now()
-  const cards = useSessionCards()
+function createSessionActions(deps: {
+  cardsClient: SessionClient
+  reportError: (why: unknown) => void
+  now: () => number
+  cards: ReturnType<typeof useSessionCards>
+  vault: Ref<string>
+  run: Ref<string>
+}) {
+  let displayedAt = deps.now()
+  const setPut = (time: number) => {
+    displayedAt = time
+  }
 
   const { start, forget } = createSessionOpener({
-    cardsClient: deps.cards,
-    reportError: deps.reportError,
-    now,
-    cards,
-    vault,
-    run,
-    setPut: (time) => {
-      displayedAt = time
-    },
+    ...deps,
+    setPut,
   })
 
   const { answer, takeBack } = createAnswerActions({
+    ...deps,
+    writing: deps.cards.queue.writing,
+    getPut: () => displayedAt,
+    setPut,
+  })
+
+  const show = () => {
+    deps.cards.queue.isAnswerShown.value = true
+  }
+
+  return { start, show, answer, takeBack, forget }
+}
+
+export function useReviewSession(deps: SessionDeps) {
+  const vault = ref('')
+  const run = ref('')
+  const cards = useSessionCards()
+
+  const actions = createSessionActions({
     cardsClient: deps.cards,
     reportError: deps.reportError,
-    now,
+    now: deps.now ?? (() => getNow()),
+    cards,
     vault,
     run,
-    cards,
-    writing,
-    getPut: () => displayedAt,
-    setPut: (time) => {
-      displayedAt = time
-    },
   })
 
   return {
     ids: { vault: vault as Ref<string>, run },
-    queue: {
-      cardList: cards.queue.cardList,
-      cardIndex: cards.queue.cardIndex,
-      isAnswerShown: cards.queue.isAnswerShown,
-      answers: cards.queue.answers,
-      card: cards.queue.card,
-      writing,
-    },
+    queue: cards.queue,
     progress: cards.progress,
-    actions: {
-      start,
-      show: () => {
-        cards.queue.isAnswerShown.value = true
-      },
-      answer,
-      takeBack,
-      forget,
-    },
+    actions,
   }
 }
 

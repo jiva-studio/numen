@@ -215,31 +215,14 @@ export const useReview = (deps: ReviewDeps) => {
   })
 
   return {
-    vault: deps.vault,
     mountView: deps.mountView,
     on,
     vaultCount,
     onKeyDown,
     notesPage,
-    decks: {
-      today: deps.counts.day,
-      reviewDays,
-      schedules,
-      start: actions.start,
-      startPreset: actions.startPreset,
-      goToVaults: actions.goToVaults,
-    },
-    session: {
-      state,
-      at: panels.at,
-      moveTo: panels.moveTo,
-      recordReview: actions.recordReview,
-      toggleAgent: panels.toggleAgent,
-      toggleNotes: panels.toggleNotes,
-      leave: actions.leave,
-      agentPanel: panels.agentPanel,
-      notesPanel: panels.notesPanel,
-    },
+    actions,
+    decks: { today: deps.counts.day, reviewDays, schedules },
+    session: { state, panels },
   }
 }
 

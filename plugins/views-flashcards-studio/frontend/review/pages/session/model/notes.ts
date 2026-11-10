@@ -106,18 +106,14 @@ function useDeckNotes(
 export function useNotesPanel(deps: NotesPanelDeps) {
   const open = computed(() => deps.open())
   const activePath = ref('')
-  const { notes, links, unread, isWorking, fetchNotes, clearNotes } = useDeckNotes(
-    deps.getDeckNeighbourhood,
-    deps.showNotice,
-    deps.resolveLinks,
-  )
+  const content = useDeckNotes(deps.getDeckNeighbourhood, deps.showNotice, deps.resolveLinks)
 
   const openPanel = async (note = '') => {
     const deck = deps.deck()
     if (!deck) return
     activePath.value = note
     deps.showPanel(true)
-    await fetchNotes(deps.vault(), deck)
+    await content.fetchNotes(deps.vault(), deck)
   }
 
   const closePanel = () => {
@@ -129,13 +125,13 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   }
 
   const endSession = () => {
-    clearNotes()
+    content.clearNotes()
     activePath.value = ''
     deps.showPanel(false)
   }
 
   return {
-    content: { notes, links, unread, isWorking },
+    content,
     view: { col: activePath, open },
     actions: { openPanel, closePanel, read: readItem, endSession },
   }
