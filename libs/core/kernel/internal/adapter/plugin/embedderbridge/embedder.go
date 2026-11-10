@@ -15,19 +15,19 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/transport"
-	pluginport "github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
 // Host provides plugin resolution and activation for embeddings.
 type Host interface {
-	pluginport.PluginResolver
-	pluginport.PluginActivator
+	bridge.Activator
+	ResolveCapability(capability string) (manifest.Discovered, error)
 	WatchPluginConfig(pluginID string, fn func()) (stop func())
 }
 
 // Embedder is the embedding provider seen as an embeddingport.Embedder.
 type Embedder struct {
-	host        pluginport.PluginActivator
+	host        bridge.Activator
 	pluginID    string
 	service     bridge.Service[numenv1connect.EmbeddingServiceClient]
 	lease       *bridge.Lease

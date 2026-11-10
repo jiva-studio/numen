@@ -6,17 +6,18 @@ import (
 	"errors"
 	"io/fs"
 
+	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand/plugincontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugintheme/themecontract"
 )
 
 // Host provides the plugins and their manifests.
 type Host interface {
-	plugincontract.PluginDiscoverer
-	plugincontract.PluginResolver
+	GetPluginInfos() []plugin.Info
+	GetPlugin(id string) (manifest.Discovered, bool)
 }
 
 // Themes is the themes of the plugins the host lists.
