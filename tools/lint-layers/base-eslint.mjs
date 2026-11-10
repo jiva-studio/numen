@@ -451,6 +451,7 @@ export function createBaseConfig(dirname, options = {}) {
       files: ['**/*.spec.ts', '**/testing/**', '**/fixtures/**'],
       rules: {
         'max-lines': 'off',
+        'numen/max-composable-return-properties': 'off',
         'max-lines-per-function': 'off',
         'max-statements': 'off',
       },

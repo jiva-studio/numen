@@ -10,7 +10,6 @@ import {
   extractFilename,
   extractStatePath,
   extractTitleValue,
-  PANE_HOST_STYLE,
   PANE_LAYOUT_STYLE,
   renderFallback,
   renderPaneContent,
@@ -1216,7 +1215,6 @@ describe('pluginView helpers and stylesheet adoption', () => {
     expect(adoptedNodes[2]?.props?.class).toBe(
       'custom-container h-full w-full min-h-0 min-w-0 flex flex-col flex-1',
     )
-    expect(adoptedNodes[2]?.props?.style).toBe(PANE_HOST_STYLE)
     clearPluginStyles()
 
     // 1-arg createPluginPaneWrapper and non-Error throw

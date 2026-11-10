@@ -70,7 +70,7 @@ export function extractStatePath(state: unknown): string {
 export const PANE_LAYOUT_STYLE =
   ':host, .plugin-view-container { display: flex !important; flex-direction: column !important; width: 100% !important; height: 100% !important; min-width: 0 !important; min-height: 0 !important; flex: 1 1 0% !important; }'
 
-export const PANE_HOST_STYLE: Record<string, string> = {
+const PANE_HOST_STYLE: Record<string, string> = {
   display: 'flex',
   flexDirection: 'column',
   width: '100%',

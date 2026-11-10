@@ -37,7 +37,7 @@ function measure() {
   book.value?.measure()
 }
 
-function handleKeyPress(event: KeyboardEvent): boolean {
+function forwardKey(event: KeyboardEvent): boolean {
   return book.value?.handleKey(event) ?? false
 }
 
@@ -47,7 +47,7 @@ function focusWay() {
 
 defineExpose({
   measure,
-  handleKey: handleKeyPress,
+  handleKey: forwardKey,
   focusWay,
 })
 </script>

@@ -35,7 +35,7 @@ const inputValue = computed({
   },
 })
 
-const turn = () => {
+const onTurn = () => {
   const rawInput = typing.value
   typing.value = null
   if (rawInput === null || (typeof rawInput === 'string' && !rawInput.trim())) return
@@ -95,8 +95,8 @@ const turn = () => {
       min="1"
       :max="pageCount"
       :aria-label="words.page"
-      @change="turn"
-      @keydown.enter="turn"
+      @change="onTurn"
+      @keydown.enter="onTurn"
     />
     <span class="text-small text-hushed pe-1">/ {{ pageCount }}</span>
   </div>

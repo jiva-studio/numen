@@ -43,7 +43,7 @@ const release = (): void => {
   win.removeEventListener('pointercancel', release)
 }
 
-const press = (event: PointerEvent): void => {
+const onPress = (event: PointerEvent): void => {
   if ((event.target as HTMLElement | null)?.closest?.(WORKED) == null) return
   isDraggable.value = false
   win.addEventListener('pointerup', release)
@@ -52,7 +52,7 @@ const press = (event: PointerEvent): void => {
 
 onScopeDispose(release)
 
-const step = (event: KeyboardEvent): void => {
+const onStep = (event: KeyboardEvent): void => {
   const direction = parseStepKey(event.key)
   if (direction !== null) emit('step', direction, event)
 }
@@ -68,7 +68,7 @@ const step = (event: KeyboardEvent): void => {
     :title="drag"
     @dragstart="emit('dragstart', $event)"
     @dragend="emit('dragend', $event)"
-    @pointerdown="press"
+    @pointerdown="onPress"
   >
     <!-- The handle is what the keyboard takes hold of. The pointer has the
          whole strip, so it takes no drag of its own. -->
@@ -78,7 +78,7 @@ const step = (event: KeyboardEvent): void => {
       tabindex="0"
       :aria-label="drag"
       :aria-keyshortcuts="STEP_KEYS"
-      @keydown="step"
+      @keydown="onStep"
     >
       <Icon name="grip" />
     </span>
