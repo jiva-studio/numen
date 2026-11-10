@@ -9,7 +9,8 @@ import { ref } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useVaults } from './useVaults'
-import { WINDOW_WORDS } from '../../../app/window/words'
+import { getVaultList } from '@/app/window/vaultList'
+import { VAULT_WORDS } from '../words'
 
 const TWO = {
   vaults: [
@@ -103,6 +104,7 @@ describe('the vault list before and after it is requested for', () => {
       windowService: { getCurrentVault: () => ({ vault: 'roots' }) },
     })
     const target = useVaults({
+      listVaults: getVaultList,
       log: { getWriter } as never,
       chunks: ref(0),
       embedded: ref(0),
