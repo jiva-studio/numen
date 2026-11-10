@@ -20,7 +20,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
       },
       requestClose: record('requestClose'),
     } as never,
-    notes: {} as never,
+    reached: {} as never,
     runs: {} as never,
     writeMessage: vi.fn(),
     ...override,
@@ -80,15 +80,13 @@ describe('the commands reach the window', () => {
     expect(() => createOptions().deps.navigator.search()).not.toThrow()
   })
 
-  it('hands the notes and the runs it was given, and emits events through the core', () => {
+  it('hands the runs it was given, and emits events through the core', () => {
     const emitEvent = vi.fn()
-    const notes = { name: 'notes' } as never
     const runs = { name: 'runs' } as never
-    const { deps } = createOptions({ core: { emitEvent } as never, notes, runs })
+    const { deps } = createOptions({ core: { emitEvent } as never, runs })
 
     deps.emitEvent?.('custom:event')
 
-    expect(deps.notes).toBe(notes)
     expect(deps.runSupport).toBe(runs)
     expect(emitEvent).toHaveBeenCalledWith('custom:event')
   })

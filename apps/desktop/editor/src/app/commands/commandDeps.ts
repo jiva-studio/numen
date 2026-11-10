@@ -9,7 +9,7 @@ import type { WindowTabs } from '@/entities/tab'
 export interface CommandDepsOptions {
   core: VaultCore
   windowTabs: WindowTabs
-  notes: Notes
+  reached: Notes
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }
   runs: RunSupport
   writeMessage: MessageWriter
@@ -86,12 +86,12 @@ export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Note
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, notes, runs, writeMessage } = options
+  const { core, windowTabs, reached, runs, writeMessage } = options
 
   return {
     navigator: createNavigationCommands(options),
     settings: createSettingsCommands(options),
-    notes,
+    notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,
     writeMessage,
     emitEvent: (event) => (core as { emitEvent?: (event: string) => void }).emitEvent?.(event),

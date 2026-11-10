@@ -24,7 +24,7 @@ import {
   type Notes,
   type RunSupport,
 } from '@/entities/command'
-import { createCommandDeps, createCommandNotes } from './commandDeps'
+import { createCommandDeps } from './commandDeps'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 import { createItemLists } from './pluginItems'
 import { toRunTarget } from './runTarget'
@@ -274,7 +274,6 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,
-    notes: createCommandNotes(options.reached, windowTabs),
     search: () => {
       commands.setOpen(false)
       palette.setOpen(true)

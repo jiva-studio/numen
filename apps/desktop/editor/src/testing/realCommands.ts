@@ -22,6 +22,7 @@ import {
 } from '@/app/commands/featureCommands'
 import { useCommands, type CommandsDepsOptions } from '@/app/commands/useCommands'
 import { WORDS } from '@/shared/words'
+import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
 
 export interface ManifestKeybinding {
@@ -164,7 +165,7 @@ export function createRealWindow(parts: RealWindowParts) {
   }
   const features = collectFeatureCommands(
     createFeatureDeps({
-      making: {} as never,
+      making: createNoteWriter(() => undefined),
       notes: options.reached,
       windowTabs: options.windowTabs as never,
       travel: () => undefined,

@@ -100,6 +100,30 @@ function isPaletteOpen(ctx: WindowContext): boolean {
   return commands ? commands.palette.open.value || commands.commands.open.value : false
 }
 
+/** The commands of the features, over the parts of the window they act on. */
+function initFeatureCommands(base: WindowCore, ctx: WindowContext, services: WindowServices) {
+  const { editing, window } = services
+  ctx.featureCommands = collectFeatureCommands(
+    createFeatureDeps({
+      making: editing.making,
+      notes: createCommandNotes(editing.reached, base.windowTabs),
+      windowTabs: base.windowTabs,
+      travel: (path) => getKinds(ctx).travel(path),
+      leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
+      getOpeningNote: () => window.opening.value,
+      tabsHold: {
+        pause: async () => getTabsHold(ctx).pause(),
+        resume: () => getTabsHold(ctx).resume(),
+      },
+      setVaultName: getVaults(ctx).setVaultName,
+      reload: getVaults(ctx).reload,
+      writeMessage: base.writeMessage,
+    }),
+    words,
+  )
+  registerFeatureCommands(ctx.featureCommands)
+}
+
 export function initWindowKindsAndCommands(
   base: WindowCore,
   ctx: WindowContext,
@@ -149,25 +173,7 @@ export function initWindowKindsAndCommands(
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
-  ctx.featureCommands = collectFeatureCommands(
-    createFeatureDeps({
-      making: editing.making,
-      notes: createCommandNotes(editing.reached, base.windowTabs),
-      windowTabs: base.windowTabs,
-      travel: (path) => getKinds(ctx).travel(path),
-      leavePath: (from, to) => getKinds(ctx).leavePath(from, to),
-      getOpeningNote: () => window.opening.value,
-      tabsHold: {
-        pause: async () => getTabsHold(ctx).pause(),
-        resume: () => getTabsHold(ctx).resume(),
-      },
-      setVaultName: getVaults(ctx).setVaultName,
-      reload: getVaults(ctx).reload,
-      writeMessage: base.writeMessage,
-    }),
-    words,
-  )
-  registerFeatureCommands(ctx.featureCommands)
+  initFeatureCommands(base, ctx, services)
 
   ctx.commands = initWindowCommands({
     windowTabs: base.windowTabs,

@@ -1,13 +1,40 @@
 /**
  * The commands of the editor as a window collects them from its features, for a test that reads
- * the rows. Nothing runs them, so the window they use is empty.
+ * the rows. Nothing runs them, so the window they use does nothing.
  */
 import { collectFeatureCommands, type FeatureCommandsDeps } from '@/app/commands/featureCommands'
-import type { Command } from '@/entities/command'
+import type { Command, Notes } from '@/entities/command'
+import { createNoteWriter } from '@/entities/note'
 import { WORDS } from '@/shared/words'
 
-const NO_WINDOW: FeatureCommandsDeps = { notes: {} as never, files: {} as never, vaults: {} as never }
+const noop = (): void => undefined
+
+const NO_NOTES: Notes = {
+  getTabAt: () => null,
+  getPath: (id) => id,
+  asking: () => false,
+  flushPending: () => Promise.resolve(),
+  close: noop,
+  openFile: noop,
+}
+
+/** A window whose tabs hold nothing and whose core is never asked. */
+export const createEmptyWindow = (): FeatureCommandsDeps => ({
+  notes: {
+    making: createNoteWriter(noop),
+    notes: NO_NOTES,
+    navigator: {
+      travel: () => Promise.resolve(),
+      leave: () => Promise.resolve(),
+      getOpeningNote: () => '',
+      showTab: noop,
+    },
+    writeMessage: noop,
+  },
+  files: { notes: NO_NOTES, writeMessage: noop },
+  vaults: { setVaultName: noop, reload: noop, writeMessage: noop },
+})
 
 /** Every command of the editor in the order the palette draws them. */
 export const createAppCommands = (agent?: string): readonly Command[] =>
-  collectFeatureCommands(NO_WINDOW, WORDS, agent).commands
+  collectFeatureCommands(createEmptyWindow(), WORDS, agent).commands
