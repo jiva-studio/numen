@@ -46,6 +46,12 @@ function onDisable(): void {
 
 <style scoped>
 .plugin-stopped {
+  --stopped-row-gap: 0.125rem;
+  --stopped-spacing: 1.75rem;
+  --stopped-pad-block: 0.5rem;
+  --stopped-pad-inline: 0.75rem;
+  --stopped-detail-offset: 0.25rem;
+  --stopped-action-gap: 0.375rem;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
@@ -53,10 +59,10 @@ function onDisable(): void {
     'when    actions'
     'detail  detail';
   column-gap: var(--numen-panel-gap);
-  row-gap: 0.125rem;
+  row-gap: var(--stopped-row-gap);
   align-items: start;
-  margin-block-end: 1.75rem;
-  padding: 0.5rem 0.75rem;
+  margin-block-end: var(--stopped-spacing);
+  padding: var(--stopped-pad-block) var(--stopped-pad-inline);
   border: var(--numen-stroke) solid var(--numen-alarm);
   border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
@@ -79,7 +85,7 @@ function onDisable(): void {
 
 .plugin-stopped__detail {
   grid-area: detail;
-  margin-block-start: 0.25rem;
+  margin-block-start: var(--stopped-detail-offset);
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
 }
@@ -90,7 +96,7 @@ function onDisable(): void {
 
 .plugin-stopped__detail code {
   display: block;
-  margin-block-start: 0.25rem;
+  margin-block-start: var(--stopped-detail-offset);
   font-family: var(--numen-font-mono);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -99,6 +105,6 @@ function onDisable(): void {
 .plugin-stopped__actions {
   grid-area: actions;
   display: flex;
-  gap: 0.375rem;
+  gap: var(--stopped-action-gap);
 }
 </style>

@@ -16,6 +16,7 @@ export default {
     "numen/no-token-declaration": true,
     "numen/known-token": true,
     "numen/no-rounded-side-border": true,
+    "numen/no-bare-length": true,
   },
   overrides: [
     { files: ["**/*.vue"], customSyntax: "postcss-html" },
@@ -26,6 +27,7 @@ export default {
         "color-named": null,
         "function-disallowed-list": null,
         "numen/no-token-declaration": null,
+        "numen/no-bare-length": null,
       },
     },
   ],

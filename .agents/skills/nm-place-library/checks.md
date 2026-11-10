@@ -25,7 +25,7 @@ A red check is fixed in the code, not by changing the check or moving code out o
 ## Styles
 
 - `styles-use-tokens`: a colour literal outside a token or theme file, a `--numen-` declaration outside those files, a `var()` with a fallback, and a `var(--numen-…)` that no token file declares.
-- Planned (Package F22): a stylelint check on lengths: no `px` for a size except a 1px hairline border, no bare length on a property, local custom properties in `rem` or `em` only.
+- `styles-use-tokens` also holds the rule `numen/no-bare-length`: no `px` for a size except a 1px hairline border, no bare length on a property, local custom properties in `rem` or `em` only.
 
 ## Shape and discipline
 

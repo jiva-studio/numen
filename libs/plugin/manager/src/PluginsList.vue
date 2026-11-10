@@ -111,21 +111,26 @@ function isPluginEnabled(pluginId: string): boolean {
 
 <style scoped>
 .plugins-list {
+  --list-gap: 0.5rem;
+  --list-spacing: 1rem;
+  --search-pad-block: 0.5rem;
+  --search-pad-inline: 0.75rem;
+  --items-gap: 0.125rem;
   display: flex;
   flex-direction: column;
 }
 
 .plugins-list__search {
   display: flex;
-  gap: 0.5rem;
-  margin-block-end: 1rem;
+  gap: var(--list-gap);
+  margin-block-end: var(--list-spacing);
 }
 
 .plugins-list__search-input {
   box-sizing: border-box;
   flex: 1 1 auto;
   min-inline-size: 0;
-  padding: 0.5rem 0.75rem;
+  padding: var(--search-pad-block) var(--search-pad-inline);
   background-color: var(--numen-field-bg);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius-tight);
@@ -141,7 +146,7 @@ function isPluginEnabled(pluginId: string): boolean {
 .plugins-list__items {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--items-gap);
 }
 
 .plugins-list__empty {

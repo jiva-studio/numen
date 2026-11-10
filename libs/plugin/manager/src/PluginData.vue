@@ -72,8 +72,15 @@ function onConfirm(): void {
 </template>
 
 <style scoped>
+.plugin-data {
+  --data-pad-inline: 1rem;
+  --asking-gap: 0.375rem;
+  --asking-pad-block: 0.5rem;
+  --asking-pad-inline: 0.75rem;
+}
+
 .plugin-data__card {
-  padding-inline: 1rem;
+  padding-inline: var(--data-pad-inline);
   border: var(--numen-stroke) solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background-color: var(--numen-raised);
@@ -84,9 +91,9 @@ function onConfirm(): void {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 0.375rem;
-  margin-block-start: 0.375rem;
-  padding: 0.5rem 0.75rem;
+  gap: var(--asking-gap);
+  margin-block-start: var(--asking-gap);
+  padding: var(--asking-pad-block) var(--asking-pad-inline);
   border: var(--numen-stroke) solid var(--numen-alarm);
   border-radius: var(--numen-radius-tight);
   color: var(--numen-ink);
@@ -94,11 +101,11 @@ function onConfirm(): void {
 
 .plugin-data__answers {
   display: flex;
-  gap: 0.375rem;
+  gap: var(--asking-gap);
 }
 
 .plugin-data__problem {
-  margin: 0.375rem 0 0;
+  margin: var(--asking-gap) 0 0;
   color: var(--numen-alarm);
   font-size: var(--numen-text-1);
 }

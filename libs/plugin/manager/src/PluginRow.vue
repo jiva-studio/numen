@@ -123,12 +123,25 @@ function onChooseMenuItem(id: string): void {
 
 <style scoped>
 .plugin-row {
+  --row-min-size: 3.5rem;
+  --row-pad-block: 0.625rem;
+  --row-pad-inline: 0.75rem;
+  --row-text-gap: 0.125rem;
+  --row-header-gap: 0.25rem;
+  --focus-width: 0.125rem;
+  --focus-inset: -0.125rem;
+  --chevron-size: 1.25rem;
+  --badge-pad-block: 0.125rem;
+  --badge-pad-inline: 0.4375rem;
+  --badge-offset: 0.25rem;
+  --state-pad-block: 0.125rem;
+  --state-pad-inline: 0.375rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--numen-panel-gap);
-  min-block-size: 3.5rem;
-  padding: 0.625rem 0.75rem;
+  min-block-size: var(--row-min-size);
+  padding: var(--row-pad-block) var(--row-pad-inline);
   cursor: pointer;
   user-select: none;
   transition:
@@ -142,8 +155,8 @@ function onChooseMenuItem(id: string): void {
 }
 
 .plugin-row:focus-visible {
-  outline: 2px solid var(--numen-accent);
-  outline-offset: -2px;
+  outline: var(--focus-width) solid var(--numen-accent);
+  outline-offset: var(--focus-inset);
 }
 
 .plugin-row--disabled {
@@ -160,7 +173,7 @@ function onChooseMenuItem(id: string): void {
 .plugin-row__main {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--row-text-gap);
   flex: 1 1 auto;
   min-inline-size: 0;
 }
@@ -168,7 +181,7 @@ function onChooseMenuItem(id: string): void {
 .plugin-row__header {
   display: flex;
   align-items: baseline;
-  gap: 0.25rem;
+  gap: var(--row-header-gap);
 }
 
 .plugin-row__category {
@@ -186,7 +199,7 @@ function onChooseMenuItem(id: string): void {
 .plugin-version-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.125rem 0.4375rem;
+  padding: var(--badge-pad-block) var(--badge-pad-inline);
   border-radius: var(--numen-radius-pill);
   background: color-mix(in srgb, var(--numen-accent) 16%, transparent);
   border: 1px solid color-mix(in srgb, var(--numen-accent) 40%, transparent);
@@ -196,7 +209,7 @@ function onChooseMenuItem(id: string): void {
   line-height: 1;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
-  margin-inline-start: 0.25rem;
+  margin-inline-start: var(--badge-offset);
 }
 
 .plugin-row__description {
@@ -218,7 +231,7 @@ function onChooseMenuItem(id: string): void {
 
 .plugin-row__badge {
   font-size: var(--numen-text-1);
-  padding: 0.125rem 0.375rem;
+  padding: var(--state-pad-block) var(--state-pad-inline);
   border-radius: var(--numen-radius-tight);
 }
 
@@ -233,7 +246,7 @@ function onChooseMenuItem(id: string): void {
 }
 
 .plugin-row__chevron {
-  font-size: 1.25rem;
+  font-size: var(--chevron-size);
   line-height: 1;
   color: var(--numen-hushed);
 }
