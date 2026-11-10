@@ -23,7 +23,8 @@ import {
   type PresetStateContext,
 } from './open'
 import { flushWrites } from './writeQueue'
-import type { PresetTabState, SettingValue } from './types'
+import type { PresetTabState } from './types'
+import type { SettingValue } from '../lib/settings'
 
 export type { PresetTabState, SettingValue }
 

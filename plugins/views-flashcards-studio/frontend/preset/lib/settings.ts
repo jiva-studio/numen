@@ -5,7 +5,9 @@ import { dayAfter, daysBetween, isDay } from '../../lib/day'
 import type { Bounds, BudgetUnit, Goal, Load, Rule, Settings, SettingsBounds } from '../../lib/presets'
 import { clamp, findNearest } from './curve'
 import type { Field } from './fields'
-import type { SettingValue } from '../model/types'
+
+/** What a setting of a preset holds. */
+export type SettingValue = number | string | boolean | Load
 
 /** How far off the day a goal of a date opens on, where the file names none. */
 export const DATE_GOAL_OFFSET_DAYS = 30

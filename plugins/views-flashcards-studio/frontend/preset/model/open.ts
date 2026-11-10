@@ -11,8 +11,9 @@ import { WORDS as words } from '../lib/words'
 import { applyGoal, applyTypedSetting, findGridIndex, reconcileSettings } from '../lib/settings'
 import { createCurveState, updateCurves, type CurveState } from './curves'
 import { canCloseTab, createWriteQueue, requestWrite, type WriteQueue } from './writeQueue'
-import type { PresetTabState, SettingValue } from './types'
+import type { PresetTabState } from './types'
 import type { Field } from '../lib/fields'
+import type { SettingValue } from '../lib/settings'
 
 /** State held by one open preset tab. */
 export interface OpenPreset {

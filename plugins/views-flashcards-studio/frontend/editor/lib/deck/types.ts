@@ -1,8 +1,6 @@
 /**
  * Type declarations for the flashcards deck tab domain.
  */
-import type { Marks } from '../../../lib/marks'
-import type { DeckCard, DeckSection, CardModel } from '../../../lib/cards'
 import type { Surrounds, Value } from '../../../types'
 
 /**

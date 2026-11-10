@@ -20,7 +20,8 @@ import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 import { WORDS as words } from '../lib/words'
 import PresetTab from '../ui/PresetTab.vue'
 import type { ErrorCode, CardsFailure } from '../../types'
-import type { PresetTabState, SettingValue } from './types'
+import type { PresetTabState } from './types'
+import type { SettingValue } from '../lib/settings'
 
 const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,

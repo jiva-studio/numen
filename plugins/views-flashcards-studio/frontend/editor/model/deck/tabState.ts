@@ -7,7 +7,6 @@ import type { Marks } from '../../../lib/marks'
 import type { DeckCard, DeckSection, CardModel } from '../../../lib/cards'
 import type { BufferDeck } from '../../lib/deck/types'
 import type { Choice, DeckPreset } from './useDeckSchedule'
-import type { Value } from '../../../types'
 
 /** Reactive data state of an open deck tab. */
 export interface DeckDataState {
