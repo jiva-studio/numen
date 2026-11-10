@@ -28,7 +28,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/triggerpasses"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	agentuse "github.com/jiva-studio/numen/libs/core/kernel/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
@@ -175,7 +174,7 @@ type behind struct {
 
 func opening(t *testing.T, notes map[string]string, watcher vaultport.VaultWatcher, readers vaultport.VaultReaders) *behind {
 	t.Helper()
-	return openingWith(t, notes, watcher, readers, nil, quietPeriod)
+	return openingWith(t, notes, watcher, readers, nil, indexing.QuietPeriod)
 }
 
 func openingWith(
@@ -202,27 +201,21 @@ func openingWith(
 	bindNotes(api, db)
 	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
 	api.UseNotes()
-	api.state.setVault(v)
+	api.state.SetVault(v)
 	if embedder != nil {
 		if err := db.VectorIndex().FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
 			t.Fatal(err)
 		}
-		api.state.Indexing.Model.Store(embedder.GetModel().String())
+		api.state.RecordModel(embedder.GetModel().String(), "")
 		api.state.Indexing.Embedding = indexing.NewEmbedding(nil, db.Progress())
 	}
 	line, isDone := api.state.ChangeEvents.subscribe()
 	t.Cleanup(isDone)
 
-	made := wired.session(db, readers, watcher)
-	worker := newIndexWorker(wired.readVault(db), api.state, indexing.NewEmbedding(embedder, db.Progress()), idleDuration, io.Discard)
-	api.state.NotifyNoteWritten = worker.WakeNotes
-
-	ctx, stop := context.WithCancel(t.Context())
-	_, wait := startIndexing(ctx, made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: false, worker: worker, session: worker.NewSession(), out: io.Discard})
-	t.Cleanup(func() {
-		stop()
-		wait()
+	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
+		embedding: indexing.NewEmbedding(embedder, db.Progress()), idle: idleDuration, out: io.Discard,
 	})
+	t.Cleanup(end)
 
 	return &behind{api: api, vault: v, index: db, recordedVal: line}
 }
@@ -302,7 +295,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	if path := next(t, readers.begun); path != "Note.md" {
 		t.Fatalf("the scan is reading %q", path)
 	}
-	if f.api.state.Ready.Load() {
+	if f.api.state.IsReady() {
 		t.Fatal("the scan finished with its reads held")
 	}
 
@@ -315,7 +308,7 @@ func TestAChangeArrivesWhileTheVaultIsStillBeingRead(t *testing.T) {
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Renamed" {
 		t.Errorf("the index says %q", title)
 	}
-	if f.api.state.Ready.Load() {
+	if f.api.state.IsReady() {
 		t.Error("the scan finished with its reads held")
 	}
 }
@@ -340,7 +333,7 @@ func TestANoteChangedBelowTheScanIsReadAgain(t *testing.T) {
 
 	// Now the scan writes what it read, and finishes.
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.state.IsReady)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "Two" {
 		t.Errorf("the index says %q", title)
@@ -367,7 +360,7 @@ func TestANoteDeletedBelowTheScanStaysDeleted(t *testing.T) {
 	next(t, f.recordedVal)
 
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.state.IsReady)
 
 	if title := titleOf(t, f.index, f.vault, "Note.md"); title != "" {
 		t.Errorf("the index still holds %q", title)
@@ -395,7 +388,7 @@ func TestANoteMadeWhileTheVaultIsBeingReadStays(t *testing.T) {
 	next(t, f.recordedVal)
 
 	readers.release()
-	waitFor(t, "the scan did not finish", f.api.state.Ready.Load)
+	waitFor(t, "the scan did not finish", f.api.state.IsReady)
 
 	if title := titleOf(t, f.index, f.vault, "Later.md"); title != "Later" {
 		t.Errorf("the index says %q of a note made while it was being read", title)
@@ -410,7 +403,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	}, watcher, unreadable{VaultReaders: vaultreader.Readers{}})
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
-		return f.api.state.Error.Why() != ""
+		return f.api.state.GetError() != ""
 	})
 
 	write(t, f.vault, "Note.md", "---\ntitle: Renamed\n---\n\n# Renamed\n")
@@ -428,7 +421,7 @@ func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
 	}, unwatchable{}, vaultreader.Readers{})
 
-	if why := f.api.state.WatchError.Why(); why == "" {
+	if why := f.api.state.GetWatchError(); why == "" {
 		t.Error("a vault whose watch never started is shown as followed")
 	}
 }
@@ -443,7 +436,7 @@ func TestAWatchThatStopsReturnsSo(t *testing.T) {
 	close(watcher.changes)
 
 	waitFor(t, "a vault whose watch stopped is shown as followed", func() bool {
-		return f.api.state.WatchError.Why() != ""
+		return f.api.state.GetWatchError() != ""
 	})
 }
 
@@ -509,18 +502,13 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 		Window:       &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()},
 	})
 	bindNotes(api, db)
-	api.state.setVault(v)
+	api.state.SetVault(v)
 
 	out := &saying{}
-	made := wired.session(db, readers, watcher)
-	worker := newIndexWorker(wired.readVault(db), api.state, nil, quietPeriod, out)
-	ctx, stop := context.WithCancel(t.Context())
-	defer stop()
-	_, wait := startIndexing(ctx, made, triggerpasses.Source{}, api.state, indexJob{vault: v, rebuild: true, worker: worker, session: worker.NewSession(), out: out})
-	t.Cleanup(func() {
-		stop()
-		wait()
+	end := wired.startSession(t, t.Context(), db, api.state, v, readers, watcher, sessionOptions{
+		idle: indexing.QuietPeriod, rebuild: true, out: out,
 	})
+	t.Cleanup(end)
 
 	waitFor(t, "the book the vault held was never taken apart", func() bool {
 		return len(out.getBooks(t)) == 1
@@ -876,7 +864,7 @@ func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
-	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
+	state.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentdomain.Task, 1)}
 	services.Mount(RouteOf(state, &windowagent.Handler{
@@ -979,7 +967,7 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
 	plugins := &routedPlugins{}
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
-	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
+	state.SetVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	services.PluginServices = plugins
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))

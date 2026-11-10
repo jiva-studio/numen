@@ -5,8 +5,8 @@ import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
-import type { Installation, SettingsTabState } from '../../types'
+import { createInstallation, createPluginInfo, createSettingsState } from '@/testing/installation'
+import type { Installation } from '../../types'
 import {
   getSettingAt as at,
   type PluginInfo,
@@ -51,7 +51,7 @@ const createDetail = (
     plugins: ref([plugin]),
     ...(platform ? { getPlatform: () => platform } : {}),
   })
-  const state: SettingsTabState = { installation }
+  const state = createSettingsState(installation)
   const wrapper = mount(PluginDetail, {
     props: { state, plugin },
     ...(attachTo ? { attachTo } : {}),
@@ -655,7 +655,9 @@ describe('the settings views of a plugin', () => {
         new Map(Object.entries(registered).map(([id, component]) => [id, { component }])),
       plugins: ref([plugin]),
     })
-    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin } })
+    const wrapper = mount(PluginDetail, {
+      props: { state: createSettingsState(installation), plugin },
+    })
     return { wrapper, recordedWrites }
   }
 
@@ -694,7 +696,9 @@ describe('the settings views of a plugin', () => {
       getSettingsViews: () => new Map([['top', { component: View }]]),
       plugins: ref([plugin]),
     })
-    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin } })
+    const wrapper = mount(PluginDetail, {
+      props: { state: createSettingsState(installation), plugin },
+    })
     expect(wrapper.findAll('.view')).toHaveLength(1)
   })
 })
@@ -711,7 +715,9 @@ describe('the data of a plugin', () => {
       return problem
     })
     const installation = createInstallation({ getPluginData, deletePluginData })
-    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin: TRANSCRIBER } })
+    const wrapper = mount(PluginDetail, {
+      props: { state: createSettingsState(installation), plugin: TRANSCRIBER },
+    })
     await flushPromises()
     return { wrapper, getPluginData, deletePluginData }
   }

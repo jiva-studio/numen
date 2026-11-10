@@ -17,9 +17,9 @@ import (
 // What each pass is called in the list of what is being done. One name each, so
 // a pass that reports itself again replaces itself.
 const (
-	WalkingNotes  = "walking the notes"
-	IndexingTexts = "indexing the file texts"
-	MakingVectors = "making the vectors"
+	WalkingNotes  = work.WalkingNotes
+	IndexingTexts = work.IndexingTexts
+	MakingVectors = work.MakingVectors
 )
 
 const taskIndexingTexts = "Indexing file texts"

@@ -25,6 +25,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	windowdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -365,7 +366,7 @@ func connectWindow(
 		importDroppedFiles(ctx, opened, event)
 	})
 
-	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *editor.PluginOpen) error {
+	opened.State.OpenVault = func(ctx context.Context, v domain.Vault, open *windowsession.PluginOpen) error {
 		err := opened.Show(ctx, v, open)
 		if err == nil {
 			hooks.cfg.SetPluginVaultPath(v.Path)

@@ -2,15 +2,16 @@ package container
 
 import (
 	"context"
-
-	textdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/text"
+	"io"
+	"sync/atomic"
+	"time"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
 	windowvault "github.com/jiva-studio/numen/libs/core/kernel/adapter/window/vault"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/windowsession"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -31,39 +32,78 @@ func getReadVault(cfg Config, db *vault.Index) indexing.OpenReading {
 	}
 }
 
-func getWindowSession(cfg Config, db *vault.Index) editor.SessionSource {
-	return editor.SessionSource{
-		StartVault:             cfg.startVault(db),
-		SetTextVersionListener: func(listener textdomain.VersionListener) { setTextVersionListener(cfg.vault(), listener) },
-		ReportTextFilesChanged: func(ctx context.Context, v domain.Vault, paths []string) error {
-			return reportTextFilesChanged(cfg.vault(), ctx, v, paths)
+func newIndexWorker(w *windowWiring, state *editor.State, embedding *indexing.Embedding, out io.Writer) *indexing.Worker {
+	return indexing.NewWorker(indexing.Config{
+		Reading:  getReadVault(w.cfg, w.db),
+		Embedder: embedding.GetEmbedder(),
+		VectorCounts: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
+			if !embedding.HasProgress() {
+				return 0, 0, indexing.ErrNoProgress
+			}
+			name, recipe := embedding.Describe()
+			state.RecordModel(name, recipe)
+			return embedding.CountProgress(ctx, v.ID, recipe)
 		},
-		GetRefresh: func() vault.Refresh { return cfg.GetRefresh(db) },
+		VectorsReady: state.EmitVectorsReady,
+		Events:       windowsession.NewIndexEvents(&state.Runtime, state.Window, out),
+		Quiet:        indexing.QuietPeriod,
+		After:        time.After,
+	})
+}
+
+func newIndexSession(worker *indexing.Worker) func() windowsession.IndexSession {
+	return func() windowsession.IndexSession {
+		session := worker.NewSession()
+		return windowsession.IndexSession{
+			Run: func(ctx context.Context, v domain.Vault, rebuild bool, read windowsession.ReadNotes) {
+				session.Run(ctx, v, rebuild, read)
+			},
+			ReportVersionsChanged: session.ReportVersionsChanged,
+		}
 	}
 }
 
-func (c Config) startVault(db *vault.Index) editor.StartVaultFunc {
+func (c Config) getTextVersions() windowsession.TextVersions {
+	if versions := c.vault().TextVersions; versions != nil {
+		return versions
+	}
+	return nil
+}
+
+func (c Config) getTriggerSource() windowsession.TriggerSource {
+	return windowsession.TriggerSource{
+		Open: func() windowsession.TriggerRunner {
+			if triggers := openTriggers(c.plugins()); triggers != nil {
+				return triggers
+			}
+			return nil
+		},
+		Watch: c.WatchPluginChanges,
+	}
+}
+
+func (c Config) startVault(db *vault.Index, refreshing *atomic.Pointer[vault.Refresh]) windowsession.VaultPassesFunc {
 	return func(
-		ctx context.Context, v domain.Vault, rebuild bool,
-		notified func(paths, assets []string, reload bool),
-		handleError window.ErrorHandler,
-	) (
-		read func(ctx context.Context, during func()) (notes int, err error),
-		run func(ctx context.Context),
-		refresh vault.Refresh,
-		unwatched error,
-	) {
+		ctx context.Context, v domain.Vault, rebuild bool, report windowsession.Reporters,
+	) windowsession.Started {
 		request := c
 		request.ShouldRebuildIndex = rebuild
 
 		opening := request.VaultOpener(db)
 		opening.ShouldRebuild = rebuild
-		opening.ErrorHandler = handleError
-		if notified != nil {
-			opening.Told = func(m vault.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+		opening.ErrorHandler = report.Failed
+		if report.Changed != nil {
+			opening.Told = func(m vault.VaultChanges) { report.Changed(m.Paths, m.Assets, m.ShouldReload) }
 		}
 
 		open := opening.Begin(ctx, v)
-		return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
+		refresh := opening.GetRefresh()
+		return windowsession.Started{
+			Read:      open.Read,
+			Run:       open.Run,
+			Unwatched: open.GetUnwatchedReason(),
+			Publish:   func() { refreshing.Store(&refresh) },
+			Retire:    func() { refreshing.Store(nil) },
+		}
 	}
 }

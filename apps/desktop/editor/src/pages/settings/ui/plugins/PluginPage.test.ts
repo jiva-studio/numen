@@ -7,7 +7,7 @@ import { nextTick, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 
 import { getSettingAt as at } from '@/entities/settings'
-import { createInstallation, createPluginInfo } from '@/testing/installation'
+import { createInstallation, createPluginInfo, createSettingsState } from '@/testing/installation'
 import SettingsTab from '../SettingsTab.vue'
 
 const PATH_SETTING = {
@@ -67,7 +67,7 @@ describe('the page of a plugin opened after another', () => {
       getPluginData: (pluginId) => fileCounts.call(pluginId),
     })
     const wrapper = mount(SettingsTab, {
-      props: { state: { installation, initialPluginId } },
+      props: { state: createSettingsState(installation, { initialPluginId }) },
       attachTo: document.body,
     })
     const history: string[] = []

@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref, shallowRef, type Ref } from 'vue'
 import { createCommands, type CommandsDepsOptions } from './createCommands'
-import type { DeclaredCommands } from '../plugins/commands/declaredCommands'
+import type { DeclaredCommands } from '@/features/plugin-commands'
 
 const isOpen = ref(false)
 
@@ -22,7 +22,10 @@ const setup = (load: () => Promise<void>, plugins?: Ref<{ id: string; isActive: 
   const declaredCommands = { paletteCommands: shallowRef([]), load } as unknown as DeclaredCommands
   createCommands({
     windowTabs: {},
-    rest: { write: { writeSettings: () => undefined }, state: { plugins } },
+    settings: {
+      state: { plugins: plugins ?? ref([]) },
+      read: { getCommittedSetting: () => undefined },
+    },
     getTarget: () => ({ file: 'books/Scan.pdf' }),
     writeMessage: (text: string, kind: string) => messages.push([text, kind]),
     declaredCommands,

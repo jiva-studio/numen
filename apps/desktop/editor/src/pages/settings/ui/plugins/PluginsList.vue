@@ -20,26 +20,22 @@ const emit = defineEmits<{
 }>()
 
 /* --------------------------------- State ---------------------------------- */
-const searchQuery = ref(props.state.initialSearchQuery?.value ?? '')
+const searchQuery = ref(props.state.initialSearchQuery.value)
 
 watch(
-  () => props.state.initialSearchQuery?.value,
+  () => props.state.initialSearchQuery.value,
   (newQuery) => {
-    if (newQuery !== undefined) {
-      searchQuery.value = newQuery
-    }
+    searchQuery.value = newQuery
   },
 )
 
 watch(searchQuery, (newQuery) => {
   const initialQuery = props.state.initialSearchQuery
-  if (initialQuery && initialQuery.value !== newQuery) {
-    initialQuery.value = newQuery
-  }
+  if (initialQuery.value !== newQuery) initialQuery.value = newQuery
 })
 
 const managed = computed(() =>
-  createManagedFromEntries(props.plugins, props.state.installation.plugin.catalog?.value ?? []),
+  createManagedFromEntries(props.plugins, props.state.installation.plugin.catalog.value),
 )
 
 const enabled = computed(() =>

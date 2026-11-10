@@ -11,3 +11,5 @@ export type {
 export { VAULT_ERRORS } from './words'
 export { vaults } from './api/vaults'
 export { getAgentUnreachable, getVaultState, watchVaultChanges } from './api/state'
+export { useVaults } from './model/useVaults'
+export { VAULT_WORDS } from './words'

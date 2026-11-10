@@ -14,3 +14,5 @@ export {
   type ItemListRequest,
 } from './api/declaredCommands'
 export { agentPort, getPluginTexts } from './api/hostClients'
+export { readPluginReadme } from './api/readme'
+export { PLUGIN_FAILURE_WORDS } from './words'

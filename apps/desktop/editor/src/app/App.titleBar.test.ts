@@ -9,7 +9,7 @@ import type { PluginHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
 import { cards, listed, mountWindow, requests, settle } from '@/testing/window'
 import { COMMAND } from '@/entities/command'
 import type * as ShellModule from '@numen/workbench'
-import type * as UseWindowPluginsModule from './plugins/useWindowPlugins'
+import type * as UseWindowPluginsModule from './plugins/pluginSupport'
 
 const frame = vi.hoisted(() => ({
   platform: 'windows' as 'windows' | 'darwin',
@@ -44,7 +44,7 @@ vi.mock('@numen/workbench', async (importOriginal) => {
 /** The plugin host of the window last mounted, so a test registers a view as a plugin does. */
 const hosts = vi.hoisted(() => ({ current: undefined as PluginHost | undefined }))
 
-vi.mock('./plugins/useWindowPlugins', async (original) => {
+vi.mock('./plugins/pluginSupport', async (original) => {
   const module = await original<typeof UseWindowPluginsModule>()
   return {
     ...module,

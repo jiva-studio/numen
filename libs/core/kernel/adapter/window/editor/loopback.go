@@ -128,13 +128,11 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.FileStat) string {
 		"?" + formatFingerprint(ref)
 }
 
-// Close stops answering.
-func (l *Loopback) Close() error {
+// Close stops answering. ctx bounds the wait for the answers under way.
+func (l *Loopback) Close(ctx context.Context) error {
 	if l == nil {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 	return l.server.Shutdown(ctx)
 }
 
