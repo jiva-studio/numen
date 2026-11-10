@@ -12,7 +12,7 @@ import StatusBar from './ui/StatusBar.vue'
 export const STATUS_BAR_VIEW = 'bar'
 
 function createStatusBarView(context: PluginContext) {
-  const { ui.slots: host, ui.commands } = context
+  const { slots: host, commands } = context.ui
   const reportError = (error: unknown): void =>
     context.ui.notices?.show(error instanceof Error ? error.message : String(error), 'error')
   return defineComponent({

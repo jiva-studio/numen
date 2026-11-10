@@ -26,9 +26,12 @@ export type { PresetTabState } from './preset/types'
 export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
-  const { ui.workspace, vault.buffers } = context
+  const { workspace } = context.ui
+  const { buffers } = context.vault
   if (!workspace) {
-    const { ui.notices, tabs.close, work.agent } = context
+    const { notices } = context.ui
+    const { close: closeTab } = context.tabs
+    const { agent } = context.work
     if (!notices || !closeTab || !agent) {
       throw new Error(
         'the review needs the notices, the tabs and the agent of the window it is drawn in',

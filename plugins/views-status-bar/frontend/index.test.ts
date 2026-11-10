@@ -128,8 +128,8 @@ describe('the bar', () => {
 
   it('draws an empty bar where the window offers no slots', () => {
     const context = createMockPluginContext({ pluginId: manifest.id })
-    const { ui.slots: _slots, ...bare } = context
-    activate(bare)
+    const { slots: _slots, ...ui } = context.ui
+    activate({ ...context, ui })
     const [registration] = context.getRegisteredSlotViews()
 
     const wrapper = mountBar(registration!.component as Component)
