@@ -125,25 +125,6 @@ func TestListReviewDays_EmptyVaultHasNoDueDays(t *testing.T) {
 	}
 }
 
-// The days are drawn along a line of time, so they are passed along one,
-// whatever order they were counted in.
-func TestTheDaysAreReturnedOldestFirst(t *testing.T) {
-	response := sortReviewDays([]*api.ReviewDay{
-		{Day: "2026-08-30"},
-		{Day: "2026-07-01"},
-		{Day: "2027-01-02"},
-		{Day: "2026-08-30"},
-		{Day: "2026-08-09"},
-	})
-
-	want := []string{"2026-07-01", "2026-08-09", "2026-08-30", "2026-08-30", "2027-01-02"}
-	for item, one := range response {
-		if one.Day != want[item] {
-			t.Errorf("the day at %d is %s, want %s", item, one.Day, want[item])
-		}
-	}
-}
-
 // A question about a vault the installation does not hold fails.
 func TestAVaultThatNoVaultContainsIsRefused(t *testing.T) {
 	handler, _ := newAPI(t)

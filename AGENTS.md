@@ -412,3 +412,4 @@ The plugin model, the SDK rules and the import rules for windows, plugins and li
     - An exception list stays as it is; the code it would exempt is changed.
     - Logic stays in the folder its layer gives it, where the checks walk.
 17. Every rule that a check enforces is stated in [`.agents/rules/architecture.md`](.agents/rules/architecture.md) with the check's name; a rule with no check is a finding for the gatekeeper.
+18. After every wave of packages in a refactor, run an independent fresh-eyes review before the next wave: a reviewer who did not write the wave reads the tree and the checks, reports findings, and changes nothing. The findings are fixed before the next wave starts.

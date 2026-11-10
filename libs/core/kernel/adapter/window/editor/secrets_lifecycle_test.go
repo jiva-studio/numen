@@ -49,11 +49,11 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 	}
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
@@ -69,7 +69,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 		t.Cleanup(server.Close)
 		ports[id] = plugintest.GetPort(t, server)
 	}
-	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return processes[p.Manifest.ID], plugintest.GetReadyOutput(ports[p.Manifest.ID]), nil
 	})
 
@@ -121,7 +121,7 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 		w.keys = keys
 	}
 	for _, id := range active {
-		if _, err := host.EnsureActive(t.Context(), id); err != nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), id); err != nil {
 			t.Fatal(err)
 		}
 		plugintest.WaitUntil(t, id+" is configured", func() bool { return probes[id].count() > 0 })
@@ -132,11 +132,11 @@ func openOverFile(t *testing.T, pluginsDir, file string, manifests map[string]st
 func openFlashcardsOver(t *testing.T, pluginsDir, file string, keys pluginport.KeyStore) *plugin.Host {
 	t.Helper()
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.flashcards", pluginsDir)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
@@ -247,7 +247,7 @@ func TestThePermissionsOfAnEditorOnlyPluginSurviveTheStartOfTheFlashcardsHost(t 
 	editorWindow.allow(t, id, gammaID, "apiKey", "mistral")
 
 	flashcards := openFlashcardsOver(t, pluginsDir, file, keys)
-	if _, found := flashcards.GetPlugin(gammaID); found {
+	if _, found := flashcards.Registry.GetPlugin(gammaID); found {
 		t.Fatalf("the flashcards host knows %s, which targets the editor only", gammaID)
 	}
 
@@ -269,17 +269,17 @@ func TestAPluginThatBecomesActiveDuringASecretOperationIsConfiguredOnce(t *testi
 	go func() {
 		close(started)
 		<-release
-		operationDone <- w.host.Refresh(t.Context())
+		operationDone <- w.host.Config.Refresh(t.Context())
 	}()
 	<-started
 
 	activationDone := make(chan error, 1)
 	go func() {
-		_, err := w.host.EnsureActive(t.Context(), gammaID)
+		_, err := w.host.Activation.EnsureActive(t.Context(), gammaID)
 		activationDone <- err
 	}()
 	plugintest.WaitUntil(t, "the plugin is active", func() bool {
-		status, found := w.host.GetPluginStatus(gammaID)
+		status, found := w.host.Registry.GetPluginStatus(gammaID)
 		return found && status.IsActive
 	})
 	close(release)

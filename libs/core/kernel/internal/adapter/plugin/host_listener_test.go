@@ -163,7 +163,7 @@ func startRelayLauncher(t *testing.T, started *atomic.Int32, listenerToken strin
 func teardownAfter(t *testing.T, host *Host) {
 	t.Helper()
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), 50*time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), 50*time.Millisecond); err != nil {
 			t.Errorf("TeardownAll failed: %v", err)
 		}
 	})
@@ -183,17 +183,17 @@ func newUndiscoveredListenerHost(t *testing.T, name string, defaultPort int, lis
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
-	host.SetLauncher(startRelayLauncher(t, &started, listenerToken))
+	host.Processes.SetLauncher(startRelayLauncher(t, &started, listenerToken))
 	return listenerHost{host: host, port: defaultPort, started: &started}
 }
 
 func discover(t *testing.T, host *Host) {
 	t.Helper()
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
 	}
-	if _, ok := host.GetPluginStatus(listenerPlugin); !ok {
-		t.Fatalf("the plugin %s is not registered; statuses %+v", listenerPlugin, host.GetPluginStatuses())
+	if _, ok := host.Registry.GetPluginStatus(listenerPlugin); !ok {
+		t.Fatalf("the plugin %s is not registered; statuses %+v", listenerPlugin, host.Registry.GetPluginStatuses())
 	}
 }
 
@@ -209,7 +209,7 @@ func waitForFailure(t *testing.T, host *Host) PluginStatus {
 	var status PluginStatus
 	plugintest.WaitUntil(t, "the plugin to be failed", func() bool {
 		var ok bool
-		status, ok = host.GetPluginStatus(listenerPlugin)
+		status, ok = host.Registry.GetPluginStatus(listenerPlugin)
 		return ok && status.Failed
 	})
 	if status.FailureReason == "" {
@@ -289,14 +289,14 @@ func TestIdleEvictionStopsThePluginOnlyAfterTheConnectionCloses(t *testing.T) {
 		t.Fatalf("reply = %q, want the echo of the line", reply)
 	}
 
-	if evicted := w.host.EvictIdle(t.Context(), 0, 50*time.Millisecond); len(evicted) != 0 {
+	if evicted := w.host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond); len(evicted) != 0 {
 		t.Fatalf("evicted %v while a connection is open", evicted)
 	}
 	if err := conn.Close(); err != nil {
 		t.Fatal(err)
 	}
 	plugintest.WaitUntil(t, "the idle plugin to be evicted", func() bool {
-		return slices.Contains(w.host.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
+		return slices.Contains(w.host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond), listenerPlugin)
 	})
 
 	second := connectListener(t, w.port)
@@ -314,12 +314,12 @@ func TestDisabledPluginListenerPortRejectsConnections(t *testing.T) {
 		t.Fatal("the listener port of the enabled plugin is not bound")
 	}
 
-	if err := w.host.SetPluginEnabled(t.Context(), listenerPlugin, false); err != nil {
+	if err := setEnabled(t.Context(), w.host, listenerPlugin, false); err != nil {
 		t.Fatal(err)
 	}
 	plugintest.WaitUntil(t, "the port of the disabled plugin to close", func() bool { return !isPortOpen(t, w.port) })
 
-	if err := w.host.SetPluginEnabled(t.Context(), listenerPlugin, true); err != nil {
+	if err := setEnabled(t.Context(), w.host, listenerPlugin, true); err != nil {
 		t.Fatal(err)
 	}
 	plugintest.WaitUntil(t, "the port of the enabled plugin to be bound", func() bool { return isPortOpen(t, w.port) })
@@ -331,7 +331,7 @@ func TestAPluginDisabledInTheSettingsHasNoBoundListenerPort(t *testing.T) {
 		t.Fatal("the listener port of the enabled plugin is not bound")
 	}
 
-	w.host.SetSettings(map[string]map[string]any{listenerPlugin: {"enabled": false}})
+	w.host.Settings.SetSettings(map[string]map[string]any{listenerPlugin: {"enabled": false}})
 
 	plugintest.WaitUntil(t, "the port of the disabled plugin to close", func() bool { return !isPortOpen(t, w.port) })
 }
@@ -351,11 +351,11 @@ func TestTheHostBindsTheStoredValueOfThePortSetting(t *testing.T) {
 			stored := getFreePort(t)
 			settings := map[string]map[string]any{listenerPlugin: {"port": float64(stored)}}
 			if storeBeforeDiscover {
-				w.host.SetSettings(settings)
+				w.host.Settings.SetSettings(settings)
 				discover(t, w.host)
 			} else {
 				discover(t, w.host)
-				w.host.SetSettings(settings)
+				w.host.Settings.SetSettings(settings)
 			}
 
 			plugintest.WaitUntil(t, "the stored port to be bound", func() bool { return isPortOpen(t, stored) })
@@ -369,11 +369,8 @@ func TestTheHostBindsTheStoredValueOfThePortSetting(t *testing.T) {
 
 func TestAChangedPortSettingBindsTheNewPortAndClosesTheOldOne(t *testing.T) {
 	for name, change := range map[string]func(context.Context, *Host, int) error{
-		"SetPluginSetting": func(ctx context.Context, host *Host, port int) error {
-			return host.SetPluginSetting(ctx, listenerPlugin, "port", float64(port))
-		},
 		"UpdatePluginSetting": func(ctx context.Context, host *Host, port int) error {
-			return host.UpdatePluginSetting(ctx, listenerPlugin, "port", float64(port))
+			return updateSetting(ctx, host, listenerPlugin, "port", float64(port))
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -403,7 +400,7 @@ func TestAPortSettingOutOfRangeMakesThePluginFailed(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			w := newUndiscoveredListenerHost(t, "mcp", getFreePort(t), "listener.mcp="+strconv.Itoa(serveEcho(t)))
-			w.host.SetSettings(map[string]map[string]any{listenerPlugin: {"port": value}})
+			w.host.Settings.SetSettings(map[string]map[string]any{listenerPlugin: {"port": value}})
 			discover(t, w.host)
 
 			waitForFailure(t, w.host)
@@ -422,11 +419,8 @@ func TestListenerPortInUseMarksThePluginFailed(t *testing.T) {
 
 func TestPortSettingChangedToUnbindablePortKeepsOldPortAndStatus(t *testing.T) {
 	changes := map[string]func(context.Context, *Host, any) error{
-		"SetPluginSetting": func(ctx context.Context, host *Host, value any) error {
-			return host.SetPluginSetting(ctx, listenerPlugin, "port", value)
-		},
 		"UpdatePluginSetting": func(ctx context.Context, host *Host, value any) error {
-			return host.UpdatePluginSetting(ctx, listenerPlugin, "port", value)
+			return updateSetting(ctx, host, listenerPlugin, "port", value)
 		},
 	}
 	values := map[string]func(t *testing.T) any{
@@ -450,7 +444,7 @@ func TestPortSettingChangedToUnbindablePortKeepsOldPortAndStatus(t *testing.T) {
 					t.Errorf("changing the port setting to %v returned no error", value)
 				}
 
-				if status, _ := w.host.GetPluginStatus(listenerPlugin); status.Failed {
+				if status, _ := w.host.Registry.GetPluginStatus(listenerPlugin); status.Failed {
 					t.Errorf("status = %+v after the port setting change was rejected, want not failed", status)
 				}
 				if reply := sendLine(t, connectListener(t, w.port), "kept"); reply != "kept" {
@@ -465,10 +459,10 @@ func TestReadyLineWithoutListenerFailsActivation(t *testing.T) {
 	w := newUndiscoveredListenerHost(t, "console", getFreePort(t), "")
 	discover(t, w.host)
 
-	_, err := w.host.EnsureActive(t.Context(), listenerPlugin)
+	_, err := w.host.Activation.EnsureActive(t.Context(), listenerPlugin)
 
 	if err == nil {
-		w.host.Release(listenerPlugin)
+		w.host.Activation.Release(listenerPlugin)
 		t.Fatal("EnsureActive succeeded for a plugin that did not report its listener")
 	}
 	if !strings.Contains(err.Error(), "console") {
@@ -487,8 +481,8 @@ func TestReadyLineWithMalformedListenerTokenFailsActivation(t *testing.T) {
 			w := newUndiscoveredListenerHost(t, "mcp", getFreePort(t), token)
 			discover(t, w.host)
 
-			if _, err := w.host.EnsureActive(t.Context(), listenerPlugin); err == nil {
-				w.host.Release(listenerPlugin)
+			if _, err := w.host.Activation.EnsureActive(t.Context(), listenerPlugin); err == nil {
+				w.host.Activation.Release(listenerPlugin)
 				t.Errorf("EnsureActive succeeded for the ready line token %q", token)
 			}
 		})
@@ -501,7 +495,7 @@ func TestTeardownAllClosesTheListenerPort(t *testing.T) {
 		t.Fatal("the listener port is not bound")
 	}
 
-	if err := w.host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
+	if err := w.host.Teardown.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
 		t.Fatalf("TeardownAll failed: %v", err)
 	}
 
@@ -536,7 +530,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 	host := NewHost(testsupport.GetMachine(), "desktop.editor", root)
 	teardownAfter(t, host)
 	var started atomic.Int32
-	host.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
+	host.Processes.SetLauncher(startRelayLauncher(t, &started, "listener.mcp="+strconv.Itoa(serveEcho(t))))
 	discover(t, host)
 
 	conn := connectListener(t, port)
@@ -551,7 +545,7 @@ func TestAListenerWithAFixedPortBindsThatPortAndForwardsTheBytes(t *testing.T) {
 
 func getStoredSettings(t *testing.T, host *Host) map[string]any {
 	t.Helper()
-	raw, err := host.GetPluginConfigJSON(listenerPlugin)
+	raw, err := host.Settings.GetPluginConfigJSON(listenerPlugin)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -586,22 +580,22 @@ func TestCheckPluginSettingAcceptsOnlyFreeOrBoundPort(t *testing.T) {
 	_, takenPort := listenLoopback(t)
 	freePort := getFreePort(t)
 
-	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(takenPort)); err == nil {
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(takenPort)); err == nil {
 		t.Errorf("CheckPluginSetting accepted the taken port %d", takenPort)
 	}
-	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, errListenerPortValue) {
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(80)); !errors.Is(err, errListenerPortValue) {
 		t.Errorf("CheckPluginSetting of port 80 = %v, want errListenerPortValue", err)
 	}
-	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(freePort)); err != nil {
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(freePort)); err != nil {
 		t.Errorf("CheckPluginSetting of the free port %d = %v, want nil", freePort, err)
 	}
 	if isPortOpen(t, freePort) {
 		t.Errorf("the free port %d stays bound after the check", freePort)
 	}
-	if err := w.host.CheckPluginSetting(listenerPlugin, "port", float64(w.port)); err != nil {
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "port", float64(w.port)); err != nil {
 		t.Errorf("CheckPluginSetting of the bound port %d = %v, want nil", w.port, err)
 	}
-	if err := w.host.CheckPluginSetting(listenerPlugin, "greeting", "good evening"); err != nil {
+	if err := w.host.Settings.CheckPluginSetting(listenerPlugin, "greeting", "good evening"); err != nil {
 		t.Errorf("CheckPluginSetting of greeting = %v, want nil", err)
 	}
 	if reply := sendLine(t, connectListener(t, w.port), "checked"); reply != "checked" {
@@ -611,11 +605,8 @@ func TestCheckPluginSettingAcceptsOnlyFreeOrBoundPort(t *testing.T) {
 
 func TestUnbindablePortSettingIsNotStoredAndOthersUpdate(t *testing.T) {
 	changes := map[string]func(context.Context, *Host, string, any) error{
-		"SetPluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
-			return host.SetPluginSetting(ctx, listenerPlugin, key, value)
-		},
 		"UpdatePluginSetting": func(ctx context.Context, host *Host, key string, value any) error {
-			return host.UpdatePluginSetting(ctx, listenerPlugin, key, value)
+			return updateSetting(ctx, host, listenerPlugin, key, value)
 		},
 	}
 	values := map[string]func(t *testing.T) any{
@@ -631,7 +622,7 @@ func TestUnbindablePortSettingIsNotStoredAndOthersUpdate(t *testing.T) {
 			t.Run(changeName+" to "+valueName, func(t *testing.T) {
 				w := newListenerHost(t)
 				var persisted persistedKeys
-				w.host.SetPersistHandler(persisted.add)
+				w.host.Settings.SetPersistHandler(persisted.add)
 				value := getValue(t)
 
 				if err := change(t.Context(), w.host, "port", value); err == nil {

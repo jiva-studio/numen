@@ -24,7 +24,7 @@ func TestAListenerThatRegistersAnotherListenerDoesNotBlockTheAnnouncement(t *tes
 	})
 
 	mock.modelName.Store("another-model")
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -34,7 +34,7 @@ func TestAListenerThatRegistersAnotherListenerDoesNotBlockTheAnnouncement(t *tes
 	}
 
 	mock.modelName.Store("third-model")
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "third-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "third-model"); err != nil {
 		t.Fatal(err)
 	}
 	select {
@@ -62,7 +62,7 @@ func TestListenersRunAfterTheEmbedderReleasesItsLock(t *testing.T) {
 	})
 
 	mock.modelName.Store("another-model")
-	if err := host.UpdatePluginSetting(t.Context(), embeddingPluginID, "model", "another-model"); err != nil {
+	if err := updateSetting(t.Context(), host, embeddingPluginID, "model", "another-model"); err != nil {
 		t.Fatal(err)
 	}
 	select {

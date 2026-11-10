@@ -253,11 +253,11 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 	writeFile(t, filepath.Join(pluginsDir, "gamma", "manifest.json"), gammaManifest)
 
 	host := plugin.NewHost(testsupport.GetMachine(), "desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
+	if err := host.Discovery.Discover(); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		if err := host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
+		if err := host.Teardown.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond); err != nil {
 			t.Error(err)
 		}
 	})
@@ -273,7 +273,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 		t.Cleanup(server.Close)
 		ports[id] = plugintest.GetPort(t, server)
 	}
-	host.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.Processes.SetLauncher(func(_ context.Context, p manifest.Discovered, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		return processes[p.Manifest.ID], plugintest.GetReadyOutput(ports[p.Manifest.ID]), nil
 	})
 
@@ -326,7 +326,7 @@ func openSecretsWindow(t *testing.T, fileBody string) *window {
 		pluginsd: pluginsDir,
 	}
 	for _, id := range []string{alphaID, betaID, gammaID} {
-		if _, err := host.EnsureActive(t.Context(), id); err != nil {
+		if _, err := host.Activation.EnsureActive(t.Context(), id); err != nil {
 			t.Fatal(err)
 		}
 		plugintest.WaitUntil(t, id+" is configured", func() bool { return probes[id].count() > 0 })

@@ -31,24 +31,24 @@ func newTaskHost(t *testing.T) taskHost {
 	host := newDiscoveredHost(t)
 	var started atomic.Int32
 	var procs []*os.Process
-	host.SetLauncher(startSleepLauncher(t, &started, &procs))
-	host.SetPluginWork(run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil))
-	if _, err := host.EnsureActive(t.Context(), workingPlugin); err != nil {
+	host.Processes.SetLauncher(startSleepLauncher(t, &started, &procs))
+	host.Services.SetPluginWork(run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil))
+	if _, err := host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatal(err)
 	}
-	host.Release(workingPlugin)
+	host.Activation.Release(workingPlugin)
 	return taskHost{host: host, process: procs[0], client: newTaskClient(t, host)}
 }
 
 func newTaskClient(t *testing.T, host *Host) numenv1connect.HostQueueServiceClient {
 	t.Helper()
-	port, err := host.openHostEndpoint(t.Context())
+	port, err := host.Services.openHostEndpoint(t.Context())
 	if err != nil || port == 0 {
 		t.Fatalf("the host endpoint is not serving: port %d, %v", port, err)
 	}
-	host.mu.RLock()
-	token := host.endpoints[workingPlugin].Token
-	host.mu.RUnlock()
+	host.Registry.t.mu.RLock()
+	token := host.Registry.t.endpoints[workingPlugin].Token
+	host.Registry.t.mu.RUnlock()
 	return numenv1connect.NewHostQueueServiceClient(
 		http.DefaultClient, "http://127.0.0.1:"+strconv.Itoa(port), connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
@@ -70,7 +70,7 @@ func (w taskHost) finishTask(t *testing.T, id string) {
 
 func (w taskHost) listEvicted(t *testing.T) []string {
 	t.Helper()
-	return w.host.EvictIdle(t.Context(), 0, 50*time.Millisecond)
+	return w.host.Teardown.EvictIdle(t.Context(), 0, 50*time.Millisecond)
 }
 
 func TestAnOpenTaskBlocksIdleEviction(t *testing.T) {
@@ -158,12 +158,12 @@ func TestACrashClearsTheOpenTasks(t *testing.T) {
 	w.reportTask(t, "scan.sample", 0, 4)
 
 	plugintest.KillProcess(t, w.process)
-	waitForProcessExit(t, w.host.supervisors[workingPlugin].GetExitSignal())
+	waitForProcessExit(t, w.host.Registry.t.supervisors[workingPlugin].GetExitSignal())
 
-	if _, err := w.host.EnsureActive(t.Context(), workingPlugin); err != nil {
+	if _, err := w.host.Activation.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatalf("restart after the crash: %v", err)
 	}
-	w.host.Release(workingPlugin)
+	w.host.Activation.Release(workingPlugin)
 	if evicted := w.listEvicted(t); len(evicted) != 1 || evicted[0] != workingPlugin {
 		t.Fatalf("evicted %v, want the restarted plugin without the crashed process's task", evicted)
 	}
