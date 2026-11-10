@@ -159,6 +159,11 @@ func (c Config) VaultOpenerWith(
 	return c.vault().VaultOpenerWith(db, walking, watcher)
 }
 
+// GetRefresh brings named notes up to date in the index, over the notes of the cache.
+func (c Config) GetRefresh(db *Index) vault.Refresh {
+	return makeRefresh(c, db, db.Notes())
+}
+
 func makeRefresh(c Config, db *Index, notes noteport.NoteRepository) vault.Refresh {
 	return c.vault().MakeRefresh(db, notes)
 }

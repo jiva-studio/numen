@@ -19,8 +19,8 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-// fileServer answers with one file of one vault, as it is read.
-type fileServer struct {
+// FileServer answers with one file of one vault, as it is read.
+type FileServer struct {
 	state          *State
 	find           *registry.Find
 	openFile       *file.OpenFile
@@ -35,7 +35,7 @@ type fileServer struct {
 // the player is drawn.
 type Loopback struct {
 	server  *http.Server
-	files   *fileServer
+	files   *FileServer
 	address string
 	token   string
 	stopped atomic.Bool
@@ -46,7 +46,7 @@ type Loopback struct {
 // cannot use the window's own scheme is unavailable.
 //
 // stopped is called when the socket stops serving while the window is open.
-func Listen(ctx context.Context, files *fileServer, stopped func(error)) (*Loopback, error) {
+func Listen(ctx context.Context, files *FileServer, stopped func(error)) (*Loopback, error) {
 	target, err := (&net.ListenConfig{}).Listen(ctx, "tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func Listen(ctx context.Context, files *fileServer, stopped func(error)) (*Loopb
 	return back, nil
 }
 
-func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
+func newLoopback(target net.Listener, files *FileServer, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ const errNoVaultNamed = "no vault of that name"
 //
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
-func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath string) {
+func (h *FileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath string) {
 	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -173,7 +173,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
 }
 
-func (h *fileServer) findVault(id string) (domain.Vault, bool) {
+func (h *FileServer) findVault(id string) (domain.Vault, bool) {
 	if showing := h.state.GetCurrentVault(); string(showing.ID) == id {
 		return showing, true
 	}

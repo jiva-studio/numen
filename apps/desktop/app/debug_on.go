@@ -71,5 +71,5 @@ func (d *DebugOptions) serveHTTP(
 		cfg.SetPluginVaultPath(v.Path)
 		return nil
 	}
-	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.Services.NewHandler(pages), os.Stdout)
+	return debugserve.Serve(ctx, cfg.Clock(), d.HTTPAddr, opened.NewHandler(pages), os.Stdout)
 }

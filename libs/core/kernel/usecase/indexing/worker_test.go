@@ -11,13 +11,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
+	searchwiring "github.com/jiva-studio/numen/libs/core/kernel/container/search"
+	vaultwiring "github.com/jiva-studio/numen/libs/core/kernel/container/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/embedding"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwatch"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/vaultreading"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
@@ -58,20 +63,46 @@ func findTask(t *testing.T, r *recorder, id string) *vaultreading.Task {
 	return nil
 }
 
-func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
+// installation is the parts of an installation that read a vault into a cache. The composition root
+// cannot be imported here: it imports the window, which imports this package.
+type installation struct {
+	vaults vaultwiring.Config
+	search searchwiring.Config
+	db     *vault.Index
+}
+
+func reading(t *testing.T) (installation, *vault.Index) {
 	t.Helper()
 
-	cfg := container.NewConfig(container.Config{IndexPath: filepath.Join(t.TempDir(), "index.db")})
+	timer := clock.System{}
+	readers := vaultreader.Readers{}
+	search := searchwiring.Config{Chunks: &note.ChunkTokens{}, Clock: timer, VaultReaders: readers}
+	cfg := vaultwiring.Config{
+		IndexPath:  filepath.Join(t.TempDir(), "index.db"),
+		Clock:      timer,
+		VaultLocks: vaultwriter.NewLocks(),
+		Watches:    vaultwatch.NewHub(),
+		CutNotes:   search.CutNotes(),
+		SetNoteCut: search.SetNoteCut,
+	}
 	db, err := cfg.OpenIndex(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	testsupport.CloseAfter(t, db)
-	return container.NewEditorAssembly(cfg, vaultregistry.Ports{}, db), db
+	return installation{vaults: cfg, search: search, db: db}, db
+}
+
+func (i installation) ReadWholeVault(
+	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+) (vaultreading.ReadWholeVault, error) {
+	request := i.search
+	request.ShouldRebuildIndex = rebuild
+	return request.ReadWholeVault(ctx, i.db, embedder, v, i.vaults.MakeRefresh(i.db, i.db.Notes()))
 }
 
 func newPass(
-	made container.EditorAssembly, db *container.Index, events Events, embedder embeddingport.Embedder, recipe string,
+	made installation, db *vault.Index, events Events, embedder embeddingport.Embedder, recipe string,
 	v domain.Vault,
 ) *pass {
 	worker := NewWorker(Config{
@@ -87,11 +118,11 @@ func newPass(
 	return &pass{worker: worker, session: worker.NewSession(), v: v}
 }
 
-func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v domain.Vault) {
+func cut(t *testing.T, made installation, db *vault.Index, v domain.Vault) {
 	t.Helper()
 
 	scan := vault.NewScan(
-		made.GetVaultReaders(),
+		made.vaults.VaultReaders(),
 		db.Vaults(),
 		db.Notes(),
 		db.FileStats(),
@@ -102,7 +133,7 @@ func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v dom
 	}
 }
 
-func fit(t *testing.T, db *container.Index, model embeddingport.Embedder) {
+func fit(t *testing.T, db *vault.Index, model embeddingport.Embedder) {
 	t.Helper()
 	if err := db.FitVectors(t.Context(), model.GetModel().Dimensions, model.GetModel().Recipe()); err != nil {
 		t.Fatal(err)

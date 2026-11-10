@@ -74,12 +74,7 @@ func (c *Core) Start(dir string) (int, error) {
 	}
 
 	ctx, stop := context.WithCancel(context.Background())
-	made, err := cfg.GetEditorAssembly(ctx)
-	if err != nil {
-		stop()
-		return 0, err
-	}
-	opened, err := editor.Open(ctx, made, filed, os.Stderr)
+	opened, err := cfg.OpenWindow(ctx, filed, os.Stderr)
 	if err != nil {
 		stop()
 		return 0, err
@@ -94,7 +89,7 @@ func (c *Core) Start(dir string) (int, error) {
 	if wrong != nil {
 		fmt.Fprintln(os.Stderr, "themes:", wrong)
 	}
-	opened.Services.Themes = themes
+	opened.SetThemes(themes)
 	listener, err := listenLocal(ctx)
 	if err != nil {
 		stop()
@@ -108,7 +103,7 @@ func (c *Core) Start(dir string) (int, error) {
 	// (books and the model sets that run over them) are not served.
 	server := &http.Server{
 		ReadHeaderTimeout: readHeaderTimeout,
-		Handler: allowOrigin(opened.Services.NewHandler(
+		Handler: allowOrigin(opened.NewHandler(
 			http.NotFoundHandler(),
 			numenv1connect.VaultServiceName,
 			numenv1connect.NoteServiceName,

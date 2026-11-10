@@ -17,7 +17,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/container"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/appearance"
@@ -31,21 +30,21 @@ import (
 // scheme.
 const mine = ":root{color-scheme:dark;--numen-surface:#010203}"
 
-func newPageHandler(t *testing.T, cfg container.Config) (http.Handler, numenv1connect.ThemeServiceHandler) {
+func newPageHandler(t *testing.T, cfg themeConfig) (http.Handler, numenv1connect.ThemeServiceHandler) {
 	t.Helper()
 
 	files, err := Pages()
 	if err != nil {
 		t.Skipf("no interface in this binary: %v", err)
 	}
-	themes, err := cfg.Themes(nil)
+	themes, err := cfg.themes(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return newThemedServices(themes).NewHandler(files), themes
 }
 
-func writeTheme(t *testing.T, cfg container.Config, name, body string) {
+func writeTheme(t *testing.T, cfg themeConfig, name, body string) {
 	t.Helper()
 	folder := filepath.Join(filepath.Dir(cfg.RegistryPath), "themes")
 	if err := os.WriteFile(filepath.Join(folder, name), []byte(body), 0o644); err != nil {

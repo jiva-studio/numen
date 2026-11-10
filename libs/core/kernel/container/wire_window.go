@@ -1,0 +1,211 @@
+package container
+
+import (
+	"context"
+	"errors"
+	"io"
+
+	"github.com/jiva-studio/numen/libs/core/kernel/adapter/window/editor"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/embeddingport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/problemport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/kernel/port/textport"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/trigger"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
+	"github.com/jiva-studio/numen/libs/note/domain"
+)
+
+// UnknownVaultError is a vault named at start that the registry does not hold.
+type UnknownVaultError = registry.UnknownError
+
+// windowWiring is what the wire_window_<service>.go files share while one editor window is built.
+// The state, the scenarios of notes and vaults and the installation are the window's own, and each
+// service is handed the ones it uses.
+type windowWiring struct {
+	cfg    Config
+	ports  registry.Ports
+	db     *Index
+	notes  *note.Scenarios
+	vaults *vault.Scenarios
+
+	inst   *editor.Installation
+	files  *editor.FileHandler
+	server *editor.FileServer
+	wrap   func(editor.Sources) editor.Sources
+}
+
+// OpenWindow opens the registry and the cache, builds the services of the editor window over
+// them, and opens the vault named, or the one shown last when none is named.
+func (c Config) OpenWindow(ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
+	ports, err := c.Registry()
+	if err != nil {
+		return nil, err
+	}
+	db, err := c.OpenIndex(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.OpenWindowOver(ctx, ports, db, named, out)
+}
+
+// OpenWindowOver is OpenWindow over a registry and a cache already open, for a caller that opened
+// them itself. The window closes the cache.
+func (c Config) OpenWindowOver(
+	ctx context.Context, ports registry.Ports, db *Index, named string, out io.Writer,
+) (*editor.Installation, error) {
+	return c.OpenWindowWith(ctx, ports, db, named, out, nil)
+}
+
+// OpenWindowWith is OpenWindowOver with the passes behind the vault put through wrap, for a caller
+// that holds one back or drives it. A nil wrap leaves them as they are.
+func (c Config) OpenWindowWith(
+	ctx context.Context, ports registry.Ports, db *Index, named string, out io.Writer,
+	wrap func(editor.Sources) editor.Sources,
+) (*editor.Installation, error) {
+	w := &windowWiring{cfg: c, ports: ports, db: db, wrap: wrap}
+	return w.open(ctx, named, out)
+}
+
+func (w *windowWiring) open(ctx context.Context, named string, out io.Writer) (*editor.Installation, error) {
+	first, err := registry.NewGetVaultToShow(w.ports.Lookup, w.ports.Vaults, w.ports.Last).Execute(named)
+	if err != nil {
+		return nil, errors.Join(err, w.db.Close())
+	}
+
+	// One task list serves every operation and the window that displays it.
+	// A request is one task regardless of how it was issued. The list is created
+	// before any component that reports into it.
+	tasks := run.NewTasks()
+	models := &run.Lock{}
+	w.cfg.ReportPluginFailures(tasks)
+	w.cfg.ReportDependencies(tasks)
+	w.cfg.SetPluginWork(tasks, models)
+
+	// Opened once, for as long as the window is. A local model is fetched and
+	// compiled behind this, so the window is drawn while it arrives.
+	embedder, asking, closeEmbedder, why := w.cfg.Embedders(ctx, tasks)
+	if closeEmbedder == nil {
+		closeEmbedder = func() error { return nil }
+	}
+	passes := windowPasses{cfg: w.cfg, db: w.db}
+	sources := editor.Sources{Reading: passes, Starting: passes, Texts: passes, Plugins: passes, Index: passes}
+	if w.wrap != nil {
+		sources = w.wrap(sources)
+	}
+	inst, err := editor.NewInstallation(editor.Setup{
+		Tasks:         tasks,
+		Out:           out,
+		CheckIdentity: vault.NewCheckIdentity(w.cfg.VaultIdentity()),
+		Embedder:      embedder,
+		Asking:        asking,
+		EmbedderError: why,
+		StopEmbedder:  closeEmbedder,
+		Progress:      w.db.Progress(),
+		OpenTabsStore: w.db.OpenTabs(),
+		EmitEvent:     w.cfg.plugins().EmitPluginEvent,
+		IsRebuilding:  w.cfg.ShouldRebuildIndex,
+		Closing:       ctx.Done(),
+	}, sources)
+	if err != nil {
+		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
+	}
+	w.inst = inst
+
+	// A note saved by the user is refreshed in the index before the save returns,
+	// so the vault reflects its content without waiting for the watcher.
+	notes := w.cfg.Notes(w.db, inst.UpdateIndex).FollowMoves(inst.State.GetWindow())
+	w.notes = &notes
+	moves := w.cfg.Vaults(w.ports, w.db, w.notes.Move)
+	w.vaults = &moves
+	inst.UseScenarios(w.notes, w.vaults)
+
+	w.mountServices()
+	if err := inst.Start(ctx, first, w.server); err != nil {
+		return nil, errors.Join(err, closeEmbedder(), w.db.Close())
+	}
+	return inst, nil
+}
+
+// mountServices puts every service of the window on its installation. The file service comes
+// before the services that ask it which kind of tab a file opens in.
+func (w *windowWiring) mountServices() {
+	w.mountVault()
+	w.mountWorkspace()
+	w.mountWindowState()
+	w.mountFile()
+	w.mountNote()
+	w.mountSearch()
+	w.mountVaults()
+	w.mountSettings()
+	w.mountMedia()
+	w.mountAgent()
+	w.mountCommand()
+	w.mountText()
+	w.mountPlugin()
+	w.mountCatalog()
+}
+
+// windowPasses is what the passes behind a vault of the window run over: the walk and the watch,
+// the text versions, the plugins and the cache of this installation.
+type windowPasses struct {
+	cfg Config
+	db  *Index
+}
+
+func (p windowPasses) ReadWholeVault(
+	ctx context.Context, embedder embeddingport.Embedder, v domain.Vault, rebuild bool,
+) (vault.ReadWholeVault, error) {
+	request := p.cfg
+	request.ShouldRebuildIndex = rebuild
+	return request.ReadWholeVault(ctx, p.db, embedder, v)
+}
+
+func (p windowPasses) StartVault(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError window.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vault.Refresh,
+	unwatched error,
+) {
+	request := p.cfg
+	request.ShouldRebuildIndex = rebuild
+
+	opening := request.VaultOpener(p.db)
+	opening.ShouldRebuild = rebuild
+	opening.ErrorHandler = handleError
+	if notified != nil {
+		opening.Told = func(m vault.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+	}
+
+	open := opening.Begin(ctx, v)
+	return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
+}
+
+func (p windowPasses) SetTextVersionListener(listener textport.VersionListener) {
+	p.cfg.vault().SetTextVersionListener(listener)
+}
+
+func (p windowPasses) ReportTextFilesChanged(ctx context.Context, v domain.Vault, paths []string) error {
+	return p.cfg.vault().ReportTextFilesChanged(ctx, v, paths)
+}
+
+func (p windowPasses) OpenTriggers() *trigger.Triggers { return p.cfg.plugins().OpenTriggers() }
+
+func (p windowPasses) WatchPluginChanges() (<-chan struct{}, func()) {
+	return p.cfg.WatchPluginChanges()
+}
+
+func (p windowPasses) GetRefresh() vault.Refresh { return p.cfg.GetRefresh(p.db) }
+
+func (p windowPasses) CloseIndex() error { return p.db.Close() }
+
+func (p windowPasses) GetProblemQueries() problemport.ProblemQueries { return p.db.Problems() }
+
+func (p windowPasses) GetPassageQueries() sourceport.PassageQueries { return p.db.Passages() }

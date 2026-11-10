@@ -26,11 +26,7 @@ func windowOn(t *testing.T) (*editor.Installation, container.Config) {
 		t.Fatal(err)
 	}
 
-	made, err := cfg.GetEditorAssembly(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	opened, err := editor.Open(t.Context(), made, "one", io.Discard)
+	opened, err := cfg.OpenWindow(t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}

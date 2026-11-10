@@ -64,7 +64,7 @@ func openTwoVaults(t *testing.T) *showing {
 	first := newListedVault(t, cfg, registry, "one", map[string]string{entropy: noteNamed("Entropy")})
 	second := newListedVault(t, cfg, registry, "two", map[string]string{enthalpy: noteNamed("Enthalpy")})
 
-	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", os.Stderr)
+	installation, err := cfg.OpenWindow(t.Context(), "one", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func openTwoVaults(t *testing.T) *showing {
 
 	going, itself := numenv1connect.NewWindowServiceHandler(installation.State.Window)
 	mux := http.NewServeMux()
-	mountQuestionsServices(mux, installation.Services)
+	mountQuestionsServices(mux, editor.ServicesOf(installation))
 	mux.Handle(going, itself)
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
@@ -269,7 +269,7 @@ func TestTheWindowOpensTheVaultItShowedLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, err := editor.Open(t.Context(), editor.NewAssembly(t, f.cfg), "", os.Stderr)
+	again, err := f.cfg.OpenWindow(t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -555,7 +555,7 @@ func unwritten(t *testing.T, notes map[string]string) *going {
 
 	f := openWindow(t, nil, notes)
 	waitForScan(t, f)
-	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(refuseToUpdate)
+	*editor.ServicesOf(f.installation).NoteWrite() = editor.ServicesOf(f.installation).NoteWrite().WithIndex(refuseToUpdate)
 	return f
 }
 
@@ -631,7 +631,7 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 
 	// The index stays behind until a later write updates it, and that write
 	// reports the state.
-	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
+	*editor.ServicesOf(f.installation).NoteWrite() = editor.ServicesOf(f.installation).NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
 	save()
 	if offset := findUpdateIndexTask(t, f); offset != nil {
 		t.Errorf("the index came level and the user is still shown %+v", offset)
@@ -666,7 +666,7 @@ func findUpdateIndexTask(t *testing.T, f *going) *v1.Task {
 func TestCreateNote_IndexFailureStillSucceeds(t *testing.T) {
 	f := openWindow(t, nil, nil)
 	waitForScan(t, f)
-	*f.installation.Services.NoteCreate() = f.installation.Services.NoteCreate().WithIndex(refuseToUpdate)
+	*editor.ServicesOf(f.installation).NoteCreate() = editor.ServicesOf(f.installation).NoteCreate().WithIndex(refuseToUpdate)
 
 	answer, err := f.client.CreateNote(t.Context(), connect.NewRequest(&v1.CreateNoteRequest{
 		Title: "Entropy",
@@ -692,7 +692,7 @@ func TestRemoveFile_IndexFailureStillSucceeds(t *testing.T) {
 			"# Entropy\n",
 	})
 	waitForScan(t, f)
-	*f.installation.Services.FileRemove() = f.installation.Services.FileRemove().WithIndex(refuseToUpdate)
+	*editor.ServicesOf(f.installation).FileRemove() = editor.ServicesOf(f.installation).FileRemove().WithIndex(refuseToUpdate)
 
 	answer, err := f.client.RemoveFile(t.Context(), connect.NewRequest(&v1.RemoveFileRequest{
 		Path: "Ontology.md",
@@ -731,7 +731,7 @@ func openInstallation(t *testing.T) *editor.Installation {
 		t.Fatal(err)
 	}
 
-	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "one", io.Discard)
+	installation, err := cfg.OpenWindow(t.Context(), "one", io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -744,7 +744,7 @@ func TestANoteSavedThroughTheWindowIsFindableAtOnce(t *testing.T) {
 	installation := openInstallation(t)
 
 	const body = "tetragrammaton is a word nothing else in this vault holds"
-	content, err := installation.Services.Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
+	content, err := editor.ServicesOf(installation).Note.WriteNote(t.Context(), connect.NewRequest(&v1.WriteNoteRequest{
 		Path: "Kept.md",
 		Body: body,
 	}))
@@ -793,7 +793,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
 	})
-	installation, err := editor.Open(t.Context(), editor.NewAssembly(t, cfg), "", os.Stderr)
+	installation, err := cfg.OpenWindow(t.Context(), "", os.Stderr)
 	if err != nil {
 		t.Fatalf("an installation holding no vault would not open: %v", err)
 	}
@@ -802,7 +802,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	// The welcome screen's way into a vault: the list opens one in this window.
 	installation.State.OpenVault = installation.Show
 
-	server := httptest.NewUnstartedServer(installation.Services.NewHandler(http.NotFoundHandler()))
+	server := httptest.NewUnstartedServer(installation.NewHandler(http.NotFoundHandler()))
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.CloseClientConnections)

@@ -14,10 +14,10 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (s *Services) getPolicy(played []string) string {
+func (s pageSet) getPolicy(played []string) string {
 	frames := append([]string(nil), played...)
-	if s.PluginServices != nil {
-		frames = append(frames, s.PluginServices.ListFrameOrigins()...)
+	if s.plugins != nil {
+		frames = append(frames, s.plugins.ListFrameOrigins()...)
 	}
 	return csp.Sources{Media: played, Frames: frames}.Policy()
 }

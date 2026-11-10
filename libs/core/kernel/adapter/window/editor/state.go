@@ -79,6 +79,9 @@ type State struct {
 	EmitEvent func(event string)
 
 	Indexing IndexState
+
+	// Playing is the socket recordings are served over, and nothing until it is open.
+	Playing atomic.Pointer[Loopback]
 }
 
 // IndexState is how far the vault has been read for meaning.

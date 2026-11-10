@@ -128,7 +128,7 @@ func TestCompositionRootRule_ExemptsTheContainerAndTheApplicationRoots(t *testin
 		{numenRoot + "apps/mobile/app/sub", true},
 		{numenRoot + "apps/desktop/internal/platform", false},
 		{coreImportPath + "/internal/adapterlib/wire", false},
-		{coreImportPath + "/adapter/window/editor/assembly", false},
+		{coreImportPath + "/adapter/window/editor", false},
 		{numenRoot + "apps/desktop/application", false},
 	} {
 		if got := isCompositionRoot(tc.path); got != tc.isExempt {

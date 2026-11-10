@@ -73,7 +73,7 @@ func TestTheWindowFollowsANoteAPluginRenamesOrMoves(t *testing.T) {
 	}
 }
 
-func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (domain.Vault, bool), assembly container.EditorAssembly) {
+func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (domain.Vault, bool), assembly windowVaults) {
 	t.Helper()
 	cfg := container.NewConfig(container.Config{IndexPath: indexfile.Path(t), PluginCachePath: t.TempDir(), RegistryPath: filepath.Join(t.TempDir(), "vaults.json")})
 	registry, err := cfg.Registry()
@@ -92,7 +92,7 @@ func openTwoPluginVaults(t *testing.T) (other domain.Vault, current func() (doma
 			t.Fatal(err)
 		}
 	}
-	return other, func() (domain.Vault, bool) { return rivers, true }, container.NewEditorAssembly(cfg, registry, db)
+	return other, func() (domain.Vault, bool) { return rivers, true }, windowVaults{cfg: cfg, registry: registry, db: db}
 }
 
 func TestWindowIgnoresPluginMoveInOtherVault(t *testing.T) {
@@ -167,7 +167,7 @@ func TestWindowIgnoresPluginRenameCompletingAfterVaultSwitch(t *testing.T) {
 		}
 		return rivers, true
 	}
-	assembly := container.NewEditorAssembly(cfg, registry, db)
+	assembly := windowVaults{cfg: cfg, registry: registry, db: db}
 	refresh := assembly.GetRefresh()
 	window := &vaultMoveRecordingWindow{current: current}
 	scenarios := assembly.OpenNotes(func(ctx context.Context, v domain.Vault, paths []string) error {

@@ -18,7 +18,7 @@ import (
 )
 
 // ReadNote hands the client the prose of a note.
-func (h *noteHandler) ReadNote(
+func (h *NoteHandler) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
 ) (*connect.Response[v1.ReadNoteResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -43,7 +43,7 @@ func (h *noteHandler) ReadNote(
 // WriteNote writes prose into a note. If the note still contains the prose the
 // client read, it is overwritten; if it contains different content, it is left
 // unchanged and the client is notified that the note changed.
-func (h *noteHandler) WriteNote(
+func (h *NoteHandler) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -84,7 +84,7 @@ func (h *noteHandler) WriteNote(
 //
 // The index is synchronized before the response, so the note is searchable as
 // soon as it is on disk.
-func (h *noteHandler) CreateNote(
+func (h *NoteHandler) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -131,7 +131,7 @@ func (h *noteHandler) CreateNote(
 
 // WriteLink writes one relationship into one note. What is already written
 // there is carried across, and the note at the other end is left alone.
-func (h *noteHandler) WriteLink(
+func (h *NoteHandler) WriteLink(
 	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
 ) (*connect.Response[v1.WriteLinkResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -160,7 +160,7 @@ func (h *noteHandler) WriteLink(
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
 }
 
-func (h *noteHandler) GetOpeningNote(
+func (h *NoteHandler) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {
 	showing := h.state.GetCurrentVault()
@@ -180,7 +180,7 @@ func (h *noteHandler) GetOpeningNote(
 	return connect.NewResponse(out), nil
 }
 
-func (h *noteHandler) GetNeighbourhood(
+func (h *NoteHandler) GetNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
 ) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -228,7 +228,7 @@ func (h *noteHandler) GetNeighbourhood(
 
 // ResolveAddresses answers where addresses written in one note land, and where
 // the wikilinks of a text land, in the vault the window shows.
-func (h *noteHandler) ResolveAddresses(
+func (h *NoteHandler) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -245,7 +245,7 @@ func (h *noteHandler) ResolveAddresses(
 	return connect.NewResponse(out), nil
 }
 
-func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
+func (h *NoteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
 	}
@@ -260,7 +260,7 @@ func (h *noteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.
 	return out, nil
 }
 
-func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
+func (h *NoteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link has the role %v", l.GetRole())
@@ -281,7 +281,7 @@ func (h *noteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link
 	}, nil
 }
 
-func (h *noteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
+func (h *NoteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
 	return h.getLinkAddress.Execute(ctx, h.state.GetCurrentVault(), to)
 }
 
@@ -327,7 +327,7 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 
 // ListHeadings hands the client the headings of the notes the filter names. A
 // window standing on nothing holds no note to divide.
-func (h *noteHandler) ListHeadings(
+func (h *NoteHandler) ListHeadings(
 	ctx context.Context,
 	r *connect.Request[v1.ListHeadingsRequest],
 ) (*connect.Response[v1.ListHeadingsResponse], error) {
@@ -366,7 +366,7 @@ func (h *noteHandler) ListHeadings(
 
 // WatchEdits streams each change to a note's prose as it happens, until the
 // client disconnects.
-func (h *noteHandler) WatchEdits(
+func (h *NoteHandler) WatchEdits(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchEditsRequest],
 	out *connect.ServerStream[v1.WatchEditsResponse],
@@ -409,7 +409,7 @@ func (h *noteHandler) WatchEdits(
 }
 
 // RenameNote gives a note a different name.
-func (h *noteHandler) RenameNote(
+func (h *NoteHandler) RenameNote(
 	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
 ) (*connect.Response[v1.RenameNoteResponse], error) {
 	showing, err := h.state.getCurrentVault()
@@ -463,7 +463,7 @@ func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 	}
 }
 
-func (h *noteHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+func (h *NoteHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
 	if h.findTabKinds == nil {
 		return map[string]string{}, nil
 	}

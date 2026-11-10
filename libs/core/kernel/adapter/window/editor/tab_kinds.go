@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
-func (h *fileHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+func (h *FileHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
 	kinds := map[string]string{}
 	if h.getFileKinds == nil || h.chooseTabKind == nil || len(paths) == 0 {
 		return kinds, nil

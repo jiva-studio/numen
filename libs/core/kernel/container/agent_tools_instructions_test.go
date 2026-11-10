@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/agenttoolsbridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/hostendpoint"
-	vaultregistry "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
 )
 
@@ -255,7 +254,7 @@ func runInApp(t *testing.T, instructions string, plugins ...testPlugin) string {
 	t.Helper()
 	agent := &toolAgent{}
 	host := hostOver(t, append([]testPlugin{agentAt(agent)}, plugins...)...)
-	assembly := container.NewEditorAssembly(container.NewConfig(container.Config{PluginHost: host}), vaultregistry.Ports{}, nil)
+	assembly := newEditorServices(container.NewConfig(container.Config{PluginHost: host}))
 
 	runToEnd(t, assembly.GetAgent(), agentdomain.Task{Question: "q", Agent: "alpha", Instructions: instructions})
 

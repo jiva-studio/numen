@@ -175,7 +175,7 @@ func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts
 		return err
 	}
 	pages, installation := displayed.pages, displayed.opened
-	installation.Services.Themes = themes.Load(cfg.Themes, installation.SayTheme, os.Stdout)
+	installation.SetThemes(themes.Load(cfg.Themes, installation.SayTheme, os.Stdout))
 
 	installation.Report(selected.Notices)
 
@@ -244,8 +244,8 @@ func openInstallation(
 		return shownInstallation{}, errors.Join(err, db.Close())
 	}
 	cfg.TextVersions = versions
-	made := container.NewEditorAssembly(cfg, registry, db)
-	opened, err := editor.Open(ctx, made, vault, os.Stdout)
+
+	opened, err := cfg.OpenWindowOver(ctx, registry, db, vault, os.Stdout)
 	if err != nil {
 		return shownInstallation{}, err
 	}
@@ -254,7 +254,7 @@ func openInstallation(
 		current := opened.GetCurrentVault()
 		return current, current.Path != ""
 	}
-	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{
+	shared, err := cfg.OpenPluginVault(registry, db, getShownVault, container.PluginVaultHooks{
 		Written: func() {
 			if wake := opened.State.NotifyNoteWritten; wake != nil {
 				wake()
@@ -268,10 +268,7 @@ func openInstallation(
 	cfg.SetPluginVault(shared)
 	cfg.SetPluginVaultList(editor.NewPluginVaultList(opened))
 	cfg.SetPluginTexts()
-	// The plugin window reads the vault of the State on each call, so a vault opened later in the
-	// main window is served without a new binding.
-	cfg.SetPluginWindow(editor.NewPluginWindow(
-		opened.State, made.OpenFocusNote(opened.State.GetWindow()), made.GetVaultReaders()))
+	cfg.SetEditorPluginWindow(db, opened)
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 
@@ -282,7 +279,7 @@ func makeApplication(
 	return application.New(application.Options{
 		Name: appName,
 		Assets: application.AssetOptions{
-			Handler: opened.Services.NewHandler(pages),
+			Handler: opened.NewHandler(pages),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -359,7 +356,7 @@ func connectWindow(
 	ctx context.Context, app *application.App, window *application.WebviewWindow, opened *editor.Installation,
 	hooks windowHooks,
 ) {
-	opened.Services.SetFolderDialog(&folderDialog{window: window})
+	opened.SetFolderDialog(&folderDialog{window: window})
 
 	naming := func(open domain.OpenTabs) { window.SetTitle(getWindowTitle(opened.GetCurrentVault(), open)) }
 	opened.State.NotifyOpenTabs = naming
