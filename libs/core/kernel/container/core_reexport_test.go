@@ -161,12 +161,10 @@ func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 	}
 }
 
-// A re-export is an alias of a named type, an alias of an unnamed interface (a second spelling of a port that
-// hides its name), an exported variable or constant set to a member of another package, or an exported
-// function whose whole body calls a function of another package of the repository with its own parameters
-// and has the same signature.
-// The rule accepts an alias of a type of its own package or of a package outside the repository, and a
-// function whose signature differs from the callee's.
+// A re-export is an alias of a named type or of an unnamed interface, an exported variable or constant set
+// to a member of another package of the repository, or an exported function that calls a function of
+// another such package with its own parameters and has its signature. An alias of a type of its own package
+// or of a package outside the repository, and a function with another signature, are accepted.
 func TestReexportRule_RejectsAnAliasOfAnotherPackagesType(t *testing.T) {
 	dir := writeTreeFixture(t, map[string]string{
 		"port/port.go": `package port
