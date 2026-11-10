@@ -5,16 +5,27 @@ import (
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
-	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
 	textport "github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion/textcontract"
+	vaultport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/vaultcontract"
+	windowport "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/windowcontract"
 )
 
 type indexNoteAssembly interface {
-	GetNoteQueries() noteport.NoteQueries
-	GetLinkQueries() noteport.LinkQueries
+	OpenGetOpeningNote() *query.GetOpeningNote
+	OpenGetTypes() *query.GetTypes
+	OpenGetHeadings() *query.GetHeadings
+	OpenResolveLinks() *query.ResolveLinks
+	OpenGetTitles() query.GetTitles
+	OpenGetNameMatches() *search.GetNameMatches
+	OpenGetFolderEntries(readers vaultport.VaultReaders) *file.GetFolderEntries
+	OpenGetFileKinds(readers vaultport.VaultReaders) *file.GetFileKinds
+	OpenFocusNote(view windowport.Window) *query.FocusNote
 	GetProblemQueries() problemport.ProblemQueries
 	GetIndexProgress() indexport.IndexProgress
 }

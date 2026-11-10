@@ -333,7 +333,7 @@ func write(t *testing.T, v domain.Vault, path, body string) {
 func titleOf(t *testing.T, db *container.Index, v domain.Vault, path string) string {
 	t.Helper()
 
-	target, err := db.Queries().GetNotes(t.Context(), v.ID, []string{path})
+	target, err := db.NoteRefs().GetNotes(t.Context(), v.ID, []string{path})
 	if err != nil {
 		t.Fatal(err)
 	}

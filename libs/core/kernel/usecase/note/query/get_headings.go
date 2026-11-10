@@ -10,10 +10,10 @@ import (
 
 // GetHeadings finds what each of the notes at some paths is divided into.
 type GetHeadings struct {
-	queries noteport.NoteQueries
+	queries noteport.Headings
 }
 
-func NewGetHeadings(queries noteport.NoteQueries) *GetHeadings {
+func NewGetHeadings(queries noteport.Headings) *GetHeadings {
 	return &GetHeadings{queries: queries}
 }
 

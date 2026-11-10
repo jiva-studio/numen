@@ -68,8 +68,7 @@ func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 	if err != nil {
 		return cli.Links{}, err
 	}
-	notes := cfg.Notes(
-		db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), cfg.UpdateIndex(db))
+	notes := cfg.Notes(db, cfg.UpdateIndex(db))
 	return cli.Links{Show: notes.Links, Close: db.Close}, nil
 }
 
@@ -94,7 +93,7 @@ func createScan(
 	return cli.Scan{
 		Read: read,
 		Summary: func(ctx context.Context) (domain.VaultSummary, error) {
-			return db.Queries().GetSummary(ctx, v.ID)
+			return db.Summaries().GetSummary(ctx, v.ID)
 		},
 		Unembedded: why,
 		Close: func() error {

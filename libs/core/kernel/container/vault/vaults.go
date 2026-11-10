@@ -137,8 +137,8 @@ func (Config) GetProblems(problems problemport.ProblemQueries) *vaultusecase.Get
 }
 
 // GetSummary builds the vault summary query use case.
-func (Config) GetSummary(queries noteport.NoteQueries) *vaultregistry.GetSummary {
-	return vaultregistry.NewGetSummary(queries)
+func (Config) GetSummary(summaries noteport.VaultSummaries) *vaultregistry.GetSummary {
+	return vaultregistry.NewGetSummary(summaries)
 }
 
 // PickFolder builds the folder picker use case when a dialog is provided.

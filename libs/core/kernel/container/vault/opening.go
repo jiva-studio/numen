@@ -21,7 +21,7 @@ func (c Config) VaultOpenerWith(
 		walking,
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 	if c.SetNoteCut != nil {

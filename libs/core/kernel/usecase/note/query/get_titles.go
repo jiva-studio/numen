@@ -17,10 +17,10 @@ type Titles struct {
 
 // GetTitles looks up what the notes at some paths are called.
 type GetTitles struct {
-	queries noteport.NoteQueries
+	queries noteport.NoteRefs
 }
 
-func NewGetTitles(queries noteport.NoteQueries) GetTitles {
+func NewGetTitles(queries noteport.NoteRefs) GetTitles {
 	return GetTitles{queries: queries}
 }
 

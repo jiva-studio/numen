@@ -142,10 +142,10 @@ func TestUseCaseRule_RejectsUnusedPortFields(t *testing.T) {
 type Read struct {
 	Readers port.VaultReaders
 	Pages   int
-	notes   port.NoteQueries
+	notes   port.NoteRefs
 }
 
-func NewRead(readers port.VaultReaders, notes port.NoteQueries) Read {
+func NewRead(readers port.VaultReaders, notes port.NoteRefs) Read {
 	return Read{Readers: readers, notes: notes}
 }
 

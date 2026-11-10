@@ -120,7 +120,7 @@ func (c changing) moveOf(p moveParts) note.Move {
 		p.links = c.db.Links()
 	}
 	if p.names == nil {
-		p.names = c.db.Queries()
+		p.names = c.db.NamedPaths()
 	}
 	if p.readers == nil {
 		p.readers = vaultreader.Readers{}

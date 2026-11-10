@@ -65,7 +65,7 @@ func scanner(readers vaultport.VaultReaders, db *container.Index) vaults.Scan {
 		readers,
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 	scan.Walks = db.Walks()
@@ -89,7 +89,7 @@ func TestScanIndexesEveryNoteOnce(t *testing.T) {
 		t.Errorf("first scan: %+v", res)
 	}
 
-	summary, err := db.Queries().GetSummary(ctx, v.ID)
+	summary, err := db.Summaries().GetSummary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +124,7 @@ func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
 	}
 
-	summary, err := db.Queries().GetSummary(ctx, v.ID)
+	summary, err := db.Summaries().GetSummary(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -415,9 +415,9 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		t.Errorf("the second vault indexed %d notes, want 2 — a shared path was taken for already known", result.Indexed)
 	}
 
-	queries := db.Queries()
+	stats, summaries := db.FileStats(), db.Summaries()
 
-	recognized, err := queries.GetFileStats(ctx, first.ID)
+	recognized, err := stats.GetFileStats(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -428,7 +428,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		t.Error("the first vault knows a file that belongs to the second")
 	}
 
-	summary, err := queries.GetSummary(ctx, first.ID)
+	summary, err := summaries.GetSummary(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -558,7 +558,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	recognized, err := db.Queries().GetFileStats(ctx, v.ID)
+	recognized, err := db.FileStats().GetFileStats(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -606,7 +606,7 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	// Checks the order in which notes reach the index: the index contents
 	// part-way through are whole groups, which does not show the order.
 	content := &groupedWrites{}
-	scan := vaults.NewScan(readers, db.Vaults(), content, db.Queries(), db.Maintenance())
+	scan := vaults.NewScan(readers, db.Vaults(), content, db.FileStats(), db.Maintenance())
 	scan.Walks = db.Walks()
 	if _, err := scan.Execute(ctx, v); err != nil {
 		t.Fatal(err)
@@ -640,7 +640,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a canceled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
-	recognized, err := db.Queries().GetFileStats(t.Context(), v.ID)
+	recognized, err := db.FileStats().GetFileStats(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

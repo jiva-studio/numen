@@ -50,13 +50,13 @@ func (c changing) search() search.Search {
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.Queries(), c.index, testsupport.NewClock())
+	return note.NewCreate(vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, c.db.NamedPaths(), c.index, testsupport.NewClock())
 }
 
 func (c changing) move() note.Move {
 	return note.NewMove(note.MoveDeps{
 		Readers: vaultreader.Readers{}, Writers: vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()},
-		Links: c.db.Links(), Names: c.db.Queries(), Sources: c.db.Sources(), Index: c.index, Now: testsupport.NewClock(),
+		Links: c.db.Links(), Names: c.db.NamedPaths(), Sources: c.db.Sources(), Index: c.index, Now: testsupport.NewClock(),
 	})
 }
 
@@ -125,7 +125,7 @@ func TestATitleThatCannotBeAFilenameGoesIntoTheKey(t *testing.T) {
 		t.Errorf("the exact title is not in the note:\n%s", body)
 	}
 
-	displayed, err := c.db.Queries().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
+	displayed, err := c.db.NoteRefs().GetNotes(t.Context(), c.vault.ID, []string{created.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +204,7 @@ func TestRenamingTheFileOfATitledNotePreservesTheTitleAlone(t *testing.T) {
 	if got := c.title(t, "physics/Old.md"); got != "Entropy" {
 		t.Errorf("the vault shows the note as %q, and the file says Entropy", got)
 	}
-	named, err := c.db.Queries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NamedPaths().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestRenamingTheFileOfAnUntitledNoteNamesItByItsNewFilename(t *testing.T) {
 
 	// The note answers to the name it is filed under now, wherever a link
 	// naming it is written.
-	named, err := c.db.Queries().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
+	named, err := c.db.NamedPaths().GetNamedPaths(t.Context(), c.vault.ID, "Entropy")
 	if err != nil {
 		t.Fatal(err)
 	}

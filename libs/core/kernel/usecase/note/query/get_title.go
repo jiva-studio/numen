@@ -10,10 +10,10 @@ import (
 
 // GetTitle finds what the note at a path is called.
 type GetTitle struct {
-	queries noteport.NoteQueries
+	queries noteport.NoteRefs
 }
 
-func NewGetTitle(queries noteport.NoteQueries) *GetTitle {
+func NewGetTitle(queries noteport.NoteRefs) *GetTitle {
 	return &GetTitle{queries: queries}
 }
 

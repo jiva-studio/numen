@@ -93,7 +93,7 @@ func cut(t *testing.T, made container.EditorAssembly, db *container.Index, v dom
 		made.GetVaultReaders(),
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 	if _, err := scan.Execute(t.Context(), v); err != nil {

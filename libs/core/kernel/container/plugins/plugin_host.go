@@ -249,12 +249,17 @@ func (c Config) OpenPluginVault(
 		return nil, err
 	}
 	refresh := c.MakeRefresh(db, db.Notes())
-	queries := db.Queries()
 	index := func(ctx context.Context, v domain.Vault, paths []string) error {
 		_, err := refresh.Execute(ctx, v, paths)
 		return err
 	}
-	scenarios := c.BuildNotes(queries, db.Links(), db.Sources(), db.SourcesKnown(), index)
+	scenarios := c.BuildNotes(db, index)
+	connections := hostvault.Connections{
+		Reader:  note.NewConnectionReader(scenarios),
+		Writer:  note.NewConnectionWriter(scenarios),
+		Joiner:  note.NewConnectionJoiner(scenarios),
+		Creator: note.NewRelatedNoteCreator(scenarios),
+	}
 	arranger := hostvault.Arranger{
 		Notes:  getNoteChanges(scenarios),
 		Checks: vault.NewStandardGetProblems(db.Problems()),
@@ -266,9 +271,12 @@ func (c Config) OpenPluginVault(
 		Current:     current,
 		Readers:     c.VaultReaders,
 		Writers:     c.VaultWriters,
-		Notes:       queries,
+		Notes:       db.NoteRefs(),
+		Types:       db.NoteTypes(),
+		NamedPaths:  db.NamedPaths(),
+		TypedPaths:  db.TypedPaths(),
 		Links:       db.Links(),
-		Connections: note.NewConnections(scenarios),
+		Connections: connections,
 		Problems:    db.Problems(),
 		Arranger:    arranger,
 		Stores:      derivedfile.PluginStores{Options: vaultconfig.Options{ServiceDir: c.ServiceDir}},
@@ -292,7 +300,7 @@ func (c Config) OpenPluginVault(
 	}
 	if vaults.IndexState == nil {
 		vaults.IndexState = func(ctx context.Context, v domain.Vault) (plugindomain.IndexState, error) {
-			has, err := queries.Has(ctx, v.ID)
+			has, err := db.VaultHolds().Has(ctx, v.ID)
 			if err != nil {
 				return plugindomain.IndexState{}, err
 			}

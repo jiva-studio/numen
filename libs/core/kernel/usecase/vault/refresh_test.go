@@ -52,7 +52,7 @@ func passages(t *testing.T, db *container.Index, v domain.Vault, query string) [
 func titles(t *testing.T, db *container.Index, v domain.Vault, query string) []string {
 	t.Helper()
 	paths := searchNotes(t, db, v, query)
-	named, err := db.Queries().GetNotes(t.Context(), v.ID, paths)
+	named, err := db.NoteRefs().GetNotes(t.Context(), v.ID, paths)
 	if err != nil {
 		t.Fatal(err)
 	}

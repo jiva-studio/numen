@@ -417,7 +417,7 @@ func TestALinkMendedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 		}},
 		Writers: vaultwriter.VaultWriters{Locks: locks},
 		Links:   c.db.Links(),
-		Names:   c.db.Queries(),
+		Names:   c.db.NamedPaths(),
 		Sources: c.db.Sources(),
 		Index:   c.index,
 		Now:     testsupport.NewClock(),

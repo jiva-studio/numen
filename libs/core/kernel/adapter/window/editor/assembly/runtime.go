@@ -11,8 +11,8 @@ import (
 	sourceport "github.com/jiva-studio/numen/libs/core/kernel/usecase/filetext/sourcecontract"
 	indexport "github.com/jiva-studio/numen/libs/core/kernel/usecase/indexing/indexcontract"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	noteport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/notecontract"
 	problemport "github.com/jiva-studio/numen/libs/core/kernel/usecase/note/problemcontract"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/search"
@@ -51,8 +51,15 @@ type Runtime[H, V any] struct {
 	VaultIdentityFn          func() vaultport.VaultIdentity
 	OpenTabsStoreFn          func() windowport.OpenTabsStore
 	ClockFn                  func() machineport.Clock
-	NoteQueriesFn            func() noteport.NoteQueries
-	LinkQueriesFn            func() noteport.LinkQueries
+	OpenGetOpeningNoteFn     func() *query.GetOpeningNote
+	OpenGetTypesFn           func() *query.GetTypes
+	OpenGetHeadingsFn        func() *query.GetHeadings
+	OpenResolveLinksFn       func() *query.ResolveLinks
+	OpenGetTitlesFn          func() query.GetTitles
+	OpenGetNameMatchesFn     func() *search.GetNameMatches
+	OpenGetFolderEntriesFn   func(readers vaultport.VaultReaders) *file.GetFolderEntries
+	OpenGetFileKindsFn       func(readers vaultport.VaultReaders) *file.GetFileKinds
+	OpenFocusNoteFn          func(view windowport.Window) *query.FocusNote
 	ProblemQueriesFn         func() problemport.ProblemQueries
 	IndexProgressFn          func() indexport.IndexProgress
 	SourceRepositoryFn       func() sourceport.SourceRepository
@@ -93,16 +100,29 @@ type Runtime[H, V any] struct {
 	OpenPluginVaultFn        func(current func() (domain.Vault, bool), hooks H) (V, error)
 }
 
-func (e Runtime[H, V]) GetPluginDir(id string) (string, bool)         { return e.PluginDirFn(id) }
-func (e Runtime[H, V]) EmitEvent(event string)                        { e.EmitEventFn(event) }
-func (e Runtime[H, V]) GetRegistry() vaultport.VaultRegistry          { return e.RegistryVal }
-func (e Runtime[H, V]) GetVaultReaders() vaultport.VaultReaders       { return e.VaultReadersFn() }
-func (e Runtime[H, V]) GetVaultWriters() vaultport.VaultWriters       { return e.VaultWritersFn() }
-func (e Runtime[H, V]) GetVaultIdentity() vaultport.VaultIdentity     { return e.VaultIdentityFn() }
-func (e Runtime[H, V]) GetOpenTabsStore() windowport.OpenTabsStore    { return e.OpenTabsStoreFn() }
-func (e Runtime[H, V]) GetClock() machineport.Clock                   { return e.ClockFn() }
-func (e Runtime[H, V]) GetNoteQueries() noteport.NoteQueries          { return e.NoteQueriesFn() }
-func (e Runtime[H, V]) GetLinkQueries() noteport.LinkQueries          { return e.LinkQueriesFn() }
+func (e Runtime[H, V]) GetPluginDir(id string) (string, bool)      { return e.PluginDirFn(id) }
+func (e Runtime[H, V]) EmitEvent(event string)                     { e.EmitEventFn(event) }
+func (e Runtime[H, V]) GetRegistry() vaultport.VaultRegistry       { return e.RegistryVal }
+func (e Runtime[H, V]) GetVaultReaders() vaultport.VaultReaders    { return e.VaultReadersFn() }
+func (e Runtime[H, V]) GetVaultWriters() vaultport.VaultWriters    { return e.VaultWritersFn() }
+func (e Runtime[H, V]) GetVaultIdentity() vaultport.VaultIdentity  { return e.VaultIdentityFn() }
+func (e Runtime[H, V]) GetOpenTabsStore() windowport.OpenTabsStore { return e.OpenTabsStoreFn() }
+func (e Runtime[H, V]) GetClock() machineport.Clock                { return e.ClockFn() }
+func (e Runtime[H, V]) OpenGetOpeningNote() *query.GetOpeningNote  { return e.OpenGetOpeningNoteFn() }
+func (e Runtime[H, V]) OpenGetTypes() *query.GetTypes              { return e.OpenGetTypesFn() }
+func (e Runtime[H, V]) OpenGetHeadings() *query.GetHeadings        { return e.OpenGetHeadingsFn() }
+func (e Runtime[H, V]) OpenResolveLinks() *query.ResolveLinks      { return e.OpenResolveLinksFn() }
+func (e Runtime[H, V]) OpenGetTitles() query.GetTitles             { return e.OpenGetTitlesFn() }
+func (e Runtime[H, V]) OpenGetNameMatches() *search.GetNameMatches { return e.OpenGetNameMatchesFn() }
+func (e Runtime[H, V]) OpenGetFolderEntries(readers vaultport.VaultReaders) *file.GetFolderEntries {
+	return e.OpenGetFolderEntriesFn(readers)
+}
+func (e Runtime[H, V]) OpenGetFileKinds(readers vaultport.VaultReaders) *file.GetFileKinds {
+	return e.OpenGetFileKindsFn(readers)
+}
+func (e Runtime[H, V]) OpenFocusNote(view windowport.Window) *query.FocusNote {
+	return e.OpenFocusNoteFn(view)
+}
 func (e Runtime[H, V]) GetProblemQueries() problemport.ProblemQueries { return e.ProblemQueriesFn() }
 func (e Runtime[H, V]) GetIndexProgress() indexport.IndexProgress     { return e.IndexProgressFn() }
 func (e Runtime[H, V]) GetSourceRepository() sourceport.SourceRepository {

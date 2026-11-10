@@ -10,10 +10,10 @@ import (
 
 // GetSummary finds how much of a vault the index holds.
 type GetSummary struct {
-	queries noteport.NoteQueries
+	queries noteport.VaultSummaries
 }
 
-func NewGetSummary(queries noteport.NoteQueries) *GetSummary {
+func NewGetSummary(queries noteport.VaultSummaries) *GetSummary {
 	return &GetSummary{queries: queries}
 }
 

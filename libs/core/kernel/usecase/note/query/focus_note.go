@@ -17,11 +17,11 @@ var ErrNoNotePath = errors.New("note path is empty")
 
 // FocusNote sets the focused note.
 type FocusNote struct {
-	queries noteport.NoteQueries
+	queries noteport.NoteRefs
 	view    windowport.Window
 }
 
-func NewFocusNote(queries noteport.NoteQueries, view windowport.Window) *FocusNote {
+func NewFocusNote(queries noteport.NoteRefs, view windowport.Window) *FocusNote {
 	return &FocusNote{queries: queries, view: view}
 }
 

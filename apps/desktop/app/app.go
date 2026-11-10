@@ -270,7 +270,8 @@ func openInstallation(
 	cfg.SetPluginTexts()
 	// The plugin window reads the vault of the State on each call, so a vault opened later in the
 	// main window is served without a new binding.
-	cfg.SetPluginWindow(editor.NewPluginWindow(opened.State, made.GetNoteQueries(), made.GetVaultReaders()))
+	cfg.SetPluginWindow(editor.NewPluginWindow(
+		opened.State, made.OpenFocusNote(opened.State.GetWindow()), made.GetVaultReaders()))
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 

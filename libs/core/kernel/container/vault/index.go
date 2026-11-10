@@ -38,12 +38,22 @@ func (c Config) OpenIndex(ctx context.Context) (*vaultusecase.Index, error) {
 	if err != nil {
 		return nil, err
 	}
+	queries := db.NoteQueries()
 	return vaultusecase.NewIndex(vaultusecase.IndexPorts{
 		Backend:       db,
 		Path:          path,
 		Vaults:        db.Vaults(),
 		Notes:         db.Notes(),
-		Queries:       db.NoteQueries(),
+		FileStats:     queries,
+		NameMatches:   queries,
+		Headings:      queries,
+		Summaries:     queries,
+		NoteTypes:     queries,
+		TypedPaths:    queries,
+		VaultHolds:    queries,
+		NoteRefs:      queries,
+		OpeningNote:   queries,
+		NamedPaths:    queries,
 		Passages:      db.ChunkQueries(),
 		Progress:      db.ChunkQueries(),
 		Stats:         db.ChunkQueries(),
@@ -52,8 +62,8 @@ func (c Config) OpenIndex(ctx context.Context) (*vaultusecase.Index, error) {
 		Vectors:       db.Sources(),
 		VectorQueries: db.Sources(),
 		Maintenance:   db.Maintenance(),
-		Links:         db.NoteQueries(),
-		Problems:      db.NoteQueries(),
+		Links:         queries,
+		Problems:      queries,
 		OpenTabs:      db.OpenTabs(),
 		TextVersions:  version.NewIndexVersions(db.TextVersions()),
 		SearchFloors:  db.SearchFloors(),

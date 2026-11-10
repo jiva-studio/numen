@@ -41,7 +41,7 @@ func scanFor(db *container.Index) vaults.Scan {
 		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
-		db.Queries(),
+		db.FileStats(),
 		db.Maintenance(),
 	)
 }

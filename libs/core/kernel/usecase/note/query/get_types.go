@@ -10,10 +10,10 @@ import (
 
 // GetTypes finds what each of the notes at some paths is.
 type GetTypes struct {
-	queries noteport.NoteQueries
+	queries noteport.NoteTypes
 }
 
-func NewGetTypes(queries noteport.NoteQueries) *GetTypes {
+func NewGetTypes(queries noteport.NoteTypes) *GetTypes {
 	return &GetTypes{queries: queries}
 }
 
