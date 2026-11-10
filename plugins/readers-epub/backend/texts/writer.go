@@ -207,4 +207,3 @@ func (s *Writer) putText(ctx context.Context, req Request, task host.Task) (err 
 	})
 	return err
 }
-

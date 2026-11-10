@@ -140,4 +140,3 @@ func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
 		t.Fatalf("expected success with Mtime == 0, got %v", err)
 	}
 }
-
