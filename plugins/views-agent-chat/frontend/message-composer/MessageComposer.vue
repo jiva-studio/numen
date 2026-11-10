@@ -42,8 +42,8 @@ const emit = defineEmits<{
   (event: 'open-settings'): void
 }>()
 
-
 defineExpose({ focus: (how?: Parameters<HTMLElement['focus']>[0]) => field.value?.focus(how) })
+
 /* --------------------------------- State ---------------------------------- */
 const field = useTemplateRef<InstanceType<typeof Textarea>>('field')
 

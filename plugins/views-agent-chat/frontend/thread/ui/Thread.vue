@@ -32,8 +32,8 @@ defineSlots<{
   failure?(props: { turn: Turn }): unknown
 }>()
 
-
 defineExpose({ toFoot })
+
 /* --------------------------------- State ---------------------------------- */
 const placedTurns = computed(() => placeTurns(props.turns))
 
