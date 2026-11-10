@@ -184,7 +184,7 @@ func settingsOf(c Config) settingsWiring {
 			PluginChanges:   res.pluginChanges,
 			SubscribedHosts: &res.subscribedHosts,
 		},
-		settingsPlugins: settingsPlugins{
+		settingsPluginRefs: settingsPluginRefs{
 			PluginHost:    c.PluginHost,
 			KeyStore:      c.KeyStore,
 			AgentProvider: func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
@@ -252,8 +252,8 @@ func plugins(c Config) pluginsWiring {
 		settingsStores: settingsStores{
 			Watches: res.watches, SettingsFiles: res.settingsFiles, SettingEvents: res.settingEvents, Programs: programs,
 		},
-		settingsPlugins: settingsPlugins{PluginHost: c.PluginHost},
-		ErrorHandler:    func(err error) { handleError(c, err) },
+		settingsPluginRefs: settingsPluginRefs{PluginHost: c.PluginHost},
+		ErrorHandler:       func(err error) { handleError(c, err) },
 	}
 	return pluginsWiring{
 		pluginInstall: pluginInstall{

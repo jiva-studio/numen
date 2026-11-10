@@ -313,7 +313,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfg.TextVersions.SetListener(cutOnChange{t: t, extract: extract})
+	cfg.TextVersions.Changes.SetListener(cutOnChange{t: t, extract: extract})
 	data := openPluginData(vaultOf(cfg))
 
 	if err := data.DeletePluginData(t.Context(), v, transcriber); err != nil {

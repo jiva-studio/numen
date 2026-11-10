@@ -109,7 +109,7 @@ type settingsStores struct {
 	PluginChanges   *settingsusecase.PluginChanges
 }
 
-type settingsPlugins struct {
+type settingsPluginRefs struct {
 	PluginHost       *PluginHost
 	KeyStore         pluginport.KeyStore
 	AgentProvider    func() agentport.AgentProvider
@@ -121,7 +121,7 @@ type settingsPlugins struct {
 type settingsWiring struct {
 	settingsPlaces
 	settingsStores
-	settingsPlugins
+	settingsPluginRefs
 	ErrorHandler func(error)
 }
 

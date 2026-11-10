@@ -57,38 +57,29 @@ func openIndex(c vaultWiring, ctx context.Context) (*vault.Index, error) {
 	}
 	queries := db.NoteQueries()
 	return vault.NewIndex(vault.IndexPorts{
-		Backend:       db,
-		Path:          path,
-		Vaults:        db.Stores.Vaults,
-		Notes:         db.Stores.Notes,
-		FileStats:     queries,
-		NameMatches:   queries,
-		Headings:      queries,
-		Summaries:     queries,
-		NoteTypes:     queries,
-		TypedPaths:    queries,
-		VaultHolds:    queries,
-		NoteRefs:      queries,
-		OpeningNote:   queries,
-		NamedPaths:    queries,
-		Passages:      db.ChunkQueries(),
-		Progress:      db.ChunkQueries(),
-		Stats:         db.ChunkQueries(),
-		Sources:       db.Source.Sources,
-		SourcesUnder:  db.Source.Sources,
-		RemovalLookup: db.Source.Sources,
-		SourceRecords: db.Source.Sources,
-		SourceBacklog: db.Source.Sources,
-		Vectors:       db.Source.Sources,
-		VectorQueries: db.Source.Sources,
-		Maintenance:   db.Stores.Maintenance,
-		Links:         queries,
-		Problems:      queries,
-		OpenTabs:      db.Stores.OpenTabs,
-		TextVersions:  version.NewIndexVersions(db.TextVersions),
-		SearchFloors:  db.Search.SearchFloors,
-		SearchSamples: db.Search.SearchSamples,
-		Nearest:       db.ChunkQueries(),
+		Closer: db,
+		File:   path,
+		Stores: vault.IndexStores{
+			Vaults: db.Vaults(), Notes: db.Notes(), OpenTabs: db.OpenTabs(), Maintenance: db.Maintenance(),
+		},
+		NoteQueries: vault.IndexNoteQueries{
+			FileStats: queries, NameMatches: queries, Headings: queries, Summaries: queries, NoteTypes: queries,
+			TypedPaths: queries, VaultHolds: queries, NoteRefs: queries, OpeningNote: queries, NamedPaths: queries,
+			Links: queries, Problems: queries,
+		},
+		Chunks: vault.IndexChunks{
+			Passages: db.ChunkQueries(), Progress: db.ChunkQueries(), Stats: db.ChunkQueries(),
+			Index:   db,
+			Vectors: db.Sources(), VectorQueries: db.Sources(),
+		},
+		Source: vault.IndexSources{
+			Sources: db.Sources(), SourcesUnder: db.Sources(), RemovalLookup: db.Sources(),
+			SourceRecords: db.Sources(), SourceBacklog: db.Sources(),
+		},
+		Search: vault.IndexSearch{
+			Nearest: db.ChunkQueries(), SearchFloors: db.SearchFloors(), SearchSamples: db.SearchSamples(),
+		},
+		TextVersions: version.NewIndexVersions(db.TextVersions()),
 	}), nil
 }
 
@@ -235,7 +226,7 @@ func getTextReaders(c vaultWiring) textdomain.Readers {
 	if c.TextVersions == nil {
 		return nil
 	}
-	return c.TextVersions
+	return c.TextVersions.Texts
 }
 
 func setPluginTexts(c vaultWiring) {
