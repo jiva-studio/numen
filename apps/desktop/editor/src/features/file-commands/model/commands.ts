@@ -38,8 +38,8 @@ const moveFileCommand = async (
 
 const getUntitledFolderPath = async (invocation: CommandInvocation): Promise<string> => {
   if (!invocation.isFolder) return ''
-  const taken = (await listFiles(invocation.path)).map((one) => one.name)
-  const name = generateUniqueName(taken, FILE_WORDS.untitledFolder)
+  const existing = (await listFiles(invocation.path)).map((one) => one.name)
+  const name = generateUniqueName(existing, FILE_WORDS.untitledFolder)
   return invocation.path ? `${invocation.path}/${name}` : name
 }
 
