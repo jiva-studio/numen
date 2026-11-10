@@ -155,7 +155,7 @@ describe("the late binding rule of the app layer", () => {
 
   it("fails a provide call on a state, wherever it is written", () => {
     assert.deepEqual(symbols("base.plugins.pluginServices.provide({ vaults })"), ["1 provide fills a state that was made before"]);
-    assert.deepEqual(symbols("const run = () => {\n  facts\n    .provide(next)\n}"), ["3 provide fills a state that was made before"]);
+    assert.deepEqual(symbols("const run = () => {\n  facts\n    .provide(next)\n}"), ["2 provide fills a state that was made before"]);
   });
 
   it("fails a ref, shallowRef or reactive that starts empty or as a stub of empty functions", () => {

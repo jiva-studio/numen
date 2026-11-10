@@ -201,9 +201,9 @@ function isEmptyValue(node) {
   if (ts.isArrayLiteralExpression(node)) return node.elements.length === 0;
   if (node.kind === ts.SyntaxKind.NullKeyword) return true;
   if (ts.isIdentifier(node)) return node.text === "undefined";
-  if (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
-    if (ts.isBlock(node.body)) return node.body.statements.length === 0 || (node.body.statements.length === 1 && ts.isReturnStatement(node.body.statements[0]) && (node.body.statements[0].expression === undefined || isEmptyValue(node.body.statements[0].expression)));
-    return isEmptyValue(node.body);
+  if (ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isMethodDeclaration(node)) {
+    if (node.body && ts.isBlock(node.body)) return node.body.statements.length === 0 || (node.body.statements.length === 1 && ts.isReturnStatement(node.body.statements[0]) && (node.body.statements[0].expression === undefined || isEmptyValue(node.body.statements[0].expression)));
+    return node.body === undefined || isEmptyValue(node.body);
   }
   return false;
 }

@@ -20,7 +20,7 @@ import {
 } from '@/testing/window'
 
 /** What the window gives the plugins, read as the plugin host reads it. */
-const provided = vi.hoisted(() => ({ read: undefined as (() => PluginServices) | undefined }))
+const provided = vi.hoisted(() => ({ read: undefined as (() => Partial<PluginServices>) | undefined }))
 
 vi.mock('../plugins/pluginSupport', async (original) => {
   const module = await original<typeof PluginSupportModule>()
@@ -61,7 +61,7 @@ describe('the files a plugin is provided', () => {
   it('run their commands with the dependencies of the window', async () => {
     await mountWindow()
 
-    await provided.read?.().files.createFolder('Zoology')
+    await provided.read?.().files?.createFolder('Zoology')
 
     expect(requests.folders).toStrictEqual(['Zoology'])
   })
