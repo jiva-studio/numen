@@ -5,7 +5,7 @@
 import { defineComponent, h, reactive } from 'vue'
 import type { createWindow } from '@/app/window/createWindow'
 import type { TabKind } from '@/entities/tab'
-import { mockVaultState } from './answers'
+import { mockVaultState } from '../answers'
 
 const NOTE_TAB = 'sample'
 

@@ -31,7 +31,7 @@ import {
   sourceAnswer,
 } from './answers'
 import { book, editor, reader } from './stubs'
-import { openNoteTab, registerNoteTabs } from './noteTabs'
+import { openNoteTab, registerNoteTabs } from './mocks/noteTabs'
 import type { createWindow } from '@/app/window/createWindow'
 
 const App = (await import('@/app/App.vue')).default

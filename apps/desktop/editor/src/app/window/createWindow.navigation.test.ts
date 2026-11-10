@@ -21,7 +21,6 @@ type Window = Awaited<ReturnType<typeof mountWindowWithPalette>>
 const ENTROPY = 'physics/Entropy.md'
 const HEAT = 'physics/Heat.md'
 
-/** A window with the palette that opens the notes of the vault in tabs of a registered kind. */
 const mountWithNotes = async (): Promise<Window> => {
   const window = await mountWindowWithPalette()
   registerNoteTabs(getWindowParts(window))

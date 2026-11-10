@@ -32,7 +32,6 @@ const closeFrontTab = (): void => {
   )
 }
 
-/** A window holding two notes in tabs, the second in front. */
 const mountWithNotes = async (): Promise<Window> => {
   const window = await mountWindow()
   const parts = getWindowParts(window)
@@ -51,7 +50,7 @@ const openOtherVault = async (window: Window): Promise<void> => {
 }
 
 describe('the window leaving its vault', () => {
-  it('saves the open tabs as they are when the core is asked to open the other vault', async () => {
+  it('writes the open tabs before the core opens the other vault', async () => {
     const window = await mountWithNotes()
     const open = getTabs(window).length
     closeFrontTab()
