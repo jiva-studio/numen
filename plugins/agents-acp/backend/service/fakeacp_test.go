@@ -245,7 +245,7 @@ func (a *fakeAgent) askPermission(id string, toolCall map[string]any) {
 	}})
 	a.read()
 }
-// getField returns the value of key in a JSON object, and fails the test when it is not a T.
+
 func getField[T any](t *testing.T, object any, key string) T {
 	t.Helper()
 	var zero T
