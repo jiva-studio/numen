@@ -161,7 +161,7 @@ const APP_SETTINGS: Installation['plugin']['app'] = ref([
 
 const INSTALLED: Installation['plugin']['plugins'] = ref(PLUGINS)
 
-const INSTALLATION: Installation = createInstallation({
+const INSTALLATION = createInstallation({
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
   write: (edits) => {
     DONE.push(`write ${edits.length}`)
