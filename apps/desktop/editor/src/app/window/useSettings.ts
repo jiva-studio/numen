@@ -2,16 +2,8 @@
  * Settings configuration, theme application, and palette lists for the window.
  */
 import { watch } from 'vue'
+import { createWindowAppearance, createWindowSettingPalette } from '@/features/settings-commands'
 import {
-  APP_OWNER,
-  INTERFACE_SCALE,
-  TEXT_SCALE,
-  createSettingPalette,
-  createWindowAppearance,
-  type SettingPreview,
-} from '@/features/settings-commands'
-import {
-  MODES,
   choosePluginPath,
   createPluginRetry,
   createSecretStore,
@@ -20,7 +12,6 @@ import {
   getPluginData,
   themes,
   watchSettings,
-  type Mode,
   type SettingEdit,
 } from '@/entities/settings'
 import { useCatalogEntries } from '@/entities/plugin'
@@ -168,53 +159,6 @@ function createChangeFollower(deps: {
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const SHELL_APPEARANCE = ['app', 'appearance'] as const
-
-function createWindowPreview(
-  appearance: ReturnType<typeof createWindowAppearance>,
-): SettingPreview {
-  return {
-    apply: (path, value) => {
-      if (path.length !== 3 || !SHELL_APPEARANCE.every((one, index) => path[index] === one)) return
-      const key = path[2]
-      if (key === 'theme' && typeof value === 'string') appearance.previewTheme(value)
-      if (key === 'mode' && isMode(value)) appearance.previewMode(value)
-      if (key === INTERFACE_SCALE && typeof value === 'number') {
-        appearance.previewSize(INTERFACE_SCALE, value)
-      }
-      if (key === TEXT_SCALE && typeof value === 'number') {
-        appearance.previewSize(TEXT_SCALE, value)
-      }
-    },
-    restore: () => appearance.restore(),
-  }
-}
-
-const isMode = (value: unknown): value is Mode => MODES.some((one) => one === value)
-
-function createWindowSettingPalette(deps: {
-  rest: ReturnType<typeof createSettingsStore>
-  appearance: ReturnType<typeof createWindowAppearance>
-  words: Words
-}) {
-  const { rest, appearance, words } = deps
-  return createSettingPalette({
-    getOwners: () => [
-      { id: APP_OWNER, name: '', settings: rest.app.value },
-      ...rest.plugins.value.map((one) => ({ id: one.id, name: one.name, settings: one.settings })),
-    ],
-    words,
-    preview: createWindowPreview(appearance),
-    write: async (edits) => {
-      await rest.writeSettings(edits)
-      // The window shows what the settings now hold, also where the write was not accepted.
-      if (edits.some((one) => one.at[0] === APP_OWNER && one.at[1] === 'appearance')) {
-        await appearance.reload()
-      }
-    },
-  })
-}
 
 export function useSettings({
   words,

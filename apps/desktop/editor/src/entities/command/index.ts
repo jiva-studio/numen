@@ -13,7 +13,7 @@ export type {
   RunSupport,
   VaultRef,
 } from './model/command'
-export { ARGUMENT, COMMAND, COMMANDS_ROW, ROW } from './lib/ids'
+export { ARGUMENT, COMMAND, COMMANDS_ROW, ROW, SETTING_COMMAND_PREFIX } from './lib/ids'
 export { withWhen } from './model/availability'
 export { createRowKeys, findChordKeys, findShortcutKeys } from './lib/keys'
 export { findIcon } from './lib/icons'

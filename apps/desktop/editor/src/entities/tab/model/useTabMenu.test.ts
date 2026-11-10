@@ -83,6 +83,7 @@ const setup = (entries: readonly SlotItem[] = ENTRIES) => {
   const commands = createCommands()
   const onHighlight = vi.fn()
   const menu = useTabMenu({
+    moveCommand: 'app:tab.moveToWindow',
     slots,
     runCommand: commands.run,
     listItems: commands.listItems,
@@ -230,6 +231,7 @@ describe('the note type and the properties of the file of a tab', () => {
     const getEntries = vi.spyOn(slots, 'getEntries')
     const commands = createCommands()
     const menu = useTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
       slots,
       runCommand: commands.run,
       listItems: commands.listItems,
@@ -314,6 +316,7 @@ describe('an open of the menu of a tab cancelled while its note type is read', (
     let finish: (kind: NoteKind) => void = () => undefined
     const commands = createCommands()
     const menu = useTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
       slots: createSlots(ENTRIES),
       runCommand: commands.run,
       listItems: commands.listItems,
@@ -424,6 +427,7 @@ describe('a command of the menu of a tab of the window that fails', () => {
     const reportError = vi.fn()
     const failure = new Error('the window is gone')
     const menu = useWindowTabMenu({
+      moveCommand: 'app:tab.moveToWindow',
       windowTabs: { tabs: { value: [] }, getTab: () => undefined } as never,
       slots: createSlots(ENTRIES),
       commands: {

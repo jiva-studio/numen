@@ -23,7 +23,6 @@ import {
 } from '@/entities/tab'
 import { useTabLinks } from '@/features/tab-linking'
 import { createCommandNotes } from '../commands/commandDeps'
-import { createTabCommands } from '../tabs/tabCommands'
 import { createTabLinkSession, getWindowReport } from '../tabs/tabLinkSession'
 import { createMovedTabOpener, createTabMover } from '../tabs/tabMove'
 import type { WindowCore, WindowServices } from './createDisplayPart'
@@ -182,25 +181,6 @@ export function createWindowTabMoves(
     moveTab: (id: string, windowId: string) =>
       runInBackground(mover.moveTab(id, windowId), ignoreError),
   }
-}
-
-export function createWindowTabCommands(
-  base: WindowCore,
-  moves: ReturnType<typeof createWindowTabMoves>,
-) {
-  const { windowTabs, tabLinks } = base
-  const tabCommands = createTabCommands({
-    tabLinks,
-    getTabs: () => windowTabs.tabs.value,
-    getKind: (id) => windowTabs.getTab(id)?.kind.kind,
-    isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
-    windowId: moves.windowId,
-    isAsking: moves.isTabAsking,
-    detach: moves.detachTabInPlace,
-    move: moves.moveTab,
-  })
-  tabCommands.register()
-  return tabCommands
 }
 
 export const useWindowOpenTabs = (base: WindowCore, isWriting: Ref<boolean>) =>

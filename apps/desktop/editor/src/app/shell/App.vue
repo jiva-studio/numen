@@ -56,6 +56,7 @@ const { isStarted, isLayoutReady, bootstrapFailure, retryBootstrap, openCurrentV
   parts.lifecycle
 
 const tabMenu = useWindowTabMenu({
+  moveCommand: COMMAND.moveTabToWindow,
   windowTabs,
   onHighlight: highlightWindow,
   slots,

@@ -6,6 +6,9 @@ import { createCommands as createPaletteCommands, registerCommand } from '@/feat
 import type { Words } from '@/features/command-palette'
 import { createFileCommands, type FileCommandsDeps } from '@/features/file-commands'
 import { createNoteCommands, type NoteCommandsDeps } from '@/features/note-commands'
+import { createTabCommands, type TabCommandsDeps } from '@/features/tab-commands'
+import { getAllTabs, getEligibleTabs, getWindowName } from '@/features/tab-linking'
+import { createVersionCommands, type VersionCommandsDeps } from '@/features/version-commands'
 import {
   createVaultCommands,
   type TabsHold,
@@ -23,6 +26,8 @@ export interface FeatureCommandsDeps {
   readonly notes: NoteCommandsDeps
   readonly files: FileCommandsDeps
   readonly vaults: VaultCommandsDeps
+  readonly tabs: TabCommandsDeps
+  readonly versions: VersionCommandsDeps
 }
 
 /** The parts of the window the commands of the features are given. */
@@ -37,6 +42,8 @@ export interface FeatureWindow {
   readonly setVaultName: (vault: VaultRef) => void
   readonly reload: () => void
   readonly writeMessage: MessageWriter
+  readonly tabs: Omit<TabCommandsDeps, 'listing'>
+  readonly listVersionItems: VersionCommandsDeps['listItems']
 }
 
 /** What each feature uses, taken from the parts of the window. */
@@ -68,12 +75,14 @@ export function createFeatureDeps(parts: FeatureWindow): FeatureCommandsDeps {
       reload: parts.reload,
       writeMessage,
     },
+    tabs: { ...parts.tabs, listing: { getAllTabs, getEligibleTabs, getWindowName } },
+    versions: { listItems: parts.listVersionItems, writeMessage },
   }
 }
 
 /**
- * The rows of the note, file, palette and vault commands, in that order, and the handler of each
- * command that has one. A group draws its commands in the order of this list.
+ * The rows of the note, file, palette, vault, tab and version commands, in that order, and the
+ * handler of each command that has one. A group draws its commands in the order of this list.
  */
 export function collectFeatureCommands(
   deps: FeatureCommandsDeps,
@@ -83,14 +92,24 @@ export function collectFeatureCommands(
   const notes = createNoteCommands(deps.notes, agent)
   const files = createFileCommands(deps.files)
   const vaults = createVaultCommands(deps.vaults, agent)
+  const tabs = createTabCommands(deps.tabs)
+  const versions = createVersionCommands(deps.versions)
   return {
     commands: [
       ...notes.commands,
       ...files.commands,
       ...createPaletteCommands(words, agent),
       ...vaults.commands,
+      ...tabs.commands,
+      ...versions.commands,
     ],
-    handlers: { ...notes.handlers, ...files.handlers, ...vaults.handlers },
+    handlers: {
+      ...notes.handlers,
+      ...files.handlers,
+      ...vaults.handlers,
+      ...tabs.handlers,
+      ...versions.handlers,
+    },
   }
 }
 

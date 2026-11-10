@@ -16,11 +16,12 @@ import {
   type SlotMenu,
 } from '@numen/plugin-loader'
 import type { WindowTabs } from './windowTabs'
-import { COMMAND } from '@/shared/commandIds'
 import { WORDS } from '@/shared/words'
 
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined
+  /** The id of the command that moves a tab to another window; the item picked names the window. */
+  readonly moveCommand: string
   /** Runs a command of an entry over the tab; with `itemId`, the one picked, and with `values`, those the entry holds. */
   runCommand?(
     command: string,
@@ -50,9 +51,13 @@ interface TabMenuTarget {
   readonly target: RunTarget
 }
 
-const getMoveWindow = (tree: SlotMenu | null, id: string | null): string | null => {
+const getMoveWindow = (
+  tree: SlotMenu | null,
+  id: string | null,
+  moveCommand: string,
+): string | null => {
   const pick = id === null ? undefined : tree?.getPick(id)
-  return pick?.command === COMMAND.moveTabToWindow ? (pick.itemId ?? null) : null
+  return pick?.command === moveCommand ? (pick.itemId ?? null) : null
 }
 
 /** The type the vault files a note as, and its frontmatter where it has any. */
@@ -92,7 +97,7 @@ export function useTabMenu(deps: TabMenuDeps) {
   })
 
   const highlight = (id: string | null): void => {
-    const windowId = getMoveWindow(slotMenu.menu.value, id)
+    const windowId = getMoveWindow(slotMenu.menu.value, id, deps.moveCommand)
     if (windowId === highlighted) return
     if (highlighted !== null) deps.onHighlight?.(highlighted, false)
     highlighted = windowId
@@ -144,6 +149,7 @@ export function useTabMenu(deps: TabMenuDeps) {
 
 /** The tabs of a window, and how the commands of the menu of a tab are read and run. */
 export interface WindowTabMenuDeps {
+  readonly moveCommand: string
   readonly windowTabs: Pick<WindowTabs, 'tabs' | 'getTab'>
   readonly slots?: SlotHost | undefined
   readonly commands?: CommandsHost | undefined
@@ -174,6 +180,7 @@ export const getTabFileTarget = (
 export function useWindowTabMenu(deps: WindowTabMenuDeps) {
   const { windowTabs, slots, commands } = deps
   return useTabMenu({
+    moveCommand: deps.moveCommand,
     slots,
     runCommand: (command, target, itemId, values) =>
       commands?.run(command, target, itemId, values) ?? Promise.resolve(),

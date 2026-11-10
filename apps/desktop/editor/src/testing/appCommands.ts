@@ -5,6 +5,7 @@
 import { collectFeatureCommands, type FeatureCommandsDeps } from '@/app/commands/featureCommands'
 import type { Command, Notes } from '@/entities/command'
 import { createNoteWriter } from '@/entities/note'
+import { getAllTabs, getEligibleTabs, getWindowName } from '@/features/tab-linking'
 import { WORDS } from '@/shared/words'
 
 const noop = (): void => undefined
@@ -33,6 +34,23 @@ export const createEmptyWindow = (): FeatureCommandsDeps => ({
   },
   files: { notes: NO_NOTES, writeMessage: noop },
   vaults: { setVaultName: noop, reload: noop, writeMessage: noop },
+  tabs: {
+    tabLinks: {
+      tabs: [],
+      windows: [],
+      linkTabs: noop,
+      unlinkTab: noop,
+      getGroupOf: () => null,
+    },
+    listing: { getAllTabs, getEligibleTabs, getWindowName },
+    getTabs: () => [],
+    getKind: () => undefined,
+    isLinkable: () => false,
+    isAsking: () => false,
+    detach: noop,
+    move: noop,
+  },
+  versions: { listItems: () => Promise.resolve([]), writeMessage: noop },
 })
 
 /** Every command of the editor in the order the palette draws them. */
