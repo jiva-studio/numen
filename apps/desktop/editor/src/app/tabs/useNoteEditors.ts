@@ -1,19 +1,18 @@
 /**
  * Editing, conflict handling, and flushing for open notes.
  */
-import { formatErrorMessage } from '@numen/core-client'
+import { formatError } from '@/shared/api/errors'
 import { runInBackground } from '@numen/ui'
 import { openNotes, createNoteWriter } from '@/entities/note'
 import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
-import { createNotes, type SearchDeps, type Store } from '@/features/command-palette'
-import type { NotePort } from '@/app/ports/notes'
+import { createNotes, type Store } from '@/features/command-palette'
 import type { VaultPort } from '@/app/ports/vault'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { FileOpeners } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
 
 export interface NoteEditorsDeps {
-  core: NotePort & SearchDeps & Pick<VaultPort, 'watchQuit' | 'reportFlush'>
+  core: Pick<VaultPort, 'watchQuit' | 'reportFlush'>
   log: MessageLog
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
@@ -64,8 +63,8 @@ function createNotedStore(
 
 export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEditorsDeps) {
   const changes = createNullChanges()
-  const notes = openNotes(core, { onReplaced: changes.reportNoteChange })
-  const making = createNoteWriter(core, log.getWriter('made'))
+  const notes = openNotes({ onReplaced: changes.reportNoteChange })
+  const making = createNoteWriter(log.getWriter('made'))
   const noted = createNoted(windowTabs)
 
   const fileFlush = createFileFlush(core)
@@ -74,7 +73,7 @@ export function createNoteEditors({ core, log, tabOpeners, windowTabs }: NoteEdi
   raiseConflicts(notes, fileFlush)
 
   const notedStore = createNotedStore(notes, windowTabs, (error) =>
-    log.getWriter('editing')(`A note did not close: ${formatErrorMessage(error)}`, 'error'),
+    log.getWriter('editing')(`A note did not close: ${formatError(error)}`, 'error'),
   )
   const stores: readonly Store[] = [notedStore]
   const reached = createNotes(stores, tabOpeners)

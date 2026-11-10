@@ -5,19 +5,12 @@
  * showing something stale, with no error and no way back.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { asFailure, asValue } from '@numen/core-client'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Core } from '@/app/ports/core'
 import type { Task } from '@/shared/notices/task'
 import type { TextRange } from '@/shared/textRange'
-import type { Neighbourhood } from '@/entities/note'
-
-const answer = (path: string): Neighbourhood => ({
-  focus: { path, title: path },
-  focusType: 'note',
-  related: [],
-  connections: [],
-})
+import type { NoteEdit } from '@/entities/note'
+import { answerCore } from '@/testing/coreAnswers'
 
 async function* emptyStream(): AsyncGenerator<never> {
   yield* []
@@ -34,49 +27,44 @@ const resolved = {
   agentUnreachable: '',
 }
 
-function fake(overrides: Partial<Core> = {}): Core & { requestLog: string[] } {
-  const request: string[] = []
-  return {
-    requestLog: request,
-    neighbourhood: async (path) => {
-      request.push(path)
-      return answer(path)
+/** What the note service answers while the window follows the vault. */
+interface NoteAnswers {
+  getInitialOpenPath?: () => Promise<{ path: string } | null>
+  watchEdits?: () => AsyncGenerator<NoteEdit>
+}
+
+function fake({ getInitialOpenPath, watchEdits, ...overrides }: Partial<Core> & NoteAnswers = {}): Core {
+  answerCore({
+    notes: {
+      getOpeningNote: async () => {
+        const note = await (getInitialOpenPath ?? (async () => ({ path: 'Opening.md' })))()
+        return note ? { note: { path: note.path, title: '' } } : {}
+      },
+      watchEdits: async function* () {
+        for await (const edit of (watchEdits ?? emptyStream)()) {
+          yield {
+            change: edit.change,
+            path: edit.path,
+            range: edit.span,
+            text: edit.text,
+            isFinal: edit.isComplete,
+          }
+        }
+      },
     },
-    headings: async () => new Map(),
-    fileKinds: async () => new Map(),
-    resolveLinks: async () => [],
-    getInitialOpenPath: async () => ({ path: 'Opening.md' }),
+  })
+  return {
     state: async () => resolved,
     agentUnreachable: async () => '',
     watchVaultChanges: emptyStream,
     watchFocus: emptyStream,
     writeOpenTabs: vi.fn(() => Promise.resolve()),
     readOpenTabs: vi.fn(() => Promise.resolve({ tabs: [], activeId: '' })),
-    watchEdits: emptyStream,
     watchSettings: emptyStream,
     watchTasks: async function* () {
       await waitForever()
     },
     cancelTask: vi.fn(() => Promise.resolve()),
-    read: async () => asValue({ body: '' }),
-    write: async () => asValue({ body: '' }),
-    create: async () => ({ ok: true, value: { path: '' } }),
-    relations: {
-      roles: ['parent', 'child', 'jump'],
-      getConnection: async () => asFailure('notFound'),
-      saveConnection: async () => asValue(undefined),
-      removeSide: async () => asValue(undefined),
-      removeConnection: async () => asValue(undefined),
-      join: async () => asValue(undefined),
-      createRelated: async () => asValue(''),
-      listBacklinks: async () => [],
-    },
-    rename: async (path, title) => asValue({ path, title, hasFrontmatter: false, moved: null }),
-    remove: async () => asValue({ trashed: '', dangling: [] }),
-    emptyTrash: async () => 0,
-    list: async () => [],
-    move: async () => ({ ok: true, value: null }),
-    createFolder: async () => null,
     getSettings: async () => ({ written: '{}', path: '/numen.json', models: [] }),
     updateSettings: vi.fn(() => Promise.resolve()),
     createSecret: vi.fn(() => Promise.resolve('s00000001')),

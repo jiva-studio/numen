@@ -9,7 +9,8 @@ import { describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { raiseConflicts, type Notes } from './conflicts'
 import { asFailure, asValue } from '@numen/core-client'
-import { openNotes, type Notes as NotesCore } from '@/entities/note'
+import { openNotes } from '@/entities/note'
+import { answerNotes, type NoteCore as NotesCore } from '@/testing/noteCore'
 import type { Conflict } from './flush'
 
 /** The words this test puts its notes in. A screen has more; these are enough. */
@@ -164,22 +165,22 @@ describe('a note that is written', () => {
 describe('a window of real notes', () => {
   /** A core holding the files a test puts in it. */
   const createCore = (files: Map<string, string>): NotesCore => ({
-    read: async (path) => asValue({ body: files.get(path) ?? '', at: `at:${files.get(path)}` }),
+    read: async (path) => asValue({ body: files.get(path) ?? '', at: `1 1 at:${files.get(path)}` }),
     write: async (path, body, observed) => {
       if (
         observed &&
         files.get(path) !== observed.prose &&
-        `at:${files.get(path)}` !== observed.stat
+        `1 1 at:${files.get(path)}` !== observed.stat
       ) {
         return asFailure('changed' as const)
       }
       files.set(path, body)
-      return asValue({ body: '', at: `at:${body}` })
+      return asValue({ body: '', at: `1 1 at:${body}` })
     },
   })
 
   const flushMicrotasks = async () => {
-    for (let i = 0; i < 8; i++) await Promise.resolve()
+    for (let i = 0; i < 4; i++) await new Promise((resolve) => setTimeout(resolve, 0))
     await nextTick()
   }
 
@@ -189,7 +190,8 @@ describe('a window of real notes', () => {
       ['A.md', 'a'],
       ['B.md', 'b'],
     ])
-    const notes = openNotes(createCore(files), { limits: { quiet: 1000, bound: 5000 } })
+    answerNotes(createCore(files))
+    const notes = openNotes({ limits: { quiet: 1000, bound: 5000 } })
     const going = quit()
     let raisedCount = 0
     raiseConflicts(notes, {

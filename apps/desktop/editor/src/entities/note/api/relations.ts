@@ -1,6 +1,5 @@
 /**
- * Relationship methods of the window core: the calls of the note service that read and write
- * connections between notes.
+ * The calls of the note service that read and write connections between notes.
  */
 import type { VaultRelations } from '@numen/plugin-loader'
 import { findErrorCode, asFailure, asValue, type Result } from '@numen/core-client'
@@ -13,12 +12,13 @@ import {
   mapConnectionToWire,
   roleCodes,
   writeMarker,
-} from './words/relationWords'
+} from './relationWords'
 
 const toResult = <E>(error: E | null): Result<void, E> =>
   error === null ? asValue(undefined) : asFailure(error)
 
-export const relationsCore: VaultRelations = {
+/** The relationships a note holds, read and written through the core. */
+export const relations: VaultRelations = {
   roles: CONNECTION_ROLES,
   getConnection: async (first, second, type = '') => {
     const answer = await notes.getConnection({ first, second, type })

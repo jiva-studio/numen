@@ -14,11 +14,7 @@ const createFlush = () => {
   }
 }
 
-const createBuffers = () =>
-  openNotes({
-    read: () => Promise.resolve({ ok: true, value: { body: 'text', at: '1' } }),
-    write: () => Promise.resolve({ ok: true, value: { body: '', at: '2' } }),
-  })
+const createBuffers = () => openNotes()
 
 describe('the files a plugin has open', () => {
   it('are written out when the window quits', () => {

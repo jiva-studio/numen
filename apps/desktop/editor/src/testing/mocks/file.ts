@@ -1,25 +1,25 @@
 /**
- * The file entity's part of the vault mock: the files and folders of the vault.
+ * What the core answers about the files and folders of the vault, through the real file client.
  */
-import { asValue } from '@numen/core-client'
+import type { CoreAnswers } from '@numen/core-client/testing'
 import { requests } from '../requests'
 import { folders, getFileKind } from '../answers'
-import type { VaultCore } from '@/app/vault/core'
 
-export const fileCoreMock = {
-  remove: (path: string) => {
-    requests.removed.push(path)
-    return Promise.resolve(asValue({ trashed: `.trash/${path}`, dangling: [] }))
+export const fileAnswers = {
+  removeFile: (request) => {
+    requests.removed.push(request.path)
+    return { trashed: `.trash/${request.path}`, dangling: [] }
   },
-  list: (folder: string) => Promise.resolve(folders[folder] ?? []),
-  move: (from: string, to: string) => {
-    requests.moved.push(`${from} ${to}`)
-    return Promise.resolve(asValue(null))
+  listFiles: (request) => ({ entries: [...(folders[request.path] ?? [])] }),
+  moveFile: (request) => {
+    requests.moved.push(`${request.from} ${request.to}`)
+    return {}
   },
-  createFolder: (path: string) => {
-    requests.folders.push(path)
-    return Promise.resolve(null)
+  createFolder: (request) => {
+    requests.folders.push(request.path)
+    return {}
   },
-  fileKinds: (paths: readonly string[]) =>
-    Promise.resolve(new Map(paths.map((path) => [path, getFileKind(path)]))),
-} satisfies Partial<VaultCore>
+  listFileKinds: (request) => ({
+    kinds: request.paths.map((path) => ({ path, ...getFileKind(path) })),
+  }),
+} satisfies CoreAnswers['files']

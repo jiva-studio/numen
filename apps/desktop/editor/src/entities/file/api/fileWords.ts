@@ -1,8 +1,8 @@
 /**
  * File domain conversions between schema representations and window models.
  */
-import type { Entry, MoveResult } from '@/entities/file'
-import { mapNoteType } from './noteWords'
+import { mapNoteType } from '@/shared/api/wire'
+import type { Entry } from '@/shared/model/fileTypes'
 
 interface EntryWire {
   readonly path: string
@@ -13,12 +13,6 @@ interface EntryWire {
   readonly tabKind?: string
 }
 
-interface MoveResultWire {
-  readonly from: string
-  readonly to: string
-  readonly repaired: readonly string[]
-}
-
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryWire): Entry => ({
   path: one.path,
@@ -27,11 +21,4 @@ export const mapEntry = (one: EntryWire): Entry => ({
   isNote: one.isNote,
   type: mapNoteType(one.type),
   ...(one.tabKind ? { tabKind: one.tabKind } : {}),
-})
-
-/** What the file did, in the shape the window carries it. */
-export const mapMoveResult = (answer: MoveResultWire): MoveResult => ({
-  from: answer.from,
-  to: answer.to,
-  repaired: answer.repaired,
 })

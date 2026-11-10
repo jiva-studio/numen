@@ -1,8 +1,6 @@
 /**
  * Assembles the window core from domain module fragments.
  */
-import { filesCore } from './files'
-import { notesCore } from './notes'
 import { searchCore } from './search'
 import { settingsCore } from './settings'
 import { tabLinksCore } from './tabLinks'
@@ -17,8 +15,6 @@ export type VaultCore = Core & SearchDeps & CommandsDeps
 
 export const core: VaultCore = {
   ...vaultsCore,
-  ...notesCore,
-  ...filesCore,
   ...settingsCore,
   ...vaultSessionCore,
   ...windowSessionCore,

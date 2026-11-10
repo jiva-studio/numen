@@ -6,12 +6,12 @@ import { formatErrorMessage } from '@numen/core-client'
 import { getCurrentDate } from '@numen/ui'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { FileIcons } from '@/features/command-palette'
+import { relations } from '@/entities/note'
 import { agentPort } from '../plugins/agentPort'
 import type { WindowKindsDeps } from '../kinds/deps'
 import {
   createAgentHost,
   createVaultNotes,
-  createVaultRelations,
   createWorkspaceHost,
   type PluginServices,
 } from '../plugins/pluginServices'
@@ -95,12 +95,11 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       today: () => formatLocalDate(getCurrentDate()),
     }),
     notes: createVaultNotes({
-      core,
       search: core,
       making: editing.making,
       pluginNotes: deps.pluginNotes,
     }),
-    relations: createVaultRelations({ core }),
+    relations,
     files: createVaultFiles({ ...deps, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),

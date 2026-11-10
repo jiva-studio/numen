@@ -20,11 +20,10 @@ import type {
 import type { SearchDeps } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import type { FileOpeners } from '@/entities/tab'
-import type { NoteCreator } from '@/entities/note'
+import { getNeighbourhood, listHeadings, resolveLinks, type NoteCreator } from '@/entities/note'
+import { getFileKinds } from '@/entities/file'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { Task } from '@/shared/notices/task'
-import type { NotePort } from '@/app/ports/notes'
-import type { FilePort } from '@/app/ports/files'
 import type { useSettings } from '../window/useSettings'
 import { createIconHost, type IconHostDeps } from './fileServices'
 import type { PluginNotes } from './pluginNotes'
@@ -104,7 +103,6 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
 
 /** What the notes of the vault are read and written through. */
 export interface VaultNotesDeps {
-  readonly core: Pick<NotePort, 'neighbourhood' | 'headings'> & Pick<FilePort, 'fileKinds'>
   readonly search: Pick<SearchDeps, 'names'>
   readonly making: NoteCreator
   readonly pluginNotes: PluginNotes
@@ -113,49 +111,22 @@ export interface VaultNotesDeps {
 /** How many notes a search for a note to link to answers with, where the plugin names no number. */
 const FOUND_LIMIT = 20
 
-export function createVaultNotes({
-  core,
-  search,
-  making,
-  pluginNotes,
-}: VaultNotesDeps): VaultNotes {
+export function createVaultNotes({ search, making, pluginNotes }: VaultNotesDeps): VaultNotes {
   return {
-    getNeighbourhood: (path) => core.neighbourhood(path),
-    getHeadings: (paths) => core.headings(paths),
+    getNeighbourhood: (path) => getNeighbourhood(path),
+    getHeadings: (paths) => listHeadings(paths),
     findNotes: async (query, limit = FOUND_LIMIT) =>
       (await search.names(query, limit)).map(({ path, title }) => ({ path, title })),
     createUntitledNote: () => making.createUntitled(''),
     read: (path) => pluginNotes.readNote(path),
     write: (path, body) => pluginNotes.writeNote(path, body),
-    readProperties: async (path) => (await core.fileKinds([path])).get(path)?.properties ?? {},
-  }
-}
-
-/** What the relationships between notes are read and written through. */
-export interface VaultRelationsDeps {
-  readonly core: Pick<NotePort, 'relations'>
-}
-
-/** The relationships a plugin reads and writes; the core derives the roles and enforces the hierarchy. */
-export function createVaultRelations({ core }: VaultRelationsDeps): VaultRelations {
-  return {
-    get roles() {
-      return core.relations.roles
-    },
-    getConnection: (first, second, type) => core.relations.getConnection(first, second, type),
-    saveConnection: (connection) => core.relations.saveConnection(connection),
-    removeSide: (from, to, type) => core.relations.removeSide(from, to, type),
-    removeConnection: (first, second, type) => core.relations.removeConnection(first, second, type),
-    join: (from, to, side) => core.relations.join(from, to, side),
-    createRelated: (request) => core.relations.createRelated(request),
-    listBacklinks: (path) => core.relations.listBacklinks(path),
+    readProperties: async (path) => (await getFileKinds([path])).get(path)?.properties ?? {},
   }
 }
 
 /** What the agent a plugin's tabs ask is made from. */
 export interface AgentHostDeps {
   readonly port: AgentPort
-  readonly core: Pick<NotePort, 'resolveLinks'>
   readonly window: { readonly unreachable: Readonly<Ref<string>> }
   readonly settings: {
     readonly rest: Pick<
@@ -165,11 +136,11 @@ export interface AgentHostDeps {
   }
 }
 
-export function createAgentHost({ port, core, window, settings }: AgentHostDeps): AgentHost {
+export function createAgentHost({ port, window, settings }: AgentHostDeps): AgentHost {
   return {
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
-    resolveLinks: (text, vault) => core.resolveLinks('', text, vault),
+    resolveLinks: (text, vault) => resolveLinks('', text, vault),
     getUnreachable: () => window.unreachable.value,
     getSetting: (path) => settings.rest.getSetting(path),
     writeSetting: (path, value) => settings.rest.writeSetting(path, value),

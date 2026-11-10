@@ -12,7 +12,6 @@ import type {
 import type { TabLinksChange } from '@/features/tab-linking'
 
 export interface VaultPort {
-  getInitialOpenPath(): Promise<{ path: string } | null>
   state(): Promise<{
     id: string
     name: string

@@ -2,7 +2,8 @@
  * The files of the vault as a plugin's tabs are given them, and the icons the window draws
  * commands and entries with.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { installCoreAnswers } from '@numen/core-client/testing'
 import { Folder, FolderOpen } from '@lucide/vue'
 import { ANSWER_WORDS, createInvocation, runInvocation } from '@/features/command-palette'
 import { COMMAND } from '@/shared/commandIds'
@@ -30,7 +31,6 @@ const setup = () => {
   const createUntitled = vi.fn()
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
   const files = createVaultFiles({
-    core: { list: (folder) => Promise.resolve([{ path: `${folder}/a.md` }] as never) },
     making: { createUntitled } as never,
     getTarget: () => target as never,
     commandDeps: commandDeps as never,
@@ -38,15 +38,32 @@ const setup = () => {
   return { files, createUntitled, commandDeps }
 }
 
+let restore: () => void
+
 beforeEach(() => {
+  restore = installCoreAnswers({
+    files: {
+      listFiles: (request) => ({
+        entries: [
+          { path: `${request.path}/a.md`, name: 'a.md', isFolder: false, isNote: true, type: '' },
+        ],
+      }),
+    },
+  })
   vi.clearAllMocks()
+})
+
+afterEach(() => {
+  restore()
 })
 
 describe('the files of the vault a plugin is handed', () => {
   it('list a folder as the vault lists it', async () => {
     const { files } = setup()
 
-    expect(await files.list('dir')).toStrictEqual([{ path: 'dir/a.md' }])
+    expect(await files.list('dir')).toStrictEqual([
+      { path: 'dir/a.md', name: 'a.md', isFolder: false, isNote: true, type: 'note' },
+    ])
   })
 
   it('move a path through the move command, answered in the command words', async () => {

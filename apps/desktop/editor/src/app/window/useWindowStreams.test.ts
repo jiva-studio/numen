@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
+import { answerCore } from '@/testing/coreAnswers'
 import { createWindowStreams, type WindowStreamsDeps } from './useWindowStreams'
 import type { Task } from '@/shared/notices/task'
 
@@ -14,7 +15,6 @@ const setup = (overrides: Partial<WindowStreamsDeps> = {}) => {
       watchVaultChanges: () => yielding(),
       watchFocus: () => yielding(),
       watchTasks: () => yielding(),
-      watchEdits: () => yielding(),
     },
     listening: new AbortController(),
     isOpen: () => open,
@@ -195,17 +195,27 @@ describe('following the vault', () => {
 
 describe('following the edits', () => {
   it('reports an edit that names a path, and not the opening silence', async () => {
-    const deps = setup({
-      core: {
-        ...setup().core,
-        watchEdits: () => yielding({ path: '' }, { path: 'a.md' }),
-      } as unknown as WindowStreamsDeps['core'],
+    const deps = setup()
+    answerCore({
+      notes: {
+        watchEdits: () =>
+          yielding(
+            { change: '', path: '', text: '', isFinal: false },
+            { change: '1', path: 'a.md', range: { start: 2, end: 5 }, text: 'abc', isFinal: false },
+          ),
+      },
     })
 
     await createWindowStreams(deps).draw()
 
     expect(deps.reportChange).toHaveBeenCalledTimes(1)
-    expect(deps.reportChange).toHaveBeenCalledWith({ path: 'a.md' })
+    expect(deps.reportChange).toHaveBeenCalledWith({
+      change: '1',
+      path: 'a.md',
+      span: { start: 2, end: 5 },
+      text: 'abc',
+      isComplete: false,
+    })
   })
 })
 

@@ -3,16 +3,14 @@
  */
 import type { Ref, ShallowRef } from 'vue'
 import { createFollower } from '@numen/ui'
-import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
-import type { NoteEdit } from '@/entities/note'
+import { watchEdits, type NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
 
 export interface WindowStreamsDeps {
-  readonly core: Pick<VaultPort, 'watchVaultChanges' | 'watchFocus' | 'watchTasks'> &
-    Pick<NotePort, 'watchEdits'>
+  readonly core: Pick<VaultPort, 'watchVaultChanges' | 'watchFocus' | 'watchTasks'>
   readonly listening: AbortController
   readonly isOpen: () => boolean
   readonly setLost: (response: string) => void
@@ -103,7 +101,7 @@ export function createWindowStreams(deps: WindowStreamsDeps) {
   /** Follows the changes being made to notes. */
   const draw = () =>
     follows(
-      () => core.watchEdits(listening.signal),
+      () => watchEdits(listening.signal),
       (response) => {
         // The stream opens with an empty message, which distinguishes an open
         // stream from one that never opened.

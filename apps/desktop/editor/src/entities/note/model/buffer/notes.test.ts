@@ -2,13 +2,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from './results'
 import { computed, watch } from 'vue'
 
-import { openNotes, type Notes } from './notes'
+import { answerNotes, type NoteCore as Notes } from '@/testing/noteCore'
+import { openNotes as openNotesOn, type OpenNotesOptions } from './notes'
+
+const openNotes = (core: Partial<Notes>, how?: OpenNotesOptions) => {
+  answerNotes(core)
+  return openNotesOn(how)
+}
 
 function rethrow(error: unknown): never {
   throw error
 }
 
-const statFile = (body: string): string => `at:${body}`
+const statFile = (body: string): string => `1 1 at:${body}`
 
 function fake(overrides: Partial<Notes> = {}) {
   const files = new Map<string, string>()
@@ -39,8 +45,11 @@ function fake(overrides: Partial<Notes> = {}) {
   return { core, files, wrote }
 }
 
+/** The timer of the machine, kept from the fake timers some tests install. */
+const turn = globalThis.setTimeout
+
 const settle = async () => {
-  for (let i = 0; i < 8; i++) await Promise.resolve()
+  for (let i = 0; i < 4; i++) await new Promise((resolve) => turn(resolve, 0))
 }
 
 const quick = { quiet: 1, bound: 5 }
@@ -858,7 +867,7 @@ describe('closing a note', () => {
         return asValue({ body: '', at: statFile(body) })
       },
     }
-    const notes = openNotes(core, { limits: quick })
+    const notes = openNotes(core, { limits: { quiet: 10_000, bound: 50_000 } })
     notes.open('Heat.md')
     await settle()
     notes.setBody('Heat.md', 'one two')

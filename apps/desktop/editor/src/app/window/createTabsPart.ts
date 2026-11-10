@@ -6,6 +6,7 @@ import { watch, type Ref } from 'vue'
 import { runInBackground } from '@numen/ui'
 import { getTabPaneRect } from '@numen/workbench'
 import { pluginCatalog } from '@/shared/api/clients'
+import { getFileKinds } from '@/entities/file'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { useTabLinks } from '@/features/tab-linking'
 import { core } from '../vault'
@@ -46,7 +47,7 @@ export function createTabsCore(deps: TabsCoreDeps) {
     write: (change) => tabReports.wait().then(() => core.writeTabLinks(windowId, change)),
     onError: (error) => writeMessage(`The tabs were not linked: ${formatError(error)}`, 'error'),
   })
-  const tabOpeners = fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })
+  const tabOpeners = fileOpeners({ fileKinds: getFileKinds, reconcileTab: windowTabs.reconcileTab })
   /* Stryker restore OptionalChaining,ObjectLiteral,StringLiteral,Regex */
   return { windowTabs, windowId, tabReports, tabLinks, tabOpeners }
 }

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CommandDeps, PaletteLists } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
 import { getNamedIcon } from '@/shared/icons'
+import { answerCore } from '@/testing/coreAnswers'
 import { createCommandRunner, useCommands, type CommandsDepsOptions } from './useCommands'
 
 const h = vi.hoisted(() => ({
@@ -295,14 +296,17 @@ describe('a plugin command over a note', () => {
       executeCommand,
       handleShortcut,
     }
-    const fileKinds = vi.fn(
-      async (paths: readonly string[]) =>
-        new Map(
-          paths.filter((one) => one !== 'Unknown.md').map((one) => [one, { type: 'sample' }]),
-        ),
-    )
+    answerCore({
+      files: {
+        listFileKinds: (request) => ({
+          kinds: request.paths
+            .filter((one) => one !== 'Unknown.md')
+            .map((path) => ({ path, isNote: true, type: 'sample' })),
+        }),
+      },
+    })
     const options = {
-      core: { fileKinds },
+      core: {},
       words: {},
       windowTabs: { onKeyPress: () => false },
       getTarget: () => ({ path: 'Animals.md', title: 'Animals' }),
@@ -501,8 +505,9 @@ describe('a plugin command with items in the palette', () => {
       executeCommand,
       handleShortcut: vi.fn(() => false),
     }
+    answerCore({ files: { listFileKinds: () => ({ kinds: [] }) } })
     const options = {
-      core: { fileKinds: async () => new Map() },
+      core: {},
       words: {},
       windowTabs: { onKeyPress: () => false },
       getTarget: () => ({ tab: 'plex:1', path: 'Tide.md', title: 'Tide' }),

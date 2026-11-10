@@ -1,9 +1,9 @@
 /**
- * A listing row and a move result, read into the window's own words.
+ * A listing row, read into the window's own words.
  */
 import { describe, expect, it } from 'vitest'
-import type { Entry, MoveResult } from '@numen/core-client'
-import { mapEntry, mapMoveResult } from './fileWords'
+import type { Entry } from '@numen/core-client'
+import { mapEntry } from './fileWords'
 
 describe('a row of a listing', () => {
   it('maps an entry to path, name, folder flag, note flag and type', () => {
@@ -39,18 +39,6 @@ describe('a row of a listing', () => {
       isFolder: true,
       isNote: false,
       type: 'note',
-    })
-  })
-})
-
-describe('the result of a move', () => {
-  it('keeps where the file stood, at its current position and which links were repaired', () => {
-    const answer = { from: 'A.md', to: 'B.md', repaired: ['C.md'] } as unknown as MoveResult
-
-    expect(mapMoveResult(answer)).toStrictEqual({
-      from: 'A.md',
-      to: 'B.md',
-      repaired: ['C.md'],
     })
   })
 })

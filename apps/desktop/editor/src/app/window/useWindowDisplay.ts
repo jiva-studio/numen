@@ -1,7 +1,6 @@
 import { ref, shallowRef } from 'vue'
-import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
-import type { NoteEdit } from '@/entities/note'
+import { getInitialOpenPath, type NoteEdit } from '@/entities/note'
 import type { Task } from '@/shared/notices/task'
 import type { PathRename } from '@/shared/paths'
 import type { TextRange } from '@/shared/textRange'
@@ -144,17 +143,14 @@ async function checkVaultSwapped(core: VaultPort, display: DisplayState): Promis
   /* Stryker restore BlockStatement */
 }
 
-async function readInitialNotePath(core: VaultPort, display: DisplayState): Promise<string> {
-  const note = await core.getInitialOpenPath()
+async function readInitialNotePath(display: DisplayState): Promise<string> {
+  const note = await getInitialOpenPath()
   display.hasNote.value = note !== null
   display.opening.value = note?.path ?? ''
   return display.opening.value
 }
 
-export function useWindowDisplay(
-  core: VaultPort & Pick<NotePort, 'watchEdits'>,
-  how: DisplayOptions = {},
-) {
+export function useWindowDisplay(core: VaultPort, how: DisplayOptions = {}) {
   const wait = how.wait ?? sleep
   // No listener is attached by default; each callback does nothing.
   const onVaultChanged = how.onVaultChanged ?? (() => undefined)
@@ -164,7 +160,7 @@ export function useWindowDisplay(
   const abortController = new AbortController()
 
   const ask = () => askDisplayState(core, display)
-  const readInitialNote = () => readInitialNotePath(core, display)
+  const readInitialNote = () => readInitialNotePath(display)
   const isVaultSwapped = () => checkVaultSwapped(core, display)
 
   const streams = createWindowStreams({

@@ -49,3 +49,12 @@ export interface MoveResult {
  * value of null is a requested move that changed nothing.
  */
 export type Movement = Result<MoveResult | null, ErrorCode>
+
+/** A file or folder in the trash, and the notes whose links no longer lead anywhere. */
+export interface RemovedNote {
+  readonly trashed: string
+  readonly dangling: readonly string[]
+}
+
+/** What removing a file or folder returned. */
+export type RemoveResult = Result<RemovedNote, ErrorCode>

@@ -7,9 +7,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/core-client'
 
-import { openNotes, type Notes } from '@/entities/note'
+import { openNotes } from '@/entities/note'
+import { answerNotes, type NoteAnswer } from '@/testing/noteCore'
 import { createFileFlush, type Conflict, type FlushDeps, type FlushResult } from './flush'
-import type { NoteResult } from '@/entities/note'
 
 function rethrow(error: unknown): never {
   throw error
@@ -51,20 +51,22 @@ function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: bo
   /** Writes wait here until a test lets them through. */
   let pendingWriteResolve: (() => void) | null = null
 
-  const core: Notes & FlushDeps = {
+  const core: FlushDeps = {
     watchQuit: getQuits,
     reportFlush: async (token: string, result: FlushResult = 'written') => {
       reportedResults.push({ token, result })
     },
-    read: async (path): Promise<NoteResult> =>
+  }
+  answerNotes({
+    read: async (path): Promise<NoteAnswer> =>
       files.has(path) ? asValue({ body: files.get(path) ?? '' }) : asFailure('notFound'),
-    write: async (path, body): Promise<NoteResult> => {
+    write: async (path, body): Promise<NoteAnswer> => {
       if (pendingWriteResolve) await new Promise<void>((through) => (pendingWriteResolve = through))
       writtenFiles.push({ path, body })
       files.set(path, body)
       return asValue({ body: '' })
     },
-  }
+  })
   return {
     core,
     files,
@@ -115,7 +117,7 @@ describe('a page requested to write its unsaved changes', () => {
   it('writes an unsaved tab and only then says it has', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     going.start().catch(rethrow)
@@ -139,7 +141,7 @@ describe('a page requested to write its unsaved changes', () => {
   it('does not answer while its pending write is still in the air', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     going.start().catch(rethrow)
@@ -164,7 +166,7 @@ describe('a page requested to write its unsaved changes', () => {
   it('says nothing until the application asks', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     going.start().catch(rethrow)
@@ -185,7 +187,7 @@ describe('a page requested to write its unsaved changes', () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
     const going = createFileFlush(fakeCore.core)
-    going.addHandler(openNotes(fakeCore.core).flush)
+    going.addHandler(openNotes().flush)
     going.start().catch(rethrow)
 
     mockStream.send({ token: '0', flush: true })
@@ -214,7 +216,7 @@ describe('a page holding text the file changed under', () => {
   it('says so before its pending writes have landed', async () => {
     const mockStream = createMockStream()
     const fakeCore = createFakeCore(mockStream.read)
-    const notes = openNotes(fakeCore.core)
+    const notes = openNotes()
     const going = createFileFlush(fakeCore.core)
     going.addHandler(notes.flush)
     const note = createConflict('Held.md')

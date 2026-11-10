@@ -6,7 +6,7 @@ import type { Component } from 'vue'
 import type { VaultFiles, WorkspaceHost } from '@numen/plugin-loader'
 import { getKnownErrorCode, asFailure } from '@numen/core-client'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
-import type { CreateResult } from '@/entities/file'
+import { listFiles, type CreateResult } from '@/entities/file'
 import {
   ANSWER_WORDS,
   createInvocation,
@@ -19,7 +19,6 @@ import { COMMAND } from '@/shared/commandIds'
 import { WORDS as words } from '@/shared/words'
 import { findIcon } from '@/shared/icons'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { FilePort } from '@/app/ports/files'
 import { getEntryIcon } from '../tabs/entryIcon'
 
 /** A handler that creates a file in a vault folder under the given title. */
@@ -95,19 +94,18 @@ export function createFileMakers({
 
 /** What the files of the vault are listed, made and moved through. */
 export interface VaultFilesDeps {
-  readonly core: Pick<FilePort, 'list'>
   readonly making: NoteCreator
   readonly getTarget: () => CommandTarget
   readonly commandDeps: () => CommandDeps
 }
 
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
-  const { core, making, getTarget, commandDeps } = deps
+  const { making, getTarget, commandDeps } = deps
   const run = async (id: string, target: CommandTarget, name: string): Promise<void> => {
     await runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
   }
   return {
-    list: (folder) => core.list(folder),
+    list: (folder) => listFiles(folder),
     move: (from, to) => run(COMMAND.moveFile, { ...getTarget(), path: from }, to),
     createFolder: (path) => run(COMMAND.createFolder, getTarget(), path),
     createNote: (folder) => making.createUntitled(folder),

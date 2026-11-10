@@ -9,9 +9,10 @@ import { listDeclaredItemLists, runDeclaredHandler } from '@/entities/plugin'
 import type { fileOpeners } from '@/entities/tab'
 import { createCommands } from '@/features/command-palette'
 import type { Command } from '@/entities/command'
+import { getFileKinds } from '@/entities/file'
+import { readNote, resolveLinks, writeNote } from '@/entities/note'
 import type { createMessageLog } from '@/shared/notices/messages'
 import { WORDS as words } from '@/shared/words'
-import { core } from '../vault'
 import { createBackendHandlers } from '../commands/backendHandlers'
 import { createCommandItemLists, type CommandItemLists } from '../commands/commandItemLists'
 import { useDeclaredCommands } from '../commands/declaredCommands'
@@ -100,7 +101,7 @@ const createDeclaredParts = (
 ) => {
   const itemLists = createCommandItemLists({
     listLists: listDeclaredItemLists,
-    fileKinds: (paths) => core.fileKinds(paths),
+    fileKinds: getFileKinds,
   })
   const declaredCommands = useDeclaredCommands({
     ...getDeclaredCommandsDeps(hostHolder, settingsHolder),
@@ -126,7 +127,7 @@ export function createPluginsCore(deps: PluginsCoreDeps) {
     settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
-  const pluginNotes = createPluginNotes(core)
+  const pluginNotes = createPluginNotes({ read: readNote, write: writeNote })
   const hostHolder: { current?: PluginHost } = {}
   const { itemLists, declaredCommands } = createDeclaredParts(hostHolder, settingsHolder)
   const appCommands: { current?: () => readonly Command[] } = {}
@@ -152,7 +153,7 @@ export function createPluginsCore(deps: PluginsCoreDeps) {
     ...pluginNotes,
     resolveLink: async (from, address) => {
       const rawName = address.replace(/^name:\/\//, '')
-      return (await core.resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
+      return (await resolveLinks(from, `[[${rawName}]]`))[0]?.path ?? ''
     },
   })
   hostHolder.current = pluginHost
