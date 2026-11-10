@@ -1089,7 +1089,10 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		{"internal/adapter/filesystem", "usecase/note", true},
 		{"internal/adapter/theme", "usecase/note", false},
 		{"internal/adapter/theme", "internal/adapter/filesystem", true},
-		{"internal/adapter/theme/presets", "internal/adapter/theme", false},
+		{"internal/adapter/themefiles", "usecase/note", true},
+		{"internal/adapter/themefiles", "internal/adapter/theme", true},
+		{"internal/adapter/theme", "internal/adapter/themefiles", true},
+		{"usecase/theme", "internal/adapter/themefiles", true},
 		{"adapter/index/chunk", "adapter/index", false},
 
 		// The core imports no adapter and no package that assembles one.

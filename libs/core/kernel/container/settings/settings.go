@@ -28,6 +28,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
+	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 )
 
@@ -221,12 +222,12 @@ func (c Config) ListRegistryOptions(name string) (manifest.SettingOptions, bool)
 	if name != settingsadapter.RegistryThemes {
 		return nil, false
 	}
-	catalog, err := c.getCatalogue()
+	files, err := c.openThemeFiles()
 	if err != nil {
 		c.handleError(err)
 	}
 	var options manifest.SettingOptions
-	for _, one := range catalog.Themes() {
+	for _, one := range themeusecase.NewListThemes(c.getThemeSources(files)).Execute() {
 		options = append(options, manifest.SettingOption{Value: one.Name, Title: one.Title})
 	}
 	return options, true
