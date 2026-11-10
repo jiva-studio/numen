@@ -7,30 +7,30 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/themebridge"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
+	themeusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/theme"
 )
 
 // Themes provides the themes the window can use: the catalog of themes, and
 // the settings file that stores the selection. The catalog offers the themes
 // of the enabled plugins of the plugin host, when the config has one.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
-	catalog, err := c.getCatalogue()
-	scales := theme.NewScales(c.InterfaceScale, c.TextScale)
-	return &theme.Service{
-		Catalog: catalog,
-		Settings: theme.NewAppearances(
-			func() (theme.Appearance, error) { return c.readAppearance(scales) },
-			func(choice theme.Appearance) error { return c.writeAppearance(choice, scales) },
-			say,
-		),
-		InterfaceScaleBounds: theme.Bounds{
-			Min: settingsadapter.GetInterfaceScaleBounds().Min, Max: settingsadapter.GetInterfaceScaleBounds().Max,
-		},
-		TextScaleBounds: theme.Bounds{
-			Min: settingsadapter.GetTextScaleBounds().Min, Max: settingsadapter.GetTextScaleBounds().Max,
-		},
-	}, err
+	files, err := c.openThemeFiles()
+	sources := c.getThemeSources(files)
+	store := settingsadapter.NewAppearanceStore(c.readAppearance, c.writeAppearance, say)
+	scales := themeusecase.NewScales(c.InterfaceScale, c.TextScale)
+	interfaceScale, textScale := settingsadapter.GetInterfaceScaleBounds(), settingsadapter.GetTextScaleBounds()
+	return theme.NewService(
+		themeusecase.NewGetThemes(sources, store, store, scales,
+			themeusecase.Bounds{Min: interfaceScale.Min, Max: interfaceScale.Max},
+			themeusecase.Bounds{Min: textScale.Min, Max: textScale.Max}),
+		themeusecase.NewReadTheme(sources),
+		themeusecase.NewWriteAppearance(sources, store, store, scales),
+		themeusecase.NewWatchThemes(sources, files, 0),
+	), err
 }
 
 // CheckInterfaceScale returns an error when scale is outside the interface scale bounds.
@@ -43,63 +43,61 @@ func CheckTextScale(name string, scale float64) error {
 	return settingsadapter.GetTextScaleBounds().Check(name, scale)
 }
 
-func (c Config) getCatalogue() (theme.Catalog, error) {
-	catalog, err := c.openCatalogue()
+func (c Config) getThemeSources(files themefiles.Files) themeusecase.Sources {
+	sources := themeusecase.Sources{Presets: files, Own: files, Plugins: nil}
 	if c.PluginHost != nil {
-		catalog = catalog.WithPlugins(themebridge.Open(c.PluginHost))
+		sources.Plugins = themebridge.Open(c.PluginHost)
 	}
-	return catalog, err
+	return sources
 }
 
-func (c Config) openCatalogue() (theme.Catalog, error) {
+func (c Config) openThemeFiles() (themefiles.Files, error) {
 	if c.ThemesPath != "" {
-		return theme.OpenAt(c.ThemesPath, c.Watches)
+		return themefiles.OpenAt(c.ThemesPath, c.Watches)
 	}
 	if folder, selected := c.GetAdjacentPath("themes"); selected {
-		return theme.OpenAt(folder, c.Watches)
+		return themefiles.OpenAt(folder, c.Watches)
 	}
-	return theme.Open(c.Watches)
+	return themefiles.Open(c.Watches)
 }
 
-func (c Config) readAppearance(scales *theme.Scales) (theme.Appearance, error) {
+func (c Config) readAppearance() (themedomain.Appearance, error) {
 	path, err := c.SettingsFile()
 	if err != nil {
-		return theme.Appearance{}, err
+		return themedomain.Appearance{}, err
 	}
 	activeSettings, err := c.GetSettingsAt(path)
 	if err != nil {
-		return theme.Appearance{}, err
+		return themedomain.Appearance{}, err
 	}
-	current := theme.Appearance{
+	return themedomain.Appearance{
 		ThemeName:      activeSettings.Appearance.Theme,
 		Mode:           settingsadapter.Mode(activeSettings.Appearance.Mode),
 		InterfaceScale: activeSettings.Appearance.InterfaceScale,
 		TextScale:      activeSettings.Appearance.TextScale,
-	}
-	scales.Apply(&current)
-	return current, nil
+	}, nil
 }
 
-func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scales) error {
+func (c Config) writeAppearance(selected themedomain.Appearance) error {
 	appearance := func(key string) []string { return []string{settingsadapter.OwnerApp, "appearance", key} }
 	values := []struct {
 		path  []string
 		value any
 	}{
-		{appearance("theme"), selectedVal.ThemeName},
-		{appearance("mode"), settingsadapter.GetModeName(selectedVal.Mode)},
+		{appearance("theme"), selected.ThemeName},
+		{appearance("mode"), settingsadapter.GetModeName(selected.Mode)},
 	}
-	if selectedVal.InterfaceScale > 0 {
+	if selected.InterfaceScale > 0 {
 		values = append(values, struct {
 			path  []string
 			value any
-		}{appearance("interfaceScale"), selectedVal.InterfaceScale})
+		}{appearance("interfaceScale"), selected.InterfaceScale})
 	}
-	if selectedVal.TextScale > 0 {
+	if selected.TextScale > 0 {
 		values = append(values, struct {
 			path  []string
 			value any
-		}{appearance("textScale"), selectedVal.TextScale})
+		}{appearance("textScale"), selected.TextScale})
 	}
 
 	writing := make([]settingsdomain.Setting, 0, len(values))
@@ -110,9 +108,5 @@ func (c Config) writeAppearance(selectedVal theme.Appearance, scales *theme.Scal
 		}
 		writing = append(writing, settingsdomain.Setting{Path: one.path, JSON: string(encoded)})
 	}
-	if err := c.WriteSettings(writing); err != nil {
-		return err
-	}
-	scales.ClearSizes(selectedVal)
-	return nil
+	return c.WriteSettings(writing)
 }

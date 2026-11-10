@@ -195,6 +195,7 @@ linters:
             - "**/internal/adapter/provision/**"
             - "**/internal/adapter/settingevents/**"
             - "**/internal/adapter/sharedmimeinfo/**"
+            - "**/internal/adapter/themefiles/**"
             - "**/internal/adapter/trash/**"
             - "!$test"
           deny:
@@ -244,6 +245,8 @@ linters:
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/sharedmimeinfo"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
+              desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"
             - pkg: "github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/trash"
               desc: "the plugin adapter reaches the world through use case contracts, not through another adapter"

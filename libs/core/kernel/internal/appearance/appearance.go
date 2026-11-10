@@ -12,6 +12,8 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+
+	themedomain "github.com/jiva-studio/numen/libs/core/kernel/domain/theme"
 )
 
 // HeadEnd is where the style elements are inserted: after everything the build
@@ -27,19 +29,9 @@ const (
 	IsSizes = "sizes"
 )
 
-// ColorScheme is which half of every color pair the tokens are read as.
-type ColorScheme int
-
-const (
-	// System is both halves, and the machine decides between them.
-	System ColorScheme = iota
-	Light
-	Dark
-)
-
 // Settings is the user's appearance configuration.
 type Settings struct {
-	Mode           ColorScheme
+	Mode           themedomain.ColorScheme
 	Theme          string
 	InterfaceScale float64
 	TextScale      float64
@@ -89,11 +81,11 @@ func buildSizeElement(rendered, set float64) string {
 
 func number(size float64) string { return strconv.FormatFloat(size, 'f', -1, 64) }
 
-func scheme(mode ColorScheme) string {
+func scheme(mode themedomain.ColorScheme) string {
 	switch mode {
-	case Light:
+	case themedomain.Light:
 		return "light"
-	case Dark:
+	case themedomain.Dark:
 		return "dark"
 	default:
 		return "light dark"

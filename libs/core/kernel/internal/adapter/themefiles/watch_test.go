@@ -1,4 +1,4 @@
-package theme_test
+package themefiles_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/theme"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/themefiles"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/watchhub"
 )
 
@@ -29,9 +29,9 @@ func readNames(t *testing.T, changed <-chan []string) []string {
 	}
 }
 
-func startWatch(t *testing.T, catalog theme.Catalog, hold time.Duration) <-chan []string {
+func startWatch(t *testing.T, catalog themefiles.Files, hold time.Duration) <-chan []string {
 	t.Helper()
-	changed, err := catalog.Watch(t.Context(), hold)
+	changed, err := catalog.WatchOwnThemes(t.Context(), hold)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestAThemeSavedIntoTheFolderIsReported(t *testing.T) {
 	changed := startWatch(t, catalog, 20*time.Millisecond)
 
 	writeTheme(t, catalog, "dracula.css", ":root { --numen-surface: #282a36 }")
-	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "dracula" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -63,7 +63,7 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 		t.Skipf("this machine does not make links: %v", err)
 	}
 
-	catalog, err := theme.OpenAt(link, watchhub.NewHub())
+	catalog, err := themefiles.OpenAt(link, watchhub.NewHub())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func TestAThemeFolderReachedThroughALinkIsWatched(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(resolved, "midnight.css"), []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:midnight" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "midnight" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -92,7 +92,7 @@ func TestAThemeSavedOverItselfIsReported(t *testing.T) {
 	if err := os.Rename(tmp, filepath.Join(catalog.Dir(), "dracula.css")); err != nil {
 		t.Fatal(err)
 	}
-	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "dracula" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -107,7 +107,7 @@ func TestAThemeDeletedIsReportedByName(t *testing.T) {
 	if err := os.Remove(filepath.Join(catalog.Dir(), "dracula.css")); err != nil {
 		t.Fatal(err)
 	}
-	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:dracula" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "dracula" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -125,7 +125,7 @@ func TestWhatIsNotAThemeIsNotReported(t *testing.T) {
 	}
 	writeTheme(t, catalog, "nord.css", ":root {}")
 
-	if names := readNames(t, changed); len(names) != 1 || names[0] != "mine:nord" {
+	if names := readNames(t, changed); len(names) != 1 || names[0] != "nord" {
 		t.Errorf("reported %v", names)
 	}
 }
@@ -145,8 +145,8 @@ func TestAHandfulOfFilesLandingAtOnceIsOneReport(t *testing.T) {
 }
 
 func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
-	var catalog theme.Catalog
-	if _, err := catalog.Watch(t.Context(), 0); err == nil {
+	var catalog themefiles.Files
+	if _, err := catalog.WatchOwnThemes(t.Context(), 0); err == nil {
 		t.Error("a catalog with no folder was watched")
 	}
 }
@@ -154,7 +154,7 @@ func TestAWatchOnAFolderThatIsNotThereIsRefused(t *testing.T) {
 // The watch ends where the caller does, and the channel is closed behind it.
 func TestAWatchStopsWithTheCallerItWasStartedFor(t *testing.T) {
 	ctx, stop := context.WithCancel(t.Context())
-	changed, err := createThemeFolder(t).Watch(ctx, 20*time.Millisecond)
+	changed, err := createThemeFolder(t).WatchOwnThemes(ctx, 20*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
 	}
