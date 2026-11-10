@@ -53,7 +53,7 @@ func (f *Failures) IsPluginSuspended(pluginID string) bool {
 	f.t.mu.RLock()
 	defer f.t.mu.RUnlock()
 	sup, ok := f.t.supervisors[pluginID]
-	return ok && sup.GetActivationFailure() != nil
+	return ok && sup.Failure.GetCause() != nil
 }
 
 func (f *Failures) newFailureLocked(pluginID string, sup *lifecycle.Supervisor, cause error) plugindomain.Failure {
@@ -62,7 +62,7 @@ func (f *Failures) newFailureLocked(pluginID string, sup *lifecycle.Supervisor, 
 		Name:     f.t.plugins[pluginID].Manifest.Name,
 		Reason:   lifecycle.DescribeFailure(cause),
 		Detail:   cause.Error(),
-		At:       sup.GetFailedAt(),
+		At:       sup.Failure.GetFailedAt(),
 	}
 }
 
@@ -71,7 +71,7 @@ func (f *Failures) getFailureLocked(pluginID string) *plugindomain.Failure {
 	if !ok {
 		return nil
 	}
-	cause := sup.GetActivationFailure()
+	cause := sup.Failure.GetCause()
 	if cause == nil {
 		return nil
 	}
@@ -93,7 +93,7 @@ func (f *Failures) failActivation(ctx context.Context, pluginID string, sup *lif
 	}
 	sup.SetDormant(cause)
 	if ctx.Err() == nil {
-		sup.RecordActivationFailure(f.clock.Now(), cause)
+		sup.Failure.Record(f.clock.Now(), cause)
 		f.enqueue(f.newFailureLocked(pluginID, sup, cause))
 	}
 }
@@ -102,7 +102,7 @@ func (f *Failures) recordActivationFailure(pluginID string, cause error) *plugin
 	f.t.mu.Lock()
 	defer f.t.mu.Unlock()
 	sup, ok := f.t.supervisors[pluginID]
-	if !ok || !sup.RecordActivationFailure(f.clock.Now(), cause) {
+	if !ok || !sup.Failure.Record(f.clock.Now(), cause) {
 		return nil
 	}
 	failure := f.newFailureLocked(pluginID, sup, cause)
@@ -137,7 +137,7 @@ func (f *Failures) ClearFailure(pluginID string) {
 
 func (f *Failures) clear(pluginID string, sup *lifecycle.Supervisor) {
 	f.forgetTargetReport(pluginID)
-	if !sup.ClearActivationFailure() {
+	if !sup.Failure.Clear() {
 		return
 	}
 	f.mu.Lock()

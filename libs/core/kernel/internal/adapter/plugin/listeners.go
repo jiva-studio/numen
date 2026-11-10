@@ -239,7 +239,7 @@ func (l *Listeners) openChangedListeners(
 func (l *Listeners) failListenerBind(pluginID string, err error) {
 	l.t.mu.RLock()
 	sup, ok := l.t.supervisors[pluginID]
-	isFailed := ok && sup.IsActivationFailed()
+	isFailed := ok && sup.Failure.IsFailed()
 	l.t.mu.RUnlock()
 	if isFailed {
 		return
@@ -255,7 +255,7 @@ func (l *Listeners) clearListenerFailure(pluginID string) {
 	if !ok {
 		return
 	}
-	if cause := sup.GetActivationFailure(); cause != nil && errors.Is(cause, errListenerBind) {
+	if cause := sup.Failure.GetCause(); cause != nil && errors.Is(cause, errListenerBind) {
 		l.failures.clear(pluginID, sup)
 	}
 }

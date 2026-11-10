@@ -166,7 +166,7 @@ func (r *Registry) getPluginStatusLocked(pluginID string) PluginStatus {
 		Dir:           "",
 	}
 	if sup, ok := r.t.supervisors[pluginID]; ok {
-		if cause := sup.GetActivationFailure(); cause != nil {
+		if cause := sup.Failure.GetCause(); cause != nil {
 			status.Failed = true
 			status.FailureReason = cause.Error()
 		}

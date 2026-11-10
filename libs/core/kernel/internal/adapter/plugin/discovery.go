@@ -13,7 +13,6 @@ import (
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
-	"github.com/jiva-studio/numen/libs/core/kernel/port/machineport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifestjson"
 )
@@ -27,7 +26,6 @@ var (
 // and retires the ones that left the disk.
 type Discovery struct {
 	t      *table
-	clock  machineport.Clock
 	errs   *errorSink
 	dirs   []string
 	target string
@@ -43,8 +41,8 @@ type Discovery struct {
 	hasScanned bool
 }
 
-func newDiscovery(t *table, clock machineport.Clock, errs *errorSink, target string, dirs []string) *Discovery {
-	return &Discovery{t: t, clock: clock, errs: errs, target: target, dirs: dirs}
+func newDiscovery(t *table, errs *errorSink, target string, dirs []string) *Discovery {
+	return &Discovery{t: t, errs: errs, target: target, dirs: dirs}
 }
 
 // Discover scans the configured directories and synchronizes the registered plugins, and the ports bound
@@ -144,13 +142,11 @@ func (d *Discovery) registerSupervisorLocked(p manifest.Discovered) {
 	id := p.Manifest.ID
 	sup, exists := d.t.supervisors[id]
 	if !exists {
-		sup = lifecycle.New(d.clock)
+		sup = lifecycle.New(d.errs.report)
 		sup.SetOnExit(func() { d.dropEndpoint(id) })
-		sup.SetOnError(d.errs.report)
 		d.t.supervisors[id] = sup
 	}
-	sup.SetPermissions(p.Manifest.Permissions)
-	sup.SetActivationPolicy(d.t.activation)
+	sup.Permissions.Set(p.Manifest.Permissions)
 }
 
 func (d *Discovery) retirePlugin(pluginID string) {

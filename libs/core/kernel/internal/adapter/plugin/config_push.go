@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
+	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/delivery"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/manifest"
@@ -17,34 +18,34 @@ type ConfigPush struct {
 	t        *table
 	errs     *errorSink
 	settings *Settings
-	delivery *secretDelivery
+	delivery *delivery.Delivery
 	prune    func()
 }
 
 func newConfigPush(t *table, errs *errorSink, settings *Settings) *ConfigPush {
 	c := &ConfigPush{t: t, errs: errs, settings: settings}
-	c.delivery = newSecretDelivery(secretHost{
-		getConfigSnapshot: c.getConfigSnapshot,
-		listPluginIDs:     c.listPluginIDs,
-		reportError:       errs.report,
+	c.delivery = delivery.New(delivery.Host{
+		GetSnapshot:   c.getSnapshot,
+		ListPluginIDs: c.listPluginIDs,
+		ReportError:   errs.report,
 	})
 	return c
 }
 
 // SetKeyStore sets where the values of secrets are kept.
 func (c *ConfigPush) SetKeyStore(store pluginport.KeyStore) {
-	c.delivery.setKeyStore(store)
+	c.delivery.SetKeyStore(store)
 }
 
 // SetSecretSource sets where the list of secrets is read from and how the permissions of removed
 // declarations are dropped.
 func (c *ConfigPush) SetSecretSource(source plugindomain.SecretSource) {
-	c.delivery.setSource(source)
+	c.delivery.SetSource(source)
 	c.prune()
 }
 
 func (c *ConfigPush) getSecretSource() plugindomain.SecretSource {
-	return c.delivery.getSource()
+	return c.delivery.GetSource()
 }
 
 // ListDeclarations returns every secret declaration of every installed plugin, in the order of the
@@ -69,37 +70,37 @@ func (c *ConfigPush) listDeclarationsLocked() []plugindomain.DeclarationKey {
 // A plugin counts as given the list only after a send that read every value.
 // If ctx ends or the call times out the plugin stays due; if the plugin answered with an error a plain refresh does not resend.
 func (c *ConfigPush) Refresh(ctx context.Context, forced ...string) error {
-	return c.delivery.refresh(ctx, forced)
+	return c.delivery.Refresh(ctx, forced)
 }
 
 // WatchPluginConfig registers fn to run each time the plugin has been given its configuration.
 // fn runs on its own goroutine, so it may call the plugin while the delivery of secrets is locked.
 // The returned function removes the registration.
 func (c *ConfigPush) WatchPluginConfig(pluginID string, fn func()) (stop func()) {
-	return c.delivery.watchPluginConfig(pluginID, fn)
+	return c.delivery.WatchConfig(pluginID, fn)
 }
 
 // NotifyPluginConfig sends the resolved configuration to a running plugin process.
 func (c *ConfigPush) NotifyPluginConfig(ctx context.Context, pluginID string) error {
-	if err := c.delivery.lockSecrets(ctx); err != nil {
+	if err := c.delivery.Lock(ctx); err != nil {
 		return err
 	}
-	defer c.delivery.unlockSecrets()
-	return c.delivery.configurePlugin(ctx, pluginID)
+	defer c.delivery.Unlock()
+	return c.delivery.Configure(ctx, pluginID)
 }
 
 func (c *ConfigPush) awaitFirstConfigure(pluginID string) {
-	c.delivery.markAwaitingFirstConfigure(pluginID)
+	c.delivery.AwaitFirstConfigure(pluginID)
 }
 
 func (c *ConfigPush) configureActivated(ctx context.Context, pluginID string) error {
-	if lockErr := c.delivery.lockSecrets(ctx); lockErr != nil {
-		c.delivery.clearAwaitingFirstConfigure(pluginID)
+	if lockErr := c.delivery.Lock(ctx); lockErr != nil {
+		c.delivery.ClearFirstConfigure(pluginID)
 		return lockErr
 	}
-	configureErr := c.delivery.configurePlugin(ctx, pluginID)
-	c.delivery.clearAwaitingFirstConfigure(pluginID)
-	c.delivery.unlockSecrets()
+	configureErr := c.delivery.Configure(ctx, pluginID)
+	c.delivery.ClearFirstConfigure(pluginID)
+	c.delivery.Unlock()
 	if configureErr != nil {
 		c.errs.report(fmt.Errorf("push settings to plugin %s: %w", pluginID, configureErr))
 	}
@@ -116,46 +117,34 @@ func (c *ConfigPush) listPluginIDs() []string {
 	return ids
 }
 
-// configSnapshot is what a Configure call to one plugin is made of, read while mu is held.
-type configSnapshot struct {
-	pluginID   string
-	endpoint   plugindomain.Endpoint
-	configJSON string
-	values     map[string]string
-	declared   []manifest.SecretDeclaration
-	requested  []string
-	store      pluginport.KeyStore
-	source     plugindomain.SecretSource
-}
-
-func (c *ConfigPush) getConfigSnapshot(pluginID string) (configSnapshot, bool, error) {
+func (c *ConfigPush) getSnapshot(pluginID string) (delivery.Snapshot, bool, error) {
 	profile := c.settings.getPerformanceProfile()
 	c.t.mu.RLock()
 	defer c.t.mu.RUnlock()
 	endpoint, hasEndpoint := c.t.endpoints[pluginID]
 	sup, hasSup := c.t.supervisors[pluginID]
 	if !hasEndpoint || !hasSup {
-		return configSnapshot{}, false, nil
+		return delivery.Snapshot{}, false, nil
 	}
 	if state := sup.GetState(); state != lifecycle.StateActive && state != lifecycle.StateIdle {
-		return configSnapshot{}, false, nil
+		return delivery.Snapshot{}, false, nil
 	}
 	rawSettings := c.t.getPluginSettingsLocked(pluginID)
 	cfgJSON, err := json.Marshal(rawSettings)
 	if err != nil {
-		return configSnapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
+		return delivery.Snapshot{}, true, fmt.Errorf("marshal plugin %s settings: %w", pluginID, err)
 	}
 	values := plugindomain.FormatSettingValues(rawSettings)
 	if profile != "" {
 		values[plugindomain.ConfigPerformanceProfile] = profile
 	}
-	return configSnapshot{
-		pluginID:   pluginID,
-		endpoint:   endpoint,
-		configJSON: string(cfgJSON),
-		values:     values,
-		declared:   c.listActiveDeclarationsLocked(pluginID, rawSettings),
-		requested:  plugindomain.ListAskedSecretGroups(c.listDeclarationsLocked()),
+	return delivery.Snapshot{
+		PluginID:   pluginID,
+		Endpoint:   endpoint,
+		ConfigJSON: string(cfgJSON),
+		Values:     values,
+		Declared:   c.listActiveDeclarationsLocked(pluginID, rawSettings),
+		Requested:  plugindomain.ListAskedSecretGroups(c.listDeclarationsLocked()),
 	}, true, nil
 }
 

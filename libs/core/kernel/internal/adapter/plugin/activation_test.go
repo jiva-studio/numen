@@ -116,7 +116,7 @@ func TestACanceledCallerDoesNotRecordAFailedStart(t *testing.T) {
 	if _, err := host.Activation.EnsureActive(ctx, "org.example.sample"); err == nil {
 		t.Fatal("expected the activation to fail")
 	}
-	if host.Registry.t.supervisors["org.example.sample"].IsActivationFailed() {
+	if host.Registry.t.supervisors["org.example.sample"].Failure.IsFailed() {
 		t.Fatal("a canceled caller recorded a failed start")
 	}
 }

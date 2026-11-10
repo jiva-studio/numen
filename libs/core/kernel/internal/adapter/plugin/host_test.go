@@ -870,7 +870,7 @@ func TestACrashedPluginIsStartedAgainAfterAConsumerReleasesIt(t *testing.T) {
 }
 
 func TestAcquireAndReleaseDoNothingWithoutARunningProcess(t *testing.T) {
-	sup := lifecycle.New(testsupport.GetMachine())
+	sup := lifecycle.New(nil)
 	if sup.Acquire(testsupport.GetMachine().Now()) {
 		t.Fatal("Acquire held a dormant supervisor")
 	}
@@ -1178,8 +1178,8 @@ func newRunningTestHost(t *testing.T, plugins map[string]runningPlugin) *Host {
 		}
 	})
 	for id, one := range plugins {
-		sup := lifecycle.New(testsupport.GetMachine())
-		sup.SetPermissions(one.perms)
+		sup := lifecycle.New(nil)
+		sup.Permissions.Set(one.perms)
 		host.Registry.t.supervisors[id] = sup
 		host.Registry.t.endpoints[id] = plugindomain.Endpoint{Host: "127.0.0.1", Port: 1, Token: one.token}
 	}

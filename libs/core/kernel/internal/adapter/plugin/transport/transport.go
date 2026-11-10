@@ -25,14 +25,22 @@ var (
 
 // NetworkTransport is the HTTP transport of one plugin process: the connections to its port are
 // pooled for the life of the process.
-type NetworkTransport struct{ *http.Transport }
+type NetworkTransport struct{ pool *http.Transport }
 
 // RoundTripTransport marks NetworkTransport as a plugin.Transport.
 func (NetworkTransport) RoundTripTransport() {}
 
+// RoundTrip sends the request over the pooled connections of the process.
+func (n NetworkTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return n.pool.RoundTrip(req)
+}
+
+// CloseIdleConnections closes the pooled connections that no request uses.
+func (n NetworkTransport) CloseIdleConnections() { n.pool.CloseIdleConnections() }
+
 // NewNetworkTransport returns the transport for a plugin process that listens on a port.
 func NewNetworkTransport() NetworkTransport {
-	return NetworkTransport{Transport: newHTTPTransport()}
+	return NetworkTransport{pool: newHTTPTransport()}
 }
 
 func newHTTPTransport() *http.Transport {

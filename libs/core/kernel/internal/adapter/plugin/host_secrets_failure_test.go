@@ -144,7 +144,7 @@ func prepareActivationWith(t *testing.T, host *Host, dormant bool) func(ctx cont
 	})
 	p := host.Registry.t.plugins[secretPluginID]
 	p.Manifest.Backend = manifest.Backend{Entrypoint: "bin/plugin"}
-	activating := lifecycle.New(testsupport.GetMachine())
+	activating := lifecycle.New(nil)
 	activating.SetActivating()
 	if dormant {
 		delete(host.Registry.t.endpoints, secretPluginID)
@@ -167,7 +167,7 @@ func addSecretPlugin(t *testing.T, host *Host, source *listing, pluginID string)
 		ID:      pluginID,
 		Secrets: []manifest.SecretDeclaration{{Name: declared, Title: "API key"}},
 	}}
-	sup := lifecycle.New(testsupport.GetMachine())
+	sup := lifecycle.New(nil)
 	sup.ActivateInProcess(testsupport.GetMachine().Now())
 	host.Registry.t.supervisors[pluginID] = sup
 	host.Registry.t.endpoints[pluginID] = plugindomain.Endpoint{Host: "127.0.0.1", Port: plugintest.GetPort(t, server), Token: "second"}
@@ -202,7 +202,7 @@ func TestFailedConfigureKeepsChangeAndRedactsValue(t *testing.T) {
 		t.Errorf("%d failures passed on, want none", failed.count())
 	}
 	sup := host.Registry.t.supervisors[secretPluginID]
-	if sup.IsActivationFailed() {
+	if sup.Failure.IsFailed() {
 		t.Error("the plugin is marked as failed")
 	}
 	for _, info := range host.Registry.GetPluginInfos() {
@@ -490,18 +490,18 @@ func TestRefreshBeforeActivationConfigureSendsLatestListOnce(t *testing.T) {
 	host, probe, source := newConfiguredHost(t)
 	activate := prepareActivation(t, host, true)
 	calls := probe.count()
-	if err := host.Config.delivery.lockSecrets(t.Context()); err != nil {
+	if err := host.Config.delivery.Lock(t.Context()); err != nil {
 		t.Fatal(err)
 	}
 	activation := make(chan error, 1)
 	go func() { activation <- activate() }()
 	plugintest.WaitUntil(t, "the activation waits for its Configure", func() bool {
-		return host.Config.delivery.isAwaitingFirstConfigure(secretPluginID)
+		return host.Config.delivery.IsAwaitingFirstConfigure(secretPluginID)
 	})
 	source.rename("Renamed")
 	refresh := make(chan error, 1)
 	go func() { refresh <- host.Config.Refresh(t.Context()) }()
-	host.Config.delivery.unlockSecrets()
+	host.Config.delivery.Unlock()
 
 	if err := <-activation; err != nil {
 		t.Fatal(err)

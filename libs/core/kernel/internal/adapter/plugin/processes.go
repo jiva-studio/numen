@@ -72,9 +72,6 @@ func (p *Processes) SetActivationPolicy(policy lifecycle.ActivationPolicy) {
 	p.t.mu.Lock()
 	defer p.t.mu.Unlock()
 	p.t.activation = policy
-	for _, sup := range p.t.supervisors {
-		sup.SetActivationPolicy(policy)
-	}
 }
 
 // SetLauncher overrides the process launcher for testing.
