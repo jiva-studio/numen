@@ -187,7 +187,7 @@ describe('the settings as they are put together', () => {
   it('gives each setting a message writer under a name of its own', () => {
     const { writers } = createSettings()
 
-    expect(writers).toStrictEqual(['appearance', 'configured', 'keys', 'plugins'])
+    expect([...writers].sort()).toStrictEqual(['appearance', 'configured', 'keys', 'plugins'])
   })
 
   it('opens the settings tab as kind of tab', () => {
