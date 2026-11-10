@@ -89,13 +89,13 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
 	if constructed, ok := debug.ReadBuildInfo(); ok {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="a test binary has no module version, so the branch that reports one is reached only in a built release"
 		if version := constructed.Main.Version; version != "" && version != "(devel)" {
 			response.Facts = append(response.Facts, detail{"this build", version})
 		}
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="a test binary carries no version-control settings, so the loop over them is reached only in a built release"
 		for _, setting := range constructed.Settings {
-			// gomutants:disable-next-line
+			// gomutants:disable-next-line reason="a test binary carries no version-control settings, so the match is reached only in a built release"
 			if setting.Key == "vcs.revision" {
 				response.Facts = append(response.Facts, detail{"revision", setting.Value})
 			}
@@ -103,7 +103,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	}
 
 	var out strings.Builder
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err := getFatalPage().Execute(&out, response); err != nil {
 		return nil, err
 	}
@@ -228,7 +228,7 @@ func getSettingsPath(cfg container.Config) string {
 		return filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
 	}
 	path, err := settings.Path()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return ""
 	}

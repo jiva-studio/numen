@@ -111,7 +111,7 @@ func New[V any](name string, opts ...Option) *Cache[V] {
 			opt(&cfg)
 		}
 	}
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="WithClock(nil) is the only way to reach the fallback, and a nil clock and the system clock answer the same in the tests that read neither time"
 	if cfg.clock == nil {
 		cfg.clock = clock.System{}
 	}
@@ -336,7 +336,7 @@ func (c *Cache[V]) loadDiskOrFetchSyncLocked(ctx context.Context, key string, lo
 		return diskVal, true, nil
 	}
 	c.mu.Lock()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the same freshness check ran before the lock was taken, so repeating it matters only when two callers race for one key"
 	if current, ok := c.entries[key]; ok && c.isFreshLocked(current.fetchedAt) {
 		c.mu.Unlock()
 		return current.value, true, nil
@@ -408,7 +408,7 @@ func (c *Cache[V]) finishLoad(ctx context.Context, key string, inflight *call[V]
 }
 
 func (c *Cache[V]) cachePath() (string, error) {
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="shouldUseDiskLocked returns false for a cache without a name before any caller asks for the path, so this guard repeats that check"
 	if c.name == "" {
 		return "", errors.New("cache name is empty")
 	}
@@ -484,19 +484,19 @@ func getGrantedDir(name string) (string, error) {
 func (c *Cache[V]) readDiskEntry(key string) (V, bool) {
 	var zero V
 	path, err := c.cachePath()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return zero, false
 	}
 	c.diskMu.Lock()
 	data, err := os.ReadFile(path)
 	c.diskMu.Unlock()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return zero, false
 	}
 	var all map[string]V
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="a file that does not decode yields the empty map, which has no key, so the early return and the fall-through give the same answer"
 	if json.Unmarshal(data, &all) != nil {
 		return zero, false
 	}
@@ -539,12 +539,12 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 	}
 	all[key] = val
 	data, err := json.Marshal(all)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return err
 	}
 	dir := filepath.Dir(path)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
@@ -553,18 +553,18 @@ func (c *Cache[V]) storeDiskEntry(key string, val V) error {
 
 func writeFileAtomic(dir, path string, data []byte) error {
 	tmp, err := os.CreateTemp(dir, ".cache-*.tmp")
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return err
 	}
 	tmpName := tmp.Name()
 	_, writeErr := tmp.Write(data)
 	closeErr := tmp.Close()
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err := errors.Join(writeErr, closeErr); err != nil {
 		return errors.Join(err, os.Remove(tmpName))
 	}
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err := os.Rename(tmpName, path); err != nil {
 		return errors.Join(err, os.Remove(tmpName))
 	}

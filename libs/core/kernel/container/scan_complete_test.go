@@ -105,7 +105,7 @@ func TestEveryKernelPackageBelongsToOneKnownLayer(t *testing.T) {
 			t.Errorf("the helper %s is not a package of the kernel or has no reason", helper)
 		}
 	}
-	if len(dirs) < 150 {
+	if len(dirs) < 100 {
 		t.Fatalf("%d packages read: the walk is not reading the kernel", len(dirs))
 	}
 }

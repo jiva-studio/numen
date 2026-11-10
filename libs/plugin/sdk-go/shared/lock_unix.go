@@ -14,13 +14,13 @@ func lockFile(path string) (func() error, error) {
 		return nil, err
 	}
 	for {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the error this call returns is checked below, and no test can make the call fail"
 		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX)
 		if !errors.Is(err, syscall.EINTR) {
 			break
 		}
 	}
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return nil, errors.Join(err, file.Close())
 	}

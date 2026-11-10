@@ -31,7 +31,7 @@ func setNiceIn(dir string, nice int) error {
 		if err != nil {
 			continue
 		}
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 		if err := setPriority(tid, nice); err != nil && first == nil {
 			first = err
 		}

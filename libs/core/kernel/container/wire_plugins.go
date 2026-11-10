@@ -289,9 +289,9 @@ func lendPluginHost(host *plugin.Host) *PluginHost {
 
 func setStorage(host *plugin.Host, cacheRoot, dataRoot string) {
 	host.SetStorageRoots(cacheRoot, dataRoot)
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="a window started without a models directory gets no dependency registry, which only an installation with downloaded models exercises"
 	if models := host.GetModelsDir(); models != "" {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the registry is built from the models directory of an installation, which a test does not have"
 		host.SetDependencies(GetDependencyRegistry(models))
 	}
 }

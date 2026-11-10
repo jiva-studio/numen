@@ -494,7 +494,7 @@ func readListing(res *v1.ListToolsResponse) Listing {
 // ListTools returns the tools in the registry.
 func (r *Registry) ListTools(ctx context.Context) (Listing, error) {
 	res, err := registryHandler{registry: r}.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 	if err != nil {
 		return Listing{}, err
 	}

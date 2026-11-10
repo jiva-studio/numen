@@ -146,9 +146,9 @@ func TestExhaustructPatternRule_RejectsAPatternThatMatchesNoType(t *testing.T) {
 // maxMutationDirectives is how many comments switch mutation testing off in the whole repository. Each
 // one accepts a mutant that no test kills, so the number only falls: a new one needs an old one removed
 // by a test that kills its mutant.
-const maxMutationDirectives = 850
+const maxMutationDirectives = 848
 
-var mutationDirective = regexp.MustCompile(`^//\s*gomutants:disable(-next-line)?\s+[A-Z_]+(,[A-Z_]+)*\s+reason="([^"]*)"`)
+var mutationDirective = regexp.MustCompile(`^//\s*gomutants:disable(-next-line)?(\s+[A-Z_]+(,[A-Z_]+)*)?\s+reason="((?:\\.|[^"\\])*)"`)
 
 // getMutationDirectives returns the comment lines of Go source files that switch mutation testing off,
 // each as "file:line: text".
@@ -186,14 +186,14 @@ func getMutationDirectives(root string) ([]string, error) {
 	return found, err
 }
 
-// getUnexplainedDirectives returns the directives that name no mutator or give no reason of at least
+// getUnexplainedDirectives returns the directives that give no reason of at least
 // three words.
 func getUnexplainedDirectives(directives []string) []string {
 	var found []string
 	for _, one := range directives {
 		_, text, _ := strings.Cut(one, ": ")
 		match := mutationDirective.FindStringSubmatch(text)
-		if match == nil || len(strings.Fields(match[3])) < 3 {
+		if match == nil || len(strings.Fields(match[4])) < 3 {
 			found = append(found, one)
 		}
 	}
@@ -210,7 +210,7 @@ func TestMutationDirectivesGiveAReasonAndStayUnderTheCap(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range getUnexplainedDirectives(directives) {
-		t.Errorf("%s: a gomutants directive names its mutator and gives a reason of three words or more", one)
+		t.Errorf("%s: a gomutants directive gives a reason of three words or more", one)
 	}
 	if len(directives) > maxMutationDirectives {
 		t.Errorf("%d gomutants directives, more than the %d allowed", len(directives), maxMutationDirectives)

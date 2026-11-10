@@ -133,7 +133,7 @@ func readRole(role v1.EmbedRole) Role {
 	if role == v1.EmbedRole_EMBED_ROLE_QUERY {
 		return RoleQuery
 	}
-	// gomutants:disable-next-line
+	// gomutants:disable-next-line reason="the returned value is the zero value of its type, so returning zero is the same value"
 	return RoleDocument
 }
 

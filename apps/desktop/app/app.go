@@ -121,7 +121,7 @@ func parseFlags() (*Options, error) {
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfig()
 	cfg.ErrorHandler = func(err error) {
-		// gomutants:disable-next-line
+		// gomutants:disable-next-line reason="the error branch needs an operating system or library failure that a test cannot cause"
 		if _, writeErr := fmt.Fprintln(out, "numen:", err); writeErr != nil {
 			return
 		}

@@ -78,7 +78,7 @@ func getForwarders(pkg *packages.Package, isRepo func(string) bool) []finding {
 				for _, spec := range decl.Specs {
 					value := spec.(*ast.ValueSpec)
 					for i, expr := range value.Values {
-						if target, ok := getForwardedPackage(pkg, expr, isRepo); ok && i < len(value.Names) {
+						if target, ok := getForwardedPackage(pkg, expr, isRepo); ok && i < len(value.Names) && value.Names[i].IsExported() {
 							found = append(found, newFinding(pkg.Fset, value.Names[i].Pos(),
 								pkg.Types.Name()+"."+value.Names[i].Name+" = "+target))
 						}
@@ -98,7 +98,7 @@ func getForwarders(pkg *packages.Package, isRepo func(string) bool) []finding {
 // getForwardedCall tells whether a function does nothing but call a function of another package of the
 // repository with its own parameters in order.
 func getForwardedCall(pkg *packages.Package, decl *ast.FuncDecl, isRepo func(string) bool) (string, bool) {
-	if decl.Body == nil || len(decl.Body.List) != 1 || decl.Recv != nil {
+	if decl.Body == nil || len(decl.Body.List) != 1 || decl.Recv != nil || !decl.Name.IsExported() {
 		return "", false
 	}
 	var call ast.Expr
@@ -119,6 +119,12 @@ func getForwardedCall(pkg *packages.Package, decl *ast.FuncDecl, isRepo func(str
 	}
 	target, ok := getForwardedPackage(pkg, invoked.Fun, isRepo)
 	if !ok {
+		return "", false
+	}
+	selector, ok := invoked.Fun.(*ast.SelectorExpr)
+	callee, isFunc := pkg.TypesInfo.Uses[selector.Sel].(*types.Func)
+	own, isOwn := pkg.TypesInfo.Defs[decl.Name].(*types.Func)
+	if !ok || !isFunc || !isOwn || !types.Identical(own.Type(), callee.Type()) {
 		return "", false
 	}
 	var params []string
@@ -161,7 +167,7 @@ func checkNoCoreTypeIsReexported(t *testing.T, workspace workspacePackages) {
 
 // The rule rejects an alias of a type another package of the repository declares, an alias of an unnamed
 // interface, a variable, constant or function that only forwards a member of another package of the
-// repository, and accepts an alias of a type of its own package or of a package outside the repository.
+// repository (a function only when its signature is the callee's), and accepts an alias of a type of its own package or of a package outside the repository.
 func TestReexportRule_RejectsAnAliasOfAnotherPackagesType(t *testing.T) {
 	dir := writeTreeFixture(t, map[string]string{
 		"port/port.go": `package port
@@ -209,6 +215,8 @@ func Close() { port.Close() }
 func Trim(name string) port.Reader { return port.Open(name + "x") }
 
 func Swap(a, b string) port.Reader { return port.Open(b) }
+
+func Wrap(name string) any { return port.Open(name) }
 `,
 	})
 	found, read := getReexports(loadFixture(t, dir), func(path string) bool { return strings.HasPrefix(path, "fixture/") })
