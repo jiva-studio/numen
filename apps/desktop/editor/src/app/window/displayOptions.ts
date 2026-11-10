@@ -65,7 +65,7 @@ export function createTargetResolver(
   const getFront = () => {
     const front = windowTabs.groups.handle.front()
     const tab = front?.id ?? ''
-    const on = front && windowTabs.tabs.getTab(tab)?.kind.getTarget?.(front.state)
+    const on = front?.state && windowTabs.tabs.getTab(tab)?.kind.getTarget?.(front.state)
     return { tab, kind: front?.kind ?? null, on }
   }
   return (): CommandTarget => {

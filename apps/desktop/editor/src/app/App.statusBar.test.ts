@@ -33,7 +33,7 @@ const LanternBar = defineComponent({
 })
 
 const registerBar = async () => {
-  hosts.current!.contextHost.registerSlotView(LANTERN, 'statusBar', {
+  hosts.current!.contextHost.registrations.registerSlotView(LANTERN, 'statusBar', {
     id: 'bar',
     component: LanternBar,
   })
@@ -78,7 +78,7 @@ describe('the background tasks a plugin is given', () => {
     vaultState.opening = null
     vaultState.error = 'the vault folder is not there'
     await mountWindow()
-    const host = hosts.current!.contextHost.getBackgroundTasks?.()
+    const host = hosts.current!.contextHost.work.getBackgroundTasks()
 
     let tasks: readonly BackgroundTask[] = []
     host!.watch((list) => (tasks = list)).dispose()

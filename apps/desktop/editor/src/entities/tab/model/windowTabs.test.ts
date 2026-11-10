@@ -149,8 +149,8 @@ describe('a tab of a kind', () => {
     expect(id).toBe('nothing:One.md')
     expect(onScreen(window.panes.layout.value)).toEqual([id])
     expect(window.tabs.getTab(id)?.kind.kind).toBe('nothing')
-    expect(window.tabs.getTab(id)?.kind.getTitle?.(window.tabs.getTab(id)?.state)).toBe('One.md')
-    expect(window.tabs.getTab(id)?.kind.getOpenTab?.(window.tabs.getTab(id)?.state)).toEqual({
+    expect(window.tabs.getTab(id)?.kind.getTitle?.(window.tabs.getTab(id)!.state)).toBe('One.md')
+    expect(window.tabs.getTab(id)?.kind.getOpenTab?.(window.tabs.getTab(id)!.state)).toEqual({
       path: 'One.md',
     })
   })

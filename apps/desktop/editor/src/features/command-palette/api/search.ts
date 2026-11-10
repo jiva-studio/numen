@@ -6,7 +6,7 @@ import type { Selector } from '@numen/plugin-loader'
 import { search } from '@/shared/api/clients'
 import { mapNoteType, mapRange } from '@/shared/api/wire'
 import type { SearchDeps, SearchMode } from '../lib/search/types'
-import type { JsonValue } from '@/shared/api/json'
+import type { JsonObject, JsonValue } from '@/shared/api/json'
 
 const queryModes: Record<SearchModeCode, SearchMode | null> = {
   [SEARCH_MODE.UNSPECIFIED]: null,
@@ -21,7 +21,7 @@ const modes = getNames<SearchMode, SearchModeCode>(queryModes)
 const parseSelector = (json: string): Selector | null => {
   try {
     const value: JsonValue = JSON.parse(json)
-    return typeof value === 'object' && value !== null && !Array.isArray(value) ? value : null
+    return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as JsonObject) : null
   } catch {
     return null
   }

@@ -7,6 +7,7 @@
  *
  * Every value here is invented.
  */
+import type { JsonObject } from '@/shared/api/json'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
@@ -107,7 +108,7 @@ const SHELL: readonly PluginSettingInfo[] = [
 ]
 
 const createTab = (
-  file: Record<string, unknown> = {},
+  file: JsonObject = {},
   plugins: readonly PluginInfo[] = [],
   app: readonly PluginSettingInfo[] = SHELL,
 ) => {

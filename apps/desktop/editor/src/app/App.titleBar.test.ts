@@ -95,10 +95,10 @@ const registerBar = async (pluginId: string, name = 'LedgerBar') => {
   const { contextHost } = hosts.current!
   const context = {
     app: contextHost.app,
-    vaults: contextHost.getVaults?.(),
-    window: contextHost.getWindow?.(),
+    vaults: contextHost.vault.getVaults(),
+    window: contextHost.ui.getWindow(),
   }
-  contextHost.registerSlotView(pluginId, 'titleBar', {
+  contextHost.registrations.registerSlotView(pluginId, 'titleBar', {
     id: 'bar',
     component: createBar(name, context),
   })

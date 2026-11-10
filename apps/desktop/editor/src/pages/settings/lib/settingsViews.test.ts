@@ -9,15 +9,17 @@ describe('getRegisteredViews', () => {
     { id: 'floor', title: 'Floor' },
     { id: 'missing', title: 'Missing' },
   ]
+  const T = { name: 'T' }
+  const F = { name: 'F' }
   const registered = new Map([
-    ['top', { component: 'T' }],
-    ['floor', { component: 'F' }],
+    ['top', { component: T }],
+    ['floor', { component: F }],
   ])
 
   it('returns the registered views in declared order', () => {
     expect(getRegisteredViews(declared, registered)).toStrictEqual([
-      { id: 'top', component: 'T' },
-      { id: 'floor', component: 'F' },
+      { id: 'top', component: T },
+      { id: 'floor', component: F },
     ])
   })
 
