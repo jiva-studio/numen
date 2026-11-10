@@ -140,7 +140,7 @@ const SHELL_SETTINGS: Installation['settings'] = {
 
 const SHELL_PLUGIN: Installation['plugin'] = {
     ...DEFAULTS.plugin,
-    app: ref<PluginSettingInfo[]>([
+    app: ref<readonly PluginSettingInfo[]>([
       {
         key: 'appearance.theme',
         type: 'enum',
@@ -178,7 +178,7 @@ const SHELL_PLUGIN: Installation['plugin'] = {
       DONE.push('path chosen')
       return ''
     },
-    plugins: ref<PluginInfo[]>([...PLUGINS]),
+    plugins: ref<readonly PluginInfo[]>(PLUGINS),
 }
 
 const SHELL_SECRETS: Installation['secrets'] = {
