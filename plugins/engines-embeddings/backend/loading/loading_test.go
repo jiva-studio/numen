@@ -119,7 +119,7 @@ func TestACanceledCallDoesNotStopTheOpening(t *testing.T) {
 	}
 }
 
-func TestAFailedOpeningHoldsNoModelAndTheNextCallOpensAgain(t *testing.T) {
+func TestAFailedOpeningReturnsItsErrorAndTheNextCallOpensAgain(t *testing.T) {
 	boom := errors.New("boom")
 	calls := 0
 	h := newHarness(t, func(context.Context, string) (Embedder, error) {
