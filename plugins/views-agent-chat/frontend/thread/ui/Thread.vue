@@ -6,7 +6,7 @@
  * into view, and reading further up leaves it where it was read until the foot
  * is reached again.
  */
-import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch, type VNode } from 'vue'
 import { ThreadTurn } from './thread-turn'
 import { atFoot, getFoot } from '../lib/foot'
 import { placeTurns, type PlacedTurn } from '../lib/turn'
@@ -26,11 +26,11 @@ const emit = defineEmits<{
 
 defineSlots<{
   /** Content shown when there are no turns yet. */
-  silence?(): unknown
+  silence?(): VNode[]
   /** How a turn is drawn, where the caller draws it itself. */
-  turn?(props: { turn: Turn; state: PlacedTurn['state'] }): unknown
+  turn?(props: { turn: Turn; state: PlacedTurn['state'] }): VNode[]
   /** Content shown for a turn that failed to send. */
-  failure?(props: { turn: Turn }): unknown
+  failure?(props: { turn: Turn }): VNode[]
 }>()
 
 /* --------------------------------- State ---------------------------------- */
