@@ -24,6 +24,7 @@ import {
   getPdfTabId,
   getRecordingTabId,
   getKindOfTab,
+  type TabKind,
   getPdfPathOfTab,
   isContentTab,
 } from '../lib/tabs'
@@ -59,17 +60,50 @@ export interface LayoutDeps {
   readonly syncPath: (sourceTab: string, path: string) => boolean
 }
 
+const FIXED_TITLES: Readonly<Partial<Record<TabKind, string>>> = {
+  files: 'Files',
+  agent: 'Agent',
+  recording: 'Lecture 4',
+  link: 'Feynman 1964',
+  deck: 'Thermodynamics',
+}
+
 function getTitle(deps: LayoutDeps, notePaths: Record<string, string>, id: string): string {
   const kind = getKindOfTab(id)
-  if (kind === 'files') return 'Files'
   if (kind === 'plex') return deps.getPlexTitle() || 'Plex'
-  if (kind === 'agent') return 'Agent'
-  if (kind === 'recording') return 'Lecture 4'
-  if (kind === 'link') return 'Feynman 1964'
-  if (kind === 'deck') return 'Thermodynamics'
+  const fixed = kind === undefined ? undefined : FIXED_TITLES[kind]
+  if (fixed !== undefined) return fixed
   if (kind === 'reader:pdf') return getPdfDoc(getPdfPathOfTab(id)).title
   const path = notePaths[id] ?? ENTROPY_PATH
   return deps.vault.read.getNote(path)?.title ?? path
+}
+
+function isContentPane(one: { id: string; tabs: readonly string[] }): boolean {
+  return one.tabs.some(isContentTab) || (!['main', 'map', 'aside'].includes(one.id) && one.tabs.length === 0)
+}
+
+function findContentPaneId(workspace: Workspace): string | null {
+  const focused = paneById(workspace.root, workspace.focus)
+  if (focused && isContentPane(focused)) return focused.id
+  return getPanes(workspace.root).find(isContentPane)?.id ?? null
+}
+
+/** The workspace with a tab shown in the pane of the content, beside it or, where there is none, below the map. */
+function getShownWorkspace(
+  workspace: Workspace,
+  tabId: string,
+  placement: Placement,
+  createId: () => string,
+): Workspace {
+  const contentPane = findContentPaneId(workspace)
+  if (placement === 'split' && contentPane) {
+    return openTabAdjacent(workspace, tabId, { side: 'right', onto: contentPane, createId })
+  }
+  if (contentPane) return openTab(workspace, tabId, contentPane)
+  const anchor = paneById(workspace.root, 'map')?.id ?? getPanes(workspace.root)[0]?.id
+  return anchor
+    ? openTabAdjacent(workspace, tabId, { side: 'bottom', onto: anchor, createId })
+    : openTab(workspace, tabId)
 }
 
 /** The open tabs and where the panes of the window hold them. */
@@ -94,27 +128,9 @@ export function createLayout(deps: LayoutDeps) {
     openTabIds.value.map((id) => ({ id, title: getTitle(deps, notePaths, id) })),
   )
 
-  function findContentPaneId(): string | null {
-    const isContentPane = (one: { id: string; tabs: readonly string[] }) =>
-      one.tabs.some(isContentTab) || (!['main', 'map', 'aside'].includes(one.id) && one.tabs.length === 0)
-    const focused = paneById(held.value.root, held.value.focus)
-    if (focused && isContentPane(focused)) return focused.id
-    return getPanes(held.value.root).find(isContentPane)?.id ?? null
-  }
-
   function showTab(tabId: string, placement: Placement): void {
     if (!openTabIds.value.includes(tabId)) openTabIds.value = [...openTabIds.value, tabId]
-    const contentPane = findContentPaneId()
-    if (placement === 'split' && contentPane) {
-      held.value = openTabAdjacent(held.value, tabId, { side: 'right', onto: contentPane, createId: createPaneId })
-    } else if (contentPane) {
-      held.value = openTab(held.value, tabId, contentPane)
-    } else {
-      const anchor = paneById(held.value.root, 'map')?.id ?? getPanes(held.value.root)[0]?.id
-      held.value = anchor
-        ? openTabAdjacent(held.value, tabId, { side: 'bottom', onto: anchor, createId: createPaneId })
-        : openTab(held.value, tabId)
-    }
+    held.value = getShownWorkspace(held.value, tabId, placement, createPaneId)
   }
 
   function navigateNoteTab(tabId: string, path: string): void {

@@ -1,4 +1,4 @@
-import { reportFailure } from '@numen/ui'
+import { nav, reportFailure } from '@numen/ui'
 import { DEMO_COMMAND } from '../lib/commands'
 import { ROOT } from '../lib/entries'
 import { ENTROPY_PATH } from '../lib/notes'
@@ -32,26 +32,28 @@ function getNamingRole(command: string): NamingRole | null {
   return (found?.[0] as NamingRole | undefined) ?? null
 }
 
+/** Takes a note out of the vault, closes its tabs, and moves the plex off it. */
+function removeNote({ vault, layout, plex }: CommandDeps, path: string) {
+  if (!vault.edit.removeNote(path)) return
+  for (const [tabId, tabPath] of Object.entries(layout.state.notePaths)) {
+    if (tabPath === path) layout.actions.close(tabId)
+  }
+  if (plex.here.value === path) plex.go(Object.keys(vault.notes)[0] ?? ENTROPY_PATH)
+}
+
 /** The commands of the menus and the palette, run over the demo vault and the windows of the demo. */
 export function createCommands(deps: CommandDeps) {
   const { vault, layout, files, plex, palette, agent } = deps
-
-  function removeNote(path: string) {
-    if (!vault.edit.removeNote(path)) return
-    for (const [tabId, tabPath] of Object.entries(layout.state.notePaths)) {
-      if (tabPath === path) layout.actions.close(tabId)
-    }
-    if (plex.here.value === path) plex.go(Object.keys(vault.notes)[0] ?? ENTROPY_PATH)
-  }
 
   function createRelated(path: string, role: Exclude<NamingRole, 'title'>, source: Source) {
     if (source === 'files') vault.edit.createRelated('', path, role)
     else palette.actions.openNaming(role, path)
   }
 
-  function createNote() {
-    const path = vault.edit.createUntitled('physics')
-    files.tree.openFolder('physics')
+  /** Makes an entry in a folder, opens the folder and asks for the name of the entry. */
+  function startNaming(folder: string, create: (folder: string) => string) {
+    const path = create(folder)
+    files.tree.openFolder(folder)
     files.state.renaming.value = path
   }
 
@@ -83,36 +85,42 @@ export function createCommands(deps: CommandDeps) {
     layout.actions.openToolTab(PLEX_TAB, 'map')
   }
 
+  const overPath: Readonly<Record<string, (path: string, source: Source) => void>> = {
+    [DEMO_COMMAND.renameTreeEntry]: (path) => {
+      files.state.renaming.value = path === ROOT ? null : path
+    },
+    [DEMO_COMMAND.openNote]: (path) => layout.actions.openVaultFile(path, 'current'),
+    [DEMO_COMMAND.openNoteBeside]: (path) => layout.actions.openVaultFile(path, 'split'),
+    [DEMO_COMMAND.revealNote]: reveal,
+    [DEMO_COMMAND.showNoteInPlex]: showInPlex,
+    [DEMO_COMMAND.createNote]: () => startNaming('physics', vault.edit.createUntitled),
+    [DEMO_COMMAND.renameNote]: renameNote,
+    [DEMO_COMMAND.copyNotePath]: (path) => {
+      nav.clipboard.writeText(path).catch(reportFailure)
+    },
+    [DEMO_COMMAND.removeFile]: (path) => removeNote(deps, path),
+    [DEMO_COMMAND.askAgent]: askAgent,
+    ...tools,
+  }
+
   /** Runs a command over the note or file at a path. */
   function run(command: string, path: string, source: Source = 'plex') {
     const role = getNamingRole(command)
-    if (command === DEMO_COMMAND.renameTreeEntry) files.state.renaming.value = path === ROOT ? null : path
-    else if (command === DEMO_COMMAND.openNote) layout.actions.openVaultFile(path, 'current')
-    else if (command === DEMO_COMMAND.openNoteBeside) layout.actions.openVaultFile(path, 'split')
-    else if (command === DEMO_COMMAND.revealNote) reveal(path)
-    else if (command === DEMO_COMMAND.showNoteInPlex) showInPlex(path)
-    else if (role !== null && role !== 'title') createRelated(path, role, source)
-    else if (command === DEMO_COMMAND.createNote) createNote()
-    else if (command === DEMO_COMMAND.renameNote) renameNote(path, source)
-    else if (command === DEMO_COMMAND.copyNotePath) navigator.clipboard.writeText(path).catch(reportFailure)
-    else if (command === DEMO_COMMAND.removeFile) removeNote(path)
-    else if (command === DEMO_COMMAND.askAgent) askAgent(path)
-    else tools[command]?.()
+    if (role !== null && role !== 'title') createRelated(path, role, source)
+    else overPath[command]?.(path, source)
+  }
+
+  const createInside: Readonly<Record<string, (folder: string) => string>> = {
+    [DEMO_COMMAND.createNote]: vault.edit.createUntitled,
+    [DEMO_COMMAND.createFolder]: vault.edit.createFolder,
   }
 
   /** Runs a command chosen in the menu of the file tree over the row the menu was opened on. */
   function runInTree(command: string, target: { path: string; others: readonly string[] }) {
     const isFolder = target.path === ROOT || vault.read.getEntryAt(target.path)?.isFolder === true
-    if (command === DEMO_COMMAND.createNote && isFolder) {
-      const path = vault.edit.createUntitled(target.path)
-      files.tree.openFolder(target.path)
-      files.state.renaming.value = path
-      return
-    }
-    if (command === DEMO_COMMAND.createFolder && isFolder) {
-      const path = vault.edit.createFolder(target.path)
-      files.tree.openFolder(target.path)
-      files.state.renaming.value = path
+    const create = isFolder ? createInside[command] : undefined
+    if (create) {
+      startNaming(target.path, create)
       return
     }
     const paths = command === DEMO_COMMAND.removeFile ? [target.path, ...target.others] : [target.path]

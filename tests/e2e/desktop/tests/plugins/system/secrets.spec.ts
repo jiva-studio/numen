@@ -5,6 +5,7 @@ import path from 'node:path'
 import { test, expect, type Locator, type Page } from '../../support/test.js'
 import { startOwnServer, type InstalledPlugin, type OwnServer } from '../../support/server.js'
 import { runCommand } from '../../support/workspace.js'
+import type { JsonObject } from '../../support/json.js'
 
 const ONE = 'md.numen.test.probe-one'
 const TWO = 'md.numen.test.probe-two'
@@ -122,14 +123,14 @@ const callOn = async (
   page: Page,
   method: string,
   data: object,
-): Promise<Record<string, unknown>> => {
+): Promise<JsonObject> => {
   const answer = await page.request.post(`${serverUrl}/numen.v1.SettingsService/${method}`, {
     data,
     headers: { 'Content-Type': 'application/json' },
   })
   const text = await answer.text()
   if (!answer.ok()) throw new Error(`${method} answered ${answer.status()}: ${text}`)
-  return text ? (JSON.parse(text) as Record<string, unknown>) : {}
+  return text ? (JSON.parse(text) as JsonObject) : {}
 }
 
 const createSecret = async (

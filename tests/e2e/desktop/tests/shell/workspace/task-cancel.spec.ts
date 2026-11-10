@@ -1,5 +1,6 @@
 import { observeFor } from '../../support/browser.js'
 import { test, expect, type APIRequestContext } from '../../support/test.js'
+import type { JsonObject } from '../../support/json.js'
 
 /** The word that makes the mock embedder hold a batch until it is cancelled (engine.MockHoldWord). */
 const HOLD_WORD = 'numenmockhold'
@@ -16,8 +17,8 @@ const BODY = Array.from(
 const callRPC = async (
   request: APIRequestContext,
   method: string,
-  data: Record<string, unknown>,
-): Promise<{ status: number; body: Record<string, unknown> }> => {
+  data: JsonObject,
+): Promise<{ status: number; body: JsonObject }> => {
   const answer = await request.post(`/numen.v1.${method}`, {
     data,
     headers: { 'Content-Type': 'application/json' },
@@ -25,7 +26,7 @@ const callRPC = async (
   const text = await answer.text()
   return {
     status: answer.status(),
-    body: text ? (JSON.parse(text) as Record<string, unknown>) : {},
+    body: text ? (JSON.parse(text) as JsonObject) : {},
   }
 }
 

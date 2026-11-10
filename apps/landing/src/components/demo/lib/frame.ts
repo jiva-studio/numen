@@ -22,9 +22,8 @@ export function getDraggedHeight(was: number, distance: number, windowHeight: nu
   return Math.min(getTallest(windowHeight), Math.max(LEAST, was + distance))
 }
 
-
 /** A value that survives JSON.stringify and JSON.parse unchanged. */
-export type JsonValue =
+type JsonValue =
   | string
   | number
   | boolean
@@ -33,12 +32,37 @@ export type JsonValue =
   | { readonly [key: string]: JsonValue }
 
 /** What the text parses to as JSON, and nothing where it is not JSON. */
-export function parseJson(text: string): JsonValue | undefined {
+function parseJson(text: string): JsonValue | undefined {
   try {
     return JSON.parse(text)
   } catch {
     return undefined
   }
+}
+
+type JsonObject = { readonly [key: string]: JsonValue }
+
+function isObject(value: JsonValue | undefined): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** What a player in a frame reports about itself. */
+interface PlayerInfo {
+  currentTime?: number
+  playerState?: number
+}
+
+/** The position and state a player message reports; null for a message that is not a report. */
+export function readPlayerInfo(text: string): PlayerInfo | null {
+  const payload = parseJson(text)
+  if (!isObject(payload) || payload['event'] !== 'infoDelivery') return null
+  const info = payload['info']
+  if (!isObject(info)) return null
+  const { currentTime, playerState } = info
+  const result: PlayerInfo = {}
+  if (typeof currentTime === 'number') result.currentTime = currentTime
+  if (typeof playerState === 'number') result.playerState = playerState
+  return result
 }
 
 /** Where a message to a frame is addressed: the origin of its address. */

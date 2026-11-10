@@ -8,6 +8,7 @@ import path from 'node:path'
 import zlib from 'node:zlib'
 import { expect, type APIRequestContext } from 'playwright/test'
 import { getVaultPath, listFilePaths, readOwner, writeSetting } from './vault.js'
+import type { JsonValue } from './json.js'
 
 /** Whether a file of the vault is on disk. */
 export const hasVaultFile = (file: string): boolean =>
@@ -75,7 +76,7 @@ export const writePluginSetting = (
   request: APIRequestContext,
   plugin: string,
   key: string,
-  value: unknown,
+  value: JsonValue | undefined,
 ): Promise<void> => writeSetting(request, [plugin, key], value)
 
 /**
