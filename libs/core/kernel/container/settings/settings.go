@@ -108,7 +108,7 @@ func (c Config) ConfigurePluginHost(s settingsadapter.File) {
 		subscribe = c.feed().Subscribe
 	}
 	settingsusecase.NewApplyToPlugins(
-		c.PluginHost, c.writeSettings(), c.notifyPlugins(), subscribe, hosts, c.setUpPluginHost,
+		settingsadapter.JSONCodec{}, c.PluginHost, c.writeSettings(), c.notifyPlugins(), subscribe, hosts, c.setUpPluginHost,
 	).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
@@ -224,7 +224,7 @@ func (c Config) ListRegistryOptions(name string) (manifest.SettingOptions, bool)
 // ListAppSettings returns the application settings declared.
 func (c Config) ListAppSettings() []plugindomain.Setting {
 	return settingsusecase.NewListAppSettings(
-		c.store(), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c,
+		settingsadapter.JSONCodec{}, c.store(), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, c,
 	).Execute()
 }
 
@@ -344,7 +344,7 @@ func (c Config) listSettingValues() *settingsusecase.ListSettingValues {
 		late = c.Programs
 	}
 	return settingsusecase.NewListSettingValues(
-		c.store(), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, plugins, late,
+		settingsadapter.JSONCodec{}, c.store(), settingsadapter.Defaults{}, settingsadapter.AppDeclaration{}, plugins, late,
 	)
 }
 
@@ -354,7 +354,7 @@ func (c Config) writeSettings() *settingsusecase.WriteSettings {
 		plugins = c.PluginHost
 	}
 	check := settingsusecase.NewCheckSettings(
-		settingsadapter.NewValidator(c.GetDeclarations(), c.GetRegistries()), plugins,
+		settingsadapter.JSONCodec{}, settingsadapter.NewValidator(c.GetDeclarations(), c.GetRegistries()), plugins,
 	)
 	return settingsusecase.NewWriteSettings(check, c.store(), c.feed())
 }
@@ -365,7 +365,7 @@ func (c Config) notifyPlugins() *settingsusecase.NotifyPlugins {
 		signal = c.PluginChanges.Signal
 	}
 	return settingsusecase.NewNotifyPlugins(
-		c.PluginHost, c.PluginHost, c.refreshPluginSecrets, c.resolveProfile, signal, c.handleError,
+		settingsadapter.JSONCodec{}, c.PluginHost, c.PluginHost, c.refreshPluginSecrets, c.resolveProfile, signal, c.handleError,
 	)
 }
 

@@ -17,7 +17,7 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	sources := c.getThemeSources(files)
 	store := settingsadapter.NewAppearanceStore(
 		settingsusecase.NewReadAppearance(c.store()).Execute,
-		settingsusecase.NewWriteAppearance(c.writeSettings()).Execute,
+		settingsusecase.NewWriteAppearance(settingsadapter.JSONCodec{}, c.writeSettings()).Execute,
 		say,
 	)
 	scales := themeusecase.NewScales(c.InterfaceScale, c.TextScale)

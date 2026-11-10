@@ -28,7 +28,7 @@ func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 	app := appDeclarations{{Key: "appearance.theme"}, {Key: "appearance.mode"}}
 	late := latePrograms{{Name: "claude", IsDefault: true}}
 
-	got, err := settings.NewListSettingValues(file, file, app, plugins, late).Execute()
+	got, err := settings.NewListSettingValues(jsonCodec{}, file, file, app, plugins, late).Execute()
 
 	want := settingsdomain.Values{
 		key("app", "appearance", "theme"):   `"preset:night"`,
@@ -52,7 +52,7 @@ func TestListSettingValuesListsTheValueInForceOfEverySetting(t *testing.T) {
 // The values of an unconfigured installation come from the defaults, not from the file.
 func TestListSettingValuesListsTheDefaultsOfAnUnconfiguredInstallation(t *testing.T) {
 	file := &memoryFile{current: stored{values: map[string]any{"app.appearance.theme": "preset:night"}}}
-	list := settings.NewListSettingValues(file, file, appDeclarations{{Key: "appearance.theme"}}, nil, nil)
+	list := settings.NewListSettingValues(jsonCodec{}, file, file, appDeclarations{{Key: "appearance.theme"}}, nil, nil)
 
 	got, err := list.ListDefaults()
 

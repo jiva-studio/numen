@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"fmt"
 
 	settingsdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/settings"
@@ -11,13 +10,16 @@ import (
 // CheckSettings validates settings against the declarations of the settings they are written to,
 // and against the plugin that owns a plugin setting.
 type CheckSettings struct {
+	codec     settingsport.ValueCodec
 	validator settingsport.WriteValidator
 	plugins   settingsport.PluginSettings
 }
 
 // NewCheckSettings makes the use case. plugins is nil where no plugin host runs.
-func NewCheckSettings(validator settingsport.WriteValidator, plugins settingsport.PluginSettings) *CheckSettings {
-	return &CheckSettings{validator: validator, plugins: plugins}
+func NewCheckSettings(
+	codec settingsport.ValueCodec, validator settingsport.WriteValidator, plugins settingsport.PluginSettings,
+) *CheckSettings {
+	return &CheckSettings{codec: codec, validator: validator, plugins: plugins}
 }
 
 // Execute returns an error wrapping ErrNotASetting for the first entry that is refused.
@@ -31,8 +33,8 @@ func (u *CheckSettings) Execute(entries []settingsdomain.Setting) error {
 }
 
 func (u *CheckSettings) check(one settingsdomain.Setting) error {
-	var value any
-	if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
+	value, err := u.codec.Decode(one.JSON)
+	if err != nil {
 		return err
 	}
 	if err := u.validator.CheckWrite(one.Path, value); err != nil {

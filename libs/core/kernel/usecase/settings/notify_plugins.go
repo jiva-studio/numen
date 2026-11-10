@@ -2,7 +2,6 @@ package settings
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
@@ -13,6 +12,7 @@ import (
 
 // NotifyPlugins gives the plugins the settings that changed.
 type NotifyPlugins struct {
+	codec          settingsport.ValueCodec
 	plugins        settingsport.PluginSettings
 	config         settingsport.PluginConfig
 	refreshSecrets settingsport.SecretRefresh
@@ -24,11 +24,11 @@ type NotifyPlugins struct {
 // NewNotifyPlugins makes the use case. signal is called once the plugins have been told, and is
 // nil where nobody waits for it.
 func NewNotifyPlugins(
-	plugins settingsport.PluginSettings, config settingsport.PluginConfig, refreshSecrets settingsport.SecretRefresh,
+	codec settingsport.ValueCodec, plugins settingsport.PluginSettings, config settingsport.PluginConfig, refreshSecrets settingsport.SecretRefresh,
 	resolveProfile settingsport.ProfileResolver, signal func(), report func(error),
 ) *NotifyPlugins {
 	return &NotifyPlugins{
-		plugins: plugins, config: config, refreshSecrets: refreshSecrets,
+		codec: codec, plugins: plugins, config: config, refreshSecrets: refreshSecrets,
 		resolveProfile: resolveProfile, signal: signal, report: report,
 	}
 }
@@ -52,9 +52,10 @@ func (u *NotifyPlugins) Execute(batch []settingsdomain.Setting) {
 				u.report(fmt.Errorf("configure the plugins after the secrets changed: %w", err))
 			}
 		case slices.Equal(one.Path, performancePath):
-			var profile string
-			if err := json.Unmarshal([]byte(one.JSON), &profile); err != nil {
-				u.report(err)
+			value, err := u.codec.Decode(one.JSON)
+			profile, isText := value.(string)
+			if err != nil || !isText {
+				u.report(fmt.Errorf("the performance profile is not a name: %s", one.JSON))
 				continue
 			}
 			u.config.SetPerformanceProfile(context.Background(), u.resolveProfile(profile))
@@ -76,8 +77,8 @@ func (u *NotifyPlugins) updatePluginSettings(entries []settingsdomain.Setting) {
 		if !settingsdomain.IsPluginSetting(one.Path) {
 			continue
 		}
-		var value any
-		if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
+		value, err := u.codec.Decode(one.JSON)
+		if err != nil {
 			continue
 		}
 		if err := u.plugins.UpdatePluginSetting(context.Background(), one.Path[0], one.Path[1], value); err != nil {

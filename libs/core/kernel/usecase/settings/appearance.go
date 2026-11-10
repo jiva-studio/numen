@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -50,12 +49,13 @@ func getAppearanceValue(stored settingsdomain.Stored, key string) any {
 // WriteAppearance writes the theme, the mode and the scales into the settings file. A scale of zero
 // leaves the stored one as it is.
 type WriteAppearance struct {
+	codec settingsport.ValueCodec
 	write *WriteSettings
 }
 
 // NewWriteAppearance makes the use case over the settings writer.
-func NewWriteAppearance(write *WriteSettings) *WriteAppearance {
-	return &WriteAppearance{write: write}
+func NewWriteAppearance(codec settingsport.ValueCodec, write *WriteSettings) *WriteAppearance {
+	return &WriteAppearance{codec: codec, write: write}
 }
 
 // Execute writes the appearance.
@@ -81,11 +81,11 @@ func (u *WriteAppearance) Execute(selected themedomain.Appearance) error {
 	}
 	writing := make([]settingsdomain.Setting, 0, len(values))
 	for _, one := range values {
-		encoded, err := json.Marshal(one.value)
+		encoded, err := u.codec.Encode(one.value)
 		if err != nil {
 			return fmt.Errorf("%s: %w", strings.Join(one.path, "."), err)
 		}
-		writing = append(writing, settingsdomain.Setting{Path: one.path, JSON: string(encoded)})
+		writing = append(writing, settingsdomain.Setting{Path: one.path, JSON: encoded})
 	}
 	return u.write.Execute(writing)
 }

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"errors"
 	"strings"
 
@@ -15,6 +14,7 @@ import (
 // ListSettingValues lists the value in force of every declared setting: the stored value, else the
 // default its owner declares.
 type ListSettingValues struct {
+	codec    settingsport.ValueCodec
 	file     settingsport.SettingsFile
 	defaults settingsport.Defaults
 	app      settingsport.AppDeclarations
@@ -25,10 +25,10 @@ type ListSettingValues struct {
 // NewListSettingValues makes the use case. plugins and late are nil where there are no plugin host
 // and no program list.
 func NewListSettingValues(
-	file settingsport.SettingsFile, defaults settingsport.Defaults, app settingsport.AppDeclarations,
+	codec settingsport.ValueCodec, file settingsport.SettingsFile, defaults settingsport.Defaults, app settingsport.AppDeclarations,
 	plugins settingsport.PluginInfos, late settingsport.LatePrograms,
 ) *ListSettingValues {
-	return &ListSettingValues{file: file, defaults: defaults, app: app, plugins: plugins, late: late}
+	return &ListSettingValues{codec: codec, file: file, defaults: defaults, app: app, plugins: plugins, late: late}
 }
 
 // Execute lists the values the file holds, with the defaults for the rest.
@@ -49,12 +49,12 @@ func (u *ListSettingValues) list(stored settingsdomain.Stored) (settingsdomain.V
 	values := settingsdomain.Values{}
 	var failures []error
 	add := func(path []string, value any) {
-		encoded, err := json.Marshal(value)
+		encoded, err := u.codec.Encode(value)
 		if err != nil {
 			failures = append(failures, err)
 			return
 		}
-		values[settingsdomain.JoinPath(path)] = string(encoded)
+		values[settingsdomain.JoinPath(path)] = encoded
 	}
 	for _, declared := range u.app.GetAppDeclaration() {
 		path := append([]string{settingsdomain.AppOwner}, strings.Split(declared.Key, ".")...)

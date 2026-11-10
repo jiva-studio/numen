@@ -2,6 +2,7 @@ package settings_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"slices"
 	"strings"
@@ -116,3 +117,17 @@ func (p pluginInfos) GetPluginInfos() []plugin.Info { return p }
 type latePrograms []agent.Program
 
 func (l latePrograms) GetLate() []agent.Program { return l }
+
+// jsonCodec is the JSON the settings are held as.
+type jsonCodec struct{}
+
+func (jsonCodec) Decode(text string) (any, error) {
+	var value any
+	err := json.Unmarshal([]byte(text), &value)
+	return value, err
+}
+
+func (jsonCodec) Encode(value any) (string, error) {
+	encoded, err := json.Marshal(value)
+	return string(encoded), err
+}

@@ -165,3 +165,24 @@ type AppDeclaration struct{}
 
 // GetAppDeclaration returns the settings the shell declares.
 func (AppDeclaration) GetAppDeclaration() []manifest.Setting { return GetAppDeclaration() }
+
+// JSONCodec converts the values of settings to and from JSON.
+type JSONCodec struct{}
+
+// Decode returns the value the JSON stands for.
+func (JSONCodec) Decode(text string) (any, error) {
+	var value any
+	if err := json.Unmarshal([]byte(text), &value); err != nil {
+		return nil, err
+	}
+	return value, nil
+}
+
+// Encode returns the JSON of the value.
+func (JSONCodec) Encode(value any) (string, error) {
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	return string(encoded), nil
+}

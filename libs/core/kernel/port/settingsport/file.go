@@ -29,3 +29,12 @@ type WriteValidator interface {
 	// CheckWrite returns the reason the value is refused, and nil where it is accepted.
 	CheckWrite(path []string, value any) error
 }
+
+// ValueCodec converts the value of a setting between the JSON the settings hold it as and the value
+// it stands for.
+type ValueCodec interface {
+	// Decode returns the value the JSON stands for, or the reason it is no JSON.
+	Decode(json string) (any, error)
+	// Encode returns the JSON of the value.
+	Encode(value any) (string, error)
+}

@@ -29,9 +29,9 @@ func TestReadAppearanceReadsTheAppearanceOfTheFile(t *testing.T) {
 func TestWriteAppearanceWritesTheModeAsAWordAndSkipsAScaleOfZero(t *testing.T) {
 	file := &memoryFile{}
 	known := [][]string{{"app", "appearance", "theme"}, {"app", "appearance", "mode"}, {"app", "appearance", "textScale"}}
-	write := settings.NewWriteSettings(settings.NewCheckSettings(refusingValidator{known: known}, nil), file, refreshRecorder{new([]string)})
+	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{known: known}, nil), file, refreshRecorder{new([]string)})
 
-	err := settings.NewWriteAppearance(write).Execute(themedomain.Appearance{ThemeName: "preset:night", Mode: themedomain.Light, TextScale: 1.5})
+	err := settings.NewWriteAppearance(jsonCodec{}, write).Execute(themedomain.Appearance{ThemeName: "preset:night", Mode: themedomain.Light, TextScale: 1.5})
 
 	var got []string
 	for _, one := range file.written {
