@@ -123,7 +123,7 @@ type onTheList struct {
 	second   domain.Vault
 
 	mu       sync.Mutex
-	current    domain.Vault
+	current  domain.Vault
 	expected []domain.Vault
 	failure  error
 }

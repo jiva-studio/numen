@@ -1,13 +1,12 @@
 import { runInBackground } from '@numen/ui'
-import type { VaultCore } from '../vault'
-import type { CommandDeps } from '@/features/command-palette'
+import type { CommandDeps, SearchDeps } from '@/features/command-palette'
 import type { Notes, RunSupport } from '@/entities/command'
 import { formatError } from '@/shared/api/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
 export interface CommandDepsOptions {
-  core: VaultCore
+  core: SearchDeps
   windowTabs: WindowTabs
   reached: Notes
   settingPalette?: { choose: (command: string, item: string) => Promise<void> }

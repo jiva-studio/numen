@@ -115,3 +115,64 @@ describe('a passage searched for', () => {
     ])
   })
 })
+
+describe('the kind of a note found by name', () => {
+  it('is an ordinary note where the answer carries no kind at all', async () => {
+    search.searchNames.mockResolvedValue({
+      found: [{ note: { path: 'Entropy.md', title: 'Entropy' }, ranges: [] }],
+    })
+    expect((await searchCore.names('ent', 8))[0]?.type).toBe('note')
+  })
+
+  it('is drawn as whichever of four the answer names', async () => {
+    search.searchNames.mockResolvedValue({
+      found: [
+        { note: { path: 'Ants.md', title: 'Ants' }, ranges: [], type: '' },
+        { note: { path: 'Animals.md', title: 'Animals' }, ranges: [], type: 'sample' },
+        { note: { path: 'Animal.md', title: 'Animal' }, ranges: [], type: 'form' },
+        { note: { path: 'Daily.md', title: 'Daily' }, ranges: [], type: 'sheet' },
+      ],
+    })
+    expect((await searchCore.names('an', 8)).map((one) => one.type)).toEqual([
+      'note',
+      'sample',
+      'form',
+      'sheet',
+    ])
+  })
+
+  it('is the type a plugin declares as the answer names it', async () => {
+    search.searchNames.mockResolvedValue({
+      found: [{ note: { path: 'Later.md', title: 'Later' }, ranges: [], type: 'later' }],
+    })
+    expect((await searchCore.names('la', 8))[0]?.type).toBe('later')
+  })
+})
+
+describe('the kind of a passage', () => {
+  it('is the kind of the note it was read out of', async () => {
+    search.searchPassages.mockResolvedValue({
+      found: [
+        {
+          path: 'Daily.md',
+          note: { path: 'Daily.md', title: 'Daily' },
+          ranges: [],
+          type: 'sheet',
+        },
+        { path: 'Ants.md', note: { path: 'Ants.md', title: 'Ants' }, ranges: [] },
+      ],
+    })
+    const found = await searchCore.search('an', 'words', 8)
+    expect(found.map((one) => one.type)).toEqual(['sheet', 'note'])
+    expect(found.map((one) => one.isNote)).toEqual([true, true])
+  })
+
+  it('is no note at all where the answer names none', async () => {
+    search.searchPassages.mockResolvedValue({
+      found: [{ path: 'library/mahabharata.epub', text: 'war', ranges: [] }],
+    })
+    const found = await searchCore.search('war', 'words', 8)
+    expect(found[0]?.isNote).toBe(false)
+    expect(found[0]?.type).toBe('note')
+  })
+})

@@ -46,15 +46,16 @@ import (
 func bindNotes(services *Services, db *vaults.Index) {
 	refs, links := db.NoteRefs(), db.Links()
 	neighborhood := query.NewShowNeighbourhood(links, refs)
-	services.Note.getOpeningNote = query.NewGetOpeningNote(db.OpeningNote())
-	services.Note.getTypes = query.NewGetTypes(db.NoteTypes())
-	services.Note.getHeadings = query.NewGetHeadings(db.Headings())
-	services.Note.resolveLinks = query.NewResolveLinks(links)
-	services.Note.showNeighbourhood = &neighborhood
-	services.Note.getLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
+	services.NoteCases.OpeningNote = query.NewGetOpeningNote(db.OpeningNote())
+	services.NoteCases.Types = query.NewGetTypes(db.NoteTypes())
+	services.NoteCases.Headings = query.NewGetHeadings(db.Headings())
+	services.NoteCases.ResolveLinks = query.NewResolveLinks(links)
+	services.NoteCases.Neighbourhood = &neighborhood
+	services.NoteCases.GetLinkAddress = query.NewGetLinkAddress(db.NamedPaths())
+	services.UseNotes()
 	services.Search.GetNameMatches = search.NewGetNameMatches(db.NameMatches())
 	services.Search.GetTitles = query.NewGetTitles(refs)
-	services.Search.GetTypes = services.Note.getTypes
+	services.Search.GetTypes = services.NoteCases.Types
 }
 
 // Vault watcher driven manually by the test, so reading a vault needs no filesystem or timer.
@@ -201,7 +202,8 @@ func openingWith(
 		Places:       newPlaceBroadcaster(),
 	})
 	bindNotes(api, db)
-	api.Note.read, api.Note.write = &read, &writing
+	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
+	api.UseNotes()
 	api.state.setVault(v)
 	if embedder != nil {
 		if err := db.FitVectors(t.Context(), embedder.GetModel().Dimensions, embedder.GetModel().Recipe()); err != nil {
@@ -633,34 +635,6 @@ func TestEverySearchModeIsRead(t *testing.T) {
 		_, named := editorSearch.ConvertSearchModeFromWire(mode)
 		return named
 	})
-}
-
-func TestEveryRelationIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.Relation]domain.Relation{
-		v1.Relation_RELATION_PARENT:  domain.RelationParent,
-		v1.Relation_RELATION_CHILD:   domain.RelationChild,
-		v1.Relation_RELATION_JUMP:    domain.RelationJump,
-		v1.Relation_RELATION_SIBLING: domain.RelationSibling,
-	}, convertRelationToWire)
-}
-
-func TestConvertNoteTypeToWire_MapsPlainNoteToEmpty(t *testing.T) {
-	for typed, want := range map[domain.NoteType]string{
-		domain.TypeNote: "",
-		"sample":        "sample",
-		"sheet":         "sheet",
-	} {
-		if got := convertNoteTypeToWire(typed); got != want {
-			t.Errorf("%q is written as %q, want %q", typed, got, want)
-		}
-	}
-}
-
-func TestEveryNamingIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.NameSource]query.NameSource{
-		v1.NameSource_NAME_SOURCE_FRONTMATTER: query.ByFrontmatter,
-		v1.NameSource_NAME_SOURCE_FILENAME:    query.ByFilename,
-	}, newWireNameSource)
 }
 
 func TestEveryPresenceIsSavedFromOne(t *testing.T) {

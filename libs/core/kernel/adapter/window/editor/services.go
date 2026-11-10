@@ -1,18 +1,12 @@
 package editor
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/libs/core/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/note/domain"
 
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note/query"
-	"github.com/jiva-studio/numen/libs/core/kernel/usecase/tabkind"
-	vaults "github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 
 	agentport "github.com/jiva-studio/numen/libs/core/kernel/usecase/completion/agentcontract"
@@ -33,96 +27,6 @@ func newAgentHandler(state *State) *wire.AgentHandler {
 		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
 		GetUnreachable: state.Unreachable.Why,
 	}
-}
-
-// NoteHandler answers what a vault's notes hold and what changes them.
-type NoteHandler struct {
-	state *State
-
-	getOpeningNote *query.GetOpeningNote
-	getTypes       *query.GetTypes
-	findTabKinds   func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)
-	getHeadings    *query.GetHeadings
-	resolveLinks   *query.ResolveLinks
-
-	read              *note.Read
-	write             *note.Write
-	create            *note.Create
-	editLinks         *note.EditLinks
-	rename            *note.Rename
-	showNeighbourhood *query.ShowNeighbourhood
-	getLinkAddress    *query.GetLinkAddress
-
-	getConnection    *query.GetConnection
-	saveConnection   *note.SaveConnection
-	removeSide       *note.RemoveSide
-	removeConnection *note.RemoveConnection
-	join             *note.Join
-	createInRelation *note.CreateInRelation
-	getBacklinks     *query.GetBacklinks
-}
-
-// NewNoteHandler is the handler of the notes service; the use cases it calls are set after.
-func NewNoteHandler(state *State) *NoteHandler { return &NoteHandler{state: state} }
-
-// SetQueries sets the use cases that read a note from the index.
-func (h *NoteHandler) SetQueries(
-	opening *query.GetOpeningNote, types *query.GetTypes, headings *query.GetHeadings, links *query.ResolveLinks,
-) {
-	h.getOpeningNote, h.getTypes, h.getHeadings, h.resolveLinks = opening, types, headings, links
-}
-
-// SetTabKinds sets how the kind of tab each note opens in is found.
-func (h *NoteHandler) SetTabKinds(find func(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error)) {
-	h.findTabKinds = find
-}
-
-// SetScenarios sets the use cases that read, change and connect notes. The handler keeps pointers
-// into notes, so a use case replaced there is the one it calls.
-func (h *NoteHandler) SetScenarios(notes *note.Scenarios) {
-	h.read = &notes.Read
-	h.write = &notes.Write
-	h.create = &notes.Create
-	h.editLinks = &notes.Linking
-	h.rename = &notes.Rename
-	h.showNeighbourhood = &notes.Neighborhood
-	h.getLinkAddress = notes.GetLinkAddress
-	h.getConnection = &notes.Connection
-	h.saveConnection = &notes.SaveConnection
-	h.removeSide = &notes.RemoveSide
-	h.removeConnection = &notes.RemoveConnection
-	h.join = &notes.Join
-	h.createInRelation = &notes.CreateInRelation
-	h.getBacklinks = &notes.Backlinks
-}
-
-// NewFileHandler is the handler of the files service; the use cases it calls are set after.
-func NewFileHandler(state *State) *FileHandler { return &FileHandler{state: state} }
-
-// SetFolders sets the use cases that list what a folder of the vault holds and make one.
-func (h *FileHandler) SetFolders(entries *file.GetFolderEntries, kinds *file.GetFileKinds, create *file.CreateFolder) {
-	h.getFolderEntries, h.getFileKinds, h.createFolder = entries, kinds, create
-}
-
-// SetTabKindChoice sets the choice of the kind of tab a note opens in, or none.
-func (h *FileHandler) SetTabKindChoice(choose *tabkind.Choose) { h.chooseTabKind = choose }
-
-// SetScenarios sets the use cases that move and remove files. The handler keeps pointers into
-// notes and target, so a use case replaced there is the one it calls.
-func (h *FileHandler) SetScenarios(notes *note.Scenarios, target *vaults.Scenarios) {
-	h.remove = &notes.Remove
-	h.emptyTrash = &notes.EmptyTrash
-	h.move = &target.Move
-}
-
-// ListTabKinds is the kind of tab each of the files opens in.
-func (h *FileHandler) ListTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
-	return h.listTabKinds(ctx, v, paths)
-}
-
-// NewMediaHandler is the handler of the media service over the use cases that find a file.
-func NewMediaHandler(state *State, resolve *file.ResolveAddress, types *file.GetMediaType) *MediaHandler {
-	return &MediaHandler{state: state, resolveAddress: resolve, mediaTypes: types}
 }
 
 // NewFileServer is the server of the files over the loopback socket.

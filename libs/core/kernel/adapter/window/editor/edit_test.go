@@ -160,7 +160,8 @@ func openEditor(t *testing.T, notes map[string]string) *Services {
 		vaultreader.Readers{}, vaultwriter.VaultWriters{Locks: vaultwriter.NewLocks()}, levelNothing, testsupport.NewClock())
 	read := note.NewRead(vaultreader.Readers{})
 	api := newBareServices()
-	api.Note.read, api.Note.write = &read, &writing
+	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
+	api.UseNotes()
 	api.state.setVault(testsupport.NewVault(t, notes))
 	return api
 }
@@ -305,7 +306,8 @@ func TestJoinNote_ReportsConflictWhenNoteChanged(t *testing.T) {
 		levelNothing,
 		testsupport.NewClock(),
 	)
-	api.Note.editLinks = &linking
+	api.NoteCases.EditLinks = &linking
+	api.UseNotes()
 
 	out, err := api.Note.WriteLink(t.Context(), connect.NewRequest(&v1.WriteLinkRequest{
 		Path: "Heat.md",
@@ -353,7 +355,8 @@ func TestEditLoad(t *testing.T) {
 		Places:       newPlaceBroadcaster(),
 	})
 	bindNotes(api, db)
-	api.Note.read, api.Note.write = &read, &writing
+	api.NoteCases.Read, api.NoteCases.Write = &read, &writing
+	api.UseNotes()
 	api.state.Indexing.Progress = db.Progress()
 	api.state.setVault(v)
 
@@ -377,7 +380,7 @@ func TestEditLoad(t *testing.T) {
 	body := "# Heat\n\nA line nobody wrote before, at " + strconv.FormatInt(testsupport.GetMachine().Now().UnixNano(), 10) + ".\n"
 
 	saving := testsupport.GetMachine().Now()
-	if _, err := api.Note.write.Save(t.Context(), v, path, body, nil); err != nil {
+	if _, err := api.NoteCases.Write.Save(t.Context(), v, path, body, nil); err != nil {
 		t.Fatal(err)
 	}
 	wrote := testsupport.GetMachine().Now().Sub(saving)

@@ -5,7 +5,7 @@ import type { SlotCommand } from '@numen/plugin-loader'
 import { WORDS as words } from '@/shared/words'
 import { createAppCommands } from '@/testing/appCommands'
 import { runSupport } from '../model/palette/runSupport'
-import { useCommandPalette } from '../model/palette/palette'
+import { createCommandPalette } from '../model/palette/palette'
 import { useSearch, type NameMatch, type Passage, type SearchDeps } from '../model/search/search'
 import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '@/entities/command'
@@ -91,7 +91,7 @@ async function mountField(
     getTarget: () => inFront,
     menu: { getEntries: () => [SHOW] },
   })
-  const commands = useCommandPalette(
+  const commands = createCommandPalette(
     { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
     words,
     () => inFront,
@@ -255,7 +255,7 @@ describe('the highlight of the search menu as groups answer', () => {
       getTarget: () => inFront,
       menu: { getEntries: () => [SHOW] },
     })
-    const commands = useCommandPalette(
+    const commands = createCommandPalette(
       { names: async () => [], vaults: async () => ({ vaults: [], showing: '' }) },
       words,
       () => inFront,

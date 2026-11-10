@@ -1,4 +1,4 @@
-package editor
+package note
 
 import (
 	"context"
@@ -18,10 +18,10 @@ import (
 )
 
 // ReadNote hands the client the prose of a note.
-func (h *NoteHandler) ReadNote(
+func (h *Prose) ReadNote(
 	ctx context.Context, r *connect.Request[v1.ReadNoteRequest],
 ) (*connect.Response[v1.ReadNoteResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -43,31 +43,29 @@ func (h *NoteHandler) ReadNote(
 // WriteNote writes prose into a note. If the note still contains the prose the
 // client read, it is overwritten; if it contains different content, it is left
 // unchanged and the client is notified that the note changed.
-func (h *NoteHandler) WriteNote(
+func (h *Prose) WriteNote(
 	ctx context.Context, r *connect.Request[v1.WriteNoteRequest],
 ) (*connect.Response[v1.WriteNoteResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
 	// The counter wraps the write, not the response, so closing waits for
 	// writes that reach the vault.
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault has happened, so the response carries the
 	// file stat the client uses at its next save. The response also sets
 	// IsIndexOutdated when the index did not follow, because the prose is on disk
 	// but search does not include it.
-	indexOutdated := h.state.isIndexOutdated(err)
+	indexOutdated := h.writes.IsIndexOutdated(err)
 	if err == nil || indexOutdated {
 		// The written prose requires new vectors. The pending chunks are
 		// tracked in the index, so several saves are embedded in one pass.
-		if h.state.NotifyNoteWritten != nil {
-			h.state.NotifyNoteWritten()
-		}
+		h.writes.NoteWritten()
 		return connect.NewResponse(&v1.WriteNoteResponse{
 			At: convertFileStatToWire(pos), IsIndexOutdated: indexOutdated,
 		}), nil
@@ -84,21 +82,21 @@ func (h *NoteHandler) WriteNote(
 //
 // The index is synchronized before the response, so the note is searchable as
 // soon as it is on disk.
-func (h *NoteHandler) CreateNote(
+func (h *Prose) CreateNote(
 	ctx context.Context, r *connect.Request[v1.CreateNoteRequest],
 ) (*connect.Response[v1.CreateNoteResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	links, err := h.getLinks(ctx, r.Msg.GetLinks())
+	links, err := h.addresses.getLinks(ctx, r.Msg.GetLinks())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	creating := note.NewNote{Title: r.Msg.GetTitle(), Path: r.Msg.GetPath(), Links: links}
 	var made note.CreateResult
@@ -110,7 +108,7 @@ func (h *NoteHandler) CreateNote(
 	} else {
 		made, err = h.create.Execute(ctx, showing, creating)
 	}
-	indexOutdated := h.state.isIndexOutdated(err)
+	indexOutdated := h.writes.IsIndexOutdated(err)
 	if made.Path != "" {
 		// The note is on disk under that name, so the response carries it. The
 		// index catches up after the write, and the watcher repeats that
@@ -131,21 +129,21 @@ func (h *NoteHandler) CreateNote(
 
 // WriteLink writes one relationship into one note. What is already written
 // there is carried across, and the note at the other end is left alone.
-func (h *NoteHandler) WriteLink(
+func (h *Links) WriteLink(
 	ctx context.Context, r *connect.Request[v1.WriteLinkRequest],
 ) (*connect.Response[v1.WriteLinkResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	link, err := h.toDomainLink(ctx, r.Msg.GetLink())
+	link, err := h.addresses.toDomainLink(ctx, r.Msg.GetLink())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	// at the moment it is made.
 	if _, err := h.editLinks.Add(
@@ -160,10 +158,10 @@ func (h *NoteHandler) WriteLink(
 	return connect.NewResponse(&v1.WriteLinkResponse{}), nil
 }
 
-func (h *NoteHandler) GetOpeningNote(
+func (h *Outline) GetOpeningNote(
 	ctx context.Context, _ *connect.Request[v1.GetOpeningNoteRequest],
 ) (*connect.Response[v1.GetOpeningNoteResponse], error) {
-	showing := h.state.GetCurrentVault()
+	showing := h.vault.GetCurrentVault()
 	if showing.ID == "" {
 		// A window standing on nothing opens on no note.
 		return connect.NewResponse(&v1.GetOpeningNoteResponse{}), nil
@@ -180,10 +178,10 @@ func (h *NoteHandler) GetOpeningNote(
 	return connect.NewResponse(out), nil
 }
 
-func (h *NoteHandler) GetNeighbourhood(
+func (h *Outline) GetNeighbourhood(
 	ctx context.Context, r *connect.Request[v1.GetNeighbourhoodRequest],
 ) (*connect.Response[v1.GetNeighbourhoodResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -228,10 +226,10 @@ func (h *NoteHandler) GetNeighbourhood(
 
 // ResolveAddresses answers where addresses written in one note land, and where
 // the wikilinks of a text land, in the vault the window shows.
-func (h *NoteHandler) ResolveAddresses(
+func (h *Links) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -245,13 +243,13 @@ func (h *NoteHandler) ResolveAddresses(
 	return connect.NewResponse(out), nil
 }
 
-func (h *NoteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
+func (a *Addresses) getLinks(ctx context.Context, links []*v1.Link) ([]domain.Link, error) {
 	if len(links) == 0 {
 		return nil, nil
 	}
 	out := make([]domain.Link, 0, len(links))
 	for _, l := range links {
-		link, err := h.toDomainLink(ctx, l)
+		link, err := a.toDomainLink(ctx, l)
 		if err != nil {
 			return nil, err
 		}
@@ -260,7 +258,7 @@ func (h *NoteHandler) getLinks(ctx context.Context, links []*v1.Link) ([]domain.
 	return out, nil
 }
 
-func (h *NoteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
+func (a *Addresses) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link, error) {
 	role, ok := wire.ConvertRoleFromWire(l.GetRole())
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link has the role %v", l.GetRole())
@@ -272,7 +270,7 @@ func (h *NoteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link
 	if !ok {
 		return domain.Link{}, fmt.Errorf("no link has the marker %v", l.GetMarker())
 	}
-	target, err := h.getAddress(ctx, l.GetTo())
+	target, err := a.getAddress(ctx, l.GetTo())
 	if err != nil {
 		return domain.Link{}, err
 	}
@@ -281,8 +279,8 @@ func (h *NoteHandler) toDomainLink(ctx context.Context, l *v1.Link) (domain.Link
 	}, nil
 }
 
-func (h *NoteHandler) getAddress(ctx context.Context, to string) (domain.Address, error) {
-	return h.getLinkAddress.Execute(ctx, h.state.GetCurrentVault(), to)
+func (a *Addresses) getAddress(ctx context.Context, to string) (domain.Address, error) {
+	return a.get.Execute(ctx, a.vault.GetCurrentVault(), to)
 }
 
 func convertNoteToWire(n domain.NoteRef) *v1.Note {
@@ -327,11 +325,11 @@ func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 
 // ListHeadings hands the client the headings of the notes the filter names. A
 // window standing on nothing holds no note to divide.
-func (h *NoteHandler) ListHeadings(
+func (h *Outline) ListHeadings(
 	ctx context.Context,
 	r *connect.Request[v1.ListHeadingsRequest],
 ) (*connect.Response[v1.ListHeadingsResponse], error) {
-	showing := h.state.GetCurrentVault()
+	showing := h.vault.GetCurrentVault()
 	if showing.ID == "" {
 		return connect.NewResponse(&v1.ListHeadingsResponse{}), nil
 	}
@@ -366,12 +364,12 @@ func (h *NoteHandler) ListHeadings(
 
 // WatchEdits streams each change to a note's prose as it happens, until the
 // client disconnects.
-func (h *NoteHandler) WatchEdits(
+func (h *Handler) WatchEdits(
 	ctx context.Context,
 	_ *connect.Request[v1.WatchEditsRequest],
 	out *connect.ServerStream[v1.WatchEditsResponse],
 ) error {
-	line, isDone := h.state.Edits.subscribe()
+	line, isDone := h.edits.SubscribeEdits()
 	defer isDone()
 
 	// The empty first message confirms the stream is open; without it a stream
@@ -409,17 +407,17 @@ func (h *NoteHandler) WatchEdits(
 }
 
 // RenameNote gives a note a different name.
-func (h *NoteHandler) RenameNote(
+func (h *Prose) RenameNote(
 	ctx context.Context, r *connect.Request[v1.RenameNoteRequest],
 ) (*connect.Response[v1.RenameNoteResponse], error) {
-	showing, err := h.state.getCurrentVault()
+	showing, err := getShownVault(h.vault)
 	if err != nil {
 		return nil, err
 	}
-	if !h.state.Writing.begin() {
+	if !h.writes.BeginWrite() {
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
-	defer h.state.Writing.finish()
+	defer h.writes.FinishWrite()
 
 	renamed, err := h.rename.Execute(ctx, showing, r.Msg.GetPath(), r.Msg.GetTitle())
 	out := &v1.RenameNoteResponse{
@@ -430,7 +428,7 @@ func (h *NoteHandler) RenameNote(
 	if renamed.Moved != nil {
 		out.Moved = newMoveResult(*renamed.Moved)
 	}
-	out.IsIndexOutdated = h.state.isIndexOutdated(err)
+	out.IsIndexOutdated = h.writes.IsIndexOutdated(err)
 	if err != nil && !out.GetIsIndexOutdated() {
 		reason, ok := wire.GetErrorCode(err)
 		switch {
@@ -463,7 +461,7 @@ func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 	}
 }
 
-func (h *NoteHandler) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
+func (h *Outline) listTabKinds(ctx context.Context, v domain.Vault, paths []string) (map[string]string, error) {
 	if h.findTabKinds == nil {
 		return map[string]string{}, nil
 	}
