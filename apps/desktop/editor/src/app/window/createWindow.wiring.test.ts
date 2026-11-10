@@ -162,7 +162,7 @@ interface FrontTab {
 /** The front tab, as the window's tabs provide it. */
 const front = ref<FrontTab | null>(null)
 
-const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) })
+const createKind = (on: unknown) => ({ name: 'kind', address: { getTarget: vi.fn(() => on) } })
 
 beforeEach(() => {
   front.value = null
@@ -330,7 +330,7 @@ describe('what the window answers about the tab in front', () => {
       vault: { id: 'vault' },
       isReady: true,
     })
-    expect(kind.getTarget).toHaveBeenCalledWith({ target: 1 })
+    expect(kind.address.getTarget).toHaveBeenCalledWith({ target: 1 })
   })
 
   it('remains over nothing where the tab in front is not retained', () => {

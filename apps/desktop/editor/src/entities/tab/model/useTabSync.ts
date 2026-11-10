@@ -36,7 +36,11 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
     if (shownPath !== undefined) return shownPath
     const tab = windowTabs.tabs.getTab(tabId)
     if (!tab) return ''
-    return tab.kind.getOpenTab?.(tab.state).path || tab.kind.getTarget?.(tab.state).path || ''
+    return (
+      tab.kind.address?.getOpenTab?.(tab.state).path ||
+      tab.kind.address?.getTarget?.(tab.state).path ||
+      ''
+    )
   }
 
   /** Removes the echo of a tab and returns the path it expected, if any. */
@@ -64,11 +68,11 @@ function createTabMover({ windowTabs, onError }: Pick<TabSyncDeps, 'windowTabs' 
    */
   const moveTab = (tabId: TabId, path: string, title: string) => {
     const target = windowTabs.tabs.getTab(tabId)
-    if (!target?.kind.navigate) return
+    if (!target?.kind.address?.navigate) return
     echoPaths.set(tabId, path)
     shownPaths.set(tabId, path)
     try {
-      const navigation = target.kind.navigate(target.state, path, title)
+      const navigation = target.kind.address.navigate(target.state, path, title)
       if (!navigation) {
         forgetEcho(tabId, path)
         return

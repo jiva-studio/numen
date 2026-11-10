@@ -180,7 +180,8 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
     registerKind: (kind) => {
       const unregisterKind = windowTabs.groups.registerKind(kind)
-      const unregisterIcon = kind.icon ? registerTabKindIcon(kind.kind, kind.icon) : () => undefined
+      const icon = kind.display?.icon
+      const unregisterIcon = icon ? registerTabKindIcon(kind.kind, icon) : () => undefined
       return () => {
         unregisterKind()
         unregisterIcon()

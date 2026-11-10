@@ -27,7 +27,7 @@ import {
   type Unvalidated,
 } from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '../styles'
-import type { AnyTabKind, OpenTab, TabKind } from './tabKinds'
+import type { AnyTabKind, OpenTab, TabKind, TabKindAddress, TabKindDisplay } from './tabKinds'
 import {
   attachPluginRoot,
   extractFilename,
@@ -41,7 +41,7 @@ import {
 } from './pane/pluginView'
 import { createNoteWriter, startNoteRead } from './customTabNote'
 import type { PluginHostDeps } from './types'
-import { pickDeclaredHooks } from './pluginTabKind'
+import { pickDeclaredParts } from './pluginTabKind'
 import { NOTE_KIND, createBufferedNoteState } from './customTabBuffer'
 
 export function createPluginPaneWrapper(
@@ -135,7 +135,7 @@ type ReaderState = ReturnType<typeof createReaderState>
 const getReaderOpenTab = (state: ReaderState): OpenTab =>
   state.reported ? { path: state.path, place: { ...state.reported } } : { path: state.path }
 
-export function getReaderTabKind(
+export function createReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
   getContext?: () => PluginContext | undefined,
@@ -143,23 +143,28 @@ export function getReaderTabKind(
   const kindId = registration.id.startsWith('reader:')
     ? registration.id
     : `reader:${registration.id}`
-  const kind: TabKind<ReaderState> = {
-    kind: kindId,
-    pluginId,
-    ...(registration.icon ? { icon: registration.icon } : {}),
-    open: (targetPath, _id, saved) => createReaderState(pluginId, targetPath, saved),
-    getState: (state) => state.place ?? undefined,
+  const display: TabKindDisplay<ReaderState> = {
     onShow: (state) => {
       state.measure()
       state.focusTab()
     },
+    ...(registration.icon ? { icon: registration.icon } : {}),
+  }
+  const kind: TabKind<ReaderState> = {
+    kind: kindId,
+    pluginId,
+    open: (targetPath, _id, saved) => createReaderState(pluginId, targetPath, saved),
+    pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
     // A reader may keep the title as a ref, which the state of a tab does not unwrap.
     getTitle: (state) =>
       parseTitle(state.title) || extractFilename(state.path) || registration.title || '',
-    pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
-    identity: (targetPath) => targetPath,
-    getTarget: (state) => ({ file: state.path, path: state.path, title: state.title }),
-    getOpenTab: getReaderOpenTab,
+    display,
+    address: {
+      getState: (state) => state.place ?? undefined,
+      identity: (targetPath) => targetPath,
+      getTarget: (state) => ({ file: state.path, path: state.path, title: state.title }),
+      getOpenTab: getReaderOpenTab,
+    },
   }
   return kind
 }
@@ -263,13 +268,28 @@ function notifyCustomTabShown(
   if (state.path) deps.getWorkspace()?.files.syncPath(id, state.path, state.title)
 }
 
-export function getCustomTabKind(
+export function createCustomTabKind(
   pluginId: string,
   registration: TabKindRegistration,
   deps?: PluginHostDeps & {
     readonly getContext?: (() => PluginContext | undefined) | undefined
   },
 ): AnyTabKind {
+  const declared = pickDeclaredParts(registration)
+  const display: TabKindDisplay<CustomTabState> = {
+    onShow: (state, id) => notifyCustomTabShown(state, id, deps),
+    ...declared.display,
+  }
+  const address: TabKindAddress<CustomTabState> = {
+    identity: (targetPath) => targetPath || registration.kind,
+    navigate: (state, targetPath, title) => {
+      if (!isNotePath(targetPath)) return
+      state.navigate(targetPath, title)
+    },
+    getTarget: (state) => resolveCustomTabTarget(state, registration),
+    getOpenTab: (state) => ({ path: state.path }),
+    ...declared.address,
+  }
   const kind: TabKind<CustomTabState> = {
     kind: registration.kind,
     pluginId,
@@ -285,21 +305,15 @@ export function getCustomTabKind(
         },
       )
     },
+    pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
     getTitle: (state) =>
       state.title ||
       stripMarkdownExtension(extractFilename(state.path)) ||
       registration.title ||
       registration.kind,
-    pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
-    identity: (targetPath) => targetPath || registration.kind,
-    onShow: (state, id) => notifyCustomTabShown(state, id, deps),
-    navigate: (state, targetPath, title) => {
-      if (!isNotePath(targetPath)) return
-      state.navigate(targetPath, title)
-    },
-    getTarget: (state) => resolveCustomTabTarget(state, registration),
-    getOpenTab: (state) => ({ path: state.path }),
-    ...pickDeclaredHooks(registration),
+    display,
+    events: declared.events,
+    address,
   }
   return kind
 }

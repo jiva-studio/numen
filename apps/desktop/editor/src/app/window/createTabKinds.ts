@@ -29,7 +29,7 @@ function formatLocalDate(date: Date): string {
 function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessage: MessageWriter) {
   return {
     askQuestion: (text: string): void => {
-      const textKind = windowTabs.groups.findKind((kind) => kind.receiveText !== undefined)
+      const textKind = windowTabs.groups.findKind((kind) => kind.events?.receiveText !== undefined)
       if (!textKind) {
         writeMessage(
           'The agent chat is not available: its plugin is off or did not start.',
@@ -62,9 +62,11 @@ export function createTabKinds(deps: WindowKindsDeps) {
       .map((one) => windowTabs.tabs.getTab(one.id))
       .find(
         (one) =>
-          one?.kind.isTool && one.kind.navigate !== undefined && one.kind.getTarget !== undefined,
+          one?.kind.display?.isTool &&
+          one.kind.address?.navigate !== undefined &&
+          one.kind.address?.getTarget !== undefined,
       )
-    const target = last?.kind.getTarget?.(last.state)
+    const target = last?.kind.address?.getTarget?.(last.state)
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }
 

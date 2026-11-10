@@ -30,10 +30,10 @@ export function useSettingsTab(
       }
       return state
     },
-    getTitle: () => words.settings,
     pane: SettingsTab,
-    identity: () => SETTINGS,
-    isTool: true,
+    getTitle: () => words.settings,
+    display: { isTool: true },
+    address: { identity: () => SETTINGS },
   }
 
   /** Opens the settings tab, optionally at one plugin or with a search filter. */

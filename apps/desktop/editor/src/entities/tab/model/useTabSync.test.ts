@@ -18,8 +18,10 @@ const createWindowTabs = (
           state: one.state,
           kind: {
             kind: id.split(':')[0],
-            ...(one.navigate ? { navigate: one.navigate } : {}),
-            ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
+            address: {
+              ...(one.navigate ? { navigate: one.navigate } : {}),
+              ...(one.path ? { getOpenTab: () => ({ path: one.path }) } : {}),
+            },
           },
         }
       },

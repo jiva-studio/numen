@@ -14,8 +14,8 @@ describe('createUnavailableKind', () => {
     const state = kind.open('/a.bin', 'tab')
 
     expect(kind.kind).toBe('reader:viewer')
-    expect(kind.getOpenTab?.(state)).toEqual({ path: '/a.bin' })
-    expect(kind.identity?.('/a.bin')).toBe('/a.bin')
+    expect(kind.address?.getOpenTab?.(state)).toEqual({ path: '/a.bin' })
+    expect(kind.address?.identity?.('/a.bin')).toBe('/a.bin')
   })
 
   it('keeps the state the plugin saved for the tab', () => {
@@ -23,7 +23,7 @@ describe('createUnavailableKind', () => {
 
     const state = kind.open('a.bin', 'tab', { page: 4 })
 
-    expect(kind.getState?.(state)).toEqual({ page: 4 })
+    expect(kind.address?.getState?.(state)).toEqual({ page: 4 })
     expect(kind.getTitle?.(state)).toBe('a.bin')
   })
 
@@ -31,7 +31,7 @@ describe('createUnavailableKind', () => {
     const icon = { name: 'FilesIcon' }
     const kind = createUnavailableKind(UnavailablePane, 'files', { title: 'Files', icon })
 
-    expect(kind.icon).toBe(icon)
+    expect(kind.display?.icon).toBe(icon)
     expect(kind.getTitle?.(kind.open('', 'tab'))).toBe('Files')
   })
 

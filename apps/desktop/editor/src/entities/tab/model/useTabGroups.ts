@@ -44,7 +44,7 @@ export function useTabGroups(store: TabStore) {
     folder: string,
     name: string,
   ): Promise<Result<{ path: string }, string>> | undefined =>
-    byKind.value.get(kind)?.createFile?.(folder, name)
+    byKind.value.get(kind)?.address?.createFile?.(folder, name)
 
   return {
     registerKinds,

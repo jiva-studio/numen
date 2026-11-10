@@ -30,11 +30,13 @@ export const createRestoreFailedKind = (
       saved,
       message: error instanceof Error ? error.message : String(error),
     }),
-    getTitle: (state) => title || state.targetPath.split('/').pop() || kind,
-    getOpenTab: (state) => ({ path: state.targetPath }),
-    getState: (state) => state.saved,
     pane,
-    identity: (targetPath: string) => targetPath,
+    getTitle: (state) => title || state.targetPath.split('/').pop() || kind,
+    address: {
+      getState: (state) => state.saved,
+      getOpenTab: (state) => ({ path: state.targetPath }),
+      identity: (targetPath: string) => targetPath,
+    },
   }
   return restoreFailed
 }

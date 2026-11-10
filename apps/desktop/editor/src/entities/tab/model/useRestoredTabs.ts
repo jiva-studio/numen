@@ -13,10 +13,13 @@ import { useTabPanes } from './useTabPanes'
 import type { Caught } from '@/shared/api/errors'
 
 const comparePlacement = (one: AnyTabKind, other: AnyTabKind): number => {
-  // Stryker disable next-line OptionalChaining: comparePlacement is only called on kinds filtered by kind.placement.
-  const rank = (kind: AnyTabKind) => (kind.placement?.pane === 'main' ? 0 : 1)
+  // Stryker disable next-line OptionalChaining: comparePlacement is only called on kinds filtered by kind.display.placement.
+  const rank = (kind: AnyTabKind) => (kind.display?.placement?.pane === 'main' ? 0 : 1)
   // Stryker disable next-line OptionalChaining,LogicalOperator: comparePlacement is only called on kinds with placement.order defined.
-  return rank(one) - rank(other) || (one.placement?.order ?? 0) - (other.placement?.order ?? 0)
+  return (
+    rank(one) - rank(other) ||
+    (one.display?.placement?.order ?? 0) - (other.display?.placement?.order ?? 0)
+  )
 }
 
 /** The error callback for a placed kind whose tab failed to open. */
@@ -29,11 +32,11 @@ async function createPlacedWorkspace(
 ): Promise<Workspace> {
   const main: string[] = []
   const aside: string[] = []
-  for (const one of kinds.filter((kind) => kind.placement).sort(comparePlacement)) {
+  for (const one of kinds.filter((kind) => kind.display?.placement).sort(comparePlacement)) {
     try {
       const id = await createTab(one.kind)
-      // Stryker disable next-line OptionalChaining: kinds are filtered by kind.placement above.
-      if (one.placement?.pane === 'main') main.push(id)
+      // Stryker disable next-line OptionalChaining: kinds are filtered by kind.display.placement above.
+      if (one.display?.placement?.pane === 'main') main.push(id)
       else aside.push(id)
     } catch (error) {
       onError(one.kind, error)
@@ -72,7 +75,7 @@ export function useRestoredTabs(store: TabStore) {
     for (const one of saved) {
       if (!open.value.has(one.id)) openers.openSavedTab(one)
       const kind = byKind.value.get(one.kind)
-      if (kind?.placement?.pane === 'aside') aside.push(one.id)
+      if (kind?.display?.placement?.pane === 'aside') aside.push(one.id)
       else main.push(one.id)
     }
     layout.value = createWorkspace(main, aside)

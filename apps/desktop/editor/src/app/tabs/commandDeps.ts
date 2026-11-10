@@ -43,9 +43,9 @@ function tabMatchesPath(
   path: string,
 ): boolean {
   if (!windowTab) return false
-  const openPath = windowTab.kind.getOpenTab?.(windowTab.state).path
+  const openPath = windowTab.kind.address?.getOpenTab?.(windowTab.state).path
   if (openPath === path) return true
-  const target = windowTab.kind.getTarget?.(windowTab.state)
+  const target = windowTab.kind.address?.getTarget?.(windowTab.state)
   return target?.file === path || target?.path === path
 }
 
@@ -70,16 +70,16 @@ export function createCommandNotes(reached: Notes, windowTabs: WindowTabs): Note
       const path = reached.getPath(id)
       if (path !== id) return path
       const tab = getTab(id)
-      return tab?.kind.getOpenTab?.(tab.state).path ?? id
+      return tab?.kind.address?.getOpenTab?.(tab.state).path ?? id
     },
     asking: (id: string) => {
       const tab = getTab(id)
-      return reached.asking(id) || (tab?.kind.isAsking?.(tab.state) ?? false)
+      return reached.asking(id) || (tab?.kind.events?.isAsking?.(tab.state) ?? false)
     },
     flushPending: async (id: string) => {
       await reached.flushPending(id)
       const tab = getTab(id)
-      await tab?.kind.flushPending?.(tab.state)
+      await tab?.kind.events?.flushPending?.(tab.state)
     },
     close: (id: string) => {
       reached.close(id)
