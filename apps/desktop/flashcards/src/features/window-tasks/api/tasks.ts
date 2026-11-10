@@ -1,5 +1,5 @@
 import { windowService } from '@/shared/api/clients'
-import { TARGET } from '@/shared/config/window'
+import { TARGET } from '@/shared/lib/window'
 import type { WindowTask } from '../lib/task'
 
 /** The tasks of this window as the core reports them, a whole list at each change, until the signal aborts. */

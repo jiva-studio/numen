@@ -3,7 +3,7 @@
  */
 // Stryker disable StringLiteral: interface copy
 import { VAULT_ERRORS } from '@/entities/vault'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 
 export const VAULT_WORDS = {
   goto: WORDS.goto,

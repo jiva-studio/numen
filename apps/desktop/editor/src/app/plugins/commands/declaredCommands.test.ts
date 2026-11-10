@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createWhenReader } from '@numen/plugin-loader'
 import { commands, runInvocation, type CommandDeps } from '@/features/command-palette'
 import type { DeclaredCommand, DeclaredList } from '@/entities/plugin'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import {
   createDeclaredPaletteCommands,
   getPaletteId,

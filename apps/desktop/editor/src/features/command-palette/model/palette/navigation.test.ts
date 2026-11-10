@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { WORDS as windowWords } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../../words'
 import type { PendingStep } from '../../lib/step/step'
 import type { StepGroup } from '../../types'

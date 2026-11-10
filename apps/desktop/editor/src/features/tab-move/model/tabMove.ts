@@ -13,7 +13,7 @@ import {
   type WindowTabs,
 } from '@/entities/tab'
 import type { Notes } from '@/entities/command'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { detachTab, moveTab } from '../api/tab-move'
 import {
   ACCEPT_ATTEMPTS,

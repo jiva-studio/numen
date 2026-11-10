@@ -18,7 +18,7 @@ import {
 import type { Component } from 'vue'
 import { findIcon, type Command } from '@/entities/command'
 import type { DeclaredCommand, DeclaredSlot } from '@/entities/plugin'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { getPaletteId } from './declaredCommands'
 import { APP_SLOT_ENTRIES } from './appPlacements'
 

@@ -3,7 +3,7 @@ import { defineComponent, effectScope, h, onScopeDispose } from 'vue'
 import { CONVERSATION, VAULT_SUMMARY, createMockAgentHost } from '@numen/plugin-loader'
 import { createMockManifest } from '@numen/core-client/testing'
 import type { AgentHost, VaultsHost, WindowHost } from '@numen/plugin-loader'
-import { TARGET } from '@/shared/config/window'
+import { TARGET } from '@/shared/lib/window'
 import { createShellHost } from './host'
 import { createWindowCommands } from './windowCommands'
 

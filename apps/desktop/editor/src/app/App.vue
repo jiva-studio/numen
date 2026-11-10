@@ -21,7 +21,7 @@ import BootstrapFailure from './bootstrap/BootstrapFailure.vue'
 import { createWindow } from './window/createWindow'
 import { useWindowTabMenu } from '@/entities/tab'
 import { COMMAND } from '@/entities/command'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as words } from '@/shared/ui/words'
 import { WINDOW_WORDS } from './window/words'
 import { WORDS as note } from '@/entities/note'
 

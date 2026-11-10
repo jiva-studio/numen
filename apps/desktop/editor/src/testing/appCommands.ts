@@ -5,7 +5,7 @@
 import { collectFeatureCommands, type FeatureCommandsDeps } from '@/app/window/createCommands'
 import type { Command, Notes } from '@/entities/command'
 import { createNoteWriter } from '@/entities/note'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 
 const noop = (): void => undefined
 

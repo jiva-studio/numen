@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createCommandDeps, createCommandNotes, type CommandDepsOptions } from './commandDeps'
 import { useSettings } from '../window/useSettings'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 
 const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
   const calls: unknown[][] = []

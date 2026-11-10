@@ -7,7 +7,7 @@
  */
 // Stryker disable StringLiteral: interface copy
 import { commandKeyChord } from '@numen/workbench'
-import { ERRORS } from './api/errors'
+import { ERRORS } from '../api/errors'
 
 export { ERRORS }
 

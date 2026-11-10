@@ -11,8 +11,8 @@ import {
   type Notes,
 } from '@/entities/command'
 import { createFolder, listFiles, moveFile } from '@/entities/file'
-import type { MessageWriter } from '@/shared/notices/messages'
-import { generateUniqueName } from '@/shared/paths'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import { generateUniqueName } from '@/shared/lib/paths'
 import { FILE_WORDS } from '../words'
 
 /** What the commands over files use of the window. */

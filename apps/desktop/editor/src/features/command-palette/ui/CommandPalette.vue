@@ -16,7 +16,7 @@ import type { Commands } from '../model/palette/palette'
 import { runInvocation } from '../model/handlers/handlers'
 import type { ResultChoice, SearchState } from '../model/search/search'
 import { findRowIcon, type FileIcons } from '../model/rowIcons'
-import { WORDS as windowWords } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../words'
 
 /* --------------------------------- Props ---------------------------------- */

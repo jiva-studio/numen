@@ -15,7 +15,7 @@ import {
 } from '@numen/plugin-loader'
 import { registerCommand } from '@/features/command-palette'
 import type { Command, CommandInvocation, CommandTarget } from '@/entities/command'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import type { Writable } from '@/shared/lib/writable'
 import {
   listDeclaredItemLists,

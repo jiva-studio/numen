@@ -5,7 +5,7 @@
  */
 import { shallowRef } from 'vue'
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import * as secretsApi from '../api/secrets'
 
 /** The messages this module shows in the window. */

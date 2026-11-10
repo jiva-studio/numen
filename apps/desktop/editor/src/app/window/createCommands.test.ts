@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as CommandModule from '@/entities/command'
 import type { CommandDeps, PaletteLists } from '@/features/command-palette'
 import type { CommandTarget } from '@/entities/command'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { answerCore } from '@/testing/coreAnswers'
 import { createCommandRunner, createCommands, type CommandsDepsOptions } from './createCommands'
 

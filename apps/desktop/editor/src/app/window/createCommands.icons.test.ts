@@ -7,10 +7,10 @@
 import { describe, expect, it } from 'vitest'
 
 import { COMMAND, findIcon } from '@/entities/command'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { getNoteIcon, registerTabKindIcon } from '@/entities/note'
 import { createWelcomeActions, WELCOME_WORDS } from '@/pages/welcome'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as words } from '@/shared/ui/words'
 import { createAppCommands } from '@/testing/appCommands'
 
 describe('the icon a command is drawn with', () => {

@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { shallowRef } from 'vue'
-import { WORDS as windowWords } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/ui/words'
 import { PALETTE_WORDS } from '../words'
 import { createAppCommands } from '@/testing/appCommands'
 import * as stepModule from '../lib/step/step'

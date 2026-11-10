@@ -10,7 +10,7 @@ import {
   parseSettingCommandId,
 } from './settingCommands'
 import type { SettingOwner } from '../lib/settingsConfig'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import type { PluginSettingInfo } from '@/entities/settings'
 
 const declare = (overrides: Partial<PluginSettingInfo>): PluginSettingInfo => ({

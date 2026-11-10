@@ -6,9 +6,9 @@
  */
 import { computed, type ComputedRef, type Ref } from 'vue'
 import type { Notice, NoticeQueue } from '@numen/workbench'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { Task } from '@/entities/window'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as words } from '@/shared/ui/words'
 
 export interface NoticeTasksDeps {
   log: MessageLog

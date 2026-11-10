@@ -2,7 +2,7 @@
  * Retry of a plugin whose last start failed.
  */
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { retryPlugin as askPluginRetry } from '../api/settings'
 
 /** Notice copy of a retry. */

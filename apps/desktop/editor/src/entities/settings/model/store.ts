@@ -15,7 +15,7 @@ import type {
   SecretSection,
   SettingEdit,
 } from '../lib/configuration'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { write } from '../lib/write'
 import { getSettings, updateSettings } from '../api/settings'
 

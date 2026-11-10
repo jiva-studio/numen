@@ -4,9 +4,6 @@
  * directory) and the theme files (a `theme` or `themes` directory) alone.
  */
 export default {
-  // The website is being rewritten by its owner and keeps the styles it had. Remove this entry when
-  // that is done.
-  ignoreFiles: ["apps/landing/**"],
   plugins: ["./tools/lint-layers/stylelint-plugin.mjs"],
   rules: {
     "color-no-hex": true,

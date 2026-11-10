@@ -7,9 +7,9 @@
  */
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
-import type { StepGroup } from '@/shared/steps'
+import type { StepGroup } from '@/shared/lib/steps'
 
-export type { StepGroup, StepRow } from '@/shared/steps'
+export type { StepGroup, StepRow } from '@/shared/lib/steps'
 
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandsDeps {

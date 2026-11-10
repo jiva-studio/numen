@@ -6,7 +6,7 @@ import type { PaletteGroup } from '@numen/workbench'
 import type { SlotItem, CommandTarget as RunTarget } from '@numen/plugin-loader'
 import type { InFlightRequest } from '@numen/ui'
 import { useDebouncedSearch, type Wait } from './debounced'
-import type { IndexCoverage } from '@/shared/notices/coverage'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
 import {
   createNameItem,
   createPassageItem,
@@ -18,7 +18,7 @@ import {
   type SearchMenuDeps,
   type SearchRow,
 } from './lookup'
-import type { TextRange } from '@/shared/textRange'
+import type { TextRange } from '@/shared/lib/textRange'
 import type { SearchDeps, SearchMode } from '../../lib/search/types'
 import { getCreateNoteActions } from '../../lib/entries/entries'
 import type { CommandTarget } from '@/entities/command'

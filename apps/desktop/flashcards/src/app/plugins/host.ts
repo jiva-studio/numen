@@ -39,7 +39,7 @@ import {
 import { createNoticeQueue } from '@numen/workbench'
 import { createNamedIcon } from '@numen/ui'
 import type { WindowPlatform } from '@numen/workbench'
-import { TARGET } from '@/shared/config/window'
+import { TARGET } from '@/shared/lib/window'
 
 /** A tab kind, with the plugin that registered it. */
 export interface PluginView {

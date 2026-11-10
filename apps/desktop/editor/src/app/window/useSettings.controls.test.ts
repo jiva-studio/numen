@@ -13,8 +13,8 @@ import { SettingsTab } from '@/pages/settings'
 import { createTestTabs } from '@/testing/tabs'
 import type { PluginSettingInfo, SettingEdit } from '@/entities/settings'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
-import type { MessageLog } from '@/shared/notices/messages'
-import { WORDS } from '@/shared/words'
+import type { MessageLog } from '@/shared/model/notices/messages'
+import { WORDS } from '@/shared/ui/words'
 import { useSettings } from './useSettings'
 
 type Tree = Record<string, Record<string, unknown>>

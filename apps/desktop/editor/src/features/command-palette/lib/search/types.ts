@@ -3,7 +3,7 @@
  */
 import type { Selector } from '@numen/plugin-loader'
 import type { NoteType } from '@/entities/file'
-import type { TextRange } from '@/shared/textRange'
+import type { TextRange } from '@/shared/lib/textRange'
 
 /**
  * One name that matched: a note title or an internal heading.

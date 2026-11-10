@@ -10,7 +10,7 @@
 import { formatError } from '@/shared/api/errors'
 import { ref, watch, type Ref } from 'vue'
 import { createFollower, createRequestGuard } from '@numen/ui'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { DESIGNED, SCHEMES } from '@/entities/settings'
 import type { Appearance, Mode, Sizes, Themes } from '@/entities/settings'
 import type { AppearanceWords } from '../words'

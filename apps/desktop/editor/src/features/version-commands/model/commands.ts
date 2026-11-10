@@ -11,7 +11,7 @@ import {
   type FeatureCommands,
 } from '@/entities/command'
 import { runDeclaredHandler } from '@/entities/plugin'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { VERSION_WORDS } from '../words'
 
 /** The plugin id the core serves the commands of the application under: none. */

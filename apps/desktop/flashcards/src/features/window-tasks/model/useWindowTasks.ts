@@ -7,7 +7,7 @@ import { onMounted, onUnmounted } from 'vue'
 import { createFollower } from '@numen/ui'
 import type { NoticeQueue } from '@numen/workbench'
 import { formatError } from '@/shared/api/errors'
-import { WINDOW_SOURCE } from '@/shared/config/window'
+import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { watchTasks } from '../api/tasks'
 
 export function useWindowTasks(notices: NoticeQueue) {

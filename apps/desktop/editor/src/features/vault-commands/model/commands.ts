@@ -17,7 +17,7 @@ import {
 } from '@/entities/command'
 import { emptyTrash } from '@/entities/file'
 import { vaults } from '@/entities/vault'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { VAULT_WORDS } from '../words'
 import { openAfterSavingTabs, type TabsHold } from './leaveVault'
 

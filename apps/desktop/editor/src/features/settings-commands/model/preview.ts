@@ -10,7 +10,7 @@ import { formatError } from '@/shared/api/errors'
 import { computed, ref } from 'vue'
 import type { Ref } from 'vue'
 import type { Mode, Sizes } from '@/entities/settings'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { HELD, onto } from '../lib/appearanceValues'
 import type { ScaleKind } from '../lib/appearanceValues'
 

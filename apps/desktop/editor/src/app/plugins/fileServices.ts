@@ -10,8 +10,8 @@ import { createInvocation, runInvocation, type CommandDeps } from '@/features/co
 import { COMMAND, findIcon, type CommandTarget } from '@/entities/command'
 import type { NoteCreator } from '@/entities/note'
 import { getKnownErrorCode } from '@/shared/api/errors'
-import { WORDS as words } from '@/shared/words'
-import type { MessageWriter } from '@/shared/notices/messages'
+import { WORDS as words } from '@/shared/ui/words'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import { getEntryIcon } from '../tabs/entryIcon'
 
 /** A handler that creates a file in a vault folder under the given title. */

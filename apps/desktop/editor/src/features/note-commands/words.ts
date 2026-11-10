@@ -2,7 +2,7 @@
  * What the commands over a note say: the text of their rows, and the answers they report.
  */
 // Stryker disable StringLiteral: interface copy
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 
 export const NOTE_WORDS = {
   read: WORDS.read,

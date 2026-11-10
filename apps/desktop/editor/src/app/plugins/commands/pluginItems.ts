@@ -9,8 +9,8 @@ import { runInBackground } from '@numen/ui'
 import { isSharedCommand, type CommandItem, type PluginHost } from '@numen/plugin-loader'
 import type { PaletteLists } from '@/features/command-palette'
 import type { Command, CommandTarget, RunSupport } from '@/entities/command'
-import type { StepGroup } from '@/shared/steps'
-import { WORDS } from '@/shared/words'
+import type { StepGroup } from '@/shared/lib/steps'
+import { WORDS } from '@/shared/ui/words'
 import { toRunTarget } from './runTarget'
 
 type ItemHost = Pick<PluginHost, 'hasCommandItems' | 'listCommandItems'> | undefined

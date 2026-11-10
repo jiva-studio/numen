@@ -4,7 +4,7 @@
 import { shallowRef } from 'vue'
 import { getCurrentDate } from '@numen/ui'
 import { formatError } from '@/shared/api/errors'
-import type { MessageWriter } from '@/shared/notices/messages'
+import type { MessageWriter } from '@/shared/model/notices/messages'
 import type { FileIcons } from '@/features/command-palette'
 import { relations } from '@/entities/note'
 import { agentPort } from '@/entities/plugin'

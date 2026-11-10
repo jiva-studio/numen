@@ -2,7 +2,7 @@
  * External conflict detection and resolution for open notes.
  */
 import { getState, type Event, type Tab } from './tab'
-import type { PathRename } from '@/shared/paths'
+import type { PathRename } from '@/shared/lib/paths'
 import type { ConflictWords } from './types'
 import { ERROR_MESSAGES, STALE_CONFLICT } from './words'
 

@@ -6,9 +6,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useSettings } from './useSettings'
 import { THEME_MODE, THEME_ORIGIN } from '@numen/core-client'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 import { installSettingsCore, type SettingsCore } from '@/testing/settingsWire'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { WindowTabs } from '@/entities/tab'
 
 let restore: (() => void) | undefined

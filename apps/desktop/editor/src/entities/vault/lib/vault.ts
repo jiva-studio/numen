@@ -1,7 +1,7 @@
 /**
  * The vaults an installation holds, and the operations on the list.
  */
-import type { PathRename } from '@/shared/paths'
+import type { PathRename } from '@/shared/lib/paths'
 import type { Result } from '@/shared/lib/result'
 
 /** One vault the installation holds, as the list has it. */

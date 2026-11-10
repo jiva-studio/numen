@@ -8,8 +8,8 @@ import { formatError } from '@/shared/api/errors'
 import { createNote } from '../api/notes'
 import { relations } from '../api/relations'
 import { getRelationErrorWords, type ConnectionRole } from '@numen/plugin-loader'
-import type { MessageWriter } from '@/shared/notices/messages'
-import { ERRORS } from '@/shared/words'
+import type { MessageWriter } from '@/shared/model/notices/messages'
+import { ERRORS } from '@/shared/ui/words'
 
 /** A note that now exists: where it is filed, and what it is called. */
 export interface NoteRef {

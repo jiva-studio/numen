@@ -4,7 +4,7 @@
  * Every part of the window that reports messages takes a `MessageWriter`, so a
  * test that checks the messages passes one of these.
  */
-import type { Severity, MessageWriter } from '@/shared/notices/messages'
+import type { Severity, MessageWriter } from '@/shared/model/notices/messages'
 
 export function writer() {
   const notifiedCalls: { text: string; kind: Severity }[] = []

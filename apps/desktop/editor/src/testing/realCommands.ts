@@ -22,7 +22,7 @@ import {
   registerFeatureCommands,
   type CommandsDepsOptions,
 } from '@/app/window/createCommands'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 import { createNoteWriter } from '@/entities/note'
 import { createAppCommands } from './appCommands'
 

@@ -15,7 +15,7 @@ import { formatError } from '@/shared/api/errors'
 import { getUserAgent } from '../lib/dom'
 import { VERSION } from '../lib/version'
 import { COMMANDS, createVaultRows, createWelcomeActions } from '../lib/screen'
-import { WORDS as words } from '@/shared/words'
+import { WORDS as words } from '@/shared/ui/words'
 import { WELCOME_WORDS } from '../words'
 import type { WelcomeScreenProps } from './welcomeScreen.types'
 

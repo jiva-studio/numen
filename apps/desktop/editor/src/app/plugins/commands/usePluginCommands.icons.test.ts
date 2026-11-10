@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PluginHost } from '@numen/plugin-loader'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import { getFileKinds } from '@/entities/file'
 import { createCommandNoteReader, usePluginCommands } from './usePluginCommands'
 

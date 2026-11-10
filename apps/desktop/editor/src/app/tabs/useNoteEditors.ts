@@ -7,7 +7,7 @@ import { openNotes, createNoteWriter } from '@/entities/note'
 import { reportFlush, watchQuit } from '@/entities/window'
 import { raiseConflicts, createFileFlush } from '@/features/file-conflict'
 import { createNotes, type Store } from '@/features/command-palette'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { FileOpeners } from '@/entities/tab'
 import type { WindowTabs } from '@/entities/tab'
 

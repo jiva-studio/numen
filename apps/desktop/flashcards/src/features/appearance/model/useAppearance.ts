@@ -7,7 +7,7 @@ import { createFollower } from '@numen/ui'
 import type { NoticeQueue } from '@numen/workbench'
 import { listPlugins } from '@/entities/plugin'
 import { formatError } from '@/shared/api/errors'
-import { WINDOW_SOURCE } from '@/shared/config/window'
+import { WINDOW_SOURCE } from '@/shared/lib/window'
 import { themeClient } from '../api/theme'
 import { createAppearance } from './appearance'
 

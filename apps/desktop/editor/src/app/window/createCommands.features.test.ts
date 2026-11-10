@@ -1,7 +1,7 @@
 /** The commands of the features as the window collects them. */
 import { describe, expect, it } from 'vitest'
 import type { CommandTarget } from '@/entities/command'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 import { createEmptyWindow } from '@/testing/appCommands'
 import { collectFeatureCommands } from './createCommands'
 

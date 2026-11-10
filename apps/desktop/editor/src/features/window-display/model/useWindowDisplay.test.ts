@@ -9,7 +9,7 @@ import { TASK_KIND, TASK_UNIT } from '@numen/core-client'
 import { installCoreAnswers } from '@numen/core-client/testing'
 import { useWindowDisplay } from './useWindowDisplay'
 import type { Task } from '@/entities/window'
-import type { TextRange } from '@/shared/textRange'
+import type { TextRange } from '@/shared/lib/textRange'
 import type { NoteEdit } from '@/entities/note'
 
 async function* emptyStream(): AsyncGenerator<never> {

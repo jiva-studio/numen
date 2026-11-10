@@ -6,8 +6,8 @@ import { createFollower } from '@numen/ui'
 import { watchEdits, type NoteEdit } from '@/entities/note'
 import { watchFocus, watchTasks, type Task } from '@/entities/window'
 import { watchVaultChanges, type VaultChange } from '@/entities/vault'
-import type { PathRename } from '@/shared/paths'
-import type { TextRange } from '@/shared/textRange'
+import type { PathRename } from '@/shared/lib/paths'
+import type { TextRange } from '@/shared/lib/textRange'
 
 export interface WindowStreamsDeps {
   readonly listening: AbortController

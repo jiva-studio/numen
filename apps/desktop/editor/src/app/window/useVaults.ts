@@ -3,8 +3,8 @@
  */
 import { computed, ref, type Ref } from 'vue'
 import type { VaultList } from '@/entities/vault'
-import type { IndexCoverage } from '@/shared/notices/coverage'
-import type { MessageLog } from '@/shared/notices/messages'
+import type { IndexCoverage } from '@/shared/model/notices/coverage'
+import type { MessageLog } from '@/shared/model/notices/messages'
 import type { VaultRef } from '@/entities/command'
 import { WINDOW_WORDS } from './words'
 import { getVaultList } from './vaultList'

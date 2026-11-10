@@ -7,7 +7,7 @@ import { openExternalUrl } from '@numen/plugin-loader'
 import { interceptExternalLinks } from '@numen/ui'
 import type { NoticeQueue } from '@numen/workbench'
 import { formatError } from '@/shared/api/errors'
-import { WINDOW_SOURCE } from '@/shared/config/window'
+import { WINDOW_SOURCE } from '@/shared/lib/window'
 
 export function useExternalLinks(notices: NoticeQueue) {
   let stop: (() => void) | undefined

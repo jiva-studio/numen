@@ -13,7 +13,7 @@ import type { WelcomeAction } from '@numen/workbench'
 import { registerCommand } from '@/features/command-palette'
 import { findShortcutKeys, type Command, type CommandTarget } from '@/entities/command'
 import type { FileKind } from '@/entities/file'
-import { getNamedIcon } from '@/shared/icons'
+import { getNamedIcon } from '@/shared/ui/icons'
 import {
   createEmptyWhenContext,
   createWhenAvailability,

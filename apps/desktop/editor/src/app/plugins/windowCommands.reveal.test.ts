@@ -11,7 +11,7 @@ import {
   PALETTE_WORDS,
   type NameMatch,
 } from '@/features/command-palette'
-import { WORDS as windowWords } from '@/shared/words'
+import { WORDS as windowWords } from '@/shared/ui/words'
 import {
   createRealWindow,
   readManifest,

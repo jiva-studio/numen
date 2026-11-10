@@ -16,7 +16,7 @@ import {
   type SlotMenu,
 } from '@numen/plugin-loader'
 import type { WindowTabs } from './windowTabs'
-import { WORDS } from '@/shared/words'
+import { WORDS } from '@/shared/ui/words'
 
 export interface TabMenuDeps {
   readonly slots?: SlotHost | undefined

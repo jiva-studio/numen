@@ -9,7 +9,7 @@
 import type { Component } from 'vue'
 import type { Selector } from '@numen/plugin-loader'
 import type { FileKind } from '@/shared/model/fileTypes'
-import type { TextRange } from '@/shared/textRange'
+import type { TextRange } from '@/shared/lib/textRange'
 
 /** Where a file opens: in the current pane or in a split. */
 export type FilePlacement = 'current' | 'split'
