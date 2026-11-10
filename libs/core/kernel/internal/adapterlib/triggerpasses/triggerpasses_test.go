@@ -53,7 +53,7 @@ func runPasses(t *testing.T) (passes *triggerpasses.Passes, passesRun func() int
 	plugins := &listing{}
 	line := make(chan struct{})
 	passes = triggerpasses.NewPasses()
-	triggers := trigger.NewTriggers(plugins, nil, nil, nil, nil, nil, nil)
+	triggers := trigger.NewTriggers(trigger.TriggersDeps{Plugins: plugins})
 	go triggerpasses.Run(t.Context(), triggers, domain.Vault{ID: "v1"}, passes, line, func(error) {})
 	return passes, plugins.reads.Load, line
 }

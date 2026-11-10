@@ -40,12 +40,9 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 	watching, stop := context.WithCancel(ctx)
 	defer stop()
 
-	changed, err := u.watch.WatchOwnThemes(watching, u.hold)
-	if errors.Is(err, themedomain.ErrNoFolder) && u.catalog.sources.Plugins != nil {
-		changed, err = nil, nil
-	}
+	changed, err := u.watchOwnThemes(watching)
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrWatchUnavailable, err)
+		return err
 	}
 
 	previous := u.catalog.listPluginThemeNames()
@@ -70,15 +67,32 @@ func (u *WatchThemes) Execute(ctx context.Context, send func(names []string) err
 			if !open {
 				return nil
 			}
-			names := make([]string, 0, len(titles))
-			for _, title := range titles {
-				names = append(names, themedomain.GetName(themedomain.Mine, title))
-			}
-			if err := send(names); err != nil {
+			if err := send(listOwnNames(titles)); err != nil {
 				return err
 			}
 		}
 	}
+}
+
+// watchOwnThemes starts the watch of the user's folder. Where the folder cannot be watched and the build
+// has plugin themes, it returns a nil channel, which never reports.
+func (u *WatchThemes) watchOwnThemes(ctx context.Context) (<-chan []string, error) {
+	changed, err := u.watch.WatchOwnThemes(ctx, u.hold)
+	if errors.Is(err, themedomain.ErrNoFolder) && u.catalog.sources.Plugins != nil {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrWatchUnavailable, err)
+	}
+	return changed, nil
+}
+
+func listOwnNames(titles []string) []string {
+	names := make([]string, 0, len(titles))
+	for _, title := range titles {
+		names = append(names, themedomain.GetName(themedomain.Mine, title))
+	}
+	return names
 }
 
 func listDifference(before, after []string) []string {

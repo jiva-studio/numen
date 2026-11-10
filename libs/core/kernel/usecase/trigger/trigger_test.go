@@ -224,7 +224,10 @@ func newScene(t *testing.T, files map[string]string, entries ...plugin.TriggerEn
 		config:      map[string]any{},
 	}
 	vaultReaders := readers{s.memoryVault}
-	s.triggers = trigger.NewTriggers(s.plugins, s.plugins, vaultReaders, note.NewReadFrontmatter(vaultReaders), types{}, s.versions, settingsOf{config: &s.config})
+	s.triggers = trigger.NewTriggers(trigger.TriggersDeps{
+		Plugins: s.plugins, Run: s.plugins, Readers: vaultReaders, Notes: note.NewReadFrontmatter(vaultReaders), Types: types{},
+		Versions: s.versions, Config: settingsOf{config: &s.config},
+	})
 	return s
 }
 

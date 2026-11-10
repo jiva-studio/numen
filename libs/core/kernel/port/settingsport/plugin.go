@@ -19,6 +19,12 @@ type PluginConfig interface {
 	SetPersistHandler(handler plugin.PersistHandler)
 }
 
+// PluginHost is the plugin host as the use cases see it: the settings it changes and the settings it is handed.
+type PluginHost interface {
+	PluginSettings
+	PluginConfig
+}
+
 // SecretRefresh configures the running plugins with the secrets as they stand now.
 type SecretRefresh func(ctx context.Context) error
 

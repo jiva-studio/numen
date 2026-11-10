@@ -24,11 +24,11 @@ type NotifyPlugins struct {
 // NewNotifyPlugins makes the use case. signal is called once the plugins have received the batch. It is
 // optional.
 func NewNotifyPlugins(
-	codec settingsport.ValueCodec, plugins settingsport.PluginSettings, config settingsport.PluginConfig, refreshSecrets settingsport.SecretRefresh,
+	codec settingsport.ValueCodec, host settingsport.PluginHost, refreshSecrets settingsport.SecretRefresh,
 	resolveProfile settingsport.ProfileResolver, signal func(), report func(error),
 ) *NotifyPlugins {
 	return &NotifyPlugins{
-		codec: codec, plugins: plugins, config: config, refreshSecrets: refreshSecrets,
+		codec: codec, plugins: host, config: host, refreshSecrets: refreshSecrets,
 		resolveProfile: resolveProfile, signal: signal, report: report,
 	}
 }

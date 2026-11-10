@@ -16,7 +16,7 @@ func setting(json string, path ...string) settingsdomain.Setting {
 }
 
 func newNotifier(host *pluginHost, refreshSecrets func(context.Context) error, signal func(), report func(error)) *settings.NotifyPlugins {
-	return settings.NewNotifyPlugins(jsonCodec{}, host, host, refreshSecrets, func(profile string) string { return "resolved-" + profile }, signal, report)
+	return settings.NewNotifyPlugins(jsonCodec{}, host, refreshSecrets, func(profile string) string { return "resolved-" + profile }, signal, report)
 }
 
 // A plugin that is enabled in the same batch as its settings receives the settings first, and
@@ -79,7 +79,10 @@ func TestApplyToPluginsSubscribesTheHostOnce(t *testing.T) {
 	file := &memoryFile{}
 	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
 	setups := 0
-	apply := settings.NewApplyToPlugins(jsonCodec{}, host, write, newNotifier(host, nil, nil, nil), subscribe, hosts, func() { setups++ })
+	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
+		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil, nil), Subscribe: subscribe, Hosts: hosts,
+		Setup: func() { setups++ },
+	})
 
 	apply.Execute(map[string]map[string]any{"org.example.scans": {"depth": 2.0}}, "fast")
 	apply.Execute(nil, "fast")
@@ -103,7 +106,9 @@ func TestApplyToPluginsSavesWhatAPluginChanges(t *testing.T) {
 	host := &pluginHost{}
 	file := &memoryFile{}
 	write := settings.NewWriteSettings(settings.NewCheckSettings(jsonCodec{}, refusingValidator{declared: [][]string{{"org.example.scans", "depth"}}}, host), file, refreshRecorder{new([]string)})
-	apply := settings.NewApplyToPlugins(jsonCodec{}, host, write, newNotifier(host, nil, nil, nil), nil, &settings.HostSubscriptions{}, func() {})
+	apply := settings.NewApplyToPlugins(settings.ApplyToPluginsDeps{
+		Codec: jsonCodec{}, Config: host, Write: write, Notify: newNotifier(host, nil, nil, nil), Hosts: &settings.HostSubscriptions{}, Setup: func() {},
+	})
 	apply.Execute(nil, "fast")
 
 	err := host.persist("org.example.scans", "depth", 5)

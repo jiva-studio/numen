@@ -9,9 +9,10 @@ import (
 func mountVaults(w *windowWiring) {
 	state := w.inst.State
 	list := w.vaults
-	handler := vaults.NewHandler(
-		state, list.Registry.List, list.Registry.Find, list.Registry.FolderCheck, list.Change.Add, list.Change.Rename, list.Change.Remove,
-	)
+	handler := vaults.NewHandler(state, vaults.Uses{
+		List: list.Registry.List, Find: list.Registry.Find, FolderCheck: list.Registry.FolderCheck,
+		Add: list.Change.Add, Rename: list.Change.Rename, Remove: list.Change.Remove,
+	})
 	w.inst.OnFolderDialog(func(dialog editor.PathDialog) {
 		handler.SetFolderChooser(picker.NewChooseFolder(dialog))
 	})

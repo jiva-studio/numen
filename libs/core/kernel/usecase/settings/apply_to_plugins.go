@@ -19,14 +19,25 @@ type ApplyToPlugins struct {
 	setup     func()
 }
 
-// NewApplyToPlugins makes the use case. The host is identified by config, which every capability
-// of the host is built from. setup hands the host what it needs besides settings, such as the key
-// store. subscribe is nil where the changes are not followed.
-func NewApplyToPlugins(
-	codec settingsport.ValueCodec, config settingsport.PluginConfig, write *WriteSettings, notify *NotifyPlugins,
-	subscribe settingsport.ChangeSubscriber, hosts *HostSubscriptions, setup func(),
-) *ApplyToPlugins {
-	return &ApplyToPlugins{codec: codec, config: config, write: write, notify: notify, subscribe: subscribe, hosts: hosts, setup: setup}
+// ApplyToPluginsDeps is what ApplyToPlugins is made of. The host is identified by Config, which every
+// capability of the host is built from. Setup hands the host what it needs besides settings, such as
+// the key store. Subscribe is nil where the changes are not followed.
+type ApplyToPluginsDeps struct {
+	Codec     settingsport.ValueCodec
+	Config    settingsport.PluginConfig
+	Write     *WriteSettings
+	Notify    *NotifyPlugins
+	Subscribe settingsport.ChangeSubscriber
+	Hosts     *HostSubscriptions
+	Setup     func()
+}
+
+// NewApplyToPlugins makes the use case.
+func NewApplyToPlugins(deps ApplyToPluginsDeps) *ApplyToPlugins {
+	return &ApplyToPlugins{
+		codec: deps.Codec, config: deps.Config, write: deps.Write, notify: deps.Notify,
+		subscribe: deps.Subscribe, hosts: deps.Hosts, setup: deps.Setup,
+	}
 }
 
 // Execute applies the settings of the plugins and the performance profile to the host, and

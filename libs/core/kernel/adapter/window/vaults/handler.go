@@ -74,13 +74,22 @@ type Handler struct {
 	chooseFolder atomic.Pointer[FolderChooser]
 }
 
+// Uses are the operations on the list of vaults that the service answers with.
+type Uses struct {
+	List        Lister
+	Find        Finder
+	FolderCheck FolderChecker
+	Add         Adder
+	Rename      Renamer
+	Remove      Remover
+}
+
 // NewHandler is the handler of the vaults service of one window. The folder dialog is set after,
 // when the application has one.
-func NewHandler(
-	current Window, list Lister, find Finder, folderCheck FolderChecker, add Adder, rename Renamer, remove Remover,
-) *Handler {
+func NewHandler(current Window, uses Uses) *Handler {
 	return &Handler{
-		window: current, list: list, find: find, folderCheck: folderCheck, add: add, rename: rename, remove: remove,
+		window: current, list: uses.List, find: uses.Find, folderCheck: uses.FolderCheck, add: uses.Add,
+		rename: uses.Rename, remove: uses.Remove,
 	}
 }
 

@@ -56,10 +56,10 @@ func newHandler(t *testing.T, notes map[string]string, kinds tabKinds) *filewind
 	readers := vaultreader.Readers{}
 	return filewindow.NewHandler(
 		filewindow.NewFolders(
-			open, open, open,
+			open, open,
 			file.NewGetFolderEntries(readers, nil), file.NewGetFileKinds(readers, nil), choose, nil,
 		),
-		filewindow.NewChanges(open, open, open, open, nil, nil, nil),
+		filewindow.NewChanges(open, open, open, nil, nil, nil),
 	)
 }
 

@@ -75,10 +75,10 @@ func (s *Services) UseNotes() {
 	addresses := notewindow.NewAddresses(s.state, use.GetLinkAddress)
 	s.Note = notewindow.NewHandler(
 		s.state,
-		notewindow.NewProse(s.state, s.state, addresses, use.Read, use.Write, use.Create, use.Rename),
+		notewindow.NewProse(s.state, addresses, use.Read, use.Write, use.Create, use.Rename),
 		notewindow.NewOutline(s.state, nil, use.OpeningNote, use.Types, use.Headings, use.Neighborhood),
-		notewindow.NewLinks(s.state, s.state, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
-		notewindow.NewConnections(s.state, s.state, nil, nil, nil, nil, nil),
+		notewindow.NewLinks(s.state, addresses, use.ResolveLinks, use.EditLinks, nil, nil),
+		notewindow.NewConnections(s.state, nil, nil, nil, nil, nil),
 	)
 }
 
@@ -86,8 +86,8 @@ func createServices(state *State) *Services {
 	services := &Services{
 		state: state,
 		File: filewindow.NewHandler(
-			filewindow.NewFolders(state, state, state, nil, nil, nil, nil),
-			filewindow.NewChanges(state, state, state, state, nil, nil, nil),
+			filewindow.NewFolders(state, state, nil, nil, nil, nil),
+			filewindow.NewChanges(state, state, state, nil, nil, nil),
 		),
 		Command: command.NewHandler(state, plugincommand.NewCommands(nil, nil, nil, nil, nil), nil),
 		Media:   mediawindow.NewHandler(state, state, nil, nil),

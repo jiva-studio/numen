@@ -937,10 +937,10 @@ func openTriggers(c pluginsWiring) *trigger.Triggers {
 	if c.PluginHost == nil || c.SafeMode || c.TextVersions == nil {
 		return nil
 	}
-	return trigger.NewTriggers(
-		manifestlist.Open(c.PluginHost), getPluginCommands(c).Run, c.VaultReaders, pluginsNewNoteReader(c), c.PluginHost,
-		c.TextVersions, getWhenConfig(c),
-	)
+	return trigger.NewTriggers(trigger.TriggersDeps{
+		Plugins: manifestlist.Open(c.PluginHost), Run: getPluginCommands(c).Run, Readers: c.VaultReaders,
+		Notes: pluginsNewNoteReader(c), Types: c.PluginHost, Versions: c.TextVersions, Config: getWhenConfig(c),
+	})
 }
 
 func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {

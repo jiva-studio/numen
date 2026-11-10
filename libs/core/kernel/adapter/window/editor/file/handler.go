@@ -26,6 +26,12 @@ type Writes interface {
 	FinishWrite()
 }
 
+// Session is the window a handler serves: the vault it shows and the writes it waits for.
+type Session interface {
+	Vault
+	Writes
+}
+
 // Index reports whether the index followed a write.
 type Index interface {
 	IsIndexOutdated(err error) bool
@@ -79,11 +85,11 @@ type Folders struct {
 // NewFolders is the part of FileService that lists and makes folders. choose may be nil, which
 // leaves every file without a kind of tab.
 func NewFolders(
-	window Vault, writes Writes, events Events,
+	session Session, events Events,
 	entries *file.GetFolderEntries, kinds *file.GetFileKinds, choose *tabkind.Choose, create *file.CreateFolder,
 ) *Folders {
 	return &Folders{
-		vault: window, writes: writes, events: events,
+		vault: session, writes: session, events: events,
 		getFolderEntries: entries, getFileKinds: kinds, chooseTabKind: choose, createFolder: create,
 	}
 }
@@ -101,10 +107,10 @@ type Changes struct {
 
 // NewChanges is the part of FileService that moves and removes files.
 func NewChanges(
-	window Vault, writes Writes, index Index, tree Tree,
+	session Session, index Index, tree Tree,
 	move *vaults.Move, remove *note.Remove, emptyTrash *note.EmptyTrash,
 ) *Changes {
 	return &Changes{
-		vault: window, writes: writes, index: index, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash,
+		vault: session, writes: session, index: index, tree: tree, move: move, remove: remove, emptyTrash: emptyTrash,
 	}
 }

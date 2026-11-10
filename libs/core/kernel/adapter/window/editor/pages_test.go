@@ -367,7 +367,7 @@ func TestHandler_ClosingWaitsForInFlightRequests(t *testing.T) {
 	list := registry.NewList(b)
 	check := check.NewFolderCheck(vaultreader.Readers{})
 	api := newBareServices()
-	vaultsHandler := windowvaults.NewHandler(api.state, list, nil, check, nil, nil, nil)
+	vaultsHandler := windowvaults.NewHandler(api.state, windowvaults.Uses{List: list, FolderCheck: check})
 	vaultsPath, vaultsServed := windowvaults.NewRoute(vaultsHandler, api.state.CountQuestions())
 	api.Extra = append(api.Extra, NewRoute(vaultsPath, vaultsServed, vaultsHandler))
 	handler := api.NewHandler(http.NotFoundHandler())

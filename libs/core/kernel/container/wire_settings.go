@@ -196,9 +196,10 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 	if c.SettingEvents != nil {
 		subscribe = feed(c).Subscribe
 	}
-	settingsusecase.NewApplyToPlugins(
-		settingsadapter.JSONCodec{}, c.PluginHost, settingsWriteSettings(c), notifyPlugins(c), subscribe, hosts, func() { setUpPluginHost(c) },
-	).Execute(s.Plugins, c.ResolvedCompute.Profile)
+	settingsusecase.NewApplyToPlugins(settingsusecase.ApplyToPluginsDeps{
+		Codec: settingsadapter.JSONCodec{}, Config: c.PluginHost, Write: settingsWriteSettings(c), Notify: notifyPlugins(c),
+		Subscribe: subscribe, Hosts: hosts, Setup: func() { setUpPluginHost(c) },
+	}).Execute(s.Plugins, c.ResolvedCompute.Profile)
 }
 
 func setUpPluginHost(c settingsWiring) {
@@ -417,7 +418,7 @@ func notifyPlugins(c settingsWiring) *settingsusecase.NotifyPlugins {
 		signal = c.PluginChanges.Signal
 	}
 	return settingsusecase.NewNotifyPlugins(
-		settingsadapter.JSONCodec{}, c.PluginHost, c.PluginHost, func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
+		settingsadapter.JSONCodec{}, c.PluginHost, func(ctx context.Context) error { return refreshPluginSecrets(c, ctx) },
 		func(profile string) string { return resolveProfile(c, profile) }, signal, func(err error) { settingsHandleError(c, err) },
 	)
 }

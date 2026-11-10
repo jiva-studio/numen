@@ -172,7 +172,7 @@ func onAList(t *testing.T) *onTheList {
 	chooseFolder := picker.NewChooseFolder(f.dialog)
 	folderCheck := check.NewFolderCheck(vaultreader.Readers{})
 	remove := vaults.NewRemove(find, forget, erase)
-	handler := NewHandler(f, list, find, folderCheck, adding, rename, remove)
+	handler := NewHandler(f, Uses{List: list, Find: find, FolderCheck: folderCheck, Add: adding, Rename: rename, Remove: remove})
 	handler.SetFolderChooser(chooseFolder)
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewVaultsServiceHandler(handler))

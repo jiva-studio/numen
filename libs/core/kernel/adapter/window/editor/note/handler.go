@@ -28,6 +28,12 @@ type Writes interface {
 	NoteWritten()
 }
 
+// Session is the window a handler serves: the vault it shows and the writes it waits for.
+type Session interface {
+	Vault
+	Writes
+}
+
 // Edits is the stream of edits being made to the notes of the window.
 type Edits interface {
 	SubscribeEdits() (<-chan domain.Edit, func())
@@ -85,11 +91,11 @@ type Prose struct {
 
 // NewProse is the part of NoteService that reads and changes the prose of notes.
 func NewProse(
-	window Vault, writes Writes, addresses *Addresses,
+	session Session, addresses *Addresses,
 	read *note.Read, write *note.Write, create *note.Create, rename *note.Rename,
 ) *Prose {
 	return &Prose{
-		vault: window, writes: writes, addresses: addresses, read: read, write: write, create: create, rename: rename,
+		vault: session, writes: session, addresses: addresses, read: read, write: write, create: create, rename: rename,
 	}
 }
 
@@ -131,11 +137,11 @@ type Links struct {
 
 // NewLinks is the part of NoteService that works the links of notes.
 func NewLinks(
-	window Vault, writes Writes, addresses *Addresses,
+	session Session, addresses *Addresses,
 	resolve *query.ResolveLinks, edit *note.EditLinks, create *note.CreateInRelation, backlinks *query.GetBacklinks,
 ) *Links {
 	return &Links{
-		vault: window, writes: writes, addresses: addresses, resolveLinks: resolve, editLinks: edit,
+		vault: session, writes: session, addresses: addresses, resolveLinks: resolve, editLinks: edit,
 		createInRelation: create, getBacklinks: backlinks,
 	}
 }
@@ -153,12 +159,12 @@ type Connections struct {
 
 // NewConnections is the part of NoteService that works the connections between notes.
 func NewConnections(
-	window Vault, writes Writes,
+	session Session,
 	get *query.GetConnection, save *note.SaveConnection, removeSide *note.RemoveSide,
 	remove *note.RemoveConnection, join *note.Join,
 ) *Connections {
 	return &Connections{
-		vault: window, writes: writes, getConnection: get, saveConnection: save, removeSide: removeSide,
+		vault: session, writes: session, getConnection: get, saveConnection: save, removeSide: removeSide,
 		removeConnection: remove, join: join,
 	}
 }

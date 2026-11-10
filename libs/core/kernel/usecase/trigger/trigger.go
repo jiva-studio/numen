@@ -57,16 +57,24 @@ type Triggers struct {
 	mu         sync.Mutex
 }
 
-// NewTriggers runs the triggers of the plugins with run over the files the readers open, the notes giving
-// the type and properties of a note, the table giving a file its type, the versions giving
-// target.versions and config giving the settings.
-func NewTriggers(
-	plugins Plugins, run CommandRun, readers vaultport.VaultReaders, notes NoteReader, types contenttypeport.ContentTypeTable,
-	versions Versions, config pluginport.WhenConfig,
-) *Triggers {
+// TriggersDeps is what Triggers is made of: Run runs the triggers of the Plugins over the files the
+// Readers open, Notes gives the type and properties of a note, Types gives a file its type, Versions
+// gives target.versions and Config gives the settings.
+type TriggersDeps struct {
+	Plugins  Plugins
+	Run      CommandRun
+	Readers  vaultport.VaultReaders
+	Notes    NoteReader
+	Types    contenttypeport.ContentTypeTable
+	Versions Versions
+	Config   pluginport.WhenConfig
+}
+
+// NewTriggers makes the use case.
+func NewTriggers(deps TriggersDeps) *Triggers {
 	return &Triggers{
-		plugins: plugins, run: run, readers: readers, notes: notes, types: types, versions: versions, config: config,
-		conditions: when.NewConditions(),
+		plugins: deps.Plugins, run: deps.Run, readers: deps.Readers, notes: deps.Notes, types: deps.Types,
+		versions: deps.Versions, config: deps.Config, conditions: when.NewConditions(),
 	}
 }
 
