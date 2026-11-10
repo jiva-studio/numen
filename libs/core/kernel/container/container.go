@@ -185,9 +185,10 @@ func settingsOf(c Config) settingsWiring {
 			SubscribedHosts: &res.subscribedHosts,
 		},
 		settingsPluginRefs: settingsPluginRefs{
-			PluginHost: c.PluginHost,
-			KeyStore:   c.KeyStore,
-			Plugins:    func() pluginsWiring { return plugins(c) },
+			PluginHost:       c.PluginHost,
+			KeyStore:         c.KeyStore,
+			Plugins:          func() pluginsWiring { return plugins(c) },
+			GetAgentPrograms: c.agentPrograms,
 		},
 		ErrorHandler: func(err error) { handleError(c, err) },
 	}

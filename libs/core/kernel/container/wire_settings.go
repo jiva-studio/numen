@@ -110,9 +110,10 @@ type settingsStores struct {
 }
 
 type settingsPluginRefs struct {
-	PluginHost *PluginHost
-	KeyStore   pluginport.KeyStore
-	Plugins    func() pluginsWiring
+	PluginHost       *PluginHost
+	KeyStore         pluginport.KeyStore
+	Plugins          func() pluginsWiring
+	GetAgentPrograms func(agentport.AgentProvider, settingsadapter.Agent) []agentdomain.Program
 }
 
 type settingsWiring struct {
