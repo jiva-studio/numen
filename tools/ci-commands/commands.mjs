@@ -307,7 +307,7 @@ const readManifests = (plugins) => {
 }
 
 /**
- * The ids one plugin's frontend registers a handler for. Every `registerCommand` call of the
+ * The ids one plugin's frontend registers a handler for. Every `register.command` call of the
  * frontend's sources is read; one this cannot read an id out of is refused.
  */
 const readRegisteredIds = (at, name) =>

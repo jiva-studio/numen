@@ -18,7 +18,7 @@ const declared = new Map([...demo.matchAll(/^\s+([A-Za-z]+): '([^']+)',$/gm)].ma
 const readRegistered = (plugin) => {
   const manifest = JSON.parse(read(`plugins/${plugin}/manifest.json`))
   const source = read(`plugins/${plugin}/frontend/index.ts`)
-  const ids = [...source.matchAll(/registerCommand\(\{\s+id: '([^']+)'/g)].map((m) => m[1])
+  const ids = [...source.matchAll(/register\.command\(\{\s+id: '([^']+)'/g)].map((m) => m[1])
   return ids.map((id) => `${manifest.id}:${id}`)
 }
 
