@@ -19,8 +19,6 @@ import { findRowIcon, type FileIcons } from '../model/rowIcons'
 import { WORDS as windowWords } from '@/shared/words'
 import { PALETTE_WORDS } from '../words'
 
-const words = { ...windowWords, ...PALETTE_WORDS }
-
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
   commands: Commands
@@ -30,6 +28,8 @@ const props = defineProps<{
   places: FileIcons
   runChoice: (choice: ResultChoice) => void
 }>()
+
+const words = { ...windowWords, ...PALETTE_WORDS }
 
 /* --------------------------------- State ---------------------------------- */
 const actionWords: ActionWords = {
