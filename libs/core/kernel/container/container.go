@@ -260,6 +260,7 @@ func plugins(c Config) pluginsWiring {
 			PluginCatalog:   c.PluginCatalog,
 			PluginDirs:      c.PluginDirs,
 			KeyStore:        c.KeyStore,
+			CredentialsPath: c.credentialsPath,
 		},
 		pluginSettingsAccess: pluginSettingsAccess{
 			SettingsFiles:         res.settingsFiles,
@@ -291,3 +292,5 @@ func plugins(c Config) pluginsWiring {
 func (c Config) agentPrograms(provider agentport.AgentProvider, target settingsadapter.Agent) []agentdomain.Program {
 	return getAgentPrograms(plugins(c), provider, target)
 }
+
+func (c Config) credentialsPath() string { return credentialsPathOf(c.KeyStore)() }

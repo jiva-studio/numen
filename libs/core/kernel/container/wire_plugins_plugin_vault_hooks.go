@@ -221,7 +221,7 @@ func openSecrets(c pluginsWiring) *secret.Secrets {
 	if c.PluginHost != nil {
 		plugins = c.PluginHost
 	}
-	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, newSecretID, credentialsPathOf(c.KeyStore), c.SecretGate)
+	return secret.NewSecrets(openSecretLedger(c), c.KeyStore, plugins, newSecretID, c.CredentialsPath, c.SecretGate)
 }
 
 func credentialsPathOf(store pluginport.KeyStore) func() string {
