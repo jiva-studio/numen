@@ -6,6 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
+	"github.com/jiva-studio/numen/libs/core/kernel/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault/registry"
 	"github.com/jiva-studio/numen/libs/note/domain"
@@ -117,7 +118,9 @@ func openCLIProblems(c Config, ctx context.Context) (cli.Problems, error) {
 }
 
 func getCLIPluginCommands(c Config) cli.PluginCommands {
-	return cli.PluginCommands{List: getPluginCommands(plugins(c)).List, Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) { return openPluginCommands(c, ctx, v) }}
+	return cli.PluginCommands{List: getPluginCommands(plugins(c)).List, Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
+		return openPluginCommands(c, ctx, v)
+	}}
 }
 
 func closeIfOpen(closeFn func() error) error {

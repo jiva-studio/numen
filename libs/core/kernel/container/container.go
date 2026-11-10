@@ -13,8 +13,8 @@ import (
 
 	settingsadapter "github.com/jiva-studio/numen/libs/core/kernel/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/adapter/settings/hardware"
-	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	agentdomain "github.com/jiva-studio/numen/libs/core/kernel/domain/agent"
+	"github.com/jiva-studio/numen/libs/core/kernel/domain/machine"
 	plugindomain "github.com/jiva-studio/numen/libs/core/kernel/domain/plugin"
 	"github.com/jiva-studio/numen/libs/core/kernel/domain/window"
 	"github.com/jiva-studio/numen/libs/core/kernel/internal/adapter/clock"
@@ -26,11 +26,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/kernel/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/kernel/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/note"
-	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/secret"
 	settingsusecase "github.com/jiva-studio/numen/libs/core/kernel/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/kernel/usecase/vault"
+	"github.com/jiva-studio/numen/libs/note/edit"
 	"github.com/jiva-studio/numen/libs/plugin/catalog/catalog"
 )
 
@@ -166,27 +166,29 @@ func (c Config) GetWait() machine.Wait {
 func settingsOf(c Config) settingsWiring {
 	res := getResources(c)
 	return settingsWiring{
-		SettingsPath:     c.SettingsPath,
-		ThemesPath:       c.ThemesPath,
-		RegistryPath:     c.RegistryPath,
-		InterfaceScale:   c.InterfaceScale,
-		TextScale:        c.TextScale,
-		Hardware:         c.Hardware,
-		ResolvedCompute:  c.ResolvedCompute,
-		PluginHost:       c.PluginHost,
-		KeyStore:         c.KeyStore,
-		Watches:          res.watches,
-		SettingsFiles:    res.settingsFiles,
-		SettingEvents:    res.settingEvents,
-		Programs:         getPrograms(c),
-		SecretGate:       res.secretGate,
-		PluginChanges:    res.pluginChanges,
-		SubscribedHosts:  &res.subscribedHosts,
-		ErrorHandler:     func(err error) { handleError(c, err) },
-		AgentProvider:    func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
-		GetAgentPrograms: func(p agentport.AgentProvider, t settingsadapter.Agent) []agentdomain.Program { return getAgentPrograms(plugins(c), p, t) },
-		SetSecretSource:  func() { setSecretSource(plugins(c)) },
-		SetCompleter:     func() { setCompleter(plugins(c)) },
+		SettingsPath:    c.SettingsPath,
+		ThemesPath:      c.ThemesPath,
+		RegistryPath:    c.RegistryPath,
+		InterfaceScale:  c.InterfaceScale,
+		TextScale:       c.TextScale,
+		Hardware:        c.Hardware,
+		ResolvedCompute: c.ResolvedCompute,
+		PluginHost:      c.PluginHost,
+		KeyStore:        c.KeyStore,
+		Watches:         res.watches,
+		SettingsFiles:   res.settingsFiles,
+		SettingEvents:   res.settingEvents,
+		Programs:        getPrograms(c),
+		SecretGate:      res.secretGate,
+		PluginChanges:   res.pluginChanges,
+		SubscribedHosts: &res.subscribedHosts,
+		ErrorHandler:    func(err error) { handleError(c, err) },
+		AgentProvider:   func() agentport.AgentProvider { return pluginsAgentProvider(plugins(c)) },
+		GetAgentPrograms: func(p agentport.AgentProvider, t settingsadapter.Agent) []agentdomain.Program {
+			return getAgentPrograms(plugins(c), p, t)
+		},
+		SetSecretSource: func() { setSecretSource(plugins(c)) },
+		SetCompleter:    func() { setCompleter(plugins(c)) },
 	}
 }
 
