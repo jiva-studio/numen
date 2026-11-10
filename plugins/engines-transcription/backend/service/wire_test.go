@@ -22,8 +22,8 @@ const (
 	workDeadline = time.Minute
 )
 
-// listeningRecognizer hears one stretch of a recording as "first words", but opening a recording waits
-// until release is closed. The first recording it opens closes startCh.
+// listeningRecognizer returns one stretch of a recording that reads "first words", but opening a
+// recording waits until release is closed. The first recording it opens closes startCh.
 type listeningRecognizer struct {
 	startCh   chan struct{}
 	startOnce sync.Once

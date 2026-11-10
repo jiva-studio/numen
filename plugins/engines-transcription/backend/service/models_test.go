@@ -115,7 +115,7 @@ func readManifestModels(t *testing.T) []string {
 	return models
 }
 
-func TestTheRecognizerHearsThroughTheEngine(t *testing.T) {
+func TestTheRecognizerTranscribesThroughTheEngine(t *testing.T) {
 	model := &models{isMock: true}
 
 	recognizer, err := model.getRecognizer(t.Context())
