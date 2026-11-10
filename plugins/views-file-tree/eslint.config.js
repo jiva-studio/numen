@@ -12,63 +12,65 @@ const contract = ['plugin-sdk', 'ui']
 // thing to show, those segments at the root, with a `lib` that the slices share. A slice is reached
 // only through its `index.ts` and reaches no sibling slice.
 const sameSlice = { slice: '{{ from.element.captured.slice }}' }
-const shared = { element: { type: ['root-shared', 'lib'] } }
-const ownParts = (types) => ({ element: { type: types, captured: sameSlice } })
+const sliceParts = ['slice-ui', 'slice-model', 'slice-api', 'slice-lib', 'slice']
+const sharedFiles = { file: { categories: 'root-shared' } }
+const sharedLib = { element: { type: 'lib' } }
+const otherSlice = { element: { type: 'slice' }, file: { categories: 'public' } }
+const own = (types) => ({ element: { type: types, captured: sameSlice } })
 const slicePolicies = [
   { allow: { to: { module: { origin: ['external', 'core'] } } } },
   {
-    from: { element: { type: 'root-index' } },
+    from: { file: { categories: 'root-index' } },
     allow: {
-      to: {
-        element: {
-          type: ['root-shared', 'shell-ui', 'shell-model', 'shell-api', 'lib', 'slice-index'],
-        },
-      },
+      to: [
+        sharedFiles,
+        sharedLib,
+        otherSlice,
+        { element: { type: ['shell-ui', 'shell-model', 'shell-api'] } },
+      ],
     },
   },
   {
     from: { element: { type: 'shell-ui' } },
     allow: {
-      to: {
-        element: {
-          type: ['root-shared', 'shell-ui', 'shell-model', 'shell-api', 'lib', 'slice-index'],
-        },
-      },
+      to: [
+        sharedFiles,
+        sharedLib,
+        otherSlice,
+        { element: { type: ['shell-ui', 'shell-model', 'shell-api'] } },
+      ],
     },
   },
   {
     from: { element: { type: 'shell-model' } },
     allow: {
-      to: { element: { type: ['root-shared', 'shell-model', 'shell-api', 'lib', 'slice-index'] } },
+      to: [sharedFiles, sharedLib, otherSlice, { element: { type: ['shell-model', 'shell-api'] } }],
     },
   },
   {
     from: { element: { type: 'shell-api' } },
-    allow: { to: { element: { type: ['root-shared', 'shell-api', 'lib'] } } },
+    allow: { to: [sharedFiles, sharedLib, { element: { type: 'shell-api' } }] },
   },
-  {
-    from: { element: { type: 'lib' } },
-    allow: { to: { element: { type: ['root-shared', 'lib'] } } },
-  },
-  {
-    from: { element: { type: 'slice-index' } },
-    allow: { to: [shared, ownParts(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])] },
-  },
+  { from: { element: { type: 'lib' } }, allow: { to: [sharedFiles, sharedLib] } },
   {
     from: { element: { type: 'slice-ui' } },
-    allow: { to: [shared, ownParts(['slice-ui', 'slice-model', 'slice-api', 'slice-lib'])] },
+    allow: { to: [sharedFiles, sharedLib, own(sliceParts.slice(0, 4))] },
   },
   {
     from: { element: { type: 'slice-model' } },
-    allow: { to: [shared, ownParts(['slice-model', 'slice-api', 'slice-lib'])] },
+    allow: { to: [sharedFiles, sharedLib, own(sliceParts.slice(1, 4))] },
   },
   {
     from: { element: { type: 'slice-api' } },
-    allow: { to: [shared, ownParts(['slice-api', 'slice-lib'])] },
+    allow: { to: [sharedFiles, sharedLib, own(sliceParts.slice(2, 4))] },
   },
   {
     from: { element: { type: 'slice-lib' } },
-    allow: { to: [shared, ownParts(['slice-lib'])] },
+    allow: { to: [sharedFiles, sharedLib, own(['slice-lib'])] },
+  },
+  {
+    from: { element: { type: 'slice' } },
+    allow: { to: [sharedFiles, sharedLib, own(sliceParts)] },
   },
 ]
 
@@ -182,8 +184,6 @@ export default [
     settings: {
       'import/resolver': { typescript: { alwaysTryTypes: true } },
       'boundaries/elements': [
-        { type: 'root-index', pattern: 'frontend/index.ts', mode: 'file' },
-        { type: 'root-shared', pattern: 'frontend/{words,types}.ts', mode: 'file' },
         { type: 'shell-ui', pattern: 'frontend/ui' },
         { type: 'shell-model', pattern: 'frontend/model' },
         { type: 'shell-api', pattern: 'frontend/api' },
@@ -192,7 +192,12 @@ export default [
         { type: 'slice-model', pattern: 'frontend/*/model', capture: ['slice'] },
         { type: 'slice-api', pattern: 'frontend/*/api', capture: ['slice'] },
         { type: 'slice-lib', pattern: 'frontend/*/lib', capture: ['slice'] },
-        { type: 'slice-index', pattern: 'frontend/*/index.ts', mode: 'file', capture: ['slice'] },
+        { type: 'slice', pattern: 'frontend/*', capture: ['slice'] },
+      ],
+      'boundaries/files': [
+        { category: 'root-index', pattern: 'frontend/index.ts' },
+        { category: 'root-shared', pattern: 'frontend/{words,types}.ts' },
+        { category: 'public', pattern: 'frontend/*/index.ts' },
       ],
     },
     rules: {
