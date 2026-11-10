@@ -180,7 +180,7 @@ func getPluginDir(c pluginsWiring, id string) (string, bool) {
 	if c.PluginHost == nil {
 		return "", false
 	}
-	p, ok := c.PluginHost.GetPlugin(id)
+	p, ok := c.PluginHost.Runtime.GetPlugin(id)
 	if !ok {
 		return "", false
 	}
@@ -191,7 +191,7 @@ func getFrontendPluginIDs(c pluginsWiring) []string {
 	if c.PluginHost == nil {
 		return nil
 	}
-	infos := c.PluginHost.GetPluginInfos()
+	infos := c.PluginHost.Runtime.GetPluginInfos()
 	ids := make([]string, 0, len(infos))
 	for _, info := range infos {
 		if !info.HasFrontend {
@@ -204,7 +204,7 @@ func getFrontendPluginIDs(c pluginsWiring) []string {
 
 func setPluginWindow(c pluginsWiring, window hostendpoint.WindowControl) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWindow(window)
+		c.PluginHost.Endpoint.SetPluginWindow(window)
 	}
 }
 
@@ -257,7 +257,7 @@ func setSecretSource(c pluginsWiring) {
 		return
 	}
 	ledger := openSecretLedger(c)
-	c.PluginHost.SetSecretSource(plugindomain.SecretSource{
+	c.PluginHost.Configuration.SetSecretSource(plugindomain.SecretSource{
 		List:  ledger.GetSecrets,
 		Prune: openSecrets(c).Prune.Execute,
 	})
@@ -327,7 +327,7 @@ func pluginsNewNoteReader(c pluginsWiring) plugincommand.NoteReader {
 func getWhenConfig(c pluginsWiring) pluginport.WhenConfig {
 	settings := settingsadapter.WhenConfig{App: c.ListAppSettings}
 	if c.PluginHost != nil {
-		settings.Plugins = c.PluginHost.GetPluginInfos
+		settings.Plugins = c.PluginHost.Runtime.GetPluginInfos
 	}
 	return settings
 }

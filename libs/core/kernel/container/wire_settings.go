@@ -172,7 +172,7 @@ func configurePluginHost(c settingsWiring, s settingsadapter.File) {
 }
 
 func setUpPluginHost(c settingsWiring) {
-	c.PluginHost.SetKeyStore(c.KeyStore)
+	c.PluginHost.Configuration.SetKeyStore(c.KeyStore)
 	if c.Plugins != nil {
 		setSecretSource(c.Plugins())
 		setCompleter(c.Plugins())
@@ -195,7 +195,7 @@ func settingsPlugins(c settingsWiring) func() []plugindomain.Info {
 		if c.PluginHost == nil {
 			return nil
 		}
-		return c.PluginHost.GetPluginInfos()
+		return c.PluginHost.Runtime.GetPluginInfos()
 	}
 }
 
@@ -228,7 +228,7 @@ func getDeclarations(c settingsWiring) settingsadapter.Declarations {
 		if c.PluginHost == nil {
 			return nil, false
 		}
-		return c.PluginHost.GetPluginSettingDeclarations(owner)
+		return c.PluginHost.Configuration.GetPluginSettingDeclarations(owner)
 	}
 }
 
@@ -397,7 +397,7 @@ func refreshPluginSecrets(c settingsWiring, ctx context.Context) error {
 		return err
 	}
 	defer c.SecretGate.Leave()
-	return c.PluginHost.Refresh(ctx)
+	return c.PluginHost.Configuration.Refresh(ctx)
 }
 
 func resolveProfile(c settingsWiring, profile string) string {

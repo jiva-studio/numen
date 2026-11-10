@@ -66,7 +66,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	})
 
 	t.Run("plugin processes were never started", func(t *testing.T) {
-		for _, info := range cfg.PluginHost.GetPluginInfos() {
+		for _, info := range cfg.PluginHost.Runtime.GetPluginInfos() {
 			if info.IsActive {
 				t.Fatalf("expected plugin %s to remain inactive in safe mode", info.ID)
 			}

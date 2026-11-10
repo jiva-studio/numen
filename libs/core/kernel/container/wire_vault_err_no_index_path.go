@@ -223,10 +223,10 @@ func setPluginTexts(c vaultWiring) {
 		return
 	}
 	if c.TextVersions == nil {
-		c.PluginHost.SetPluginTexts(nil)
+		c.PluginHost.Endpoint.SetPluginTexts(nil)
 		return
 	}
-	c.PluginHost.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
+	c.PluginHost.Endpoint.SetPluginTexts(hosttext.NewTexts(c.TextVersions))
 }
 
 func openPluginData(c vaultWiring) *textversion.PluginData {

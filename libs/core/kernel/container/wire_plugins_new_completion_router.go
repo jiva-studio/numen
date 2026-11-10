@@ -68,7 +68,7 @@ func setCompleter(c pluginsWiring) {
 		pluginsHandleError(c, err)
 		return
 	}
-	c.PluginHost.SetCompleter(router)
+	c.PluginHost.Endpoint.SetCompleter(router)
 }
 
 func getSettingsAgent(c pluginsWiring) agentport.Agent {
@@ -130,7 +130,7 @@ func reportDependencies(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
+	c.PluginHost.Watch.ObserveDependencies(func(req manifest.DependencyRequirement, status plugindomain.DependencyStatus) {
 		id := dependencyTaskPrefix + req.ID
 		switch status.State {
 		case plugindomain.DependencyStateReady:
@@ -192,7 +192,7 @@ func getPluginCatalog(c pluginsWiring) *catalog.Service {
 	}
 	config := c.PluginCatalog
 	config.Sources = append(
-		[]catalog.Source{localsource.New(slices.Clone(c.PluginDirs), localsource.SettingsFunc(c.PluginHost.IsPluginEnabled))},
+		[]catalog.Source{localsource.New(slices.Clone(c.PluginDirs), localsource.SettingsFunc(c.PluginHost.Runtime.IsPluginEnabled))},
 		config.Sources...)
 	service, err := catalog.NewService(config)
 	if err != nil {
@@ -240,7 +240,7 @@ func pluginsResolvePlugin(c pluginsWiring, capability string) (*PluginHost, erro
 	if c.SafeMode {
 		return nil, &plugindomain.UnavailableError{Capability: capability, Reason: plugindomain.Disabled, Err: errSafeMode}
 	}
-	if _, err := c.PluginHost.ResolveCapability(capability); err != nil {
+	if _, err := c.PluginHost.Runtime.ResolveCapability(capability); err != nil {
 		return nil, err
 	}
 	return c.PluginHost, nil
@@ -249,14 +249,14 @@ func pluginsResolvePlugin(c pluginsWiring, capability string) (*PluginHost, erro
 func setSafeMode(c pluginsWiring, enabled bool) pluginsWiring {
 	c.SafeMode = enabled
 	if c.PluginHost != nil {
-		c.PluginHost.SetSafeMode(enabled)
+		c.PluginHost.Runtime.SetSafeMode(enabled)
 	}
 	return c
 }
 
 func setPluginVaultPath(c pluginsWiring, path string) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetVaultPath(path)
+		c.PluginHost.Runtime.SetVaultPath(path)
 	}
 }
 
@@ -264,7 +264,7 @@ func stopPlugins(c pluginsWiring, ctx context.Context) error {
 	if c.PluginHost == nil {
 		return nil
 	}
-	return c.PluginHost.TeardownAll(ctx, pluginGracePeriod)
+	return c.PluginHost.Watch.TeardownAll(ctx, pluginGracePeriod)
 }
 
 func getPluginCommands(c pluginsWiring) plugincommand.Commands {
@@ -299,7 +299,7 @@ func getPluginRetrier(c pluginsWiring) func(ctx context.Context, pluginID string
 		if c.PluginHost == nil {
 			return nil, &plugindomain.UnavailableError{PluginID: pluginID, Reason: plugindomain.NotInstalled}
 		}
-		return c.PluginHost.RetryPlugin(ctx, pluginID)
+		return c.PluginHost.Runtime.RetryPlugin(ctx, pluginID)
 	}
 }
 
@@ -307,7 +307,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 	if c.PluginHost == nil {
 		return
 	}
-	c.PluginHost.SetOnPluginFailed(func(failure plugindomain.Failure) {
+	c.PluginHost.Watch.SetOnPluginFailed(func(failure plugindomain.Failure) {
 		tasks.Set(work.Task{
 			ID:         pluginFailureTaskPrefix + failure.PluginID,
 			Title:      "Plugin stopped",
@@ -317,7 +317,7 @@ func reportPluginFailures(c pluginsWiring, tasks *run.Tasks) {
 			PluginName: failure.Name,
 		})
 	})
-	c.PluginHost.SetOnFailureCleared(func(pluginID string) {
+	c.PluginHost.Watch.SetOnFailureCleared(func(pluginID string) {
 		tasks.Remove(pluginFailureTaskPrefix + pluginID)
 		signalPluginChanges(c)
 	})
@@ -330,7 +330,7 @@ func setPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) {
 func pluginsOpenPluginWork(c pluginsWiring, tasks *run.Tasks, models *run.Lock) *run.PluginWork {
 	work := run.NewPluginWork(models, tasks, func(pluginID string) string { return pluginsGetPluginName(c, pluginID) })
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWork(work)
+		c.PluginHost.Endpoint.SetPluginWork(work)
 	}
 	return work
 }
@@ -339,7 +339,7 @@ func pluginsGetPluginName(c pluginsWiring, pluginID string) string {
 	if c.PluginHost == nil {
 		return pluginID
 	}
-	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
+	if found, isKnown := c.PluginHost.Runtime.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
 		return found.Manifest.Name
 	}
 	return pluginID
@@ -347,13 +347,13 @@ func pluginsGetPluginName(c pluginsWiring, pluginID string) string {
 
 func setPluginVault(c pluginsWiring, v *pluginvault.Access) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginVault(v)
+		c.PluginHost.Endpoint.SetPluginVault(v)
 	}
 }
 
 func setPluginVaultList(c pluginsWiring, list pluginvault.List) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginVaultList(list)
+		c.PluginHost.Endpoint.SetPluginVaultList(list)
 	}
 }
 
